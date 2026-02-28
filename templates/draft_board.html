@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Draft Board — Keeper League{% endblock %}
+
+{% block content %}
+<h1 class="h3 fw-bold mb-3">Draft Board</h1>
+
+{# ── Filters ── #}
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label small mb-0">Position</label>
+        <select name="pos" class="form-select form-select-sm">
+          <option value="">All</option>
+          {% for pos in ["DEF","MID","FWD","RUC"] %}
+            <option value="{{ pos }}" {% if filters.pos == pos %}selected{% endif %}>{{ pos }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label small mb-0">AFL Team</label>
+        <select name="afl_team" class="form-select form-select-sm">
+          <option value="">All</option>
+          {% for t in afl_teams %}
+            <option value="{{ t }}" {% if filters.afl_team == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label small mb-0">Age</label>
+        <div class="d-flex gap-1">
+          <input type="number" name="age_min" class="form-control form-control-sm" style="width:60px" placeholder="Min" value="{{ filters.age_min }}">
+          <input type="number" name="age_max" class="form-control form-control-sm" style="width:60px" placeholder="Max" value="{{ filters.age_max }}">
+        </div>
+      </div>
+      <div class="col">
+        <label class="form-label small mb-0">Search</label>
+        <input type="text" name="q" class="form-control form-control-sm" placeholder="Player name…" value="{{ filters.q }}">
+      </div>
+      <div class="col-auto">
+        <div class="form-check" style="margin-top:4px">
+          <input type="checkbox" name="available" value="1" class="form-check-input" id="avail"
+                 {% if filters.available %}checked{% endif %}>
+          <label class="form-check-label small" for="avail">Available only</label>
+        </div>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary btn-sm" type="submit">Filter</button>
+        <a href="{{ url_for('draft_board') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<p class="text-muted small">{{ players|length }} players</p>
+
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle" id="draftTable">
+    <thead class="table-dark">
+      <tr>
+        <th style="width:40px">#</th>
+        <th>Player</th>
+        <th>Pos</th>
+        <th>Age</th>
+        <th>GP</th>
+        <th>SC Avg</th>
+        <th>Prev SC</th>
+        <th>Rtg</th>
+        <th>Pot</th>
+        <th>Draft Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in players %}
+      <tr>
+        <td class="text-muted">{{ loop.index }}</td>
+        <td>
+          <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none d-flex align-items-center gap-2">
+            <img src="{{ TEAM_LOGOS.get(p.team, '') }}" class="team-logo-sm" alt="" onerror="this.style.display='none'">
+            <span class="fw-medium">{{ p.name }}</span>
+          </a>
+        </td>
+        <td><span class="pos-badge pos-{{ p.primary_position }}">{{ p.position }}</span></td>
+        <td>{{ p.age or '—' }}</td>
+        <td>{{ p.games_played or '—' }}</td>
+        <td class="fw-semibold">{{ p.sc_avg or '—' }}</td>
+        <td>{{ p.sc_avg_prev or '—' }}</td>
+        <td>
+          {% if p.rating %}
+          <span class="fw-semibold" style="color:{% if p.rating >= 80 %}#3fb950{% elif p.rating >= 70 %}#d29922{% elif p.rating >= 60 %}#f0883e{% else %}#f85149{% endif %}">{{ p.rating }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if p.potential %}
+          <span class="fw-semibold" style="color:{% if p.potential >= 80 %}#3fb950{% elif p.potential >= 70 %}#d29922{% elif p.potential >= 60 %}#f0883e{% else %}#f85149{% endif %}">{{ p.potential }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if p.draft_score %}
+          <span class="fw-bold" style="color: hsl({{ (p.draft_score / 100 * 120)|int }}, 70%, 55%)">{{ p.draft_score }}</span>
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('#draftTable thead th').forEach((th, idx) => {
+  th.style.cursor = 'pointer';
+  th.addEventListener('click', () => {
+    const tbody = th.closest('table').querySelector('tbody');
+    const rows = Array.from(tbody.rows);
+    const asc = th.dataset.sort !== 'asc';
+    th.dataset.sort = asc ? 'asc' : 'desc';
+    rows.sort((a, b) => {
+      let va = a.cells[idx].textContent.trim();
+      let vb = b.cells[idx].textContent.trim();
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+      return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    rows.forEach(r => tbody.appendChild(r));
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "admin/base.html" %}
+{% block title %}Analytics — Admin — Keeper League{% endblock %}
+{% block admin_content %}
+<div class="section-header mb-3">
+  <h3 class="fw-bold">Analytics</h3>
+</div>
+
+{# Active user stat cards #}
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
+      <div class="card-body py-3">
+        <div style="font-size:1.8rem;font-weight:700;color:#58a6ff;">{{ active_24h }}</div>
+        <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">Active (24h)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
+      <div class="card-body py-3">
+        <div style="font-size:1.8rem;font-weight:700;color:#3fb950;">{{ active_7d }}</div>
+        <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">Active (7d)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
+      <div class="card-body py-3">
+        <div style="font-size:1.8rem;font-weight:700;color:#d2a8ff;">{{ active_30d }}</div>
+        <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">Active (30d)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Page views chart #}
+<div class="card mb-4" style="background:#161b22;border:1px solid #30363d;">
+  <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
+    <h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-graph-up me-2"></i>Page Views (Last 30 Days)</h6>
+  </div>
+  <div class="card-body">
+    <canvas id="viewsChart" height="100"></canvas>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  {# Top pages #}
+  <div class="col-md-5">
+    <div class="card" style="background:#161b22;border:1px solid #30363d;">
+      <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
+        <h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-fire me-2"></i>Top Pages</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-dark mb-0" style="font-size:.8rem;">
+            <thead><tr style="color:#8b949e;"><th>Path</th><th class="text-end">Views</th></tr></thead>
+            <tbody>
+              {% for page in top_pages %}
+              <tr>
+                <td class="text-truncate" style="max-width:250px;">{{ page[0] }}</td>
+                <td class="text-end fw-semibold">{{ page[1] }}</td>
+              </tr>
+              {% endfor %}
+              {% if not top_pages %}
+              <tr><td colspan="2" class="text-center text-secondary py-3">No data yet</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Recent requests #}
+  <div class="col-md-7">
+    <div class="card" style="background:#161b22;border:1px solid #30363d;">
+      <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
+        <h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-clock-history me-2"></i>Recent Requests</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
+          <table class="table table-sm table-dark mb-0" style="font-size:.75rem;">
+            <thead><tr style="color:#8b949e;"><th>User</th><th>Path</th><th>Status</th><th>Time</th></tr></thead>
+            <tbody>
+              {% for r in recent %}
+              <tr>
+                <td>{{ r.user }}</td>
+                <td class="text-truncate" style="max-width:200px;">{{ r.path }}</td>
+                <td>{{ r.status }}</td>
+                <td style="color:#8b949e;">{{ r.time.strftime('%d %b %H:%M') if r.time else '' }}</td>
+              </tr>
+              {% endfor %}
+              {% if not recent %}
+              <tr><td colspan="4" class="text-center text-secondary py-3">No data yet</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ctx = document.getElementById('viewsChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: {{ chart_labels|tojson }},
+    datasets: [{
+      label: 'Page Views',
+      data: {{ chart_data|tojson }},
+      borderColor: '#58a6ff',
+      backgroundColor: 'rgba(88,166,255,.1)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 3,
+      pointBackgroundColor: '#58a6ff',
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 10 },
+        grid: { color: '#21262d' },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#8b949e', font: { size: 10 } },
+        grid: { color: '#21262d' },
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

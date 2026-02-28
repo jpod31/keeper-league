@@ -1,0 +1,908 @@
+{# AFL Field View — included from squad.html when view == 'field' #}
+{# Expects: field_data, TEAM_LOGOS, is_owner, league, team #}
+
+{% macro player_card(p, pos_class, cap_id, vc_id, is_bench, is_owner, league_id, team_id, is_reserve, emergency_ids, bench_type='') %}
+  {% if p %}
+    {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
+    <div class="fv-card fv-card-{{ pos_class }}{% if is_bench %} fv-card-bench{% if bench_type %} fv-card-bench-{{ bench_type|lower }}{% endif %}{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}"
+         data-player-id="{{ p.id }}"
+         data-section="{% if is_reserve %}reserve{% elif is_bench %}bench{% else %}field{% endif %}"
+         data-positions="{{ p.position or 'MID' }}"
+         data-field-pos="{{ pos_class|upper if not is_bench and not is_reserve else '' }}"
+         data-bench-type="{{ bench_type }}"
+         onclick="fvShowPlayer({{ p.id }})">
+      {# Captain / VC / Emergency ribbon #}
+      {% if cap_id == p.id %}
+        <div class="fv-ribbon fv-ribbon-cap"><span>C</span></div>
+      {% elif vc_id == p.id %}
+        <div class="fv-ribbon fv-ribbon-vc"><span>VC</span></div>
+      {% elif is_emg %}
+        <div class="fv-ribbon fv-ribbon-emg"><span>E</span></div>
+      {% endif %}
+
+      {# Hover action bubbles (owner only) #}
+      {% if is_owner %}
+      <div class="fv-actions" onclick="event.stopPropagation()">
+        {% if not is_bench and not is_reserve %}
+        <button class="fv-action-btn fv-act-cap{% if cap_id == p.id %} active{% endif %}"
+                title="Set Captain" onclick="event.stopPropagation(); fvSetCaptain({{ p.id }})">C</button>
+        <button class="fv-action-btn fv-act-vc{% if vc_id == p.id %} active{% endif %}"
+                title="Set Vice Captain" onclick="event.stopPropagation(); fvSetVC({{ p.id }})">VC</button>
+        {% endif %}
+        <button class="fv-action-btn fv-act-sub"
+                title="Swap Player" onclick="event.stopPropagation(); fvStartSub({{ p.id }})">
+          <i class="bi bi-arrow-left-right"></i>
+        </button>
+        {% if is_reserve %}
+        <button class="fv-action-btn fv-act-emg{% if is_emg %} active{% endif %}"
+                title="Toggle Emergency" onclick="event.stopPropagation(); fvSetEmergency({{ p.id }})">E</button>
+        {% endif %}
+      </div>
+      {# Swap-mode click overlay (hidden until swap mode active) #}
+      <div class="fv-swap-overlay" onclick="fvCompleteSub({{ p.id }})" title="Swap here"></div>
+      {% endif %}
+
+      {# Team logo + position tag + bench type #}
+      <div class="fv-card-top">
+        <div class="fv-logo">
+          {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+            <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" title="{{ p.afl_team }}">
+          {% else %}
+            <span class="fv-logo-fallback"><i class="bi bi-shield-fill"></i></span>
+          {% endif %}
+        </div>
+        {% if bench_type %}
+          <span class="fv-bench-pip fv-bpip-{{ bench_type|lower }}">B.{{ bench_type }}</span>
+        {% endif %}
+        <span class="fv-pos-pip fv-pip-{{ (p.position or 'MID').split('/')[0]|lower }}">{{ (p.position or 'MID').split('/')[0] }}</span>
+      </div>
+
+      {# Player name #}
+      {% set fname = p.name.split()[0] %}
+      {% set sname = p.name.split()[1:] | join(' ') %}
+      <div class="fv-name-block">
+        <div class="fv-firstname">{{ fname }}</div>
+        <div class="fv-surname{% if sname|length > 9 %} fv-name-long{% endif %}" title="{{ p.name }}">{{ sname }}</div>
+      </div>
+
+      {# Stats bar #}
+      <div class="fv-stats-bar">
+        <div class="fv-stat fv-stat-primary">
+          <span class="fv-stat-num">{{ '%.0f'|format(p.sc_avg) if p.sc_avg else '-' }}</span>
+          <span class="fv-stat-label">AVG</span>
+        </div>
+        <div class="fv-stat-sep"></div>
+        <div class="fv-stat">
+          {% if p.rating %}
+            <span class="fv-stat-num fv-rtg-{{ 'elite' if p.rating >= 80 else 'good' if p.rating >= 70 else 'avg' if p.rating >= 60 else 'low' }}">{{ p.rating }}</span>
+          {% else %}
+            <span class="fv-stat-num fv-rtg-none">-</span>
+          {% endif %}
+          <span class="fv-stat-label">RTG</span>
+        </div>
+        <div class="fv-stat-sep"></div>
+        <div class="fv-stat">
+          <span class="fv-stat-num">{{ p.age or '-' }}</span>
+          <span class="fv-stat-label">AGE</span>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    {# Empty slot #}
+    <div class="fv-card fv-card-empty fv-card-{{ pos_class }}{% if is_bench %} fv-card-bench{% if bench_type %} fv-card-bench-{{ bench_type|lower }}{% endif %}{% endif %}">
+      <div class="fv-empty-slot">
+        {% if bench_type and bench_type != 'FLEX' %}
+          <span style="font-size:.55rem;font-weight:700;color:#30363d;letter-spacing:1px;">{{ bench_type }}</span>
+        {% elif bench_type == 'FLEX' %}
+          <span style="font-size:.55rem;font-weight:700;color:#30363d;letter-spacing:1px;">FLEX</span>
+        {% else %}
+          <i class="bi bi-person-dash"></i>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+
+{# ═══════════ THE FIELD ═══════════ #}
+<div class="fv-outer" id="fvWrapper">
+  {# Lockout countdown banner — spans full width above field + sidebar #}
+  {% if field_data.next_lockout_time %}
+  <div id="lockoutBanner" class="fv-lockout-banner">
+    <i class="bi bi-clock"></i>
+    <span id="lockoutText">Loading...</span>
+  </div>
+  <script>
+  (function() {
+    const lockoutTime = new Date("{{ field_data.next_lockout_time }}");
+    const banner = document.getElementById('lockoutBanner');
+    const text = document.getElementById('lockoutText');
+    function update() {
+      const diff = lockoutTime - new Date();
+      if (diff <= 0) {
+        text.textContent = 'LOCKED — Game has started';
+        banner.classList.add('fv-lockout-locked');
+      } else {
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        const pad = n => String(n).padStart(2, '0');
+        if (d > 0) {
+          text.textContent = `Next lockout in ${d}d ${pad(h)}:${pad(m)}:${pad(s)}`;
+        } else {
+          text.textContent = `Next lockout in ${pad(h)}:${pad(m)}:${pad(s)}`;
+        }
+      }
+    }
+    update();
+    setInterval(update, 1000);
+  })();
+  </script>
+  {% endif %}
+  <div class="fv-wrapper">
+  <div class="fv-field">
+    {# SVG field markings #}
+    <svg class="fv-markings" viewBox="0 0 400 600" preserveAspectRatio="none">
+      <ellipse cx="200" cy="300" rx="196" ry="296" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1.5"/>
+      <circle cx="200" cy="300" r="38" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1.2"/>
+      <circle cx="200" cy="300" r="2.5" fill="rgba(255,255,255,.1)"/>
+      <line x1="15" y1="300" x2="385" y2="300" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+      <path d="M 55,115 Q 200,175 345,115" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+      <path d="M 55,485 Q 200,425 345,485" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+      <rect x="160" y="6" width="80" height="35" rx="3" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+      <rect x="160" y="559" width="80" height="35" rx="3" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+    </svg>
+
+    {# ── DEF (top) — 3 stacked on 2 ── #}
+    <div class="fv-zone">
+      <div class="fv-zone-hdr">
+        <span class="fv-zone-pill fv-zp-def">DEF</span>
+        <span class="fv-zone-tally">{{ field_data.zone_filled.get('DEF', 0) }}/{{ field_data.slot_counts.get('DEF', 0) }}</span>
+      </div>
+      <div class="fv-zone-grid fv-grid-3">
+        {% for p in field_data.zones.get('DEF', [])[:3] %}
+          {{ player_card(p, 'def', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+        {% endfor %}
+      </div>
+      <div class="fv-zone-grid fv-grid-2" style="margin-top:8px">
+        {% for p in field_data.zones.get('DEF', [])[3:5] %}
+          {{ player_card(p, 'def', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ── MID — 2 / 3 / 2 rows ── #}
+    <div class="fv-zone fv-zone-wide">
+      <div class="fv-zone-hdr">
+        <span class="fv-zone-pill fv-zp-mid">MID</span>
+        <span class="fv-zone-tally">{{ field_data.zone_filled.get('MID', 0) }}/{{ field_data.slot_counts.get('MID', 0) }}</span>
+      </div>
+      {# Row 1: first 2 mids #}
+      <div class="fv-zone-grid fv-grid-2">
+        {% for p in field_data.zones.get('MID', [])[:2] %}
+          {{ player_card(p, 'mid', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+        {% endfor %}
+      </div>
+      {# Row 2: next 3 mids #}
+      <div class="fv-zone-grid fv-grid-3" style="margin-top:8px">
+        {% for p in field_data.zones.get('MID', [])[2:5] %}
+          {{ player_card(p, 'mid', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+        {% endfor %}
+      </div>
+      {# Row 3: last 2 mids #}
+      <div class="fv-zone-grid fv-grid-2" style="margin-top:8px">
+        {% for p in field_data.zones.get('MID', [])[5:7] %}
+          {{ player_card(p, 'mid', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ── RUC — 1 centered ── #}
+    <div class="fv-zone">
+      <div class="fv-zone-hdr">
+        <span class="fv-zone-pill fv-zp-ruc">RUC</span>
+        <span class="fv-zone-tally">{{ field_data.zone_filled.get('RUC', 0) }}/{{ field_data.slot_counts.get('RUC', 0) }}</span>
+      </div>
+      <div class="fv-zone-grid fv-grid-1">
+        {% for p in field_data.zones.get('RUC', []) %}
+          {{ player_card(p, 'ruc', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ── FWD (bottom) — 2 top, 3 bottom ── #}
+    <div class="fv-zone">
+      <div class="fv-zone-hdr">
+        <span class="fv-zone-pill fv-zp-fwd">FWD</span>
+        <span class="fv-zone-tally">{{ field_data.zone_filled.get('FWD', 0) }}/{{ field_data.slot_counts.get('FWD', 0) }}</span>
+      </div>
+      <div class="fv-zone-grid fv-grid-2">
+        {% for p in field_data.zones.get('FWD', [])[:2] %}
+          {{ player_card(p, 'fwd', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+        {% endfor %}
+      </div>
+      <div class="fv-zone-grid fv-grid-3" style="margin-top:8px">
+        {% for p in field_data.zones.get('FWD', [])[2:5] %}
+          {{ player_card(p, 'fwd', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {# ═══════════ SIDEBAR: Bench only ═══════════ #}
+  <div class="fv-sidebar">
+    <div class="fv-bench-section">
+      <div class="fv-bench-hdr">
+        <i class="bi bi-clipboard2 me-1"></i>Bench
+        <span class="fv-zone-tally ms-2">{{ field_data.bench_filled }}/{{ field_data.bench_data|length }}</span>
+      </div>
+      <div class="fv-bench-stack">
+        {% for slot in field_data.bench_data %}
+          {% set bt = slot.bench_type %}
+          {% set p = slot.player %}
+          {% set bench_pos_class = bt|lower if bt != 'FLEX' else 'bench' %}
+          {{ player_card(p, bench_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids, bt) }}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  </div>{# /fv-wrapper #}
+
+  {# ═══════════ RESERVES: full-width horizontal below field+sidebar ═══════════ #}
+  {% if field_data.reserves %}
+  <div class="fv-reserves-section">
+    <div class="fv-reserves-hdr">
+      <i class="bi bi-people me-1"></i>Reserves
+      <span class="fv-zone-tally ms-2">{{ field_data.reserves|length }} players</span>
+    </div>
+    <div class="fv-reserves-grid">
+      {% for p in field_data.reserves %}
+        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids) }}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>{# /fv-outer #}
+
+{# ═══ Player Scouting Report Modal ═══ #}
+<div class="modal fade" id="playerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background:#161b22;border:1px solid #30363d;border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid #30363d;padding:.75rem 1rem;">
+        <h6 class="modal-title fw-bold" id="pmName" style="font-size:.95rem;"></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding:1rem;">
+        {# Hero row: bio left, rings right #}
+        <div class="pm-hero">
+          <div id="pmLogo" style="width:40px;height:40px;flex-shrink:0;">
+            <img id="pmLogoImg" src="" alt="" style="width:100%;height:100%;object-fit:contain;display:none;">
+            <span id="pmLogoFallback" class="fv-logo-fallback" style="width:40px;height:40px;"><i class="bi bi-shield-fill"></i></span>
+          </div>
+          <div class="pm-bio">
+            <div class="pm-bio-name" id="pmBioName"></div>
+            <div class="pm-bio-meta" id="pmTeamPos"></div>
+            <div class="pm-bio-meta"><strong id="pmAge">-</strong> age &nbsp; <strong id="pmHeight">-</strong> cm &nbsp; <strong id="pmGames">-</strong> career games</div>
+          </div>
+          <div class="pm-rings">
+            <div style="text-align:center;">
+              <div class="draft-ring" style="width:56px;height:56px;">
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="#21262d" stroke-width="4"/>
+                  <circle id="pmRatingArc" cx="28" cy="28" r="24" fill="none" stroke="#3fb950" stroke-width="4"
+                          stroke-dasharray="150.80" stroke-dashoffset="150.80" stroke-linecap="round"/>
+                </svg>
+                <div class="ring-value" id="pmRating" style="font-size:.9rem;">-</div>
+              </div>
+              <div style="font-size:.45rem;color:#6e7681;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Rating</div>
+            </div>
+            <div style="text-align:center;">
+              <div class="draft-ring" style="width:56px;height:56px;">
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="#21262d" stroke-width="4"/>
+                  <circle id="pmPotentialArc" cx="28" cy="28" r="24" fill="none" stroke="#bc8cff" stroke-width="4"
+                          stroke-dasharray="150.80" stroke-dashoffset="150.80" stroke-linecap="round"/>
+                </svg>
+                <div class="ring-value" id="pmPotential" style="font-size:.9rem;">-</div>
+              </div>
+              <div style="font-size:.45rem;color:#6e7681;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Potential</div>
+            </div>
+          </div>
+        </div>
+
+        {# SC row: big avg, sparkline, prev avg #}
+        <div class="pm-sc-row">
+          <div>
+            <div class="pm-sc-label">SC Average</div>
+            <div class="pm-sc-big" id="pmScAvg">-</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div class="pm-sc-label">Form (last 5)</div>
+            <canvas id="pmSparkline" class="pm-sparkline" width="120" height="36"></canvas>
+          </div>
+          <div class="pm-sc-prev">
+            <div class="pm-sc-label">Prev Avg</div>
+            <div class="pm-sc-prev-val" id="pmScPrev">-</div>
+          </div>
+        </div>
+
+        {# Last game stats #}
+        <div class="pm-stat-section" id="pmLastGameSection" style="display:none;">
+          <div class="pm-stat-title">Last Game (<span id="pmLastGameRd"></span>)</div>
+          <div class="pm-stat-grid" id="pmLastGameGrid"></div>
+        </div>
+
+        {# Season averages #}
+        <div class="pm-stat-section" id="pmSeasonAvgSection" style="display:none;">
+          <div class="pm-stat-title">Season Averages (<span id="pmSeasonGames"></span> games)</div>
+          <div class="pm-stat-grid" id="pmSeasonAvgGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if is_owner %}
+<script>
+const API_PREFIX = `/leagues/{{ league.id }}/team/{{ team.id }}/api`;
+let swapSourceId = null;
+
+// ── Toast notification (replaces disruptive alert()) ──
+function fvToast(msg, type) {
+  const existing = document.querySelectorAll('.fv-toast');
+  existing.forEach(t => t.remove());
+  const toast = document.createElement('div');
+  toast.className = 'fv-toast fv-toast-' + (type || 'info');
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => { requestAnimationFrame(() => toast.classList.add('fv-toast-show')); });
+  setTimeout(() => {
+    toast.classList.remove('fv-toast-show');
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
+// ── Core API helper — never reloads ──
+function fvApi(endpoint, body) {
+  return fetch(API_PREFIX + endpoint, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) fvToast(data.error, 'error');
+    return data;
+  })
+  .catch(() => { fvToast('Request failed', 'error'); return {error: true}; });
+}
+
+// ── Soft-refresh: fetch page, replace field wrapper seamlessly ──
+function fvRefresh() {
+  return fetch(location.href)
+    .then(r => r.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const newWrapper = doc.getElementById('fvWrapper');
+      const current = document.getElementById('fvWrapper');
+      if (newWrapper && current) {
+        const scrollY = window.scrollY;
+        current.innerHTML = newWrapper.innerHTML;
+        window.scrollTo(0, scrollY);
+        // Re-execute inline scripts (lockout countdown etc.)
+        current.querySelectorAll('script').forEach(old => {
+          const fresh = document.createElement('script');
+          fresh.textContent = old.textContent;
+          old.parentNode.replaceChild(fresh, old);
+        });
+        _initHoverListeners();
+      }
+    });
+}
+
+// ── Captain — inline DOM update ──
+function fvSetCaptain(pid) {
+  fvApi('/set-captain', {player_id: pid}).then(data => {
+    if (data.error) return;
+    // Remove old captain
+    document.querySelectorAll('.fv-card-captain').forEach(c => {
+      c.classList.remove('fv-card-captain');
+      const r = c.querySelector('.fv-ribbon-cap'); if (r) r.remove();
+      c.querySelectorAll('.fv-act-cap').forEach(b => b.classList.remove('active'));
+    });
+    const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+    if (card) {
+      // Remove VC if was VC
+      card.classList.remove('fv-card-vc');
+      const oldR = card.querySelector('.fv-ribbon'); if (oldR) oldR.remove();
+      card.querySelectorAll('.fv-act-vc').forEach(b => b.classList.remove('active'));
+      // Add captain
+      card.classList.add('fv-card-captain');
+      const ribbon = document.createElement('div');
+      ribbon.className = 'fv-ribbon fv-ribbon-cap';
+      ribbon.innerHTML = '<span>C</span>';
+      card.insertBefore(ribbon, card.firstChild);
+      card.querySelectorAll('.fv-act-cap').forEach(b => b.classList.add('active'));
+    }
+    fvToast('Captain updated', 'success');
+  });
+}
+
+// ── Vice Captain — inline DOM update ──
+function fvSetVC(pid) {
+  fvApi('/set-vc', {player_id: pid}).then(data => {
+    if (data.error) return;
+    // Remove old VC
+    document.querySelectorAll('.fv-card-vc').forEach(c => {
+      c.classList.remove('fv-card-vc');
+      const r = c.querySelector('.fv-ribbon-vc'); if (r) r.remove();
+      c.querySelectorAll('.fv-act-vc').forEach(b => b.classList.remove('active'));
+    });
+    const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+    if (card) {
+      // Remove captain if was captain
+      card.classList.remove('fv-card-captain');
+      const oldR = card.querySelector('.fv-ribbon'); if (oldR) oldR.remove();
+      card.querySelectorAll('.fv-act-cap').forEach(b => b.classList.remove('active'));
+      // Add VC
+      card.classList.add('fv-card-vc');
+      const ribbon = document.createElement('div');
+      ribbon.className = 'fv-ribbon fv-ribbon-vc';
+      ribbon.innerHTML = '<span>VC</span>';
+      card.insertBefore(ribbon, card.firstChild);
+      card.querySelectorAll('.fv-act-vc').forEach(b => b.classList.add('active'));
+    }
+    fvToast('Vice Captain updated', 'success');
+  });
+}
+
+// ── Emergency — inline DOM update ──
+function fvSetEmergency(pid) {
+  fvApi('/set-emergency', {player_id: pid}).then(data => {
+    if (data.error) return;
+    const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+    if (!card) return;
+    if (data.is_emergency) {
+      card.classList.add('fv-card-emergency');
+      if (!card.querySelector('.fv-ribbon-emg')) {
+        const ribbon = document.createElement('div');
+        ribbon.className = 'fv-ribbon fv-ribbon-emg';
+        ribbon.innerHTML = '<span>E</span>';
+        card.insertBefore(ribbon, card.firstChild);
+      }
+      card.querySelectorAll('.fv-act-emg').forEach(b => b.classList.add('active'));
+      fvToast('Emergency set', 'success');
+    } else {
+      card.classList.remove('fv-card-emergency');
+      const r = card.querySelector('.fv-ribbon-emg'); if (r) r.remove();
+      card.querySelectorAll('.fv-act-emg').forEach(b => b.classList.remove('active'));
+      fvToast('Emergency removed', 'info');
+    }
+  });
+}
+
+// ── Swap: start ──
+function fvStartSub(pid) {
+  if (swapSourceId === pid) {
+    fvCancelSub();
+    return;
+  }
+  swapSourceId = pid;
+  const wrapper = document.getElementById('fvWrapper');
+  wrapper.classList.add('fv-swap-mode');
+
+  const sourceCard = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+  const srcSection = sourceCard.dataset.section;
+  const srcPositions = sourceCard.dataset.positions.split('/');
+  const srcFieldPos = sourceCard.dataset.fieldPos;
+
+  document.querySelectorAll('.fv-card[data-player-id]').forEach(card => {
+    card.classList.remove('fv-swap-active', 'fv-swap-eligible');
+    const tid = parseInt(card.dataset.playerId);
+
+    if (tid === pid) {
+      card.classList.add('fv-swap-active');
+      return;
+    }
+
+    const tgtSection = card.dataset.section;
+    const tgtPositions = card.dataset.positions.split('/');
+    const tgtFieldPos = card.dataset.fieldPos;
+    const tgtBenchType = card.dataset.benchType || '';
+    const srcBenchType = sourceCard.dataset.benchType || '';
+    let eligible = false;
+
+    if (srcSection === tgtSection && srcSection === 'field') {
+      eligible = srcPositions.includes(tgtFieldPos) && tgtPositions.includes(srcFieldPos);
+    } else if (srcSection === 'field' && tgtSection === 'bench') {
+      if (tgtBenchType === 'FLEX') {
+        eligible = tgtPositions.includes(srcFieldPos);
+      } else {
+        eligible = tgtPositions.includes(srcFieldPos) && srcPositions.includes(tgtBenchType);
+      }
+    } else if (srcSection === 'field' && tgtSection === 'reserve') {
+      eligible = tgtPositions.includes(srcFieldPos);
+    } else if (srcSection === 'bench' && tgtSection === 'field') {
+      eligible = srcPositions.includes(tgtFieldPos);
+    } else if (srcSection === 'bench' && tgtSection === 'bench') {
+      const srcOk = tgtBenchType === 'FLEX' || srcPositions.includes(tgtBenchType);
+      const tgtOk = srcBenchType === 'FLEX' || tgtPositions.includes(srcBenchType);
+      eligible = srcOk && tgtOk;
+    } else if (srcSection === 'bench' && tgtSection === 'reserve') {
+      eligible = true;
+    } else if (srcSection === 'reserve' && tgtSection === 'field') {
+      eligible = srcPositions.includes(tgtFieldPos);
+    } else if (srcSection === 'reserve' && tgtSection === 'bench') {
+      eligible = tgtBenchType === 'FLEX' || srcPositions.includes(tgtBenchType);
+    } else if (srcSection === 'reserve' && tgtSection === 'reserve') {
+      eligible = true;
+    }
+
+    if (eligible) {
+      card.classList.add('fv-swap-eligible');
+    }
+  });
+}
+
+// ── Swap: complete with animation + soft refresh ──
+function fvCompleteSub(targetPid) {
+  if (!swapSourceId || swapSourceId === targetPid) return;
+  const targetCard = document.querySelector(`.fv-card[data-player-id="${targetPid}"]`);
+  if (!targetCard || !targetCard.classList.contains('fv-swap-eligible')) return;
+
+  const sourceCard = document.querySelector(`.fv-card[data-player-id="${swapSourceId}"]`);
+  const savedSource = swapSourceId;
+  fvCancelSub();
+
+  // Animate the swap
+  const srcRect = sourceCard.getBoundingClientRect();
+  const tgtRect = targetCard.getBoundingClientRect();
+  const dx = tgtRect.left - srcRect.left;
+  const dy = tgtRect.top - srcRect.top;
+
+  sourceCard.style.zIndex = '10';
+  targetCard.style.zIndex = '10';
+  sourceCard.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)';
+  targetCard.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)';
+  sourceCard.style.transform = `translate(${dx}px, ${dy}px)`;
+  targetCard.style.transform = `translate(${-dx}px, ${-dy}px)`;
+
+  // After animation, call API
+  setTimeout(() => {
+    fvApi('/swap', {player_id_1: savedSource, player_id_2: targetPid}).then(data => {
+      if (data && !data.error) {
+        // Fade and soft-refresh for seamless update
+        const wrapper = document.getElementById('fvWrapper');
+        wrapper.style.transition = 'opacity 0.15s ease';
+        wrapper.style.opacity = '0.5';
+        fvRefresh().then(() => {
+          const w = document.getElementById('fvWrapper');
+          if (w) {
+            w.style.transition = 'opacity 0.25s ease';
+            w.style.opacity = '1';
+          }
+          fvToast('Players swapped', 'success');
+        });
+      } else {
+        // Reverse animation on error
+        sourceCard.style.transition = 'transform 0.25s ease';
+        targetCard.style.transition = 'transform 0.25s ease';
+        sourceCard.style.transform = '';
+        targetCard.style.transform = '';
+        setTimeout(() => {
+          sourceCard.style.zIndex = '';
+          targetCard.style.zIndex = '';
+          sourceCard.style.transition = '';
+          targetCard.style.transition = '';
+        }, 260);
+      }
+    });
+  }, 370);
+}
+
+// ── Swap: cancel ──
+function fvCancelSub() {
+  swapSourceId = null;
+  const wrapper = document.getElementById('fvWrapper');
+  wrapper.classList.remove('fv-swap-mode');
+  document.querySelectorAll('.fv-card').forEach(card => {
+    card.classList.remove('fv-swap-active', 'fv-swap-eligible');
+  });
+}
+
+// ── Sparkline drawing helper ──
+function drawSparkline(canvasId, scores) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  if (!scores || !scores.length) return;
+  const vals = scores.map(s => s.sc);
+  const min = Math.min(...vals) - 5;
+  const max = Math.max(...vals) + 5;
+  const range = max - min || 1;
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  vals.forEach((v, i) => {
+    const x = vals.length === 1 ? w / 2 : (i / (vals.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.fillStyle = '#58a6ff';
+  vals.forEach((v, i) => {
+    const x = vals.length === 1 ? w / 2 : (i / (vals.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// ── Build stat grid helper ──
+function buildStatGrid(containerId, stats, keys) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  keys.forEach(([key, label]) => {
+    const val = stats[key];
+    const cell = document.createElement('div');
+    cell.className = 'pm-stat-cell';
+    cell.innerHTML = `<span class="pm-stat-val">${val != null ? val : '-'}</span><span class="pm-stat-key">${label}</span>`;
+    grid.appendChild(cell);
+  });
+}
+
+// ── Player Scouting Report Popup ──
+const TEAM_LOGOS_JS = {{ TEAM_LOGOS | tojson }};
+const STAT_KEYS = [
+  ['disposals','DIS'],['kicks','KCK'],['handballs','HBL'],['marks','MRK'],
+  ['goals','GLS'],['behinds','BHD'],['tackles','TKL'],['hitouts','HO'],
+  ['clearances','CLR'],['inside_fifties','I50'],['contested_possessions','CP'],
+  ['pressure_acts','PA'],['metres_gained','MG'],['supercoach_score','SC']
+];
+const SEASON_KEYS = [
+  ['disposals','DIS'],['kicks','KCK'],['handballs','HBL'],['marks','MRK'],
+  ['goals','GLS'],['tackles','TKL'],['hitouts','HO'],['clearances','CLR'],['sc','SC']
+];
+
+function fvShowPlayer(pid) {
+  if (swapSourceId) return;
+  fetch(`${API_PREFIX}/player/${pid}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) return;
+      document.getElementById('pmName').textContent = data.name || '';
+      document.getElementById('pmBioName').textContent = data.name || '';
+      document.getElementById('pmTeamPos').textContent =
+        (data.afl_team || '') + ' \u2022 ' + (data.position || '');
+      document.getElementById('pmAge').textContent = data.age || '-';
+      document.getElementById('pmHeight').textContent = data.height_cm || '-';
+      document.getElementById('pmGames').textContent = data.career_games || '-';
+      document.getElementById('pmScAvg').textContent =
+        data.sc_avg ? Math.round(data.sc_avg) : '-';
+      document.getElementById('pmScPrev').textContent =
+        data.sc_avg_prev ? Math.round(data.sc_avg_prev) : '-';
+
+      // Team logo
+      const logoImg = document.getElementById('pmLogoImg');
+      const logoFb = document.getElementById('pmLogoFallback');
+      if (data.afl_team && TEAM_LOGOS_JS[data.afl_team]) {
+        logoImg.src = TEAM_LOGOS_JS[data.afl_team];
+        logoImg.style.display = 'block';
+        logoFb.style.display = 'none';
+      } else {
+        logoImg.style.display = 'none';
+        logoFb.style.display = 'flex';
+      }
+
+      // Rating ring (r=24, circumference = 2*PI*24 = 150.80)
+      const rating = data.rating || 0;
+      document.getElementById('pmRating').textContent = rating || '-';
+      const circ = 2 * Math.PI * 24;
+      const rOffset = circ - (rating / 100) * circ;
+      const arc = document.getElementById('pmRatingArc');
+      arc.style.strokeDashoffset = rOffset;
+      arc.style.stroke = rating >= 80 ? '#3fb950' : rating >= 70 ? '#d29922' : rating >= 60 ? '#f0883e' : '#f85149';
+
+      // Potential ring
+      const potential = data.potential || 0;
+      document.getElementById('pmPotential').textContent = potential || '-';
+      const pOffset = circ - (potential / 100) * circ;
+      const pArc = document.getElementById('pmPotentialArc');
+      pArc.style.strokeDashoffset = pOffset;
+      pArc.style.stroke = potential >= 85 ? '#3fb950' : potential >= 75 ? '#bc8cff' : potential >= 65 ? '#d29922' : '#8b949e';
+
+      // Sparkline
+      drawSparkline('pmSparkline', data.form);
+
+      // Last game
+      const lgSection = document.getElementById('pmLastGameSection');
+      if (data.last_game) {
+        lgSection.style.display = '';
+        document.getElementById('pmLastGameRd').textContent = 'Rd ' + data.last_game.round + ', ' + data.last_game.year;
+        buildStatGrid('pmLastGameGrid', data.last_game, STAT_KEYS);
+      } else {
+        lgSection.style.display = 'none';
+      }
+
+      // Season averages
+      const saSection = document.getElementById('pmSeasonAvgSection');
+      if (data.season_avg) {
+        saSection.style.display = '';
+        document.getElementById('pmSeasonGames').textContent = data.season_avg.games;
+        buildStatGrid('pmSeasonAvgGrid', data.season_avg, SEASON_KEYS);
+      } else {
+        saSection.style.display = 'none';
+      }
+
+      new bootstrap.Modal(document.getElementById('playerModal')).show();
+    });
+}
+
+// ── Position Eligibility Hover (event delegation — survives soft refresh) ──
+function _initHoverListeners() {
+  // Nothing to do — hover is handled via delegation below
+}
+document.getElementById('fvWrapper').addEventListener('mouseenter', function(e) {
+  if (swapSourceId) return;
+  const card = e.target.closest('.fv-card[data-section="bench"], .fv-card[data-section="reserve"]');
+  if (!card) return;
+  const positions = (card.dataset.positions || '').split('/');
+  positions.forEach(pos => {
+    const posLower = pos.toLowerCase();
+    document.querySelectorAll(`.fv-zone .fv-card-${posLower}`).forEach(fc => {
+      fc.classList.add('fv-zone-highlight');
+    });
+  });
+}, true);
+document.getElementById('fvWrapper').addEventListener('mouseleave', function(e) {
+  const card = e.target.closest('.fv-card[data-section="bench"], .fv-card[data-section="reserve"]');
+  if (!card) return;
+  document.querySelectorAll('.fv-zone-highlight').forEach(el => {
+    el.classList.remove('fv-zone-highlight');
+  });
+}, true);
+
+// Escape key or click-off to cancel swap
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && swapSourceId) {
+    fvCancelSub();
+  }
+});
+document.getElementById('fvWrapper').addEventListener('click', function(e) {
+  if (!swapSourceId) return;
+  if (e.target.closest('.fv-card[data-player-id]')) return;
+  fvCancelSub();
+});
+</script>
+{% else %}
+<script>
+const API_PREFIX = `/leagues/{{ league.id }}/team/{{ team.id }}/api`;
+let swapSourceId = null;
+
+function drawSparkline(canvasId, scores) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  if (!scores || !scores.length) return;
+  const vals = scores.map(s => s.sc);
+  const min = Math.min(...vals) - 5;
+  const max = Math.max(...vals) + 5;
+  const range = max - min || 1;
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  vals.forEach((v, i) => {
+    const x = vals.length === 1 ? w / 2 : (i / (vals.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.fillStyle = '#58a6ff';
+  vals.forEach((v, i) => {
+    const x = vals.length === 1 ? w / 2 : (i / (vals.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function buildStatGrid(containerId, stats, keys) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  keys.forEach(([key, label]) => {
+    const val = stats[key];
+    const cell = document.createElement('div');
+    cell.className = 'pm-stat-cell';
+    cell.innerHTML = `<span class="pm-stat-val">${val != null ? val : '-'}</span><span class="pm-stat-key">${label}</span>`;
+    grid.appendChild(cell);
+  });
+}
+
+const TEAM_LOGOS_JS = {{ TEAM_LOGOS | tojson }};
+const STAT_KEYS = [
+  ['disposals','DIS'],['kicks','KCK'],['handballs','HBL'],['marks','MRK'],
+  ['goals','GLS'],['behinds','BHD'],['tackles','TKL'],['hitouts','HO'],
+  ['clearances','CLR'],['inside_fifties','I50'],['contested_possessions','CP'],
+  ['pressure_acts','PA'],['metres_gained','MG'],['supercoach_score','SC']
+];
+const SEASON_KEYS = [
+  ['disposals','DIS'],['kicks','KCK'],['handballs','HBL'],['marks','MRK'],
+  ['goals','GLS'],['tackles','TKL'],['hitouts','HO'],['clearances','CLR'],['sc','SC']
+];
+
+function fvShowPlayer(pid) {
+  fetch(`${API_PREFIX}/player/${pid}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) return;
+      document.getElementById('pmName').textContent = data.name || '';
+      document.getElementById('pmBioName').textContent = data.name || '';
+      document.getElementById('pmTeamPos').textContent =
+        (data.afl_team || '') + ' \u2022 ' + (data.position || '');
+      document.getElementById('pmAge').textContent = data.age || '-';
+      document.getElementById('pmHeight').textContent = data.height_cm || '-';
+      document.getElementById('pmGames').textContent = data.career_games || '-';
+      document.getElementById('pmScAvg').textContent =
+        data.sc_avg ? Math.round(data.sc_avg) : '-';
+      document.getElementById('pmScPrev').textContent =
+        data.sc_avg_prev ? Math.round(data.sc_avg_prev) : '-';
+
+      const logoImg = document.getElementById('pmLogoImg');
+      const logoFb = document.getElementById('pmLogoFallback');
+      if (data.afl_team && TEAM_LOGOS_JS[data.afl_team]) {
+        logoImg.src = TEAM_LOGOS_JS[data.afl_team];
+        logoImg.style.display = 'block';
+        logoFb.style.display = 'none';
+      } else {
+        logoImg.style.display = 'none';
+        logoFb.style.display = 'flex';
+      }
+
+      const rating = data.rating || 0;
+      document.getElementById('pmRating').textContent = rating || '-';
+      const circ = 2 * Math.PI * 24;
+      const rOffset = circ - (rating / 100) * circ;
+      const arc = document.getElementById('pmRatingArc');
+      arc.style.strokeDashoffset = rOffset;
+      arc.style.stroke = rating >= 80 ? '#3fb950' : rating >= 70 ? '#d29922' : rating >= 60 ? '#f0883e' : '#f85149';
+
+      const potential = data.potential || 0;
+      document.getElementById('pmPotential').textContent = potential || '-';
+      const pOffset = circ - (potential / 100) * circ;
+      const pArc = document.getElementById('pmPotentialArc');
+      pArc.style.strokeDashoffset = pOffset;
+      pArc.style.stroke = potential >= 85 ? '#3fb950' : potential >= 75 ? '#bc8cff' : potential >= 65 ? '#d29922' : '#8b949e';
+
+      drawSparkline('pmSparkline', data.form);
+
+      const lgSection = document.getElementById('pmLastGameSection');
+      if (data.last_game) {
+        lgSection.style.display = '';
+        document.getElementById('pmLastGameRd').textContent = 'Rd ' + data.last_game.round + ', ' + data.last_game.year;
+        buildStatGrid('pmLastGameGrid', data.last_game, STAT_KEYS);
+      } else {
+        lgSection.style.display = 'none';
+      }
+
+      const saSection = document.getElementById('pmSeasonAvgSection');
+      if (data.season_avg) {
+        saSection.style.display = '';
+        document.getElementById('pmSeasonGames').textContent = data.season_avg.games;
+        buildStatGrid('pmSeasonAvgGrid', data.season_avg, SEASON_KEYS);
+      } else {
+        saSection.style.display = 'none';
+      }
+
+      new bootstrap.Modal(document.getElementById('playerModal')).show();
+    });
+}
+</script>
+{% endif %}

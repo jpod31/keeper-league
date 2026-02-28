@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Profile — Keeper League{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="page-header">
+      <h2>Profile</h2>
+    </div>
+    <div class="card mb-4">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
+                style="width:64px;height:64px;background:linear-gradient(135deg,#238636,#1f6feb);font-size:1.5rem;font-weight:700;color:#fff;">
+            {{ (current_user.display_name or current_user.username)[0]|upper }}
+          </span>
+          <div class="fw-bold">{{ current_user.display_name or current_user.username }}</div>
+          <div class="text-secondary" style="font-size:.8rem;">@{{ current_user.username }} &middot; Joined {{ current_user.created_at.strftime('%b %Y') }}</div>
+        </div>
+        <form method="POST">
+          <div class="mb-3">
+            <label for="display_name" class="form-label">Display Name</label>
+            <input type="text" class="form-control" id="display_name" name="display_name"
+                   value="{{ current_user.display_name or '' }}" maxlength="80">
+          </div>
+          <div class="mb-4">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email"
+                   value="{{ current_user.email or '' }}">
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+        </form>
+      </div>
+    </div>
+
+    <h5 class="fw-bold mb-3">Your Teams</h5>
+    {% set teams = current_user.fantasy_teams.all() %}
+    {% if teams %}
+      {% for team in teams %}
+        <a href="{{ url_for('leagues.dashboard', league_id=team.league_id) }}" class="action-card mb-2">
+          <div class="action-icon" style="background:rgba(31,111,235,.15);color:#58a6ff;">
+            <i class="bi bi-trophy"></i>
+          </div>
+          <div>
+            <div class="action-label">{{ team.name }}</div>
+            <div class="action-desc">{{ team.league.name }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    {% else %}
+      <p class="text-secondary" style="font-size:.85rem;">You haven't joined any leagues yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

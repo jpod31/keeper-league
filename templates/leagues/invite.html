@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Join {{ league.name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="page-header text-center">
+      <h2>You've been invited!</h2>
+      <p class="text-secondary" style="font-size:.9rem;">Join <strong>{{ league.name }}</strong> and start building your team.</p>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="info-row"><span class="info-label">League</span><span class="info-value fw-bold">{{ league.name }}</span></div>
+        <div class="info-row"><span class="info-label">Commissioner</span><span class="info-value">{{ league.commissioner.display_name }}</span></div>
+        <div class="info-row"><span class="info-label">Season</span><span class="info-value">{{ league.season_year }}</span></div>
+        <div class="info-row"><span class="info-label">Teams</span>
+          <span class="info-value">
+            {{ league.teams|length }}/{{ league.num_teams }}
+            {% if league.teams|length >= league.num_teams %}
+              <span class="badge ms-1" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.65rem;">Full</span>
+            {% else %}
+              <span class="badge ms-1" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.65rem;">Open</span>
+            {% endif %}
+          </span>
+        </div>
+        <div class="info-row"><span class="info-label">Draft Type</span><span class="info-value text-capitalize">{{ league.draft_type }}</span></div>
+        <div class="info-row"><span class="info-label">Scoring</span><span class="info-value">{{ SCORING_TYPE_LABELS.get(league.scoring_type, league.scoring_type) }}</span></div>
+      </div>
+    </div>
+
+    {% if league.teams|length >= league.num_teams %}
+      <div class="card">
+        <div class="card-body text-center py-4">
+          <p class="text-secondary mb-0">This league is full.</p>
+        </div>
+      </div>
+    {% else %}
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="POST">
+            <div class="mb-3">
+              <label class="form-label">Team Name</label>
+              <input type="text" class="form-control" name="team_name"
+                     placeholder="Enter your team name" required maxlength="120">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="bi bi-box-arrow-in-right me-1"></i>Join League
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="text-center mt-3">
+      <span class="text-secondary" style="font-size:.8rem;">
+        Don't have an account? <a href="{{ url_for('auth.register', next=url_for('leagues.league_invite', code=code)) }}">Sign up</a>
+      </span>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'season' %}
+{% block title %}Delist Hub — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb">
+    <a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">Season Hub</a> / Delist Hub
+  </div>
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h2>Delist Hub</h2>
+      <span class="text-secondary" style="font-size:.8rem;">Assess your roster and choose players to delist</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge" style="background:rgba(248,81,73,.2);color:#f85149;font-size:.7rem;">OPEN</span>
+      {% if is_commissioner %}
+        <form method="POST" action="{{ url_for(close_route, league_id=league.id) }}">
+          <input type="hidden" name="step" value="close_delists">
+          <button type="submit" class="btn btn-outline-warning btn-sm" onclick="return confirm('Close the delist period? All teams must have met the minimum.');">
+            <i class="bi bi-stop-fill me-1"></i>Close Period
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# Progress summary #}
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <span style="font-size:1.1rem;font-weight:600;">
+          Your delists:
+          <span style="color:{% if team_delist_count >= min_delists %}#3fb950{% else %}#f85149{% endif %};font-size:1.3rem;">
+            {{ team_delist_count }}
+          </span>
+          <span class="text-secondary" style="font-size:.9rem;">/ {{ min_delists }} required</span>
+        </span>
+        {% if team_delist_count >= min_delists %}
+          <span class="ms-2"><i class="bi bi-check-circle-fill" style="color:#3fb950;"></i> Minimum met</span>
+        {% else %}
+          <span class="ms-2 text-secondary" style="font-size:.85rem;">
+            {{ min_delists - team_delist_count }} more needed
+          </span>
+        {% endif %}
+      </div>
+      <a href="{{ url_for('leagues.season_hub', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Season Hub
+      </a>
+    </div>
+  </div>
+</div>
+
+{# Commissioner: all teams progress #}
+{% if is_commissioner and all_teams_progress %}
+<div class="card mb-4">
+  <div class="card-header d-flex align-items-center gap-2" style="font-size:.85rem;">
+    <i class="bi bi-people-fill" style="color:#8b949e;"></i>
+    <span class="fw-bold">League Progress</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="d-flex flex-wrap gap-0">
+      {% for tp in all_teams_progress %}
+        <div class="px-3 py-2 d-flex align-items-center gap-2" style="border-bottom:1px solid #21262d;width:50%;font-size:.8rem;">
+          {% if tp.met %}
+            <i class="bi bi-check-circle-fill" style="color:#3fb950;font-size:.75rem;"></i>
+          {% else %}
+            <i class="bi bi-clock" style="color:#d29922;font-size:.75rem;"></i>
+          {% endif %}
+          <span class="fw-bold" style="color:#c9d1d9;">{{ tp.name }}</span>
+          <span class="text-secondary">{{ tp.owner }}</span>
+          <span class="ms-auto" style="color:{% if tp.met %}#3fb950{% else %}#d29922{% endif %};">{{ tp.count }}/{{ min_delists }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# Player roster with assessment data #}
+{% if roster_entries %}
+<div class="card">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-person-lines-fill" style="color:#8b949e;"></i>
+      <span class="fw-bold" style="font-size:.9rem;">Your Roster</span>
+      <span class="text-secondary" style="font-size:.75rem;">({{ roster_entries|length }} players)</span>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm active" id="sortAvgBtn" onclick="sortRoster('avg')" style="font-size:.7rem;">Sort: SC Avg</button>
+      <button class="btn btn-outline-secondary btn-sm" id="sortPosBtn" onclick="sortRoster('pos')" style="font-size:.7rem;">Sort: Position</button>
+      <button class="btn btn-outline-secondary btn-sm" id="sortAgeBtn" onclick="sortRoster('age')" style="font-size:.7rem;">Sort: Age</button>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div id="rosterList">
+      {% for r in roster_entries %}
+        {% set p = r.player %}
+        {% set is_delisted = r.player_id in delisted_player_ids %}
+        <div class="dh-player-row{% if is_delisted %} dh-delisted{% endif %}"
+             data-sc-avg="{{ p.sc_avg or 0 }}"
+             data-position="{{ p.position or 'MID' }}"
+             data-age="{{ p.age or 0 }}">
+          <div class="dh-player-main">
+            {# Team logo #}
+            <div class="dh-logo">
+              {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" height="28">
+              {% else %}
+                <i class="bi bi-shield-fill" style="font-size:1.2rem;color:#30363d;"></i>
+              {% endif %}
+            </div>
+
+            {# Player info #}
+            <div class="dh-player-info">
+              <div class="d-flex align-items-center gap-2">
+                {% if is_delisted %}
+                  <del class="fw-bold" style="color:#484f58;">{{ p.name }}</del>
+                  <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.6rem;">DELISTED</span>
+                {% else %}
+                  <a href="{{ url_for('player_detail', name=p.name) }}" class="fw-bold text-decoration-none" style="color:#c9d1d9;">{{ p.name }}</a>
+                {% endif %}
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.75rem;">
+                {% for pos in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge pos-{{ pos }}">{{ pos }}</span>
+                {% endfor %}
+                <span class="text-secondary">{{ p.afl_team or '-' }}</span>
+                {% if p.age %}
+                  <span class="text-secondary">Age {{ p.age }}</span>
+                {% endif %}
+                <span class="text-secondary text-capitalize">via {{ r.acquired_via }}</span>
+              </div>
+            </div>
+          </div>
+
+          {# Stats #}
+          <div class="dh-player-stats">
+            <div class="dh-stat">
+              <span class="dh-stat-val">{{ '%.0f'|format(p.sc_avg) if p.sc_avg else '-' }}</span>
+              <span class="dh-stat-label">SC Avg</span>
+            </div>
+            {% if p.sc_avg_prev %}
+            <div class="dh-stat">
+              <span class="dh-stat-val" style="font-size:.75rem;">{{ '%.0f'|format(p.sc_avg_prev) }}</span>
+              <span class="dh-stat-label">Prev</span>
+            </div>
+            {% endif %}
+            {% if p.rating %}
+            <div class="dh-stat">
+              <span class="dh-stat-val dh-rtg-{{ 'elite' if p.rating >= 80 else 'good' if p.rating >= 70 else 'avg' if p.rating >= 60 else 'low' }}">{{ p.rating }}</span>
+              <span class="dh-stat-label">Rating</span>
+            </div>
+            {% endif %}
+            {% if p.age %}
+            <div class="dh-stat">
+              <span class="dh-stat-val{% if p.age >= 30 %} dh-rtg-low{% elif p.age <= 22 %} dh-rtg-elite{% endif %}">{{ p.age }}</span>
+              <span class="dh-stat-label">Age</span>
+            </div>
+            {% endif %}
+          </div>
+
+          {# Action #}
+          <div class="dh-player-action">
+            {% if not is_delisted %}
+              <form method="POST" action="{{ url_for('leagues.delist_player_action', league_id=league.id) }}"
+                    onsubmit="return confirm('Delist {{ p.name }}? This cannot be undone.');">
+                <input type="hidden" name="player_id" value="{{ p.id }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-person-dash me-1"></i>Delist
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-person-x" style="font-size:2rem;color:#30363d;"></i>
+    <p class="text-secondary mt-2 mb-0">No players on your roster.</p>
+  </div>
+</div>
+{% endif %}
+
+<style>
+.dh-player-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid #21262d;
+  transition: background .15s ease;
+}
+.dh-player-row:hover:not(.dh-delisted) { background: rgba(139,148,158,.04); }
+.dh-player-row:last-child { border-bottom: none; }
+.dh-delisted { opacity: .45; }
+.dh-player-main { display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 0; }
+.dh-logo { width: 32px; flex-shrink: 0; text-align: center; }
+.dh-player-info { min-width: 0; }
+.dh-player-stats {
+  display: flex;
+  gap: 1.25rem;
+  flex-shrink: 0;
+}
+.dh-stat { text-align: center; min-width: 40px; }
+.dh-stat-val { display: block; font-weight: 700; font-size: .9rem; color: #c9d1d9; }
+.dh-stat-label { display: block; font-size: .6rem; text-transform: uppercase; letter-spacing: .5px; color: #484f58; }
+.dh-rtg-elite { color: #3fb950; }
+.dh-rtg-good { color: #d29922; }
+.dh-rtg-avg { color: #f0883e; }
+.dh-rtg-low { color: #f85149; }
+.dh-player-action { flex-shrink: 0; width: 100px; text-align: right; }
+
+@media (max-width: 768px) {
+  .dh-player-row { flex-wrap: wrap; gap: .5rem; }
+  .dh-player-stats { gap: .75rem; }
+  .dh-player-action { width: 100%; text-align: left; margin-top: .25rem; }
+}
+</style>
+
+<script>
+function sortRoster(mode) {
+  const list = document.getElementById('rosterList');
+  const rows = Array.from(list.querySelectorAll('.dh-player-row'));
+
+  // Update button states
+  document.querySelectorAll('[id^="sort"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort' + mode.charAt(0).toUpperCase() + mode.slice(1) + 'Btn').classList.add('active');
+
+  rows.sort((a, b) => {
+    const aD = a.classList.contains('dh-delisted') ? 1 : 0;
+    const bD = b.classList.contains('dh-delisted') ? 1 : 0;
+    if (aD !== bD) return aD - bD;
+
+    if (mode === 'avg') {
+      return (parseFloat(b.dataset.scAvg) || 0) - (parseFloat(a.dataset.scAvg) || 0);
+    } else if (mode === 'age') {
+      return (parseInt(b.dataset.age) || 0) - (parseInt(a.dataset.age) || 0);
+    } else {
+      return (a.dataset.position || '').localeCompare(b.dataset.position || '');
+    }
+  });
+  rows.forEach(row => list.appendChild(row));
+}
+</script>
+{% endblock %}

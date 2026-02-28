@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+{% block title %}Leagues — Admin — Keeper League{% endblock %}
+{% block admin_content %}
+<div class="section-header mb-3">
+  <h3 class="fw-bold">Leagues</h3>
+  <span class="badge bg-secondary">{{ leagues|length }}</span>
+</div>
+
+<div class="card" style="background:#161b22;border:1px solid #30363d;">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-dark mb-0" style="font-size:.8rem;">
+        <thead>
+          <tr style="color:#8b949e;">
+            <th>Name</th><th>Commissioner</th><th>Season</th><th>Teams</th><th>Status</th><th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lg in leagues %}
+          <tr>
+            <td class="fw-semibold">
+              <a href="{{ url_for('leagues.dashboard', league_id=lg.id) }}" style="color:#58a6ff;text-decoration:none;">
+                {{ lg.name }}
+              </a>
+            </td>
+            <td>{{ lg.commissioner }}</td>
+            <td>{{ lg.season_year }}</td>
+            <td>{{ lg.num_teams }}/{{ lg.max_teams }}</td>
+            <td><span class="status-pill status-{{ lg.status }}">{{ lg.status }}</span></td>
+            <td style="color:#8b949e;">{{ lg.created_at.strftime('%d %b %Y') if lg.created_at else '—' }}</td>
+          </tr>
+          {% endfor %}
+          {% if not leagues %}
+          <tr><td colspan="6" class="text-center text-secondary py-3">No leagues created yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

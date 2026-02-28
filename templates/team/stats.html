@@ -1,0 +1,105 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'team' %}
+{% block title %}Stats — {{ team.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">{{ team.name }}</a> / Stats</div>
+  <div class="d-flex justify-content-between align-items-start">
+    <h2>{{ team.name }} — Stats</h2>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-people me-1"></i>Squad</a>
+      <a href="{{ url_for('team.lineup', league_id=league.id, team_id=team.id, afl_round=1) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-layout-text-window me-1"></i>Lineup</a>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value text-accent">{{ players|length }}</div>
+      <div class="stat-label">Squad Size</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#3fb950;">{{ total_sc }}</div>
+      <div class="stat-label">Total SC Value</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#d29922;">{{ avg_age }}</div>
+      <div class="stat-label">Avg Age</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#bc8cff;">{{ '%.1f'|format(total_sc / players|length) if players else 0 }}</div>
+      <div class="stat-label">Avg SC / Player</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-diagram-3 me-2" style="color:#8b949e;"></i>Position Breakdown</h5></div>
+      <div class="card-body">
+        {% for pos, count in position_counts.items()|sort(attribute='1', reverse=true) %}
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <span class="pos-badge pos-{{ pos }}" style="width:45px;text-align:center;">{{ pos }}</span>
+            <div class="flex-grow-1">
+              <div class="progress">
+                <div class="progress-bar" style="width:{{ (count / players|length * 100)|int }}%;background:linear-gradient(90deg,#238636,#1f6feb);"></div>
+              </div>
+            </div>
+            <span class="text-secondary" style="font-size:.8rem;min-width:20px;">{{ count }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-star me-2" style="color:#d29922;"></i>Top 10 by SC Avg</h5></div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th style="width:30px;">#</th><th>Player</th><th>Pos</th><th class="text-end">SC Avg</th></tr></thead>
+          <tbody>
+            {% for p in players[:10] %}
+              <tr>
+                <td style="color:#484f58;">{{ loop.index }}</td>
+                <td><a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:#c9d1d9;">{{ p.name }}</a></td>
+                <td><span class="pos-badge pos-{{ (p.position or 'MID').split('/')[0] }}">{{ p.position }}</span></td>
+                <td class="text-end fw-bold">{{ '%.1f'|format(p.sc_avg) if p.sc_avg else '-' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-list-ul me-2" style="color:#8b949e;"></i>All Players</h5></div>
+  <div class="card-body p-0">
+    <table class="table table-hover table-sm mb-0">
+      <thead><tr><th>Player</th><th>Pos</th><th class="text-center">Age</th><th>AFL Team</th><th class="text-end">SC Avg</th><th class="text-center">Games</th><th class="text-end">Draft Score</th></tr></thead>
+      <tbody>
+        {% for p in players %}
+          <tr>
+            <td><a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:#c9d1d9;">{{ p.name }}</a></td>
+            <td>{% for pos in (p.position or 'MID').split('/') %}<span class="pos-badge pos-{{ pos }}">{{ pos }}</span> {% endfor %}</td>
+            <td class="text-center">{{ p.age or '-' }}</td>
+            <td style="font-size:.8rem;">{{ p.afl_team or '' }}</td>
+            <td class="text-end">{{ '%.1f'|format(p.sc_avg) if p.sc_avg else '-' }}</td>
+            <td class="text-center">{{ p.career_games or '-' }}</td>
+            <td class="text-end">{{ '%.1f'|format(p.draft_score) if p.draft_score else '-' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Create League — Keeper League{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="page-header">
+      <div class="page-breadcrumb"><a href="{{ url_for('leagues.league_list') }}">My Leagues</a> / Create</div>
+      <h2>Create a New League</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-4">
+        <form method="POST">
+          <div class="mb-4">
+            <label for="name" class="form-label">League Name</label>
+            <input type="text" class="form-control" id="name" name="name" required
+                   placeholder="e.g. Keeper Masters 2025" maxlength="120" autofocus
+                   value="{{ form.get('name', '') }}">
+          </div>
+          <div class="mb-4">
+            <label for="team_name" class="form-label">Your Team Name</label>
+            <input type="text" class="form-control" id="team_name" name="team_name" required
+                   placeholder="e.g. The Premiership Chasers" maxlength="120"
+                   value="{{ form.get('team_name', '') }}">
+          </div>
+
+          <hr style="border-color:#30363d;margin:1.5rem 0;">
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label for="scoring_type" class="form-label">Scoring</label>
+              <select class="form-select" id="scoring_type" name="scoring_type" onchange="toggleHybridBase()">
+                <option value="supercoach" {{ 'selected' if form.get('scoring_type') == 'supercoach' else '' }}>SuperCoach</option>
+                <option value="afl_fantasy" {{ 'selected' if form.get('scoring_type') == 'afl_fantasy' else '' }}>AFL Fantasy</option>
+                <option value="custom" {{ 'selected' if form.get('scoring_type') == 'custom' else '' }}>Custom</option>
+                <option value="hybrid" {{ 'selected' if form.get('scoring_type') == 'hybrid' else '' }}>Hybrid</option>
+              </select>
+            </div>
+            <div class="col-6" id="hybrid_base_group" style="{{ '' if form.get('scoring_type') == 'hybrid' else 'display:none' }}">
+              <label for="hybrid_base" class="form-label">Hybrid Base</label>
+              <select class="form-select" id="hybrid_base" name="hybrid_base">
+                <option value="supercoach" {{ 'selected' if form.get('hybrid_base') == 'supercoach' else '' }}>SuperCoach</option>
+                <option value="afl_fantasy" {{ 'selected' if form.get('hybrid_base') == 'afl_fantasy' else '' }}>AFL Fantasy</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label for="num_teams" class="form-label">Teams</label>
+              <input type="number" class="form-control" id="num_teams" name="num_teams"
+                     value="{{ form.get('num_teams', 6) }}" min="2" max="18">
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label for="squad_size" class="form-label">Squad Size</label>
+              <input type="number" class="form-control" id="squad_size" name="squad_size"
+                     value="{{ form.get('squad_size', 38) }}" min="18" max="60">
+            </div>
+            <div class="col-6">
+              <label for="draft_type" class="form-label">Draft Type</label>
+              <select class="form-select" id="draft_type" name="draft_type">
+                <option value="snake" {{ 'selected' if form.get('draft_type') == 'snake' else '' }}>Snake</option>
+                <option value="linear" {{ 'selected' if form.get('draft_type') == 'linear' else '' }}>Linear</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label for="pick_timer_secs" class="form-label">Pick Timer (seconds)</label>
+            <input type="number" class="form-control" id="pick_timer_secs" name="pick_timer_secs"
+                   value="{{ form.get('pick_timer_secs', 120) }}" min="30" max="600">
+            <div class="form-text" style="color:#484f58;font-size:.75rem;">Time each manager gets per pick in the draft</div>
+          </div>
+
+          <hr style="border-color:#30363d;margin:1.5rem 0;">
+          <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-diagram-3 me-2"></i>On-Field Formation</h6>
+          <div class="row g-2 mb-3">
+            <div class="col">
+              <label class="form-label" style="font-size:.75rem;color:#58a6ff;">DEF</label>
+              <input type="number" class="form-control form-control-sm" name="def_count"
+                     value="{{ form.get('def_count', 5) }}" min="2" max="8">
+            </div>
+            <div class="col">
+              <label class="form-label" style="font-size:.75rem;color:#bc8cff;">MID</label>
+              <input type="number" class="form-control form-control-sm" name="mid_count"
+                     value="{{ form.get('mid_count', 7) }}" min="3" max="10">
+            </div>
+            <div class="col">
+              <label class="form-label" style="font-size:.75rem;color:#f0883e;">FWD</label>
+              <input type="number" class="form-control form-control-sm" name="fwd_count"
+                     value="{{ form.get('fwd_count', 5) }}" min="2" max="8">
+            </div>
+            <div class="col">
+              <label class="form-label" style="font-size:.75rem;color:#3fb950;">RUC</label>
+              <input type="number" class="form-control form-control-sm" name="ruc_count"
+                     value="{{ form.get('ruc_count', 1) }}" min="1" max="3">
+            </div>
+          </div>
+          <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-clipboard2 me-2"></i>Bench</h6>
+          <div class="row g-2 mb-2">
+            <div class="col">
+              <label class="form-label" style="font-size:.7rem;color:#58a6ff;">B.DEF</label>
+              <input type="number" class="form-control form-control-sm" name="bench_def"
+                     value="{{ form.get('bench_def', 1) }}" min="0" max="5">
+            </div>
+            <div class="col">
+              <label class="form-label" style="font-size:.7rem;color:#bc8cff;">B.MID</label>
+              <input type="number" class="form-control form-control-sm" name="bench_mid"
+                     value="{{ form.get('bench_mid', 2) }}" min="0" max="5">
+            </div>
+            <div class="col">
+              <label class="form-label" style="font-size:.7rem;color:#f0883e;">B.FWD</label>
+              <input type="number" class="form-control form-control-sm" name="bench_fwd"
+                     value="{{ form.get('bench_fwd', 1) }}" min="0" max="5">
+            </div>
+            <div class="col">
+              <label class="form-label" style="font-size:.7rem;color:#8b949e;">FLEX</label>
+              <input type="number" class="form-control form-control-sm" name="bench_flex"
+                     value="{{ form.get('bench_flex', 1) }}" min="0" max="5">
+            </div>
+          </div>
+          <div class="form-text mb-4" style="color:#484f58;font-size:.75rem;">Position-locked bench: players must match the slot position. Flex accepts any position.</div>
+
+          <hr style="border-color:#30363d;margin:1.5rem 0;">
+          <div class="form-check mb-4">
+            <input type="checkbox" class="form-check-input" id="supplemental_draft" name="supplemental_draft"
+                   {{ 'checked' if form.get('supplemental_draft') }}>
+            <label class="form-check-label" for="supplemental_draft">Enable Supplemental Draft</label>
+            <div class="form-text" style="color:#484f58;font-size:.75rem;">Allow a mid-season supplemental draft after the initial draft is complete</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-plus-lg me-1"></i>Create League
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function toggleHybridBase() {
+  const st = document.getElementById('scoring_type').value;
+  document.getElementById('hybrid_base_group').style.display = (st === 'hybrid') ? '' : 'none';
+}
+</script>
+{% endblock %}

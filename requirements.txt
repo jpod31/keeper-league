@@ -1,0 +1,14 @@
+flask
+pandas
+requests
+beautifulsoup4
+lxml
+flask-sqlalchemy
+flask-login
+flask-socketio
+flask-wtf
+eventlet
+openpyxl
+apscheduler
+python-dotenv
+gunicorn

@@ -1,0 +1,463 @@
+"""Live sync orchestrator: ties Squiggle schedule + Footywire stats + DB together.
+
+Called by the scheduler to keep AFL game data and fantasy scores up to date
+during live AFL rounds.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timezone
+
+from models.database import (
+    db, AflGame, AflPlayer, PlayerStat, Fixture, FantasyTeam,
+    FantasyRoster, LiveScoringConfig, RoundScore, League,
+    CustomScoringRule,
+)
+from models.scoring_engine import score_team_round
+from scrapers.squiggle import (
+    get_games as squiggle_get_games,
+    normalise_team_name,
+    parse_game_status,
+    parse_scheduled_start,
+)
+from scrapers.footywire_live import scrape_live_round
+
+logger = logging.getLogger(__name__)
+
+
+# ── Schedule sync ────────────────────────────────────────────────────
+
+
+def sync_game_schedule(year: int, afl_round: int) -> int:
+    """Fetch game schedule from Squiggle and upsert AflGame rows.
+
+    Returns number of games upserted.
+    """
+    games = squiggle_get_games(year, afl_round)
+    if not games:
+        logger.info("No games returned from Squiggle for %d R%d", year, afl_round)
+        return 0
+
+    count = 0
+    for g in games:
+        home = normalise_team_name(g.get("hteam", ""))
+        away = normalise_team_name(g.get("ateam", ""))
+        if not home or not away:
+            continue
+
+        status = parse_game_status(g)
+        scheduled_start = parse_scheduled_start(g)
+
+        # Upsert by Squiggle game ID
+        afl_game = db.session.get(AflGame, g["id"])
+        if afl_game:
+            afl_game.status = status
+            afl_game.home_score = g.get("hscore")
+            afl_game.away_score = g.get("ascore")
+            afl_game.venue = g.get("venue")
+            if scheduled_start:
+                afl_game.scheduled_start = scheduled_start
+        else:
+            afl_game = AflGame(
+                id=g["id"],
+                year=year,
+                afl_round=afl_round,
+                home_team=home,
+                away_team=away,
+                venue=g.get("venue"),
+                scheduled_start=scheduled_start,
+                status=status,
+                home_score=g.get("hscore"),
+                away_score=g.get("ascore"),
+            )
+            db.session.add(afl_game)
+        count += 1
+
+    db.session.commit()
+    logger.info("Synced %d games for %d R%d", count, year, afl_round)
+    return count
+
+
+# ── Live scores sync ─────────────────────────────────────────────────
+
+
+def sync_live_scores(year: int, afl_round: int) -> dict:
+    """Main polling function: scrape live scores, update DB, rescore matchups.
+
+    Returns dict of changed data suitable for SocketIO broadcast:
+    {league_id: {fixture_id: {...}, ...}, ...}
+    """
+    # 1. Refresh game statuses from Squiggle
+    sync_game_schedule(year, afl_round)
+
+    # 2. Check if any games are live or recently completed
+    afl_games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+    active_games = [g for g in afl_games if g.status in ("live", "complete")]
+    if not active_games:
+        logger.debug("No active games for %d R%d, skipping scrape", year, afl_round)
+        return {}
+
+    # 3. Scrape live SC scores
+    sc_scores = scrape_live_round(year, afl_round)
+    if not sc_scores:
+        logger.info("No SC scores scraped for %d R%d", year, afl_round)
+        return {}
+
+    # 4. Build player name→AflPlayer lookup
+    all_players = AflPlayer.query.all()
+    player_lookup: dict[tuple[str, str], AflPlayer] = {}
+    player_name_lookup: dict[str, list[AflPlayer]] = {}
+    for p in all_players:
+        player_lookup[(p.name, p.afl_team)] = p
+        player_name_lookup.setdefault(p.name, []).append(p)
+
+    # Build set of teams in active games
+    active_teams = set()
+    completed_teams = set()
+    for g in active_games:
+        active_teams.add(g.home_team)
+        active_teams.add(g.away_team)
+        if g.status == "complete":
+            completed_teams.add(g.home_team)
+            completed_teams.add(g.away_team)
+
+    # 5. Upsert PlayerStat rows from scraped SC scores
+    updated_player_ids = set()
+    unmatched_count = 0
+    for entry in sc_scores:
+        name = entry["name"]
+        team = entry["team"]
+        sc_score = entry["sc_score"]
+
+        # Match by (name, team) first
+        afl_player = player_lookup.get((name, team))
+        if not afl_player:
+            # Fallback: match by name only (if unambiguous)
+            candidates = player_name_lookup.get(name, [])
+            if len(candidates) == 1:
+                afl_player = candidates[0]
+
+        if not afl_player:
+            unmatched_count += 1
+            logger.debug("Unmatched player from scrape: '%s' (team='%s')", name, team)
+            continue
+
+        # Only process players whose AFL team is in an active game
+        if afl_player.afl_team not in active_teams:
+            continue
+
+        is_live = afl_player.afl_team not in completed_teams
+
+        stat = PlayerStat.query.filter_by(
+            player_id=afl_player.id, year=year, round=afl_round
+        ).first()
+
+        if stat:
+            stat.supercoach_score = sc_score
+            stat.is_live = is_live
+        else:
+            stat = PlayerStat(
+                player_id=afl_player.id,
+                year=year,
+                round=afl_round,
+                supercoach_score=sc_score,
+                is_live=is_live,
+            )
+            db.session.add(stat)
+
+        updated_player_ids.add(afl_player.id)
+
+    db.session.commit()
+
+    matched = len(updated_player_ids)
+    total_scraped = len(sc_scores)
+    if unmatched_count > 0:
+        logger.warning(
+            "Player matching: %d/%d matched, %d unmatched for %d R%d",
+            matched, total_scraped, unmatched_count, year, afl_round,
+        )
+    else:
+        logger.info("Player matching: %d/%d matched for %d R%d", matched, total_scraped, year, afl_round)
+
+    # 6. Rescore affected fantasy matchups
+    changed_data = _rescore_affected_matchups(year, afl_round, updated_player_ids)
+
+    return changed_data
+
+
+def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: set[int]) -> dict:
+    """Rescore fantasy teams that have players with updated scores.
+
+    Returns {league_id: {fixture_id: {home_score, away_score, ...}, ...}, ...}
+    """
+    if not updated_player_ids:
+        return {}
+
+    # Find all teams that have these players on their active roster
+    affected_roster = FantasyRoster.query.filter(
+        FantasyRoster.player_id.in_(updated_player_ids),
+        FantasyRoster.is_active == True,
+    ).all()
+    affected_team_ids = {r.team_id for r in affected_roster}
+
+    if not affected_team_ids:
+        return {}
+
+    # Get leagues for these teams
+    affected_teams = FantasyTeam.query.filter(FantasyTeam.id.in_(affected_team_ids)).all()
+    league_teams: dict[int, set[int]] = {}
+    team_to_league: dict[int, int] = {}
+    for t in affected_teams:
+        league_teams.setdefault(t.league_id, set()).add(t.id)
+        team_to_league[t.id] = t.league_id
+
+    # Check if all AFL games in this round are complete
+    all_games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+    all_complete = all_games and all(g.status == "complete" for g in all_games)
+
+    changed_data: dict[int, dict] = {}
+
+    for league_id, team_ids in league_teams.items():
+        league = db.session.get(League, league_id)
+        if not league:
+            continue
+
+        # Rescore each affected team
+        for team_id in team_ids:
+            score_team_round(team_id, league_id, afl_round, year, league.scoring_type, league.hybrid_base)
+
+        # Update fixture scores for this league/round
+        fixtures = Fixture.query.filter_by(
+            league_id=league_id, year=year, afl_round=afl_round
+        ).all()
+
+        league_data = {}
+        for f in fixtures:
+            home_rs = RoundScore.query.filter_by(
+                team_id=f.home_team_id, afl_round=afl_round, year=year
+            ).first()
+            away_rs = RoundScore.query.filter_by(
+                team_id=f.away_team_id, afl_round=afl_round, year=year
+            ).first()
+
+            home_total = home_rs.total_score if home_rs else 0
+            away_total = away_rs.total_score if away_rs else 0
+
+            f.home_score = home_total
+            f.away_score = away_total
+
+            # Auto-transition fixture status
+            if all_complete:
+                f.status = "completed"
+            elif f.status == "scheduled":
+                f.status = "live"
+
+            league_data[f.id] = {
+                "fixture_id": f.id,
+                "home_team_id": f.home_team_id,
+                "away_team_id": f.away_team_id,
+                "home_score": home_total,
+                "away_score": away_total,
+                "home_captain_bonus": home_rs.captain_bonus if home_rs else 0,
+                "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
+                "status": f.status,
+            }
+
+        if league_data:
+            changed_data[league_id] = league_data
+
+    db.session.commit()
+
+    # If all games complete, recalculate standings and advance finals
+    if all_complete:
+        from models.scoring_engine import recalculate_standings
+        from models.fixture_manager import advance_finals
+        for league_id in changed_data:
+            recalculate_standings(league_id, year)
+            advance_finals(league_id, year)
+
+    return changed_data
+
+
+# ── Rolling lockouts ─────────────────────────────────────────────────
+
+
+def get_locked_player_ids(afl_round: int, year: int) -> set[int]:
+    """Return set of AflPlayer IDs whose AFL game has started (live or complete).
+
+    Used by lineup management to prevent swapping locked players.
+    """
+    live_games = AflGame.query.filter(
+        AflGame.year == year,
+        AflGame.afl_round == afl_round,
+        AflGame.status.in_(["live", "complete"]),
+    ).all()
+
+    if not live_games:
+        return set()
+
+    locked_teams = set()
+    for g in live_games:
+        locked_teams.add(g.home_team)
+        locked_teams.add(g.away_team)
+
+    locked_players = AflPlayer.query.filter(
+        AflPlayer.afl_team.in_(locked_teams)
+    ).all()
+
+    return {p.id for p in locked_players}
+
+
+def get_game_statuses(afl_round: int, year: int) -> list[dict]:
+    """Return list of game status dicts for a round (for frontend display)."""
+    games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+    return [
+        {
+            "game_id": g.id,
+            "home_team": g.home_team,
+            "away_team": g.away_team,
+            "status": g.status,
+            "scheduled_start": g.scheduled_start.isoformat() if g.scheduled_start else None,
+            "home_score": g.home_score,
+            "away_score": g.away_score,
+        }
+        for g in games
+    ]
+
+
+def _compute_player_score(stat, league_id, scoring_type, hybrid_base=None):
+    """Compute a player's score from a PlayerStat row, respecting league scoring type.
+
+    Returns the numeric score (0 if stat columns are null).
+    """
+    from models.scoring_engine import _compute_score_from_stat
+    return _compute_score_from_stat(stat, league_id, scoring_type, hybrid_base)
+
+
+def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
+                                league_id: int | None = None) -> list[dict]:
+    """Get per-player score breakdown for a team in a round (for live display).
+
+    Detects DNP (did-not-play) field players and shows which emergency
+    replaced them, mirroring the scoring engine's auto-sub logic.
+
+    If league_id is provided, uses the league's scoring type for score calculation.
+    Otherwise falls back to supercoach scores.
+    """
+    roster_entries = FantasyRoster.query.filter_by(
+        team_id=team_id, is_active=True
+    ).all()
+
+    if not roster_entries:
+        return []
+
+    # Determine scoring type
+    scoring_type = "supercoach"
+    hybrid_base = None
+    if league_id:
+        league = db.session.get(League, league_id)
+        if league:
+            scoring_type = league.scoring_type
+            hybrid_base = league.hybrid_base
+
+    # Separate on-field vs emergencies (same split as scoring engine)
+    on_field = [r for r in roster_entries if not r.is_benched and not r.is_emergency]
+    emergencies = [r for r in roster_entries if r.is_emergency]
+
+    # Pre-fetch stats for all relevant players in one query
+    relevant_ids = [r.player_id for r in on_field] + [r.player_id for r in emergencies]
+    stats_rows = PlayerStat.query.filter(
+        PlayerStat.player_id.in_(relevant_ids),
+        PlayerStat.year == year,
+        PlayerStat.round == afl_round,
+    ).all() if relevant_ids else []
+    stats_map = {s.player_id: s for s in stats_rows}
+
+    # Determine which emergencies auto-subbed for DNP field players
+    used_emergencies = set()        # emergency player_id -> True
+    dnp_replaced_by = {}            # field player_id -> emergency player_id
+    emergency_replaces = {}         # emergency player_id -> field player name
+
+    for entry in on_field:
+        stat = stats_map.get(entry.player_id)
+        if stat is not None:
+            continue  # played — no sub needed
+        # DNP — find first available emergency who played (position-aware)
+        for em in emergencies:
+            if em.player_id in used_emergencies:
+                continue
+            # Position check: emergency must be compatible with field player's position
+            if not _breakdown_positions_compatible(entry, em):
+                continue
+            em_stat = stats_map.get(em.player_id)
+            if em_stat is not None:
+                used_emergencies.add(em.player_id)
+                dnp_replaced_by[entry.player_id] = em.player_id
+                emergency_replaces[em.player_id] = entry.player.name if entry.player else "Unknown"
+                break
+
+    # Build breakdown list
+    breakdown = []
+
+    for entry in on_field:
+        stat = stats_map.get(entry.player_id)
+        player = entry.player
+        is_dnp = stat is None
+        replaced_by_id = dnp_replaced_by.get(entry.player_id)
+
+        score = _compute_player_score(stat, league_id, scoring_type, hybrid_base) if stat else 0
+
+        breakdown.append({
+            "player_id": entry.player_id,
+            "name": player.name if player else "Unknown",
+            "afl_team": player.afl_team if player else "",
+            "position": entry.position_code or "FIELD",
+            "score": score,
+            "is_live": stat.is_live if stat else False,
+            "is_captain": entry.is_captain,
+            "is_vice_captain": entry.is_vice_captain,
+            "is_emergency": False,
+            "is_dnp": is_dnp,
+            "replaced_by": replaced_by_id,
+        })
+
+    for entry in emergencies:
+        stat = stats_map.get(entry.player_id)
+        player = entry.player
+        subbed_on = entry.player_id in used_emergencies
+
+        score = _compute_player_score(stat, league_id, scoring_type, hybrid_base) if stat else 0
+
+        breakdown.append({
+            "player_id": entry.player_id,
+            "name": player.name if player else "Unknown",
+            "afl_team": player.afl_team if player else "",
+            "position": entry.position_code or "EMG",
+            "score": score,
+            "is_live": stat.is_live if stat else False,
+            "is_captain": entry.is_captain,
+            "is_vice_captain": entry.is_vice_captain,
+            "is_emergency": True,
+            "is_dnp": False,
+            "subbed_on": subbed_on,
+            "replaces": emergency_replaces.get(entry.player_id, ""),
+        })
+
+    return breakdown
+
+
+def _breakdown_positions_compatible(field_entry, emergency_entry):
+    """Check if an emergency can sub for a field player based on position."""
+    field_pos = (field_entry.position_code or "").upper()
+    em_player = emergency_entry.player
+
+    if not field_pos or not em_player or not em_player.position:
+        return True
+
+    em_positions = set(em_player.position.upper().split("/"))
+
+    if field_pos in ("BENCH", "UTIL", "FLEX"):
+        return True
+
+    return field_pos in em_positions

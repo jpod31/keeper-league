@@ -1,0 +1,185 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'players' %}
+{% block title %}My Draft Values — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb">
+    <a href="{{ url_for('leagues.league_list') }}">My Leagues</a> /
+    <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / My Draft Values
+  </div>
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h2>My Draft Values</h2>
+      <p class="mt-1 mb-0" style="font-size:.85rem;color:#8b949e;">
+        Customise how players are ranked for <strong>your</strong> draft strategy.
+        {% if has_custom %}
+          <span class="badge ms-1" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.65rem;">Customised</span>
+        {% else %}
+          <span class="badge ms-1" style="background:rgba(139,148,158,.15);color:#8b949e;font-size:.65rem;">League Defaults</span>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Sliders (left) -->
+  <div class="col-lg-5">
+    <form method="POST" id="weights-form">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+            <i class="bi bi-sliders me-2" style="color:#8b949e;"></i>Value Factors
+          </h5>
+        </div>
+        <div class="card-body">
+          {% set factors = [
+            ("sc_average", "SC Average", "How much raw SuperCoach average matters"),
+            ("age_factor", "Age Factor", "Bonus for prime-age, upside for youth"),
+            ("positional_scarcity", "Positional Scarcity", "Premium for scarce positions like RUC"),
+            ("trajectory", "Trajectory", "Rising or declining scoring trend"),
+            ("durability", "Durability", "Games played / availability"),
+            ("rating_potential", "Rating & Potential", "FIFA-style player rating and ceiling"),
+          ] %}
+          {% for key, label, desc in factors %}
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <div>
+                  <span style="font-weight:600;font-size:.85rem;">{{ label }}</span>
+                  <div style="font-size:.7rem;color:#8b949e;">{{ desc }}</div>
+                </div>
+                <span class="badge weight-badge" id="badge-{{ key }}" style="background:#21262d;color:#58a6ff;font-size:.8rem;min-width:45px;text-align:center;">
+                  {{ "%.0f"|format((weights.get(key, 0.2)) * 100) }}%
+                </span>
+              </div>
+              <input type="range" class="form-range" id="slider-{{ key }}" name="{{ key }}"
+                     min="0" max="1" step="0.01" value="{{ weights.get(key, 0.2) }}"
+                     oninput="updateSliders()">
+            </div>
+          {% endfor %}
+
+          <div class="d-flex justify-content-between align-items-center pt-2" style="border-top:1px solid #30363d;">
+            <span style="font-size:.8rem;color:#8b949e;">Total</span>
+            <span id="total-badge" class="badge" style="background:#21262d;color:#3fb950;font-size:.8rem;">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" name="action" value="save" class="btn btn-primary flex-grow-1">
+          <i class="bi bi-check-lg me-1"></i>Save My Values
+        </button>
+        {% if has_custom %}
+          <button type="submit" name="action" value="reset" class="btn btn-outline-secondary"
+                  onclick="return confirm('Reset to league defaults?')">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Preview table (right) -->
+  <div class="col-lg-7">
+    <div class="card" style="max-height:75vh;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <i class="bi bi-bar-chart me-2" style="color:#8b949e;"></i>Top 20 Players
+        </h5>
+        <span id="preview-status" style="font-size:.7rem;color:#8b949e;"></span>
+      </div>
+      <div class="card-body p-0" style="overflow-y:auto;">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="sticky-top" style="background:#161b22;">
+            <tr>
+              <th style="width:35px;">#</th>
+              <th>Player</th>
+              <th>Pos</th>
+              <th>Team</th>
+              <th>SC Avg</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="preview-table">
+            {% for player, score in top_players %}
+              <tr>
+                <td style="color:#8b949e;">{{ loop.index }}</td>
+                <td><strong>{{ player.name }}</strong></td>
+                <td><span class="pos-badge badge-{{ (player.position or 'mid').split('/')[0]|lower }}">{{ player.position }}</span></td>
+                <td>{{ player.afl_team }}</td>
+                <td>{{ "%.1f"|format(player.sc_avg) if player.sc_avg else '-' }}</td>
+                <td><span style="color:#58a6ff;font-weight:600;">{{ "%.1f"|format(score) if score else '-' }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LEAGUE_ID = {{ league.id }};
+const FACTOR_KEYS = ['sc_average', 'age_factor', 'positional_scarcity', 'trajectory', 'durability', 'rating_potential'];
+let previewTimeout = null;
+
+function updateSliders() {
+  // Update badge values
+  let total = 0;
+  FACTOR_KEYS.forEach(key => {
+    const slider = document.getElementById('slider-' + key);
+    const badge = document.getElementById('badge-' + key);
+    const val = parseFloat(slider.value);
+    total += val;
+    badge.textContent = Math.round(val * 100) + '%';
+  });
+
+  // Update total badge
+  const totalBadge = document.getElementById('total-badge');
+  const pct = Math.round(total * 100);
+  totalBadge.textContent = pct + '%';
+  if (Math.abs(pct - 100) <= 2) {
+    totalBadge.style.color = '#3fb950';
+  } else {
+    totalBadge.style.color = '#d29922';
+  }
+
+  // Debounced live preview
+  clearTimeout(previewTimeout);
+  previewTimeout = setTimeout(fetchPreview, 400);
+}
+
+function fetchPreview() {
+  const params = new URLSearchParams();
+  FACTOR_KEYS.forEach(key => {
+    params.set(key, document.getElementById('slider-' + key).value);
+  });
+
+  const statusEl = document.getElementById('preview-status');
+  statusEl.textContent = 'Updating...';
+
+  fetch(`/leagues/${LEAGUE_ID}/draft-values/preview?${params}`)
+    .then(r => r.json())
+    .then(players => {
+      const tbody = document.getElementById('preview-table');
+      tbody.innerHTML = players.map((p, i) => {
+        const posClass = (p.position || 'mid').split('/')[0].toLowerCase();
+        return `<tr>
+          <td style="color:#8b949e;">${i + 1}</td>
+          <td><strong>${p.name}</strong></td>
+          <td><span class="pos-badge badge-${posClass}">${p.position || ''}</span></td>
+          <td>${p.afl_team || ''}</td>
+          <td>${p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
+          <td><span style="color:#58a6ff;font-weight:600;">${p.draft_score ? p.draft_score.toFixed(1) : '-'}</span></td>
+        </tr>`;
+      }).join('');
+      statusEl.textContent = '';
+    })
+    .catch(() => {
+      statusEl.textContent = 'Error loading preview';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,341 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'season' %}
+{% block title %}Draft Setup — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="page-header">
+      <div class="page-breadcrumb"><a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">Season Hub</a> / Draft Setup</div>
+      <h2>Draft Setup</h2>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sort-numeric-down me-2" style="color:#8b949e;"></i>Draft Order</h5>
+        <form method="POST" class="d-inline">
+          <input type="hidden" name="action" value="randomize">
+          <button type="submit" class="btn btn-outline-secondary btn-sm" {% if session and session.status != 'scheduled' %}disabled{% endif %}>
+            <i class="bi bi-shuffle me-1"></i>Randomize
+          </button>
+        </form>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+          <thead><tr><th style="width:60px;">Pick</th><th>Team</th><th>Owner</th></tr></thead>
+          <tbody>
+            {% for team in teams %}
+              <tr>
+                <td>
+                  <span class="d-inline-flex align-items-center justify-content-center rounded" style="width:28px;height:28px;background:#21262d;font-size:.75rem;font-weight:600;border-radius:6px !important;">{{ team.draft_order }}</span>
+                </td>
+                <td class="fw-bold">{{ team.name }}</td>
+                <td style="color:#8b949e;">{{ team.owner.display_name }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-gear me-2" style="color:#8b949e;"></i>Configuration</h5></div>
+      <div class="card-body">
+        <div class="info-row"><span class="info-label">Draft Type</span><span class="info-value text-capitalize">{{ league.draft_type }}</span></div>
+        <div class="info-row"><span class="info-label">Rounds</span><span class="info-value">{{ league.squad_size }}</span></div>
+        <div class="info-row"><span class="info-label">Total Picks</span><span class="info-value">{{ league.squad_size * teams|length }}</span></div>
+        <div class="info-row"><span class="info-label">Pick Timer</span><span class="info-value">{{ league.pick_timer_secs }}s</span></div>
+        <div class="info-row"><span class="info-label">Teams</span><span class="info-value">{{ teams|length }}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-4">
+        {% if not session and not initial_session %}
+          <div>
+            <p class="text-secondary mb-3" style="font-size:.85rem;">Create a draft session to generate all pick slots.</p>
+            <form method="POST">
+              <input type="hidden" name="action" value="create_session">
+              <div class="mb-3">
+                <label class="form-label">Draft Start Date &amp; Time <span class="text-secondary" style="font-size:.75rem;">(optional)</span></label>
+                <input type="datetime-local" class="form-control form-control-sm" name="scheduled_start"
+                       style="max-width:280px;">
+                <div class="form-text" style="font-size:.7rem;">Leave blank to start manually whenever you're ready</div>
+              </div>
+              <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Draft Session</button>
+            </form>
+          </div>
+        {% elif session and session.status == 'scheduled' %}
+          <div>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-3">
+                <span class="status-pill status-setup">Ready</span>
+                <span class="text-secondary" style="font-size:.85rem;">
+                  {% if session.draft_round_type == 'supplemental' %}Supplemental draft{% else %}Session{% endif %} created
+                </span>
+              </div>
+              <form method="POST">
+                <input type="hidden" name="action" value="start">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-play-fill me-1"></i>Start Draft Now</button>
+              </form>
+            </div>
+            {% if session.scheduled_start %}
+              <div class="mt-2 p-3" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-calendar-event" style="color:#d29922;"></i>
+                  <span style="font-size:.85rem;font-weight:600;">Scheduled Start</span>
+                </div>
+                <div style="font-size:.9rem;color:#c9d1d9;" id="scheduled-time">
+                  {{ session.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') if session.scheduled_start else 'Not set' }}
+                </div>
+                <div id="countdown-display" class="mt-2" style="font-size:1.5rem;font-weight:700;color:#58a6ff;"></div>
+              </div>
+              <script>
+                (function() {
+                  const target = new Date("{{ session.scheduled_start.isoformat() }}");
+                  const el = document.getElementById('countdown-display');
+                  function tick() {
+                    const now = new Date();
+                    const diff = target - now;
+                    if (diff <= 0) {
+                      el.innerHTML = '<span style="color:#3fb950;">Draft time has arrived!</span>';
+                      return;
+                    }
+                    const d = Math.floor(diff / 86400000);
+                    const h = Math.floor((diff % 86400000) / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    let parts = [];
+                    if (d > 0) parts.push(d + 'd');
+                    parts.push(h + 'h');
+                    parts.push(m + 'm');
+                    parts.push(s + 's');
+                    el.textContent = parts.join(' ');
+                    setTimeout(tick, 1000);
+                  }
+                  tick();
+                })();
+              </script>
+            {% else %}
+              <p class="text-secondary mt-2 mb-0" style="font-size:.8rem;">
+                <i class="bi bi-info-circle me-1"></i>No scheduled time set — start manually when ready.
+              </p>
+            {% endif %}
+            {# Allow updating the schedule #}
+            <form method="POST" class="mt-3">
+              <input type="hidden" name="action" value="set_schedule">
+              <div class="d-flex align-items-end gap-2">
+                <div>
+                  <label class="form-label" style="font-size:.75rem;">Update Draft Time</label>
+                  <input type="datetime-local" class="form-control form-control-sm" name="scheduled_start"
+                         {% if session.scheduled_start %}value="{{ session.scheduled_start.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}
+                         style="max-width:250px;">
+                </div>
+                <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clock me-1"></i>Set</button>
+              </div>
+            </form>
+          </div>
+        {% elif session and session.status == 'in_progress' %}
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+              <span class="status-pill status-active">In Progress</span>
+              {% if session.draft_round_type == 'supplemental' %}
+                <span class="badge" style="background:rgba(45,212,191,.15);color:#2dd4bf;font-size:.7rem;">Supplemental</span>
+              {% endif %}
+            </div>
+            <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i>Enter Draft Room</a>
+          </div>
+        {% elif session and session.status == 'paused' %}
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+              <span class="status-pill status-pending">Paused</span>
+              {% if session.draft_round_type == 'supplemental' %}
+                <span class="badge" style="background:rgba(45,212,191,.15);color:#2dd4bf;font-size:.7rem;">Supplemental</span>
+              {% endif %}
+            </div>
+            <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i>Enter Draft Room</a>
+          </div>
+        {% elif initial_completed %}
+          <div class="text-center mb-3">
+            <span class="status-pill status-completed" style="font-size:.85rem;">Initial Draft Complete</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Supplemental Draft section — shown when initial draft is complete and supplemental drafts are enabled #}
+    {% if initial_completed and season_config and season_config.mid_season_draft_enabled %}
+      {# Active supplemental draft — scheduled or ready #}
+      {% if supp_session and supp_session.status == 'scheduled' and session and session.id == supp_session.id %}
+        <div class="card mt-4" style="border-color:#2dd4bf;">
+          <div class="card-header" style="background:rgba(45,212,191,.08);border-bottom:1px solid rgba(45,212,191,.2);">
+            <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+              <i class="bi bi-calendar-event me-2" style="color:#2dd4bf;"></i>Supplemental Draft Scheduled
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if supp_session.scheduled_start %}
+              <div class="p-3 mb-3" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-clock-history" style="color:#d29922;font-size:1.1rem;"></i>
+                  <span style="font-size:.9rem;font-weight:600;color:#c9d1d9;">
+                    {{ supp_session.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') }}
+                  </span>
+                </div>
+                <div id="supp-countdown" style="font-size:1.8rem;font-weight:700;color:#2dd4bf;"></div>
+                <div class="text-secondary mt-1" style="font-size:.75rem;">{{ supp_session.total_rounds }} rounds &middot; {{ league.teams|length }} teams</div>
+              </div>
+              <script>
+                (function() {
+                  const target = new Date("{{ supp_session.scheduled_start.isoformat() }}");
+                  const el = document.getElementById('supp-countdown');
+                  function tick() {
+                    const now = new Date();
+                    const diff = target - now;
+                    if (diff <= 0) {
+                      el.innerHTML = '<span style="color:#3fb950;">Draft time has arrived!</span>';
+                      return;
+                    }
+                    const d = Math.floor(diff / 86400000);
+                    const h = Math.floor((diff % 86400000) / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    let parts = [];
+                    if (d > 0) parts.push(d + 'd');
+                    parts.push(h + 'h');
+                    parts.push(m + 'm');
+                    parts.push(s + 's');
+                    el.textContent = parts.join(' ');
+                    setTimeout(tick, 1000);
+                  }
+                  tick();
+                })();
+              </script>
+            {% else %}
+              <p class="text-secondary mb-2" style="font-size:.85rem;">
+                <i class="bi bi-info-circle me-1"></i>No scheduled time — start manually when ready.
+              </p>
+            {% endif %}
+            <div class="d-flex gap-2 mt-3">
+              <form method="POST">
+                <input type="hidden" name="action" value="start">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-play-fill me-1"></i>Start Supplemental Draft Now</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+      {# Create supplemental form — shown when no active supp draft #}
+      {% if not supp_session or supp_session.status == 'completed' %}
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+              <i class="bi bi-plus-circle me-2" style="color:#2dd4bf;"></i>Schedule Supplemental Draft
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary mb-3" style="font-size:.85rem;">
+              Pick from the open player pool — undrafted players and any newly added draftees.
+            </p>
+            <form method="POST">
+              <input type="hidden" name="action" value="create_supplemental">
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Rounds</label>
+                  <input type="number" class="form-control form-control-sm" name="supp_rounds"
+                         value="5" min="1" max="20">
+                  <div class="form-text" style="font-size:.7rem;">Number of rounds in the supplemental draft</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Draft Date &amp; Time <span class="text-secondary" style="font-size:.75rem;">(optional)</span></label>
+                  <input type="datetime-local" class="form-control form-control-sm" name="supp_scheduled_start">
+                  <div class="form-text" style="font-size:.7rem;">Avoid times during live AFL rounds</div>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Create Supplemental Draft
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {% if supp_session and supp_session.status == 'completed' %}
+          <div class="card mt-3">
+            <div class="card-body text-center py-3">
+              <span class="status-pill status-completed" style="font-size:.8rem;">Previous Supplemental Draft Complete</span>
+              <span class="text-secondary ms-2" style="font-size:.8rem;">{{ supp_session.total_rounds }} rounds</span>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+    {# ═══ Mock Draft section ═══ #}
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <i class="bi bi-robot me-2" style="color:#f0883e;"></i>Mock Draft
+          <span class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.6rem;vertical-align:middle;">SIMULATION</span>
+        </h5>
+      </div>
+      <div class="card-body">
+        {% if mock_session and mock_session.status in ('in_progress', 'paused') %}
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <span class="status-pill status-active">In Progress</span>
+              <span class="text-secondary" style="font-size:.8rem;">
+                Round {{ mock_session.current_round }} &middot; Pick {{ mock_session.current_pick }}
+              </span>
+            </div>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('draft_live.mock_draft_room', league_id=league.id) }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-door-open me-1"></i>Enter Mock Draft
+              </a>
+              <form method="POST" action="{{ url_for('draft_live.mock_delete', league_id=league.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete the mock draft?')">
+                  <i class="bi bi-trash me-1"></i>Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        {% elif mock_session and mock_session.status == 'completed' %}
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <span class="status-pill status-completed">Completed</span>
+              <span class="text-secondary" style="font-size:.8rem;">{{ mock_session.total_rounds }} rounds</span>
+            </div>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('draft_live.mock_draft_room', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-eye me-1"></i>View Results
+              </a>
+              <form method="POST" action="{{ url_for('draft_live.mock_delete', league_id=league.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete the mock draft?')">
+                  <i class="bi bi-trash me-1"></i>Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        {% endif %}
+
+        <p class="text-secondary mb-3" style="font-size:.85rem;">
+          Simulate a draft where the computer picks for all other teams. Your roster won't be affected &mdash; this is just practice.
+        </p>
+        <form method="POST" action="{{ url_for('draft_live.draft_setup', league_id=league.id) }}">
+          <input type="hidden" name="action" value="create_mock">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Rounds</label>
+              <input type="number" class="form-control form-control-sm" name="mock_rounds"
+                     value="{{ league.squad_size }}" min="1" max="{{ league.squad_size }}">
+              <div class="form-text" style="font-size:.7rem;">Number of rounds to simulate</div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-warning">
+            <i class="bi bi-robot me-1"></i>{{ 'Restart Mock Draft' if mock_session else 'Start Mock Draft' }}
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

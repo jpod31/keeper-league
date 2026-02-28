@@ -1,0 +1,193 @@
+{% extends "league_base.html" %}
+{% block title %}{{ league.name }} — Keeper League{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h2>{{ league.name }}</h2>
+      <div class="d-flex align-items-center gap-3 mt-1">
+        <span class="status-pill status-{{ league.status }}">{{ league.status }}</span>
+        <span style="font-size:.8rem;color:#8b949e;">{{ league.season_year }} &middot; {{ SCORING_TYPE_LABELS.get(league.scoring_type, league.scoring_type) }} Scoring</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Teams -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <i class="bi bi-people me-2" style="color:#8b949e;"></i>Teams
+          <span class="text-secondary fw-normal" style="font-size:.8rem;">{{ teams|length }}/{{ league.num_teams }}</span>
+        </h5>
+      </div>
+      {% if teams %}
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Team</th>
+                <th>Owner</th>
+                <th class="text-end">Roster</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for team in teams %}
+                <tr onclick="window.location='{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}'"
+                    style="cursor:pointer;">
+                  <td>
+                    <span class="d-inline-flex align-items-center justify-content-center rounded"
+                          style="width:28px;height:28px;background:#21262d;font-size:.75rem;font-weight:600;border-radius:6px !important;">
+                      {{ team.draft_order or loop.index }}
+                    </span>
+                  </td>
+                  <td>
+                    <strong>{{ team.name }}</strong>
+                    {% if team.owner_id == current_user.id %}
+                      <span class="badge ms-1" style="background:rgba(88,166,255,.15);color:#58a6ff;font-size:.65rem;">You</span>
+                    {% endif %}
+                  </td>
+                  <td style="color:#8b949e;">{{ team.owner.display_name }}</td>
+                  <td class="text-end">
+                    <span class="badge" style="background:#21262d;color:#8b949e;">{{ team.roster|selectattr('is_active')|list|length }}</span>
+                  </td>
+                  <td style="width:24px;color:#484f58;"><i class="bi bi-chevron-right"></i></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body text-center py-4">
+          <p class="text-secondary mb-0">No teams have joined yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <!-- Join -->
+    {% if not user_team %}
+      <div class="card mb-3">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3" style="font-size:.95rem;">
+            <i class="bi bi-box-arrow-in-right me-2" style="color:#3fb950;"></i>Join League
+          </h5>
+          <form method="POST" action="{{ url_for('leagues.league_join', league_id=league.id) }}">
+            <div class="mb-3">
+              <input type="text" class="form-control" name="team_name"
+                     placeholder="Your team name" required maxlength="120">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Join League</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Invite Link -->
+    {% if league.invite_code %}
+      <div class="card mb-3">
+        <div class="card-header">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+            <i class="bi bi-share me-2" style="color:#d29922;"></i>Invite Players
+          </h5>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary mb-2" style="font-size:.8rem;">Share this link to invite others to your league:</p>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control" id="invite-url" readonly
+                   value="{{ url_for('leagues.league_invite', code=league.invite_code, _external=True) }}"
+                   style="font-size:.75rem;background:#0d1117;color:#c9d1d9;border-color:#30363d;">
+            <button class="btn btn-outline-secondary" onclick="copyInvite()" id="copy-btn" title="Copy link">
+              <i class="bi bi-clipboard"></i>
+            </button>
+          </div>
+          <div class="mt-2 text-center">
+            <span class="badge" style="background:#21262d;color:#8b949e;font-size:.7rem;letter-spacing:1px;">{{ league.invite_code }}</span>
+          </div>
+        </div>
+      </div>
+      <script>
+        function copyInvite() {
+          const url = document.getElementById('invite-url');
+          url.select();
+          navigator.clipboard.writeText(url.value).then(() => {
+            const btn = document.getElementById('copy-btn');
+            btn.innerHTML = '<i class="bi bi-check2"></i>';
+            btn.classList.replace('btn-outline-secondary', 'btn-outline-success');
+            setTimeout(() => {
+              btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+              btn.classList.replace('btn-outline-success', 'btn-outline-secondary');
+            }, 2000);
+          });
+        }
+      </script>
+    {% endif %}
+
+    <!-- League Info -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <i class="bi bi-info-circle me-2" style="color:#8b949e;"></i>Details
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="info-row"><span class="info-label">Commissioner</span><span class="info-value">{{ league.commissioner.display_name }}</span></div>
+        <div class="info-row"><span class="info-label">Squad Size</span><span class="info-value">{{ league.squad_size }}</span></div>
+        <div class="info-row"><span class="info-label">On-Field</span><span class="info-value">{{ league.on_field_count }}</span></div>
+        <div class="info-row"><span class="info-label">Draft Type</span><span class="info-value text-capitalize">{{ league.draft_type }}</span></div>
+        <div class="info-row"><span class="info-label">Pick Timer</span><span class="info-value">{{ league.pick_timer_secs }}s</span></div>
+        <div class="info-row"><span class="info-label">Trade Window</span>
+          <span class="info-value">
+            {% if league.trade_window_open %}
+              <span style="color:#3fb950;"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Open</span>
+            {% else %}
+              <span style="color:#f85149;"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Closed</span>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Positions -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <i class="bi bi-diagram-3 me-2" style="color:#8b949e;"></i>Positions
+        </h5>
+      </div>
+      <div class="card-body">
+        {% for slot in league.position_slots %}
+          <div class="d-flex justify-content-between align-items-center py-1">
+            <span class="pos-badge pos-{{ slot.position_code }}">{{ slot.position_code }}</span>
+            <span style="font-size:.85rem;">{{ slot.count }}{% if slot.is_bench %} <span class="text-secondary" style="font-size:.7rem;">(bench)</span>{% endif %}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Custom Scoring -->
+    {% if league.scoring_type == 'custom' and scoring_rules %}
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+            <i class="bi bi-calculator me-2" style="color:#8b949e;"></i>Scoring Rules
+          </h5>
+        </div>
+        <div class="card-body">
+          {% for stat, pts in scoring_rules.items() %}
+            <div class="info-row">
+              <span class="info-label text-capitalize">{{ stat.replace('_', ' ') }}</span>
+              <span class="info-value">{{ pts }} pts</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

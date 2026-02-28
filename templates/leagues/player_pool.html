@@ -1,0 +1,139 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'players' %}
+{% block title %}Player Pool — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Player Pool</div>
+  <h2>Open Market</h2>
+  <span style="font-size:.8rem;color:#8b949e;">{{ players|length }} undrafted players available</span>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="row g-2">
+      <div class="col-md-5">
+        <input type="text" class="form-control form-control-sm" id="pool-search"
+               placeholder="Search players..." oninput="filterPool()">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" id="pool-pos-filter" onchange="filterPool()">
+          <option value="">All Positions</option>
+          <option value="DEF">DEF</option>
+          <option value="MID">MID</option>
+          <option value="FWD">FWD</option>
+          <option value="RUC">RUC</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0" style="max-height:70vh;overflow:auto;">
+    <table class="table table-hover table-sm mb-0" style="min-width:820px;">
+      <thead class="sticky-top" style="background:#161b22;">
+        <tr>
+          <th style="cursor:pointer;" onclick="sortPool('name')">Player</th>
+          <th>Pos</th>
+          <th>Team</th>
+          <th class="text-center" style="cursor:pointer;" onclick="sortPool('age')">Age</th>
+          <th class="text-end" style="cursor:pointer;" onclick="sortPool('sc_avg')">2025 Avg</th>
+          <th class="text-end" style="cursor:pointer;" onclick="sortPool('l3')">L3</th>
+          <th class="text-end" style="cursor:pointer;" onclick="sortPool('l5')">L5</th>
+          <th class="text-end" style="cursor:pointer;" onclick="sortPool('draft_score')">Score</th>
+          <th class="text-end" style="cursor:pointer;" onclick="sortPool('rating')">RTG</th>
+          <th class="text-end" style="cursor:pointer;" onclick="sortPool('potential')">POT</th>
+        </tr>
+      </thead>
+      <tbody id="pool-body">
+        {% for p in players %}
+          {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
+          {% set pr = rolling.get(p.name, {}) %}
+          <tr data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
+              data-sc="{{ sc_display or 0 }}" data-ds="{{ p.draft_score or 0 }}"
+              data-age="{{ p.age or 0 }}" data-rtg="{{ p.rating or 0 }}"
+              data-pot="{{ p.potential or 0 }}"
+              data-l3="{{ pr.l3 or 0 }}" data-l5="{{ pr.l5 or 0 }}">
+            <td>
+              <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:#c9d1d9;">{{ p.name }}</a>
+            </td>
+            <td>
+              {% for pos in (p.position or 'MID').split('/') %}
+                <span class="pos-badge badge-{{ pos|lower }}">{{ pos }}</span>
+              {% endfor %}
+            </td>
+            <td>
+              {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" height="20" class="me-1" style="vertical-align:middle;">
+              {% endif %}
+              <span style="font-size:.8rem;">{{ p.afl_team or '' }}</span>
+            </td>
+            <td class="text-center">{{ p.age or '-' }}</td>
+            <td class="text-end">{{ '%.1f'|format(sc_display) if sc_display else '-' }}</td>
+            <td class="text-end">
+              {% if pr.l3 %}
+                {% set diff3 = pr.l3 - sc_display if sc_display else 0 %}
+                <span style="color:{{ '#3fb950' if diff3 > 5 else '#f85149' if diff3 < -5 else '#c9d1d9' }};font-weight:600;">{{ pr.l3 }}</span>
+              {% else %}-{% endif %}
+            </td>
+            <td class="text-end">
+              {% if pr.l5 %}
+                {% set diff5 = pr.l5 - sc_display if sc_display else 0 %}
+                <span style="color:{{ '#3fb950' if diff5 > 5 else '#f85149' if diff5 < -5 else '#c9d1d9' }};font-weight:600;">{{ pr.l5 }}</span>
+              {% else %}-{% endif %}
+            </td>
+            <td class="text-end">
+              {% if p.draft_score %}
+                <span class="badge" style="background:hsl({{ (p.draft_score / 100 * 120)|int }}, 70%, 35%);font-size:.75rem;">{{ '%.1f'|format(p.draft_score) }}</span>
+              {% else %}-{% endif %}
+            </td>
+            <td class="text-end">
+              {% if p.rating %}
+                {% set rtg_color = '#3fb950' if p.rating >= 80 else '#d29922' if p.rating >= 70 else '#f0883e' if p.rating >= 60 else '#f85149' %}
+                <span style="color:{{ rtg_color }};font-weight:600;">{{ p.rating }}</span>
+              {% else %}-{% endif %}
+            </td>
+            <td class="text-end">
+              {% if p.potential %}
+                {% set pot_color = '#3fb950' if p.potential >= 85 else '#58a6ff' if p.potential >= 75 else '#d29922' if p.potential >= 65 else '#8b949e' %}
+                <span style="color:{{ pot_color }};font-weight:600;">{{ p.potential }}</span>
+              {% else %}-{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterPool() {
+  const q = document.getElementById('pool-search').value.toLowerCase();
+  const pos = document.getElementById('pool-pos-filter').value;
+  document.querySelectorAll('#pool-body tr').forEach(row => {
+    const nameMatch = !q || row.dataset.name.includes(q);
+    const posMatch = !pos || (row.dataset.pos || '').includes(pos);
+    row.style.display = (nameMatch && posMatch) ? '' : 'none';
+  });
+}
+
+let sortKey = 'draft_score', sortAsc = false;
+function sortPool(key) {
+  if (sortKey === key) { sortAsc = !sortAsc; } else { sortKey = key; sortAsc = false; }
+  const tbody = document.getElementById('pool-body');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort((a, b) => {
+    let va, vb;
+    if (key === 'name') {
+      va = a.dataset.name; vb = b.dataset.name;
+      return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    const attrMap = {sc_avg: 'sc', draft_score: 'ds', rating: 'rtg', potential: 'pot'};
+    const attr = attrMap[key] || key;
+    va = parseFloat(a.dataset[attr]) || 0;
+    vb = parseFloat(b.dataset[attr]) || 0;
+    return sortAsc ? va - vb : vb - va;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+</script>
+{% endblock %}

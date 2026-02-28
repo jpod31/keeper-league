@@ -1,0 +1,654 @@
+{% extends "base.html" %}
+{% block title %}{{ player.name }} — Keeper League{% endblock %}
+
+{% set team_primary = TEAM_COLOURS.get(player.team, ('#58a6ff','#fff'))[0] %}
+{% set team_secondary = TEAM_COLOURS.get(player.team, ('#58a6ff','#fff'))[1] %}
+{% set has_sc = player.sc_avg is not none %}
+{% set has_detailed = detailed.has_data %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('draft_board') }}">Draft Board</a></li>
+    <li class="breadcrumb-item active">{{ player.name }}</li>
+  </ol>
+</nav>
+
+{# ── Hero header ── #}
+<div class="player-hero" style="border-left: 4px solid {{ team_primary }}">
+  <img src="{{ TEAM_LOGOS.get(player.team, '') }}" class="team-logo" alt="{{ player.team }}" onerror="this.style.display='none'">
+  <div class="flex-grow-1">
+    <h1 class="player-name">{{ player.name }}</h1>
+    <div class="player-meta">
+      <span>
+        <img src="{{ TEAM_LOGOS.get(player.team, '') }}" style="width:14px;height:14px;object-fit:contain" alt="" onerror="this.style.display='none'">
+        {{ player.team }}
+      </span>
+      <span><span class="pos-badge pos-{{ player.primary_position }}">{{ player.position }}</span></span>
+      {% if player.age %}<span>{{ player.age }} yrs</span>{% endif %}
+      {% if player.height %}<span>{{ player.height }} cm</span>{% endif %}
+      {% if player.games %}<span>{{ player.games }} career games</span>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex align-items-center gap-3">
+    {% if player.draft_score %}
+    {% set ds = player.draft_score %}
+    {% set ds_color = '#f0883e' if ds >= 70 else '#d29922' if ds >= 50 else '#da6d42' if ds >= 30 else '#8b6c32' %}
+    <div class="draft-ring text-center">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="35" fill="none" stroke="#30363d" stroke-width="5"/>
+        <circle cx="40" cy="40" r="35" fill="none" stroke="{{ ds_color }}" stroke-width="5"
+                stroke-dasharray="{{ (ds / 100 * 220)|round }} 220"
+                stroke-linecap="round"/>
+      </svg>
+      <div class="ring-value" style="color:{{ ds_color }}">{{ ds|round(0)|int }}</div>
+      <div style="font-size:.65rem;color:#c9d1d9;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Draft</div>
+    </div>
+    {% endif %}
+    {% if player_ratings.get('rating') %}
+    {% set rtg = player_ratings.rating %}
+    {% set rtg_color = '#3fb950' if rtg >= 80 else '#56d364' if rtg >= 70 else '#7ee787' if rtg >= 60 else '#2ea043' %}
+    <div class="draft-ring text-center">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="35" fill="none" stroke="#30363d" stroke-width="5"/>
+        <circle cx="40" cy="40" r="35" fill="none" stroke="{{ rtg_color }}" stroke-width="5"
+                stroke-dasharray="{{ (rtg / 100 * 220)|round }} 220"
+                stroke-linecap="round"/>
+      </svg>
+      <div class="ring-value" style="color:{{ rtg_color }}">{{ rtg }}</div>
+      <div style="font-size:.65rem;color:#c9d1d9;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Rating</div>
+    </div>
+    {% endif %}
+    {% if player_ratings.get('potential') %}
+    {% set pot = player_ratings.potential %}
+    {% set pot_color = '#58a6ff' if pot >= 85 else '#79c0ff' if pot >= 75 else '#a5d6ff' if pot >= 65 else '#388bfd' %}
+    <div class="draft-ring text-center">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="35" fill="none" stroke="#30363d" stroke-width="5"/>
+        <circle cx="40" cy="40" r="35" fill="none" stroke="{{ pot_color }}" stroke-width="5"
+                stroke-dasharray="{{ (pot / 100 * 220)|round }} 220"
+                stroke-linecap="round"/>
+      </svg>
+      <div class="ring-value" style="color:{{ pot_color }}">{{ pot }}</div>
+      <div style="font-size:.65rem;color:#c9d1d9;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Potential</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Quick stat cards (always show if we have any data) ── #}
+{% if has_detailed and detailed.last_3_avg %}
+<div class="row g-3 mb-4">
+  {% if player_ratings.get('rating') %}
+  <div class="col-6 col-md">
+    <div class="stat-card">
+      {% set rtg = player_ratings.rating %}
+      <div class="stat-value" style="color:{% if rtg >= 80 %}#3fb950{% elif rtg >= 70 %}#d29922{% elif rtg >= 60 %}#f0883e{% else %}#f85149{% endif %}">{{ rtg }}</div>
+      <div class="stat-label">Rating</div>
+      {% if player_ratings.get('potential') %}
+      <div class="stat-sub">Pot: {{ player_ratings.potential }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  {% set card_stats = [
+    ('disposals', 'Disposals', '#58a6ff'),
+    ('marks', 'Marks', '#bc8cff'),
+    ('tackles', 'Tackles', '#f0883e'),
+    ('goals', 'Goals', '#3fb950'),
+    ('supercoach_score', 'SC Score', '#f778ba'),
+  ] %}
+  {% for key, label, colour in card_stats %}
+    {% if detailed.last_3_avg.get(key) is not none %}
+    <div class="col-6 col-md">
+      <div class="stat-card">
+        <div class="stat-value" style="color:{{ colour }}">{{ detailed.last_3_avg[key] }}</div>
+        <div class="stat-label">{{ label }}</div>
+        <div class="stat-sub">
+          L3 avg
+          {% if detailed.last_5_avg.get(key) is not none %}
+           / L5: {{ detailed.last_5_avg[key] }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% elif has_sc %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f778ba">{{ player.sc_avg }}</div>
+      <div class="stat-label">SC Average</div>
+    </div>
+  </div>
+  {% if player_ratings.get('rating') %}
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      {% set rtg = player_ratings.rating %}
+      <div class="stat-value" style="color:{% if rtg >= 80 %}#3fb950{% elif rtg >= 70 %}#d29922{% elif rtg >= 60 %}#f0883e{% else %}#f85149{% endif %}">{{ rtg }}</div>
+      <div class="stat-label">Rating</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if player_ratings.get('potential') %}
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      {% set pot = player_ratings.potential %}
+      <div class="stat-value" style="color:{% if pot >= 80 %}#3fb950{% elif pot >= 70 %}#d29922{% elif pot >= 60 %}#f0883e{% else %}#f85149{% endif %}">{{ pot }}</div>
+      <div class="stat-label">Potential</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if sc_history.career_avg %}
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#58a6ff">{{ sc_history.career_avg }}</div>
+      <div class="stat-label">Career SC Avg</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if sc_history.peak_avg %}
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#3fb950">{{ sc_history.peak_avg }}</div>
+      <div class="stat-label">Peak ({{ sc_history.peak_year }})</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if sc_history.trajectory_slope is not none %}
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:{% if sc_history.trajectory_slope > 0 %}#3fb950{% elif sc_history.trajectory_slope < 0 %}#f85149{% else %}#8b949e{% endif %}">
+        {% if sc_history.trajectory_slope > 0 %}+{% endif %}{{ sc_history.trajectory_slope }}
+      </div>
+      <div class="stat-label">SC Trend (pts/yr)</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── Tabs ── #}
+<ul class="nav nav-tabs mb-4" id="playerTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+  </li>
+  {% if has_detailed %}
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="detailed-tab" data-bs-toggle="tab" data-bs-target="#detailed" type="button" role="tab">Season Stats</button>
+  </li>
+  {% endif %}
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab">Charts</button>
+  </li>
+  {% if has_detailed and detailed.current_rounds %}
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="rounds-tab" data-bs-toggle="tab" data-bs-target="#rounds" type="button" role="tab">Round-by-Round</button>
+  </li>
+  {% endif %}
+</ul>
+
+<div class="tab-content" id="playerTabContent">
+
+{# ══════════════ TAB 1: OVERVIEW ══════════════ #}
+<div class="tab-pane fade show active" id="overview" role="tabpanel">
+  <div class="row g-4">
+    {# ── Draft breakdown ── #}
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="fw-semibold text-uppercase text-muted small mb-3">Draft Score Breakdown</h6>
+          {% for factor, raw in breakdown.items() %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="small fw-medium">{{ factor|replace('_', ' ')|title }}</span>
+              <span class="small text-muted">{{ (raw * weights.get(factor, 0) * 100)|round(1) }} pts</span>
+            </div>
+            <div class="progress">
+              <div class="progress-bar" style="width:{{ (raw * 100)|round }}%; background:{{ team_primary }}"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# ── SC History ── #}
+    <div class="col-lg-6">
+      {% if sc_history.yearly_averages %}
+      <div class="card">
+        <div class="card-body">
+          <h6 class="fw-semibold text-uppercase text-muted small mb-3">SC History</h6>
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Year</th><th>SC Avg</th><th>Games</th></tr></thead>
+            <tbody>
+              {% for y in sc_history.yearly_averages %}
+              <tr>
+                <td>{{ y.year }}</td>
+                <td class="fw-semibold">{{ y.avg }}</td>
+                <td class="text-muted">{{ y.games_played }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% elif not has_sc %}
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <div class="text-muted mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+            </svg>
+          </div>
+          <p class="text-muted small mb-0">No SuperCoach data available for this player.</p>
+          {% if player.games and player.games == 0 %}
+          <p class="text-muted small mb-0">Yet to make AFL debut.</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ══════════════ TAB 2: SEASON STATS ══════════════ #}
+{% if has_detailed %}
+<div class="tab-pane fade" id="detailed" role="tabpanel">
+  {% set display_cols = [] %}
+  {% for c in ['disposals', 'kicks', 'handballs', 'marks', 'tackles', 'goals', 'hitouts', 'clearances', 'inside_fifties', 'supercoach_score'] %}
+    {% if c in detailed.available_cols %}{% if display_cols.append(c) %}{% endif %}{% endif %}
+  {% endfor %}
+
+  {# ── Season averages ── #}
+  <div class="card mb-4">
+    <div class="card-body">
+      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Season Averages</h6>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Year</th><th>GP</th>
+              {% for c in display_cols %}<th>{{ c|replace('_',' ')|title }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in detailed.season_averages %}
+            <tr>
+              <td class="fw-medium">{{ s.year }}</td>
+              <td>{{ s.games }}</td>
+              {% for c in display_cols %}
+              <td>{{ s.get('avg_' ~ c, '—') if s.get('avg_' ~ c) is not none else '—' }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ── Career totals ── #}
+  {% if detailed.career_totals %}
+  <div class="card mb-4">
+    <div class="card-body">
+      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Career Totals ({{ detailed.career_totals.games }} games)</h6>
+      <div class="row g-3">
+        {% for c in display_cols %}
+          {% if detailed.career_totals.get('avg_' ~ c) is not none %}
+          <div class="col-6 col-md-3 col-lg-2">
+            <div class="stat-card" style="padding:0.75rem">
+              <div class="stat-value" style="font-size:1.25rem">{{ detailed.career_totals['avg_' ~ c] }}</div>
+              <div class="stat-label" style="font-size:0.6rem">avg {{ c|replace('_',' ')|title }}</div>
+              <div class="stat-sub">{{ detailed.career_totals.get('total_' ~ c, '')|int }} total</div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Timeline slicer ── #}
+  {% if detailed.current_rounds %}
+  <div class="card">
+    <div class="card-body">
+      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Timeline Slicer</h6>
+      <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+        <div>
+          <label class="form-label small mb-0">From</label>
+          <select id="sliceFrom" class="form-select form-select-sm" style="width:90px">
+            {% for r in detailed.current_rounds %}
+            <option value="{{ r.round }}">{{ r.round_label|default('R' ~ r.round) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label small mb-0">To</label>
+          <select id="sliceTo" class="form-select form-select-sm" style="width:90px">
+            {% for r in detailed.current_rounds %}
+            <option value="{{ r.round }}" {{ 'selected' if loop.last }}>{{ r.round_label|default('R' ~ r.round) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-sm btn-outline-primary" onclick="applySlice()">Apply</button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="resetSlice()">Reset</button>
+        <span id="sliceInfo" class="text-muted small ms-2"></span>
+      </div>
+      <div id="slicedAvgs" style="display:none">
+        <div class="alert alert-info py-2 small mb-0">
+          <strong>Rounds <span id="sliceRange"></span>:</strong>
+          <span id="sliceAvgText"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ══════════════ TAB 3: CHARTS ══════════════ #}
+<div class="tab-pane fade" id="charts" role="tabpanel">
+  <div class="row g-4">
+    {# Chart 1: SC Career Trajectory (kept as-is, needs 2+ years) #}
+    {% if sc_history.yearly_averages and sc_history.yearly_averages|length >= 2 %}
+    <div class="col-lg-6">
+      <div class="chart-card">
+        <h6 class="fw-semibold text-uppercase text-muted small mb-3">SC Career Trajectory</h6>
+        <canvas id="trajectoryChart" height="220"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Chart 2: Key Stats Over Career (multi-line: disposals, marks, tackles, goals) #}
+    {% if has_detailed and detailed.season_averages|length >= 2 %}
+    <div class="col-lg-6">
+      <div class="chart-card">
+        <h6 class="fw-semibold text-uppercase text-muted small mb-3">Key Stats Over Career</h6>
+        <canvas id="keyStatsChart" height="220"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Chart 3: Draft Score Over Time (needs 2+ years) #}
+    {% if draft_history|length >= 2 %}
+    <div class="col-lg-6">
+      <div class="chart-card">
+        <h6 class="fw-semibold text-uppercase text-muted small mb-3">Draft Score Over Time</h6>
+        <canvas id="draftScoreChart" height="220"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Chart 4: Stat Profile vs League (radar, kept as-is) #}
+    {% if has_detailed and detailed.career_totals %}
+    <div class="col-lg-6">
+      <div class="chart-card">
+        <h6 class="fw-semibold text-uppercase text-muted small mb-3">Stat Profile vs League</h6>
+        <canvas id="radarChart" height="280"></canvas>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if not sc_history.yearly_averages and not has_detailed and draft_history|length < 2 %}
+  <p class="text-muted">No chart data available for this player.</p>
+  {% endif %}
+</div>
+
+{# ══════════════ TAB 4: ROUND-BY-ROUND ══════════════ #}
+{% if has_detailed and detailed.current_rounds %}
+<div class="tab-pane fade" id="rounds" role="tabpanel">
+  <div class="card">
+    <div class="card-body">
+      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Round-by-Round ({{ detailed.current_rounds|length }} games)</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0" id="roundByRoundTable">
+          <thead>
+            <tr>
+              <th style="cursor:pointer">Rnd</th>
+              {% for c in detailed.available_cols %}
+              <th style="cursor:pointer">{{ c|replace('_',' ')|title }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in detailed.current_rounds %}
+            <tr data-round="{{ r.round }}">
+              <td class="fw-medium">{{ r.round_label|default(r.round) }}</td>
+              {% for c in detailed.available_cols %}
+              <td>{{ r.get(c, '—') if r.get(c) is not none else '—' }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+</div>{# end tab-content #}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const scHistory = {{ sc_history | tojson }};
+  const detailed = {{ detailed | tojson }};
+  const draftHistory = {{ draft_history | tojson }};
+  const teamColour = '{{ team_primary }}';
+
+  const chartScales = {
+    x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+    y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+  };
+
+  // ── Chart 1: SC Career Trajectory ──
+  const yearly = scHistory.yearly_averages || [];
+  if (yearly.length >= 2) {
+    const ctx = document.getElementById('trajectoryChart');
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: yearly.map(y => y.year),
+          datasets: [{
+            label: 'SC Average',
+            data: yearly.map(y => y.avg),
+            borderColor: teamColour,
+            backgroundColor: teamColour + '20',
+            fill: true, tension: 0.3, pointRadius: 5, pointHoverRadius: 7,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: chartScales.x,
+            y: { ...chartScales.y,
+                 suggestedMin: Math.max(0, Math.min(...yearly.map(y => y.avg)) - 15) },
+          }
+        }
+      });
+    }
+  }
+
+  // ── Chart 2: Key Stats Over Career (multi-line) ──
+  const seasons = detailed.season_averages || [];
+  if (seasons.length >= 2) {
+    const ctx2 = document.getElementById('keyStatsChart');
+    if (ctx2) {
+      const statDefs = [
+        { key: 'avg_disposals', label: 'Disposals', colour: '#58a6ff' },
+        { key: 'avg_marks', label: 'Marks', colour: '#bc8cff' },
+        { key: 'avg_tackles', label: 'Tackles', colour: '#f0883e' },
+        { key: 'avg_goals', label: 'Goals', colour: '#3fb950' },
+      ];
+      const datasets = statDefs
+        .filter(s => seasons.some(y => y[s.key] != null))
+        .map(s => ({
+          label: s.label,
+          data: seasons.map(y => y[s.key]),
+          borderColor: s.colour,
+          backgroundColor: s.colour + '15',
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        }));
+      if (datasets.length > 0) {
+        new Chart(ctx2, {
+          type: 'line',
+          data: {
+            labels: seasons.map(y => y.year),
+            datasets: datasets,
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#8b949e', boxWidth: 12, usePointStyle: true } } },
+            scales: {
+              x: chartScales.x,
+              y: { ...chartScales.y, suggestedMin: 0 },
+            }
+          }
+        });
+      }
+    }
+  }
+
+  // ── Chart 3: Draft Score Over Time ──
+  if (draftHistory.length >= 2) {
+    const ctx3 = document.getElementById('draftScoreChart');
+    if (ctx3) {
+      new Chart(ctx3, {
+        type: 'line',
+        data: {
+          labels: draftHistory.map(d => d.year),
+          datasets: [{
+            label: 'Draft Score',
+            data: draftHistory.map(d => d.draft_score),
+            borderColor: '#f778ba',
+            backgroundColor: '#f778ba20',
+            fill: true, tension: 0.3, pointRadius: 5, pointHoverRadius: 7,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { afterLabel: function(ctx) {
+              const d = draftHistory[ctx.dataIndex];
+              return d ? 'SC Avg: ' + d.sc_avg : '';
+            }}}
+          },
+          scales: {
+            x: chartScales.x,
+            y: { ...chartScales.y, suggestedMin: 0, suggestedMax: 100 },
+          }
+        }
+      });
+    }
+  }
+
+  // ── Chart 4: Radar (Stat Profile vs League) ──
+  if (detailed.has_data && detailed.career_totals) {
+    const radarCtx = document.getElementById('radarChart');
+    if (radarCtx) {
+      const rs = [
+        { key: 'disposals', label: 'Disposals', league: 20 },
+        { key: 'marks', label: 'Marks', league: 4.5 },
+        { key: 'tackles', label: 'Tackles', league: 4.5 },
+        { key: 'goals', label: 'Goals', league: 0.8 },
+        { key: 'clearances', label: 'Clearances', league: 2.5 },
+        { key: 'inside_fifties', label: 'Inside 50s', league: 2.5 },
+      ];
+      const avail = rs.filter(s => detailed.career_totals['avg_' + s.key] != null);
+      if (avail.length >= 3) {
+        const pv = avail.map(s => detailed.career_totals['avg_' + s.key]);
+        const lv = avail.map(s => s.league);
+        const mx = avail.map((_, i) => Math.max(pv[i], lv[i], 1));
+        new Chart(radarCtx, {
+          type: 'radar',
+          data: {
+            labels: avail.map(s => s.label),
+            datasets: [
+              { label: '{{ player.name }}', data: pv.map((v, i) => Math.round(v / mx[i] * 100)),
+                borderColor: teamColour, backgroundColor: teamColour + '20', pointBackgroundColor: teamColour },
+              { label: 'League Avg', data: lv.map((v, i) => Math.round(v / mx[i] * 100)),
+                borderColor: '#484f58', backgroundColor: '#484f5810', pointBackgroundColor: '#484f58', borderDash: [4,4] },
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: '#8b949e', boxWidth: 12 } },
+              tooltip: { callbacks: { label: function(ctx) {
+                const s = avail[ctx.dataIndex];
+                return ctx.datasetIndex === 0 ? s.label + ': ' + pv[ctx.dataIndex] : s.label + ': ' + lv[ctx.dataIndex] + ' (league)';
+              }}}
+            },
+            scales: { r: { angleLines: { color: '#30363d' }, grid: { color: '#21262d' }, pointLabels: { color: '#8b949e' }, ticks: { display: false }, suggestedMin: 0, suggestedMax: 100 } }
+          }
+        });
+      }
+    }
+  }
+
+  // ── Table sorting ──
+  const rbrTable = document.getElementById('roundByRoundTable');
+  if (rbrTable) {
+    rbrTable.querySelectorAll('thead th').forEach((th, ci) => {
+      let asc = true;
+      th.addEventListener('click', () => {
+        const tbody = rbrTable.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+          const av = parseFloat(a.children[ci]?.textContent) || 0;
+          const bv = parseFloat(b.children[ci]?.textContent) || 0;
+          return asc ? av - bv : bv - av;
+        });
+        asc = !asc;
+        rows.forEach(r => tbody.appendChild(r));
+      });
+    });
+  }
+
+  // ── Timeline slicer ──
+  const detailedRounds = detailed.current_rounds || [];
+  window.applySlice = function() {
+    const f = parseInt(document.getElementById('sliceFrom')?.value);
+    const t = parseInt(document.getElementById('sliceTo')?.value);
+    if (isNaN(f) || isNaN(t)) return;
+    const from = Math.min(f, t), to = Math.max(f, t);
+    if (rbrTable) rbrTable.querySelectorAll('tbody tr').forEach(row => {
+      const rnd = parseInt(row.dataset.round);
+      row.style.display = (rnd >= from && rnd <= to) ? '' : 'none';
+    });
+    const filtered = detailedRounds.filter(r => { const rn = parseInt(r.round); return rn >= from && rn <= to; });
+    const sd = document.getElementById('slicedAvgs'), rs = document.getElementById('sliceRange'), at = document.getElementById('sliceAvgText');
+    if (sd && filtered.length > 0) {
+      rs.textContent = from + '–' + to;
+      const keys = ['disposals', 'marks', 'tackles', 'goals', 'supercoach_score'];
+      at.textContent = keys.map(k => {
+        const vals = filtered.map(r => r[k]).filter(v => v != null);
+        if (!vals.length) return null;
+        return k.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()) + ': ' + (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1);
+      }).filter(Boolean).join(' | ') + ' (' + filtered.length + ' games)';
+      sd.style.display = '';
+    } else if (sd) sd.style.display = 'none';
+    const info = document.getElementById('sliceInfo');
+    if (info) info.textContent = 'R' + from + '–R' + to;
+  };
+  window.resetSlice = function() {
+    if (rbrTable) rbrTable.querySelectorAll('tbody tr').forEach(r => r.style.display = '');
+    const sd = document.getElementById('slicedAvgs'); if (sd) sd.style.display = 'none';
+    const info = document.getElementById('sliceInfo'); if (info) info.textContent = '';
+  };
+})();
+</script>
+{% endblock %}

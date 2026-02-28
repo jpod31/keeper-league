@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  {# Sidebar #}
+  <div class="col-lg-2 mb-3">
+    <div class="card" style="background:#161b22;border:1px solid #30363d;">
+      <div class="card-body p-2">
+        <h6 class="fw-bold px-2 pt-1 mb-2" style="color:#8b949e;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;">Admin</h6>
+        <nav class="nav flex-column">
+          <a class="nav-link px-2 py-1 rounded {% if request.endpoint == 'admin.dashboard' %}active{% endif %}"
+             href="{{ url_for('admin.dashboard') }}" style="font-size:.85rem;">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+          </a>
+          <a class="nav-link px-2 py-1 rounded {% if request.endpoint == 'admin.users' %}active{% endif %}"
+             href="{{ url_for('admin.users') }}" style="font-size:.85rem;">
+            <i class="bi bi-people me-2"></i>Users
+          </a>
+          <a class="nav-link px-2 py-1 rounded {% if request.endpoint == 'admin.leagues' %}active{% endif %}"
+             href="{{ url_for('admin.leagues') }}" style="font-size:.85rem;">
+            <i class="bi bi-trophy me-2"></i>Leagues
+          </a>
+          <a class="nav-link px-2 py-1 rounded {% if request.endpoint == 'admin.analytics' %}active{% endif %}"
+             href="{{ url_for('admin.analytics') }}" style="font-size:.85rem;">
+            <i class="bi bi-bar-chart me-2"></i>Analytics
+          </a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  {# Main content #}
+  <div class="col-lg-10">
+    {% block admin_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

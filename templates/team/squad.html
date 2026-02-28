@@ -1,0 +1,172 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'team' %}
+{% block title %}{{ team.name }} — Squad{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / {{ team.name }}</div>
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h2>{{ team.name }}</h2>
+      <span style="font-size:.8rem;color:#8b949e;">{{ players|length }} players</span>
+    </div>
+    <div class="d-flex gap-2">
+      <div class="btn-group btn-group-sm" role="group">
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='table') }}"
+           class="btn btn-sm {{ 'btn-primary' if view|default('field') == 'table' else 'btn-outline-secondary' }}">
+          <i class="bi bi-table me-1"></i>Table
+        </a>
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}"
+           class="btn btn-sm {{ 'btn-primary' if view|default('field') == 'field' else 'btn-outline-secondary' }}">
+          <i class="bi bi-diagram-3 me-1"></i>Field
+        </a>
+      </div>
+      <a href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-graph-up me-1"></i>Stats</a>
+    </div>
+  </div>
+</div>
+
+{% if not is_owner %}
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(139,148,158,.08);border:1px solid #30363d;border-radius:8px;font-size:.85rem;color:#8b949e;">
+  <i class="bi bi-eye"></i>
+  <span>Viewing <strong style="color:#c9d1d9;">{{ team.name }}</strong>'s squad (read-only)</span>
+</div>
+{% endif %}
+
+{% if players %}
+  {% if view|default('field') == 'field' %}
+    {% include "team/field_view.html" %}
+  {% else %}
+  <div class="d-flex align-items-center mb-3">
+    <div class="btn-group btn-group-sm" role="group">
+      <button class="btn btn-sm btn-primary" id="btnAllTime" onclick="switchStats('alltime')">All Time</button>
+      <button class="btn btn-sm btn-outline-secondary" id="btnMyClub" onclick="switchStats('myclub')">For My Club</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0" id="rosterTable">
+        <thead>
+          <tr>
+            <th style="width:40px;">#</th>
+            <th>Player</th>
+            <th>Pos</th>
+            <th>AFL Team</th>
+            <th class="text-center">Games</th>
+            <th class="text-center">Goals</th>
+            <th class="text-center">Disp</th>
+            <th class="text-center">Marks</th>
+            <th class="text-center">Tackles</th>
+            <th class="text-end">SC Avg</th>
+            <th>Acquired</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in players %}
+            {% set r = roster[loop.index0] %}
+            {% set st = alltime_stats.get(p.id, {}) %}
+            <tr data-pid="{{ p.id }}">
+              <td style="color:#484f58;">{{ loop.index }}</td>
+              <td>
+                <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:#c9d1d9;">{{ p.name }}</a>
+              </td>
+              <td>
+                {% for pos in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge pos-{{ pos }}">{{ pos }}</span>
+                {% endfor %}
+              </td>
+              <td>
+                {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                  <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" height="18" class="me-1">
+                {% endif %}
+                <span style="font-size:.8rem;">{{ p.afl_team or '' }}</span>
+              </td>
+              <td class="text-center stat-games">{{ st.get('games', '-') }}</td>
+              <td class="text-center stat-goals">{{ st.get('goals', '-') }}</td>
+              <td class="text-center stat-disposals">{{ st.get('disposals', '-') }}</td>
+              <td class="text-center stat-marks">{{ st.get('marks', '-') }}</td>
+              <td class="text-center stat-tackles">{{ st.get('tackles', '-') }}</td>
+              <td class="text-end stat-sc-avg">{{ st.get('sc_avg', '-') }}</td>
+              <td><span class="text-secondary text-capitalize" style="font-size:.75rem;">{{ r.acquired_via }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    const STATS_API = "{{ url_for('team.api_roster_stats', league_id=league.id, team_id=team.id) }}";
+    const STAT_FIELDS = ['games', 'goals', 'disposals', 'marks', 'tackles', 'sc_avg'];
+    let allTimeCache = {};
+    let myClubCache = null;
+    let currentMode = 'alltime';
+
+    // Cache alltime values from the DOM on load
+    document.querySelectorAll('#rosterTable tbody tr[data-pid]').forEach(row => {
+      const pid = row.dataset.pid;
+      allTimeCache[pid] = {};
+      STAT_FIELDS.forEach(field => {
+        const cell = row.querySelector('.stat-' + field.replace('_', '-'));
+        if (cell) allTimeCache[pid][field] = cell.textContent.trim();
+      });
+    });
+
+    function updateCells(data) {
+      document.querySelectorAll('#rosterTable tbody tr[data-pid]').forEach(row => {
+        const pid = row.dataset.pid;
+        const stats = data[pid] || {};
+        STAT_FIELDS.forEach(field => {
+          const cell = row.querySelector('.stat-' + field.replace('_', '-'));
+          if (cell) {
+            const val = stats[field];
+            cell.textContent = (val !== undefined && val !== null) ? val : '-';
+          }
+        });
+      });
+    }
+
+    window.switchStats = function(mode) {
+      if (mode === currentMode) return;
+      currentMode = mode;
+
+      const btnAll = document.getElementById('btnAllTime');
+      const btnClub = document.getElementById('btnMyClub');
+
+      if (mode === 'alltime') {
+        btnAll.className = 'btn btn-sm btn-primary';
+        btnClub.className = 'btn btn-sm btn-outline-secondary';
+        updateCells(allTimeCache);
+      } else {
+        btnClub.className = 'btn btn-sm btn-primary';
+        btnAll.className = 'btn btn-sm btn-outline-secondary';
+
+        if (myClubCache) {
+          updateCells(myClubCache);
+        } else {
+          btnClub.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+          fetch(STATS_API)
+            .then(r => r.json())
+            .then(data => {
+              myClubCache = data;
+              updateCells(data);
+              btnClub.textContent = 'For My Club';
+            })
+            .catch(() => {
+              btnClub.textContent = 'For My Club';
+              alert('Failed to load club stats');
+            });
+        }
+      }
+    };
+  })();
+  </script>
+  {% endif %}
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-people" style="font-size:1.5rem;"></i></div>
+    <h4>No players on roster</h4>
+    <p>Players will appear here after the draft.</p>
+  </div>
+{% endif %}
+{% endblock %}

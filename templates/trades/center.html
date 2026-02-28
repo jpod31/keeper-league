@@ -1,0 +1,74 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'season' %}
+{% block title %}Trade Center — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">Season Hub</a> / Trades</div>
+  <div class="d-flex justify-content-between align-items-start">
+    <h2>Trade Center</h2>
+    {% if user_team %}
+      <a href="{{ url_for('trades.trade_propose', league_id=league.id) }}" class="btn btn-primary">
+        <i class="bi bi-arrow-left-right me-1"></i>Propose Trade
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+{% if not league.trade_window_open %}
+  <div class="alert alert-warning d-flex align-items-center gap-2" style="border-color:rgba(210,153,34,.3);">
+    <i class="bi bi-exclamation-triangle"></i> Trade window is currently closed.
+  </div>
+{% endif %}
+
+<ul class="nav nav-tabs mb-4">
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if tab == 'incoming' }}"
+       href="{{ url_for('trades.trade_center', league_id=league.id, tab='incoming') }}">
+      Incoming
+      {% set pending_count = incoming|selectattr('status', 'equalto', 'pending')|list|length %}
+      {% if pending_count %}
+        <span class="badge" style="background:#f85149;font-size:.65rem;margin-left:4px;">{{ pending_count }}</span>
+      {% endif %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if tab == 'outgoing' }}"
+       href="{{ url_for('trades.trade_center', league_id=league.id, tab='outgoing') }}">Outgoing</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if tab == 'history' }}"
+       href="{{ url_for('trades.trade_center', league_id=league.id, tab='history') }}">History</a>
+  </li>
+</ul>
+
+{% macro trade_row(trade) %}
+  <a href="{{ url_for('trades.trade_detail', league_id=league.id, trade_id=trade.id) }}" class="trade-card">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <strong style="font-size:.9rem;">{{ trade.proposer_team.name }}</strong>
+          <i class="bi bi-arrow-left-right" style="color:#484f58;font-size:.75rem;"></i>
+          <strong style="font-size:.9rem;">{{ trade.recipient_team.name }}</strong>
+        </div>
+        <div style="font-size:.75rem;color:#8b949e;">
+          {{ trade.assets|length }} player(s) &middot; {{ trade.proposed_at.strftime('%d %b %Y %H:%M') }}
+        </div>
+      </div>
+      <span class="status-pill status-{{ trade.status }}">{{ trade.status }}</span>
+    </div>
+  </a>
+{% endmacro %}
+
+{% set current_trades = incoming if tab == 'incoming' else (outgoing if tab == 'outgoing' else history) %}
+{% if current_trades %}
+  {% for trade in current_trades %}{{ trade_row(trade) }}{% endfor %}
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <i class="bi bi-arrow-left-right" style="font-size:1.5rem;"></i>
+    </div>
+    <h4>No {{ tab }} trades</h4>
+    <p>{% if tab == 'incoming' %}No one has proposed a trade to you yet.{% elif tab == 'outgoing' %}You haven't proposed any trades.{% else %}No completed trades to show.{% endif %}</p>
+  </div>
+{% endif %}
+{% endblock %}

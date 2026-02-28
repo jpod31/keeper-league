@@ -1,0 +1,351 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'fixture' %}
+{% block title %}Live — Round {{ afl_round }} — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Live Scores</div>
+  <div class="d-flex justify-content-between align-items-start">
+    <div class="d-flex align-items-center gap-3">
+      {% if afl_round > 1 %}
+        <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=afl_round-1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i></a>
+      {% endif %}
+      <h2 class="mb-0">Live — Round {{ afl_round }}</h2>
+      {% if afl_round < max_round %}
+        <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=afl_round+1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-right"></i></a>
+      {% endif %}
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <span id="connection-status" class="badge" style="font-size:.65rem;background:#21262d;color:#484f58;">
+        <i class="bi bi-circle-fill me-1" style="font-size:.4rem;"></i>Connecting...
+      </span>
+      <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round) }}" class="btn btn-outline-secondary btn-sm">Round View</a>
+    </div>
+  </div>
+</div>
+
+<!-- AFL Game Status Bar -->
+{% if afl_games %}
+<div class="mb-3 d-flex flex-wrap gap-2">
+  {% for g in afl_games %}
+    <div class="game-status-pill" id="game-{{ g.game_id }}">
+      <span class="game-teams">{{ g.home_team[:3]|upper }} v {{ g.away_team[:3]|upper }}</span>
+      {% if g.status == 'live' %}
+        <span class="badge bg-success" style="font-size:.6rem;animation:pulse 2s infinite;">LIVE</span>
+      {% elif g.status == 'complete' %}
+        <span class="badge" style="font-size:.6rem;background:#238636;">FT</span>
+      {% else %}
+        <span class="badge" style="font-size:.6rem;background:#21262d;color:#8b949e;">
+          {% if g.scheduled_start %}{{ g.scheduled_start[11:16] }}{% else %}TBC{% endif %}
+        </span>
+      {% endif %}
+      {% if g.home_score is not none %}
+        <span class="game-afl-score">{{ g.home_score }}-{{ g.away_score }}</span>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Fixture Cards -->
+<div class="row g-3">
+  {% for f in fixtures %}
+    <div class="col-md-6">
+      <div class="fixture-card" id="fixture-card-{{ f.id }}">
+        <div class="p-4">
+          <div class="row text-center align-items-center">
+            <div class="col-5">
+              <div class="fixture-team">{{ f.home_team.name }}</div>
+              {% set hs = scores.get(f.home_team_id, {}) %}
+              <div class="fixture-score score-animate" id="home-{{ f.id }}">{{ '%.0f'|format(hs.get('total_score', 0)) }}</div>
+              {% if hs.get('captain_bonus', 0) > 0 %}
+                <small class="captain-bonus" id="home-cap-{{ f.id }}">+{{ '%.0f'|format(hs.captain_bonus) }} (C)</small>
+              {% else %}
+                <small class="captain-bonus" id="home-cap-{{ f.id }}" style="display:none;"></small>
+              {% endif %}
+            </div>
+            <div class="col-2">
+              <span class="status-pill {{ 'status-completed' if f.status == 'completed' else 'status-active' }}" id="fixture-status-{{ f.id }}">
+                {{ f.status|capitalize if f.status != 'scheduled' else 'Live' }}
+              </span>
+            </div>
+            <div class="col-5">
+              <div class="fixture-team">{{ f.away_team.name }}</div>
+              {% set aws = scores.get(f.away_team_id, {}) %}
+              <div class="fixture-score score-animate" id="away-{{ f.id }}">{{ '%.0f'|format(aws.get('total_score', 0)) }}</div>
+              {% if aws.get('captain_bonus', 0) > 0 %}
+                <small class="captain-bonus" id="away-cap-{{ f.id }}">+{{ '%.0f'|format(aws.captain_bonus) }} (C)</small>
+              {% else %}
+                <small class="captain-bonus" id="away-cap-{{ f.id }}" style="display:none;"></small>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Player Breakdown Toggle -->
+          <div class="text-center mt-2">
+            <button class="btn btn-sm" style="font-size:.7rem;color:#8b949e;border:1px solid #30363d;padding:2px 10px;"
+                    onclick="toggleBreakdown({{ f.id }})" type="button">
+              <i class="bi bi-chevron-down me-1"></i>Player Breakdown
+            </button>
+          </div>
+
+          <!-- Player Breakdown Content -->
+          <div class="breakdown-panel" id="breakdown-{{ f.id }}" style="display:none;">
+            <div class="row mt-3" style="font-size:.78rem;">
+              <div class="col-6">
+                <div class="fw-bold mb-1" style="color:#c9d1d9;">{{ f.home_team.name }}</div>
+                <div id="home-players-{{ f.id }}">
+                  {% set bd = fixture_breakdowns.get(f.id, {}) %}
+                  {% for p in bd.get('home_players', []) %}
+                    <div class="player-score-row d-flex justify-content-between py-1 {{ 'player-locked' if p.player_id in locked_player_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}">
+                      <span>
+                        {% if p.is_captain %}<span class="badge" style="background:#d29922;font-size:.5rem;padding:1px 3px;">C</span> {% endif %}
+                        {% if p.is_vice_captain %}<span class="badge" style="background:#58a6ff;font-size:.5rem;padding:1px 3px;">VC</span> {% endif %}
+                        {% if p.get('is_dnp') %}<span class="badge" style="background:#484f58;font-size:.5rem;padding:1px 3px;">DNP</span> {% endif %}
+                        {% if p.get('subbed_on') %}<span class="badge" style="background:#238636;font-size:.5rem;padding:1px 3px;">SUB</span> {% endif %}
+                        {% if p.player_id in locked_player_ids %}<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> {% endif %}
+                        {{ p.name }}
+                        {% if p.get('replaces') %}<span style="color:#3fb950;font-size:.65rem;font-style:italic;">&rarr; for {{ p.replaces }}</span>{% endif %}
+                      </span>
+                      <span class="{{ 'text-success' if p.is_live else 'text-secondary' }}{{ ' score-dnp' if p.get('is_dnp') else '' }}">
+                        {{ p.score or 0 }}
+                        {% if p.is_live %}<i class="bi bi-circle-fill" style="font-size:.35rem;color:#238636;vertical-align:middle;"></i>{% endif %}
+                      </span>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="fw-bold mb-1" style="color:#c9d1d9;">{{ f.away_team.name }}</div>
+                <div id="away-players-{{ f.id }}">
+                  {% for p in bd.get('away_players', []) %}
+                    <div class="player-score-row d-flex justify-content-between py-1 {{ 'player-locked' if p.player_id in locked_player_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}">
+                      <span>
+                        {% if p.is_captain %}<span class="badge" style="background:#d29922;font-size:.5rem;padding:1px 3px;">C</span> {% endif %}
+                        {% if p.is_vice_captain %}<span class="badge" style="background:#58a6ff;font-size:.5rem;padding:1px 3px;">VC</span> {% endif %}
+                        {% if p.get('is_dnp') %}<span class="badge" style="background:#484f58;font-size:.5rem;padding:1px 3px;">DNP</span> {% endif %}
+                        {% if p.get('subbed_on') %}<span class="badge" style="background:#238636;font-size:.5rem;padding:1px 3px;">SUB</span> {% endif %}
+                        {% if p.player_id in locked_player_ids %}<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> {% endif %}
+                        {{ p.name }}
+                        {% if p.get('replaces') %}<span style="color:#3fb950;font-size:.65rem;font-style:italic;">&rarr; for {{ p.replaces }}</span>{% endif %}
+                      </span>
+                      <span class="{{ 'text-success' if p.is_live else 'text-secondary' }}{{ ' score-dnp' if p.get('is_dnp') else '' }}">
+                        {{ p.score or 0 }}
+                        {% if p.is_live %}<i class="bi bi-circle-fill" style="font-size:.35rem;color:#238636;vertical-align:middle;"></i>{% endif %}
+                      </span>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="mt-3 d-flex align-items-center gap-2" style="font-size:.75rem;color:#484f58;">
+  {% if live_enabled %}
+    <i class="bi bi-broadcast me-1" style="color:#238636;"></i>Live updates via WebSocket
+  {% else %}
+    <i class="bi bi-arrow-clockwise me-1"></i>Auto-refreshes every 60 seconds
+  {% endif %}
+</div>
+
+<style>
+  .game-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 4px 10px;
+    font-size: .75rem;
+  }
+  .game-teams { color: #c9d1d9; font-weight: 600; }
+  .game-afl-score { color: #8b949e; font-size: .7rem; }
+  .captain-bonus { color: #d29922; font-size: .75rem; }
+  .player-score-row { border-bottom: 1px solid #21262d; }
+  .player-score-row:last-child { border-bottom: none; }
+  .player-locked { opacity: 0.7; }
+  .player-dnp { opacity: 0.45; }
+  .player-dnp span:first-child { text-decoration: line-through; }
+  .score-dnp { color: #484f58 !important; }
+  .player-subbed-on { background: rgba(35,134,54,.08); }
+  .breakdown-panel { border-top: 1px solid #21262d; padding-top: 8px; }
+  .score-flash { animation: scoreFlash 1.5s ease-out; }
+  @keyframes scoreFlash {
+    0% { color: #58a6ff; text-shadow: 0 0 8px rgba(88,166,255,.5); }
+    100% { color: inherit; text-shadow: none; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const LEAGUE_ID = {{ league.id }};
+const AFL_ROUND = {{ afl_round }};
+const LIVE_ENABLED = {{ 'true' if live_enabled else 'false' }};
+const FALLBACK_URL = "{{ url_for('matchups.api_live_scores', league_id=league.id, afl_round=afl_round) }}";
+
+function toggleBreakdown(fixtureId) {
+    const panel = document.getElementById('breakdown-' + fixtureId);
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function flashScore(el) {
+    el.classList.remove('score-flash');
+    void el.offsetWidth;  // force reflow
+    el.classList.add('score-flash');
+}
+
+function updateScores(data) {
+    // Update fixture scores
+    if (data.fixtures) {
+        data.fixtures.forEach(function(f) {
+            const homeEl = document.getElementById('home-' + f.fixture_id);
+            const awayEl = document.getElementById('away-' + f.fixture_id);
+            if (homeEl) {
+                const oldVal = homeEl.textContent.trim();
+                const newVal = Math.round(f.home_score).toString();
+                homeEl.textContent = newVal;
+                if (oldVal !== newVal) flashScore(homeEl);
+            }
+            if (awayEl) {
+                const oldVal = awayEl.textContent.trim();
+                const newVal = Math.round(f.away_score).toString();
+                awayEl.textContent = newVal;
+                if (oldVal !== newVal) flashScore(awayEl);
+            }
+
+            // Update captain bonus
+            const homeCapEl = document.getElementById('home-cap-' + f.fixture_id);
+            if (homeCapEl) {
+                if (f.home_captain_bonus > 0) {
+                    homeCapEl.textContent = '+' + Math.round(f.home_captain_bonus) + ' (C)';
+                    homeCapEl.style.display = '';
+                } else {
+                    homeCapEl.style.display = 'none';
+                }
+            }
+            const awayCapEl = document.getElementById('away-cap-' + f.fixture_id);
+            if (awayCapEl) {
+                if (f.away_captain_bonus > 0) {
+                    awayCapEl.textContent = '+' + Math.round(f.away_captain_bonus) + ' (C)';
+                    awayCapEl.style.display = '';
+                } else {
+                    awayCapEl.style.display = 'none';
+                }
+            }
+
+            // Update player breakdowns
+            updatePlayerBreakdown('home-players-' + f.fixture_id, f.home_players, data.locked_player_ids || []);
+            updatePlayerBreakdown('away-players-' + f.fixture_id, f.away_players, data.locked_player_ids || []);
+        });
+    }
+
+    // Update game status pills
+    if (data.game_statuses) {
+        data.game_statuses.forEach(function(g) {
+            const el = document.getElementById('game-' + g.game_id);
+            if (!el) return;
+            const badges = el.querySelectorAll('.badge');
+            badges.forEach(function(badge) {
+                if (g.status === 'live') {
+                    badge.className = 'badge bg-success';
+                    badge.style.fontSize = '.6rem';
+                    badge.style.animation = 'pulse 2s infinite';
+                    badge.textContent = 'LIVE';
+                } else if (g.status === 'complete') {
+                    badge.className = 'badge';
+                    badge.style.background = '#238636';
+                    badge.style.fontSize = '.6rem';
+                    badge.style.animation = '';
+                    badge.textContent = 'FT';
+                }
+            });
+            // Update AFL score
+            const scoreSpan = el.querySelector('.game-afl-score');
+            if (scoreSpan && g.home_score !== null) {
+                scoreSpan.textContent = g.home_score + '-' + g.away_score;
+            }
+        });
+    }
+}
+
+function updatePlayerBreakdown(containerId, players, lockedIds) {
+    if (!players || !players.length) return;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    let html = '';
+    players.forEach(function(p) {
+        const isLocked = lockedIds.indexOf(p.player_id) !== -1;
+        const isDnp = p.is_dnp || false;
+        const isSubOn = p.subbed_on || false;
+        let rowClass = 'player-score-row d-flex justify-content-between py-1';
+        if (isLocked) rowClass += ' player-locked';
+        if (isDnp) rowClass += ' player-dnp';
+        if (isSubOn) rowClass += ' player-subbed-on';
+
+        const scoreClass = isDnp ? 'score-dnp' : (p.is_live ? 'text-success' : 'text-secondary');
+        let badges = '';
+        if (p.is_captain) badges += '<span class="badge" style="background:#d29922;font-size:.5rem;padding:1px 3px;">C</span> ';
+        if (p.is_vice_captain) badges += '<span class="badge" style="background:#58a6ff;font-size:.5rem;padding:1px 3px;">VC</span> ';
+        if (isDnp) badges += '<span class="badge" style="background:#484f58;font-size:.5rem;padding:1px 3px;">DNP</span> ';
+        if (isSubOn) badges += '<span class="badge" style="background:#238636;font-size:.5rem;padding:1px 3px;">SUB</span> ';
+        if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> ';
+        const liveIndicator = p.is_live ? ' <i class="bi bi-circle-fill" style="font-size:.35rem;color:#238636;vertical-align:middle;"></i>' : '';
+        const subNote = p.replaces ? ' <span style="color:#3fb950;font-size:.65rem;font-style:italic;">&rarr; for ' + p.replaces + '</span>' : '';
+
+        html += '<div class="' + rowClass + '"><span>' + badges + p.name + subNote + '</span><span class="' + scoreClass + '">' + (p.score || 0) + liveIndicator + '</span></div>';
+    });
+    container.innerHTML = html;
+}
+
+// --- SocketIO connection ---
+if (LIVE_ENABLED && typeof io !== 'undefined') {
+    const socket = io('/matchups');
+    const statusEl = document.getElementById('connection-status');
+
+    socket.on('connect', function() {
+        statusEl.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:.4rem;color:#238636;"></i>Connected';
+        statusEl.style.color = '#238636';
+        socket.emit('join_live', {league_id: LEAGUE_ID, afl_round: AFL_ROUND});
+        // Request current scores on connect
+        socket.emit('request_scores', {league_id: LEAGUE_ID, afl_round: AFL_ROUND});
+    });
+
+    socket.on('disconnect', function() {
+        statusEl.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:.4rem;color:#f85149;"></i>Disconnected';
+        statusEl.style.color = '#f85149';
+    });
+
+    socket.on('score_update', function(data) {
+        updateScores(data);
+    });
+
+    socket.on('joined', function(data) {
+        console.log('Joined live room:', data.room);
+    });
+} else {
+    // Fallback: AJAX polling every 60 seconds
+    const statusEl = document.getElementById('connection-status');
+    statusEl.innerHTML = '<i class="bi bi-arrow-clockwise me-1" style="font-size:.4rem;"></i>Polling';
+    statusEl.style.color = '#8b949e';
+
+    setInterval(function() {
+        fetch(FALLBACK_URL)
+            .then(r => r.json())
+            .then(data => updateScores(data))
+            .catch(err => console.error('Poll error:', err));
+    }, 60000);
+}
+</script>
+{% endblock %}

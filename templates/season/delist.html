@@ -1,0 +1,114 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'settings' %}
+{% block title %}Delist Period — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Delist</div>
+  <h2>Delist Period</h2>
+</div>
+
+{% if not period %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-person-dash" style="font-size:1.5rem;"></i></div>
+    <h4>No delist period open</h4>
+    <p>The commissioner can open a delist period from here.</p>
+    {% if is_commissioner %}
+      <form method="POST" class="d-inline-flex gap-2 align-items-center mt-2">
+        <input type="hidden" name="action" value="open_period">
+        <label class="form-label mb-0 text-secondary" style="font-size:.85rem;">Min delists:</label>
+        <input type="number" name="min_delists" class="form-control form-control-sm" value="{{ league.delist_minimum }}" min="0" max="15" style="width:70px;">
+        <button type="submit" class="btn btn-primary btn-sm">Open Delist Period</button>
+      </form>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="alert d-flex justify-content-between align-items-center" style="background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);border-radius:10px;">
+    <div>
+      <strong style="color:#58a6ff;">Delist period is open</strong>
+      <span class="text-secondary" style="font-size:.85rem;">&mdash; Each team must delist at least {{ period.min_delists }} player(s).</span>
+    </div>
+    {% if is_commissioner %}
+      <form method="POST">
+        <input type="hidden" name="action" value="close_period">
+        <button type="submit" class="btn btn-outline-secondary btn-sm" style="border-color:#f85149;color:#f85149;"
+                onclick="return confirm('Close the delist period?')">Close Period</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="row g-4">
+    {% if user_team %}
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+              <i class="bi bi-person-dash me-2" style="color:#f85149;"></i>Your Delists
+              <span class="text-secondary fw-normal" style="font-size:.8rem;">{{ my_delists|length }}/{{ period.min_delists }} minimum</span>
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if my_delists %}
+              <div class="mb-3">
+                {% for d in my_delists %}
+                  <span class="badge me-1 mb-1" style="background:rgba(248,81,73,.15);color:#f85149;">{{ d.player.name }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% if my_delists|length < period.min_delists %}
+              <div class="alert" style="background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.2);color:#d29922;font-size:.85rem;padding:.5rem .75rem;">
+                <i class="bi bi-exclamation-triangle me-1"></i> {{ period.min_delists - my_delists|length }} more required
+              </div>
+            {% endif %}
+
+            <form method="POST">
+              <input type="hidden" name="action" value="delist">
+              <div class="mb-2">
+                <select name="player_id" class="form-select form-select-sm">
+                  <option value="">Select player to delist...</option>
+                  {% for r in my_roster %}
+                    <option value="{{ r.player.id }}">
+                      {{ r.player.name }} ({{ r.player.position }}) &mdash; SC {{ '%.0f'|format(r.player.sc_avg) if r.player.sc_avg else '?' }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit" class="btn btn-sm" style="background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.2);"
+                      onclick="return confirm('Are you sure? This cannot be undone.')">
+                <i class="bi bi-person-x me-1"></i>Delist Player
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-people me-2" style="color:#8b949e;"></i>All Teams</h5></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Team</th><th class="text-center">Delisted</th><th class="text-center">Status</th></tr></thead>
+            <tbody>
+              {% for team in teams %}
+                {% set count = delist_summary.get(team.id, [])|length %}
+                <tr>
+                  <td>{{ team.name }}</td>
+                  <td class="text-center">{{ count }}</td>
+                  <td class="text-center">
+                    {% if count >= period.min_delists %}
+                      <span class="status-pill status-completed" style="font-size:.65rem;">Done</span>
+                    {% else %}
+                      <span class="status-pill status-pending" style="font-size:.65rem;">{{ count }}/{{ period.min_delists }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

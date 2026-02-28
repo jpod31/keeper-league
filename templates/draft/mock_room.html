@@ -1,0 +1,536 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'season' %}
+{% block title %}Mock Draft — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb">
+    <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> /
+    <a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">Season Hub</a> /
+    <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}">Draft Setup</a> / Mock Draft
+  </div>
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h2>
+        Mock Draft
+        <span class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.55rem;vertical-align:middle;">SIMULATION</span>
+      </h2>
+      <div class="d-flex align-items-center gap-3 mt-1">
+        <span id="draft-status" class="status-pill status-{{ session.status }}">{{ session.status }}</span>
+        <span style="font-size:.8rem;color:#8b949e;">{{ league.draft_type|capitalize }} &middot; Computer picks for other teams</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-warning btn-sm" id="btn-reset" onclick="resetMock()">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+      </button>
+      <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Current Pick Banner -->
+<div id="current-pick-banner" class="draft-banner{% if user_team and state.current_team_id == user_team.id %} draft-banner-your-pick{% endif %}">
+  <div class="d-flex align-items-center gap-3">
+    <div class="draft-pick-badge">
+      <span id="current-pick-num">{{ state.current_pick or '-' }}</span>
+    </div>
+    <div>
+      <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">
+        Round <span id="current-round">{{ state.current_round or '-' }}</span>
+      </div>
+      <div style="font-size:1.1rem;font-weight:600;">
+        <span id="current-team">{{ state.current_team_name or 'TBD' }}</span>
+        <span id="your-pick-badge" class="badge ms-2" style="background:rgba(210,153,34,.2);color:#d29922;font-size:.7rem;{% if not (user_team and state.current_team_id == user_team.id) %}display:none;{% endif %}">YOUR PICK</span>
+        <span id="cpu-pick-badge" class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.7rem;{% if user_team and state.current_team_id == user_team.id %}display:none;{% endif %}">CPU</span>
+      </div>
+    </div>
+  </div>
+  <div id="auto-pick-spinner" style="display:none;">
+    <div class="d-flex align-items-center gap-2">
+      <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+      <span style="font-size:.8rem;color:#f0883e;">Computer picking...</span>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Available Players (left) -->
+  <div class="col-lg-5">
+    <div class="card" style="max-height:75vh;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+            <i class="bi bi-people me-2" style="color:#8b949e;"></i>Available Players
+          </h5>
+          <button class="btn btn-outline-secondary py-0 px-2" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#weight-panel"
+                  title="Adjust your draft value weights" style="font-size:.7rem;">
+            <i class="bi bi-sliders me-1"></i>Values
+          </button>
+        </div>
+        <!-- Inline weight sliders -->
+        <div class="collapse mb-2" id="weight-panel">
+          <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.75rem;">
+            {% set inline_factors = [
+              ("sc_average", "SC Avg"),
+              ("age_factor", "Age"),
+              ("positional_scarcity", "Scarcity"),
+              ("trajectory", "Trajectory"),
+              ("durability", "Durability"),
+              ("rating_potential", "Rating"),
+            ] %}
+            {% for key, label in inline_factors %}
+              <div class="d-flex align-items-center gap-2 {% if not loop.last %}mb-2{% endif %}">
+                <span style="font-size:.7rem;color:#8b949e;width:60px;flex-shrink:0;">{{ label }}</span>
+                <input type="range" class="form-range flex-grow-1" id="dv-{{ key }}"
+                       min="0" max="1" step="0.01" value="{{ user_weights.get(key, 0.2) }}"
+                       oninput="onWeightSliderChange()" style="height:16px;">
+                <span class="dv-badge" id="dvb-{{ key }}" style="font-size:.7rem;color:#58a6ff;width:32px;text-align:right;">
+                  {{ "%.0f"|format((user_weights.get(key, 0.2)) * 100) }}%
+                </span>
+              </div>
+            {% endfor %}
+            <div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #30363d;">
+              <span style="font-size:.7rem;color:#8b949e;">
+                {% if has_custom_weights %}
+                  <span style="color:#3fb950;">Custom</span>
+                {% else %}
+                  League defaults
+                {% endif %}
+              </span>
+              <div class="d-flex gap-1">
+                <button class="btn btn-outline-secondary py-0 px-2" onclick="applyWeights()" style="font-size:.7rem;">
+                  Apply
+                </button>
+                <button class="btn btn-primary py-0 px-2" onclick="saveWeights()" style="font-size:.7rem;">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-2">
+          <div class="col-7">
+            <input type="text" class="form-control form-control-sm" id="player-search"
+                   placeholder="Search players..." oninput="searchPlayers()">
+          </div>
+          <div class="col-5">
+            <select class="form-select form-select-sm" id="pos-filter" onchange="searchPlayers()">
+              <option value="">All Positions</option>
+              <option value="DEF">DEF</option>
+              <option value="MID">MID</option>
+              <option value="FWD">FWD</option>
+              <option value="RUC">RUC</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0" style="overflow-y:auto;">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="sticky-top" style="background:#161b22;">
+            <tr>
+              <th>Player</th>
+              <th>Pos</th>
+              <th>Team</th>
+              <th>SC</th>
+              <th>Rtg</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="available-players">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pick History + Your Team (right) -->
+  <div class="col-lg-7">
+    <!-- Pick History -->
+    <div class="card mb-3" style="max-height:40vh;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+            <i class="bi bi-clock-history me-2" style="color:#8b949e;"></i>Pick History
+          </h5>
+          {% if user_team %}
+            <div class="btn-group btn-group-sm" role="group">
+              <button type="button" class="btn btn-sm btn-outline-secondary active" id="filter-all" onclick="filterPicks('all')" style="font-size:.7rem;padding:2px 8px;">All</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-mine" onclick="filterPicks('mine')" style="font-size:.7rem;padding:2px 8px;">Mine</button>
+            </div>
+          {% endif %}
+        </div>
+        <span class="badge" style="background:#21262d;color:#8b949e;font-size:.75rem;">
+          <span id="picks-count">{{ state.picks_made }}</span>/{{ state.total_picks }}
+        </span>
+      </div>
+      <div class="card-body p-0" style="overflow-y:auto;" id="pick-history-scroll">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="sticky-top" style="background:#161b22;">
+            <tr>
+              <th>#</th>
+              <th>Rd</th>
+              <th>Team</th>
+              <th>Player</th>
+              <th>Pos</th>
+              <th>AFL Team</th>
+            </tr>
+          </thead>
+          <tbody id="pick-history">
+            {% for pick in state.pick_history|reverse %}
+              <tr>
+                <td>{{ pick.pick_number }}</td>
+                <td>{{ pick.round }}</td>
+                <td>{{ pick.team_name }}</td>
+                <td>{{ pick.player_name }}{% if pick.is_auto_pick %} <span style="color:#f0883e;font-size:.7rem;">(cpu)</span>{% endif %}</td>
+                <td><span class="pos-badge badge-{{ (pick.player_position or 'mid').split('/')[0]|lower }}">{{ pick.player_position }}</span></td>
+                <td>{{ pick.player_afl_team }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Your Team -->
+    {% if user_team %}
+      <div class="card" style="max-height:30vh;overflow:hidden;display:flex;flex-direction:column;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+            <i class="bi bi-person-badge me-2" style="color:#58a6ff;"></i>{{ user_team.name }}
+          </h5>
+          <span class="badge" style="background:#21262d;color:#8b949e;font-size:.75rem;" id="your-picks-count"></span>
+        </div>
+        <div class="card-body p-0" style="overflow-y:auto;">
+          <table class="table table-sm mb-0">
+            <thead class="sticky-top" style="background:#161b22;">
+              <tr><th>#</th><th>Player</th><th>Pos</th><th>AFL Team</th></tr>
+            </thead>
+            <tbody id="your-team">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LEAGUE_ID = {{ league.id }};
+const USER_TEAM_ID = {{ user_team.id if user_team else 'null' }};
+const USER_TEAM_NAME = {{ (user_team.name|tojson) if user_team else 'null' }};
+const MOCK_SESSION_ID = {{ session.id }};
+let draftState = {{ state|tojson }};
+let isProcessing = false;
+
+// ── UI Update ──
+
+function updateBanner() {
+  const statusEl = document.getElementById('draft-status');
+  statusEl.textContent = draftState.status;
+  statusEl.className = 'status-pill status-' + draftState.status.replace('_', '-');
+
+  document.getElementById('current-pick-num').textContent = draftState.current_pick || '-';
+  document.getElementById('current-round').textContent = draftState.current_round || '-';
+  document.getElementById('current-team').textContent = draftState.current_team_name || 'TBD';
+  document.getElementById('picks-count').textContent = draftState.picks_made;
+
+  const banner = document.getElementById('current-pick-banner');
+  const yourBadge = document.getElementById('your-pick-badge');
+  const cpuBadge = document.getElementById('cpu-pick-badge');
+
+  if (draftState.status === 'completed') {
+    banner.className = 'draft-banner draft-banner-complete';
+    document.getElementById('current-team').textContent = 'Mock Draft Complete!';
+    yourBadge.style.display = 'none';
+    cpuBadge.style.display = 'none';
+  } else if (USER_TEAM_ID && draftState.current_team_id === USER_TEAM_ID) {
+    banner.className = 'draft-banner draft-banner-your-pick';
+    yourBadge.style.display = '';
+    cpuBadge.style.display = 'none';
+  } else {
+    banner.className = 'draft-banner';
+    yourBadge.style.display = 'none';
+    cpuBadge.style.display = '';
+  }
+}
+
+// ── Available Players ──
+
+function searchPlayers() {
+  const q = document.getElementById('player-search').value;
+  const pos = document.getElementById('pos-filter').value;
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/available?q=${encodeURIComponent(q)}&pos=${pos}&limit=100&mock=1`)
+    .then(r => r.json())
+    .then(players => {
+      const tbody = document.getElementById('available-players');
+      tbody.innerHTML = players.map(p => {
+        const posClass = (p.position||'mid').split('/')[0].toLowerCase();
+        const rtg = p.rating != null ? p.rating : '-';
+        const rtgColor = p.rating >= 80 ? '#3fb950' : p.rating >= 70 ? '#d29922' : p.rating >= 60 ? '#f0883e' : p.rating != null ? '#f85149' : '#8b949e';
+        return `<tr>
+          <td>${p.name}</td>
+          <td><span class="pos-badge badge-${posClass}">${p.position || ''}</span></td>
+          <td>${p.afl_team || ''}</td>
+          <td>${p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
+          <td><span style="color:${rtgColor};font-weight:600;">${rtg}</span></td>
+          <td><span style="color:#58a6ff;font-weight:600;">${p.draft_score ? p.draft_score.toFixed(1) : '-'}</span></td>
+          <td>
+            <button class="btn btn-outline-primary btn-sm py-0 px-2"
+                    onclick="pickPlayer(${p.id})"
+                    ${canPick() ? '' : 'disabled'}>Pick</button>
+          </td>
+        </tr>`;
+      }).join('');
+    });
+}
+
+function canPick() {
+  if (isProcessing) return false;
+  if (draftState.status !== 'in_progress') return false;
+  return USER_TEAM_ID && draftState.current_team_id === USER_TEAM_ID;
+}
+
+// ── Making Picks ──
+
+async function pickPlayer(playerId) {
+  if (!canPick()) return;
+  isProcessing = true;
+  searchPlayers();  // disable buttons
+
+  try {
+    const res = await fetch(`/leagues/${LEAGUE_ID}/draft/mock/pick`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: playerId }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+      isProcessing = false;
+      searchPlayers();
+      return;
+    }
+
+    // Add user's pick to history
+    addPickToHistory(data.user_pick);
+    addToYourTeam(data.user_pick);
+
+    // Animate computer picks with delays
+    if (data.auto_picks && data.auto_picks.length > 0) {
+      document.getElementById('auto-pick-spinner').style.display = '';
+      await animateAutoPicks(data.auto_picks);
+      document.getElementById('auto-pick-spinner').style.display = 'none';
+    }
+
+    // Update state
+    draftState = data.state;
+    updateBanner();
+    searchPlayers();
+  } catch (err) {
+    console.error(err);
+  }
+  isProcessing = false;
+  searchPlayers();  // re-enable buttons
+}
+
+async function animateAutoPicks(picks) {
+  for (const pick of picks) {
+    // Update banner to show which team is picking
+    document.getElementById('current-team').textContent = pick.team_name;
+    document.getElementById('current-pick-num').textContent = pick.pick_number;
+    const rdNum = pick.round;
+    document.getElementById('current-round').textContent = rdNum;
+
+    // Short delay for visual feedback
+    await sleep(150);
+
+    addPickToHistory(pick);
+    document.getElementById('picks-count').textContent =
+      parseInt(document.getElementById('picks-count').textContent) + 1;
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ── Pick History ──
+
+let pickFilterMode = 'all';
+
+function filterPicks(mode) {
+  pickFilterMode = mode;
+  const allBtn = document.getElementById('filter-all');
+  const mineBtn = document.getElementById('filter-mine');
+  if (allBtn && mineBtn) {
+    allBtn.classList.toggle('active', mode === 'all');
+    mineBtn.classList.toggle('active', mode === 'mine');
+  }
+  const rows = document.querySelectorAll('#pick-history tr');
+  rows.forEach(row => {
+    if (mode === 'all') {
+      row.style.display = '';
+    } else {
+      const teamCell = row.cells[2];
+      row.style.display = (teamCell && teamCell.textContent.trim() === USER_TEAM_NAME) ? '' : 'none';
+    }
+  });
+}
+
+function addPickToHistory(pick) {
+  const tbody = document.getElementById('pick-history');
+  const posClass = (pick.player_position || 'mid').split('/')[0].toLowerCase();
+  const cpuTag = pick.is_auto_pick ? ' <span style="color:#f0883e;font-size:.7rem;">(cpu)</span>' : '';
+  const hidden = (pickFilterMode === 'mine' && pick.team_name !== USER_TEAM_NAME) ? ' style="display:none"' : '';
+  const row = `<tr${hidden}>
+    <td>${pick.pick_number}</td>
+    <td>${pick.round}</td>
+    <td>${pick.team_name}</td>
+    <td>${pick.player_name}${cpuTag}</td>
+    <td><span class="pos-badge badge-${posClass}">${pick.player_position}</span></td>
+    <td>${pick.player_afl_team || ''}</td>
+  </tr>`;
+  tbody.insertAdjacentHTML('afterbegin', row);
+}
+
+// ── Your Team ──
+
+function addToYourTeam(pick) {
+  const tbody = document.getElementById('your-team');
+  if (!tbody) return;
+  const count = tbody.rows.length + 1;
+  const posClass = (pick.player_position || 'mid').split('/')[0].toLowerCase();
+  tbody.insertAdjacentHTML('beforeend', `<tr>
+    <td>${count}</td>
+    <td>${pick.player_name}</td>
+    <td><span class="pos-badge badge-${posClass}">${pick.player_position}</span></td>
+    <td>${pick.player_afl_team || ''}</td>
+  </tr>`);
+  const countEl = document.getElementById('your-picks-count');
+  if (countEl) countEl.textContent = `${count} players`;
+}
+
+function loadYourTeam() {
+  if (!USER_TEAM_ID) return;
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/team_picks/${USER_TEAM_ID}?mock=1`)
+    .then(r => r.json())
+    .then(picks => {
+      const tbody = document.getElementById('your-team');
+      if (!tbody) return;
+      tbody.innerHTML = picks.map((p, i) => {
+        const posClass = (p.player_position || 'mid').split('/')[0].toLowerCase();
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${p.player_name}</td>
+          <td><span class="pos-badge badge-${posClass}">${p.player_position}</span></td>
+          <td>${p.player_afl_team || ''}</td>
+        </tr>`;
+      }).join('');
+      const countEl = document.getElementById('your-picks-count');
+      if (countEl) countEl.textContent = `${picks.length} players`;
+    });
+}
+
+// ── Mock Controls ──
+
+async function resetMock() {
+  if (!confirm('Reset the mock draft? All picks will be cleared.')) return;
+  const res = await fetch(`/leagues/${LEAGUE_ID}/draft/mock/reset`, { method: 'POST' });
+  const data = await res.json();
+  if (data.error) {
+    alert(data.error);
+    return;
+  }
+  draftState = data.state;
+  // Clear pick history and your team
+  document.getElementById('pick-history').innerHTML = '';
+  const yourTeam = document.getElementById('your-team');
+  if (yourTeam) yourTeam.innerHTML = '';
+  const countEl = document.getElementById('your-picks-count');
+  if (countEl) countEl.textContent = '0 players';
+
+  updateBanner();
+  searchPlayers();
+  // Auto-pick CPU teams at the start
+  triggerInitialAutoPicks();
+}
+
+async function triggerInitialAutoPicks() {
+  if (!USER_TEAM_ID || draftState.status !== 'in_progress') return;
+
+  // If first pick isn't the user, run auto-picks
+  if (draftState.current_team_id !== USER_TEAM_ID) {
+    isProcessing = true;
+    document.getElementById('auto-pick-spinner').style.display = '';
+
+    const res = await fetch(`/leagues/${LEAGUE_ID}/draft/mock/auto_start`, { method: 'POST' });
+    const data = await res.json();
+    if (data.auto_picks && data.auto_picks.length > 0) {
+      await animateAutoPicks(data.auto_picks);
+    }
+    document.getElementById('auto-pick-spinner').style.display = 'none';
+
+    if (data.state) {
+      draftState = data.state;
+      updateBanner();
+    }
+    isProcessing = false;
+    searchPlayers();
+  }
+}
+
+// ── Weight Sliders ──
+
+const WEIGHT_KEYS = ['sc_average', 'age_factor', 'positional_scarcity', 'trajectory', 'durability', 'rating_potential'];
+
+function onWeightSliderChange() {
+  WEIGHT_KEYS.forEach(key => {
+    const slider = document.getElementById('dv-' + key);
+    const badge = document.getElementById('dvb-' + key);
+    if (slider && badge) {
+      badge.textContent = Math.round(parseFloat(slider.value) * 100) + '%';
+    }
+  });
+}
+
+function applyWeights() { searchPlayers(); }
+
+function saveWeights() {
+  const w = {};
+  WEIGHT_KEYS.forEach(key => {
+    w[key] = parseFloat(document.getElementById('dv-' + key).value);
+  });
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/save_weights`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(w),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok' && data.weights) {
+        WEIGHT_KEYS.forEach(key => {
+          const slider = document.getElementById('dv-' + key);
+          const badge = document.getElementById('dvb-' + key);
+          if (slider && data.weights[key] != null) {
+            slider.value = data.weights[key];
+            badge.textContent = Math.round(data.weights[key] * 100) + '%';
+          }
+        });
+        searchPlayers();
+      }
+    });
+}
+
+// ── Initial Load ──
+searchPlayers();
+loadYourTeam();
+// Wait a beat for the page to render, then trigger auto-picks if CPU goes first
+setTimeout(triggerInitialAutoPicks, 500);
+</script>
+{% endblock %}

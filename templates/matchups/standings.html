@@ -1,0 +1,67 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'analysis' %}
+{% block title %}Standings — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Standings</div>
+  <div class="d-flex justify-content-between align-items-start">
+    <h2>Ladder</h2>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-calendar-week me-1"></i>Fixture</a>
+      <a href="{{ url_for('matchups.finals_view', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-trophy me-1"></i>Finals</a>
+    </div>
+  </div>
+</div>
+
+{% if standings %}
+  <div class="card">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0 ladder-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">Pos</th>
+            <th>Team</th>
+            <th class="text-center">W</th>
+            <th class="text-center">L</th>
+            <th class="text-center">D</th>
+            <th class="text-center">Pts</th>
+            <th class="text-end">PF</th>
+            <th class="text-end">PA</th>
+            <th class="text-end">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in standings %}
+            <tr>
+              <td>
+                <span class="ladder-pos {{ 'top-4' if loop.index <= 4 else '' }}">{{ loop.index }}</span>
+              </td>
+              <td>
+                <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}" class="text-decoration-none">
+                  <strong>{{ s.team.name }}</strong>
+                </a>
+              </td>
+              <td class="text-center">{{ s.wins }}</td>
+              <td class="text-center">{{ s.losses }}</td>
+              <td class="text-center">{{ s.draws }}</td>
+              <td class="text-center"><strong style="color:#58a6ff;">{{ s.ladder_points }}</strong></td>
+              <td class="text-end">{{ '%.0f'|format(s.points_for) }}</td>
+              <td class="text-end">{{ '%.0f'|format(s.points_against) }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.percentage) }}%</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="mt-2" style="font-size:.75rem;color:#484f58;">
+    <i class="bi bi-info-circle me-1"></i>Top 4 teams qualify for finals
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-bar-chart" style="font-size:1.5rem;"></i></div>
+    <h4>No standings yet</h4>
+    <p>Score some rounds to see the ladder.</p>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'season' %}
+{% block title %}Trade #{{ trade.id }} — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">Season Hub</a> / <a href="{{ url_for('trades.trade_center', league_id=league.id) }}">Trades</a> / #{{ trade.id }}</div>
+  <div class="d-flex justify-content-between align-items-start">
+    <h2>Trade Details</h2>
+    <span class="status-pill status-{{ trade.status }}" style="font-size:.85rem;">{{ trade.status }}</span>
+  </div>
+</div>
+
+{% if trade.status == 'agreed' %}
+  <div class="alert" style="background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.25);color:#c9d1d9;margin-bottom:1.5rem;">
+    <i class="bi bi-info-circle me-1" style="color:#58a6ff;"></i>
+    Both teams have agreed to this trade. It will auto-execute when the trade window opens.
+  </div>
+{% endif %}
+
+<div class="row g-4 mb-4">
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <span style="color:#f85149;"><i class="bi bi-arrow-up-right me-1"></i></span>{{ trade.proposer_team.name }} sends
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          {% for asset in giving %}
+            <tr>
+              <td><a href="{{ url_for('player_detail', name=asset.player.name) }}" class="text-decoration-none">{{ asset.player.name }}</a></td>
+              <td><span class="pos-badge pos-{{ (asset.player.position or 'MID').split('/')[0] }}">{{ asset.player.position }}</span></td>
+              <td class="text-end text-secondary">{{ '%.0f'|format(asset.player.sc_avg) if asset.player.sc_avg else '-' }}</td>
+            </tr>
+          {% endfor %}
+          {% for asset in giving_picks %}
+            <tr>
+              <td colspan="2">
+                <i class="bi bi-ticket-perforated me-1" style="color:#58a6ff;"></i>
+                {{ asset.future_pick.year }} Round {{ asset.future_pick.round_number }} Pick
+                {% if asset.future_pick.original_team_id != asset.from_team_id %}
+                  <span class="text-secondary" style="font-size:.75rem;">(originally {{ asset.future_pick.original_team.name }}'s)</span>
+                {% endif %}
+              </td>
+              <td class="text-end"><span class="badge" style="background:rgba(88,166,255,.15);color:#58a6ff;font-size:.65rem;">PICK</span></td>
+            </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-2 d-flex align-items-center justify-content-center">
+    <i class="bi bi-arrow-left-right" style="font-size:2rem;color:#30363d;"></i>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <span style="color:#3fb950;"><i class="bi bi-arrow-down-left me-1"></i></span>{{ trade.recipient_team.name }} sends
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          {% for asset in receiving %}
+            <tr>
+              <td><a href="{{ url_for('player_detail', name=asset.player.name) }}" class="text-decoration-none">{{ asset.player.name }}</a></td>
+              <td><span class="pos-badge pos-{{ (asset.player.position or 'MID').split('/')[0] }}">{{ asset.player.position }}</span></td>
+              <td class="text-end text-secondary">{{ '%.0f'|format(asset.player.sc_avg) if asset.player.sc_avg else '-' }}</td>
+            </tr>
+          {% endfor %}
+          {% for asset in receiving_picks %}
+            <tr>
+              <td colspan="2">
+                <i class="bi bi-ticket-perforated me-1" style="color:#58a6ff;"></i>
+                {{ asset.future_pick.year }} Round {{ asset.future_pick.round_number }} Pick
+                {% if asset.future_pick.original_team_id != asset.from_team_id %}
+                  <span class="text-secondary" style="font-size:.75rem;">(originally {{ asset.future_pick.original_team.name }}'s)</span>
+                {% endif %}
+              </td>
+              <td class="text-end"><span class="badge" style="background:rgba(88,166,255,.15);color:#58a6ff;font-size:.65rem;">PICK</span></td>
+            </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-4" style="font-size:.8rem;color:#8b949e;">
+      <span><i class="bi bi-clock me-1"></i>Proposed {{ trade.proposed_at.strftime('%d %b %Y %H:%M') }}</span>
+      {% if trade.review_deadline and trade.status == 'pending' %}
+        <span><i class="bi bi-hourglass-split me-1"></i>Deadline {{ trade.review_deadline.strftime('%d %b %Y %H:%M') }}</span>
+      {% endif %}
+      {% if trade.responded_at %}
+        <span><i class="bi bi-check-circle me-1"></i>Responded {{ trade.responded_at.strftime('%d %b %Y %H:%M') }}</span>
+      {% endif %}
+    </div>
+    {% if trade.notes %}
+      <div class="mt-3 p-3" style="background:#21262d;border-radius:8px;font-size:.85rem;">
+        <i class="bi bi-chat-quote me-1" style="color:#8b949e;"></i> "{{ trade.notes }}"
+      </div>
+    {% endif %}
+    {% if trade.veto_reason %}
+      <div class="mt-3 p-3" style="background:rgba(248,81,73,.1);border-radius:8px;border:1px solid rgba(248,81,73,.2);font-size:.85rem;color:#f85149;">
+        <i class="bi bi-exclamation-triangle me-1"></i> Veto: {{ trade.veto_reason }}
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if trade.status == 'pending' %}
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    {% if is_recipient %}
+      <form method="POST" action="{{ url_for('trades.trade_respond', league_id=league.id, trade_id=trade.id) }}">
+        <input type="hidden" name="action" value="accept">
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Accept this trade?')">
+          <i class="bi bi-check-lg me-1"></i>Accept
+        </button>
+      </form>
+      <form method="POST" action="{{ url_for('trades.trade_respond', league_id=league.id, trade_id=trade.id) }}">
+        <input type="hidden" name="action" value="reject">
+        <button type="submit" class="btn btn-outline-secondary" style="border-color:#f85149;color:#f85149;">
+          <i class="bi bi-x-lg me-1"></i>Reject
+        </button>
+      </form>
+    {% endif %}
+    {% if is_proposer %}
+      <form method="POST" action="{{ url_for('trades.trade_respond', league_id=league.id, trade_id=trade.id) }}">
+        <input type="hidden" name="action" value="cancel">
+        <button type="submit" class="btn btn-outline-secondary">Cancel Trade</button>
+      </form>
+    {% endif %}
+    {% if is_commissioner %}
+      <form method="POST" action="{{ url_for('trades.trade_veto', league_id=league.id, trade_id=trade.id) }}" class="d-flex gap-2">
+        <input type="text" class="form-control form-control-sm" name="reason" placeholder="Veto reason (optional)" style="width:200px;">
+        <button type="submit" class="btn btn-outline-secondary btn-sm" style="border-color:#f85149;color:#f85149;" onclick="return confirm('Veto this trade?')">Veto</button>
+      </form>
+    {% endif %}
+  </div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-chat-dots me-2" style="color:#8b949e;"></i>Comments</h5></div>
+  <div class="card-body">
+    {% if trade.comments %}
+      {% for c in trade.comments %}
+        <div class="mb-3 pb-3" style="border-bottom:1px solid #21262d;">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                  style="width:24px;height:24px;background:#21262d;font-size:.65rem;font-weight:600;">{{ c.user.display_name[0]|upper }}</span>
+            <strong style="font-size:.85rem;">{{ c.user.display_name }}</strong>
+            <small style="color:#484f58;">{{ c.created_at.strftime('%d %b %H:%M') }}</small>
+          </div>
+          <p class="mb-0 ms-4" style="font-size:.85rem;">{{ c.comment }}</p>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-secondary mb-3" style="font-size:.85rem;">No comments yet.</p>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('trades.trade_comment', league_id=league.id, trade_id=trade.id) }}" class="d-flex gap-2">
+      <input type="text" class="form-control form-control-sm" name="comment" placeholder="Add a comment..." required>
+      <button type="submit" class="btn btn-outline-primary btn-sm" style="white-space:nowrap;">Send</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

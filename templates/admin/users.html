@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+{% block title %}Users — Admin — Keeper League{% endblock %}
+{% block admin_content %}
+<div class="section-header mb-3">
+  <h3 class="fw-bold">Users</h3>
+  <span class="badge bg-secondary">{{ users|length }}</span>
+</div>
+
+<div class="card" style="background:#161b22;border:1px solid #30363d;">
+  <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
+    <input type="text" id="userSearch" class="form-control form-control-sm" placeholder="Search users..."
+           style="max-width:300px;background:#0d1117;border-color:#30363d;color:#c9d1d9;font-size:.8rem;">
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-dark mb-0" style="font-size:.8rem;" id="usersTable">
+        <thead>
+          <tr style="color:#8b949e;">
+            <th>Username</th><th>Display Name</th><th>Email</th><th>Leagues</th><th>Teams</th><th>Joined</th><th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="fw-semibold">{{ u.username }}</td>
+            <td>{{ u.display_name or '—' }}</td>
+            <td style="color:#8b949e;">{{ u.email }}</td>
+            <td>
+              {% for lg in u.leagues %}
+                <span class="badge bg-dark" style="font-size:.65rem;">{{ lg.name }}</span>
+              {% endfor %}
+              {% if not u.leagues %}—{% endif %}
+            </td>
+            <td>{{ u.team_count }}</td>
+            <td style="color:#8b949e;">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+            <td>
+              {% if u.is_admin %}
+                <span class="badge" style="background:rgba(210,168,255,.15);color:#d2a8ff;">Admin</span>
+              {% else %}
+                <span style="color:#8b949e;">User</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('userSearch').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#usersTable tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}

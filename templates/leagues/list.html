@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}My Leagues — Keeper League{% endblock %}
+{% block content %}
+<div class="section-header">
+  <div>
+    <h3>My Leagues</h3>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#joinLeagueModal">
+      <i class="bi bi-box-arrow-in-right me-1"></i>Join League
+    </button>
+    <a href="{{ url_for('leagues.league_create') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>Create League
+    </a>
+  </div>
+</div>
+
+{% if leagues %}
+  <div class="row g-3">
+    {% for lg in leagues %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('leagues.dashboard', league_id=lg.id) }}" class="text-decoration-none">
+          <div class="card h-100" style="transition: border-color .15s, transform .15s; cursor: pointer;">
+            <div class="card-body p-4">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="d-inline-flex align-items-center justify-content-center rounded"
+                     style="width:40px;height:40px;background:linear-gradient(135deg,#238636,#1f6feb);font-weight:700;color:#fff;border-radius:10px !important;">
+                  {{ lg.name[0]|upper }}
+                </div>
+                <span class="status-pill status-{{ lg.status }}">{{ lg.status }}</span>
+              </div>
+              <h5 class="fw-bold mb-1" style="color:#c9d1d9;">{{ lg.name }}</h5>
+              <div class="d-flex gap-3 mb-3" style="font-size:.8rem;color:#8b949e;">
+                <span><i class="bi bi-calendar3 me-1"></i>{{ lg.season_year }}</span>
+                <span><i class="bi bi-people me-1"></i>{{ lg.teams|length }}/{{ lg.num_teams }}</span>
+                <span>{{ SCORING_TYPE_LABELS.get(lg.scoring_type, lg.scoring_type) }}</span>
+              </div>
+              {% if lg.commissioner_id == current_user.id %}
+                <span class="badge" style="background:rgba(31,111,235,.15);color:#58a6ff;font-size:.7rem;">Commissioner</span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <i class="bi bi-trophy" style="font-size:1.5rem;"></i>
+    </div>
+    <h4>No leagues yet</h4>
+    <p>Create your first league to start drafting, trading, and competing with your mates.</p>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#joinLeagueModal">
+        <i class="bi bi-box-arrow-in-right me-1"></i>Join League
+      </button>
+      <a href="{{ url_for('leagues.league_create') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Create League
+      </a>
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}

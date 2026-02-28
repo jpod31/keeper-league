@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Log In — Keeper League{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card text-center">
+    <div class="auth-logo">KL</div>
+    <h3 class="fw-bold mb-1">Welcome back</h3>
+    <p class="text-secondary mb-4" style="font-size:.9rem;">Sign in to your Keeper League account</p>
+    <form method="POST" class="text-start">
+      <div class="mb-3">
+        <label for="username" class="form-label">Username or Email</label>
+        <input type="text" class="form-control{% if errors.get('login') %} is-invalid{% endif %}"
+               id="username" name="username" required autofocus
+               placeholder="Enter your username or email"
+               value="{{ form.get('username', '') }}">
+        {% if errors.get('login') %}
+          <div class="invalid-feedback">{{ errors.login }}</div>
+        {% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control{% if errors.get('password') %} is-invalid{% endif %}"
+               id="password" name="password" required
+               placeholder="Enter your password">
+        {% if errors.get('password') %}
+          <div class="invalid-feedback">{{ errors.password }}</div>
+        {% endif %}
+      </div>
+      <div class="form-check mb-4">
+        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+        <label class="form-check-label" for="remember" style="font-size:.8rem;color:#8b949e;">Remember me</label>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Sign In</button>
+    </form>
+    <p class="text-center mt-4 mb-0" style="font-size:.85rem;color:#8b949e;">
+      Don't have an account? <a href="{{ url_for('auth.register') }}" style="color:#58a6ff;text-decoration:none;">Create one</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

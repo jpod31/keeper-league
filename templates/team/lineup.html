@@ -1,0 +1,178 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'team' %}
+{% block title %}Round {{ afl_round }} Lineup — {{ team.name }}{% endblock %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">{{ team.name }}</a> / Lineup</div>
+  <div class="d-flex justify-content-between align-items-start">
+    <div class="d-flex align-items-center gap-3">
+      {% if afl_round > 1 %}
+        <a href="{{ url_for('team.lineup', league_id=league.id, team_id=team.id, afl_round=afl_round-1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i></a>
+      {% endif %}
+      <div>
+        <h2 class="mb-0">Round {{ afl_round }} Lineup</h2>
+        {% if lineup.is_locked %}<span class="status-pill" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.7rem;">Locked</span>{% endif %}
+      </div>
+      {% if afl_round < max_round %}
+        <a href="{{ url_for('team.lineup', league_id=league.id, team_id=team.id, afl_round=afl_round+1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-right"></i></a>
+      {% endif %}
+    </div>
+    <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-people me-1"></i>Squad</a>
+  </div>
+</div>
+
+{% if bye_players %}
+  <div class="alert" style="background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.2);border-radius:10px;font-size:.85rem;">
+    <i class="bi bi-exclamation-triangle me-1" style="color:#d29922;"></i>
+    <strong style="color:#d29922;">Bye players:</strong>
+    {% for p in bye_players %}{{ p.name }} ({{ p.afl_team }}){% if not loop.last %}, {% endif %}{% endfor %}
+  </div>
+{% endif %}
+
+{% if locked_player_ids %}
+  <div class="alert" style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:10px;font-size:.85rem;">
+    <i class="bi bi-lock-fill me-1" style="color:#f85149;"></i>
+    <strong style="color:#f85149;">Rolling lockout:</strong>
+    Players whose AFL game has started are locked in place.
+  </div>
+{% endif %}
+
+{% if is_owner and not lineup.is_locked %}
+  <form method="POST" id="lineup-form">
+    <input type="hidden" name="action" value="save">
+    <div class="row g-3">
+      {% for slot_config in position_slots if not slot_config.is_bench %}
+        <div class="col-md-6 col-lg-3">
+          <div class="card">
+            <div class="card-header" style="padding:.6rem 1rem;">
+              <h6 class="mb-0 fw-bold" style="font-size:.8rem;">
+                <span class="pos-badge pos-{{ slot_config.position_code }} me-1">{{ slot_config.position_code }}</span>
+                <span class="text-secondary fw-normal">({{ slot_config.count }})</span>
+              </h6>
+            </div>
+            <div class="card-body p-2">
+              {% set filled = lineup.slots|selectattr('position_code', 'equalto', slot_config.position_code)|list %}
+              {% for i in range(slot_config.count) %}
+                {% set existing = filled[i] if i < filled|length else None %}
+                {% set is_locked_player = existing and existing.player_id in locked_player_ids %}
+                <div class="mb-1 d-flex align-items-center gap-1">
+                  {% if is_locked_player %}
+                    <i class="bi bi-lock-fill" style="color:#f85149;font-size:.7rem;flex-shrink:0;" title="Game started — locked"></i>
+                  {% endif %}
+                  <select name="player_id" class="form-select form-select-sm" style="font-size:.78rem;" {{ 'disabled' if is_locked_player }}>
+                    <option value="">-- Empty --</option>
+                    {% for p in all_players %}
+                      <option value="{{ p.id }}" {{ 'selected' if existing and existing.player_id == p.id else '' }}>
+                        {{ p.name }} ({{ p.position }}) &mdash; {{ '%.0f'|format(p.sc_avg) if p.sc_avg else '?' }}
+                        {% if player_lock_times.get(p.id) %} [{{ player_lock_times[p.id] }}]{% endif %}
+                      </option>
+                    {% endfor %}
+                  </select>
+                  {% if is_locked_player %}
+                    <input type="hidden" name="player_id" value="{{ existing.player_id }}">
+                  {% endif %}
+                  <input type="hidden" name="position_code" value="{{ slot_config.position_code }}">
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="row g-3 mt-2">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header" style="padding:.6rem 1rem;">
+            <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-star me-1" style="color:#d29922;"></i>Captain & Vice-Captain</h6>
+          </div>
+          <div class="card-body">
+            {% set cap = lineup.slots|selectattr('is_captain')|first %}
+            {% set vc = lineup.slots|selectattr('is_vice_captain')|first %}
+            <div class="mb-3">
+              <label class="form-label">Captain <span class="text-secondary" style="font-size:.7rem;">(score doubled)</span></label>
+              <select name="captain_id" class="form-select form-select-sm">
+                <option value="">-- None --</option>
+                {% for p in all_players %}
+                  <option value="{{ p.id }}" {{ 'selected' if cap and cap.player_id == p.id else '' }}>{{ p.name }} ({{ '%.0f'|format(p.sc_avg) if p.sc_avg else '?' }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Vice-Captain <span class="text-secondary" style="font-size:.7rem;">(backup if captain DNP)</span></label>
+              <select name="vc_id" class="form-select form-select-sm">
+                <option value="">-- None --</option>
+                {% for p in all_players %}
+                  <option value="{{ p.id }}" {{ 'selected' if vc and vc.player_id == p.id else '' }}>{{ p.name }} ({{ '%.0f'|format(p.sc_avg) if p.sc_avg else '?' }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header" style="padding:.6rem 1rem;">
+            <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-bench me-1" style="color:#8b949e;"></i>Bench</h6>
+          </div>
+          <div class="card-body scroll-body" style="max-height:200px;">
+            {% set bench_players = lineup.slots|selectattr('position_code', 'equalto', 'BENCH')|list %}
+            {% for p in all_players %}
+              {% set on_bench = bench_players|selectattr('player_id', 'equalto', p.id)|list %}
+              <div class="form-check mb-1 d-flex align-items-center gap-1">
+                {% if p.id in locked_player_ids %}
+                  <i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;" title="Game started — locked"></i>
+                {% endif %}
+                <input type="checkbox" class="form-check-input bench-check" value="{{ p.id }}" {{ 'checked' if on_bench else '' }} {{ 'disabled' if p.id in locked_player_ids }}>
+                <label class="form-check-label" style="font-size:.8rem;">
+                  {{ p.name }} <span class="text-secondary">({{ p.position }})</span>
+                  {% if player_lock_times.get(p.id) %}
+                    <span style="font-size:.65rem;color:{% if player_lock_times[p.id] == 'Locked' %}#f85149{% else %}#8b949e{% endif %};">{{ player_lock_times[p.id] }}</span>
+                  {% endif %}
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Lineup</button>
+      <button type="submit" name="action" value="auto_fill" class="btn btn-outline-primary"><i class="bi bi-magic me-1"></i>Auto-Fill</button>
+      <button type="submit" name="action" value="lock" class="btn btn-outline-secondary" style="border-color:#f85149;color:#f85149;"
+              onclick="return confirm('Lock this lineup? This cannot be undone.')"><i class="bi bi-lock me-1"></i>Lock</button>
+    </div>
+  </form>
+{% else %}
+  <div class="row g-3">
+    {% for slot_config in position_slots if not slot_config.is_bench %}
+      <div class="col-md-6 col-lg-3">
+        <div class="card">
+          <div class="card-header" style="padding:.6rem 1rem;">
+            <h6 class="mb-0 fw-bold" style="font-size:.8rem;">
+              <span class="pos-badge pos-{{ slot_config.position_code }}">{{ slot_config.position_code }}</span>
+            </h6>
+          </div>
+          <div class="card-body p-2">
+            {% set filled = lineup.slots|selectattr('position_code', 'equalto', slot_config.position_code)|list %}
+            {% for slot in filled %}
+              <div class="mb-1 d-flex align-items-center gap-2" style="font-size:.85rem;">
+                {% if slot.player_id in locked_player_ids %}
+                  <i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i>
+                {% endif %}
+                <span>{{ slot.player_name or 'Empty' }}</span>
+                {% if slot.is_captain %}<span class="badge" style="background:#d29922;font-size:.6rem;">C</span>{% endif %}
+                {% if slot.is_vice_captain %}<span class="badge" style="background:#58a6ff;font-size:.6rem;">VC</span>{% endif %}
+                {% if player_lock_times.get(slot.player_id) %}
+                  <span style="font-size:.6rem;color:{% if player_lock_times[slot.player_id] == 'Locked' %}#f85149{% else %}#8b949e{% endif %};">{{ player_lock_times[slot.player_id] }}</span>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

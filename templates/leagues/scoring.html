@@ -1,0 +1,228 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'settings' %}
+{% block title %}Scoring — {{ league.name }}{% endblock %}
+{% block league_content %}
+<style>
+  .scoring-card { cursor:pointer; border:2px solid #30363d; border-radius:8px; padding:1.25rem; transition:all .15s; }
+  .scoring-card:hover { border-color:#58a6ff; }
+  .scoring-card.active { border-color:#58a6ff; background:#161b2280; }
+  .scoring-card .card-icon { font-size:1.5rem; margin-bottom:.5rem; }
+  .scoring-card h6 { margin:0; font-size:.9rem; font-weight:600; }
+  .scoring-card p { margin:0; font-size:.75rem; color:#8b949e; }
+  .stat-category-header { font-size:.75rem; font-weight:600; color:#58a6ff; text-transform:uppercase; letter-spacing:.5px; margin-top:1rem; margin-bottom:.5rem; border-bottom:1px solid #21262d; padding-bottom:.25rem; }
+  .stat-category-header:first-child { margin-top:0; }
+  .preset-btn { font-size:.75rem; padding:4px 10px; }
+</style>
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="page-header">
+      <div class="page-breadcrumb"><a href="{{ url_for('leagues.league_list') }}">My Leagues</a> / <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Scoring</div>
+      <h2>Scoring Settings</h2>
+    </div>
+
+    <form method="POST">
+      {# ── Scoring Type Cards ── #}
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="scoring-card {{ 'active' if league.scoring_type == 'supercoach' }}" onclick="selectScoring('supercoach')">
+            <div class="card-icon" style="color:#3fb950;"><i class="bi bi-shield-check"></i></div>
+            <h6>SuperCoach</h6>
+            <p>Official SC scores</p>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="scoring-card {{ 'active' if league.scoring_type == 'afl_fantasy' }}" onclick="selectScoring('afl_fantasy')">
+            <div class="card-icon" style="color:#58a6ff;"><i class="bi bi-star"></i></div>
+            <h6>AFL Fantasy</h6>
+            <p>Official AF scores</p>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="scoring-card {{ 'active' if league.scoring_type == 'custom' }}" onclick="selectScoring('custom')">
+            <div class="card-icon" style="color:#f0883e;"><i class="bi bi-sliders"></i></div>
+            <h6>Custom</h6>
+            <p>Build your own formula</p>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="scoring-card {{ 'active' if league.scoring_type == 'hybrid' }}" onclick="selectScoring('hybrid')">
+            <div class="card-icon" style="color:#bc8cff;"><i class="bi bi-layers"></i></div>
+            <h6>Hybrid</h6>
+            <p>Official base + custom bonuses</p>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" name="scoring_type" id="scoring_type" value="{{ league.scoring_type }}">
+
+      {# ── SuperCoach / AFL Fantasy info ── #}
+      <div id="info-supercoach" class="card mb-4" style="{{ '' if league.scoring_type == 'supercoach' else 'display:none' }}">
+        <div class="card-body">
+          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-shield-check me-2" style="color:#3fb950;"></i>SuperCoach Scoring</h5>
+          <p class="text-secondary mb-0" style="font-size:.8rem;">Uses official SuperCoach scores directly from the AFL. No configuration needed — scores are pulled automatically each round.</p>
+        </div>
+      </div>
+      <div id="info-afl_fantasy" class="card mb-4" style="{{ '' if league.scoring_type == 'afl_fantasy' else 'display:none' }}">
+        <div class="card-body">
+          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-star me-2" style="color:#58a6ff;"></i>AFL Fantasy Scoring</h5>
+          <p class="text-secondary mb-0" style="font-size:.8rem;">Uses official AFL Fantasy scores. No configuration needed — scores are stored alongside SuperCoach data.</p>
+        </div>
+      </div>
+
+      {# ── Hybrid base selector ── #}
+      <div id="hybrid-base-section" class="card mb-4" style="{{ '' if league.scoring_type == 'hybrid' else 'display:none' }}">
+        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-layers me-2" style="color:#bc8cff;"></i>Hybrid Base Score</h5></div>
+        <div class="card-body">
+          <p class="text-secondary mb-3" style="font-size:.8rem;">Select the official score source as the base. Custom bonus rules are added on top.</p>
+          <div class="d-flex gap-3">
+            <div class="form-check">
+              <input type="radio" class="form-check-input" id="hybrid_sc" name="hybrid_base" value="supercoach"
+                     {{ 'checked' if not league.hybrid_base or league.hybrid_base == 'supercoach' }}>
+              <label class="form-check-label" for="hybrid_sc">SuperCoach</label>
+            </div>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" id="hybrid_af" name="hybrid_base" value="afl_fantasy"
+                     {{ 'checked' if league.hybrid_base == 'afl_fantasy' }}>
+              <label class="form-check-label" for="hybrid_af">AFL Fantasy</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Custom / Hybrid Rules Builder ── #}
+      <div id="custom-rules" class="card mb-4" style="{{ '' if league.scoring_type in ('custom', 'hybrid') else 'display:none' }}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+            <span id="rules-title">{{ 'Bonus Rules' if league.scoring_type == 'hybrid' else 'Custom Scoring Rules' }}</span>
+          </h5>
+          <div class="d-flex gap-2">
+            {% for key, preset in scoring_presets.items() %}
+              <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadPreset('{{ key }}')">{{ preset.label }}</button>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card-body" id="rules-container">
+          {% set rules_to_show = scoring_rules if scoring_rules else (default_scoring if league.scoring_type == 'custom' else {}) %}
+          {# Group existing rules by category for display #}
+          {% for cat_name, cat_stats in stat_categories.items() %}
+            {% set ns = namespace(has_rules=false) %}
+            {% for stat in cat_stats %}
+              {% if stat in rules_to_show %}{% set ns.has_rules = true %}{% endif %}
+            {% endfor %}
+            {% if ns.has_rules %}
+              <div class="stat-category-header">{{ cat_name }}</div>
+            {% endif %}
+            {% for stat in cat_stats %}
+              {% if stat in rules_to_show %}
+                <div class="row g-2 mb-2 align-items-center rule-row">
+                  <div class="col-6">
+                    <select class="form-select form-select-sm" name="stat_column">
+                      {% for s in available_stats %}
+                        <option value="{{ s }}" {{ 'selected' if s == stat }}>{{ s.replace('_', ' ')|title }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-4">
+                    <input type="number" class="form-control form-control-sm" name="points_per" value="{{ rules_to_show[stat] }}" step="0.5">
+                  </div>
+                  <div class="col-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;"
+                            onclick="this.closest('.rule-row').remove()"><i class="bi bi-x-lg"></i></button>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+          {# Any rules not in categories (shouldn't happen but safety) #}
+          {% for stat, pts in rules_to_show.items() %}
+            {% set ns = namespace(found=false) %}
+            {% for cat_stats in stat_categories.values() %}
+              {% if stat in cat_stats %}{% set ns.found = true %}{% endif %}
+            {% endfor %}
+            {% if not ns.found %}
+              <div class="row g-2 mb-2 align-items-center rule-row">
+                <div class="col-6">
+                  <select class="form-select form-select-sm" name="stat_column">
+                    {% for s in available_stats %}
+                      <option value="{{ s }}" {{ 'selected' if s == stat }}>{{ s.replace('_', ' ')|title }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-4">
+                  <input type="number" class="form-control form-control-sm" name="points_per" value="{{ pts }}" step="0.5">
+                </div>
+                <div class="col-2">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;"
+                          onclick="this.closest('.rule-row').remove()"><i class="bi bi-x-lg"></i></button>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="card-footer" style="border-top-color:#30363d;">
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addRule()" style="font-size:.8rem;">
+            <i class="bi bi-plus-lg me-1"></i>Add Rule
+          </button>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Scoring</button>
+        <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const STATS = {{ available_stats|tojson }};
+const DEFAULTS = {{ default_scoring|tojson }};
+const PRESETS = {{ scoring_presets|tojson }};
+const STAT_CATEGORIES = {{ stat_categories|tojson }};
+
+function selectScoring(type) {
+  document.getElementById('scoring_type').value = type;
+  // Update card styling
+  document.querySelectorAll('.scoring-card').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  // Toggle visibility
+  ['supercoach','afl_fantasy','custom','hybrid'].forEach(t => {
+    const info = document.getElementById('info-' + t);
+    if (info) info.style.display = (t === type) ? '' : 'none';
+  });
+  document.getElementById('hybrid-base-section').style.display = (type === 'hybrid') ? '' : 'none';
+  document.getElementById('custom-rules').style.display = (type === 'custom' || type === 'hybrid') ? '' : 'none';
+  document.getElementById('rules-title').textContent = (type === 'hybrid') ? 'Bonus Rules' : 'Custom Scoring Rules';
+}
+
+function addRule() {
+  const container = document.getElementById('rules-container');
+  const opts = STATS.map(s => `<option value="${s}">${s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>`).join('');
+  container.insertAdjacentHTML('beforeend', `
+    <div class="row g-2 mb-2 align-items-center rule-row">
+      <div class="col-6"><select class="form-select form-select-sm" name="stat_column">${opts}</select></div>
+      <div class="col-4"><input type="number" class="form-control form-control-sm" name="points_per" value="1" step="0.5"></div>
+      <div class="col-2"><button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;" onclick="this.closest('.rule-row').remove()"><i class="bi bi-x-lg"></i></button></div>
+    </div>
+  `);
+}
+
+function loadPreset(key) {
+  const preset = PRESETS[key];
+  if (!preset) return;
+  const container = document.getElementById('rules-container');
+  container.innerHTML = '';
+  for (const [stat, pts] of Object.entries(preset.rules)) {
+    const opts = STATS.map(s => `<option value="${s}" ${s === stat ? 'selected' : ''}>${s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>`).join('');
+    container.insertAdjacentHTML('beforeend', `
+      <div class="row g-2 mb-2 align-items-center rule-row">
+        <div class="col-6"><select class="form-select form-select-sm" name="stat_column">${opts}</select></div>
+        <div class="col-4"><input type="number" class="form-control form-control-sm" name="points_per" value="${pts}" step="0.5"></div>
+        <div class="col-2"><button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;" onclick="this.closest('.rule-row').remove()"><i class="bi bi-x-lg"></i></button></div>
+      </div>
+    `);
+  }
+}
+</script>
+{% endblock %}
