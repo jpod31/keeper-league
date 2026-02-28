@@ -17,31 +17,57 @@
       </div>
     </div>
 
-    {# ══════════════════════════════════════════════════════════════
-       SECTION CARDS — always visible, stacked vertically
-       ══════════════════════════════════════════════════════════════ #}
+    {# ── ACTIVE DELIST ALERT — top of page when delist is open ── #}
+    {% if delist_period and delist_period.status == 'open' and user_team and current_phase in ('midseason', 'offseason') %}
+      <div class="lm-section mb-3" id="delist-alert">
+        <div class="lm-section-header lm-header-delist" style="cursor:default;">
+          <div class="d-flex align-items-center gap-2">
+            <div class="lm-icon lm-icon-delist"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <div>
+              <h5 class="mb-0 fw-bold text-white">Delist Period Open</h5>
+              <span style="font-size:.8rem;color:rgba(255,255,255,.7);">
+                Your delists: <strong style="color:{% if team_delist_count >= (delist_period.min_delists or 3) %}#56d364{% else %}#f0883e{% endif %};">{{ team_delist_count }}</strong> / {{ delist_period.min_delists or 3 }}
+                {% if team_delist_count < (delist_period.min_delists or 3) %}
+                  — {{ (delist_period.min_delists or 3) - team_delist_count }} more needed
+                {% else %}
+                  <i class="bi bi-check-circle-fill ms-1" style="color:#56d364;"></i>
+                {% endif %}
+              </span>
+            </div>
+          </div>
+          <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-danger btn-sm">
+            <i class="bi bi-person-dash me-1"></i>Manage Delists
+          </a>
+        </div>
+      </div>
+    {% endif %}
 
-    {# ── PRE-SEASON ── #}
-    {% set ps_status = 'completed' if phases|selectattr('id','equalto','preseason')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','preseason')|map(attribute='status')|first == 'active' else 'future') %}
-    <div class="lm-section {% if ps_status == 'future' %}lm-future{% endif %} {% if ps_status == 'completed' %}lm-collapsed{% endif %}" id="section-preseason">
-      <div class="lm-section-header sh-header-preseason" onclick="toggleSection('preseason')">
-        <div class="d-flex align-items-center gap-2">
-          <div class="sh-icon-circle sh-icon-preseason"><i class="bi bi-gear"></i></div>
-          <h5 class="mb-0 fw-bold">Pre-Season</h5>
-          {% if ps_status == 'completed' %}
-            <i class="bi bi-check-circle-fill lm-check"></i>
+    {# ══════════════════════════════════════════════════════════════
+       1. PRE-SEASON SETUP
+       ══════════════════════════════════════════════════════════════ #}
+    {% set setup_done = (league.teams|length >= 2)|int + (1 if league.scoring_type else 0) + (1 if initial_draft else 0) %}
+    {% set ps_complete = setup_done == 3 and initial_draft and initial_draft.status == 'completed' %}
+    <div class="lm-section {% if ps_complete %}lm-collapsed{% endif %}" id="section-setup">
+      <div class="lm-section-header lm-header-setup" onclick="toggleSection('setup')">
+        <div class="d-flex align-items-center gap-3">
+          <div class="lm-icon lm-icon-setup"><i class="bi bi-gear-fill"></i></div>
+          <div>
+            <h5 class="mb-0 fw-bold text-white">Pre-Season Setup</h5>
+            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">Teams, scoring &amp; draft configuration</span>
+          </div>
+          {% if ps_complete %}
+            <i class="bi bi-check-circle-fill lm-check ms-1"></i>
           {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2">
-          {% set setup_done = (league.teams|length >= 2)|int + (1 if league.scoring_type else 0) + (1 if initial_draft else 0) %}
-          <span class="text-secondary" style="font-size:.75rem;">Setup {{ setup_done }}/3</span>
+          <span class="badge" style="background:{% if setup_done == 3 %}rgba(63,185,80,.3);color:#56d364{% else %}rgba(210,153,34,.3);color:#f0883e{% endif %};font-size:.7rem;">{{ setup_done }}/3</span>
           <i class="bi bi-chevron-down lm-chevron"></i>
         </div>
       </div>
       <div class="lm-section-body">
-        <div class="sh-step">
+        <div class="lm-step">
           <div class="d-flex align-items-center gap-3">
-            <div class="sh-step-icon {% if league.teams|length >= 2 %}sh-step-done{% else %}sh-step-pending{% endif %}">
+            <div class="lm-step-icon {% if league.teams|length >= 2 %}lm-step-done{% else %}lm-step-pending{% endif %}">
               {% if league.teams|length >= 2 %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-people"></i>{% endif %}
             </div>
             <div>
@@ -50,9 +76,9 @@
             </div>
           </div>
         </div>
-        <div class="sh-step">
+        <div class="lm-step">
           <div class="d-flex align-items-center gap-3">
-            <div class="sh-step-icon {% if league.scoring_type %}sh-step-done{% else %}sh-step-pending{% endif %}">
+            <div class="lm-step-icon {% if league.scoring_type %}lm-step-done{% else %}lm-step-pending{% endif %}">
               {% if league.scoring_type %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-sliders"></i>{% endif %}
             </div>
             <div>
@@ -61,10 +87,10 @@
             </div>
           </div>
         </div>
-        <div class="sh-step">
+        <div class="lm-step">
           <div class="d-flex justify-content-between align-items-start">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon {% if initial_draft %}sh-step-done{% else %}sh-step-pending{% endif %}">
+              <div class="lm-step-icon {% if initial_draft %}lm-step-done{% else %}lm-step-pending{% endif %}">
                 {% if initial_draft %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-list-check"></i>{% endif %}
               </div>
               <div>
@@ -86,7 +112,7 @@
             <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
               <i class="bi bi-gear me-1"></i>League Settings
             </a>
-            <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm sh-btn-draft">
+            <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm lm-btn-draft">
               <i class="bi bi-list-check me-1"></i>Draft Setup
             </a>
           </div>
@@ -94,53 +120,58 @@
       </div>
     </div>
 
-    {# ── DRAFT ── #}
-    {% set draft_status = 'completed' if phases|selectattr('id','equalto','draft')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','draft')|map(attribute='status')|first == 'active' else 'future') %}
-    <div class="lm-section {% if draft_status == 'future' %}lm-future{% endif %} {% if draft_status == 'completed' %}lm-collapsed{% endif %}" id="section-draft">
-      <div class="lm-section-header sh-header-draft" onclick="toggleSection('draft')">
-        <div class="d-flex align-items-center gap-2">
-          <div class="sh-icon-circle sh-icon-draft"><i class="bi bi-list-check"></i></div>
-          <h5 class="mb-0 fw-bold">Draft</h5>
-          {% if draft_status == 'completed' %}
-            <i class="bi bi-check-circle-fill lm-check"></i>
+    {# ══════════════════════════════════════════════════════════════
+       2. DRAFT
+       ══════════════════════════════════════════════════════════════ #}
+    {% set draft_done = initial_draft and initial_draft.status == 'completed' %}
+    <div class="lm-section {% if draft_done %}lm-collapsed{% endif %}" id="section-draft">
+      <div class="lm-section-header lm-header-draft" onclick="toggleSection('draft')">
+        <div class="d-flex align-items-center gap-3">
+          <div class="lm-icon lm-icon-draft"><i class="bi bi-list-check"></i></div>
+          <div>
+            <h5 class="mb-0 fw-bold text-white">Draft</h5>
+            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">
+              {% if initial_draft and initial_draft.status == 'completed' %}
+                Completed &middot; {{ initial_draft.total_rounds }} rounds
+              {% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}
+                Live &middot; Round {{ initial_draft.current_round }}, Pick {{ initial_draft.current_pick }}
+              {% elif initial_draft and initial_draft.status == 'scheduled' %}
+                Scheduled &mdash; ready to start
+              {% else %}
+                Not yet created
+              {% endif %}
+            </span>
+          </div>
+          {% if draft_done %}
+            <i class="bi bi-check-circle-fill lm-check ms-1"></i>
           {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2">
           {% if initial_draft and initial_draft.status == 'scheduled' and initial_draft.scheduled_start %}
-            <div class="lm-timer" id="timer-draft">
+            <div class="lm-timer">
               <i class="bi bi-clock"></i>
-              <span class="lm-timer-label">Starts in</span>
+              <span>Starts in</span>
               <span class="lm-timer-value" data-target="{{ initial_draft.scheduled_start.isoformat() }}"></span>
             </div>
-          {% endif %}
-          {% if not initial_draft or initial_draft.status != 'completed' %}
-            <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm sh-btn-draft" onclick="event.stopPropagation();">
-              <i class="bi bi-box-arrow-up-right me-1"></i>Draft Setup
-            </a>
           {% endif %}
           <i class="bi bi-chevron-down lm-chevron"></i>
         </div>
       </div>
       <div class="lm-section-body">
-        {# Initial Draft card #}
-        <div class="sh-card sh-card-draft">
+        {# Initial Draft #}
+        <div class="lm-card lm-card-draft">
           <div class="d-flex justify-content-between align-items-start">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon {% if initial_draft and initial_draft.status == 'completed' %}sh-step-done{% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}sh-step-live{% elif initial_draft and initial_draft.status == 'scheduled' %}sh-step-ready{% else %}sh-step-pending{% endif %}">
-                {% if initial_draft and initial_draft.status == 'completed' %}
-                  <i class="bi bi-check-lg"></i>
-                {% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}
-                  <i class="bi bi-broadcast"></i>
-                {% elif initial_draft and initial_draft.status == 'scheduled' %}
-                  <i class="bi bi-calendar-event"></i>
-                {% else %}
-                  <i class="bi bi-plus-circle"></i>
-                {% endif %}
+              <div class="lm-step-icon {% if draft_done %}lm-step-done{% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}lm-step-live{% elif initial_draft and initial_draft.status == 'scheduled' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
+                {% if draft_done %}<i class="bi bi-check-lg"></i>
+                {% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}<i class="bi bi-broadcast"></i>
+                {% elif initial_draft and initial_draft.status == 'scheduled' %}<i class="bi bi-calendar-event"></i>
+                {% else %}<i class="bi bi-plus-circle"></i>{% endif %}
               </div>
               <div>
-                <h5 class="fw-bold mb-0" style="font-size:.95rem;">Initial Draft</h5>
+                <h6 class="fw-bold mb-0" style="font-size:.95rem;">Initial Draft</h6>
                 <span class="text-secondary" style="font-size:.8rem;">
-                  {% if initial_draft and initial_draft.status == 'completed' %}
+                  {% if draft_done %}
                     {{ initial_draft.total_rounds }} rounds &middot; {{ league.teams|length }} teams
                     {% if initial_draft.completed_at %} &middot; {{ initial_draft.completed_at.strftime('%d %b %Y') }}{% endif %}
                   {% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}
@@ -159,10 +190,10 @@
                   <i class="bi bi-door-open me-1"></i>Enter Draft Room
                 </a>
               {% elif initial_draft and initial_draft.status == 'scheduled' %}
-                <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn sh-btn-draft btn-sm">
+                <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm">
                   <i class="bi bi-gear me-1"></i>Draft Setup
                 </a>
-              {% elif not initial_draft %}
+              {% elif not initial_draft and is_commissioner %}
                 <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-primary btn-sm">
                   <i class="bi bi-plus-lg me-1"></i>Create Draft
                 </a>
@@ -170,23 +201,23 @@
             </div>
           </div>
           {% if initial_draft and initial_draft.status == 'scheduled' and initial_draft.scheduled_start %}
-            <div class="sh-countdown-box mt-3">
+            <div class="lm-info-box mt-3">
               <div class="d-flex align-items-center gap-2 mb-1">
-                <i class="bi bi-clock-history" style="color:#d29922;"></i>
+                <i class="bi bi-clock-history" style="color:#f0883e;"></i>
                 <span style="font-size:.85rem;color:#c9d1d9;">
                   {{ initial_draft.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') }}
                 </span>
               </div>
-              <div id="initial-countdown" class="sh-countdown-timer"></div>
+              <div id="initial-countdown" class="lm-countdown"></div>
             </div>
           {% endif %}
         </div>
 
-        {# ── Mock Draft ── #}
-        <div class="lm-mock-card">
+        {# Mock Draft #}
+        <div class="lm-card lm-card-mock mt-3">
           <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon sh-step-ready">
+              <div class="lm-step-icon lm-step-ready">
                 <i class="bi bi-controller"></i>
               </div>
               <div>
@@ -195,7 +226,7 @@
               </div>
             </div>
             {% if mock_draft and mock_draft.status in ('in_progress', 'paused') %}
-              <a href="{{ url_for('draft_live.mock_draft_room', league_id=league.id) }}" class="btn sh-btn-draft btn-sm">
+              <a href="{{ url_for('draft_live.mock_draft_room', league_id=league.id) }}" class="btn lm-btn-draft btn-sm">
                 <i class="bi bi-play-fill me-1"></i>Resume Mock
               </a>
             {% else %}
@@ -205,78 +236,6 @@
                   <i class="bi bi-controller me-1"></i>Start Mock Draft
                 </button>
               </form>
-            {% endif %}
-          </div>
-        </div>
-
-        {# Mid-Season & Off-Season Draft cards #}
-        <div class="row g-3 mt-1">
-          <div class="col-md-6">
-            {% if season_cfg and season_cfg.mid_season_draft_enabled %}
-              <div class="sh-card sh-card-draft h-100">
-                <div class="d-flex align-items-center gap-3 mb-2">
-                  <div class="sh-step-icon {% if mid_draft_status == 'completed' %}sh-step-done{% elif mid_draft_status == 'active' %}sh-step-live{% elif mid_draft_status == 'pending' %}sh-step-ready{% else %}sh-step-pending{% endif %}">
-                    {% if mid_draft_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                    {% elif mid_draft_status == 'active' %}<i class="bi bi-broadcast"></i>
-                    {% else %}<i class="bi bi-calendar-event"></i>{% endif %}
-                  </div>
-                  <div>
-                    <h6 class="fw-bold mb-0" style="font-size:.9rem;">Mid-Season Draft</h6>
-                    <span class="text-secondary" style="font-size:.75rem;">
-                      {% if mid_draft_status == 'completed' %}Completed{% elif mid_draft_status == 'active' %}In progress{% elif mid_draft_status == 'pending' %}Ready to start{% else %}Upcoming{% endif %}
-                    </span>
-                  </div>
-                </div>
-                {% if mid_draft_status in ('pending', 'active') %}
-                  <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn sh-btn-draft btn-sm w-100 mt-auto">
-                    <i class="bi bi-list-check me-1"></i>Go to Draft
-                  </a>
-                {% endif %}
-              </div>
-            {% else %}
-              <div class="sh-card sh-card-disabled h-100">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="sh-step-icon sh-step-disabled"><i class="bi bi-x-lg"></i></div>
-                  <div>
-                    <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#484f58;">Mid-Season Draft</h6>
-                    <span style="font-size:.75rem;color:#484f58;">Disabled in league settings</span>
-                  </div>
-                </div>
-              </div>
-            {% endif %}
-          </div>
-          <div class="col-md-6">
-            {% if season_cfg and season_cfg.mid_season_draft_enabled %}
-              <div class="sh-card sh-card-draft h-100">
-                <div class="d-flex align-items-center gap-3 mb-2">
-                  <div class="sh-step-icon {% if off_draft_status == 'completed' %}sh-step-done{% elif off_draft_status == 'active' %}sh-step-live{% elif off_draft_status == 'pending' %}sh-step-ready{% else %}sh-step-pending{% endif %}">
-                    {% if off_draft_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                    {% elif off_draft_status == 'active' %}<i class="bi bi-broadcast"></i>
-                    {% else %}<i class="bi bi-calendar-event"></i>{% endif %}
-                  </div>
-                  <div>
-                    <h6 class="fw-bold mb-0" style="font-size:.9rem;">Off-Season Draft</h6>
-                    <span class="text-secondary" style="font-size:.75rem;">
-                      {% if off_draft_status == 'completed' %}Completed{% elif off_draft_status == 'active' %}In progress{% elif off_draft_status == 'pending' %}Ready to start{% else %}Upcoming{% endif %}
-                    </span>
-                  </div>
-                </div>
-                {% if off_draft_status in ('pending', 'active') %}
-                  <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn sh-btn-draft btn-sm w-100 mt-auto">
-                    <i class="bi bi-list-check me-1"></i>Go to Draft
-                  </a>
-                {% endif %}
-              </div>
-            {% else %}
-              <div class="sh-card sh-card-disabled h-100">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="sh-step-icon sh-step-disabled"><i class="bi bi-x-lg"></i></div>
-                  <div>
-                    <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#484f58;">Off-Season Draft</h6>
-                    <span style="font-size:.75rem;color:#484f58;">Disabled in league settings</span>
-                  </div>
-                </div>
-              </div>
             {% endif %}
           </div>
         </div>
@@ -298,139 +257,34 @@
       </div>
     </div>
 
-    {# ── REGULAR SEASON ── #}
-    {% set reg_status = 'completed' if phases|selectattr('id','equalto','regular')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','regular')|map(attribute='status')|first == 'active' else 'future') %}
-    <div class="lm-section {% if reg_status == 'future' %}lm-future{% endif %} {% if reg_status != 'active' %}lm-collapsed{% endif %}" id="section-regular">
-      <div class="lm-section-header sh-header-regular" onclick="toggleSection('regular')">
-        <div class="d-flex align-items-center gap-2">
-          <div class="sh-icon-circle sh-icon-regular"><i class="bi bi-trophy"></i></div>
-          <h5 class="mb-0 fw-bold">Regular Season</h5>
-          {% if reg_status == 'completed' %}
-            <i class="bi bi-check-circle-fill lm-check"></i>
-          {% endif %}
-          {% if current_round_num %}
-            <span class="badge" style="background:rgba(63,185,80,.2);color:#3fb950;font-size:.65rem;">ROUND {{ current_round_num }}</span>
-          {% endif %}
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-chevron-down lm-chevron"></i>
-        </div>
-      </div>
-      <div class="lm-section-body">
-        {# Standings snapshot #}
-        {% if standings %}
-          <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">Ladder</h6>
-          <div class="table-responsive">
-            <table class="table table-sm mb-0" style="font-size:.85rem;">
-              <thead>
-                <tr>
-                  <th style="width:30px;">#</th>
-                  <th>Team</th>
-                  <th class="text-center">W</th>
-                  <th class="text-center">L</th>
-                  <th class="text-center">D</th>
-                  <th class="text-center">Pts</th>
-                  <th class="text-end">%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for s in standings %}
-                  <tr{% if user_team and s.team_id == user_team.id %} style="background:rgba(88,166,255,.06);"{% endif %}>
-                    <td class="text-secondary">{{ loop.index }}</td>
-                    <td>
-                      {% if user_team and s.team_id == user_team.id %}<strong>{{ s.team.name }}</strong>{% else %}{{ s.team.name }}{% endif %}
-                    </td>
-                    <td class="text-center">{{ s.wins }}</td>
-                    <td class="text-center">{{ s.losses }}</td>
-                    <td class="text-center">{{ s.draws }}</td>
-                    <td class="text-center fw-bold">{{ s.ladder_points }}</td>
-                    <td class="text-end">{{ '%.1f'|format(s.percentage) if s.percentage else '—' }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+    {# ══════════════════════════════════════════════════════════════
+       3. MID-SEASON
+       ══════════════════════════════════════════════════════════════ #}
+    {% set mid_is_active = current_phase == 'midseason' %}
+    {% set mid_is_future = not mid_is_active and current_phase in ('pre_season', 'regular') %}
+    <div class="lm-section {% if mid_is_future %}lm-future{% endif %} {% if not mid_is_active %}lm-collapsed{% endif %}" id="section-mid">
+      <div class="lm-section-header lm-header-mid" onclick="toggleSection('mid')">
+        <div class="d-flex align-items-center gap-3">
+          <div class="lm-icon lm-icon-mid"><i class="bi bi-arrow-repeat"></i></div>
+          <div>
+            <h5 class="mb-0 fw-bold text-white">Mid-Season</h5>
+            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">Trades, delists &amp; mini-draft</span>
           </div>
-        {% else %}
-          <div class="text-center text-secondary py-4">
-            <i class="bi bi-trophy" style="font-size:2rem;opacity:.3;"></i>
-            <p class="mt-2 mb-0" style="font-size:.85rem;">No results yet — the season hasn't started or no rounds completed.</p>
-          </div>
-        {% endif %}
-
-        {# Trades quick summary #}
-        <div class="mt-4">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <div class="sh-icon-circle sh-icon-trades" style="width:28px;height:28px;font-size:.8rem;"><i class="bi bi-arrow-left-right"></i></div>
-            <h6 class="fw-bold mb-0" style="font-size:.85rem;">Trades</h6>
-            {% if league.trade_window_open %}
-              <span class="badge" style="background:rgba(63,185,80,.2);color:#3fb950;font-size:.6rem;">OPEN</span>
-            {% endif %}
-          </div>
-          <div class="row g-3">
-            <div class="col-md-4">
-              <div class="sh-stat-card">
-                <div class="sh-stat-label">Incoming</div>
-                <div class="sh-stat-value" style="color:{% if pending_incoming > 0 %}#f0883e{% else %}#8b949e{% endif %};">
-                  {{ pending_incoming }}
-                  {% if pending_incoming > 0 %}<span class="sh-stat-alert">!</span>{% endif %}
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="sh-stat-card">
-                <div class="sh-stat-label">Outgoing</div>
-                <div class="sh-stat-value" style="color:{% if pending_outgoing > 0 %}#58a6ff{% else %}#8b949e{% endif %};">{{ pending_outgoing }}</div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="sh-stat-card d-flex flex-column justify-content-center">
-                {% if user_team %}
-                  <a href="{{ url_for('trades.trade_propose', league_id=league.id) }}" class="btn sh-btn-trades btn-sm mb-2">
-                    <i class="bi bi-plus-lg me-1"></i>Propose Trade
-                  </a>
-                {% endif %}
-                <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">
-                  <i class="bi bi-clock-history me-1"></i>Trade Center
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {% if is_commissioner %}
-          <div class="d-flex gap-2 mt-4 flex-wrap">
-            <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-calendar3 me-1"></i>Fixture
-            </a>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    {# ── MID-SEASON ── #}
-    {% set mid_status = 'completed' if phases|selectattr('id','equalto','midseason')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','midseason')|map(attribute='status')|first == 'active' else 'future') %}
-    <div class="lm-section {% if mid_status == 'future' %}lm-future{% endif %} {% if mid_status != 'active' %}lm-collapsed{% endif %}" id="section-midseason">
-      <div class="lm-section-header sh-header-mid" onclick="toggleSection('midseason')">
-        <div class="d-flex align-items-center gap-2">
-          <div class="sh-icon-circle sh-icon-mid"><i class="bi bi-arrow-repeat"></i></div>
-          <h5 class="mb-0 fw-bold">Mid-Season</h5>
-          {% if mid_status == 'completed' %}
-            <i class="bi bi-check-circle-fill lm-check"></i>
-          {% elif mid_status == 'active' %}
-            <span class="badge" style="background:rgba(210,153,34,.2);color:#d29922;font-size:.65rem;">ACTIVE</span>
+          {% if mid_is_active %}
+            <span class="badge" style="background:rgba(255,255,255,.15);color:#fff;font-size:.65rem;">ACTIVE</span>
           {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2">
           {% if mid_trade_status == 'active' and trade_window_dates.mid_close %}
             <div class="lm-timer">
               <i class="bi bi-clock"></i>
-              <span class="lm-timer-label">Trades close</span>
+              <span>Trades close</span>
               <span class="lm-timer-value" data-target="{{ trade_window_dates.mid_close.isoformat() }}"></span>
             </div>
           {% elif delist_period and delist_period.status == 'open' and current_phase == 'midseason' and delist_period.closes_at %}
             <div class="lm-timer">
               <i class="bi bi-clock"></i>
-              <span class="lm-timer-label">Delists close</span>
+              <span>Delists close</span>
               <span class="lm-timer-value" data-target="{{ delist_period.closes_at.isoformat() }}"></span>
             </div>
           {% endif %}
@@ -438,12 +292,12 @@
         </div>
       </div>
       <div class="lm-section-body">
-        {# Step 1: Trade Window #}
+        {# Trade Window #}
         {% if season_cfg and season_cfg.mid_season_trade_enabled %}
-          <div class="sh-step">
+          <div class="lm-step">
             <div class="d-flex justify-content-between align-items-start">
               <div class="d-flex align-items-center gap-3">
-                <div class="sh-step-icon {% if mid_trade_status == 'completed' %}sh-step-done{% elif mid_trade_status == 'active' %}sh-step-live{% else %}sh-step-pending{% endif %}">
+                <div class="lm-step-icon {% if mid_trade_status == 'completed' %}lm-step-done{% elif mid_trade_status == 'active' %}lm-step-live{% else %}lm-step-pending{% endif %}">
                   {% if mid_trade_status == 'completed' %}<i class="bi bi-check-lg"></i>
                   {% else %}<i class="bi bi-arrow-left-right"></i>{% endif %}
                 </div>
@@ -467,7 +321,7 @@
               {% endif %}
             </div>
             {% if mid_trade_status == 'active' and trade_window_dates.mid_close %}
-              <div class="sh-countdown-box mt-2" style="font-size:.8rem;color:#8b949e;">
+              <div class="lm-info-box mt-2" style="font-size:.8rem;color:#8b949e;">
                 <i class="bi bi-calendar-event me-1"></i>Closes {{ trade_window_dates.mid_close.strftime('%d %b %Y') }}
                 {% if trade_window_dates.mid_draft %}
                   &middot; Draft: {{ trade_window_dates.mid_draft.strftime('%d %b %Y') }}
@@ -492,16 +346,16 @@
             {% endif %}
             {% if mid_trade_status == 'active' %}
               <div class="mt-2">
-                <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm sh-btn-trades">
+                <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm lm-btn-trades">
                   <i class="bi bi-arrow-left-right me-1"></i>Go to Trade Center
                 </a>
               </div>
             {% endif %}
           </div>
         {% else %}
-          <div class="sh-step sh-step-disabled-block">
+          <div class="lm-step lm-step-disabled-block">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon sh-step-disabled"><i class="bi bi-x-lg"></i></div>
+              <div class="lm-step-icon lm-step-disabled"><i class="bi bi-x-lg"></i></div>
               <div>
                 <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#484f58;">Mid-Season Trade Window</h6>
                 <span style="font-size:.8rem;color:#484f58;">Disabled in league settings</span>
@@ -510,11 +364,11 @@
           </div>
         {% endif %}
 
-        {# Step 2: Delist & Mini-Draft #}
-        <div class="sh-step">
+        {# Delist & Mini-Draft #}
+        <div class="lm-step">
           <div class="d-flex justify-content-between align-items-start">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon {% if mid_draft_status == 'completed' %}sh-step-done{% elif mid_delist_status == 'active' %}sh-step-live{% elif mid_draft_status == 'active' %}sh-step-live{% elif mid_delist_status == 'pending' %}sh-step-ready{% else %}sh-step-pending{% endif %}">
+              <div class="lm-step-icon {% if mid_draft_status == 'completed' %}lm-step-done{% elif mid_delist_status == 'active' %}lm-step-live{% elif mid_draft_status == 'active' %}lm-step-live{% elif mid_delist_status == 'pending' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
                 {% if mid_draft_status == 'completed' %}<i class="bi bi-check-lg"></i>
                 {% elif mid_delist_status == 'active' %}<i class="bi bi-person-dash"></i>
                 {% elif mid_draft_status == 'active' %}<i class="bi bi-list-check"></i>
@@ -546,10 +400,10 @@
             {% endif %}
           </div>
           {% if mid_delist_status == 'active' and user_team %}
-            <div class="sh-inline-box mt-2">
+            <div class="lm-info-box mt-2">
               <div class="d-flex justify-content-between align-items-center">
                 <span style="font-size:.85rem;">
-                  Your delists: <strong style="color:{% if team_delist_count >= (season_cfg.mid_season_delist_required or 1) %}#3fb950{% else %}#d29922{% endif %};">{{ team_delist_count }}</strong> / {{ season_cfg.mid_season_delist_required or 1 }}
+                  Your delists: <strong style="color:{% if team_delist_count >= (season_cfg.mid_season_delist_required or 1) %}#3fb950{% else %}#f0883e{% endif %};">{{ team_delist_count }}</strong> / {{ season_cfg.mid_season_delist_required or 1 }}
                   {% if team_delist_count >= (season_cfg.mid_season_delist_required or 1) %}
                     <i class="bi bi-check-circle-fill ms-1" style="color:#3fb950;"></i>
                   {% endif %}
@@ -562,18 +416,18 @@
           {% endif %}
           {% if mid_draft_status in ('pending', 'active') and season_cfg and season_cfg.mid_season_draft_enabled %}
             <div class="mt-2">
-              <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm sh-btn-draft">
+              <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm lm-btn-draft">
                 <i class="bi bi-list-check me-1"></i>Go to Draft Setup
               </a>
             </div>
           {% endif %}
         </div>
 
-        {# Step 3: Roster Lock #}
-        <div class="sh-step">
+        {# Roster Lock #}
+        <div class="lm-step">
           <div class="d-flex justify-content-between align-items-start">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon {% if mid_lock_status == 'completed' %}sh-step-done{% else %}sh-step-pending{% endif %}">
+              <div class="lm-step-icon {% if mid_lock_status == 'completed' %}lm-step-done{% else %}lm-step-pending{% endif %}">
                 {% if mid_lock_status == 'completed' %}<i class="bi bi-check-lg"></i>
                 {% else %}<i class="bi bi-lock"></i>{% endif %}
               </div>
@@ -593,92 +447,34 @@
       </div>
     </div>
 
-    {# ── FINALS ── #}
-    {% set fin_status = 'completed' if phases|selectattr('id','equalto','finals')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','finals')|map(attribute='status')|first == 'active' else 'future') %}
-    <div class="lm-section {% if fin_status == 'future' %}lm-future{% endif %} {% if fin_status != 'active' %}lm-collapsed{% endif %}" id="section-finals">
-      <div class="lm-section-header sh-header-finals" onclick="toggleSection('finals')">
-        <div class="d-flex align-items-center gap-2">
-          <div class="sh-icon-circle sh-icon-finals"><i class="bi bi-award"></i></div>
-          <h5 class="mb-0 fw-bold">Finals</h5>
-          {% if fin_status == 'completed' %}
-            <i class="bi bi-check-circle-fill lm-check"></i>
-          {% elif fin_status == 'active' %}
-            <span class="badge" style="background:rgba(248,81,73,.2);color:#f85149;font-size:.65rem;">ACTIVE</span>
-          {% endif %}
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-chevron-down lm-chevron"></i>
-        </div>
-      </div>
-      <div class="lm-section-body">
-        {% if standings %}
-          <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">Finals Standings</h6>
-          <div class="table-responsive">
-            <table class="table table-sm mb-0" style="font-size:.85rem;">
-              <thead>
-                <tr>
-                  <th style="width:30px;">#</th>
-                  <th>Team</th>
-                  <th class="text-center">W</th>
-                  <th class="text-center">L</th>
-                  <th class="text-center">Pts</th>
-                  <th class="text-end">%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for s in standings[:4] %}
-                  <tr style="{% if user_team and s.team_id == user_team.id %}background:rgba(88,166,255,.06);{% endif %}">
-                    <td class="text-secondary">{{ loop.index }}</td>
-                    <td><strong>{{ s.team.name }}</strong></td>
-                    <td class="text-center">{{ s.wins }}</td>
-                    <td class="text-center">{{ s.losses }}</td>
-                    <td class="text-center fw-bold">{{ s.ladder_points }}</td>
-                    <td class="text-end">{{ '%.1f'|format(s.percentage) if s.percentage else '—' }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+    {# ══════════════════════════════════════════════════════════════
+       4. OFF-SEASON
+       ══════════════════════════════════════════════════════════════ #}
+    {% set off_is_active = current_phase == 'offseason' %}
+    {% set off_is_future = not off_is_active and current_phase in ('pre_season', 'regular', 'midseason', 'finals') %}
+    <div class="lm-section {% if off_is_future %}lm-future{% endif %} {% if not off_is_active %}lm-collapsed{% endif %}" id="section-off">
+      <div class="lm-section-header lm-header-off" onclick="toggleSection('off')">
+        <div class="d-flex align-items-center gap-3">
+          <div class="lm-icon lm-icon-off"><i class="bi bi-snow"></i></div>
+          <div>
+            <h5 class="mb-0 fw-bold text-white">Off-Season</h5>
+            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">Delists, supplemental draft &amp; trades</span>
           </div>
-        {% else %}
-          <div class="text-center text-secondary py-4">
-            <i class="bi bi-award" style="font-size:2rem;opacity:.3;"></i>
-            <p class="mt-2 mb-0" style="font-size:.85rem;">Finals bracket not yet generated.</p>
-          </div>
-        {% endif %}
-        {% if is_commissioner %}
-          <div class="d-flex gap-2 mt-3 flex-wrap">
-            <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-calendar3 me-1"></i>View Fixture
-            </a>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    {# ── OFF-SEASON ── #}
-    {% set off_status = 'completed' if phases|selectattr('id','equalto','offseason')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','offseason')|map(attribute='status')|first == 'active' else 'future') %}
-    <div class="lm-section {% if off_status == 'future' %}lm-future{% endif %} {% if off_status != 'active' %}lm-collapsed{% endif %}" id="section-offseason">
-      <div class="lm-section-header sh-header-off" onclick="toggleSection('offseason')">
-        <div class="d-flex align-items-center gap-2">
-          <div class="sh-icon-circle sh-icon-off"><i class="bi bi-snow"></i></div>
-          <h5 class="mb-0 fw-bold">Off-Season</h5>
-          {% if off_status == 'completed' %}
-            <i class="bi bi-check-circle-fill lm-check"></i>
-          {% elif off_status == 'active' %}
-            <span class="badge" style="background:rgba(188,140,255,.2);color:#bc8cff;font-size:.65rem;">ACTIVE</span>
+          {% if off_is_active %}
+            <span class="badge" style="background:rgba(255,255,255,.15);color:#fff;font-size:.65rem;">ACTIVE</span>
           {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2">
           {% if off_trade_status == 'active' and trade_window_dates.off_close %}
             <div class="lm-timer">
               <i class="bi bi-clock"></i>
-              <span class="lm-timer-label">Trades close</span>
+              <span>Trades close</span>
               <span class="lm-timer-value" data-target="{{ trade_window_dates.off_close.isoformat() }}"></span>
             </div>
           {% elif delist_period and delist_period.status == 'open' and current_phase == 'offseason' and delist_period.closes_at %}
             <div class="lm-timer">
               <i class="bi bi-clock"></i>
-              <span class="lm-timer-label">Delists close</span>
+              <span>Delists close</span>
               <span class="lm-timer-value" data-target="{{ delist_period.closes_at.isoformat() }}"></span>
             </div>
           {% endif %}
@@ -686,11 +482,11 @@
         </div>
       </div>
       <div class="lm-section-body">
-        {# Step 1: Delist Period #}
-        <div class="sh-step">
+        {# Delist Period #}
+        <div class="lm-step">
           <div class="d-flex justify-content-between align-items-start">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon {% if off_delist_status == 'completed' %}sh-step-done{% elif off_delist_status == 'active' %}sh-step-live{% elif off_delist_status == 'pending' %}sh-step-ready{% else %}sh-step-pending{% endif %}">
+              <div class="lm-step-icon {% if off_delist_status == 'completed' %}lm-step-done{% elif off_delist_status == 'active' %}lm-step-live{% elif off_delist_status == 'pending' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
                 {% if off_delist_status == 'completed' %}<i class="bi bi-check-lg"></i>
                 {% else %}<i class="bi bi-person-dash"></i>{% endif %}
               </div>
@@ -716,10 +512,10 @@
             {% endif %}
           </div>
           {% if off_delist_status == 'active' and user_team %}
-            <div class="sh-inline-box mt-2">
+            <div class="lm-info-box mt-2">
               <div class="d-flex justify-content-between align-items-center">
                 <span style="font-size:.85rem;">
-                  Your delists: <strong style="color:{% if team_delist_count >= (season_cfg.offseason_delist_min if season_cfg else 3) %}#3fb950{% else %}#d29922{% endif %};">{{ team_delist_count }}</strong> / {{ season_cfg.offseason_delist_min if season_cfg else 3 }}
+                  Your delists: <strong style="color:{% if team_delist_count >= (season_cfg.offseason_delist_min if season_cfg else 3) %}#3fb950{% else %}#f0883e{% endif %};">{{ team_delist_count }}</strong> / {{ season_cfg.offseason_delist_min if season_cfg else 3 }}
                   {% if team_delist_count >= (season_cfg.offseason_delist_min if season_cfg else 3) %}
                     <i class="bi bi-check-circle-fill ms-1" style="color:#3fb950;"></i>
                   {% endif %}
@@ -732,11 +528,11 @@
           {% endif %}
         </div>
 
-        {# Step 2: SSP #}
+        {# SSP #}
         {% if season_cfg and season_cfg.ssp_enabled %}
-          <div class="sh-step">
+          <div class="lm-step">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon {% if off_ssp_status == 'completed' %}sh-step-done{% elif off_ssp_status == 'active' %}sh-step-live{% else %}sh-step-pending{% endif %}">
+              <div class="lm-step-icon {% if off_ssp_status == 'completed' %}lm-step-done{% elif off_ssp_status == 'active' %}lm-step-live{% else %}lm-step-pending{% endif %}">
                 {% if off_ssp_status == 'completed' %}<i class="bi bi-check-lg"></i>
                 {% else %}<i class="bi bi-bandaid"></i>{% endif %}
               </div>
@@ -775,9 +571,9 @@
             {% endif %}
           </div>
         {% else %}
-          <div class="sh-step sh-step-disabled-block">
+          <div class="lm-step lm-step-disabled-block">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon sh-step-disabled"><i class="bi bi-x-lg"></i></div>
+              <div class="lm-step-icon lm-step-disabled"><i class="bi bi-x-lg"></i></div>
               <div>
                 <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#484f58;">SSP (Injury Replacements)</h6>
                 <span style="font-size:.8rem;color:#484f58;">Disabled in league settings</span>
@@ -786,13 +582,12 @@
           </div>
         {% endif %}
 
-        {# Step 3: Supplemental Draft #}
-        <div class="sh-step">
+        {# Supplemental Draft #}
+        <div class="lm-step">
           <div class="d-flex justify-content-between align-items-start">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon {% if off_draft_status == 'completed' %}sh-step-done{% elif off_draft_status == 'active' %}sh-step-live{% elif off_draft_status == 'pending' %}sh-step-ready{% else %}sh-step-pending{% endif %}">
+              <div class="lm-step-icon {% if off_draft_status == 'completed' %}lm-step-done{% elif off_draft_status == 'active' %}lm-step-live{% elif off_draft_status == 'pending' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
                 {% if off_draft_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                {% elif off_draft_status == 'active' %}<i class="bi bi-list-check"></i>
                 {% else %}<i class="bi bi-list-check"></i>{% endif %}
               </div>
               <div>
@@ -801,18 +596,18 @@
               </div>
             </div>
             {% if off_draft_status in ('pending', 'active') %}
-              <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn sh-btn-draft btn-sm">
+              <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm">
                 <i class="bi bi-list-check me-1"></i>Draft Setup
               </a>
             {% endif %}
           </div>
         </div>
 
-        {# Step 4: Off-Season Trades #}
-        <div class="sh-step">
+        {# Off-Season Trades #}
+        <div class="lm-step">
           <div class="d-flex justify-content-between align-items-start">
             <div class="d-flex align-items-center gap-3">
-              <div class="sh-step-icon {% if off_trade_status == 'completed' %}sh-step-done{% elif off_trade_status == 'active' %}sh-step-live{% elif off_trade_status == 'pending' %}sh-step-ready{% else %}sh-step-pending{% endif %}">
+              <div class="lm-step-icon {% if off_trade_status == 'completed' %}lm-step-done{% elif off_trade_status == 'active' %}lm-step-live{% elif off_trade_status == 'pending' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
                 {% if off_trade_status == 'completed' %}<i class="bi bi-check-lg"></i>
                 {% else %}<i class="bi bi-arrow-left-right"></i>{% endif %}
               </div>
@@ -837,13 +632,13 @@
           </div>
           {% if off_trade_status == 'active' %}
             <div class="mt-2">
-              <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm sh-btn-trades">
+              <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm lm-btn-trades">
                 <i class="bi bi-arrow-left-right me-1"></i>Go to Trade Center
               </a>
             </div>
           {% elif off_trade_status == 'pending' %}
             <div class="mt-2">
-              <a href="{{ url_for('trades.trade_propose', league_id=league.id) }}" class="btn btn-sm sh-btn-trades">
+              <a href="{{ url_for('trades.trade_propose', league_id=league.id) }}" class="btn btn-sm lm-btn-trades">
                 <i class="bi bi-plus-lg me-1"></i>Propose Trade
               </a>
               <span class="text-secondary ms-2" style="font-size:.8rem;">Trades can be proposed now — they'll execute when the window opens</span>
@@ -866,92 +661,52 @@
       </div>
     </div>
 
-    {# ── ACTIVE DELIST PERIOD — floating alert when delist is open ── #}
-    {% if delist_period and delist_period.status == 'open' and user_team and current_phase in ('midseason', 'offseason') %}
-      <div class="lm-section mt-1" id="delist-alert" style="border-color:rgba(248,81,73,.3);">
-        <div class="lm-section-header" style="background:linear-gradient(135deg,rgba(248,81,73,.12) 0%,rgba(210,153,34,.08) 100%);border-bottom:1px solid rgba(248,81,73,.2);cursor:default;">
-          <div class="d-flex align-items-center gap-2">
-            <div class="sh-icon-circle" style="background:rgba(248,81,73,.15);color:#f85149;"><i class="bi bi-person-dash"></i></div>
-            <h5 class="mb-0 fw-bold">Delist Period Open</h5>
-            <span class="badge" style="background:rgba(248,81,73,.2);color:#f85149;font-size:.65rem;">ACTION REQUIRED</span>
-          </div>
-        </div>
-        <div class="lm-section-body">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <span style="font-size:.9rem;">
-                Your delists: <strong style="color:{% if team_delist_count >= (delist_period.min_delists or 3) %}#3fb950{% else %}#d29922{% endif %};">{{ team_delist_count }}</strong> / {{ delist_period.min_delists or 3 }}
-                {% if team_delist_count >= (delist_period.min_delists or 3) %}
-                  <i class="bi bi-check-circle-fill ms-1" style="color:#3fb950;"></i>
-                {% else %}
-                  <span class="text-secondary ms-1" style="font-size:.8rem;">— {{ (delist_period.min_delists or 3) - team_delist_count }} more needed</span>
-                {% endif %}
-              </span>
-            </div>
-            <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-outline-danger btn-sm">
-              <i class="bi bi-person-dash me-1"></i>Manage Delists
-            </a>
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
   </div>
 </div>
 
 <script>
 (function() {
-  // ── Section collapse/expand ──
-  function toggleSection(sectionId) {
-    const section = document.getElementById('section-' + sectionId);
-    if (!section) return;
-    section.classList.toggle('lm-collapsed');
+  function toggleSection(id) {
+    var s = document.getElementById('section-' + id);
+    if (s) s.classList.toggle('lm-collapsed');
   }
   window.toggleSection = toggleSection;
 
-  // ── Countdown timers ──
-  function startTimers() {
-    const timers = document.querySelectorAll('.lm-timer-value[data-target]');
-    timers.forEach(function(el) {
-      const targetStr = el.getAttribute('data-target');
-      if (!targetStr) return;
-      const target = new Date(targetStr);
-
-      function tick() {
-        const now = new Date(), diff = target - now;
-        if (diff <= 0) {
-          el.textContent = 'Now';
-          const pill = el.closest('.lm-timer');
-          if (pill) pill.classList.add('lm-timer-expired');
-          return;
-        }
-        const d = Math.floor(diff / 86400000);
-        const h = Math.floor((diff % 86400000) / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        let parts = [];
-        if (d) parts.push(d + 'd');
-        parts.push(h + 'h', m + 'm', s + 's');
-        el.textContent = parts.join(' ');
-        setTimeout(tick, 1000);
+  // Countdown timers
+  document.querySelectorAll('.lm-timer-value[data-target]').forEach(function(el) {
+    var target = new Date(el.getAttribute('data-target'));
+    (function tick() {
+      var now = new Date(), diff = target - now;
+      if (diff <= 0) {
+        el.textContent = 'Now';
+        var pill = el.closest('.lm-timer');
+        if (pill) pill.classList.add('lm-timer-expired');
+        return;
       }
-      tick();
-    });
-  }
-  startTimers();
+      var d = Math.floor(diff / 86400000);
+      var h = Math.floor((diff % 86400000) / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      var s = Math.floor((diff % 60000) / 1000);
+      var p = [];
+      if (d) p.push(d + 'd');
+      p.push(h + 'h', m + 'm', s + 's');
+      el.textContent = p.join(' ');
+      setTimeout(tick, 1000);
+    })();
+  });
 
-  // ── Initial draft countdown (inline in draft card) ──
+  // Initial draft countdown
   var cdEl = document.getElementById('initial-countdown');
   if (cdEl) {
     {% if initial_draft and initial_draft.scheduled_start %}
     (function() {
-      const target = new Date("{{ initial_draft.scheduled_start.isoformat() }}");
+      var target = new Date("{{ initial_draft.scheduled_start.isoformat() }}");
       function tick() {
-        const now = new Date(), diff = target - now;
-        if (diff <= 0) { cdEl.innerHTML = '<span style="color:#3fb950;">Draft time!</span>'; return; }
-        const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000);
-        const m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-        let p = []; if (d) p.push(d+'d'); p.push(h+'h', m+'m', s+'s');
+        var now = new Date(), diff = target - now;
+        if (diff <= 0) { cdEl.innerHTML = '<span style="color:#56d364;">Draft time!</span>'; return; }
+        var d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000);
+        var m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+        var p = []; if (d) p.push(d+'d'); p.push(h+'h', m+'m', s+'s');
         cdEl.textContent = p.join(' '); setTimeout(tick, 1000);
       }
       tick();
