@@ -131,6 +131,7 @@ AVAILABLE_STATS = [
     "one_percenters", "bounces", "goal_assists", "kick_ins",
     "centre_clearances", "stoppage_clearances", "turnovers",
     "time_on_ground_pct", "disposal_efficiency",
+    "supercoach_score", "afl_fantasy_score",
 ]
 
 # ---------- Default custom scoring (AFL Fantasy-style) ----------
@@ -165,6 +166,37 @@ SCORING_PRESETS = {
             "goals": 6, "behinds": 1, "hitouts": 1,
         },
     },
+    "advanced_stats": {
+        "label": "Advanced Stats",
+        "rules": {
+            "kicks": 3, "handballs": 2, "marks": 3, "tackles": 4,
+            "goals": 6, "behinds": 1, "hitouts": 1,
+            "contested_possessions": 2, "clearances": 3,
+            "inside_fifties": 2, "rebounds": 2,
+            "intercepts": 3, "score_involvements": 1,
+            "contested_marks": 4, "ground_ball_gets": 1,
+            "frees_for": 1, "frees_against": -3,
+            "clangers": -2, "turnovers": -2,
+        },
+    },
+    "full_stats": {
+        "label": "Full Stats",
+        "rules": {
+            "kicks": 3, "handballs": 2, "marks": 3, "tackles": 4,
+            "goals": 6, "behinds": 1, "hitouts": 1,
+            "contested_possessions": 2, "uncontested_possessions": 1,
+            "clearances": 3, "centre_clearances": 1, "stoppage_clearances": 1,
+            "inside_fifties": 2, "rebounds": 2,
+            "effective_disposals": 1, "metres_gained": 0.1,
+            "pressure_acts": 1, "ground_ball_gets": 1,
+            "intercepts": 3, "score_involvements": 1,
+            "contested_marks": 4, "marks_inside_50": 3,
+            "one_percenters": 2, "bounces": 1,
+            "goal_assists": 3, "kick_ins": 1,
+            "frees_for": 1, "frees_against": -3,
+            "clangers": -2, "turnovers": -2,
+        },
+    },
 }
 
 # ---------- Stat categories for custom scoring UI ----------
@@ -184,6 +216,7 @@ STAT_CATEGORIES = {
         "one_percenters", "bounces", "goal_assists", "kick_ins",
         "time_on_ground_pct", "disposal_efficiency",
     ],
+    "Fantasy Scores": ["supercoach_score", "afl_fantasy_score"],
 }
 
 # ---------- Scoring type labels ----------
