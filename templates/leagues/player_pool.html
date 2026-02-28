@@ -27,9 +27,9 @@
     padding: 1px 6px; border-radius: 10px; font-size: .7rem; font-weight: 600;
     line-height: 1.4;
   }
-  .trend-up { background: rgba(63,185,80,.1); color: #3fb950; }
+  .trend-up { background: rgba(63,185,80,.1); color: #56d364; }
   .trend-down { background: rgba(248,81,73,.1); color: #f85149; }
-  .trend-flat { background: rgba(139,148,158,.08); color: #8b949e; }
+  .trend-flat { color: #484f58; font-weight: 500; }
   .value-bar-wrap {
     display: flex; align-items: center; gap: 6px; justify-content: flex-end;
   }
@@ -169,39 +169,38 @@
               {% if pr.l3 and sc_display %}
                 {% set diff = pr.l3 - sc_display %}
                 {% if diff > 5 %}
-                  <span class="trend-pill trend-up"><i class="bi bi-caret-up-fill"></i>{{ '%.0f'|format(diff) }}</span>
+                  <span class="trend-pill trend-up"><i class="bi bi-caret-up-fill"></i>+{{ '%.0f'|format(diff) }}</span>
                 {% elif diff < -5 %}
-                  <span class="trend-pill trend-down"><i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(diff|abs) }}</span>
+                  <span class="trend-pill trend-down"><i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(diff) }}</span>
                 {% else %}
-                  <span class="trend-pill trend-flat">{{ '%+.0f'|format(diff) }}</span>
+                  <span class="trend-flat">{{ '%+.0f'|format(diff) }}</span>
                 {% endif %}
               {% else %}
                 <span style="color:#484f58;">-</span>
               {% endif %}
             </td>
-            {# Rating #}
+            {# Rating — white default, only highlight elite (85+) or poor (<55) #}
             <td class="text-end">
               {% if p.rating %}
-                {% set rtg_color = '#3fb950' if p.rating >= 80 else '#d29922' if p.rating >= 70 else '#f0883e' if p.rating >= 60 else '#f85149' %}
+                {% set rtg_color = '#58a6ff' if p.rating >= 85 else '#f85149' if p.rating < 55 else '#c9d1d9' %}
                 <span style="color:{{ rtg_color }};font-weight:600;">{{ p.rating }}</span>
               {% else %}<span style="color:#484f58;">-</span>{% endif %}
             </td>
-            {# Potential #}
+            {# Potential — white default, only highlight elite (90+) #}
             <td class="text-end">
               {% if p.potential %}
-                {% set pot_color = '#3fb950' if p.potential >= 85 else '#58a6ff' if p.potential >= 75 else '#d29922' if p.potential >= 65 else '#8b949e' %}
+                {% set pot_color = '#58a6ff' if p.potential >= 90 else '#c9d1d9' %}
                 <span style="color:{{ pot_color }};font-weight:600;">{{ p.potential }}</span>
               {% else %}<span style="color:#484f58;">-</span>{% endif %}
             </td>
-            {# Draft Value (number + mini bar) #}
+            {# Draft Value (number + mini bar) — single blue tone #}
             <td class="text-end">
               {% if p.draft_score %}
                 {% set pct = (p.draft_score / max_ds * 100) if max_ds else 0 %}
-                {% set val_color = '#3fb950' if pct >= 75 else '#58a6ff' if pct >= 50 else '#d29922' if pct >= 30 else '#8b949e' %}
                 <div class="value-bar-wrap">
-                  <span style="color:{{ val_color }};font-weight:700;font-size:.82rem;">{{ '%.1f'|format(p.draft_score) }}</span>
+                  <span style="color:#c9d1d9;font-weight:700;font-size:.82rem;">{{ '%.1f'|format(p.draft_score) }}</span>
                   <div class="value-bar">
-                    <div class="value-bar-fill" style="width:{{ pct }}%;background:{{ val_color }};"></div>
+                    <div class="value-bar-fill" style="width:{{ pct }}%;background:#58a6ff;opacity:{{ 0.3 + pct * 0.007 }};"></div>
                   </div>
                 </div>
               {% else %}<span style="color:#484f58;">-</span>{% endif %}
@@ -211,7 +210,7 @@
               {% if owner_team %}
                 <span class="status-chip" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
               {% else %}
-                <span class="status-chip" style="background:rgba(63,185,80,.1);color:#3fb950;">Available</span>
+                <span class="status-chip" style="background:rgba(139,148,158,.08);color:#6e7681;">FA</span>
               {% endif %}
             </td>
           </tr>
