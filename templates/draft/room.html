@@ -254,6 +254,7 @@ const LEAGUE_ID = {{ league.id }};
 const USER_TEAM_ID = {{ user_team.id if user_team else 'null' }};
 const USER_TEAM_NAME = {{ (user_team.name|tojson) if user_team else 'null' }};
 const IS_COMMISSIONER = {{ 'true' if is_commissioner else 'false' }};
+const CAN_RESTART = {{ 'true' if can_restart else 'false' }};
 let draftState = {{ state|tojson }};
 
 // Connect to SocketIO
@@ -333,18 +334,20 @@ function updateUI() {
     banner.className = 'draft-banner';
   }
 
-  // Update commissioner controls
+  // Update commissioner controls — only swap the status button, keep Override + Restart
   const controls = document.getElementById('commissioner-controls');
   if (controls && IS_COMMISSIONER) {
+    const overrideBtn = `<button id="comm-override-btn" class="btn btn-outline-warning btn-sm${commOverride ? ' active' : ''}" onclick="toggleCommOverride()" style="font-size:.7rem;" title="Pick on behalf of other teams"><i class="bi bi-shield${commOverride ? '-fill-check' : ''} me-1"></i>${commOverride ? 'Override ON' : 'Override'}</button>`;
+    const restartBtn = CAN_RESTART ? `<button class="btn btn-outline-danger btn-sm" onclick="confirmRestart()" style="font-size:.7rem;" title="Delete draft and return to settings"><i class="bi bi-arrow-counterclockwise me-1"></i>Restart</button>` : '';
+    let statusBtn = '';
     if (draftState.status === 'scheduled') {
-      controls.innerHTML = '<button class="btn btn-primary btn-sm" onclick="startDraft()"><i class="bi bi-play-fill me-1"></i>Start Draft</button>';
+      statusBtn = '<button class="btn btn-primary btn-sm" onclick="startDraft()"><i class="bi bi-play-fill me-1"></i>Start Draft</button>';
     } else if (draftState.status === 'in_progress') {
-      controls.innerHTML = '<button class="btn btn-outline-secondary btn-sm" onclick="pauseDraft()"><i class="bi bi-pause-fill me-1"></i>Pause</button>';
+      statusBtn = '<button class="btn btn-outline-secondary btn-sm" onclick="pauseDraft()"><i class="bi bi-pause-fill me-1"></i>Pause</button>';
     } else if (draftState.status === 'paused') {
-      controls.innerHTML = '<button class="btn btn-primary btn-sm" onclick="resumeDraft()"><i class="bi bi-play-fill me-1"></i>Resume</button>';
-    } else {
-      controls.innerHTML = '';
+      statusBtn = '<button class="btn btn-primary btn-sm" onclick="resumeDraft()"><i class="bi bi-play-fill me-1"></i>Resume</button>';
     }
+    controls.innerHTML = overrideBtn + statusBtn + restartBtn;
   }
 
   fetchPositionNeeds();
