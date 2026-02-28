@@ -112,18 +112,31 @@
             </div>
           </div>
         </div>
+        <!-- Position needs tracker -->
+        <div id="pos-needs-bar" class="d-flex gap-2 mb-2 flex-wrap" style="display:none !important;">
+        </div>
         <div class="row g-2">
-          <div class="col-7">
+          <div class="col">
             <input type="text" class="form-control form-control-sm" id="player-search"
                    placeholder="Search players..." oninput="searchPlayers()">
           </div>
-          <div class="col-5">
-            <select class="form-select form-select-sm" id="pos-filter" onchange="searchPlayers()">
-              <option value="">All Positions</option>
+          <div class="col-auto">
+            <select class="form-select form-select-sm" id="pos-filter" onchange="searchPlayers()" style="width:auto;">
+              <option value="">All Pos</option>
               <option value="DEF">DEF</option>
               <option value="MID">MID</option>
               <option value="FWD">FWD</option>
               <option value="RUC">RUC</option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <select class="form-select form-select-sm" id="age-filter" onchange="searchPlayers()" style="width:auto;">
+              <option value="">All Ages</option>
+              <option value="21">U21</option>
+              <option value="23">U23</option>
+              <option value="25">U25</option>
+              <option value="25-30">25-30</option>
+              <option value="30+">30+</option>
             </select>
           </div>
         </div>
@@ -135,6 +148,7 @@
               <th>Player</th>
               <th>Pos</th>
               <th>Team</th>
+              <th>Age</th>
               <th>SC</th>
               <th>Rtg</th>
               <th>Value</th>
@@ -245,6 +259,7 @@ socket.on('draft_state', (state) => {
 
 socket.on('pick_made', (pick) => {
   addPickToHistory(pick);
+  fetchPositionNeeds();
   searchPlayers();
   if (pick.team_id === USER_TEAM_ID) {
     addToYourTeam(pick);
@@ -321,32 +336,91 @@ function updateUI() {
     }
   }
 
+  fetchPositionNeeds();
   searchPlayers();
   updateYourTeam();
+}
+
+let positionNeeds = null;
+
+function fetchPositionNeeds() {
+  if (!USER_TEAM_ID) return;
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/position_needs`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.error) {
+        positionNeeds = data;
+        renderPositionBar();
+      }
+    }).catch(() => {});
+}
+
+function renderPositionBar() {
+  const bar = document.getElementById('pos-needs-bar');
+  if (!positionNeeds || !bar) return;
+  bar.style.setProperty('display', 'flex', 'important');
+  const positions = ['DEF', 'MID', 'FWD', 'RUC'];
+  const blocked = new Set(positionNeeds.blocked_positions || []);
+  bar.innerHTML = positions.map(pos => {
+    const drafted = (positionNeeds.drafted || {})[pos] || 0;
+    const required = (positionNeeds.required || {})[pos] || 0;
+    const need = (positionNeeds.needs || {})[pos] || 0;
+    const isBlocked = blocked.has(pos);
+    const color = isBlocked ? '#f85149' : need > 0 ? '#d29922' : '#3fb950';
+    const bg = isBlocked ? 'rgba(248,81,73,.12)' : need > 0 ? 'rgba(210,153,34,.12)' : 'rgba(63,185,80,.12)';
+    return `<span style="font-size:.7rem;padding:2px 8px;border-radius:8px;background:${bg};color:${color};font-weight:600;"
+                  title="${isBlocked ? 'BLOCKED - must draft other positions' : need > 0 ? need + ' more needed' : 'Requirement met'}">
+      ${pos} ${drafted}/${required}${isBlocked ? ' <i class="bi bi-lock-fill"></i>' : ''}
+    </span>`;
+  }).join('');
+}
+
+function isPositionBlocked(playerPos) {
+  if (!positionNeeds || !positionNeeds.blocked_positions || positionNeeds.blocked_positions.length === 0) return false;
+  if (!playerPos) return false;
+  const positions = playerPos.split('/').map(p => p.trim().toUpperCase());
+  // Blocked only if ALL of the player's positions are blocked
+  return positions.every(p => positionNeeds.blocked_positions.includes(p));
 }
 
 function searchPlayers() {
   const q = document.getElementById('player-search').value;
   const pos = document.getElementById('pos-filter').value;
-  fetch(`/leagues/${LEAGUE_ID}/draft/api/available?q=${encodeURIComponent(q)}&pos=${pos}&limit=100`)
+  const ageFilter = document.getElementById('age-filter').value;
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/available?q=${encodeURIComponent(q)}&pos=${pos}&limit=200`)
     .then(r => r.json())
     .then(players => {
+      // Client-side age filter
+      let filtered = players;
+      if (ageFilter) {
+        filtered = players.filter(p => {
+          if (!p.age) return false;
+          if (ageFilter === '30+') return p.age >= 30;
+          if (ageFilter === '25-30') return p.age >= 25 && p.age <= 30;
+          return p.age < parseInt(ageFilter);
+        });
+      }
       const tbody = document.getElementById('available-players');
-      tbody.innerHTML = players.map(p => {
+      tbody.innerHTML = filtered.slice(0, 100).map(p => {
         const posClass = (p.position||'mid').split('/')[0].toLowerCase();
         const rtg = p.rating != null ? p.rating : '-';
         const rtgColor = p.rating >= 80 ? '#3fb950' : p.rating >= 70 ? '#d29922' : p.rating >= 60 ? '#f0883e' : p.rating != null ? '#f85149' : '#8b949e';
-        return `<tr>
+        const blocked = isPositionBlocked(p.position);
+        const pickDisabled = !canPick() || blocked;
+        const blockedStyle = blocked ? 'opacity:.45;' : '';
+        return `<tr style="${blockedStyle}">
           <td>${p.name}</td>
           <td><span class="pos-badge badge-${posClass}">${p.position || ''}</span></td>
           <td>${p.afl_team || ''}</td>
+          <td style="color:#8b949e;">${p.age || '-'}</td>
           <td>${p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
           <td><span style="color:${rtgColor};font-weight:600;">${rtg}</span></td>
           <td><span style="color:#58a6ff;font-weight:600;">${p.draft_score ? p.draft_score.toFixed(1) : '-'}</span></td>
           <td>
             <button class="btn btn-outline-primary btn-sm py-0 px-2"
                     onclick="pickPlayer(${p.id})"
-                    ${canPick() ? '' : 'disabled'}>Pick</button>
+                    ${pickDisabled ? 'disabled' : ''}
+                    title="${blocked ? 'Position blocked — draft other positions first' : ''}">${blocked ? '<i class="bi bi-lock-fill"></i>' : 'Pick'}</button>
           </td>
         </tr>`;
       }).join('');
@@ -517,6 +591,7 @@ function saveWeights() {
 }
 
 // Initial load
+fetchPositionNeeds();
 searchPlayers();
 if (USER_TEAM_ID) updateYourTeam();
 </script>

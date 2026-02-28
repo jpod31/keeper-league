@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from models.database import (
     db, DraftSession, DraftPick, DraftQueue,
     FantasyTeam, FantasyRoster, AflPlayer, League,
+    LeaguePositionSlot,
 )
 
 # Thread lock for SQLite concurrency safety during picks
@@ -251,40 +252,131 @@ def make_pick(session_id, player_id, is_auto=False):
         return current_pick, None
 
 
+def get_position_needs(league_id, session_id, team_id):
+    """Calculate remaining position needs for a team during a draft.
+
+    Returns dict with required/drafted counts, remaining picks, and blocked positions.
+    A position is blocked when picking another player of that position would make it
+    impossible to fill all required roster slots.
+    """
+    slots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
+
+    # Sum required per position (on-field + position-specific bench)
+    required = {}
+    flex_count = 0
+    for s in slots:
+        code = s.position_code.upper()
+        if code in ("FLEX", "UTIL", "BENCH"):
+            flex_count += s.count
+        else:
+            required[code] = required.get(code, 0) + s.count
+
+    # Get team's completed picks in this draft
+    picks = (
+        DraftPick.query
+        .filter_by(draft_session_id=session_id, team_id=team_id)
+        .filter(DraftPick.player_id.isnot(None))
+        .all()
+    )
+
+    # Count drafted by primary position (first in "DEF/MID" etc.)
+    drafted = {}
+    for pick in picks:
+        player = db.session.get(AflPlayer, pick.player_id)
+        if player and player.position:
+            primary = player.position.split("/")[0].upper()
+            drafted[primary] = drafted.get(primary, 0) + 1
+
+    # Remaining position needs
+    needs = {}
+    for pos, req in required.items():
+        needs[pos] = max(0, req - drafted.get(pos, 0))
+
+    total_mandatory = sum(needs.values())
+
+    # Remaining picks for this team
+    session = db.session.get(DraftSession, session_id)
+    remaining_picks = (session.total_rounds if session else 0) - len(picks)
+
+    # Determine blocked positions
+    blocked = set()
+    if total_mandatory >= remaining_picks and remaining_picks > 0:
+        # Every remaining pick must fill a mandatory need
+        for pos in ("DEF", "MID", "FWD", "RUC"):
+            if needs.get(pos, 0) == 0:
+                blocked.add(pos)
+
+    return {
+        "required": required,
+        "drafted": drafted,
+        "needs": needs,
+        "flex_count": flex_count,
+        "total_mandatory": total_mandatory,
+        "remaining_picks": remaining_picks,
+        "blocked_positions": sorted(blocked),
+    }
+
+
+def _player_position_allowed(player, blocked_positions):
+    """Check if a player can be drafted given blocked positions.
+
+    A multi-position player (e.g. DEF/MID) is allowed if ANY of their
+    positions is not blocked.
+    """
+    if not blocked_positions:
+        return True
+    if not player.position:
+        return True
+    positions = [p.strip().upper() for p in player.position.split("/")]
+    return any(pos not in blocked_positions for pos in positions)
+
+
 def auto_pick(session_id, team_id):
-    """Auto-pick for a team: use their queue first, then highest-ranked available player."""
+    """Auto-pick for a team: use their queue first, then highest-ranked available player.
+    Respects position limits — won't pick a position that would make it impossible
+    to fill required roster slots.
+    """
+    session = db.session.get(DraftSession, session_id)
+    if not session:
+        return None, "No draft session."
+
+    # Get position constraints
+    pos_needs = get_position_needs(session.league_id, session_id, team_id)
+    blocked = set(pos_needs["blocked_positions"])
+
     # Check queue first
-    queue_entry = (
+    queue_entries = (
         DraftQueue.query
         .filter_by(team_id=team_id)
         .order_by(DraftQueue.priority)
-        .first()
+        .all()
     )
 
-    if queue_entry:
-        # Verify player is still available
-        already_picked = db.session.query(DraftPick.player_id).filter(
-            DraftPick.draft_session_id == session_id,
-            DraftPick.player_id.isnot(None),
-        ).all()
-        picked_ids = {row[0] for row in already_picked}
-
-        if queue_entry.player_id not in picked_ids:
-            return make_pick(session_id, queue_entry.player_id, is_auto=True)
-
-    # Fallback: pick highest draft_score available player
     already_picked = db.session.query(DraftPick.player_id).filter(
         DraftPick.draft_session_id == session_id,
         DraftPick.player_id.isnot(None),
     ).all()
     picked_ids = {row[0] for row in already_picked}
 
+    for queue_entry in queue_entries:
+        if queue_entry.player_id not in picked_ids:
+            player = db.session.get(AflPlayer, queue_entry.player_id)
+            if player and _player_position_allowed(player, blocked):
+                return make_pick(session_id, queue_entry.player_id, is_auto=True)
+
+    # Fallback: pick highest draft_score available player respecting position limits
     query = AflPlayer.query
     if picked_ids:
         query = query.filter(AflPlayer.id.notin_(picked_ids))
-    best = query.order_by(AflPlayer.draft_score.desc().nullslast()).first()
-    if best:
-        return make_pick(session_id, best.id, is_auto=True)
+    candidates = query.order_by(AflPlayer.draft_score.desc().nullslast()).limit(50).all()
+
+    for player in candidates:
+        if _player_position_allowed(player, blocked):
+            return make_pick(session_id, player.id, is_auto=True)
+
+    # If all blocked, fall back to any player (shouldn't happen in practice)
+    if candidates:
+        return make_pick(session_id, candidates[0].id, is_auto=True)
 
     return None, "No players available for auto-pick."
 

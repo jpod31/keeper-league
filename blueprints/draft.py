@@ -8,7 +8,7 @@ from blueprints import check_league_access
 from models.draft_live import (
     create_draft_session, get_draft_state, start_draft, pause_draft, resume_draft,
     get_available_players, get_queue, set_queue, add_to_queue, remove_from_queue,
-    randomize_draft_order, get_team_draft_picks,
+    randomize_draft_order, get_team_draft_picks, get_position_needs,
     delete_mock_draft, reset_mock_draft, run_mock_auto_picks,
 )
 
@@ -316,6 +316,29 @@ def api_available_players(league_id):
         return jsonify(result[:limit])
 
     return jsonify([])
+
+
+@draft_bp.route("/<int:league_id>/draft/api/position_needs")
+@login_required
+def api_position_needs(league_id):
+    """Return position requirements, drafted counts, and blocked positions for the user's team."""
+    if request.args.get("mock") == "1":
+        session = DraftSession.query.filter_by(
+            league_id=league_id, is_mock=True
+        ).order_by(DraftSession.id.desc()).first()
+    else:
+        session = _get_active_draft_session(league_id)
+    if not session:
+        return jsonify({"error": "No draft session"}), 404
+
+    user_team = FantasyTeam.query.filter_by(
+        league_id=league_id, owner_id=current_user.id
+    ).first()
+    if not user_team:
+        return jsonify({"error": "No team"}), 404
+
+    needs = get_position_needs(league_id, session.id, user_team.id)
+    return jsonify(needs)
 
 
 @draft_bp.route("/<int:league_id>/draft/api/queue", methods=["GET", "POST", "DELETE"])

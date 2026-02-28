@@ -91,6 +91,14 @@
           <option value="{{ t }}">{{ t }}</option>
         {% endfor %}
       </select>
+      <select class="form-select form-select-sm" id="pool-age-filter" onchange="filterPool()" style="width:auto;">
+        <option value="">All Ages</option>
+        <option value="21">U21</option>
+        <option value="23">U23</option>
+        <option value="25">U25</option>
+        <option value="25-30">25-30</option>
+        <option value="30+">30+</option>
+      </select>
       <select class="form-select form-select-sm" id="pool-status-filter" onchange="filterPool()" style="width:auto;">
         <option value="">All Status</option>
         <option value="available">Available</option>
@@ -225,6 +233,7 @@ function filterPool() {
   const q = document.getElementById('pool-search').value.toLowerCase();
   const pos = document.getElementById('pool-pos-filter').value;
   const team = document.getElementById('pool-team-filter').value;
+  const ageFilter = document.getElementById('pool-age-filter').value;
   const status = document.getElementById('pool-status-filter').value;
   let count = 0;
   document.querySelectorAll('#pool-body tr').forEach(row => {
@@ -232,7 +241,14 @@ function filterPool() {
     const posMatch = !pos || (row.dataset.pos || '').includes(pos);
     const teamMatch = !team || row.dataset.team === team;
     const statusMatch = !status || row.dataset.status === status;
-    const show = nameMatch && posMatch && teamMatch && statusMatch;
+    let ageMatch = true;
+    if (ageFilter) {
+      const age = parseFloat(row.dataset.age) || 0;
+      if (ageFilter === '30+') ageMatch = age >= 30;
+      else if (ageFilter === '25-30') ageMatch = age >= 25 && age <= 30;
+      else ageMatch = age > 0 && age < parseInt(ageFilter);
+    }
+    const show = nameMatch && posMatch && teamMatch && statusMatch && ageMatch;
     row.style.display = show ? '' : 'none';
     if (show) count++;
   });
