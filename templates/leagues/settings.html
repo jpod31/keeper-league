@@ -157,14 +157,15 @@
             <div class="col-md-4">
               <label for="num_fixture_rounds" class="form-label">Regular Season Rounds</label>
               <input type="number" class="form-control form-control-sm" id="num_fixture_rounds" name="num_fixture_rounds"
-                     value="{{ season_config.num_regular_rounds if season_config else 23 }}" min="1" max="30">
+                     value="{{ season_config.num_regular_rounds if season_config else 18 }}" min="1" max="24">
             </div>
             <div class="col-md-4">
-              <label for="finals_teams" class="form-label">Finals Teams</label>
+              <label for="finals_teams" class="form-label">Finals Format</label>
               <select class="form-select form-select-sm" id="finals_teams" name="finals_teams">
-                <option value="4" {{ 'selected' if not season_config or season_config.finals_teams == 4 }}>Top 4</option>
-                <option value="6" {{ 'selected' if season_config and season_config.finals_teams == 6 }}>Top 6</option>
-                <option value="8" {{ 'selected' if season_config and season_config.finals_teams == 8 }}>Top 8</option>
+                <option value="0" {{ 'selected' if season_config and season_config.finals_teams == 0 }}>No Finals</option>
+                <option value="4" {{ 'selected' if not season_config or season_config.finals_teams == 4 }}>Top 4 (3 wks)</option>
+                <option value="6" {{ 'selected' if season_config and season_config.finals_teams == 6 }}>Top 6 (4 wks)</option>
+                <option value="8" {{ 'selected' if season_config and season_config.finals_teams == 8 }}>Top 8 (4 wks)</option>
               </select>
             </div>
             <div class="col-md-4">
@@ -174,7 +175,11 @@
               </button>
             </div>
           </div>
-          <div class="form-text mt-2" style="color:#484f58;font-size:.7rem;">Fixtures are auto-generated when the league is created. Regenerating will overwrite all existing fixtures and results.</div>
+          <div id="fixture-total-display" class="mt-2" style="font-size:.75rem;font-weight:600;color:#3fb950;">
+          </div>
+          <div id="fixture-error-bar" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:6px;color:#f85149;font-size:.75rem;font-weight:600;">
+          </div>
+          <div class="form-text mt-1" style="color:#484f58;font-size:.7rem;">AFL season has 24 rounds. Regular season + finals weeks must not exceed this.</div>
         </div>
       </div>
 
@@ -532,5 +537,44 @@ allPosFields.forEach(name => {
 
 // Initial render
 updateTotalDisplay();
+
+// ── Fixture rounds + finals validation ──
+const AFL_SEASON_ROUNDS = 24;
+const finalsWeeks = { '0': 0, '4': 3, '6': 4, '8': 4 };
+
+function updateFixtureDisplay() {
+  const roundsInput = document.getElementById('num_fixture_rounds');
+  const finalsSelect = document.getElementById('finals_teams');
+  const display = document.getElementById('fixture-total-display');
+  const errBar = document.getElementById('fixture-error-bar');
+  if (!roundsInput || !finalsSelect || !display) return;
+
+  const rounds = parseInt(roundsInput.value) || 0;
+  const finalsVal = finalsSelect.value;
+  const fWeeks = finalsWeeks[finalsVal] || 0;
+  const total = rounds + fWeeks;
+  const ok = total <= AFL_SEASON_ROUNDS;
+
+  display.style.color = ok ? '#3fb950' : '#f85149';
+  display.textContent = `${rounds} regular + ${fWeeks} finals weeks = ${total} / ${AFL_SEASON_ROUNDS} AFL rounds`;
+
+  if (errBar) {
+    if (!ok) {
+      errBar.style.display = 'block';
+      errBar.textContent = `Total season (${total} weeks) exceeds AFL season (${AFL_SEASON_ROUNDS} rounds). Reduce regular rounds or change finals format.`;
+    } else {
+      errBar.style.display = 'none';
+    }
+  }
+
+  // Red border on rounds input
+  roundsInput.style.borderColor = ok ? '' : '#f85149';
+  roundsInput.style.boxShadow = ok ? '' : '0 0 0 1px rgba(248,81,73,.3)';
+}
+
+document.getElementById('num_fixture_rounds')?.addEventListener('input', updateFixtureDisplay);
+document.getElementById('num_fixture_rounds')?.addEventListener('change', updateFixtureDisplay);
+document.getElementById('finals_teams')?.addEventListener('change', updateFixtureDisplay);
+updateFixtureDisplay();
 </script>
 {% endblock %}

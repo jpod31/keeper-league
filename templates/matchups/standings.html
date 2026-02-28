@@ -19,8 +19,9 @@
       <table class="table table-hover mb-0 ladder-table">
         <thead>
           <tr>
-            <th style="width:60px;">Pos</th>
+            <th style="width:40px;"></th>
             <th>Team</th>
+            <th class="text-center">P</th>
             <th class="text-center">W</th>
             <th class="text-center">L</th>
             <th class="text-center">D</th>
@@ -32,22 +33,29 @@
         </thead>
         <tbody>
           {% for s in standings %}
-            <tr>
+            {% set pos = loop.index %}
+            {% set in_finals = pos <= finals_teams %}
+            <tr style="{% if in_finals and pos == finals_teams %}border-bottom:2px solid rgba(35,134,54,.3);{% endif %}">
               <td>
-                <span class="ladder-pos {{ 'top-4' if loop.index <= 4 else '' }}">{{ loop.index }}</span>
+                <span class="ladder-pos {{ 'top-4' if in_finals else '' }}"
+                      style="{% if pos == 1 %}color:#e3b341;{% elif pos == 2 %}color:#c9d1d9;{% elif pos == 3 %}color:#d2a47a;{% endif %}">
+                  {{ pos }}
+                </span>
               </td>
               <td>
-                <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}" class="text-decoration-none">
+                <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}"
+                   class="text-decoration-none" style="color:#e6edf3;">
                   <strong>{{ s.team.name }}</strong>
                 </a>
               </td>
+              <td class="text-center" style="color:#8b949e;">{{ s.wins + s.losses + s.draws }}</td>
               <td class="text-center">{{ s.wins }}</td>
               <td class="text-center">{{ s.losses }}</td>
               <td class="text-center">{{ s.draws }}</td>
               <td class="text-center"><strong style="color:#58a6ff;">{{ s.ladder_points }}</strong></td>
               <td class="text-end">{{ '%.0f'|format(s.points_for) }}</td>
               <td class="text-end">{{ '%.0f'|format(s.points_against) }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.percentage) }}%</td>
+              <td class="text-end">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '-' }}{% if s.percentage > 0 %}%{% endif %}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -55,13 +63,13 @@
     </div>
   </div>
   <div class="mt-2" style="font-size:.75rem;color:#484f58;">
-    <i class="bi bi-info-circle me-1"></i>Top 4 teams qualify for finals
+    <i class="bi bi-info-circle me-1"></i>Top {{ finals_teams }} teams qualify for finals
   </div>
 {% else %}
   <div class="empty-state">
     <div class="empty-icon"><i class="bi bi-bar-chart" style="font-size:1.5rem;"></i></div>
-    <h4>No standings yet</h4>
-    <p>Score some rounds to see the ladder.</p>
+    <h4>No teams in this league yet</h4>
+    <p>Add teams to see the ladder.</p>
   </div>
 {% endif %}
 {% endblock %}

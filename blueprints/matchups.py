@@ -45,9 +45,51 @@ def fixture_view(league_id):
     rounds = get_fixture(league_id, year)
     is_commissioner = league.commissioner_id == current_user.id
 
+    # Determine which round to show (query param or auto-detect)
+    selected_round = request.args.get("round", type=int)
+    if not selected_round and rounds:
+        # Default: latest round with a completed game, or the first scheduled
+        completed_rounds = [r for r, fxs in rounds.items()
+                            if any(f.status == "completed" for f in fxs)]
+        live_rounds = [r for r, fxs in rounds.items()
+                       if any(f.status == "live" for f in fxs)]
+        if live_rounds:
+            selected_round = max(live_rounds)
+        elif completed_rounds:
+            selected_round = max(completed_rounds)
+        else:
+            selected_round = min(rounds.keys()) if rounds else 1
+
+    # Build round metadata for the selector bar
+    round_meta = {}
+    for rnd_num, fixtures in sorted(rounds.items()):
+        has_live = any(f.status == "live" for f in fixtures)
+        has_completed = any(f.status == "completed" for f in fixtures)
+        all_completed = all(f.status == "completed" for f in fixtures)
+        if has_live:
+            status = "live"
+        elif all_completed:
+            status = "completed"
+        elif has_completed:
+            status = "partial"
+        else:
+            status = "scheduled"
+        round_meta[rnd_num] = status
+
+    current_fixtures = rounds.get(selected_round, [])
+    max_round = max(rounds.keys()) if rounds else 1
+
+    # Season config for finals info
+    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+
     return render_template("matchups/fixture.html",
                            league=league,
                            rounds=rounds,
+                           round_meta=round_meta,
+                           selected_round=selected_round,
+                           current_fixtures=current_fixtures,
+                           max_round=max_round,
+                           season_config=season_cfg,
                            is_commissioner=is_commissioner)
 
 
@@ -118,11 +160,31 @@ def standings(league_id):
         flash("You don't have access to this league.", "warning")
         return redirect(url_for("leagues.league_list"))
 
-    standing_list = get_standings(league_id, league.season_year)
+    year = league.season_year
+    standing_list = get_standings(league_id, year)
+
+    # Initialize standings for all teams if missing (so ladder always shows)
+    teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    existing_ids = {s.team_id for s in standing_list}
+    added = False
+    for t in teams:
+        if t.id not in existing_ids:
+            from models.database import SeasonStanding
+            s = SeasonStanding(league_id=league_id, team_id=t.id, year=year)
+            db.session.add(s)
+            added = True
+    if added:
+        db.session.commit()
+        standing_list = get_standings(league_id, year)
+
+    # Season config for finals info
+    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    finals_teams = season_cfg.finals_teams if season_cfg else 4
 
     return render_template("matchups/standings.html",
                            league=league,
-                           standings=standing_list)
+                           standings=standing_list,
+                           finals_teams=finals_teams)
 
 
 @matchups_bp.route("/<int:league_id>/score/<int:afl_round>", methods=["POST"])
@@ -396,26 +458,8 @@ def teams_view(league_id):
 @matchups_bp.route("/<int:league_id>/results")
 @login_required
 def results_view(league_id):
-    league, user_team = check_league_access(league_id)
-    if not league:
-        flash("You don't have access to this league.", "warning")
-        return redirect(url_for("leagues.league_list"))
-
-    year = league.season_year
-    rounds = get_fixture(league_id, year)
-    is_commissioner = league.commissioner_id == current_user.id
-
-    # Find the most recent completed round
-    latest_completed = 0
-    for rnd_num, fixtures in rounds.items():
-        if any(f.status == "completed" for f in fixtures):
-            latest_completed = max(latest_completed, rnd_num)
-
-    return render_template("matchups/results.html",
-                           league=league,
-                           rounds=rounds,
-                           latest_completed=latest_completed,
-                           is_commissioner=is_commissioner)
+    """Redirect to the unified fixture view (results merged into season view)."""
+    return redirect(url_for("matchups.fixture_view", league_id=league_id))
 
 
 @matchups_bp.route("/<int:league_id>/finals")

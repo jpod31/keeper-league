@@ -2,15 +2,11 @@
 <div class="league-subnav">
   <a class="league-subtab{% if active_subtab|default('') == 'fixture' %} active{% endif %}"
      href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
-    <i class="bi bi-calendar-week"></i>Fixture
+    <i class="bi bi-calendar-week"></i>Season
   </a>
   <a class="league-subtab{% if active_subtab|default('') == 'ladder' %} active{% endif %}"
      href="{{ url_for('matchups.standings', league_id=league.id) }}">
     <i class="bi bi-bar-chart"></i>Ladder
-  </a>
-  <a class="league-subtab{% if active_subtab|default('') == 'results' %} active{% endif %}"
-     href="{{ url_for('matchups.results_view', league_id=league.id) }}">
-    <i class="bi bi-clipboard-check"></i>Results
   </a>
   <a class="league-subtab{% if active_subtab|default('') == 'teams' %} active{% endif %}"
      href="{{ url_for('matchups.teams_view', league_id=league.id) }}">
