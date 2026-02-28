@@ -1615,6 +1615,41 @@ th[style*="cursor"]:hover { color: #58a6ff; }
 .sh-icon-finals { background: rgba(248,81,73,.15); color: #f85149; }
 .sh-icon-preseason { background: rgba(210,153,34,.15); color: #d29922; }
 
+/* ── List Management Section Cards ── */
+.lm-section { border:1px solid #30363d; border-radius:12px; overflow:hidden; margin-bottom:1rem; transition: opacity .2s; }
+.lm-section.lm-future { opacity:.5; }
+.lm-section.lm-future:hover { opacity:.75; }
+.lm-section-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:1rem 1.25rem; cursor:pointer; border-bottom:1px solid #30363d;
+  user-select:none;
+}
+.lm-section-body { padding:1.25rem; }
+.lm-section.lm-collapsed .lm-section-body { display:none; }
+.lm-section.lm-collapsed .lm-section-header { border-bottom:none; }
+.lm-chevron { transition: transform .2s; color:#484f58; font-size:.8rem; }
+.lm-section.lm-collapsed .lm-chevron { transform: rotate(-90deg); }
+.lm-section-header:hover .lm-chevron { color:#c9d1d9; }
+
+/* Timer pill */
+.lm-timer {
+  display:inline-flex; align-items:center; gap:.35rem;
+  padding:4px 12px; border-radius:20px;
+  font-size:.75rem; font-weight:600;
+  background:rgba(88,166,255,.1); color:#58a6ff;
+}
+.lm-timer i { font-size:.7rem; }
+.lm-timer-expired { background:rgba(63,185,80,.1); color:#3fb950; }
+
+/* Mock draft card */
+.lm-mock-card {
+  background:#0d1117; border:1px solid #21262d; border-radius:10px;
+  padding:1rem; margin-top:.75rem; border-left:3px solid #bc8cff;
+}
+
+/* Status check for completed sections */
+.lm-check { color:#3fb950; font-size:.85rem; }
+
 /* ═══ Squad Page ═══ */
 
 /* Hero header */

@@ -60,7 +60,7 @@
       </a>
       <a class="league-tab{% if active_tab|default('') == 'season' %} active{% endif %}"
          href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
-        <i class="bi bi-calendar-range"></i><span>Season Hub</span>
+        <i class="bi bi-calendar-range"></i><span>List Management</span>
       </a>
       <a class="league-tab{% if active_tab|default('') == 'settings' %} active{% endif %}"
          href="{{ url_for('leagues.league_settings', league_id=league.id) }}">

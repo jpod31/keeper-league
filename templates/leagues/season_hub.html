@@ -1,14 +1,14 @@
 {% extends "league_base.html" %}
 {% set active_tab = 'season' %}
-{% block title %}Season Hub — {{ league.name }}{% endblock %}
+{% block title %}List Management — {{ league.name }}{% endblock %}
 {% block league_content %}
 <div class="row justify-content-center">
   <div class="col-md-11">
     <div class="page-header">
-      <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Season Hub</div>
+      <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / List Management</div>
       <div class="d-flex justify-content-between align-items-start">
         <div>
-          <h2>Season Hub</h2>
+          <h2>List Management</h2>
           <div class="d-flex align-items-center gap-2 mt-1">
             <span class="status-pill status-{{ league.status }}">{{ league.status }}</span>
             <span style="font-size:.8rem;color:#8b949e;">{{ league.season_year }}</span>
@@ -36,19 +36,27 @@
     </div>
 
     {# ══════════════════════════════════════════════════════════════
-       PHASE DETAIL PANELS — one per phase, toggled by timeline click
+       SECTION CARDS — always visible, stacked vertically
        ══════════════════════════════════════════════════════════════ #}
 
-    {# ── PRE-SEASON PANEL ── #}
-    <div class="phase-panel" id="panel-preseason" style="display:none;">
-      <div class="phase-panel-header sh-header-preseason">
+    {# ── PRE-SEASON ── #}
+    {% set ps_status = 'completed' if phases|selectattr('id','equalto','preseason')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','preseason')|map(attribute='status')|first == 'active' else 'future') %}
+    <div class="lm-section {% if ps_status == 'future' %}lm-future{% endif %} {% if ps_status == 'completed' %}lm-collapsed{% endif %}" id="section-preseason">
+      <div class="lm-section-header sh-header-preseason" onclick="toggleSection('preseason')">
         <div class="d-flex align-items-center gap-2">
           <div class="sh-icon-circle sh-icon-preseason"><i class="bi bi-gear"></i></div>
-          <h4 class="mb-0 fw-bold">Pre-Season</h4>
+          <h5 class="mb-0 fw-bold">Pre-Season</h5>
+          {% if ps_status == 'completed' %}
+            <i class="bi bi-check-circle-fill lm-check"></i>
+          {% endif %}
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          {% set setup_done = (league.teams|length >= 2)|int + (1 if league.scoring_type else 0) + (1 if initial_draft else 0) %}
+          <span class="text-secondary" style="font-size:.75rem;">Setup {{ setup_done }}/3</span>
+          <i class="bi bi-chevron-down lm-chevron"></i>
         </div>
       </div>
-      <div class="phase-panel-body">
-        <h6 class="fw-bold mb-3" style="font-size:.9rem;color:#c9d1d9;">Setup Checklist</h6>
+      <div class="lm-section-body">
         <div class="sh-step">
           <div class="d-flex align-items-center gap-3">
             <div class="sh-step-icon {% if league.teams|length >= 2 %}sh-step-done{% else %}sh-step-pending{% endif %}">
@@ -104,21 +112,35 @@
       </div>
     </div>
 
-    {# ── DRAFT PANEL ── #}
-    <div class="phase-panel" id="panel-draft" style="display:none;">
-      <div class="phase-panel-header sh-header-draft">
+    {# ── DRAFT ── #}
+    {% set draft_status = 'completed' if phases|selectattr('id','equalto','draft')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','draft')|map(attribute='status')|first == 'active' else 'future') %}
+    <div class="lm-section {% if draft_status == 'future' %}lm-future{% endif %} {% if draft_status == 'completed' %}lm-collapsed{% endif %}" id="section-draft">
+      <div class="lm-section-header sh-header-draft" onclick="toggleSection('draft')">
         <div class="d-flex align-items-center gap-2">
           <div class="sh-icon-circle sh-icon-draft"><i class="bi bi-list-check"></i></div>
-          <h4 class="mb-0 fw-bold">Draft</h4>
+          <h5 class="mb-0 fw-bold">Draft</h5>
+          {% if draft_status == 'completed' %}
+            <i class="bi bi-check-circle-fill lm-check"></i>
+          {% endif %}
         </div>
-        {% if not initial_draft or initial_draft.status != 'completed' %}
-          <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm sh-btn-draft">
-            <i class="bi bi-box-arrow-up-right me-1"></i>Draft Setup
-          </a>
-        {% endif %}
+        <div class="d-flex align-items-center gap-2">
+          {% if initial_draft and initial_draft.status == 'scheduled' and initial_draft.scheduled_start %}
+            <div class="lm-timer" id="timer-draft">
+              <i class="bi bi-clock"></i>
+              <span class="lm-timer-label">Starts in</span>
+              <span class="lm-timer-value" data-target="{{ initial_draft.scheduled_start.isoformat() }}"></span>
+            </div>
+          {% endif %}
+          {% if not initial_draft or initial_draft.status != 'completed' %}
+            <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm sh-btn-draft" onclick="event.stopPropagation();">
+              <i class="bi bi-box-arrow-up-right me-1"></i>Draft Setup
+            </a>
+          {% endif %}
+          <i class="bi bi-chevron-down lm-chevron"></i>
+        </div>
       </div>
-      <div class="phase-panel-body">
-        {# Initial Draft #}
+      <div class="lm-section-body">
+        {# Initial Draft card #}
         <div class="sh-card sh-card-draft">
           <div class="d-flex justify-content-between align-items-start">
             <div class="d-flex align-items-center gap-3">
@@ -175,22 +197,34 @@
               </div>
               <div id="initial-countdown" class="sh-countdown-timer"></div>
             </div>
-            <script>
-              (function() {
-                const target = new Date("{{ initial_draft.scheduled_start.isoformat() }}");
-                const el = document.getElementById('initial-countdown');
-                function tick() {
-                  const now = new Date(), diff = target - now;
-                  if (diff <= 0) { el.innerHTML = '<span style="color:#3fb950;">Draft time!</span>'; return; }
-                  const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000);
-                  const m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-                  let p = []; if (d) p.push(d+'d'); p.push(h+'h', m+'m', s+'s');
-                  el.textContent = p.join(' '); setTimeout(tick, 1000);
-                }
-                tick();
-              })();
-            </script>
           {% endif %}
+        </div>
+
+        {# ── Mock Draft ── #}
+        <div class="lm-mock-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+              <div class="sh-step-icon sh-step-ready">
+                <i class="bi bi-controller"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Mock Draft</h6>
+                <span class="text-secondary" style="font-size:.8rem;">Practice your draft strategy against AI opponents</span>
+              </div>
+            </div>
+            {% if mock_draft and mock_draft.status in ('in_progress', 'paused') %}
+              <a href="{{ url_for('draft_live.mock_draft_room', league_id=league.id) }}" class="btn sh-btn-draft btn-sm">
+                <i class="bi bi-play-fill me-1"></i>Resume Mock
+              </a>
+            {% else %}
+              <form method="POST" action="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" onclick="event.stopPropagation();">
+                <input type="hidden" name="action" value="create_mock">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-controller me-1"></i>Start Mock Draft
+                </button>
+              </form>
+            {% endif %}
+          </div>
         </div>
 
         {# Mid-Season & Off-Season Draft cards #}
@@ -282,18 +316,25 @@
       </div>
     </div>
 
-    {# ── REGULAR SEASON PANEL ── #}
-    <div class="phase-panel" id="panel-regular" style="display:none;">
-      <div class="phase-panel-header sh-header-regular">
+    {# ── REGULAR SEASON ── #}
+    {% set reg_status = 'completed' if phases|selectattr('id','equalto','regular')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','regular')|map(attribute='status')|first == 'active' else 'future') %}
+    <div class="lm-section {% if reg_status == 'future' %}lm-future{% endif %} {% if reg_status != 'active' %}lm-collapsed{% endif %}" id="section-regular">
+      <div class="lm-section-header sh-header-regular" onclick="toggleSection('regular')">
         <div class="d-flex align-items-center gap-2">
           <div class="sh-icon-circle sh-icon-regular"><i class="bi bi-trophy"></i></div>
-          <h4 class="mb-0 fw-bold">Regular Season</h4>
+          <h5 class="mb-0 fw-bold">Regular Season</h5>
+          {% if reg_status == 'completed' %}
+            <i class="bi bi-check-circle-fill lm-check"></i>
+          {% endif %}
           {% if current_round_num %}
             <span class="badge" style="background:rgba(63,185,80,.2);color:#3fb950;font-size:.65rem;">ROUND {{ current_round_num }}</span>
           {% endif %}
         </div>
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-chevron-down lm-chevron"></i>
+        </div>
       </div>
-      <div class="phase-panel-body">
+      <div class="lm-section-body">
         {# Standings snapshot #}
         {% if standings %}
           <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">Ladder</h6>
@@ -384,18 +425,37 @@
       </div>
     </div>
 
-    {# ── MID-SEASON PANEL ── #}
-    <div class="phase-panel" id="panel-midseason" style="display:none;">
-      <div class="phase-panel-header sh-header-mid">
+    {# ── MID-SEASON ── #}
+    {% set mid_status = 'completed' if phases|selectattr('id','equalto','midseason')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','midseason')|map(attribute='status')|first == 'active' else 'future') %}
+    <div class="lm-section {% if mid_status == 'future' %}lm-future{% endif %} {% if mid_status != 'active' %}lm-collapsed{% endif %}" id="section-midseason">
+      <div class="lm-section-header sh-header-mid" onclick="toggleSection('midseason')">
         <div class="d-flex align-items-center gap-2">
           <div class="sh-icon-circle sh-icon-mid"><i class="bi bi-arrow-repeat"></i></div>
-          <h4 class="mb-0 fw-bold">Mid-Season</h4>
-          {% if current_phase == 'midseason' %}
+          <h5 class="mb-0 fw-bold">Mid-Season</h5>
+          {% if mid_status == 'completed' %}
+            <i class="bi bi-check-circle-fill lm-check"></i>
+          {% elif mid_status == 'active' %}
             <span class="badge" style="background:rgba(210,153,34,.2);color:#d29922;font-size:.65rem;">ACTIVE</span>
           {% endif %}
         </div>
+        <div class="d-flex align-items-center gap-2">
+          {% if mid_trade_status == 'active' and trade_window_dates.mid_close %}
+            <div class="lm-timer">
+              <i class="bi bi-clock"></i>
+              <span class="lm-timer-label">Trades close</span>
+              <span class="lm-timer-value" data-target="{{ trade_window_dates.mid_close.isoformat() }}"></span>
+            </div>
+          {% elif delist_period and delist_period.status == 'open' and current_phase == 'midseason' and delist_period.closes_at %}
+            <div class="lm-timer">
+              <i class="bi bi-clock"></i>
+              <span class="lm-timer-label">Delists close</span>
+              <span class="lm-timer-value" data-target="{{ delist_period.closes_at.isoformat() }}"></span>
+            </div>
+          {% endif %}
+          <i class="bi bi-chevron-down lm-chevron"></i>
+        </div>
       </div>
-      <div class="phase-panel-body">
+      <div class="lm-section-body">
         {# Step 1: Trade Window #}
         {% if season_cfg and season_cfg.mid_season_trade_enabled %}
           <div class="sh-step">
@@ -412,12 +472,12 @@
               </div>
               {% if is_commissioner %}
                 {% if mid_trade_status == 'locked' %}
-                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                     <input type="hidden" name="step" value="trade_window">
                     <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-play-fill me-1"></i>Open</button>
                   </form>
                 {% elif mid_trade_status == 'active' %}
-                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                     <input type="hidden" name="step" value="close_trades">
                     <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close</button>
                   </form>
@@ -430,13 +490,13 @@
                 {% if trade_window_dates.mid_draft %}
                   &middot; Draft: {{ trade_window_dates.mid_draft.strftime('%d %b %Y') }}
                   {% if is_commissioner %}
-                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" style="font-size:.65rem;padding:1px 6px;" data-bs-toggle="collapse" data-bs-target="#amendDraftDate"><i class="bi bi-pencil"></i></button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" style="font-size:.65rem;padding:1px 6px;" data-bs-toggle="collapse" data-bs-target="#amendDraftDate" onclick="event.stopPropagation();"><i class="bi bi-pencil"></i></button>
                   {% endif %}
                 {% endif %}
               </div>
               {% if is_commissioner %}
                 <div class="collapse mt-2" id="amendDraftDate">
-                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-flex gap-2 align-items-end">
+                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-flex gap-2 align-items-end" onclick="event.stopPropagation();">
                     <input type="hidden" name="step" value="amend_draft_date">
                     <div>
                       <label class="form-label" style="font-size:.7rem;">New Draft Date</label>
@@ -491,12 +551,12 @@
             </div>
             {% if is_commissioner and current_phase == 'midseason' %}
               {% if mid_delist_status in ('pending', 'locked') %}
-                <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                   <input type="hidden" name="step" value="open_delists">
                   <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-play-fill me-1"></i>Open Delists</button>
                 </form>
               {% elif mid_delist_status == 'active' %}
-                <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                   <input type="hidden" name="step" value="close_delists">
                   <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close Delists</button>
                 </form>
@@ -541,7 +601,7 @@
               </div>
             </div>
             {% if is_commissioner and mid_draft_status == 'completed' and mid_lock_status != 'completed' %}
-              <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+              <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                 <input type="hidden" name="step" value="roster_lock">
                 <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-lock me-1"></i>Lock Rosters</button>
               </form>
@@ -551,18 +611,24 @@
       </div>
     </div>
 
-    {# ── FINALS PANEL ── #}
-    <div class="phase-panel" id="panel-finals" style="display:none;">
-      <div class="phase-panel-header sh-header-finals">
+    {# ── FINALS ── #}
+    {% set fin_status = 'completed' if phases|selectattr('id','equalto','finals')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','finals')|map(attribute='status')|first == 'active' else 'future') %}
+    <div class="lm-section {% if fin_status == 'future' %}lm-future{% endif %} {% if fin_status != 'active' %}lm-collapsed{% endif %}" id="section-finals">
+      <div class="lm-section-header sh-header-finals" onclick="toggleSection('finals')">
         <div class="d-flex align-items-center gap-2">
           <div class="sh-icon-circle sh-icon-finals"><i class="bi bi-award"></i></div>
-          <h4 class="mb-0 fw-bold">Finals</h4>
-          {% if current_phase == 'finals' %}
+          <h5 class="mb-0 fw-bold">Finals</h5>
+          {% if fin_status == 'completed' %}
+            <i class="bi bi-check-circle-fill lm-check"></i>
+          {% elif fin_status == 'active' %}
             <span class="badge" style="background:rgba(248,81,73,.2);color:#f85149;font-size:.65rem;">ACTIVE</span>
           {% endif %}
         </div>
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-chevron-down lm-chevron"></i>
+        </div>
       </div>
-      <div class="phase-panel-body">
+      <div class="lm-section-body">
         {% if standings %}
           <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">Finals Standings</h6>
           <div class="table-responsive">
@@ -607,18 +673,37 @@
       </div>
     </div>
 
-    {# ── OFF-SEASON PANEL ── #}
-    <div class="phase-panel" id="panel-offseason" style="display:none;">
-      <div class="phase-panel-header sh-header-off">
+    {# ── OFF-SEASON ── #}
+    {% set off_status = 'completed' if phases|selectattr('id','equalto','offseason')|map(attribute='status')|first == 'completed' else ('active' if phases|selectattr('id','equalto','offseason')|map(attribute='status')|first == 'active' else 'future') %}
+    <div class="lm-section {% if off_status == 'future' %}lm-future{% endif %} {% if off_status != 'active' %}lm-collapsed{% endif %}" id="section-offseason">
+      <div class="lm-section-header sh-header-off" onclick="toggleSection('offseason')">
         <div class="d-flex align-items-center gap-2">
           <div class="sh-icon-circle sh-icon-off"><i class="bi bi-snow"></i></div>
-          <h4 class="mb-0 fw-bold">Off-Season</h4>
-          {% if current_phase == 'offseason' %}
+          <h5 class="mb-0 fw-bold">Off-Season</h5>
+          {% if off_status == 'completed' %}
+            <i class="bi bi-check-circle-fill lm-check"></i>
+          {% elif off_status == 'active' %}
             <span class="badge" style="background:rgba(188,140,255,.2);color:#bc8cff;font-size:.65rem;">ACTIVE</span>
           {% endif %}
         </div>
+        <div class="d-flex align-items-center gap-2">
+          {% if off_trade_status == 'active' and trade_window_dates.off_close %}
+            <div class="lm-timer">
+              <i class="bi bi-clock"></i>
+              <span class="lm-timer-label">Trades close</span>
+              <span class="lm-timer-value" data-target="{{ trade_window_dates.off_close.isoformat() }}"></span>
+            </div>
+          {% elif delist_period and delist_period.status == 'open' and current_phase == 'offseason' and delist_period.closes_at %}
+            <div class="lm-timer">
+              <i class="bi bi-clock"></i>
+              <span class="lm-timer-label">Delists close</span>
+              <span class="lm-timer-value" data-target="{{ delist_period.closes_at.isoformat() }}"></span>
+            </div>
+          {% endif %}
+          <i class="bi bi-chevron-down lm-chevron"></i>
+        </div>
       </div>
-      <div class="phase-panel-body">
+      <div class="lm-section-body">
         {# Step 1: Delist Period #}
         <div class="sh-step">
           <div class="d-flex justify-content-between align-items-start">
@@ -636,12 +721,12 @@
             </div>
             {% if is_commissioner %}
               {% if off_delist_status == 'pending' %}
-                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}">
+                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                   <input type="hidden" name="step" value="open_delists">
                   <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-play-fill me-1"></i>Open Delists</button>
                 </form>
               {% elif off_delist_status == 'active' %}
-                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}">
+                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                   <input type="hidden" name="step" value="close_delists">
                   <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close Delists</button>
                 </form>
@@ -756,12 +841,12 @@
             </div>
             {% if is_commissioner %}
               {% if off_trade_status == 'pending' %}
-                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}">
+                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                   <input type="hidden" name="step" value="open_trades">
                   <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-play-fill me-1"></i>Open</button>
                 </form>
               {% elif off_trade_status == 'active' %}
-                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}">
+                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
                   <input type="hidden" name="step" value="close_trades">
                   <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close</button>
                 </form>
@@ -801,15 +886,15 @@
 
     {# ── ACTIVE DELIST PERIOD — floating alert when delist is open ── #}
     {% if delist_period and delist_period.status == 'open' and user_team and current_phase in ('midseason', 'offseason') %}
-      <div class="phase-panel mt-3" id="delist-alert" style="border-color:rgba(248,81,73,.3);">
-        <div class="phase-panel-header" style="background:linear-gradient(135deg,rgba(248,81,73,.12) 0%,rgba(210,153,34,.08) 100%);border-bottom:1px solid rgba(248,81,73,.2);">
+      <div class="lm-section mt-1" id="delist-alert" style="border-color:rgba(248,81,73,.3);">
+        <div class="lm-section-header" style="background:linear-gradient(135deg,rgba(248,81,73,.12) 0%,rgba(210,153,34,.08) 100%);border-bottom:1px solid rgba(248,81,73,.2);cursor:default;">
           <div class="d-flex align-items-center gap-2">
             <div class="sh-icon-circle" style="background:rgba(248,81,73,.15);color:#f85149;"><i class="bi bi-person-dash"></i></div>
-            <h4 class="mb-0 fw-bold">Delist Period Open</h4>
+            <h5 class="mb-0 fw-bold">Delist Period Open</h5>
             <span class="badge" style="background:rgba(248,81,73,.2);color:#f85149;font-size:.65rem;">ACTION REQUIRED</span>
           </div>
         </div>
-        <div class="phase-panel-body">
+        <div class="lm-section-body">
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <span style="font-size:.9rem;">
@@ -834,38 +919,77 @@
 
 <script>
 (function() {
-  const activePhase = "{{ active_phase_id }}";
-  let currentPanel = null;
-
-  function togglePhase(phaseId) {
-    const panels = document.querySelectorAll('.phase-panel[id^="panel-"]');
-    const targetPanel = document.getElementById('panel-' + phaseId);
-    if (!targetPanel) return;
-
-    if (currentPanel === phaseId) {
-      // Clicking active node again — collapse
-      targetPanel.style.display = 'none';
-      currentPanel = null;
-      // Remove active highlight from all nodes
-      document.querySelectorAll('.timeline-node').forEach(n => n.classList.remove('selected'));
-      return;
-    }
-
-    // Hide all panels
-    panels.forEach(p => p.style.display = 'none');
-    // Show target
-    targetPanel.style.display = 'block';
-    currentPanel = phaseId;
-
-    // Update node visual selection
-    document.querySelectorAll('.timeline-node').forEach(n => n.classList.remove('selected'));
-    document.querySelector('.timeline-node[data-phase="' + phaseId + '"]').classList.add('selected');
+  // ── Section collapse/expand ──
+  function toggleSection(sectionId) {
+    const section = document.getElementById('section-' + sectionId);
+    if (!section) return;
+    section.classList.toggle('lm-collapsed');
   }
+  window.toggleSection = toggleSection;
 
-  // Auto-open the active phase panel on load
+  // ── Timeline click → scroll to section + expand ──
+  function togglePhase(phaseId) {
+    const section = document.getElementById('section-' + phaseId);
+    if (!section) return;
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (section.classList.contains('lm-collapsed')) {
+      section.classList.remove('lm-collapsed');
+    }
+    // Highlight the timeline node
+    document.querySelectorAll('.timeline-node').forEach(n => n.classList.remove('selected'));
+    const node = document.querySelector('.timeline-node[data-phase="' + phaseId + '"]');
+    if (node) node.classList.add('selected');
+  }
   window.togglePhase = togglePhase;
-  if (activePhase) {
-    togglePhase(activePhase);
+
+  // ── Countdown timers ──
+  function startTimers() {
+    const timers = document.querySelectorAll('.lm-timer-value[data-target]');
+    timers.forEach(function(el) {
+      const targetStr = el.getAttribute('data-target');
+      if (!targetStr) return;
+      const target = new Date(targetStr);
+
+      function tick() {
+        const now = new Date(), diff = target - now;
+        if (diff <= 0) {
+          el.textContent = 'Now';
+          const pill = el.closest('.lm-timer');
+          if (pill) pill.classList.add('lm-timer-expired');
+          return;
+        }
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        let parts = [];
+        if (d) parts.push(d + 'd');
+        parts.push(h + 'h', m + 'm', s + 's');
+        el.textContent = parts.join(' ');
+        setTimeout(tick, 1000);
+      }
+      tick();
+    });
+  }
+  startTimers();
+
+  // ── Initial draft countdown (inline in draft card) ──
+  var cdEl = document.getElementById('initial-countdown');
+  if (cdEl) {
+    {% if initial_draft and initial_draft.scheduled_start %}
+    (function() {
+      const target = new Date("{{ initial_draft.scheduled_start.isoformat() }}");
+      function tick() {
+        const now = new Date(), diff = target - now;
+        if (diff <= 0) { cdEl.innerHTML = '<span style="color:#3fb950;">Draft time!</span>'; return; }
+        const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000);
+        const m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+        let p = []; if (d) p.push(d+'d'); p.push(h+'h', m+'m', s+'s');
+        cdEl.textContent = p.join(' '); setTimeout(tick, 1000);
+      }
+      tick();
+    })();
+    {% endif %}
   }
 })();
 </script>

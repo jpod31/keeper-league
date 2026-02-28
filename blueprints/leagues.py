@@ -905,6 +905,9 @@ def season_hub(league_id):
             ).all()
             delisted_player_ids = {a.player_id for a in delisted_actions}
 
+    # ── Mock draft ──
+    mock_draft = DraftSession.query.filter_by(league_id=league_id, is_mock=True).first()
+
     # ── Trade data ──
     pending_incoming = 0
     pending_outgoing = 0
@@ -989,7 +992,8 @@ def season_hub(league_id):
                            delisted_player_ids=delisted_player_ids,
                            trade_window_dates=trade_window_dates,
                            standings=standings,
-                           current_round_num=current_round_num)
+                           current_round_num=current_round_num,
+                           mock_draft=mock_draft)
 
 
 @leagues_bp.route("/<int:league_id>/midseason")
