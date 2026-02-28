@@ -16,7 +16,10 @@
       </div>
     </div>
     {% if is_commissioner %}
-      <div id="commissioner-controls" class="d-flex gap-2">
+      <div id="commissioner-controls" class="d-flex gap-2 align-items-center">
+        <button id="comm-override-btn" class="btn btn-outline-warning btn-sm" onclick="toggleCommOverride()" style="font-size:.7rem;" title="Pick on behalf of other teams">
+          <i class="bi bi-shield me-1"></i>Override
+        </button>
         {% if session.status == 'scheduled' %}
           <button class="btn btn-primary btn-sm" onclick="startDraft()"><i class="bi bi-play-fill me-1"></i>Start Draft</button>
         {% elif session.status == 'in_progress' %}
@@ -350,14 +353,34 @@ function searchPlayers() {
     });
 }
 
+let commOverride = false;
+
 function canPick() {
   if (draftState.status !== 'in_progress') return false;
-  if (IS_COMMISSIONER) return true;
-  return USER_TEAM_ID && draftState.current_team_id === USER_TEAM_ID;
+  const isMyTurn = USER_TEAM_ID && draftState.current_team_id === USER_TEAM_ID;
+  if (isMyTurn) return true;
+  if (IS_COMMISSIONER && commOverride) return true;
+  return false;
 }
 
 function pickPlayer(playerId) {
+  const isMyTurn = USER_TEAM_ID && draftState.current_team_id === USER_TEAM_ID;
+  if (!isMyTurn && IS_COMMISSIONER && commOverride) {
+    if (!confirm('Pick on behalf of ' + (draftState.current_team_name || 'another team') + '?')) return;
+  }
   socket.emit('make_pick', { league_id: LEAGUE_ID, player_id: playerId });
+}
+
+function toggleCommOverride() {
+  commOverride = !commOverride;
+  const btn = document.getElementById('comm-override-btn');
+  if (btn) {
+    btn.classList.toggle('active', commOverride);
+    btn.innerHTML = commOverride
+      ? '<i class="bi bi-shield-fill-check me-1"></i>Override ON'
+      : '<i class="bi bi-shield me-1"></i>Override';
+  }
+  searchPlayers();
 }
 
 let pickFilterMode = 'all';
