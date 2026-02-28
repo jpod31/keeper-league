@@ -190,9 +190,16 @@
                   <i class="bi bi-door-open me-1"></i>Enter Draft Room
                 </a>
               {% elif initial_draft and initial_draft.status == 'scheduled' %}
-                <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm">
-                  <i class="bi bi-gear me-1"></i>Draft Setup
-                </a>
+                <div class="d-flex gap-2">
+                  <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-door-open me-1"></i>Enter Draft Room
+                  </a>
+                  {% if is_commissioner %}
+                    <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm">
+                      <i class="bi bi-gear me-1"></i>Setup
+                    </a>
+                  {% endif %}
+                </div>
               {% elif not initial_draft and is_commissioner %}
                 <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-primary btn-sm">
                   <i class="bi bi-plus-lg me-1"></i>Create Draft

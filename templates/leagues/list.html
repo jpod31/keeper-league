@@ -158,11 +158,7 @@
               </div>
               <div class="d-flex align-items-center gap-2">
                 <span class="badge" style="background:rgba(88,166,255,.12);color:#58a6ff;font-size:.7rem;">{{ d.league.name }}</span>
-                {% if d.draft.status == 'in_progress' %}
-                  <a href="{{ url_for('draft_live.draft_room', league_id=d.league.id) }}" class="btn btn-primary btn-sm" style="font-size:.7rem;padding:2px 8px;">Enter</a>
-                {% else %}
-                  <a href="{{ url_for('draft_live.draft_setup', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">Setup</a>
-                {% endif %}
+                <a href="{{ url_for('draft_live.draft_room', league_id=d.league.id) }}" class="btn btn-primary btn-sm" style="font-size:.7rem;padding:2px 8px;">Enter</a>
               </div>
             </div>
           {% endfor %}
