@@ -250,11 +250,18 @@ def rank_players(
         factor_scores[name] = fn(players)
 
     # Weighted composite
+    raw = []
     for i, player in enumerate(players):
         score = 0.0
         for factor_name, weight in w.items():
             score += weight * factor_scores[factor_name][i]
-        player.draft_score = round(score * 100, 1)
+        raw.append(score)
+
+    # Normalise to full 0-99 range so top player isn't stuck at 60
+    lo, hi = min(raw), max(raw)
+    rng = hi - lo if hi != lo else 1.0
+    for i, player in enumerate(players):
+        player.draft_score = round(((raw[i] - lo) / rng) * 99, 1)
 
     players.sort(key=lambda p: p.draft_score or 0, reverse=True)
     return players
@@ -491,8 +498,16 @@ def compute_historical_draft_scores(
 
         results.append({
             "year": year,
-            "draft_score": round(draft_score * 100, 1),
+            "draft_score": draft_score,
             "sc_avg": sc_avg,
         })
+
+    # Normalise historical scores to 0-99 range
+    if results:
+        raw_scores = [r["draft_score"] for r in results]
+        lo, hi = min(raw_scores), max(raw_scores)
+        rng = hi - lo if hi != lo else 1.0
+        for r in results:
+            r["draft_score"] = round(((r["draft_score"] - lo) / rng) * 99, 1)
 
     return results

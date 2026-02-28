@@ -34,9 +34,9 @@
     display: flex; align-items: center; gap: 6px; justify-content: flex-end;
   }
   .value-bar {
-    width: 48px; height: 5px; border-radius: 3px; background: #21262d; overflow: hidden;
+    width: 50px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.06); overflow: hidden;
   }
-  .value-bar-fill { height: 100%; border-radius: 3px; }
+  .value-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #d29922, #e3b341); }
   .status-chip {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
@@ -196,9 +196,9 @@
               {% if p.draft_score %}
                 {% set pct = (p.draft_score / max_ds * 100) if max_ds else 0 %}
                 <div class="value-bar-wrap">
-                  <span style="color:#e6edf3;font-weight:700;font-size:.82rem;">{{ '%.1f'|format(p.draft_score) }}</span>
+                  <span style="color:#e3b341;font-weight:700;font-size:.82rem;">{{ '%.1f'|format(p.draft_score) }}</span>
                   <div class="value-bar">
-                    <div class="value-bar-fill" style="width:{{ pct }}%;background:#8b949e;"></div>
+                    <div class="value-bar-fill" style="width:{{ pct }}%;"></div>
                   </div>
                 </div>
               {% else %}<span style="color:#484f58;">-</span>{% endif %}
