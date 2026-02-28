@@ -14,6 +14,13 @@
       </div>
     </div>
 
+    {% if has_active_draft and is_commissioner %}
+      <div class="alert d-flex align-items-center gap-2 mb-3" style="background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.2);border-radius:10px;font-size:.85rem;">
+        <i class="bi bi-lock-fill" style="color:#d29922;"></i>
+        <span style="color:#c9d1d9;">Some settings are locked while a draft session is active. Delete the draft from <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" style="color:#58a6ff;">Draft Setup</a> to unlock.</span>
+      </div>
+    {% endif %}
+
     <form method="POST">
       <fieldset {% if not is_commissioner %}disabled{% endif %}>
       <div class="card mb-4">
@@ -25,12 +32,14 @@
               <input type="text" class="form-control" id="name" name="name" value="{{ league.name }}">
             </div>
             <div class="col-md-3">
-              <label for="num_teams" class="form-label">Max Teams</label>
-              <input type="number" class="form-control" id="num_teams" name="num_teams" value="{{ league.num_teams }}" min="2" max="18">
+              <label for="num_teams" class="form-label">Max Teams {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
+              <input type="number" class="form-control" id="num_teams" name="num_teams" value="{{ league.num_teams }}" min="2" max="18" {% if has_active_draft %}disabled{% endif %}>
+              {% if has_active_draft %}<input type="hidden" name="num_teams" value="{{ league.num_teams }}">{% endif %}
             </div>
             <div class="col-md-3">
-              <label for="squad_size" class="form-label">Squad Size</label>
-              <input type="number" class="form-control" id="squad_size" name="squad_size" value="{{ league.squad_size }}" min="18" max="60">
+              <label for="squad_size" class="form-label">Squad Size {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
+              <input type="number" class="form-control" id="squad_size" name="squad_size" value="{{ league.squad_size }}" min="18" max="60" {% if has_active_draft %}disabled{% endif %}>
+              {% if has_active_draft %}<input type="hidden" name="squad_size" value="{{ league.squad_size }}">{% endif %}
             </div>
             <div class="col-md-4">
               <label class="form-label">On-Field Count</label>
@@ -38,11 +47,12 @@
               <div class="form-text" style="color:#484f58;font-size:.7rem;">Derived from formation totals (DEF+MID+FWD+RUC)</div>
             </div>
             <div class="col-md-4">
-              <label for="draft_type" class="form-label">Draft Type</label>
-              <select class="form-select" id="draft_type" name="draft_type">
+              <label for="draft_type" class="form-label">Draft Type {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
+              <select class="form-select" id="draft_type" name="draft_type" {% if has_active_draft %}disabled{% endif %}>
                 <option value="snake" {{ 'selected' if league.draft_type == 'snake' }}>Snake</option>
                 <option value="linear" {{ 'selected' if league.draft_type == 'linear' }}>Linear</option>
               </select>
+              {% if has_active_draft %}<input type="hidden" name="draft_type" value="{{ league.draft_type }}">{% endif %}
             </div>
             <div class="col-md-4">
               <label for="pick_timer_secs" class="form-label">Pick Timer (s)</label>

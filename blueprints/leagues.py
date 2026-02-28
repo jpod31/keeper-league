@@ -382,12 +382,38 @@ def league_settings(league_id):
         return redirect(url_for("leagues.league_settings", league_id=league_id))
 
     if request.method == "POST":
+        # Block draft-critical setting changes while a draft exists
+        from models.database import DraftSession
+        active_draft = DraftSession.query.filter_by(
+            league_id=league_id, is_mock=False
+        ).filter(DraftSession.status.in_(["scheduled", "in_progress", "paused"])).first()
+
+        new_num_teams = request.form.get("num_teams", type=int) or league.num_teams
+        new_squad_size = request.form.get("squad_size", type=int) or league.squad_size
+        new_draft_type = request.form.get("draft_type", league.draft_type)
+
+        if active_draft:
+            changed = []
+            if new_num_teams != league.num_teams:
+                changed.append("Max Teams")
+            if new_squad_size != league.squad_size:
+                changed.append("Squad Size")
+            if new_draft_type != league.draft_type:
+                changed.append("Draft Type")
+            if changed:
+                flash(
+                    f"Cannot change {', '.join(changed)} while a draft is active. "
+                    "Delete the draft session first from Draft Setup.",
+                    "warning",
+                )
+                return redirect(url_for("leagues.league_settings", league_id=league_id))
+
         update_league_settings(
             league_id,
             name=request.form.get("name", league.name).strip(),
-            num_teams=request.form.get("num_teams", type=int) or league.num_teams,
-            squad_size=request.form.get("squad_size", type=int) or league.squad_size,
-            draft_type=request.form.get("draft_type", league.draft_type),
+            num_teams=new_num_teams,
+            squad_size=new_squad_size,
+            draft_type=new_draft_type,
             pick_timer_secs=request.form.get("pick_timer_secs", type=int) or league.pick_timer_secs,
             delist_minimum=request.form.get("delist_minimum", type=int) or league.delist_minimum,
         )
@@ -471,9 +497,14 @@ def league_settings(league_id):
         return redirect(url_for("leagues.league_settings", league_id=league_id))
 
     live_config = LiveScoringConfig.query.get(league_id)
-    from models.database import SeasonConfig
+    from models.database import SeasonConfig, DraftSession
     season_config = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
-    return render_template("leagues/settings.html", league=league, live_config=live_config, season_config=season_config, is_commissioner=is_commissioner)
+    has_active_draft = DraftSession.query.filter_by(
+        league_id=league_id, is_mock=False
+    ).filter(DraftSession.status.in_(["scheduled", "in_progress", "paused"])).first() is not None
+    return render_template("leagues/settings.html", league=league, live_config=live_config,
+                           season_config=season_config, is_commissioner=is_commissioner,
+                           has_active_draft=has_active_draft)
 
 
 @leagues_bp.route("/<int:league_id>/scoring", methods=["GET", "POST"])
