@@ -8,25 +8,36 @@
       <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Messages</div>
       <div class="d-flex justify-content-between align-items-center">
         <h2>Messages</h2>
-        <div class="dropdown">
-          <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            <i class="bi bi-plus-lg me-1"></i>New Message
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end" style="background:#161b22;border-color:#30363d;">
-            {% for t in all_teams %}
-              <li>
-                <a class="dropdown-item" href="{{ url_for('comms.inbox', league_id=league.id) }}?new={{ t.id }}">
-                  {{ t.name }}
-                  <span class="text-secondary ms-1" style="font-size:.7rem;">{{ t.owner.display_name or t.owner.username }}</span>
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
+        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#newMsgPicker">
+          <i class="bi bi-plus-lg me-1"></i>New Message
+        </button>
+      </div>
+    </div>
+
+    {# Collapsible team picker + compose form #}
+    <div class="collapse mb-3" id="newMsgPicker">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center" style="padding:.6rem 1rem;">
+          <span class="fw-bold" style="font-size:.85rem;">Choose a team to message</span>
+          <button type="button" class="btn-close btn-close-white" style="font-size:.55rem;" data-bs-toggle="collapse" data-bs-target="#newMsgPicker"></button>
+        </div>
+        <div class="card-body p-0">
+          {% for t in all_teams %}
+            <a href="{{ url_for('comms.inbox', league_id=league.id) }}?new={{ t.id }}"
+               class="d-flex align-items-center gap-2 px-3 py-2"
+               style="border-bottom:1px solid #21262d;text-decoration:none;color:#c9d1d9;font-size:.85rem;">
+              <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:#21262d;font-size:.7rem;font-weight:600;flex-shrink:0;">
+                {{ t.name[0]|upper }}
+              </div>
+              {{ t.name }}
+              <span class="text-secondary" style="font-size:.7rem;">{{ t.owner.display_name or t.owner.username }}</span>
+            </a>
+          {% endfor %}
         </div>
       </div>
     </div>
 
-    {# New message form if ?new=team_id #}
+    {# Compose form when team selected via ?new= #}
     {% set new_team_id = request.args.get('new', type=int) %}
     {% if new_team_id %}
       {% set recipient = all_teams|selectattr('id', 'equalto', new_team_id)|first %}
@@ -40,7 +51,7 @@
             <form method="POST" action="{{ url_for('comms.send_message', league_id=league.id) }}">
               <input type="hidden" name="recipient_team_id" value="{{ new_team_id }}">
               <div class="mb-2">
-                <textarea name="body" class="form-control" rows="3" placeholder="Write your message..." required style="font-size:.85rem;"></textarea>
+                <textarea name="body" class="form-control" rows="3" placeholder="Write your message..." required autofocus style="font-size:.85rem;"></textarea>
               </div>
               <button type="submit" class="btn btn-primary btn-sm">
                 <i class="bi bi-send me-1"></i>Send
