@@ -68,7 +68,7 @@ def _positional_scarcity_scores(players: List[Player]) -> List[float]:
     for pos in pos_sc:
         pos_sc[pos].sort(reverse=True)
 
-    # Compute scarcity per position: elite / replacement ratio
+    # Compute scarcity: quality drop-off weighted by pool rarity
     scarcity: Dict[str, float] = {}
     for pos, slots in POSITIONS.items():
         demand = slots * NUM_TEAMS
@@ -84,7 +84,9 @@ def _positional_scarcity_scores(players: List[Player]) -> List[float]:
             replacement_sc = ranked[-1]
 
         replacement_sc = max(replacement_sc, 1.0)
-        scarcity[pos] = elite_sc / replacement_sc
+        dropoff = elite_sc / replacement_sc
+        # Weight by how few players exist at this position
+        scarcity[pos] = dropoff / len(ranked)
 
     # Normalise to 0-1 (max = 1.0)
     max_val = max(scarcity.values()) if scarcity else 1.0
