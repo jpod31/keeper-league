@@ -479,10 +479,10 @@ def league_settings(league_id):
         bench_flex = request.form.get("bench_flex", type=int)
 
         if any(v is not None for v in [def_count, mid_count, fwd_count, ruc_count]):
-            d = def_count or 5
-            m = mid_count or 7
-            f = fwd_count or 5
-            r = ruc_count or 1
+            d = def_count if def_count is not None else 5
+            m = mid_count if mid_count is not None else 7
+            f = fwd_count if fwd_count is not None else 5
+            r = ruc_count if ruc_count is not None else 1
             bd = bench_def if bench_def is not None else 1
             bm = bench_mid if bench_mid is not None else 2
             bf = bench_fwd if bench_fwd is not None else 1

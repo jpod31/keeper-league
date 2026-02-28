@@ -154,80 +154,31 @@
       <rect x="160" y="559" width="80" height="35" rx="3" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
     </svg>
 
-    {# ── DEF (top) — 3 stacked on 2 ── #}
-    <div class="fv-zone">
-      <div class="fv-zone-hdr">
-        <span class="fv-zone-pill fv-zp-def">DEF</span>
-        <span class="fv-zone-tally">{{ field_data.zone_filled.get('DEF', 0) }}/{{ field_data.slot_counts.get('DEF', 0) }}</span>
-      </div>
-      <div class="fv-zone-grid fv-grid-3">
-        {% for p in field_data.zones.get('DEF', [])[:3] %}
-          {{ player_card(p, 'def', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+    {# ── Dynamic zone rendering macro ── #}
+    {% macro render_zone(pos_code, pos_class, wide) %}
+      {% set rows = field_data.zone_layouts.get(pos_code, []) %}
+      {% set players = field_data.zones.get(pos_code, []) %}
+      <div class="fv-zone{% if wide %} fv-zone-wide{% endif %}">
+        <div class="fv-zone-hdr">
+          <span class="fv-zone-pill fv-zp-{{ pos_class }}">{{ pos_code }}</span>
+          <span class="fv-zone-tally">{{ field_data.zone_filled.get(pos_code, 0) }}/{{ field_data.slot_counts.get(pos_code, 0) }}</span>
+        </div>
+        {% set ns = namespace(offset=0) %}
+        {% for row_size in rows %}
+          <div class="fv-zone-grid fv-grid-{{ row_size }}"{% if not loop.first %} style="margin-top:8px"{% endif %}>
+            {% for p in players[ns.offset:ns.offset + row_size] %}
+              {{ player_card(p, pos_class, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+            {% endfor %}
+          </div>
+          {% set ns.offset = ns.offset + row_size %}
         {% endfor %}
       </div>
-      <div class="fv-zone-grid fv-grid-2" style="margin-top:8px">
-        {% for p in field_data.zones.get('DEF', [])[3:5] %}
-          {{ player_card(p, 'def', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
-        {% endfor %}
-      </div>
-    </div>
+    {% endmacro %}
 
-    {# ── MID — 2 / 3 / 2 rows ── #}
-    <div class="fv-zone fv-zone-wide">
-      <div class="fv-zone-hdr">
-        <span class="fv-zone-pill fv-zp-mid">MID</span>
-        <span class="fv-zone-tally">{{ field_data.zone_filled.get('MID', 0) }}/{{ field_data.slot_counts.get('MID', 0) }}</span>
-      </div>
-      {# Row 1: first 2 mids #}
-      <div class="fv-zone-grid fv-grid-2">
-        {% for p in field_data.zones.get('MID', [])[:2] %}
-          {{ player_card(p, 'mid', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
-        {% endfor %}
-      </div>
-      {# Row 2: next 3 mids #}
-      <div class="fv-zone-grid fv-grid-3" style="margin-top:8px">
-        {% for p in field_data.zones.get('MID', [])[2:5] %}
-          {{ player_card(p, 'mid', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
-        {% endfor %}
-      </div>
-      {# Row 3: last 2 mids #}
-      <div class="fv-zone-grid fv-grid-2" style="margin-top:8px">
-        {% for p in field_data.zones.get('MID', [])[5:7] %}
-          {{ player_card(p, 'mid', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
-        {% endfor %}
-      </div>
-    </div>
-
-    {# ── RUC — 1 centered ── #}
-    <div class="fv-zone">
-      <div class="fv-zone-hdr">
-        <span class="fv-zone-pill fv-zp-ruc">RUC</span>
-        <span class="fv-zone-tally">{{ field_data.zone_filled.get('RUC', 0) }}/{{ field_data.slot_counts.get('RUC', 0) }}</span>
-      </div>
-      <div class="fv-zone-grid fv-grid-1">
-        {% for p in field_data.zones.get('RUC', []) %}
-          {{ player_card(p, 'ruc', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
-        {% endfor %}
-      </div>
-    </div>
-
-    {# ── FWD (bottom) — 2 top, 3 bottom ── #}
-    <div class="fv-zone">
-      <div class="fv-zone-hdr">
-        <span class="fv-zone-pill fv-zp-fwd">FWD</span>
-        <span class="fv-zone-tally">{{ field_data.zone_filled.get('FWD', 0) }}/{{ field_data.slot_counts.get('FWD', 0) }}</span>
-      </div>
-      <div class="fv-zone-grid fv-grid-2">
-        {% for p in field_data.zones.get('FWD', [])[:2] %}
-          {{ player_card(p, 'fwd', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
-        {% endfor %}
-      </div>
-      <div class="fv-zone-grid fv-grid-3" style="margin-top:8px">
-        {% for p in field_data.zones.get('FWD', [])[2:5] %}
-          {{ player_card(p, 'fwd', field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
-        {% endfor %}
-      </div>
-    </div>
+    {{ render_zone('DEF', 'def', false) }}
+    {{ render_zone('MID', 'mid', true) }}
+    {{ render_zone('RUC', 'ruc', false) }}
+    {{ render_zone('FWD', 'fwd', false) }}
   </div>
 
   {# ═══════════ SIDEBAR: Bench only ═══════════ #}

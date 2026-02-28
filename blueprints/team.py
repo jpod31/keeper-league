@@ -238,6 +238,36 @@ def squad(league_id, team_id):
         zone_filled = {code: sum(1 for p in plist if p is not None)
                        for code, plist in zones.items()}
 
+        # Dynamic row layouts for each zone (adapts field view to any count)
+        def calc_zone_rows(count):
+            """Return list of row sizes for a given position count."""
+            if count <= 0:
+                return []
+            if count <= 3:
+                return [count]
+            if count == 4:
+                return [2, 2]
+            if count == 5:
+                return [3, 2]
+            if count == 6:
+                return [3, 3]
+            if count == 7:
+                return [2, 3, 2]
+            if count == 8:
+                return [3, 2, 3]
+            # 9+: rows of 3, last row gets remainder
+            rows = []
+            remaining = count
+            while remaining > 0:
+                row = min(3, remaining)
+                rows.append(row)
+                remaining -= row
+            return rows
+
+        zone_layouts = {}
+        for code, count in slot_counts.items():
+            zone_layouts[code] = calc_zone_rows(count)
+
         # Emergency IDs — only reserves (is_benched=True) can be emergency.
         # Also fix any stale is_emergency flags on non-reserve players.
         emergency_ids = []
@@ -284,6 +314,7 @@ def squad(league_id, team_id):
             "cap_id": cap_id,
             "vc_id": vc_id,
             "slot_counts": slot_counts,
+            "zone_layouts": zone_layouts,
             "zone_filled": zone_filled,
             "bench_filled": bench_filled,
             "emergency_ids": emergency_ids,

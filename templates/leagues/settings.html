@@ -21,7 +21,7 @@
       </div>
     {% endif %}
 
-    <form method="POST">
+    <form method="POST" novalidate>
       <fieldset {% if not is_commissioner %}disabled{% endif %}>
       <div class="card mb-4">
         <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sliders me-2" style="color:#8b949e;"></i>General</h5></div>
@@ -47,6 +47,8 @@
                 —
               </div>
               <div class="form-text" style="color:#484f58;font-size:.7rem;">On-field + bench must fit within squad size</div>
+              <div id="pos-error-bar" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:6px;color:#f85149;font-size:.75rem;font-weight:600;align-items:center;gap:6px;">
+              </div>
             </div>
             <div class="col-md-4">
               <label for="draft_type" class="form-label">Draft Type {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
@@ -92,17 +94,17 @@
             <div class="col">
               <label class="form-label" style="font-size:.75rem;color:#58a6ff;">DEF</label>
               <input type="number" class="form-control form-control-sm" name="def_count"
-                     value="{{ on_field_slots.get('DEF', 5) }}" min="2" max="8">
+                     value="{{ on_field_slots.get('DEF', 5) }}" min="1" max="10">
             </div>
             <div class="col">
               <label class="form-label" style="font-size:.75rem;color:#bc8cff;">MID</label>
               <input type="number" class="form-control form-control-sm" name="mid_count"
-                     value="{{ on_field_slots.get('MID', 7) }}" min="3" max="10">
+                     value="{{ on_field_slots.get('MID', 7) }}" min="1" max="12">
             </div>
             <div class="col">
               <label class="form-label" style="font-size:.75rem;color:#f0883e;">FWD</label>
               <input type="number" class="form-control form-control-sm" name="fwd_count"
-                     value="{{ on_field_slots.get('FWD', 5) }}" min="2" max="8">
+                     value="{{ on_field_slots.get('FWD', 5) }}" min="1" max="10">
             </div>
             <div class="col">
               <label class="form-label" style="font-size:.75rem;color:#3fb950;">RUC</label>
@@ -126,22 +128,22 @@
             <div class="col">
               <label class="form-label" style="font-size:.7rem;color:#58a6ff;">B.DEF</label>
               <input type="number" class="form-control form-control-sm" name="bench_def"
-                     value="{{ bench_slots.get('DEF', 1) }}" min="0" max="5">
+                     value="{{ bench_slots.get('DEF', 1) }}" min="0" max="15">
             </div>
             <div class="col">
               <label class="form-label" style="font-size:.7rem;color:#bc8cff;">B.MID</label>
               <input type="number" class="form-control form-control-sm" name="bench_mid"
-                     value="{{ bench_slots.get('MID', 2) }}" min="0" max="5">
+                     value="{{ bench_slots.get('MID', 2) }}" min="0" max="15">
             </div>
             <div class="col">
               <label class="form-label" style="font-size:.7rem;color:#f0883e;">B.FWD</label>
               <input type="number" class="form-control form-control-sm" name="bench_fwd"
-                     value="{{ bench_slots.get('FWD', 1) }}" min="0" max="5">
+                     value="{{ bench_slots.get('FWD', 1) }}" min="0" max="15">
             </div>
             <div class="col">
               <label class="form-label" style="font-size:.7rem;color:#8b949e;">FLEX</label>
               <input type="number" class="form-control form-control-sm" name="bench_flex"
-                     value="{{ bench_slots.get('FLEX', 1) }}" min="0" max="5">
+                     value="{{ bench_slots.get('FLEX', 1) }}" min="0" max="30">
             </div>
           </div>
           <div class="form-text" style="color:#484f58;font-size:.7rem;">Position-locked bench: players must match the slot position. Flex accepts any position.</div>
@@ -427,11 +429,53 @@ function updateTotalDisplay() {
   const { onField, bench, total } = calcTotals();
   const squad = getVal('squad_size');
   const el = document.getElementById('pos-total-display');
+  const errBar = document.getElementById('pos-error-bar');
   if (!el) return;
   const ok = total <= squad;
   el.style.color = ok ? '#3fb950' : '#f85149';
   el.textContent = `${onField} field + ${bench} bench = ${total} / ${squad}`;
+
+  // Red error bar
+  if (errBar) {
+    if (!ok) {
+      errBar.style.display = 'flex';
+      errBar.textContent = `Total positions (${total}) exceed squad size (${squad}). Reduce positions or increase squad size.`;
+    } else {
+      errBar.style.display = 'none';
+    }
+  }
+
+  // Red borders on position inputs when total exceeds
+  allPosFields.forEach(name => {
+    const inp = document.querySelector(`[name="${name}"]:not([type=hidden])`);
+    if (inp) {
+      inp.style.borderColor = ok ? '' : '#f85149';
+      inp.style.boxShadow = ok ? '' : '0 0 0 1px rgba(248,81,73,.3)';
+    }
+  });
+
+  // Also red-border squad_size input when total exceeds
+  const sqInp = document.getElementById('squad_size');
+  if (sqInp) {
+    sqInp.style.borderColor = ok ? '' : '#f85149';
+    sqInp.style.boxShadow = ok ? '' : '0 0 0 1px rgba(248,81,73,.3)';
+  }
 }
+
+// Block form submit when positions exceed squad size
+document.querySelector('form[method="POST"][novalidate]')?.addEventListener('submit', function(e) {
+  const { total } = calcTotals();
+  const squad = getVal('squad_size');
+  if (total > squad) {
+    e.preventDefault();
+    updateTotalDisplay();
+    const errBar = document.getElementById('pos-error-bar');
+    if (errBar) {
+      errBar.style.display = 'flex';
+      errBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+});
 
 function autoScalePositions() {
   const squad = getVal('squad_size');
