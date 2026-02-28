@@ -270,7 +270,8 @@ def league_create():
                            available_stats=config.AVAILABLE_STATS,
                            default_scoring=config.DEFAULT_CUSTOM_SCORING,
                            stat_categories=config.STAT_CATEGORIES,
-                           scoring_presets=config.SCORING_PRESETS)
+                           scoring_presets=config.SCORING_PRESETS,
+                           default_uf_categories=config.DEFAULT_UF_CATEGORIES)
 
 
 @leagues_bp.route("/<int:league_id>")
