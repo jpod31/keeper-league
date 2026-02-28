@@ -22,36 +22,36 @@
 
     <form method="POST">
       {# ── Scoring Type Cards (5 cards) ── #}
-      <div class="row g-3 mb-4">
-        <div class="col-6 col-lg">
+      <div class="d-flex flex-wrap gap-3 mb-4" style="justify-content:center;">
+        <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'supercoach' }}" onclick="selectScoring('supercoach')">
             <div class="card-icon" style="color:#3fb950;"><i class="bi bi-shield-check"></i></div>
             <h6>SuperCoach</h6>
             <p>Official SC scores</p>
           </div>
         </div>
-        <div class="col-6 col-lg">
+        <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'afl_fantasy' }}" onclick="selectScoring('afl_fantasy')">
             <div class="card-icon" style="color:#58a6ff;"><i class="bi bi-star"></i></div>
             <h6>AFL Fantasy</h6>
             <p>Official AF scores</p>
           </div>
         </div>
-        <div class="col-6 col-lg">
+        <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'custom' }}" onclick="selectScoring('custom')">
             <div class="card-icon" style="color:#f0883e;"><i class="bi bi-sliders"></i></div>
             <h6>Custom</h6>
             <p>Build your own formula</p>
           </div>
         </div>
-        <div class="col-6 col-lg">
+        <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'hybrid' }}" onclick="selectScoring('hybrid')">
             <div class="card-icon" style="color:#bc8cff;"><i class="bi bi-layers"></i></div>
             <h6>Hybrid</h6>
             <p>Base + custom bonuses</p>
           </div>
         </div>
-        <div class="col-6 col-lg">
+        <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'ultimate_footy' }}" onclick="selectScoring('ultimate_footy')">
             <div class="card-icon" style="color:#d29922;"><i class="bi bi-trophy"></i></div>
             <h6>Ultimate Footy</h6>

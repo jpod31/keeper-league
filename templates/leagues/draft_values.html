@@ -35,11 +35,11 @@
         <div class="card-body">
           {% set factors = [
             ("sc_average", "SC Average", "How much raw SuperCoach average matters"),
-            ("age_factor", "Age Factor", "Bonus for prime-age, upside for youth"),
+            ("age_factor", "Keeper Longevity", "Younger players score higher — more years of keeper value"),
             ("positional_scarcity", "Positional Scarcity", "Premium for scarce positions like RUC"),
             ("trajectory", "Trajectory", "Rising or declining scoring trend"),
             ("durability", "Durability", "Games played / availability"),
-            ("rating_potential", "Rating & Potential", "FIFA-style player rating and ceiling"),
+            ("rating_potential", "Growth Ceiling", "High ceiling + room to improve (potential minus current rating)"),
           ] %}
           {% for key, label, desc in factors %}
             <div class="mb-3">

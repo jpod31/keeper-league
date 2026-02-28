@@ -8,7 +8,7 @@ from typing import List, Dict, Optional
 import pandas as pd
 
 from models.player import Player
-from config import DRAFT_WEIGHTS, AGE_CURVE, POSITIONAL_SCARCITY, DATA_DIR, SC_HISTORY_YEARS
+from config import DRAFT_WEIGHTS, POSITIONAL_SCARCITY, DATA_DIR, SC_HISTORY_YEARS
 
 
 def _normalise(values: List[Optional[float]]) -> List[float]:
@@ -32,36 +32,15 @@ def _sc_average_scores(players: List[Player]) -> List[float]:
 
 
 def _age_factor_scores(players: List[Player]) -> List[float]:
-    """Score based on age curve: young players get upside bonus,
-    prime-age players score high, old players score low."""
-    cfg = AGE_CURVE
+    """Keeper league longevity: younger = more years of keeper value."""
     scores: List[float] = []
     for p in players:
         if p.age is None:
-            scores.append(0.5)  # neutral when unknown
+            scores.append(0.5)
             continue
-
-        age = p.age
-        if age <= cfg["prime_start"]:
-            # Young: linear from young_bonus at min_age to 1.0 at prime_start
-            span = cfg["prime_start"] - cfg["min_age"]
-            if span == 0:
-                scores.append(cfg["young_bonus"])
-            else:
-                t = (age - cfg["min_age"]) / span
-                scores.append(cfg["young_bonus"] + t * (1.0 - cfg["young_bonus"]))
-        elif age <= cfg["prime_end"]:
-            # Prime window: full score
-            scores.append(1.0)
-        else:
-            # Declining: linear from 1.0 at prime_end to old_penalty at max_age
-            span = cfg["max_age"] - cfg["prime_end"]
-            if span == 0:
-                scores.append(cfg["old_penalty"])
-            else:
-                t = (age - cfg["prime_end"]) / span
-                scores.append(max(1.0 - t * (1.0 - cfg["old_penalty"]), cfg["old_penalty"]))
-
+        age = max(min(p.age, 38), 18)
+        # Linear: 18yo = 1.0, 38yo = 0.0
+        scores.append((38 - age) / 20.0)
     return scores
 
 
@@ -225,7 +204,7 @@ def _durability_scores(players: List[Player]) -> List[float]:
 
 
 def _rating_potential_scores(players: List[Player]) -> List[float]:
-    """Combined rating + potential score, weighted by age."""
+    """Reward high ceiling AND room to grow (potential - rating gap)."""
     scores = []
     for p in players:
         if p.rating is None and p.potential is None:
@@ -233,13 +212,9 @@ def _rating_potential_scores(players: List[Player]) -> List[float]:
             continue
         r = (p.rating or 50) / 100.0
         pot = (p.potential or 50) / 100.0
-        if p.age and p.age <= 23:
-            score = 0.3 * r + 0.7 * pot
-        elif p.age and p.age >= 30:
-            score = 0.8 * r + 0.2 * pot
-        else:
-            score = 0.5 * r + 0.5 * pot
-        scores.append(score)
+        growth = max(0, pot - r)  # room to improve
+        # 40% ceiling (absolute potential) + 60% growth room
+        scores.append(0.4 * pot + 0.6 * growth)
     return _normalise(scores)
 
 
@@ -434,12 +409,13 @@ def compute_historical_draft_scores(
 ) -> List[Dict]:
     """Compute a draft score for each year of the player's career.
 
-    Uses the same 5-factor model but applied retrospectively:
-      - SC avg (40%): that year's SC avg / current pool max
-      - Age factor (15%): player's age that year through AGE_CURVE
-      - Positional scarcity (15%): same as current (static)
-      - Trajectory (15%): SC slope using all data up to that year
-      - Durability (15%): games that year / 25, capped at 1.0
+    Uses the same 6-factor model but applied retrospectively:
+      - SC avg: that year's SC avg / current pool max
+      - Age factor: keeper longevity (younger = better)
+      - Positional scarcity: same as current (static)
+      - Trajectory: SC slope using all data up to that year
+      - Durability: games that year / 25, capped at 1.0
+      - Rating/potential: growth ceiling (potential - rating gap)
 
     Returns list of {"year": int, "draft_score": float, "sc_avg": float}.
     """
@@ -455,7 +431,6 @@ def compute_historical_draft_scores(
     # Positional scarcity (static across years)
     pos_score = POSITIONAL_SCARCITY.get(player.primary_position, 0.3)
 
-    cfg = AGE_CURVE
     current_year = SC_HISTORY_YEARS[-1]
 
     results = []
@@ -468,29 +443,15 @@ def compute_historical_draft_scores(
             continue
         sc_score = min(sc_avg / pool_max_sc, 1.0)
 
-        # Age component: estimate age in that year
+        # Age component: keeper longevity (younger = better)
         if player.age is not None:
             age_that_year = player.age - (current_year - year)
         else:
             age_that_year = None
 
         if age_that_year is not None:
-            if age_that_year <= cfg["prime_start"]:
-                span = cfg["prime_start"] - cfg["min_age"]
-                if span == 0:
-                    age_score = cfg["young_bonus"]
-                else:
-                    t = max(0, (age_that_year - cfg["min_age"]) / span)
-                    age_score = cfg["young_bonus"] + t * (1.0 - cfg["young_bonus"])
-            elif age_that_year <= cfg["prime_end"]:
-                age_score = 1.0
-            else:
-                span = cfg["max_age"] - cfg["prime_end"]
-                if span == 0:
-                    age_score = cfg["old_penalty"]
-                else:
-                    t = (age_that_year - cfg["prime_end"]) / span
-                    age_score = max(1.0 - t * (1.0 - cfg["old_penalty"]), cfg["old_penalty"])
+            clamped = max(min(age_that_year, 38), 18)
+            age_score = (38 - clamped) / 20.0
         else:
             age_score = 0.5
 
@@ -509,16 +470,12 @@ def compute_historical_draft_scores(
         games = season.get("games", 0) or 0
         dur_score = min(games / 25.0, 1.0)
 
-        # Rating/potential component (static across years — use current values)
+        # Rating/potential component: growth ceiling (static across years)
         if player.rating is not None or player.potential is not None:
             r = (player.rating or 50) / 100.0
             pot = (player.potential or 50) / 100.0
-            if age_that_year and age_that_year <= 23:
-                rp_score = 0.3 * r + 0.7 * pot
-            elif age_that_year and age_that_year >= 30:
-                rp_score = 0.8 * r + 0.2 * pot
-            else:
-                rp_score = 0.5 * r + 0.5 * pot
+            growth = max(0, pot - r)
+            rp_score = 0.4 * pot + 0.6 * growth
         else:
             rp_score = 0.5  # neutral if no rating data
 

@@ -73,11 +73,11 @@
           <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.75rem;">
             {% set inline_factors = [
               ("sc_average", "SC Avg"),
-              ("age_factor", "Age"),
+              ("age_factor", "Longevity"),
               ("positional_scarcity", "Scarcity"),
               ("trajectory", "Trajectory"),
               ("durability", "Durability"),
-              ("rating_potential", "Rating"),
+              ("rating_potential", "Growth"),
             ] %}
             {% for key, label in inline_factors %}
               <div class="d-flex align-items-center gap-2 {% if not loop.last %}mb-2{% endif %}">

@@ -45,14 +45,10 @@ DRAFT_WEIGHTS = {
     "rating_potential": 0.22,
 }
 
-# ---------- Age curve ----------
-# Young players get a bonus that tapers off; old players get a penalty.
+# ---------- Age curve (legacy — kept for reference) ----------
+# The draft model now uses a simple linear longevity formula:
+#   score = (38 - age) / 20.0  →  18yo = 1.0, 38yo = 0.0
 AGE_CURVE = {
-    "peak_age": 27,       # centre of the prime window
-    "prime_start": 24,    # start of prime
-    "prime_end": 30,      # end of prime
-    "young_bonus": 1.0,   # max bonus for youngest players
-    "old_penalty": 0.0,   # floor for oldest players
     "min_age": 18,
     "max_age": 38,
 }
