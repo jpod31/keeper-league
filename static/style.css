@@ -1290,38 +1290,6 @@ th[style*="cursor"]:hover { color: #58a6ff; }
   font-size: .85rem;
 }
 
-/* Sub-nav (League section) */
-.league-subnav {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid #21262d;
-  margin: -0.5rem 0 1.25rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.league-subnav::-webkit-scrollbar { display: none; }
-.league-subtab {
-  display: inline-flex;
-  align-items: center;
-  gap: .3rem;
-  padding: .55rem 1rem;
-  font-size: .78rem;
-  font-weight: 500;
-  color: #8b949e;
-  text-decoration: none;
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  transition: color .15s, border-color .15s;
-}
-.league-subtab:hover { color: #c9d1d9; text-decoration: none; }
-.league-subtab.active {
-  color: #e6edf3;
-  border-bottom-color: #58a6ff;
-  font-weight: 600;
-}
-.league-subtab i { font-size: .8rem; }
-
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
   .league-nav-inner { gap: .25rem; }
@@ -1329,7 +1297,6 @@ th[style*="cursor"]:hover { color: #58a6ff; }
   .league-tab { padding: .5rem .55rem; font-size: .7rem; }
   .league-tab span { display: none; }
   .league-tab i { font-size: .95rem; }
-  .league-subtab { padding: .45rem .65rem; font-size: .72rem; }
 }
 
 /* ═══ Field View Responsive ═══ */

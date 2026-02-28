@@ -1,9 +1,7 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'league' %}
-{% set active_subtab = 'results' %}
+{% set active_tab = 'results' %}
 {% block title %}{{ fixture.home_team.name }} vs {{ fixture.away_team.name }} — {{ league.name }}{% endblock %}
 {% block league_content %}
-{% include "matchups/_league_subnav.html" %}
 <div class="page-header" style="margin-top:0;">
   <div class="page-breadcrumb"><a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=fixture.afl_round) }}">Round {{ fixture.afl_round }}</a> / Matchup</div>
   <h2>{% if fixture.is_final %}{{ fixture.final_type }} &mdash; {% endif %}Round {{ fixture.afl_round }}</h2>
