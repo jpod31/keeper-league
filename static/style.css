@@ -32,6 +32,35 @@ body {
 }
 .nav-link:hover { color: #c9d1d9 !important; }
 
+/* ── Notification icon & dropdown ── */
+.notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #f85149;
+  border-radius: 50%;
+  border: 1.5px solid #161b22;
+}
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #21262d;
+  text-decoration: none;
+  color: #8b949e;
+  transition: background .15s;
+}
+.notif-item:hover { background: #1c2128; color: #c9d1d9; }
+.notif-item.notif-unread { background: rgba(31,111,235,.06); color: #c9d1d9; }
+.notif-item:last-child { border-bottom: none; }
+.notif-type-icon { font-size: .95rem; margin-top: 2px; color: #58a6ff; flex-shrink: 0; }
+.notif-title { font-size: .8rem; font-weight: 500; line-height: 1.3; }
+.notif-body { font-size: .72rem; color: #8b949e; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.notif-time { font-size: .65rem; color: #484f58; white-space: nowrap; margin-top: 2px; flex-shrink: 0; }
+
 /* ── Cards ── */
 .card {
   background: #161b22;
@@ -1488,8 +1517,8 @@ th[style*="cursor"]:hover { color: #58a6ff; }
   border: none;
 }
 .lm-section:hover { box-shadow: 0 4px 20px rgba(0,0,0,.3); }
-.lm-section.lm-future { opacity: .45; }
-.lm-section.lm-future:hover { opacity: .7; }
+.lm-section.lm-future { opacity: .7; }
+.lm-section.lm-future:hover { opacity: .85; }
 
 /* ── Section headers — vibrant solid backgrounds ── */
 .lm-section-header {

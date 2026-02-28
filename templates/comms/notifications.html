@@ -1,0 +1,48 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'notifications' %}
+{% block title %}Notifications — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="page-header">
+      <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Notifications</div>
+      <div class="d-flex justify-content-between align-items-center">
+        <h2>Notifications</h2>
+        {% if notifs %}
+        <form method="POST" action="{{ url_for('comms.notification_mark_all_read', league_id=league.id) }}" class="d-inline">
+          <button type="submit" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-check-all me-1"></i>Mark all read
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not notifs %}
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-chat-dots" style="font-size:2.5rem;color:#30363d;"></i>
+          <p class="text-secondary mt-2 mb-0">No notifications yet</p>
+        </div>
+      </div>
+    {% else %}
+      <div class="card" style="overflow:hidden;">
+        {% for n in notifs %}
+          <a href="{{ n.link or '#' }}" class="d-flex align-items-start gap-3 px-3 py-3{% if not n.is_read %} bg-opacity-10{% endif %}"
+             style="border-bottom:1px solid #21262d;text-decoration:none;color:{% if n.is_read %}#8b949e{% else %}#c9d1d9{% endif %};{% if not n.is_read %}background:rgba(31,111,235,.05);{% endif %}">
+            <i class="bi {% if n.type == 'trade_received' %}bi-arrow-left-right{% elif n.type == 'trade_accepted' %}bi-check-circle{% elif n.type == 'trade_rejected' %}bi-x-circle{% elif n.type == 'trade_vetoed' %}bi-shield-exclamation{% elif n.type == 'player_delisted' %}bi-person-dash{% elif n.type == 'message_received' %}bi-chat-dots{% else %}bi-bell{% endif %}"
+               style="font-size:1.1rem;color:#58a6ff;margin-top:2px;"></i>
+            <div class="flex-grow-1">
+              <div style="font-size:.85rem;font-weight:{% if not n.is_read %}600{% else %}400{% endif %};">{{ n.title }}</div>
+              {% if n.body %}<div style="font-size:.75rem;color:#8b949e;margin-top:2px;">{{ n.body[:120] }}</div>{% endif %}
+            </div>
+            <span style="font-size:.7rem;color:#484f58;white-space:nowrap;">
+              {{ n.created_at.strftime('%d %b %H:%M') }}
+            </span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

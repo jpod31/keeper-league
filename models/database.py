@@ -684,6 +684,60 @@ class LongTermInjury(db.Model):
     replacement_player = db.relationship("AflPlayer", foreign_keys=[replacement_player_id], lazy="joined")
 
 
+# ── Notifications & Messaging ─────────────────────────────────────────
+
+
+class Notification(db.Model):
+    __tablename__ = "notification"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=True)
+    type = db.Column(db.String(30), nullable=False)  # trade_received/accepted/rejected/vetoed, player_delisted, message_received
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=True)
+    link = db.Column(db.String(300), nullable=True)
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    trade_id = db.Column(db.Integer, db.ForeignKey("trade.id"), nullable=True)
+    conversation_id = db.Column(db.Integer, nullable=True)
+
+    user = db.relationship("User", lazy="joined")
+
+
+class Conversation(db.Model):
+    __tablename__ = "conversation"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
+    team_a_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    team_b_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    last_message_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    team_a = db.relationship("FantasyTeam", foreign_keys=[team_a_id], lazy="joined")
+    team_b = db.relationship("FantasyTeam", foreign_keys=[team_b_id], lazy="joined")
+    messages = db.relationship("Message", backref="conversation", lazy="select",
+                               cascade="all, delete-orphan", order_by="Message.created_at")
+
+    __table_args__ = (
+        db.UniqueConstraint("league_id", "team_a_id", "team_b_id", name="uq_conversation_league_teams"),
+    )
+
+
+class Message(db.Model):
+    __tablename__ = "message"
+
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey("conversation.id"), nullable=False, index=True)
+    sender_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    is_read = db.Column(db.Boolean, default=False)
+
+    sender = db.relationship("User", lazy="joined")
+
+
 # ── Analytics ─────────────────────────────────────────────────────────
 
 

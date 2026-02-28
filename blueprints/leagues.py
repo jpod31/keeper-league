@@ -1232,6 +1232,22 @@ def delist_player_action(league_id):
     if error:
         flash(error, "warning")
     else:
+        # Notify all other team owners in the league
+        from models.notification_manager import create_notification
+        delisted_player = db.session.get(AflPlayer, player_id)
+        player_name = delisted_player.name if delisted_player else "Unknown"
+        other_teams = FantasyTeam.query.filter(
+            FantasyTeam.league_id == league_id,
+            FantasyTeam.id != user_team.id,
+        ).all()
+        for t in other_teams:
+            create_notification(
+                user_id=t.owner_id,
+                league_id=league_id,
+                notif_type="player_delisted",
+                title=f"{user_team.name} delisted {player_name}",
+                link=url_for("leagues.delist_hub", league_id=league_id),
+            )
         flash("Player delisted.", "success")
 
     return redirect(url_for("leagues.delist_hub", league_id=league_id))

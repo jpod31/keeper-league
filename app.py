@@ -292,6 +292,7 @@ def create_app():
     from blueprints.trades import trades_bp
     from blueprints.matchups import matchups_bp
     from blueprints.admin import admin_bp
+    from blueprints.comms import comms_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(leagues_bp)
     app.register_blueprint(draft_bp)
@@ -299,6 +300,7 @@ def create_app():
     app.register_blueprint(trades_bp)
     app.register_blueprint(matchups_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(comms_bp)
 
     # Context processor — inject globals into all templates
     @app.context_processor
@@ -310,10 +312,12 @@ def create_app():
         }
         if current_user.is_authenticated:
             from models.database import FantasyTeam
+            from models.notification_manager import get_unread_count
             user_teams = FantasyTeam.query.filter_by(
                 owner_id=current_user.id
             ).all()
             ctx["user_leagues"] = [(t.league, t) for t in user_teams]
+            ctx["unread_notif_count"] = get_unread_count(current_user.id)
 
             # If in a league-scoped route, provide nav helpers
             league_id = (request.view_args or {}).get("league_id")
@@ -735,8 +739,14 @@ csrf.exempt("flask_socketio")
 # Register SocketIO events
 from sockets.draft_events import register_draft_events
 from sockets.matchup_events import register_matchup_events
+from sockets.notification_events import register_notification_events
 register_draft_events(socketio)
 register_matchup_events(socketio)
+register_notification_events(socketio)
+
+# Give notification_manager access to socketio for real-time pushes
+from models.notification_manager import init_notification_socketio
+init_notification_socketio(socketio)
 
 # Start live scoring scheduler (skip in testing)
 if not app.testing:

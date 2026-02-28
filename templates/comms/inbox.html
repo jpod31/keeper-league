@@ -1,0 +1,92 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'messages' %}
+{% block title %}Messages — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="page-header">
+      <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Messages</div>
+      <div class="d-flex justify-content-between align-items-center">
+        <h2>Messages</h2>
+        <div class="dropdown">
+          <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-plus-lg me-1"></i>New Message
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" style="background:#161b22;border-color:#30363d;">
+            {% for t in all_teams %}
+              <li>
+                <a class="dropdown-item" href="{{ url_for('comms.inbox', league_id=league.id) }}?new={{ t.id }}">
+                  {{ t.name }}
+                  <span class="text-secondary ms-1" style="font-size:.7rem;">{{ t.owner.display_name or t.owner.username }}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    {# New message form if ?new=team_id #}
+    {% set new_team_id = request.args.get('new', type=int) %}
+    {% if new_team_id %}
+      {% set recipient = all_teams|selectattr('id', 'equalto', new_team_id)|first %}
+      {% if recipient %}
+        <div class="card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold" style="font-size:.9rem;">New message to {{ recipient.name }}</span>
+            <a href="{{ url_for('comms.inbox', league_id=league.id) }}" class="btn-close btn-close-white" style="font-size:.6rem;"></a>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="{{ url_for('comms.send_message', league_id=league.id) }}">
+              <input type="hidden" name="recipient_team_id" value="{{ new_team_id }}">
+              <div class="mb-2">
+                <textarea name="body" class="form-control" rows="3" placeholder="Write your message..." required style="font-size:.85rem;"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-send me-1"></i>Send
+              </button>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    {% if not convo_data %}
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-chat-dots" style="font-size:2.5rem;color:#30363d;"></i>
+          <p class="text-secondary mt-2 mb-0">No conversations yet. Start one!</p>
+        </div>
+      </div>
+    {% else %}
+      <div class="card" style="overflow:hidden;">
+        {% for item in convo_data %}
+          <a href="{{ url_for('comms.conversation', league_id=league.id, convo_id=item.convo.id) }}"
+             class="d-flex align-items-center gap-3 px-3 py-3"
+             style="border-bottom:1px solid #21262d;text-decoration:none;color:#c9d1d9;{% if item.unread %}background:rgba(31,111,235,.05);{% endif %}">
+            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:#21262d;font-size:.8rem;font-weight:600;flex-shrink:0;">
+              {{ item.other_team.name[0]|upper }}
+            </div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-bold" style="font-size:.85rem;">{{ item.other_team.name }}</span>
+                {% if item.last_msg %}
+                  <span style="font-size:.65rem;color:#484f58;">{{ item.last_msg.created_at.strftime('%d %b %H:%M') }}</span>
+                {% endif %}
+              </div>
+              {% if item.last_msg %}
+                <div style="font-size:.78rem;color:#8b949e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  {{ item.last_msg.body[:80] }}
+                </div>
+              {% endif %}
+            </div>
+            {% if item.unread %}
+              <span class="badge rounded-pill bg-primary" style="font-size:.65rem;">{{ item.unread }}</span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

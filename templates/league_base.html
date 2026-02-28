@@ -62,6 +62,12 @@
          href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
         <i class="bi bi-calendar-range"></i><span>List Management</span>
       </a>
+      {% if nav_user_team|default(none) %}
+      <a class="league-tab{% if active_tab|default('') == 'messages' %} active{% endif %}"
+         href="{{ url_for('comms.inbox', league_id=league.id) }}">
+        <i class="bi bi-chat-dots"></i><span>Messages</span>
+      </a>
+      {% endif %}
       <a class="league-tab{% if active_tab|default('') == 'settings' %} active{% endif %}"
          href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
         <i class="bi bi-gear"></i><span>Settings</span>

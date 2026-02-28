@@ -1,0 +1,93 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'messages' %}
+{% block title %}Chat with {{ other_team.name }} — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="page-header">
+      <div class="page-breadcrumb">
+        <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> /
+        <a href="{{ url_for('comms.inbox', league_id=league.id) }}">Messages</a> /
+        {{ other_team.name }}
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:32px;height:32px;background:#21262d;font-size:.75rem;font-weight:600;">
+          {{ other_team.name[0]|upper }}
+        </div>
+        <h2 class="mb-0">{{ other_team.name }}</h2>
+        <span class="text-secondary" style="font-size:.8rem;">{{ other_team.owner.display_name or other_team.owner.username }}</span>
+      </div>
+    </div>
+
+    <div class="card" id="chatCard" style="min-height:400px;max-height:calc(100vh - 300px);display:flex;flex-direction:column;">
+      {# Messages #}
+      <div id="msgContainer" style="flex:1;overflow-y:auto;padding:1rem;">
+        {% if not messages %}
+          <div class="text-center text-secondary py-4" style="font-size:.85rem;">
+            <i class="bi bi-chat-dots d-block mb-2" style="font-size:1.5rem;"></i>
+            Start the conversation!
+          </div>
+        {% else %}
+          {% for msg in messages %}
+            {% set is_mine = msg.sender_user_id == current_user.id %}
+            <div class="d-flex mb-3 {% if is_mine %}justify-content-end{% endif %}">
+              <div style="max-width:75%;padding:8px 14px;border-radius:{% if is_mine %}14px 14px 4px 14px{% else %}14px 14px 14px 4px{% endif %};background:{% if is_mine %}#1f6feb{% else %}#21262d{% endif %};font-size:.84rem;line-height:1.4;">
+                {% if not is_mine %}
+                  <div style="font-size:.7rem;color:#8b949e;margin-bottom:2px;font-weight:600;">{{ msg.sender.display_name or msg.sender.username }}</div>
+                {% endif %}
+                <div>{{ msg.body }}</div>
+                <div style="font-size:.6rem;color:{% if is_mine %}rgba(255,255,255,.5){% else %}#484f58{% endif %};text-align:right;margin-top:3px;">
+                  {{ msg.created_at.strftime('%H:%M') }}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      {# Send form #}
+      <div style="border-top:1px solid #30363d;padding:.75rem 1rem;">
+        <form method="POST" action="{{ url_for('comms.send_message', league_id=league.id) }}" class="d-flex gap-2" id="chatForm">
+          <input type="hidden" name="conversation_id" value="{{ convo.id }}">
+          <input type="text" name="body" class="form-control form-control-sm" placeholder="Type a message..." required autocomplete="off" id="chatInput" style="font-size:.85rem;">
+          <button type="submit" class="btn btn-primary btn-sm px-3">
+            <i class="bi bi-send"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  // Auto-scroll to bottom
+  var container = document.getElementById('msgContainer');
+  if (container) container.scrollTop = container.scrollHeight;
+
+  // Real-time messages via SocketIO
+  if (typeof io !== 'undefined') {
+    var sock = io('/notifications', {transports: ['websocket', 'polling']});
+    var convoId = {{ convo.id }};
+    sock.emit('join_conversation', {conversation_id: convoId});
+
+    sock.on('new_message', function(data) {
+      if (data.conversation_id !== convoId) return;
+      if (data.sender_user_id === {{ current_user.id }}) return;
+
+      var div = document.createElement('div');
+      div.className = 'd-flex mb-3';
+      div.innerHTML = '<div style="max-width:75%;padding:8px 14px;border-radius:14px 14px 14px 4px;background:#21262d;font-size:.84rem;line-height:1.4;">' +
+        '<div style="font-size:.7rem;color:#8b949e;margin-bottom:2px;font-weight:600;">' + data.sender_name + '</div>' +
+        '<div>' + data.body.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' +
+        '<div style="font-size:.6rem;color:#484f58;text-align:right;margin-top:3px;">' + new Date(data.created_at + 'Z').toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</div>' +
+        '</div>';
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    });
+  }
+})();
+</script>
+{% endblock %}

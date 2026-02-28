@@ -9,6 +9,7 @@ from models.trade_manager import (
     propose_trade, respond_to_trade, cancel_trade, veto_trade,
     add_comment, get_team_trades, get_league_trades, expire_stale_trades,
 )
+from models.notification_manager import create_notification
 
 trades_bp = Blueprint("trades", __name__, url_prefix="/leagues",
                       template_folder="../templates")
@@ -88,6 +89,18 @@ def trade_propose(league_id):
             if error:
                 flash(error, "danger")
             else:
+                # Notify recipient team owner
+                recipient_team = db.session.get(FantasyTeam, recipient_team_id)
+                if recipient_team:
+                    create_notification(
+                        user_id=recipient_team.owner_id,
+                        league_id=league_id,
+                        notif_type="trade_received",
+                        title=f"Trade offer from {user_team.name}",
+                        body="You have a new trade proposal to review.",
+                        link=url_for("trades.trade_detail", league_id=league_id, trade_id=trade.id),
+                        trade_id=trade.id,
+                    )
                 flash("Trade proposed!", "success")
                 return redirect(url_for("trades.trade_detail", league_id=league_id, trade_id=trade.id))
 
@@ -150,17 +163,36 @@ def trade_detail(league_id, trade_id):
 @login_required
 def trade_respond(league_id, trade_id):
     action = request.form.get("action")
+    trade = db.session.get(Trade, trade_id)
     if action == "accept":
         _, error = respond_to_trade(trade_id, accept=True)
         if error:
             flash(error, "danger")
         else:
+            if trade:
+                create_notification(
+                    user_id=trade.proposer_team.owner_id,
+                    league_id=league_id,
+                    notif_type="trade_accepted",
+                    title=f"{trade.recipient_team.name} accepted your trade",
+                    link=url_for("trades.trade_detail", league_id=league_id, trade_id=trade_id),
+                    trade_id=trade_id,
+                )
             flash("Trade accepted! Rosters have been updated.", "success")
     elif action == "reject":
         _, error = respond_to_trade(trade_id, accept=False)
         if error:
             flash(error, "danger")
         else:
+            if trade:
+                create_notification(
+                    user_id=trade.proposer_team.owner_id,
+                    league_id=league_id,
+                    notif_type="trade_rejected",
+                    title=f"{trade.recipient_team.name} rejected your trade",
+                    link=url_for("trades.trade_detail", league_id=league_id, trade_id=trade_id),
+                    trade_id=trade_id,
+                )
             flash("Trade rejected.", "info")
     elif action == "cancel":
         _, error = cancel_trade(trade_id)
@@ -180,10 +212,24 @@ def trade_veto(league_id, trade_id):
         return redirect(url_for("trades.trade_detail", league_id=league_id, trade_id=trade_id))
 
     reason = request.form.get("reason", "").strip()
+    trade = db.session.get(Trade, trade_id)
     _, error = veto_trade(trade_id, reason or None)
     if error:
         flash(error, "danger")
     else:
+        # Notify both teams
+        if trade:
+            link = url_for("trades.trade_detail", league_id=league_id, trade_id=trade_id)
+            for owner_id in (trade.proposer_team.owner_id, trade.recipient_team.owner_id):
+                create_notification(
+                    user_id=owner_id,
+                    league_id=league_id,
+                    notif_type="trade_vetoed",
+                    title="Commissioner vetoed a trade",
+                    body=reason[:100] if reason else None,
+                    link=link,
+                    trade_id=trade_id,
+                )
         flash("Trade vetoed.", "warning")
     return redirect(url_for("trades.trade_detail", league_id=league_id, trade_id=trade_id))
 
