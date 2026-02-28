@@ -45,17 +45,13 @@ def _age_factor_scores(players: List[Player]) -> List[float]:
 
 
 def _positional_scarcity_scores(players: List[Player]) -> List[float]:
-    """Compute scarcity from the actual player pool: lineup demand vs replacement quality.
+    """Compute scarcity from quality drop-off at each position.
 
-    For each position, find the replacement-level SC average — the SC of the
-    (slots × num_teams)th best player.  Positions where you need many starters
-    AND replacement quality is low are the most scarce.
+    Measures how much worse replacement-level is compared to elite level.
+    Positions where the talent pool is deep (lots of quality mids) score low.
+    Positions where quality drops off fast (rucks) score high.
 
-    Formula:  scarcity = slots_per_team / replacement_level_SC
-
-    This captures both concerns:
-      - More roster slots → higher scarcity (lineup impact)
-      - Lower replacement quality → higher scarcity (talent drop-off)
+    Formula:  scarcity = elite_SC / replacement_SC
     """
     from config import POSITIONS, NUM_TEAMS
 
@@ -72,21 +68,23 @@ def _positional_scarcity_scores(players: List[Player]) -> List[float]:
     for pos in pos_sc:
         pos_sc[pos].sort(reverse=True)
 
-    # Compute scarcity per position
+    # Compute scarcity per position: elite / replacement ratio
     scarcity: Dict[str, float] = {}
     for pos, slots in POSITIONS.items():
         demand = slots * NUM_TEAMS
         ranked = pos_sc[pos]
-        # Replacement level = the demand-th best player's SC
+        if not ranked:
+            scarcity[pos] = 1.0
+            continue
+
+        elite_sc = ranked[0]
         if len(ranked) >= demand:
             replacement_sc = ranked[demand - 1]
-        elif ranked:
-            replacement_sc = ranked[-1]
         else:
-            replacement_sc = 1.0  # avoid div-by-zero
+            replacement_sc = ranked[-1]
 
-        replacement_sc = max(replacement_sc, 1.0)  # safety floor
-        scarcity[pos] = slots / replacement_sc
+        replacement_sc = max(replacement_sc, 1.0)
+        scarcity[pos] = elite_sc / replacement_sc
 
     # Normalise to 0-1 (max = 1.0)
     max_val = max(scarcity.values()) if scarcity else 1.0
