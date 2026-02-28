@@ -85,9 +85,9 @@ def _positional_scarcity_scores(players: List[Player]) -> List[float]:
 
         replacement_sc = max(replacement_sc, 1.0)
         dropoff = elite_sc / replacement_sc
-        # Weight by how few players exist — log scale to avoid RUC dominating
-        import math
-        scarcity[pos] = dropoff / math.log2(max(len(ranked), 2))
+        # Divide by roster slots: needing 7 mids = each mid is less premium
+        # Needing 1 ruck = that slot is critical
+        scarcity[pos] = dropoff / slots
 
     # Normalise to 0-1 (max = 1.0)
     max_val = max(scarcity.values()) if scarcity else 1.0
