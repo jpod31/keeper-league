@@ -54,25 +54,9 @@
          href="{{ url_for('leagues.player_pool', league_id=league.id) }}">
         <i class="bi bi-person-plus"></i><span>Players</span>
       </a>
-      <a class="league-tab{% if active_tab|default('') == 'fixture' %} active{% endif %}"
+      <a class="league-tab{% if active_tab|default('') == 'league' %} active{% endif %}"
          href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
-        <i class="bi bi-calendar-week"></i><span>Fixture</span>
-      </a>
-      <a class="league-tab{% if active_tab|default('') == 'ladder' %} active{% endif %}"
-         href="{{ url_for('matchups.standings', league_id=league.id) }}">
-        <i class="bi bi-bar-chart"></i><span>Ladder</span>
-      </a>
-      <a class="league-tab{% if active_tab|default('') == 'results' %} active{% endif %}"
-         href="{{ url_for('matchups.results_view', league_id=league.id) }}">
-        <i class="bi bi-clipboard-check"></i><span>Results</span>
-      </a>
-      <a class="league-tab{% if active_tab|default('') == 'teams' %} active{% endif %}"
-         href="{{ url_for('matchups.teams_view', league_id=league.id) }}">
-        <i class="bi bi-people-fill"></i><span>Teams</span>
-      </a>
-      <a class="league-tab{% if active_tab|default('') == 'finals' %} active{% endif %}"
-         href="{{ url_for('matchups.finals_view', league_id=league.id) }}">
-        <i class="bi bi-trophy"></i><span>Finals</span>
+        <i class="bi bi-calendar-week"></i><span>League</span>
       </a>
       <a class="league-tab{% if active_tab|default('') == 'season' %} active{% endif %}"
          href="{{ url_for('leagues.season_hub', league_id=league.id) }}">

@@ -1,7 +1,9 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'teams' %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'teams' %}
 {% block title %}Teams — {{ league.name }}{% endblock %}
 {% block league_content %}
+{% include "matchups/_league_subnav.html" %}
 <style>
   .team-card {
     background: #161b22;
