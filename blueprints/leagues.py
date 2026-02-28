@@ -1356,14 +1356,14 @@ def player_pool(league_id):
 
     # Assign a colour to each fantasy team for status badges
     _team_palette = [
-        ("#58a6ff", "rgba(88,166,255,.12)"),   # blue
-        ("#f0883e", "rgba(240,136,62,.12)"),    # orange
-        ("#bc8cff", "rgba(188,140,255,.12)"),   # purple
-        ("#3fb950", "rgba(63,185,80,.12)"),     # green
-        ("#d29922", "rgba(210,153,34,.12)"),    # yellow
-        ("#f85149", "rgba(248,81,73,.12)"),     # red
-        ("#79c0ff", "rgba(121,192,255,.12)"),   # light blue
-        ("#db61a2", "rgba(219,97,162,.12)"),    # pink
+        ("#79c0ff", "rgba(88,166,255,.18)"),    # blue
+        ("#ffb471", "rgba(240,136,62,.18)"),    # orange
+        ("#d2a8ff", "rgba(188,140,255,.18)"),   # purple
+        ("#7ee787", "rgba(63,185,80,.18)"),     # green
+        ("#e3b341", "rgba(210,153,34,.18)"),    # yellow
+        ("#ff7b72", "rgba(248,81,73,.18)"),     # red
+        ("#a5d6ff", "rgba(121,192,255,.18)"),   # light blue
+        ("#f778ba", "rgba(219,97,162,.18)"),    # pink
     ]
     unique_teams = sorted(set(rostered_map.values()))
     team_colours = {}
