@@ -1639,6 +1639,107 @@ th[style*="cursor"]:hover { color: #58a6ff; }
   flex-shrink: 0;
 }
 
+/* Action pill buttons */
+.squad-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all .2s ease;
+  white-space: nowrap;
+}
+.squad-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+.squad-pill:active {
+  transform: translateY(0) scale(.97);
+  box-shadow: none;
+}
+.squad-pill i { font-size: .8rem; }
+
+/* List Management — neutral */
+.squad-pill-manage {
+  background: rgba(139,148,158,.1);
+  color: #8b949e;
+  border-color: rgba(139,148,158,.2);
+}
+.squad-pill-manage:hover {
+  background: rgba(139,148,158,.18);
+  color: #c9d1d9;
+  border-color: rgba(139,148,158,.35);
+}
+
+/* Stats — purple */
+.squad-pill-stats {
+  background: rgba(188,140,255,.1);
+  color: #bc8cff;
+  border-color: rgba(188,140,255,.2);
+}
+.squad-pill-stats:hover {
+  background: rgba(188,140,255,.2);
+  color: #d4b3ff;
+  border-color: rgba(188,140,255,.4);
+}
+
+/* Field View — green */
+.squad-pill-field {
+  background: rgba(63,185,80,.1);
+  color: #3fb950;
+  border-color: rgba(63,185,80,.2);
+}
+.squad-pill-field:hover {
+  background: rgba(63,185,80,.2);
+  color: #56d364;
+  border-color: rgba(63,185,80,.4);
+}
+.squad-pill-field.active {
+  background: rgba(63,185,80,.2);
+  color: #56d364;
+  border-color: rgba(63,185,80,.45);
+  box-shadow: 0 0 10px rgba(63,185,80,.2);
+}
+
+/* List View — blue */
+.squad-pill-list {
+  background: rgba(88,166,255,.1);
+  color: #58a6ff;
+  border-color: rgba(88,166,255,.2);
+}
+.squad-pill-list:hover {
+  background: rgba(88,166,255,.2);
+  color: #79c0ff;
+  border-color: rgba(88,166,255,.4);
+}
+.squad-pill-list.active {
+  background: rgba(88,166,255,.2);
+  color: #79c0ff;
+  border-color: rgba(88,166,255,.45);
+  box-shadow: 0 0 10px rgba(88,166,255,.2);
+}
+
+/* Inactive view pill — dimmed */
+.squad-pill-field:not(.active),
+.squad-pill-list:not(.active) {
+  opacity: .55;
+}
+.squad-pill-field:not(.active):hover,
+.squad-pill-list:not(.active):hover {
+  opacity: 1;
+}
+
+/* Dropdown toggle on pill */
+.squad-pill.dropdown-toggle::after {
+  margin-left: 4px;
+  vertical-align: .15em;
+}
+
 /* Summary stat cards row */
 .squad-stat-cards {
   display: grid;
@@ -1743,6 +1844,10 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .squad-hero-actions {
     flex-wrap: wrap;
     gap: .4rem;
+  }
+  .squad-pill {
+    padding: 4px 10px;
+    font-size: .68rem;
   }
   .squad-stat-cards {
     grid-template-columns: 1fr 1fr;
