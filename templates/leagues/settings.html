@@ -38,13 +38,15 @@
             </div>
             <div class="col-md-3">
               <label for="squad_size" class="form-label">Squad Size {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
-              <input type="number" class="form-control" id="squad_size" name="squad_size" value="{{ league.squad_size }}" min="18" max="60" {% if has_active_draft %}disabled{% endif %}>
+              <input type="number" class="form-control" id="squad_size" name="squad_size" value="{{ league.squad_size }}" min="5" max="60" {% if has_active_draft %}disabled{% endif %}>
               {% if has_active_draft %}<input type="hidden" name="squad_size" value="{{ league.squad_size }}">{% endif %}
             </div>
             <div class="col-md-4">
-              <label class="form-label">On-Field Count</label>
-              <input type="text" class="form-control" value="{{ league.on_field_count }}" disabled style="background:#21262d;color:#8b949e;">
-              <div class="form-text" style="color:#484f58;font-size:.7rem;">Derived from formation totals (DEF+MID+FWD+RUC)</div>
+              <label class="form-label">Positions Allocated</label>
+              <div id="pos-total-display" class="form-control" style="background:#21262d;font-weight:600;font-size:.85rem;" disabled>
+                —
+              </div>
+              <div class="form-text" style="color:#484f58;font-size:.7rem;">On-field + bench must fit within squad size</div>
             </div>
             <div class="col-md-4">
               <label for="draft_type" class="form-label">Draft Type {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
@@ -403,5 +405,88 @@ function toggleSection(name, expanded) {
     dot.classList.remove('status-on');
   }
 }
+
+// ── Squad size ↔ position auto-scaling ──
+const posFields = {
+  onField: ['def_count', 'mid_count', 'fwd_count', 'ruc_count'],
+  bench:   ['bench_def', 'bench_mid', 'bench_fwd', 'bench_flex'],
+};
+const allPosFields = posFields.onField.concat(posFields.bench);
+
+function getVal(name) { const el = document.querySelector(`[name="${name}"]`); return el ? parseInt(el.value) || 0 : 0; }
+function setVal(name, v) { const el = document.querySelector(`[name="${name}"]:not([type=hidden])`); if (el) el.value = v; }
+
+function calcTotals() {
+  let onField = 0, bench = 0;
+  posFields.onField.forEach(n => onField += getVal(n));
+  posFields.bench.forEach(n => bench += getVal(n));
+  return { onField, bench, total: onField + bench };
+}
+
+function updateTotalDisplay() {
+  const { onField, bench, total } = calcTotals();
+  const squad = getVal('squad_size');
+  const el = document.getElementById('pos-total-display');
+  if (!el) return;
+  const ok = total <= squad;
+  el.style.color = ok ? '#3fb950' : '#f85149';
+  el.textContent = `${onField} field + ${bench} bench = ${total} / ${squad}`;
+}
+
+function autoScalePositions() {
+  const squad = getVal('squad_size');
+  const { total } = calcTotals();
+  if (total <= squad) { updateTotalDisplay(); return; }
+
+  // Scale proportionally: on-field first, then bench with leftovers
+  // Target: ~75% on-field, ~25% bench (with RUC always 1)
+  const onFieldTarget = Math.max(4, Math.round(squad * 0.75));
+  const benchTarget = squad - onFieldTarget;
+
+  // On-field: DEF/MID/FWD proportional, RUC=1
+  const ruc = 1;
+  const remaining = onFieldTarget - ruc;
+  // Standard ratios: DEF 5/17, MID 7/17, FWD 5/17
+  let def = Math.max(1, Math.round(remaining * 5 / 17));
+  let mid = Math.max(1, Math.round(remaining * 7 / 17));
+  let fwd = Math.max(1, remaining - def - mid);  // absorb rounding
+  if (fwd < 1) { fwd = 1; mid = Math.max(1, remaining - def - fwd); }
+
+  setVal('def_count', def);
+  setVal('mid_count', mid);
+  setVal('fwd_count', fwd);
+  setVal('ruc_count', ruc);
+
+  // Bench: distribute proportionally, at least 1 FLEX
+  const flex = Math.max(0, Math.min(benchTarget, 1));
+  const benchRemain = benchTarget - flex;
+  const bDef = Math.max(0, Math.round(benchRemain * 0.25));
+  const bMid = Math.max(0, Math.round(benchRemain * 0.5));
+  const bFwd = Math.max(0, benchRemain - bDef - bMid);
+
+  setVal('bench_def', bDef);
+  setVal('bench_mid', bMid);
+  setVal('bench_fwd', bFwd);
+  setVal('bench_flex', flex);
+
+  updateTotalDisplay();
+}
+
+// Wire up events
+const squadInput = document.getElementById('squad_size');
+if (squadInput) {
+  squadInput.addEventListener('change', autoScalePositions);
+  squadInput.addEventListener('input', autoScalePositions);
+}
+allPosFields.forEach(name => {
+  const el = document.querySelector(`[name="${name}"]`);
+  if (el) {
+    el.addEventListener('change', updateTotalDisplay);
+    el.addEventListener('input', updateTotalDisplay);
+  }
+});
+
+// Initial render
+updateTotalDisplay();
 </script>
 {% endblock %}

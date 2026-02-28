@@ -479,18 +479,38 @@ def league_settings(league_id):
         bench_flex = request.form.get("bench_flex", type=int)
 
         if any(v is not None for v in [def_count, mid_count, fwd_count, ruc_count]):
+            d = def_count or 5
+            m = mid_count or 7
+            f = fwd_count or 5
+            r = ruc_count or 1
+            bd = bench_def if bench_def is not None else 1
+            bm = bench_mid if bench_mid is not None else 2
+            bf = bench_fwd if bench_fwd is not None else 1
+            bx = bench_flex if bench_flex is not None else 1
+            total_positions = d + m + f + r + bd + bm + bf + bx
+
+            # Reload league to get potentially-updated squad_size
+            db.session.refresh(league)
+            if total_positions > league.squad_size:
+                flash(
+                    f"Total positions ({total_positions}) exceed squad size ({league.squad_size}). "
+                    "Reduce formation/bench or increase squad size.",
+                    "warning",
+                )
+                return redirect(url_for("leagues.league_settings", league_id=league_id))
+
             slots = [
-                {"position_code": "DEF", "count": def_count or 5, "is_bench": False},
-                {"position_code": "MID", "count": mid_count or 7, "is_bench": False},
-                {"position_code": "FWD", "count": fwd_count or 5, "is_bench": False},
-                {"position_code": "RUC", "count": ruc_count or 1, "is_bench": False},
-                {"position_code": "DEF", "count": bench_def if bench_def is not None else 1, "is_bench": True},
-                {"position_code": "MID", "count": bench_mid if bench_mid is not None else 2, "is_bench": True},
-                {"position_code": "FWD", "count": bench_fwd if bench_fwd is not None else 1, "is_bench": True},
-                {"position_code": "FLEX", "count": bench_flex if bench_flex is not None else 1, "is_bench": True},
+                {"position_code": "DEF", "count": d, "is_bench": False},
+                {"position_code": "MID", "count": m, "is_bench": False},
+                {"position_code": "FWD", "count": f, "is_bench": False},
+                {"position_code": "RUC", "count": r, "is_bench": False},
+                {"position_code": "DEF", "count": bd, "is_bench": True},
+                {"position_code": "MID", "count": bm, "is_bench": True},
+                {"position_code": "FWD", "count": bf, "is_bench": True},
+                {"position_code": "FLEX", "count": bx, "is_bench": True},
             ]
             update_position_slots(league_id, slots)
-            on_field = (def_count or 5) + (mid_count or 7) + (fwd_count or 5) + (ruc_count or 1)
+            on_field = d + m + f + r
             update_league_settings(league_id, on_field_count=on_field)
 
         flash("League settings updated.", "success")
