@@ -37,7 +37,9 @@ from scrapers.stats_loader import (
 )
 
 
-_XLSX_PATH = os.path.join(os.path.expanduser("~"), "OneDrive", "Documents", "AFL 2025.1.xlsx")
+_XLSX_PATH = os.environ.get("RATINGS_XLSX_PATH",
+    os.path.join(os.path.expanduser("~"), "OneDrive", "Documents", "AFL 2025.1.xlsx")
+)
 
 # Team name mapping: Excel name -> DB name
 _XLSX_TEAM_MAP = {
