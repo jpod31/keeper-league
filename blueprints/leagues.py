@@ -1354,11 +1354,8 @@ def player_pool(league_id):
     for pid, tname in roster_rows:
         rostered_map[pid] = tname
 
-    # Rank by SC avg: current year first, fallback to previous
-    for p in players:
-        p._rank_avg = p.sc_avg or p.sc_avg_prev or 0
-
-    players.sort(key=lambda p: p._rank_avg, reverse=True)
+    # Rank by draft value (fallback to SC avg if no draft score)
+    players.sort(key=lambda p: p.draft_score or 0, reverse=True)
     for i, p in enumerate(players, 1):
         p._rank = i
 
