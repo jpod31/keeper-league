@@ -1354,6 +1354,23 @@ def player_pool(league_id):
     for pid, tname in roster_rows:
         rostered_map[pid] = tname
 
+    # Assign a colour to each fantasy team for status badges
+    _team_palette = [
+        ("#58a6ff", "rgba(88,166,255,.12)"),   # blue
+        ("#f0883e", "rgba(240,136,62,.12)"),    # orange
+        ("#bc8cff", "rgba(188,140,255,.12)"),   # purple
+        ("#3fb950", "rgba(63,185,80,.12)"),     # green
+        ("#d29922", "rgba(210,153,34,.12)"),    # yellow
+        ("#f85149", "rgba(248,81,73,.12)"),     # red
+        ("#79c0ff", "rgba(121,192,255,.12)"),   # light blue
+        ("#db61a2", "rgba(219,97,162,.12)"),    # pink
+    ]
+    unique_teams = sorted(set(rostered_map.values()))
+    team_colours = {}
+    for i, tname in enumerate(unique_teams):
+        fg, bg = _team_palette[i % len(_team_palette)]
+        team_colours[tname] = {"fg": fg, "bg": bg}
+
     # Rank by draft value (fallback to SC avg if no draft score)
     players.sort(key=lambda p: p.draft_score or 0, reverse=True)
     for i, p in enumerate(players, 1):
@@ -1365,4 +1382,5 @@ def player_pool(league_id):
                            league=league,
                            players=players,
                            rolling=rolling,
-                           rostered_map=rostered_map)
+                           rostered_map=rostered_map,
+                           team_colours=team_colours)
