@@ -701,6 +701,8 @@ class PageView(db.Model):
 
 def init_db(app):
     """Initialise the database — create tables if they don't exist."""
+    import os, config
+    os.makedirs(config.DATA_DIR, exist_ok=True)
     db.init_app(app)
     with app.app_context():
         db.create_all()
