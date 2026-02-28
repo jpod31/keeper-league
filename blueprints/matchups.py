@@ -347,6 +347,27 @@ def gameday(league_id):
     )
 
 
+@matchups_bp.route("/<int:league_id>/gameday/sync-scores", methods=["POST"])
+@login_required
+def sync_scores(league_id):
+    """Manual score sync triggered from the gameday page."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+
+    live_config = LiveScoringConfig.query.get(league_id)
+    if not live_config or not live_config.enabled:
+        return jsonify({"error": "Live scoring is not enabled"}), 400
+
+    try:
+        from models.scheduler import run_manual_score_sync
+        run_manual_score_sync()
+        return jsonify({"ok": True, "message": "Scores synced successfully"})
+    except Exception as e:
+        logger.exception("Manual score sync failed")
+        return jsonify({"error": str(e)}), 500
+
+
 @matchups_bp.route("/<int:league_id>/finals")
 @login_required
 def finals_view(league_id):

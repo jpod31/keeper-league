@@ -391,7 +391,6 @@ def league_settings(league_id):
             db.session.add(live_config)
         live_config.enabled = request.form.get("live_scoring_enabled") == "on"
         live_config.lockout_type = request.form.get("lockout_type", "game_start")
-        live_config.poll_interval_seconds = request.form.get("poll_interval", type=int) or 120
         db.session.commit()
 
         # Season / fixture config

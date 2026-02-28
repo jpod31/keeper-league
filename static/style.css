@@ -1855,6 +1855,140 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .squad-hide-mobile { display: none !important; }
 }
 
+/* ═══ Settings — Toggle Switch + Expandable Sections ═══ */
+
+/* Custom toggle switch */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  cursor: pointer;
+  user-select: none;
+}
+.settings-toggle input { display: none; }
+.toggle-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #21262d;
+  border: 2px solid #30363d;
+  border-radius: 12px;
+  transition: all .25s ease;
+  flex-shrink: 0;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #484f58;
+  border-radius: 50%;
+  transition: all .25s ease;
+}
+.settings-toggle input:checked + .toggle-track {
+  background: rgba(35,134,54,.25);
+  border-color: #238636;
+}
+.settings-toggle input:checked + .toggle-track::after {
+  left: 22px;
+  background: #3fb950;
+  box-shadow: 0 0 8px rgba(63,185,80,.4);
+}
+.toggle-label-text {
+  font-weight: 600;
+  font-size: .85rem;
+  color: #c9d1d9;
+  transition: color .2s;
+}
+.settings-toggle input:not(:checked) ~ .toggle-label-text {
+  color: #6e7681;
+}
+.toggle-hint {
+  font-size: .7rem;
+  color: #484f58;
+  margin-top: 1px;
+}
+
+/* Expandable section body */
+.settings-expand {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height .35s ease, opacity .25s ease, padding .3s ease;
+  padding: 0 1.25rem;
+}
+.settings-expand.expanded {
+  max-height: 600px;
+  opacity: 1;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+/* Section header with toggle */
+.settings-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+.settings-section-header.section-active {
+  border-bottom-color: #30363d;
+}
+
+/* Status indicator dot in card header */
+.settings-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #30363d;
+  margin-left: 8px;
+  vertical-align: middle;
+  transition: all .25s ease;
+}
+.settings-status.status-on {
+  background: #3fb950;
+  box-shadow: 0 0 6px rgba(63,185,80,.5);
+}
+
+/* Gameday sync button */
+.sync-scores-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  background: rgba(35,134,54,.15);
+  color: #3fb950;
+  border: 1px solid rgba(35,134,54,.3);
+  cursor: pointer;
+  transition: all .2s ease;
+  white-space: nowrap;
+}
+.sync-scores-btn:hover {
+  background: rgba(35,134,54,.25);
+  border-color: rgba(35,134,54,.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+.sync-scores-btn:active {
+  transform: translateY(0) scale(.97);
+}
+.sync-scores-btn:disabled {
+  opacity: .5;
+  pointer-events: none;
+}
+.sync-scores-btn .spinner-border {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
 /* ── Responsive utilities ── */
 @media (max-width: 768px) {
   .section-header { flex-direction: column; gap: .75rem; align-items: flex-start; }

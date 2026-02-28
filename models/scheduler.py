@@ -1,8 +1,8 @@
 """APScheduler integration for background live-scoring jobs.
 
-Two jobs:
-  1. _poll_live_scores  — runs every 120s, scrapes live SC scores and pushes via SocketIO
-  2. _sync_round_schedule — daily at 6am, populates AflGame with bounce times for lockouts
+Jobs:
+  1. _poll_live_scores  — cron: Thu-Sun at 11pm AEST, plus Sat at 5pm AEST
+  2. _sync_round_schedule — daily at 6am UTC, populates AflGame with bounce times
 """
 
 from __future__ import annotations
@@ -26,14 +26,29 @@ def init_scheduler(app, socketio):
     _app = app
     _socketio = socketio
 
+    # Score sync: Thu-Sun at 11pm AEST (13:00 UTC)
     scheduler.add_job(
         _poll_live_scores,
-        "interval",
-        seconds=120,
-        id="live_score_poll",
+        "cron",
+        day_of_week="thu,fri,sat,sun",
+        hour=13,
+        minute=0,
+        id="nightly_score_sync",
         replace_existing=True,
         max_instances=1,
     )
+    # Extra Saturday sync at 5pm AEST (07:00 UTC)
+    scheduler.add_job(
+        _poll_live_scores,
+        "cron",
+        day_of_week="sat",
+        hour=7,
+        minute=0,
+        id="saturday_afternoon_sync",
+        replace_existing=True,
+        max_instances=1,
+    )
+    # Daily schedule sync at 06:00 UTC
     scheduler.add_job(
         _sync_round_schedule,
         "cron",
@@ -43,11 +58,16 @@ def init_scheduler(app, socketio):
         replace_existing=True,
     )
     scheduler.start()
-    logger.info("Live scoring scheduler started (poll=120s, daily sync at 06:00)")
+    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC)")
+
+
+def run_manual_score_sync():
+    """Trigger a score sync on demand (called from the gameday manual sync route)."""
+    _poll_live_scores()
 
 
 def _poll_live_scores():
-    """Background job: poll for live AFL scores and push updates via SocketIO."""
+    """Poll for live AFL scores and push updates via SocketIO."""
     if not _app or not _socketio:
         return
 

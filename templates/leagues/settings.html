@@ -159,27 +159,32 @@
         </div>
       </div>
 
+      {# ── Mid-Season (expandable toggle) ── #}
       <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-bar-chart me-2" style="color:#8b949e;"></i>Draft Ranking Weights</h5></div>
-        <div class="card-body">
-          <div class="d-flex align-items-start gap-3">
-            <i class="bi bi-info-circle" style="color:#58a6ff;font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
-            <div>
-              <p class="mb-2" style="font-size:.85rem;color:#c9d1d9;">Draft ranking weights are now <strong>personal</strong> — each manager sets their own preferences from their team page.</p>
-              <p class="mb-0 text-secondary" style="font-size:.75rem;">This lets each manager prioritise different factors (e.g. age vs SC average) without affecting other teams' rankings.</p>
-            </div>
-          </div>
+        <div class="settings-section-header {{ 'section-active' if season_config and season_config.mid_season_draft_enabled }}" id="midSeasonHeader">
+          <h5 class="mb-0 fw-bold d-flex align-items-center" style="font-size:.95rem;">
+            <i class="bi bi-arrow-repeat me-2" style="color:#2dd4bf;"></i>Mid-Season
+            <span class="settings-status {{ 'status-on' if season_config and season_config.mid_season_draft_enabled }}" id="midSeasonDot"></span>
+          </h5>
+          <label class="settings-toggle mb-0">
+            <input type="checkbox" id="mid_season_draft_enabled" name="mid_season_draft_enabled"
+                   {{ 'checked' if season_config and season_config.mid_season_draft_enabled }}
+                   onchange="toggleSection('midSeason', this.checked)">
+            <span class="toggle-track"></span>
+          </label>
         </div>
-      </div>
-
-      <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-arrow-repeat me-2" style="color:#2dd4bf;"></i>Mid-Season</h5></div>
-        <div class="card-body">
+        <div class="settings-expand {{ 'expanded' if season_config and season_config.mid_season_draft_enabled }}" id="midSeasonBody">
           <div class="row g-3">
+            <div class="col-12">
+              <div class="d-flex align-items-center gap-2 mb-3" style="font-size:.75rem;color:#8b949e;">
+                <i class="bi bi-info-circle"></i>
+                Mid-season activities occur between halves of the AFL season. Teams must delist before drafting.
+              </div>
+            </div>
             <div class="col-md-6">
-              <label class="form-label" style="font-size:.75rem;">Mid-Season Trade Window</label>
-              <div class="mb-2" style="font-size:.75rem;color:#8b949e;">
-                <i class="bi bi-info-circle me-1"></i>Trades are always available. Window dates are set via Season Hub.
+              <label class="form-label" style="font-size:.75rem;color:#8b949e;">Trade Window</label>
+              <div class="mb-2" style="font-size:.7rem;color:#484f58;">
+                Window dates are set via Season Hub
               </div>
               <label for="mid_season_trade_after_round" class="form-label" style="font-size:.75rem;">Opens after AFL Round</label>
               <input type="number" class="form-control form-control-sm" id="mid_season_trade_after_round"
@@ -188,11 +193,7 @@
                      min="1" max="24" placeholder="e.g. 12">
             </div>
             <div class="col-md-6">
-              <div class="form-check mb-2">
-                <input type="checkbox" class="form-check-input" id="mid_season_draft_enabled" name="mid_season_draft_enabled"
-                       {{ 'checked' if season_config and season_config.mid_season_draft_enabled }}>
-                <label class="form-check-label" for="mid_season_draft_enabled">Mid-Season Draft</label>
-              </div>
+              <label class="form-label" style="font-size:.75rem;color:#8b949e;">Draft</label>
               <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">Draft after AFL Round</label>
               <input type="number" class="form-control form-control-sm" id="mid_season_draft_after_round"
                      name="mid_season_draft_after_round"
@@ -214,13 +215,24 @@
                      min="0" max="10">
             </div>
           </div>
-          <div class="form-text mt-2" style="color:#484f58;font-size:.7rem;">Mid-season activities occur between halves of the AFL season. Teams must delist before drafting.</div>
         </div>
       </div>
 
+      {# ── Off-Season (expandable toggle) ── #}
       <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-snow me-2" style="color:#58a6ff;"></i>Off-Season</h5></div>
-        <div class="card-body">
+        <div class="settings-section-header {{ 'section-active' if not season_config or season_config.ssp_enabled != false }}" id="offSeasonHeader">
+          <h5 class="mb-0 fw-bold d-flex align-items-center" style="font-size:.95rem;">
+            <i class="bi bi-snow me-2" style="color:#58a6ff;"></i>Off-Season
+            <span class="settings-status {{ 'status-on' if not season_config or season_config.ssp_enabled != false }}" id="offSeasonDot"></span>
+          </h5>
+          <label class="settings-toggle mb-0">
+            <input type="checkbox" id="ssp_enabled" name="ssp_enabled"
+                   {{ 'checked' if not season_config or season_config.ssp_enabled != false }}
+                   onchange="toggleSection('offSeason', this.checked)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="settings-expand {{ 'expanded' if not season_config or season_config.ssp_enabled != false }}" id="offSeasonBody">
           <div class="row g-3">
             <div class="col-md-4">
               <label for="offseason_delist_min" class="form-label" style="font-size:.75rem;">Min Delists</label>
@@ -231,72 +243,61 @@
               <div class="form-text" style="font-size:.7rem;">Each team must delist at least this many players</div>
             </div>
             <div class="col-md-4">
-              <div class="mt-4" style="font-size:.75rem;color:#8b949e;">
-                <i class="bi bi-info-circle me-1"></i>Off-season trade window dates are set via Season Hub
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="form-check mt-4">
-                <input type="checkbox" class="form-check-input" id="ssp_enabled" name="ssp_enabled"
-                       {{ 'checked' if not season_config or season_config.ssp_enabled != false }}>
-                <label class="form-check-label" for="ssp_enabled">SSP (Injury Replacement)</label>
-              </div>
-            </div>
-            <div class="col-md-4">
               <label for="ssp_slots" class="form-label" style="font-size:.75rem;">SSP Replacement Slots</label>
               <input type="number" class="form-control form-control-sm" id="ssp_slots" name="ssp_slots"
                      value="{{ season_config.ssp_slots if season_config and season_config.ssp_slots else 1 }}"
                      min="0" max="5">
               <div class="form-text" style="font-size:.7rem;">Max LTIL replacements per team per season</div>
             </div>
+            <div class="col-md-4">
+              <div class="mt-3" style="font-size:.75rem;color:#8b949e;">
+                <i class="bi bi-info-circle me-1"></i>Trade window dates are set via Season Hub
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      {# ── Live Scoring (expandable toggle) ── #}
       <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-broadcast me-2" style="color:#238636;"></i>Live Scoring</h5></div>
-        <div class="card-body">
+        <div class="settings-section-header {{ 'section-active' if live_config and live_config.enabled }}" id="liveScoringHeader">
+          <h5 class="mb-0 fw-bold d-flex align-items-center" style="font-size:.95rem;">
+            <i class="bi bi-broadcast me-2" style="color:#238636;"></i>Live Scoring
+            <span class="settings-status {{ 'status-on' if live_config and live_config.enabled }}" id="liveScoringDot"></span>
+          </h5>
+          <label class="settings-toggle mb-0">
+            <input type="checkbox" id="live_scoring_enabled" name="live_scoring_enabled"
+                   {{ 'checked' if live_config and live_config.enabled else '' }}
+                   onchange="toggleSection('liveScoring', this.checked)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="settings-expand {{ 'expanded' if live_config and live_config.enabled }}" id="liveScoringBody">
           <div class="row g-3">
-            <div class="col-md-4">
-              <div class="form-check mt-2">
-                <input type="checkbox" class="form-check-input" id="live_scoring_enabled" name="live_scoring_enabled"
-                       {{ 'checked' if live_config and live_config.enabled else '' }}>
-                <label class="form-check-label" for="live_scoring_enabled">Enable Live Scoring</label>
-              </div>
-              <div class="form-text" style="font-size:.7rem;color:#484f58;">Scores update automatically during live AFL games via Squiggle + Footywire</div>
-            </div>
-            <div class="col-md-4">
-              <label for="lockout_type" class="form-label">Lockout Type</label>
-              <select class="form-select" id="lockout_type" name="lockout_type">
+            <div class="col-md-6">
+              <label for="lockout_type" class="form-label" style="font-size:.75rem;">Lockout Type</label>
+              <select class="form-select form-select-sm" id="lockout_type" name="lockout_type">
                 <option value="game_start" {{ 'selected' if not live_config or live_config.lockout_type == 'game_start' }}>Per-Game Rolling</option>
                 <option value="round_start" {{ 'selected' if live_config and live_config.lockout_type == 'round_start' }}>Round Start (all at once)</option>
               </select>
-              <div class="form-text" style="font-size:.7rem;color:#484f58;">Per-game: each player locks at their game's first bounce</div>
+              <div class="form-text" style="font-size:.7rem;">Per-game: each player locks at their game's first bounce</div>
             </div>
-            <div class="col-md-4">
-              <label for="poll_interval" class="form-label">Poll Interval</label>
-              <select class="form-select" id="poll_interval" name="poll_interval">
-                <option value="60" {{ 'selected' if live_config and live_config.poll_interval_seconds == 60 }}>60 seconds</option>
-                <option value="120" {{ 'selected' if not live_config or live_config.poll_interval_seconds == 120 }}>120 seconds</option>
-                <option value="300" {{ 'selected' if live_config and live_config.poll_interval_seconds == 300 }}>5 minutes</option>
-              </select>
-              <div class="form-text" style="font-size:.7rem;color:#484f58;">How often scores are fetched during live games</div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:.75rem;">Score Updates</label>
+              <div style="font-size:.75rem;color:#8b949e;margin-top:4px;">
+                <i class="bi bi-clock me-1"></i>Scores sync automatically Thu-Sun at 11pm and Sat 5pm AEST.
+                Use <strong style="color:#c9d1d9;">Sync Scores</strong> on the Gameday tab for manual updates.
+              </div>
             </div>
           </div>
-          <hr class="my-3" style="border-color:#30363d;">
-          <div class="d-flex align-items-center gap-3">
-            <span class="text-muted small">Pull the latest AFL game schedule from Squiggle for the current and next round.</span>
+          <hr class="my-3" style="border-color:#21262d;">
+          <div class="d-flex align-items-center justify-content-between">
+            <span style="font-size:.75rem;color:#484f58;">Sync AFL game schedule (bounce times + results) from Squiggle</span>
+            <button type="button" class="sync-scores-btn" id="syncBtn" {% if not is_commissioner %}disabled{% endif %}
+                    onclick="document.getElementById('syncForm').submit();this.disabled=true;this.innerHTML='<span class=\'spinner-border\'></span> Syncing...';">
+              <i class="bi bi-cloud-download"></i>Sync Schedule
+            </button>
           </div>
-        </div>
-        <div class="card-footer" style="background:#161b22;border-top:1px solid #30363d;">
-          <button type="button" class="btn btn-outline-success btn-sm" id="syncBtn" {% if not is_commissioner %}disabled{% endif %}
-                  onclick="document.getElementById('syncForm').submit();this.disabled=true;document.getElementById('syncSpinner').classList.remove('d-none');">
-            <i class="bi bi-cloud-download me-1"></i>Sync Now
-          </button>
-          <span id="syncSpinner" class="ms-2 d-none">
-            <span class="spinner-border spinner-border-sm" role="status"></span>
-            <span class="text-muted small">Syncing…</span>
-          </span>
         </div>
       </div>
 
@@ -324,6 +325,22 @@ if (roundsInput) {
   roundsInput.addEventListener('change', function() {
     document.getElementById('regen_rounds').value = this.value;
   });
+}
+
+// Toggle expandable settings sections
+function toggleSection(name, expanded) {
+  var body = document.getElementById(name + 'Body');
+  var header = document.getElementById(name + 'Header');
+  var dot = document.getElementById(name + 'Dot');
+  if (expanded) {
+    body.classList.add('expanded');
+    header.classList.add('section-active');
+    dot.classList.add('status-on');
+  } else {
+    body.classList.remove('expanded');
+    header.classList.remove('section-active');
+    dot.classList.remove('status-on');
+  }
 }
 </script>
 {% endblock %}
