@@ -476,6 +476,61 @@ def randomize_draft_order(league_id):
 # ── Mock draft helpers ─────────────────────────────────────────────
 
 
+def restart_draft(league_id):
+    """Delete the initial draft session, clear all drafted rosters, and reset league status.
+
+    Only allowed before any fixture round has been scored.
+    Returns (True, None) on success or (False, error_msg) on failure.
+    """
+    from models.database import Fixture
+
+    # Check no fixtures have been played
+    played = Fixture.query.filter_by(league_id=league_id).filter(
+        Fixture.status == "completed"
+    ).first()
+    if played:
+        return False, "Cannot restart draft — fixtures have already been played."
+
+    # Find the initial draft session
+    session = DraftSession.query.filter_by(
+        league_id=league_id, draft_round_type="initial", is_mock=False,
+    ).first()
+    if not session:
+        return False, "No draft session to restart."
+
+    # Remove all roster entries that were added via draft for teams in this league
+    team_ids = [t.id for t in FantasyTeam.query.filter_by(league_id=league_id).all()]
+    if team_ids:
+        FantasyRoster.query.filter(
+            FantasyRoster.team_id.in_(team_ids),
+            FantasyRoster.acquired_via.in_(("draft", "supplemental")),
+        ).delete(synchronize_session="fetch")
+
+    # Clear all draft queues for teams in this league
+    if team_ids:
+        DraftQueue.query.filter(DraftQueue.team_id.in_(team_ids)).delete(
+            synchronize_session="fetch"
+        )
+
+    # Delete the draft session (cascade deletes picks)
+    db.session.delete(session)
+
+    # Also delete any supplemental sessions
+    supps = DraftSession.query.filter_by(
+        league_id=league_id, draft_round_type="supplemental", is_mock=False,
+    ).all()
+    for s in supps:
+        db.session.delete(s)
+
+    # Reset league status
+    league = db.session.get(League, league_id)
+    if league:
+        league.status = "setup"
+
+    db.session.commit()
+    return True, None
+
+
 def delete_mock_draft(session_id):
     """Delete a mock draft session and all its picks."""
     session = db.session.get(DraftSession, session_id)

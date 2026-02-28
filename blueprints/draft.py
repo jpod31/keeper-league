@@ -8,7 +8,7 @@ from blueprints import check_league_access
 from models.draft_live import (
     create_draft_session, get_draft_state, start_draft, pause_draft, resume_draft,
     get_available_players, get_queue, set_queue, add_to_queue, remove_from_queue,
-    randomize_draft_order, get_team_draft_picks, get_position_needs,
+    randomize_draft_order, get_team_draft_picks, get_position_needs, restart_draft,
     delete_mock_draft, reset_mock_draft, run_mock_auto_picks,
 )
 
@@ -58,6 +58,12 @@ def draft_room(league_id):
     user_weights = uw.to_dict() if uw else (lw.to_dict() if lw else DRAFT_WEIGHTS.copy())
     has_custom_weights = uw is not None
 
+    # Check if draft can be restarted (no fixtures played yet)
+    from models.database import Fixture
+    can_restart = is_commissioner and not Fixture.query.filter_by(
+        league_id=league_id, status="completed"
+    ).first()
+
     return render_template("draft/room.html",
                            league=league,
                            session=session,
@@ -65,7 +71,8 @@ def draft_room(league_id):
                            is_commissioner=is_commissioner,
                            state=state,
                            user_weights=user_weights,
-                           has_custom_weights=has_custom_weights)
+                           has_custom_weights=has_custom_weights,
+                           can_restart=can_restart)
 
 
 @draft_bp.route("/<int:league_id>/draft/setup", methods=["GET", "POST"])
@@ -196,6 +203,15 @@ def draft_setup(league_id):
                     return redirect(url_for("draft_live.draft_room", league_id=league_id))
             return redirect(url_for("draft_live.draft_setup", league_id=league_id))
 
+        elif action == "restart_draft":
+            ok, error = restart_draft(league_id)
+            if error:
+                flash(error, "danger")
+            else:
+                flash("Draft has been reset. You can now change settings and re-create the draft.", "success")
+                return redirect(url_for("leagues.league_settings", league_id=league_id))
+            return redirect(url_for("draft_live.draft_setup", league_id=league_id))
+
         elif action == "create_mock":
             mock_rounds = request.form.get("mock_rounds", type=int) or league.squad_size
             # Delete any existing mock sessions for this league
@@ -220,8 +236,12 @@ def draft_setup(league_id):
         league_id=league_id, is_mock=True
     ).order_by(DraftSession.id.desc()).first()
 
-    from models.database import SeasonConfig
+    from models.database import SeasonConfig, Fixture
     season_config = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
+
+    can_restart = initial_session is not None and not Fixture.query.filter_by(
+        league_id=league_id, status="completed"
+    ).first()
 
     return render_template("draft/setup.html",
                            league=league,
@@ -231,7 +251,8 @@ def draft_setup(league_id):
                            initial_completed=initial_completed,
                            supp_session=supp_session,
                            mock_session=mock_session,
-                           season_config=season_config)
+                           season_config=season_config,
+                           can_restart=can_restart)
 
 
 # ── JSON APIs ────────────────────────────────────────────────────────

@@ -27,10 +27,21 @@
         {% elif session.status == 'paused' %}
           <button class="btn btn-primary btn-sm" onclick="resumeDraft()"><i class="bi bi-play-fill me-1"></i>Resume</button>
         {% endif %}
+        {% if can_restart %}
+          <button class="btn btn-outline-danger btn-sm" onclick="confirmRestart()" style="font-size:.7rem;" title="Delete draft and return to settings">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Restart
+          </button>
+        {% endif %}
       </div>
     {% endif %}
   </div>
 </div>
+
+{% if can_restart %}
+<form id="restart-form" method="POST" action="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" style="display:none;">
+  <input type="hidden" name="action" value="restart_draft">
+</form>
+{% endif %}
 
 <!-- Current Pick Banner -->
 <div id="current-pick-banner" class="draft-banner{% if user_team and state.current_team_id == user_team.id %} draft-banner-your-pick{% endif %}">
@@ -535,6 +546,13 @@ function updateYourTeam() {
 function startDraft() { socket.emit('start_draft', { league_id: LEAGUE_ID }); }
 function pauseDraft() { socket.emit('pause_draft', { league_id: LEAGUE_ID }); }
 function resumeDraft() { socket.emit('resume_draft', { league_id: LEAGUE_ID }); }
+
+function confirmRestart() {
+  if (!confirm('Are you sure you want to restart the draft?\n\nThis will DELETE the current draft session, remove all drafted players from rosters, and take you to settings where you can make changes before re-drafting.\n\nThis cannot be undone.')) return;
+  // Submit via hidden form
+  const form = document.getElementById('restart-form');
+  if (form) form.submit();
+}
 
 // ── Inline draft value weights ──
 const WEIGHT_KEYS = ['sc_average', 'age_factor', 'positional_scarcity', 'trajectory', 'durability', 'rating_potential'];
