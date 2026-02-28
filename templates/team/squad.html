@@ -10,20 +10,31 @@
       <span style="font-size:.8rem;color:#8b949e;">{{ players|length }} players</span>
     </div>
     <div class="d-flex gap-2">
-      <div class="btn-group btn-group-sm" role="group">
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='table') }}"
-           class="btn btn-sm {{ 'btn-primary' if view|default('field') == 'table' else 'btn-outline-secondary' }}">
-          <i class="bi bi-table me-1"></i>Table
-        </a>
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}"
-           class="btn btn-sm {{ 'btn-primary' if view|default('field') == 'field' else 'btn-outline-secondary' }}">
-          <i class="bi bi-diagram-3 me-1"></i>Field
-        </a>
+      {# List Management dropdown #}
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+          <i class="bi bi-gear me-1"></i>List Management
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark">
+          <li><a class="dropdown-item" href="{{ url_for('trades.trade_center', league_id=league.id) }}"><i class="bi bi-arrow-left-right me-2"></i>Trade Center</a></li>
+          {% if is_owner %}
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="{{ url_for('team.draft_weights', league_id=league.id) }}"><i class="bi bi-bar-chart me-2"></i>Draft Weights</a></li>
+          {% endif %}
+        </ul>
       </div>
       <a href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-graph-up me-1"></i>Stats</a>
-      {% if is_owner %}
-      <a href="{{ url_for('team.draft_weights', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-bar-chart me-1"></i>Draft Weights</a>
-      {% endif %}
+      {# View toggle — Field View is primary/prominent #}
+      <div class="btn-group btn-group-sm" role="group">
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}"
+           class="btn btn-sm {{ 'btn-primary' if view|default('field') == 'field' else 'btn-outline-secondary' }}">
+          <i class="bi bi-diagram-3 me-1"></i>Field View
+        </a>
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='table') }}"
+           class="btn btn-sm {{ 'btn-primary' if view|default('field') == 'table' else 'btn-outline-secondary' }}">
+          <i class="bi bi-table me-1"></i>List View
+        </a>
+      </div>
     </div>
   </div>
 </div>
@@ -41,8 +52,9 @@
   {% else %}
   <div class="d-flex align-items-center mb-3">
     <div class="btn-group btn-group-sm" role="group">
-      <button class="btn btn-sm btn-primary" id="btnAllTime" onclick="switchStats('alltime')">All Time</button>
-      <button class="btn btn-sm btn-outline-secondary" id="btnMyClub" onclick="switchStats('myclub')">For My Club</button>
+      <button class="btn btn-sm btn-outline-secondary" id="btnMyClub" onclick="switchStats('myclub')">In My 23</button>
+      <button class="btn btn-sm btn-outline-secondary" id="btnSeason" onclick="switchStats('season')">Season</button>
+      <button class="btn btn-sm btn-primary" id="btnCareer" onclick="switchStats('career')">Career</button>
     </div>
   </div>
   <div class="card">
@@ -99,19 +111,21 @@
 
   <script>
   (function() {
-    const STATS_API = "{{ url_for('team.api_roster_stats', league_id=league.id, team_id=team.id) }}";
+    const MY_CLUB_API = "{{ url_for('team.api_roster_stats', league_id=league.id, team_id=team.id) }}";
+    const SEASON_API = "{{ url_for('team.api_season_stats', league_id=league.id, team_id=team.id) }}";
     const STAT_FIELDS = ['games', 'goals', 'disposals', 'marks', 'tackles', 'sc_avg'];
-    let allTimeCache = {};
+    let careerCache = {};
+    let seasonCache = null;
     let myClubCache = null;
-    let currentMode = 'alltime';
+    let currentMode = 'career';
 
-    // Cache alltime values from the DOM on load
+    // Cache career values from the DOM on load
     document.querySelectorAll('#rosterTable tbody tr[data-pid]').forEach(row => {
       const pid = row.dataset.pid;
-      allTimeCache[pid] = {};
+      careerCache[pid] = {};
       STAT_FIELDS.forEach(field => {
         const cell = row.querySelector('.stat-' + field.replace('_', '-'));
-        if (cell) allTimeCache[pid][field] = cell.textContent.trim();
+        if (cell) careerCache[pid][field] = cell.textContent.trim();
       });
     });
 
@@ -129,37 +143,44 @@
       });
     }
 
+    function setActiveBtn(mode) {
+      ['btnMyClub', 'btnSeason', 'btnCareer'].forEach(id => {
+        document.getElementById(id).className = 'btn btn-sm btn-outline-secondary';
+      });
+      const map = { myclub: 'btnMyClub', season: 'btnSeason', career: 'btnCareer' };
+      document.getElementById(map[mode]).className = 'btn btn-sm btn-primary';
+    }
+
+    function fetchAndCache(api, mode, btnId, label) {
+      const btn = document.getElementById(btnId);
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+      return fetch(api)
+        .then(r => r.json())
+        .then(data => {
+          if (mode === 'myclub') myClubCache = data;
+          else seasonCache = data;
+          updateCells(data);
+          btn.textContent = label;
+        })
+        .catch(() => {
+          btn.textContent = label;
+          alert('Failed to load stats');
+        });
+    }
+
     window.switchStats = function(mode) {
       if (mode === currentMode) return;
       currentMode = mode;
+      setActiveBtn(mode);
 
-      const btnAll = document.getElementById('btnAllTime');
-      const btnClub = document.getElementById('btnMyClub');
-
-      if (mode === 'alltime') {
-        btnAll.className = 'btn btn-sm btn-primary';
-        btnClub.className = 'btn btn-sm btn-outline-secondary';
-        updateCells(allTimeCache);
-      } else {
-        btnClub.className = 'btn btn-sm btn-primary';
-        btnAll.className = 'btn btn-sm btn-outline-secondary';
-
-        if (myClubCache) {
-          updateCells(myClubCache);
-        } else {
-          btnClub.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
-          fetch(STATS_API)
-            .then(r => r.json())
-            .then(data => {
-              myClubCache = data;
-              updateCells(data);
-              btnClub.textContent = 'For My Club';
-            })
-            .catch(() => {
-              btnClub.textContent = 'For My Club';
-              alert('Failed to load club stats');
-            });
-        }
+      if (mode === 'career') {
+        updateCells(careerCache);
+      } else if (mode === 'season') {
+        if (seasonCache) { updateCells(seasonCache); }
+        else { fetchAndCache(SEASON_API, 'season', 'btnSeason', 'Season'); }
+      } else if (mode === 'myclub') {
+        if (myClubCache) { updateCells(myClubCache); }
+        else { fetchAndCache(MY_CLUB_API, 'myclub', 'btnMyClub', 'In My 23'); }
       }
     };
   })();

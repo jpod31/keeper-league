@@ -983,3 +983,54 @@ def api_roster_stats(league_id, team_id):
             }
 
     return jsonify(result)
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/api/season-stats")
+@login_required
+def api_season_stats(league_id, team_id):
+    """Return per-player stats for the current season year only."""
+    league, _user_team = check_league_access(league_id)
+    if not league:
+        return jsonify({"error": "Not a league member"}), 403
+    team = db.session.get(FantasyTeam, team_id)
+    if not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+
+    roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    player_ids = [r.player_id for r in roster]
+    current_year = league.season_year
+
+    result = {}
+    if player_ids:
+        rows = db.session.query(
+            PlayerStat.player_id,
+            sa_func.count(PlayerStat.id).label("games"),
+            sa_func.sum(PlayerStat.goals).label("goals"),
+            sa_func.sum(PlayerStat.disposals).label("disposals"),
+            sa_func.sum(PlayerStat.marks).label("marks"),
+            sa_func.sum(PlayerStat.tackles).label("tackles"),
+            sa_func.avg(PlayerStat.supercoach_score).label("sc_avg"),
+        ).filter(
+            PlayerStat.player_id.in_(player_ids),
+            PlayerStat.year == current_year,
+        ).group_by(PlayerStat.player_id).all()
+
+        for r in rows:
+            result[str(r.player_id)] = {
+                "games": r.games,
+                "goals": int(r.goals or 0),
+                "disposals": int(r.disposals or 0),
+                "marks": int(r.marks or 0),
+                "tackles": int(r.tackles or 0),
+                "sc_avg": round(float(r.sc_avg or 0), 1),
+            }
+
+    # Fill in zeros for players with no season stats
+    for pid in player_ids:
+        if str(pid) not in result:
+            result[str(pid)] = {
+                "games": 0, "goals": 0, "disposals": 0,
+                "marks": 0, "tackles": 0, "sc_avg": 0,
+            }
+
+    return jsonify(result)
