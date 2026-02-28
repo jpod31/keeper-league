@@ -162,25 +162,13 @@
       <div class="card mb-4">
         <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-bar-chart me-2" style="color:#8b949e;"></i>Draft Ranking Weights</h5></div>
         <div class="card-body">
-          {% set weights = league.draft_weights %}
-          {% set weight_fields = [
-            ('sc_average', 'SC Average', weights.sc_average if weights else 0.30),
-            ('age_factor', 'Age Factor', weights.age_factor if weights else 0.12),
-            ('positional_scarcity', 'Positional Scarcity', weights.positional_scarcity if weights else 0.12),
-            ('trajectory', 'Trajectory', weights.trajectory if weights else 0.12),
-            ('durability', 'Durability', weights.durability if weights else 0.12),
-            ('rating_potential', 'Rating & Potential', weights.rating_potential if weights else 0.22),
-          ] %}
-          {% for key, label, val in weight_fields %}
-            <div class="d-flex align-items-center gap-3 mb-3">
-              <label class="form-label mb-0" style="width:150px;flex-shrink:0;">{{ label }}</label>
-              <input type="range" class="form-range flex-grow-1" name="weight_{{ key }}"
-                     min="0" max="1" step="0.05" value="{{ val }}"
-                     oninput="this.nextElementSibling.textContent=this.value">
-              <span class="badge" style="background:#21262d;min-width:40px;">{{ val }}</span>
+          <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-info-circle" style="color:#58a6ff;font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
+            <div>
+              <p class="mb-2" style="font-size:.85rem;color:#c9d1d9;">Draft ranking weights are now <strong>personal</strong> — each manager sets their own preferences from their team page.</p>
+              <p class="mb-0 text-secondary" style="font-size:.75rem;">This lets each manager prioritise different factors (e.g. age vs SC average) without affecting other teams' rankings.</p>
             </div>
-          {% endfor %}
-          <div class="form-text" style="color:#484f58;font-size:.75rem;">Weights auto-normalise to sum to 1.0</div>
+          </div>
         </div>
       </div>
 

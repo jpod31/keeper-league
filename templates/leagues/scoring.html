@@ -73,7 +73,7 @@
         <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-layers me-2" style="color:#bc8cff;"></i>Hybrid Base Score</h5></div>
         <div class="card-body">
           <p class="text-secondary mb-3" style="font-size:.8rem;">Select the official score source as the base. Custom bonus rules are added on top.</p>
-          <div class="d-flex gap-3">
+          <div class="d-flex gap-3 mb-3">
             <div class="form-check">
               <input type="radio" class="form-check-input" id="hybrid_sc" name="hybrid_base" value="supercoach"
                      {{ 'checked' if not league.hybrid_base or league.hybrid_base == 'supercoach' }}>
@@ -84,6 +84,31 @@
                      {{ 'checked' if league.hybrid_base == 'afl_fantasy' }}>
               <label class="form-check-label" for="hybrid_af">AFL Fantasy</label>
             </div>
+          </div>
+          <hr style="border-color:#30363d;margin:1rem 0;">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <label class="form-label mb-0" style="width:160px;flex-shrink:0;">Official Score Weight</label>
+            <input type="range" class="form-range flex-grow-1" id="hybrid_base_weight" name="hybrid_base_weight"
+                   min="0" max="1" step="0.05"
+                   value="{{ league.hybrid_base_weight if league.hybrid_base_weight is not none else 1.0 }}"
+                   oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'">
+            <span class="badge" style="background:#21262d;min-width:50px;">{{ '%d' % (((league.hybrid_base_weight if league.hybrid_base_weight is not none else 1.0)|float) * 100) }}%</span>
+          </div>
+          <div class="d-flex gap-3 mb-2">
+            <div class="form-check">
+              <input type="radio" class="form-check-input" id="score_mode_points" name="hybrid_custom_mode" value="points"
+                     {{ 'checked' if not league.hybrid_custom_mode or league.hybrid_custom_mode == 'points' }}>
+              <label class="form-check-label" for="score_mode_points">Flat Points</label>
+            </div>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" id="score_mode_pct" name="hybrid_custom_mode" value="percentage"
+                     {{ 'checked' if league.hybrid_custom_mode == 'percentage' }}>
+              <label class="form-check-label" for="score_mode_pct">Percentage Split</label>
+            </div>
+          </div>
+          <div class="form-text" style="color:#484f58;font-size:.75rem;">
+            <strong>Flat Points:</strong> Score = Official &times; Weight + Custom Bonus<br>
+            <strong>Percentage Split:</strong> Score = Official &times; Weight + Custom &times; (1 &minus; Weight)
           </div>
         </div>
       </div>

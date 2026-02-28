@@ -8,7 +8,7 @@ from sqlalchemy import func as sa_func
 from models.database import (
     db, League, FantasyTeam, FantasyRoster, AflPlayer, AflGame,
     LeaguePositionSlot, WeeklyLineup, LineupSlot,
-    PlayerStat, RoundScore,
+    PlayerStat, RoundScore, UserDraftWeights, LeagueDraftWeights,
 )
 from blueprints import check_league_access
 from models.lineup_manager import (
@@ -457,6 +457,59 @@ def team_stats(league_id, team_id):
                            total_sc=round(total_sc, 1),
                            avg_age=round(avg_age, 1),
                            position_counts=position_counts)
+
+
+@team_bp.route("/<int:league_id>/draft-weights", methods=["GET", "POST"])
+@login_required
+def draft_weights(league_id):
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("League not found.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
+    if not team:
+        flash("You don't have a team in this league.", "warning")
+        return redirect(url_for("leagues.dashboard", league_id=league_id))
+
+    weight_keys = ["sc_average", "age_factor", "positional_scarcity", "trajectory", "durability", "rating_potential"]
+
+    if request.method == "POST":
+        weights = {}
+        for k in weight_keys:
+            val = request.form.get(f"weight_{k}", type=float)
+            if val is not None:
+                weights[k] = val
+        if weights:
+            total = sum(weights.values())
+            if total > 0 and abs(total - 1.0) > 0.01:
+                for k in weights:
+                    weights[k] = round(weights[k] / total, 4)
+                flash("Weights normalised to sum to 1.0.", "info")
+
+            uw = UserDraftWeights.query.filter_by(user_id=current_user.id, league_id=league_id).first()
+            if not uw:
+                uw = UserDraftWeights(user_id=current_user.id, league_id=league_id)
+                db.session.add(uw)
+            for k, v in weights.items():
+                setattr(uw, k, v)
+            db.session.commit()
+            flash("Draft ranking weights saved.", "success")
+        return redirect(url_for("team.draft_weights", league_id=league_id))
+
+    # Load current weights: UserDraftWeights → LeagueDraftWeights → config.DRAFT_WEIGHTS
+    uw = UserDraftWeights.query.filter_by(user_id=current_user.id, league_id=league_id).first()
+    if uw:
+        current_weights = uw.to_dict()
+    else:
+        lw = LeagueDraftWeights.query.filter_by(league_id=league_id).first()
+        current_weights = lw.to_dict() if lw else dict(config.DRAFT_WEIGHTS)
+
+    return render_template("team/draft_weights.html",
+                           league=league,
+                           team=team,
+                           weights=current_weights,
+                           weight_keys=weight_keys)
 
 
 # ── Lineup AJAX helpers ──────────────────────────────────────────────

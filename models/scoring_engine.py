@@ -144,18 +144,23 @@ def _compute_score_from_stat(stat, league_id, scoring_type, hybrid_base=None):
         return stat.afl_fantasy_score or 0
 
     if scoring_type == "hybrid":
+        # Fetch league for weight/mode settings
+        league = db.session.get(League, league_id)
+        weight = league.hybrid_base_weight if league and league.hybrid_base_weight is not None else 1.0
+        mode = league.hybrid_custom_mode if league and league.hybrid_custom_mode else "points"
+
         # Base score from official source
-        if hybrid_base == "afl_fantasy":
-            base = stat.afl_fantasy_score or 0
-        else:
-            base = stat.supercoach_score or 0
-        # Add bonus rules
+        base = (stat.afl_fantasy_score or 0) if hybrid_base == "afl_fantasy" else (stat.supercoach_score or 0)
+
+        # Custom bonus from rules
         rules = CustomScoringRule.query.filter_by(league_id=league_id).all()
-        bonus = 0.0
-        for rule in rules:
-            val = getattr(stat, rule.stat_column, 0) or 0
-            bonus += val * rule.points_per
-        return round(base + bonus, 1)
+        custom_total = sum((getattr(stat, r.stat_column, 0) or 0) * r.points_per for r in rules)
+
+        # Apply formula based on mode
+        if mode == "percentage":
+            return round(base * weight + custom_total * (1 - weight), 1)
+        else:  # "points" — weighted base + flat custom bonus
+            return round(base * weight + custom_total, 1)
 
     # Custom scoring
     rules = CustomScoringRule.query.filter_by(league_id=league_id).all()

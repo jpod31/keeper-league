@@ -1,0 +1,81 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'team' %}
+{% block title %}Draft Weights — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="page-header">
+      <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">{{ team.name }}</a> / Draft Weights</div>
+      <h2>My Draft Ranking Weights</h2>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-bar-chart me-2" style="color:#58a6ff;"></i>Weight Sliders</h5></div>
+      <div class="card-body">
+        <form method="POST">
+          {% set weight_labels = {
+            'sc_average': 'SC Average',
+            'age_factor': 'Age Factor',
+            'positional_scarcity': 'Positional Scarcity',
+            'trajectory': 'Trajectory',
+            'durability': 'Durability',
+            'rating_potential': 'Rating & Potential',
+          } %}
+          {% for key in weight_keys %}
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <label class="form-label mb-0" style="width:160px;flex-shrink:0;">{{ weight_labels.get(key, key) }}</label>
+              <input type="range" class="form-range flex-grow-1" name="weight_{{ key }}"
+                     min="0" max="1" step="0.05" value="{{ weights.get(key, 0) }}"
+                     oninput="this.nextElementSibling.textContent=this.value;updateTotal()">
+              <span class="badge weight-badge" style="background:#21262d;min-width:40px;">{{ weights.get(key, 0) }}</span>
+            </div>
+          {% endfor %}
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="form-text" style="color:#484f58;font-size:.75rem;">
+              Total: <strong id="weight_total" style="color:#c9d1d9;">{{ '%.2f'|format(weights.values()|sum) }}</strong> — weights auto-normalise to sum to 1.0 on save
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetDefaults()">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Defaults
+            </button>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Weights</button>
+          <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-start gap-3">
+          <i class="bi bi-info-circle" style="color:#58a6ff;font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
+          <div style="font-size:.8rem;color:#8b949e;">
+            <p class="mb-1">These weights determine how the draft ranking algorithm scores available players <em>for you</em>.</p>
+            <p class="mb-0">Other managers in your league can set their own weights independently. The draft room's "Available Players" list will be sorted based on your personal weights.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = {sc_average:0.30, age_factor:0.12, positional_scarcity:0.12, trajectory:0.12, durability:0.12, rating_potential:0.22};
+
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('.form-range').forEach(el => { total += parseFloat(el.value) || 0; });
+  document.getElementById('weight_total').textContent = total.toFixed(2);
+}
+
+function resetDefaults() {
+  for (const [key, val] of Object.entries(DEFAULTS)) {
+    const input = document.querySelector(`input[name="weight_${key}"]`);
+    if (input) {
+      input.value = val;
+      input.nextElementSibling.textContent = val;
+    }
+  }
+  updateTotal();
+}
+</script>
+{% endblock %}

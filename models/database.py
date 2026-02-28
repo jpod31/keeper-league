@@ -170,6 +170,8 @@ class League(db.Model):
     season_year = db.Column(db.Integer, nullable=False)
     scoring_type = db.Column(db.String(20), nullable=False, default="supercoach")  # supercoach|afl_fantasy|custom|hybrid
     hybrid_base = db.Column(db.String(20))  # supercoach|afl_fantasy — used only when scoring_type is hybrid
+    hybrid_base_weight = db.Column(db.Float, default=1.0)        # 0.0-1.0 weight for official base score
+    hybrid_custom_mode = db.Column(db.String(20), default="points")  # "percentage"|"points"
     squad_size = db.Column(db.Integer, default=38)
     on_field_count = db.Column(db.Integer, default=18)
     num_teams = db.Column(db.Integer, default=6)
@@ -767,12 +769,16 @@ def _run_migrations(app):
                 )
         db.session.commit()
 
-    # League.hybrid_base column
+    # League hybrid columns
     if "league" in inspector.get_table_names():
         existing_league = {c["name"] for c in inspector.get_columns("league")}
         if "hybrid_base" not in existing_league:
             db.session.execute(text("ALTER TABLE league ADD COLUMN hybrid_base VARCHAR(20)"))
-            db.session.commit()
+        if "hybrid_base_weight" not in existing_league:
+            db.session.execute(text("ALTER TABLE league ADD COLUMN hybrid_base_weight FLOAT DEFAULT 1.0"))
+        if "hybrid_custom_mode" not in existing_league:
+            db.session.execute(text("ALTER TABLE league ADD COLUMN hybrid_custom_mode VARCHAR(20) DEFAULT 'points'"))
+        db.session.commit()
 
     # PlayerStat new stat columns
     if "player_stat" in inspector.get_table_names():

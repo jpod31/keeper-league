@@ -21,6 +21,9 @@
         </a>
       </div>
       <a href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-graph-up me-1"></i>Stats</a>
+      {% if is_owner %}
+      <a href="{{ url_for('team.draft_weights', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-bar-chart me-1"></i>Draft Weights</a>
+      {% endif %}
     </div>
   </div>
 </div>

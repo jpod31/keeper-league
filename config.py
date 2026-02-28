@@ -120,6 +120,19 @@ TEAM_LOGOS = {
     "Western Bulldogs": f"{_LOGO_BASE}Bulldogs.png",
 }
 
+# ---------- Available stat columns for custom scoring ----------
+AVAILABLE_STATS = [
+    "kicks", "handballs", "disposals", "marks", "goals", "behinds",
+    "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
+    "clearances", "clangers", "inside_fifties", "rebounds",
+    "effective_disposals", "metres_gained", "pressure_acts",
+    "ground_ball_gets", "intercepts", "score_involvements",
+    "frees_for", "frees_against", "contested_marks", "marks_inside_50",
+    "one_percenters", "bounces", "goal_assists", "kick_ins",
+    "centre_clearances", "stoppage_clearances", "turnovers",
+    "time_on_ground_pct", "disposal_efficiency",
+]
+
 # ---------- Default custom scoring (AFL Fantasy-style) ----------
 DEFAULT_CUSTOM_SCORING = {
     "kicks": 3,

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Create League — Keeper League{% endblock %}
 {% block content %}
+<style>
+  .preset-btn { font-size:.75rem; padding:4px 10px; }
+</style>
 <div class="row justify-content-center">
-  <div class="col-md-6">
+  <div class="col-md-7">
     <div class="page-header">
       <div class="page-breadcrumb"><a href="{{ url_for('leagues.league_list') }}">My Leagues</a> / Create</div>
       <h2>Create a New League</h2>
@@ -29,7 +32,7 @@
           <div class="row g-3 mb-3">
             <div class="col-6">
               <label for="scoring_type" class="form-label">Scoring</label>
-              <select class="form-select" id="scoring_type" name="scoring_type" onchange="toggleHybridBase()">
+              <select class="form-select" id="scoring_type" name="scoring_type" onchange="toggleScoringUI()">
                 <option value="supercoach" {{ 'selected' if form.get('scoring_type') == 'supercoach' else '' }}>SuperCoach</option>
                 <option value="afl_fantasy" {{ 'selected' if form.get('scoring_type') == 'afl_fantasy' else '' }}>AFL Fantasy</option>
                 <option value="custom" {{ 'selected' if form.get('scoring_type') == 'custom' else '' }}>Custom</option>
@@ -49,6 +52,60 @@
                      value="{{ form.get('num_teams', 6) }}" min="2" max="18">
             </div>
           </div>
+
+          {# ── Hybrid Weight Config ── #}
+          <div id="hybrid_weight_config" class="card mb-3" style="{{ '' if form.get('scoring_type') == 'hybrid' else 'display:none' }}">
+            <div class="card-header"><h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-sliders me-2" style="color:#bc8cff;"></i>Hybrid Weight Configuration</h6></div>
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <label class="form-label mb-0" style="width:160px;flex-shrink:0;">Official Score Weight</label>
+                <input type="range" class="form-range flex-grow-1" id="hybrid_base_weight" name="hybrid_base_weight"
+                       min="0" max="1" step="0.05" value="{{ form.get('hybrid_base_weight', 0.7) }}"
+                       oninput="updateWeightBadge(this.value)">
+                <span class="badge" id="weight_badge" style="background:#21262d;min-width:50px;">{{ '%d' % ((form.get('hybrid_base_weight', 0.7)|float) * 100) }}%</span>
+              </div>
+              <div class="d-flex gap-3 mb-2">
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" id="mode_points" name="hybrid_custom_mode" value="points"
+                         {{ 'checked' if form.get('hybrid_custom_mode', 'points') == 'points' }}>
+                  <label class="form-check-label" for="mode_points">Flat Points</label>
+                </div>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" id="mode_percentage" name="hybrid_custom_mode" value="percentage"
+                         {{ 'checked' if form.get('hybrid_custom_mode') == 'percentage' }}>
+                  <label class="form-check-label" for="mode_percentage">Percentage Split</label>
+                </div>
+              </div>
+              <div class="form-text" style="color:#484f58;font-size:.75rem;">
+                <strong>Flat Points:</strong> Score = Official &times; Weight + Custom Bonus<br>
+                <strong>Percentage Split:</strong> Score = Official &times; Weight + Custom &times; (1 &minus; Weight)
+              </div>
+            </div>
+          </div>
+
+          {# ── Inline Scoring Builder (Custom / Hybrid) ── #}
+          <div id="scoring_builder" class="card mb-3" style="{{ '' if form.get('scoring_type') in ('custom', 'hybrid') else 'display:none' }}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h6 class="mb-0 fw-bold" style="font-size:.85rem;">
+                <i class="bi bi-sliders me-2" style="color:#f0883e;"></i>
+                <span id="builder_title">{{ 'Bonus Rules' if form.get('scoring_type') == 'hybrid' else 'Custom Scoring Rules' }}</span>
+              </h6>
+              <div class="d-flex gap-2">
+                {% for key, preset in scoring_presets.items() %}
+                  <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadCreatePreset('{{ key }}')">{{ preset.label }}</button>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="card-body" id="create_rules_container">
+              {# Rules will be populated by JS on page load for custom type #}
+            </div>
+            <div class="card-footer" style="border-top-color:#30363d;">
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCreateRule()" style="font-size:.8rem;">
+                <i class="bi bi-plus-lg me-1"></i>Add Rule
+              </button>
+            </div>
+          </div>
+
           <div class="row g-3 mb-3">
             <div class="col-6">
               <label for="squad_size" class="form-label">Squad Size</label>
@@ -120,11 +177,43 @@
           <div class="form-text mb-4" style="color:#484f58;font-size:.75rem;">Position-locked bench: players must match the slot position. Flex accepts any position.</div>
 
           <hr style="border-color:#30363d;margin:1.5rem 0;">
-          <div class="form-check mb-4">
-            <input type="checkbox" class="form-check-input" id="supplemental_draft" name="supplemental_draft"
-                   {{ 'checked' if form.get('supplemental_draft') }}>
-            <label class="form-check-label" for="supplemental_draft">Enable Supplemental Draft</label>
-            <div class="form-text" style="color:#484f58;font-size:.75rem;">Allow a mid-season supplemental draft after the initial draft is complete</div>
+          <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-arrow-repeat me-2"></i>Mid-Season Rules</h6>
+          <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="mid_season_draft_enabled" name="mid_season_draft_enabled"
+                   {{ 'checked' if form.get('mid_season_draft_enabled') }}
+                   onchange="document.getElementById('mid_season_fields').style.display=this.checked?'':'none'">
+            <label class="form-check-label" for="mid_season_draft_enabled">Enable Mid-Season Draft</label>
+          </div>
+          <div id="mid_season_fields" class="row g-3 mb-3" style="{{ '' if form.get('mid_season_draft_enabled') else 'display:none' }}">
+            <div class="col-6">
+              <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">After AFL Round</label>
+              <input type="number" class="form-control form-control-sm" id="mid_season_draft_after_round"
+                     name="mid_season_draft_after_round"
+                     value="{{ form.get('mid_season_draft_after_round', 13) }}" min="1" max="24">
+            </div>
+            <div class="col-6">
+              <label for="mid_season_draft_picks" class="form-label" style="font-size:.75rem;">Picks per Team</label>
+              <input type="number" class="form-control form-control-sm" id="mid_season_draft_picks"
+                     name="mid_season_draft_picks"
+                     value="{{ form.get('mid_season_draft_picks', 1) }}" min="1" max="10">
+            </div>
+          </div>
+
+          <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-snow me-2"></i>Off-Season Rules</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label for="offseason_delist_min" class="form-label" style="font-size:.75rem;">Min Delists per Team</label>
+              <input type="number" class="form-control form-control-sm" id="offseason_delist_min"
+                     name="offseason_delist_min"
+                     value="{{ form.get('offseason_delist_min', 3) }}" min="0" max="15">
+            </div>
+            <div class="col-6">
+              <div class="form-check mt-4">
+                <input type="checkbox" class="form-check-input" id="ssp_enabled" name="ssp_enabled"
+                       {{ 'checked' if form.get('ssp_enabled', true) }}>
+                <label class="form-check-label" for="ssp_enabled">SSP (Injury Replacement)</label>
+              </div>
+            </div>
           </div>
 
           <button type="submit" class="btn btn-primary w-100">
@@ -135,10 +224,59 @@
     </div>
   </div>
 </div>
+
 <script>
-function toggleHybridBase() {
+const CREATE_STATS = {{ available_stats|tojson }};
+const CREATE_DEFAULTS = {{ default_scoring|tojson }};
+const CREATE_PRESETS = {{ scoring_presets|tojson }};
+
+function updateWeightBadge(val) {
+  document.getElementById('weight_badge').textContent = Math.round(val * 100) + '%';
+}
+
+function toggleScoringUI() {
   const st = document.getElementById('scoring_type').value;
   document.getElementById('hybrid_base_group').style.display = (st === 'hybrid') ? '' : 'none';
+  document.getElementById('hybrid_weight_config').style.display = (st === 'hybrid') ? '' : 'none';
+  document.getElementById('scoring_builder').style.display = (st === 'custom' || st === 'hybrid') ? '' : 'none';
+  document.getElementById('builder_title').textContent = (st === 'hybrid') ? 'Bonus Rules' : 'Custom Scoring Rules';
+
+  // Auto-load defaults when switching to custom and container is empty
+  if (st === 'custom' && document.getElementById('create_rules_container').children.length === 0) {
+    loadCreatePreset('_defaults');
+  }
 }
+
+function _makeRuleRow(stat, pts) {
+  const opts = CREATE_STATS.map(s =>
+    `<option value="${s}" ${s === stat ? 'selected' : ''}>${s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>`
+  ).join('');
+  return `<div class="row g-2 mb-2 align-items-center rule-row">
+    <div class="col-6"><select class="form-select form-select-sm" name="stat_column">${opts}</select></div>
+    <div class="col-4"><input type="number" class="form-control form-control-sm" name="points_per" value="${pts}" step="0.5"></div>
+    <div class="col-2"><button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;" onclick="this.closest('.rule-row').remove()"><i class="bi bi-x-lg"></i></button></div>
+  </div>`;
+}
+
+function addCreateRule() {
+  document.getElementById('create_rules_container').insertAdjacentHTML('beforeend', _makeRuleRow('', 1));
+}
+
+function loadCreatePreset(key) {
+  const container = document.getElementById('create_rules_container');
+  container.innerHTML = '';
+  const rules = (key === '_defaults') ? CREATE_DEFAULTS : (CREATE_PRESETS[key] ? CREATE_PRESETS[key].rules : {});
+  for (const [stat, pts] of Object.entries(rules)) {
+    container.insertAdjacentHTML('beforeend', _makeRuleRow(stat, pts));
+  }
+}
+
+// On page load, if scoring type is custom/hybrid, auto-populate
+(function() {
+  const st = document.getElementById('scoring_type').value;
+  if (st === 'custom' && document.getElementById('create_rules_container').children.length === 0) {
+    loadCreatePreset('_defaults');
+  }
+})();
 </script>
 {% endblock %}

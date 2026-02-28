@@ -101,7 +101,11 @@ def league_create():
 
         if not name:
             flash("League name is required.", "warning")
-            return render_template("leagues/create.html", form=form_vals)
+            return render_template("leagues/create.html", form=form_vals,
+                                   available_stats=config.AVAILABLE_STATS,
+                                   default_scoring=config.DEFAULT_CUSTOM_SCORING,
+                                   stat_categories=config.STAT_CATEGORIES,
+                                   scoring_presets=config.SCORING_PRESETS)
 
         # Read formation fields
         def_count = request.form.get("def_count", type=int) or 5
@@ -137,17 +141,56 @@ def league_create():
         except Exception as e:
             db.session.rollback()
             flash(f"Failed to create league: {e}", "danger")
-            return render_template("leagues/create.html", form=form_vals)
+            return render_template("leagues/create.html", form=form_vals,
+                                   available_stats=config.AVAILABLE_STATS,
+                                   default_scoring=config.DEFAULT_CUSTOM_SCORING,
+                                   stat_categories=config.STAT_CATEGORIES,
+                                   scoring_presets=config.SCORING_PRESETS)
+
+        # Hybrid weight/mode settings
+        if scoring_type == "hybrid":
+            hw = request.form.get("hybrid_base_weight", type=float)
+            if hw is not None:
+                league.hybrid_base_weight = max(0.0, min(1.0, hw))
+            league.hybrid_custom_mode = request.form.get("hybrid_custom_mode", "points")
+            db.session.commit()
+
+        # Inline scoring rules (custom or hybrid)
+        if scoring_type in ("custom", "hybrid"):
+            stat_cols = request.form.getlist("stat_column")
+            stat_pts = request.form.getlist("points_per")
+            rules = {}
+            for col, pts in zip(stat_cols, stat_pts):
+                col = col.strip()
+                if col:
+                    try:
+                        rules[col] = float(pts)
+                    except (ValueError, TypeError):
+                        rules[col] = 0
+            if rules:
+                set_custom_scoring(league.id, rules)
 
         # Auto-join the commissioner
         join_league(league.id, current_user.id,
                     team_name or f"{current_user.display_name}'s Team")
 
-        # Auto-generate fixtures + season config
-        supplemental_draft = request.form.get("supplemental_draft") == "on"
+        # Auto-generate season config with mid/off-season settings
         from models.database import SeasonConfig, LockoutConfig
         if not SeasonConfig.query.filter_by(league_id=league.id, year=league.season_year).first():
-            db.session.add(SeasonConfig(league_id=league.id, year=league.season_year, mid_season_draft_enabled=supplemental_draft))
+            mid_draft = request.form.get("mid_season_draft_enabled") == "on"
+            mid_draft_round = request.form.get("mid_season_draft_after_round", type=int)
+            mid_draft_picks = request.form.get("mid_season_draft_picks", type=int) or 1
+            offseason_delist = request.form.get("offseason_delist_min", type=int) or 3
+            ssp = request.form.get("ssp_enabled") == "on"
+            db.session.add(SeasonConfig(
+                league_id=league.id,
+                year=league.season_year,
+                mid_season_draft_enabled=mid_draft,
+                mid_season_draft_after_round=mid_draft_round,
+                mid_season_draft_picks=mid_draft_picks,
+                offseason_delist_min=offseason_delist,
+                ssp_enabled=ssp,
+            ))
         if not LockoutConfig.query.filter_by(league_id=league.id).first():
             db.session.add(LockoutConfig(league_id=league.id, lockout_type="game_start"))
         db.session.commit()
@@ -158,7 +201,11 @@ def league_create():
         flash(f"League '{league.name}' created!", "success")
         return redirect(url_for("leagues.dashboard", league_id=league.id))
 
-    return render_template("leagues/create.html", form={})
+    return render_template("leagues/create.html", form={},
+                           available_stats=config.AVAILABLE_STATS,
+                           default_scoring=config.DEFAULT_CUSTOM_SCORING,
+                           stat_categories=config.STAT_CATEGORIES,
+                           scoring_presets=config.SCORING_PRESETS)
 
 
 @leagues_bp.route("/<int:league_id>")
@@ -355,21 +402,6 @@ def league_settings(league_id):
             on_field = (def_count or 5) + (mid_count or 7) + (fwd_count or 5) + (ruc_count or 1)
             update_league_settings(league_id, on_field_count=on_field)
 
-        # Draft weights
-        weight_keys = ["sc_average", "age_factor", "positional_scarcity", "trajectory", "durability", "rating_potential"]
-        weights = {}
-        for k in weight_keys:
-            val = request.form.get(f"weight_{k}", type=float)
-            if val is not None:
-                weights[k] = val
-        if weights:
-            total = sum(weights.values())
-            if abs(total - 1.0) > 0.01:
-                for k in weights:
-                    weights[k] = round(weights[k] / total, 2)
-                flash("Draft weights normalised to sum to 1.0.", "info")
-            update_draft_weights(league_id, weights)
-
         flash("League settings updated.", "success")
         return redirect(url_for("leagues.league_settings", league_id=league_id))
 
@@ -395,9 +427,13 @@ def league_scoring(league_id):
         scoring_type = request.form.get("scoring_type", league.scoring_type)
         league.scoring_type = scoring_type
 
-        # Hybrid base selector
+        # Hybrid base selector + weight/mode
         if scoring_type == "hybrid":
             league.hybrid_base = request.form.get("hybrid_base", "supercoach")
+            hw = request.form.get("hybrid_base_weight", type=float)
+            if hw is not None:
+                league.hybrid_base_weight = max(0.0, min(1.0, hw))
+            league.hybrid_custom_mode = request.form.get("hybrid_custom_mode", "points")
         db.session.commit()
 
         if scoring_type in ("custom", "hybrid"):
@@ -417,22 +453,11 @@ def league_scoring(league_id):
         return redirect(url_for("leagues.league_scoring", league_id=league_id))
 
     scoring_rules = get_custom_scoring(league_id)
-    available_stats = [
-        "kicks", "handballs", "disposals", "marks", "goals", "behinds",
-        "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
-        "clearances", "clangers", "inside_fifties", "rebounds",
-        "effective_disposals", "metres_gained", "pressure_acts",
-        "ground_ball_gets", "intercepts", "score_involvements",
-        "frees_for", "frees_against", "contested_marks", "marks_inside_50",
-        "one_percenters", "bounces", "goal_assists", "kick_ins",
-        "centre_clearances", "stoppage_clearances", "turnovers",
-        "time_on_ground_pct", "disposal_efficiency",
-    ]
 
     return render_template("leagues/scoring.html",
                            league=league,
                            scoring_rules=scoring_rules,
-                           available_stats=available_stats,
+                           available_stats=config.AVAILABLE_STATS,
                            default_scoring=config.DEFAULT_CUSTOM_SCORING,
                            stat_categories=config.STAT_CATEGORIES,
                            scoring_presets=config.SCORING_PRESETS,
