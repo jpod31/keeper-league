@@ -45,57 +45,94 @@ def _age_factor_scores(players: List[Player]) -> List[float]:
 
 
 def _positional_scarcity_scores(players: List[Player]) -> List[float]:
-    """Compute scarcity from quality drop-off at each position.
+    """Two-dimensional positional scarcity with per-player rank decay.
 
-    Measures how much worse replacement-level is compared to elite level.
-    Positions where the talent pool is deep (lots of quality mids) score low.
-    Positions where quality drops off fast (rucks) score high.
+    Base scarcity per position uses two signals:
+      1. Quality drop-off: elite_SC / replacement_SC
+      2. Elite shortfall: what fraction of demand lacks 100+ SC players
+         (captures FWD's thin elite tier vs DEF's deeper talent)
 
-    Formula:  scarcity = elite_SC / replacement_SC
+    Per-player rank decay ensures only the top players at scarce positions
+    get the full boost — prevents 7 rucks flooding the top 20 when only
+    the first 4-5 drafted rucks give a real positional advantage.
     """
     from config import POSITIONS, NUM_TEAMS
+    import math
 
-    # Build sorted SC lists per position (includes dual-pos in both)
+    ELITE_THRESHOLD = 100.0
+
+    # Build sorted SC lists per position (dual-pos players appear in both)
     pos_sc: Dict[str, list] = {pos: [] for pos in POSITIONS}
-    for p in players:
+    player_sc: Dict[int, float] = {}
+    for i, p in enumerate(players):
         sc = p.sc_avg if p.sc_avg else p.sc_avg_prev
         if sc is None:
             continue
-        for pos in POSITIONS:
-            if pos in (p.positions if p.position else []):
-                pos_sc[pos].append(sc)
+        player_sc[i] = sc
+        for pos in (p.positions if p.position else []):
+            if pos in pos_sc:
+                pos_sc[pos].append((sc, i))
 
     for pos in pos_sc:
         pos_sc[pos].sort(reverse=True)
 
-    # Compute scarcity: quality drop-off weighted by pool rarity
-    scarcity: Dict[str, float] = {}
+    # ── Base scarcity per position ──
+    base: Dict[str, float] = {}
     for pos, slots in POSITIONS.items():
         demand = slots * NUM_TEAMS
         ranked = pos_sc[pos]
         if not ranked:
-            scarcity[pos] = 1.0
+            base[pos] = 1.0
             continue
 
-        elite_sc = ranked[0]
-        if len(ranked) >= demand:
-            replacement_sc = ranked[demand - 1]
-        else:
-            replacement_sc = ranked[-1]
+        scs = [sc for sc, _ in ranked]
+        elite_sc = scs[0]
+        rep_idx = min(demand - 1, len(scs) - 1)
+        replacement_sc = max(scs[rep_idx], 1.0)
 
-        replacement_sc = max(replacement_sc, 1.0)
+        # Factor A: quality drop-off ratio
         dropoff = elite_sc / replacement_sc
-        # Divide by roster slots: more slots = less premium per player
-        # Log scale so RUC (1 slot) doesn't dominate too heavily
-        import math
-        scarcity[pos] = dropoff / math.log2(slots + 1)
 
-    # Normalise to 0-1 (max = 1.0)
-    max_val = max(scarcity.values()) if scarcity else 1.0
-    if max_val > 0:
-        scarcity = {pos: val / max_val for pos, val in scarcity.items()}
+        # Factor B: elite shortfall — fraction of starter demand NOT met
+        # by players above ELITE_THRESHOLD (100 SC)
+        elite_count = sum(1 for sc in scs if sc >= ELITE_THRESHOLD)
+        shortfall = max(0.0, (demand - elite_count) / demand)
 
-    return [scarcity.get(p.primary_position, 0.3) for p in players]
+        # Combined: drop-off boosted by shortfall, scaled by log(slots)
+        base[pos] = dropoff * (1.0 + 0.5 * shortfall) / math.log2(slots + 1)
+
+    # Normalise base to 0-1
+    max_base = max(base.values()) if base else 1.0
+    if max_base > 0:
+        base = {pos: val / max_base for pos, val in base.items()}
+
+    # ── Per-player rank at their primary position ──
+    pos_rank: Dict[int, int] = {}
+    for pos in POSITIONS:
+        for rank, (sc, idx) in enumerate(pos_sc[pos]):
+            if players[idx].primary_position == pos and idx not in pos_rank:
+                pos_rank[idx] = rank
+
+    # ── Per-player scarcity with rank decay ──
+    result: List[float] = []
+    for i, p in enumerate(players):
+        pos = p.primary_position
+        b = base.get(pos, 0.3)
+
+        if i in pos_rank:
+            rank = pos_rank[i]
+            demand = POSITIONS.get(pos, 5) * NUM_TEAMS
+            cutoff = demand * 2  # scarcity decays over 2× starter demand
+            decay = max(0.0, 1.0 - rank / cutoff)
+            result.append(b * decay)
+        elif i in player_sc:
+            # Has SC data but wasn't ranked at primary position — rare edge case
+            result.append(b * 0.5)
+        else:
+            # No SC data — moderate default
+            result.append(b * 0.3)
+
+    return result
 
 
 def _least_squares_slope(xs: List[float], ys: List[float]) -> float:
