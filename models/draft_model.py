@@ -179,7 +179,10 @@ def _trajectory_scores_batch(players: List[Player]) -> List[float]:
                 ys.append(avg)
 
         if len(xs) >= 2:
-            raw.append(_least_squares_slope(xs, ys))
+            slope = _least_squares_slope(xs, ys)
+            # Dampen small samples: confidence ramps from 0.4 at 2 years to 1.0 at 5+
+            confidence = min(1.0, 0.4 + (len(xs) - 2) * 0.2)
+            raw.append(slope * confidence)
         elif p.sc_avg is not None and p.sc_avg_prev is not None:
             # Fallback: single-year delta
             raw.append(p.sc_avg - p.sc_avg_prev)
