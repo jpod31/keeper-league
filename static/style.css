@@ -144,10 +144,10 @@ th[style*="cursor"]:hover { color: #58a6ff; }
   font-weight: 600;
   letter-spacing: 0.5px;
 }
-.pos-DEF, .pos-badge.badge-def { background: #1a3a5c; color: #58a6ff; }
-.pos-MID, .pos-badge.badge-mid { background: #2d1a3e; color: #bc8cff; }
-.pos-FWD, .pos-badge.badge-fwd { background: #3b2308; color: #f0883e; }
-.pos-RUC, .pos-badge.badge-ruc { background: #1a3328; color: #3fb950; }
+.pos-DEF, .pos-badge.badge-def { background: #1a3f66; color: #79c0ff; }
+.pos-MID, .pos-badge.badge-mid { background: #351d4a; color: #d2a8ff; }
+.pos-FWD, .pos-badge.badge-fwd { background: #46290a; color: #ffb471; }
+.pos-RUC, .pos-badge.badge-ruc { background: #1d3d2e; color: #7ee787; }
 
 /* ── Draft score ring ── */
 .draft-ring {
