@@ -1,57 +1,253 @@
 {% extends "base.html" %}
-{% block title %}My Leagues — Keeper League{% endblock %}
+{% block title %}Home — Keeper League{% endblock %}
 {% block content %}
-<div class="section-header">
-  <div>
-    <h3>My Leagues</h3>
-  </div>
-  <div class="d-flex gap-2">
-    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#joinLeagueModal">
-      <i class="bi bi-box-arrow-in-right me-1"></i>Join League
-    </button>
-    <a href="{{ url_for('leagues.league_create') }}" class="btn btn-primary">
-      <i class="bi bi-plus-lg me-1"></i>Create League
-    </a>
-  </div>
-</div>
 
 {% if leagues %}
-  <div class="row g-3">
-    {% for lg in leagues %}
-      <div class="col-md-6 col-lg-4">
-        <a href="{{ url_for('leagues.dashboard', league_id=lg.id) }}" class="text-decoration-none">
-          <div class="card h-100" style="transition: border-color .15s, transform .15s; cursor: pointer;">
-            <div class="card-body p-4">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="d-inline-flex align-items-center justify-content-center rounded"
-                     style="width:40px;height:40px;background:linear-gradient(135deg,#238636,#1f6feb);font-weight:700;color:#fff;border-radius:10px !important;">
-                  {{ lg.name[0]|upper }}
+  {# ═══ Logged-in Dashboard ═══ #}
+  <div class="section-header">
+    <div>
+      <h3>Home</h3>
+      <div class="section-sub">Your league activity at a glance</div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#joinLeagueModal">
+        <i class="bi bi-box-arrow-in-right me-1"></i>Join
+      </button>
+      <a href="{{ url_for('leagues.league_create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Create
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    {# ── Main Activity Feed (col-8) ── #}
+    <div class="col-lg-8">
+
+      {# Upcoming Fixtures #}
+      {% set upcoming = [] %}
+      {% for d in dashboard_data %}
+        {% if d.next_fixture %}
+          {% if upcoming.append(d) %}{% endif %}
+        {% endif %}
+      {% endfor %}
+      {% if upcoming %}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-calendar-event" style="color:#58a6ff;"></i>
+          <span class="fw-bold" style="font-size:.85rem;">Upcoming Fixtures</span>
+        </div>
+        <div class="card-body p-0">
+          {% for d in upcoming %}
+            {% set f = d.next_fixture %}
+            {% set is_home = (f.home_team_id == d.team.id) %}
+            {% set opponent = f.away_team if is_home else f.home_team %}
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #21262d;">
+              <div>
+                <span class="fw-bold" style="font-size:.85rem;">Round {{ f.afl_round }}: </span>
+                <span style="font-size:.85rem;">{{ d.team.name }}</span>
+                <span class="text-muted mx-1">vs</span>
+                <span style="font-size:.85rem;">{{ opponent.name }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge" style="background:rgba(88,166,255,.12);color:#58a6ff;font-size:.7rem;">{{ d.league.name }}</span>
+                <a href="{{ url_for('matchups.gameday', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">View</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# Recent Results #}
+      {% set results = [] %}
+      {% for d in dashboard_data %}
+        {% if d.last_result %}
+          {% if results.append(d) %}{% endif %}
+        {% endif %}
+      {% endfor %}
+      {% if results %}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-trophy" style="color:#3fb950;"></i>
+          <span class="fw-bold" style="font-size:.85rem;">Recent Results</span>
+        </div>
+        <div class="card-body p-0">
+          {% for d in results %}
+            {% set f = d.last_result %}
+            {% set is_home = (f.home_team_id == d.team.id) %}
+            {% set my_score = f.home_score if is_home else f.away_score %}
+            {% set opp_score = f.away_score if is_home else f.home_score %}
+            {% set opponent = f.away_team if is_home else f.home_team %}
+            {% set won = my_score is not none and opp_score is not none and my_score > opp_score %}
+            {% set drew = my_score is not none and opp_score is not none and my_score == opp_score %}
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #21262d;">
+              <div class="d-flex align-items-center gap-2">
+                {% if won %}
+                  <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.65rem;">W</span>
+                {% elif drew %}
+                  <span class="badge" style="background:rgba(139,148,158,.15);color:#8b949e;font-size:.65rem;">D</span>
+                {% else %}
+                  <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.65rem;">L</span>
+                {% endif %}
+                <span style="font-size:.85rem;">
+                  <span class="fw-bold">R{{ f.afl_round }}:</span>
+                  {{ d.team.name }}
+                  <span class="fw-bold" style="color:{{ '#3fb950' if won else '#f85149' if not drew else '#8b949e' }};">
+                    {{ '%.0f'|format(my_score) if my_score is not none else '?' }}
+                  </span>
+                  <span class="text-muted">-</span>
+                  <span class="text-muted">{{ '%.0f'|format(opp_score) if opp_score is not none else '?' }}</span>
+                  vs {{ opponent.name }}
+                </span>
+              </div>
+              <span class="badge" style="background:rgba(88,166,255,.12);color:#58a6ff;font-size:.7rem;">{{ d.league.name }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# Active Trades #}
+      {% set trade_entries = [] %}
+      {% for d in dashboard_data %}
+        {% if d.pending_trades > 0 %}
+          {% if trade_entries.append(d) %}{% endif %}
+        {% endif %}
+      {% endfor %}
+      {% if trade_entries %}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-arrow-left-right" style="color:#d29922;"></i>
+          <span class="fw-bold" style="font-size:.85rem;">Active Trades</span>
+        </div>
+        <div class="card-body p-0">
+          {% for d in trade_entries %}
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #21262d;">
+              <span style="font-size:.85rem;">
+                <span class="fw-bold">{{ d.pending_trades }}</span> pending proposal{{ 's' if d.pending_trades != 1 }}
+              </span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge" style="background:rgba(88,166,255,.12);color:#58a6ff;font-size:.7rem;">{{ d.league.name }}</span>
+                <a href="{{ url_for('trades.trade_list', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">View</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# Draft Status #}
+      {% set draft_entries = [] %}
+      {% for d in dashboard_data %}
+        {% if d.draft and d.draft.status in ('scheduled', 'in_progress') %}
+          {% if draft_entries.append(d) %}{% endif %}
+        {% endif %}
+      {% endfor %}
+      {% if draft_entries %}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-list-ol" style="color:#bc8cff;"></i>
+          <span class="fw-bold" style="font-size:.85rem;">Drafts</span>
+        </div>
+        <div class="card-body p-0">
+          {% for d in draft_entries %}
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #21262d;">
+              <div>
+                {% if d.draft.status == 'in_progress' %}
+                  <span class="status-pill status-active" style="font-size:.65rem;">Live</span>
+                  <span style="font-size:.85rem;margin-left:.5rem;">Round {{ d.draft.current_round }}, Pick {{ d.draft.current_pick }}</span>
+                {% elif d.draft.scheduled_start %}
+                  <span class="status-pill status-setup" style="font-size:.65rem;">Scheduled</span>
+                  <span style="font-size:.85rem;margin-left:.5rem;">{{ d.draft.scheduled_start.strftime('%d %b %Y %I:%M %p') }}</span>
+                {% else %}
+                  <span class="status-pill status-setup" style="font-size:.65rem;">Ready</span>
+                  <span style="font-size:.85rem;margin-left:.5rem;">Waiting to start</span>
+                {% endif %}
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge" style="background:rgba(88,166,255,.12);color:#58a6ff;font-size:.7rem;">{{ d.league.name }}</span>
+                {% if d.draft.status == 'in_progress' %}
+                  <a href="{{ url_for('draft_live.draft_room', league_id=d.league.id) }}" class="btn btn-primary btn-sm" style="font-size:.7rem;padding:2px 8px;">Enter</a>
+                {% else %}
+                  <a href="{{ url_for('draft_live.draft_setup', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">Setup</a>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# Empty activity state #}
+      {% if not upcoming and not results and not trade_entries and not draft_entries %}
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-lightning" style="font-size:2rem;color:#484f58;"></i>
+          <p class="mt-2 mb-0" style="color:#8b949e;font-size:.9rem;">No recent activity across your leagues. Check back once the season gets going!</p>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    {# ── My Leagues Sidebar (col-4) ── #}
+    <div class="col-lg-4">
+      <h6 class="fw-bold mb-3" style="font-size:.8rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">My Leagues</h6>
+      {% for d in dashboard_data %}
+        <a href="{{ url_for('leagues.dashboard', league_id=d.league.id) }}" class="text-decoration-none">
+          <div class="card mb-2" style="transition:border-color .15s;cursor:pointer;">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="d-inline-flex align-items-center justify-content-center rounded"
+                       style="width:32px;height:32px;background:linear-gradient(135deg,#238636,#1f6feb);font-weight:700;color:#fff;border-radius:8px !important;font-size:.75rem;">
+                    {{ d.league.name[0]|upper }}
+                  </div>
+                  <div>
+                    <div class="fw-bold" style="font-size:.85rem;color:#c9d1d9;">{{ d.league.name }}</div>
+                    <div style="font-size:.7rem;color:#8b949e;">{{ d.league.season_year }} &middot; {{ d.league.teams|length }}/{{ d.league.num_teams }} teams</div>
+                  </div>
                 </div>
-                <span class="status-pill status-{{ lg.status }}">{{ lg.status }}</span>
+                <span class="status-pill status-{{ d.league.status }}" style="font-size:.6rem;">{{ d.league.status }}</span>
               </div>
-              <h5 class="fw-bold mb-1" style="color:#c9d1d9;">{{ lg.name }}</h5>
-              <div class="d-flex gap-3 mb-3" style="font-size:.8rem;color:#8b949e;">
-                <span><i class="bi bi-calendar3 me-1"></i>{{ lg.season_year }}</span>
-                <span><i class="bi bi-people me-1"></i>{{ lg.teams|length }}/{{ lg.num_teams }}</span>
-                <span>{{ SCORING_TYPE_LABELS.get(lg.scoring_type, lg.scoring_type) }}</span>
-              </div>
-              {% if lg.commissioner_id == current_user.id %}
-                <span class="badge" style="background:rgba(31,111,235,.15);color:#58a6ff;font-size:.7rem;">Commissioner</span>
+              {% if d.team and d.standing %}
+                <div class="d-flex gap-3" style="font-size:.75rem;color:#8b949e;">
+                  <span><i class="bi bi-trophy me-1" style="color:#3fb950;"></i>{{ d.standing.wins }}W-{{ d.standing.losses }}L{{ '-' ~ d.standing.draws ~ 'D' if d.standing.draws else '' }}</span>
+                  <span>{{ d.standing.ladder_points }} pts</span>
+                  {% if d.standing.percentage %}
+                    <span>{{ '%.1f'|format(d.standing.percentage) }}%</span>
+                  {% endif %}
+                </div>
+              {% elif d.team %}
+                <div style="font-size:.75rem;color:#8b949e;">{{ d.team.name }}</div>
+              {% else %}
+                <div style="font-size:.75rem;color:#d29922;">No team yet</div>
               {% endif %}
             </div>
           </div>
         </a>
+      {% endfor %}
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-outline-primary btn-sm flex-fill" data-bs-toggle="modal" data-bs-target="#joinLeagueModal">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Join League
+        </button>
+        <a href="{{ url_for('leagues.league_create') }}" class="btn btn-primary btn-sm flex-fill">
+          <i class="bi bi-plus-lg me-1"></i>Create League
+        </a>
       </div>
-    {% endfor %}
-  </div>
-{% else %}
-  <div class="empty-state">
-    <div class="empty-icon">
-      <i class="bi bi-trophy" style="font-size:1.5rem;"></i>
     </div>
-    <h4>No leagues yet</h4>
-    <p>Create your first league to start drafting, trading, and competing with your mates.</p>
-    <div class="d-flex gap-2">
+  </div>
+
+{% else %}
+  {# ═══ No Leagues — Landing Page ═══ #}
+  <div class="empty-state" style="padding:6rem 2rem;">
+    <div class="empty-icon" style="width:80px;height:80px;">
+      <i class="bi bi-trophy" style="font-size:2rem;"></i>
+    </div>
+    <h4 style="font-size:1.3rem;">Welcome to Keeper League</h4>
+    <p>Create your first league to start drafting, trading, and competing with your mates in AFL fantasy.</p>
+    <div class="d-flex gap-2 justify-content-center">
       <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#joinLeagueModal">
         <i class="bi bi-box-arrow-in-right me-1"></i>Join League
       </button>

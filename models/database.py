@@ -177,6 +177,8 @@ class League(db.Model):
     num_teams = db.Column(db.Integer, default=6)
     draft_type = db.Column(db.String(10), default="snake")  # snake|linear
     pick_timer_secs = db.Column(db.Integer, default=120)
+    draft_auto_randomize = db.Column(db.Boolean, default=True)
+    draft_scheduled_date = db.Column(db.DateTime, nullable=True)
     _trade_window_open = db.Column("trade_window_open", db.Boolean, default=True)
     delist_minimum = db.Column(db.Integer, default=3)
     status = db.Column(db.String(20), default="setup")  # setup|drafting|active|finals|offseason
@@ -769,7 +771,7 @@ def _run_migrations(app):
                 )
         db.session.commit()
 
-    # League hybrid columns
+    # League hybrid + draft preference columns
     if "league" in inspector.get_table_names():
         existing_league = {c["name"] for c in inspector.get_columns("league")}
         if "hybrid_base" not in existing_league:
@@ -778,6 +780,10 @@ def _run_migrations(app):
             db.session.execute(text("ALTER TABLE league ADD COLUMN hybrid_base_weight FLOAT DEFAULT 1.0"))
         if "hybrid_custom_mode" not in existing_league:
             db.session.execute(text("ALTER TABLE league ADD COLUMN hybrid_custom_mode VARCHAR(20) DEFAULT 'points'"))
+        if "draft_auto_randomize" not in existing_league:
+            db.session.execute(text("ALTER TABLE league ADD COLUMN draft_auto_randomize BOOLEAN DEFAULT 1"))
+        if "draft_scheduled_date" not in existing_league:
+            db.session.execute(text("ALTER TABLE league ADD COLUMN draft_scheduled_date DATETIME"))
         db.session.commit()
 
     # PlayerStat new stat columns

@@ -394,61 +394,13 @@ def create_app():
             return redirect(url_for("auth.login"))
         return redirect(url_for("leagues.league_list"))
 
-    @app.route("/draft")
-    def draft_board():
-        players = _get_ranked_players()
-
-        # Filters
-        pos_filter = request.args.get("pos", "")
-        age_min = request.args.get("age_min", type=int)
-        age_max = request.args.get("age_max", type=int)
-        team_filter = request.args.get("afl_team", "")
-        search = request.args.get("q", "").strip().lower()
-        available_only = request.args.get("available", "") == "1"
-
-        # Determine drafted player names
-        drafted_names = set()
-        if available_only:
-            teams = load_teams()
-            for roster in teams.values():
-                drafted_names.update(roster)
-
-        filtered = []
-        for p in players:
-            if pos_filter and pos_filter not in p.positions:
-                continue
-            if age_min and (p.age is None or p.age < age_min):
-                continue
-            if age_max and (p.age is None or p.age > age_max):
-                continue
-            if team_filter and p.team != team_filter:
-                continue
-            if search and search not in p.name.lower():
-                continue
-            if available_only and p.name in drafted_names:
-                continue
-            filtered.append(p)
-
-        afl_teams = sorted(set(p.team for p in players))
-        return render_template("draft_board.html",
-                               players=filtered,
-                               afl_teams=afl_teams,
-                               filters={
-                                   "pos": pos_filter,
-                                   "age_min": age_min or "",
-                                   "age_max": age_max or "",
-                                   "afl_team": team_filter,
-                                   "q": request.args.get("q", ""),
-                                   "available": available_only,
-                               })
-
     @app.route("/player/<name>")
     def player_detail(name):
         players = _get_ranked_players()
         player = next((p for p in players if p.name == name), None)
         if player is None:
             flash(f"Player '{name}' not found.", "warning")
-            return redirect(url_for("draft_board"))
+            return redirect(url_for("leagues.league_list"))
 
         breakdown = factor_breakdown(player, players, config.DRAFT_WEIGHTS)
 

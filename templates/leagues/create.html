@@ -3,225 +3,306 @@
 {% block content %}
 <style>
   .preset-btn { font-size:.75rem; padding:4px 10px; }
+  .wiz-section .card-header { cursor:pointer; user-select:none; }
+  .wiz-section .card-header:hover { background:rgba(255,255,255,.02); }
+  .wiz-section .card-header .bi-chevron-down { transition:transform .2s; }
+  .wiz-section .card-header.collapsed .bi-chevron-down { transform:rotate(-90deg); }
+  .wiz-num { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:#1f6feb; color:#fff; font-size:.7rem; font-weight:700; margin-right:.5rem; }
 </style>
 <div class="row justify-content-center">
-  <div class="col-md-7">
+  <div class="col-md-8">
     <div class="page-header">
-      <div class="page-breadcrumb"><a href="{{ url_for('leagues.league_list') }}">My Leagues</a> / Create</div>
+      <div class="page-breadcrumb"><a href="{{ url_for('leagues.league_list') }}">Home</a> / Create</div>
       <h2>Create a New League</h2>
     </div>
 
-    <div class="card">
-      <div class="card-body p-4">
-        <form method="POST">
-          <div class="mb-4">
-            <label for="name" class="form-label">League Name</label>
-            <input type="text" class="form-control" id="name" name="name" required
-                   placeholder="e.g. Keeper Masters 2025" maxlength="120" autofocus
-                   value="{{ form.get('name', '') }}">
-          </div>
-          <div class="mb-4">
-            <label for="team_name" class="form-label">Your Team Name</label>
-            <input type="text" class="form-control" id="team_name" name="team_name" required
-                   placeholder="e.g. The Premiership Chasers" maxlength="120"
-                   value="{{ form.get('team_name', '') }}">
-          </div>
+    <form method="POST">
 
-          <hr style="border-color:#30363d;margin:1.5rem 0;">
-
-          <div class="row g-3 mb-3">
-            <div class="col-6">
-              <label for="scoring_type" class="form-label">Scoring</label>
-              <select class="form-select" id="scoring_type" name="scoring_type" onchange="toggleScoringUI()">
-                <option value="supercoach" {{ 'selected' if form.get('scoring_type') == 'supercoach' else '' }}>SuperCoach</option>
-                <option value="afl_fantasy" {{ 'selected' if form.get('scoring_type') == 'afl_fantasy' else '' }}>AFL Fantasy</option>
-                <option value="custom" {{ 'selected' if form.get('scoring_type') == 'custom' else '' }}>Custom</option>
-                <option value="hybrid" {{ 'selected' if form.get('scoring_type') == 'hybrid' else '' }}>Hybrid</option>
-              </select>
-            </div>
-            <div class="col-6" id="hybrid_base_group" style="{{ '' if form.get('scoring_type') == 'hybrid' else 'display:none' }}">
-              <label for="hybrid_base" class="form-label">Hybrid Base</label>
-              <select class="form-select" id="hybrid_base" name="hybrid_base">
-                <option value="supercoach" {{ 'selected' if form.get('hybrid_base') == 'supercoach' else '' }}>SuperCoach</option>
-                <option value="afl_fantasy" {{ 'selected' if form.get('hybrid_base') == 'afl_fantasy' else '' }}>AFL Fantasy</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label for="num_teams" class="form-label">Teams</label>
-              <input type="number" class="form-control" id="num_teams" name="num_teams"
-                     value="{{ form.get('num_teams', 6) }}" min="2" max="18">
-            </div>
+      {# ═══ Section 1: League Details ═══ #}
+      <div class="wiz-section mb-3">
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between" data-bs-toggle="collapse" data-bs-target="#sec-details">
+            <span><span class="wiz-num">1</span><span class="fw-bold" style="font-size:.9rem;">League Details</span></span>
+            <i class="bi bi-chevron-down" style="color:#8b949e;"></i>
           </div>
-
-          {# ── Hybrid Weight Config ── #}
-          <div id="hybrid_weight_config" class="card mb-3" style="{{ '' if form.get('scoring_type') == 'hybrid' else 'display:none' }}">
-            <div class="card-header"><h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-sliders me-2" style="color:#bc8cff;"></i>Hybrid Weight Configuration</h6></div>
+          <div class="collapse show" id="sec-details">
             <div class="card-body">
-              <div class="d-flex align-items-center gap-3 mb-3">
-                <label class="form-label mb-0" style="width:160px;flex-shrink:0;">Official Score Weight</label>
-                <input type="range" class="form-range flex-grow-1" id="hybrid_base_weight" name="hybrid_base_weight"
-                       min="0" max="1" step="0.05" value="{{ form.get('hybrid_base_weight', 0.7) }}"
-                       oninput="updateWeightBadge(this.value)">
-                <span class="badge" id="weight_badge" style="background:#21262d;min-width:50px;">{{ '%d' % ((form.get('hybrid_base_weight', 0.7)|float) * 100) }}%</span>
+              <div class="mb-3">
+                <label for="name" class="form-label">League Name</label>
+                <input type="text" class="form-control" id="name" name="name" required
+                       placeholder="e.g. Keeper Masters 2025" maxlength="120" autofocus
+                       value="{{ form.get('name', '') }}">
               </div>
-              <div class="d-flex gap-3 mb-2">
-                <div class="form-check">
-                  <input type="radio" class="form-check-input" id="mode_points" name="hybrid_custom_mode" value="points"
-                         {{ 'checked' if form.get('hybrid_custom_mode', 'points') == 'points' }}>
-                  <label class="form-check-label" for="mode_points">Flat Points</label>
+              <div class="mb-3">
+                <label for="team_name" class="form-label">Your Team Name</label>
+                <input type="text" class="form-control" id="team_name" name="team_name" required
+                       placeholder="e.g. The Premiership Chasers" maxlength="120"
+                       value="{{ form.get('team_name', '') }}">
+              </div>
+              <div class="row g-3">
+                <div class="col-6">
+                  <label for="num_teams" class="form-label">Team Slots</label>
+                  <input type="number" class="form-control" id="num_teams" name="num_teams"
+                         value="{{ form.get('num_teams', 6) }}" min="2" max="18">
                 </div>
-                <div class="form-check">
-                  <input type="radio" class="form-check-input" id="mode_percentage" name="hybrid_custom_mode" value="percentage"
-                         {{ 'checked' if form.get('hybrid_custom_mode') == 'percentage' }}>
-                  <label class="form-check-label" for="mode_percentage">Percentage Split</label>
+                <div class="col-6">
+                  <label for="squad_size" class="form-label">Squad Size</label>
+                  <input type="number" class="form-control" id="squad_size" name="squad_size"
+                         value="{{ form.get('squad_size', 38) }}" min="18" max="60">
                 </div>
               </div>
-              <div class="form-text" style="color:#484f58;font-size:.75rem;">
-                <strong>Flat Points:</strong> Score = Official &times; Weight + Custom Bonus<br>
-                <strong>Percentage Split:</strong> Score = Official &times; Weight + Custom &times; (1 &minus; Weight)
-              </div>
             </div>
           </div>
-
-          {# ── Inline Scoring Builder (Custom / Hybrid) ── #}
-          <div id="scoring_builder" class="card mb-3" style="{{ '' if form.get('scoring_type') in ('custom', 'hybrid') else 'display:none' }}">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h6 class="mb-0 fw-bold" style="font-size:.85rem;">
-                <i class="bi bi-sliders me-2" style="color:#f0883e;"></i>
-                <span id="builder_title">{{ 'Bonus Rules' if form.get('scoring_type') == 'hybrid' else 'Custom Scoring Rules' }}</span>
-              </h6>
-              <div class="d-flex gap-2">
-                {% for key, preset in scoring_presets.items() %}
-                  <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadCreatePreset('{{ key }}')">{{ preset.label }}</button>
-                {% endfor %}
-              </div>
-            </div>
-            <div class="card-body" id="create_rules_container">
-              {# Rules will be populated by JS on page load for custom type #}
-            </div>
-            <div class="card-footer" style="border-top-color:#30363d;">
-              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCreateRule()" style="font-size:.8rem;">
-                <i class="bi bi-plus-lg me-1"></i>Add Rule
-              </button>
-            </div>
-          </div>
-
-          <div class="row g-3 mb-3">
-            <div class="col-6">
-              <label for="squad_size" class="form-label">Squad Size</label>
-              <input type="number" class="form-control" id="squad_size" name="squad_size"
-                     value="{{ form.get('squad_size', 38) }}" min="18" max="60">
-            </div>
-            <div class="col-6">
-              <label for="draft_type" class="form-label">Draft Type</label>
-              <select class="form-select" id="draft_type" name="draft_type">
-                <option value="snake" {{ 'selected' if form.get('draft_type') == 'snake' else '' }}>Snake</option>
-                <option value="linear" {{ 'selected' if form.get('draft_type') == 'linear' else '' }}>Linear</option>
-              </select>
-            </div>
-          </div>
-          <div class="mb-4">
-            <label for="pick_timer_secs" class="form-label">Pick Timer (seconds)</label>
-            <input type="number" class="form-control" id="pick_timer_secs" name="pick_timer_secs"
-                   value="{{ form.get('pick_timer_secs', 120) }}" min="30" max="600">
-            <div class="form-text" style="color:#484f58;font-size:.75rem;">Time each manager gets per pick in the draft</div>
-          </div>
-
-          <hr style="border-color:#30363d;margin:1.5rem 0;">
-          <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-diagram-3 me-2"></i>On-Field Formation</h6>
-          <div class="row g-2 mb-3">
-            <div class="col">
-              <label class="form-label" style="font-size:.75rem;color:#58a6ff;">DEF</label>
-              <input type="number" class="form-control form-control-sm" name="def_count"
-                     value="{{ form.get('def_count', 5) }}" min="2" max="8">
-            </div>
-            <div class="col">
-              <label class="form-label" style="font-size:.75rem;color:#bc8cff;">MID</label>
-              <input type="number" class="form-control form-control-sm" name="mid_count"
-                     value="{{ form.get('mid_count', 7) }}" min="3" max="10">
-            </div>
-            <div class="col">
-              <label class="form-label" style="font-size:.75rem;color:#f0883e;">FWD</label>
-              <input type="number" class="form-control form-control-sm" name="fwd_count"
-                     value="{{ form.get('fwd_count', 5) }}" min="2" max="8">
-            </div>
-            <div class="col">
-              <label class="form-label" style="font-size:.75rem;color:#3fb950;">RUC</label>
-              <input type="number" class="form-control form-control-sm" name="ruc_count"
-                     value="{{ form.get('ruc_count', 1) }}" min="1" max="3">
-            </div>
-          </div>
-          <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-clipboard2 me-2"></i>Bench</h6>
-          <div class="row g-2 mb-2">
-            <div class="col">
-              <label class="form-label" style="font-size:.7rem;color:#58a6ff;">B.DEF</label>
-              <input type="number" class="form-control form-control-sm" name="bench_def"
-                     value="{{ form.get('bench_def', 1) }}" min="0" max="5">
-            </div>
-            <div class="col">
-              <label class="form-label" style="font-size:.7rem;color:#bc8cff;">B.MID</label>
-              <input type="number" class="form-control form-control-sm" name="bench_mid"
-                     value="{{ form.get('bench_mid', 2) }}" min="0" max="5">
-            </div>
-            <div class="col">
-              <label class="form-label" style="font-size:.7rem;color:#f0883e;">B.FWD</label>
-              <input type="number" class="form-control form-control-sm" name="bench_fwd"
-                     value="{{ form.get('bench_fwd', 1) }}" min="0" max="5">
-            </div>
-            <div class="col">
-              <label class="form-label" style="font-size:.7rem;color:#8b949e;">FLEX</label>
-              <input type="number" class="form-control form-control-sm" name="bench_flex"
-                     value="{{ form.get('bench_flex', 1) }}" min="0" max="5">
-            </div>
-          </div>
-          <div class="form-text mb-4" style="color:#484f58;font-size:.75rem;">Position-locked bench: players must match the slot position. Flex accepts any position.</div>
-
-          <hr style="border-color:#30363d;margin:1.5rem 0;">
-          <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-arrow-repeat me-2"></i>Mid-Season Rules</h6>
-          <div class="form-check mb-2">
-            <input type="checkbox" class="form-check-input" id="mid_season_draft_enabled" name="mid_season_draft_enabled"
-                   {{ 'checked' if form.get('mid_season_draft_enabled') }}
-                   onchange="document.getElementById('mid_season_fields').style.display=this.checked?'':'none'">
-            <label class="form-check-label" for="mid_season_draft_enabled">Enable Mid-Season Draft</label>
-          </div>
-          <div id="mid_season_fields" class="row g-3 mb-3" style="{{ '' if form.get('mid_season_draft_enabled') else 'display:none' }}">
-            <div class="col-6">
-              <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">After AFL Round</label>
-              <input type="number" class="form-control form-control-sm" id="mid_season_draft_after_round"
-                     name="mid_season_draft_after_round"
-                     value="{{ form.get('mid_season_draft_after_round', 13) }}" min="1" max="24">
-            </div>
-            <div class="col-6">
-              <label for="mid_season_draft_picks" class="form-label" style="font-size:.75rem;">Picks per Team</label>
-              <input type="number" class="form-control form-control-sm" id="mid_season_draft_picks"
-                     name="mid_season_draft_picks"
-                     value="{{ form.get('mid_season_draft_picks', 1) }}" min="1" max="10">
-            </div>
-          </div>
-
-          <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-snow me-2"></i>Off-Season Rules</h6>
-          <div class="row g-3 mb-3">
-            <div class="col-6">
-              <label for="offseason_delist_min" class="form-label" style="font-size:.75rem;">Min Delists per Team</label>
-              <input type="number" class="form-control form-control-sm" id="offseason_delist_min"
-                     name="offseason_delist_min"
-                     value="{{ form.get('offseason_delist_min', 3) }}" min="0" max="15">
-            </div>
-            <div class="col-6">
-              <div class="form-check mt-4">
-                <input type="checkbox" class="form-check-input" id="ssp_enabled" name="ssp_enabled"
-                       {{ 'checked' if form.get('ssp_enabled', true) }}>
-                <label class="form-check-label" for="ssp_enabled">SSP (Injury Replacement)</label>
-              </div>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary w-100">
-            <i class="bi bi-plus-lg me-1"></i>Create League
-          </button>
-        </form>
+        </div>
       </div>
-    </div>
+
+      {# ═══ Section 2: Scoring ═══ #}
+      <div class="wiz-section mb-3">
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between" data-bs-toggle="collapse" data-bs-target="#sec-scoring">
+            <span><span class="wiz-num">2</span><span class="fw-bold" style="font-size:.9rem;">Scoring</span></span>
+            <i class="bi bi-chevron-down" style="color:#8b949e;"></i>
+          </div>
+          <div class="collapse show" id="sec-scoring">
+            <div class="card-body">
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label for="scoring_type" class="form-label">Scoring Type</label>
+                  <select class="form-select" id="scoring_type" name="scoring_type" onchange="toggleScoringUI()">
+                    <option value="supercoach" {{ 'selected' if form.get('scoring_type') == 'supercoach' else '' }}>SuperCoach</option>
+                    <option value="afl_fantasy" {{ 'selected' if form.get('scoring_type') == 'afl_fantasy' else '' }}>AFL Fantasy</option>
+                    <option value="custom" {{ 'selected' if form.get('scoring_type') == 'custom' else '' }}>Custom</option>
+                    <option value="hybrid" {{ 'selected' if form.get('scoring_type') == 'hybrid' else '' }}>Hybrid</option>
+                  </select>
+                </div>
+                <div class="col-6" id="hybrid_base_group" style="{{ '' if form.get('scoring_type') == 'hybrid' else 'display:none' }}">
+                  <label for="hybrid_base" class="form-label">Hybrid Base</label>
+                  <select class="form-select" id="hybrid_base" name="hybrid_base">
+                    <option value="supercoach" {{ 'selected' if form.get('hybrid_base') == 'supercoach' else '' }}>SuperCoach</option>
+                    <option value="afl_fantasy" {{ 'selected' if form.get('hybrid_base') == 'afl_fantasy' else '' }}>AFL Fantasy</option>
+                  </select>
+                </div>
+              </div>
+
+              {# Hybrid Weight Config #}
+              <div id="hybrid_weight_config" class="card mb-3" style="{{ '' if form.get('scoring_type') == 'hybrid' else 'display:none' }}">
+                <div class="card-header"><h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-sliders me-2" style="color:#bc8cff;"></i>Hybrid Weight Configuration</h6></div>
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <label class="form-label mb-0" style="width:160px;flex-shrink:0;">Official Score Weight</label>
+                    <input type="range" class="form-range flex-grow-1" id="hybrid_base_weight" name="hybrid_base_weight"
+                           min="0" max="1" step="0.05" value="{{ form.get('hybrid_base_weight', 0.7) }}"
+                           oninput="updateWeightBadge(this.value)">
+                    <span class="badge" id="weight_badge" style="background:#21262d;min-width:50px;">{{ '%d' % ((form.get('hybrid_base_weight', 0.7)|float) * 100) }}%</span>
+                  </div>
+                  <div class="d-flex gap-3 mb-2">
+                    <div class="form-check">
+                      <input type="radio" class="form-check-input" id="mode_points" name="hybrid_custom_mode" value="points"
+                             {{ 'checked' if form.get('hybrid_custom_mode', 'points') == 'points' }}>
+                      <label class="form-check-label" for="mode_points">Flat Points</label>
+                    </div>
+                    <div class="form-check">
+                      <input type="radio" class="form-check-input" id="mode_percentage" name="hybrid_custom_mode" value="percentage"
+                             {{ 'checked' if form.get('hybrid_custom_mode') == 'percentage' }}>
+                      <label class="form-check-label" for="mode_percentage">Percentage Split</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {# Inline Scoring Builder #}
+              <div id="scoring_builder" class="card mb-3" style="{{ '' if form.get('scoring_type') in ('custom', 'hybrid') else 'display:none' }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0 fw-bold" style="font-size:.85rem;">
+                    <i class="bi bi-sliders me-2" style="color:#f0883e;"></i>
+                    <span id="builder_title">{{ 'Bonus Rules' if form.get('scoring_type') == 'hybrid' else 'Custom Scoring Rules' }}</span>
+                  </h6>
+                  <div class="d-flex gap-2">
+                    {% for key, preset in scoring_presets.items() %}
+                      <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadCreatePreset('{{ key }}')">{{ preset.label }}</button>
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="card-body" id="create_rules_container"></div>
+                <div class="card-footer" style="border-top-color:#30363d;">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCreateRule()" style="font-size:.8rem;">
+                    <i class="bi bi-plus-lg me-1"></i>Add Rule
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ═══ Section 3: Draft Configuration ═══ #}
+      <div class="wiz-section mb-3">
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between" data-bs-toggle="collapse" data-bs-target="#sec-draft">
+            <span><span class="wiz-num">3</span><span class="fw-bold" style="font-size:.9rem;">Draft Configuration</span></span>
+            <i class="bi bi-chevron-down" style="color:#8b949e;"></i>
+          </div>
+          <div class="collapse show" id="sec-draft">
+            <div class="card-body">
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label for="draft_type" class="form-label">Draft Type</label>
+                  <select class="form-select" id="draft_type" name="draft_type">
+                    <option value="snake" {{ 'selected' if form.get('draft_type') == 'snake' else '' }}>Snake</option>
+                    <option value="linear" {{ 'selected' if form.get('draft_type') == 'linear' else '' }}>Linear</option>
+                  </select>
+                  <div class="form-text" style="color:#484f58;font-size:.7rem;">Snake reverses pick order each round. Linear keeps the same order.</div>
+                </div>
+                <div class="col-6">
+                  <label for="pick_timer_secs" class="form-label">Pick Timer</label>
+                  <select class="form-select" id="pick_timer_secs" name="pick_timer_secs">
+                    {% for secs in [30, 60, 90, 120, 180, 300] %}
+                      <option value="{{ secs }}" {{ 'selected' if form.get('pick_timer_secs', 120)|int == secs }}>{{ secs }}s{% if secs == 120 %} (default){% endif %}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="form-text" style="color:#484f58;font-size:.7rem;">Time each manager gets per pick</div>
+                </div>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label for="draft_scheduled_date" class="form-label">Draft Date <span class="text-secondary" style="font-size:.75rem;">(optional)</span></label>
+                  <input type="datetime-local" class="form-control" id="draft_scheduled_date" name="draft_scheduled_date"
+                         value="{{ form.get('draft_scheduled_date', '') }}">
+                  <div class="form-text" style="color:#484f58;font-size:.7rem;">Leave blank to schedule later</div>
+                </div>
+                <div class="col-6 d-flex align-items-end">
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="draft_auto_randomize" name="draft_auto_randomize"
+                           {{ 'checked' if form.get('draft_auto_randomize', true) }}>
+                    <label class="form-check-label" for="draft_auto_randomize">Auto-randomize draft order</label>
+                    <div class="form-text" style="color:#484f58;font-size:.7rem;">Randomly assign pick order when session starts</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ═══ Section 4: Season Rules ═══ #}
+      <div class="wiz-section mb-3">
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between" data-bs-toggle="collapse" data-bs-target="#sec-season">
+            <span><span class="wiz-num">4</span><span class="fw-bold" style="font-size:.9rem;">Season Rules</span></span>
+            <i class="bi bi-chevron-down" style="color:#8b949e;"></i>
+          </div>
+          <div class="collapse show" id="sec-season">
+            <div class="card-body">
+              <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-arrow-repeat me-2"></i>Mid-Season Rules</h6>
+              <div class="form-check mb-2">
+                <input type="checkbox" class="form-check-input" id="mid_season_draft_enabled" name="mid_season_draft_enabled"
+                       {{ 'checked' if form.get('mid_season_draft_enabled') }}
+                       onchange="document.getElementById('mid_season_fields').style.display=this.checked?'':'none'">
+                <label class="form-check-label" for="mid_season_draft_enabled">Enable Mid-Season Draft</label>
+              </div>
+              <div id="mid_season_fields" class="row g-3 mb-3" style="{{ '' if form.get('mid_season_draft_enabled') else 'display:none' }}">
+                <div class="col-6">
+                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">After AFL Round</label>
+                  <input type="number" class="form-control form-control-sm" id="mid_season_draft_after_round"
+                         name="mid_season_draft_after_round"
+                         value="{{ form.get('mid_season_draft_after_round', 13) }}" min="1" max="24">
+                </div>
+                <div class="col-6">
+                  <label for="mid_season_draft_picks" class="form-label" style="font-size:.75rem;">Picks per Team</label>
+                  <input type="number" class="form-control form-control-sm" id="mid_season_draft_picks"
+                         name="mid_season_draft_picks"
+                         value="{{ form.get('mid_season_draft_picks', 1) }}" min="1" max="10">
+                </div>
+              </div>
+
+              <hr style="border-color:#21262d;margin:1rem 0;">
+
+              <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-snow me-2"></i>Off-Season Rules</h6>
+              <div class="row g-3">
+                <div class="col-6">
+                  <label for="offseason_delist_min" class="form-label" style="font-size:.75rem;">Min Delists per Team</label>
+                  <input type="number" class="form-control form-control-sm" id="offseason_delist_min"
+                         name="offseason_delist_min"
+                         value="{{ form.get('offseason_delist_min', 3) }}" min="0" max="15">
+                </div>
+                <div class="col-6">
+                  <div class="form-check mt-4">
+                    <input type="checkbox" class="form-check-input" id="ssp_enabled" name="ssp_enabled"
+                           {{ 'checked' if form.get('ssp_enabled', true) }}>
+                    <label class="form-check-label" for="ssp_enabled">SSP (Injury Replacement)</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ═══ Section 5: Roster & Lineup ═══ #}
+      <div class="wiz-section mb-4">
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between" data-bs-toggle="collapse" data-bs-target="#sec-roster">
+            <span><span class="wiz-num">5</span><span class="fw-bold" style="font-size:.9rem;">Roster & Lineup</span></span>
+            <i class="bi bi-chevron-down" style="color:#8b949e;"></i>
+          </div>
+          <div class="collapse show" id="sec-roster">
+            <div class="card-body">
+              <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-diagram-3 me-2"></i>On-Field Formation</h6>
+              <div class="row g-2 mb-3">
+                <div class="col">
+                  <label class="form-label" style="font-size:.75rem;color:#58a6ff;">DEF</label>
+                  <input type="number" class="form-control form-control-sm" name="def_count"
+                         value="{{ form.get('def_count', 5) }}" min="2" max="8">
+                </div>
+                <div class="col">
+                  <label class="form-label" style="font-size:.75rem;color:#bc8cff;">MID</label>
+                  <input type="number" class="form-control form-control-sm" name="mid_count"
+                         value="{{ form.get('mid_count', 7) }}" min="3" max="10">
+                </div>
+                <div class="col">
+                  <label class="form-label" style="font-size:.75rem;color:#f0883e;">FWD</label>
+                  <input type="number" class="form-control form-control-sm" name="fwd_count"
+                         value="{{ form.get('fwd_count', 5) }}" min="2" max="8">
+                </div>
+                <div class="col">
+                  <label class="form-label" style="font-size:.75rem;color:#3fb950;">RUC</label>
+                  <input type="number" class="form-control form-control-sm" name="ruc_count"
+                         value="{{ form.get('ruc_count', 1) }}" min="1" max="3">
+                </div>
+              </div>
+              <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-clipboard2 me-2"></i>Bench</h6>
+              <div class="row g-2 mb-2">
+                <div class="col">
+                  <label class="form-label" style="font-size:.7rem;color:#58a6ff;">B.DEF</label>
+                  <input type="number" class="form-control form-control-sm" name="bench_def"
+                         value="{{ form.get('bench_def', 1) }}" min="0" max="5">
+                </div>
+                <div class="col">
+                  <label class="form-label" style="font-size:.7rem;color:#bc8cff;">B.MID</label>
+                  <input type="number" class="form-control form-control-sm" name="bench_mid"
+                         value="{{ form.get('bench_mid', 2) }}" min="0" max="5">
+                </div>
+                <div class="col">
+                  <label class="form-label" style="font-size:.7rem;color:#f0883e;">B.FWD</label>
+                  <input type="number" class="form-control form-control-sm" name="bench_fwd"
+                         value="{{ form.get('bench_fwd', 1) }}" min="0" max="5">
+                </div>
+                <div class="col">
+                  <label class="form-label" style="font-size:.7rem;color:#8b949e;">FLEX</label>
+                  <input type="number" class="form-control form-control-sm" name="bench_flex"
+                         value="{{ form.get('bench_flex', 1) }}" min="0" max="5">
+                </div>
+              </div>
+              <div class="form-text" style="color:#484f58;font-size:.75rem;">Position-locked bench: players must match the slot position. Flex accepts any position.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 mb-4" style="padding:.75rem;">
+        <i class="bi bi-plus-lg me-1"></i>Create League
+      </button>
+    </form>
   </div>
 </div>
 
@@ -240,8 +321,6 @@ function toggleScoringUI() {
   document.getElementById('hybrid_weight_config').style.display = (st === 'hybrid') ? '' : 'none';
   document.getElementById('scoring_builder').style.display = (st === 'custom' || st === 'hybrid') ? '' : 'none';
   document.getElementById('builder_title').textContent = (st === 'hybrid') ? 'Bonus Rules' : 'Custom Scoring Rules';
-
-  // Auto-load defaults when switching to custom and container is empty
   if (st === 'custom' && document.getElementById('create_rules_container').children.length === 0) {
     loadCreatePreset('_defaults');
   }

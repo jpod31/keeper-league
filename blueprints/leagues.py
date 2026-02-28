@@ -78,8 +78,56 @@ leagues_bp = Blueprint("leagues", __name__, url_prefix="/leagues",
 @leagues_bp.route("/")
 @login_required
 def league_list():
+    from models.database import Fixture, Trade, DraftSession, SeasonStanding
+
     leagues = get_user_leagues(current_user.id)
-    return render_template("leagues/list.html", leagues=leagues)
+
+    # Build dashboard data for each league
+    dashboard_data = []
+    for lg in leagues:
+        team = FantasyTeam.query.filter_by(league_id=lg.id, owner_id=current_user.id).first()
+        entry = {"league": lg, "team": team}
+
+        if team:
+            # Next fixture (unplayed)
+            next_fix = Fixture.query.filter(
+                Fixture.league_id == lg.id,
+                ((Fixture.home_team_id == team.id) | (Fixture.away_team_id == team.id)),
+                Fixture.status == "scheduled",
+            ).order_by(Fixture.afl_round).first()
+            entry["next_fixture"] = next_fix
+
+            # Last result (completed)
+            last_fix = Fixture.query.filter(
+                Fixture.league_id == lg.id,
+                ((Fixture.home_team_id == team.id) | (Fixture.away_team_id == team.id)),
+                Fixture.status == "completed",
+            ).order_by(Fixture.afl_round.desc()).first()
+            entry["last_result"] = last_fix
+
+            # Standing
+            standing = SeasonStanding.query.filter_by(
+                league_id=lg.id, team_id=team.id, year=lg.season_year
+            ).first()
+            entry["standing"] = standing
+        else:
+            entry["next_fixture"] = None
+            entry["last_result"] = None
+            entry["standing"] = None
+
+        # Pending trades across league
+        pending_trades = Trade.query.filter_by(league_id=lg.id, status="pending").count()
+        entry["pending_trades"] = pending_trades
+
+        # Draft status
+        draft = DraftSession.query.filter_by(
+            league_id=lg.id, is_mock=False
+        ).order_by(DraftSession.id.desc()).first()
+        entry["draft"] = draft
+
+        dashboard_data.append(entry)
+
+    return render_template("leagues/list.html", leagues=leagues, dashboard_data=dashboard_data)
 
 
 @leagues_bp.route("/create", methods=["GET", "POST"])
@@ -154,6 +202,16 @@ def league_create():
                 league.hybrid_base_weight = max(0.0, min(1.0, hw))
             league.hybrid_custom_mode = request.form.get("hybrid_custom_mode", "points")
             db.session.commit()
+
+        # Draft preferences
+        league.draft_auto_randomize = "draft_auto_randomize" in request.form
+        draft_date = request.form.get("draft_scheduled_date")
+        if draft_date:
+            try:
+                league.draft_scheduled_date = datetime.fromisoformat(draft_date)
+            except ValueError:
+                pass
+        db.session.commit()
 
         # Inline scoring rules (custom or hybrid)
         if scoring_type in ("custom", "hybrid"):
@@ -850,12 +908,55 @@ def season_hub(league_id):
         Trade.proposed_at.desc()
     ).limit(5).all()
 
+    # ── Build phases list for timeline ──
+    phase_order = ["preseason", "draft", "regular", "midseason", "finals", "offseason"]
+    phase_labels = {
+        "preseason": "Pre-Season", "draft": "Draft",
+        "regular": "Regular Season", "midseason": "Mid-Season",
+        "finals": "Finals", "offseason": "Off-Season",
+    }
+    # Map current_phase to timeline phase id
+    cp_map = {"pre_season": "preseason", "regular": "regular", "midseason": "midseason", "finals": "finals", "offseason": "offseason"}
+    active_phase_id = cp_map.get(current_phase, "preseason")
+    # Draft is "completed" if initial draft is done; it's "active" if we're in pre_season with no draft yet or draft in progress
+    if current_phase == "pre_season" and initial_draft and initial_draft.status in ("in_progress", "paused"):
+        active_phase_id = "draft"
+    elif current_phase == "pre_season" and initial_draft and initial_draft.status == "completed":
+        active_phase_id = "regular"
+
+    phases = []
+    found_active = False
+    for pid in phase_order:
+        if pid == active_phase_id:
+            phases.append({"id": pid, "label": phase_labels[pid], "status": "active"})
+            found_active = True
+        elif not found_active:
+            phases.append({"id": pid, "label": phase_labels[pid], "status": "completed"})
+        else:
+            phases.append({"id": pid, "label": phase_labels[pid], "status": "future"})
+
+    # ── Standings snapshot for regular season panel ──
+    from models.database import SeasonStanding, Fixture
+    standings = []
+    current_round_num = None
+    if current_phase in ("regular", "midseason", "finals"):
+        standings = SeasonStanding.query.filter_by(
+            league_id=league_id, year=league.season_year
+        ).order_by(SeasonStanding.ladder_points.desc(), SeasonStanding.percentage.desc()).all()
+        # Find current round (last completed fixture round)
+        last_completed = Fixture.query.filter_by(
+            league_id=league_id, year=league.season_year, status="completed"
+        ).order_by(Fixture.afl_round.desc()).first()
+        current_round_num = last_completed.afl_round if last_completed else 0
+
     return render_template("leagues/season_hub.html",
                            league=league,
                            season_cfg=season_cfg,
                            user_team=user_team,
                            is_commissioner=is_commissioner,
                            current_phase=current_phase,
+                           phases=phases,
+                           active_phase_id=active_phase_id,
                            initial_draft=initial_draft,
                            supplemental_drafts=supplemental_drafts,
                            mid_trade_status=mid_trade_status,
@@ -874,7 +975,9 @@ def season_hub(league_id):
                            recent_trades=recent_trades,
                            user_roster=user_roster,
                            delisted_player_ids=delisted_player_ids,
-                           trade_window_dates=trade_window_dates)
+                           trade_window_dates=trade_window_dates,
+                           standings=standings,
+                           current_round_num=current_round_num)
 
 
 @leagues_bp.route("/<int:league_id>/midseason")
@@ -1222,24 +1325,36 @@ def player_pool(league_id):
         flash("League not found.", "warning")
         return redirect(url_for("leagues.league_list"))
 
-    # All player IDs on active rosters in this league
-    rostered_ids = (
-        db.session.query(FantasyRoster.player_id)
-        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
-        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
-        .subquery()
-    )
-
+    # Get ALL players
     players = (
         AflPlayer.query
-        .filter(AflPlayer.id.notin_(db.session.query(rostered_ids)))
         .order_by(AflPlayer.draft_score.desc().nullslast())
         .all()
     )
+
+    # Build rostered lookup: player_id -> team name
+    rostered_map = {}
+    roster_rows = (
+        db.session.query(FantasyRoster.player_id, FantasyTeam.name)
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+        .all()
+    )
+    for pid, tname in roster_rows:
+        rostered_map[pid] = tname
+
+    # Rank by SC avg: current year first, fallback to previous
+    for p in players:
+        p._rank_avg = p.sc_avg or p.sc_avg_prev or 0
+
+    players.sort(key=lambda p: p._rank_avg, reverse=True)
+    for i, p in enumerate(players, 1):
+        p._rank = i
 
     rolling = _compute_rolling_averages()
 
     return render_template("leagues/player_pool.html",
                            league=league,
                            players=players,
-                           rolling=rolling)
+                           rolling=rolling,
+                           rostered_map=rostered_map)

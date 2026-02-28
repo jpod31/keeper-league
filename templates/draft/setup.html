@@ -38,13 +38,17 @@
     </div>
 
     <div class="card mb-4">
-      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-gear me-2" style="color:#8b949e;"></i>Configuration</h5></div>
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-gear me-2" style="color:#8b949e;"></i>Configuration <span class="text-secondary" style="font-size:.7rem;font-weight:400;">(set at league creation)</span></h5></div>
       <div class="card-body">
         <div class="info-row"><span class="info-label">Draft Type</span><span class="info-value text-capitalize">{{ league.draft_type }}</span></div>
         <div class="info-row"><span class="info-label">Rounds</span><span class="info-value">{{ league.squad_size }}</span></div>
         <div class="info-row"><span class="info-label">Total Picks</span><span class="info-value">{{ league.squad_size * teams|length }}</span></div>
         <div class="info-row"><span class="info-label">Pick Timer</span><span class="info-value">{{ league.pick_timer_secs }}s</span></div>
         <div class="info-row"><span class="info-label">Teams</span><span class="info-value">{{ teams|length }}</span></div>
+        <div class="info-row"><span class="info-label">Auto-Randomize</span><span class="info-value">{{ 'Yes' if league.draft_auto_randomize else 'No' }}</span></div>
+        {% if league.draft_scheduled_date %}
+        <div class="info-row"><span class="info-label">Pre-set Date</span><span class="info-value">{{ league.draft_scheduled_date.strftime('%d %b %Y %I:%M %p') }}</span></div>
+        {% endif %}
       </div>
     </div>
 
@@ -52,14 +56,15 @@
       <div class="card-body p-4">
         {% if not session and not initial_session %}
           <div>
-            <p class="text-secondary mb-3" style="font-size:.85rem;">Create a draft session to generate all pick slots.</p>
+            <p class="text-secondary mb-3" style="font-size:.85rem;">Create a draft session to generate all pick slots.{% if league.draft_auto_randomize %} Draft order will be auto-randomized.{% endif %}</p>
             <form method="POST">
               <input type="hidden" name="action" value="create_session">
               <div class="mb-3">
                 <label class="form-label">Draft Start Date &amp; Time <span class="text-secondary" style="font-size:.75rem;">(optional)</span></label>
                 <input type="datetime-local" class="form-control form-control-sm" name="scheduled_start"
+                       {% if league.draft_scheduled_date %}value="{{ league.draft_scheduled_date.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}
                        style="max-width:280px;">
-                <div class="form-text" style="font-size:.7rem;">Leave blank to start manually whenever you're ready</div>
+                <div class="form-text" style="font-size:.7rem;">{% if league.draft_scheduled_date %}Pre-filled from league creation. {% endif %}Leave blank to start manually.</div>
               </div>
               <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Draft Session</button>
             </form>

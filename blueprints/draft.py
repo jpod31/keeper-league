@@ -111,15 +111,21 @@ def draft_setup(league_id):
                 if error:
                     flash(error, "danger")
                 else:
-                    # Set scheduled start if provided
+                    # Set scheduled start: form value > league default
                     sched = request.form.get("scheduled_start")
-                    if sched and sess:
+                    if not sched and league.draft_scheduled_date:
+                        sess.scheduled_start = league.draft_scheduled_date
+                        db.session.commit()
+                    elif sched and sess:
                         from datetime import datetime
                         try:
                             sess.scheduled_start = datetime.fromisoformat(sched)
                             db.session.commit()
                         except ValueError:
                             pass
+                    # Auto-randomize if league preference is set
+                    if league.draft_auto_randomize:
+                        randomize_draft_order(league_id)
                     flash("Draft session created!", "success")
             return redirect(url_for("draft_live.draft_setup", league_id=league_id))
 

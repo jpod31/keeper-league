@@ -24,8 +24,7 @@
       <div class="collapse navbar-collapse" id="nav">
         {% if current_user.is_authenticated %}
           <ul class="navbar-nav me-auto">
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('leagues.league_list') }}"><i class="bi bi-trophy me-1"></i>My Leagues</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('draft_board') }}"><i class="bi bi-list-ol me-1"></i>Draft Board</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('leagues.league_list') }}"><i class="bi bi-house me-1"></i>Home</a></li>
           </ul>
           <ul class="navbar-nav">
             {% if current_user.is_admin %}

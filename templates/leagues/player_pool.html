@@ -1,21 +1,21 @@
 {% extends "league_base.html" %}
 {% set active_tab = 'players' %}
-{% block title %}Player Pool — {{ league.name }}{% endblock %}
+{% block title %}Players — {{ league.name }}{% endblock %}
 {% block league_content %}
 <div class="page-header">
-  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Player Pool</div>
-  <h2>Open Market</h2>
-  <span style="font-size:.8rem;color:#8b949e;">{{ players|length }} undrafted players available</span>
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Players</div>
+  <h2>All Players</h2>
+  <span style="font-size:.8rem;color:#8b949e;">{{ players|length }} players &middot; Ranked by SC Average</span>
 </div>
 
 <div class="card">
   <div class="card-header">
     <div class="row g-2">
-      <div class="col-md-5">
+      <div class="col-md-4">
         <input type="text" class="form-control form-control-sm" id="pool-search"
                placeholder="Search players..." oninput="filterPool()">
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <select class="form-select form-select-sm" id="pool-pos-filter" onchange="filterPool()">
           <option value="">All Positions</option>
           <option value="DEF">DEF</option>
@@ -24,20 +24,42 @@
           <option value="RUC">RUC</option>
         </select>
       </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" id="pool-team-filter" onchange="filterPool()">
+          <option value="">All Teams</option>
+          {% set teams_seen = [] %}
+          {% for p in players %}
+            {% if p.afl_team and p.afl_team not in teams_seen %}
+              {% if teams_seen.append(p.afl_team) %}{% endif %}
+            {% endif %}
+          {% endfor %}
+          {% for t in teams_seen|sort %}
+            <option value="{{ t }}">{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" id="pool-status-filter" onchange="filterPool()">
+          <option value="">All Status</option>
+          <option value="available">Available</option>
+          <option value="taken">Taken</option>
+        </select>
+      </div>
     </div>
   </div>
-  <div class="card-body p-0" style="max-height:70vh;overflow:auto;">
-    <table class="table table-hover table-sm mb-0" style="min-width:820px;">
+  <div class="card-body p-0" style="max-height:75vh;overflow:auto;">
+    <table class="table table-hover table-sm mb-0" style="min-width:960px;">
       <thead class="sticky-top" style="background:#161b22;">
         <tr>
+          <th style="width:50px;cursor:pointer;" onclick="sortPool('rank')">#</th>
           <th style="cursor:pointer;" onclick="sortPool('name')">Player</th>
           <th>Pos</th>
-          <th>Team</th>
+          <th>AFL Team</th>
           <th class="text-center" style="cursor:pointer;" onclick="sortPool('age')">Age</th>
-          <th class="text-end" style="cursor:pointer;" onclick="sortPool('sc_avg')">2025 Avg</th>
+          <th class="text-end" style="cursor:pointer;" onclick="sortPool('sc_avg')">SC Avg</th>
           <th class="text-end" style="cursor:pointer;" onclick="sortPool('l3')">L3</th>
           <th class="text-end" style="cursor:pointer;" onclick="sortPool('l5')">L5</th>
-          <th class="text-end" style="cursor:pointer;" onclick="sortPool('draft_score')">Score</th>
+          <th class="text-center">Status</th>
           <th class="text-end" style="cursor:pointer;" onclick="sortPool('rating')">RTG</th>
           <th class="text-end" style="cursor:pointer;" onclick="sortPool('potential')">POT</th>
         </tr>
@@ -46,27 +68,32 @@
         {% for p in players %}
           {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
           {% set pr = rolling.get(p.name, {}) %}
+          {% set owner_team = rostered_map.get(p.id) %}
           <tr data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
+              data-team="{{ p.afl_team or '' }}"
               data-sc="{{ sc_display or 0 }}" data-ds="{{ p.draft_score or 0 }}"
               data-age="{{ p.age or 0 }}" data-rtg="{{ p.rating or 0 }}"
-              data-pot="{{ p.potential or 0 }}"
-              data-l3="{{ pr.l3 or 0 }}" data-l5="{{ pr.l5 or 0 }}">
+              data-pot="{{ p.potential or 0 }}" data-rank="{{ p._rank }}"
+              data-l3="{{ pr.l3 or 0 }}" data-l5="{{ pr.l5 or 0 }}"
+              data-status="{{ 'taken' if owner_team else 'available' }}"
+              {% if owner_team %}style="opacity:.55;"{% endif %}>
+            <td class="text-muted" style="font-size:.75rem;font-weight:600;">{{ p._rank }}</td>
             <td>
-              <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:#c9d1d9;">{{ p.name }}</a>
+              <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none d-flex align-items-center gap-2">
+                {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                  <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" height="18" style="flex-shrink:0;">
+                {% endif %}
+                <span class="fw-bold" style="color:#c9d1d9;">{{ p.name }}</span>
+              </a>
             </td>
             <td>
               {% for pos in (p.position or 'MID').split('/') %}
                 <span class="pos-badge badge-{{ pos|lower }}">{{ pos }}</span>
               {% endfor %}
             </td>
-            <td>
-              {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
-                <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" height="20" class="me-1" style="vertical-align:middle;">
-              {% endif %}
-              <span style="font-size:.8rem;">{{ p.afl_team or '' }}</span>
-            </td>
+            <td style="font-size:.8rem;">{{ p.afl_team or '' }}</td>
             <td class="text-center">{{ p.age or '-' }}</td>
-            <td class="text-end">{{ '%.1f'|format(sc_display) if sc_display else '-' }}</td>
+            <td class="text-end fw-semibold">{{ '%.1f'|format(sc_display) if sc_display else '-' }}</td>
             <td class="text-end">
               {% if pr.l3 %}
                 {% set diff3 = pr.l3 - sc_display if sc_display else 0 %}
@@ -79,10 +106,12 @@
                 <span style="color:{{ '#3fb950' if diff5 > 5 else '#f85149' if diff5 < -5 else '#c9d1d9' }};font-weight:600;">{{ pr.l5 }}</span>
               {% else %}-{% endif %}
             </td>
-            <td class="text-end">
-              {% if p.draft_score %}
-                <span class="badge" style="background:hsl({{ (p.draft_score / 100 * 120)|int }}, 70%, 35%);font-size:.75rem;">{{ '%.1f'|format(p.draft_score) }}</span>
-              {% else %}-{% endif %}
+            <td class="text-center">
+              {% if owner_team %}
+                <span class="badge" style="background:rgba(139,148,158,.15);color:#8b949e;font-size:.7rem;">{{ owner_team }}</span>
+              {% else %}
+                <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.7rem;">Available</span>
+              {% endif %}
             </td>
             <td class="text-end">
               {% if p.rating %}
@@ -109,16 +138,20 @@
 function filterPool() {
   const q = document.getElementById('pool-search').value.toLowerCase();
   const pos = document.getElementById('pool-pos-filter').value;
+  const team = document.getElementById('pool-team-filter').value;
+  const status = document.getElementById('pool-status-filter').value;
   document.querySelectorAll('#pool-body tr').forEach(row => {
     const nameMatch = !q || row.dataset.name.includes(q);
     const posMatch = !pos || (row.dataset.pos || '').includes(pos);
-    row.style.display = (nameMatch && posMatch) ? '' : 'none';
+    const teamMatch = !team || row.dataset.team === team;
+    const statusMatch = !status || row.dataset.status === status;
+    row.style.display = (nameMatch && posMatch && teamMatch && statusMatch) ? '' : 'none';
   });
 }
 
-let sortKey = 'draft_score', sortAsc = false;
+let sortKey = 'rank', sortAsc = true;
 function sortPool(key) {
-  if (sortKey === key) { sortAsc = !sortAsc; } else { sortKey = key; sortAsc = false; }
+  if (sortKey === key) { sortAsc = !sortAsc; } else { sortKey = key; sortAsc = (key === 'name'); }
   const tbody = document.getElementById('pool-body');
   const rows = Array.from(tbody.querySelectorAll('tr'));
   rows.sort((a, b) => {
