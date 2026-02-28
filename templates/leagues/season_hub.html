@@ -18,24 +18,6 @@
     </div>
 
     {# ══════════════════════════════════════════════════════════════
-       HORIZONTAL TIMELINE BAR
-       ══════════════════════════════════════════════════════════════ #}
-    <div class="timeline-bar" id="season-timeline">
-      {% for phase in phases %}
-        <div class="timeline-segment">
-          <div class="timeline-node {{ phase.status }}" data-phase="{{ phase.id }}"
-               onclick="togglePhase('{{ phase.id }}')">
-            <span class="timeline-check"><i class="bi bi-check"></i></span>
-            <span class="timeline-label">{{ phase.label }}</span>
-          </div>
-          {% if not loop.last %}
-            <div class="timeline-connector {% if phase.status == 'completed' %}completed{% elif phase.status == 'active' %}active{% endif %}"></div>
-          {% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    {# ══════════════════════════════════════════════════════════════
        SECTION CARDS — always visible, stacked vertically
        ══════════════════════════════════════════════════════════════ #}
 
@@ -926,21 +908,6 @@
     section.classList.toggle('lm-collapsed');
   }
   window.toggleSection = toggleSection;
-
-  // ── Timeline click → scroll to section + expand ──
-  function togglePhase(phaseId) {
-    const section = document.getElementById('section-' + phaseId);
-    if (!section) return;
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (section.classList.contains('lm-collapsed')) {
-      section.classList.remove('lm-collapsed');
-    }
-    // Highlight the timeline node
-    document.querySelectorAll('.timeline-node').forEach(n => n.classList.remove('selected'));
-    const node = document.querySelector('.timeline-node[data-phase="' + phaseId + '"]');
-    if (node) node.classList.add('selected');
-  }
-  window.togglePhase = togglePhase;
 
   // ── Countdown timers ──
   function startTimers() {
