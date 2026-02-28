@@ -1,0 +1,118 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'results' %}
+{% block title %}Results — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "matchups/_league_subnav.html" %}
+<style>
+  .result-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    transition: border-color .15s;
+  }
+  .result-card:hover { border-color: #484f58; }
+  .result-matchup {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .6rem .75rem;
+    border-bottom: 1px solid #21262d;
+    font-size: .82rem;
+  }
+  .result-matchup:last-child { border-bottom: none; }
+  .result-team { color: #c9d1d9; font-weight: 500; flex: 1; }
+  .result-team.winner { color: #e6edf3; font-weight: 700; }
+  .result-score {
+    font-weight: 700;
+    min-width: 36px;
+    text-align: center;
+  }
+  .result-score.winner { color: #3fb950; }
+  .result-score.loser { color: #8b949e; }
+  .result-vs { color: #484f58; font-size: .7rem; padding: 0 .5rem; }
+  .round-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .65rem 1rem;
+    border-bottom: 1px solid #30363d;
+  }
+  .round-label { font-weight: 700; font-size: .85rem; color: #c9d1d9; }
+  .round-status {
+    font-size: .65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .status-completed-pill { background: rgba(63,185,80,.12); color: #3fb950; }
+  .status-scheduled-pill { background: rgba(139,148,158,.1); color: #8b949e; }
+  .status-live-pill { background: rgba(35,134,54,.15); color: #3fb950; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+</style>
+
+<div class="page-header" style="margin-top:0;">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <h2 class="mb-0">Results</h2>
+      <span style="font-size:.78rem;color:#8b949e;">
+        {% if latest_completed %}Latest: Round {{ latest_completed }}{% else %}No rounds completed yet{% endif %}
+      </span>
+    </div>
+  </div>
+</div>
+
+{% if rounds %}
+  {# Show rounds in reverse order (most recent first), completed rounds at top #}
+  {% set round_list = rounds.items()|sort(reverse=true) %}
+  {% for rnd_num, fixtures in round_list %}
+    {% set has_completed = fixtures|selectattr('status', 'equalto', 'completed')|list|length > 0 %}
+    {% set has_live = fixtures|selectattr('status', 'equalto', 'live')|list|length > 0 %}
+    {% set all_scheduled = not has_completed and not has_live %}
+    <div class="result-card mb-3">
+      <div class="round-header">
+        <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=rnd_num) }}" class="text-decoration-none">
+          <span class="round-label">Round {{ rnd_num }}</span>
+        </a>
+        <div class="d-flex align-items-center gap-2">
+          {% if has_live %}
+            <span class="round-status status-live-pill"><i class="bi bi-broadcast me-1"></i>Live</span>
+            <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=rnd_num) }}" class="btn btn-sm" style="font-size:.7rem;padding:2px 8px;border:1px solid #30363d;color:#8b949e;">
+              <i class="bi bi-broadcast me-1"></i>Watch Live
+            </a>
+          {% elif has_completed %}
+            <span class="round-status status-completed-pill">Completed</span>
+          {% else %}
+            <span class="round-status status-scheduled-pill">Scheduled</span>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        {% for f in fixtures %}
+          {% set home_won = f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}
+          {% set away_won = f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}
+          <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=f.id) }}" class="text-decoration-none">
+            <div class="result-matchup">
+              <span class="result-team {{ 'winner' if home_won else '' }}">{{ f.home_team.name }}</span>
+              {% if f.status == 'completed' %}
+                <span class="result-score {{ 'winner' if home_won else 'loser' }}">{{ '%.0f'|format(f.home_score or 0) }}</span>
+                <span class="result-vs">-</span>
+                <span class="result-score {{ 'winner' if away_won else 'loser' }}">{{ '%.0f'|format(f.away_score or 0) }}</span>
+              {% else %}
+                <span class="result-vs">vs</span>
+              {% endif %}
+              <span class="result-team {{ 'winner' if away_won else '' }}" style="text-align:right;">{{ f.away_team.name }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-clipboard-check" style="font-size:1.5rem;"></i></div>
+    <h4>No fixtures yet</h4>
+    <p>Results will appear here once the fixture is generated and rounds are scored.</p>
+  </div>
+{% endif %}
+{% endblock %}

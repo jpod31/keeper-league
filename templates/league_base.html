@@ -54,13 +54,9 @@
          href="{{ url_for('leagues.player_pool', league_id=league.id) }}">
         <i class="bi bi-person-plus"></i><span>Players</span>
       </a>
-      <a class="league-tab{% if active_tab|default('') == 'fixture' %} active{% endif %}"
+      <a class="league-tab{% if active_tab|default('') == 'league' %} active{% endif %}"
          href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
-        <i class="bi bi-calendar-week"></i><span>Fixture</span>
-      </a>
-      <a class="league-tab{% if active_tab|default('') == 'analysis' %} active{% endif %}"
-         href="{{ url_for('matchups.standings', league_id=league.id) }}">
-        <i class="bi bi-graph-up"></i><span>Analysis</span>
+        <i class="bi bi-calendar-week"></i><span>League</span>
       </a>
       <a class="league-tab{% if active_tab|default('') == 'season' %} active{% endif %}"
          href="{{ url_for('leagues.season_hub', league_id=league.id) }}">

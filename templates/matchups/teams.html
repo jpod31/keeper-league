@@ -1,0 +1,116 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'teams' %}
+{% block title %}Teams — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "matchups/_league_subnav.html" %}
+<style>
+  .team-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    transition: border-color .15s, transform .1s;
+  }
+  .team-card:hover {
+    border-color: #484f58;
+    transform: translateY(-2px);
+  }
+  .team-card a { text-decoration: none; }
+  .team-owner { font-size: .75rem; color: #8b949e; }
+  .team-record { font-size: .8rem; color: #c9d1d9; font-weight: 600; }
+  .team-stat { font-size: .72rem; color: #8b949e; }
+  .team-stat strong { color: #c9d1d9; }
+  .team-pos-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    font-size: .7rem; font-weight: 700;
+  }
+  .pos-1 { background: rgba(210,153,34,.15); color: #e3b341; }
+  .pos-2 { background: rgba(192,192,192,.1); color: #c9d1d9; }
+  .pos-3 { background: rgba(180,120,60,.1); color: #d2a47a; }
+  .pos-other { background: rgba(139,148,158,.08); color: #8b949e; }
+  .roster-count {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: .72rem; color: #8b949e;
+  }
+</style>
+
+<div class="page-header" style="margin-top:0;">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <h2 class="mb-0">Teams</h2>
+      <span style="font-size:.78rem;color:#8b949e;">{{ teams|length }} teams in {{ league.name }}</span>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  {# Sort by ladder position: build ordered list from standings first, then add unranked teams #}
+  {% set ordered_teams = [] %}
+  {% set ranked_ids = [] %}
+  {% for s in standing_map.values()|sort(attribute='ladder_points', reverse=true) %}
+    {% for t in teams if t.id == s.team_id %}
+      {% if ordered_teams.append(t) %}{% endif %}
+      {% if ranked_ids.append(t.id) %}{% endif %}
+    {% endfor %}
+  {% endfor %}
+  {% for t in teams|sort(attribute='name') if t.id not in ranked_ids %}
+    {% if ordered_teams.append(t) %}{% endif %}
+  {% endfor %}
+  {% for team in ordered_teams %}
+    {% set s = standing_map.get(team.id) %}
+    <div class="col-md-6 col-lg-4">
+      <div class="team-card">
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">
+          <div class="p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="mb-0 fw-bold" style="color:#e6edf3;font-size:.95rem;">{{ team.name }}</h5>
+                <div class="team-owner">
+                  <i class="bi bi-person-fill me-1"></i>{{ team.owner.username if team.owner else 'No owner' }}
+                </div>
+              </div>
+              {% if s %}
+                <span class="team-pos-badge {{ 'pos-1' if loop.index == 1 else ('pos-2' if loop.index == 2 else ('pos-3' if loop.index == 3 else 'pos-other')) }}">
+                  {{ loop.index }}
+                </span>
+              {% endif %}
+            </div>
+
+            {% if s %}
+              <div class="d-flex gap-3 mb-2">
+                <div class="team-record">{{ s.wins }}W {{ s.losses }}L {{ s.draws }}D</div>
+                <div class="team-stat"><strong style="color:#58a6ff;">{{ s.ladder_points }}</strong> pts</div>
+                <div class="team-stat">{{ '%.1f'|format(s.percentage) }}%</div>
+              </div>
+              <div class="d-flex gap-3">
+                <div class="team-stat">PF <strong>{{ '%.0f'|format(s.points_for) }}</strong></div>
+                <div class="team-stat">PA <strong>{{ '%.0f'|format(s.points_against) }}</strong></div>
+              </div>
+            {% else %}
+              <div class="team-stat" style="font-style:italic;">No results yet</div>
+            {% endif %}
+
+            <div class="mt-2 d-flex justify-content-between align-items-center">
+              <span class="roster-count">
+                <i class="bi bi-people-fill"></i>{{ team.roster|selectattr('is_active')|list|length }} players
+              </span>
+              <span style="font-size:.7rem;color:#58a6ff;">
+                View Squad <i class="bi bi-chevron-right"></i>
+              </span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+{% if not teams %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-people" style="font-size:1.5rem;"></i></div>
+    <h4>No teams yet</h4>
+    <p>Teams will appear here once members join the league.</p>
+  </div>
+{% endif %}
+{% endblock %}

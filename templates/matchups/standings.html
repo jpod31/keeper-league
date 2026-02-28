@@ -1,14 +1,14 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'analysis' %}
-{% block title %}Standings — {{ league.name }}{% endblock %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'ladder' %}
+{% block title %}Ladder — {{ league.name }}{% endblock %}
 {% block league_content %}
-<div class="page-header">
-  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Standings</div>
-  <div class="d-flex justify-content-between align-items-start">
-    <h2>Ladder</h2>
-    <div class="d-flex gap-2">
-      <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-calendar-week me-1"></i>Fixture</a>
-      <a href="{{ url_for('matchups.finals_view', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-trophy me-1"></i>Finals</a>
+{% include "matchups/_league_subnav.html" %}
+<div class="page-header" style="margin-top:0;">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <h2 class="mb-0">Ladder</h2>
+      <span style="font-size:.78rem;color:#8b949e;">{{ league.season_year }} standings</span>
     </div>
   </div>
 </div>

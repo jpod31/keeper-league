@@ -374,6 +374,50 @@ def sync_scores(league_id):
         return jsonify({"error": str(e)}), 500
 
 
+@matchups_bp.route("/<int:league_id>/teams")
+@login_required
+def teams_view(league_id):
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    standing_list = get_standings(league_id, league.season_year)
+    # Map team_id -> standing for easy lookup
+    standing_map = {s.team_id: s for s in standing_list}
+
+    return render_template("matchups/teams.html",
+                           league=league,
+                           teams=teams,
+                           standing_map=standing_map)
+
+
+@matchups_bp.route("/<int:league_id>/results")
+@login_required
+def results_view(league_id):
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    year = league.season_year
+    rounds = get_fixture(league_id, year)
+    is_commissioner = league.commissioner_id == current_user.id
+
+    # Find the most recent completed round
+    latest_completed = 0
+    for rnd_num, fixtures in rounds.items():
+        if any(f.status == "completed" for f in fixtures):
+            latest_completed = max(latest_completed, rnd_num)
+
+    return render_template("matchups/results.html",
+                           league=league,
+                           rounds=rounds,
+                           latest_completed=latest_completed,
+                           is_commissioner=is_commissioner)
+
+
 @matchups_bp.route("/<int:league_id>/finals")
 @login_required
 def finals_view(league_id):
