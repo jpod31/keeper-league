@@ -32,15 +32,21 @@ def _sc_average_scores(players: List[Player]) -> List[float]:
 
 
 def _age_factor_scores(players: List[Player]) -> List[float]:
-    """Keeper league longevity: younger = more years of keeper value."""
+    """Keeper league longevity: younger = more years of keeper value.
+
+    Uses a steep power curve so the penalty accelerates sharply after ~27.
+    Linear base raised to the power of 1.8 means:
+      18yo → 1.00,  22yo → 0.67,  25yo → 0.45,
+      28yo → 0.27,  31yo → 0.14,  34yo → 0.05,  38yo → 0.00
+    """
     scores: List[float] = []
     for p in players:
         if p.age is None:
             scores.append(0.5)
             continue
         age = max(min(p.age, 38), 18)
-        # Linear: 18yo = 1.0, 38yo = 0.0
-        scores.append((38 - age) / 20.0)
+        linear = (38 - age) / 20.0
+        scores.append(linear ** 1.8)
     return scores
 
 
@@ -500,7 +506,7 @@ def compute_historical_draft_scores(
 
         if age_that_year is not None:
             clamped = max(min(age_that_year, 38), 18)
-            age_score = (38 - clamped) / 20.0
+            age_score = ((38 - clamped) / 20.0) ** 1.8
         else:
             age_score = 0.5
 
@@ -528,14 +534,14 @@ def compute_historical_draft_scores(
         else:
             rp_score = 0.5  # neutral if no rating data
 
-        # Weighted composite (6 factors)
+        # Weighted composite (6 factors — matches DRAFT_WEIGHTS in config.py)
         draft_score = (
-            0.30 * sc_score
-            + 0.12 * age_score
+            0.28 * sc_score
+            + 0.22 * age_score
             + 0.12 * pos_score
             + 0.12 * traj_score
-            + 0.12 * dur_score
-            + 0.22 * rp_score
+            + 0.08 * dur_score
+            + 0.18 * rp_score
         )
 
         results.append({

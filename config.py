@@ -37,12 +37,12 @@ POSITIONS = {
 
 # ---------- Draft model weights (must sum to 1.0) ----------
 DRAFT_WEIGHTS = {
-    "sc_average": 0.30,
-    "age_factor": 0.12,
+    "sc_average": 0.28,
+    "age_factor": 0.22,
     "positional_scarcity": 0.12,
     "trajectory": 0.12,
-    "durability": 0.12,
-    "rating_potential": 0.22,
+    "durability": 0.08,
+    "rating_potential": 0.18,
 }
 
 # ---------- Age curve (legacy — kept for reference) ----------
