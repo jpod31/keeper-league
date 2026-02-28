@@ -93,7 +93,7 @@
         </div>
         {% if is_commissioner %}
           <div class="d-flex gap-2 mt-3 flex-wrap">
-            <a href="{{ url_for('leagues.settings', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
               <i class="bi bi-gear me-1"></i>League Settings
             </a>
             <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm sh-btn-draft">
@@ -376,7 +376,7 @@
 
         {% if is_commissioner %}
           <div class="d-flex gap-2 mt-4 flex-wrap">
-            <a href="{{ url_for('matchups.fixture_list', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
               <i class="bi bi-calendar3 me-1"></i>Fixture
             </a>
           </div>
@@ -599,7 +599,7 @@
         {% endif %}
         {% if is_commissioner %}
           <div class="d-flex gap-2 mt-3 flex-wrap">
-            <a href="{{ url_for('matchups.fixture_list', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
               <i class="bi bi-calendar3 me-1"></i>View Fixture
             </a>
           </div>

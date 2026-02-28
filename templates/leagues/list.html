@@ -128,7 +128,7 @@
               </span>
               <div class="d-flex align-items-center gap-2">
                 <span class="badge" style="background:rgba(88,166,255,.12);color:#58a6ff;font-size:.7rem;">{{ d.league.name }}</span>
-                <a href="{{ url_for('trades.trade_list', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">View</a>
+                <a href="{{ url_for('trades.trade_center', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">View</a>
               </div>
             </div>
           {% endfor %}
