@@ -159,6 +159,21 @@
         </div>
       </div>
 
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-calculator me-2" style="color:#d29922;"></i>Scoring System</h5>
+          <a href="{{ url_for('leagues.league_scoring', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil me-1"></i>Configure Scoring
+          </a>
+        </div>
+        <div class="card-body py-3">
+          <div class="d-flex align-items-center gap-3">
+            <span class="badge" style="background:rgba(210,153,34,.15);color:#d29922;font-size:.75rem;padding:4px 10px;">{{ league.scoring_type|default('supercoach')|replace('_', ' ')|title }}</span>
+            <span style="font-size:.75rem;color:#8b949e;">Scoring type, custom stat weights, and hybrid configuration</span>
+          </div>
+        </div>
+      </div>
+
       {# ── Mid-Season (expandable toggle) ── #}
       <div class="card mb-4">
         <div class="settings-section-header {{ 'section-active' if season_config and season_config.mid_season_draft_enabled }}" id="midSeasonHeader">
