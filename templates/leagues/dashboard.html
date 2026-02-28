@@ -187,6 +187,21 @@
           {% endfor %}
         </div>
       </div>
+    {% elif league.scoring_type == 'ultimate_footy' and scoring_rules %}
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+            <i class="bi bi-trophy me-2" style="color:#d29922;"></i>UF Categories ({{ scoring_rules|length }})
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2">
+            {% for stat in scoring_rules.keys() %}
+              <span class="badge" style="background:#21262d;color:#c9d1d9;font-weight:500;font-size:.75rem;">{{ stat.replace('_', ' ')|title }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
     {% endif %}
   </div>
 </div>

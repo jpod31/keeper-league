@@ -33,6 +33,40 @@
   </div>
 </div>
 
+{% if uf_breakdown %}
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-trophy me-2" style="color:#d29922;"></i>Category Breakdown</h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0 uf-breakdown">
+      <thead>
+        <tr>
+          <th style="width:40%;">{{ fixture.home_team.name }}</th>
+          <th class="text-center" style="width:20%;">Stat</th>
+          <th class="text-end" style="width:40%;">{{ fixture.away_team.name }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in uf_breakdown %}
+        <tr>
+          <td class="{{ 'uf-winner' if row.winner == 'home' else ('uf-loser' if row.winner == 'away' else '') }}">
+            {{ row.home }}
+            {% if row.winner == 'home' %}<i class="bi bi-check-circle-fill ms-1" style="font-size:.7rem;"></i>{% endif %}
+          </td>
+          <td class="text-center" style="color:#8b949e;font-size:.8rem;">{{ row.stat.replace('_', ' ')|title }}</td>
+          <td class="text-end {{ 'uf-winner' if row.winner == 'away' else ('uf-loser' if row.winner == 'home' else '') }}">
+            {% if row.winner == 'away' %}<i class="bi bi-check-circle-fill me-1" style="font-size:.7rem;"></i>{% endif %}
+            {{ row.away }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 <div class="row g-3">
   <div class="col-md-6">
     <div class="card">

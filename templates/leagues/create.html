@@ -73,6 +73,7 @@
                     <option value="afl_fantasy" {{ 'selected' if form.get('scoring_type') == 'afl_fantasy' else '' }}>AFL Fantasy</option>
                     <option value="custom" {{ 'selected' if form.get('scoring_type') == 'custom' else '' }}>Custom</option>
                     <option value="hybrid" {{ 'selected' if form.get('scoring_type') == 'hybrid' else '' }}>Hybrid</option>
+                    <option value="ultimate_footy" {{ 'selected' if form.get('scoring_type') == 'ultimate_footy' else '' }}>Ultimate Footy</option>
                   </select>
                 </div>
                 <div class="col-6" id="hybrid_base_group" style="{{ '' if form.get('scoring_type') == 'hybrid' else 'display:none' }}">
@@ -119,7 +120,9 @@
                   </h6>
                   <div class="d-flex gap-2">
                     {% for key, preset in scoring_presets.items() %}
+                      {% if key != 'uf_standard' %}
                       <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadCreatePreset('{{ key }}')">{{ preset.label }}</button>
+                      {% endif %}
                     {% endfor %}
                   </div>
                 </div>
@@ -128,6 +131,35 @@
                   <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCreateRule()" style="font-size:.8rem;">
                     <i class="bi bi-plus-lg me-1"></i>Add Rule
                   </button>
+                </div>
+              </div>
+
+              {# Ultimate Footy Category Picker #}
+              <div id="uf_builder" class="card mb-3" style="{{ '' if form.get('scoring_type') == 'ultimate_footy' else 'display:none' }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0 fw-bold" style="font-size:.85rem;">
+                    <i class="bi bi-trophy me-2" style="color:#d29922;"></i>Stat Categories to Compare
+                  </h6>
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadCreateUfPreset('standard')">UF Standard</button>
+                    <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadCreateUfPreset('all')">All Stats</button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <p class="text-secondary mb-3" style="font-size:.8rem;">Each selected stat = 1 point to the team with the higher total.</p>
+                  {% for cat_name, cat_stats in stat_categories.items() %}
+                    {% if cat_name != 'Fantasy Scores' %}
+                    <div class="stat-category-header" style="font-size:.75rem;font-weight:600;color:#58a6ff;text-transform:uppercase;letter-spacing:.5px;margin-top:.75rem;margin-bottom:.5rem;border-bottom:1px solid #21262d;padding-bottom:.25rem;">{{ cat_name }}</div>
+                    <div class="uf-cat-grid">
+                      {% for stat in cat_stats %}
+                        <label class="uf-cat-item">
+                          <input type="checkbox" name="uf_category" value="{{ stat }}">
+                          <span>{{ stat.replace('_', ' ')|title }}</span>
+                        </label>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  {% endfor %}
                 </div>
               </div>
             </div>
@@ -310,6 +342,7 @@
 const CREATE_STATS = {{ available_stats|tojson }};
 const CREATE_DEFAULTS = {{ default_scoring|tojson }};
 const CREATE_PRESETS = {{ scoring_presets|tojson }};
+const CREATE_DEFAULT_UF = {{ default_uf_categories|tojson }};
 
 function updateWeightBadge(val) {
   document.getElementById('weight_badge').textContent = Math.round(val * 100) + '%';
@@ -320,9 +353,25 @@ function toggleScoringUI() {
   document.getElementById('hybrid_base_group').style.display = (st === 'hybrid') ? '' : 'none';
   document.getElementById('hybrid_weight_config').style.display = (st === 'hybrid') ? '' : 'none';
   document.getElementById('scoring_builder').style.display = (st === 'custom' || st === 'hybrid') ? '' : 'none';
+  document.getElementById('uf_builder').style.display = (st === 'ultimate_footy') ? '' : 'none';
   document.getElementById('builder_title').textContent = (st === 'hybrid') ? 'Bonus Rules' : 'Custom Scoring Rules';
   if (st === 'custom' && document.getElementById('create_rules_container').children.length === 0) {
     loadCreatePreset('_defaults');
+  }
+  if (st === 'ultimate_footy') {
+    // Auto-load standard UF categories if none checked
+    const checks = document.querySelectorAll('#uf_builder input[name="uf_category"]');
+    const anyChecked = Array.from(checks).some(cb => cb.checked);
+    if (!anyChecked) loadCreateUfPreset('standard');
+  }
+}
+
+function loadCreateUfPreset(preset) {
+  const checks = document.querySelectorAll('#uf_builder input[name="uf_category"]');
+  if (preset === 'standard') {
+    checks.forEach(cb => { cb.checked = CREATE_DEFAULT_UF.includes(cb.value); });
+  } else if (preset === 'all') {
+    checks.forEach(cb => { cb.checked = true; });
   }
 }
 

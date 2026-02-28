@@ -57,7 +57,9 @@
               <div class="fixture-team">{{ f.home_team.name }}</div>
               {% set hs = scores.get(f.home_team_id, {}) %}
               <div class="fixture-score score-animate" id="home-{{ f.id }}">{{ '%.0f'|format(hs.get('total_score', 0)) }}</div>
-              {% if hs.get('captain_bonus', 0) > 0 %}
+              {% if league.scoring_type == 'ultimate_footy' %}
+                <small class="text-secondary" style="font-size:.7rem;">categories won</small>
+              {% elif hs.get('captain_bonus', 0) > 0 %}
                 <small class="captain-bonus" id="home-cap-{{ f.id }}">+{{ '%.0f'|format(hs.captain_bonus) }} (C)</small>
               {% else %}
                 <small class="captain-bonus" id="home-cap-{{ f.id }}" style="display:none;"></small>
@@ -72,7 +74,9 @@
               <div class="fixture-team">{{ f.away_team.name }}</div>
               {% set aws = scores.get(f.away_team_id, {}) %}
               <div class="fixture-score score-animate" id="away-{{ f.id }}">{{ '%.0f'|format(aws.get('total_score', 0)) }}</div>
-              {% if aws.get('captain_bonus', 0) > 0 %}
+              {% if league.scoring_type == 'ultimate_footy' %}
+                <small class="text-secondary" style="font-size:.7rem;">categories won</small>
+              {% elif aws.get('captain_bonus', 0) > 0 %}
                 <small class="captain-bonus" id="away-cap-{{ f.id }}">+{{ '%.0f'|format(aws.captain_bonus) }} (C)</small>
               {% else %}
                 <small class="captain-bonus" id="away-cap-{{ f.id }}" style="display:none;"></small>

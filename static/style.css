@@ -1997,3 +1997,80 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .timeline-label { font-size: .55rem; }
   .timeline-node { width: 14px; height: 14px; }
 }
+
+/* ── Simple / Advanced toggle ── */
+.scoring-mode-toggle {
+  display: inline-flex;
+  background: #21262d;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #30363d;
+}
+.scoring-mode-toggle .toggle-btn {
+  padding: 3px 12px;
+  font-size: .75rem;
+  font-weight: 500;
+  color: #8b949e;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+}
+.scoring-mode-toggle .toggle-btn.active {
+  background: #30363d;
+  color: #c9d1d9;
+}
+.scoring-mode-toggle .toggle-btn:hover:not(.active) {
+  color: #c9d1d9;
+}
+
+/* ── UF Category Picker ── */
+.uf-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px;
+  margin-bottom: .5rem;
+}
+.uf-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .8rem;
+  color: #c9d1d9;
+  transition: background .15s;
+}
+.uf-cat-item:hover {
+  background: #21262d;
+}
+.uf-cat-item input[type="checkbox"] {
+  accent-color: #d29922;
+}
+
+/* ── UF Breakdown Table ── */
+.uf-breakdown {
+  color: #c9d1d9;
+  font-size: .85rem;
+}
+.uf-breakdown thead th {
+  background: #161b22;
+  border-bottom-color: #30363d;
+  color: #8b949e;
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  padding: .5rem .75rem;
+}
+.uf-breakdown tbody td {
+  border-bottom-color: #21262d;
+  padding: .4rem .75rem;
+}
+.uf-winner {
+  color: #3fb950;
+  font-weight: 600;
+}
+.uf-loser {
+  color: #484f58;
+}

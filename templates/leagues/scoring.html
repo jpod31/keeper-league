@@ -3,7 +3,7 @@
 {% block title %}Scoring — {{ league.name }}{% endblock %}
 {% block league_content %}
 <style>
-  .scoring-card { cursor:pointer; border:2px solid #30363d; border-radius:8px; padding:1.25rem; transition:all .15s; }
+  .scoring-card { cursor:pointer; border:2px solid #30363d; border-radius:8px; padding:1.25rem; transition:all .15s; text-align:center; }
   .scoring-card:hover { border-color:#58a6ff; }
   .scoring-card.active { border-color:#58a6ff; background:#161b2280; }
   .scoring-card .card-icon { font-size:1.5rem; margin-bottom:.5rem; }
@@ -21,34 +21,41 @@
     </div>
 
     <form method="POST">
-      {# ── Scoring Type Cards ── #}
+      {# ── Scoring Type Cards (5 cards) ── #}
       <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-lg">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'supercoach' }}" onclick="selectScoring('supercoach')">
             <div class="card-icon" style="color:#3fb950;"><i class="bi bi-shield-check"></i></div>
             <h6>SuperCoach</h6>
             <p>Official SC scores</p>
           </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-lg">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'afl_fantasy' }}" onclick="selectScoring('afl_fantasy')">
             <div class="card-icon" style="color:#58a6ff;"><i class="bi bi-star"></i></div>
             <h6>AFL Fantasy</h6>
             <p>Official AF scores</p>
           </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-lg">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'custom' }}" onclick="selectScoring('custom')">
             <div class="card-icon" style="color:#f0883e;"><i class="bi bi-sliders"></i></div>
             <h6>Custom</h6>
             <p>Build your own formula</p>
           </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-lg">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'hybrid' }}" onclick="selectScoring('hybrid')">
             <div class="card-icon" style="color:#bc8cff;"><i class="bi bi-layers"></i></div>
             <h6>Hybrid</h6>
-            <p>Official base + custom bonuses</p>
+            <p>Base + custom bonuses</p>
+          </div>
+        </div>
+        <div class="col-6 col-lg">
+          <div class="scoring-card {{ 'active' if league.scoring_type == 'ultimate_footy' }}" onclick="selectScoring('ultimate_footy')">
+            <div class="card-icon" style="color:#d29922;"><i class="bi bi-trophy"></i></div>
+            <h6>Ultimate Footy</h6>
+            <p>Head-to-head categories</p>
           </div>
         </div>
       </div>
@@ -65,6 +72,14 @@
         <div class="card-body">
           <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-star me-2" style="color:#58a6ff;"></i>AFL Fantasy Scoring</h5>
           <p class="text-secondary mb-0" style="font-size:.8rem;">Uses official AFL Fantasy scores. No configuration needed — scores are stored alongside SuperCoach data.</p>
+        </div>
+      </div>
+
+      {# ── Ultimate Footy info ── #}
+      <div id="info-ultimate_footy" class="card mb-4" style="{{ '' if league.scoring_type == 'ultimate_footy' else 'display:none' }}">
+        <div class="card-body">
+          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-trophy me-2" style="color:#d29922;"></i>Ultimate Footy</h5>
+          <p class="text-secondary mb-0" style="font-size:.8rem;">Teams compete head-to-head on individual stat categories. For each stat, the team with the higher total wins 1 point. The team winning the most categories wins the fixture (e.g. 8&ndash;5).</p>
         </div>
       </div>
 
@@ -115,13 +130,22 @@
 
       {# ── Custom / Hybrid Rules Builder ── #}
       <div id="custom-rules" class="card mb-4" style="{{ '' if league.scoring_type in ('custom', 'hybrid') else 'display:none' }}">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <span id="rules-title">{{ 'Bonus Rules' if league.scoring_type == 'hybrid' else 'Custom Scoring Rules' }}</span>
-          </h5>
-          <div class="d-flex gap-2">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-3">
+            <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+              <span id="rules-title">{{ 'Bonus Rules' if league.scoring_type == 'hybrid' else 'Custom Scoring Rules' }}</span>
+            </h5>
+            {# ── Simple / Advanced Toggle ── #}
+            <div class="scoring-mode-toggle">
+              <button type="button" class="toggle-btn active" id="toggle-simple" onclick="setAdvancedMode(false)">Simple</button>
+              <button type="button" class="toggle-btn" id="toggle-advanced" onclick="setAdvancedMode(true)">Advanced</button>
+            </div>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
             {% for key, preset in scoring_presets.items() %}
+              {% if key != 'uf_standard' %}
               <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadPreset('{{ key }}')">{{ preset.label }}</button>
+              {% endif %}
             {% endfor %}
           </div>
         </div>
@@ -140,7 +164,7 @@
               {% if stat in rules_to_show %}
                 <div class="row g-2 mb-2 align-items-center rule-row">
                   <div class="col-6">
-                    <select class="form-select form-select-sm" name="stat_column">
+                    <select class="form-select form-select-sm stat-select" name="stat_column">
                       {% for s in available_stats %}
                         <option value="{{ s }}" {{ 'selected' if s == stat }}>{{ s.replace('_', ' ')|title }}</option>
                       {% endfor %}
@@ -166,7 +190,7 @@
             {% if not ns.found %}
               <div class="row g-2 mb-2 align-items-center rule-row">
                 <div class="col-6">
-                  <select class="form-select form-select-sm" name="stat_column">
+                  <select class="form-select form-select-sm stat-select" name="stat_column">
                     {% for s in available_stats %}
                       <option value="{{ s }}" {{ 'selected' if s == stat }}>{{ s.replace('_', ' ')|title }}</option>
                     {% endfor %}
@@ -190,6 +214,35 @@
         </div>
       </div>
 
+      {# ── Ultimate Footy Category Picker ── #}
+      <div id="uf-categories" class="card mb-4" style="{{ '' if league.scoring_type == 'ultimate_footy' else 'display:none' }}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold" style="font-size:.95rem;">Stat Categories to Compare</h5>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadUfPreset('standard')">UF Standard</button>
+            <button type="button" class="btn btn-outline-secondary preset-btn" onclick="loadUfPreset('all')">All Stats</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary mb-3" style="font-size:.8rem;">Select the stat categories teams will compete on each round. Each selected stat = 1 point to the team with the higher total.</p>
+          {% set uf_active = scoring_rules if (league.scoring_type == 'ultimate_footy' and scoring_rules) else {} %}
+          {% for cat_name, cat_stats in stat_categories.items() %}
+            {% if cat_name != 'Fantasy Scores' %}
+            <div class="stat-category-header">{{ cat_name }}</div>
+            <div class="uf-cat-grid">
+              {% for stat in cat_stats %}
+                <label class="uf-cat-item">
+                  <input type="checkbox" name="uf_category" value="{{ stat }}"
+                         {{ 'checked' if stat in uf_active }}>
+                  <span>{{ stat.replace('_', ' ')|title }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
       <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Scoring</button>
         <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}" class="btn btn-outline-secondary">Cancel</a>
@@ -205,28 +258,75 @@ const STATS = {{ available_stats|tojson }};
 const DEFAULTS = {{ default_scoring|tojson }};
 const PRESETS = {{ scoring_presets|tojson }};
 const STAT_CATEGORIES = {{ stat_categories|tojson }};
+const DEFAULT_UF = {{ default_uf_categories|tojson }};
+
+const CORE_STATS = STAT_CATEGORIES['Core'] || [];
+let advancedMode = false;
+
+function buildStatOptions(advanced, selectedStat) {
+  if (advanced) {
+    // Show all stats grouped by category
+    let html = '';
+    for (const [cat, stats] of Object.entries(STAT_CATEGORIES)) {
+      html += `<optgroup label="${cat}">`;
+      stats.forEach(s => {
+        const label = s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        html += `<option value="${s}" ${s === selectedStat ? 'selected' : ''}>${label}</option>`;
+      });
+      html += '</optgroup>';
+    }
+    return html;
+  } else {
+    // Show Core stats only
+    return CORE_STATS.map(s => {
+      const label = s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return `<option value="${s}" ${s === selectedStat ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+  }
+}
+
+function setAdvancedMode(adv) {
+  advancedMode = adv;
+  document.getElementById('toggle-simple').classList.toggle('active', !adv);
+  document.getElementById('toggle-advanced').classList.toggle('active', adv);
+  // Rebuild all existing select dropdowns
+  document.querySelectorAll('#rules-container .stat-select').forEach(sel => {
+    const current = sel.value;
+    sel.innerHTML = buildStatOptions(adv, current);
+    // If current value is not in simple mode, keep it visible (option stays even if not in list)
+    if (!adv && !CORE_STATS.includes(current)) {
+      const label = current.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const extra = document.createElement('option');
+      extra.value = current;
+      extra.textContent = label;
+      extra.selected = true;
+      sel.prepend(extra);
+    }
+  });
+}
 
 function selectScoring(type) {
   document.getElementById('scoring_type').value = type;
   // Update card styling
   document.querySelectorAll('.scoring-card').forEach(c => c.classList.remove('active'));
   event.currentTarget.classList.add('active');
-  // Toggle visibility
-  ['supercoach','afl_fantasy','custom','hybrid'].forEach(t => {
+  // Toggle visibility of info sections
+  ['supercoach','afl_fantasy','custom','hybrid','ultimate_footy'].forEach(t => {
     const info = document.getElementById('info-' + t);
     if (info) info.style.display = (t === type) ? '' : 'none';
   });
   document.getElementById('hybrid-base-section').style.display = (type === 'hybrid') ? '' : 'none';
   document.getElementById('custom-rules').style.display = (type === 'custom' || type === 'hybrid') ? '' : 'none';
+  document.getElementById('uf-categories').style.display = (type === 'ultimate_footy') ? '' : 'none';
   document.getElementById('rules-title').textContent = (type === 'hybrid') ? 'Bonus Rules' : 'Custom Scoring Rules';
 }
 
 function addRule() {
   const container = document.getElementById('rules-container');
-  const opts = STATS.map(s => `<option value="${s}">${s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>`).join('');
+  const opts = buildStatOptions(advancedMode, '');
   container.insertAdjacentHTML('beforeend', `
     <div class="row g-2 mb-2 align-items-center rule-row">
-      <div class="col-6"><select class="form-select form-select-sm" name="stat_column">${opts}</select></div>
+      <div class="col-6"><select class="form-select form-select-sm stat-select" name="stat_column">${opts}</select></div>
       <div class="col-4"><input type="number" class="form-control form-control-sm" name="points_per" value="1" step="0.5"></div>
       <div class="col-2"><button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;" onclick="this.closest('.rule-row').remove()"><i class="bi bi-x-lg"></i></button></div>
     </div>
@@ -238,16 +338,38 @@ function loadPreset(key) {
   if (!preset) return;
   const container = document.getElementById('rules-container');
   container.innerHTML = '';
+  // Check if preset uses non-Core stats
+  const usesAdvanced = Object.keys(preset.rules).some(s => !CORE_STATS.includes(s));
+  if (usesAdvanced && !advancedMode) setAdvancedMode(true);
   for (const [stat, pts] of Object.entries(preset.rules)) {
-    const opts = STATS.map(s => `<option value="${s}" ${s === stat ? 'selected' : ''}>${s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>`).join('');
+    const opts = buildStatOptions(advancedMode, stat);
     container.insertAdjacentHTML('beforeend', `
       <div class="row g-2 mb-2 align-items-center rule-row">
-        <div class="col-6"><select class="form-select form-select-sm" name="stat_column">${opts}</select></div>
+        <div class="col-6"><select class="form-select form-select-sm stat-select" name="stat_column">${opts}</select></div>
         <div class="col-4"><input type="number" class="form-control form-control-sm" name="points_per" value="${pts}" step="0.5"></div>
         <div class="col-2"><button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;" onclick="this.closest('.rule-row').remove()"><i class="bi bi-x-lg"></i></button></div>
       </div>
     `);
   }
 }
+
+function loadUfPreset(preset) {
+  const checks = document.querySelectorAll('#uf-categories input[name="uf_category"]');
+  if (preset === 'standard') {
+    checks.forEach(cb => { cb.checked = DEFAULT_UF.includes(cb.value); });
+  } else if (preset === 'all') {
+    checks.forEach(cb => { cb.checked = true; });
+  }
+}
+
+// On page load: auto-switch to Advanced if existing rules use non-Core stats
+(function() {
+  const existingSelects = document.querySelectorAll('#rules-container .stat-select');
+  let hasAdvanced = false;
+  existingSelects.forEach(sel => {
+    if (!CORE_STATS.includes(sel.value)) hasAdvanced = true;
+  });
+  if (hasAdvanced) setAdvancedMode(true);
+})();
 </script>
 {% endblock %}

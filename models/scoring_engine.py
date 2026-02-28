@@ -162,7 +162,7 @@ def _compute_score_from_stat(stat, league_id, scoring_type, hybrid_base=None):
         else:  # "points" — weighted base + flat custom bonus
             return round(base * weight + custom_total, 1)
 
-    # Custom scoring
+    # Custom scoring (also used for ultimate_footy per-player contribution display)
     rules = CustomScoringRule.query.filter_by(league_id=league_id).all()
     total = 0.0
     for rule in rules:
@@ -268,6 +268,94 @@ def get_standings(league_id, year):
     )
 
 
+def score_round_ultimate(league_id, afl_round, year):
+    """Score all fixtures for an Ultimate Footy league.
+
+    Instead of summing player points, teams compete head-to-head on stat
+    categories.  For each category the team with the higher aggregate wins 1
+    point.  Ties award 0 to both.
+
+    Updates Fixture scores directly and saves RoundScore per team.
+    Returns dict {team_id: categories_won}.
+    """
+    categories = [r.stat_column for r in CustomScoringRule.query.filter_by(league_id=league_id).all()]
+    if not categories:
+        return {}
+
+    fixtures = Fixture.query.filter_by(
+        league_id=league_id, afl_round=afl_round, year=year
+    ).all()
+
+    scores = {}
+    for f in fixtures:
+        breakdown = _compute_uf_fixture(f, league_id, afl_round, year, categories)
+        home_wins = sum(1 for b in breakdown if b["winner"] == "home")
+        away_wins = sum(1 for b in breakdown if b["winner"] == "away")
+
+        f.home_score = home_wins
+        f.away_score = away_wins
+
+        # Save RoundScore for each team
+        _save_round_score(f.home_team_id, afl_round, year, home_wins, 0,
+                          {"stat_totals": {b["stat"]: b["home"] for b in breakdown},
+                           "categories_won": home_wins})
+        _save_round_score(f.away_team_id, afl_round, year, away_wins, 0,
+                          {"stat_totals": {b["stat"]: b["away"] for b in breakdown},
+                           "categories_won": away_wins})
+
+        scores[f.home_team_id] = home_wins
+        scores[f.away_team_id] = away_wins
+
+    db.session.commit()
+    return scores
+
+
+def _compute_uf_fixture(fixture, league_id, afl_round, year, categories):
+    """Compute per-category breakdown for a single UF fixture.
+
+    Returns list of dicts: [{"stat": ..., "home": total, "away": total, "winner": "home"|"away"|"tie"}, ...]
+    """
+    home_roster = FantasyRoster.query.filter_by(team_id=fixture.home_team_id, is_active=True).all()
+    away_roster = FantasyRoster.query.filter_by(team_id=fixture.away_team_id, is_active=True).all()
+
+    home_ids = [r.player_id for r in home_roster if not r.is_benched and not r.is_emergency]
+    away_ids = [r.player_id for r in away_roster if not r.is_benched and not r.is_emergency]
+
+    home_stats = PlayerStat.query.filter(
+        PlayerStat.player_id.in_(home_ids),
+        PlayerStat.year == year,
+        PlayerStat.round == afl_round,
+    ).all() if home_ids else []
+
+    away_stats = PlayerStat.query.filter(
+        PlayerStat.player_id.in_(away_ids),
+        PlayerStat.year == year,
+        PlayerStat.round == afl_round,
+    ).all() if away_ids else []
+
+    breakdown = []
+    for cat in categories:
+        home_total = sum(getattr(s, cat, 0) or 0 for s in home_stats)
+        away_total = sum(getattr(s, cat, 0) or 0 for s in away_stats)
+        if home_total > away_total:
+            winner = "home"
+        elif away_total > home_total:
+            winner = "away"
+        else:
+            winner = "tie"
+        breakdown.append({"stat": cat, "home": home_total, "away": away_total, "winner": winner})
+
+    return breakdown
+
+
+def compute_uf_breakdown(fixture, league_id):
+    """On-the-fly UF category breakdown for display (matchup detail page)."""
+    categories = [r.stat_column for r in CustomScoringRule.query.filter_by(league_id=league_id).all()]
+    if not categories:
+        return []
+    return _compute_uf_fixture(fixture, league_id, fixture.afl_round, fixture.year, categories)
+
+
 def finalize_round(league_id, afl_round, year):
     """End-of-round: score all teams, resolve fixtures, update standings.
 
@@ -275,19 +363,33 @@ def finalize_round(league_id, afl_round, year):
     Also advances finals if the completed fixture is a finals match.
     Returns the scores dict {team_id: total_score}.
     """
-    # 1. Score all teams (commits internally)
-    scores = score_round(league_id, afl_round, year)
+    league = db.session.get(League, league_id)
 
-    # 2. Update fixture results
-    fixtures = Fixture.query.filter_by(
-        league_id=league_id, afl_round=afl_round, year=year
-    ).all()
-    for f in fixtures:
-        f.home_score = scores.get(f.home_team_id, 0)
-        f.away_score = scores.get(f.away_team_id, 0)
-        f.status = "completed"
+    if league and league.scoring_type == "ultimate_footy":
+        # UF: score at fixture level (category wins)
+        scores = score_round_ultimate(league_id, afl_round, year)
+        # Fixtures already updated inside score_round_ultimate; mark completed
+        fixtures = Fixture.query.filter_by(
+            league_id=league_id, afl_round=afl_round, year=year
+        ).all()
+        for f in fixtures:
+            f.status = "completed"
+        db.session.commit()
+    else:
+        # Standard scoring path
+        # 1. Score all teams (commits internally)
+        scores = score_round(league_id, afl_round, year)
 
-    db.session.commit()
+        # 2. Update fixture results
+        fixtures = Fixture.query.filter_by(
+            league_id=league_id, afl_round=afl_round, year=year
+        ).all()
+        for f in fixtures:
+            f.home_score = scores.get(f.home_team_id, 0)
+            f.away_score = scores.get(f.away_team_id, 0)
+            f.status = "completed"
+
+        db.session.commit()
 
     # 3. Recalculate standings (only from regular-season fixtures)
     recalculate_standings(league_id, year)

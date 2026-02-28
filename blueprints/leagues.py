@@ -153,7 +153,8 @@ def league_create():
                                    available_stats=config.AVAILABLE_STATS,
                                    default_scoring=config.DEFAULT_CUSTOM_SCORING,
                                    stat_categories=config.STAT_CATEGORIES,
-                                   scoring_presets=config.SCORING_PRESETS)
+                                   scoring_presets=config.SCORING_PRESETS,
+                                   default_uf_categories=config.DEFAULT_UF_CATEGORIES)
 
         # Read formation fields
         def_count = request.form.get("def_count", type=int) or 5
@@ -193,7 +194,8 @@ def league_create():
                                    available_stats=config.AVAILABLE_STATS,
                                    default_scoring=config.DEFAULT_CUSTOM_SCORING,
                                    stat_categories=config.STAT_CATEGORIES,
-                                   scoring_presets=config.SCORING_PRESETS)
+                                   scoring_presets=config.SCORING_PRESETS,
+                                   default_uf_categories=config.DEFAULT_UF_CATEGORIES)
 
         # Hybrid weight/mode settings
         if scoring_type == "hybrid":
@@ -213,8 +215,13 @@ def league_create():
                 pass
         db.session.commit()
 
-        # Inline scoring rules (custom or hybrid)
-        if scoring_type in ("custom", "hybrid"):
+        # Inline scoring rules (custom, hybrid, or ultimate_footy)
+        if scoring_type == "ultimate_footy":
+            uf_stats = request.form.getlist("uf_category")
+            rules = {stat.strip(): 1 for stat in uf_stats if stat.strip()}
+            if rules:
+                set_custom_scoring(league.id, rules)
+        elif scoring_type in ("custom", "hybrid"):
             stat_cols = request.form.getlist("stat_column")
             stat_pts = request.form.getlist("points_per")
             rules = {}
@@ -281,7 +288,7 @@ def dashboard(league_id):
 
     teams = get_league_teams(league_id)
     is_commissioner = league.commissioner_id == current_user.id
-    scoring_rules = get_custom_scoring(league_id) if league.scoring_type in ("custom", "hybrid") else {}
+    scoring_rules = get_custom_scoring(league_id) if league.scoring_type in ("custom", "hybrid", "ultimate_footy") else {}
 
     return render_template("leagues/dashboard.html",
                            league=league,
@@ -493,7 +500,11 @@ def league_scoring(league_id):
             league.hybrid_custom_mode = request.form.get("hybrid_custom_mode", "points")
         db.session.commit()
 
-        if scoring_type in ("custom", "hybrid"):
+        if scoring_type == "ultimate_footy":
+            uf_stats = request.form.getlist("uf_category")
+            rules = {stat.strip(): 1 for stat in uf_stats if stat.strip()}
+            set_custom_scoring(league_id, rules)
+        elif scoring_type in ("custom", "hybrid"):
             stat_cols = request.form.getlist("stat_column")
             stat_pts = request.form.getlist("points_per")
             rules = {}
@@ -518,7 +529,8 @@ def league_scoring(league_id):
                            default_scoring=config.DEFAULT_CUSTOM_SCORING,
                            stat_categories=config.STAT_CATEGORIES,
                            scoring_presets=config.SCORING_PRESETS,
-                           scoring_type_labels=config.SCORING_TYPE_LABELS)
+                           scoring_type_labels=config.SCORING_TYPE_LABELS,
+                           default_uf_categories=config.DEFAULT_UF_CATEGORIES)
 
 
 @leagues_bp.route("/<int:league_id>/sync-now", methods=["POST"])

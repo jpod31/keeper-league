@@ -99,9 +99,15 @@ def matchup_detail(league_id, fixture_id):
         flash("Matchup not found.", "warning")
         return redirect(url_for("matchups.fixture_view", league_id=league_id))
 
+    uf_breakdown = None
+    if league.scoring_type == "ultimate_footy" and fixture.status == "completed":
+        from models.scoring_engine import compute_uf_breakdown
+        uf_breakdown = compute_uf_breakdown(fixture, league_id)
+
     return render_template("matchups/detail.html",
                            league=league,
-                           fixture=fixture)
+                           fixture=fixture,
+                           uf_breakdown=uf_breakdown)
 
 
 @matchups_bp.route("/<int:league_id>/standings")

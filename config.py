@@ -149,6 +149,13 @@ DEFAULT_CUSTOM_SCORING = {
 TRADE_WINDOW_DURATION_WEEKS = 2
 MID_SEASON_TRADE_AFTER_ROUND = 12
 
+# ---------- Ultimate Footy default categories ----------
+DEFAULT_UF_CATEGORIES = [
+    "kicks", "handballs", "marks", "tackles", "goals", "behinds",
+    "hitouts", "contested_possessions", "clearances", "inside_fifties",
+    "rebounds", "frees_for", "frees_against",
+]
+
 # ---------- Scoring presets ----------
 SCORING_PRESETS = {
     "afl_fantasy_formula": {
@@ -197,6 +204,10 @@ SCORING_PRESETS = {
             "clangers": -2, "turnovers": -2,
         },
     },
+    "uf_standard": {
+        "label": "UF Standard",
+        "rules": {s: 1 for s in DEFAULT_UF_CATEGORIES},
+    },
 }
 
 # ---------- Stat categories for custom scoring UI ----------
@@ -225,6 +236,7 @@ SCORING_TYPE_LABELS = {
     "afl_fantasy": "AFL Fantasy",
     "custom": "Custom",
     "hybrid": "Hybrid",
+    "ultimate_footy": "Ultimate Footy",
 }
 
 TEAM_COLOURS = {

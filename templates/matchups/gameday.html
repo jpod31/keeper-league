@@ -60,7 +60,9 @@
     <div class="col-5">
       <div class="gameday-team-name">{{ my_team.name }}</div>
       <div class="gameday-score {{ 'gameday-winning' if my_score > opp_score else '' }}" id="hero-my-score">{{ '%.0f'|format(my_score) }}</div>
-      {% if my_captain_bonus > 0 %}
+      {% if league.scoring_type == 'ultimate_footy' %}
+        <div style="color:#8b949e;font-size:.7rem;">categories won</div>
+      {% elif my_captain_bonus > 0 %}
         <div class="captain-bonus" id="hero-my-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
       {% else %}
         <div class="captain-bonus" id="hero-my-cap" style="display:none;"></div>
@@ -72,7 +74,9 @@
     <div class="col-5">
       <div class="gameday-team-name">{{ opp_team.name }}</div>
       <div class="gameday-score {{ 'gameday-winning' if opp_score > my_score else '' }}" id="hero-opp-score">{{ '%.0f'|format(opp_score) }}</div>
-      {% if opp_captain_bonus > 0 %}
+      {% if league.scoring_type == 'ultimate_footy' %}
+        <div style="color:#8b949e;font-size:.7rem;">categories won</div>
+      {% elif opp_captain_bonus > 0 %}
         <div class="captain-bonus" id="hero-opp-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
       {% else %}
         <div class="captain-bonus" id="hero-opp-cap" style="display:none;"></div>

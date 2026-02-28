@@ -14,7 +14,7 @@ from models.database import (
     FantasyRoster, LiveScoringConfig, RoundScore, League,
     CustomScoringRule,
 )
-from models.scoring_engine import score_team_round
+from models.scoring_engine import score_team_round, _compute_uf_fixture
 from scrapers.squiggle import (
     get_games as squiggle_get_games,
     normalise_team_name,
@@ -223,49 +223,85 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
         if not league:
             continue
 
-        # Rescore each affected team
-        for team_id in team_ids:
-            score_team_round(team_id, league_id, afl_round, year, league.scoring_type, league.hybrid_base)
-
         # Update fixture scores for this league/round
         fixtures = Fixture.query.filter_by(
             league_id=league_id, year=year, afl_round=afl_round
         ).all()
 
-        league_data = {}
-        for f in fixtures:
-            home_rs = RoundScore.query.filter_by(
-                team_id=f.home_team_id, afl_round=afl_round, year=year
-            ).first()
-            away_rs = RoundScore.query.filter_by(
-                team_id=f.away_team_id, afl_round=afl_round, year=year
-            ).first()
+        if league.scoring_type == "ultimate_footy":
+            # UF: rescore at fixture level using stat category totals
+            categories = [r.stat_column for r in
+                          CustomScoringRule.query.filter_by(league_id=league_id).all()]
+            league_data = {}
+            for f in fixtures:
+                if categories:
+                    breakdown = _compute_uf_fixture(f, league_id, afl_round, year, categories)
+                    home_wins = sum(1 for b in breakdown if b["winner"] == "home")
+                    away_wins = sum(1 for b in breakdown if b["winner"] == "away")
+                else:
+                    home_wins = 0
+                    away_wins = 0
 
-            home_total = home_rs.total_score if home_rs else 0
-            away_total = away_rs.total_score if away_rs else 0
+                f.home_score = home_wins
+                f.away_score = away_wins
 
-            f.home_score = home_total
-            f.away_score = away_total
+                if all_complete:
+                    f.status = "completed"
+                elif f.status == "scheduled":
+                    f.status = "live"
 
-            # Auto-transition fixture status
-            if all_complete:
-                f.status = "completed"
-            elif f.status == "scheduled":
-                f.status = "live"
+                league_data[f.id] = {
+                    "fixture_id": f.id,
+                    "home_team_id": f.home_team_id,
+                    "away_team_id": f.away_team_id,
+                    "home_score": home_wins,
+                    "away_score": away_wins,
+                    "home_captain_bonus": 0,
+                    "away_captain_bonus": 0,
+                    "status": f.status,
+                }
 
-            league_data[f.id] = {
-                "fixture_id": f.id,
-                "home_team_id": f.home_team_id,
-                "away_team_id": f.away_team_id,
-                "home_score": home_total,
-                "away_score": away_total,
-                "home_captain_bonus": home_rs.captain_bonus if home_rs else 0,
-                "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
-                "status": f.status,
-            }
+            if league_data:
+                changed_data[league_id] = league_data
+        else:
+            # Standard scoring: rescore each affected team
+            for team_id in team_ids:
+                score_team_round(team_id, league_id, afl_round, year, league.scoring_type, league.hybrid_base)
 
-        if league_data:
-            changed_data[league_id] = league_data
+            league_data = {}
+            for f in fixtures:
+                home_rs = RoundScore.query.filter_by(
+                    team_id=f.home_team_id, afl_round=afl_round, year=year
+                ).first()
+                away_rs = RoundScore.query.filter_by(
+                    team_id=f.away_team_id, afl_round=afl_round, year=year
+                ).first()
+
+                home_total = home_rs.total_score if home_rs else 0
+                away_total = away_rs.total_score if away_rs else 0
+
+                f.home_score = home_total
+                f.away_score = away_total
+
+                # Auto-transition fixture status
+                if all_complete:
+                    f.status = "completed"
+                elif f.status == "scheduled":
+                    f.status = "live"
+
+                league_data[f.id] = {
+                    "fixture_id": f.id,
+                    "home_team_id": f.home_team_id,
+                    "away_team_id": f.away_team_id,
+                    "home_score": home_total,
+                    "away_score": away_total,
+                    "home_captain_bonus": home_rs.captain_bonus if home_rs else 0,
+                    "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
+                    "status": f.status,
+                }
+
+            if league_data:
+                changed_data[league_id] = league_data
 
     db.session.commit()
 
