@@ -1517,8 +1517,9 @@ th[style*="cursor"]:hover { color: #58a6ff; }
   border: none;
 }
 .lm-section:hover { box-shadow: 0 4px 20px rgba(0,0,0,.3); }
-.lm-section.lm-future { opacity: .7; }
-.lm-section.lm-future:hover { opacity: .85; }
+.lm-section.lm-future { opacity: .8; }
+.lm-section.lm-future:hover { opacity: .9; }
+.lm-section-body .text-secondary { color: #8b949e !important; }
 
 /* ── Section headers — vibrant solid backgrounds ── */
 .lm-section-header {
@@ -1603,9 +1604,9 @@ th[style*="cursor"]:hover { color: #58a6ff; }
 .lm-step-done    { background: #1a3a1a; color: #3fb950; }
 .lm-step-live    { background: #2d1800; color: #f0883e; }
 .lm-step-ready   { background: #0a1e3d; color: #58a6ff; }
-.lm-step-pending { background: #1c2128; color: #484f58; }
-.lm-step-disabled { background: #1c2128; color: #30363d; }
-.lm-step-disabled-block { opacity: .45; }
+.lm-step-pending { background: #1c2128; color: #6e7681; }
+.lm-step-disabled { background: #1c2128; color: #484f58; }
+.lm-step-disabled-block { opacity: .55; }
 
 /* ── Cards inside sections ── */
 .lm-card {

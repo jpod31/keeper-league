@@ -3,9 +3,14 @@
 {% block title %}Trade #{{ trade.id }} — {{ league.name }}{% endblock %}
 {% block league_content %}
 <div class="page-header">
-  <div class="page-breadcrumb"><a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">Season Hub</a> / <a href="{{ url_for('trades.trade_center', league_id=league.id) }}">Trades</a> / #{{ trade.id }}</div>
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">List Management</a> / <a href="{{ url_for('trades.trade_center', league_id=league.id) }}">Trades</a> / #{{ trade.id }}</div>
   <div class="d-flex justify-content-between align-items-start">
-    <h2>Trade Details</h2>
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary" style="padding:4px 10px;">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h2 class="mb-0">Trade Details</h2>
+    </div>
     <span class="status-pill status-{{ trade.status }}" style="font-size:.85rem;">{{ trade.status }}</span>
   </div>
 </div>

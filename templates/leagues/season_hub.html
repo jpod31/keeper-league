@@ -321,7 +321,7 @@
               {% endif %}
             </div>
             {% if mid_trade_status == 'active' and trade_window_dates.mid_close %}
-              <div class="lm-info-box mt-2" style="font-size:.8rem;color:#8b949e;">
+              <div class="lm-info-box mt-2" style="font-size:.8rem;color:#9198a1;">
                 <i class="bi bi-calendar-event me-1"></i>Closes {{ trade_window_dates.mid_close.strftime('%d %b %Y') }}
                 {% if trade_window_dates.mid_draft %}
                   &middot; Draft: {{ trade_window_dates.mid_draft.strftime('%d %b %Y') }}
@@ -357,8 +357,8 @@
             <div class="d-flex align-items-center gap-3">
               <div class="lm-step-icon lm-step-disabled"><i class="bi bi-x-lg"></i></div>
               <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#484f58;">Mid-Season Trade Window</h6>
-                <span style="font-size:.8rem;color:#484f58;">Disabled in league settings</span>
+                <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#8b949e;">Mid-Season Trade Window</h6>
+                <span style="font-size:.8rem;color:#6e7681;">Disabled in league settings</span>
               </div>
             </div>
           </div>
@@ -412,6 +412,12 @@
                   <i class="bi bi-person-dash me-1"></i>Manage Delists
                 </a>
               </div>
+              {% if delist_period and delist_period.closes_at and current_phase == 'midseason' %}
+                <div class="mt-2" style="font-size:.8rem;color:#9198a1;">
+                  <i class="bi bi-calendar-event me-1" style="color:#f0883e;"></i>
+                  Closes {{ delist_period.closes_at.strftime('%d %b %Y at %I:%M %p') }}
+                </div>
+              {% endif %}
             </div>
           {% endif %}
           {% if mid_draft_status in ('pending', 'active') and season_cfg and season_cfg.mid_season_draft_enabled %}
@@ -443,6 +449,19 @@
               </form>
             {% endif %}
           </div>
+        </div>
+
+        {# Quick links — always visible #}
+        <div class="d-flex gap-2 mt-3 flex-wrap" style="padding-top:.75rem;border-top:1px solid rgba(48,54,61,.6);">
+          <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left-right me-1"></i>Trade Center
+          </a>
+          <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-person-dash me-1"></i>Delist Hub
+          </a>
+          <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-search me-1"></i>Player Pool
+          </a>
         </div>
       </div>
     </div>
@@ -524,6 +543,12 @@
                   <i class="bi bi-person-dash me-1"></i>Manage Delists
                 </a>
               </div>
+              {% if delist_period and delist_period.closes_at and current_phase == 'offseason' %}
+                <div class="mt-2" style="font-size:.8rem;color:#9198a1;">
+                  <i class="bi bi-calendar-event me-1" style="color:#f0883e;"></i>
+                  Closes {{ delist_period.closes_at.strftime('%d %b %Y at %I:%M %p') }}
+                </div>
+              {% endif %}
             </div>
           {% endif %}
         </div>
@@ -575,8 +600,8 @@
             <div class="d-flex align-items-center gap-3">
               <div class="lm-step-icon lm-step-disabled"><i class="bi bi-x-lg"></i></div>
               <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#484f58;">SSP (Injury Replacements)</h6>
-                <span style="font-size:.8rem;color:#484f58;">Disabled in league settings</span>
+                <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#8b949e;">SSP (Injury Replacements)</h6>
+                <span style="font-size:.8rem;color:#6e7681;">Disabled in league settings</span>
               </div>
             </div>
           </div>
@@ -644,6 +669,22 @@
               <span class="text-secondary ms-2" style="font-size:.8rem;">Trades can be proposed now — they'll execute when the window opens</span>
             </div>
           {% endif %}
+        </div>
+
+        {# Quick links — always visible #}
+        <div class="d-flex gap-2 mt-3 flex-wrap" style="padding-top:.75rem;border-top:1px solid rgba(48,54,61,.6);">
+          <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left-right me-1"></i>Trade Center
+          </a>
+          <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-person-dash me-1"></i>Delist Hub
+          </a>
+          <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-list-check me-1"></i>Draft Setup
+          </a>
+          <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-search me-1"></i>Player Pool
+          </a>
         </div>
 
         {# Finish Off-Season #}

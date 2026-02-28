@@ -3,8 +3,13 @@
 {% block title %}Delist Period — {{ league.name }}{% endblock %}
 {% block league_content %}
 <div class="page-header">
-  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Delist</div>
-  <h2>Delist Period</h2>
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">List Management</a> / Delist</div>
+  <div class="d-flex align-items-center gap-3">
+    <a href="{{ url_for('leagues.season_hub', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary" style="padding:4px 10px;">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="mb-0">Delist Period</h2>
+  </div>
 </div>
 
 {% if not period %}
@@ -26,6 +31,13 @@
     <div>
       <strong style="color:#58a6ff;">Delist period is open</strong>
       <span class="text-secondary" style="font-size:.85rem;">&mdash; Each team must delist at least {{ period.min_delists }} player(s).</span>
+      {% if period.closes_at %}
+        <div class="mt-1" style="font-size:.8rem;">
+          <i class="bi bi-clock me-1" style="color:#f0883e;"></i>
+          <span style="color:#c9d1d9;">Closes {{ period.closes_at.strftime('%A, %d %b %Y at %I:%M %p') }}</span>
+          <span class="ms-2 fw-bold delist-countdown" data-target="{{ period.closes_at.isoformat() }}" style="color:#f0883e;"></span>
+        </div>
+      {% endif %}
     </div>
     {% if is_commissioner %}
       <form method="POST">
@@ -110,5 +122,28 @@
       </div>
     </div>
   </div>
+{% endif %}
+
+{% if period and period.closes_at %}
+<script>
+(function() {
+  document.querySelectorAll('.delist-countdown[data-target]').forEach(function(el) {
+    var target = new Date(el.getAttribute('data-target'));
+    (function tick() {
+      var now = new Date(), diff = target - now;
+      if (diff <= 0) { el.textContent = 'Closed'; return; }
+      var d = Math.floor(diff / 86400000);
+      var h = Math.floor((diff % 86400000) / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      var s = Math.floor((diff % 60000) / 1000);
+      var p = [];
+      if (d) p.push(d + 'd');
+      p.push(h + 'h', m + 'm', s + 's');
+      el.textContent = p.join(' ');
+      setTimeout(tick, 1000);
+    })();
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}
