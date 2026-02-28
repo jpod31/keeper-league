@@ -1582,6 +1582,174 @@ th[style*="cursor"]:hover { color: #58a6ff; }
 .sh-icon-finals { background: rgba(248,81,73,.15); color: #f85149; }
 .sh-icon-preseason { background: rgba(210,153,34,.15); color: #d29922; }
 
+/* ═══ Squad Page ═══ */
+
+/* Hero header */
+.squad-hero {
+  background: linear-gradient(135deg, rgba(22,27,34,.95), rgba(13,17,23,.8));
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.squad-hero-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.squad-hero-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #e6edf3;
+}
+.squad-hero-crumb {
+  font-size: .75rem;
+  color: #8b949e;
+  margin-bottom: .35rem;
+}
+.squad-hero-crumb a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+.squad-hero-crumb a:hover { text-decoration: underline; }
+.squad-hero-count {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: .7rem;
+  font-weight: 600;
+  background: rgba(88,166,255,.15);
+  color: #58a6ff;
+}
+.squad-hero-owner {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: .65rem;
+  font-weight: 600;
+  background: rgba(63,185,80,.15);
+  color: #3fb950;
+}
+.squad-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-shrink: 0;
+}
+
+/* Summary stat cards row */
+.squad-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+/* Position chip summary in stat card */
+.squad-pos-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding: .25rem 0;
+}
+.squad-pos-chip {
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: .3px;
+}
+.squad-chip-def { background: rgba(88,166,255,.15); color: #58a6ff; }
+.squad-chip-mid { background: rgba(188,140,255,.15); color: #bc8cff; }
+.squad-chip-fwd { background: rgba(240,136,62,.15); color: #f0883e; }
+.squad-chip-ruc { background: rgba(63,185,80,.15); color: #3fb950; }
+
+/* Table row position left-borders */
+.squad-row-def { border-left: 3px solid #58a6ff; }
+.squad-row-mid { border-left: 3px solid #bc8cff; }
+.squad-row-fwd { border-left: 3px solid #f0883e; }
+.squad-row-ruc { border-left: 3px solid #3fb950; }
+
+/* Row hover tint */
+#rosterTable tbody tr:hover { background: rgba(88,166,255,.04) !important; }
+
+/* Captain / VC inline badges */
+.squad-badge {
+  display: inline-block;
+  font-size: .55rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+  vertical-align: middle;
+  letter-spacing: .3px;
+}
+.squad-badge-cap {
+  background: linear-gradient(135deg, #d29922, #e8b84a);
+  color: #000;
+}
+.squad-badge-vc {
+  background: linear-gradient(135deg, #1f6feb, #58a6ff);
+  color: #fff;
+}
+
+/* SC Avg heat-map cell */
+.squad-sc {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: .8rem;
+}
+.squad-sc-elite { background: rgba(63,185,80,.15); color: #3fb950; }
+.squad-sc-good  { background: rgba(88,166,255,.15); color: #58a6ff; }
+.squad-sc-avg   { background: rgba(210,153,34,.15); color: #d29922; }
+.squad-sc-low   { background: rgba(248,81,73,.15); color: #f85149; }
+
+/* Acquired-via styled pills */
+.squad-acq {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .65rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.squad-acq-draft        { background: rgba(88,166,255,.12); color: #58a6ff; }
+.squad-acq-trade        { background: rgba(210,153,34,.12); color: #d29922; }
+.squad-acq-supplemental { background: rgba(63,185,80,.12); color: #3fb950; }
+.squad-acq-free_agent   { background: rgba(63,185,80,.12); color: #3fb950; }
+
+/* Sortable column headers */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color .15s;
+}
+th.sortable:hover { color: #58a6ff; }
+th.sort-asc::after  { content: ' \25B2'; font-size: .55rem; opacity: .7; }
+th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
+
+/* Squad mobile overrides */
+@media (max-width: 768px) {
+  .squad-hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+  }
+  .squad-hero-actions {
+    flex-wrap: wrap;
+    gap: .4rem;
+  }
+  .squad-stat-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  .squad-hide-mobile { display: none !important; }
+}
+
 /* ── Responsive utilities ── */
 @media (max-width: 768px) {
   .section-header { flex-direction: column; gap: .75rem; align-items: flex-start; }

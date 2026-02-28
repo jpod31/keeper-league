@@ -2,14 +2,27 @@
 {% set active_tab = 'team' %}
 {% block title %}{{ team.name }} — Squad{% endblock %}
 {% block league_content %}
-<div class="page-header">
-  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / {{ team.name }}</div>
-  <div class="d-flex justify-content-between align-items-start">
+
+{# ── Build roster lookup (player_id → roster entry) ── #}
+{% set roster_map = {} %}
+{% for r in roster %}{% if roster_map.update({r.player_id: r}) %}{% endif %}{% endfor %}
+
+{# ── Hero Header ── #}
+<div class="squad-hero">
+  <div class="squad-hero-inner">
     <div>
-      <h2>{{ team.name }}</h2>
-      <span style="font-size:.8rem;color:#8b949e;">{{ players|length }} players</span>
+      <div class="squad-hero-crumb">
+        <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / {{ team.name }}
+      </div>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <h2 class="squad-hero-title">{{ team.name }}</h2>
+        <span class="squad-hero-count">{{ players|length }} players</span>
+        {% if is_owner %}
+        <span class="squad-hero-owner">Your Team</span>
+        {% endif %}
+      </div>
     </div>
-    <div class="d-flex gap-2">
+    <div class="squad-hero-actions">
       {# List Management dropdown #}
       <div class="dropdown">
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
@@ -24,7 +37,7 @@
         </ul>
       </div>
       <a href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-graph-up me-1"></i>Stats</a>
-      {# View toggle — Field View is primary/prominent #}
+      {# View toggle #}
       <div class="btn-group btn-group-sm" role="group">
         <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}"
            class="btn btn-sm {{ 'btn-primary' if view|default('field') == 'field' else 'btn-outline-secondary' }}">
@@ -47,42 +60,93 @@
 {% endif %}
 
 {% if players %}
+  {# ── Compute Summary Stats ── #}
+  {% set ns = namespace(total_sc=0, sc_count=0, total_age=0, age_count=0,
+                        def_count=0, mid_count=0, fwd_count=0, ruc_count=0) %}
+  {% for p in players %}
+    {% if p.sc_avg %}
+      {% set ns.total_sc = ns.total_sc + p.sc_avg %}
+      {% set ns.sc_count = ns.sc_count + 1 %}
+    {% endif %}
+    {% if p.age %}
+      {% set ns.total_age = ns.total_age + p.age %}
+      {% set ns.age_count = ns.age_count + 1 %}
+    {% endif %}
+    {% set primary = (p.position or 'MID').split('/')[0] %}
+    {% if primary == 'DEF' %}{% set ns.def_count = ns.def_count + 1 %}
+    {% elif primary == 'MID' %}{% set ns.mid_count = ns.mid_count + 1 %}
+    {% elif primary == 'FWD' %}{% set ns.fwd_count = ns.fwd_count + 1 %}
+    {% elif primary == 'RUC' %}{% set ns.ruc_count = ns.ruc_count + 1 %}
+    {% endif %}
+  {% endfor %}
+
+  {# ── Summary Stat Cards (both views) ── #}
+  <div class="squad-stat-cards">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#3fb950;">{{ '%.0f'|format(ns.total_sc) }}</div>
+      <div class="stat-label">Total SC Value</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#58a6ff;">{{ '%.1f'|format(ns.total_sc / ns.sc_count) if ns.sc_count else '-' }}</div>
+      <div class="stat-label">Avg SC / Player</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#d29922;">{{ '%.1f'|format(ns.total_age / ns.age_count) if ns.age_count else '-' }}</div>
+      <div class="stat-label">Avg Age</div>
+    </div>
+    <div class="stat-card">
+      <div class="squad-pos-summary">
+        {% if ns.def_count %}<span class="squad-pos-chip squad-chip-def">DEF {{ ns.def_count }}</span>{% endif %}
+        {% if ns.mid_count %}<span class="squad-pos-chip squad-chip-mid">MID {{ ns.mid_count }}</span>{% endif %}
+        {% if ns.fwd_count %}<span class="squad-pos-chip squad-chip-fwd">FWD {{ ns.fwd_count }}</span>{% endif %}
+        {% if ns.ruc_count %}<span class="squad-pos-chip squad-chip-ruc">RUC {{ ns.ruc_count }}</span>{% endif %}
+      </div>
+      <div class="stat-label">Roster Makeup</div>
+    </div>
+  </div>
+
   {% if view|default('field') == 'field' %}
     {% include "team/field_view.html" %}
   {% else %}
-  <div class="d-flex align-items-center mb-3">
-    <div class="btn-group btn-group-sm" role="group">
-      <button class="btn btn-sm btn-outline-secondary" id="btnMyClub" onclick="switchStats('myclub')">In My 23</button>
-      <button class="btn btn-sm btn-outline-secondary" id="btnSeason" onclick="switchStats('season')">Season</button>
-      <button class="btn btn-sm btn-primary" id="btnCareer" onclick="switchStats('career')">Career</button>
-    </div>
-  </div>
+  {# ── Enhanced List View ── #}
   <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-bold" style="font-size:.9rem;">Squad Roster</span>
+      <div class="btn-group btn-group-sm" role="group">
+        <button class="btn btn-sm btn-outline-secondary" id="btnMyClub" onclick="switchStats('myclub')">In My 23</button>
+        <button class="btn btn-sm btn-outline-secondary" id="btnSeason" onclick="switchStats('season')">Season</button>
+        <button class="btn btn-sm btn-primary" id="btnCareer" onclick="switchStats('career')">Career</button>
+      </div>
+    </div>
     <div class="card-body p-0">
       <table class="table table-hover mb-0" id="rosterTable">
         <thead>
           <tr>
             <th style="width:40px;">#</th>
-            <th>Player</th>
+            <th class="sortable" data-sort="name">Player</th>
             <th>Pos</th>
             <th>AFL Team</th>
-            <th class="text-center">Games</th>
-            <th class="text-center">Goals</th>
-            <th class="text-center">Disp</th>
-            <th class="text-center">Marks</th>
-            <th class="text-center">Tackles</th>
-            <th class="text-end">SC Avg</th>
+            <th class="text-center sortable" data-sort="games">Games</th>
+            <th class="text-center sortable squad-hide-mobile" data-sort="goals">Goals</th>
+            <th class="text-center sortable" data-sort="disposals">Disp</th>
+            <th class="text-center sortable squad-hide-mobile" data-sort="marks">Marks</th>
+            <th class="text-center sortable squad-hide-mobile" data-sort="tackles">Tackles</th>
+            <th class="text-end sortable" data-sort="sc_avg">SC Avg</th>
             <th>Acquired</th>
           </tr>
         </thead>
         <tbody>
           {% for p in players %}
-            {% set r = roster[loop.index0] %}
+            {% set r = roster_map.get(p.id) %}
             {% set st = alltime_stats.get(p.id, {}) %}
-            <tr data-pid="{{ p.id }}">
+            {% set primary_pos = (p.position or 'MID').split('/')[0]|lower %}
+            {% set sc_val = st.get('sc_avg', 0) or 0 %}
+            <tr data-pid="{{ p.id }}" class="squad-row-{{ primary_pos }}" data-name="{{ p.name|lower }}">
               <td style="color:#484f58;">{{ loop.index }}</td>
               <td>
                 <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:#c9d1d9;">{{ p.name }}</a>
+                {% if r and r.is_captain %}<span class="squad-badge squad-badge-cap">C</span>{% endif %}
+                {% if r and r.is_vice_captain %}<span class="squad-badge squad-badge-vc">VC</span>{% endif %}
               </td>
               <td>
                 {% for pos in (p.position or 'MID').split('/') %}
@@ -96,12 +160,21 @@
                 <span style="font-size:.8rem;">{{ p.afl_team or '' }}</span>
               </td>
               <td class="text-center stat-games">{{ st.get('games', '-') }}</td>
-              <td class="text-center stat-goals">{{ st.get('goals', '-') }}</td>
+              <td class="text-center stat-goals squad-hide-mobile">{{ st.get('goals', '-') }}</td>
               <td class="text-center stat-disposals">{{ st.get('disposals', '-') }}</td>
-              <td class="text-center stat-marks">{{ st.get('marks', '-') }}</td>
-              <td class="text-center stat-tackles">{{ st.get('tackles', '-') }}</td>
-              <td class="text-end stat-sc-avg">{{ st.get('sc_avg', '-') }}</td>
-              <td><span class="text-secondary text-capitalize" style="font-size:.75rem;">{{ r.acquired_via }}</span></td>
+              <td class="text-center stat-marks squad-hide-mobile">{{ st.get('marks', '-') }}</td>
+              <td class="text-center stat-tackles squad-hide-mobile">{{ st.get('tackles', '-') }}</td>
+              <td class="text-end stat-sc-avg">
+                {% if sc_val %}
+                <span class="squad-sc {% if sc_val >= 100 %}squad-sc-elite{% elif sc_val >= 80 %}squad-sc-good{% elif sc_val >= 60 %}squad-sc-avg{% else %}squad-sc-low{% endif %}">{{ sc_val }}</span>
+                {% else %}-{% endif %}
+              </td>
+              <td>
+                {% if r %}
+                  {% set acq = r.acquired_via or 'draft' %}
+                  <span class="squad-acq squad-acq-{{ acq }}">{{ acq|replace('_', ' ')|title }}</span>
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
@@ -129,6 +202,15 @@
       });
     });
 
+    function scHeatClass(val) {
+      const n = parseFloat(val);
+      if (!n || isNaN(n)) return '';
+      if (n >= 100) return 'squad-sc-elite';
+      if (n >= 80) return 'squad-sc-good';
+      if (n >= 60) return 'squad-sc-avg';
+      return 'squad-sc-low';
+    }
+
     function updateCells(data) {
       document.querySelectorAll('#rosterTable tbody tr[data-pid]').forEach(row => {
         const pid = row.dataset.pid;
@@ -137,7 +219,16 @@
           const cell = row.querySelector('.stat-' + field.replace('_', '-'));
           if (cell) {
             const val = stats[field];
-            cell.textContent = (val !== undefined && val !== null) ? val : '-';
+            if (field === 'sc_avg') {
+              const displayVal = (val !== undefined && val !== null) ? val : '-';
+              if (displayVal !== '-' && parseFloat(displayVal)) {
+                cell.innerHTML = '<span class="squad-sc ' + scHeatClass(displayVal) + '">' + displayVal + '</span>';
+              } else {
+                cell.textContent = '-';
+              }
+            } else {
+              cell.textContent = (val !== undefined && val !== null) ? val : '-';
+            }
           }
         });
       });
@@ -183,6 +274,46 @@
         else { fetchAndCache(MY_CLUB_API, 'myclub', 'btnMyClub', 'In My 23'); }
       }
     };
+
+    // ── Sortable columns ──
+    let sortCol = null, sortAsc = true;
+    document.querySelectorAll('#rosterTable th.sortable').forEach(th => {
+      th.addEventListener('click', function() {
+        const key = this.dataset.sort;
+        if (sortCol === key) { sortAsc = !sortAsc; }
+        else { sortCol = key; sortAsc = (key === 'name'); }
+
+        // Update sort indicators
+        document.querySelectorAll('#rosterTable th.sortable').forEach(h => {
+          h.classList.remove('sort-asc', 'sort-desc');
+        });
+        this.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+
+        // Find column index of this header
+        const allThs = Array.from(document.querySelectorAll('#rosterTable thead th'));
+        const ci = allThs.indexOf(this);
+
+        const tbody = document.querySelector('#rosterTable tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr[data-pid]'));
+
+        rows.sort((a, b) => {
+          if (key === 'name') {
+            const va = a.dataset.name;
+            const vb = b.dataset.name;
+            return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+          }
+          // Read numeric value from cell text
+          const va = parseFloat(a.children[ci].textContent.replace(/[^0-9.\-]/g, '')) || 0;
+          const vb = parseFloat(b.children[ci].textContent.replace(/[^0-9.\-]/g, '')) || 0;
+          return sortAsc ? va - vb : vb - va;
+        });
+
+        rows.forEach((row, i) => {
+          tbody.appendChild(row);
+          row.querySelector('td:first-child').textContent = i + 1;
+        });
+      });
+    });
   })();
   </script>
   {% endif %}
