@@ -98,6 +98,14 @@
 
   <div class="card mt-4">
     <div class="card-body">
+      <div class="mb-3">
+        <label for="intended_period" class="form-label">Intended Trade Period</label>
+        <select class="form-select form-select-sm" id="intended_period" name="intended_period" style="max-width:250px;">
+          <option value="midseason">Mid-Season</option>
+          <option value="offseason">End of Season</option>
+        </select>
+        <div class="form-text" style="font-size:.7rem;color:#484f58;">Which trade window should this trade execute in?</div>
+      </div>
       <label for="notes" class="form-label">Message <span class="text-secondary" style="font-size:.75rem;">(optional)</span></label>
       <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Add a note for the other manager..."></textarea>
     </div>

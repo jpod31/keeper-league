@@ -70,7 +70,7 @@
                 {% else %}
                   <span class="badge" style="background:#484f58;">Closed</span>
                 {% endif %}
-                <span class="text-secondary" style="font-size:.7rem;display:block;margin-top:4px;">Managed via Season Hub (date-based windows)</span>
+                <span class="text-secondary" style="font-size:.7rem;display:block;margin-top:4px;">Durations configured below in Mid-Season &amp; Off-Season sections</span>
               </div>
             </div>
             <div class="col-md-6">
@@ -234,16 +234,33 @@
                 </label>
               </div>
               <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                  <div class="mb-2" style="font-size:.7rem;color:#6e7681;">
-                    Window dates are set via Season Hub
-                  </div>
+                <div class="col-md-4">
                   <label for="mid_season_trade_after_round" class="form-label" style="font-size:.75rem;">Opens after AFL Round</label>
                   <input type="number" class="form-control form-control-sm" id="mid_season_trade_after_round"
                          name="mid_season_trade_after_round"
                          value="{{ season_config.mid_season_trade_after_round if season_config and season_config.mid_season_trade_after_round else '' }}"
                          min="1" max="24" placeholder="e.g. 12">
                 </div>
+                <div class="col-md-4">
+                  <label for="mid_trade_duration_days" class="form-label" style="font-size:.75rem;">Trade Window Duration (days)</label>
+                  <input type="number" class="form-control form-control-sm" id="mid_trade_duration_days"
+                         name="mid_trade_duration_days"
+                         value="{{ season_config.mid_trade_duration_days if season_config and season_config.mid_trade_duration_days else 2 }}"
+                         min="1" max="3">
+                  <div class="form-text" style="font-size:.7rem;">Max 3 days</div>
+                </div>
+                <div class="col-md-4">
+                  <label for="mid_delist_duration_days" class="form-label" style="font-size:.75rem;">Delist Period Duration (days)</label>
+                  <input type="number" class="form-control form-control-sm" id="mid_delist_duration_days"
+                         name="mid_delist_duration_days"
+                         value="{{ season_config.mid_delist_duration_days if season_config and season_config.mid_delist_duration_days else 2 }}"
+                         min="1" max="3">
+                  <div class="form-text" style="font-size:.7rem;">Max 3 days</div>
+                </div>
+              </div>
+              <div class="mb-3" style="font-size:.7rem;color:#6e7681;">
+                <i class="bi bi-info-circle me-1"></i>
+                Order: <strong style="color:#c9d1d9;">Trade Window</strong> &rarr; <strong style="color:#c9d1d9;">Delist Period</strong> &rarr; <strong style="color:#c9d1d9;">Supplemental Draft</strong>
               </div>
             </div>
 
@@ -320,9 +337,26 @@
               <div class="form-text" style="font-size:.7rem;">Max LTIL replacements per team per season</div>
             </div>
             <div class="col-md-4">
-              <div class="mt-3" style="font-size:.75rem;color:#8b949e;">
-                <i class="bi bi-info-circle me-1"></i>Trade window dates are set via Season Hub
-              </div>
+              <label for="off_delist_duration_days" class="form-label" style="font-size:.75rem;">Delist Period Duration (days)</label>
+              <input type="number" class="form-control form-control-sm" id="off_delist_duration_days"
+                     name="off_delist_duration_days"
+                     value="{{ season_config.off_delist_duration_days if season_config and season_config.off_delist_duration_days else 7 }}"
+                     min="1" max="30">
+            </div>
+            <div class="col-md-4">
+              <label for="off_trade_start_days" class="form-label" style="font-size:.75rem;">Trade Window Starts (days after off-season)</label>
+              <input type="number" class="form-control form-control-sm" id="off_trade_start_days"
+                     name="off_trade_start_days"
+                     value="{{ season_config.off_trade_start_days if season_config and season_config.off_trade_start_days else 7 }}"
+                     min="1" max="60">
+              <div class="form-text" style="font-size:.7rem;">Must be &ge; delist period duration</div>
+            </div>
+            <div class="col-md-4">
+              <label for="off_trade_duration_days" class="form-label" style="font-size:.75rem;">Trade Window Duration (days)</label>
+              <input type="number" class="form-control form-control-sm" id="off_trade_duration_days"
+                     name="off_trade_duration_days"
+                     value="{{ season_config.off_trade_duration_days if season_config and season_config.off_trade_duration_days else 7 }}"
+                     min="1" max="30">
             </div>
             <div class="col-md-6">
               <label for="ssp_window_open" class="form-label" style="font-size:.75rem;">SSP Window Opens</label>

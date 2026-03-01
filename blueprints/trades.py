@@ -75,6 +75,7 @@ def trade_propose(league_id):
         give_pick_ids = [int(x) for x in request.form.getlist("give_pick_ids") if x]
         receive_pick_ids = [int(x) for x in request.form.getlist("receive_pick_ids") if x]
         notes = request.form.get("notes", "").strip()
+        intended_period = request.form.get("intended_period", "").strip() or None
 
         if not recipient_team_id:
             flash("Select a team to trade with.", "warning")
@@ -84,7 +85,8 @@ def trade_propose(league_id):
             trade, error = propose_trade(
                 league_id, user_team.id, recipient_team_id,
                 give_ids, receive_ids, notes or None,
-                give_pick_ids=give_pick_ids, receive_pick_ids=receive_pick_ids
+                give_pick_ids=give_pick_ids, receive_pick_ids=receive_pick_ids,
+                intended_period=intended_period,
             )
             if error:
                 flash(error, "danger")

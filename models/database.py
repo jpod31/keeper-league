@@ -473,6 +473,7 @@ class Trade(db.Model):
     review_deadline = db.Column(db.DateTime)
     commissioner_veto = db.Column(db.Boolean, default=False)
     veto_reason = db.Column(db.Text)
+    intended_period = db.Column(db.String(20))  # "midseason" or "offseason"
     notes = db.Column(db.Text)
 
     proposer_team = db.relationship("FantasyTeam", foreign_keys=[proposer_team_id], lazy="joined")
@@ -626,6 +627,13 @@ class SeasonConfig(db.Model):
     mid_season_delist_required = db.Column(db.Integer, default=1)
     mid_season_trade_enabled = db.Column(db.Boolean, default=False)
     mid_season_trade_after_round = db.Column(db.Integer)
+
+    # Trade/delist window duration settings (configured in Settings)
+    mid_trade_duration_days = db.Column(db.Integer, default=2)     # 1-3 days
+    mid_delist_duration_days = db.Column(db.Integer, default=2)    # 1-3 days
+    off_trade_start_days = db.Column(db.Integer, default=7)        # days after offseason opens
+    off_trade_duration_days = db.Column(db.Integer, default=7)     # how long window runs
+    off_delist_duration_days = db.Column(db.Integer, default=7)    # how long delist period runs
 
     # Trade window dates (automatic date-based windows)
     mid_trade_window_open = db.Column(db.DateTime)    # UTC datetime mid-season window opens
@@ -919,7 +927,29 @@ def _run_migrations(app):
                 db.session.execute(
                     text(f"ALTER TABLE season_config ADD COLUMN {col_name} {col_def}")
                 )
+        # Trade window duration columns
+        duration_cols = [
+            ("mid_trade_duration_days", "INTEGER DEFAULT 2"),
+            ("mid_delist_duration_days", "INTEGER DEFAULT 2"),
+            ("off_trade_start_days", "INTEGER DEFAULT 7"),
+            ("off_trade_duration_days", "INTEGER DEFAULT 7"),
+            ("off_delist_duration_days", "INTEGER DEFAULT 7"),
+        ]
+        for col_name, col_def in duration_cols:
+            if col_name not in existing:
+                db.session.execute(
+                    text(f"ALTER TABLE season_config ADD COLUMN {col_name} {col_def}")
+                )
         db.session.commit()
+
+    # Trade.intended_period column
+    if "trade" in inspector.get_table_names():
+        existing_trade = {c["name"] for c in inspector.get_columns("trade")}
+        if "intended_period" not in existing_trade:
+            db.session.execute(
+                text("ALTER TABLE trade ADD COLUMN intended_period VARCHAR(20)")
+            )
+            db.session.commit()
 
     # League hybrid + draft preference columns
     if "league" in inspector.get_table_names():

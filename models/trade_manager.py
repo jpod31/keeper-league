@@ -13,7 +13,8 @@ TRADE_REVIEW_HOURS = 48
 
 def propose_trade(league_id, proposer_team_id, recipient_team_id,
                   give_player_ids, receive_player_ids, notes=None,
-                  give_pick_ids=None, receive_pick_ids=None):
+                  give_pick_ids=None, receive_pick_ids=None,
+                  intended_period=None):
     """Propose a trade between two teams.
     give_player_ids: players moving FROM proposer TO recipient
     receive_player_ids: players moving FROM recipient TO proposer
@@ -37,6 +38,7 @@ def propose_trade(league_id, proposer_team_id, recipient_team_id,
         proposer_team_id=proposer_team_id,
         recipient_team_id=recipient_team_id,
         notes=notes,
+        intended_period=intended_period,
         review_deadline=datetime.now(timezone.utc) + timedelta(hours=TRADE_REVIEW_HOURS),
     )
     db.session.add(trade)

@@ -33,6 +33,13 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
 
     NOTE: Does NOT commit — caller is responsible for db.session.commit().
     """
+    # Guard: don't re-score if a finalized score already exists
+    existing = RoundScore.query.filter_by(
+        team_id=team_id, afl_round=afl_round, year=year
+    ).first()
+    if existing:
+        return existing.total_score
+
     # Get on-field roster entries
     roster_entries = FantasyRoster.query.filter_by(
         team_id=team_id, is_active=True

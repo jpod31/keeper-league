@@ -456,6 +456,14 @@ def league_settings(league_id):
         if mid_delist is not None:
             season_cfg.mid_season_delist_required = mid_delist
 
+        # Mid-season trade/delist duration
+        mid_trade_dur = request.form.get("mid_trade_duration_days", type=int)
+        if mid_trade_dur is not None:
+            season_cfg.mid_trade_duration_days = max(1, min(3, mid_trade_dur))
+        mid_delist_dur = request.form.get("mid_delist_duration_days", type=int)
+        if mid_delist_dur is not None:
+            season_cfg.mid_delist_duration_days = max(1, min(3, mid_delist_dur))
+
         # Off-season config
         season_cfg.offseason_trade_enabled = request.form.get("offseason_trade_enabled") == "on"
         season_cfg.ssp_enabled = request.form.get("ssp_enabled") == "on"
@@ -465,6 +473,26 @@ def league_settings(league_id):
         ssp_slots = request.form.get("ssp_slots", type=int)
         if ssp_slots is not None:
             season_cfg.ssp_slots = ssp_slots
+
+        # Off-season trade/delist duration
+        off_delist_dur = request.form.get("off_delist_duration_days", type=int)
+        if off_delist_dur is not None:
+            season_cfg.off_delist_duration_days = max(1, off_delist_dur)
+        off_trade_start = request.form.get("off_trade_start_days", type=int)
+        if off_trade_start is not None:
+            season_cfg.off_trade_start_days = max(1, off_trade_start)
+        off_trade_dur = request.form.get("off_trade_duration_days", type=int)
+        if off_trade_dur is not None:
+            season_cfg.off_trade_duration_days = max(1, off_trade_dur)
+
+        # Validate: trade window must start after delist ends
+        if (season_cfg.off_trade_start_days is not None
+                and season_cfg.off_delist_duration_days is not None
+                and season_cfg.off_trade_start_days < season_cfg.off_delist_duration_days):
+            flash("Off-season trade window must start after the delist period ends. "
+                  f"Trade start ({season_cfg.off_trade_start_days} days) must be >= delist duration ({season_cfg.off_delist_duration_days} days).",
+                  "warning")
+            season_cfg.off_trade_start_days = season_cfg.off_delist_duration_days
 
         # SSP window dates
         ssp_window_open_str = request.form.get("ssp_window_open", "").strip()
@@ -1131,17 +1159,20 @@ def midseason_start_step(league_id):
 
     if step == "trade_window":
         now = datetime.now(timezone.utc)
-        duration = timedelta(weeks=config.TRADE_WINDOW_DURATION_WEEKS)
+        trade_days = season_cfg.mid_trade_duration_days or 2
+        duration = timedelta(days=trade_days)
         season_cfg.season_phase = "midseason"
         season_cfg.mid_trade_window_open = now
         season_cfg.mid_trade_window_close = now + duration
         season_cfg.mid_draft_date = now + duration + timedelta(days=1)
         db.session.commit()
 
-        # Auto-execute any agreed trades
+        # Auto-execute agreed trades intended for mid-season
         from models.database import Trade
         from models.trade_manager import _execute_trade
-        agreed_trades = Trade.query.filter_by(league_id=league_id, status="agreed").all()
+        agreed_trades = Trade.query.filter_by(
+            league_id=league_id, status="agreed", intended_period="midseason"
+        ).all()
         executed_count = 0
         for t in agreed_trades:
             _execute_trade(t)
@@ -1178,11 +1209,14 @@ def midseason_start_step(league_id):
         else:
             from models.season_manager import open_delist_period
             min_delists = season_cfg.mid_season_delist_required or 1
-            _, error = open_delist_period(league_id, league.season_year, min_delists=min_delists)
+            delist_days = season_cfg.mid_delist_duration_days or 2
+            closes_at = datetime.now(timezone.utc) + timedelta(days=delist_days)
+            _, error = open_delist_period(league_id, league.season_year,
+                                          min_delists=min_delists, closes_at=closes_at)
             if error:
                 flash(error, "warning")
             else:
-                flash("Delist period opened.", "success")
+                flash(f"Delist period opened (closes {closes_at.strftime('%d %b %Y')}).", "success")
 
     elif step == "close_delists":
         from models.database import DelistPeriod
@@ -1238,12 +1272,15 @@ def offseason_start_step(league_id):
         season_cfg.season_phase = "offseason"
         league.status = "offseason"
         min_delists = season_cfg.offseason_delist_min or 3
+        delist_days = season_cfg.off_delist_duration_days or 7
+        closes_at = datetime.now(timezone.utc) + timedelta(days=delist_days)
         from models.season_manager import open_delist_period
-        _, error = open_delist_period(league_id, league.season_year, min_delists=min_delists)
+        _, error = open_delist_period(league_id, league.season_year,
+                                      min_delists=min_delists, closes_at=closes_at)
         if error:
             flash(error, "warning")
         else:
-            flash("Off-season delist period opened.", "success")
+            flash(f"Off-season delist period opened (closes {closes_at.strftime('%d %b %Y')}).", "success")
 
     elif step == "close_delists":
         from models.database import DelistPeriod
@@ -1260,15 +1297,18 @@ def offseason_start_step(league_id):
 
     elif step == "open_trades":
         now = datetime.now(timezone.utc)
-        duration = timedelta(weeks=config.TRADE_WINDOW_DURATION_WEEKS)
+        trade_days = season_cfg.off_trade_duration_days or 7
+        duration = timedelta(days=trade_days)
         season_cfg.off_trade_window_open = now
         season_cfg.off_trade_window_close = now + duration
         db.session.commit()
 
-        # Auto-execute any agreed trades
+        # Auto-execute agreed trades intended for off-season
         from models.database import Trade
         from models.trade_manager import _execute_trade
-        agreed_trades = Trade.query.filter_by(league_id=league_id, status="agreed").all()
+        agreed_trades = Trade.query.filter_by(
+            league_id=league_id, status="agreed", intended_period="offseason"
+        ).all()
         executed_count = 0
         for t in agreed_trades:
             _execute_trade(t)
