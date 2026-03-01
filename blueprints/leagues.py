@@ -657,12 +657,18 @@ def regenerate_fixtures(league_id):
 
     from models.fixture_manager import generate_round_robin
     fixtures, error = generate_round_robin(league_id, league.season_year, num_rounds)
+
+    # Support AJAX requests (no page reload)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        if error:
+            return {"ok": False, "message": error}, 400
+        return {"ok": True, "message": f"Generated {len(fixtures)} fixtures across {num_rounds} rounds."}
+
     if error:
         flash(error, "danger")
     else:
         flash(f"Generated {len(fixtures)} fixtures across {num_rounds} rounds.", "success")
-
-    return redirect(url_for("matchups.fixture_view", league_id=league_id))
+    return redirect(url_for("leagues.league_settings", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/finalize-round/<int:afl_round>", methods=["POST"])

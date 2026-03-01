@@ -169,8 +169,8 @@
               </select>
             </div>
             <div class="col-md-4">
-              <button type="button" class="btn btn-outline-warning btn-sm w-100" {% if not is_commissioner %}disabled{% endif %}
-                      onclick="if(confirm('Generate fixtures for the season? Any existing fixtures will be replaced.')){document.getElementById('regenForm').submit();}">
+              <button type="button" class="btn btn-outline-warning btn-sm w-100" id="genFixturesBtn" {% if not is_commissioner %}disabled{% endif %}
+                      onclick="generateFixtures()">
                 <i class="bi bi-arrow-repeat me-1"></i>Generate Fixtures
               </button>
             </div>
@@ -405,6 +405,47 @@ var roundsInput = document.getElementById('num_fixture_rounds');
 if (roundsInput) {
   roundsInput.addEventListener('change', function() {
     document.getElementById('regen_rounds').value = this.value;
+  });
+}
+
+// Generate fixtures via AJAX (no page reload)
+function generateFixtures() {
+  if (!confirm('Generate fixtures for the season? Any existing fixtures will be replaced.')) return;
+  var btn = document.getElementById('genFixturesBtn');
+  var rounds = document.getElementById('regen_rounds').value;
+  var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  var resultBar = document.getElementById('fixture-total-display');
+  var errorBar = document.getElementById('fixture-error-bar');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+  errorBar.style.display = 'none';
+
+  var fd = new FormData();
+  fd.append('num_rounds', rounds);
+
+  fetch("{{ url_for('leagues.regenerate_fixtures', league_id=league.id) }}", {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrf },
+    body: fd
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+  .then(function(res) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Generate Fixtures';
+    if (res.ok) {
+      resultBar.textContent = res.data.message;
+      resultBar.style.color = '#3fb950';
+    } else {
+      errorBar.textContent = res.data.message;
+      errorBar.style.display = 'block';
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Generate Fixtures';
+    errorBar.textContent = 'Request failed. Please try again.';
+    errorBar.style.display = 'block';
   });
 }
 
