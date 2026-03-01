@@ -24,13 +24,13 @@
 <div class="squad-hero">
   <div class="squad-hero-inner">
     <div>
-      <div class="squad-hero-crumb">
+      <div class="squad-hero-crumb lm-desktop">
         <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / List Management
       </div>
       <div class="d-flex align-items-center gap-2 flex-wrap">
         <h2 class="squad-hero-title">List Management</h2>
         <span class="status-pill status-{{ league.status }}">{{ league.status }}</span>
-        <span style="font-size:.8rem;color:#8b949e;font-weight:600;">{{ league.season_year }}</span>
+        <span class="lm-desktop" style="font-size:.8rem;color:#8b949e;font-weight:600;">{{ league.season_year }}</span>
         {% if user_roster %}
           <span class="squad-hero-count">{{ user_roster|length }} players</span>
         {% endif %}
@@ -40,14 +40,14 @@
       {% if delist_is_open and delist_period.closes_at %}
         <div class="lm-timer">
           <i class="bi bi-clock"></i>
-          <span>Delists close</span>
+          <span class="lm-desktop">Delists close</span>
           <span class="lm-timer-value" data-target="{{ delist_period.closes_at.isoformat() }}"></span>
         </div>
       {% endif %}
       {% if is_commissioner %}
         <div class="dropdown">
           <button class="squad-pill squad-pill-manage dropdown-toggle" data-bs-toggle="dropdown">
-            <i class="bi bi-shield-lock"></i>Commissioner
+            <i class="bi bi-shield-lock"></i><span class="lm-desktop">Commissioner</span>
           </button>
           <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" style="min-width:220px;">
             {% if current_phase == 'midseason' %}
@@ -95,8 +95,8 @@
 
 {% if user_roster %}
 
-  {# ── Summary Stat Cards ── #}
-  <div class="squad-stat-cards">
+  {# ── Desktop: Stat Cards ── #}
+  <div class="squad-stat-cards lm-desktop">
     <div class="stat-card">
       <div class="stat-value" style="color:#3fb950;">{{ '%.0f'|format(ns.total_sc) }}</div>
       <div class="stat-label">Total SC Value</div>
@@ -120,6 +120,31 @@
     </div>
   </div>
 
+  {# ── Mobile: Compact Stat Strip ── #}
+  <div class="lm-stat-strip lm-mobile">
+    <div class="lm-ss-item">
+      <span class="lm-ss-val" style="color:#3fb950;">{{ '%.0f'|format(ns.total_sc) }}</span>
+      <span class="lm-ss-lbl">Total SC</span>
+    </div>
+    <div class="lm-ss-div"></div>
+    <div class="lm-ss-item">
+      <span class="lm-ss-val" style="color:#58a6ff;">{{ '%.1f'|format(ns.total_sc / ns.sc_count) if ns.sc_count else '-' }}</span>
+      <span class="lm-ss-lbl">Avg</span>
+    </div>
+    <div class="lm-ss-div"></div>
+    <div class="lm-ss-item">
+      <span class="lm-ss-val" style="color:#d29922;">{{ '%.1f'|format(ns.total_age / ns.age_count) if ns.age_count else '-' }}</span>
+      <span class="lm-ss-lbl">Age</span>
+    </div>
+    <div class="lm-ss-div"></div>
+    <div class="lm-ss-chips">
+      {% if ns.def_count %}<span class="squad-pos-chip squad-chip-def">{{ ns.def_count }}</span>{% endif %}
+      {% if ns.mid_count %}<span class="squad-pos-chip squad-chip-mid">{{ ns.mid_count }}</span>{% endif %}
+      {% if ns.fwd_count %}<span class="squad-pos-chip squad-chip-fwd">{{ ns.fwd_count }}</span>{% endif %}
+      {% if ns.ruc_count %}<span class="squad-pos-chip squad-chip-ruc">{{ ns.ruc_count }}</span>{% endif %}
+    </div>
+  </div>
+
   {# ── Delist Progress (when open) ── #}
   {% if delist_is_open and user_team %}
     <div class="lm-delist-bar">
@@ -138,7 +163,6 @@
           </span>
         {% endif %}
       </div>
-      {# Commissioner: league progress #}
       {% if is_commissioner and all_teams_progress %}
         <div class="lm-league-grid">
           {% for tp in all_teams_progress %}
@@ -152,7 +176,7 @@
     </div>
   {% endif %}
 
-  {# ── Trade / Draft status (compact, only when active) ── #}
+  {# ── Trade / Draft alerts ── #}
   {% set trade_is_open = (mid_trade_status == 'active') or (off_trade_status == 'active') %}
   {% set trade_close = trade_window_dates.mid_close if mid_trade_status == 'active' else (trade_window_dates.off_close if off_trade_status == 'active' else None) %}
   {% set has_active_draft = (initial_draft and initial_draft.status in ('in_progress', 'paused', 'scheduled')) %}
@@ -178,16 +202,16 @@
   {% endif %}
 
   {# ══════════════════════════════════════════════════════════════
-     ROSTER TABLE
+     DESKTOP: TABLE VIEW
      ══════════════════════════════════════════════════════════════ #}
-  <div class="card">
+  <div class="card lm-desktop">
     <div class="card-header d-flex justify-content-between align-items-center">
       <span class="fw-bold" style="font-size:.9rem;">Your Roster</span>
       <div class="btn-group btn-group-sm">
-        <button class="btn btn-sm btn-primary" id="sortAvgBtn" onclick="sortRoster('avg')">SC Avg</button>
-        <button class="btn btn-sm btn-outline-secondary" id="sortPosBtn" onclick="sortRoster('pos')">Position</button>
-        <button class="btn btn-sm btn-outline-secondary" id="sortAgeBtn" onclick="sortRoster('age')">Age</button>
-        <button class="btn btn-sm btn-outline-secondary" id="sortRtgBtn" onclick="sortRoster('rtg')">Rating</button>
+        <button class="btn btn-sm btn-primary" data-sort-btn="avg" onclick="sortRoster('avg')">SC Avg</button>
+        <button class="btn btn-sm btn-outline-secondary" data-sort-btn="pos" onclick="sortRoster('pos')">Position</button>
+        <button class="btn btn-sm btn-outline-secondary" data-sort-btn="age" onclick="sortRoster('age')">Age</button>
+        <button class="btn btn-sm btn-outline-secondary" data-sort-btn="rtg" onclick="sortRoster('rtg')">Rating</button>
       </div>
     </div>
     <div class="card-body p-0">
@@ -198,13 +222,13 @@
               <th style="width:36px;">#</th>
               <th>Player</th>
               <th>Pos</th>
-              <th class="lm-hide-mobile">Team</th>
+              <th>Team</th>
               <th class="text-end">SC Avg</th>
-              <th class="text-end lm-hide-mobile">Prev</th>
+              <th class="text-end">Prev</th>
               <th class="text-center">Form</th>
-              <th class="text-center lm-hide-mobile">Rtg</th>
+              <th class="text-center">Rtg</th>
               <th class="text-center">Age</th>
-              <th class="lm-hide-mobile">Via</th>
+              <th>Via</th>
               {% if delist_is_open %}<th style="width:80px;"></th>{% endif %}
             </tr>
           </thead>
@@ -233,7 +257,7 @@
                     <span class="pos-badge pos-{{ pos }}">{{ pos }}</span>
                   {% endfor %}
                 </td>
-                <td class="lm-hide-mobile">
+                <td>
                   {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
                     <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" height="18" class="me-1">
                   {% endif %}
@@ -244,7 +268,7 @@
                     <span class="squad-sc {% if p.sc_avg >= 100 %}squad-sc-elite{% elif p.sc_avg >= 80 %}squad-sc-good{% elif p.sc_avg >= 60 %}squad-sc-avg{% else %}squad-sc-low{% endif %}">{{ '%.0f'|format(p.sc_avg) }}</span>
                   {% else %}<span style="color:#484f58;">-</span>{% endif %}
                 </td>
-                <td class="text-end lm-hide-mobile" style="color:#6e7681;font-size:.8rem;">
+                <td class="text-end" style="color:#6e7681;font-size:.8rem;">
                   {{ '%.0f'|format(p.sc_avg_prev) if p.sc_avg_prev else '-' }}
                 </td>
                 <td class="text-center">
@@ -258,7 +282,7 @@
                     {% endif %}
                   {% else %}<span style="color:#484f58;">-</span>{% endif %}
                 </td>
-                <td class="text-center lm-hide-mobile">
+                <td class="text-center">
                   {% if p.rating %}
                     <span class="{% if p.rating >= 80 %}squad-sc-elite{% elif p.rating >= 70 %}squad-sc-good{% elif p.rating >= 60 %}squad-sc-avg{% else %}squad-sc-low{% endif %}" style="font-size:.8rem;font-weight:600;">{{ p.rating }}</span>
                   {% else %}<span style="color:#484f58;">-</span>{% endif %}
@@ -268,7 +292,7 @@
                     <span style="font-size:.8rem;font-weight:600;" class="{% if p.age >= 30 %}squad-sc-low{% elif p.age <= 22 %}squad-sc-elite{% endif %}">{{ p.age }}</span>
                   {% else %}<span style="color:#484f58;">-</span>{% endif %}
                 </td>
-                <td class="lm-hide-mobile">
+                <td>
                   {% set acq = r.acquired_via or 'draft' %}
                   <span class="squad-acq squad-acq-{{ acq }}">{{ acq|replace('_', ' ')|title }}</span>
                 </td>
@@ -291,6 +315,100 @@
     </div>
   </div>
 
+  {# ══════════════════════════════════════════════════════════════
+     MOBILE: SORT BAR + PLAYER CARDS
+     ══════════════════════════════════════════════════════════════ #}
+  <div class="lm-mobile">
+    <div class="lm-sort-bar">
+      <button class="lm-sort-pill active" data-sort-btn="avg" onclick="sortRoster('avg')">SC Avg</button>
+      <button class="lm-sort-pill" data-sort-btn="pos" onclick="sortRoster('pos')">Position</button>
+      <button class="lm-sort-pill" data-sort-btn="age" onclick="sortRoster('age')">Age</button>
+      <button class="lm-sort-pill" data-sort-btn="rtg" onclick="sortRoster('rtg')">Rating</button>
+    </div>
+
+    <div id="mobileCards">
+      {% for r in user_roster %}
+        {% set p = r.player %}
+        {% set is_delisted = r.player_id in delisted_player_ids %}
+        {% set pr = rolling.get(p.name, {}) %}
+        {% set trend_val = (pr.l3 - p.sc_avg) if (pr.l3 and p.sc_avg) else 0 %}
+        {% set primary_pos = (p.position or 'MID').split('/')[0] %}
+        <div class="lm-pcard {% if is_delisted %}lm-pcard-del{% endif %}"
+             data-sc-avg="{{ p.sc_avg or 0 }}"
+             data-position="{{ p.position or 'MID' }}"
+             data-age="{{ p.age or 0 }}"
+             data-rating="{{ p.rating or 0 }}"
+             style="border-left-color:var(--lm-pos-{{ primary_pos|lower }});">
+          <div class="lm-pcard-row1">
+            <div class="lm-pcard-left">
+              {% if is_delisted %}
+                <del class="lm-pcard-name" style="color:#484f58;">{{ p.name }}</del>
+                <span class="lm-del-badge">DELISTED</span>
+              {% else %}
+                <a href="{{ url_for('player_detail', name=p.name) }}" class="lm-pcard-name">{{ p.name }}</a>
+              {% endif %}
+            </div>
+            <div class="lm-pcard-sc">
+              {% if p.sc_avg %}
+                <span class="squad-sc {% if p.sc_avg >= 100 %}squad-sc-elite{% elif p.sc_avg >= 80 %}squad-sc-good{% elif p.sc_avg >= 60 %}squad-sc-avg{% else %}squad-sc-low{% endif %}">{{ '%.0f'|format(p.sc_avg) }}</span>
+              {% else %}<span style="color:#484f58;">-</span>{% endif %}
+            </div>
+          </div>
+          <div class="lm-pcard-row2">
+            <div class="lm-pcard-meta">
+              {% for pos in (p.position or 'MID').split('/') %}
+                <span class="pos-badge pos-{{ pos }}">{{ pos }}</span>
+              {% endfor %}
+              {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" height="14">
+              {% endif %}
+              <span class="lm-pcard-team">{{ p.afl_team or '' }}</span>
+              {% if p.age %}
+                <span class="lm-pcard-age {% if p.age >= 30 %}squad-sc-low{% elif p.age <= 22 %}squad-sc-elite{% endif %}">{{ p.age }}yo</span>
+              {% endif %}
+            </div>
+            <div class="lm-pcard-trend">
+              {% if pr.l3 and p.sc_avg %}
+                {% if trend_val > 3 %}
+                  <span class="trend-pill trend-up"><i class="bi bi-caret-up-fill"></i>+{{ '%.0f'|format(trend_val) }}</span>
+                {% elif trend_val < -3 %}
+                  <span class="trend-pill trend-down"><i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(trend_val) }}</span>
+                {% else %}
+                  <span class="trend-pill trend-flat">{{ '%+.0f'|format(trend_val) }}</span>
+                {% endif %}
+              {% endif %}
+            </div>
+          </div>
+          {% if delist_is_open and not is_delisted %}
+            <div class="lm-pcard-row3">
+              {% set acq = r.acquired_via or 'draft' %}
+              <span class="squad-acq squad-acq-{{ acq }}">{{ acq|replace('_', ' ')|title }}</span>
+              {% if p.rating %}
+                <span class="lm-pcard-rtg {% if p.rating >= 80 %}squad-sc-elite{% elif p.rating >= 70 %}squad-sc-good{% elif p.rating >= 60 %}squad-sc-avg{% else %}squad-sc-low{% endif %}">Rtg {{ p.rating }}</span>
+              {% endif %}
+              <form method="POST" action="{{ url_for('leagues.delist_player_action', league_id=league.id) }}" class="ms-auto"
+                    onsubmit="return confirm('Delist {{ p.name }}?');">
+                <input type="hidden" name="player_id" value="{{ p.id }}">
+                <button type="submit" class="lm-pcard-delist-btn">Delist</button>
+              </form>
+            </div>
+          {% elif not delist_is_open and not is_delisted %}
+            <div class="lm-pcard-row3">
+              {% set acq = r.acquired_via or 'draft' %}
+              <span class="squad-acq squad-acq-{{ acq }}">{{ acq|replace('_', ' ')|title }}</span>
+              {% if p.rating %}
+                <span class="lm-pcard-rtg {% if p.rating >= 80 %}squad-sc-elite{% elif p.rating >= 70 %}squad-sc-good{% elif p.rating >= 60 %}squad-sc-avg{% else %}squad-sc-low{% endif %}">Rtg {{ p.rating }}</span>
+              {% endif %}
+              {% if p.sc_avg_prev %}
+                <span class="lm-pcard-prev">Prev {{ '%.0f'|format(p.sc_avg_prev) }}</span>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
 {% elif user_team %}
   <div class="card">
     <div class="card-body text-center py-5">
@@ -308,7 +426,19 @@
 {% endif %}
 
 <style>
-/* Delist progress bar */
+/* ── Position accent colors ── */
+:root {
+  --lm-pos-def: #3fb950;
+  --lm-pos-mid: #58a6ff;
+  --lm-pos-fwd: #f0883e;
+  --lm-pos-ruc: #bc8cff;
+}
+
+/* ── Desktop / Mobile toggle ── */
+.lm-desktop { display: block; }
+.lm-mobile  { display: none; }
+
+/* ── Delist progress bar ── */
 .lm-delist-bar {
   background: var(--kl-bg-card);
   border: 1px solid var(--kl-border);
@@ -337,7 +467,7 @@
 .lm-delist-text { font-size: .85rem; color: #c9d1d9; }
 .lm-delist-close { margin-left: auto; font-size: .75rem; color: #8b949e; }
 
-/* Commissioner league progress grid */
+/* ── Commissioner league progress grid ── */
 .lm-league-grid {
   display: flex;
   flex-wrap: wrap;
@@ -358,7 +488,7 @@
 .lm-lg-item.lm-lg-met { color: #3fb950; }
 .lm-lg-count { font-weight: 700; }
 
-/* Alert rows (trades/draft) */
+/* ── Alert rows (trades/draft) ── */
 .lm-alerts { margin-bottom: .75rem; }
 .lm-alert-row {
   display: flex;
@@ -384,7 +514,7 @@
   color: #f0883e;
 }
 
-/* Table */
+/* ── Desktop table ── */
 .lm-delisted { opacity: .35; }
 .lm-del-badge {
   display: inline-block;
@@ -403,7 +533,7 @@
   font-weight: 600;
 }
 
-/* Trend pills (reuse player pool pattern) */
+/* ── Trend pills ── */
 .trend-pill {
   display: inline-flex;
   align-items: center;
@@ -418,10 +548,234 @@
 .trend-down { background: rgba(248,81,73,.1); color: #f85149; }
 .trend-flat { color: #484f58; font-weight: 500; font-size: .7rem; }
 
+/* ── Timer ── */
+.lm-timer {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .78rem;
+  color: #f0883e;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════
+   MOBILE: 768px and below
+   ══════════════════════════════════════ */
 @media (max-width: 768px) {
-  .lm-hide-mobile { display: none; }
-  .lm-lg-item { width: 100%; }
+  .lm-desktop { display: none !important; }
+  .lm-mobile  { display: block !important; }
+
+  /* Tighter hero */
+  .squad-hero { padding: .5rem .75rem; margin: 0 -.75rem .5rem; }
+  .squad-hero-title { font-size: 1.05rem; }
+  .squad-hero-inner { gap: .35rem; }
+  .squad-hero-actions { gap: .35rem; }
+
+  /* Timer compact */
+  .lm-timer { font-size: .7rem; }
+
+  /* Delist bar compact */
+  .lm-delist-bar { padding: .45rem .6rem; margin-bottom: .5rem; }
   .lm-delist-bar-inner { gap: .4rem; }
+  .lm-delist-chip { font-size: .85rem; }
+  .lm-delist-text { font-size: .78rem; }
+  .lm-lg-item { width: 100%; }
+
+  /* Alert rows compact */
+  .lm-alert-row { padding: .35rem .6rem; font-size: .75rem; }
+
+  /* ── Mobile stat strip ── */
+  .lm-stat-strip {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    background: var(--kl-bg-card);
+    border: 1px solid var(--kl-border);
+    border-radius: 8px;
+    padding: .5rem .65rem;
+    margin-bottom: .5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .lm-ss-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    flex-shrink: 0;
+  }
+  .lm-ss-val {
+    font-size: .95rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .lm-ss-lbl {
+    font-size: .55rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #8b949e;
+    font-weight: 600;
+  }
+  .lm-ss-div {
+    width: 1px;
+    height: 24px;
+    background: var(--kl-border);
+    flex-shrink: 0;
+  }
+  .lm-ss-chips {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .lm-ss-chips .squad-pos-chip {
+    font-size: .6rem;
+    padding: 1px 5px;
+  }
+
+  /* ── Sort bar (sticky) ── */
+  .lm-sort-bar {
+    display: flex;
+    gap: .35rem;
+    padding: .45rem 0;
+    margin-bottom: .35rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--kl-bg);
+  }
+  .lm-sort-pill {
+    flex: 1;
+    border: none;
+    background: var(--kl-bg-card);
+    border: 1px solid var(--kl-border);
+    color: #8b949e;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: .3rem .1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .lm-sort-pill:active { transform: scale(.96); }
+  .lm-sort-pill.active {
+    background: var(--kl-accent-blue);
+    border-color: var(--kl-accent-blue);
+    color: #fff;
+  }
+
+  /* ── Player cards ── */
+  .lm-pcard {
+    background: var(--kl-bg-card);
+    border: 1px solid var(--kl-border);
+    border-left: 3px solid var(--kl-border);
+    border-radius: 8px;
+    padding: .55rem .65rem;
+    margin-bottom: .35rem;
+    transition: border-color .15s;
+  }
+  .lm-pcard:active { border-color: var(--kl-accent-blue); }
+  .lm-pcard-del { opacity: .3; }
+
+  /* Row 1: Name + SC avg */
+  .lm-pcard-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .lm-pcard-left {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    min-width: 0;
+    flex: 1;
+  }
+  .lm-pcard-name {
+    font-weight: 700;
+    font-size: .85rem;
+    color: #c9d1d9;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  a.lm-pcard-name:hover { color: var(--kl-accent-blue); }
+  .lm-pcard-sc {
+    flex-shrink: 0;
+  }
+  .lm-pcard-sc .squad-sc {
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  /* Row 2: Meta line */
+  .lm-pcard-row2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: .2rem;
+  }
+  .lm-pcard-meta {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+  .lm-pcard-meta .pos-badge {
+    font-size: .55rem;
+    padding: 1px 4px;
+  }
+  .lm-pcard-team {
+    font-size: .7rem;
+    color: #8b949e;
+    white-space: nowrap;
+  }
+  .lm-pcard-age {
+    font-size: .7rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .lm-pcard-trend {
+    flex-shrink: 0;
+  }
+
+  /* Row 3: Acquired + rating + delist */
+  .lm-pcard-row3 {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .3rem;
+    padding-top: .3rem;
+    border-top: 1px solid rgba(48,54,61,.5);
+  }
+  .lm-pcard-rtg {
+    font-size: .68rem;
+    font-weight: 700;
+  }
+  .lm-pcard-prev {
+    font-size: .65rem;
+    color: #6e7681;
+    font-weight: 500;
+  }
+  .lm-pcard-delist-btn {
+    border: 1px solid #f85149;
+    background: rgba(248,81,73,.08);
+    color: #f85149;
+    font-size: .72rem;
+    font-weight: 700;
+    padding: .3rem .75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .lm-pcard-delist-btn:active {
+    background: #f85149;
+    color: #fff;
+    transform: scale(.96);
+  }
 }
 </style>
 
@@ -432,7 +786,7 @@
     var target = new Date(el.getAttribute('data-target'));
     (function tick() {
       var now = new Date(), diff = target - now;
-      if (diff <= 0) { el.textContent = 'Now'; var p = el.closest('.lm-timer'); if (p) p.classList.add('lm-timer-expired'); return; }
+      if (diff <= 0) { el.textContent = 'Now'; return; }
       var d = Math.floor(diff / 86400000), h = Math.floor((diff % 86400000) / 3600000);
       var m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
       var p = []; if (d) p.push(d + 'd'); p.push(h + 'h', m + 'm', s + 's');
@@ -440,26 +794,43 @@
     })();
   });
 
-  // Sort roster
-  var sortModes = {avg: 'Avg', pos: 'Pos', age: 'Age', rtg: 'Rtg'};
+  // Sort — applies to BOTH desktop table and mobile cards
   window.sortRoster = function(mode) {
-    var body = document.getElementById('rosterBody');
-    if (!body) return;
-    var rows = Array.from(body.querySelectorAll('tr'));
-    Object.keys(sortModes).forEach(function(m) {
-      var btn = document.getElementById('sort' + sortModes[m] + 'Btn');
-      if (btn) btn.className = 'btn btn-sm ' + (m === mode ? 'btn-primary' : 'btn-outline-secondary');
+    // Update all sort buttons (desktop btn-group + mobile pills)
+    document.querySelectorAll('[data-sort-btn]').forEach(function(btn) {
+      var isMatch = btn.getAttribute('data-sort-btn') === mode;
+      if (btn.classList.contains('lm-sort-pill')) {
+        btn.classList.toggle('active', isMatch);
+      } else {
+        btn.className = 'btn btn-sm ' + (isMatch ? 'btn-primary' : 'btn-outline-secondary');
+      }
     });
-    rows.sort(function(a, b) {
-      var aD = a.classList.contains('lm-delisted') ? 1 : 0;
-      var bD = b.classList.contains('lm-delisted') ? 1 : 0;
+
+    var comparator = function(a, b) {
+      var aD = (a.classList.contains('lm-delisted') || a.classList.contains('lm-pcard-del')) ? 1 : 0;
+      var bD = (b.classList.contains('lm-delisted') || b.classList.contains('lm-pcard-del')) ? 1 : 0;
       if (aD !== bD) return aD - bD;
       if (mode === 'avg') return (parseFloat(b.dataset.scAvg) || 0) - (parseFloat(a.dataset.scAvg) || 0);
       if (mode === 'age') return (parseInt(b.dataset.age) || 0) - (parseInt(a.dataset.age) || 0);
       if (mode === 'rtg') return (parseInt(b.dataset.rating) || 0) - (parseInt(a.dataset.rating) || 0);
       return (a.dataset.position || '').localeCompare(b.dataset.position || '');
-    });
-    rows.forEach(function(row, i) { row.cells[0].textContent = i + 1; body.appendChild(row); });
+    };
+
+    // Sort desktop table rows
+    var tbody = document.getElementById('rosterBody');
+    if (tbody) {
+      var rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort(comparator);
+      rows.forEach(function(row, i) { row.cells[0].textContent = i + 1; tbody.appendChild(row); });
+    }
+
+    // Sort mobile cards
+    var mCards = document.getElementById('mobileCards');
+    if (mCards) {
+      var cards = Array.from(mCards.querySelectorAll('.lm-pcard'));
+      cards.sort(comparator);
+      cards.forEach(function(card) { mCards.appendChild(card); });
+    }
   };
 })();
 </script>
