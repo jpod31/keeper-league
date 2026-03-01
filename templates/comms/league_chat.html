@@ -1,14 +1,13 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'chat' %}
+{% set active_tab = 'comms' %}
+{% set active_subtab = 'chat' %}
 {% block title %}{{ league.name }} — Chat{% endblock %}
 {% block league_content %}
+{% include "comms/_comms_subnav.html" %}
 
 <div class="page-header">
   <div class="d-flex align-items-center justify-content-between">
     <h2><i class="bi bi-chat-dots me-2" style="color:var(--kl-accent-blue);"></i>League Chat</h2>
-    <a href="{{ url_for('comms.activity_feed', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-activity me-1"></i>Activity Feed
-    </a>
   </div>
 </div>
 

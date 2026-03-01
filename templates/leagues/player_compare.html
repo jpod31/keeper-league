@@ -1,5 +1,8 @@
 {% extends "league_base.html" %}
+{% set active_tab = 'players' %}
+{% set active_subtab = 'compare' %}
 {% block league_content %}
+{% include "leagues/_players_subnav.html" %}
 <div class="page-header">
   <div class="page-breadcrumb">
     <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}">Players</a> / Compare

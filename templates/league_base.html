@@ -54,10 +54,6 @@
          href="{{ url_for('leagues.player_pool', league_id=league.id) }}">
         <i class="bi bi-person-plus"></i><span>Players</span>
       </a>
-      <a class="league-tab{% if active_tab|default('') == 'compare' %} active{% endif %}"
-         href="{{ url_for('leagues.player_compare', league_id=league.id) }}">
-        <i class="bi bi-people"></i><span>Compare</span>
-      </a>
       <a class="league-tab{% if active_tab|default('') == 'league' %} active{% endif %}"
          href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
         <i class="bi bi-calendar-week"></i><span>League</span>
@@ -70,16 +66,10 @@
          href="{{ url_for('matchups.history_list', league_id=league.id) }}">
         <i class="bi bi-archive"></i><span>History</span>
       </a>
-      <a class="league-tab{% if active_tab|default('') == 'chat' %} active{% endif %}"
+      <a class="league-tab{% if active_tab|default('') == 'comms' %} active{% endif %}"
          href="{{ url_for('comms.league_chat', league_id=league.id) }}">
-        <i class="bi bi-megaphone"></i><span>Chat</span>
+        <i class="bi bi-megaphone"></i><span>Comms</span>
       </a>
-      {% if nav_user_team|default(none) %}
-      <a class="league-tab{% if active_tab|default('') == 'messages' %} active{% endif %}"
-         href="{{ url_for('comms.inbox', league_id=league.id) }}">
-        <i class="bi bi-chat-dots"></i><span>Messages</span>
-      </a>
-      {% endif %}
       <a class="league-tab{% if active_tab|default('') == 'settings' %} active{% endif %}"
          href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
         <i class="bi bi-gear"></i><span>Settings</span>

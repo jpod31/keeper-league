@@ -1,7 +1,9 @@
 {% extends "league_base.html" %}
 {% set active_tab = 'players' %}
+{% set active_subtab = 'pool' %}
 {% block title %}Players — {{ league.name }}{% endblock %}
 {% block league_content %}
+{% include "leagues/_players_subnav.html" %}
 <style>
   .pool-table th {
     padding: .5rem .6rem;

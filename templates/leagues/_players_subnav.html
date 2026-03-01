@@ -1,0 +1,11 @@
+{# Sub-navigation bar for the "Players" section #}
+<div class="league-subnav">
+  <a class="league-subtab{% if active_subtab|default('') == 'pool' %} active{% endif %}"
+     href="{{ url_for('leagues.player_pool', league_id=league.id) }}">
+    <i class="bi bi-person-plus"></i>Pool
+  </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'compare' %} active{% endif %}"
+     href="{{ url_for('leagues.player_compare', league_id=league.id) }}">
+    <i class="bi bi-people"></i>Compare
+  </a>
+</div>

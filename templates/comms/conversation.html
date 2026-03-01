@@ -1,7 +1,9 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'messages' %}
+{% set active_tab = 'comms' %}
+{% set active_subtab = 'messages' %}
 {% block title %}Chat with {{ other_team.name }} — {{ league.name }}{% endblock %}
 {% block league_content %}
+{% include "comms/_comms_subnav.html" %}
 <div class="row justify-content-center">
   <div class="col-md-8">
     <div class="page-header">
