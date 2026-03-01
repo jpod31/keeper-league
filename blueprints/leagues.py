@@ -1053,7 +1053,8 @@ def season_hub(league_id):
                            user_roster=user_roster,
                            delisted_player_ids=delisted_player_ids,
                            trade_window_dates=trade_window_dates,
-                           mock_draft=mock_draft)
+                           mock_draft=mock_draft,
+                           rolling=_compute_rolling_averages())
 
 
 @leagues_bp.route("/<int:league_id>/season/auto-transition", methods=["POST"])
