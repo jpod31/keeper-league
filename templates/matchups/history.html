@@ -1,7 +1,9 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'history' %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'history' %}
 {% block title %}History — {{ league.name }}{% endblock %}
 {% block league_content %}
+{% include "matchups/_league_subnav.html" %}
 <div class="row justify-content-center">
   <div class="col-md-8">
     <div class="page-header">

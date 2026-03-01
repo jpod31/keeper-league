@@ -62,10 +62,6 @@
          href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
         <i class="bi bi-calendar-range"></i><span>List Management</span>
       </a>
-      <a class="league-tab{% if active_tab|default('') == 'history' %} active{% endif %}"
-         href="{{ url_for('matchups.history_list', league_id=league.id) }}">
-        <i class="bi bi-archive"></i><span>History</span>
-      </a>
       <a class="league-tab{% if active_tab|default('') == 'comms' %} active{% endif %}"
          href="{{ url_for('comms.league_chat', league_id=league.id) }}">
         <i class="bi bi-megaphone"></i><span>Comms</span>
