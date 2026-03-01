@@ -9,6 +9,7 @@ from models.database import (
     db, League, FantasyTeam, FantasyRoster, AflPlayer, AflGame,
     LeaguePositionSlot, WeeklyLineup, LineupSlot,
     PlayerStat, RoundScore, UserDraftWeights, LeagueDraftWeights,
+    LongTermInjury, SeasonConfig,
 )
 from blueprints import check_league_access
 from models.lineup_manager import (
@@ -203,8 +204,14 @@ def squad(league_id, team_id):
         bench_list = [bd["player"] for bd in bench_data]
         bench_filled = sum(1 for p in bench_list if p is not None)
 
-        # Reserves: all roster players not on-field and not on bench
-        reserves = [p for p in players if p.id not in used_ids]
+        # LTIL entries — exclude from reserves
+        ltil_entries = LongTermInjury.query.filter_by(
+            team_id=team_id, removed_at=None, year=league.season_year
+        ).all()
+        ltil_player_ids = {lt.player_id for lt in ltil_entries}
+
+        # Reserves: all roster players not on-field, not on bench, not on LTIL
+        reserves = [p for p in players if p.id not in used_ids and p.id not in ltil_player_ids]
         reserves.sort(key=lambda p: p.rating or 0, reverse=True)
 
         # ── Step 4: Persist to DB so swap/captain/VC operations work ──
@@ -306,6 +313,19 @@ def squad(league_id, team_id):
         except Exception:
             pass
 
+        # LTIL / SSP config
+        from datetime import datetime, timezone
+        season_cfg = SeasonConfig.query.filter_by(
+            league_id=league_id, year=league.season_year
+        ).first()
+        ssp_slots = season_cfg.ssp_slots if season_cfg and season_cfg.ssp_slots else 1
+        ssp_enabled = season_cfg.ssp_enabled if season_cfg else True
+        now = datetime.now(timezone.utc)
+        ssp_window_active = False
+        if season_cfg and season_cfg.ssp_window_open and season_cfg.ssp_window_close:
+            ssp_window_active = season_cfg.ssp_window_open <= now <= season_cfg.ssp_window_close
+        can_remove_ltil = league.status in ("offseason", "setup")
+
         field_data = {
             "zones": zones,
             "bench": bench_list,
@@ -319,6 +339,11 @@ def squad(league_id, team_id):
             "bench_filled": bench_filled,
             "emergency_ids": emergency_ids,
             "next_lockout_time": next_lockout_time,
+            "ltil_entries": ltil_entries,
+            "ssp_slots": ssp_slots,
+            "ssp_enabled": ssp_enabled,
+            "ssp_window_active": ssp_window_active,
+            "can_remove_ltil": can_remove_ltil,
         }
 
     # ── All-time stats for table view ──
@@ -1065,3 +1090,118 @@ def api_season_stats(league_id, team_id):
             }
 
     return jsonify(result)
+
+
+# ── LTIL / SSP API routes ──────────────────────────────────────────
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/api/add-to-ltil", methods=["POST"])
+@login_required
+def api_add_to_ltil(league_id, team_id):
+    """Place a player on the Long-Term Injury List."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+    if team.owner_id != current_user.id:
+        return jsonify({"error": "Not your team"}), 403
+
+    data = request.get_json(silent=True) or {}
+    player_id = data.get("player_id")
+    if not player_id:
+        return jsonify({"error": "Missing player_id"}), 400
+
+    from models.season_manager import add_to_ltil
+    ltil, err = add_to_ltil(team_id, player_id, league_id, league.season_year)
+    if err:
+        return jsonify({"error": err}), 409
+    return jsonify({"ok": True, "ltil_id": ltil.id})
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/api/remove-from-ltil", methods=["POST"])
+@login_required
+def api_remove_from_ltil(league_id, team_id):
+    """Remove a player from LTIL — blocked unless offseason."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+    if team.owner_id != current_user.id:
+        return jsonify({"error": "Not your team"}), 403
+
+    data = request.get_json(silent=True) or {}
+    player_id = data.get("player_id")
+    if not player_id:
+        return jsonify({"error": "Missing player_id"}), 400
+
+    from models.season_manager import remove_from_ltil
+    ltil, err = remove_from_ltil(team_id, player_id, league_id=league_id)
+    if err:
+        return jsonify({"error": err}), 409
+    return jsonify({"ok": True})
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/api/ssp-pick", methods=["POST"])
+@login_required
+def api_ssp_pick(league_id, team_id):
+    """Select an SSP replacement for an LTIL player."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+    if team.owner_id != current_user.id:
+        return jsonify({"error": "Not your team"}), 403
+
+    data = request.get_json(silent=True) or {}
+    ltil_id = data.get("ltil_id")
+    replacement_player_id = data.get("replacement_player_id")
+    if not ltil_id or not replacement_player_id:
+        return jsonify({"error": "Missing ltil_id or replacement_player_id"}), 400
+
+    from models.season_manager import ssp_select_replacement
+    ltil, err = ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id)
+    if err:
+        return jsonify({"error": err}), 409
+    return jsonify({"ok": True})
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/api/ssp-available")
+@login_required
+def api_ssp_available(league_id, team_id):
+    """List unrostered players available for SSP selection."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+    if team.owner_id != current_user.id:
+        return jsonify({"error": "Not your team"}), 403
+
+    # Get all rostered player IDs in this league
+    rostered_ids = set(
+        r.player_id for r in
+        FantasyRoster.query
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+        .all()
+    )
+
+    # Get unrostered players with SC data
+    available = (
+        AflPlayer.query
+        .filter(AflPlayer.id.notin_(rostered_ids))
+        .filter(AflPlayer.sc_avg.isnot(None))
+        .order_by(AflPlayer.sc_avg.desc())
+        .limit(200)
+        .all()
+    )
+
+    return jsonify([
+        {
+            "id": p.id,
+            "name": p.name,
+            "afl_team": p.afl_team,
+            "position": p.position,
+            "sc_avg": p.sc_avg,
+        }
+        for p in available
+    ])

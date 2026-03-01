@@ -37,6 +37,12 @@
         <button class="fv-action-btn fv-act-emg{% if is_emg %} active{% endif %}"
                 title="Toggle Emergency" onclick="event.stopPropagation(); fvSetEmergency({{ p.id }})">E</button>
         {% endif %}
+        {% if is_bench or is_reserve %}
+        <button class="fv-action-btn fv-act-ltil"
+                title="Add to LTIL" onclick="event.stopPropagation(); fvAddToLTIL({{ p.id }})">
+          <i class="bi bi-bandaid"></i>
+        </button>
+        {% endif %}
       </div>
       {# Swap-mode click overlay (hidden until swap mode active) #}
       <div class="fv-swap-overlay" onclick="fvCompleteSub({{ p.id }})" title="Swap here"></div>
@@ -199,6 +205,79 @@
     </div>
   </div>
   </div>{# /fv-wrapper #}
+
+  {# ═══════════ LTIL ZONE ═══════════ #}
+  {% if field_data.ssp_enabled %}
+  <div class="fv-ltil-section">
+    <div class="fv-ltil-hdr">
+      <i class="bi bi-bandaid me-1"></i>Long-Term Injury List
+      <span class="fv-zone-tally ms-2">{{ field_data.ltil_entries|length }} / {{ field_data.ssp_slots }}</span>
+    </div>
+    <div class="fv-ltil-grid">
+      {# Filled LTIL cards #}
+      {% for lt in field_data.ltil_entries %}
+      <div class="fv-ltil-card fv-ltil-filled" data-ltil-id="{{ lt.id }}">
+        <div class="fv-ltil-card-top">
+          <div class="fv-ltil-badge"><i class="bi bi-bandaid-fill"></i> LTIL</div>
+          {% if is_owner and field_data.can_remove_ltil %}
+          <button class="fv-ltil-remove-btn" onclick="fvRemoveLTIL({{ lt.player_id }})" title="Remove from LTIL">
+            <i class="bi bi-x-lg"></i>
+          </button>
+          {% endif %}
+        </div>
+        <div class="fv-ltil-player">
+          <div class="fv-ltil-name">{{ lt.player.name }}</div>
+          <div class="fv-ltil-meta">{{ lt.player.position or '-' }} &bull; AVG {{ '%.0f'|format(lt.player.sc_avg) if lt.player.sc_avg else '-' }}</div>
+        </div>
+        {% if lt.replacement_player %}
+        <div class="fv-ltil-ssp-info">
+          <span class="fv-ltil-ssp-label">SSP:</span>
+          <span class="fv-ltil-ssp-name">{{ lt.replacement_player.name }}</span>
+        </div>
+        {% elif is_owner and field_data.ssp_window_active %}
+        <button class="fv-ltil-ssp-btn" onclick="fvOpenSSPModal({{ lt.id }})">
+          <i class="bi bi-plus-circle me-1"></i>Pick SSP
+        </button>
+        {% else %}
+        <div class="fv-ltil-ssp-info">
+          <span class="fv-ltil-ssp-label" style="color:#484f58;">No replacement</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      {# Empty LTIL slots #}
+      {% for i in range(field_data.ssp_slots - field_data.ltil_entries|length) %}
+      <div class="fv-ltil-card fv-ltil-empty">
+        <div class="fv-ltil-empty-inner">
+          <i class="bi bi-bandaid" style="font-size:1.2rem;color:#484f58;"></i>
+          <span style="font-size:.65rem;color:#484f58;font-weight:600;">LTIL Slot</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ═══ SSP Modal ═══ #}
+  {% if is_owner and field_data.ssp_enabled %}
+  <div class="modal fade" id="sspModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content" style="background:#161b22;border:1px solid #30363d;border-radius:12px;">
+        <div class="modal-header" style="border-bottom:1px solid #30363d;padding:.75rem 1rem;">
+          <h6 class="modal-title fw-bold" style="font-size:.95rem;"><i class="bi bi-bandaid me-1" style="color:#f85149;"></i>SSP — Select Replacement</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="padding:1rem;">
+          <input type="text" class="form-control form-control-sm mb-3" id="sspSearch" placeholder="Search players..." oninput="filterSSPList()" style="background:#0d1117;border-color:#30363d;color:#c9d1d9;">
+          <div id="sspPlayerList" style="max-height:350px;overflow-y:auto;">
+            <div class="text-center text-secondary py-3" style="font-size:.8rem;">Loading players...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   {# ═══════════ RESERVES: full-width horizontal below field+sidebar ═══════════ #}
   {% if field_data.reserves %}
@@ -692,6 +771,83 @@ function fvShowPlayer(pid) {
 
       new bootstrap.Modal(document.getElementById('playerModal')).show();
     });
+}
+
+// ── LTIL / SSP functions ──
+function fvAddToLTIL(pid) {
+  if (!confirm('Place this player on the Long-Term Injury List?')) return;
+  fvApi('/add-to-ltil', {player_id: pid}).then(data => {
+    if (data && !data.error) {
+      fvToast('Player added to LTIL', 'success');
+      fvRefresh();
+    }
+  });
+}
+
+function fvRemoveLTIL(pid) {
+  if (!confirm('Remove this player from the LTIL? (Only available during off-season)')) return;
+  fvApi('/remove-from-ltil', {player_id: pid}).then(data => {
+    if (data && !data.error) {
+      fvToast('Player removed from LTIL', 'success');
+      fvRefresh();
+    }
+  });
+}
+
+let currentLTILId = null;
+let sspPlayersCache = null;
+
+function fvOpenSSPModal(ltilId) {
+  currentLTILId = ltilId;
+  const modal = new bootstrap.Modal(document.getElementById('sspModal'));
+  modal.show();
+  // Load available players
+  if (!sspPlayersCache) {
+    fetch(API_PREFIX + '/ssp-available')
+      .then(r => r.json())
+      .then(data => {
+        sspPlayersCache = data;
+        renderSSPList(data);
+      });
+  } else {
+    renderSSPList(sspPlayersCache);
+  }
+}
+
+function renderSSPList(players) {
+  const container = document.getElementById('sspPlayerList');
+  if (!players || !players.length) {
+    container.innerHTML = '<div class="text-center text-secondary py-3" style="font-size:.8rem;">No available players</div>';
+    return;
+  }
+  container.innerHTML = players.map(p =>
+    `<div class="ssp-player-row" data-name="${(p.name || '').toLowerCase()}">
+      <div class="ssp-player-info">
+        <span class="ssp-player-name">${p.name}</span>
+        <span class="ssp-player-meta">${p.afl_team || ''} &bull; ${p.position || '-'} &bull; AVG ${p.sc_avg ? Math.round(p.sc_avg) : '-'}</span>
+      </div>
+      <button class="btn btn-sm btn-outline-danger" onclick="fvSSPPick(${p.id})" style="font-size:.7rem;padding:2px 10px;">Select</button>
+    </div>`
+  ).join('');
+}
+
+function filterSSPList() {
+  const q = (document.getElementById('sspSearch').value || '').toLowerCase();
+  document.querySelectorAll('.ssp-player-row').forEach(row => {
+    row.style.display = row.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+function fvSSPPick(replacementId) {
+  if (!currentLTILId) return;
+  fvApi('/ssp-pick', {ltil_id: currentLTILId, replacement_player_id: replacementId}).then(data => {
+    if (data && !data.error) {
+      bootstrap.Modal.getInstance(document.getElementById('sspModal'))?.hide();
+      sspPlayersCache = null;
+      fvToast('SSP replacement selected', 'success');
+      fvRefresh();
+    }
+  });
 }
 
 // ── Position Eligibility Hover (event delegation — survives soft refresh) ──

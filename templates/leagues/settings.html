@@ -324,6 +324,17 @@
                 <i class="bi bi-info-circle me-1"></i>Trade window dates are set via Season Hub
               </div>
             </div>
+            <div class="col-md-6">
+              <label for="ssp_window_open" class="form-label" style="font-size:.75rem;">SSP Window Opens</label>
+              <input type="datetime-local" class="form-control form-control-sm" id="ssp_window_open" name="ssp_window_open"
+                     value="{{ season_config.ssp_window_open.strftime('%Y-%m-%dT%H:%M') if season_config and season_config.ssp_window_open else '' }}">
+              <div class="form-text" style="font-size:.7rem;">When owners can pick SSP replacements for LTIL players</div>
+            </div>
+            <div class="col-md-6">
+              <label for="ssp_window_close" class="form-label" style="font-size:.75rem;">SSP Window Closes</label>
+              <input type="datetime-local" class="form-control form-control-sm" id="ssp_window_close" name="ssp_window_close"
+                     value="{{ season_config.ssp_window_close.strftime('%Y-%m-%dT%H:%M') if season_config and season_config.ssp_window_close else '' }}">
+            </div>
           </div>
         </div>
       </div>

@@ -466,6 +466,24 @@ def league_settings(league_id):
         if ssp_slots is not None:
             season_cfg.ssp_slots = ssp_slots
 
+        # SSP window dates
+        ssp_window_open_str = request.form.get("ssp_window_open", "").strip()
+        ssp_window_close_str = request.form.get("ssp_window_close", "").strip()
+        if ssp_window_open_str:
+            try:
+                season_cfg.ssp_window_open = datetime.fromisoformat(ssp_window_open_str)
+            except ValueError:
+                pass
+        else:
+            season_cfg.ssp_window_open = None
+        if ssp_window_close_str:
+            try:
+                season_cfg.ssp_window_close = datetime.fromisoformat(ssp_window_close_str)
+            except ValueError:
+                pass
+        else:
+            season_cfg.ssp_window_close = None
+
         db.session.commit()
 
         # Formation + bench position slots

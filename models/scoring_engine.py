@@ -5,6 +5,8 @@ from models.database import (
     PlayerStat, CustomScoringRule, League, SeasonConfig,
 )
 
+FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC"}
+
 
 def score_round(league_id, afl_round, year):
     """Score all teams for a given round. Uses SuperCoach or custom scoring based on league config.
@@ -36,7 +38,7 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
         team_id=team_id, is_active=True
     ).all()
 
-    on_field = [r for r in roster_entries if not r.is_benched and not r.is_emergency]
+    on_field = [r for r in roster_entries if r.position_code in FIELD_POSITIONS and not r.is_emergency]
     emergencies = [r for r in roster_entries if r.is_emergency]
     captain_entry = next((r for r in roster_entries if r.is_captain), None)
     vc_entry = next((r for r in roster_entries if r.is_vice_captain), None)
@@ -337,8 +339,8 @@ def _compute_uf_fixture(fixture, league_id, afl_round, year, categories):
     home_roster = FantasyRoster.query.filter_by(team_id=fixture.home_team_id, is_active=True).all()
     away_roster = FantasyRoster.query.filter_by(team_id=fixture.away_team_id, is_active=True).all()
 
-    home_ids = [r.player_id for r in home_roster if not r.is_benched and not r.is_emergency]
-    away_ids = [r.player_id for r in away_roster if not r.is_benched and not r.is_emergency]
+    home_ids = [r.player_id for r in home_roster if r.position_code in FIELD_POSITIONS and not r.is_emergency]
+    away_ids = [r.player_id for r in away_roster if r.position_code in FIELD_POSITIONS and not r.is_emergency]
 
     home_stats = PlayerStat.query.filter(
         PlayerStat.player_id.in_(home_ids),
@@ -468,8 +470,8 @@ def compute_custom_breakdown(fixture, league_id):
         team_id=fixture.away_team_id, is_active=True
     ).all()
 
-    home_ids = [r.player_id for r in home_roster if not r.is_benched and not r.is_emergency]
-    away_ids = [r.player_id for r in away_roster if not r.is_benched and not r.is_emergency]
+    home_ids = [r.player_id for r in home_roster if r.position_code in FIELD_POSITIONS and not r.is_emergency]
+    away_ids = [r.player_id for r in away_roster if r.position_code in FIELD_POSITIONS and not r.is_emergency]
 
     home_stats = PlayerStat.query.filter(
         PlayerStat.player_id.in_(home_ids),

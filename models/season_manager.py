@@ -284,13 +284,19 @@ def add_to_ltil(team_id, player_id, league_id, year):
     return ltil, None
 
 
-def remove_from_ltil(team_id, player_id):
+def remove_from_ltil(team_id, player_id, league_id=None):
     """Remove a player from the long-term injury list.
 
+    Only allowed when the league status is 'offseason' or 'setup'.
     If a replacement player was selected via SSP, the replacement is dropped
     from the team's roster.
     Returns (ltil_entry, None) on success or (None, error_msg) on failure.
     """
+    if league_id:
+        league = db.session.get(League, league_id)
+        if league and league.status not in ("offseason", "setup"):
+            return None, "Players can only be removed from LTIL during the off-season."
+
     ltil = LongTermInjury.query.filter_by(
         team_id=team_id, player_id=player_id, removed_at=None
     ).first()
@@ -314,8 +320,20 @@ def remove_from_ltil(team_id, player_id):
 def ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id):
     """SSP: Select a replacement player from the unrostered pool for an LTIL player.
 
+    Validates SSP window dates if configured.
     Returns (ltil_entry, None) on success or (None, error_msg) on failure.
     """
+    # Check SSP window if configured
+    ltil_entry = db.session.get(LongTermInjury, ltil_id)
+    if ltil_entry:
+        season_cfg = SeasonConfig.query.filter_by(
+            league_id=league_id, year=ltil_entry.year
+        ).first()
+        if season_cfg and season_cfg.ssp_window_open and season_cfg.ssp_window_close:
+            now = datetime.now(timezone.utc)
+            if now < season_cfg.ssp_window_open or now > season_cfg.ssp_window_close:
+                return None, "SSP window is not currently open."
+
     ltil = db.session.get(LongTermInjury, ltil_id)
     if not ltil or ltil.team_id != team_id or ltil.removed_at is not None:
         return None, "Invalid LTIL entry."

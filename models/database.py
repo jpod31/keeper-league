@@ -634,6 +634,8 @@ class SeasonConfig(db.Model):
     offseason_delist_min = db.Column(db.Integer, default=3)
     ssp_enabled = db.Column(db.Boolean, default=True)
     ssp_slots = db.Column(db.Integer, default=1)
+    ssp_window_open = db.Column(db.DateTime)
+    ssp_window_close = db.Column(db.DateTime)
 
     __table_args__ = (
         db.UniqueConstraint("league_id", "year", name="uq_season_config_league_year"),
@@ -817,6 +819,8 @@ def _run_migrations(app):
             ("mid_draft_date", "DATETIME"),
             ("off_trade_window_open", "DATETIME"),
             ("off_trade_window_close", "DATETIME"),
+            ("ssp_window_open", "DATETIME"),
+            ("ssp_window_close", "DATETIME"),
         ]
         for col_name, col_def in date_cols:
             if col_name not in existing:
