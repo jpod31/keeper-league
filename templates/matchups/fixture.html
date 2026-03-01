@@ -5,257 +5,253 @@
 {% block league_content %}
 {% include "matchups/_league_subnav.html" %}
 <style>
-  .round-bar { display:flex; gap:4px; overflow-x:auto; padding:6px 0 10px; scrollbar-width:thin; }
-  .round-bar::-webkit-scrollbar { height:4px; }
-  .round-bar::-webkit-scrollbar-thumb { background:#30363d; border-radius:2px; }
-  .round-pill {
-    flex-shrink:0; padding:5px 12px; border-radius:8px; font-size:.75rem; font-weight:600;
-    background:#161b22; border:1px solid #30363d; color:#8b949e; cursor:pointer;
-    text-decoration:none; transition: all .15s; position:relative; text-align:center; min-width:36px;
+  /* ── Round strip ── */
+  .rnd-strip {
+    display:flex; align-items:stretch; background:#0d1117; border:1px solid #21262d;
+    border-radius:10px; overflow:hidden; margin-bottom:20px;
   }
-  .round-pill:hover { border-color:#58a6ff; color:#c9d1d9; }
-  .round-pill.active { background:#1f6feb; border-color:#1f6feb; color:#fff; }
-  .round-pill .rd-dot {
-    position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%;
+  .rnd-strip-scroll {
+    display:flex; overflow-x:auto; flex:1; scrollbar-width:none;
   }
-  .rd-dot-completed { background:#3fb950; }
-  .rd-dot-live { background:#3fb950; animation:pulse 2s infinite; }
-  .rd-dot-partial { background:#d29922; }
-  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:.4;} }
+  .rnd-strip-scroll::-webkit-scrollbar { display:none; }
+  .rnd-item {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-width:44px; padding:10px 6px 8px; text-decoration:none;
+    border-right:1px solid #161b22; transition:background .12s; position:relative; cursor:pointer;
+  }
+  .rnd-item:last-child { border-right:none; }
+  .rnd-item:hover { background:#161b22; }
+  .rnd-item.active { background:#161b22; }
+  .rnd-item.active::after {
+    content:''; position:absolute; bottom:0; left:20%; right:20%;
+    height:2px; background:#58a6ff; border-radius:1px 1px 0 0;
+  }
+  .rnd-num {
+    font-size:.72rem; font-weight:600; color:#484f58; line-height:1;
+    transition:color .12s;
+  }
+  .rnd-item:hover .rnd-num { color:#8b949e; }
+  .rnd-item.active .rnd-num { color:#e6edf3; }
+  .rnd-dot {
+    width:4px; height:4px; border-radius:50%; margin-top:4px;
+  }
+  .rnd-dot-done { background:#2ea043; }
+  .rnd-dot-live { background:#3fb950; animation:livePulse 1.8s ease-in-out infinite; }
+  .rnd-dot-part { background:#9e6a03; }
+  .rnd-dot-none { background:transparent; }
+  @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(1.4);} }
 
-  .matchup-card {
-    background:#161b22; border:1px solid #30363d; border-radius:12px;
-    transition: border-color .15s, transform .1s; overflow:hidden;
-  }
-  .matchup-card:hover { border-color:#484f58; transform:translateY(-1px); }
-  .matchup-row {
-    display:flex; align-items:center; padding:12px 16px; gap:8px;
-  }
-  .matchup-team {
-    flex:1; font-weight:600; font-size:.88rem; color:#c9d1d9;
-    text-decoration:none; transition: color .15s; display:flex; align-items:center; gap:6px;
-  }
-  .matchup-team:hover { color:#58a6ff; }
-  .matchup-team.winner { color:#e6edf3; font-weight:700; }
-  .matchup-team.away { justify-content:flex-end; text-align:right; }
-  .matchup-score-block {
-    display:flex; align-items:center; gap:6px; flex-shrink:0; min-width:90px; justify-content:center;
-  }
-  .matchup-score {
-    font-size:1.1rem; font-weight:700; min-width:32px; text-align:center;
-    padding:2px 6px; border-radius:6px;
-  }
-  .matchup-score.winner { color:#3fb950; background:rgba(63,185,80,.08); }
-  .matchup-score.loser { color:#8b949e; }
-  .matchup-dash { color:#30363d; font-weight:300; }
-  .matchup-vs { color:#484f58; font-size:.75rem; font-weight:600; letter-spacing:1px; }
-  .matchup-status {
-    font-size:.6rem; padding:2px 7px; border-radius:8px; font-weight:600;
-    display:inline-flex; align-items:center; gap:3px;
-  }
-  .status-final { background:rgba(63,185,80,.1); color:#3fb950; }
-  .status-live { background:rgba(63,185,80,.12); color:#3fb950; }
-  .status-sched { background:rgba(139,148,158,.08); color:#8b949e; }
-  .matchup-detail-link {
+  .rnd-nav {
     display:flex; align-items:center; justify-content:center;
-    padding:6px 16px; border-top:1px solid #21262d;
-    font-size:.7rem; color:#484f58; text-decoration:none; transition:color .15s;
+    width:36px; background:transparent; border:none; color:#484f58;
+    cursor:pointer; transition:color .12s; flex-shrink:0; text-decoration:none;
   }
-  .matchup-detail-link:hover { color:#58a6ff; background:rgba(88,166,255,.04); }
-  .round-nav { display:flex; align-items:center; gap:8px; }
-  .round-nav-btn {
-    padding:4px 10px; border-radius:6px; border:1px solid #30363d;
-    background:#161b22; color:#8b949e; text-decoration:none; font-size:.8rem;
-    transition: all .15s;
+  .rnd-nav:hover { color:#c9d1d9; background:#161b22; }
+
+  /* ── Round header ── */
+  .round-hdr {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #21262d;
   }
-  .round-nav-btn:hover { border-color:#58a6ff; color:#c9d1d9; }
-  .round-title { font-size:1.3rem; font-weight:700; color:#e6edf3; }
-  .round-status-pill {
-    font-size:.65rem; padding:3px 10px; border-radius:10px; font-weight:600;
-    margin-left:8px; vertical-align:middle;
+  .round-hdr-left { display:flex; align-items:baseline; gap:10px; }
+  .round-hdr h3 {
+    font-size:1.05rem; font-weight:700; color:#e6edf3; margin:0;
+    letter-spacing:-.01em;
   }
+  .round-hdr .rh-badge {
+    font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px;
+    letter-spacing:.3px; text-transform:uppercase;
+  }
+  .rh-complete { background:rgba(46,160,67,.1); color:#2ea043; }
+  .rh-live { background:rgba(63,185,80,.12); color:#3fb950; }
+  .rh-progress { background:rgba(158,106,3,.1); color:#d29922; }
+  .rh-actions { display:flex; gap:6px; align-items:center; }
+  .rh-btn {
+    font-size:.7rem; padding:4px 10px; border-radius:6px;
+    border:1px solid #30363d; background:transparent; color:#8b949e;
+    text-decoration:none; transition:all .12s; cursor:pointer;
+  }
+  .rh-btn:hover { border-color:#484f58; color:#c9d1d9; }
+  .rh-btn-primary {
+    border-color:rgba(88,166,255,.3); color:#58a6ff;
+  }
+  .rh-btn-primary:hover { border-color:#58a6ff; background:rgba(88,166,255,.06); }
+
+  /* ── Matchup list ── */
+  .mx-list {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px;
+    overflow:hidden;
+  }
+  .mx-row {
+    display:grid; grid-template-columns:1fr auto 1fr auto;
+    align-items:center; padding:14px 20px; gap:0;
+    border-bottom:1px solid #161b22; transition:background .1s;
+  }
+  .mx-row:last-child { border-bottom:none; }
+  .mx-row:hover { background:rgba(22,27,34,.6); }
+
+  .mx-team {
+    font-size:.85rem; font-weight:500; color:#c9d1d9; text-decoration:none;
+    transition:color .1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .mx-team:hover { color:#58a6ff; }
+  .mx-team-home { text-align:left; padding-right:12px; }
+  .mx-team-away { text-align:right; padding-left:12px; }
+  .mx-team.won { color:#e6edf3; font-weight:700; }
+
+  .mx-centre {
+    display:flex; align-items:center; justify-content:center;
+    min-width:100px; gap:0;
+  }
+  .mx-sc {
+    font-size:.95rem; font-weight:700; min-width:34px; text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  .mx-sc.won { color:#e6edf3; }
+  .mx-sc.lost { color:#484f58; }
+  .mx-sc.draw { color:#8b949e; }
+  .mx-sep { color:#21262d; margin:0 4px; font-weight:300; font-size:.8rem; }
+  .mx-vs {
+    font-size:.65rem; font-weight:700; color:#30363d; letter-spacing:1.5px;
+    text-transform:uppercase;
+  }
+  .mx-live-tag {
+    font-size:.55rem; font-weight:700; color:#3fb950; letter-spacing:.5px;
+    background:rgba(63,185,80,.08); padding:2px 6px; border-radius:3px;
+  }
+
+  .mx-arrow {
+    display:flex; align-items:center; justify-content:center;
+    width:28px; color:#21262d; transition:color .1s;
+  }
+  .mx-row:hover .mx-arrow { color:#484f58; }
+  .mx-arrow a { color:inherit; text-decoration:none; display:flex; }
+
+  /* ── Win indicator bar ── */
+  .mx-win-bar {
+    position:absolute; left:0; top:0; bottom:0; width:3px;
+    border-radius:0 2px 2px 0;
+  }
+
+  /* ── Empty state ── */
+  .season-empty {
+    text-align:center; padding:60px 20px; color:#484f58;
+  }
+  .season-empty i { font-size:2rem; margin-bottom:12px; display:block; color:#30363d; }
+  .season-empty h4 { color:#8b949e; font-size:1rem; font-weight:600; margin-bottom:4px; }
+  .season-empty p { font-size:.8rem; }
+  .season-empty a { color:#58a6ff; }
 </style>
 
-<div class="page-header" style="margin-top:0;">
-  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
-    <div>
-      <h2 class="mb-0">Season {{ league.season_year }}</h2>
-      <span style="font-size:.78rem;color:#8b949e;">
-        {% if season_config %}{{ season_config.num_regular_rounds }} rounds
-          + {{ season_config.finals_teams or 4 }}-team finals{% endif %}
-      </span>
-    </div>
-    {% if is_commissioner and current_fixtures %}
-      <form method="POST" action="{{ url_for('matchups.score_round_view', league_id=league.id, afl_round=selected_round) }}" style="margin:0;">
-        <button type="submit" class="btn btn-outline-primary btn-sm" onclick="return confirm('Score round {{ selected_round }}?')">
-          <i class="bi bi-calculator me-1"></i>Score Round {{ selected_round }}
-        </button>
-      </form>
-    {% endif %}
-  </div>
-</div>
-
 {% if rounds %}
-  {# ── Round selector bar ── #}
-  <div class="round-bar" id="roundBar">
-    {% for rnd_num in round_meta.keys()|sort %}
-      {% set status = round_meta[rnd_num] %}
-      <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=rnd_num) }}"
-         class="round-pill{% if rnd_num == selected_round %} active{% endif %}"
-         id="rp-{{ rnd_num }}">
-        {{ rnd_num }}
-        {% if status == 'completed' %}
-          <span class="rd-dot rd-dot-completed"></span>
-        {% elif status == 'live' %}
-          <span class="rd-dot rd-dot-live"></span>
-        {% elif status == 'partial' %}
-          <span class="rd-dot rd-dot-partial"></span>
-        {% endif %}
+  {# ── Round strip ── #}
+  <div class="rnd-strip" id="rndStrip">
+    {% set sorted_rounds = round_meta.keys()|sort|list %}
+    {% if selected_round > sorted_rounds[0] %}
+      <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=selected_round-1) }}" class="rnd-nav">
+        <i class="bi bi-chevron-left" style="font-size:.7rem;"></i>
       </a>
-    {% endfor %}
-  </div>
-
-  {# ── Round header with nav ── #}
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="round-nav">
-      {% if selected_round > 1 and (selected_round - 1) in round_meta %}
-        <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=selected_round-1) }}" class="round-nav-btn">
-          <i class="bi bi-chevron-left"></i>
+    {% endif %}
+    <div class="rnd-strip-scroll" id="rndScroll">
+      {% for rnd_num in sorted_rounds %}
+        {% set st = round_meta[rnd_num] %}
+        <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=rnd_num) }}"
+           class="rnd-item{% if rnd_num == selected_round %} active{% endif %}" id="ri-{{ rnd_num }}">
+          <span class="rnd-num">{{ rnd_num }}</span>
+          <span class="rnd-dot {% if st == 'completed' %}rnd-dot-done{% elif st == 'live' %}rnd-dot-live{% elif st == 'partial' %}rnd-dot-part{% else %}rnd-dot-none{% endif %}"></span>
         </a>
-      {% endif %}
-      <span class="round-title">
-        Round {{ selected_round }}
-        {% set rs = round_meta.get(selected_round, 'scheduled') %}
-        {% if rs == 'completed' %}
-          <span class="round-status-pill status-final">Completed</span>
-        {% elif rs == 'live' %}
-          <span class="round-status-pill status-live"><i class="bi bi-broadcast me-1"></i>Live</span>
-        {% elif rs == 'partial' %}
-          <span class="round-status-pill" style="background:rgba(210,153,34,.1);color:#d29922;">In Progress</span>
-        {% endif %}
-      </span>
-      {% if selected_round < max_round and (selected_round + 1) in round_meta %}
-        <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=selected_round+1) }}" class="round-nav-btn">
-          <i class="bi bi-chevron-right"></i>
-        </a>
-      {% endif %}
+      {% endfor %}
     </div>
-    {% if current_fixtures and current_fixtures[0].status in ['live', 'completed'] %}
-      <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=selected_round) }}"
-         class="btn btn-sm" style="font-size:.75rem;padding:4px 10px;border:1px solid #30363d;color:#8b949e;">
-        <i class="bi bi-broadcast me-1"></i>Live View
+    {% if selected_round < sorted_rounds[-1] %}
+      <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=selected_round+1) }}" class="rnd-nav">
+        <i class="bi bi-chevron-right" style="font-size:.7rem;"></i>
       </a>
     {% endif %}
   </div>
 
-  {# ── Matchup cards for selected round ── #}
-  <div class="row g-3 mb-4">
+  {# ── Round header ── #}
+  {% set rs = round_meta.get(selected_round, 'scheduled') %}
+  <div class="round-hdr">
+    <div class="round-hdr-left">
+      <h3>Round {{ selected_round }}</h3>
+      {% if rs == 'completed' %}
+        <span class="rh-badge rh-complete">Complete</span>
+      {% elif rs == 'live' %}
+        <span class="rh-badge rh-live"><i class="bi bi-broadcast me-1" style="font-size:.5rem;"></i>Live</span>
+      {% elif rs == 'partial' %}
+        <span class="rh-badge rh-progress">In Progress</span>
+      {% endif %}
+    </div>
+    <div class="rh-actions">
+      {% if current_fixtures and rs in ['live', 'completed', 'partial'] %}
+        <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=selected_round) }}" class="rh-btn">
+          <i class="bi bi-broadcast me-1"></i>Live
+        </a>
+      {% endif %}
+      {% if is_commissioner and current_fixtures %}
+        <form method="POST" action="{{ url_for('matchups.score_round_view', league_id=league.id, afl_round=selected_round) }}" style="margin:0;">
+          <button type="submit" class="rh-btn rh-btn-primary" onclick="return confirm('Score round {{ selected_round }}?')">
+            <i class="bi bi-calculator me-1"></i>Score
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Matchup list ── #}
+  <div class="mx-list">
     {% for f in current_fixtures %}
       {% set home_won = f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}
       {% set away_won = f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}
       {% set is_draw = f.status == 'completed' and (f.home_score or 0) == (f.away_score or 0) %}
-      <div class="col-md-6">
-        <div class="matchup-card">
-          <div class="matchup-row">
-            <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.home_team_id) }}"
-               class="matchup-team{{ ' winner' if home_won }}">
-              {{ f.home_team.name }}
-            </a>
-            <div class="matchup-score-block">
-              {% if f.status == 'completed' %}
-                <span class="matchup-score{{ ' winner' if home_won else ' loser' }}">{{ '%.0f'|format(f.home_score or 0) }}</span>
-                <span class="matchup-dash">-</span>
-                <span class="matchup-score{{ ' winner' if away_won else ' loser' }}">{{ '%.0f'|format(f.away_score or 0) }}</span>
-              {% elif f.status == 'live' %}
-                <span class="matchup-status status-live"><i class="bi bi-broadcast"></i> LIVE</span>
-              {% else %}
-                <span class="matchup-vs">VS</span>
-              {% endif %}
-            </div>
-            <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.away_team_id) }}"
-               class="matchup-team away{{ ' winner' if away_won }}">
-              {{ f.away_team.name }}
-            </a>
-          </div>
-          <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=f.id) }}"
-             class="matchup-detail-link">
-            {% if f.status == 'completed' %}
-              View Full Breakdown <i class="bi bi-chevron-right ms-1"></i>
-            {% else %}
-              Match Details <i class="bi bi-chevron-right ms-1"></i>
-            {% endif %}
+      <div class="mx-row" style="position:relative;">
+        {% if home_won %}<div class="mx-win-bar" style="background:#2ea043;"></div>{% endif %}
+        {% if away_won %}<div class="mx-win-bar" style="background:transparent;"></div>{% endif %}
+
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.home_team_id) }}"
+           class="mx-team mx-team-home{{ ' won' if home_won }}">
+          {{ f.home_team.name }}
+        </a>
+
+        <div class="mx-centre">
+          {% if f.status == 'completed' %}
+            <span class="mx-sc{{ ' won' if home_won else (' lost' if away_won else ' draw') }}">{{ '%.0f'|format(f.home_score or 0) }}</span>
+            <span class="mx-sep">&ndash;</span>
+            <span class="mx-sc{{ ' won' if away_won else (' lost' if home_won else ' draw') }}">{{ '%.0f'|format(f.away_score or 0) }}</span>
+          {% elif f.status == 'live' %}
+            <span class="mx-live-tag"><i class="bi bi-broadcast me-1"></i>LIVE</span>
+          {% else %}
+            <span class="mx-vs">vs</span>
+          {% endif %}
+        </div>
+
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.away_team_id) }}"
+           class="mx-team mx-team-away{{ ' won' if away_won }}">
+          {{ f.away_team.name }}
+        </a>
+
+        <div class="mx-arrow">
+          <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=f.id) }}">
+            <i class="bi bi-chevron-right" style="font-size:.65rem;"></i>
           </a>
         </div>
       </div>
     {% endfor %}
   </div>
 
-  {# ── Mini schedule: surrounding rounds ── #}
-  {% set nearby_start = [1, selected_round - 2]|max %}
-  {% set nearby_end = [max_round, selected_round + 4]|min %}
-  {% set nearby_rounds = [] %}
-  {% for r in range(nearby_start, nearby_end + 1) %}
-    {% if r != selected_round and r in round_meta %}
-      {% if nearby_rounds.append(r) %}{% endif %}
-    {% endif %}
-  {% endfor %}
-  {% if nearby_rounds %}
-  <div class="card" style="border-color:#21262d;">
-    <div class="card-header" style="padding:.6rem 1rem;border-bottom:1px solid #21262d;">
-      <span style="font-size:.8rem;font-weight:600;color:#8b949e;">Nearby Rounds</span>
-    </div>
-    <div class="card-body p-0">
-      {% for rnd_num in nearby_rounds %}
-        {% set status = round_meta[rnd_num] %}
-        {% set fxs = rounds.get(rnd_num, []) %}
-        <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=rnd_num) }}"
-           class="d-flex justify-content-between align-items-center px-3 py-2 text-decoration-none"
-           style="border-bottom:1px solid #21262d;">
-          <div class="d-flex align-items-center gap-2">
-            <span style="font-size:.8rem;font-weight:700;color:#c9d1d9;min-width:50px;">Rd {{ rnd_num }}</span>
-            {% if status == 'completed' %}
-              <span class="matchup-status status-final">Final</span>
-            {% elif status == 'live' %}
-              <span class="matchup-status status-live"><i class="bi bi-broadcast"></i> Live</span>
-            {% endif %}
-          </div>
-          <div style="font-size:.75rem;color:#8b949e;">
-            {% for f in fxs %}
-              <span style="margin-left:8px;">
-                {{ f.home_team.name[:8] }}
-                {% if f.status == 'completed' %}
-                  {{ '%.0f'|format(f.home_score or 0) }}-{{ '%.0f'|format(f.away_score or 0) }}
-                {% else %}
-                  v
-                {% endif %}
-                {{ f.away_team.name[:8] }}
-              </span>
-            {% endfor %}
-          </div>
-          <i class="bi bi-chevron-right" style="color:#484f58;font-size:.65rem;"></i>
-        </a>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
 {% else %}
-  <div class="empty-state">
-    <div class="empty-icon"><i class="bi bi-calendar-week" style="font-size:1.5rem;"></i></div>
+  <div class="season-empty">
+    <i class="bi bi-calendar-week"></i>
     <h4>No fixture generated</h4>
-    <p>{% if is_commissioner %}Go to <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}">League Settings</a> to regenerate the fixture.{% else %}The commissioner hasn't configured the fixture yet.{% endif %}</p>
+    <p>{% if is_commissioner %}Head to <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}">Settings</a> to generate the season fixture.{% else %}The commissioner hasn't set up the fixture yet.{% endif %}</p>
   </div>
 {% endif %}
 
 <script>
-// Auto-scroll round bar to active pill
-(function() {
-  const bar = document.getElementById('roundBar');
-  const active = bar && bar.querySelector('.round-pill.active');
-  if (active && bar) {
-    const offset = active.offsetLeft - bar.offsetWidth / 2 + active.offsetWidth / 2;
-    bar.scrollLeft = Math.max(0, offset);
-  }
+(function(){
+  var s = document.getElementById('rndScroll');
+  var a = s && s.querySelector('.rnd-item.active');
+  if(a && s) s.scrollLeft = a.offsetLeft - s.offsetWidth/2 + a.offsetWidth/2;
 })();
 </script>
 {% endblock %}

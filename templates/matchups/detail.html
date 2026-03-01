@@ -4,107 +4,150 @@
 {% block title %}{{ fixture.home_team.name }} vs {{ fixture.away_team.name }} — {{ league.name }}{% endblock %}
 {% block league_content %}
 {% include "matchups/_league_subnav.html" %}
+<style>
+  .mu-hero {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px;
+    padding:28px 24px; margin-bottom:20px; overflow:hidden;
+  }
+  .mu-hero-grid {
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px;
+  }
+  .mu-hero-team {
+    text-decoration:none; transition:color .1s; text-align:center;
+  }
+  .mu-hero-team:hover .mu-tname { color:#58a6ff; }
+  .mu-tname {
+    font-size:1rem; font-weight:700; color:#e6edf3; margin-bottom:4px;
+    transition:color .1s;
+  }
+  .mu-tscore {
+    font-size:2.2rem; font-weight:800; line-height:1;
+    font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+  }
+  .mu-tscore.won { color:#e6edf3; }
+  .mu-tscore.lost { color:#30363d; }
+  .mu-tscore.draw { color:#8b949e; }
+  .mu-tscore.pending { color:#21262d; font-size:1.6rem; }
+  .mu-centre {
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .mu-status {
+    font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px;
+    letter-spacing:.3px; text-transform:uppercase;
+  }
+  .mu-final { background:rgba(46,160,67,.08); color:#2ea043; }
+  .mu-sched { color:#30363d; font-size:.7rem; font-weight:600; letter-spacing:1.5px; }
+  .mu-margin {
+    font-size:.65rem; color:#484f58; margin-top:2px;
+  }
+
+  .mu-actions {
+    display:flex; gap:8px; margin-top:16px; justify-content:center;
+    padding-top:16px; border-top:1px solid #161b22;
+  }
+  .mu-act {
+    font-size:.7rem; padding:5px 12px; border-radius:6px;
+    border:1px solid #21262d; background:transparent; color:#8b949e;
+    text-decoration:none; transition:all .12s;
+  }
+  .mu-act:hover { border-color:#30363d; color:#c9d1d9; }
+
+  .uf-wrap {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px;
+    overflow:hidden; margin-bottom:20px;
+  }
+  .uf-hdr {
+    padding:10px 16px; border-bottom:1px solid #21262d;
+    font-size:.75rem; font-weight:600; color:#8b949e;
+  }
+  .uf-row {
+    display:grid; grid-template-columns:1fr auto 1fr; padding:8px 16px;
+    border-bottom:1px solid #161b22; font-size:.8rem; align-items:center;
+  }
+  .uf-row:last-child { border-bottom:none; }
+  .uf-val { font-variant-numeric:tabular-nums; }
+  .uf-val.uf-w { color:#e6edf3; font-weight:600; }
+  .uf-val.uf-l { color:#484f58; }
+  .uf-stat {
+    text-align:center; font-size:.7rem; color:#484f58;
+    text-transform:capitalize;
+  }
+</style>
+
 <div class="page-header" style="margin-top:0;">
   <div class="page-breadcrumb">
     <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=fixture.afl_round) }}">Season</a>
-    / <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=fixture.afl_round) }}">Round {{ fixture.afl_round }}</a>
-    / Matchup
+    / Round {{ fixture.afl_round }}{% if fixture.is_final %} / {{ fixture.final_type }}{% endif %}
   </div>
-  <h2>{% if fixture.is_final %}{{ fixture.final_type }} &mdash; {% endif %}Round {{ fixture.afl_round }}</h2>
 </div>
 
-<div class="card mb-4">
-  <div class="card-body py-4">
-    <div class="row text-center align-items-center">
-      <div class="col-5">
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.home_team_id) }}" class="text-decoration-none">
-          <h4 class="fw-bold mb-2" style="color:#e6edf3;transition:color .15s;"
-              onmouseover="this.style.color='#58a6ff'" onmouseout="this.style.color='#e6edf3'">{{ fixture.home_team.name }}</h4>
-        </a>
-        <span class="fixture-score {% if fixture.status == 'completed' and (fixture.home_score or 0) > (fixture.away_score or 0) %}text-success{% endif %}" style="font-size:2.5rem;">
-          {{ '%.0f'|format(fixture.home_score or 0) if fixture.status == 'completed' else '-' }}
-        </span>
-      </div>
-      <div class="col-2">
-        {% if fixture.status == 'completed' %}
-          <span class="status-pill status-completed">Final</span>
-        {% else %}
-          <span class="fixture-vs" style="font-size:.85rem;">VS</span>
+{% set home_won = fixture.status == 'completed' and (fixture.home_score or 0) > (fixture.away_score or 0) %}
+{% set away_won = fixture.status == 'completed' and (fixture.away_score or 0) > (fixture.home_score or 0) %}
+{% set is_draw = fixture.status == 'completed' and (fixture.home_score or 0) == (fixture.away_score or 0) %}
+
+<div class="mu-hero">
+  <div class="mu-hero-grid">
+    <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.home_team_id) }}" class="mu-hero-team">
+      <div class="mu-tname">{{ fixture.home_team.name }}</div>
+      {% if fixture.status == 'completed' %}
+        <div class="mu-tscore{{ ' won' if home_won else (' lost' if away_won else ' draw') }}">{{ '%.0f'|format(fixture.home_score or 0) }}</div>
+      {% else %}
+        <div class="mu-tscore pending">&ndash;</div>
+      {% endif %}
+    </a>
+
+    <div class="mu-centre">
+      {% if fixture.status == 'completed' %}
+        <span class="mu-status mu-final">Final</span>
+        {% set margin = ((fixture.home_score or 0) - (fixture.away_score or 0))|abs %}
+        {% if margin > 0 %}
+          <span class="mu-margin">by {{ '%.0f'|format(margin) }} pts</span>
         {% endif %}
-      </div>
-      <div class="col-5">
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.away_team_id) }}" class="text-decoration-none">
-          <h4 class="fw-bold mb-2" style="color:#e6edf3;transition:color .15s;"
-              onmouseover="this.style.color='#58a6ff'" onmouseout="this.style.color='#e6edf3'">{{ fixture.away_team.name }}</h4>
-        </a>
-        <span class="fixture-score {% if fixture.status == 'completed' and (fixture.away_score or 0) > (fixture.home_score or 0) %}text-success{% endif %}" style="font-size:2.5rem;">
-          {{ '%.0f'|format(fixture.away_score or 0) if fixture.status == 'completed' else '-' }}
-        </span>
-      </div>
+      {% else %}
+        <span class="mu-sched">VS</span>
+      {% endif %}
     </div>
+
+    <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.away_team_id) }}" class="mu-hero-team">
+      <div class="mu-tname">{{ fixture.away_team.name }}</div>
+      {% if fixture.status == 'completed' %}
+        <div class="mu-tscore{{ ' won' if away_won else (' lost' if home_won else ' draw') }}">{{ '%.0f'|format(fixture.away_score or 0) }}</div>
+      {% else %}
+        <div class="mu-tscore pending">&ndash;</div>
+      {% endif %}
+    </a>
+  </div>
+
+  <div class="mu-actions">
+    <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.home_team_id) }}" class="mu-act">
+      {{ fixture.home_team.name }} Squad
+    </a>
+    <a href="{{ url_for('team.lineup', league_id=league.id, team_id=fixture.home_team_id, afl_round=fixture.afl_round) }}" class="mu-act">
+      {{ fixture.home_team.name[:8] }} Lineup
+    </a>
+    <a href="{{ url_for('team.lineup', league_id=league.id, team_id=fixture.away_team_id, afl_round=fixture.afl_round) }}" class="mu-act">
+      {{ fixture.away_team.name[:8] }} Lineup
+    </a>
+    <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.away_team_id) }}" class="mu-act">
+      {{ fixture.away_team.name }} Squad
+    </a>
   </div>
 </div>
 
 {% if uf_breakdown %}
-<div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-trophy me-2" style="color:#d29922;"></i>Category Breakdown</h5>
-  </div>
-  <div class="card-body p-0">
-    <table class="table table-sm mb-0 uf-breakdown">
-      <thead>
-        <tr>
-          <th style="width:40%;">{{ fixture.home_team.name }}</th>
-          <th class="text-center" style="width:20%;">Stat</th>
-          <th class="text-end" style="width:40%;">{{ fixture.away_team.name }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in uf_breakdown %}
-        <tr>
-          <td class="{{ 'uf-winner' if row.winner == 'home' else ('uf-loser' if row.winner == 'away' else '') }}">
-            {{ row.home }}
-            {% if row.winner == 'home' %}<i class="bi bi-check-circle-fill ms-1" style="font-size:.7rem;"></i>{% endif %}
-          </td>
-          <td class="text-center" style="color:#8b949e;font-size:.8rem;">{{ row.stat.replace('_', ' ')|title }}</td>
-          <td class="text-end {{ 'uf-winner' if row.winner == 'away' else ('uf-loser' if row.winner == 'home' else '') }}">
-            {% if row.winner == 'away' %}<i class="bi bi-check-circle-fill me-1" style="font-size:.7rem;"></i>{% endif %}
-            {{ row.away }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+<div class="uf-wrap">
+  <div class="uf-hdr">Category Breakdown</div>
+  {% for row in uf_breakdown %}
+    <div class="uf-row">
+      <div class="uf-val{{ ' uf-w' if row.winner == 'home' else ' uf-l' }}" style="text-align:left;">
+        {{ row.home }}{% if row.winner == 'home' %} <i class="bi bi-check2" style="font-size:.7rem;"></i>{% endif %}
+      </div>
+      <div class="uf-stat">{{ row.stat.replace('_', ' ') }}</div>
+      <div class="uf-val{{ ' uf-w' if row.winner == 'away' else ' uf-l' }}" style="text-align:right;">
+        {% if row.winner == 'away' %}<i class="bi bi-check2" style="font-size:.7rem;"></i> {% endif %}{{ row.away }}
+      </div>
+    </div>
+  {% endfor %}
 </div>
 {% endif %}
-
-<div class="row g-3">
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header">
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.home_team_id) }}" class="text-decoration-none">
-          <h5 class="mb-0 fw-bold" style="font-size:.95rem;color:#e6edf3;">{{ fixture.home_team.name }}</h5>
-        </a>
-      </div>
-      <div class="card-body d-flex gap-2">
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.home_team_id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-people me-1"></i>Squad</a>
-        <a href="{{ url_for('team.lineup', league_id=league.id, team_id=fixture.home_team_id, afl_round=fixture.afl_round) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-layout-text-window me-1"></i>Lineup</a>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header">
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.away_team_id) }}" class="text-decoration-none">
-          <h5 class="mb-0 fw-bold" style="font-size:.95rem;color:#e6edf3;">{{ fixture.away_team.name }}</h5>
-        </a>
-      </div>
-      <div class="card-body d-flex gap-2">
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.away_team_id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-people me-1"></i>Squad</a>
-        <a href="{{ url_for('team.lineup', league_id=league.id, team_id=fixture.away_team_id, afl_round=fixture.afl_round) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-layout-text-window me-1"></i>Lineup</a>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %}

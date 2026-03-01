@@ -4,72 +4,104 @@
 {% block title %}Ladder — {{ league.name }}{% endblock %}
 {% block league_content %}
 {% include "matchups/_league_subnav.html" %}
-<div class="page-header" style="margin-top:0;">
-  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
-    <div>
-      <h2 class="mb-0">Ladder</h2>
-      <span style="font-size:.78rem;color:#8b949e;">{{ league.season_year }} standings</span>
-    </div>
-  </div>
-</div>
+<style>
+  .ldr-wrap {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden;
+  }
+  .ldr-table { width:100%; border-collapse:collapse; }
+  .ldr-table th {
+    font-size:.65rem; font-weight:600; color:#484f58; text-transform:uppercase;
+    letter-spacing:.5px; padding:10px 12px; border-bottom:1px solid #21262d;
+    white-space:nowrap;
+  }
+  .ldr-table td {
+    font-size:.8rem; padding:10px 12px; border-bottom:1px solid #161b22;
+    color:#8b949e; font-variant-numeric:tabular-nums;
+  }
+  .ldr-table tbody tr { transition:background .1s; }
+  .ldr-table tbody tr:hover { background:rgba(22,27,34,.5); }
+  .ldr-table tbody tr:last-child td { border-bottom:none; }
+  .ldr-finals-line td { border-bottom:2px solid rgba(46,160,67,.2) !important; }
+
+  .ldr-pos {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:24px; height:24px; border-radius:6px; font-size:.7rem; font-weight:700;
+  }
+  .ldr-pos-finals { background:rgba(46,160,67,.08); color:#2ea043; }
+  .ldr-pos-out { color:#30363d; }
+  .ldr-pos-1 { background:rgba(227,179,65,.1); color:#e3b341; }
+  .ldr-pos-2 { background:rgba(139,148,158,.06); color:#8b949e; }
+  .ldr-pos-3 { background:rgba(210,164,122,.06); color:#d2a47a; }
+
+  .ldr-name {
+    color:#e6edf3; font-weight:600; text-decoration:none; transition:color .1s;
+  }
+  .ldr-name:hover { color:#58a6ff; }
+  .ldr-pts { color:#58a6ff; font-weight:700; }
+  .ldr-pct { font-weight:500; }
+  .ldr-footer {
+    padding:8px 16px; font-size:.68rem; color:#30363d;
+    border-top:1px solid #161b22;
+  }
+</style>
 
 {% if standings %}
-  <div class="card">
-    <div class="card-body p-0">
-      <table class="table table-hover mb-0 ladder-table">
-        <thead>
-          <tr>
-            <th style="width:40px;"></th>
-            <th>Team</th>
-            <th class="text-center">P</th>
-            <th class="text-center">W</th>
-            <th class="text-center">L</th>
-            <th class="text-center">D</th>
-            <th class="text-center">Pts</th>
-            <th class="text-end">PF</th>
-            <th class="text-end">PA</th>
-            <th class="text-end">%</th>
+  <div class="ldr-wrap">
+    <table class="ldr-table">
+      <thead>
+        <tr>
+          <th style="width:40px;text-align:center;">#</th>
+          <th>Team</th>
+          <th style="text-align:center;">P</th>
+          <th style="text-align:center;">W</th>
+          <th style="text-align:center;">L</th>
+          <th style="text-align:center;">D</th>
+          <th style="text-align:center;">Pts</th>
+          <th style="text-align:right;">For</th>
+          <th style="text-align:right;">Agst</th>
+          <th style="text-align:right;">%</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in standings %}
+          {% set pos = loop.index %}
+          {% set in_finals = pos <= finals_teams %}
+          <tr{% if in_finals and pos == finals_teams %} class="ldr-finals-line"{% endif %}>
+            <td style="text-align:center;">
+              <span class="ldr-pos{% if pos == 1 %} ldr-pos-1{% elif pos == 2 %} ldr-pos-2{% elif pos == 3 %} ldr-pos-3{% elif in_finals %} ldr-pos-finals{% else %} ldr-pos-out{% endif %}">
+                {{ pos }}
+              </span>
+            </td>
+            <td>
+              <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}" class="ldr-name">
+                {{ s.team.name }}
+              </a>
+            </td>
+            <td style="text-align:center;">{{ s.wins + s.losses + s.draws }}</td>
+            <td style="text-align:center;">{{ s.wins }}</td>
+            <td style="text-align:center;">{{ s.losses }}</td>
+            <td style="text-align:center;">{{ s.draws }}</td>
+            <td style="text-align:center;"><span class="ldr-pts">{{ s.ladder_points }}</span></td>
+            <td style="text-align:right;">{{ '%.0f'|format(s.points_for) if s.points_for > 0 else '–' }}</td>
+            <td style="text-align:right;">{{ '%.0f'|format(s.points_against) if s.points_against > 0 else '–' }}</td>
+            <td style="text-align:right;">
+              <span class="ldr-pct">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '–' }}{% if s.percentage > 0 %}%{% endif %}</span>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {% for s in standings %}
-            {% set pos = loop.index %}
-            {% set in_finals = pos <= finals_teams %}
-            <tr style="{% if in_finals and pos == finals_teams %}border-bottom:2px solid rgba(35,134,54,.3);{% endif %}">
-              <td>
-                <span class="ladder-pos {{ 'top-4' if in_finals else '' }}"
-                      style="{% if pos == 1 %}color:#e3b341;{% elif pos == 2 %}color:#c9d1d9;{% elif pos == 3 %}color:#d2a47a;{% endif %}">
-                  {{ pos }}
-                </span>
-              </td>
-              <td>
-                <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}"
-                   class="text-decoration-none" style="color:#e6edf3;">
-                  <strong>{{ s.team.name }}</strong>
-                </a>
-              </td>
-              <td class="text-center" style="color:#8b949e;">{{ s.wins + s.losses + s.draws }}</td>
-              <td class="text-center">{{ s.wins }}</td>
-              <td class="text-center">{{ s.losses }}</td>
-              <td class="text-center">{{ s.draws }}</td>
-              <td class="text-center"><strong style="color:#58a6ff;">{{ s.ladder_points }}</strong></td>
-              <td class="text-end">{{ '%.0f'|format(s.points_for) }}</td>
-              <td class="text-end">{{ '%.0f'|format(s.points_against) }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '-' }}{% if s.percentage > 0 %}%{% endif %}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if finals_teams > 0 %}
+    <div class="ldr-footer">
+      Top {{ finals_teams }} qualify for finals
     </div>
-  </div>
-  <div class="mt-2" style="font-size:.75rem;color:#484f58;">
-    <i class="bi bi-info-circle me-1"></i>Top {{ finals_teams }} teams qualify for finals
+    {% endif %}
   </div>
 {% else %}
-  <div class="empty-state">
-    <div class="empty-icon"><i class="bi bi-bar-chart" style="font-size:1.5rem;"></i></div>
-    <h4>No teams in this league yet</h4>
-    <p>Add teams to see the ladder.</p>
+  <div style="text-align:center;padding:60px 20px;color:#484f58;">
+    <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
+    <h4 style="color:#8b949e;font-size:1rem;font-weight:600;">No teams yet</h4>
+    <p style="font-size:.8rem;">Teams will appear here once they join the league.</p>
   </div>
 {% endif %}
 {% endblock %}

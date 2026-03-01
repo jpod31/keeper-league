@@ -4,76 +4,110 @@
 {% block title %}Round {{ afl_round }} — {{ league.name }}{% endblock %}
 {% block league_content %}
 {% include "matchups/_league_subnav.html" %}
+<style>
+  .rd-hdr {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #21262d;
+  }
+  .rd-hdr-left { display:flex; align-items:center; gap:10px; }
+  .rd-hdr h3 { font-size:1.05rem; font-weight:700; color:#e6edf3; margin:0; }
+  .rd-nav {
+    display:flex; align-items:center; justify-content:center;
+    width:28px; height:28px; border-radius:6px; border:1px solid #21262d;
+    background:transparent; color:#484f58; text-decoration:none;
+    transition:all .12s; font-size:.7rem;
+  }
+  .rd-nav:hover { border-color:#30363d; color:#c9d1d9; }
+  .rd-actions { display:flex; gap:6px; }
+  .rd-btn {
+    font-size:.7rem; padding:4px 10px; border-radius:6px;
+    border:1px solid #21262d; background:transparent; color:#8b949e;
+    text-decoration:none; transition:all .12s; cursor:pointer;
+  }
+  .rd-btn:hover { border-color:#30363d; color:#c9d1d9; }
+  .rd-btn-primary { border-color:rgba(88,166,255,.3); color:#58a6ff; }
+  .rd-btn-primary:hover { border-color:#58a6ff; background:rgba(88,166,255,.06); }
+
+  .rd-list {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden;
+  }
+  .rd-row {
+    display:grid; grid-template-columns:1fr auto 1fr auto; align-items:center;
+    padding:14px 20px; border-bottom:1px solid #161b22; transition:background .1s;
+    position:relative;
+  }
+  .rd-row:last-child { border-bottom:none; }
+  .rd-row:hover { background:rgba(22,27,34,.5); }
+  .rd-team {
+    font-size:.85rem; font-weight:500; color:#c9d1d9; text-decoration:none; transition:color .1s;
+  }
+  .rd-team:hover { color:#58a6ff; }
+  .rd-team-home { text-align:left; }
+  .rd-team-away { text-align:right; }
+  .rd-team.won { color:#e6edf3; font-weight:700; }
+  .rd-centre { display:flex; align-items:center; justify-content:center; min-width:100px; }
+  .rd-sc { font-size:.95rem; font-weight:700; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }
+  .rd-sc.won { color:#e6edf3; }
+  .rd-sc.lost { color:#484f58; }
+  .rd-sep { color:#21262d; margin:0 4px; font-weight:300; font-size:.8rem; }
+  .rd-vs { font-size:.65rem; font-weight:700; color:#30363d; letter-spacing:1.5px; }
+  .rd-arrow { display:flex; align-items:center; width:28px; color:#21262d; transition:color .1s; }
+  .rd-row:hover .rd-arrow { color:#484f58; }
+  .rd-arrow a { color:inherit; text-decoration:none; display:flex; }
+  .rd-win-bar { position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:0 2px 2px 0; background:#2ea043; }
+</style>
+
 <div class="page-header" style="margin-top:0;">
-  <div class="page-breadcrumb"><a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=afl_round) }}">Season</a> / Round {{ afl_round }}</div>
-  <div class="d-flex justify-content-between align-items-start">
-    <div class="d-flex align-items-center gap-3">
-      {% if afl_round > 1 %}
-        <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round-1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i></a>
-      {% endif %}
-      <h2 class="mb-0">Round {{ afl_round }}</h2>
-      {% if afl_round < max_round %}
-        <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round+1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-right"></i></a>
-      {% endif %}
-    </div>
-    <div class="d-flex gap-2">
-      {% if is_commissioner %}
-        <form method="POST" action="{{ url_for('matchups.score_round_view', league_id=league.id, afl_round=afl_round) }}">
-          <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Score round {{ afl_round }}?')">
-            <i class="bi bi-calculator me-1"></i>Score Round
-          </button>
-        </form>
-      {% endif %}
-      <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=afl_round) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-broadcast me-1"></i>Live</a>
-    </div>
+  <div class="page-breadcrumb">
+    <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=afl_round) }}">Season</a> / Round {{ afl_round }}
+  </div>
+</div>
+
+<div class="rd-hdr">
+  <div class="rd-hdr-left">
+    {% if afl_round > 1 %}
+      <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round-1) }}" class="rd-nav"><i class="bi bi-chevron-left"></i></a>
+    {% endif %}
+    <h3>Round {{ afl_round }}</h3>
+    {% if afl_round < max_round %}
+      <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round+1) }}" class="rd-nav"><i class="bi bi-chevron-right"></i></a>
+    {% endif %}
+  </div>
+  <div class="rd-actions">
+    <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=afl_round) }}" class="rd-btn"><i class="bi bi-broadcast me-1"></i>Live</a>
+    {% if is_commissioner %}
+      <form method="POST" action="{{ url_for('matchups.score_round_view', league_id=league.id, afl_round=afl_round) }}" style="margin:0;">
+        <button type="submit" class="rd-btn rd-btn-primary" onclick="return confirm('Score round {{ afl_round }}?')"><i class="bi bi-calculator me-1"></i>Score</button>
+      </form>
+    {% endif %}
   </div>
 </div>
 
 {% if fixtures %}
-  <div class="row g-3">
+  <div class="rd-list">
     {% for f in fixtures %}
       {% set home_won = f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}
       {% set away_won = f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}
-      <div class="col-md-6">
-        <div class="fixture-card" style="overflow:hidden;">
-          <div class="p-4">
-            <div class="row text-center align-items-center">
-              <div class="col-5">
-                <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.home_team_id) }}" class="text-decoration-none">
-                  <div class="fixture-team" style="color:{% if home_won %}#3fb950{% else %}#c9d1d9{% endif %};">{{ f.home_team.name }}</div>
-                </a>
-                {% if f.status == 'completed' %}
-                  <div class="fixture-score {% if home_won %}text-success{% endif %}">{{ '%.0f'|format(f.home_score or 0) }}</div>
-                {% endif %}
-              </div>
-              <div class="col-2">
-                {% if f.status == 'completed' %}
-                  <span class="status-pill status-completed">Final</span>
-                {% else %}
-                  <span class="fixture-vs">VS</span>
-                {% endif %}
-              </div>
-              <div class="col-5">
-                <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.away_team_id) }}" class="text-decoration-none">
-                  <div class="fixture-team" style="color:{% if away_won %}#3fb950{% else %}#c9d1d9{% endif %};">{{ f.away_team.name }}</div>
-                </a>
-                {% if f.status == 'completed' %}
-                  <div class="fixture-score {% if away_won %}text-success{% endif %}">{{ '%.0f'|format(f.away_score or 0) }}</div>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-          <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=f.id) }}"
-             class="d-flex justify-content-center align-items-center py-2 text-decoration-none"
-             style="border-top:1px solid #21262d;font-size:.7rem;color:#484f58;transition:color .15s;"
-             onmouseover="this.style.color='#58a6ff'" onmouseout="this.style.color='#484f58'">
-            View Details <i class="bi bi-chevron-right ms-1"></i>
-          </a>
+      <div class="rd-row">
+        {% if home_won %}<div class="rd-win-bar"></div>{% endif %}
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.home_team_id) }}" class="rd-team rd-team-home{{ ' won' if home_won }}">{{ f.home_team.name }}</a>
+        <div class="rd-centre">
+          {% if f.status == 'completed' %}
+            <span class="rd-sc{{ ' won' if home_won else ' lost' }}">{{ '%.0f'|format(f.home_score or 0) }}</span>
+            <span class="rd-sep">&ndash;</span>
+            <span class="rd-sc{{ ' won' if away_won else ' lost' }}">{{ '%.0f'|format(f.away_score or 0) }}</span>
+          {% else %}
+            <span class="rd-vs">VS</span>
+          {% endif %}
+        </div>
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.away_team_id) }}" class="rd-team rd-team-away{{ ' won' if away_won }}">{{ f.away_team.name }}</a>
+        <div class="rd-arrow">
+          <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=f.id) }}"><i class="bi bi-chevron-right" style="font-size:.65rem;"></i></a>
         </div>
       </div>
     {% endfor %}
   </div>
 {% else %}
-  <p class="text-secondary">No fixtures for this round.</p>
+  <p style="color:#484f58;font-size:.85rem;">No fixtures for this round.</p>
 {% endif %}
 {% endblock %}
