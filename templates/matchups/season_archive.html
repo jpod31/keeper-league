@@ -1,0 +1,137 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'history' %}
+{% block title %}{{ year }} Season — {{ league.name }}{% endblock %}
+{% block league_content %}
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <div class="page-header">
+      <div class="page-breadcrumb">
+        <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> /
+        <a href="{{ url_for('matchups.history_list', league_id=league.id) }}">History</a> /
+        {{ year }}
+      </div>
+      <h2>{{ year }} Season</h2>
+    </div>
+
+    {# ── Standings ── #}
+    <div class="card mb-4">
+      <div class="card-body p-3">
+        <h5 class="fw-bold mb-3" style="font-size:.95rem;">
+          <i class="bi bi-trophy me-2" style="color:var(--kl-accent-blue);"></i>Final Standings
+        </h5>
+        {% if standings %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-0" style="font-size:.85rem;">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Team</th>
+                  <th class="text-center">W</th>
+                  <th class="text-center">L</th>
+                  <th class="text-center">D</th>
+                  <th class="text-center">Pts</th>
+                  <th class="text-end">For</th>
+                  <th class="text-end">Against</th>
+                  <th class="text-end">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in standings %}
+                <tr{% if loop.index <= 4 %} style="background:rgba(88,166,255,.05);"{% endif %}>
+                  <td class="text-secondary">{{ loop.index }}</td>
+                  <td class="fw-semibold">{{ s.team.name }}</td>
+                  <td class="text-center">{{ s.wins }}</td>
+                  <td class="text-center">{{ s.losses }}</td>
+                  <td class="text-center">{{ s.draws }}</td>
+                  <td class="text-center fw-bold">{{ s.ladder_points }}</td>
+                  <td class="text-end">{{ '%.1f'|format(s.points_for) }}</td>
+                  <td class="text-end">{{ '%.1f'|format(s.points_against) }}</td>
+                  <td class="text-end">{{ '%.1f'|format(s.percentage) }}%</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-secondary mb-0" style="font-size:.85rem;">No standings recorded for this season.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="row g-4">
+      {# ── Draft Picks ── #}
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body p-3">
+            <h5 class="fw-bold mb-3" style="font-size:.95rem;">
+              <i class="bi bi-list-check me-2" style="color:var(--kl-accent-green);"></i>Draft Picks
+            </h5>
+            {% if draft_picks %}
+              <div style="max-height:400px;overflow-y:auto;">
+                <table class="table table-sm mb-0" style="font-size:.82rem;">
+                  <thead>
+                    <tr>
+                      <th style="width:40px;">#</th>
+                      <th>Player</th>
+                      <th>Team</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for pick in draft_picks %}
+                    <tr>
+                      <td class="text-secondary">{{ pick.pick_number }}</td>
+                      <td>
+                        {% if pick.player %}
+                          <a href="{{ url_for('player_detail', name=pick.player.name) }}" style="color:var(--kl-accent-blue);text-decoration:none;">
+                            {{ pick.player.name }}
+                          </a>
+                          <span class="text-secondary" style="font-size:.75rem;">{{ pick.player.afl_team }}</span>
+                        {% else %}
+                          <span class="text-secondary">—</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ pick.team.name }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-secondary mb-0" style="font-size:.85rem;">No draft data for this season.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ── Trades ── #}
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body p-3">
+            <h5 class="fw-bold mb-3" style="font-size:.95rem;">
+              <i class="bi bi-arrow-left-right me-2" style="color:var(--kl-accent-red);"></i>Completed Trades
+            </h5>
+            {% if trades %}
+              <div style="max-height:400px;overflow-y:auto;">
+                {% for trade in trades %}
+                  <div class="d-flex align-items-start gap-2 py-2" style="border-bottom:1px solid var(--kl-border);font-size:.82rem;">
+                    <i class="bi bi-arrow-left-right text-secondary" style="margin-top:2px;"></i>
+                    <div>
+                      <div class="fw-semibold">{{ trade.proposer_team.name }} ↔ {{ trade.target_team.name }}</div>
+                      <div class="text-secondary" style="font-size:.75rem;">
+                        {{ trade.created_at.strftime('%d %b %Y') }}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-secondary mb-0" style="font-size:.85rem;">No trades recorded for this season.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

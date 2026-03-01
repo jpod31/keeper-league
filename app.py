@@ -5,8 +5,8 @@ import json
 import logging
 import subprocess
 
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import current_user
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import current_user, login_required
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 
@@ -264,10 +264,23 @@ def create_app():
     app.config["SESSION_COOKIE_SECURE"] = config.SESSION_COOKIE_SECURE
     app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 
+    # Email config
+    app.config["MAIL_SERVER"] = config.MAIL_SERVER
+    app.config["MAIL_PORT"] = config.MAIL_PORT
+    app.config["MAIL_USE_TLS"] = config.MAIL_USE_TLS
+    app.config["MAIL_USERNAME"] = config.MAIL_USERNAME
+    app.config["MAIL_PASSWORD"] = config.MAIL_PASSWORD
+    app.config["MAIL_DEFAULT_SENDER"] = config.MAIL_DEFAULT_SENDER
+
     # Init extensions
     init_db(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+
+    # Flask-Mail (lazy — only sends if MAIL_USERNAME is configured)
+    from flask_mail import Mail
+    mail = Mail(app)
+    app.extensions["mail"] = mail
 
     # Enable SQLite WAL mode for concurrent reads
     if "sqlite" in config.SQLALCHEMY_DATABASE_URI:
@@ -318,6 +331,8 @@ def create_app():
             ).all()
             ctx["user_leagues"] = [(t.league, t) for t in user_teams]
             ctx["unread_notif_count"] = get_unread_count(current_user.id)
+            ctx["theme_pref"] = getattr(current_user, "theme_preference", "dark") or "dark"
+            ctx["has_completed_onboarding"] = getattr(current_user, "has_completed_onboarding", True)
 
             # If in a league-scoped route, provide nav helpers
             league_id = (request.view_args or {}).get("league_id")
@@ -679,6 +694,21 @@ def create_app():
         flash("Refresh complete — " + " | ".join(steps), "success")
         return redirect(url_for("settings"))
 
+    @app.route("/push/vapid-key")
+    def vapid_key():
+        return jsonify({"publicKey": config.VAPID_PUBLIC_KEY})
+
+    @app.route("/push/subscribe", methods=["POST"])
+    @login_required
+    def push_subscribe():
+        data = request.get_json(silent=True) or {}
+        subscription = data.get("subscription")
+        if subscription:
+            import json as _json
+            current_user.push_subscription = _json.dumps(subscription)
+            db.session.commit()
+        return jsonify({"ok": True})
+
     @app.route("/import/players", methods=["POST"])
     def trigger_import_players():
         f = request.files.get("file")
@@ -747,6 +777,9 @@ register_notification_events(socketio)
 # Give notification_manager access to socketio for real-time pushes
 from models.notification_manager import init_notification_socketio
 init_notification_socketio(socketio)
+
+from models.activity_feed import init_activity_socketio
+init_activity_socketio(socketio)
 
 # Start live scoring scheduler (skip in testing)
 if not app.testing:

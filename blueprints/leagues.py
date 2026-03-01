@@ -1065,6 +1065,47 @@ def season_hub(league_id):
                            mock_draft=mock_draft)
 
 
+@leagues_bp.route("/<int:league_id>/season/auto-transition", methods=["POST"])
+@login_required
+def save_auto_transition(league_id):
+    """Save season automation settings (commissioner only)."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        flash("Only the commissioner can change automation settings.", "warning")
+        return redirect(url_for("leagues.season_hub", league_id=league_id))
+
+    from models.season_manager import get_or_create_season_config
+    from datetime import datetime as dt
+
+    cfg = get_or_create_season_config(league_id, league.season_year)
+    cfg.auto_transition_enabled = "auto_transition_enabled" in request.form
+
+    season_start = request.form.get("season_start_date", "").strip()
+    offseason_start = request.form.get("offseason_start_date", "").strip()
+    finals_round = request.form.get("finals_start_round", type=int)
+
+    if season_start:
+        try:
+            cfg.season_start_date = dt.strptime(season_start, "%Y-%m-%d")
+        except ValueError:
+            pass
+    else:
+        cfg.season_start_date = None
+
+    if offseason_start:
+        try:
+            cfg.offseason_start_date = dt.strptime(offseason_start, "%Y-%m-%d")
+        except ValueError:
+            pass
+    else:
+        cfg.offseason_start_date = None
+
+    cfg.finals_start_round = finals_round
+    db.session.commit()
+    flash("Season automation settings saved.", "success")
+    return redirect(url_for("leagues.season_hub", league_id=league_id))
+
+
 @leagues_bp.route("/<int:league_id>/midseason")
 @login_required
 def midseason_hub(league_id):
@@ -1474,3 +1515,34 @@ def player_pool(league_id):
                            rolling=rolling,
                            rostered_map=rostered_map,
                            team_colours=team_colours)
+
+
+@leagues_bp.route("/<int:league_id>/players/compare")
+@login_required
+def player_compare(league_id):
+    """Compare up to 4 players side-by-side."""
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    player_ids = request.args.getlist("p", type=int)
+
+    from models.analytics import get_player_comparison_data
+    players_data = get_player_comparison_data(player_ids, league.season_year, league_id)
+
+    # Get searchable player list for selectors
+    all_players = (
+        AflPlayer.query
+        .filter(AflPlayer.sc_avg.isnot(None))
+        .order_by(AflPlayer.sc_avg.desc())
+        .limit(500)
+        .all()
+    )
+
+    return render_template("leagues/player_compare.html",
+                           league=league,
+                           players_data=players_data,
+                           selected_ids=player_ids,
+                           all_players=all_players,
+                           active_tab="players")

@@ -23,7 +23,7 @@ from models.season_manager import (
 from models.live_sync import (
     get_locked_player_ids, get_game_statuses, get_player_score_breakdown,
 )
-from models.database import Fixture, FantasyRoster, RoundScore
+from models.database import Fixture, FantasyRoster, RoundScore, DraftPick, Trade
 from blueprints import check_league_access
 from scrapers.squiggle import get_current_round
 import config
@@ -486,6 +486,100 @@ def teams_view(league_id):
                            league=league,
                            teams=teams,
                            standing_map=standing_map,
+                           scoring=scoring)
+
+
+@matchups_bp.route("/<int:league_id>/history")
+@login_required
+def history_list(league_id):
+    """List all past seasons for this league."""
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    from models.database import SeasonStanding
+    # Get distinct years that have standings data
+    years = (
+        db.session.query(SeasonStanding.year)
+        .filter_by(league_id=league_id)
+        .distinct()
+        .order_by(SeasonStanding.year.desc())
+        .all()
+    )
+    years = [y[0] for y in years]
+
+    scoring = get_scoring_context(league)
+
+    return render_template("matchups/history.html",
+                           league=league,
+                           years=years,
+                           scoring=scoring)
+
+
+@matchups_bp.route("/<int:league_id>/history/<int:year>")
+@login_required
+def season_archive(league_id, year):
+    """View a single past season's standings, trades, and draft picks."""
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    from models.database import SeasonStanding, Trade, DraftPick
+
+    # Standings
+    standings = (
+        SeasonStanding.query.filter_by(league_id=league_id, year=year)
+        .order_by(
+            SeasonStanding.ladder_points.desc(),
+            SeasonStanding.percentage.desc(),
+        )
+        .all()
+    )
+
+    # Trades from that year
+    trades = []
+    try:
+        trades = (
+            Trade.query
+            .filter_by(league_id=league_id)
+            .filter(
+                Trade.status == "accepted",
+                db.extract("year", Trade.created_at) == year,
+            )
+            .order_by(Trade.created_at.desc())
+            .limit(50)
+            .all()
+        )
+    except Exception:
+        pass
+
+    # Draft picks from that year (via DraftSession)
+    draft_picks = []
+    try:
+        from models.database import DraftSession
+        sessions = DraftSession.query.filter_by(
+            league_id=league_id, status="completed"
+        ).all()
+        for sess in sessions:
+            if sess.completed_at and sess.completed_at.year == year:
+                draft_picks.extend(
+                    DraftPick.query.filter_by(draft_session_id=sess.id)
+                    .order_by(DraftPick.pick_number)
+                    .all()
+                )
+    except Exception:
+        pass
+
+    scoring = get_scoring_context(league)
+
+    return render_template("matchups/season_archive.html",
+                           league=league,
+                           year=year,
+                           standings=standings,
+                           trades=trades,
+                           draft_picks=draft_picks,
                            scoring=scoring)
 
 

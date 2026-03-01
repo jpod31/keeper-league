@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#0d1117;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d1117;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="540" cellpadding="0" cellspacing="0" style="background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#238636,#1f6feb);padding:24px 30px;">
+              <span style="font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:.5px;">KL</span>
+              <span style="color:rgba(255,255,255,.8);font-size:.9rem;margin-left:8px;">Weekly Digest</span>
+            </td>
+          </tr>
+          <!-- Greeting -->
+          <tr>
+            <td style="padding:24px 30px 8px;">
+              <p style="color:#c9d1d9;font-size:.95rem;margin:0;">
+                Hi {{ user.display_name or user.username }}, here's what happened this week:
+              </p>
+            </td>
+          </tr>
+          <!-- Notifications -->
+          <tr>
+            <td style="padding:8px 30px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                {% for notif in notifications %}
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid #21262d;">
+                    <div style="font-size:.85rem;color:#c9d1d9;font-weight:600;">{{ notif.title }}</div>
+                    {% if notif.body %}
+                      <div style="font-size:.8rem;color:#8b949e;margin-top:2px;">{{ notif.body }}</div>
+                    {% endif %}
+                    <div style="font-size:.72rem;color:#6e7681;margin-top:4px;">
+                      {{ notif.created_at.strftime('%a %d %b, %I:%M %p') }}
+                      {% if notif.link %}
+                        &middot; <a href="{{ notif.link }}" style="color:#58a6ff;text-decoration:none;">View</a>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:16px 30px;border-top:1px solid #30363d;">
+              <p style="color:#6e7681;font-size:.75rem;margin:0;">
+                You're receiving this because you enabled weekly digest emails.
+                Manage your notification preferences in your profile.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

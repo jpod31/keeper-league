@@ -1205,3 +1205,33 @@ def api_ssp_available(league_id, team_id):
         }
         for p in available
     ])
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/analytics")
+@login_required
+def team_analytics(league_id, team_id):
+    """Team analytics: projected score, captain recs, bye clashes, form."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        flash("Team not found.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    from models.analytics import (
+        compute_projected_score, captain_recommendations,
+        detect_bye_clashes, get_team_form,
+    )
+
+    year = league.season_year
+    projection = compute_projected_score(team_id, year, league_id)
+    captain_recs = captain_recommendations(team_id, year)
+    bye_clashes = detect_bye_clashes(team_id, year)
+    form_data = get_team_form(team_id, year)
+
+    return render_template("team/analytics.html",
+                           league=league, team=team,
+                           projection=projection,
+                           captain_recs=captain_recs,
+                           bye_clashes=bye_clashes,
+                           form_data=form_data,
+                           active_tab="team")

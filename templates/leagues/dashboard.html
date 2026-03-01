@@ -88,6 +88,43 @@
       </div>
     {% endif %}
 
+    <!-- Getting Started Checklist -->
+    {% if not has_completed_onboarding|default(true) %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <i class="bi bi-check2-square me-2" style="color:var(--kl-accent-green);"></i>Getting Started
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="px-3 py-2" style="font-size:.82rem;">
+          {% set has_team = user_team is not none %}
+          {% set has_draft = league.status != 'setup' %}
+          <div class="d-flex align-items-center gap-2 py-1">
+            <i class="bi {% if has_team %}bi-check-circle-fill{% else %}bi-circle{% endif %}" style="color:{% if has_team %}var(--kl-accent-green){% else %}var(--kl-border-light){% endif %};"></i>
+            <span {% if has_team %}style="text-decoration:line-through;color:var(--kl-text-secondary);"{% endif %}>Join or create a league</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 py-1">
+            <i class="bi {% if has_draft %}bi-check-circle-fill{% else %}bi-circle{% endif %}" style="color:{% if has_draft %}var(--kl-accent-green){% else %}var(--kl-border-light){% endif %};"></i>
+            <span {% if has_draft %}style="text-decoration:line-through;color:var(--kl-text-secondary);"{% endif %}>Complete the draft</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 py-1">
+            <i class="bi bi-circle" style="color:var(--kl-border-light);"></i>
+            <span>Set your lineup</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 py-1">
+            <i class="bi bi-circle" style="color:var(--kl-border-light);"></i>
+            <span>Check gameday scores</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 py-1">
+            <i class="bi bi-circle" style="color:var(--kl-border-light);"></i>
+            <span>Propose a trade</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Invite Link -->
     {% if league.invite_code %}
       <div class="card mb-3">

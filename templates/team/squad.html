@@ -37,6 +37,7 @@
         </ul>
       </div>
       <a href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}" class="squad-pill squad-pill-stats"><i class="bi bi-graph-up"></i>Stats</a>
+      <a href="{{ url_for('team.team_analytics', league_id=league.id, team_id=team.id) }}" class="squad-pill squad-pill-manage"><i class="bi bi-bar-chart-line"></i>Analytics</a>
       {# View toggle — separate pills #}
       <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}"
          class="squad-pill squad-pill-field {{ 'active' if view|default('field') == 'field' }}">

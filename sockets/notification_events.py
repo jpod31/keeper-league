@@ -29,3 +29,15 @@ def register_notification_events(socketio):
         convo_id = data.get("conversation_id")
         if convo_id:
             leave_room(f"convo_{convo_id}")
+
+    @socketio.on("join_league_chat", namespace="/notifications")
+    def handle_join_league_chat(data):
+        league_id = data.get("league_id")
+        if league_id and current_user.is_authenticated:
+            join_room(f"league_chat_{league_id}")
+
+    @socketio.on("leave_league_chat", namespace="/notifications")
+    def handle_leave_league_chat(data):
+        league_id = data.get("league_id")
+        if league_id:
+            leave_room(f"league_chat_{league_id}")

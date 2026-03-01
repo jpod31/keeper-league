@@ -68,8 +68,29 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Weekly email digest: Monday 08:00 UTC (6pm AEST)
+    scheduler.add_job(
+        _send_weekly_digest,
+        "cron",
+        day_of_week="mon",
+        hour=8,
+        minute=0,
+        id="weekly_email_digest",
+        replace_existing=True,
+        max_instances=1,
+    )
+    # Daily season auto-transition check: 05:00 UTC
+    scheduler.add_job(
+        _check_season_transitions,
+        "cron",
+        hour=5,
+        minute=0,
+        id="daily_season_transition",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
-    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC)")
+    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC)")
 
 
 def run_manual_score_sync():
@@ -219,3 +240,79 @@ def _broadcast_score_update(league_id, afl_round, fixtures_data, game_statuses, 
     room = f"live_{league_id}_{afl_round}"
     _socketio.emit("score_update", payload, room=room, namespace="/matchups")
     logger.debug("Broadcast score_update to room %s (%d fixtures)", room, len(fixture_list))
+
+
+def _send_weekly_digest():
+    """Weekly job: email a digest of the past week's activity to opted-in users."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from datetime import timedelta
+            from models.database import User, Notification
+            from flask_mail import Message as MailMessage
+            from flask import render_template
+            import config
+
+            mail = _app.extensions.get("mail")
+            if not mail or not config.MAIL_USERNAME:
+                logger.debug("Email digest: mail not configured, skipping")
+                return
+
+            one_week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+
+            # Find users who opted in to email digests
+            users = User.query.filter_by(email_digest_enabled=True).all()
+            sent = 0
+            for user in users:
+                if not user.email:
+                    continue
+                # Get their notifications from the past week
+                notifs = Notification.query.filter(
+                    Notification.user_id == user.id,
+                    Notification.created_at >= one_week_ago,
+                ).order_by(Notification.created_at.desc()).limit(50).all()
+
+                if not notifs:
+                    continue
+
+                try:
+                    msg = MailMessage(
+                        subject="Keeper League — Weekly Digest",
+                        recipients=[user.email],
+                        html=render_template("email/digest.html",
+                                             user=user, notifications=notifs),
+                    )
+                    mail.send(msg)
+                    sent += 1
+                except Exception:
+                    logger.debug("Digest email failed for user %s", user.id, exc_info=True)
+
+            logger.info("Weekly digest: sent to %d users", sent)
+
+        except Exception:
+            logger.exception("Error in weekly email digest")
+
+
+def _check_season_transitions():
+    """Daily job: check all leagues with auto-transition enabled."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from models.season_transitions import check_and_transition
+            from models.database import SeasonConfig
+
+            configs = SeasonConfig.query.filter_by(auto_transition_enabled=True).all()
+            for cfg in configs:
+                try:
+                    check_and_transition(cfg.league_id)
+                except Exception:
+                    logger.exception("Auto-transition failed for league %d", cfg.league_id)
+
+            if configs:
+                logger.info("Season transition check: %d leagues checked", len(configs))
+        except Exception:
+            logger.exception("Error in season transition check")

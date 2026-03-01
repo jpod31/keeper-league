@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 
 from models.database import (
     db, League, FantasyTeam, Conversation, Message, Notification,
+    LeagueChat, LeagueChatMessage,
 )
 from models.notification_manager import (
     get_unread_count, get_recent_notifications, mark_read, mark_all_read,
@@ -223,3 +224,95 @@ def send_message(league_id):
         }, namespace="/notifications", room=f"convo_{convo.id}")
 
     return redirect(url_for("comms.conversation", league_id=league_id, convo_id=convo.id))
+
+
+# ── League Chat ──────────────────────────────────────────────────────
+
+
+@comms_bp.route("/<int:league_id>/chat")
+@login_required
+def league_chat(league_id):
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    # Get or create league chat
+    chat = LeagueChat.query.filter_by(league_id=league_id).first()
+    if not chat:
+        chat = LeagueChat(league_id=league_id)
+        db.session.add(chat)
+        db.session.commit()
+
+    messages = (
+        LeagueChatMessage.query
+        .filter_by(league_chat_id=chat.id)
+        .order_by(LeagueChatMessage.created_at.asc())
+        .limit(100)
+        .all()
+    )
+
+    return render_template("comms/league_chat.html",
+                           league=league, user_team=user_team,
+                           chat=chat, messages=messages,
+                           active_tab="chat")
+
+
+@comms_bp.route("/<int:league_id>/chat/send", methods=["POST"])
+@login_required
+def send_chat_message(league_id):
+    league, user_team = check_league_access(league_id)
+    if not league:
+        return jsonify({"error": "Access denied"}), 403
+
+    body = (request.json or {}).get("body", "").strip() if request.is_json else request.form.get("body", "").strip()
+    if not body:
+        return jsonify({"error": "Empty message"}), 400
+
+    chat = LeagueChat.query.filter_by(league_id=league_id).first()
+    if not chat:
+        chat = LeagueChat(league_id=league_id)
+        db.session.add(chat)
+        db.session.commit()
+
+    msg = LeagueChatMessage(
+        league_chat_id=chat.id,
+        sender_user_id=current_user.id,
+        body=body,
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    # Broadcast via SocketIO
+    from models.notification_manager import _socketio
+    if _socketio:
+        _socketio.emit("chat_message", {
+            "id": msg.id,
+            "sender_id": current_user.id,
+            "sender_name": current_user.display_name or current_user.username,
+            "body": body,
+            "created_at": msg.created_at.isoformat(),
+        }, namespace="/notifications", room=f"league_chat_{league_id}")
+
+    if request.is_json:
+        return jsonify({"ok": True, "id": msg.id})
+    return redirect(url_for("comms.league_chat", league_id=league_id))
+
+
+# ── Activity Feed ────────────────────────────────────────────────────
+
+
+@comms_bp.route("/<int:league_id>/activity")
+@login_required
+def activity_feed(league_id):
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    from models.activity_feed import get_recent_activity
+    entries = get_recent_activity(league_id, limit=50)
+
+    return render_template("comms/activity_feed.html",
+                           league=league, user_team=user_team,
+                           entries=entries, active_tab="chat")

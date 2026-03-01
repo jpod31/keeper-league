@@ -1,0 +1,109 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'chat' %}
+{% block title %}{{ league.name }} — Chat{% endblock %}
+{% block league_content %}
+
+<div class="page-header">
+  <div class="d-flex align-items-center justify-content-between">
+    <h2><i class="bi bi-chat-dots me-2" style="color:var(--kl-accent-blue);"></i>League Chat</h2>
+    <a href="{{ url_for('comms.activity_feed', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-activity me-1"></i>Activity Feed
+    </a>
+  </div>
+</div>
+
+<div class="card" style="height:calc(100vh - 260px);display:flex;flex-direction:column;">
+  {# Messages area #}
+  <div id="chatMessages" class="card-body" style="flex:1;overflow-y:auto;padding:1rem;">
+    {% for msg in messages %}
+    <div class="d-flex mb-2 {% if msg.sender_user_id == current_user.id %}justify-content-end{% endif %}">
+      <div style="max-width:70%;padding:.5rem .75rem;border-radius:10px;{% if msg.sender_user_id == current_user.id %}background:rgba(88,166,255,.15);{% else %}background:var(--kl-bg-elevated);{% endif %}">
+        {% if msg.sender_user_id != current_user.id %}
+        <div style="font-size:.7rem;font-weight:600;color:var(--kl-accent-blue);margin-bottom:2px;">
+          {{ msg.sender.display_name or msg.sender.username }}
+        </div>
+        {% endif %}
+        <div style="font-size:.85rem;">{{ msg.body }}</div>
+        <div style="font-size:.6rem;color:var(--kl-text-muted);margin-top:2px;">
+          {{ msg.created_at.strftime('%H:%M') }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% if not messages %}
+    <div class="text-center text-secondary py-4" style="font-size:.85rem;">
+      <i class="bi bi-chat-dots" style="font-size:2rem;display:block;margin-bottom:.5rem;color:var(--kl-border-light);"></i>
+      No messages yet. Start the conversation!
+    </div>
+    {% endif %}
+  </div>
+
+  {# Input area #}
+  <div class="card-footer" style="border-top:1px solid var(--kl-border);padding:.75rem;">
+    <form id="chatForm" class="d-flex gap-2">
+      <input type="text" id="chatInput" class="form-control form-control-sm" placeholder="Type a message..." autocomplete="off" maxlength="500">
+      <button type="submit" class="btn btn-primary btn-sm px-3">
+        <i class="bi bi-send"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var chatArea = document.getElementById('chatMessages');
+  var form = document.getElementById('chatForm');
+  var input = document.getElementById('chatInput');
+  var leagueId = {{ league.id }};
+  var userId = {{ current_user.id }};
+  var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  // Scroll to bottom
+  chatArea.scrollTop = chatArea.scrollHeight;
+
+  // Join league chat room
+  var notifSocket = io('/notifications', {transports: ['websocket', 'polling']});
+  notifSocket.emit('join_league_chat', {league_id: leagueId});
+
+  // Listen for new messages
+  notifSocket.on('chat_message', function(data) {
+    if (data.sender_id === userId) return; // Skip own messages (already added)
+    appendMessage(data.sender_name, data.body, data.created_at, false);
+  });
+
+  function appendMessage(name, body, time, isMine) {
+    var div = document.createElement('div');
+    div.className = 'd-flex mb-2 ' + (isMine ? 'justify-content-end' : '');
+    var t = new Date(time + (time.includes('Z') ? '' : 'Z'));
+    var timeStr = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
+    var bg = isMine ? 'background:rgba(88,166,255,.15);' : 'background:var(--kl-bg-elevated);';
+    var nameHtml = isMine ? '' : '<div style="font-size:.7rem;font-weight:600;color:var(--kl-accent-blue);margin-bottom:2px;">' + name + '</div>';
+    div.innerHTML = '<div style="max-width:70%;padding:.5rem .75rem;border-radius:10px;' + bg + '">' +
+      nameHtml +
+      '<div style="font-size:.85rem;">' + body.replace(/</g, '&lt;') + '</div>' +
+      '<div style="font-size:.6rem;color:var(--kl-text-muted);margin-top:2px;">' + timeStr + '</div></div>';
+    chatArea.appendChild(div);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var body = input.value.trim();
+    if (!body) return;
+    input.value = '';
+
+    // Optimistic add
+    appendMessage('You', body, new Date().toISOString(), true);
+
+    fetch('/leagues/' + leagueId + '/chat/send', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+      body: JSON.stringify({body: body})
+    });
+  });
+})();
+</script>
+{% endblock %}

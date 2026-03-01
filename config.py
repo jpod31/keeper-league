@@ -22,6 +22,19 @@ SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = os.environ.get("FLASK_ENV") == "production"
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload
 
+# ---------- Email (Flask-Mail) ----------
+MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
+MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
+MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
+MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
+MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@keeperlg.com")
+
+# ---------- Push Notifications (VAPID) ----------
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:admin@keeperlg.com")
+
 # ---------- League rules ----------
 SQUAD_SIZE = 38
 ON_FIELD = 18

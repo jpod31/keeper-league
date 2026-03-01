@@ -709,6 +709,63 @@
       </div>
     </div>
 
+    {# ══════════════════════════════════════════════════════════════
+       5. SEASON AUTOMATION (Commissioner only)
+       ══════════════════════════════════════════════════════════════ #}
+    {% if is_commissioner %}
+    <div class="lm-section lm-collapsed" id="section-auto">
+      <div class="lm-section-header" style="background:linear-gradient(135deg,#1f6feb 0%,#238636 100%);" onclick="toggleSection('auto')">
+        <div class="d-flex align-items-center gap-3">
+          <div class="lm-icon" style="background:rgba(255,255,255,.15);color:#fff;"><i class="bi bi-robot"></i></div>
+          <div>
+            <h5 class="mb-0 fw-bold text-white">Season Automation</h5>
+            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">Auto-transition between phases based on dates</span>
+          </div>
+        </div>
+        <i class="bi bi-chevron-down lm-chevron"></i>
+      </div>
+      <div class="lm-section-body">
+        <form method="POST" action="{{ url_for('leagues.save_auto_transition', league_id=league.id) }}">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <div class="fw-semibold" style="font-size:.9rem;">Enable Auto-Transition</div>
+              <div class="text-secondary" style="font-size:.78rem;">Automatically advance season phases when dates are reached</div>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="auto_transition_enabled"
+                     {% if season_cfg and season_cfg.auto_transition_enabled %}checked{% endif %}>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label" style="font-size:.8rem;">Season Start Date</label>
+              <input type="date" class="form-control form-control-sm" name="season_start_date"
+                     value="{{ season_cfg.season_start_date.strftime('%Y-%m-%d') if season_cfg and season_cfg.season_start_date else '' }}">
+              <div class="text-secondary mt-1" style="font-size:.7rem;">When a new season begins (offseason → regular)</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-size:.8rem;">Offseason Start Date</label>
+              <input type="date" class="form-control form-control-sm" name="offseason_start_date"
+                     value="{{ season_cfg.offseason_start_date.strftime('%Y-%m-%d') if season_cfg and season_cfg.offseason_start_date else '' }}">
+              <div class="text-secondary mt-1" style="font-size:.7rem;">When offseason begins (regular → offseason)</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-size:.8rem;">Finals Start Round</label>
+              <input type="number" class="form-control form-control-sm" name="finals_start_round"
+                     min="1" max="30"
+                     value="{{ season_cfg.finals_start_round if season_cfg and season_cfg.finals_start_round else '' }}"
+                     placeholder="e.g. 24">
+              <div class="text-secondary mt-1" style="font-size:.7rem;">AFL round when finals begin</div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-save me-1"></i>Save Automation Settings
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
   </div>
 </div>
 

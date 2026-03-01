@@ -1,9 +1,12 @@
 """Notification and messaging helpers."""
 
+import json
+import logging
 from datetime import datetime, timezone
 
 from models.database import db, Notification, Conversation, Message
 
+logger = logging.getLogger(__name__)
 
 # ── Notification socketio emitter (set by app.py after socketio init) ──
 _socketio = None
@@ -26,9 +29,71 @@ def notify_user(user_id, data):
         )
 
 
+def _get_user_pref(user_id, notif_type):
+    """Return (push_enabled, email_enabled) for a user+type pair."""
+    from models.database import NotificationPreference
+    pref = NotificationPreference.query.filter_by(
+        user_id=user_id, notif_type=notif_type
+    ).first()
+    if pref:
+        return pref.channel_push, pref.channel_email
+    # Default: in-app only
+    return False, False
+
+
+def _send_push(user, title, body, link=None):
+    """Send a Web Push notification to the user's subscribed browser."""
+    if not user.push_subscription:
+        return
+    try:
+        from pywebpush import webpush
+        import config
+        if not config.VAPID_PRIVATE_KEY:
+            return
+        subscription_info = json.loads(user.push_subscription)
+        payload = json.dumps({
+            "title": title,
+            "body": body or "",
+            "link": link or "/",
+            "tag": "kl-notification",
+        })
+        webpush(
+            subscription_info=subscription_info,
+            data=payload,
+            vapid_private_key=config.VAPID_PRIVATE_KEY,
+            vapid_claims={"sub": config.VAPID_CLAIMS_EMAIL},
+        )
+    except Exception:
+        logger.debug("Push notification failed for user %s", user.id, exc_info=True)
+
+
+def _send_email(user, title, body, link=None):
+    """Send a single notification email to the user."""
+    if not user.email:
+        return
+    try:
+        from flask import current_app, render_template
+        mail = current_app.extensions.get("mail")
+        if not mail:
+            return
+        import config
+        if not config.MAIL_USERNAME:
+            return
+        from flask_mail import Message as MailMessage
+        msg = MailMessage(
+            subject=f"Keeper League: {title}",
+            recipients=[user.email],
+            html=render_template("email/notification.html",
+                                 title=title, body=body, link=link),
+        )
+        mail.send(msg)
+    except Exception:
+        logger.debug("Email notification failed for user %s", user.id, exc_info=True)
+
+
 def create_notification(user_id, league_id, notif_type, title,
                         body=None, link=None, trade_id=None, conversation_id=None):
-    """Write a notification row and push it via WebSocket."""
+    """Write a notification row, push via WebSocket, and optionally send push/email."""
     notif = Notification(
         user_id=user_id,
         league_id=league_id,
@@ -50,6 +115,18 @@ def create_notification(user_id, league_id, notif_type, title,
         "link": link,
         "created_at": notif.created_at.isoformat(),
     })
+
+    # Check user preferences for push / email
+    push_on, email_on = _get_user_pref(user_id, notif_type)
+    if push_on or email_on:
+        from models.database import User
+        user = db.session.get(User, user_id)
+        if user:
+            if push_on:
+                _send_push(user, title, body, link)
+            if email_on:
+                _send_email(user, title, body, link)
+
     return notif
 
 

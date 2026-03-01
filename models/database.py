@@ -146,6 +146,11 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_active_user = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
+    theme_preference = db.Column(db.String(10), default="dark")
+    has_completed_onboarding = db.Column(db.Boolean, default=False)
+    last_login = db.Column(db.DateTime)
+    email_digest_enabled = db.Column(db.Boolean, default=False)
+    push_subscription = db.Column(db.Text)
 
     leagues_commissioned = db.relationship("League", backref="commissioner", lazy="dynamic")
     fantasy_teams = db.relationship("FantasyTeam", backref="owner", lazy="dynamic")
@@ -637,6 +642,12 @@ class SeasonConfig(db.Model):
     ssp_window_open = db.Column(db.DateTime)
     ssp_window_close = db.Column(db.DateTime)
 
+    # Season automation (Phase F)
+    auto_transition_enabled = db.Column(db.Boolean, default=False)
+    season_start_date = db.Column(db.DateTime)
+    offseason_start_date = db.Column(db.DateTime)
+    finals_start_round = db.Column(db.Integer)
+
     __table_args__ = (
         db.UniqueConstraint("league_id", "year", name="uq_season_config_league_year"),
     )
@@ -740,6 +751,65 @@ class Message(db.Model):
     sender = db.relationship("User", lazy="joined")
 
 
+# ── League Chat & Activity Feed ──────────────────────────────────────
+
+
+class LeagueChat(db.Model):
+    __tablename__ = "league_chat"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    messages = db.relationship("LeagueChatMessage", backref="chat", lazy="dynamic",
+                               cascade="all, delete-orphan")
+
+
+class LeagueChatMessage(db.Model):
+    __tablename__ = "league_chat_message"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_chat_id = db.Column(db.Integer, db.ForeignKey("league_chat.id"), nullable=False, index=True)
+    sender_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    sender = db.relationship("User", lazy="joined")
+
+
+class ActivityFeedEntry(db.Model):
+    __tablename__ = "activity_feed_entry"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False, index=True)
+    type = db.Column(db.String(30), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text)
+    link = db.Column(db.String(300))
+    actor_user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    actor = db.relationship("User", lazy="joined")
+
+
+# ── Notification Preferences ────────────────────────────────────────
+
+
+class NotificationPreference(db.Model):
+    __tablename__ = "notification_preference"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    notif_type = db.Column(db.String(30), nullable=False)
+    channel_in_app = db.Column(db.Boolean, default=True)
+    channel_push = db.Column(db.Boolean, default=False)
+    channel_email = db.Column(db.Boolean, default=False)
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "notif_type", name="uq_notif_pref_user_type"),
+    )
+
+
 # ── Analytics ─────────────────────────────────────────────────────────
 
 
@@ -775,12 +845,22 @@ def _run_migrations(app):
 
     inspector = inspect(db.engine)
 
-    # User.is_admin column
+    # User columns
     if "user" in inspector.get_table_names():
         existing_user = {c["name"] for c in inspector.get_columns("user")}
         if "is_admin" not in existing_user:
             db.session.execute(text("ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0"))
-            db.session.commit()
+        if "theme_preference" not in existing_user:
+            db.session.execute(text("ALTER TABLE user ADD COLUMN theme_preference VARCHAR(10) DEFAULT 'dark'"))
+        if "has_completed_onboarding" not in existing_user:
+            db.session.execute(text("ALTER TABLE user ADD COLUMN has_completed_onboarding BOOLEAN DEFAULT 0"))
+        if "last_login" not in existing_user:
+            db.session.execute(text("ALTER TABLE user ADD COLUMN last_login DATETIME"))
+        if "email_digest_enabled" not in existing_user:
+            db.session.execute(text("ALTER TABLE user ADD COLUMN email_digest_enabled BOOLEAN DEFAULT 0"))
+        if "push_subscription" not in existing_user:
+            db.session.execute(text("ALTER TABLE user ADD COLUMN push_subscription TEXT"))
+        db.session.commit()
 
     # FutureDraftPick table — created automatically by create_all()
     # TradeAsset.future_pick_id column
@@ -823,6 +903,18 @@ def _run_migrations(app):
             ("ssp_window_close", "DATETIME"),
         ]
         for col_name, col_def in date_cols:
+            if col_name not in existing:
+                db.session.execute(
+                    text(f"ALTER TABLE season_config ADD COLUMN {col_name} {col_def}")
+                )
+        # Season automation columns (Phase F)
+        auto_cols = [
+            ("auto_transition_enabled", "BOOLEAN DEFAULT 0"),
+            ("season_start_date", "DATETIME"),
+            ("offseason_start_date", "DATETIME"),
+            ("finals_start_round", "INTEGER"),
+        ]
+        for col_name, col_def in auto_cols:
             if col_name not in existing:
                 db.session.execute(
                     text(f"ALTER TABLE season_config ADD COLUMN {col_name} {col_def}")

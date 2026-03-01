@@ -11,7 +11,7 @@
           <span class="text-secondary ms-1" style="font-size:.65rem;letter-spacing:1px;">{{ league.invite_code }}</span>
         {% endif %}
       </button>
-      <ul class="dropdown-menu" style="background:#161b22;border-color:#30363d;">
+      <ul class="dropdown-menu" style="background:var(--kl-bg-card);border-color:var(--kl-border);">
         {% for lg, tm in user_leagues|default([]) %}
           <li>
             <a class="dropdown-item{% if lg.id == league.id %} active{% endif %}"
@@ -24,7 +24,7 @@
             </a>
           </li>
         {% endfor %}
-        <li><hr class="dropdown-divider" style="border-color:#30363d;"></li>
+        <li><hr class="dropdown-divider" style="border-color:var(--kl-border);"></li>
         <li>
           <a class="dropdown-item" href="{{ url_for('leagues.league_create') }}">
             <i class="bi bi-plus-circle me-2" style="color:#3fb950;"></i>Create League
@@ -54,6 +54,10 @@
          href="{{ url_for('leagues.player_pool', league_id=league.id) }}">
         <i class="bi bi-person-plus"></i><span>Players</span>
       </a>
+      <a class="league-tab{% if active_tab|default('') == 'compare' %} active{% endif %}"
+         href="{{ url_for('leagues.player_compare', league_id=league.id) }}">
+        <i class="bi bi-people"></i><span>Compare</span>
+      </a>
       <a class="league-tab{% if active_tab|default('') == 'league' %} active{% endif %}"
          href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
         <i class="bi bi-calendar-week"></i><span>League</span>
@@ -61,6 +65,14 @@
       <a class="league-tab{% if active_tab|default('') == 'season' %} active{% endif %}"
          href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
         <i class="bi bi-calendar-range"></i><span>List Management</span>
+      </a>
+      <a class="league-tab{% if active_tab|default('') == 'history' %} active{% endif %}"
+         href="{{ url_for('matchups.history_list', league_id=league.id) }}">
+        <i class="bi bi-archive"></i><span>History</span>
+      </a>
+      <a class="league-tab{% if active_tab|default('') == 'chat' %} active{% endif %}"
+         href="{{ url_for('comms.league_chat', league_id=league.id) }}">
+        <i class="bi bi-megaphone"></i><span>Chat</span>
       </a>
       {% if nav_user_team|default(none) %}
       <a class="league-tab{% if active_tab|default('') == 'messages' %} active{% endif %}"

@@ -32,6 +32,84 @@
       </div>
     </div>
 
+    {# ── Notification Preferences ── #}
+    <div class="card mb-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3" style="font-size:.95rem;">Notification Preferences</h5>
+
+        {# Email digest toggle #}
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom:1px solid var(--kl-border);">
+          <div>
+            <div class="fw-semibold" style="font-size:.85rem;">Weekly Email Digest</div>
+            <div class="text-secondary" style="font-size:.75rem;">Receive a summary of the week's activity every Monday</div>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="digestToggle"
+                   {% if current_user.email_digest_enabled %}checked{% endif %}
+                   onchange="toggleDigest(this.checked)">
+          </div>
+        </div>
+
+        {# Push notification enable #}
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom:1px solid var(--kl-border);">
+          <div>
+            <div class="fw-semibold" style="font-size:.85rem;">Push Notifications</div>
+            <div class="text-secondary" style="font-size:.75rem;">Browser notifications when events happen</div>
+          </div>
+          <button class="btn btn-outline-primary btn-sm" id="pushEnableBtn" onclick="enablePush()" style="font-size:.75rem;">
+            {% if current_user.push_subscription %}Enabled{% else %}Enable{% endif %}
+          </button>
+        </div>
+
+        {# Per-type channel toggles #}
+        <div style="font-size:.8rem;color:var(--kl-text-secondary);margin-bottom:8px;">
+          Choose channels for each notification type:
+        </div>
+        <table class="table table-sm mb-0" style="font-size:.8rem;">
+          <thead>
+            <tr>
+              <th style="border:0;">Type</th>
+              <th class="text-center" style="border:0;width:60px;">In-App</th>
+              <th class="text-center" style="border:0;width:60px;">Push</th>
+              <th class="text-center" style="border:0;width:60px;">Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set notif_types = [
+              ('trade_received', 'Trade Received'),
+              ('trade_accepted', 'Trade Accepted'),
+              ('trade_rejected', 'Trade Rejected'),
+              ('trade_vetoed', 'Trade Vetoed'),
+              ('player_delisted', 'Player Delisted'),
+              ('message_received', 'Message Received'),
+              ('season_transition', 'Season Change'),
+            ] %}
+            {% for ntype, label in notif_types %}
+              {% set pref = notif_prefs.get(ntype, {}) %}
+              <tr>
+                <td>{{ label }}</td>
+                <td class="text-center">
+                  <input type="checkbox" class="form-check-input notif-pref"
+                         data-type="{{ ntype }}" data-channel="in_app"
+                         {% if pref.get('in_app', true) %}checked{% endif %}>
+                </td>
+                <td class="text-center">
+                  <input type="checkbox" class="form-check-input notif-pref"
+                         data-type="{{ ntype }}" data-channel="push"
+                         {% if pref.get('push', false) %}checked{% endif %}>
+                </td>
+                <td class="text-center">
+                  <input type="checkbox" class="form-check-input notif-pref"
+                         data-type="{{ ntype }}" data-channel="email"
+                         {% if pref.get('email', false) %}checked{% endif %}>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <h5 class="fw-bold mb-3">Your Teams</h5>
     {% set teams = current_user.fantasy_teams.all() %}
     {% if teams %}
@@ -51,4 +129,64 @@
     {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+function toggleDigest(on) {
+  fetch('/auth/notification-prefs', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+    body: JSON.stringify({digest_enabled: on})
+  });
+}
+
+function enablePush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('Push notifications are not supported in this browser.');
+    return;
+  }
+  fetch('/push/vapid-key').then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.publicKey) { alert('Push not configured on server.'); return; }
+    navigator.serviceWorker.ready.then(function(reg) {
+      var key = urlBase64ToUint8Array(data.publicKey);
+      reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: key}).then(function(sub) {
+        fetch('/push/subscribe', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+          body: JSON.stringify({subscription: sub.toJSON()})
+        }).then(function() {
+          document.getElementById('pushEnableBtn').textContent = 'Enabled';
+        });
+      });
+    });
+  });
+}
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var rawData = window.atob(base64);
+  var arr = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; ++i) arr[i] = rawData.charCodeAt(i);
+  return arr;
+}
+
+// Per-type preference toggles
+document.querySelectorAll('.notif-pref').forEach(function(cb) {
+  cb.addEventListener('change', function() {
+    fetch('/auth/notification-prefs', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+      body: JSON.stringify({
+        notif_type: this.dataset.type,
+        channel: this.dataset.channel,
+        enabled: this.checked
+      })
+    });
+  });
+});
+</script>
 {% endblock %}

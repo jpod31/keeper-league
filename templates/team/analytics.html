@@ -1,0 +1,167 @@
+{% extends "league_base.html" %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb">
+    <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">{{ team.name }}</a> / Analytics
+  </div>
+  <h2>Team Analytics</h2>
+</div>
+
+{# ── Stat Cards Row ── #}
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--kl-accent-blue);">{{ projection.total }}</div>
+      <div class="stat-label">Projected Score</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-value">{{ projection.players|length }}</div>
+      <div class="stat-label">Active Starters</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--kl-accent-orange);">{{ bye_clashes|length }}</div>
+      <div class="stat-label">Bye Clash Rounds</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--kl-accent-green);">{{ form_data|length }}</div>
+      <div class="stat-label">Rounds Scored</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  {# ── Form Chart ── #}
+  <div class="col-lg-8">
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3"><i class="bi bi-graph-up me-2" style="color:var(--kl-accent-blue);"></i>Team Form</h6>
+      <canvas id="formChart" height="200"></canvas>
+    </div>
+  </div>
+
+  {# ── Captain Recommendations ── #}
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="fw-bold mb-0"><i class="bi bi-star me-2" style="color:var(--kl-accent-yellow);"></i>Captain Picks</h6>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th class="text-end">Avg</th>
+              <th class="text-end">Form</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rec in captain_recs %}
+            <tr>
+              <td>
+                {{ rec.player.name }}
+                {% if rec.is_captain %}<span class="squad-badge squad-badge-cap">C</span>{% endif %}
+                {% if rec.is_vc %}<span class="squad-badge squad-badge-vc">VC</span>{% endif %}
+              </td>
+              <td class="text-end fw-bold">{{ rec.avg }}</td>
+              <td class="text-end" style="color:{% if rec.form_avg > rec.avg %}var(--kl-accent-green){% elif rec.form_avg < rec.avg %}var(--kl-accent-red){% else %}var(--kl-text-primary){% endif %};">
+                {{ rec.form_avg }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Bye Clashes ── #}
+{% if bye_clashes %}
+<div class="card mt-3">
+  <div class="card-header">
+    <h6 class="fw-bold mb-0"><i class="bi bi-exclamation-triangle me-2" style="color:var(--kl-accent-orange);"></i>Bye Clash Rounds (3+ starters out)</h6>
+  </div>
+  <div class="card-body">
+    <div class="row g-2">
+      {% for clash in bye_clashes %}
+      <div class="col-md-4">
+        <div class="stat-card" style="border-left:3px solid var(--kl-accent-orange);">
+          <div class="stat-value" style="color:var(--kl-accent-orange);">R{{ clash.round }}</div>
+          <div class="stat-label">{{ clash.count }} starters on bye</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Projected Score Breakdown ── #}
+<div class="card mt-3">
+  <div class="card-header">
+    <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart me-2" style="color:var(--kl-accent-blue);"></i>Projected Score Breakdown</h6>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th class="text-end">Avg L5</th>
+            <th class="text-end">Games</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in projection.players %}
+          <tr>
+            <td>{{ p.player.name }} <span class="text-secondary" style="font-size:.7rem;">{{ p.player.afl_team }}</span></td>
+            <td class="text-end fw-bold">{{ p.avg_last5 }}</td>
+            <td class="text-end text-secondary">{{ p.games_scored }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var formData = {{ form_data|tojson }};
+  if (!formData.length) return;
+  var ctx = document.getElementById('formChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: formData.map(function(d) { return 'R' + d.round; }),
+      datasets: [{
+        label: 'Team Score',
+        data: formData.map(function(d) { return d.score; }),
+        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88,166,255,.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: '#58a6ff',
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: false, grid: { color: 'rgba(48,54,61,.5)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

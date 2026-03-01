@@ -12,3 +12,5 @@ openpyxl
 apscheduler
 python-dotenv
 gunicorn
+flask-mail
+pywebpush

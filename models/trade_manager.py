@@ -124,6 +124,19 @@ def respond_to_trade(trade_id, accept):
 
     trade.responded_at = datetime.now(timezone.utc)
     db.session.commit()
+
+    # Log activity
+    try:
+        from models.activity_feed import log_activity
+        status_label = trade.status.replace("_", " ").title()
+        log_activity(
+            trade.league_id, f"trade_{trade.status}",
+            f"Trade {status_label}: {trade.proposer_team.name} ↔ {trade.recipient_team.name}",
+            link=f"/leagues/{trade.league_id}/trades/{trade.id}",
+        )
+    except Exception:
+        pass
+
     return trade, None
 
 

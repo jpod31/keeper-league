@@ -1,0 +1,204 @@
+{% extends "league_base.html" %}
+{% block league_content %}
+<div class="page-header">
+  <div class="page-breadcrumb">
+    <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}">Players</a> / Compare
+  </div>
+  <h2>Player Comparison</h2>
+</div>
+
+{# ── Player Selectors ── #}
+<div class="card mb-3">
+  <div class="card-body">
+    <form id="compareForm" method="GET" action="{{ url_for('leagues.player_compare', league_id=league.id) }}">
+      <div class="row g-2 align-items-end">
+        {% for i in range(4) %}
+        <div class="col-md-3">
+          <label class="form-label">Player {{ i + 1 }}</label>
+          <select name="p" class="form-select form-select-sm player-select" data-slot="{{ i }}">
+            <option value="">-- Select --</option>
+            {% for p in all_players %}
+            <option value="{{ p.id }}" {% if p.id in selected_ids %}selected{% endif %}>
+              {{ p.name }} ({{ p.afl_team }}) - {{ p.sc_avg|round(1) if p.sc_avg else 'N/A' }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm mt-2">
+        <i class="bi bi-arrow-repeat me-1"></i>Compare
+      </button>
+    </form>
+  </div>
+</div>
+
+{% if players_data %}
+{# ── Stats Table ── #}
+<div class="card mb-3">
+  <div class="card-header">
+    <h6 class="fw-bold mb-0"><i class="bi bi-table me-2"></i>Side-by-Side Stats</h6>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>Stat</th>
+            {% for pd in players_data %}
+            <th class="text-center">{{ pd.player.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-secondary">Team</td>
+            {% for pd in players_data %}<td class="text-center">{{ pd.player.afl_team }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td class="text-secondary">Position</td>
+            {% for pd in players_data %}<td class="text-center"><span class="pos-badge pos-{{ pd.player.position[:3] if pd.player.position else 'MID' }}">{{ pd.player.position or '?' }}</span></td>{% endfor %}
+          </tr>
+          <tr>
+            <td class="text-secondary">Games</td>
+            {% for pd in players_data %}<td class="text-center fw-bold">{{ pd.games }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td class="text-secondary">Avg Score</td>
+            {% for pd in players_data %}<td class="text-center fw-bold" style="color:var(--kl-accent-blue);">{{ pd.avg }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td class="text-secondary">Last 3 Avg</td>
+            {% for pd in players_data %}<td class="text-center">{{ pd.l3_avg }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td class="text-secondary">Last 5 Avg</td>
+            {% for pd in players_data %}<td class="text-center">{{ pd.l5_avg }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td class="text-secondary">Ceiling</td>
+            {% for pd in players_data %}<td class="text-center" style="color:var(--kl-accent-green);">{{ pd.ceiling }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td class="text-secondary">Floor</td>
+            {% for pd in players_data %}<td class="text-center" style="color:var(--kl-accent-red);">{{ pd.floor }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td class="text-secondary">Consistency</td>
+            {% for pd in players_data %}<td class="text-center">{{ pd.consistency }}%</td>{% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  {# ── Radar Chart ── #}
+  <div class="col-lg-6">
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3"><i class="bi bi-hexagon me-2" style="color:var(--kl-accent-purple);"></i>Stat Radar</h6>
+      <canvas id="radarChart" height="300"></canvas>
+    </div>
+  </div>
+
+  {# ── Score Trend ── #}
+  <div class="col-lg-6">
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3"><i class="bi bi-graph-up me-2" style="color:var(--kl-accent-blue);"></i>Score Trend</h6>
+      <canvas id="trendChart" height="300"></canvas>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon"><i class="bi bi-people" style="font-size:1.5rem;"></i></div>
+  <h4>Select players to compare</h4>
+  <p>Choose up to 4 players from the dropdowns above to see side-by-side stats, radar charts, and score trends.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if players_data %}
+<script>
+(function() {
+  var colors = ['#58a6ff', '#3fb950', '#f0883e', '#bc8cff'];
+  var playersData = {{ players_data|tojson }};
+
+  // Radar Chart
+  var radarLabels = ['Kicks', 'Handballs', 'Marks', 'Tackles', 'Goals', 'Disposals', 'Clearances'];
+  var radarKeys = ['kicks', 'handballs', 'marks', 'tackles', 'goals', 'disposals', 'clearances'];
+  var radarDatasets = [];
+  playersData.forEach(function(pd, i) {
+    radarDatasets.push({
+      label: pd.player.name,
+      data: radarKeys.map(function(k) { return pd.stat_avgs[k] || 0; }),
+      borderColor: colors[i],
+      backgroundColor: colors[i] + '22',
+      pointBackgroundColor: colors[i],
+    });
+  });
+  var radarCtx = document.getElementById('radarChart').getContext('2d');
+  new Chart(radarCtx, {
+    type: 'radar',
+    data: { labels: radarLabels, datasets: radarDatasets },
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          grid: { color: 'rgba(48,54,61,.5)' },
+          pointLabels: { color: '#8b949e', font: { size: 11 } },
+          ticks: { display: false }
+        }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#c9d1d9', boxWidth: 12 } }
+      }
+    }
+  });
+
+  // Trend Chart
+  var allRounds = new Set();
+  playersData.forEach(function(pd) {
+    pd.scores_by_round.forEach(function(s) { allRounds.add(s.round); });
+  });
+  var sortedRounds = Array.from(allRounds).sort(function(a, b) { return a - b; });
+  var trendDatasets = [];
+  playersData.forEach(function(pd, i) {
+    var scoreMap = {};
+    pd.scores_by_round.forEach(function(s) { scoreMap[s.round] = s.score; });
+    trendDatasets.push({
+      label: pd.player.name,
+      data: sortedRounds.map(function(r) { return scoreMap[r] || null; }),
+      borderColor: colors[i],
+      backgroundColor: 'transparent',
+      tension: 0.3,
+      pointRadius: 3,
+      spanGaps: true,
+    });
+  });
+  var trendCtx = document.getElementById('trendChart').getContext('2d');
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: sortedRounds.map(function(r) { return 'R' + r; }),
+      datasets: trendDatasets,
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#c9d1d9', boxWidth: 12 } }
+      },
+      scales: {
+        y: { beginAtZero: false, grid: { color: 'rgba(48,54,61,.5)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
