@@ -24,25 +24,6 @@
   --kl-space-lg: 1.5rem;
   --kl-space-xl: 2rem;
 }
-[data-bs-theme="light"] {
-  --kl-bg-body: #ffffff;
-  --kl-bg-card: #f6f8fa;
-  --kl-bg-elevated: #eaeef2;
-  --kl-bg-hover: #f0f3f6;
-  --kl-border: #d0d7de;
-  --kl-border-light: #afb8c1;
-  --kl-text-primary: #1f2328;
-  --kl-text-heading: #1f2328;
-  --kl-text-secondary: #656d76;
-  --kl-text-muted: #6e7781;
-  --kl-text-faint: #8c959f;
-  --kl-accent-blue: #0969da;
-  --kl-accent-green: #1a7f37;
-  --kl-accent-red: #cf222e;
-  --kl-accent-yellow: #9a6700;
-  --kl-accent-orange: #bc4c00;
-  --kl-accent-purple: #8250df;
-}
 
 /* ── Typography ── */
 body {

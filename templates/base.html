@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="{{ theme_pref|default('dark') }}">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,11 +29,6 @@
             <li class="nav-item"><a class="nav-link" href="{{ url_for('leagues.league_list') }}"><i class="bi bi-house me-1"></i>Home</a></li>
           </ul>
           <ul class="navbar-nav">
-            <li class="nav-item">
-              <button class="theme-toggle-btn" id="themeToggle" title="Toggle theme">
-                <i class="bi bi-moon-fill"></i>
-              </button>
-            </li>
             {% if current_user.is_admin %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('admin.dashboard') }}" title="Admin"><i class="bi bi-gear"></i></a>
@@ -283,38 +278,6 @@
       console.log('SW registration failed:', err);
     });
   }
-  </script>
-  <script>
-  // Theme toggle
-  (function() {
-    var btn = document.getElementById('themeToggle');
-    if (!btn) return;
-    var html = document.documentElement;
-    function updateIcon() {
-      var icon = btn.querySelector('i');
-      if (html.getAttribute('data-bs-theme') === 'dark') {
-        icon.className = 'bi bi-moon-fill';
-      } else {
-        icon.className = 'bi bi-sun-fill';
-      }
-    }
-    updateIcon();
-    btn.addEventListener('click', function() {
-      var current = html.getAttribute('data-bs-theme');
-      var next = current === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-bs-theme', next);
-      localStorage.setItem('kl-theme', next);
-      updateIcon();
-      var csrf = document.querySelector('meta[name="csrf-token"]');
-      if (csrf) {
-        fetch('/auth/theme', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf.getAttribute('content')},
-          body: JSON.stringify({theme: next})
-        });
-      }
-    });
-  })();
   </script>
   {% block scripts %}{% endblock %}
 </body>
