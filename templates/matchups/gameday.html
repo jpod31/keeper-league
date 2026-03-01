@@ -100,6 +100,29 @@
   </div>
 </div>
 
+{# ── Player row macro ── #}
+{% macro player_row(p, locked_ids) %}
+<div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}{{ ' player-reserve' if p.get('lineup_type') == 'reserve' else '' }}">
+  <span class="gameday-player-info">
+    {% if p.is_captain %}<span class="gameday-badge-c">C</span> {% endif %}
+    {% if p.is_vice_captain %}<span class="gameday-badge-vc">VC</span> {% endif %}
+    {% if p.get('is_dnp') %}<span class="gameday-badge-dnp">DNP</span> {% endif %}
+    {% if p.get('subbed_on') %}<span class="gameday-badge-sub"><i class="bi bi-arrow-up-short"></i>SUB</span> {% endif %}
+    {% if p.is_emergency and not p.get('subbed_on') %}<span class="gameday-badge-emg">EMG</span> {% endif %}
+    {% if p.player_id in locked_ids %}<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> {% endif %}
+    <span class="gameday-player-name">{{ p.name }}</span>
+    <span class="gameday-player-meta">
+      {{ p.afl_team }} &middot; {{ p.position }}
+      {% if p.get('replaces') %}<span class="gameday-sub-note">&rarr; replacing {{ p.replaces }}</span>{% endif %}
+    </span>
+  </span>
+  <span class="gameday-player-score {{ 'text-success' if p.is_live else 'text-secondary' }}{{ ' score-dnp' if p.get('is_dnp') else '' }}{{ ' score-reserve' if p.get('lineup_type') == 'reserve' else '' }}">
+    {% if p.get('lineup_type') == 'reserve' %}&ndash;{% else %}{{ p.score or 0 }}{% endif %}
+    {% if p.is_live %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}
+  </span>
+</div>
+{% endmacro %}
+
 {# ── Player Comparison ── #}
 <div class="row g-3 mt-2">
   {# My team #}
@@ -107,29 +130,36 @@
     <div class="gameday-player-card">
       <div class="gameday-player-card-header">{{ my_team.name }}</div>
       <div class="gameday-player-list" id="my-players">
-        {% for p in my_players %}
-          <div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_player_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}">
-            <span class="gameday-player-info">
-              {% if p.is_captain %}<span class="gameday-badge-c">C</span> {% endif %}
-              {% if p.is_vice_captain %}<span class="gameday-badge-vc">VC</span> {% endif %}
-              {% if p.get('is_dnp') %}<span class="gameday-badge-dnp">DNP</span> {% endif %}
-              {% if p.get('subbed_on') %}<span class="gameday-badge-sub"><i class="bi bi-arrow-up-short"></i>SUB</span> {% endif %}
-              {% if p.is_emergency and not p.get('subbed_on') %}<span class="gameday-badge-emg">EMG</span> {% endif %}
-              {% if p.player_id in locked_player_ids %}<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> {% endif %}
-              <span class="gameday-player-name">{{ p.name }}</span>
-              <span class="gameday-player-meta">
-                {{ p.afl_team }} &middot; {{ p.position }}
-                {% if p.get('replaces') %}<span class="gameday-sub-note">&rarr; replacing {{ p.replaces }}</span>{% endif %}
-              </span>
-            </span>
-            <span class="gameday-player-score {{ 'text-success' if p.is_live else 'text-secondary' }}{{ ' score-dnp' if p.get('is_dnp') else '' }}">
-              {{ p.score or 0 }}
-              {% if p.is_live %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}
-            </span>
-          </div>
+        {% if my_players %}
+          <div class="gameday-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>
+          {% for p in my_players if p.lineup_type == 'field' %}
+            {{ player_row(p, locked_player_ids) }}
+          {% endfor %}
+
+          {% set bench_emg = [] %}
+          {% for p in my_players if p.lineup_type in ['bench', 'emergency'] %}
+            {% if bench_emg.append(p) %}{% endif %}
+          {% endfor %}
+          {% if bench_emg %}
+            <div class="gameday-section-hdr"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
+            {% for p in bench_emg %}
+              {{ player_row(p, locked_player_ids) }}
+            {% endfor %}
+          {% endif %}
+
+          {% set reserve_list = [] %}
+          {% for p in my_players if p.lineup_type == 'reserve' %}
+            {% if reserve_list.append(p) %}{% endif %}
+          {% endfor %}
+          {% if reserve_list %}
+            <div class="gameday-section-hdr gameday-section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
+            {% for p in reserve_list %}
+              {{ player_row(p, locked_player_ids) }}
+            {% endfor %}
+          {% endif %}
         {% else %}
           <div class="text-center py-3" style="color:#484f58;font-size:.8rem;">No lineup submitted</div>
-        {% endfor %}
+        {% endif %}
       </div>
     </div>
   </div>
@@ -139,29 +169,36 @@
     <div class="gameday-player-card">
       <div class="gameday-player-card-header">{{ opp_team.name }}</div>
       <div class="gameday-player-list" id="opp-players">
-        {% for p in opp_players %}
-          <div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_player_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}">
-            <span class="gameday-player-info">
-              {% if p.is_captain %}<span class="gameday-badge-c">C</span> {% endif %}
-              {% if p.is_vice_captain %}<span class="gameday-badge-vc">VC</span> {% endif %}
-              {% if p.get('is_dnp') %}<span class="gameday-badge-dnp">DNP</span> {% endif %}
-              {% if p.get('subbed_on') %}<span class="gameday-badge-sub"><i class="bi bi-arrow-up-short"></i>SUB</span> {% endif %}
-              {% if p.is_emergency and not p.get('subbed_on') %}<span class="gameday-badge-emg">EMG</span> {% endif %}
-              {% if p.player_id in locked_player_ids %}<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> {% endif %}
-              <span class="gameday-player-name">{{ p.name }}</span>
-              <span class="gameday-player-meta">
-                {{ p.afl_team }} &middot; {{ p.position }}
-                {% if p.get('replaces') %}<span class="gameday-sub-note">&rarr; replacing {{ p.replaces }}</span>{% endif %}
-              </span>
-            </span>
-            <span class="gameday-player-score {{ 'text-success' if p.is_live else 'text-secondary' }}{{ ' score-dnp' if p.get('is_dnp') else '' }}">
-              {{ p.score or 0 }}
-              {% if p.is_live %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}
-            </span>
-          </div>
+        {% if opp_players %}
+          <div class="gameday-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>
+          {% for p in opp_players if p.lineup_type == 'field' %}
+            {{ player_row(p, locked_player_ids) }}
+          {% endfor %}
+
+          {% set opp_bench_emg = [] %}
+          {% for p in opp_players if p.lineup_type in ['bench', 'emergency'] %}
+            {% if opp_bench_emg.append(p) %}{% endif %}
+          {% endfor %}
+          {% if opp_bench_emg %}
+            <div class="gameday-section-hdr"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
+            {% for p in opp_bench_emg %}
+              {{ player_row(p, locked_player_ids) }}
+            {% endfor %}
+          {% endif %}
+
+          {% set opp_reserve_list = [] %}
+          {% for p in opp_players if p.lineup_type == 'reserve' %}
+            {% if opp_reserve_list.append(p) %}{% endif %}
+          {% endfor %}
+          {% if opp_reserve_list %}
+            <div class="gameday-section-hdr gameday-section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
+            {% for p in opp_reserve_list %}
+              {{ player_row(p, locked_player_ids) }}
+            {% endfor %}
+          {% endif %}
         {% else %}
           <div class="text-center py-3" style="color:#484f58;font-size:.8rem;">No lineup submitted</div>
-        {% endfor %}
+        {% endif %}
       </div>
     </div>
   </div>
@@ -263,6 +300,23 @@
 
   /* Subbed-on emergency — highlighted */
   .player-subbed-on { background: rgba(35,134,54,.08); }
+
+  /* Reserve player — dimmed, non-scoring */
+  .player-reserve { opacity: 0.5; }
+  .player-reserve .gameday-player-name { color: #484f58; }
+  .score-reserve { color: #30363d !important; }
+
+  /* Section headers */
+  .gameday-section-hdr {
+    padding: 6px 14px; font-size: .65rem; font-weight: 700;
+    color: #8b949e; text-transform: uppercase; letter-spacing: .5px;
+    background: #161b22; border-bottom: 1px solid #21262d;
+  }
+  .gameday-section-reserve { color: #484f58; }
+  .gameday-section-note {
+    font-weight: 400; text-transform: none; letter-spacing: 0;
+    color: #30363d; margin-left: 4px; font-style: italic;
+  }
 
   /* Animations */
   .score-flash { animation: scoreFlash 1.5s ease-out; }
@@ -377,44 +431,69 @@ function updateHero(myScore, oppScore, myCapBonus, oppCapBonus) {
     else marginEl.textContent = 'Tied';
 }
 
+function renderPlayerRow(p, lockedIds) {
+    const isLocked = lockedIds.indexOf(p.player_id) !== -1;
+    const isDnp = p.is_dnp || false;
+    const isSubOn = p.subbed_on || false;
+    const isReserve = (p.lineup_type || '') === 'reserve';
+    let rowClass = 'gameday-player-row';
+    if (isLocked) rowClass += ' player-locked';
+    if (isDnp) rowClass += ' player-dnp';
+    if (isSubOn) rowClass += ' player-subbed-on';
+    if (isReserve) rowClass += ' player-reserve';
+
+    const scoreClass = isReserve ? 'score-reserve' : (isDnp ? 'score-dnp' : (p.is_live ? 'text-success' : 'text-secondary'));
+
+    let badges = '';
+    if (p.is_captain) badges += '<span class="gameday-badge-c">C</span> ';
+    if (p.is_vice_captain) badges += '<span class="gameday-badge-vc">VC</span> ';
+    if (isDnp) badges += '<span class="gameday-badge-dnp">DNP</span> ';
+    if (isSubOn) badges += '<span class="gameday-badge-sub"><i class="bi bi-arrow-up-short"></i>SUB</span> ';
+    if (p.is_emergency && !isSubOn) badges += '<span class="gameday-badge-emg">EMG</span> ';
+    if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> ';
+
+    const liveDot = p.is_live ? ' <i class="bi bi-circle-fill gameday-live-dot"></i>' : '';
+    const subNote = p.replaces ? '<span class="gameday-sub-note">&rarr; replacing ' + p.replaces + '</span>' : '';
+    const scoreText = isReserve ? '&ndash;' : (p.score || 0);
+
+    return '<div class="' + rowClass + '">'
+        + '<span class="gameday-player-info">'
+        + badges
+        + '<span class="gameday-player-name">' + p.name + '</span>'
+        + '<span class="gameday-player-meta">' + (p.afl_team || '') + ' &middot; ' + (p.position || '') + subNote + '</span>'
+        + '</span>'
+        + '<span class="gameday-player-score ' + scoreClass + '">'
+        + scoreText + liveDot
+        + '</span>'
+        + '</div>';
+}
+
 function renderPlayerList(containerId, players, lockedIds) {
     const container = document.getElementById(containerId);
     if (!container || !players || !players.length) return;
 
+    const field = players.filter(function(p) { return (p.lineup_type || 'field') === 'field'; });
+    const bench = players.filter(function(p) { return p.lineup_type === 'bench' || p.lineup_type === 'emergency'; });
+    const reserves = players.filter(function(p) { return p.lineup_type === 'reserve'; });
+
     let html = '';
-    players.forEach(function(p) {
-        const isLocked = lockedIds.indexOf(p.player_id) !== -1;
-        const isDnp = p.is_dnp || false;
-        const isSubOn = p.subbed_on || false;
-        let rowClass = 'gameday-player-row';
-        if (isLocked) rowClass += ' player-locked';
-        if (isDnp) rowClass += ' player-dnp';
-        if (isSubOn) rowClass += ' player-subbed-on';
 
-        const scoreClass = (isDnp ? 'score-dnp' : (p.is_live ? 'text-success' : 'text-secondary'));
+    // Field section
+    html += '<div class="gameday-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>';
+    field.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
 
-        let badges = '';
-        if (p.is_captain) badges += '<span class="gameday-badge-c">C</span> ';
-        if (p.is_vice_captain) badges += '<span class="gameday-badge-vc">VC</span> ';
-        if (isDnp) badges += '<span class="gameday-badge-dnp">DNP</span> ';
-        if (isSubOn) badges += '<span class="gameday-badge-sub"><i class="bi bi-arrow-up-short"></i>SUB</span> ';
-        if (p.is_emergency && !isSubOn) badges += '<span class="gameday-badge-emg">EMG</span> ';
-        if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> ';
+    // Bench section
+    if (bench.length > 0) {
+        html += '<div class="gameday-section-hdr"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>';
+        bench.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
+    }
 
-        const liveDot = p.is_live ? ' <i class="bi bi-circle-fill gameday-live-dot"></i>' : '';
-        const subNote = p.replaces ? '<span class="gameday-sub-note">&rarr; replacing ' + p.replaces + '</span>' : '';
+    // Reserves section
+    if (reserves.length > 0) {
+        html += '<div class="gameday-section-hdr gameday-section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>';
+        reserves.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
+    }
 
-        html += '<div class="' + rowClass + '">'
-            + '<span class="gameday-player-info">'
-            + badges
-            + '<span class="gameday-player-name">' + p.name + '</span>'
-            + '<span class="gameday-player-meta">' + (p.afl_team || '') + ' &middot; ' + (p.position || '') + subNote + '</span>'
-            + '</span>'
-            + '<span class="gameday-player-score ' + scoreClass + '">'
-            + (p.score || 0) + liveDot
-            + '</span>'
-            + '</div>';
-    });
     container.innerHTML = html;
 }
 

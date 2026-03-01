@@ -372,14 +372,22 @@ def _compute_player_score(stat, league_id, scoring_type, hybrid_base=None):
 
 
 def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
-                                league_id: int | None = None) -> list[dict]:
+                                league_id: int | None = None,
+                                include_reserves: bool = False) -> list[dict]:
     """Get per-player score breakdown for a team in a round (for live display).
 
     Detects DNP (did-not-play) field players and shows which emergency
     replaced them, mirroring the scoring engine's auto-sub logic.
 
+    Only marks a player as DNP if their AFL team's game has started
+    (live or complete) but no stat row exists. Players whose game hasn't
+    begun show as 'yet to play' instead.
+
     If league_id is provided, uses the league's scoring type for score calculation.
     Otherwise falls back to supercoach scores.
+
+    If include_reserves is True, also returns benched (reserve) players
+    with lineup_type='reserve'.
     """
     roster_entries = FantasyRoster.query.filter_by(
         team_id=team_id, is_active=True
@@ -397,18 +405,32 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             scoring_type = league.scoring_type
             hybrid_base = league.hybrid_base
 
-    # Separate on-field vs emergencies (same split as scoring engine)
+    # Separate on-field vs emergencies vs reserves
     on_field = [r for r in roster_entries if not r.is_benched and not r.is_emergency]
     emergencies = [r for r in roster_entries if r.is_emergency]
+    reserves = [r for r in roster_entries if r.is_benched and not r.is_emergency]
 
     # Pre-fetch stats for all relevant players in one query
     relevant_ids = [r.player_id for r in on_field] + [r.player_id for r in emergencies]
+    if include_reserves:
+        relevant_ids += [r.player_id for r in reserves]
     stats_rows = PlayerStat.query.filter(
         PlayerStat.player_id.in_(relevant_ids),
         PlayerStat.year == year,
         PlayerStat.round == afl_round,
     ).all() if relevant_ids else []
     stats_map = {s.player_id: s for s in stats_rows}
+
+    # Determine which AFL teams have started playing (live or complete)
+    started_games = AflGame.query.filter(
+        AflGame.year == year,
+        AflGame.afl_round == afl_round,
+        AflGame.status.in_(["live", "complete"]),
+    ).all()
+    started_teams = set()
+    for g in started_games:
+        started_teams.add(g.home_team)
+        started_teams.add(g.away_team)
 
     # Determine which emergencies auto-subbed for DNP field players
     used_emergencies = set()        # emergency player_id -> True
@@ -419,6 +441,11 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
         stat = stats_map.get(entry.player_id)
         if stat is not None:
             continue  # played — no sub needed
+        # Only consider DNP if the player's team game has started
+        player = entry.player
+        player_team = player.afl_team if player else ""
+        if player_team not in started_teams:
+            continue  # game hasn't started — not DNP yet
         # DNP — find first available emergency who played (position-aware)
         for em in emergencies:
             if em.player_id in used_emergencies:
@@ -439,10 +466,19 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
     for entry in on_field:
         stat = stats_map.get(entry.player_id)
         player = entry.player
-        is_dnp = stat is None
+        player_team = player.afl_team if player else ""
+        game_started = player_team in started_teams
+        is_dnp = stat is None and game_started
         replaced_by_id = dnp_replaced_by.get(entry.player_id)
 
         score = _compute_player_score(stat, league_id, scoring_type, hybrid_base) if stat else 0
+
+        # Determine lineup type from position code
+        pos = (entry.position_code or "").upper()
+        if pos.startswith("BENCH"):
+            lineup_type = "bench"
+        else:
+            lineup_type = "field"
 
         breakdown.append({
             "player_id": entry.player_id,
@@ -455,7 +491,9 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             "is_vice_captain": entry.is_vice_captain,
             "is_emergency": False,
             "is_dnp": is_dnp,
+            "game_started": game_started,
             "replaced_by": replaced_by_id,
+            "lineup_type": lineup_type,
         })
 
     for entry in emergencies:
@@ -476,9 +514,35 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             "is_vice_captain": entry.is_vice_captain,
             "is_emergency": True,
             "is_dnp": False,
+            "game_started": (player.afl_team if player else "") in started_teams,
             "subbed_on": subbed_on,
             "replaces": emergency_replaces.get(entry.player_id, ""),
+            "lineup_type": "emergency",
         })
+
+    # Optionally include reserves (benched players not in lineup)
+    if include_reserves:
+        for entry in reserves:
+            stat = stats_map.get(entry.player_id)
+            player = entry.player
+
+            score = _compute_player_score(stat, league_id, scoring_type, hybrid_base) if stat else 0
+
+            breakdown.append({
+                "player_id": entry.player_id,
+                "name": player.name if player else "Unknown",
+                "afl_team": player.afl_team if player else "",
+                "position": player.position if player else "",
+                "score": score,
+                "is_live": stat.is_live if stat else False,
+                "is_captain": False,
+                "is_vice_captain": False,
+                "is_emergency": False,
+                "is_dnp": False,
+                "game_started": (player.afl_team if player else "") in started_teams,
+                "replaced_by": None,
+                "lineup_type": "reserve",
+            })
 
     return breakdown
 
