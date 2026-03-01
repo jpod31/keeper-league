@@ -1025,20 +1025,6 @@ def season_hub(league_id):
         Trade.proposed_at.desc()
     ).limit(5).all()
 
-    # ── Standings snapshot for regular season panel ──
-    from models.database import SeasonStanding, Fixture
-    standings = []
-    current_round_num = None
-    if current_phase in ("regular", "midseason", "finals"):
-        standings = SeasonStanding.query.filter_by(
-            league_id=league_id, year=league.season_year
-        ).order_by(SeasonStanding.ladder_points.desc(), SeasonStanding.percentage.desc()).all()
-        # Find current round (last completed fixture round)
-        last_completed = Fixture.query.filter_by(
-            league_id=league_id, year=league.season_year, status="completed"
-        ).order_by(Fixture.afl_round.desc()).first()
-        current_round_num = last_completed.afl_round if last_completed else 0
-
     return render_template("leagues/season_hub.html",
                            league=league,
                            season_cfg=season_cfg,
@@ -1067,8 +1053,6 @@ def season_hub(league_id):
                            user_roster=user_roster,
                            delisted_player_ids=delisted_player_ids,
                            trade_window_dates=trade_window_dates,
-                           standings=standings,
-                           current_round_num=current_round_num,
                            mock_draft=mock_draft)
 
 
