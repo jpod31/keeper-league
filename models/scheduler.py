@@ -57,8 +57,19 @@ def init_scheduler(app, socketio):
         id="daily_schedule_sync",
         replace_existing=True,
     )
+    # Weekly position sync: Tuesday 04:00 UTC (after weekend rounds)
+    scheduler.add_job(
+        _sync_positions,
+        "cron",
+        day_of_week="tue",
+        hour=4,
+        minute=0,
+        id="weekly_position_sync",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
-    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC)")
+    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC)")
 
 
 def run_manual_score_sync():
@@ -140,6 +151,20 @@ def _sync_round_schedule():
 
         except Exception:
             logger.exception("Error in daily schedule sync")
+
+
+def _sync_positions():
+    """Weekly job: sync player positions from Footywire."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from scrapers.footywire import sync_player_positions
+            changes = sync_player_positions()
+            logger.info("Weekly position sync: %d changes", len(changes))
+        except Exception:
+            logger.exception("Error in weekly position sync")
 
 
 def _get_active_round(year: int) -> int | None:

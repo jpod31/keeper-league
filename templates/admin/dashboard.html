@@ -41,6 +41,20 @@
   </div>
 </div>
 
+{# Quick actions #}
+<div class="card mb-4" style="background:#161b22;border:1px solid #30363d;">
+  <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
+    <h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-gear me-2"></i>Quick Actions</h6>
+  </div>
+  <div class="card-body">
+    <form action="{{ url_for('admin.sync_positions') }}" method="post" class="d-inline">
+      <button type="submit" class="btn btn-outline-info btn-sm">
+        <i class="bi bi-arrow-repeat me-1"></i>Sync Player Positions
+      </button>
+    </form>
+  </div>
+</div>
+
 {# Recent activity #}
 <div class="card" style="background:#161b22;border:1px solid #30363d;">
   <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">

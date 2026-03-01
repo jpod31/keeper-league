@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
@@ -66,6 +66,21 @@ def dashboard():
                            total_teams=total_teams,
                            views_today=views_today,
                            activity=activity)
+
+
+@admin_bp.route("/sync-positions", methods=["POST"])
+@admin_required
+def sync_positions():
+    from scrapers.footywire import sync_player_positions
+    changes = sync_player_positions()
+    if changes:
+        summary = f"Updated {len(changes)} position(s): " + ", ".join(
+            f"{c['name']} {c['old_pos']}->{c['new_pos']}" for c in changes
+        )
+        flash(summary, "success")
+    else:
+        flash("All player positions are already up to date.", "info")
+    return redirect(url_for("admin.dashboard"))
 
 
 @admin_bp.route("/users")

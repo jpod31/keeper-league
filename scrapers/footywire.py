@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import time
@@ -19,7 +20,7 @@ from config import (
     SC_ROUNDS,
     SC_HISTORY_YEARS,
 )
-from models.player import Player, save_players_csv
+from models.player import Player, save_players_csv, load_players_csv
 
 HEADERS = {
     "User-Agent": (
@@ -430,3 +431,76 @@ def load_player_sc_history(player_name: str) -> dict:
         "current_rounds": current_rounds,
         "trajectory_slope": trajectory_slope,
     }
+
+
+# ── Position sync ─────────────────────────────────────────────────────
+
+_sync_logger = logging.getLogger(__name__)
+
+
+def _update_csv_positions(changes: List[dict]) -> None:
+    """Patch players.csv with updated positions from a list of change dicts."""
+    players = load_players_csv()
+    if not players:
+        return
+
+    lookup = {(c["name"], c["team"]): c["new_pos"] for c in changes}
+    updated = 0
+    for p in players:
+        key = (p.name, p.team)
+        if key in lookup:
+            p.position = lookup[key]
+            updated += 1
+
+    if updated:
+        save_players_csv(players)
+        _sync_logger.info("Updated %d positions in players.csv", updated)
+
+
+def sync_player_positions() -> List[dict]:
+    """Scrape current positions from Footywire and update the DB + CSV.
+
+    Returns a list of change dicts: {name, team, old_pos, new_pos}
+    """
+    from models.database import db, AflPlayer
+
+    _sync_logger.info("Starting player position sync from Footywire...")
+    scraped = scrape_rosters()
+
+    # Build lookup: (name, team) -> scraped position
+    scraped_positions = {}
+    for p in scraped:
+        scraped_positions[(p.name, p.team)] = p.position
+
+    # Compare with DB
+    all_db_players = AflPlayer.query.all()
+    changes = []
+
+    for dbp in all_db_players:
+        key = (dbp.name, dbp.afl_team)
+        new_pos = scraped_positions.get(key)
+        if new_pos is None:
+            continue  # player not found in scrape (delisted, name mismatch, etc.)
+
+        old_pos = dbp.position or "MID"
+        if new_pos != old_pos:
+            changes.append({
+                "name": dbp.name,
+                "team": dbp.afl_team,
+                "old_pos": old_pos,
+                "new_pos": new_pos,
+            })
+            dbp.position = new_pos
+
+    if changes:
+        db.session.commit()
+        _sync_logger.info(
+            "Position sync complete: %d changes — %s",
+            len(changes),
+            ", ".join(f"{c['name']} ({c['team']}): {c['old_pos']} -> {c['new_pos']}" for c in changes),
+        )
+        _update_csv_positions(changes)
+    else:
+        _sync_logger.info("Position sync complete: all positions up to date")
+
+    return changes
