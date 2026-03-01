@@ -4,732 +4,906 @@
 {% block league_content %}
 <div class="row justify-content-center">
   <div class="col-md-11">
+
+    {# ── HEADER + PHASE TIMELINE ── #}
     <div class="page-header">
       <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / List Management</div>
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <h2>List Management</h2>
-          <div class="d-flex align-items-center gap-2 mt-1">
-            <span class="status-pill status-{{ league.status }}">{{ league.status }}</span>
-            <span style="font-size:.8rem;color:#8b949e;">{{ league.season_year }}</span>
-          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="status-pill status-{{ league.status }}">{{ league.status }}</span>
+          <span style="font-size:.85rem;color:#8b949e;font-weight:600;">{{ league.season_year }}</span>
         </div>
       </div>
     </div>
 
-    {# ── ACTIVE DELIST ALERT — top of page when delist is open ── #}
-    {% if delist_period and delist_period.status == 'open' and user_team and current_phase in ('midseason', 'offseason') %}
-      <div class="lm-section mb-3" id="delist-alert">
-        <div class="lm-section-header lm-header-delist" style="cursor:default;">
-          <div class="d-flex align-items-center gap-2">
-            <div class="lm-icon lm-icon-delist"><i class="bi bi-exclamation-triangle-fill"></i></div>
-            <div>
-              <h5 class="mb-0 fw-bold text-white">Delist Period Open</h5>
-              <span style="font-size:.8rem;color:rgba(255,255,255,.7);">
-                Your delists: <strong style="color:{% if team_delist_count >= (delist_period.min_delists or 3) %}#56d364{% else %}#f0883e{% endif %};">{{ team_delist_count }}</strong> / {{ delist_period.min_delists or 3 }}
-                {% if team_delist_count < (delist_period.min_delists or 3) %}
-                  — {{ (delist_period.min_delists or 3) - team_delist_count }} more needed
-                {% else %}
-                  <i class="bi bi-check-circle-fill ms-1" style="color:#56d364;"></i>
-                {% endif %}
-              </span>
-            </div>
+    {# ── Phase Timeline ── #}
+    <div class="ph-timeline mb-4">
+      {% for p in phases %}
+        <div class="ph-step ph-{{ p.status }}{% if p.id == active_phase_id %} ph-current{% endif %}">
+          <div class="ph-dot">
+            {% if p.status == 'completed' %}<i class="bi bi-check-lg"></i>{% endif %}
           </div>
-          <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-danger btn-sm">
-            <i class="bi bi-person-dash me-1"></i>Manage Delists
-          </a>
+          <span class="ph-label">{{ p.label }}</span>
         </div>
-      </div>
-    {% endif %}
-
-    {# ══════════════════════════════════════════════════════════════
-       1. PRE-SEASON SETUP
-       ══════════════════════════════════════════════════════════════ #}
-    {% set setup_done = (league.teams|length >= 2)|int + (1 if league.scoring_type else 0) + (1 if initial_draft else 0) %}
-    {% set ps_complete = setup_done == 3 and initial_draft and initial_draft.status == 'completed' %}
-    <div class="lm-section {% if ps_complete %}lm-collapsed{% endif %}" id="section-setup">
-      <div class="lm-section-header lm-header-setup" onclick="toggleSection('setup')">
-        <div class="d-flex align-items-center gap-3">
-          <div class="lm-icon lm-icon-setup"><i class="bi bi-gear-fill"></i></div>
-          <div>
-            <h5 class="mb-0 fw-bold text-white">Pre-Season Setup</h5>
-            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">Teams, scoring &amp; draft configuration</span>
-          </div>
-          {% if ps_complete %}
-            <i class="bi bi-check-circle-fill lm-check ms-1"></i>
-          {% endif %}
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge" style="background:{% if setup_done == 3 %}rgba(63,185,80,.3);color:#56d364{% else %}rgba(210,153,34,.3);color:#f0883e{% endif %};font-size:.7rem;">{{ setup_done }}/3</span>
-          <i class="bi bi-chevron-down lm-chevron"></i>
-        </div>
-      </div>
-      <div class="lm-section-body">
-        <div class="lm-step">
-          <div class="d-flex align-items-center gap-3">
-            <div class="lm-step-icon {% if league.teams|length >= 2 %}lm-step-done{% else %}lm-step-pending{% endif %}">
-              {% if league.teams|length >= 2 %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-people"></i>{% endif %}
-            </div>
-            <div>
-              <h6 class="fw-bold mb-0" style="font-size:.9rem;">Teams Joined</h6>
-              <span class="text-secondary" style="font-size:.8rem;">{{ league.teams|length }} / {{ league.team_slots }} teams</span>
-            </div>
-          </div>
-        </div>
-        <div class="lm-step">
-          <div class="d-flex align-items-center gap-3">
-            <div class="lm-step-icon {% if league.scoring_type %}lm-step-done{% else %}lm-step-pending{% endif %}">
-              {% if league.scoring_type %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-sliders"></i>{% endif %}
-            </div>
-            <div>
-              <h6 class="fw-bold mb-0" style="font-size:.9rem;">Scoring Configured</h6>
-              <span class="text-secondary" style="font-size:.8rem;">{{ league.scoring_type or 'Not set' }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="lm-step">
-          <div class="d-flex justify-content-between align-items-start">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon {% if initial_draft %}lm-step-done{% else %}lm-step-pending{% endif %}">
-                {% if initial_draft %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-list-check"></i>{% endif %}
-              </div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Draft Created</h6>
-                <span class="text-secondary" style="font-size:.8rem;">
-                  {% if initial_draft %}Session ready{% else %}No draft session yet{% endif %}
-                </span>
-              </div>
-            </div>
-            {% if is_commissioner and not initial_draft %}
-              <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg me-1"></i>Create Draft
-              </a>
-            {% endif %}
-          </div>
-        </div>
-        {% if is_commissioner %}
-          <div class="d-flex gap-2 mt-3 flex-wrap">
-            <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-gear me-1"></i>League Settings
-            </a>
-            <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm lm-btn-draft">
-              <i class="bi bi-list-check me-1"></i>Draft Setup
-            </a>
-          </div>
+        {% if not loop.last %}
+          <div class="ph-connector {% if p.status == 'completed' %}ph-conn-done{% endif %}"></div>
         {% endif %}
-      </div>
+      {% endfor %}
     </div>
 
     {# ══════════════════════════════════════════════════════════════
-       2. DRAFT
+       PHASE CONTENT — only the current phase renders
        ══════════════════════════════════════════════════════════════ #}
-    {% set draft_done = initial_draft and initial_draft.status == 'completed' %}
-    <div class="lm-section {% if draft_done %}lm-collapsed{% endif %}" id="section-draft">
-      <div class="lm-section-header lm-header-draft" onclick="toggleSection('draft')">
-        <div class="d-flex align-items-center gap-3">
-          <div class="lm-icon lm-icon-draft"><i class="bi bi-list-check"></i></div>
-          <div>
-            <h5 class="mb-0 fw-bold text-white">Draft</h5>
-            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">
-              {% if initial_draft and initial_draft.status == 'completed' %}
-                Completed &middot; {{ initial_draft.total_rounds }} rounds
-              {% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}
-                Live &middot; Round {{ initial_draft.current_round }}, Pick {{ initial_draft.current_pick }}
-              {% elif initial_draft and initial_draft.status == 'scheduled' %}
-                Scheduled &mdash; ready to start
-              {% else %}
-                Not yet created
-              {% endif %}
-            </span>
-          </div>
-          {% if draft_done %}
-            <i class="bi bi-check-circle-fill lm-check ms-1"></i>
-          {% endif %}
+
+    {# ── PRE-SEASON ── #}
+    {% if current_phase == 'pre_season' %}
+      {% set setup_done = (league.teams|length >= 2)|int + (1 if league.scoring_type else 0) + (1 if initial_draft else 0) %}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-gear-fill" style="color:var(--kl-accent-yellow);"></i>
+          <span class="fw-bold">Setup Checklist</span>
+          <span class="ms-auto badge" style="background:{% if setup_done == 3 %}rgba(63,185,80,.2);color:#3fb950{% else %}rgba(210,153,34,.2);color:#d29922{% endif %};font-size:.7rem;">{{ setup_done }}/3</span>
         </div>
-        <div class="d-flex align-items-center gap-2">
-          {% if initial_draft and initial_draft.status == 'scheduled' and initial_draft.scheduled_start %}
-            <div class="lm-timer">
-              <i class="bi bi-clock"></i>
-              <span>Starts in</span>
-              <span class="lm-timer-value" data-target="{{ initial_draft.scheduled_start.isoformat() }}"></span>
-            </div>
-          {% endif %}
-          <i class="bi bi-chevron-down lm-chevron"></i>
-        </div>
-      </div>
-      <div class="lm-section-body">
-        {# Initial Draft #}
-        <div class="lm-card lm-card-draft">
-          <div class="d-flex justify-content-between align-items-start">
+        <div class="card-body py-2">
+          <div class="lm-step">
             <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon {% if draft_done %}lm-step-done{% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}lm-step-live{% elif initial_draft and initial_draft.status == 'scheduled' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
-                {% if draft_done %}<i class="bi bi-check-lg"></i>
-                {% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}<i class="bi bi-broadcast"></i>
-                {% elif initial_draft and initial_draft.status == 'scheduled' %}<i class="bi bi-calendar-event"></i>
-                {% else %}<i class="bi bi-plus-circle"></i>{% endif %}
+              <div class="lm-step-icon {% if league.teams|length >= 2 %}lm-step-done{% else %}lm-step-pending{% endif %}">
+                {% if league.teams|length >= 2 %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-people"></i>{% endif %}
               </div>
               <div>
-                <h6 class="fw-bold mb-0" style="font-size:.95rem;">Initial Draft</h6>
-                <span class="text-secondary" style="font-size:.8rem;">
-                  {% if draft_done %}
-                    {{ initial_draft.total_rounds }} rounds &middot; {{ league.teams|length }} teams
-                    {% if initial_draft.completed_at %} &middot; {{ initial_draft.completed_at.strftime('%d %b %Y') }}{% endif %}
-                  {% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}
-                    Round {{ initial_draft.current_round }} &middot; Pick {{ initial_draft.current_pick }}
-                  {% elif initial_draft and initial_draft.status == 'scheduled' %}
-                    Session created &mdash; ready to start
-                  {% else %}
-                    Create a session to get started
-                  {% endif %}
-                </span>
+                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Teams Joined</h6>
+                <span class="text-secondary" style="font-size:.8rem;">{{ league.teams|length }} / {{ league.team_slots }} teams</span>
               </div>
             </div>
-            <div>
-              {% if initial_draft and initial_draft.status in ('in_progress', 'paused') %}
-                <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary btn-sm">
-                  <i class="bi bi-door-open me-1"></i>Enter Draft Room
-                </a>
-              {% elif initial_draft and initial_draft.status == 'scheduled' %}
-                <div class="d-flex gap-2">
-                  <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-door-open me-1"></i>Enter Draft Room
-                  </a>
-                  {% if is_commissioner %}
-                    <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm">
-                      <i class="bi bi-gear me-1"></i>Setup
-                    </a>
-                  {% endif %}
+          </div>
+          <div class="lm-step">
+            <div class="d-flex align-items-center gap-3">
+              <div class="lm-step-icon {% if league.scoring_type %}lm-step-done{% else %}lm-step-pending{% endif %}">
+                {% if league.scoring_type %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-sliders"></i>{% endif %}
+              </div>
+              <div>
+                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Scoring Configured</h6>
+                <span class="text-secondary" style="font-size:.8rem;">{{ league.scoring_type or 'Not set' }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="lm-step">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="d-flex align-items-center gap-3">
+                <div class="lm-step-icon {% if initial_draft %}lm-step-done{% else %}lm-step-pending{% endif %}">
+                  {% if initial_draft %}<i class="bi bi-check-lg"></i>{% else %}<i class="bi bi-list-check"></i>{% endif %}
                 </div>
-              {% elif not initial_draft and is_commissioner %}
+                <div>
+                  <h6 class="fw-bold mb-0" style="font-size:.9rem;">Draft Created</h6>
+                  <span class="text-secondary" style="font-size:.8rem;">
+                    {% if initial_draft %}Session ready{% else %}No draft session yet{% endif %}
+                  </span>
+                </div>
+              </div>
+              {% if is_commissioner and not initial_draft %}
                 <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-primary btn-sm">
                   <i class="bi bi-plus-lg me-1"></i>Create Draft
                 </a>
               {% endif %}
             </div>
           </div>
-          {% if initial_draft and initial_draft.status == 'scheduled' and initial_draft.scheduled_start %}
-            <div class="lm-info-box mt-3">
-              <div class="d-flex align-items-center gap-2 mb-1">
-                <i class="bi bi-clock-history" style="color:#f0883e;"></i>
-                <span style="font-size:.85rem;color:#c9d1d9;">
-                  {{ initial_draft.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') }}
-                </span>
-              </div>
-              <div id="initial-countdown" class="lm-countdown"></div>
-            </div>
+        </div>
+      </div>
+
+      {# Draft status card #}
+      {% set draft_done = initial_draft and initial_draft.status == 'completed' %}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-list-check" style="color:var(--kl-accent-blue);"></i>
+          <span class="fw-bold">Initial Draft</span>
+          {% if draft_done %}
+            <i class="bi bi-check-circle-fill ms-1" style="color:#3fb950;font-size:.8rem;"></i>
           {% endif %}
         </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              {% if draft_done %}
+                <span class="text-secondary" style="font-size:.85rem;">{{ initial_draft.total_rounds }} rounds &middot; {{ league.teams|length }} teams{% if initial_draft.completed_at %} &middot; {{ initial_draft.completed_at.strftime('%d %b %Y') }}{% endif %}</span>
+              {% elif initial_draft and initial_draft.status in ('in_progress', 'paused') %}
+                <span style="font-size:.85rem;color:var(--kl-accent-orange);"><i class="bi bi-broadcast me-1"></i>Live &mdash; Round {{ initial_draft.current_round }}, Pick {{ initial_draft.current_pick }}</span>
+              {% elif initial_draft and initial_draft.status == 'scheduled' %}
+                <span class="text-secondary" style="font-size:.85rem;">Session created &mdash; ready to start</span>
+                {% if initial_draft.scheduled_start %}
+                  <div class="mt-1" style="font-size:.8rem;color:#9198a1;"><i class="bi bi-clock-history me-1" style="color:#f0883e;"></i>{{ initial_draft.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') }}</div>
+                {% endif %}
+              {% else %}
+                <span class="text-secondary" style="font-size:.85rem;">No draft session created yet</span>
+              {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+              {% if initial_draft and initial_draft.status in ('in_progress', 'paused', 'scheduled') %}
+                <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary btn-sm">
+                  <i class="bi bi-door-open me-1"></i>Enter Draft Room
+                </a>
+              {% endif %}
+              {% if is_commissioner and initial_draft and initial_draft.status == 'scheduled' %}
+                <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm"><i class="bi bi-gear me-1"></i>Setup</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {# Mock Draft #}
-        <div class="lm-card lm-card-mock mt-3">
+      {# Mock Draft #}
+      <div class="card mb-3">
+        <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon lm-step-ready">
-                <i class="bi bi-controller"></i>
-              </div>
+              <div class="lm-step-icon lm-step-ready"><i class="bi bi-controller"></i></div>
               <div>
                 <h6 class="fw-bold mb-0" style="font-size:.9rem;">Mock Draft</h6>
                 <span class="text-secondary" style="font-size:.8rem;">Practice your draft strategy against AI opponents</span>
               </div>
             </div>
             {% if mock_draft and mock_draft.status in ('in_progress', 'paused') %}
-              <a href="{{ url_for('draft_live.mock_draft_room', league_id=league.id) }}" class="btn lm-btn-draft btn-sm">
-                <i class="bi bi-play-fill me-1"></i>Resume Mock
-              </a>
+              <a href="{{ url_for('draft_live.mock_draft_room', league_id=league.id) }}" class="btn lm-btn-draft btn-sm"><i class="bi bi-play-fill me-1"></i>Resume Mock</a>
             {% else %}
-              <form method="POST" action="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" onclick="event.stopPropagation();">
+              <form method="POST" action="{{ url_for('draft_live.draft_setup', league_id=league.id) }}">
                 <input type="hidden" name="action" value="create_mock">
-                <button type="submit" class="btn btn-outline-secondary btn-sm">
-                  <i class="bi bi-controller me-1"></i>Start Mock Draft
-                </button>
+                <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-controller me-1"></i>Start Mock Draft</button>
               </form>
             {% endif %}
           </div>
         </div>
-
-        {# Quick links #}
-        <div class="d-flex gap-2 mt-3 flex-wrap">
-          <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-search me-1"></i>Scout Players
-          </a>
-          <a href="{{ url_for('leagues.draft_values', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-bar-chart me-1"></i>Draft Values
-          </a>
-          {% if user_team %}
-            <a href="{{ url_for('team.squad', league_id=league.id, team_id=user_team.id) }}" class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-people me-1"></i>My Squad
-            </a>
-          {% endif %}
-        </div>
       </div>
-    </div>
 
-    {# ══════════════════════════════════════════════════════════════
-       3. MID-SEASON
-       ══════════════════════════════════════════════════════════════ #}
-    {% set mid_is_active = current_phase == 'midseason' %}
-    {% set mid_is_future = not mid_is_active and current_phase in ('pre_season', 'regular') %}
-    <div class="lm-section {% if mid_is_future %}lm-future{% endif %} {% if not mid_is_active %}lm-collapsed{% endif %}" id="section-mid">
-      <div class="lm-section-header lm-header-mid" onclick="toggleSection('mid')">
-        <div class="d-flex align-items-center gap-3">
-          <div class="lm-icon lm-icon-mid"><i class="bi bi-arrow-repeat"></i></div>
-          <div>
-            <h5 class="mb-0 fw-bold text-white">Mid-Season</h5>
-            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">Trades, delists &amp; mini-draft</span>
+      {# Quick links #}
+      <div class="d-flex gap-2 flex-wrap mb-4">
+        {% if is_commissioner %}
+          <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear me-1"></i>League Settings</a>
+          <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm lm-btn-draft"><i class="bi bi-list-check me-1"></i>Draft Setup</a>
+        {% endif %}
+        <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search me-1"></i>Scout Players</a>
+        <a href="{{ url_for('leagues.draft_values', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-bar-chart me-1"></i>Draft Values</a>
+        {% if user_team %}
+          <a href="{{ url_for('team.squad', league_id=league.id, team_id=user_team.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-people me-1"></i>My Squad</a>
+        {% endif %}
+      </div>
+
+    {# ── REGULAR SEASON / FINALS ── #}
+    {% elif current_phase in ('regular', 'finals') %}
+      <div class="card mb-3">
+        <div class="card-body text-center py-4">
+          {% if current_phase == 'finals' %}
+            <i class="bi bi-trophy" style="font-size:2.5rem;color:var(--kl-accent-purple);"></i>
+            <h5 class="mt-2 mb-1">Finals Underway</h5>
+          {% else %}
+            <i class="bi bi-calendar-check" style="font-size:2.5rem;color:var(--kl-accent-green);"></i>
+            <h5 class="mt-2 mb-1">Season Active{% if current_round_num %} &mdash; Round {{ current_round_num }}{% endif %}</h5>
+          {% endif %}
+          <p class="text-secondary mb-3" style="font-size:.85rem;">No list management actions needed right now. Enjoy the games!</p>
+          <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <a href="{{ url_for('matchups.gameday', league_id=league.id) }}" class="btn btn-primary btn-sm"><i class="bi bi-lightning-charge me-1"></i>Gameday</a>
+            <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-grid me-1"></i>League Hub</a>
+            {% if user_team %}
+              <a href="{{ url_for('team.squad', league_id=league.id, team_id=user_team.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-people me-1"></i>My Squad</a>
+            {% endif %}
           </div>
-          {% if mid_is_active %}
-            <span class="badge" style="background:rgba(255,255,255,.15);color:#fff;font-size:.65rem;">ACTIVE</span>
-          {% endif %}
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          {% if mid_trade_status == 'active' and trade_window_dates.mid_close %}
-            <div class="lm-timer">
-              <i class="bi bi-clock"></i>
-              <span>Trades close</span>
-              <span class="lm-timer-value" data-target="{{ trade_window_dates.mid_close.isoformat() }}"></span>
-            </div>
-          {% elif delist_period and delist_period.status == 'open' and current_phase == 'midseason' and delist_period.closes_at %}
-            <div class="lm-timer">
-              <i class="bi bi-clock"></i>
-              <span>Delists close</span>
-              <span class="lm-timer-value" data-target="{{ delist_period.closes_at.isoformat() }}"></span>
-            </div>
-          {% endif %}
-          <i class="bi bi-chevron-down lm-chevron"></i>
         </div>
       </div>
-      <div class="lm-section-body">
-        {# Trade Window #}
-        {% if season_cfg and season_cfg.mid_season_trade_enabled %}
-          <div class="lm-step">
-            <div class="d-flex justify-content-between align-items-start">
-              <div class="d-flex align-items-center gap-3">
-                <div class="lm-step-icon {% if mid_trade_status == 'completed' %}lm-step-done{% elif mid_trade_status == 'active' %}lm-step-live{% else %}lm-step-pending{% endif %}">
-                  {% if mid_trade_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                  {% else %}<i class="bi bi-arrow-left-right"></i>{% endif %}
-                </div>
-                <div>
-                  <h6 class="fw-bold mb-0" style="font-size:.9rem;">Trade Window</h6>
-                  <span class="text-secondary" style="font-size:.8rem;">Balanced trades only (players in = players out)</span>
-                </div>
-              </div>
-              {% if is_commissioner %}
-                {% if mid_trade_status == 'locked' %}
-                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                    <input type="hidden" name="step" value="trade_window">
-                    <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-play-fill me-1"></i>Open</button>
-                  </form>
-                {% elif mid_trade_status == 'active' %}
-                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                    <input type="hidden" name="step" value="close_trades">
-                    <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close</button>
-                  </form>
-                {% endif %}
+
+      {% if standings %}
+        <div class="card mb-3">
+          <div class="card-header d-flex align-items-center gap-2">
+            <i class="bi bi-bar-chart-line" style="color:var(--kl-accent-blue);"></i>
+            <span class="fw-bold" style="font-size:.85rem;">Standings Snapshot</span>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm mb-0" style="font-size:.8rem;">
+                <thead><tr><th></th><th>Team</th><th class="text-center">W</th><th class="text-center">L</th><th class="text-center">Pts</th><th class="text-center">%</th></tr></thead>
+                <tbody>
+                  {% for s in standings[:8] %}
+                    <tr{% if user_team and s.team_id == user_team.id %} style="background:rgba(88,166,255,.06);"{% endif %}>
+                      <td class="text-secondary">{{ loop.index }}</td>
+                      <td class="fw-bold">{{ s.team.name if s.team else '?' }}</td>
+                      <td class="text-center">{{ s.wins }}</td>
+                      <td class="text-center">{{ s.losses }}</td>
+                      <td class="text-center fw-bold">{{ s.ladder_points }}</td>
+                      <td class="text-center">{{ '%.1f'|format(s.percentage) if s.percentage else '-' }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+    {# ── MID-SEASON ── #}
+    {% elif current_phase == 'midseason' %}
+
+      {# Step progress bar #}
+      <div class="ph-steps-bar mb-4">
+        {% set mid_steps = [
+          ('Trade Window', mid_trade_status),
+          ('Delists', mid_delist_status),
+          ('Mini-Draft', mid_draft_status),
+          ('Roster Lock', mid_lock_status)
+        ] %}
+        {% for label, status in mid_steps %}
+          <div class="ph-mini-step ph-ms-{{ status }}">
+            <div class="ph-ms-dot">
+              {% if status == 'completed' %}<i class="bi bi-check-lg"></i>
+              {% elif status == 'active' %}<i class="bi bi-three-dots"></i>
+              {% endif %}
+            </div>
+            <span>{{ label }}</span>
+          </div>
+          {% if not loop.last %}<div class="ph-ms-line {% if status == 'completed' %}ph-ms-line-done{% endif %}"></div>{% endif %}
+        {% endfor %}
+      </div>
+
+      {# Trade Window card #}
+      {% if season_cfg and season_cfg.mid_season_trade_enabled %}
+        <div class="card mb-3">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-arrow-left-right" style="color:var(--kl-accent-orange);"></i>
+              <span class="fw-bold" style="font-size:.9rem;">Trade Window</span>
+              {% if mid_trade_status == 'active' %}
+                <span class="badge" style="background:rgba(63,185,80,.2);color:#3fb950;font-size:.65rem;">OPEN</span>
+              {% elif mid_trade_status == 'completed' %}
+                <span class="badge" style="background:rgba(139,148,158,.15);color:#8b949e;font-size:.65rem;">CLOSED</span>
               {% endif %}
             </div>
             {% if mid_trade_status == 'active' and trade_window_dates.mid_close %}
-              <div class="lm-info-box mt-2" style="font-size:.8rem;color:#9198a1;">
-                <i class="bi bi-calendar-event me-1"></i>Closes {{ trade_window_dates.mid_close.strftime('%d %b %Y') }}
-                {% if trade_window_dates.mid_draft %}
-                  &middot; Draft: {{ trade_window_dates.mid_draft.strftime('%d %b %Y') }}
-                  {% if is_commissioner %}
-                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2" style="font-size:.65rem;padding:1px 6px;" data-bs-toggle="collapse" data-bs-target="#amendDraftDate" onclick="event.stopPropagation();"><i class="bi bi-pencil"></i></button>
-                  {% endif %}
+              <div class="lm-timer">
+                <i class="bi bi-clock"></i>
+                <span>Closes</span>
+                <span class="lm-timer-value" data-target="{{ trade_window_dates.mid_close.isoformat() }}"></span>
+              </div>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            {% if mid_trade_status == 'active' %}
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-secondary" style="font-size:.85rem;">
+                  Closes {{ trade_window_dates.mid_close.strftime('%d %b %Y') if trade_window_dates.mid_close else 'TBD' }}
+                  {% if trade_window_dates.mid_draft %} &middot; Draft: {{ trade_window_dates.mid_draft.strftime('%d %b %Y') }}{% endif %}
+                </span>
+                <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm lm-btn-trades"><i class="bi bi-arrow-left-right me-1"></i>Trade Center</a>
+              </div>
+              {% if pending_incoming %}
+                <div class="mt-2" style="font-size:.8rem;color:var(--kl-accent-orange);"><i class="bi bi-inbox me-1"></i>{{ pending_incoming }} incoming trade{{ 's' if pending_incoming != 1 }} pending</div>
+              {% endif %}
+            {% elif mid_trade_status == 'completed' %}
+              <span class="text-secondary" style="font-size:.85rem;">Trade window has closed.</span>
+            {% else %}
+              <span class="text-secondary" style="font-size:.85rem;">Trade window not yet opened.</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      {# INLINE DELIST SECTION #}
+      {% if mid_delist_status in ('active', 'pending') or (delist_period and delist_period.status == 'open') %}
+        <div class="card mb-3" id="delist-section">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-person-dash" style="color:var(--kl-accent-red);"></i>
+              <span class="fw-bold" style="font-size:.9rem;">Delist Period</span>
+              {% if delist_period and delist_period.status == 'open' %}
+                <span class="badge" style="background:rgba(248,81,73,.2);color:#f85149;font-size:.65rem;">OPEN</span>
+              {% elif mid_delist_status == 'pending' %}
+                <span class="badge" style="background:rgba(210,153,34,.2);color:#d29922;font-size:.65rem;">PENDING</span>
+              {% endif %}
+            </div>
+            {% if delist_period and delist_period.closes_at and delist_period.status == 'open' %}
+              <div class="lm-timer">
+                <i class="bi bi-clock"></i>
+                <span>Closes</span>
+                <span class="lm-timer-value" data-target="{{ delist_period.closes_at.isoformat() }}"></span>
+              </div>
+            {% endif %}
+          </div>
+
+          {% if delist_period and delist_period.status == 'open' and user_team %}
+            <div class="card-body">
+              {# Progress bar #}
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <span style="font-size:1rem;font-weight:600;">
+                  Your delists:
+                  <span style="color:{% if team_delist_count >= min_delists %}#3fb950{% else %}#f85149{% endif %};font-size:1.2rem;">{{ team_delist_count }}</span>
+                  <span class="text-secondary" style="font-size:.85rem;">/ {{ min_delists }} required</span>
+                </span>
+                {% if team_delist_count >= min_delists %}
+                  <span><i class="bi bi-check-circle-fill" style="color:#3fb950;"></i> <span style="font-size:.8rem;color:#3fb950;">Minimum met</span></span>
+                {% else %}
+                  <span class="text-secondary" style="font-size:.85rem;">{{ min_delists - team_delist_count }} more needed</span>
                 {% endif %}
               </div>
-              {% if is_commissioner %}
-                <div class="collapse mt-2" id="amendDraftDate">
-                  <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-flex gap-2 align-items-end" onclick="event.stopPropagation();">
-                    <input type="hidden" name="step" value="amend_draft_date">
-                    <div>
-                      <label class="form-label" style="font-size:.7rem;">New Draft Date</label>
-                      <input type="datetime-local" class="form-control form-control-sm" name="draft_date"
-                             value="{{ trade_window_dates.mid_draft.strftime('%Y-%m-%dT%H:%M') if trade_window_dates.mid_draft else '' }}">
+
+              {# Commissioner: league progress #}
+              {% if is_commissioner and all_teams_progress %}
+                <div class="mb-3 p-2" style="background:var(--kl-bg-card);border:1px solid var(--kl-border);border-radius:8px;">
+                  <div class="d-flex align-items-center gap-2 mb-2" style="font-size:.8rem;">
+                    <i class="bi bi-people-fill" style="color:#8b949e;"></i>
+                    <span class="fw-bold">League Progress</span>
+                  </div>
+                  <div class="d-flex flex-wrap gap-0">
+                    {% for tp in all_teams_progress %}
+                      <div class="px-3 py-1 d-flex align-items-center gap-2" style="border-bottom:1px solid #21262d;width:50%;font-size:.75rem;">
+                        {% if tp.met %}
+                          <i class="bi bi-check-circle-fill" style="color:#3fb950;font-size:.7rem;"></i>
+                        {% else %}
+                          <i class="bi bi-clock" style="color:#d29922;font-size:.7rem;"></i>
+                        {% endif %}
+                        <span class="fw-bold" style="color:#c9d1d9;">{{ tp.name }}</span>
+                        <span class="ms-auto" style="color:{% if tp.met %}#3fb950{% else %}#d29922{% endif %};">{{ tp.count }}/{{ min_delists }}</span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endif %}
+
+              {# Roster table #}
+              {% if user_roster %}
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="fw-bold" style="font-size:.85rem;">Your Roster</span>
+                    <span class="text-secondary" style="font-size:.7rem;">({{ user_roster|length }} players)</span>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm active" id="sortAvgBtn" onclick="sortRoster('avg')" style="font-size:.65rem;">Sort: SC Avg</button>
+                    <button class="btn btn-outline-secondary btn-sm" id="sortPosBtn" onclick="sortRoster('pos')" style="font-size:.65rem;">Sort: Position</button>
+                    <button class="btn btn-outline-secondary btn-sm" id="sortAgeBtn" onclick="sortRoster('age')" style="font-size:.65rem;">Sort: Age</button>
+                  </div>
+                </div>
+                <div id="rosterList" style="border:1px solid var(--kl-border);border-radius:8px;overflow:hidden;">
+                  {% for r in user_roster %}
+                    {% set p = r.player %}
+                    {% set is_delisted = r.player_id in delisted_player_ids %}
+                    <div class="dh-player-row{% if is_delisted %} dh-delisted{% endif %}"
+                         data-sc-avg="{{ p.sc_avg or 0 }}"
+                         data-position="{{ p.position or 'MID' }}"
+                         data-age="{{ p.age or 0 }}">
+                      <div class="dh-player-main">
+                        <div class="dh-logo">
+                          {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                            <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" height="28">
+                          {% else %}
+                            <i class="bi bi-shield-fill" style="font-size:1.2rem;color:#30363d;"></i>
+                          {% endif %}
+                        </div>
+                        <div class="dh-player-info">
+                          <div class="d-flex align-items-center gap-2">
+                            {% if is_delisted %}
+                              <del class="fw-bold" style="color:#484f58;">{{ p.name }}</del>
+                              <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.6rem;">DELISTED</span>
+                            {% else %}
+                              <a href="{{ url_for('player_detail', name=p.name) }}" class="fw-bold text-decoration-none" style="color:#c9d1d9;">{{ p.name }}</a>
+                            {% endif %}
+                          </div>
+                          <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.7rem;">
+                            {% for pos in (p.position or 'MID').split('/') %}
+                              <span class="pos-badge pos-{{ pos }}">{{ pos }}</span>
+                            {% endfor %}
+                            <span class="text-secondary">{{ p.afl_team or '-' }}</span>
+                            {% if p.age %}<span class="text-secondary">Age {{ p.age }}</span>{% endif %}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="dh-player-stats">
+                        <div class="dh-stat">
+                          <span class="dh-stat-val">{{ '%.0f'|format(p.sc_avg) if p.sc_avg else '-' }}</span>
+                          <span class="dh-stat-label">SC Avg</span>
+                        </div>
+                        {% if p.sc_avg_prev %}
+                        <div class="dh-stat">
+                          <span class="dh-stat-val" style="font-size:.75rem;">{{ '%.0f'|format(p.sc_avg_prev) }}</span>
+                          <span class="dh-stat-label">Prev</span>
+                        </div>
+                        {% endif %}
+                        {% if p.rating %}
+                        <div class="dh-stat">
+                          <span class="dh-stat-val dh-rtg-{{ 'elite' if p.rating >= 80 else 'good' if p.rating >= 70 else 'avg' if p.rating >= 60 else 'low' }}">{{ p.rating }}</span>
+                          <span class="dh-stat-label">Rating</span>
+                        </div>
+                        {% endif %}
+                        {% if p.age %}
+                        <div class="dh-stat">
+                          <span class="dh-stat-val{% if p.age >= 30 %} dh-rtg-low{% elif p.age <= 22 %} dh-rtg-elite{% endif %}">{{ p.age }}</span>
+                          <span class="dh-stat-label">Age</span>
+                        </div>
+                        {% endif %}
+                      </div>
+                      <div class="dh-player-action">
+                        {% if not is_delisted %}
+                          <form method="POST" action="{{ url_for('leagues.delist_player_action', league_id=league.id) }}"
+                                onsubmit="return confirm('Delist {{ p.name }}? This cannot be undone.');">
+                            <input type="hidden" name="player_id" value="{{ p.id }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-person-dash me-1"></i>Delist</button>
+                          </form>
+                        {% endif %}
+                      </div>
                     </div>
-                    <button type="submit" class="btn btn-outline-primary btn-sm">Update</button>
-                  </form>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-center py-3">
+                  <i class="bi bi-person-x" style="font-size:1.5rem;color:#30363d;"></i>
+                  <p class="text-secondary mt-1 mb-0" style="font-size:.85rem;">No players on your roster.</p>
                 </div>
               {% endif %}
-            {% endif %}
-            {% if mid_trade_status == 'active' %}
-              <div class="mt-2">
-                <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm lm-btn-trades">
-                  <i class="bi bi-arrow-left-right me-1"></i>Go to Trade Center
-                </a>
-              </div>
-            {% endif %}
-          </div>
-        {% else %}
-          <div class="lm-step lm-step-disabled-block">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon lm-step-disabled"><i class="bi bi-x-lg"></i></div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#8b949e;">Mid-Season Trade Window</h6>
-                <span style="font-size:.8rem;color:#6e7681;">Disabled in league settings</span>
-              </div>
             </div>
+          {% elif mid_delist_status == 'pending' %}
+            <div class="card-body">
+              <span class="text-secondary" style="font-size:.85rem;">Delist period will open after the trade window closes.</span>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {# Mini-Draft card #}
+      {% if season_cfg and season_cfg.mid_season_draft_enabled %}
+        <div class="card mb-3">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-list-check" style="color:var(--kl-accent-blue);"></i>
+              <span class="fw-bold" style="font-size:.9rem;">Mini-Draft</span>
+              {% if mid_draft_status == 'completed' %}
+                <i class="bi bi-check-circle-fill" style="color:#3fb950;font-size:.75rem;"></i>
+              {% elif mid_draft_status == 'active' %}
+                <span class="badge" style="background:rgba(63,185,80,.2);color:#3fb950;font-size:.65rem;">ACTIVE</span>
+              {% endif %}
+            </div>
+            {% if mid_draft_status in ('pending', 'active') %}
+              <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm"><i class="bi bi-list-check me-1"></i>Draft Setup</a>
+            {% endif %}
           </div>
+          <div class="card-body">
+            <span class="text-secondary" style="font-size:.85rem;">
+              {% if mid_draft_status == 'completed' %}Draft completed.
+              {% elif mid_draft_status == 'active' %}Draft is in progress.
+              {% elif mid_draft_status == 'pending' %}Ready to begin once delists close.
+              {% else %}Awaiting earlier steps.{% endif %}
+            </span>
+          </div>
+        </div>
+      {% endif %}
+
+      {# Quick links #}
+      <div class="d-flex gap-2 flex-wrap mb-4">
+        <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left-right me-1"></i>Trade Center</a>
+        <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search me-1"></i>Player Pool</a>
+        {% if user_team %}
+          <a href="{{ url_for('team.squad', league_id=league.id, team_id=user_team.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-people me-1"></i>My Squad</a>
         {% endif %}
-
-        {# Delist & Mini-Draft #}
-        <div class="lm-step">
-          <div class="d-flex justify-content-between align-items-start">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon {% if mid_draft_status == 'completed' %}lm-step-done{% elif mid_delist_status == 'active' %}lm-step-live{% elif mid_draft_status == 'active' %}lm-step-live{% elif mid_delist_status == 'pending' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
-                {% if mid_draft_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                {% elif mid_delist_status == 'active' %}<i class="bi bi-person-dash"></i>
-                {% elif mid_draft_status == 'active' %}<i class="bi bi-list-check"></i>
-                {% else %}<i class="bi bi-person-dash"></i>{% endif %}
-              </div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Delist &amp; Mini-Draft</h6>
-                <span class="text-secondary" style="font-size:.8rem;">
-                  {% if season_cfg %}
-                    Delist {{ season_cfg.mid_season_delist_required or 1 }} player{{ 's' if (season_cfg.mid_season_delist_required or 1) != 1 }}, then draft {{ season_cfg.mid_season_draft_picks or 1 }} pick{{ 's' if (season_cfg.mid_season_draft_picks or 1) != 1 }}
-                  {% else %}
-                    Delist players, then pick replacements
-                  {% endif %}
-                </span>
-              </div>
-            </div>
-            {% if is_commissioner and current_phase == 'midseason' %}
-              {% if mid_delist_status in ('pending', 'locked') %}
-                <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                  <input type="hidden" name="step" value="open_delists">
-                  <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-play-fill me-1"></i>Open Delists</button>
-                </form>
-              {% elif mid_delist_status == 'active' %}
-                <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                  <input type="hidden" name="step" value="close_delists">
-                  <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close Delists</button>
-                </form>
-              {% endif %}
-            {% endif %}
-          </div>
-          {% if mid_delist_status == 'active' and user_team %}
-            <div class="lm-info-box mt-2">
-              <div class="d-flex justify-content-between align-items-center">
-                <span style="font-size:.85rem;">
-                  Your delists: <strong style="color:{% if team_delist_count >= (season_cfg.mid_season_delist_required or 1) %}#3fb950{% else %}#f0883e{% endif %};">{{ team_delist_count }}</strong> / {{ season_cfg.mid_season_delist_required or 1 }}
-                  {% if team_delist_count >= (season_cfg.mid_season_delist_required or 1) %}
-                    <i class="bi bi-check-circle-fill ms-1" style="color:#3fb950;"></i>
-                  {% endif %}
-                </span>
-                <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-outline-danger btn-sm" style="font-size:.75rem;">
-                  <i class="bi bi-person-dash me-1"></i>Manage Delists
-                </a>
-              </div>
-              {% if delist_period and delist_period.closes_at and current_phase == 'midseason' %}
-                <div class="mt-2" style="font-size:.8rem;color:#9198a1;">
-                  <i class="bi bi-calendar-event me-1" style="color:#f0883e;"></i>
-                  Closes {{ delist_period.closes_at.strftime('%d %b %Y at %I:%M %p') }}
-                </div>
-              {% endif %}
-            </div>
-          {% endif %}
-          {% if mid_draft_status in ('pending', 'active') and season_cfg and season_cfg.mid_season_draft_enabled %}
-            <div class="mt-2">
-              <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm lm-btn-draft">
-                <i class="bi bi-list-check me-1"></i>Go to Draft Setup
-              </a>
-            </div>
-          {% endif %}
-        </div>
-
-        {# Roster Lock #}
-        <div class="lm-step">
-          <div class="d-flex justify-content-between align-items-start">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon {% if mid_lock_status == 'completed' %}lm-step-done{% else %}lm-step-pending{% endif %}">
-                {% if mid_lock_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                {% else %}<i class="bi bi-lock"></i>{% endif %}
-              </div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Roster Lock</h6>
-                <span class="text-secondary" style="font-size:.8rem;">Rosters locked until next phase</span>
-              </div>
-            </div>
-            {% if is_commissioner and mid_draft_status == 'completed' and mid_lock_status != 'completed' %}
-              <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                <input type="hidden" name="step" value="roster_lock">
-                <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-lock me-1"></i>Lock Rosters</button>
-              </form>
-            {% endif %}
-          </div>
-        </div>
-
-        {# Quick links — always visible #}
-        <div class="d-flex gap-2 mt-3 flex-wrap" style="padding-top:.75rem;border-top:1px solid rgba(48,54,61,.6);">
-          <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-arrow-left-right me-1"></i>Trade Center
-          </a>
-          <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-person-dash me-1"></i>Delist Hub
-          </a>
-          <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-search me-1"></i>Player Pool
-          </a>
-        </div>
       </div>
-    </div>
 
-    {# ══════════════════════════════════════════════════════════════
-       4. OFF-SEASON
-       ══════════════════════════════════════════════════════════════ #}
-    {% set off_is_active = current_phase == 'offseason' %}
-    {% set off_is_future = not off_is_active and current_phase in ('pre_season', 'regular', 'midseason', 'finals') %}
-    <div class="lm-section {% if off_is_future %}lm-future{% endif %} {% if not off_is_active %}lm-collapsed{% endif %}" id="section-off">
-      <div class="lm-section-header lm-header-off" onclick="toggleSection('off')">
-        <div class="d-flex align-items-center gap-3">
-          <div class="lm-icon lm-icon-off"><i class="bi bi-snow"></i></div>
-          <div>
-            <h5 class="mb-0 fw-bold text-white">Off-Season</h5>
-            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">Delists, supplemental draft &amp; trades</span>
-          </div>
-          {% if off_is_active %}
-            <span class="badge" style="background:rgba(255,255,255,.15);color:#fff;font-size:.65rem;">ACTIVE</span>
-          {% endif %}
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          {% if off_trade_status == 'active' and trade_window_dates.off_close %}
-            <div class="lm-timer">
-              <i class="bi bi-clock"></i>
-              <span>Trades close</span>
-              <span class="lm-timer-value" data-target="{{ trade_window_dates.off_close.isoformat() }}"></span>
+    {# ── OFF-SEASON ── #}
+    {% elif current_phase == 'offseason' %}
+
+      {# Step progress bar #}
+      <div class="ph-steps-bar mb-4">
+        {% set off_steps = [
+          ('Delists', off_delist_status),
+          ('SSP', off_ssp_status if (season_cfg and season_cfg.ssp_enabled) else 'locked'),
+          ('Draft', off_draft_status),
+          ('Trades', off_trade_status)
+        ] %}
+        {% for label, status in off_steps %}
+          <div class="ph-mini-step ph-ms-{{ status }}">
+            <div class="ph-ms-dot">
+              {% if status == 'completed' %}<i class="bi bi-check-lg"></i>
+              {% elif status == 'active' %}<i class="bi bi-three-dots"></i>
+              {% endif %}
             </div>
-          {% elif delist_period and delist_period.status == 'open' and current_phase == 'offseason' and delist_period.closes_at %}
+            <span>{{ label }}</span>
+          </div>
+          {% if not loop.last %}<div class="ph-ms-line {% if status == 'completed' %}ph-ms-line-done{% endif %}"></div>{% endif %}
+        {% endfor %}
+      </div>
+
+      {# INLINE DELIST SECTION #}
+      <div class="card mb-3" id="delist-section">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-person-dash" style="color:var(--kl-accent-red);"></i>
+            <span class="fw-bold" style="font-size:.9rem;">Delist Period</span>
+            {% if delist_period and delist_period.status == 'open' %}
+              <span class="badge" style="background:rgba(248,81,73,.2);color:#f85149;font-size:.65rem;">OPEN</span>
+            {% elif off_delist_status == 'completed' %}
+              <i class="bi bi-check-circle-fill" style="color:#3fb950;font-size:.75rem;"></i>
+            {% endif %}
+          </div>
+          {% if delist_period and delist_period.closes_at and delist_period.status == 'open' %}
             <div class="lm-timer">
               <i class="bi bi-clock"></i>
-              <span>Delists close</span>
+              <span>Closes</span>
               <span class="lm-timer-value" data-target="{{ delist_period.closes_at.isoformat() }}"></span>
             </div>
           {% endif %}
-          <i class="bi bi-chevron-down lm-chevron"></i>
-        </div>
-      </div>
-      <div class="lm-section-body">
-        {# Delist Period #}
-        <div class="lm-step">
-          <div class="d-flex justify-content-between align-items-start">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon {% if off_delist_status == 'completed' %}lm-step-done{% elif off_delist_status == 'active' %}lm-step-live{% elif off_delist_status == 'pending' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
-                {% if off_delist_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                {% else %}<i class="bi bi-person-dash"></i>{% endif %}
-              </div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Delist Period</h6>
-                <span class="text-secondary" style="font-size:.8rem;">
-                  Each team must delist at least {{ season_cfg.offseason_delist_min if season_cfg else 3 }} players
-                </span>
-              </div>
-            </div>
-            {% if is_commissioner %}
-              {% if off_delist_status == 'pending' %}
-                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                  <input type="hidden" name="step" value="open_delists">
-                  <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-play-fill me-1"></i>Open Delists</button>
-                </form>
-              {% elif off_delist_status == 'active' %}
-                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                  <input type="hidden" name="step" value="close_delists">
-                  <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close Delists</button>
-                </form>
-              {% endif %}
-            {% endif %}
-          </div>
-          {% if off_delist_status == 'active' and user_team %}
-            <div class="lm-info-box mt-2">
-              <div class="d-flex justify-content-between align-items-center">
-                <span style="font-size:.85rem;">
-                  Your delists: <strong style="color:{% if team_delist_count >= (season_cfg.offseason_delist_min if season_cfg else 3) %}#3fb950{% else %}#f0883e{% endif %};">{{ team_delist_count }}</strong> / {{ season_cfg.offseason_delist_min if season_cfg else 3 }}
-                  {% if team_delist_count >= (season_cfg.offseason_delist_min if season_cfg else 3) %}
-                    <i class="bi bi-check-circle-fill ms-1" style="color:#3fb950;"></i>
-                  {% endif %}
-                </span>
-                <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-outline-danger btn-sm" style="font-size:.75rem;">
-                  <i class="bi bi-person-dash me-1"></i>Manage Delists
-                </a>
-              </div>
-              {% if delist_period and delist_period.closes_at and current_phase == 'offseason' %}
-                <div class="mt-2" style="font-size:.8rem;color:#9198a1;">
-                  <i class="bi bi-calendar-event me-1" style="color:#f0883e;"></i>
-                  Closes {{ delist_period.closes_at.strftime('%d %b %Y at %I:%M %p') }}
-                </div>
-              {% endif %}
-            </div>
-          {% endif %}
         </div>
 
-        {# SSP #}
-        {% if season_cfg and season_cfg.ssp_enabled %}
-          <div class="lm-step">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon {% if off_ssp_status == 'completed' %}lm-step-done{% elif off_ssp_status == 'active' %}lm-step-live{% else %}lm-step-pending{% endif %}">
-                {% if off_ssp_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                {% else %}<i class="bi bi-bandaid"></i>{% endif %}
-              </div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;">SSP (Injury Replacements)</h6>
-                <span class="text-secondary" style="font-size:.8rem;">Teams with LTIL players select a replacement from the pool</span>
-              </div>
+        {% if delist_period and delist_period.status == 'open' and user_team %}
+          <div class="card-body">
+            {# Progress #}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span style="font-size:1rem;font-weight:600;">
+                Your delists:
+                <span style="color:{% if team_delist_count >= min_delists %}#3fb950{% else %}#f85149{% endif %};font-size:1.2rem;">{{ team_delist_count }}</span>
+                <span class="text-secondary" style="font-size:.85rem;">/ {{ min_delists }} required</span>
+              </span>
+              {% if team_delist_count >= min_delists %}
+                <span><i class="bi bi-check-circle-fill" style="color:#3fb950;"></i> <span style="font-size:.8rem;color:#3fb950;">Minimum met</span></span>
+              {% else %}
+                <span class="text-secondary" style="font-size:.85rem;">{{ min_delists - team_delist_count }} more needed</span>
+              {% endif %}
             </div>
-            {% if off_ssp_status == 'active' and ltil_entries %}
-              <div class="mt-2">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0" style="font-size:.85rem;">
-                    <thead><tr><th>Team</th><th>Injured Player</th><th>Replacement</th></tr></thead>
-                    <tbody>
-                      {% for ltil in ltil_entries %}
-                        <tr>
-                          <td>{{ ltil.team.name }}</td>
-                          <td><span style="color:#f85149;">{{ ltil.player.name }}</span> <span class="text-secondary" style="font-size:.75rem;">{{ ltil.player.afl_team }}</span></td>
-                          <td>
-                            {% if ltil.replacement_player %}
-                              <span style="color:#3fb950;">{{ ltil.replacement_player.name }}</span>
-                            {% else %}
-                              <span class="text-secondary">Pending</span>
-                            {% endif %}
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
+
+            {% if delist_period.closes_at %}
+              <div class="mb-3" style="font-size:.8rem;color:#9198a1;">
+                <i class="bi bi-calendar-event me-1" style="color:#f0883e;"></i>
+                Closes {{ delist_period.closes_at.strftime('%A, %d %b %Y at %I:%M %p') }}
+              </div>
+            {% endif %}
+
+            {# Commissioner: league progress #}
+            {% if is_commissioner and all_teams_progress %}
+              <div class="mb-3 p-2" style="background:var(--kl-bg-card);border:1px solid var(--kl-border);border-radius:8px;">
+                <div class="d-flex align-items-center gap-2 mb-2" style="font-size:.8rem;">
+                  <i class="bi bi-people-fill" style="color:#8b949e;"></i>
+                  <span class="fw-bold">League Progress</span>
                 </div>
+                <div class="d-flex flex-wrap gap-0">
+                  {% for tp in all_teams_progress %}
+                    <div class="px-3 py-1 d-flex align-items-center gap-2" style="border-bottom:1px solid #21262d;width:50%;font-size:.75rem;">
+                      {% if tp.met %}
+                        <i class="bi bi-check-circle-fill" style="color:#3fb950;font-size:.7rem;"></i>
+                      {% else %}
+                        <i class="bi bi-clock" style="color:#d29922;font-size:.7rem;"></i>
+                      {% endif %}
+                      <span class="fw-bold" style="color:#c9d1d9;">{{ tp.name }}</span>
+                      <span class="ms-auto" style="color:{% if tp.met %}#3fb950{% else %}#d29922{% endif %};">{{ tp.count }}/{{ min_delists }}</span>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+
+            {# Roster table #}
+            {% if user_roster %}
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fw-bold" style="font-size:.85rem;">Your Roster</span>
+                  <span class="text-secondary" style="font-size:.7rem;">({{ user_roster|length }} players)</span>
+                </div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline-secondary btn-sm active" id="sortAvgBtn" onclick="sortRoster('avg')" style="font-size:.65rem;">Sort: SC Avg</button>
+                  <button class="btn btn-outline-secondary btn-sm" id="sortPosBtn" onclick="sortRoster('pos')" style="font-size:.65rem;">Sort: Position</button>
+                  <button class="btn btn-outline-secondary btn-sm" id="sortAgeBtn" onclick="sortRoster('age')" style="font-size:.65rem;">Sort: Age</button>
+                </div>
+              </div>
+              <div id="rosterList" style="border:1px solid var(--kl-border);border-radius:8px;overflow:hidden;">
+                {% for r in user_roster %}
+                  {% set p = r.player %}
+                  {% set is_delisted = r.player_id in delisted_player_ids %}
+                  <div class="dh-player-row{% if is_delisted %} dh-delisted{% endif %}"
+                       data-sc-avg="{{ p.sc_avg or 0 }}"
+                       data-position="{{ p.position or 'MID' }}"
+                       data-age="{{ p.age or 0 }}">
+                    <div class="dh-player-main">
+                      <div class="dh-logo">
+                        {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                          <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" height="28">
+                        {% else %}
+                          <i class="bi bi-shield-fill" style="font-size:1.2rem;color:#30363d;"></i>
+                        {% endif %}
+                      </div>
+                      <div class="dh-player-info">
+                        <div class="d-flex align-items-center gap-2">
+                          {% if is_delisted %}
+                            <del class="fw-bold" style="color:#484f58;">{{ p.name }}</del>
+                            <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.6rem;">DELISTED</span>
+                          {% else %}
+                            <a href="{{ url_for('player_detail', name=p.name) }}" class="fw-bold text-decoration-none" style="color:#c9d1d9;">{{ p.name }}</a>
+                          {% endif %}
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.7rem;">
+                          {% for pos in (p.position or 'MID').split('/') %}
+                            <span class="pos-badge pos-{{ pos }}">{{ pos }}</span>
+                          {% endfor %}
+                          <span class="text-secondary">{{ p.afl_team or '-' }}</span>
+                          {% if p.age %}<span class="text-secondary">Age {{ p.age }}</span>{% endif %}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="dh-player-stats">
+                      <div class="dh-stat">
+                        <span class="dh-stat-val">{{ '%.0f'|format(p.sc_avg) if p.sc_avg else '-' }}</span>
+                        <span class="dh-stat-label">SC Avg</span>
+                      </div>
+                      {% if p.sc_avg_prev %}
+                      <div class="dh-stat">
+                        <span class="dh-stat-val" style="font-size:.75rem;">{{ '%.0f'|format(p.sc_avg_prev) }}</span>
+                        <span class="dh-stat-label">Prev</span>
+                      </div>
+                      {% endif %}
+                      {% if p.rating %}
+                      <div class="dh-stat">
+                        <span class="dh-stat-val dh-rtg-{{ 'elite' if p.rating >= 80 else 'good' if p.rating >= 70 else 'avg' if p.rating >= 60 else 'low' }}">{{ p.rating }}</span>
+                        <span class="dh-stat-label">Rating</span>
+                      </div>
+                      {% endif %}
+                      {% if p.age %}
+                      <div class="dh-stat">
+                        <span class="dh-stat-val{% if p.age >= 30 %} dh-rtg-low{% elif p.age <= 22 %} dh-rtg-elite{% endif %}">{{ p.age }}</span>
+                        <span class="dh-stat-label">Age</span>
+                      </div>
+                      {% endif %}
+                    </div>
+                    <div class="dh-player-action">
+                      {% if not is_delisted %}
+                        <form method="POST" action="{{ url_for('leagues.delist_player_action', league_id=league.id) }}"
+                              onsubmit="return confirm('Delist {{ p.name }}? This cannot be undone.');">
+                          <input type="hidden" name="player_id" value="{{ p.id }}">
+                          <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-person-dash me-1"></i>Delist</button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-center py-3">
+                <i class="bi bi-person-x" style="font-size:1.5rem;color:#30363d;"></i>
+                <p class="text-secondary mt-1 mb-0" style="font-size:.85rem;">No players on your roster.</p>
+              </div>
+            {% endif %}
+          </div>
+        {% elif off_delist_status == 'completed' %}
+          <div class="card-body">
+            <span class="text-secondary" style="font-size:.85rem;"><i class="bi bi-check-circle me-1" style="color:#3fb950;"></i>Delist period closed. All teams have submitted their delists.</span>
+          </div>
+        {% elif off_delist_status == 'pending' and not (delist_period and delist_period.status == 'open') %}
+          <div class="card-body">
+            <span class="text-secondary" style="font-size:.85rem;">Delist period not yet opened by the commissioner.</span>
+          </div>
+        {% endif %}
+      </div>
+
+      {# SSP #}
+      {% if season_cfg and season_cfg.ssp_enabled %}
+        <div class="card mb-3">
+          <div class="card-header d-flex align-items-center gap-2">
+            <i class="bi bi-bandaid" style="color:var(--kl-accent-yellow);"></i>
+            <span class="fw-bold" style="font-size:.9rem;">SSP (Injury Replacements)</span>
+            {% if off_ssp_status == 'completed' %}<i class="bi bi-check-circle-fill" style="color:#3fb950;font-size:.75rem;"></i>{% endif %}
+          </div>
+          <div class="card-body">
+            {% if off_ssp_status == 'active' and ltil_entries %}
+              <div class="table-responsive">
+                <table class="table table-sm mb-0" style="font-size:.85rem;">
+                  <thead><tr><th>Team</th><th>Injured Player</th><th>Replacement</th></tr></thead>
+                  <tbody>
+                    {% for ltil in ltil_entries %}
+                      <tr>
+                        <td>{{ ltil.team.name }}</td>
+                        <td><span style="color:#f85149;">{{ ltil.player.name }}</span> <span class="text-secondary" style="font-size:.75rem;">{{ ltil.player.afl_team }}</span></td>
+                        <td>{% if ltil.replacement_player %}<span style="color:#3fb950;">{{ ltil.replacement_player.name }}</span>{% else %}<span class="text-secondary">Pending</span>{% endif %}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
               </div>
             {% elif off_ssp_status == 'active' %}
-              <div class="mt-2 text-secondary" style="font-size:.85rem;">
-                <i class="bi bi-info-circle me-1"></i>No players currently on LTIL.
-              </div>
-            {% endif %}
-          </div>
-        {% else %}
-          <div class="lm-step lm-step-disabled-block">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon lm-step-disabled"><i class="bi bi-x-lg"></i></div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;color:#8b949e;">SSP (Injury Replacements)</h6>
-                <span style="font-size:.8rem;color:#6e7681;">Disabled in league settings</span>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-
-        {# Supplemental Draft #}
-        <div class="lm-step">
-          <div class="d-flex justify-content-between align-items-start">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon {% if off_draft_status == 'completed' %}lm-step-done{% elif off_draft_status == 'active' %}lm-step-live{% elif off_draft_status == 'pending' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
-                {% if off_draft_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                {% else %}<i class="bi bi-list-check"></i>{% endif %}
-              </div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Supplemental Draft</h6>
-                <span class="text-secondary" style="font-size:.8rem;">Fill remaining roster spots from the player pool</span>
-              </div>
-            </div>
-            {% if off_draft_status in ('pending', 'active') %}
-              <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm">
-                <i class="bi bi-list-check me-1"></i>Draft Setup
-              </a>
+              <span class="text-secondary" style="font-size:.85rem;"><i class="bi bi-info-circle me-1"></i>No players currently on LTIL.</span>
+            {% elif off_ssp_status == 'completed' %}
+              <span class="text-secondary" style="font-size:.85rem;">SSP complete.</span>
+            {% else %}
+              <span class="text-secondary" style="font-size:.85rem;">Awaiting delist period to close.</span>
             {% endif %}
           </div>
         </div>
+      {% endif %}
 
-        {# Off-Season Trades #}
-        <div class="lm-step">
-          <div class="d-flex justify-content-between align-items-start">
-            <div class="d-flex align-items-center gap-3">
-              <div class="lm-step-icon {% if off_trade_status == 'completed' %}lm-step-done{% elif off_trade_status == 'active' %}lm-step-live{% elif off_trade_status == 'pending' %}lm-step-ready{% else %}lm-step-pending{% endif %}">
-                {% if off_trade_status == 'completed' %}<i class="bi bi-check-lg"></i>
-                {% else %}<i class="bi bi-arrow-left-right"></i>{% endif %}
-              </div>
-              <div>
-                <h6 class="fw-bold mb-0" style="font-size:.9rem;">Off-Season Trades</h6>
-                <span class="text-secondary" style="font-size:.8rem;">Pre-season trade window (balanced trades enforced)</span>
-              </div>
-            </div>
-            {% if is_commissioner %}
-              {% if off_trade_status == 'pending' %}
-                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                  <input type="hidden" name="step" value="open_trades">
-                  <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-play-fill me-1"></i>Open</button>
-                </form>
-              {% elif off_trade_status == 'active' %}
-                <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" onclick="event.stopPropagation();">
-                  <input type="hidden" name="step" value="close_trades">
-                  <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close</button>
-                </form>
-              {% endif %}
+      {# Supplemental Draft #}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-list-check" style="color:var(--kl-accent-blue);"></i>
+            <span class="fw-bold" style="font-size:.9rem;">Supplemental Draft</span>
+            {% if off_draft_status == 'completed' %}<i class="bi bi-check-circle-fill" style="color:#3fb950;font-size:.75rem;"></i>{% endif %}
+            {% if off_draft_status == 'active' %}<span class="badge" style="background:rgba(63,185,80,.2);color:#3fb950;font-size:.65rem;">ACTIVE</span>{% endif %}
+          </div>
+          {% if off_draft_status in ('pending', 'active') %}
+            <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn lm-btn-draft btn-sm"><i class="bi bi-list-check me-1"></i>Draft Setup</a>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <span class="text-secondary" style="font-size:.85rem;">
+            {% if off_draft_status == 'completed' %}Draft completed.
+            {% elif off_draft_status == 'active' %}Draft is in progress.
+            {% elif off_draft_status == 'pending' %}Ready to begin.
+            {% else %}Awaiting earlier steps.{% endif %}
+          </span>
+        </div>
+      </div>
+
+      {# Off-Season Trades #}
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-left-right" style="color:var(--kl-accent-orange);"></i>
+            <span class="fw-bold" style="font-size:.9rem;">Off-Season Trades</span>
+            {% if off_trade_status == 'active' %}
+              <span class="badge" style="background:rgba(63,185,80,.2);color:#3fb950;font-size:.65rem;">OPEN</span>
+            {% elif off_trade_status == 'completed' %}
+              <span class="badge" style="background:rgba(139,148,158,.15);color:#8b949e;font-size:.65rem;">CLOSED</span>
             {% endif %}
           </div>
-          {% if off_trade_status == 'active' %}
-            <div class="mt-2">
-              <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm lm-btn-trades">
-                <i class="bi bi-arrow-left-right me-1"></i>Go to Trade Center
-              </a>
-            </div>
-          {% elif off_trade_status == 'pending' %}
-            <div class="mt-2">
-              <a href="{{ url_for('trades.trade_propose', league_id=league.id) }}" class="btn btn-sm lm-btn-trades">
-                <i class="bi bi-plus-lg me-1"></i>Propose Trade
-              </a>
-              <span class="text-secondary ms-2" style="font-size:.8rem;">Trades can be proposed now — they'll execute when the window opens</span>
+          {% if off_trade_status == 'active' and trade_window_dates.off_close %}
+            <div class="lm-timer">
+              <i class="bi bi-clock"></i>
+              <span>Closes</span>
+              <span class="lm-timer-value" data-target="{{ trade_window_dates.off_close.isoformat() }}"></span>
             </div>
           {% endif %}
         </div>
-
-        {# Quick links — always visible #}
-        <div class="d-flex gap-2 mt-3 flex-wrap" style="padding-top:.75rem;border-top:1px solid rgba(48,54,61,.6);">
-          <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-arrow-left-right me-1"></i>Trade Center
-          </a>
-          <a href="{{ url_for('leagues.delist_hub', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-person-dash me-1"></i>Delist Hub
-          </a>
-          <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-list-check me-1"></i>Draft Setup
-          </a>
-          <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-search me-1"></i>Player Pool
-          </a>
+        <div class="card-body">
+          {% if off_trade_status == 'active' %}
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-secondary" style="font-size:.85rem;">Closes {{ trade_window_dates.off_close.strftime('%d %b %Y') if trade_window_dates.off_close else 'TBD' }}</span>
+              <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm lm-btn-trades"><i class="bi bi-arrow-left-right me-1"></i>Trade Center</a>
+            </div>
+          {% elif off_trade_status == 'pending' %}
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-secondary" style="font-size:.85rem;">Trade window not yet opened.</span>
+              <a href="{{ url_for('trades.trade_propose', league_id=league.id) }}" class="btn btn-sm lm-btn-trades"><i class="bi bi-plus-lg me-1"></i>Propose Trade</a>
+            </div>
+            <div class="mt-1 text-secondary" style="font-size:.75rem;">Trades can be proposed now &mdash; they'll execute when the window opens.</div>
+          {% elif off_trade_status == 'completed' %}
+            <span class="text-secondary" style="font-size:.85rem;">Trade window has closed.</span>
+          {% else %}
+            <span class="text-secondary" style="font-size:.85rem;">Awaiting earlier steps.</span>
+          {% endif %}
         </div>
+      </div>
 
-        {# Finish Off-Season #}
-        {% if is_commissioner and off_trade_status in ('completed', 'pending') and off_draft_status == 'completed' %}
-          <div class="text-center mt-3 pt-3" style="border-top:1px solid #30363d;">
-            <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}"
-                  onsubmit="return confirm('This will end the off-season and prepare for the new season. Continue?');">
-              <input type="hidden" name="step" value="finish_offseason">
-              <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check-circle me-1"></i>Finish Off-Season
-              </button>
-            </form>
-          </div>
+      {# Quick links #}
+      <div class="d-flex gap-2 flex-wrap mb-4">
+        <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left-right me-1"></i>Trade Center</a>
+        <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-list-check me-1"></i>Draft Setup</a>
+        <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search me-1"></i>Player Pool</a>
+        {% if user_team %}
+          <a href="{{ url_for('team.squad', league_id=league.id, team_id=user_team.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-people me-1"></i>My Squad</a>
         {% endif %}
       </div>
-    </div>
+    {% endif %}
 
     {# ══════════════════════════════════════════════════════════════
-       5. SEASON AUTOMATION (Commissioner only)
+       COMMISSIONER CONTROLS (collapsible, bottom)
        ══════════════════════════════════════════════════════════════ #}
     {% if is_commissioner %}
-    <div class="lm-section lm-collapsed" id="section-auto">
-      <div class="lm-section-header" style="background:linear-gradient(135deg,#1f6feb 0%,#238636 100%);" onclick="toggleSection('auto')">
+    <div class="lm-section lm-collapsed" id="section-commissioner">
+      <div class="lm-section-header" style="background:linear-gradient(135deg,#1c2128 0%,#161b22 100%);border-bottom:2px solid var(--kl-border-light);" onclick="toggleSection('commissioner')">
         <div class="d-flex align-items-center gap-3">
-          <div class="lm-icon" style="background:rgba(255,255,255,.15);color:#fff;"><i class="bi bi-robot"></i></div>
+          <div class="lm-icon" style="background:rgba(139,148,158,.15);color:#8b949e;"><i class="bi bi-shield-lock"></i></div>
           <div>
-            <h5 class="mb-0 fw-bold text-white">Season Automation</h5>
-            <span style="font-size:.78rem;color:rgba(255,255,255,.6);">Auto-transition between phases based on dates</span>
+            <h5 class="mb-0 fw-bold text-white" style="font-size:.95rem;">Commissioner Controls</h5>
+            <span style="font-size:.75rem;color:rgba(255,255,255,.45);">Phase transitions, automation &amp; settings</span>
           </div>
         </div>
         <i class="bi bi-chevron-down lm-chevron"></i>
       </div>
       <div class="lm-section-body">
+
+        {# ── Phase Transition Buttons ── #}
+        <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">Phase Transitions</h6>
+
+        {% if current_phase == 'midseason' %}
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% if mid_trade_status == 'locked' and season_cfg and season_cfg.mid_season_trade_enabled %}
+              <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="trade_window">
+                <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-play-fill me-1"></i>Open Trade Window</button>
+              </form>
+            {% endif %}
+            {% if mid_trade_status == 'active' %}
+              <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="close_trades">
+                <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close Trade Window</button>
+              </form>
+            {% endif %}
+            {% if mid_delist_status in ('pending', 'locked') %}
+              <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="open_delists">
+                <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-play-fill me-1"></i>Open Delists</button>
+              </form>
+            {% endif %}
+            {% if mid_delist_status == 'active' %}
+              <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="close_delists">
+                <button type="submit" class="btn btn-outline-warning btn-sm" onclick="return confirm('Close the delist period? All teams must have met the minimum.');"><i class="bi bi-stop-fill me-1"></i>Close Delists</button>
+              </form>
+            {% endif %}
+            {% if mid_draft_status == 'completed' and mid_lock_status != 'completed' %}
+              <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="roster_lock">
+                <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-lock me-1"></i>Lock Rosters</button>
+              </form>
+            {% endif %}
+          </div>
+          {% if mid_trade_status == 'active' and trade_window_dates.mid_draft %}
+            <div class="mb-3">
+              <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;" data-bs-toggle="collapse" data-bs-target="#amendDraftDate"><i class="bi bi-pencil me-1"></i>Amend Draft Date (currently {{ trade_window_dates.mid_draft.strftime('%d %b %Y') }})</button>
+              <div class="collapse mt-2" id="amendDraftDate">
+                <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-flex gap-2 align-items-end">
+                  <input type="hidden" name="step" value="amend_draft_date">
+                  <div>
+                    <label class="form-label" style="font-size:.7rem;">New Draft Date</label>
+                    <input type="datetime-local" class="form-control form-control-sm" name="draft_date"
+                           value="{{ trade_window_dates.mid_draft.strftime('%Y-%m-%dT%H:%M') if trade_window_dates.mid_draft else '' }}">
+                  </div>
+                  <button type="submit" class="btn btn-outline-primary btn-sm">Update</button>
+                </form>
+              </div>
+            </div>
+          {% endif %}
+
+        {% elif current_phase == 'offseason' %}
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% if off_delist_status == 'pending' and not (delist_period and delist_period.status == 'open') %}
+              <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="open_delists">
+                <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-play-fill me-1"></i>Open Delists</button>
+              </form>
+            {% endif %}
+            {% if delist_period and delist_period.status == 'open' %}
+              <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="close_delists">
+                <button type="submit" class="btn btn-outline-warning btn-sm" onclick="return confirm('Close the delist period? All teams must have met the minimum.');"><i class="bi bi-stop-fill me-1"></i>Close Delists</button>
+              </form>
+            {% endif %}
+            {% if off_trade_status == 'pending' %}
+              <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="open_trades">
+                <button type="submit" class="btn btn-outline-success btn-sm"><i class="bi bi-play-fill me-1"></i>Open Trade Window</button>
+              </form>
+            {% elif off_trade_status == 'active' %}
+              <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}">
+                <input type="hidden" name="step" value="close_trades">
+                <button type="submit" class="btn btn-outline-warning btn-sm"><i class="bi bi-stop-fill me-1"></i>Close Trade Window</button>
+              </form>
+            {% endif %}
+            {% if off_trade_status in ('completed', 'pending') and off_draft_status == 'completed' %}
+              <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}"
+                    onsubmit="return confirm('This will end the off-season and prepare for the new season. Continue?');">
+                <input type="hidden" name="step" value="finish_offseason">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check-circle me-1"></i>Finish Off-Season</button>
+              </form>
+            {% endif %}
+          </div>
+
+        {% elif current_phase == 'pre_season' %}
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear me-1"></i>League Settings</a>
+            <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm lm-btn-draft"><i class="bi bi-list-check me-1"></i>Draft Setup</a>
+          </div>
+
+        {% else %}
+          <p class="text-secondary mb-3" style="font-size:.85rem;">No phase transitions available for the current phase.</p>
+        {% endif %}
+
+        {# ── Season Automation ── #}
+        <hr style="border-color:#21262d;">
+        <h6 class="fw-bold mb-3" style="font-size:.85rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">Season Automation</h6>
         <form method="POST" action="{{ url_for('leagues.save_auto_transition', league_id=league.id) }}">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
-              <div class="fw-semibold" style="font-size:.9rem;">Enable Auto-Transition</div>
-              <div class="text-secondary" style="font-size:.78rem;">Automatically advance season phases when dates are reached</div>
+              <div class="fw-semibold" style="font-size:.85rem;">Enable Auto-Transition</div>
+              <div class="text-secondary" style="font-size:.75rem;">Automatically advance season phases when dates are reached</div>
             </div>
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" name="auto_transition_enabled"
@@ -738,29 +912,27 @@
           </div>
           <div class="row g-3 mb-3">
             <div class="col-md-4">
-              <label class="form-label" style="font-size:.8rem;">Season Start Date</label>
+              <label class="form-label" style="font-size:.75rem;">Season Start Date</label>
               <input type="date" class="form-control form-control-sm" name="season_start_date"
                      value="{{ season_cfg.season_start_date.strftime('%Y-%m-%d') if season_cfg and season_cfg.season_start_date else '' }}">
-              <div class="text-secondary mt-1" style="font-size:.7rem;">When a new season begins (offseason → regular)</div>
+              <div class="text-secondary mt-1" style="font-size:.65rem;">When a new season begins (offseason -> regular)</div>
             </div>
             <div class="col-md-4">
-              <label class="form-label" style="font-size:.8rem;">Offseason Start Date</label>
+              <label class="form-label" style="font-size:.75rem;">Offseason Start Date</label>
               <input type="date" class="form-control form-control-sm" name="offseason_start_date"
                      value="{{ season_cfg.offseason_start_date.strftime('%Y-%m-%d') if season_cfg and season_cfg.offseason_start_date else '' }}">
-              <div class="text-secondary mt-1" style="font-size:.7rem;">When offseason begins (regular → offseason)</div>
+              <div class="text-secondary mt-1" style="font-size:.65rem;">When offseason begins (regular -> offseason)</div>
             </div>
             <div class="col-md-4">
-              <label class="form-label" style="font-size:.8rem;">Finals Start Round</label>
+              <label class="form-label" style="font-size:.75rem;">Finals Start Round</label>
               <input type="number" class="form-control form-control-sm" name="finals_start_round"
                      min="1" max="30"
                      value="{{ season_cfg.finals_start_round if season_cfg and season_cfg.finals_start_round else '' }}"
                      placeholder="e.g. 24">
-              <div class="text-secondary mt-1" style="font-size:.7rem;">AFL round when finals begin</div>
+              <div class="text-secondary mt-1" style="font-size:.65rem;">AFL round when finals begin</div>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary btn-sm">
-            <i class="bi bi-save me-1"></i>Save Automation Settings
-          </button>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-save me-1"></i>Save Automation Settings</button>
         </form>
       </div>
     </div>
@@ -768,6 +940,142 @@
 
   </div>
 </div>
+
+{# ── Inline styles for new components ── #}
+<style>
+/* Phase timeline */
+.ph-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 1rem 0;
+  overflow-x: auto;
+}
+.ph-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  min-width: 70px;
+}
+.ph-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .7rem;
+  font-weight: 700;
+  transition: all .2s;
+}
+.ph-label {
+  font-size: .65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.ph-completed .ph-dot { background: #1a3a1a; color: #3fb950; border: 2px solid #3fb950; }
+.ph-completed .ph-label { color: #3fb950; }
+.ph-active .ph-dot { background: var(--kl-accent-blue); color: #fff; border: 2px solid var(--kl-accent-blue); box-shadow: 0 0 12px rgba(88,166,255,.4); }
+.ph-active .ph-label { color: var(--kl-accent-blue); font-weight: 700; }
+.ph-current .ph-dot { transform: scale(1.15); }
+.ph-future .ph-dot { background: #1c2128; color: #484f58; border: 2px solid #30363d; }
+.ph-future .ph-label { color: #484f58; }
+.ph-connector {
+  flex: 1;
+  height: 2px;
+  min-width: 20px;
+  max-width: 60px;
+  background: #30363d;
+  margin-bottom: 1.2rem;
+}
+.ph-conn-done { background: #3fb950; }
+
+/* Sub-step progress bar (mid/off-season) */
+.ph-steps-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: .5rem 1rem;
+  background: var(--kl-bg-card);
+  border: 1px solid var(--kl-border);
+  border-radius: 10px;
+}
+.ph-mini-step {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: .3rem .5rem;
+  white-space: nowrap;
+}
+.ph-ms-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .55rem;
+  flex-shrink: 0;
+}
+.ph-ms-completed .ph-ms-dot { background: #1a3a1a; color: #3fb950; }
+.ph-ms-completed span { color: #3fb950; }
+.ph-ms-active .ph-ms-dot { background: var(--kl-accent-blue); color: #fff; }
+.ph-ms-active span { color: var(--kl-accent-blue); }
+.ph-ms-pending .ph-ms-dot { background: #2d1800; color: var(--kl-accent-orange); }
+.ph-ms-pending span { color: var(--kl-accent-orange); }
+.ph-ms-locked .ph-ms-dot { background: #1c2128; color: #484f58; }
+.ph-ms-locked span { color: #484f58; }
+.ph-ms-line {
+  flex: 1;
+  height: 2px;
+  min-width: 12px;
+  max-width: 40px;
+  background: #30363d;
+}
+.ph-ms-line-done { background: #3fb950; }
+
+/* Delist player rows (reused from delist_hub) */
+.dh-player-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid #21262d;
+  transition: background .15s ease;
+}
+.dh-player-row:hover:not(.dh-delisted) { background: rgba(139,148,158,.04); }
+.dh-player-row:last-child { border-bottom: none; }
+.dh-delisted { opacity: .45; }
+.dh-player-main { display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 0; }
+.dh-logo { width: 32px; flex-shrink: 0; text-align: center; }
+.dh-player-info { min-width: 0; }
+.dh-player-stats { display: flex; gap: 1.25rem; flex-shrink: 0; }
+.dh-stat { text-align: center; min-width: 40px; }
+.dh-stat-val { display: block; font-weight: 700; font-size: .9rem; color: #c9d1d9; }
+.dh-stat-label { display: block; font-size: .6rem; text-transform: uppercase; letter-spacing: .5px; color: #484f58; }
+.dh-rtg-elite { color: #3fb950; }
+.dh-rtg-good { color: #d29922; }
+.dh-rtg-avg { color: #f0883e; }
+.dh-rtg-low { color: #f85149; }
+.dh-player-action { flex-shrink: 0; width: 100px; text-align: right; }
+
+@media (max-width: 768px) {
+  .ph-timeline { flex-wrap: wrap; gap: .25rem; }
+  .ph-connector { min-width: 10px; max-width: 30px; }
+  .ph-steps-bar { flex-wrap: wrap; gap: .25rem; }
+  .ph-ms-line { min-width: 8px; max-width: 20px; }
+  .dh-player-row { flex-wrap: wrap; gap: .5rem; }
+  .dh-player-stats { gap: .75rem; }
+  .dh-player-action { width: 100%; text-align: left; margin-top: .25rem; }
+}
+</style>
 
 <script>
 (function() {
@@ -800,24 +1108,25 @@
     })();
   });
 
-  // Initial draft countdown
-  var cdEl = document.getElementById('initial-countdown');
-  if (cdEl) {
-    {% if initial_draft and initial_draft.scheduled_start %}
-    (function() {
-      var target = new Date("{{ initial_draft.scheduled_start.isoformat() }}");
-      function tick() {
-        var now = new Date(), diff = target - now;
-        if (diff <= 0) { cdEl.innerHTML = '<span style="color:#56d364;">Draft time!</span>'; return; }
-        var d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000);
-        var m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-        var p = []; if (d) p.push(d+'d'); p.push(h+'h', m+'m', s+'s');
-        cdEl.textContent = p.join(' '); setTimeout(tick, 1000);
-      }
-      tick();
-    })();
-    {% endif %}
-  }
+  // Roster sort (for inline delist)
+  window.sortRoster = function(mode) {
+    var list = document.getElementById('rosterList');
+    if (!list) return;
+    var rows = Array.from(list.querySelectorAll('.dh-player-row'));
+    document.querySelectorAll('[id^="sort"]').forEach(function(b) { b.classList.remove('active'); });
+    var btnId = 'sort' + mode.charAt(0).toUpperCase() + mode.slice(1) + 'Btn';
+    var btn = document.getElementById(btnId);
+    if (btn) btn.classList.add('active');
+    rows.sort(function(a, b) {
+      var aD = a.classList.contains('dh-delisted') ? 1 : 0;
+      var bD = b.classList.contains('dh-delisted') ? 1 : 0;
+      if (aD !== bD) return aD - bD;
+      if (mode === 'avg') return (parseFloat(b.dataset.scAvg) || 0) - (parseFloat(a.dataset.scAvg) || 0);
+      if (mode === 'age') return (parseInt(b.dataset.age) || 0) - (parseInt(a.dataset.age) || 0);
+      return (a.dataset.position || '').localeCompare(b.dataset.position || '');
+    });
+    rows.forEach(function(row) { list.appendChild(row); });
+  };
 })();
 </script>
 {% endblock %}

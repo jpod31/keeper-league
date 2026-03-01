@@ -964,15 +964,48 @@ def season_hub(league_id):
     user_roster = []
     delisted_player_ids = set()
     if user_team:
-        user_roster = FantasyRoster.query.filter_by(
-            team_id=user_team.id, is_active=True
-        ).all()
+        user_roster = (
+            FantasyRoster.query
+            .filter_by(team_id=user_team.id, is_active=True)
+            .join(AflPlayer, FantasyRoster.player_id == AflPlayer.id)
+            .order_by(AflPlayer.position, AflPlayer.sc_avg.desc())
+            .all()
+        )
         if delist_period:
             from models.database import DelistAction
             delisted_actions = DelistAction.query.filter_by(
                 delist_period_id=delist_period.id, team_id=user_team.id
             ).all()
             delisted_player_ids = {a.player_id for a in delisted_actions}
+
+    # ── Delist inline data ──
+    min_delists = 3
+    if delist_period and delist_period.min_delists:
+        min_delists = delist_period.min_delists
+    elif season_cfg:
+        if current_phase == "midseason" and season_cfg.mid_season_delist_required:
+            min_delists = season_cfg.mid_season_delist_required
+        elif season_cfg.offseason_delist_min:
+            min_delists = season_cfg.offseason_delist_min
+
+    all_teams_progress = []
+    if is_commissioner and delist_period and delist_period.status == "open":
+        teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+        for t in teams:
+            count = DelistAction.query.filter_by(
+                delist_period_id=delist_period.id, team_id=t.id
+            ).count()
+            all_teams_progress.append({
+                "name": t.name,
+                "owner": t.owner.display_name if t.owner else "?",
+                "count": count,
+                "met": count >= min_delists,
+            })
+
+    is_midseason = (league.status == "active" and season_cfg
+                    and season_cfg.season_phase == "midseason")
+    close_route = ("leagues.midseason_start_step" if is_midseason
+                   else "leagues.offseason_start_step")
 
     # ── Mock draft ──
     mock_draft = DraftSession.query.filter_by(league_id=league_id, is_mock=True).first()
@@ -1053,6 +1086,9 @@ def season_hub(league_id):
                            off_trade_status=off_trade_status,
                            delist_period=delist_period,
                            team_delist_count=team_delist_count,
+                           min_delists=min_delists,
+                           all_teams_progress=all_teams_progress,
+                           close_route=close_route,
                            ltil_entries=ltil_entries,
                            pending_incoming=pending_incoming,
                            pending_outgoing=pending_outgoing,
@@ -1335,7 +1371,7 @@ def delist_player_action(league_id):
     player_id = request.form.get("player_id", type=int)
     if not player_id:
         flash("No player selected.", "warning")
-        return redirect(url_for("leagues.delist_hub", league_id=league_id))
+        return redirect(url_for("leagues.season_hub", league_id=league_id))
 
     from models.season_manager import delist_player
     _, error = delist_player(delist_period.id, user_team.id, player_id)
@@ -1356,107 +1392,18 @@ def delist_player_action(league_id):
                 league_id=league_id,
                 notif_type="player_delisted",
                 title=f"{user_team.name} delisted {player_name}",
-                link=url_for("leagues.delist_hub", league_id=league_id),
+                link=url_for("leagues.season_hub", league_id=league_id),
             )
         flash("Player delisted.", "success")
 
-    return redirect(url_for("leagues.delist_hub", league_id=league_id))
+    return redirect(url_for("leagues.season_hub", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/delist-hub")
 @login_required
 def delist_hub(league_id):
-    """Dedicated delist management page with player assessment."""
-    league = db.session.get(League, league_id)
-    if not league:
-        flash("League not found.", "warning")
-        return redirect(url_for("leagues.league_list"))
-
-    from models.database import (
-        SeasonConfig, DelistPeriod, DelistAction, FantasyRoster, AflPlayer,
-    )
-    season_cfg = SeasonConfig.query.filter_by(
-        league_id=league_id, year=league.season_year
-    ).first()
-
-    user_team = FantasyTeam.query.filter_by(
-        league_id=league_id, owner_id=current_user.id
-    ).first()
-    if not user_team:
-        flash("You need a team to manage delists.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
-
-    is_commissioner = league.commissioner_id == current_user.id
-
-    # Check phase
-    is_midseason = (league.status == "active" and season_cfg
-                    and season_cfg.season_phase == "midseason")
-    is_offseason = league.status == "offseason"
-
-    delist_period = DelistPeriod.query.filter_by(
-        league_id=league_id, year=league.season_year, status="open"
-    ).first()
-
-    if not delist_period:
-        flash("No active delist period.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
-
-    if not is_midseason and not is_offseason:
-        flash("Delisting is only available during mid-season and off-season.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
-
-    # Get user's active roster with player details
-    roster_entries = (
-        FantasyRoster.query
-        .filter_by(team_id=user_team.id, is_active=True)
-        .join(AflPlayer, FantasyRoster.player_id == AflPlayer.id)
-        .order_by(AflPlayer.position, AflPlayer.sc_avg.desc())
-        .all()
-    )
-
-    # Get delisted player IDs
-    delisted_actions = DelistAction.query.filter_by(
-        delist_period_id=delist_period.id, team_id=user_team.id
-    ).all()
-    delisted_player_ids = {a.player_id for a in delisted_actions}
-    team_delist_count = len(delisted_actions)
-
-    # Determine min delists for this period
-    min_delists = delist_period.min_delists or 3
-
-    # Get all teams' delist progress (for commissioner view)
-    all_teams_progress = []
-    if is_commissioner:
-        teams = FantasyTeam.query.filter_by(league_id=league_id).all()
-        for t in teams:
-            count = DelistAction.query.filter_by(
-                delist_period_id=delist_period.id, team_id=t.id
-            ).count()
-            all_teams_progress.append({
-                "name": t.name,
-                "owner": t.owner.display_name if t.owner else "?",
-                "count": count,
-                "met": count >= min_delists,
-            })
-
-    # Determine which phase for the close route
-    close_route = ("leagues.midseason_start_step" if is_midseason
-                   else "leagues.offseason_start_step")
-
-    return render_template(
-        "leagues/delist_hub.html",
-        league=league,
-        season_cfg=season_cfg,
-        user_team=user_team,
-        is_commissioner=is_commissioner,
-        delist_period=delist_period,
-        roster_entries=roster_entries,
-        delisted_player_ids=delisted_player_ids,
-        team_delist_count=team_delist_count,
-        min_delists=min_delists,
-        all_teams_progress=all_teams_progress,
-        close_route=close_route,
-    )
+    """Redirect to unified season hub — delists are now inline."""
+    return redirect(url_for("leagues.season_hub", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/player-pool")
