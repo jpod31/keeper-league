@@ -1521,6 +1521,7 @@ def player_pool(league_id):
 @login_required
 def player_compare(league_id):
     """Compare up to 4 players side-by-side."""
+    from blueprints import check_league_access
     league, user_team = check_league_access(league_id)
     if not league:
         flash("You don't have access to this league.", "warning")
