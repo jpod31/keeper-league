@@ -5,7 +5,7 @@
 <div class="row justify-content-center">
   <div class="col-md-11">
 
-    {# ── HEADER + PHASE TIMELINE ── #}
+    {# ── HEADER ── #}
     <div class="page-header">
       <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / List Management</div>
       <div class="d-flex justify-content-between align-items-start">
@@ -17,21 +17,6 @@
           <span style="font-size:.85rem;color:#8b949e;font-weight:600;">{{ league.season_year }}</span>
         </div>
       </div>
-    </div>
-
-    {# ── Phase Timeline ── #}
-    <div class="ph-timeline mb-4">
-      {% for p in phases %}
-        <div class="ph-step ph-{{ p.status }}{% if p.id == active_phase_id %} ph-current{% endif %}">
-          <div class="ph-dot">
-            {% if p.status == 'completed' %}<i class="bi bi-check-lg"></i>{% endif %}
-          </div>
-          <span class="ph-label">{{ p.label }}</span>
-        </div>
-        {% if not loop.last %}
-          <div class="ph-connector {% if p.status == 'completed' %}ph-conn-done{% endif %}"></div>
-        {% endif %}
-      {% endfor %}
     </div>
 
     {# ══════════════════════════════════════════════════════════════
@@ -943,57 +928,6 @@
 
 {# ── Inline styles for new components ── #}
 <style>
-/* Phase timeline */
-.ph-timeline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  padding: 1rem 0;
-  overflow-x: auto;
-}
-.ph-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .35rem;
-  min-width: 70px;
-}
-.ph-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .7rem;
-  font-weight: 700;
-  transition: all .2s;
-}
-.ph-label {
-  font-size: .65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .3px;
-  white-space: nowrap;
-}
-.ph-completed .ph-dot { background: #1a3a1a; color: #3fb950; border: 2px solid #3fb950; }
-.ph-completed .ph-label { color: #3fb950; }
-.ph-active .ph-dot { background: var(--kl-accent-blue); color: #fff; border: 2px solid var(--kl-accent-blue); box-shadow: 0 0 12px rgba(88,166,255,.4); }
-.ph-active .ph-label { color: var(--kl-accent-blue); font-weight: 700; }
-.ph-current .ph-dot { transform: scale(1.15); }
-.ph-future .ph-dot { background: #1c2128; color: #484f58; border: 2px solid #30363d; }
-.ph-future .ph-label { color: #484f58; }
-.ph-connector {
-  flex: 1;
-  height: 2px;
-  min-width: 20px;
-  max-width: 60px;
-  background: #30363d;
-  margin-bottom: 1.2rem;
-}
-.ph-conn-done { background: #3fb950; }
-
 /* Sub-step progress bar (mid/off-season) */
 .ph-steps-bar {
   display: flex;
@@ -1067,8 +1001,6 @@
 .dh-player-action { flex-shrink: 0; width: 100px; text-align: right; }
 
 @media (max-width: 768px) {
-  .ph-timeline { flex-wrap: wrap; gap: .25rem; }
-  .ph-connector { min-width: 10px; max-width: 30px; }
   .ph-steps-bar { flex-wrap: wrap; gap: .25rem; }
   .ph-ms-line { min-width: 8px; max-width: 20px; }
   .dh-player-row { flex-wrap: wrap; gap: .5rem; }

@@ -1025,33 +1025,6 @@ def season_hub(league_id):
         Trade.proposed_at.desc()
     ).limit(5).all()
 
-    # ── Build phases list for timeline ──
-    phase_order = ["preseason", "draft", "regular", "midseason", "finals", "offseason"]
-    phase_labels = {
-        "preseason": "Pre-Season", "draft": "Draft",
-        "regular": "Regular Season", "midseason": "Mid-Season",
-        "finals": "Finals", "offseason": "Off-Season",
-    }
-    # Map current_phase to timeline phase id
-    cp_map = {"pre_season": "preseason", "regular": "regular", "midseason": "midseason", "finals": "finals", "offseason": "offseason"}
-    active_phase_id = cp_map.get(current_phase, "preseason")
-    # Draft is "completed" if initial draft is done; it's "active" if we're in pre_season with no draft yet or draft in progress
-    if current_phase == "pre_season" and initial_draft and initial_draft.status in ("in_progress", "paused"):
-        active_phase_id = "draft"
-    elif current_phase == "pre_season" and initial_draft and initial_draft.status == "completed":
-        active_phase_id = "regular"
-
-    phases = []
-    found_active = False
-    for pid in phase_order:
-        if pid == active_phase_id:
-            phases.append({"id": pid, "label": phase_labels[pid], "status": "active"})
-            found_active = True
-        elif not found_active:
-            phases.append({"id": pid, "label": phase_labels[pid], "status": "completed"})
-        else:
-            phases.append({"id": pid, "label": phase_labels[pid], "status": "future"})
-
     # ── Standings snapshot for regular season panel ──
     from models.database import SeasonStanding, Fixture
     standings = []
@@ -1072,8 +1045,6 @@ def season_hub(league_id):
                            user_team=user_team,
                            is_commissioner=is_commissioner,
                            current_phase=current_phase,
-                           phases=phases,
-                           active_phase_id=active_phase_id,
                            initial_draft=initial_draft,
                            supplemental_drafts=supplemental_drafts,
                            mid_trade_status=mid_trade_status,
