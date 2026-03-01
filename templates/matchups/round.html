@@ -47,19 +47,25 @@
   .rd-team.won { color:#e6edf3; font-weight:700; }
   .rd-centre { display:flex; align-items:center; justify-content:center; min-width:100px; }
   .rd-sc { font-size:.95rem; font-weight:700; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }
-  .rd-sc.won { color:#e6edf3; }
-  .rd-sc.lost { color:#484f58; }
+  .rd-sc.won { color:#3fb950; }
+  .rd-sc.lost { color:#6e7681; }
   .rd-sep { color:#21262d; margin:0 4px; font-weight:300; font-size:.8rem; }
   .rd-vs { font-size:.65rem; font-weight:700; color:#30363d; letter-spacing:1.5px; }
   .rd-arrow { display:flex; align-items:center; width:28px; color:#21262d; transition:color .1s; }
   .rd-row:hover .rd-arrow { color:#484f58; }
   .rd-arrow a { color:inherit; text-decoration:none; display:flex; }
-  .rd-win-bar { position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:0 2px 2px 0; background:#2ea043; }
+  .rd-win-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 2px 2px 0; background:#3fb950; }
+  .rd-loss-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 2px 2px 0; background:rgba(248,81,73,.4); }
   .rd-scoring-tag {
     font-size:.55rem; font-weight:600; padding:2px 6px; border-radius:3px;
     color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
     text-transform:uppercase; margin-left:8px;
   }
+  [data-type="sc"] { color:#58a6ff !important; background:rgba(88,166,255,.1) !important; }
+  [data-type="af"] { color:#3fb950 !important; background:rgba(63,185,80,.1) !important; }
+  [data-type="custom"] { color:#bc8cff !important; background:rgba(188,140,255,.1) !important; }
+  [data-type="hybrid"] { color:#f0883e !important; background:rgba(240,136,62,.1) !important; }
+  [data-type="uf"] { color:#39d2c0 !important; background:rgba(57,210,192,.1) !important; }
 </style>
 
 <div class="page-header" style="margin-top:0;">
@@ -74,7 +80,7 @@
       <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round-1) }}" class="rd-nav"><i class="bi bi-chevron-left"></i></a>
     {% endif %}
     <h3>Round {{ afl_round }}</h3>
-    <span class="rd-scoring-tag">{{ scoring.label }}</span>
+    <span class="rd-scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
     {% if afl_round < max_round %}
       <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round+1) }}" class="rd-nav"><i class="bi bi-chevron-right"></i></a>
     {% endif %}
@@ -89,6 +95,8 @@
   </div>
 </div>
 
+{% set _st = scoring.label|lower %}
+{% set sc_type = 'sc' if 'supercoach' in _st else ('af' if 'fantasy' in _st else ('uf' if 'ultimate' in _st else ('hybrid' if 'hybrid' in _st else 'custom'))) %}
 {% if fixtures %}
   <div class="rd-list">
     {% for f in fixtures %}
@@ -96,6 +104,7 @@
       {% set away_won = f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}
       <div class="rd-row">
         {% if home_won %}<div class="rd-win-bar"></div>{% endif %}
+        {% if away_won %}<div class="rd-loss-bar"></div>{% endif %}
         <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.home_team_id) }}" class="rd-team rd-team-home{{ ' won' if home_won }}">{{ f.home_team.name }}</a>
         <div class="rd-centre">
           {% if f.status == 'completed' %}

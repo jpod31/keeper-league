@@ -25,6 +25,7 @@
   .rnd-item.active::after {
     content:''; position:absolute; bottom:0; left:20%; right:20%;
     height:2px; background:#58a6ff; border-radius:1px 1px 0 0;
+    box-shadow:0 0 6px rgba(88,166,255,.5);
   }
   .rnd-num {
     font-size:.72rem; font-weight:600; color:#484f58; line-height:1;
@@ -32,6 +33,8 @@
   }
   .rnd-item:hover .rnd-num { color:#8b949e; }
   .rnd-item.active .rnd-num { color:#e6edf3; }
+  .rnd-item.rnd-done .rnd-num { color:#8b949e; }
+  .rnd-item.rnd-live .rnd-num { color:#3fb950; }
   .rnd-dot {
     width:4px; height:4px; border-radius:50%; margin-top:4px;
   }
@@ -107,8 +110,8 @@
     font-size:.95rem; font-weight:700; min-width:34px; text-align:center;
     font-variant-numeric:tabular-nums;
   }
-  .mx-sc.won { color:#e6edf3; }
-  .mx-sc.lost { color:#484f58; }
+  .mx-sc.won { color:#3fb950; }
+  .mx-sc.lost { color:#6e7681; }
   .mx-sc.draw { color:#8b949e; }
   .mx-sep { color:#21262d; margin:0 4px; font-weight:300; font-size:.8rem; }
   .mx-vs {
@@ -129,7 +132,7 @@
 
   /* ── Win indicator bar ── */
   .mx-win-bar {
-    position:absolute; left:0; top:0; bottom:0; width:3px;
+    position:absolute; left:0; top:0; bottom:0; width:4px;
     border-radius:0 2px 2px 0;
   }
 
@@ -146,8 +149,15 @@
     color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
     text-transform:uppercase;
   }
+  [data-type="sc"] { color:#58a6ff !important; background:rgba(88,166,255,.1) !important; }
+  [data-type="af"] { color:#3fb950 !important; background:rgba(63,185,80,.1) !important; }
+  [data-type="custom"] { color:#bc8cff !important; background:rgba(188,140,255,.1) !important; }
+  [data-type="hybrid"] { color:#f0883e !important; background:rgba(240,136,62,.1) !important; }
+  [data-type="uf"] { color:#39d2c0 !important; background:rgba(57,210,192,.1) !important; }
 </style>
 
+{% set _st = scoring.label|lower %}
+{% set sc_type = 'sc' if 'supercoach' in _st else ('af' if 'fantasy' in _st else ('uf' if 'ultimate' in _st else ('hybrid' if 'hybrid' in _st else 'custom'))) %}
 {% if rounds %}
   {# ── Round strip ── #}
   <div class="rnd-strip" id="rndStrip">
@@ -161,7 +171,7 @@
       {% for rnd_num in sorted_rounds %}
         {% set st = round_meta[rnd_num] %}
         <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=rnd_num) }}"
-           class="rnd-item{% if rnd_num == selected_round %} active{% endif %}" id="ri-{{ rnd_num }}">
+           class="rnd-item{% if rnd_num == selected_round %} active{% endif %}{% if st == 'completed' %} rnd-done{% elif st == 'live' %} rnd-live{% endif %}" id="ri-{{ rnd_num }}">
           <span class="rnd-num">{{ rnd_num }}</span>
           <span class="rnd-dot {% if st == 'completed' %}rnd-dot-done{% elif st == 'live' %}rnd-dot-live{% elif st == 'partial' %}rnd-dot-part{% else %}rnd-dot-none{% endif %}"></span>
         </a>
@@ -186,7 +196,7 @@
       {% elif rs == 'partial' %}
         <span class="rh-badge rh-progress">In Progress</span>
       {% endif %}
-      <span class="mx-scoring-tag">{{ scoring.label }}</span>
+      <span class="mx-scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
     </div>
     <div class="rh-actions">
       {% if current_fixtures and rs in ['live', 'completed', 'partial'] %}
@@ -211,8 +221,8 @@
       {% set away_won = f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}
       {% set is_draw = f.status == 'completed' and (f.home_score or 0) == (f.away_score or 0) %}
       <div class="mx-row" style="position:relative;">
-        {% if home_won %}<div class="mx-win-bar" style="background:#2ea043;"></div>{% endif %}
-        {% if away_won %}<div class="mx-win-bar" style="background:transparent;"></div>{% endif %}
+        {% if home_won %}<div class="mx-win-bar" style="background:#3fb950;"></div>{% endif %}
+        {% if away_won %}<div class="mx-win-bar" style="background:rgba(248,81,73,.4);"></div>{% endif %}
 
         <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.home_team_id) }}"
            class="mx-team mx-team-home{{ ' won' if home_won }}">

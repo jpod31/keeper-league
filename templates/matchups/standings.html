@@ -21,17 +21,17 @@
   .ldr-table tbody tr { transition:background .1s; }
   .ldr-table tbody tr:hover { background:rgba(22,27,34,.5); }
   .ldr-table tbody tr:last-child td { border-bottom:none; }
-  .ldr-finals-line td { border-bottom:2px solid rgba(46,160,67,.2) !important; }
+  .ldr-finals-line td { border-bottom:2px solid rgba(63,185,80,.5) !important; }
 
   .ldr-pos {
     display:inline-flex; align-items:center; justify-content:center;
     width:24px; height:24px; border-radius:6px; font-size:.7rem; font-weight:700;
   }
   .ldr-pos-finals { background:rgba(46,160,67,.08); color:#2ea043; }
-  .ldr-pos-out { color:#30363d; }
-  .ldr-pos-1 { background:rgba(227,179,65,.1); color:#e3b341; }
-  .ldr-pos-2 { background:rgba(139,148,158,.06); color:#8b949e; }
-  .ldr-pos-3 { background:rgba(210,164,122,.06); color:#d2a47a; }
+  .ldr-pos-out { color:#484f58; }
+  .ldr-pos-1 { background:rgba(255,215,0,.15); color:#FFD700; text-shadow:0 0 6px rgba(255,215,0,.4); }
+  .ldr-pos-2 { background:rgba(192,192,192,.1); color:#C0C0C0; }
+  .ldr-pos-3 { background:rgba(205,127,50,.1); color:#CD7F32; }
 
   .ldr-name {
     color:#e6edf3; font-weight:600; text-decoration:none; transition:color .1s;
@@ -49,8 +49,15 @@
     color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
     text-transform:uppercase;
   }
+  [data-type="sc"] { color:#58a6ff !important; background:rgba(88,166,255,.1) !important; }
+  [data-type="af"] { color:#3fb950 !important; background:rgba(63,185,80,.1) !important; }
+  [data-type="custom"] { color:#bc8cff !important; background:rgba(188,140,255,.1) !important; }
+  [data-type="hybrid"] { color:#f0883e !important; background:rgba(240,136,62,.1) !important; }
+  [data-type="uf"] { color:#39d2c0 !important; background:rgba(57,210,192,.1) !important; }
 </style>
 
+{% set _st = scoring.label|lower %}
+{% set sc_type = 'sc' if 'supercoach' in _st else ('af' if 'fantasy' in _st else ('uf' if 'ultimate' in _st else ('hybrid' if 'hybrid' in _st else 'custom'))) %}
 {% if standings %}
   <div class="ldr-wrap">
     <table class="ldr-table">
@@ -72,7 +79,7 @@
         {% for s in standings %}
           {% set pos = loop.index %}
           {% set in_finals = pos <= finals_teams %}
-          <tr{% if in_finals and pos == finals_teams %} class="ldr-finals-line"{% endif %}>
+          <tr{% if in_finals and pos == finals_teams %} class="ldr-finals-line"{% endif %}{% if in_finals %} style="background:rgba(63,185,80,.03);"{% endif %}>
             <td style="text-align:center;">
               <span class="ldr-pos{% if pos == 1 %} ldr-pos-1{% elif pos == 2 %} ldr-pos-2{% elif pos == 3 %} ldr-pos-3{% elif in_finals %} ldr-pos-finals{% else %} ldr-pos-out{% endif %}">
                 {{ pos }}
@@ -84,8 +91,8 @@
               </a>
             </td>
             <td style="text-align:center;">{{ s.wins + s.losses + s.draws }}</td>
-            <td style="text-align:center;">{{ s.wins }}</td>
-            <td style="text-align:center;">{{ s.losses }}</td>
+            <td style="text-align:center;{% if s.wins > 0 %}color:#3fb950;font-weight:600;{% endif %}">{{ s.wins }}</td>
+            <td style="text-align:center;{% if s.losses > 0 %}color:#f85149;font-weight:600;{% endif %}">{{ s.losses }}</td>
             <td style="text-align:center;">{{ s.draws }}</td>
             <td style="text-align:center;"><span class="ldr-pts">{{ s.ladder_points }}</span></td>
             <td style="text-align:right;">
@@ -103,7 +110,7 @@
               {% endif %}
             </td>
             <td style="text-align:right;">
-              <span class="ldr-pct">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '–' }}{% if s.percentage > 0 %}%{% endif %}</span>
+              <span class="ldr-pct" style="{% if s.percentage >= 110 %}color:#3fb950;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '–' }}{% if s.percentage > 0 %}%{% endif %}</span>
             </td>
           </tr>
         {% endfor %}
@@ -111,7 +118,7 @@
     </table>
     <div class="ldr-footer">
       <span>{% if finals_teams > 0 %}Top {{ finals_teams }} qualify for finals{% endif %}</span>
-      <span class="ldr-scoring-tag">{{ scoring.label }}</span>
+      <span class="ldr-scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
     </div>
   </div>
 {% else %}

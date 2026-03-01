@@ -24,8 +24,8 @@
     font-size:2.2rem; font-weight:800; line-height:1;
     font-variant-numeric:tabular-nums; letter-spacing:-.02em;
   }
-  .mu-tscore.won { color:#e6edf3; }
-  .mu-tscore.lost { color:#30363d; }
+  .mu-tscore.won { color:#3fb950; }
+  .mu-tscore.lost { color:#484f58; }
   .mu-tscore.draw { color:#8b949e; }
   .mu-tscore.pending { color:#21262d; font-size:1.6rem; }
   .mu-centre {
@@ -45,6 +45,9 @@
     color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
     text-transform:uppercase; margin-top:4px;
   }
+  .mu-tname.lost { color:#6e7681; }
+  .pb-total.pb-won { border-top:2px solid #3fb950; }
+  .pb-total.pb-lost { border-top:2px solid rgba(248,81,73,.3); }
 
   .mu-actions {
     display:flex; gap:8px; margin-top:16px; justify-content:center;
@@ -72,19 +75,25 @@
     color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
     text-transform:uppercase;
   }
+  [data-type="sc"] { color:#58a6ff !important; background:rgba(88,166,255,.1) !important; }
+  [data-type="af"] { color:#3fb950 !important; background:rgba(63,185,80,.1) !important; }
+  [data-type="custom"] { color:#bc8cff !important; background:rgba(188,140,255,.1) !important; }
+  [data-type="hybrid"] { color:#f0883e !important; background:rgba(240,136,62,.1) !important; }
+  [data-type="uf"] { color:#39d2c0 !important; background:rgba(57,210,192,.1) !important; }
   .bd-row {
     display:grid; grid-template-columns:1fr auto 1fr; padding:8px 16px;
     border-bottom:1px solid #161b22; font-size:.8rem; align-items:center;
   }
   .bd-row:last-child { border-bottom:none; }
+  .bd-row:nth-child(even) { background:rgba(22,27,34,.3); }
   .bd-row-total {
-    border-top:1px solid #21262d; background:rgba(22,27,34,.4);
+    border-top:2px solid #30363d; background:rgba(22,27,34,.6);
   }
   .bd-val { font-variant-numeric:tabular-nums; }
-  .bd-val.bd-w { color:#e6edf3; font-weight:600; }
-  .bd-val.bd-l { color:#484f58; }
+  .bd-val.bd-w { color:#3fb950; font-weight:600; }
+  .bd-val.bd-l { color:#6e7681; }
   .bd-stat {
-    text-align:center; font-size:.7rem; color:#484f58;
+    text-align:center; font-size:.7rem; color:#8b949e;
     text-transform:capitalize;
   }
   .bd-stat-sub {
@@ -130,6 +139,8 @@
   </div>
 </div>
 
+{% set _st = scoring.label|lower %}
+{% set sc_type = 'sc' if 'supercoach' in _st else ('af' if 'fantasy' in _st else ('uf' if 'ultimate' in _st else ('hybrid' if 'hybrid' in _st else 'custom'))) %}
 {% set home_won = fixture.status == 'completed' and (fixture.home_score or 0) > (fixture.away_score or 0) %}
 {% set away_won = fixture.status == 'completed' and (fixture.away_score or 0) > (fixture.home_score or 0) %}
 {% set is_draw = fixture.status == 'completed' and (fixture.home_score or 0) == (fixture.away_score or 0) %}
@@ -137,7 +148,7 @@
 <div class="mu-hero">
   <div class="mu-hero-grid">
     <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.home_team_id) }}" class="mu-hero-team">
-      <div class="mu-tname">{{ fixture.home_team.name }}</div>
+      <div class="mu-tname{{ ' lost' if away_won else '' }}">{{ fixture.home_team.name }}</div>
       {% if fixture.status == 'completed' %}
         <div class="mu-tscore{{ ' won' if home_won else (' lost' if away_won else ' draw') }}">{{ '%.0f'|format(fixture.home_score or 0) }}</div>
       {% else %}
@@ -155,11 +166,11 @@
       {% else %}
         <span class="mu-sched">VS</span>
       {% endif %}
-      <span class="mu-scoring-tag">{{ scoring.label }}</span>
+      <span class="mu-scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
     </div>
 
     <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.away_team_id) }}" class="mu-hero-team">
-      <div class="mu-tname">{{ fixture.away_team.name }}</div>
+      <div class="mu-tname{{ ' lost' if home_won else '' }}">{{ fixture.away_team.name }}</div>
       {% if fixture.status == 'completed' %}
         <div class="mu-tscore{{ ' won' if away_won else (' lost' if home_won else ' draw') }}">{{ '%.0f'|format(fixture.away_score or 0) }}</div>
       {% else %}
@@ -189,7 +200,7 @@
 <div class="bd-wrap">
   <div class="bd-hdr">
     <span>Category Breakdown</span>
-    <span class="bd-hdr-tag">{{ scoring.label }}</span>
+    <span class="bd-hdr-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
   </div>
   {% for row in uf_breakdown %}
     <div class="bd-row">
@@ -210,7 +221,7 @@
 <div class="bd-wrap">
   <div class="bd-hdr">
     <span>Stat Breakdown</span>
-    <span class="bd-hdr-tag">{{ scoring.label }}</span>
+    <span class="bd-hdr-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
   </div>
   {% set ns = namespace(home_total=0, away_total=0) %}
   {% for row in custom_breakdown %}
@@ -244,7 +255,7 @@
 <div class="bd-wrap">
   <div class="bd-hdr">
     <span>Player Scores</span>
-    <span class="bd-hdr-tag">{{ scoring.label }}</span>
+    <span class="bd-hdr-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
   </div>
   <div class="pb-grid">
     <div class="pb-side">
@@ -263,7 +274,7 @@
           <span>+{{ '%.0f'|format(player_breakdown.home_captain_bonus) }}</span>
         </div>
       {% endif %}
-      <div class="pb-total">
+      <div class="pb-total{{ ' pb-won' if home_won else (' pb-lost' if away_won else '') }}">
         <span class="pb-total-label">Total</span>
         <span class="pb-total-val">{{ '%.0f'|format(player_breakdown.home_total) }}</span>
       </div>
@@ -284,7 +295,7 @@
           <span>+{{ '%.0f'|format(player_breakdown.away_captain_bonus) }}</span>
         </div>
       {% endif %}
-      <div class="pb-total">
+      <div class="pb-total{{ ' pb-won' if away_won else (' pb-lost' if home_won else '') }}">
         <span class="pb-total-label">Total</span>
         <span class="pb-total-val">{{ '%.0f'|format(player_breakdown.away_total) }}</span>
       </div>
