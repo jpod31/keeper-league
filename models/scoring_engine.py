@@ -198,10 +198,16 @@ def _save_round_score(team_id, afl_round, year, total, captain_bonus, breakdown)
 def recalculate_standings(league_id, year):
     """Recalculate standings from all completed fixture results.
     4 pts per win, 2 pts per draw, sorted by ladder points then percentage then points for.
+
+    For Ultimate Footy, percentage is calculated as total categories won / total
+    categories played (since pf/pa are category counts, not points).
     """
-    config = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
-    pts_win = config.points_per_win if config else 4
-    pts_draw = config.points_per_draw if config else 2
+    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    pts_win = season_cfg.points_per_win if season_cfg else 4
+    pts_draw = season_cfg.points_per_draw if season_cfg else 2
+
+    league = db.session.get(League, league_id)
+    is_uf = league and league.scoring_type == "ultimate_footy"
 
     teams = FantasyTeam.query.filter_by(league_id=league_id).all()
     team_stats = {t.id: {"wins": 0, "losses": 0, "draws": 0,
@@ -231,10 +237,23 @@ def recalculate_standings(league_id, year):
             team_stats[f.home_team_id]["draws"] += 1
             team_stats[f.away_team_id]["draws"] += 1
 
+    # For UF, determine total categories per fixture for proper percentage
+    if is_uf:
+        num_categories = CustomScoringRule.query.filter_by(league_id=league_id).count()
+    else:
+        num_categories = 0
+
     # Update standings
     for team_id, stats in team_stats.items():
         ladder_pts = stats["wins"] * pts_win + stats["draws"] * pts_draw
-        percentage = (stats["pf"] / stats["pa"] * 100) if stats["pa"] > 0 else 0
+
+        if is_uf and num_categories > 0:
+            # UF percentage: total categories won / total categories played
+            games_played = stats["wins"] + stats["losses"] + stats["draws"]
+            total_cats_played = games_played * num_categories
+            percentage = (stats["pf"] / total_cats_played * 100) if total_cats_played > 0 else 0
+        else:
+            percentage = (stats["pf"] / stats["pa"] * 100) if stats["pa"] > 0 else 0
 
         standing = SeasonStanding.query.filter_by(
             league_id=league_id, team_id=team_id, year=year
@@ -427,3 +446,158 @@ def get_team_round_scores(team_id, year):
         .order_by(RoundScore.afl_round)
         .all()
     )
+
+
+def compute_custom_breakdown(fixture, league_id):
+    """Per-stat breakdown for custom/hybrid scoring leagues.
+
+    Returns list of dicts:
+        [{"stat": col, "points_per": multiplier,
+          "home_raw": raw_total, "away_raw": raw_total,
+          "home_pts": points, "away_pts": points,
+          "winner": "home"|"away"|"tie"}, ...]
+    """
+    rules = CustomScoringRule.query.filter_by(league_id=league_id).all()
+    if not rules:
+        return []
+
+    home_roster = FantasyRoster.query.filter_by(
+        team_id=fixture.home_team_id, is_active=True
+    ).all()
+    away_roster = FantasyRoster.query.filter_by(
+        team_id=fixture.away_team_id, is_active=True
+    ).all()
+
+    home_ids = [r.player_id for r in home_roster if not r.is_benched and not r.is_emergency]
+    away_ids = [r.player_id for r in away_roster if not r.is_benched and not r.is_emergency]
+
+    home_stats = PlayerStat.query.filter(
+        PlayerStat.player_id.in_(home_ids),
+        PlayerStat.year == fixture.year,
+        PlayerStat.round == fixture.afl_round,
+    ).all() if home_ids else []
+
+    away_stats = PlayerStat.query.filter(
+        PlayerStat.player_id.in_(away_ids),
+        PlayerStat.year == fixture.year,
+        PlayerStat.round == fixture.afl_round,
+    ).all() if away_ids else []
+
+    breakdown = []
+    for rule in rules:
+        home_raw = sum(getattr(s, rule.stat_column, 0) or 0 for s in home_stats)
+        away_raw = sum(getattr(s, rule.stat_column, 0) or 0 for s in away_stats)
+        home_pts = round(home_raw * rule.points_per, 1)
+        away_pts = round(away_raw * rule.points_per, 1)
+
+        if home_pts > away_pts:
+            winner = "home"
+        elif away_pts > home_pts:
+            winner = "away"
+        else:
+            winner = "tie"
+
+        breakdown.append({
+            "stat": rule.stat_column,
+            "points_per": rule.points_per,
+            "home_raw": home_raw,
+            "away_raw": away_raw,
+            "home_pts": home_pts,
+            "away_pts": away_pts,
+            "winner": winner,
+        })
+
+    return breakdown
+
+
+def compute_player_breakdown(fixture, league_id):
+    """Per-player score breakdown for completed fixtures.
+
+    Returns dict:
+        {"home": [{"name": str, "score": float, "is_emergency": bool}, ...],
+         "away": [...],
+         "home_total": float, "away_total": float,
+         "home_captain_bonus": float, "away_captain_bonus": float}
+    """
+    from models.database import AflPlayer
+
+    home_rs = RoundScore.query.filter_by(
+        team_id=fixture.home_team_id,
+        afl_round=fixture.afl_round,
+        year=fixture.year,
+    ).first()
+    away_rs = RoundScore.query.filter_by(
+        team_id=fixture.away_team_id,
+        afl_round=fixture.afl_round,
+        year=fixture.year,
+    ).first()
+
+    def parse_breakdown(rs):
+        if not rs or not rs.breakdown:
+            return []
+        # UF breakdown has different format — skip player parsing for it
+        if "stat_totals" in rs.breakdown:
+            return []
+        players = []
+        for pid_str, score in rs.breakdown.items():
+            if pid_str.startswith("emergency_"):
+                pid = int(pid_str.replace("emergency_", ""))
+                is_emergency = True
+            else:
+                try:
+                    pid = int(pid_str)
+                except (ValueError, TypeError):
+                    continue
+                is_emergency = False
+            player = db.session.get(AflPlayer, pid)
+            players.append({
+                "name": player.name if player else f"Player {pid}",
+                "score": score,
+                "is_emergency": is_emergency,
+            })
+        return sorted(players, key=lambda p: p["score"], reverse=True)
+
+    return {
+        "home": parse_breakdown(home_rs),
+        "away": parse_breakdown(away_rs),
+        "home_total": home_rs.total_score if home_rs else 0,
+        "away_total": away_rs.total_score if away_rs else 0,
+        "home_captain_bonus": home_rs.captain_bonus if home_rs else 0,
+        "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
+    }
+
+
+def get_scoring_context(league):
+    """Build a scoring context dict for template rendering.
+
+    Returns dict with scoring type info, labels, and score terminology
+    that templates can use to adapt their display.
+    """
+    scoring_type = league.scoring_type or "supercoach"
+    is_uf = scoring_type == "ultimate_footy"
+    is_custom = scoring_type == "custom"
+    is_hybrid = scoring_type == "hybrid"
+
+    from models.database import CustomScoringRule
+    has_custom_rules = CustomScoringRule.query.filter_by(league_id=league.id).count() > 0
+
+    labels = {
+        "supercoach": "SuperCoach",
+        "afl_fantasy": "AFL Fantasy",
+        "custom": "Custom",
+        "hybrid": "Hybrid",
+        "ultimate_footy": "Ultimate Footy",
+    }
+
+    return {
+        "type": scoring_type,
+        "label": labels.get(scoring_type, scoring_type),
+        "is_uf": is_uf,
+        "is_custom": is_custom,
+        "is_hybrid": is_hybrid,
+        "has_custom_rules": has_custom_rules,
+        "score_label": "Categories" if is_uf else "Points",
+        "for_label": "Cat W" if is_uf else "For",
+        "against_label": "Cat L" if is_uf else "Agst",
+        "pct_label": "Win %" if is_uf else "%",
+    }

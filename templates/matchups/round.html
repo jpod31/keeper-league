@@ -55,6 +55,11 @@
   .rd-row:hover .rd-arrow { color:#484f58; }
   .rd-arrow a { color:inherit; text-decoration:none; display:flex; }
   .rd-win-bar { position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:0 2px 2px 0; background:#2ea043; }
+  .rd-scoring-tag {
+    font-size:.55rem; font-weight:600; padding:2px 6px; border-radius:3px;
+    color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
+    text-transform:uppercase; margin-left:8px;
+  }
 </style>
 
 <div class="page-header" style="margin-top:0;">
@@ -69,6 +74,7 @@
       <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round-1) }}" class="rd-nav"><i class="bi bi-chevron-left"></i></a>
     {% endif %}
     <h3>Round {{ afl_round }}</h3>
+    <span class="rd-scoring-tag">{{ scoring.label }}</span>
     {% if afl_round < max_round %}
       <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round+1) }}" class="rd-nav"><i class="bi bi-chevron-right"></i></a>
     {% endif %}

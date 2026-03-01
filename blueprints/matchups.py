@@ -12,7 +12,8 @@ from models.fixture_manager import (
 )
 from models.scoring_engine import (
     finalize_round, get_standings, get_live_scores,
-    get_team_round_scores,
+    get_team_round_scores, get_scoring_context,
+    compute_uf_breakdown, compute_custom_breakdown, compute_player_breakdown,
 )
 from models.season_manager import (
     get_or_create_season_config, update_season_config,
@@ -82,6 +83,8 @@ def fixture_view(league_id):
     # Season config for finals info
     season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
 
+    scoring = get_scoring_context(league)
+
     return render_template("matchups/fixture.html",
                            league=league,
                            rounds=rounds,
@@ -90,7 +93,8 @@ def fixture_view(league_id):
                            current_fixtures=current_fixtures,
                            max_round=max_round,
                            season_config=season_cfg,
-                           is_commissioner=is_commissioner)
+                           is_commissioner=is_commissioner,
+                           scoring=scoring)
 
 
 @matchups_bp.route("/<int:league_id>/fixture/generate", methods=["POST"])
@@ -121,12 +125,15 @@ def round_view(league_id, afl_round):
     fixtures = get_round_fixtures(league_id, league.season_year, afl_round)
     is_commissioner = league.commissioner_id == current_user.id
 
+    scoring = get_scoring_context(league)
+
     return render_template("matchups/round.html",
                            league=league,
                            afl_round=afl_round,
                            fixtures=fixtures,
                            is_commissioner=is_commissioner,
-                           max_round=config.SC_ROUNDS)
+                           max_round=config.SC_ROUNDS,
+                           scoring=scoring)
 
 
 @matchups_bp.route("/<int:league_id>/matchup/<int:fixture_id>")
@@ -141,15 +148,30 @@ def matchup_detail(league_id, fixture_id):
         flash("Matchup not found.", "warning")
         return redirect(url_for("matchups.fixture_view", league_id=league_id))
 
+    scoring = get_scoring_context(league)
+
+    # Build scoring-type-appropriate breakdown for completed fixtures
     uf_breakdown = None
-    if league.scoring_type == "ultimate_footy" and fixture.status == "completed":
-        from models.scoring_engine import compute_uf_breakdown
-        uf_breakdown = compute_uf_breakdown(fixture, league_id)
+    custom_breakdown = None
+    player_breakdown = None
+
+    if fixture.status == "completed":
+        if league.scoring_type == "ultimate_footy":
+            uf_breakdown = compute_uf_breakdown(fixture, league_id)
+        elif league.scoring_type in ("custom", "hybrid"):
+            custom_breakdown = compute_custom_breakdown(fixture, league_id)
+            player_breakdown = compute_player_breakdown(fixture, league_id)
+        else:
+            # supercoach / afl_fantasy — show per-player scores
+            player_breakdown = compute_player_breakdown(fixture, league_id)
 
     return render_template("matchups/detail.html",
                            league=league,
                            fixture=fixture,
-                           uf_breakdown=uf_breakdown)
+                           scoring=scoring,
+                           uf_breakdown=uf_breakdown,
+                           custom_breakdown=custom_breakdown,
+                           player_breakdown=player_breakdown)
 
 
 @matchups_bp.route("/<int:league_id>/standings")
@@ -181,10 +203,13 @@ def standings(league_id):
     season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
     finals_teams = season_cfg.finals_teams if season_cfg else 4
 
+    scoring = get_scoring_context(league)
+
     return render_template("matchups/standings.html",
                            league=league,
                            standings=standing_list,
-                           finals_teams=finals_teams)
+                           finals_teams=finals_teams,
+                           scoring=scoring)
 
 
 @matchups_bp.route("/<int:league_id>/score/<int:afl_round>", methods=["POST"])
@@ -228,6 +253,8 @@ def live_scores(league_id, afl_round):
     live_config = LiveScoringConfig.query.get(league_id)
     live_enabled = live_config.enabled if live_config else False
 
+    scoring = get_scoring_context(league)
+
     return render_template("matchups/live.html",
                            league=league,
                            afl_round=afl_round,
@@ -237,7 +264,8 @@ def live_scores(league_id, afl_round):
                            locked_player_ids=locked_ids,
                            fixture_breakdowns=fixture_breakdowns,
                            live_enabled=live_enabled,
-                           max_round=config.SC_ROUNDS)
+                           max_round=config.SC_ROUNDS,
+                           scoring=scoring)
 
 
 @matchups_bp.route("/<int:league_id>/live/<int:afl_round>/api/scores")
@@ -393,6 +421,8 @@ def gameday(league_id):
         .scalar()
     ) or config.SC_ROUNDS
 
+    scoring = get_scoring_context(league)
+
     return render_template(
         "matchups/gameday.html",
         league=league,
@@ -412,6 +442,7 @@ def gameday(league_id):
         live_enabled=live_enabled,
         min_round=min_round,
         max_round=max_round,
+        scoring=scoring,
     )
 
 
@@ -449,10 +480,13 @@ def teams_view(league_id):
     # Map team_id -> standing for easy lookup
     standing_map = {s.team_id: s for s in standing_list}
 
+    scoring = get_scoring_context(league)
+
     return render_template("matchups/teams.html",
                            league=league,
                            teams=teams,
-                           standing_map=standing_map)
+                           standing_map=standing_map,
+                           scoring=scoring)
 
 
 @matchups_bp.route("/<int:league_id>/results")
@@ -473,10 +507,13 @@ def finals_view(league_id):
     finals = get_finals(league_id, league.season_year)
     is_commissioner = league.commissioner_id == current_user.id
 
+    scoring = get_scoring_context(league)
+
     return render_template("matchups/finals.html",
                            league=league,
                            finals=finals,
-                           is_commissioner=is_commissioner)
+                           is_commissioner=is_commissioner,
+                           scoring=scoring)
 
 
 @matchups_bp.route("/<int:league_id>/finals/generate", methods=["POST"])

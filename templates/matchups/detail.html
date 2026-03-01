@@ -40,6 +40,11 @@
   .mu-margin {
     font-size:.65rem; color:#484f58; margin-top:2px;
   }
+  .mu-scoring-tag {
+    font-size:.55rem; font-weight:600; padding:2px 6px; border-radius:3px;
+    color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
+    text-transform:uppercase; margin-top:4px;
+  }
 
   .mu-actions {
     display:flex; gap:8px; margin-top:16px; justify-content:center;
@@ -52,25 +57,69 @@
   }
   .mu-act:hover { border-color:#30363d; color:#c9d1d9; }
 
-  .uf-wrap {
+  /* ── Breakdown tables ── */
+  .bd-wrap {
     background:#0d1117; border:1px solid #21262d; border-radius:10px;
     overflow:hidden; margin-bottom:20px;
   }
-  .uf-hdr {
+  .bd-hdr {
     padding:10px 16px; border-bottom:1px solid #21262d;
     font-size:.75rem; font-weight:600; color:#8b949e;
+    display:flex; justify-content:space-between; align-items:center;
   }
-  .uf-row {
+  .bd-hdr-tag {
+    font-size:.55rem; font-weight:600; padding:2px 6px; border-radius:3px;
+    color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
+    text-transform:uppercase;
+  }
+  .bd-row {
     display:grid; grid-template-columns:1fr auto 1fr; padding:8px 16px;
     border-bottom:1px solid #161b22; font-size:.8rem; align-items:center;
   }
-  .uf-row:last-child { border-bottom:none; }
-  .uf-val { font-variant-numeric:tabular-nums; }
-  .uf-val.uf-w { color:#e6edf3; font-weight:600; }
-  .uf-val.uf-l { color:#484f58; }
-  .uf-stat {
+  .bd-row:last-child { border-bottom:none; }
+  .bd-row-total {
+    border-top:1px solid #21262d; background:rgba(22,27,34,.4);
+  }
+  .bd-val { font-variant-numeric:tabular-nums; }
+  .bd-val.bd-w { color:#e6edf3; font-weight:600; }
+  .bd-val.bd-l { color:#484f58; }
+  .bd-stat {
     text-align:center; font-size:.7rem; color:#484f58;
     text-transform:capitalize;
+  }
+  .bd-stat-sub {
+    font-size:.55rem; color:#30363d; font-weight:400;
+  }
+
+  /* ── Player breakdown ── */
+  .pb-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:0;
+  }
+  .pb-side { padding:0; }
+  .pb-side + .pb-side { border-left:1px solid #21262d; }
+  .pb-side-hdr {
+    padding:8px 16px; border-bottom:1px solid #161b22;
+    font-size:.7rem; font-weight:600; color:#8b949e;
+  }
+  .pb-player {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:6px 16px; border-bottom:1px solid #161b22;
+    font-size:.78rem; color:#8b949e;
+  }
+  .pb-player:last-child { border-bottom:none; }
+  .pb-player-name { color:#c9d1d9; }
+  .pb-player-em { font-style:italic; color:#484f58; }
+  .pb-player-score { font-variant-numeric:tabular-nums; font-weight:600; color:#c9d1d9; }
+  .pb-total {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 16px; border-top:1px solid #21262d;
+    background:rgba(22,27,34,.4); font-size:.78rem;
+  }
+  .pb-total-label { color:#8b949e; font-weight:600; }
+  .pb-total-val { color:#e6edf3; font-weight:700; font-variant-numeric:tabular-nums; }
+  .pb-cap-row {
+    display:flex; justify-content:space-between; padding:4px 16px;
+    font-size:.7rem; color:#484f58; border-top:1px solid #161b22;
   }
 </style>
 
@@ -101,11 +150,12 @@
         <span class="mu-status mu-final">Final</span>
         {% set margin = ((fixture.home_score or 0) - (fixture.away_score or 0))|abs %}
         {% if margin > 0 %}
-          <span class="mu-margin">by {{ '%.0f'|format(margin) }} pts</span>
+          <span class="mu-margin">by {{ '%.0f'|format(margin) }} {{ scoring.score_label|lower }}</span>
         {% endif %}
       {% else %}
         <span class="mu-sched">VS</span>
       {% endif %}
+      <span class="mu-scoring-tag">{{ scoring.label }}</span>
     </div>
 
     <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.away_team_id) }}" class="mu-hero-team">
@@ -134,20 +184,112 @@
   </div>
 </div>
 
+{# ── Ultimate Footy: Category Breakdown ── #}
 {% if uf_breakdown %}
-<div class="uf-wrap">
-  <div class="uf-hdr">Category Breakdown</div>
+<div class="bd-wrap">
+  <div class="bd-hdr">
+    <span>Category Breakdown</span>
+    <span class="bd-hdr-tag">{{ scoring.label }}</span>
+  </div>
   {% for row in uf_breakdown %}
-    <div class="uf-row">
-      <div class="uf-val{{ ' uf-w' if row.winner == 'home' else ' uf-l' }}" style="text-align:left;">
+    <div class="bd-row">
+      <div class="bd-val{{ ' bd-w' if row.winner == 'home' else ' bd-l' }}" style="text-align:left;">
         {{ row.home }}{% if row.winner == 'home' %} <i class="bi bi-check2" style="font-size:.7rem;"></i>{% endif %}
       </div>
-      <div class="uf-stat">{{ row.stat.replace('_', ' ') }}</div>
-      <div class="uf-val{{ ' uf-w' if row.winner == 'away' else ' uf-l' }}" style="text-align:right;">
+      <div class="bd-stat">{{ row.stat.replace('_', ' ') }}</div>
+      <div class="bd-val{{ ' bd-w' if row.winner == 'away' else ' bd-l' }}" style="text-align:right;">
         {% if row.winner == 'away' %}<i class="bi bi-check2" style="font-size:.7rem;"></i> {% endif %}{{ row.away }}
       </div>
     </div>
   {% endfor %}
+</div>
+{% endif %}
+
+{# ── Custom / Hybrid: Stat Contribution Breakdown ── #}
+{% if custom_breakdown %}
+<div class="bd-wrap">
+  <div class="bd-hdr">
+    <span>Stat Breakdown</span>
+    <span class="bd-hdr-tag">{{ scoring.label }}</span>
+  </div>
+  {% set ns = namespace(home_total=0, away_total=0) %}
+  {% for row in custom_breakdown %}
+    {% set ns.home_total = ns.home_total + row.home_pts %}
+    {% set ns.away_total = ns.away_total + row.away_pts %}
+    <div class="bd-row">
+      <div class="bd-val{{ ' bd-w' if row.winner == 'home' else ' bd-l' }}" style="text-align:left;">
+        {{ '%.0f'|format(row.home_pts) }}
+        <span style="font-size:.65rem;color:#484f58;margin-left:4px;">({{ '%.0f'|format(row.home_raw) }})</span>
+      </div>
+      <div class="bd-stat">
+        {{ row.stat.replace('_', ' ') }}
+        <br><span class="bd-stat-sub">&times;{{ row.points_per }}</span>
+      </div>
+      <div class="bd-val{{ ' bd-w' if row.winner == 'away' else ' bd-l' }}" style="text-align:right;">
+        <span style="font-size:.65rem;color:#484f58;margin-right:4px;">({{ '%.0f'|format(row.away_raw) }})</span>
+        {{ '%.0f'|format(row.away_pts) }}
+      </div>
+    </div>
+  {% endfor %}
+  <div class="bd-row bd-row-total">
+    <div class="bd-val bd-w" style="text-align:left;">{{ '%.0f'|format(ns.home_total) }}</div>
+    <div class="bd-stat" style="font-weight:600;color:#8b949e;">Total</div>
+    <div class="bd-val bd-w" style="text-align:right;">{{ '%.0f'|format(ns.away_total) }}</div>
+  </div>
+</div>
+{% endif %}
+
+{# ── All types: Per-Player Scores ── #}
+{% if player_breakdown and (player_breakdown.home or player_breakdown.away) %}
+<div class="bd-wrap">
+  <div class="bd-hdr">
+    <span>Player Scores</span>
+    <span class="bd-hdr-tag">{{ scoring.label }}</span>
+  </div>
+  <div class="pb-grid">
+    <div class="pb-side">
+      <div class="pb-side-hdr">{{ fixture.home_team.name }}</div>
+      {% for p in player_breakdown.home %}
+        <div class="pb-player">
+          <span class="pb-player-name{% if p.is_emergency %} pb-player-em{% endif %}">
+            {{ p.name }}{% if p.is_emergency %} (EM){% endif %}
+          </span>
+          <span class="pb-player-score">{{ '%.0f'|format(p.score) }}</span>
+        </div>
+      {% endfor %}
+      {% if player_breakdown.home_captain_bonus > 0 %}
+        <div class="pb-cap-row">
+          <span>Captain Bonus</span>
+          <span>+{{ '%.0f'|format(player_breakdown.home_captain_bonus) }}</span>
+        </div>
+      {% endif %}
+      <div class="pb-total">
+        <span class="pb-total-label">Total</span>
+        <span class="pb-total-val">{{ '%.0f'|format(player_breakdown.home_total) }}</span>
+      </div>
+    </div>
+    <div class="pb-side">
+      <div class="pb-side-hdr">{{ fixture.away_team.name }}</div>
+      {% for p in player_breakdown.away %}
+        <div class="pb-player">
+          <span class="pb-player-name{% if p.is_emergency %} pb-player-em{% endif %}">
+            {{ p.name }}{% if p.is_emergency %} (EM){% endif %}
+          </span>
+          <span class="pb-player-score">{{ '%.0f'|format(p.score) }}</span>
+        </div>
+      {% endfor %}
+      {% if player_breakdown.away_captain_bonus > 0 %}
+        <div class="pb-cap-row">
+          <span>Captain Bonus</span>
+          <span>+{{ '%.0f'|format(player_breakdown.away_captain_bonus) }}</span>
+        </div>
+      {% endif %}
+      <div class="pb-total">
+        <span class="pb-total-label">Total</span>
+        <span class="pb-total-val">{{ '%.0f'|format(player_breakdown.away_total) }}</span>
+      </div>
+    </div>
+  </div>
 </div>
 {% endif %}
 {% endblock %}

@@ -141,6 +141,11 @@
   .season-empty h4 { color:#8b949e; font-size:1rem; font-weight:600; margin-bottom:4px; }
   .season-empty p { font-size:.8rem; }
   .season-empty a { color:#58a6ff; }
+  .mx-scoring-tag {
+    font-size:.55rem; font-weight:600; padding:2px 6px; border-radius:3px;
+    color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
+    text-transform:uppercase;
+  }
 </style>
 
 {% if rounds %}
@@ -181,6 +186,7 @@
       {% elif rs == 'partial' %}
         <span class="rh-badge rh-progress">In Progress</span>
       {% endif %}
+      <span class="mx-scoring-tag">{{ scoring.label }}</span>
     </div>
     <div class="rh-actions">
       {% if current_fixtures and rs in ['live', 'completed', 'partial'] %}
