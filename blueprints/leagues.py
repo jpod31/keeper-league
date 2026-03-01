@@ -648,7 +648,7 @@ def regenerate_fixtures(league_id):
         return redirect(url_for("leagues.league_list"))
 
     if league.commissioner_id != current_user.id:
-        flash("Only the commissioner can regenerate fixtures.", "warning")
+        flash("Only the commissioner can generate fixtures.", "warning")
         return redirect(url_for("leagues.dashboard", league_id=league_id))
 
     from models.database import SeasonConfig
@@ -660,9 +660,9 @@ def regenerate_fixtures(league_id):
     if error:
         flash(error, "danger")
     else:
-        flash(f"Regenerated {len(fixtures)} fixtures across {num_rounds} rounds.", "success")
+        flash(f"Generated {len(fixtures)} fixtures across {num_rounds} rounds.", "success")
 
-    return redirect(url_for("leagues.league_settings", league_id=league_id))
+    return redirect(url_for("matchups.fixture_view", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/finalize-round/<int:afl_round>", methods=["POST"])

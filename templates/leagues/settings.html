@@ -170,8 +170,8 @@
             </div>
             <div class="col-md-4">
               <button type="button" class="btn btn-outline-warning btn-sm w-100" {% if not is_commissioner %}disabled{% endif %}
-                      onclick="if(confirm('This will delete and recreate all fixtures for the season. Existing results will be lost. Continue?')){document.getElementById('regenForm').submit();}">
-                <i class="bi bi-arrow-repeat me-1"></i>Regenerate Fixtures
+                      onclick="if(confirm('Generate fixtures for the season? Any existing fixtures will be replaced.')){document.getElementById('regenForm').submit();}">
+                <i class="bi bi-arrow-repeat me-1"></i>Generate Fixtures
               </button>
             </div>
           </div>
