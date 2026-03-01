@@ -40,7 +40,7 @@
     </div>
 
     {# Compose form when team selected via ?new= #}
-    {% set new_team_id = request.args.get('new', type=int) %}
+    {% set new_team_id = request.args.get('new', '')|int or 0 %}
     {% if new_team_id %}
       {% set recipient = all_teams|selectattr('id', 'equalto', new_team_id)|first %}
       {% if recipient %}
