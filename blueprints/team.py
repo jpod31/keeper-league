@@ -155,8 +155,22 @@ def squad(league_id, team_id):
         ltil_player_ids = {lt.player_id for lt in ltil_entries}
 
         # Reserves: all roster players not on-field, not in FLEX, not on LTIL
-        reserves = [p for p in players if p.id not in used_ids and p.id not in ltil_player_ids]
-        reserves.sort(key=lambda p: p.rating or 0, reverse=True)
+        # Grouped by primary position, sorted by SC avg (fallback to rating)
+        _reserve_players = [p for p in players if p.id not in used_ids and p.id not in ltil_player_ids]
+        _sort_key = lambda p: (p.sc_avg or 0, p.rating or 0)
+        _pos_order = ["DEF", "MID", "RUC", "FWD"]
+        reserves_by_pos = {}
+        for p in _reserve_players:
+            primary = (p.position or "MID").split("/")[0]
+            if primary not in _pos_order:
+                primary = "MID"
+            reserves_by_pos.setdefault(primary, []).append(p)
+        for pos in reserves_by_pos:
+            reserves_by_pos[pos].sort(key=_sort_key, reverse=True)
+        # Flat list for backward compat
+        reserves = []
+        for pos in _pos_order:
+            reserves.extend(reserves_by_pos.get(pos, []))
 
         # ── Step 4: Persist to DB so swap/captain/VC operations work ──
         needs_persist = is_owner and any(
@@ -204,11 +218,15 @@ def squad(league_id, team_id):
                 return [2, 3, 2]
             if count == 8:
                 return [3, 2, 3]
-            # 9+: rows of 3, last row gets remainder
+            if count == 9:
+                return [5, 4]
+            if count == 10:
+                return [5, 5]
+            # 11+: rows of 5 then 4
             rows = []
             remaining = count
             while remaining > 0:
-                row = min(3, remaining)
+                row = min(5, remaining)
                 rows.append(row)
                 remaining -= row
             return rows
@@ -274,6 +292,7 @@ def squad(league_id, team_id):
             "flex_filled": flex_filled,
             "flex_count": flex_count,
             "reserves": reserves,
+            "reserves_by_pos": reserves_by_pos,
             "cap_id": cap_id,
             "vc_id": vc_id,
             "slot_counts": slot_counts,

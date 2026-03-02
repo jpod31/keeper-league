@@ -271,18 +271,31 @@
   </div>
   {% endif %}
 
-  {# ═══════════ RESERVES: full-width horizontal below field+sidebar ═══════════ #}
+  {# ═══════════ RESERVES: grouped by position ═══════════ #}
   {% if field_data.reserves %}
   <div class="fv-reserves-section">
     <div class="fv-reserves-hdr">
       <i class="bi bi-people me-1"></i>Reserves
       <span class="fv-zone-tally ms-2">{{ field_data.reserves|length }} players</span>
     </div>
-    <div class="fv-reserves-grid">
-      {% for p in field_data.reserves %}
-        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids) }}
-      {% endfor %}
-    </div>
+    {% set pos_labels = {'DEF': 'Defenders', 'MID': 'Midfielders', 'RUC': 'Rucks', 'FWD': 'Forwards'} %}
+    {% for pos_code in ['DEF', 'MID', 'RUC', 'FWD'] %}
+      {% set pos_players = field_data.reserves_by_pos.get(pos_code, []) %}
+      {% if pos_players %}
+      <div class="fv-reserves-group">
+        <div class="fv-reserves-group-hdr">
+          <span class="fv-zone-pill fv-zp-{{ pos_code|lower }}">{{ pos_code }}</span>
+          <span class="fv-reserves-group-label">{{ pos_labels[pos_code] }}</span>
+          <span class="fv-zone-tally ms-1">{{ pos_players|length }}</span>
+        </div>
+        <div class="fv-reserves-grid">
+          {% for p in pos_players %}
+            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids) }}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
   </div>
   {% endif %}
 </div>{# /fv-outer #}

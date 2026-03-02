@@ -2930,6 +2930,24 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   flex-shrink: 0;
 }
 
+/* Reserves grouped by position */
+.fv-reserves-group { margin-bottom: .75rem; }
+.fv-reserves-group:last-child { margin-bottom: 0; }
+.fv-reserves-group-hdr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+.fv-reserves-group-label {
+  font-size: .65rem;
+  color: var(--kl-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
+}
+
 /* Pending LTIL in field view sidebar */
 .fv-ltil-sidebar-pending {
   border: 1px dashed rgba(210,153,34,.5) !important;
