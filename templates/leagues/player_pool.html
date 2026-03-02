@@ -83,6 +83,13 @@
   </div>
 </div>
 
+{% if can_pickup %}
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);border-radius:8px;font-size:.82rem;">
+  <i class="bi bi-person-plus-fill" style="color:#3fb950;"></i>
+  <span style="color:#c9d1d9;">SSP pickups open — <strong>{{ roster_count }}/{{ league.squad_size }}</strong> roster spots filled. Closes at Round {{ ssp_cutoff_round }}.</span>
+</div>
+{% endif %}
+
 <div class="card">
   <div class="card-header py-2">
     {# Mobile filter toggle #}
