@@ -305,6 +305,16 @@ def rank_players(
         score = 0.0
         for factor_name, weight in w.items():
             score += weight * factor_scores[factor_name][i]
+
+        # Keeper longevity multiplier — in a keeper league, a 34yo with 1 year
+        # left has fundamentally less value than a 23yo you keep for a decade,
+        # regardless of current production. This multiplier applies on top of
+        # the age factor component to enforce that.
+        age = player.age
+        if age is not None and age > 28:
+            keeper_mult = max(0.15, 1.0 - (age - 28) * 0.15)
+            score *= keeper_mult
+
         raw.append(score)
 
     # Normalise to full 0-99 range so top player isn't stuck at 60
@@ -545,6 +555,11 @@ def compute_historical_draft_scores(
             + 0.08 * dur_score
             + 0.18 * rp_score
         )
+
+        # Keeper longevity multiplier (matches rank_players)
+        if age_that_year is not None and age_that_year > 28:
+            keeper_mult = max(0.15, 1.0 - (age_that_year - 28) * 0.15)
+            draft_score *= keeper_mult
 
         results.append({
             "year": year,

@@ -136,7 +136,7 @@
         <tr>
           <th class="sortable sort-active" style="width:40px;" onclick="sortPool('rank')"># <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable" onclick="sortPool('name')">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable" style="width:60px;" onclick="sortPool('pos')">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable" style="width:80px;" onclick="sortPool('pos')">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-center" style="width:45px;" onclick="sortPool('age')">Age <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:65px;" onclick="sortPool('sc_avg')">SC <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-center" style="width:75px;" onclick="sortPool('trend')">Trend <i class="bi bi-chevron-expand sort-icon"></i></th>
@@ -181,11 +181,16 @@
                 <span style="color:#c9d1d9;font-size:.72rem;margin-left:auto;">{{ p.afl_team or '' }}</span>
               </a>
             </td>
-            {# Position #}
+            {# Position — ordered FWD > DEF > RUC > MID, displayed side-by-side #}
             <td>
-              {% for pos in (p.position or 'MID').split('/') %}
-                <span class="pos-badge badge-{{ pos|lower }}">{{ pos }}</span>
-              {% endfor %}
+              {% set player_positions = (p.position or 'MID').split('/') %}
+              <div style="display:flex;gap:3px;flex-wrap:nowrap;">
+                {% for pos in ['FWD', 'DEF', 'RUC', 'MID'] %}
+                  {% if pos in player_positions %}
+                    <span class="pos-badge badge-{{ pos|lower }}" style="padding:2px 5px;font-size:.65rem;">{{ pos }}</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
             </td>
             {# Age #}
             <td class="text-center" style="color:#8b949e;">{{ p.age or '-' }}</td>
