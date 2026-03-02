@@ -1,6 +1,6 @@
 """Live draft blueprint: setup, room, API endpoints for picks and queues."""
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, make_response
 from flask_login import login_required, current_user
 
 from models.database import db, League, FantasyTeam, DraftSession, AflPlayer, UserDraftWeights, LeagueDraftWeights, DraftChatMessage
@@ -110,7 +110,7 @@ def draft_room(league_id):
         league_id=league_id, status="completed"
     ).first()
 
-    return render_template("draft/room.html",
+    resp = make_response(render_template("draft/room.html",
                            league=league,
                            session=session,
                            user_team=user_team,
@@ -118,7 +118,9 @@ def draft_room(league_id):
                            state=state,
                            user_weights=user_weights,
                            has_custom_weights=has_custom_weights,
-                           can_restart=can_restart)
+                           can_restart=can_restart))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return resp
 
 
 @draft_bp.route("/<int:league_id>/draft/setup", methods=["GET", "POST"])
