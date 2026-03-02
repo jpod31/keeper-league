@@ -312,7 +312,7 @@ def rank_players(
         # the age factor component to enforce that.
         age = player.age
         if age is not None and age > 28:
-            keeper_mult = max(0.15, 1.0 - (age - 28) * 0.15)
+            keeper_mult = max(0.35, 1.0 - (age - 28) * 0.10)
             score *= keeper_mult
 
         raw.append(score)
@@ -558,7 +558,7 @@ def compute_historical_draft_scores(
 
         # Keeper longevity multiplier (matches rank_players)
         if age_that_year is not None and age_that_year > 28:
-            keeper_mult = max(0.15, 1.0 - (age_that_year - 28) * 0.15)
+            keeper_mult = max(0.35, 1.0 - (age_that_year - 28) * 0.10)
             draft_score *= keeper_mult
 
         results.append({
