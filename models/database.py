@@ -684,6 +684,9 @@ class SeasonConfig(db.Model):
     ssp_window_open = db.Column(db.DateTime)
     ssp_window_close = db.Column(db.DateTime)
 
+    # Captain scoring toggle
+    captain_scoring_enabled = db.Column(db.Boolean, default=True)
+
     # Season automation (Phase F)
     auto_transition_enabled = db.Column(db.Boolean, default=False)
     season_start_date = db.Column(db.DateTime)

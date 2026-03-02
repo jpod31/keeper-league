@@ -79,8 +79,11 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
         total += player_score
         breakdown[str(entry.player_id)] = player_score
 
-    # Captain bonus
-    if captain_entry:
+    # Captain bonus (check league toggle)
+    sc = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    captain_enabled = sc.captain_scoring_enabled if sc and sc.captain_scoring_enabled is not None else True
+
+    if captain_enabled and captain_entry:
         cap_score = _get_player_score(captain_entry.player_id, afl_round, year, league_id, scoring_type, hybrid_base)
         if cap_score is not None and cap_score > 0:
             captain_bonus = cap_score  # doubled = original + bonus

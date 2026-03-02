@@ -303,6 +303,20 @@ def migrate_draft_pick_is_pass(app):
         print("  [done] draft_pick is_pass migration complete")
 
 
+def migrate_captain_scoring_enabled(app):
+    """Add captain_scoring_enabled column to season_config (idempotent)."""
+    with app.app_context():
+        conn = db.engine.raw_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("ALTER TABLE season_config ADD COLUMN captain_scoring_enabled BOOLEAN DEFAULT 1")
+        except Exception:
+            pass  # column already exists
+        conn.commit()
+        conn.close()
+        print("  [done] captain_scoring_enabled migration complete")
+
+
 def main():
     print("=== Keeper League CSV -> SQLite Migration ===\n")
     os.makedirs(config.DATA_DIR, exist_ok=True)
@@ -326,6 +340,9 @@ def main():
 
     print("\n6. Migrating draft_pick is_pass...")
     migrate_draft_pick_is_pass(app)
+
+    print("\n7. Migrating captain_scoring_enabled...")
+    migrate_captain_scoring_enabled(app)
 
     print("\n=== Migration complete! ===")
     db_path = os.path.join(config.DATA_DIR, "keeper_league.db")

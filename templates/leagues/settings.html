@@ -363,6 +363,18 @@
           </div>
           <hr class="my-3" style="border-color:#21262d;">
           <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <span class="fw-bold" style="font-size:.85rem;">Captain Scoring</span>
+              <div style="font-size:.7rem;color:#6e7681;">Double captain's points (or VC if captain DNP)</div>
+            </div>
+            <label class="settings-toggle mb-0">
+              <input type="checkbox" name="captain_scoring_enabled"
+                     {{ 'checked' if not season_config or season_config.captain_scoring_enabled is none or season_config.captain_scoring_enabled }}>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <hr class="my-3" style="border-color:#21262d;">
+          <div class="d-flex align-items-center justify-content-between">
             <span style="font-size:.75rem;color:#484f58;">Sync AFL game schedule (bounce times + results) from Squiggle</span>
             <button type="button" class="sync-scores-btn" id="syncBtn" {% if not is_commissioner %}disabled{% endif %}
                     onclick="document.getElementById('syncForm').submit();this.disabled=true;this.innerHTML='<span class=\'spinner-border\'></span> Syncing...';">

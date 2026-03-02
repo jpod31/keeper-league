@@ -456,6 +456,9 @@ def league_settings(league_id):
             season_cfg.mid_season_draft_after_round = max(1, min(24, mid_round))
             season_cfg.mid_season_trade_after_round = season_cfg.mid_season_draft_after_round
 
+        # Captain scoring toggle
+        season_cfg.captain_scoring_enabled = request.form.get("captain_scoring_enabled") == "on"
+
         # SSP config
         season_cfg.ssp_enabled = request.form.get("ssp_enabled") == "on"
         ssp_cutoff = request.form.get("ssp_cutoff_round", type=int)
