@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
-from models.database import db, League, FantasyTeam, DraftSession, AflPlayer, UserDraftWeights, LeagueDraftWeights
+from models.database import db, League, FantasyTeam, DraftSession, AflPlayer, UserDraftWeights, LeagueDraftWeights, DraftChatMessage
 from blueprints import check_league_access
 from models.draft_live import (
     create_draft_session, get_draft_state, start_draft, pause_draft, resume_draft,
@@ -519,6 +519,24 @@ def api_save_weights(league_id):
     db.session.commit()
 
     return jsonify({"status": "ok", "weights": weights})
+
+
+@draft_bp.route("/<int:league_id>/draft/api/chat_history")
+@login_required
+def api_chat_history(league_id):
+    """Return persisted chat messages for the active draft session."""
+    session = _get_active_draft_session(league_id)
+    if not session:
+        return jsonify([])
+    messages = DraftChatMessage.query.filter_by(
+        draft_session_id=session.id
+    ).order_by(DraftChatMessage.id.asc()).limit(200).all()
+    return jsonify([{
+        "team_name": m.team_name,
+        "message": m.message,
+        "user_id": m.user_id,
+        "is_system": m.is_system,
+    } for m in messages])
 
 
 # ── Mock Draft Routes ──────────────────────────────────────────────

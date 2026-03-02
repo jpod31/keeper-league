@@ -422,6 +422,18 @@ class DraftQueue(db.Model):
     )
 
 
+class DraftChatMessage(db.Model):
+    __tablename__ = "draft_chat_message"
+
+    id = db.Column(db.Integer, primary_key=True)
+    draft_session_id = db.Column(db.Integer, db.ForeignKey("draft_session.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    team_name = db.Column(db.String(100))
+    message = db.Column(db.String(500), nullable=False)
+    is_system = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc))
+
+
 # ── Phase 3: Weekly lineup tables ────────────────────────────────────
 
 

@@ -1158,6 +1158,31 @@ function scrollChat() {
   if (container) container.scrollTop = container.scrollHeight;
 }
 
+function loadChatHistory() {
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/chat_history`)
+    .then(r => r.json())
+    .then(messages => {
+      if (!messages.length) return;
+      const container = document.getElementById('chat-messages');
+      const placeholder = container.querySelector('.text-center');
+      if (placeholder) placeholder.remove();
+      messages.forEach(m => {
+        const div = document.createElement('div');
+        if (m.is_system) {
+          div.className = 'chat-msg-system';
+          div.textContent = m.message;
+        } else {
+          const color = getChatColor(m.team_name);
+          div.className = 'chat-msg';
+          div.innerHTML = '<span class="chat-msg-name" style="color:' + color + ';">' + escapeHtml(m.team_name) + '</span>' +
+                          '<span class="chat-msg-text">' + escapeHtml(m.message) + '</span>';
+        }
+        container.appendChild(div);
+      });
+      scrollChat();
+    }).catch(() => {});
+}
+
 // Patch addPickToHistory to also post to chat
 const _origAddPick = addPickToHistory;
 addPickToHistory = function(pick) {
@@ -1182,5 +1207,6 @@ if (window.innerWidth < 992) {
 fetchPositionNeeds();
 searchPlayers();
 if (USER_TEAM_ID) updateYourTeam();
+loadChatHistory();
 </script>
 {% endblock %}

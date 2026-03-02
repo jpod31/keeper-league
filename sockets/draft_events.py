@@ -7,7 +7,7 @@ from flask import request
 from flask_login import current_user
 from flask_socketio import emit, join_room, leave_room
 
-from models.database import db, DraftSession, FantasyTeam, League
+from models.database import db, DraftSession, FantasyTeam, League, DraftChatMessage
 from models.draft_live import (
     get_draft_state, make_pick, pass_pick, auto_pick, start_draft,
     pause_draft, resume_draft, end_draft,
@@ -125,6 +125,14 @@ def register_draft_events(socketio):
             }
             emit("pick_made", pick_data, room=room)
 
+            # Save pick as system chat message
+            sys_text = "%s drafted %s" % (pick_data["team_name"], pick_data["player_name"])
+            db.session.add(DraftChatMessage(
+                draft_session_id=session.id, user_id=0,
+                team_name=None, message=sys_text, is_system=True,
+            ))
+            db.session.commit()
+
             if new_state["status"] == "completed":
                 _cleanup_timer(session.id)
                 emit("draft_completed", new_state, room=room)
@@ -197,6 +205,13 @@ def register_draft_events(socketio):
                 "is_pass": True,
             }
             emit("pick_made", pick_data, room=room)
+
+            db.session.add(DraftChatMessage(
+                draft_session_id=session.id, user_id=0,
+                team_name=None, message="%s passed" % pick_data["team_name"],
+                is_system=True,
+            ))
+            db.session.commit()
 
             if new_state["status"] == "completed":
                 _cleanup_timer(session.id)
@@ -297,10 +312,22 @@ def register_draft_events(socketio):
             if not league_id or not msg or len(msg) > 500:
                 return
 
+            session = _get_active_session(league_id)
             user_team = FantasyTeam.query.filter_by(
                 league_id=league_id, owner_id=current_user.id
             ).first()
             team_name = user_team.name if user_team else current_user.display_name
+
+            # Persist to DB
+            if session:
+                chat_msg = DraftChatMessage(
+                    draft_session_id=session.id,
+                    user_id=current_user.id,
+                    team_name=team_name,
+                    message=msg,
+                )
+                db.session.add(chat_msg)
+                db.session.commit()
 
             emit("draft_chat_msg", {
                 "team_name": team_name,
