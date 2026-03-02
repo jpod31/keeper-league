@@ -1369,12 +1369,21 @@ def player_pool(league_id):
         flash("League not found.", "warning")
         return redirect(url_for("leagues.league_list"))
 
-    # Get ALL players
-    players = (
-        AflPlayer.query
-        .order_by(AflPlayer.draft_score.desc().nullslast())
-        .all()
-    )
+    # Get ALL players — rank with user/league weights so values match draft room
+    from models.draft_model import rank_players_for_user
+    ranked = rank_players_for_user(league_id, current_user.id)
+    # ranked is list of (AflPlayer, score) — write personalised score onto each ORM object
+    players = []
+    for i, (ap, score) in enumerate(ranked, 1):
+        ap.draft_score = score
+        ap._rank = i
+        players.append(ap)
+    # Also include unranked players (those with no data) at the end
+    ranked_ids = {ap.id for ap, _ in ranked}
+    unranked = AflPlayer.query.filter(~AflPlayer.id.in_(ranked_ids)).all() if ranked_ids else AflPlayer.query.all()
+    for ap in unranked:
+        ap._rank = len(players) + 1
+        players.append(ap)
 
     # Build rostered lookup: player_id -> team name
     rostered_map = {}
@@ -1403,11 +1412,6 @@ def player_pool(league_id):
     for i, tname in enumerate(unique_teams):
         fg, bg = _team_palette[i % len(_team_palette)]
         team_colours[tname] = {"fg": fg, "bg": bg}
-
-    # Rank by draft value (fallback to SC avg if no draft score)
-    players.sort(key=lambda p: p.draft_score or 0, reverse=True)
-    for i, p in enumerate(players, 1):
-        p._rank = i
 
     rolling = _compute_rolling_averages()
 

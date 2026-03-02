@@ -325,8 +325,9 @@ def api_available_players(league_id):
     players = get_available_players(session.id, search=search or None,
                                     position=position or None, limit=limit)
 
-    # Compute per-user draft scores for the available players
-    from models.database import UserDraftWeights, LeagueDraftWeights
+    # Compute per-user draft scores — rank ALL players so normalisation
+    # is consistent with the player pool, then filter to available ones.
+    from models.database import UserDraftWeights, LeagueDraftWeights, AflPlayer as AflPlayerModel
     from models.player import orm_to_player
     from models.draft_model import rank_players, _apply_custom_sc_projection, DRAFT_WEIGHTS
 
@@ -341,25 +342,29 @@ def api_available_players(league_id):
 
     if players:
         league = db.session.get(League, league_id)
-        player_dcs = [orm_to_player(p) for p in players]
 
-        # Apply custom/hybrid scoring projection or AFL Fantasy ranking if needed
+        # Rank the full player pool so 0-99 normalisation matches the Players tab
+        all_afl = AflPlayerModel.query.all()
+        all_dcs = [orm_to_player(p) for p in all_afl]
+
         if league and league.scoring_type in ("custom", "hybrid"):
             from models.database import CustomScoringRule
             rules = CustomScoringRule.query.filter_by(league_id=league_id).all()
             if rules:
-                _apply_custom_sc_projection(player_dcs, players, rules)
+                _apply_custom_sc_projection(all_dcs, all_afl, rules)
         elif league and league.scoring_type == "afl_fantasy":
             from models.draft_model import _apply_af_projection
-            _apply_af_projection(player_dcs, players)
+            _apply_af_projection(all_dcs, all_afl)
 
-        rank_players(player_dcs, weights)
+        rank_players(all_dcs, weights)
 
-        # Build result sorted by user's personalised score
-        name_to_dc = {(dc.name, dc.team): dc for dc in player_dcs}
+        # Build lookup from full ranked set
+        score_lookup = {(dc.name, dc.team): dc.draft_score for dc in all_dcs}
+
+        # Return only available players with scores from the full ranking
+        available_ids = {p.id for p in players}
         result = []
         for p in players:
-            dc = name_to_dc.get((p.name, p.afl_team))
             sc = p.sc_avg if p.sc_avg else p.sc_avg_prev
             result.append({
                 "id": p.id,
@@ -368,7 +373,7 @@ def api_available_players(league_id):
                 "position": p.position,
                 "age": p.age,
                 "sc_avg": sc,
-                "draft_score": dc.draft_score if dc else p.draft_score,
+                "draft_score": score_lookup.get((p.name, p.afl_team), p.draft_score),
                 "rating": p.rating,
                 "potential": p.potential,
             })
