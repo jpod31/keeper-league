@@ -3,6 +3,29 @@
 {% block title %}Draft Room — {{ league.name }}{% endblock %}
 {% block league_content %}
 <style>
+/* ── Draft Chat ── */
+.draft-chat-card { max-height: 320px; }
+.chat-msg {
+  padding: .3rem .6rem;
+  font-size: .78rem;
+  border-bottom: 1px solid rgba(48,54,61,.4);
+}
+.chat-msg:last-child { border-bottom: none; }
+.chat-msg-name {
+  font-weight: 700;
+  font-size: .72rem;
+  margin-right: .4rem;
+}
+.chat-msg-text { color: var(--kl-text-primary); word-break: break-word; }
+.chat-msg-system {
+  text-align: center;
+  font-size: .7rem;
+  color: #484f58;
+  font-style: italic;
+  padding: .25rem .6rem;
+}
+.chat-toggle-collapsed { transform: rotate(-90deg); }
+
 /* ── Available Players table — prominent styling ── */
 .draft-avail-tbl { font-size: .82rem; }
 .draft-avail-tbl thead th {
@@ -296,7 +319,7 @@
 
     <!-- Your Team -->
     {% if user_team %}
-      <div class="card" style="max-height:30vh;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="card mb-3" style="max-height:30vh;overflow:hidden;display:flex;flex-direction:column;">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
             <i class="bi bi-person-badge me-2" style="color:#58a6ff;"></i>{{ user_team.name }}
@@ -315,6 +338,36 @@
         </div>
       </div>
     {% endif %}
+
+    <!-- Draft Chat -->
+    <div class="card draft-chat-card" style="display:flex;flex-direction:column;">
+      <div class="card-header d-flex justify-content-between align-items-center" style="cursor:pointer;" onclick="toggleChat()">
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
+          <i class="bi bi-chat-dots me-2" style="color:#d29922;"></i>Draft Chat
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge d-none" id="chat-unread" style="background:#f85149;font-size:.6rem;border-radius:8px;">0</span>
+          <i class="bi bi-chevron-down" id="chat-toggle-icon" style="color:#8b949e;font-size:.75rem;transition:transform .2s;"></i>
+        </div>
+      </div>
+      <div id="chat-body" style="display:flex;flex-direction:column;">
+        <div class="card-body p-0" id="chat-messages" style="height:200px;overflow-y:auto;padding:.5rem !important;">
+          <div class="text-center py-3" style="color:#484f58;font-size:.75rem;">
+            <i class="bi bi-chat-dots" style="font-size:1.2rem;"></i>
+            <div class="mt-1">Talk trash, celebrate picks, roast auto-picks...</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--kl-border);padding:.5rem .65rem;display:flex;gap:.4rem;">
+          <input type="text" class="form-control form-control-sm" id="chat-input"
+                 placeholder="Say something..." maxlength="500"
+                 onkeydown="if(event.key==='Enter')sendChat()"
+                 style="font-size:.8rem;background:#0d1117;border-color:#30363d;color:#c9d1d9;">
+          <button class="btn btn-sm btn-primary" onclick="sendChat()" style="padding:4px 12px;white-space:nowrap;">
+            <i class="bi bi-send"></i>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -795,6 +848,109 @@ function saveWeights() {
       }
     });
 }
+
+// ── Draft Chat ──
+let chatOpen = true;
+let chatUnread = 0;
+
+// Team colors for chat names — cycle through accent colors
+const CHAT_COLORS = ['#58a6ff', '#3fb950', '#d29922', '#f0883e', '#bc8cff', '#f85149', '#39d353', '#79c0ff'];
+const chatColorMap = {};
+let chatColorIdx = 0;
+
+function getChatColor(teamName) {
+  if (!chatColorMap[teamName]) {
+    chatColorMap[teamName] = CHAT_COLORS[chatColorIdx % CHAT_COLORS.length];
+    chatColorIdx++;
+  }
+  return chatColorMap[teamName];
+}
+
+function toggleChat() {
+  const body = document.getElementById('chat-body');
+  const icon = document.getElementById('chat-toggle-icon');
+  chatOpen = !chatOpen;
+  body.style.display = chatOpen ? 'flex' : 'none';
+  icon.classList.toggle('chat-toggle-collapsed', !chatOpen);
+  if (chatOpen) {
+    chatUnread = 0;
+    const badge = document.getElementById('chat-unread');
+    badge.classList.add('d-none');
+    scrollChat();
+  }
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  socket.emit('draft_chat', { league_id: LEAGUE_ID, message: msg });
+  input.value = '';
+  input.focus();
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+socket.on('draft_chat_msg', function(data) {
+  const container = document.getElementById('chat-messages');
+  // Remove placeholder if present
+  const placeholder = container.querySelector('.text-center');
+  if (placeholder) placeholder.remove();
+
+  const color = getChatColor(data.team_name);
+  const isMe = data.user_id === {{ current_user.id }};
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = '<span class="chat-msg-name" style="color:' + color + ';">' + escapeHtml(data.team_name) + '</span>' +
+                  '<span class="chat-msg-text">' + escapeHtml(data.message) + '</span>';
+  container.appendChild(div);
+  scrollChat();
+
+  if (!chatOpen) {
+    chatUnread++;
+    const badge = document.getElementById('chat-unread');
+    badge.textContent = chatUnread;
+    badge.classList.remove('d-none');
+  }
+});
+
+// Also post pick events as system messages in chat
+socket.on('pick_made', function() {
+  // The existing pick_made handler already runs — we just add a chat note
+  // We'll do this in the addPickToHistory wrapper instead
+});
+
+function addChatSystemMsg(text) {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+  const placeholder = container.querySelector('.text-center');
+  if (placeholder) placeholder.remove();
+  const div = document.createElement('div');
+  div.className = 'chat-msg-system';
+  div.textContent = text;
+  container.appendChild(div);
+  scrollChat();
+}
+
+function scrollChat() {
+  const container = document.getElementById('chat-messages');
+  if (container) container.scrollTop = container.scrollHeight;
+}
+
+// Patch addPickToHistory to also post to chat
+const _origAddPick = addPickToHistory;
+addPickToHistory = function(pick) {
+  _origAddPick(pick);
+  if (pick.is_pass) {
+    addChatSystemMsg(pick.team_name + ' passed');
+  } else {
+    addChatSystemMsg(pick.team_name + ' drafted ' + pick.player_name);
+  }
+};
 
 // Initial load
 fetchPositionNeeds();

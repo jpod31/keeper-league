@@ -288,6 +288,28 @@ def register_draft_events(socketio):
             db.session.rollback()
             emit("error", {"message": "An error occurred resuming the draft"})
 
+    @socketio.on("draft_chat", namespace="/draft")
+    def handle_draft_chat(data):
+        """Broadcast a chat message to all users in the draft room."""
+        try:
+            league_id = data.get("league_id")
+            msg = (data.get("message") or "").strip()
+            if not league_id or not msg or len(msg) > 500:
+                return
+
+            user_team = FantasyTeam.query.filter_by(
+                league_id=league_id, owner_id=current_user.id
+            ).first()
+            team_name = user_team.name if user_team else current_user.display_name
+
+            emit("draft_chat_msg", {
+                "team_name": team_name,
+                "message": msg,
+                "user_id": current_user.id,
+            }, room=f"draft_{league_id}")
+        except Exception:
+            logger.exception("Error in draft_chat handler")
+
     @socketio.on("end_draft", namespace="/draft")
     def handle_end_draft(data):
         try:
