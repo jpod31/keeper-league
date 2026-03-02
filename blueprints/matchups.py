@@ -220,6 +220,14 @@ def score_round_view(league_id, afl_round):
         flash("Only the commissioner can score rounds.", "warning")
         return redirect(url_for("matchups.round_view", league_id=league_id, afl_round=afl_round))
 
+    # Check if already finalized before scoring
+    fixtures = Fixture.query.filter_by(
+        league_id=league_id, afl_round=afl_round, year=league.season_year
+    ).all()
+    if fixtures and all(f.status == "completed" for f in fixtures):
+        flash(f"Round {afl_round} has already been finalized. Scores unchanged.", "info")
+        return redirect(url_for("matchups.round_view", league_id=league_id, afl_round=afl_round))
+
     # Score all teams, update fixtures, recalculate standings, advance finals
     finalize_round(league_id, afl_round, league.season_year)
 

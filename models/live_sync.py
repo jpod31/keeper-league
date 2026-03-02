@@ -234,6 +234,8 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
                           CustomScoringRule.query.filter_by(league_id=league_id).all()]
             league_data = {}
             for f in fixtures:
+                if f.status == "completed":
+                    continue  # Already finalized — don't touch
                 if categories:
                     breakdown = _compute_uf_fixture(f, league_id, afl_round, year, categories)
                     home_wins = sum(1 for b in breakdown if b["winner"] == "home")
@@ -270,6 +272,8 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
 
             league_data = {}
             for f in fixtures:
+                if f.status == "completed":
+                    continue  # Already finalized — don't touch
                 home_rs = RoundScore.query.filter_by(
                     team_id=f.home_team_id, afl_round=afl_round, year=year
                 ).first()

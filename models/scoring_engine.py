@@ -33,13 +33,6 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
 
     NOTE: Does NOT commit — caller is responsible for db.session.commit().
     """
-    # Guard: don't re-score if a finalized score already exists
-    existing = RoundScore.query.filter_by(
-        team_id=team_id, afl_round=afl_round, year=year
-    ).first()
-    if existing:
-        return existing.total_score
-
     # Get on-field roster entries
     roster_entries = FantasyRoster.query.filter_by(
         team_id=team_id, is_active=True
@@ -391,6 +384,20 @@ def finalize_round(league_id, afl_round, year):
     Also advances finals if the completed fixture is a finals match.
     Returns the scores dict {team_id: total_score}.
     """
+    # Guard: don't re-score an already-finalized round
+    fixtures = Fixture.query.filter_by(
+        league_id=league_id, afl_round=afl_round, year=year
+    ).all()
+    if fixtures and all(f.status == "completed" for f in fixtures):
+        # Return existing scores without re-calculating
+        teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+        return {
+            t.id: (RoundScore.query.filter_by(
+                team_id=t.id, afl_round=afl_round, year=year
+            ).first() or type('', (), {'total_score': 0})()).total_score
+            for t in teams
+        }
+
     league = db.session.get(League, league_id)
 
     if league and league.scoring_type == "ultimate_footy":
