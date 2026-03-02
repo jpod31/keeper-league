@@ -45,7 +45,7 @@
         {% endif %}
       </div>
       {# Swap-mode click overlay (hidden until swap mode active) #}
-      <div class="fv-swap-overlay" onclick="fvCompleteSub({{ p.id }})" title="Swap here"></div>
+      <div class="fv-swap-overlay" onclick="event.stopPropagation(); fvCompleteSub({{ p.id }})" title="Swap here"></div>
       {% endif %}
 
       {# Team logo + position tag + bench type #}
@@ -933,83 +933,6 @@ function buildStatGrid(containerId, stats, keys) {
   });
 }
 
-const TEAM_LOGOS_JS = {{ TEAM_LOGOS | tojson }};
-const STAT_KEYS = [
-  ['disposals','DIS'],['kicks','KCK'],['handballs','HBL'],['marks','MRK'],
-  ['goals','GLS'],['behinds','BHD'],['tackles','TKL'],['hitouts','HO'],
-  ['clearances','CLR'],['inside_fifties','I50'],['contested_possessions','CP'],
-  ['pressure_acts','PA'],['metres_gained','MG'],['supercoach_score','SC']
-];
-const SEASON_KEYS = [
-  ['disposals','DIS'],['kicks','KCK'],['handballs','HBL'],['marks','MRK'],
-  ['goals','GLS'],['tackles','TKL'],['hitouts','HO'],['clearances','CLR'],['sc','SC']
-];
 
-function fvShowPlayer(pid) {
-  fetch(`${API_PREFIX}/player/${pid}`)
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) return;
-      document.getElementById('pmName').textContent = data.name || '';
-      document.getElementById('pmBioName').textContent = data.name || '';
-      document.getElementById('pmTeamPos').textContent =
-        (data.afl_team || '') + ' \u2022 ' + (data.position || '');
-      document.getElementById('pmAge').textContent = data.age || '-';
-      document.getElementById('pmHeight').textContent = data.height_cm || '-';
-      document.getElementById('pmGames').textContent = data.career_games || '-';
-      document.getElementById('pmScAvg').textContent =
-        data.sc_avg ? Math.round(data.sc_avg) : '-';
-      document.getElementById('pmScPrev').textContent =
-        data.sc_avg_prev ? Math.round(data.sc_avg_prev) : '-';
-
-      const logoImg = document.getElementById('pmLogoImg');
-      const logoFb = document.getElementById('pmLogoFallback');
-      if (data.afl_team && TEAM_LOGOS_JS[data.afl_team]) {
-        logoImg.src = TEAM_LOGOS_JS[data.afl_team];
-        logoImg.style.display = 'block';
-        logoFb.style.display = 'none';
-      } else {
-        logoImg.style.display = 'none';
-        logoFb.style.display = 'flex';
-      }
-
-      const rating = data.rating || 0;
-      document.getElementById('pmRating').textContent = rating || '-';
-      const circ = 2 * Math.PI * 24;
-      const rOffset = circ - (rating / 100) * circ;
-      const arc = document.getElementById('pmRatingArc');
-      arc.style.strokeDashoffset = rOffset;
-      arc.style.stroke = rating >= 80 ? '#3fb950' : rating >= 70 ? '#d29922' : rating >= 60 ? '#f0883e' : '#f85149';
-
-      const potential = data.potential || 0;
-      document.getElementById('pmPotential').textContent = potential || '-';
-      const pOffset = circ - (potential / 100) * circ;
-      const pArc = document.getElementById('pmPotentialArc');
-      pArc.style.strokeDashoffset = pOffset;
-      pArc.style.stroke = potential >= 85 ? '#3fb950' : potential >= 75 ? '#bc8cff' : potential >= 65 ? '#d29922' : '#8b949e';
-
-      drawSparkline('pmSparkline', data.form);
-
-      const lgSection = document.getElementById('pmLastGameSection');
-      if (data.last_game) {
-        lgSection.style.display = '';
-        document.getElementById('pmLastGameRd').textContent = 'Rd ' + data.last_game.round + ', ' + data.last_game.year;
-        buildStatGrid('pmLastGameGrid', data.last_game, STAT_KEYS);
-      } else {
-        lgSection.style.display = 'none';
-      }
-
-      const saSection = document.getElementById('pmSeasonAvgSection');
-      if (data.season_avg) {
-        saSection.style.display = '';
-        document.getElementById('pmSeasonGames').textContent = data.season_avg.games;
-        buildStatGrid('pmSeasonAvgGrid', data.season_avg, SEASON_KEYS);
-      } else {
-        saSection.style.display = 'none';
-      }
-
-      new bootstrap.Modal(document.getElementById('playerModal')).show();
-    });
-}
 </script>
 {% endif %}
