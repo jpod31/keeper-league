@@ -1,7 +1,7 @@
 /* Keeper League Service Worker — Caching + Push Notifications */
 
-var SHELL_CACHE = 'kl-shell-v1';
-var DYNAMIC_CACHE = 'kl-dynamic-v1';
+var SHELL_CACHE = 'kl-shell-v2';
+var DYNAMIC_CACHE = 'kl-dynamic-v2';
 var MAX_DYNAMIC = 50;
 
 var SHELL_ASSETS = [
