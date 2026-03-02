@@ -1,16 +1,20 @@
 """Fixture generation: round-robin, matchups, finals bracket."""
 
+import random
+from collections import defaultdict
+
 from models.database import (
     db, Fixture, FantasyTeam, League, SeasonConfig,
 )
 
 
-def _circle_method_rounds(teams):
-    """Generate a valid round-robin schedule using the circle method.
+def _circle_method_pairings(teams):
+    """Generate round-robin pairings using the circle method.
 
     With N teams (padded to even), produces N-1 rounds where each team
     plays exactly once per round.  Returns list of rounds, each round
-    being a list of (home, away) tuples of team objects.
+    being a list of (team_a, team_b) tuples — home/away is NOT assigned
+    here; the caller decides that based on fairness tracking.
     """
     team_list = list(teams)
     n = len(team_list)
@@ -27,14 +31,10 @@ def _circle_method_rounds(teams):
     for r in range(num_rounds):
         round_pairs = []
         for i in range(n // 2):
-            home = team_list[i]
-            away = team_list[n - 1 - i]
-            if home is not None and away is not None:
-                # Alternate home/away by round to keep it fair
-                if r % 2 == 0:
-                    round_pairs.append((home, away))
-                else:
-                    round_pairs.append((away, home))
+            t1 = team_list[i]
+            t2 = team_list[n - 1 - i]
+            if t1 is not None and t2 is not None:
+                round_pairs.append((t1, t2))
         rounds.append(round_pairs)
 
         # Rotate: keep team_list[0] fixed, rotate rest clockwise
@@ -44,11 +44,13 @@ def _circle_method_rounds(teams):
 
 
 def generate_round_robin(league_id, year, num_rounds=23):
-    """Generate a round-robin fixture for the season.
+    """Generate a fair round-robin fixture for the season.
 
-    Uses the circle method to produce valid rounds where each team plays
-    exactly once per round.  Cycles through the generated rounds to fill
-    the requested number of AFL rounds, alternating home/away on repeats.
+    Improvements over a naive circle method:
+      1. Teams are shuffled so fixture is randomised each generation
+      2. Repeat cycles use shuffled round order to spread rematches apart
+      3. Home/away assigned per-pairing: alternates between meetings,
+         and balances each team's total home games across the season
     """
     teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
     if len(teams) < 2:
@@ -57,26 +59,57 @@ def generate_round_robin(league_id, year, num_rounds=23):
     # Delete any existing fixtures for this year
     Fixture.query.filter_by(league_id=league_id, year=year, is_final=False).delete()
 
-    # Generate one full cycle of valid rounds
-    base_rounds = _circle_method_rounds(teams)
+    # Shuffle teams so the fixture is different each time it's generated
+    shuffled = list(teams)
+    random.shuffle(shuffled)
+
+    # Generate one full cycle of pairings (no home/away yet)
+    base_rounds = _circle_method_pairings(shuffled)
     if not base_rounds:
         return [], "Could not generate fixture."
 
-    fixtures = []
     cycle_len = len(base_rounds)
 
-    for rnd in range(1, num_rounds + 1):
-        base_idx = (rnd - 1) % cycle_len
-        cycle = (rnd - 1) // cycle_len  # which repetition we're on
+    # Build round schedule: first cycle in natural order, subsequent
+    # cycles shuffled so rematches are spread across the season
+    round_schedule = []
+    num_cycles = (num_rounds + cycle_len - 1) // cycle_len
+    for c in range(num_cycles):
+        indices = list(range(cycle_len))
+        if c > 0:
+            random.shuffle(indices)
+        round_schedule.extend(indices)
+    round_schedule = round_schedule[:num_rounds]
 
-        for home, away in base_rounds[base_idx]:
-            # Flip home/away on odd cycles for fairness
-            if cycle % 2 == 1:
-                home, away = away, home
+    # Track fairness
+    home_counts = defaultdict(int)       # team_id -> total home games
+    pair_last_home = {}                  # frozenset({a_id, b_id}) -> team_id last home
+
+    fixtures = []
+    for afl_round, base_idx in enumerate(round_schedule, 1):
+        for t1, t2 in base_rounds[base_idx]:
+            pair_key = frozenset({t1.id, t2.id})
+            last_home = pair_last_home.get(pair_key)
+
+            if last_home is not None:
+                # Alternate from last meeting
+                if last_home == t1.id:
+                    home, away = t2, t1
+                else:
+                    home, away = t1, t2
+            else:
+                # First meeting — give home to team with fewer home games
+                if home_counts[t1.id] <= home_counts[t2.id]:
+                    home, away = t1, t2
+                else:
+                    home, away = t2, t1
+
+            home_counts[home.id] += 1
+            pair_last_home[pair_key] = home.id
 
             fixture = Fixture(
                 league_id=league_id,
-                afl_round=rnd,
+                afl_round=afl_round,
                 year=year,
                 home_team_id=home.id,
                 away_team_id=away.id,
