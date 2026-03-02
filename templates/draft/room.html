@@ -985,8 +985,17 @@ function updateYourTeam() {
 }
 
 // Commissioner controls
-function startDraft() { socket.emit('start_draft', { league_id: LEAGUE_ID }); }
-function pauseDraft() { socket.emit('pause_draft', { league_id: LEAGUE_ID }); }
+function startDraft() {
+  socket.emit('start_draft', { league_id: LEAGUE_ID });
+  // Disable button to prevent accidental double-click hitting the Pause that replaces it
+  const controls = document.getElementById('commissioner-controls');
+  if (controls) controls.querySelectorAll('.btn').forEach(b => b.disabled = true);
+  setTimeout(() => { if (controls) controls.querySelectorAll('.btn').forEach(b => b.disabled = false); }, 2000);
+}
+function pauseDraft() {
+  if (!confirm('Pause the draft? All timers will stop.')) return;
+  socket.emit('pause_draft', { league_id: LEAGUE_ID });
+}
 function resumeDraft() { socket.emit('resume_draft', { league_id: LEAGUE_ID }); }
 
 function confirmRestart() {
