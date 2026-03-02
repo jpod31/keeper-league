@@ -309,7 +309,8 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(leagues_bp)
     app.register_blueprint(draft_bp)
-    csrf.exempt(draft_bp)  # draft API endpoints use @login_required + commissioner checks
+    csrf.exempt(draft_bp)   # draft API endpoints use @login_required + auth checks
+    csrf.exempt(team_bp)    # team API endpoints use @login_required + ownership checks
     # Exempt specific JSON API endpoints in leagues blueprint
     csrf.exempt("leagues.commissioner_delist")
     csrf.exempt("leagues.commissioner_force_move")
