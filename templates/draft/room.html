@@ -496,13 +496,15 @@
         <h6 class="modal-title fw-bold mb-0" style="font-size:.9rem;color:#f85149;">End Draft Early?</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body text-center" style="padding:1rem;">
-        <div style="font-size:.85rem;color:#8b949e;">All remaining picks will be marked as <strong style="color:#d29922;">PASS</strong> and the draft will be completed immediately.</div>
-      </div>
-      <div class="modal-footer d-flex gap-2" style="border-top:1px solid #30363d;padding:.75rem 1rem;">
-        <button type="button" class="btn btn-outline-secondary btn-sm flex-fill" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger btn-sm flex-fill" onclick="confirmEndDraft()">End Draft</button>
-      </div>
+      <form method="POST" action="{{ url_for('draft_live.api_end_draft', league_id=league.id) }}" id="end-draft-form">
+        <div class="modal-body text-center" style="padding:1rem;">
+          <div style="font-size:.85rem;color:#8b949e;">All remaining picks will be marked as <strong style="color:#d29922;">PASS</strong> and the draft will be completed immediately.</div>
+        </div>
+        <div class="modal-footer d-flex gap-2" style="border-top:1px solid #30363d;padding:.75rem 1rem;">
+          <button type="button" class="btn btn-outline-secondary btn-sm flex-fill" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger btn-sm flex-fill" id="end-draft-submit-btn">End Draft</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -1032,38 +1034,11 @@ function showEndDraftModal() {
   new bootstrap.Modal(document.getElementById('confirmEndDraftModal')).show();
 }
 
-function confirmEndDraft() {
-  const modal = bootstrap.Modal.getInstance(document.getElementById('confirmEndDraftModal'));
-  if (modal) modal.hide();
-
-  // Always use HTTP — socket can appear connected but be stale after server restarts
-  const btn = document.querySelector('#confirmEndDraftModal .btn-danger') || null;
-  const banner = document.getElementById('current-team');
-  if (banner) banner.textContent = 'Ending draft...';
-
-  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-  fetch(`/leagues/${LEAGUE_ID}/draft/api/end`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': csrfToken || '',
-    },
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.error) {
-      alert('Error: ' + data.error);
-      if (banner) banner.textContent = 'Error ending draft';
-      return;
-    }
-    alert('Draft ended successfully!');
-    location.reload();
-  })
-  .catch(err => {
-    alert('Failed to end draft: ' + err.message + '. Please try refreshing the page.');
-    if (banner) banner.textContent = 'Failed — refresh and retry';
-  });
-}
+// End draft form submit handler — disable button to prevent double-click
+document.getElementById('end-draft-form')?.addEventListener('submit', function() {
+  var btn = document.getElementById('end-draft-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Ending...'; }
+});
 
 // ── Inline draft value weights ──
 const WEIGHT_KEYS = ['sc_average', 'age_factor', 'positional_scarcity', 'trajectory', 'durability', 'rating_potential'];

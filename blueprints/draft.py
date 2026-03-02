@@ -352,43 +352,41 @@ def api_update_schedule(league_id):
 @draft_bp.route("/<int:league_id>/draft/api/end", methods=["POST"])
 @login_required
 def api_end_draft(league_id):
-    """HTTP endpoint to end draft."""
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"[END_DRAFT] HTTP request from user={current_user.username} league={league_id}")
-    print(f"[END_DRAFT] HTTP request from user={current_user.username} league={league_id}", flush=True)
+    """HTTP endpoint to end draft. Handles both form POST and JSON fetch."""
+    print(f"[END_DRAFT] Request from user={current_user.username} league={league_id}", flush=True)
 
     league = db.session.get(League, league_id)
     if not league:
-        print(f"[END_DRAFT] League {league_id} not found", flush=True)
-        return jsonify({"error": "League not found"}), 404
+        flash("League not found.", "danger")
+        return redirect(url_for("leagues.league_list"))
     if league.commissioner_id != current_user.id:
-        print(f"[END_DRAFT] User {current_user.id} is not commissioner (commissioner={league.commissioner_id})", flush=True)
-        return jsonify({"error": "Only the commissioner can end the draft"}), 403
+        flash("Only the commissioner can end the draft.", "warning")
+        return redirect(url_for("draft_live.draft_room", league_id=league_id))
 
     session = _get_active_draft_session(league_id)
     if not session:
-        print(f"[END_DRAFT] No active draft session for league {league_id}", flush=True)
-        return jsonify({"error": "No active draft session"}), 404
+        flash("No active draft session.", "warning")
+        return redirect(url_for("draft_live.draft_room", league_id=league_id))
 
-    print(f"[END_DRAFT] Found session {session.id}, status={session.status}", flush=True)
+    print(f"[END_DRAFT] Session {session.id}, status={session.status}", flush=True)
 
     session_id = session.id
     result, error = end_draft(session_id)
     if error:
-        print(f"[END_DRAFT] end_draft() returned error: {error}", flush=True)
-        return jsonify({"error": error}), 400
+        print(f"[END_DRAFT] Error: {error}", flush=True)
+        flash(f"Failed to end draft: {error}", "danger")
+        return redirect(url_for("draft_live.draft_room", league_id=league_id))
 
-    print(f"[END_DRAFT] Draft ended successfully. Session {session_id} now completed.", flush=True)
+    print(f"[END_DRAFT] Success! Session {session_id} completed.", flush=True)
 
-    # Clean up timer (in-memory and DB deadline)
+    # Clean up timer
     from sockets.draft_events import _cleanup_timer
     try:
         _cleanup_timer(session_id)
-    except Exception as e:
-        print(f"[END_DRAFT] Timer cleanup error (non-fatal): {e}", flush=True)
+    except Exception:
+        pass
 
-    # Broadcast draft_completed to all connected clients in the room
+    # Broadcast to connected clients
     try:
         from flask import current_app
         socketio = current_app.extensions.get("socketio")
@@ -396,11 +394,11 @@ def api_end_draft(league_id):
             state = get_draft_state(session_id)
             socketio.emit("draft_completed", state, namespace="/draft",
                           to=f"draft_{league_id}")
-            print(f"[END_DRAFT] Broadcasted draft_completed to room draft_{league_id}", flush=True)
-    except Exception as e:
-        print(f"[END_DRAFT] Broadcast error (non-fatal): {e}", flush=True)
+    except Exception:
+        pass
 
-    return jsonify({"ok": True, "status": "completed"})
+    flash("Draft ended successfully! All remaining picks marked as pass.", "success")
+    return redirect(url_for("draft_live.draft_room", league_id=league_id))
 
 
 @draft_bp.route("/<int:league_id>/draft/api/available")
