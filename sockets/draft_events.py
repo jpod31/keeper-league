@@ -57,6 +57,7 @@ def register_draft_events(socketio):
 
             room = f"draft_{league_id}"
             join_room(room)
+            print(f"[DRAFT] join_draft: user={current_user.username if current_user.is_authenticated else 'anon'} league={league_id}", flush=True)
 
             session = _get_active_session(league_id)
             if session:
@@ -85,6 +86,7 @@ def register_draft_events(socketio):
         try:
             league_id = data.get("league_id")
             player_id = data.get("player_id")
+            print(f"[DRAFT] make_pick: league={league_id} player={player_id} user={current_user.username if current_user.is_authenticated else 'anon'}", flush=True)
 
             if not league_id or not player_id:
                 emit("error", {"message": "Missing league_id or player_id"})

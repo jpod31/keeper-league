@@ -845,13 +845,17 @@ function canPick() {
   if (draftState.status !== 'in_progress') return false;
   const isMyTurn = USER_TEAM_ID && draftState.current_team_id === USER_TEAM_ID;
   if (isMyTurn) return true;
-  if (IS_COMMISSIONER && commOverride) return true;
+  if (IS_COMMISSIONER) return true;
   return false;
 }
 
 function pickPlayer(playerId, playerName, playerPos, playerTeam) {
   if (!socket.connected) {
-    alert('Not connected to server — please refresh the page and try again.');
+    alert('Not connected — refresh the page.');
+    return;
+  }
+  if (draftState.status !== 'in_progress') {
+    alert('Draft status is "' + draftState.status + '" — wait for it to start or refresh the page.');
     return;
   }
   // Disable all pick buttons immediately to prevent double-clicks
