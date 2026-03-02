@@ -661,8 +661,8 @@ const FIXTURES_META = {
   {{ f.id }}: {
     home_team_id: {{ f.home_team_id }},
     away_team_id: {{ f.away_team_id }},
-    home_team_name: "{{ f.home_team.name|e }}",
-    away_team_name: "{{ f.away_team.name|e }}",
+    home_team_name: {{ f.home_team.name|tojson }},
+    away_team_name: {{ f.away_team.name|tojson }},
     status: "{{ f.status }}"
   },
   {% endfor %}
@@ -684,6 +684,9 @@ function viewMatchup(fixtureId) {
     if (!meta) return;
 
     pendingFixtureId = fixtureId;
+
+    // Immediately highlight the clicked card
+    updateActiveCard(fixtureId);
 
     // If data is cached, render immediately
     if (cachedFixtureData[fixtureId]) {
