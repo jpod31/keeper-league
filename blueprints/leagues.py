@@ -437,7 +437,7 @@ def league_settings(league_id):
         if num_fixture_rounds:
             season_cfg.num_regular_rounds = num_fixture_rounds
         finals_teams = request.form.get("finals_teams", type=int)
-        if finals_teams:
+        if finals_teams is not None:
             season_cfg.finals_teams = finals_teams
 
         # Mid-season config (single toggle — trade follows draft toggle)

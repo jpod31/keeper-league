@@ -341,6 +341,12 @@ def create_app():
                     (t for t in user_teams if t.league_id == league_id), None
                 )
                 ctx["nav_user_team"] = nav_team
+                # Finals config for subnav visibility
+                from models.database import League as _League, SeasonConfig as _SC
+                _lg = db.session.get(_League, league_id)
+                if _lg:
+                    _sc = _SC.query.filter_by(league_id=league_id, year=_lg.season_year).first()
+                    ctx["nav_finals_teams"] = _sc.finals_teams if _sc else 4
         return ctx
 
     # ── Security headers ────────────────────────────────────────────

@@ -8,10 +8,12 @@
      href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
     <i class="bi bi-calendar-week"></i>Season
   </a>
+  {% if nav_finals_teams is defined and nav_finals_teams and nav_finals_teams > 0 %}
   <a class="league-subtab{% if active_subtab|default('') == 'finals' %} active{% endif %}"
      href="{{ url_for('matchups.finals_view', league_id=league.id) }}">
     <i class="bi bi-trophy"></i>Finals
   </a>
+  {% endif %}
   <a class="league-subtab{% if active_subtab|default('') == 'history' %} active{% endif %}"
      href="{{ url_for('matchups.history_list', league_id=league.id) }}">
     <i class="bi bi-archive"></i>History
