@@ -72,7 +72,6 @@
         <div class="info-row"><span class="info-label">Total Picks</span><span class="info-value">{{ league.squad_size * teams|length }}</span></div>
         <div class="info-row"><span class="info-label">Pick Timer</span><span class="info-value">{{ league.pick_timer_secs }}s</span></div>
         <div class="info-row"><span class="info-label">Teams</span><span class="info-value">{{ teams|length }}</span></div>
-        <div class="info-row"><span class="info-label">Auto-Randomize</span><span class="info-value">{{ 'Yes' if league.draft_auto_randomize else 'No' }}</span></div>
         {% if league.draft_scheduled_date %}
         <div class="info-row"><span class="info-label">Pre-set Date</span><span class="info-value">{{ league.draft_scheduled_date.strftime('%d %b %Y %I:%M %p') }}</span></div>
         {% endif %}
@@ -83,7 +82,7 @@
       <div class="card-body p-4">
         {% if not session and not initial_session %}
           <div>
-            <p class="text-secondary mb-3" style="font-size:.85rem;">Create a draft session to generate all pick slots.{% if league.draft_auto_randomize %} Draft order will be auto-randomized.{% endif %}</p>
+            <p class="text-secondary mb-3" style="font-size:.85rem;">Create a draft session to generate all pick slots. Set the draft order above first.</p>
             <form method="POST">
               <input type="hidden" name="action" value="create_session">
               <div class="mb-3">

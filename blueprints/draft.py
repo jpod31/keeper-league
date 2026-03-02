@@ -146,9 +146,6 @@ def draft_setup(league_id):
                             db.session.commit()
                         except ValueError:
                             pass
-                    # Auto-randomize if league preference is set
-                    if league.draft_auto_randomize:
-                        randomize_draft_order(league_id)
                     flash("Draft session created!", "success")
             return redirect(url_for("draft_live.draft_setup", league_id=league_id))
 
