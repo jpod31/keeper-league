@@ -384,6 +384,7 @@ class DraftSession(db.Model):
     completed_at = db.Column(db.DateTime)
     total_rounds = db.Column(db.Integer)
     is_mock = db.Column(db.Boolean, default=False)
+    pick_deadline = db.Column(db.DateTime)  # UTC deadline for current pick timer
 
     league = db.relationship("League", backref=db.backref("draft_sessions", lazy="select"))
     picks = db.relationship("DraftPick", backref="session", lazy="select",

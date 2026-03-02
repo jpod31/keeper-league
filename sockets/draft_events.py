@@ -33,6 +33,11 @@ _timers = {}  # {session_id: {"remaining": int, "running": bool, "generation": i
 def _cleanup_timer(session_id):
     """Remove timer entry to prevent memory leak after draft completes."""
     _timers.pop(session_id, None)
+    # Clear persisted deadline
+    session = db.session.get(DraftSession, session_id)
+    if session and session.pick_deadline is not None:
+        session.pick_deadline = None
+        db.session.commit()
 
 
 def register_draft_events(socketio):
@@ -55,6 +60,11 @@ def register_draft_events(socketio):
 
             session = _get_active_session(league_id)
             if session:
+                # If draft is in_progress but timer isn't running (e.g. after server restart),
+                # recover the timer from the persisted pick_deadline
+                if session.status == "in_progress" and session.id not in _timers:
+                    _recover_timer(socketio, session.id, league_id)
+
                 state = get_draft_state(session.id)
                 emit("draft_state", state)
         except Exception:
@@ -410,6 +420,7 @@ def _start_timer(socketio, session_id, league_id):
     """Start the countdown timer for the current pick.
 
     Uses monotonic clock to avoid drift from green-thread scheduling delays.
+    Persists deadline to DB so timer survives server restarts.
     """
     from flask import current_app
     app = current_app._get_current_object()
@@ -427,6 +438,11 @@ def _start_timer(socketio, session_id, league_id):
         "running": True,
         "generation": gen,
     }
+
+    # Persist deadline to DB so we can recover after restarts
+    from datetime import datetime, timedelta, timezone
+    session.pick_deadline = datetime.now(timezone.utc) + timedelta(seconds=duration)
+    db.session.commit()
 
     def tick():
         my_gen = gen
@@ -495,11 +511,127 @@ def _stop_timer(session_id):
 def _reset_timer(session_id):
     """Reset/stop the timer (new pick will start a fresh one)."""
     _stop_timer(session_id)
+    # Clear persisted deadline
+    session = db.session.get(DraftSession, session_id)
+    if session and session.pick_deadline is not None:
+        session.pick_deadline = None
+        db.session.commit()
 
 
 def get_timer_remaining(session_id):
-    """Get the current timer remaining seconds for a session (for external use)."""
+    """Get the current timer remaining seconds for a session (for external use).
+
+    Falls back to the persisted pick_deadline if no in-memory timer is running
+    (e.g. after a server restart before the first user reconnects).
+    """
     timer = _timers.get(session_id)
     if timer and timer.get("running"):
         return timer.get("remaining")
+    # Fallback: check persisted deadline
+    session = db.session.get(DraftSession, session_id)
+    if session and session.pick_deadline:
+        from datetime import datetime, timezone
+        remaining = int((session.pick_deadline - datetime.now(timezone.utc)).total_seconds())
+        return max(0, remaining)
     return None
+
+
+def _recover_timer(socketio, session_id, league_id):
+    """Recover a timer from the persisted pick_deadline after server restart."""
+    session = db.session.get(DraftSession, session_id)
+    if not session or session.status != "in_progress" or not session.pick_deadline:
+        return
+
+    from datetime import datetime, timezone
+    remaining = int((session.pick_deadline - datetime.now(timezone.utc)).total_seconds())
+
+    if remaining <= 0:
+        # Deadline already passed — trigger auto-pick
+        from models.draft_live import get_draft_state, auto_pick
+        state = get_draft_state(session_id)
+        if state and state.get("current_team_id"):
+            from flask import current_app
+            app = current_app._get_current_object()
+            pick, error = auto_pick(session_id, state["current_team_id"])
+            if pick and not error:
+                room = f"draft_{league_id}"
+                pick_data = {
+                    "pick_number": pick.pick_number,
+                    "round": pick.draft_round,
+                    "team_id": pick.team_id,
+                    "team_name": pick.team.name if pick.team else "Unknown",
+                    "player_id": pick.player_id,
+                    "player_name": pick.player.name if pick.player else "Unknown",
+                    "player_position": pick.player.position if pick.player else "",
+                    "player_afl_team": pick.player.afl_team if pick.player else "",
+                    "is_auto_pick": True,
+                }
+                socketio.emit("pick_made", pick_data, namespace="/draft", room=room)
+                new_state = get_draft_state(session_id)
+                if new_state["status"] == "completed":
+                    _cleanup_timer(session_id)
+                    socketio.emit("draft_completed", new_state, namespace="/draft", room=room)
+                else:
+                    socketio.emit("draft_state", new_state, namespace="/draft", room=room)
+                    _start_timer(socketio, session_id, league_id)
+        return
+
+    # Deadline still in the future — restart the timer with remaining seconds
+    from flask import current_app
+    app = current_app._get_current_object()
+
+    gen = 1
+    _timers[session_id] = {
+        "remaining": remaining,
+        "deadline": time.monotonic() + remaining,
+        "running": True,
+        "generation": gen,
+    }
+
+    def tick():
+        my_gen = gen
+        room = f"draft_{league_id}"
+        try:
+            while _timers.get(session_id, {}).get("running", False):
+                if _timers.get(session_id, {}).get("generation") != my_gen:
+                    return
+                deadline = _timers[session_id]["deadline"]
+                rem = max(0, int(deadline - time.monotonic()))
+                _timers[session_id]["remaining"] = rem
+                socketio.emit("timer_tick", {"remaining": rem}, namespace="/draft", room=room)
+                if rem <= 0:
+                    _timers[session_id]["running"] = False
+                    with app.app_context():
+                        from models.draft_live import get_draft_state, auto_pick
+                        sess = db.session.get(DraftSession, session_id)
+                        if sess and sess.status == "in_progress":
+                            state = get_draft_state(session_id)
+                            if state and state.get("current_team_id"):
+                                pick, error = auto_pick(session_id, state["current_team_id"])
+                                if pick and not error:
+                                    pick_data = {
+                                        "pick_number": pick.pick_number,
+                                        "round": pick.draft_round,
+                                        "team_id": pick.team_id,
+                                        "team_name": pick.team.name if pick.team else "Unknown",
+                                        "player_id": pick.player_id,
+                                        "player_name": pick.player.name if pick.player else "Unknown",
+                                        "player_position": pick.player.position if pick.player else "",
+                                        "player_afl_team": pick.player.afl_team if pick.player else "",
+                                        "is_auto_pick": True,
+                                    }
+                                    socketio.emit("pick_made", pick_data, namespace="/draft", room=room)
+                                    new_state = get_draft_state(session_id)
+                                    if new_state["status"] == "completed":
+                                        _cleanup_timer(session_id)
+                                        socketio.emit("draft_completed", new_state, namespace="/draft", room=room)
+                                    else:
+                                        socketio.emit("draft_state", new_state, namespace="/draft", room=room)
+                                        _start_timer(socketio, session_id, league_id)
+                    return
+                socketio.sleep(1)
+        except Exception:
+            logger.exception(f"Error in recovered draft timer for session {session_id}")
+            _timers.pop(session_id, None)
+
+    socketio.start_background_task(tick)
