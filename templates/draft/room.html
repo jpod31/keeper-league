@@ -1028,8 +1028,22 @@ function showEndDraftModal() {
 }
 
 function confirmEndDraft() {
-  socket.emit('end_draft', { league_id: LEAGUE_ID });
-  bootstrap.Modal.getInstance(document.getElementById('confirmEndDraftModal')).hide();
+  const modal = bootstrap.Modal.getInstance(document.getElementById('confirmEndDraftModal'));
+  if (modal) modal.hide();
+
+  if (socket.connected) {
+    socket.emit('end_draft', { league_id: LEAGUE_ID });
+  } else {
+    // Fallback: HTTP POST when socket is disconnected
+    fetch(`/leagues/${LEAGUE_ID}/draft/api/end`, { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { alert(data.error); return; }
+        alert('Draft ended successfully!');
+        location.reload();
+      })
+      .catch(() => alert('Failed to end draft — please refresh and try again.'));
+  }
 }
 
 // ── Inline draft value weights ──

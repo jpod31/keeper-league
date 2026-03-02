@@ -521,9 +521,10 @@ def league_settings(league_id):
     has_active_draft = DraftSession.query.filter_by(
         league_id=league_id, is_mock=False
     ).filter(DraftSession.status.in_(["scheduled", "in_progress", "paused"])).first() is not None
+    teams = FantasyTeam.query.filter_by(league_id=league_id).all() if is_commissioner else []
     return render_template("leagues/settings.html", league=league, live_config=live_config,
                            season_config=season_config, is_commissioner=is_commissioner,
-                           has_active_draft=has_active_draft)
+                           has_active_draft=has_active_draft, teams=teams)
 
 
 @leagues_bp.route("/<int:league_id>/scoring", methods=["GET", "POST"])
@@ -2308,4 +2309,124 @@ def api_player_stats(league_id, player_id):
         "breakeven": round(breakeven, 1),
         "stat_avgs": stat_avgs,
         "scores_by_round": scores_by_round,
+    })
+
+
+# ── Commissioner Tools ──────────────────────────────────────────────
+
+
+@leagues_bp.route("/<int:league_id>/commissioner/team-roster/<int:team_id>")
+@login_required
+def commissioner_team_roster(league_id, team_id):
+    """Return roster for a team (commissioner use)."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        return jsonify({"error": "Commissioner access required"}), 403
+    team = db.session.get(FantasyTeam, team_id)
+    if not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+
+    roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    return jsonify([
+        {"id": r.player.id, "name": r.player.name, "afl_team": r.player.afl_team,
+         "position": r.player.position}
+        for r in roster if r.player
+    ])
+
+
+@leagues_bp.route("/<int:league_id>/commissioner/delist", methods=["POST"])
+@login_required
+def commissioner_delist(league_id):
+    """Commissioner removes a player from a team's roster (for incorrect picks)."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        return jsonify({"error": "Commissioner access required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    team_id = data.get("team_id")
+    player_id = data.get("player_id")
+    if not team_id or not player_id:
+        return jsonify({"error": "Missing team_id or player_id"}), 400
+
+    team = db.session.get(FantasyTeam, team_id)
+    if not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found in this league"}), 404
+
+    entry = FantasyRoster.query.filter_by(
+        team_id=team_id, player_id=player_id, is_active=True
+    ).first()
+    if not entry:
+        return jsonify({"error": "Player not on this team's roster"}), 404
+
+    player_name = entry.player.name if entry.player else f"Player {player_id}"
+    entry.is_active = False
+    entry.is_captain = False
+    entry.is_vice_captain = False
+    entry.is_emergency = False
+    db.session.commit()
+
+    return jsonify({"ok": True, "message": f"{player_name} delisted from {team.name}"})
+
+
+@leagues_bp.route("/<int:league_id>/commissioner/force-move", methods=["POST"])
+@login_required
+def commissioner_force_move(league_id):
+    """Commissioner moves a player from one team to another (correcting draft mistakes).
+    Does NOT create trade history records."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        return jsonify({"error": "Commissioner access required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    from_team_id = data.get("from_team_id")
+    to_team_id = data.get("to_team_id")
+    player_id = data.get("player_id")
+    if not from_team_id or not to_team_id or not player_id:
+        return jsonify({"error": "Missing from_team_id, to_team_id, or player_id"}), 400
+
+    if from_team_id == to_team_id:
+        return jsonify({"error": "Source and destination teams must be different"}), 400
+
+    from_team = db.session.get(FantasyTeam, from_team_id)
+    to_team = db.session.get(FantasyTeam, to_team_id)
+    if not from_team or from_team.league_id != league_id:
+        return jsonify({"error": "Source team not found in this league"}), 404
+    if not to_team or to_team.league_id != league_id:
+        return jsonify({"error": "Destination team not found in this league"}), 404
+
+    entry = FantasyRoster.query.filter_by(
+        team_id=from_team_id, player_id=player_id, is_active=True
+    ).first()
+    if not entry:
+        return jsonify({"error": "Player not on the source team's roster"}), 404
+
+    # Check player isn't already on destination team
+    existing = FantasyRoster.query.filter_by(
+        team_id=to_team_id, player_id=player_id, is_active=True
+    ).first()
+    if existing:
+        return jsonify({"error": "Player already on destination team"}), 409
+
+    player_name = entry.player.name if entry.player else f"Player {player_id}"
+
+    # Deactivate from source team
+    entry.is_active = False
+    entry.is_captain = False
+    entry.is_vice_captain = False
+    entry.is_emergency = False
+
+    # Add to destination team
+    new_entry = FantasyRoster(
+        team_id=to_team_id,
+        player_id=player_id,
+        acquired_via="commissioner",
+        is_active=True,
+        is_benched=True,
+    )
+    db.session.add(new_entry)
+    db.session.commit()
+
+    return jsonify({
+        "ok": True,
+        "message": f"{player_name} moved from {from_team.name} to {to_team.name}"
     })

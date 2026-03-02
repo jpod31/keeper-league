@@ -9,7 +9,7 @@ from models.draft_live import (
     create_draft_session, get_draft_state, start_draft, pause_draft, resume_draft,
     get_available_players, get_queue, set_queue, add_to_queue, remove_from_queue,
     randomize_draft_order, get_team_draft_picks, get_position_needs, restart_draft,
-    delete_mock_draft, reset_mock_draft, run_mock_auto_picks,
+    delete_mock_draft, reset_mock_draft, run_mock_auto_picks, end_draft,
 )
 
 draft_bp = Blueprint("draft_live", __name__, url_prefix="/leagues",
@@ -347,6 +347,25 @@ def api_update_schedule(league_id):
     db.session.commit()
     iso = session.scheduled_start.isoformat() if session.scheduled_start else None
     return jsonify({"status": "ok", "scheduled_start": iso})
+
+
+@draft_bp.route("/<int:league_id>/draft/api/end", methods=["POST"])
+@login_required
+def api_end_draft(league_id):
+    """HTTP fallback to end draft when socket is disconnected."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        return jsonify({"error": "Only the commissioner can end the draft"}), 403
+
+    session = _get_active_draft_session(league_id)
+    if not session:
+        return jsonify({"error": "No active draft session"}), 404
+
+    _, error = end_draft(session.id)
+    if error:
+        return jsonify({"error": error}), 400
+
+    return jsonify({"ok": True, "status": "completed"})
 
 
 @draft_bp.route("/<int:league_id>/draft/api/available")
