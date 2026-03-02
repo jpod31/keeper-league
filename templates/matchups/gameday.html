@@ -32,7 +32,7 @@
         <span class="badge game-badge-ft">FT</span>
       {% else %}
         <span class="badge game-badge-sched">
-          {% if g.scheduled_start %}{{ g.scheduled_start[11:16] }}{% else %}TBC{% endif %}
+          {% if g.scheduled_display %}{{ g.scheduled_display }}{% elif g.scheduled_start %}{{ g.scheduled_start[11:16] }}{% else %}TBC{% endif %}
         </span>
       {% endif %}
       {% if g.home_score is not none %}
@@ -1118,8 +1118,14 @@ if (GAMEDAY_STATE === 'live') {
 
 if (GAMEDAY_STATE === 'upcoming') {
     setInterval(function() {
-        fetch(window.location.href, { headers: { 'X-Requested-With': 'StateCheck' } })
-            .then(function() { window.location.reload(); })
+        fetch(FALLBACK_URL)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                // Only reload when games actually go live
+                if (data.game_statuses && data.game_statuses.some(function(g) { return g.status === 'live'; })) {
+                    window.location.reload();
+                }
+            })
             .catch(function() {});
     }, 5 * 60 * 1000);
 }

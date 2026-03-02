@@ -342,6 +342,14 @@ def get_locked_player_ids(afl_round: int, year: int) -> set[int]:
     return {p.id for p in locked_players}
 
 
+def _format_game_time(dt):
+    """Format a datetime as 'Thu 7:30pm' for display."""
+    if not dt:
+        return None
+    t = dt.strftime("%I:%M%p").lstrip("0").lower()
+    return f"{dt.strftime('%a')} {t}"
+
+
 def get_game_statuses(afl_round: int, year: int) -> list[dict]:
     """Return list of game status dicts for a round (for frontend display)."""
     games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
@@ -352,6 +360,7 @@ def get_game_statuses(afl_round: int, year: int) -> list[dict]:
             "away_team": g.away_team,
             "status": g.status,
             "scheduled_start": g.scheduled_start.isoformat() if g.scheduled_start else None,
+            "scheduled_display": _format_game_time(g.scheduled_start),
             "home_score": g.home_score,
             "away_score": g.away_score,
         }

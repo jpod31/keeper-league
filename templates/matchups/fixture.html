@@ -8,16 +8,11 @@
   /* ── Round strip ── */
   .rnd-strip {
     display:flex; align-items:stretch; background:#0d1117; border:1px solid #21262d;
-    border-radius:10px; overflow:visible; margin-bottom:20px;
+    border-radius:10px; overflow:hidden; margin-bottom:20px;
   }
-  .rnd-strip-scroll {
-    display:flex; overflow-x:auto; overflow-y:hidden; flex:1; scrollbar-width:none;
-    scroll-behavior:smooth;
-  }
-  .rnd-strip-scroll::-webkit-scrollbar { display:none; }
   .rnd-item {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    min-width:48px; padding:12px 8px 10px; text-decoration:none;
+    flex:1 1 0; padding:12px 2px 10px; text-decoration:none;
     border-right:1px solid #161b22; transition:background .12s; position:relative; cursor:pointer;
   }
   .rnd-item:last-child { border-right:none; }
@@ -44,13 +39,6 @@
   .rnd-dot-part { background:#9e6a03; }
   .rnd-dot-none { background:transparent; }
   @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(1.4);} }
-
-  .rnd-nav {
-    display:flex; align-items:center; justify-content:center;
-    width:40px; background:transparent; border:none; color:#484f58;
-    cursor:pointer; transition:color .12s, background .12s; flex-shrink:0; text-decoration:none;
-  }
-  .rnd-nav:hover { color:#c9d1d9; background:#161b22; }
 
   /* ── Round header ── */
   .round-hdr {
@@ -163,26 +151,14 @@
   {# ── Round strip ── #}
   <div class="rnd-strip" id="rndStrip">
     {% set sorted_rounds = round_meta.keys()|sort|list %}
-    {% if selected_round > sorted_rounds[0] %}
-      <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=selected_round-1) }}" class="rnd-nav">
-        <i class="bi bi-chevron-left" style="font-size:.7rem;"></i>
+    {% for rnd_num in sorted_rounds %}
+      {% set st = round_meta[rnd_num] %}
+      <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=rnd_num) }}"
+         class="rnd-item{% if rnd_num == selected_round %} active{% endif %}{% if st == 'completed' %} rnd-done{% elif st == 'live' %} rnd-live{% endif %}">
+        <span class="rnd-num">{{ rnd_num }}</span>
+        <span class="rnd-dot {% if st == 'completed' %}rnd-dot-done{% elif st == 'live' %}rnd-dot-live{% elif st == 'partial' %}rnd-dot-part{% else %}rnd-dot-none{% endif %}"></span>
       </a>
-    {% endif %}
-    <div class="rnd-strip-scroll" id="rndScroll">
-      {% for rnd_num in sorted_rounds %}
-        {% set st = round_meta[rnd_num] %}
-        <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=rnd_num) }}"
-           class="rnd-item{% if rnd_num == selected_round %} active{% endif %}{% if st == 'completed' %} rnd-done{% elif st == 'live' %} rnd-live{% endif %}" id="ri-{{ rnd_num }}">
-          <span class="rnd-num">{{ rnd_num }}</span>
-          <span class="rnd-dot {% if st == 'completed' %}rnd-dot-done{% elif st == 'live' %}rnd-dot-live{% elif st == 'partial' %}rnd-dot-part{% else %}rnd-dot-none{% endif %}"></span>
-        </a>
-      {% endfor %}
-    </div>
-    {% if selected_round < sorted_rounds[-1] %}
-      <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=selected_round+1) }}" class="rnd-nav">
-        <i class="bi bi-chevron-right" style="font-size:.7rem;"></i>
-      </a>
-    {% endif %}
+    {% endfor %}
   </div>
 
   {# ── Round header ── #}
@@ -257,13 +233,4 @@
   </div>
 {% endif %}
 
-<script>
-(function(){
-  var s = document.getElementById('rndScroll');
-  var a = s && s.querySelector('.rnd-item.active');
-  if(a && s) requestAnimationFrame(function(){
-    a.scrollIntoView({ behavior:'instant', block:'nearest', inline:'center' });
-  });
-})();
-</script>
 {% endblock %}
