@@ -116,6 +116,18 @@
         <option value="available">Available</option>
         <option value="taken">Rostered</option>
       </select>
+      <select class="form-select form-select-sm" id="pool-owner-filter" onchange="filterPool()" style="width:auto;">
+        <option value="">All Coaches</option>
+        {% set owners_seen = [] %}
+        {% for pid, tname in rostered_map.items() %}
+          {% if tname not in owners_seen %}
+            {% if owners_seen.append(tname) %}{% endif %}
+          {% endif %}
+        {% endfor %}
+        {% for o in owners_seen|sort %}
+          <option value="{{ o }}">{{ o }}</option>
+        {% endfor %}
+      </select>
     </div>
   </div>
   <div class="card-body p-0" style="max-height:78vh;overflow:auto;">
@@ -124,10 +136,10 @@
         <tr>
           <th class="sortable sort-active" style="width:40px;" onclick="sortPool('rank')"># <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable" onclick="sortPool('name')">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th style="width:60px;">Pos</th>
+          <th class="sortable" style="width:60px;" onclick="sortPool('pos')">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-center" style="width:45px;" onclick="sortPool('age')">Age <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:65px;" onclick="sortPool('sc_avg')">SC <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="text-center" style="width:75px;">Trend</th>
+          <th class="sortable text-center" style="width:75px;" onclick="sortPool('trend')">Trend <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('rating')">Rtg <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('potential')">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:110px;" onclick="sortPool('draft_score')">Value <i class="bi bi-chevron-expand sort-icon"></i></th>
@@ -155,7 +167,8 @@
               data-pot="{{ p.potential or 0 }}" data-rank="{{ p._rank }}"
               data-l3="{{ pr.l3 or 0 }}" data-l5="{{ pr.l5 or 0 }}"
               data-trend="{{ trend_val }}"
-              data-status="{{ 'taken' if owner_team else 'available' }}">
+              data-status="{{ 'taken' if owner_team else 'available' }}"
+              data-owner="{{ owner_team or '' }}">
             {# Rank #}
             <td style="color:#484f58;font-size:.7rem;font-weight:700;">{{ p._rank }}</td>
             {# Player name + team logo #}
@@ -251,12 +264,14 @@ function filterPool() {
   const team = document.getElementById('pool-team-filter').value;
   const ageFilter = document.getElementById('pool-age-filter').value;
   const status = document.getElementById('pool-status-filter').value;
+  const owner = document.getElementById('pool-owner-filter').value;
   let count = 0;
   document.querySelectorAll('#pool-body tr').forEach(row => {
     const nameMatch = !q || row.dataset.name.includes(q);
     const posMatch = !pos || (row.dataset.pos || '').includes(pos);
     const teamMatch = !team || row.dataset.team === team;
     const statusMatch = !status || row.dataset.status === status;
+    const ownerMatch = !owner || row.dataset.owner === owner;
     let ageMatch = true;
     if (ageFilter) {
       const age = parseFloat(row.dataset.age) || 0;
@@ -264,7 +279,7 @@ function filterPool() {
       else if (ageFilter === '25-30') ageMatch = age >= 25 && age <= 30;
       else ageMatch = age > 0 && age < parseInt(ageFilter);
     }
-    const show = nameMatch && posMatch && teamMatch && statusMatch && ageMatch;
+    const show = nameMatch && posMatch && teamMatch && statusMatch && ageMatch && ownerMatch;
     row.style.display = show ? '' : 'none';
     if (show) count++;
   });
@@ -274,7 +289,7 @@ function filterPool() {
 let sortKey = 'rank', sortAsc = true;
 function sortPool(key) {
   // Toggle direction or switch key
-  if (sortKey === key) { sortAsc = !sortAsc; } else { sortKey = key; sortAsc = (key === 'name'); }
+  if (sortKey === key) { sortAsc = !sortAsc; } else { sortKey = key; sortAsc = (key === 'name' || key === 'pos'); }
 
   // Update header styling
   document.querySelectorAll('.pool-table th.sortable').forEach(th => th.classList.remove('sort-active'));
@@ -286,6 +301,10 @@ function sortPool(key) {
     let va, vb;
     if (key === 'name') {
       va = a.dataset.name; vb = b.dataset.name;
+      return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    if (key === 'pos') {
+      va = a.dataset.pos || 'ZZZ'; vb = b.dataset.pos || 'ZZZ';
       return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     }
     const attrMap = {sc_avg: 'sc', draft_score: 'ds', rating: 'rtg', potential: 'pot'};

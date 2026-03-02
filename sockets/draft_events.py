@@ -9,7 +9,7 @@ from flask_socketio import emit, join_room, leave_room
 from models.database import db, DraftSession, FantasyTeam, League
 from models.draft_live import (
     get_draft_state, make_pick, pass_pick, auto_pick, start_draft,
-    pause_draft, resume_draft,
+    pause_draft, resume_draft, end_draft,
 )
 
 logger = logging.getLogger(__name__)
@@ -286,6 +286,37 @@ def register_draft_events(socketio):
             logger.exception("Error in resume_draft handler")
             db.session.rollback()
             emit("error", {"message": "An error occurred resuming the draft"})
+
+    @socketio.on("end_draft", namespace="/draft")
+    def handle_end_draft(data):
+        try:
+            league_id = data.get("league_id")
+            if not league_id:
+                return
+
+            league = db.session.get(League, league_id)
+            if not league or league.commissioner_id != current_user.id:
+                emit("error", {"message": "Only the commissioner can end the draft"})
+                return
+
+            session = _get_active_session(league_id)
+            if not session:
+                emit("error", {"message": "No draft session"})
+                return
+
+            _, error = end_draft(session.id)
+            if error:
+                emit("error", {"message": error})
+                return
+
+            _cleanup_timer(session.id)
+            state = get_draft_state(session.id)
+            room = f"draft_{league_id}"
+            emit("draft_completed", state, room=room)
+        except Exception:
+            logger.exception("Error in end_draft handler")
+            db.session.rollback()
+            emit("error", {"message": "An error occurred ending the draft"})
 
 
 def _start_timer(socketio, session_id, league_id):

@@ -302,6 +302,40 @@ def pass_pick(session_id):
         return current_pick, None
 
 
+def end_draft(session_id):
+    """End a draft early (commissioner action).
+
+    Marks all remaining unpicked slots as passed and completes the session.
+    Returns (session, None) on success or (None, error_msg) on failure.
+    """
+    with _pick_lock:
+        session = db.session.get(DraftSession, session_id)
+        if not session or session.status not in ("in_progress", "paused"):
+            return None, "Draft is not active."
+
+        # Mark all remaining unpicked slots as passed
+        remaining_picks = (
+            DraftPick.query
+            .filter_by(draft_session_id=session_id, player_id=None)
+            .filter(DraftPick.is_pass == False)
+            .all()
+        )
+        now = datetime.now(timezone.utc)
+        for pick in remaining_picks:
+            pick.is_pass = True
+            pick.picked_at = now
+
+        session.status = "completed"
+        session.completed_at = now
+        if not session.is_mock:
+            league = db.session.get(League, session.league_id)
+            if league:
+                league.status = "active"
+
+        db.session.commit()
+        return session, None
+
+
 def get_position_needs(league_id, session_id, team_id):
     """Calculate remaining position needs for a team during a draft.
 
