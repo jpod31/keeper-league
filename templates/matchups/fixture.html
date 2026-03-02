@@ -8,15 +8,16 @@
   /* ── Round strip ── */
   .rnd-strip {
     display:flex; align-items:stretch; background:#0d1117; border:1px solid #21262d;
-    border-radius:10px; overflow:hidden; margin-bottom:20px;
+    border-radius:10px; overflow:visible; margin-bottom:20px;
   }
   .rnd-strip-scroll {
-    display:flex; overflow-x:auto; flex:1; scrollbar-width:none;
+    display:flex; overflow-x:auto; overflow-y:hidden; flex:1; scrollbar-width:none;
+    scroll-behavior:smooth;
   }
   .rnd-strip-scroll::-webkit-scrollbar { display:none; }
   .rnd-item {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    min-width:44px; padding:10px 6px 8px; text-decoration:none;
+    min-width:48px; padding:12px 8px 10px; text-decoration:none;
     border-right:1px solid #161b22; transition:background .12s; position:relative; cursor:pointer;
   }
   .rnd-item:last-child { border-right:none; }
@@ -28,7 +29,7 @@
     box-shadow:0 0 6px rgba(88,166,255,.5);
   }
   .rnd-num {
-    font-size:.72rem; font-weight:600; color:#484f58; line-height:1;
+    font-size:.78rem; font-weight:600; color:#484f58; line-height:1;
     transition:color .12s;
   }
   .rnd-item:hover .rnd-num { color:#8b949e; }
@@ -36,7 +37,7 @@
   .rnd-item.rnd-done .rnd-num { color:#8b949e; }
   .rnd-item.rnd-live .rnd-num { color:#3fb950; }
   .rnd-dot {
-    width:4px; height:4px; border-radius:50%; margin-top:4px;
+    width:5px; height:5px; border-radius:50%; margin-top:4px;
   }
   .rnd-dot-done { background:#2ea043; }
   .rnd-dot-live { background:#3fb950; animation:livePulse 1.8s ease-in-out infinite; }
@@ -46,8 +47,8 @@
 
   .rnd-nav {
     display:flex; align-items:center; justify-content:center;
-    width:36px; background:transparent; border:none; color:#484f58;
-    cursor:pointer; transition:color .12s; flex-shrink:0; text-decoration:none;
+    width:40px; background:transparent; border:none; color:#484f58;
+    cursor:pointer; transition:color .12s, background .12s; flex-shrink:0; text-decoration:none;
   }
   .rnd-nav:hover { color:#c9d1d9; background:#161b22; }
 
@@ -260,7 +261,9 @@
 (function(){
   var s = document.getElementById('rndScroll');
   var a = s && s.querySelector('.rnd-item.active');
-  if(a && s) s.scrollLeft = a.offsetLeft - s.offsetWidth/2 + a.offsetWidth/2;
+  if(a && s) requestAnimationFrame(function(){
+    a.scrollIntoView({ behavior:'instant', block:'nearest', inline:'center' });
+  });
 })();
 </script>
 {% endblock %}

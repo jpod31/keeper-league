@@ -266,7 +266,10 @@
 {% if round_fixtures %}
 <div class="gameday-all-matchups mt-4" id="all-matchups">
   <div class="gameday-matchups-header">
-    <i class="bi bi-grid-3x2-gap me-2"></i>ROUND {{ afl_round }} MATCHUPS
+    <span><i class="bi bi-grid-3x2-gap me-2"></i>ROUND {{ afl_round }} MATCHUPS</span>
+    {% if round_dates %}
+      <span class="matchups-header-dates">{{ round_dates }}</span>
+    {% endif %}
   </div>
   <div class="gameday-matchups-grid">
     {% for f in round_fixtures %}
@@ -550,9 +553,14 @@
     overflow: hidden;
   }
   .gameday-matchups-header {
+    display: flex; align-items: center; justify-content: space-between;
     padding: 12px 16px; font-size: .75rem; font-weight: 700; color: var(--kl-text-secondary);
     text-transform: uppercase; letter-spacing: .8px;
     background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-border);
+  }
+  .matchups-header-dates {
+    font-size: .7rem; font-weight: 500; color: var(--kl-text-faint);
+    text-transform: none; letter-spacing: normal;
   }
   .gameday-matchups-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
