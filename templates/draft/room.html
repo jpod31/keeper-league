@@ -698,7 +698,7 @@ function updateUI() {
   const passBtn = document.getElementById('pass-btn');
   if (passBtn) {
     const draftType = draftState.draft_round_type || DRAFT_ROUND_TYPE;
-    const showPass = draftType === 'supplemental' && canPick();
+    const showPass = draftState.status === 'in_progress';
     passBtn.style.display = showPass ? '' : 'none';
   }
 
