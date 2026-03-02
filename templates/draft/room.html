@@ -829,7 +829,7 @@ function searchPlayers() {
           <td class="stat-cell"><span style="color:#58a6ff;">${p.draft_score ? p.draft_score.toFixed(1) : '-'}</span></td>
           <td>
             <button class="btn btn-outline-primary btn-sm py-0 px-2"
-                    onclick="pickPlayer(${p.id}, ${JSON.stringify(p.name)}, ${JSON.stringify(p.position || '')}, ${JSON.stringify(p.afl_team || '')})"
+                    onclick="pickPlayer(${p.id})"
                     title="${blocked ? 'Position blocked — draft other positions first' : ''}">${blocked ? '<i class="bi bi-lock-fill"></i>' : 'Pick'}</button>
           </td>
         </tr>`;
@@ -847,8 +847,7 @@ function canPick() {
   return false;
 }
 
-function pickPlayer(playerId, playerName, playerPos, playerTeam) {
-  alert('pickPlayer called: ' + playerName + ' (id=' + playerId + ') connected=' + socket.connected);
+function pickPlayer(playerId) {
   if (!socket.connected) {
     alert('Not connected — refresh the page.');
     return;
