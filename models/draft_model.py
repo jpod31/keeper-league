@@ -34,10 +34,10 @@ def _sc_average_scores(players: List[Player]) -> List[float]:
 def _age_factor_scores(players: List[Player]) -> List[float]:
     """Keeper league longevity: younger = more years of keeper value.
 
-    Uses a steep power curve so the penalty accelerates sharply after ~27.
-    Linear base raised to the power of 1.8 means:
-      18yo → 1.00,  22yo → 0.67,  25yo → 0.45,
-      28yo → 0.27,  31yo → 0.14,  34yo → 0.05,  38yo → 0.00
+    Uses a steep power curve so the penalty accelerates sharply after ~25.
+    Linear base raised to the power of 2.5 means:
+      18yo → 1.00,  20yo → 0.73,  22yo → 0.52,
+      25yo → 0.30,  28yo → 0.13,  31yo → 0.04,  34yo → 0.008
     """
     scores: List[float] = []
     for p in players:
@@ -46,7 +46,7 @@ def _age_factor_scores(players: List[Player]) -> List[float]:
             continue
         age = max(min(p.age, 38), 18)
         linear = (38 - age) / 20.0
-        scores.append(linear ** 1.8)
+        scores.append(linear ** 2.5)
     return scores
 
 
@@ -105,7 +105,9 @@ def _positional_scarcity_scores(players: List[Player]) -> List[float]:
         shortfall = max(0.0, (demand - elite_count) / demand)
 
         # Combined: drop-off boosted by shortfall, scaled by log(slots)
-        base[pos] = dropoff * (1.0 + 0.5 * shortfall) / math.log2(slots + 1)
+        # Floor slots at 2 so single-slot positions (RUC) don't get
+        # an outsized 3x scarcity advantage over midfielders
+        base[pos] = dropoff * (1.0 + 0.5 * shortfall) / math.log2(max(slots, 2) + 1)
 
     # Normalise base to 0-1
     max_base = max(base.values()) if base else 1.0
@@ -506,7 +508,7 @@ def compute_historical_draft_scores(
 
         if age_that_year is not None:
             clamped = max(min(age_that_year, 38), 18)
-            age_score = ((38 - clamped) / 20.0) ** 1.8
+            age_score = ((38 - clamped) / 20.0) ** 2.5
         else:
             age_score = 0.5
 

@@ -32,13 +32,13 @@
   .trend-up { background: rgba(63,185,80,.1); color: #56d364; }
   .trend-down { background: rgba(248,81,73,.1); color: #f85149; }
   .trend-flat { color: #484f58; font-weight: 500; }
-  .value-bar-wrap {
+  .value-ring-wrap {
     display: flex; align-items: center; gap: 6px; justify-content: flex-end;
   }
-  .value-bar {
-    width: 50px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.06); overflow: hidden;
+  .value-ring {
+    position: relative; width: 30px; height: 30px; flex-shrink: 0;
   }
-  .value-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #d29922, #e3b341); }
+  .value-ring svg { transform: rotate(-90deg); }
   .status-chip {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
@@ -53,6 +53,16 @@
   }
   .pool-count strong { color: #c9d1d9; }
 </style>
+
+{# Shared SVG gradient for draft score rings #}
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <linearGradient id="ds-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1f6feb"/>
+      <stop offset="100%" stop-color="#58a6ff"/>
+    </linearGradient>
+  </defs>
+</svg>
 
 <div class="page-header">
   <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Players</div>
@@ -120,7 +130,7 @@
           <th class="text-center" style="width:75px;">Trend</th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('rating')">Rtg <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('potential')">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable text-end" style="width:100px;" onclick="sortPool('draft_score')">Value <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-end" style="width:110px;" onclick="sortPool('draft_score')">Value <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="text-center" style="width:110px;">Status</th>
         </tr>
       </thead>
@@ -201,14 +211,18 @@
                 <span style="color:#c9d1d9;font-weight:600;">{{ p.potential }}</span>
               {% else %}<span style="color:#484f58;">-</span>{% endif %}
             </td>
-            {# Draft Value (number + mini bar) #}
+            {# Draft Value (number + circular ring) #}
             <td class="text-end">
               {% if p.draft_score %}
                 {% set pct = (p.draft_score / max_ds * 100) if max_ds else 0 %}
-                <div class="value-bar-wrap">
-                  <span style="color:#e3b341;font-weight:700;font-size:.82rem;">{{ '%.1f'|format(p.draft_score) }}</span>
-                  <div class="value-bar">
-                    <div class="value-bar-fill" style="width:{{ pct }}%;"></div>
+                <div class="value-ring-wrap">
+                  <span style="color:#58a6ff;font-weight:700;font-size:.82rem;">{{ '%.1f'|format(p.draft_score) }}</span>
+                  <div class="value-ring">
+                    <svg viewBox="0 0 36 36" width="30" height="30">
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="2.5"/>
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="url(#ds-grad)" stroke-width="2.5"
+                              stroke-dasharray="{{ pct }} {{ 100 - pct }}" stroke-linecap="round"/>
+                    </svg>
                   </div>
                 </div>
               {% else %}<span style="color:#484f58;">-</span>{% endif %}

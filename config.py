@@ -59,8 +59,8 @@ DRAFT_WEIGHTS = {
 }
 
 # ---------- Age curve (legacy — kept for reference) ----------
-# The draft model now uses a simple linear longevity formula:
-#   score = (38 - age) / 20.0  →  18yo = 1.0, 38yo = 0.0
+# The draft model uses a steep power longevity formula:
+#   score = ((38 - age) / 20.0) ^ 2.5  →  18yo = 1.0, 28yo = 0.13, 38yo = 0.0
 AGE_CURVE = {
     "min_age": 18,
     "max_age": 38,
