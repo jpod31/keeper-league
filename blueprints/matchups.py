@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
-from models.database import db, League, FantasyTeam, SeasonConfig, DelistPeriod, AflGame, LiveScoringConfig, WeeklyLineup
+from models.database import db, League, FantasyTeam, SeasonConfig, DelistPeriod, AflGame, LiveScoringConfig
 from models.fixture_manager import (
     generate_round_robin, get_fixture, get_round_fixtures, get_matchup,
     generate_finals, get_finals,
@@ -393,12 +393,11 @@ def gameday(league_id):
     round_dates = None
     starts = [g.scheduled_start for g in afl_games_for_round if g.scheduled_start]
     if starts:
-        aest = timedelta(hours=10)
-        earliest = min(starts) + aest
-        latest = max(starts) + aest
-        # First bounce display (e.g. "Thu 7:20pm AEST")
+        earliest = min(starts)
+        latest = max(starts)
+        # First bounce display (e.g. "Thu 7:30pm")
         fb_hour = earliest.strftime("%I:%M%p").lstrip("0").lower()
-        first_bounce = f"{earliest.strftime('%a')} {fb_hour} AEST"
+        first_bounce = f"{earliest.strftime('%a')} {fb_hour}"
         # Date range (e.g. "Thu 10 Apr – Mon 14 Apr")
         fmt = lambda dt: f"{dt.strftime('%a')} {dt.day} {dt.strftime('%b')}"
         if earliest.date() == latest.date():
@@ -469,11 +468,6 @@ def gameday(league_id):
     live_config = LiveScoringConfig.query.get(league_id)
     live_enabled = live_config.enabled if live_config else False
 
-    # Check if user has set their lineup for this round
-    lineup_set = WeeklyLineup.query.filter_by(
-        team_id=user_team.id, afl_round=afl_round, year=year
-    ).first() is not None
-
     scoring = get_scoring_context(league)
 
     return render_template(
@@ -497,8 +491,6 @@ def gameday(league_id):
         gameday_state=gameday_state,
         first_bounce=first_bounce,
         round_dates=round_dates,
-        lineup_set=lineup_set,
-        user_team=user_team,
         scoring=scoring,
     )
 

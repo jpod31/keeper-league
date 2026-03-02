@@ -118,16 +118,6 @@
   </div>
   {% endif %}
 
-  {# Set lineup CTA — upcoming only, lineup not set #}
-  {% if gameday_state == 'upcoming' and not lineup_set %}
-  <div class="text-center mt-3">
-    <a href="{{ url_for('team.lineup', league_id=league.id, team_id=user_team.id, afl_round=afl_round) }}"
-       class="btn btn-primary btn-sm">
-      <i class="bi bi-pencil-square me-1"></i>Set Your Lineup
-    </a>
-  </div>
-  {% endif %}
-
   {# View breakdown — completed only #}
   {% if gameday_state == 'completed' %}
   <div class="text-center mt-3">
