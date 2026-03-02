@@ -735,7 +735,7 @@ function renderPositionBar() {
   bar.style.setProperty('display', 'flex', 'important');
   const positions = ['DEF', 'MID', 'FWD', 'RUC'];
   const blocked = new Set(positionNeeds.blocked_positions || []);
-  bar.innerHTML = positions.map(pos => {
+  const posHtml = positions.map(pos => {
     const drafted = (positionNeeds.drafted || {})[pos] || 0;
     const required = (positionNeeds.required || {})[pos] || 0;
     const need = (positionNeeds.needs || {})[pos] || 0;
@@ -747,6 +747,13 @@ function renderPositionBar() {
       ${pos} ${drafted}/${required}${isBlocked ? ' <i class="bi bi-lock-fill"></i>' : ''}
     </span>`;
   }).join('');
+  // North Melbourne count
+  const northCount = positionNeeds.north_count || 0;
+  const northHtml = `<span style="font-size:.7rem;padding:2px 8px;border-radius:8px;background:rgba(0,86,168,.15);color:#58a6ff;font-weight:600;"
+                           title="North Melbourne players drafted">
+    NM ${northCount}
+  </span>`;
+  bar.innerHTML = posHtml + northHtml;
 }
 
 function isPositionBlocked(playerPos) {

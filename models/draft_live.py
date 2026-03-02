@@ -412,11 +412,15 @@ def get_position_needs(league_id, session_id, team_id):
 
     # Count drafted by primary position (first in "DEF/MID" etc.)
     drafted = {}
+    north_count = 0
     for pick in picks:
         player = db.session.get(AflPlayer, pick.player_id)
-        if player and player.position:
-            primary = player.position.split("/")[0].upper()
-            drafted[primary] = drafted.get(primary, 0) + 1
+        if player:
+            if player.position:
+                primary = player.position.split("/")[0].upper()
+                drafted[primary] = drafted.get(primary, 0) + 1
+            if player.afl_team == "North Melbourne":
+                north_count += 1
 
     # Remaining position needs
     needs = {}
@@ -445,6 +449,7 @@ def get_position_needs(league_id, session_id, team_id):
         "total_mandatory": total_mandatory,
         "remaining_picks": remaining_picks,
         "blocked_positions": sorted(blocked),
+        "north_count": north_count,
     }
 
 
