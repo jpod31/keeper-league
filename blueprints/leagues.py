@@ -464,53 +464,14 @@ def league_settings(league_id):
         if mid_delist_dur is not None:
             season_cfg.mid_delist_duration_days = max(1, min(3, mid_delist_dur))
 
-        # Off-season config
-        season_cfg.offseason_trade_enabled = request.form.get("offseason_trade_enabled") == "on"
+        # SSP config
         season_cfg.ssp_enabled = request.form.get("ssp_enabled") == "on"
-        offseason_delist = request.form.get("offseason_delist_min", type=int)
-        if offseason_delist is not None:
-            season_cfg.offseason_delist_min = offseason_delist
+        ssp_cutoff = request.form.get("ssp_cutoff_round", type=int)
+        if ssp_cutoff is not None:
+            season_cfg.ssp_cutoff_round = max(1, min(24, ssp_cutoff))
         ssp_slots = request.form.get("ssp_slots", type=int)
         if ssp_slots is not None:
-            season_cfg.ssp_slots = ssp_slots
-
-        # Off-season trade/delist duration
-        off_delist_dur = request.form.get("off_delist_duration_days", type=int)
-        if off_delist_dur is not None:
-            season_cfg.off_delist_duration_days = max(1, off_delist_dur)
-        off_trade_start = request.form.get("off_trade_start_days", type=int)
-        if off_trade_start is not None:
-            season_cfg.off_trade_start_days = max(1, off_trade_start)
-        off_trade_dur = request.form.get("off_trade_duration_days", type=int)
-        if off_trade_dur is not None:
-            season_cfg.off_trade_duration_days = max(1, off_trade_dur)
-
-        # Validate: trade window must start after delist ends
-        if (season_cfg.off_trade_start_days is not None
-                and season_cfg.off_delist_duration_days is not None
-                and season_cfg.off_trade_start_days < season_cfg.off_delist_duration_days):
-            flash("Off-season trade window must start after the delist period ends. "
-                  f"Trade start ({season_cfg.off_trade_start_days} days) must be >= delist duration ({season_cfg.off_delist_duration_days} days).",
-                  "warning")
-            season_cfg.off_trade_start_days = season_cfg.off_delist_duration_days
-
-        # SSP window dates
-        ssp_window_open_str = request.form.get("ssp_window_open", "").strip()
-        ssp_window_close_str = request.form.get("ssp_window_close", "").strip()
-        if ssp_window_open_str:
-            try:
-                season_cfg.ssp_window_open = datetime.fromisoformat(ssp_window_open_str)
-            except ValueError:
-                pass
-        else:
-            season_cfg.ssp_window_open = None
-        if ssp_window_close_str:
-            try:
-                season_cfg.ssp_window_close = datetime.fromisoformat(ssp_window_close_str)
-            except ValueError:
-                pass
-        else:
-            season_cfg.ssp_window_close = None
+            season_cfg.ssp_slots = max(0, min(5, ssp_slots))
 
         db.session.commit()
 

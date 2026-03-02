@@ -305,11 +305,11 @@
         </div>
       </div>
 
-      {# ── Off-Season (expandable toggle) ── #}
+      {# ── SSP (Supplemental Selection Period) ── #}
       <div class="card mb-4">
         <div class="settings-section-header {{ 'section-active' if not season_config or season_config.ssp_enabled != false }}" id="offSeasonHeader">
           <h5 class="mb-0 fw-bold d-flex align-items-center" style="font-size:.95rem;">
-            <i class="bi bi-snow me-2" style="color:#58a6ff;"></i>Off-Season
+            <i class="bi bi-bandaid me-2" style="color:#58a6ff;"></i>SSP (Supplemental Selection Period)
             <span class="settings-status {{ 'status-on' if not season_config or season_config.ssp_enabled != false }}" id="offSeasonDot"></span>
           </h5>
           <label class="settings-toggle mb-0">
@@ -321,53 +321,19 @@
         </div>
         <div class="settings-expand {{ 'expanded' if not season_config or season_config.ssp_enabled != false }}" id="offSeasonBody">
           <div class="row g-3">
-            <div class="col-md-4">
-              <label for="offseason_delist_min" class="form-label" style="font-size:.75rem;">Min Delists</label>
-              <input type="number" class="form-control form-control-sm" id="offseason_delist_min"
-                     name="offseason_delist_min"
-                     value="{{ season_config.offseason_delist_min if season_config and season_config.offseason_delist_min else 3 }}"
-                     min="0" max="15">
-              <div class="form-text" style="font-size:.7rem;">Each team must delist at least this many players</div>
+            <div class="col-md-6">
+              <label for="ssp_cutoff_round" class="form-label" style="font-size:.75rem;">Open Until Round</label>
+              <input type="number" class="form-control form-control-sm" id="ssp_cutoff_round" name="ssp_cutoff_round"
+                     value="{{ season_config.ssp_cutoff_round if season_config and season_config.ssp_cutoff_round else 4 }}"
+                     min="1" max="24">
+              <div class="form-text" style="font-size:.7rem;">SSP is open post-draft until this round begins</div>
             </div>
-            <div class="col-md-4">
-              <label for="ssp_slots" class="form-label" style="font-size:.75rem;">SSP Replacement Slots</label>
+            <div class="col-md-6">
+              <label for="ssp_slots" class="form-label" style="font-size:.75rem;">LTIL Slots</label>
               <input type="number" class="form-control form-control-sm" id="ssp_slots" name="ssp_slots"
                      value="{{ season_config.ssp_slots if season_config and season_config.ssp_slots else 1 }}"
                      min="0" max="5">
-              <div class="form-text" style="font-size:.7rem;">Max LTIL replacements per team per season</div>
-            </div>
-            <div class="col-md-4">
-              <label for="off_delist_duration_days" class="form-label" style="font-size:.75rem;">Delist Period Duration (days)</label>
-              <input type="number" class="form-control form-control-sm" id="off_delist_duration_days"
-                     name="off_delist_duration_days"
-                     value="{{ season_config.off_delist_duration_days if season_config and season_config.off_delist_duration_days else 7 }}"
-                     min="1" max="30">
-            </div>
-            <div class="col-md-4">
-              <label for="off_trade_start_days" class="form-label" style="font-size:.75rem;">Trade Window Starts (days after off-season)</label>
-              <input type="number" class="form-control form-control-sm" id="off_trade_start_days"
-                     name="off_trade_start_days"
-                     value="{{ season_config.off_trade_start_days if season_config and season_config.off_trade_start_days else 7 }}"
-                     min="1" max="60">
-              <div class="form-text" style="font-size:.7rem;">Must be &ge; delist period duration</div>
-            </div>
-            <div class="col-md-4">
-              <label for="off_trade_duration_days" class="form-label" style="font-size:.75rem;">Trade Window Duration (days)</label>
-              <input type="number" class="form-control form-control-sm" id="off_trade_duration_days"
-                     name="off_trade_duration_days"
-                     value="{{ season_config.off_trade_duration_days if season_config and season_config.off_trade_duration_days else 7 }}"
-                     min="1" max="30">
-            </div>
-            <div class="col-md-6">
-              <label for="ssp_window_open" class="form-label" style="font-size:.75rem;">SSP Window Opens</label>
-              <input type="datetime-local" class="form-control form-control-sm" id="ssp_window_open" name="ssp_window_open"
-                     value="{{ season_config.ssp_window_open.strftime('%Y-%m-%dT%H:%M') if season_config and season_config.ssp_window_open else '' }}">
-              <div class="form-text" style="font-size:.7rem;">When owners can pick SSP replacements for LTIL players</div>
-            </div>
-            <div class="col-md-6">
-              <label for="ssp_window_close" class="form-label" style="font-size:.75rem;">SSP Window Closes</label>
-              <input type="datetime-local" class="form-control form-control-sm" id="ssp_window_close" name="ssp_window_close"
-                     value="{{ season_config.ssp_window_close.strftime('%Y-%m-%dT%H:%M') if season_config and season_config.ssp_window_close else '' }}">
+              <div class="form-text" style="font-size:.7rem;">Max long-term injury replacements per team per season</div>
             </div>
           </div>
         </div>

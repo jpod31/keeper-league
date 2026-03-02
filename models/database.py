@@ -647,6 +647,7 @@ class SeasonConfig(db.Model):
     offseason_delist_min = db.Column(db.Integer, default=3)
     ssp_enabled = db.Column(db.Boolean, default=True)
     ssp_slots = db.Column(db.Integer, default=1)
+    ssp_cutoff_round = db.Column(db.Integer, default=4)  # SSP open post-draft until this round
     ssp_window_open = db.Column(db.DateTime)
     ssp_window_close = db.Column(db.DateTime)
 

@@ -275,6 +275,20 @@ def migrate_live_scoring_schema(app):
         print("  [done] Live scoring schema migration complete")
 
 
+def migrate_ssp_cutoff_round(app):
+    """Add ssp_cutoff_round column to season_config (idempotent)."""
+    with app.app_context():
+        conn = db.engine.raw_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("ALTER TABLE season_config ADD COLUMN ssp_cutoff_round INTEGER DEFAULT 4")
+        except Exception:
+            pass  # column already exists
+        conn.commit()
+        conn.close()
+        print("  [done] ssp_cutoff_round migration complete")
+
+
 def main():
     print("=== Keeper League CSV -> SQLite Migration ===\n")
     os.makedirs(config.DATA_DIR, exist_ok=True)
@@ -292,6 +306,9 @@ def main():
 
     print("\n4. Migrating live scoring schema...")
     migrate_live_scoring_schema(app)
+
+    print("\n5. Migrating SSP cutoff round...")
+    migrate_ssp_cutoff_round(app)
 
     print("\n=== Migration complete! ===")
     db_path = os.path.join(config.DATA_DIR, "keeper_league.db")

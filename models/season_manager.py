@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from models.database import (
     db, DelistPeriod, DelistAction, FantasyTeam, FantasyRoster,
     League, SeasonConfig, DraftSession, LongTermInjury, AflPlayer,
-    FutureDraftPick,
+    FutureDraftPick, Fixture,
 )
 
 
@@ -257,8 +257,18 @@ def add_to_ltil(team_id, player_id, league_id, year):
     if existing:
         return None, "Player is already on the long-term injury list."
 
-    # Check SSP slot limit
+    # Check SSP round cutoff
     season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    if season_cfg and season_cfg.ssp_cutoff_round:
+        latest_completed = (
+            db.session.query(db.func.max(Fixture.afl_round))
+            .filter_by(league_id=league_id, year=year, status="completed", is_final=False)
+            .scalar()
+        ) or 0
+        if latest_completed >= season_cfg.ssp_cutoff_round:
+            return None, f"SSP window closed after round {season_cfg.ssp_cutoff_round}."
+
+    # Check SSP slot limit
     max_slots = season_cfg.ssp_slots if season_cfg and season_cfg.ssp_slots else 1
     current_ltil = LongTermInjury.query.filter_by(
         team_id=team_id, year=year, removed_at=None
@@ -323,16 +333,20 @@ def ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id):
     Validates SSP window dates if configured.
     Returns (ltil_entry, None) on success or (None, error_msg) on failure.
     """
-    # Check SSP window if configured
+    # Check SSP round cutoff
     ltil_entry = db.session.get(LongTermInjury, ltil_id)
     if ltil_entry:
         season_cfg = SeasonConfig.query.filter_by(
             league_id=league_id, year=ltil_entry.year
         ).first()
-        if season_cfg and season_cfg.ssp_window_open and season_cfg.ssp_window_close:
-            now = datetime.now(timezone.utc)
-            if now < season_cfg.ssp_window_open or now > season_cfg.ssp_window_close:
-                return None, "SSP window is not currently open."
+        if season_cfg and season_cfg.ssp_cutoff_round:
+            latest_completed = (
+                db.session.query(db.func.max(Fixture.afl_round))
+                .filter_by(league_id=league_id, year=ltil_entry.year, status="completed", is_final=False)
+                .scalar()
+            ) or 0
+            if latest_completed >= season_cfg.ssp_cutoff_round:
+                return None, f"SSP window closed after round {season_cfg.ssp_cutoff_round}."
 
     ltil = db.session.get(LongTermInjury, ltil_id)
     if not ltil or ltil.team_id != team_id or ltil.removed_at is not None:
