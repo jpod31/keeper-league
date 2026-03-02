@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 
 from models.database import (
     db, Trade, TradeAsset, TradeComment, FantasyRoster,
-    FantasyTeam, League, AflPlayer, FutureDraftPick,
+    FantasyTeam, League, AflPlayer, FutureDraftPick, LongTermInjury,
 )
 
 # Thread lock to serialise trade acceptance and prevent concurrent roster corruption
@@ -277,8 +277,15 @@ def check_trade_validity(league_id, proposer_team_id, recipient_team_id,
             return "Draft pick(s) already involved in a pending trade."
 
     # Validate roster sizes post-swap (only player assets affect roster)
-    proposer_size = len(proposer_roster) - len(give_player_ids) + len(receive_player_ids)
-    recipient_size = len(recipient_roster) - len(receive_player_ids) + len(give_player_ids)
+    # LTIL players free up a list spot — subtract them from effective count
+    proposer_ltil = LongTermInjury.query.filter_by(
+        team_id=proposer_team_id, removed_at=None, year=league.season_year
+    ).count()
+    recipient_ltil = LongTermInjury.query.filter_by(
+        team_id=recipient_team_id, removed_at=None, year=league.season_year
+    ).count()
+    proposer_size = len(proposer_roster) - proposer_ltil - len(give_player_ids) + len(receive_player_ids)
+    recipient_size = len(recipient_roster) - recipient_ltil - len(receive_player_ids) + len(give_player_ids)
     if proposer_size > league.squad_size:
         return f"Proposer would exceed squad size ({proposer_size} > {league.squad_size})."
     if recipient_size > league.squad_size:

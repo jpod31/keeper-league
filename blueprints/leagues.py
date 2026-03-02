@@ -1407,18 +1407,24 @@ def player_pool(league_id):
     rolling = _compute_rolling_averages()
 
     # SSP pickup: check if user's team is below squad_size AND within SSP window
-    from models.database import SeasonConfig, AflGame
+    from models.database import SeasonConfig, AflGame, LongTermInjury
     user_team = FantasyTeam.query.filter_by(
         league_id=league_id, owner_id=current_user.id
     ).first()
     roster_count = 0
+    ltil_count = 0
     can_pickup = False
     ssp_cutoff_round = 4
     if user_team:
         roster_count = FantasyRoster.query.filter_by(
             team_id=user_team.id, is_active=True
         ).count()
-        below_cap = roster_count < (league.squad_size or 0)
+        # LTIL players free up a list spot
+        ltil_count = LongTermInjury.query.filter_by(
+            team_id=user_team.id, removed_at=None, year=league.season_year
+        ).count()
+        effective_count = roster_count - ltil_count
+        below_cap = effective_count < (league.squad_size or 0)
 
         # Check SSP cutoff round from season config
         sc = SeasonConfig.query.filter_by(
@@ -1445,6 +1451,8 @@ def player_pool(league_id):
                            team_colours=team_colours,
                            user_team=user_team,
                            roster_count=roster_count,
+                           effective_roster_count=roster_count - ltil_count,
+                           ltil_count=ltil_count,
                            can_pickup=can_pickup,
                            ssp_cutoff_round=ssp_cutoff_round)
 
@@ -1463,14 +1471,19 @@ def player_pickup(league_id):
     if not user_team:
         return jsonify({"error": "You don't have a team in this league"}), 403
 
+    from models.database import SeasonConfig, AflGame, LongTermInjury
     roster_count = FantasyRoster.query.filter_by(
         team_id=user_team.id, is_active=True
     ).count()
-    if roster_count >= (league.squad_size or 0):
-        return jsonify({"error": "Your roster is full (%d/%d)" % (roster_count, league.squad_size)}), 409
+    # LTIL players free up a list spot
+    ltil_count = LongTermInjury.query.filter_by(
+        team_id=user_team.id, removed_at=None, year=league.season_year
+    ).count()
+    effective_count = roster_count - ltil_count
+    if effective_count >= (league.squad_size or 0):
+        return jsonify({"error": "Your roster is full (%d/%d)" % (effective_count, league.squad_size)}), 409
 
     # Check SSP cutoff round
-    from models.database import SeasonConfig, AflGame
     sc = SeasonConfig.query.filter_by(
         league_id=league_id, year=league.season_year
     ).first()
@@ -1521,10 +1534,13 @@ def player_pickup(league_id):
     new_count = FantasyRoster.query.filter_by(
         team_id=user_team.id, is_active=True
     ).count()
+    new_ltil = LongTermInjury.query.filter_by(
+        team_id=user_team.id, removed_at=None, year=league.season_year
+    ).count()
     return jsonify({
         "ok": True,
         "player_name": player.name,
-        "roster_count": new_count,
+        "roster_count": new_count - new_ltil,
         "squad_size": league.squad_size,
     })
 

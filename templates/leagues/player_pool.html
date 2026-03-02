@@ -84,7 +84,7 @@
 {% if can_pickup %}
 <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);border-radius:8px;font-size:.82rem;">
   <i class="bi bi-person-plus-fill" style="color:#3fb950;"></i>
-  <span style="color:#c9d1d9;">SSP pickups open — <strong>{{ roster_count }}/{{ league.squad_size }}</strong> roster spots filled. Closes at Round {{ ssp_cutoff_round }}.</span>
+  <span style="color:#c9d1d9;">SSP pickups open — <strong>{{ effective_roster_count }}/{{ league.squad_size }}</strong> roster spots filled{% if ltil_count %} ({{ ltil_count }} on LTIL){% endif %}. Closes at Round {{ ssp_cutoff_round }}.</span>
 </div>
 {% endif %}
 
@@ -353,7 +353,7 @@
           Add <strong id="pickup-player-name" style="color:#58a6ff;"></strong> to your roster?
         </p>
         <p style="font-size:.75rem;color:#8b949e;margin-bottom:0;">
-          Roster: <span id="pickup-roster-count">{{ roster_count }}</span> / {{ league.squad_size }}
+          Roster: <span id="pickup-roster-count">{{ effective_roster_count }}</span> / {{ league.squad_size }}{% if ltil_count %} <span style="color:#d29922;">({{ ltil_count }} on LTIL)</span>{% endif %}
         </p>
       </div>
       <div class="modal-footer" style="border-top:1px solid #30363d;padding:.5rem 1rem;">
