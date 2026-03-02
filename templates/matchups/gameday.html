@@ -82,15 +82,25 @@
             <div class="captain-bonus" id="hero-left-cap" style="display:none;"></div>
           {% endif %}
           {% set my_id = my_team.id if not is_bye else 0 %}
-          {% set my_pp = round_scores.get(my_id, {}).get('players_played', 0) %}
-          {% set my_pt = round_scores.get(my_id, {}).get('players_total', 0) %}
+          {% set my_data = round_scores.get(my_id, {}) %}
+          {% set my_pp = my_data.get('players_played', 0) %}
+          {% set my_pt = my_data.get('players_total', 0) %}
           <div class="hero-players-count" id="hero-left-players-count" style="font-size:.7rem;color:var(--kl-text-faint);margin-top:2px;">
             {% if my_pt %}{{ my_pp }}/{{ my_pt }} played{% endif %}
+          </div>
+          <div class="hero-cap-badges" id="hero-left-cap-badges" style="margin-top:2px;">
+            {% if my_data.get('has_captain') %}
+              <span class="hero-cap-badge" style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if my_data.get('captain_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">C</span>
+            {% endif %}
+            {% if my_data.get('has_vc') %}
+              <span class="hero-vc-badge" style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if my_data.get('vc_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">VC</span>
+            {% endif %}
           </div>
         {% else %}
           <div class="gameday-score" id="hero-left-score" style="display:none;"></div>
           <div class="captain-bonus" id="hero-left-cap" style="display:none;"></div>
           <div class="hero-players-count" id="hero-left-players-count" style="font-size:.7rem;color:var(--kl-text-faint);margin-top:2px;display:none;"></div>
+          <div class="hero-cap-badges" id="hero-left-cap-badges" style="margin-top:2px;display:none;"></div>
         {% endif %}
       </div>
       <div class="col-2">
@@ -111,15 +121,25 @@
             <div class="captain-bonus" id="hero-right-cap" style="display:none;"></div>
           {% endif %}
           {% set opp_id = opp_team.id if not is_bye else 0 %}
-          {% set opp_pp = round_scores.get(opp_id, {}).get('players_played', 0) %}
-          {% set opp_pt = round_scores.get(opp_id, {}).get('players_total', 0) %}
+          {% set opp_data = round_scores.get(opp_id, {}) %}
+          {% set opp_pp = opp_data.get('players_played', 0) %}
+          {% set opp_pt = opp_data.get('players_total', 0) %}
           <div class="hero-players-count" id="hero-right-players-count" style="font-size:.7rem;color:var(--kl-text-faint);margin-top:2px;">
             {% if opp_pt %}{{ opp_pp }}/{{ opp_pt }} played{% endif %}
+          </div>
+          <div class="hero-cap-badges" id="hero-right-cap-badges" style="margin-top:2px;">
+            {% if opp_data.get('has_captain') %}
+              <span class="hero-cap-badge" style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if opp_data.get('captain_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">C</span>
+            {% endif %}
+            {% if opp_data.get('has_vc') %}
+              <span class="hero-vc-badge" style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if opp_data.get('vc_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">VC</span>
+            {% endif %}
           </div>
         {% else %}
           <div class="gameday-score" id="hero-right-score" style="display:none;"></div>
           <div class="captain-bonus" id="hero-right-cap" style="display:none;"></div>
           <div class="hero-players-count" id="hero-right-players-count" style="font-size:.7rem;color:var(--kl-text-faint);margin-top:2px;display:none;"></div>
+          <div class="hero-cap-badges" id="hero-right-cap-badges" style="margin-top:2px;display:none;"></div>
         {% endif %}
       </div>
     </div>
@@ -289,10 +309,12 @@
     {% for f in round_fixtures %}
       {% set h_score = round_scores.get(f.home_team_id, {}).get('total_score', 0) %}
       {% set a_score = round_scores.get(f.away_team_id, {}).get('total_score', 0) %}
-      {% set h_played = round_scores.get(f.home_team_id, {}).get('players_played', 0) %}
-      {% set h_total = round_scores.get(f.home_team_id, {}).get('players_total', 0) %}
-      {% set a_played = round_scores.get(f.away_team_id, {}).get('players_played', 0) %}
-      {% set a_total = round_scores.get(f.away_team_id, {}).get('players_total', 0) %}
+      {% set h_data = round_scores.get(f.home_team_id, {}) %}
+      {% set a_data = round_scores.get(f.away_team_id, {}) %}
+      {% set h_played = h_data.get('players_played', 0) %}
+      {% set h_total = h_data.get('players_total', 0) %}
+      {% set a_played = a_data.get('players_played', 0) %}
+      {% set a_total = a_data.get('players_total', 0) %}
       {% set is_users = (not is_bye) and (user_team and (f.home_team_id == user_team.id or f.away_team_id == user_team.id)) %}
       {% set f_total = (h_score + a_score) or 1 %}
       {% set h_pct = (h_score / f_total * 100)|round(0)|int %}
@@ -328,6 +350,22 @@
           <div class="d-flex justify-content-between align-items-center" style="margin-top:2px;">
             <span class="matchup-players-count" data-side="home" style="font-size:.6rem;color:var(--kl-text-faint);">
               {% if h_total %}{{ h_played }}/{{ h_total }} played{% endif %}
+            </span>
+            <span class="matchup-cap-badges" data-side="home" style="font-size:.55rem;">
+              {% if h_data.get('has_captain') %}
+                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if h_data.get('captain_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">C</span>
+              {% endif %}
+              {% if h_data.get('has_vc') %}
+                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if h_data.get('vc_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">VC</span>
+              {% endif %}
+            </span>
+            <span class="matchup-cap-badges" data-side="away" style="font-size:.55rem;">
+              {% if a_data.get('has_captain') %}
+                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if a_data.get('captain_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">C</span>
+              {% endif %}
+              {% if a_data.get('has_vc') %}
+                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if a_data.get('vc_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">VC</span>
+              {% endif %}
             </span>
             <span class="matchup-players-count" data-side="away" style="font-size:.6rem;color:var(--kl-text-faint);">
               {% if a_total %}{{ a_played }}/{{ a_total }} played{% endif %}
@@ -890,6 +928,18 @@ function renderViewedMatchup(fixtureId) {
         else { rightCountEl.style.display = 'none'; }
     }
 
+    // C/VC badges
+    var leftBadgesEl = document.getElementById('hero-left-cap-badges');
+    var rightBadgesEl = document.getElementById('hero-right-cap-badges');
+    if (leftBadgesEl && leftPlayers) {
+        leftBadgesEl.innerHTML = _renderCapBadges(_capVcStatus(leftPlayers));
+        leftBadgesEl.style.display = '';
+    }
+    if (rightBadgesEl && rightPlayers) {
+        rightBadgesEl.innerHTML = _renderCapBadges(_capVcStatus(rightPlayers));
+        rightBadgesEl.style.display = '';
+    }
+
     // Margin bar
     var marginWrap = document.getElementById('margin-wrap');
     var marginText = document.getElementById('margin-text');
@@ -1098,6 +1148,36 @@ function _countPlayers(players, types) {
     return {played: played, total: total};
 }
 
+function _capVcStatus(players) {
+    // Determine if captain / vice-captain have played from player array
+    var result = {hasCap: false, capPlayed: false, hasVc: false, vcPlayed: false};
+    (players || []).forEach(function(p) {
+        if (p.is_captain) {
+            result.hasCap = true;
+            result.capPlayed = p.game_started && (p.score > 0 || p.is_dnp);
+        }
+        if (p.is_vice_captain) {
+            result.hasVc = true;
+            result.vcPlayed = p.game_started && (p.score > 0 || p.is_dnp);
+        }
+    });
+    return result;
+}
+
+function _renderCapBadges(status) {
+    var html = '';
+    var playedStyle = 'background:rgba(63,185,80,.2);color:#3fb950;';
+    var pendingStyle = 'background:rgba(139,148,158,.15);color:#6e7681;';
+    var baseStyle = 'padding:1px 3px;border-radius:3px;font-weight:700;';
+    if (status.hasCap) {
+        html += '<span style="' + baseStyle + (status.capPlayed ? playedStyle : pendingStyle) + '">C</span> ';
+    }
+    if (status.hasVc) {
+        html += '<span style="' + baseStyle + (status.vcPlayed ? playedStyle : pendingStyle) + '">VC</span>';
+    }
+    return html;
+}
+
 function updateMatchupCards(data) {
     if (!data.fixtures) return;
     var scoringTypes = ['field', 'bench'];
@@ -1133,6 +1213,13 @@ function updateMatchupCards(data) {
             var ac = _countPlayers(f.away_players, scoringTypes);
             if (hc.total) countEls[0].textContent = hc.played + '/' + hc.total + ' played';
             if (ac.total) countEls[1].textContent = ac.played + '/' + ac.total + ' played';
+        }
+
+        // Update C/VC badges
+        var badgeEls = card.querySelectorAll('.matchup-cap-badges');
+        if (badgeEls.length >= 2) {
+            badgeEls[0].innerHTML = _renderCapBadges(_capVcStatus(f.home_players));
+            badgeEls[1].innerHTML = _renderCapBadges(_capVcStatus(f.away_players));
         }
 
         var marginEl = card.querySelector('.matchup-margin');

@@ -454,17 +454,27 @@ def get_live_scores(league_id, afl_round, year):
     ).all()
 
     # Group on-field player IDs by team (field + bench starters, not emergency/reserve)
+    # Also track captain / vice-captain player IDs per team
     team_field = {}
+    team_captain = {}     # team_id -> player_id
+    team_vc = {}          # team_id -> player_id
     for r in all_roster:
+        if r.is_captain:
+            team_captain[r.team_id] = r.player_id
+        if r.is_vice_captain:
+            team_vc[r.team_id] = r.player_id
         if not r.is_benched and not r.is_emergency:
             team_field.setdefault(r.team_id, []).append(r.player_id)
 
     # Batch: which of those players have stats this round (= their game has produced data)
     all_field_ids = [pid for pids in team_field.values() for pid in pids]
+    # Also include captain/VC IDs so we can check if they've played
+    cap_vc_ids = set(team_captain.values()) | set(team_vc.values())
+    all_check_ids = list(set(all_field_ids) | cap_vc_ids)
     played_set = set()
-    if all_field_ids:
+    if all_check_ids:
         stats = PlayerStat.query.filter(
-            PlayerStat.player_id.in_(all_field_ids),
+            PlayerStat.player_id.in_(all_check_ids),
             PlayerStat.year == year,
             PlayerStat.round == afl_round,
         ).with_entities(PlayerStat.player_id).all()
@@ -476,12 +486,18 @@ def get_live_scores(league_id, afl_round, year):
             team_id=team.id, afl_round=afl_round, year=year
         ).first()
         field_ids = team_field.get(team.id, [])
+        cap_id = team_captain.get(team.id)
+        vc_id = team_vc.get(team.id)
         scores[team.id] = {
             "team_name": team.name,
             "total_score": rs.total_score if rs else 0,
             "captain_bonus": rs.captain_bonus if rs else 0,
             "players_played": sum(1 for pid in field_ids if pid in played_set),
             "players_total": len(field_ids),
+            "has_captain": cap_id is not None,
+            "captain_played": cap_id in played_set if cap_id else False,
+            "has_vc": vc_id is not None,
+            "vc_played": vc_id in played_set if vc_id else False,
         }
     return scores
 
