@@ -59,8 +59,8 @@
 {% set _st = scoring.label|lower %}
 {% set sc_type = 'sc' if 'supercoach' in _st else ('af' if 'fantasy' in _st else ('uf' if 'ultimate' in _st else ('hybrid' if 'hybrid' in _st else 'custom'))) %}
 {% if standings %}
-  <div class="ldr-wrap">
-    <table class="ldr-table">
+  <div class="ldr-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <table class="ldr-table" style="min-width:580px;">
       <thead>
         <tr>
           <th style="width:40px;text-align:center;">#</th>

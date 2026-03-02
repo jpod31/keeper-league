@@ -2604,45 +2604,164 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
    ══════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
-  /* Space for bottom nav */
-  body.has-bottom-nav main.container { padding-bottom: 80px; }
 
-  /* All interactive elements: 44px minimum touch target */
+  /* ── Base spacing ── */
+  body.has-bottom-nav main.container { padding-bottom: 80px; }
+  .container { max-width: 100%; padding-left: .6rem; padding-right: .6rem; }
+
+  /* ── Touch targets (44px minimum) ── */
   .btn { min-height: 44px; padding: .5rem 1rem; }
   .btn-sm { min-height: 38px; }
-  .form-control, .form-select { min-height: 44px; }
-  .dropdown-item { padding: .6rem 1rem; }
+  .form-control, .form-select { min-height: 44px; font-size: 16px; /* prevent iOS zoom */ }
+  .dropdown-item { padding: .65rem 1rem; min-height: 44px; display: flex; align-items: center; }
 
-  /* Top navbar — compact */
-  .navbar { padding: .35rem 0; }
-  .navbar-brand span.fw-semibold { display: none; }
+  /* ── Top navbar — compact single row ── */
+  .navbar { padding: .3rem 0; }
 
-  /* Reduce container padding for more room */
-  .container { max-width: 100%; padding-left: .75rem; padding-right: .75rem; }
-
-  /* Cards: reduce padding */
+  /* ── Cards — tighter on mobile ── */
   .card { border-radius: 8px; }
-  .card-header { padding: .6rem .75rem; }
-  .card-body { padding: .6rem .75rem; }
+  .card-header { padding: .5rem .75rem; }
+  .card-body { padding: .5rem .75rem; }
 
-  /* League nav compact on mobile */
-  .league-nav { margin: -.75rem -.75rem 1rem; padding: 0 .75rem; }
-  .league-nav-inner { gap: .5rem; }
+  /* ── League top nav bar ── */
+  .league-nav { margin: -.5rem -.6rem .75rem; padding: 0 .6rem; }
+  .league-nav-inner { gap: .35rem; }
+  .league-selector-btn { font-size: .7rem; padding: .25rem .5rem; }
 
-  /* Player pool filters — stack vertically */
-  .filter-bar { flex-direction: column; gap: .4rem; }
+  /* ── Subnavs — horizontal pill scroller ── */
+  .league-subnav {
+    gap: 6px;
+    padding: 6px 0;
+    margin: 0 0 .75rem;
+    border-bottom: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .league-subtab {
+    padding: 8px 14px;
+    font-size: .72rem;
+    font-weight: 600;
+    border-radius: 20px;
+    border-bottom: none;
+    background: var(--kl-bg-elevated);
+    min-height: 36px;
+  }
+  .league-subtab.active {
+    background: var(--kl-accent-blue);
+    color: #fff;
+    border-bottom-color: transparent;
+  }
+  .league-subtab:hover { background: var(--kl-bg-hover); border-bottom-color: transparent; }
+  .league-subtab.active:hover { background: var(--kl-accent-blue); }
+  .league-subtab i { display: none; }
+
+  /* ── Page headers ── */
+  .page-header { margin-bottom: .75rem; }
+  .page-header h2 { font-size: 1.1rem; }
+  .page-header .page-breadcrumb { font-size: .65rem; }
+
+  /* ── Squad hero — stack on mobile ── */
+  .squad-hero { padding: .75rem; margin-bottom: .75rem; border-radius: 8px; }
+  .squad-hero-inner { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .squad-hero-title { font-size: 1.1rem; }
+  .squad-hero-crumb { font-size: .65rem; margin-bottom: .2rem; }
+  .squad-hero-actions { flex-wrap: wrap; gap: 6px; width: 100%; }
+  .squad-pill { padding: 6px 12px; font-size: .7rem; min-height: 36px; }
+
+  /* ── Stat cards — 2 col on mobile ── */
+  .squad-stat-cards { grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .75rem; }
+  .stat-card { padding: .75rem; border-radius: 8px; }
+  .stat-card .stat-value { font-size: 1.35rem; }
+  .stat-card .stat-label { font-size: .6rem; }
+
+  /* ── Player pool filters — collapsible ── */
+  .filter-bar { display: none; flex-direction: column; gap: .4rem; }
+  .filter-bar.filter-open { display: flex; }
   .filter-bar > * { width: 100% !important; max-width: 100% !important; flex: none !important; }
+  .filter-toggle-btn { display: flex !important; }
 
-  /* Show card/table toggle */
+  /* ── Pool card/table toggle ── */
   .pool-view-toggle { display: flex; }
 
-  /* Page headers */
-  .page-header h2 { font-size: 1.15rem; }
-  .page-header .page-breadcrumb { font-size: .7rem; }
+  /* ── Round strip — horizontal scroller ── */
+  .rnd-strip {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  .rnd-strip::-webkit-scrollbar { display: none; }
+  .rnd-item {
+    flex: 0 0 auto;
+    min-width: 44px;
+    padding: 10px 4px 8px;
+  }
 
-  /* League subnav tabs */
-  .league-subnav { gap: 0; }
-  .league-subtab { padding: .5rem .6rem; font-size: .72rem; }
+  /* ── Fixture matchup rows — compact ── */
+  .mx-row { padding: 10px 12px; gap: 0; }
+  .mx-team { font-size: .78rem; }
+  .mx-centre { min-width: 80px; }
+  .mx-sc { font-size: .85rem; min-width: 28px; }
+  .mx-arrow { width: 24px; }
+
+  /* ── Ladder table — responsive scroll ── */
+  .ldr-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+  .ldr-table th { font-size: .55rem; padding: 8px 6px; }
+  .ldr-table td { font-size: .72rem; padding: 8px 6px; }
+
+  /* ── Gameday ── */
+  .gameday-round-title { font-size: 1.1rem !important; }
+
+  /* ── All tables — ensure horizontal scroll ── */
+  .table { font-size: .75rem; }
+  .table th { font-size: .6rem; padding: .4rem .5rem; }
+  .table td { padding: .4rem .5rem; }
+  /* Any parent of a table should scroll horizontally */
+  .card-body:has(> table), .p-0:has(> table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Chat — fit mobile viewport with bottom nav ── */
+  .chat-wrapper { height: calc(100vh - 220px) !important; }
+
+  /* ── Trade nav tabs ── */
+  .nav-tabs { overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tabs .nav-link { white-space: nowrap; padding: .5rem .75rem; }
+
+  /* ── Breadcrumbs — hide on mobile ── */
+  .squad-hero-crumb.lm-desktop { display: none; }
+  .lm-desktop { display: none; }
+
+  /* ── Commissioner dropdown ── */
+  .lm-timer { font-size: .7rem; padding: .3rem .6rem; }
+}
+
+/* ══════════════════════════════════════════════════
+   FILTER TOGGLE BUTTON (hidden on desktop)
+   ══════════════════════════════════════════════════ */
+.filter-toggle-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--kl-border);
+  background: var(--kl-bg-elevated);
+  color: var(--kl-text-secondary);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  min-height: 40px;
+}
+.filter-toggle-btn:hover { background: var(--kl-bg-hover); }
+.filter-toggle-btn .filter-count {
+  background: var(--kl-accent-blue);
+  color: #fff;
+  font-size: .6rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 700;
 }
 
 /* ══════════════════════════════════════════════════
@@ -2651,6 +2770,6 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 
 @media (display-mode: standalone) {
   .navbar { display: none; }
-  main.container { padding-top: 1rem; }
+  main.container { padding-top: .75rem; }
   .league-nav { margin-top: 0; }
 }
