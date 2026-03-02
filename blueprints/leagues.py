@@ -157,19 +157,15 @@ def league_create():
                                    default_uf_categories=config.DEFAULT_UF_CATEGORIES)
 
         # Read formation fields
-        def_count = request.form.get("def_count", type=int) or 5
-        mid_count = request.form.get("mid_count", type=int) or 7
-        fwd_count = request.form.get("fwd_count", type=int) or 5
+        def_count = request.form.get("def_count", type=int) or 6
+        mid_count = request.form.get("mid_count", type=int) or 9
+        fwd_count = request.form.get("fwd_count", type=int) or 6
         ruc_count = request.form.get("ruc_count", type=int) or 1
-        bench_def = request.form.get("bench_def", type=int) or 1
-        bench_mid = request.form.get("bench_mid", type=int) or 2
-        bench_fwd = request.form.get("bench_fwd", type=int) or 1
-        bench_flex = request.form.get("bench_flex", type=int) or 1
+        flex_count = request.form.get("flex_count", type=int) or 1
         position_slots = [
             ("DEF", def_count, False), ("MID", mid_count, False),
             ("FWD", fwd_count, False), ("RUC", ruc_count, False),
-            ("DEF", bench_def, True), ("MID", bench_mid, True),
-            ("FWD", bench_fwd, True), ("FLEX", bench_flex, True),
+            ("FLEX", flex_count, True),
         ]
         on_field = def_count + mid_count + fwd_count + ruc_count
 
@@ -470,33 +466,27 @@ def league_settings(league_id):
 
         db.session.commit()
 
-        # Formation + bench position slots
+        # Formation + flex position slots
         def_count = request.form.get("def_count", type=int)
         mid_count = request.form.get("mid_count", type=int)
         fwd_count = request.form.get("fwd_count", type=int)
         ruc_count = request.form.get("ruc_count", type=int)
-        bench_def = request.form.get("bench_def", type=int)
-        bench_mid = request.form.get("bench_mid", type=int)
-        bench_fwd = request.form.get("bench_fwd", type=int)
-        bench_flex = request.form.get("bench_flex", type=int)
+        flex_count = request.form.get("flex_count", type=int)
 
         if any(v is not None for v in [def_count, mid_count, fwd_count, ruc_count]):
-            d = def_count if def_count is not None else 5
-            m = mid_count if mid_count is not None else 7
-            f = fwd_count if fwd_count is not None else 5
+            d = def_count if def_count is not None else 6
+            m = mid_count if mid_count is not None else 9
+            f = fwd_count if fwd_count is not None else 6
             r = ruc_count if ruc_count is not None else 1
-            bd = bench_def if bench_def is not None else 1
-            bm = bench_mid if bench_mid is not None else 2
-            bf = bench_fwd if bench_fwd is not None else 1
-            bx = bench_flex if bench_flex is not None else 1
-            total_positions = d + m + f + r + bd + bm + bf + bx
+            fx = flex_count if flex_count is not None else 1
+            total_positions = d + m + f + r + fx
 
             # Reload league to get potentially-updated squad_size
             db.session.refresh(league)
             if total_positions > league.squad_size:
                 flash(
                     f"Total positions ({total_positions}) exceed squad size ({league.squad_size}). "
-                    "Reduce formation/bench or increase squad size.",
+                    "Reduce formation or increase squad size.",
                     "warning",
                 )
                 return redirect(url_for("leagues.league_settings", league_id=league_id))
@@ -506,10 +496,7 @@ def league_settings(league_id):
                 {"position_code": "MID", "count": m, "is_bench": False},
                 {"position_code": "FWD", "count": f, "is_bench": False},
                 {"position_code": "RUC", "count": r, "is_bench": False},
-                {"position_code": "DEF", "count": bd, "is_bench": True},
-                {"position_code": "MID", "count": bm, "is_bench": True},
-                {"position_code": "FWD", "count": bf, "is_bench": True},
-                {"position_code": "FLEX", "count": bx, "is_bench": True},
+                {"position_code": "FLEX", "count": fx, "is_bench": True},
             ]
             update_position_slots(league_id, slots)
             on_field = d + m + f + r

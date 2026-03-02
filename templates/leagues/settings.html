@@ -46,7 +46,7 @@
               <div id="pos-total-display" class="form-control" style="background:#21262d;font-weight:600;font-size:.85rem;" disabled>
                 —
               </div>
-              <div class="form-text" style="color:#484f58;font-size:.7rem;">On-field + bench must fit within squad size</div>
+              <div class="form-text" style="color:#484f58;font-size:.7rem;">On-field + flex must fit within squad size</div>
               <div id="pos-error-bar" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:6px;color:#f85149;font-size:.75rem;font-weight:600;align-items:center;gap:6px;">
               </div>
             </div>
@@ -115,38 +115,18 @@
         </div>
       </div>
 
-      <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-clipboard2 me-2" style="color:#8b949e;"></i>Bench</h5></div>
-        <div class="card-body">
-          {% set bench_slots = {} %}
+      <div class="row g-2 mb-4">
+        <div class="col-4">
+          {% set ns_flex = namespace(count=1) %}
           {% for slot in league.position_slots %}
-            {% if slot.is_bench %}
-              {% if bench_slots.update({slot.position_code: slot.count}) %}{% endif %}
+            {% if slot.is_bench and slot.position_code == 'FLEX' %}
+              {% set ns_flex.count = slot.count %}
             {% endif %}
           {% endfor %}
-          <div class="row g-2 mb-2">
-            <div class="col-3">
-              <label class="form-label" style="font-size:.7rem;color:#58a6ff;">B.DEF</label>
-              <input type="number" class="form-control form-control-sm" name="bench_def"
-                     value="{{ bench_slots.get('DEF', 1) }}" min="0" max="15">
-            </div>
-            <div class="col-3">
-              <label class="form-label" style="font-size:.7rem;color:#bc8cff;">B.MID</label>
-              <input type="number" class="form-control form-control-sm" name="bench_mid"
-                     value="{{ bench_slots.get('MID', 2) }}" min="0" max="15">
-            </div>
-            <div class="col-3">
-              <label class="form-label" style="font-size:.7rem;color:#f0883e;">B.FWD</label>
-              <input type="number" class="form-control form-control-sm" name="bench_fwd"
-                     value="{{ bench_slots.get('FWD', 1) }}" min="0" max="15">
-            </div>
-            <div class="col-3">
-              <label class="form-label" style="font-size:.7rem;color:#8b949e;">FLEX</label>
-              <input type="number" class="form-control form-control-sm" name="bench_flex"
-                     value="{{ bench_slots.get('FLEX', 1) }}" min="0" max="30">
-            </div>
-          </div>
-          <div class="form-text" style="color:#484f58;font-size:.7rem;">Position-locked bench: players must match the slot position. Flex accepts any position.</div>
+          <label class="form-label" style="font-size:.75rem;color:#d29922;"><i class="bi bi-lightning-charge me-1"></i>FLEX Slots</label>
+          <input type="number" class="form-control form-control-sm" name="flex_count"
+                 value="{{ ns_flex.count }}" min="0" max="10">
+          <div class="form-text" style="color:#484f58;font-size:.65rem;">Sidebar scoring slots — any position eligible.</div>
         </div>
       </div>
 
@@ -556,29 +536,29 @@ function toggleSection(name, expanded) {
 // ── Squad size ↔ position auto-scaling ──
 const posFields = {
   onField: ['def_count', 'mid_count', 'fwd_count', 'ruc_count'],
-  bench:   ['bench_def', 'bench_mid', 'bench_fwd', 'bench_flex'],
+  flex:    ['flex_count'],
 };
-const allPosFields = posFields.onField.concat(posFields.bench);
+const allPosFields = posFields.onField.concat(posFields.flex);
 
 function getVal(name) { const el = document.querySelector(`[name="${name}"]`); return el ? parseInt(el.value) || 0 : 0; }
 function setVal(name, v) { const el = document.querySelector(`[name="${name}"]:not([type=hidden])`); if (el) el.value = v; }
 
 function calcTotals() {
-  let onField = 0, bench = 0;
+  let onField = 0, flex = 0;
   posFields.onField.forEach(n => onField += getVal(n));
-  posFields.bench.forEach(n => bench += getVal(n));
-  return { onField, bench, total: onField + bench };
+  posFields.flex.forEach(n => flex += getVal(n));
+  return { onField, flex, total: onField + flex };
 }
 
 function updateTotalDisplay() {
-  const { onField, bench, total } = calcTotals();
+  const { onField, flex, total } = calcTotals();
   const squad = getVal('squad_size');
   const el = document.getElementById('pos-total-display');
   const errBar = document.getElementById('pos-error-bar');
   if (!el) return;
   const ok = total <= squad;
   el.style.color = ok ? '#3fb950' : '#f85149';
-  el.textContent = `${onField} field + ${bench} bench = ${total} / ${squad}`;
+  el.textContent = `${onField} field + ${flex} flex = ${total} / ${squad}`;
 
   // Red error bar
   if (errBar) {
@@ -627,36 +607,22 @@ function autoScalePositions() {
   const { total } = calcTotals();
   if (total <= squad) { updateTotalDisplay(); return; }
 
-  // Scale proportionally: on-field first, then bench with leftovers
-  // Target: ~75% on-field, ~25% bench (with RUC always 1)
-  const onFieldTarget = Math.max(4, Math.round(squad * 0.75));
-  const benchTarget = squad - onFieldTarget;
-
-  // On-field: DEF/MID/FWD proportional, RUC=1
+  // Scale proportionally: on-field + flex (with RUC always 1)
   const ruc = 1;
+  const flex = Math.max(0, Math.min(getVal('flex_count'), 3));
+  const onFieldTarget = squad - flex;
   const remaining = onFieldTarget - ruc;
-  // Standard ratios: DEF 5/17, MID 7/17, FWD 5/17
-  let def = Math.max(1, Math.round(remaining * 5 / 17));
-  let mid = Math.max(1, Math.round(remaining * 7 / 17));
-  let fwd = Math.max(1, remaining - def - mid);  // absorb rounding
+  // Standard ratios: DEF 6/22, MID 9/22, FWD 6/22
+  let def = Math.max(1, Math.round(remaining * 6 / 21));
+  let mid = Math.max(1, Math.round(remaining * 9 / 21));
+  let fwd = Math.max(1, remaining - def - mid);
   if (fwd < 1) { fwd = 1; mid = Math.max(1, remaining - def - fwd); }
 
   setVal('def_count', def);
   setVal('mid_count', mid);
   setVal('fwd_count', fwd);
   setVal('ruc_count', ruc);
-
-  // Bench: distribute proportionally, at least 1 FLEX
-  const flex = Math.max(0, Math.min(benchTarget, 1));
-  const benchRemain = benchTarget - flex;
-  const bDef = Math.max(0, Math.round(benchRemain * 0.25));
-  const bMid = Math.max(0, Math.round(benchRemain * 0.5));
-  const bFwd = Math.max(0, benchRemain - bDef - bMid);
-
-  setVal('bench_def', bDef);
-  setVal('bench_mid', bMid);
-  setVal('bench_fwd', bFwd);
-  setVal('bench_flex', flex);
+  setVal('flex_count', flex);
 
   updateTotalDisplay();
 }

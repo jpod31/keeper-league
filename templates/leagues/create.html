@@ -302,30 +302,14 @@
                          value="{{ form.get('ruc_count', 1) }}" min="1" max="3">
                 </div>
               </div>
-              <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#8b949e;"><i class="bi bi-clipboard2 me-2"></i>Bench</h6>
               <div class="row g-2 mb-2">
-                <div class="col">
-                  <label class="form-label" style="font-size:.7rem;color:#58a6ff;">B.DEF</label>
-                  <input type="number" class="form-control form-control-sm" name="bench_def"
-                         value="{{ form.get('bench_def', 1) }}" min="0" max="5">
-                </div>
-                <div class="col">
-                  <label class="form-label" style="font-size:.7rem;color:#bc8cff;">B.MID</label>
-                  <input type="number" class="form-control form-control-sm" name="bench_mid"
-                         value="{{ form.get('bench_mid', 2) }}" min="0" max="5">
-                </div>
-                <div class="col">
-                  <label class="form-label" style="font-size:.7rem;color:#f0883e;">B.FWD</label>
-                  <input type="number" class="form-control form-control-sm" name="bench_fwd"
-                         value="{{ form.get('bench_fwd', 1) }}" min="0" max="5">
-                </div>
-                <div class="col">
-                  <label class="form-label" style="font-size:.7rem;color:#8b949e;">FLEX</label>
-                  <input type="number" class="form-control form-control-sm" name="bench_flex"
-                         value="{{ form.get('bench_flex', 1) }}" min="0" max="5">
+                <div class="col-4">
+                  <label class="form-label" style="font-size:.75rem;color:#d29922;"><i class="bi bi-lightning-charge me-1"></i>FLEX</label>
+                  <input type="number" class="form-control form-control-sm" name="flex_count"
+                         value="{{ form.get('flex_count', 1) }}" min="0" max="5">
                 </div>
               </div>
-              <div class="form-text" style="color:#484f58;font-size:.75rem;">Position-locked bench: players must match the slot position. Flex accepts any position.</div>
+              <div class="form-text" style="color:#484f58;font-size:.75rem;">Flex slots appear in the sidebar and score. Any position eligible.</div>
             </div>
           </div>
         </div>

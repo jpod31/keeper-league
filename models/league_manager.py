@@ -7,19 +7,16 @@ from models.database import (
 import config
 
 
-# ── Default position slots (matches existing config.POSITIONS + bench) ──
+# ── Default position slots (on-field + flex sidebar) ──
 
 
 DEFAULT_POSITION_SLOTS = [
     # On-field
-    ("DEF", 5, False),
-    ("MID", 7, False),
-    ("FWD", 5, False),
+    ("DEF", 6, False),
+    ("MID", 9, False),
+    ("FWD", 6, False),
     ("RUC", 1, False),
-    # Bench (position-locked + flex)
-    ("DEF", 1, True),
-    ("MID", 2, True),
-    ("FWD", 1, True),
+    # Flex (sidebar — scores, any position)
     ("FLEX", 1, True),
 ]
 

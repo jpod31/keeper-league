@@ -709,7 +709,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   box-shadow: inset 0 0 80px rgba(0,0,0,.35), 0 6px 24px rgba(0,0,0,.5);
 }
 
-/* ── Sidebar (bench + reserves) ── */
+/* ── Sidebar (flex + LTIL) ── */
 .fv-sidebar {
   width: 170px;
   flex-shrink: 0;
@@ -807,7 +807,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .fv-card-mid { border-left: 3px solid var(--kl-accent-purple); }
 .fv-card-fwd { border-left: 3px solid var(--kl-accent-orange); }
 .fv-card-ruc { border-left: 3px solid var(--kl-accent-green); }
-.fv-card-bench { border-left: 3px solid var(--kl-border-light); }
+.fv-card-flex { border-left: 3px solid #d29922; }
 
 /* Captain/VC/Emergency card visual distinction */
 .fv-card-captain {
@@ -907,21 +907,16 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .fv-pip-fwd { background: rgba(240,136,62,.15); color: var(--kl-accent-orange); }
 .fv-pip-ruc { background: rgba(63,185,80,.15); color: var(--kl-accent-green); }
 
-/* Bench type pip — small indicator on bench cards */
-.fv-bench-pip {
+/* Flex pip — small indicator on flex cards */
+.fv-flex-pip {
   font-size: .4rem;
   font-weight: 700;
   padding: 1px 4px;
   border-radius: 3px;
   letter-spacing: .3px;
-  background: rgba(255,255,255,.06);
-  color: var(--kl-text-muted);
+  background: rgba(210,153,34,.12);
+  color: #d29922;
 }
-.fv-bpip-def { background: rgba(88,166,255,.1); color: var(--kl-accent-blue); }
-.fv-bpip-mid { background: rgba(188,140,255,.1); color: var(--kl-accent-purple); }
-.fv-bpip-fwd { background: rgba(240,136,62,.1); color: var(--kl-accent-orange); }
-.fv-bpip-ruc { background: rgba(63,185,80,.1); color: var(--kl-accent-green); }
-.fv-bpip-flex { background: rgba(139,148,158,.1); color: var(--kl-text-secondary); }
 
 /* ── Name block (bigger names) ── */
 .fv-name-block {
@@ -1018,44 +1013,103 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   color: var(--kl-bg-elevated);
   font-size: 1.1rem;
 }
-.fv-card-bench.fv-card-empty .fv-empty-slot { height: 115px; }
+.fv-card-flex.fv-card-empty .fv-empty-slot { height: 115px; }
 
-/* ═══ Bench Section (below field) ═══ */
-.fv-bench-section {
+/* ═══ Flex Section (sidebar) ═══ */
+.fv-flex-section {
   background: var(--kl-bg-card);
   border: 1px solid var(--kl-border);
   border-radius: 12px;
   padding: 1rem;
 }
-.fv-bench-hdr {
+.fv-flex-hdr {
   font-size: .8rem;
   font-weight: 700;
-  color: var(--kl-text-secondary);
+  color: #d29922;
   margin-bottom: .75rem;
   display: flex;
   align-items: center;
 }
-.fv-bench-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, 150px);
-  gap: 10px;
-  justify-content: center;
-}
-.fv-bench-stack {
+.fv-flex-stack {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.fv-card-bench { width: 150px; border-left: 3px solid var(--kl-border-light); }
-.fv-sidebar .fv-card-bench { width: 100%; }
-.fv-card-bench.fv-card-bench-def { border-left-color: var(--kl-accent-blue); }
-.fv-card-bench.fv-card-bench-mid { border-left-color: var(--kl-accent-purple); }
-.fv-card-bench.fv-card-bench-fwd { border-left-color: var(--kl-accent-orange); }
-.fv-card-bench.fv-card-bench-ruc { border-left-color: var(--kl-accent-green); }
-.fv-card-bench.fv-card-bench-flex { border-left-color: var(--kl-border-light); }
-.fv-card-bench .fv-logo { width: 26px; height: 26px; }
+.fv-card-flex { width: 150px; border-left: 3px solid #d29922; }
+.fv-sidebar .fv-card-flex { width: 100%; }
+.fv-card-flex .fv-logo { width: 26px; height: 26px; }
 
-/* ═══ Reserves Section (below bench) ═══ */
+/* ═══ LTIL Sidebar (compact) ═══ */
+.fv-ltil-sidebar {
+  background: #1a0f0f;
+  border: 1px solid rgba(248,81,73,.2);
+  border-radius: 12px;
+  padding: .75rem;
+}
+.fv-ltil-sidebar .fv-ltil-hdr {
+  font-size: .75rem;
+  margin-bottom: .5rem;
+}
+.fv-ltil-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fv-ltil-sidebar-card {
+  background: rgba(248,81,73,.06);
+  border: 1px solid rgba(248,81,73,.15);
+  border-radius: 8px;
+  padding: .5rem .6rem;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.fv-ltil-sidebar-card.fv-ltil-sidebar-empty {
+  justify-content: center;
+  padding: .4rem;
+  opacity: .5;
+}
+.fv-ltil-sidebar-info { flex: 1; min-width: 0; }
+.fv-ltil-sidebar-name {
+  font-size: .65rem;
+  font-weight: 700;
+  color: var(--kl-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fv-ltil-sidebar-meta {
+  font-size: .55rem;
+  color: var(--kl-text-muted);
+}
+.fv-ltil-sidebar-ssp {
+  font-size: .5rem;
+  color: #58a6ff;
+  white-space: nowrap;
+}
+.fv-ltil-ssp-btn-sm {
+  background: none;
+  border: 1px solid rgba(248,81,73,.3);
+  color: var(--kl-accent-red);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: .55rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.fv-ltil-ssp-btn-sm:hover { background: rgba(248,81,73,.1); }
+.fv-ltil-remove-btn-sm {
+  background: none;
+  border: none;
+  color: #484f58;
+  font-size: .55rem;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.fv-ltil-remove-btn-sm:hover { color: var(--kl-accent-red); }
+
+/* ═══ Reserves Section ═══ */
 .fv-reserves-section {
   background: #12161c;
   border: 1px solid #252a31;
@@ -1362,7 +1416,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   50% { box-shadow: 0 0 18px rgba(210,153,34,.7); }
 }
 
-/* ═══ Position Eligibility Highlight (hover bench/reserve) ═══ */
+/* ═══ Position Eligibility Highlight (hover flex/reserve) ═══ */
 .fv-card.fv-zone-highlight {
   box-shadow: 0 0 8px rgba(56, 193, 114, .45);
   border-color: rgba(56, 193, 114, .6);
@@ -1545,15 +1599,14 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
     flex-wrap: wrap;
     gap: .75rem;
   }
-  .fv-sidebar .fv-bench-section { flex: 1; min-width: 200px; }
-  .fv-sidebar .fv-bench-stack { flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .fv-sidebar .fv-card-bench { width: 80px; }
+  .fv-sidebar .fv-flex-section { flex: 1; min-width: 200px; }
+  .fv-sidebar .fv-flex-stack { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .fv-sidebar .fv-card-flex { width: 80px; }
   .fv-field { padding: 1.5rem 1rem; min-height: 550px; border-radius: 46% / 4%; }
   .fv-card { width: 80px; }
-  .fv-bench-grid { grid-template-columns: repeat(auto-fit, 80px) !important; }
   .fv-reserves-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
   .fv-logo { width: 20px; height: 20px; }
-  .fv-card-bench .fv-logo, .fv-card-reserve .fv-logo { width: 18px; height: 18px; }
+  .fv-card-flex .fv-logo, .fv-card-reserve .fv-logo { width: 18px; height: 18px; }
   .fv-surname { font-size: .6rem; }
   .fv-name-long { font-size: .5rem; }
   .fv-firstname { font-size: .5rem; }
@@ -2401,9 +2454,8 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .fv-logo { width: 16px; height: 16px; }
   .fv-pos-pip { font-size: .4rem; padding: 1px 3px; }
   .fv-zone-pill { font-size: .5rem; padding: 1px 6px; }
-  .fv-bench-grid { grid-template-columns: repeat(auto-fit, 55px) !important; }
-  .fv-card-bench { width: 55px; }
-  .fv-sidebar .fv-card-bench { width: 55px; }
+  .fv-card-flex { width: 55px; }
+  .fv-sidebar .fv-card-flex { width: 55px; }
   .fv-card-top { padding: 3px 4px 0; }
   .fv-name-block { padding: 1px 4px 2px; min-height: 24px; }
   .fv-zone-grid { gap: 4px; }

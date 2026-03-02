@@ -481,8 +481,8 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
 
         # Determine lineup type from position code
         pos = (entry.position_code or "").upper()
-        if pos.startswith("BENCH"):
-            lineup_type = "bench"
+        if pos == "FLEX":
+            lineup_type = "flex"
         else:
             lineup_type = "field"
 

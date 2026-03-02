@@ -1,15 +1,14 @@
 {# AFL Field View — included from squad.html when view == 'field' #}
 {# Expects: field_data, TEAM_LOGOS, is_owner, league, team #}
 
-{% macro player_card(p, pos_class, cap_id, vc_id, is_bench, is_owner, league_id, team_id, is_reserve, emergency_ids, bench_type='') %}
+{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids) %}
   {% if p %}
     {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
-    <div class="fv-card fv-card-{{ pos_class }}{% if is_bench %} fv-card-bench{% if bench_type %} fv-card-bench-{{ bench_type|lower }}{% endif %}{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}"
+    <div class="fv-card fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}"
          data-player-id="{{ p.id }}"
-         data-section="{% if is_reserve %}reserve{% elif is_bench %}bench{% else %}field{% endif %}"
+         data-section="{% if is_reserve %}reserve{% elif is_flex %}flex{% else %}field{% endif %}"
          data-positions="{{ p.position or 'MID' }}"
-         data-field-pos="{{ pos_class|upper if not is_bench and not is_reserve else '' }}"
-         data-bench-type="{{ bench_type }}"
+         data-field-pos="{{ pos_class|upper if not is_flex and not is_reserve else '' }}"
          onclick="fvShowPlayer({{ p.id }})">
       {# Captain / VC / Emergency ribbon #}
       {% if cap_id == p.id %}
@@ -23,7 +22,7 @@
       {# Hover action bubbles (owner only) #}
       {% if is_owner %}
       <div class="fv-actions" onclick="event.stopPropagation()">
-        {% if not is_bench and not is_reserve %}
+        {% if not is_reserve %}
         <button class="fv-action-btn fv-act-cap{% if cap_id == p.id %} active{% endif %}"
                 title="Set Captain" onclick="event.stopPropagation(); fvSetCaptain({{ p.id }})">C</button>
         <button class="fv-action-btn fv-act-vc{% if vc_id == p.id %} active{% endif %}"
@@ -37,7 +36,7 @@
         <button class="fv-action-btn fv-act-emg{% if is_emg %} active{% endif %}"
                 title="Toggle Emergency" onclick="event.stopPropagation(); fvSetEmergency({{ p.id }})">E</button>
         {% endif %}
-        {% if is_bench or is_reserve %}
+        {% if is_flex or is_reserve %}
         <button class="fv-action-btn fv-act-ltil"
                 title="Add to LTIL" onclick="event.stopPropagation(); fvAddToLTIL({{ p.id }})">
           <i class="bi bi-bandaid"></i>
@@ -48,7 +47,7 @@
       <div class="fv-swap-overlay" onclick="event.stopPropagation(); fvCompleteSub({{ p.id }})" title="Swap here"></div>
       {% endif %}
 
-      {# Team logo + position tag + bench type #}
+      {# Team logo + position tag #}
       <div class="fv-card-top">
         <div class="fv-logo">
           {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
@@ -57,8 +56,8 @@
             <span class="fv-logo-fallback"><i class="bi bi-shield-fill"></i></span>
           {% endif %}
         </div>
-        {% if bench_type %}
-          <span class="fv-bench-pip fv-bpip-{{ bench_type|lower }}">B.{{ bench_type }}</span>
+        {% if is_flex %}
+          <span class="fv-flex-pip">FLEX</span>
         {% endif %}
         <span class="fv-pos-pip fv-pip-{{ (p.position or 'MID').split('/')[0]|lower }}">{{ (p.position or 'MID').split('/')[0] }}</span>
       </div>
@@ -95,11 +94,9 @@
     </div>
   {% else %}
     {# Empty slot #}
-    <div class="fv-card fv-card-empty fv-card-{{ pos_class }}{% if is_bench %} fv-card-bench{% if bench_type %} fv-card-bench-{{ bench_type|lower }}{% endif %}{% endif %}">
+    <div class="fv-card fv-card-empty fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}">
       <div class="fv-empty-slot">
-        {% if bench_type and bench_type != 'FLEX' %}
-          <span style="font-size:.55rem;font-weight:700;color:#30363d;letter-spacing:1px;">{{ bench_type }}</span>
-        {% elif bench_type == 'FLEX' %}
+        {% if is_flex %}
           <span style="font-size:.55rem;font-weight:700;color:#30363d;letter-spacing:1px;">FLEX</span>
         {% else %}
           <i class="bi bi-person-dash"></i>
@@ -163,7 +160,7 @@
     {# ── Dynamic zone rendering macro ── #}
     {% macro render_zone(pos_code, pos_class, wide) %}
       {% set rows = field_data.zone_layouts.get(pos_code, []) %}
-      {% set players = field_data.zones.get(pos_code, []) %}
+      {% set players_list = field_data.zones.get(pos_code, []) %}
       <div class="fv-zone{% if wide %} fv-zone-wide{% endif %}">
         <div class="fv-zone-hdr">
           <span class="fv-zone-pill fv-zp-{{ pos_class }}">{{ pos_code }}</span>
@@ -172,7 +169,7 @@
         {% set ns = namespace(offset=0) %}
         {% for row_size in rows %}
           <div class="fv-zone-grid fv-grid-{{ row_size }}"{% if not loop.first %} style="margin-top:8px"{% endif %}>
-            {% for p in players[ns.offset:ns.offset + row_size] %}
+            {% for p in players_list[ns.offset:ns.offset + row_size] %}
               {{ player_card(p, pos_class, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
             {% endfor %}
           </div>
@@ -187,77 +184,62 @@
     {{ render_zone('FWD', 'fwd', false) }}
   </div>
 
-  {# ═══════════ SIDEBAR: Bench only ═══════════ #}
+  {# ═══════════ SIDEBAR: Flex + LTIL ═══════════ #}
   <div class="fv-sidebar">
-    <div class="fv-bench-section">
-      <div class="fv-bench-hdr">
-        <i class="bi bi-clipboard2 me-1"></i>Bench
-        <span class="fv-zone-tally ms-2">{{ field_data.bench_filled }}/{{ field_data.bench_data|length }}</span>
+    {# ── FLEX Section ── #}
+    <div class="fv-flex-section">
+      <div class="fv-flex-hdr">
+        <i class="bi bi-lightning-charge me-1"></i>Flex
+        <span class="fv-zone-tally ms-2">{{ field_data.flex_filled }}/{{ field_data.flex_count }}</span>
       </div>
-      <div class="fv-bench-stack">
-        {% for slot in field_data.bench_data %}
-          {% set bt = slot.bench_type %}
+      <div class="fv-flex-stack">
+        {% for slot in field_data.flex_data %}
           {% set p = slot.player %}
-          {% set bench_pos_class = bt|lower if bt != 'FLEX' else 'bench' %}
-          {{ player_card(p, bench_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids, bt) }}
+          {% set flex_pos_class = (p.position or 'MID').split('/')[0]|lower if p else 'flex' %}
+          {{ player_card(p, flex_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
         {% endfor %}
       </div>
     </div>
-  </div>
-  </div>{# /fv-wrapper #}
 
-  {# ═══════════ LTIL ZONE ═══════════ #}
-  {% if field_data.ssp_enabled %}
-  <div class="fv-ltil-section">
-    <div class="fv-ltil-hdr">
-      <i class="bi bi-bandaid me-1"></i>Long-Term Injury List
-      <span class="fv-zone-tally ms-2">{{ field_data.ltil_entries|length }} / {{ field_data.ssp_slots }}</span>
-    </div>
-    <div class="fv-ltil-grid">
-      {# Filled LTIL cards #}
-      {% for lt in field_data.ltil_entries %}
-      <div class="fv-ltil-card fv-ltil-filled" data-ltil-id="{{ lt.id }}">
-        <div class="fv-ltil-card-top">
-          <div class="fv-ltil-badge"><i class="bi bi-bandaid-fill"></i> LTIL</div>
+    {# ── LTIL Section (compact sidebar) ── #}
+    {% if field_data.ssp_enabled %}
+    <div class="fv-ltil-sidebar">
+      <div class="fv-ltil-hdr">
+        <i class="bi bi-bandaid me-1"></i>LTIL
+        <span class="fv-zone-tally ms-2">{{ field_data.ltil_entries|length }}/{{ field_data.ssp_slots }}</span>
+      </div>
+      <div class="fv-ltil-sidebar-list">
+        {% for lt in field_data.ltil_entries %}
+        <div class="fv-ltil-sidebar-card" data-ltil-id="{{ lt.id }}">
+          <div class="fv-ltil-sidebar-info">
+            <div class="fv-ltil-sidebar-name">{{ lt.player.name }}</div>
+            <div class="fv-ltil-sidebar-meta">{{ lt.player.position or '-' }} &bull; {{ '%.0f'|format(lt.player.sc_avg) if lt.player.sc_avg else '-' }}</div>
+          </div>
+          {% if lt.replacement_player %}
+          <div class="fv-ltil-sidebar-ssp">SSP: {{ lt.replacement_player.name }}</div>
+          {% elif is_owner and field_data.ssp_window_active %}
+          <button class="fv-ltil-ssp-btn-sm" onclick="fvOpenSSPModal({{ lt.id }})">
+            <i class="bi bi-plus-circle"></i>
+          </button>
+          {% endif %}
           {% if is_owner and field_data.can_remove_ltil %}
-          <button class="fv-ltil-remove-btn" onclick="fvRemoveLTIL({{ lt.player_id }})" title="Remove from LTIL">
+          <button class="fv-ltil-remove-btn-sm" onclick="fvRemoveLTIL({{ lt.player_id }})" title="Remove">
             <i class="bi bi-x-lg"></i>
           </button>
           {% endif %}
         </div>
-        <div class="fv-ltil-player">
-          <div class="fv-ltil-name">{{ lt.player.name }}</div>
-          <div class="fv-ltil-meta">{{ lt.player.position or '-' }} &bull; AVG {{ '%.0f'|format(lt.player.sc_avg) if lt.player.sc_avg else '-' }}</div>
+        {% endfor %}
+        {% for i in range(field_data.ssp_slots - field_data.ltil_entries|length) %}
+        <div class="fv-ltil-sidebar-card fv-ltil-sidebar-empty">
+          <i class="bi bi-bandaid" style="font-size:.7rem;color:#484f58;"></i>
+          <span style="font-size:.6rem;color:#484f58;">LTIL Slot</span>
         </div>
-        {% if lt.replacement_player %}
-        <div class="fv-ltil-ssp-info">
-          <span class="fv-ltil-ssp-label">SSP:</span>
-          <span class="fv-ltil-ssp-name">{{ lt.replacement_player.name }}</span>
-        </div>
-        {% elif is_owner and field_data.ssp_window_active %}
-        <button class="fv-ltil-ssp-btn" onclick="fvOpenSSPModal({{ lt.id }})">
-          <i class="bi bi-plus-circle me-1"></i>Pick SSP
-        </button>
-        {% else %}
-        <div class="fv-ltil-ssp-info">
-          <span class="fv-ltil-ssp-label" style="color:#484f58;">No replacement</span>
-        </div>
-        {% endif %}
+        {% endfor %}
       </div>
-      {% endfor %}
-
-      {# Empty LTIL slots #}
-      {% for i in range(field_data.ssp_slots - field_data.ltil_entries|length) %}
-      <div class="fv-ltil-card fv-ltil-empty">
-        <div class="fv-ltil-empty-inner">
-          <i class="bi bi-bandaid" style="font-size:1.2rem;color:#484f58;"></i>
-          <span style="font-size:.65rem;color:#484f58;font-weight:600;">LTIL Slot</span>
-        </div>
-      </div>
-      {% endfor %}
     </div>
+    {% endif %}
   </div>
-  {% endif %}
+  </div>{# /fv-wrapper #}
 
   {# ═══ SSP Modal ═══ #}
   {% if is_owner and field_data.ssp_enabled %}
@@ -540,32 +522,25 @@ function fvStartSub(pid) {
     const tgtSection = card.dataset.section;
     const tgtPositions = card.dataset.positions.split('/');
     const tgtFieldPos = card.dataset.fieldPos;
-    const tgtBenchType = card.dataset.benchType || '';
-    const srcBenchType = sourceCard.dataset.benchType || '';
     let eligible = false;
 
     if (srcSection === tgtSection && srcSection === 'field') {
       eligible = srcPositions.includes(tgtFieldPos) && tgtPositions.includes(srcFieldPos);
-    } else if (srcSection === 'field' && tgtSection === 'bench') {
-      if (tgtBenchType === 'FLEX') {
-        eligible = tgtPositions.includes(srcFieldPos);
-      } else {
-        eligible = tgtPositions.includes(srcFieldPos) && srcPositions.includes(tgtBenchType);
-      }
+    } else if (srcSection === 'field' && tgtSection === 'flex') {
+      // FLEX accepts any position, target just needs to fit source's field slot
+      eligible = tgtPositions.includes(srcFieldPos);
     } else if (srcSection === 'field' && tgtSection === 'reserve') {
       eligible = tgtPositions.includes(srcFieldPos);
-    } else if (srcSection === 'bench' && tgtSection === 'field') {
+    } else if (srcSection === 'flex' && tgtSection === 'field') {
       eligible = srcPositions.includes(tgtFieldPos);
-    } else if (srcSection === 'bench' && tgtSection === 'bench') {
-      const srcOk = tgtBenchType === 'FLEX' || srcPositions.includes(tgtBenchType);
-      const tgtOk = srcBenchType === 'FLEX' || tgtPositions.includes(srcBenchType);
-      eligible = srcOk && tgtOk;
-    } else if (srcSection === 'bench' && tgtSection === 'reserve') {
+    } else if (srcSection === 'flex' && tgtSection === 'flex') {
+      eligible = true;
+    } else if (srcSection === 'flex' && tgtSection === 'reserve') {
       eligible = true;
     } else if (srcSection === 'reserve' && tgtSection === 'field') {
       eligible = srcPositions.includes(tgtFieldPos);
-    } else if (srcSection === 'reserve' && tgtSection === 'bench') {
-      eligible = tgtBenchType === 'FLEX' || srcPositions.includes(tgtBenchType);
+    } else if (srcSection === 'reserve' && tgtSection === 'flex') {
+      eligible = true; // FLEX accepts any position
     } else if (srcSection === 'reserve' && tgtSection === 'reserve') {
       eligible = true;
     }
@@ -863,7 +838,7 @@ function _initHoverListeners() {
 }
 document.getElementById('fvWrapper').addEventListener('mouseenter', function(e) {
   if (swapSourceId) return;
-  const card = e.target.closest('.fv-card[data-section="bench"], .fv-card[data-section="reserve"]');
+  const card = e.target.closest('.fv-card[data-section="flex"], .fv-card[data-section="reserve"]');
   if (!card) return;
   const positions = (card.dataset.positions || '').split('/');
   positions.forEach(pos => {
@@ -874,7 +849,7 @@ document.getElementById('fvWrapper').addEventListener('mouseenter', function(e) 
   });
 }, true);
 document.getElementById('fvWrapper').addEventListener('mouseleave', function(e) {
-  const card = e.target.closest('.fv-card[data-section="bench"], .fv-card[data-section="reserve"]');
+  const card = e.target.closest('.fv-card[data-section="flex"], .fv-card[data-section="reserve"]');
   if (!card) return;
   document.querySelectorAll('.fv-zone-highlight').forEach(el => {
     el.classList.remove('fv-zone-highlight');

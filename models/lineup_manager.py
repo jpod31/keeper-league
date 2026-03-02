@@ -62,30 +62,21 @@ def set_lineup(team_id, afl_round, year, slot_data, league_id):
     position_slots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
     pos_limits = {ps.position_code: ps.count for ps in position_slots if not ps.is_bench}
 
-    # Count positions in new lineup (excluding bench/emergency)
+    # Count positions in new lineup (excluding emergency)
     pos_counts = {}
-    bench_counts = {}  # bench_type -> count
     for s in slot_data:
         if not s.get("is_emergency", False):
             code = s["position_code"]
-            if code.startswith("BENCH_"):
-                btype = code.replace("BENCH_", "")
-                bench_counts[btype] = bench_counts.get(btype, 0) + 1
-            elif code == "BENCH":
-                bench_counts["FLEX"] = bench_counts.get("FLEX", 0) + 1
-            else:
-                pos_counts[code] = pos_counts.get(code, 0) + 1
+            pos_counts[code] = pos_counts.get(code, 0) + 1
 
     for pos, limit in pos_limits.items():
         if pos_counts.get(pos, 0) > limit:
             return None, f"Too many {pos} players: {pos_counts[pos]} (max {limit})"
 
-    # Validate positional bench slot limits
-    bench_limits = {ps.position_code: ps.count for ps in position_slots if ps.is_bench}
-    total_bench = sum(bench_counts.values())
-    total_bench_limit = sum(bench_limits.values()) if bench_limits else 5
-    if total_bench > total_bench_limit:
-        return None, f"Too many bench players: {total_bench} (max {total_bench_limit})"
+    # Validate FLEX slot limits
+    flex_limit = sum(ps.count for ps in position_slots if ps.is_bench and ps.position_code == "FLEX")
+    if pos_counts.get("FLEX", 0) > flex_limit:
+        return None, f"Too many FLEX players: {pos_counts['FLEX']} (max {flex_limit})"
 
     # Validate captain/VC
     captains = [s for s in slot_data if s.get("is_captain")]
@@ -202,45 +193,29 @@ def auto_fill_lineup(team_id, afl_round, year, league_id):
             })
             all_on_field.append(p)
 
-    # Bench: fill positional bench slots, then flex with remaining
-    bench_slot_types = []
-    for ps in position_slots:
-        if ps.is_bench:
-            bench_slot_types.extend([ps.position_code] * ps.count)
-    if not bench_slot_types:
-        bench_slot_types = ["DEF", "MID", "MID", "FWD", "FLEX"]
+    # FLEX: fill flex slots with remaining best available
+    flex_count = sum(ps.count for ps in position_slots if ps.is_bench and ps.position_code == "FLEX")
+    if not flex_count:
+        flex_count = 1
 
-    remaining_for_bench = sorted(
+    remaining_for_flex = sorted(
         [p for p in available if p.id not in used] + on_bye,
         key=lambda p: p.sc_avg or 0, reverse=True,
     )
-    bench_used = set()
-    for bt in bench_slot_types:
-        for p in remaining_for_bench:
-            if p.id in used or p.id in bench_used:
-                continue
-            if bt == "FLEX":
-                slot_data.append({
-                    "player_id": p.id,
-                    "position_code": "BENCH_FLEX",
-                    "is_captain": False,
-                    "is_vice_captain": False,
-                    "is_emergency": False,
-                })
-                bench_used.add(p.id)
-                break
-            else:
-                p_positions = (p.position or "MID").split("/")
-                if bt in p_positions:
-                    slot_data.append({
-                        "player_id": p.id,
-                        "position_code": f"BENCH_{bt}",
-                        "is_captain": False,
-                        "is_vice_captain": False,
-                        "is_emergency": False,
-                    })
-                    bench_used.add(p.id)
-                    break
+    flex_filled = 0
+    for p in remaining_for_flex:
+        if flex_filled >= flex_count:
+            break
+        if p.id not in used:
+            slot_data.append({
+                "player_id": p.id,
+                "position_code": "FLEX",
+                "is_captain": False,
+                "is_vice_captain": False,
+                "is_emergency": False,
+            })
+            used.add(p.id)
+            flex_filled += 1
 
     # Auto-captain: highest SC avg on field
     if all_on_field:

@@ -48,54 +48,19 @@ def squad(league_id, team_id):
     if view == "field":
         position_slots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
 
-        # ── Migrate legacy "BENCH" position slots to positional bench ──
-        legacy_bench = [ps for ps in position_slots if ps.is_bench and ps.position_code == "BENCH"]
-        if legacy_bench:
-            total_old = sum(ps.count for ps in legacy_bench)
-            for ps in legacy_bench:
-                db.session.delete(ps)
-            # Replace with positional bench: DEF:1, MID:2, FWD:1, FLEX:N
-            positional_count = min(total_old, 4)  # up to 4 positional slots
-            flex_count = max(total_old - positional_count, 1)
-            new_bench = [("DEF", 1), ("MID", min(2, positional_count - 1) if positional_count > 1 else 0),
-                         ("FWD", 1 if positional_count > 2 else 0), ("FLEX", flex_count)]
-            for code, count in new_bench:
-                if count > 0:
-                    db.session.add(LeaguePositionSlot(
-                        league_id=league_id, position_code=code, count=count, is_bench=True
-                    ))
-            db.session.commit()
-            # Reload after migration
-            position_slots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
-
-        # ── Slot counts from league config (or defaults) — compute first ──
+        # ── Slot counts from league config (or defaults) ──
         slot_counts = {}
-        bench_slots_config = []  # [(pos_code, count), ...] for bench
+        flex_count = 0
         for ps in position_slots:
-            if ps.is_bench:
-                bench_slots_config.append((ps.position_code, ps.count))
-            else:
+            if ps.is_bench and ps.position_code == "FLEX":
+                flex_count = ps.count
+            elif not ps.is_bench:
                 slot_counts[ps.position_code] = ps.count
 
         if not slot_counts:
             slot_counts = config.POSITIONS.copy()
-            bench_slots_config = [("DEF", 1), ("MID", 2), ("FWD", 1), ("FLEX", 1)]
-
-        # Flatten bench config to ordered list of slot types
-        # Normalise legacy "BENCH" slots to "FLEX" (any position)
-        bench_slot_types = []  # e.g. ["DEF", "MID", "MID", "FWD", "FLEX"]
-        for pos_code, count in bench_slots_config:
-            normalised = pos_code if pos_code in ("DEF", "MID", "FWD", "RUC", "FLEX") else "FLEX"
-            bench_slot_types.extend([normalised] * count)
-        bench_count = len(bench_slot_types)
-
-        # Build bench position code mapping (BENCH_DEF, BENCH_MID, etc.)
-        bench_code_map = {}  # BENCH_X -> required positions (list of eligible positions)
-        for bt in set(bench_slot_types):
-            if bt == "FLEX":
-                bench_code_map["BENCH_FLEX"] = None  # any position
-            else:
-                bench_code_map[f"BENCH_{bt}"] = bt  # must match this position
+        if not flex_count:
+            flex_count = 1
 
         # ── Always read captain / VC from roster ──
         cap_id = None
@@ -108,39 +73,25 @@ def squad(league_id, team_id):
                 vc_id = r.player_id
 
         zones = {}   # pos_code -> [player_or_None, ...]
-        # bench_data: list of {"player": p_or_None, "bench_type": "DEF"/"MID"/.../"FLEX"}
-        bench_data = [{"player": None, "bench_type": bt} for bt in bench_slot_types]
+        flex_data = [{"player": None} for _ in range(flex_count)]
         used_ids = set()
 
         # ── Step 1: Read already-positioned players from DB ──
-        bench_players_by_type = {}  # bench_type -> [player, ...]
+        flex_players = []
         for r in roster:
             p = r.player
             if not r.is_benched and r.position_code in ("DEF", "MID", "FWD", "RUC"):
                 zones.setdefault(r.position_code, []).append(p)
                 used_ids.add(p.id)
-            elif not r.is_benched and r.position_code and r.position_code.startswith("BENCH_"):
-                btype = r.position_code.replace("BENCH_", "")
-                if btype not in ("DEF", "MID", "FWD", "RUC", "FLEX"):
-                    btype = "FLEX"
-                bench_players_by_type.setdefault(btype, []).append(p)
-                used_ids.add(p.id)
-            elif not r.is_benched and r.position_code == "BENCH":
-                bench_players_by_type.setdefault("FLEX", []).append(p)
+            elif not r.is_benched and r.position_code == "FLEX":
+                flex_players.append(p)
                 used_ids.add(p.id)
 
-        # Place already-benched players into bench_data slots
-        type_idx = {}
-        for i, slot in enumerate(bench_data):
-            bt = slot["bench_type"]
-            available = bench_players_by_type.get(bt, [])
-            idx = type_idx.get(bt, 0)
-            if idx < len(available):
-                bench_data[i]["player"] = available[idx]
-                type_idx[bt] = idx + 1
+        # Place already-positioned FLEX players into flex_data slots
+        for i, p in enumerate(flex_players[:flex_count]):
+            flex_data[i]["player"] = p
 
         # ── Step 2: Auto-fill empty on-field slots with unpositioned players ──
-        # Sort unpositioned players by SC avg (best first), fill scarcest positions first
         unpositioned = sorted(
             [p for p in players if p.id not in used_ids],
             key=lambda p: p.sc_avg or 0, reverse=True,
@@ -175,34 +126,23 @@ def squad(league_id, team_id):
             for p in plist:
                 if p is not None:
                     used_ids.add(p.id)
-        for bd in bench_data:
-            if bd["player"] is not None:
-                used_ids.add(bd["player"].id)
+        for fd in flex_data:
+            if fd["player"] is not None:
+                used_ids.add(fd["player"].id)
 
-        # ── Step 3: Auto-fill empty bench slots ──
-        for i, slot in enumerate(bench_data):
+        # ── Step 3: Auto-fill empty FLEX slots ──
+        for i, slot in enumerate(flex_data):
             if slot["player"] is not None:
                 continue
-            bt = slot["bench_type"]
             remaining = sorted(
                 [p for p in players if p.id not in used_ids],
                 key=lambda p: p.sc_avg or 0, reverse=True,
             )
-            for p in remaining:
-                if bt == "FLEX":
-                    bench_data[i]["player"] = p
-                    used_ids.add(p.id)
-                    break
-                else:
-                    p_positions = (p.position or "MID").split("/")
-                    if bt in p_positions:
-                        bench_data[i]["player"] = p
-                        used_ids.add(p.id)
-                        break
+            if remaining:
+                flex_data[i]["player"] = remaining[0]
+                used_ids.add(remaining[0].id)
 
-        # Build flat bench_list for backward compatibility + bench_filled count
-        bench_list = [bd["player"] for bd in bench_data]
-        bench_filled = sum(1 for p in bench_list if p is not None)
+        flex_filled = sum(1 for fd in flex_data if fd["player"] is not None)
 
         # LTIL entries — exclude from reserves
         ltil_entries = LongTermInjury.query.filter_by(
@@ -210,12 +150,11 @@ def squad(league_id, team_id):
         ).all()
         ltil_player_ids = {lt.player_id for lt in ltil_entries}
 
-        # Reserves: all roster players not on-field, not on bench, not on LTIL
+        # Reserves: all roster players not on-field, not in FLEX, not on LTIL
         reserves = [p for p in players if p.id not in used_ids and p.id not in ltil_player_ids]
         reserves.sort(key=lambda p: p.rating or 0, reverse=True)
 
         # ── Step 4: Persist to DB so swap/captain/VC operations work ──
-        # Check if any unpositioned players were auto-filled into new slots
         needs_persist = is_owner and any(
             roster_map.get(p.id) and (
                 roster_map[p.id].position_code is None or roster_map[p.id].is_benched
@@ -231,13 +170,12 @@ def squad(league_id, team_id):
                         if entry and (entry.position_code != code or entry.is_benched):
                             entry.position_code = code
                             entry.is_benched = False
-            for bd in bench_data:
-                p = bd["player"]
+            for fd in flex_data:
+                p = fd["player"]
                 if p is not None:
-                    expected_code = f"BENCH_{bd['bench_type']}"
                     entry = roster_map.get(p.id)
-                    if entry and (entry.position_code != expected_code or entry.is_benched):
-                        entry.position_code = expected_code
+                    if entry and (entry.position_code != "FLEX" or entry.is_benched):
+                        entry.position_code = "FLEX"
                         entry.is_benched = False
             db.session.commit()
 
@@ -284,7 +222,7 @@ def squad(league_id, team_id):
                 if r.is_benched:
                     emergency_ids.append(r.player_id)
                 else:
-                    # Stale flag — player is on field/bench but still marked emergency
+                    # Stale flag — player is on field but still marked emergency
                     r.is_emergency = False
                     fixed_stale = True
         if fixed_stale:
@@ -328,15 +266,15 @@ def squad(league_id, team_id):
 
         field_data = {
             "zones": zones,
-            "bench": bench_list,
-            "bench_data": bench_data,
+            "flex_data": flex_data,
+            "flex_filled": flex_filled,
+            "flex_count": flex_count,
             "reserves": reserves,
             "cap_id": cap_id,
             "vc_id": vc_id,
             "slot_counts": slot_counts,
             "zone_layouts": zone_layouts,
             "zone_filled": zone_filled,
-            "bench_filled": bench_filled,
             "emergency_ids": emergency_ids,
             "next_lockout_time": next_lockout_time,
             "ltil_entries": ltil_entries,
@@ -620,8 +558,8 @@ def api_set_captain(league_id, team_id):
     if _check_player_locked(player_id, league.season_year):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
-    # Only on-field players can be captain
-    if entry.is_benched or (entry.position_code and entry.position_code.startswith("BENCH")):
+    # Only on-field/flex players can be captain
+    if entry.is_benched:
         return jsonify({"error": "Only on-field players can be captain"}), 409
 
     # Clear old captain on this team
@@ -655,8 +593,8 @@ def api_set_vc(league_id, team_id):
     if _check_player_locked(player_id, league.season_year):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
-    # Only on-field players can be vice-captain
-    if entry.is_benched or (entry.position_code and entry.position_code.startswith("BENCH")):
+    # Only on-field/flex players can be vice-captain
+    if entry.is_benched:
         return jsonify({"error": "Only on-field players can be vice-captain"}), 409
 
     # Clear old VC on this team
@@ -691,8 +629,7 @@ def api_set_position(league_id, team_id):
     if _check_player_locked(player_id, league.season_year):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
-    valid_codes = ("DEF", "MID", "FWD", "RUC", "BENCH",
-                    "BENCH_DEF", "BENCH_MID", "BENCH_FWD", "BENCH_FLEX")
+    valid_codes = ("DEF", "MID", "FWD", "RUC", "FLEX")
     if position_code and position_code not in valid_codes:
         return jsonify({"error": "Invalid position_code"}), 400
 
@@ -762,14 +699,11 @@ def api_swap(league_id, team_id):
     p2_positions = (p2.position or "MID").split("/")
 
     def _check_slot_eligibility(player_positions, target_code, player_name):
-        """Check if player can fill the target slot (field or positional bench)."""
+        """Check if player can fill the target slot (field or flex)."""
         if target_code in ("DEF", "MID", "FWD", "RUC"):
             if target_code not in player_positions:
                 return f"{player_name} can't play {target_code}"
-        elif target_code and target_code.startswith("BENCH_") and target_code != "BENCH_FLEX":
-            required_pos = target_code.replace("BENCH_", "")
-            if required_pos not in player_positions:
-                return f"{player_name} can't fill bench {required_pos} slot"
+        # FLEX accepts any position — no check needed
         return None
 
     err_msg = _check_slot_eligibility(p1_positions, entry2.position_code, p1.name)

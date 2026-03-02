@@ -5,7 +5,7 @@ from models.database import (
     PlayerStat, CustomScoringRule, League, SeasonConfig,
 )
 
-FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC"}
+FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
 
 
 def score_round(league_id, afl_round, year):
