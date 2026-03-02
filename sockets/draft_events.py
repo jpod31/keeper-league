@@ -440,8 +440,8 @@ def _start_timer(socketio, session_id, league_id):
     }
 
     # Persist deadline to DB so we can recover after restarts
-    from datetime import datetime, timedelta, timezone
-    session.pick_deadline = datetime.now(timezone.utc) + timedelta(seconds=duration)
+    from datetime import datetime, timedelta
+    session.pick_deadline = datetime.utcnow() + timedelta(seconds=duration)
     db.session.commit()
 
     def tick():
@@ -530,8 +530,8 @@ def get_timer_remaining(session_id):
     # Fallback: check persisted deadline
     session = db.session.get(DraftSession, session_id)
     if session and session.pick_deadline:
-        from datetime import datetime, timezone
-        remaining = int((session.pick_deadline - datetime.now(timezone.utc)).total_seconds())
+        from datetime import datetime
+        remaining = int((session.pick_deadline - datetime.utcnow()).total_seconds())
         return max(0, remaining)
     return None
 
@@ -543,7 +543,7 @@ def _recover_timer(socketio, session_id, league_id):
         return
 
     from datetime import datetime, timezone
-    remaining = int((session.pick_deadline - datetime.now(timezone.utc)).total_seconds())
+    remaining = int((session.pick_deadline - datetime.utcnow()).total_seconds())
 
     if remaining <= 0:
         # Deadline already passed — trigger auto-pick
