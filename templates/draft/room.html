@@ -850,18 +850,11 @@ function canPick() {
 }
 
 function pickPlayer(playerId, playerName, playerPos, playerTeam) {
-  pendingPickPlayerId = playerId;
-  document.getElementById('confirm-player-name').textContent = playerName || 'Unknown';
-  const posEl = document.getElementById('confirm-player-pos');
-  posEl.textContent = playerPos || '';
-  posEl.className = 'pos-badge badge-' + ((playerPos || 'mid').split('/')[0].toLowerCase());
-  document.getElementById('confirm-player-team').textContent = playerTeam || '';
-  const isMyTurn = USER_TEAM_ID && draftState.current_team_id === USER_TEAM_ID;
-  const btnText = (!isMyTurn && IS_COMMISSIONER && commOverride)
-    ? 'Pick for ' + (draftState.current_team_name || 'team')
-    : 'Confirm';
-  document.getElementById('confirm-pick-btn').textContent = btnText;
-  new bootstrap.Modal(document.getElementById('confirmPickModal')).show();
+  if (!socket.connected) {
+    alert('Not connected to server — please refresh the page and try again.');
+    return;
+  }
+  socket.emit('make_pick', { league_id: LEAGUE_ID, player_id: playerId });
 }
 
 function confirmPick() {
