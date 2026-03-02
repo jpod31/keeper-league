@@ -577,7 +577,14 @@
     box-shadow: 0 4px 12px rgba(0,0,0,.3);
   }
   .matchup-yours { border-color: var(--kl-accent-blue) !important; background: rgba(31,111,235,.04); }
-  .matchup-active { box-shadow: 0 0 0 2px var(--kl-accent-blue), 0 4px 12px rgba(0,0,0,.2); }
+  .matchup-active {
+    box-shadow: 0 0 0 2px var(--kl-accent-blue), 0 4px 12px rgba(0,0,0,.2) !important;
+    border-color: var(--kl-accent-blue) !important;
+    background: rgba(31,111,235,.08);
+  }
+  .matchup-active:hover {
+    box-shadow: 0 0 0 2px var(--kl-accent-blue), 0 4px 12px rgba(0,0,0,.3) !important;
+  }
   .matchup-your-tag {
     position: absolute; top: -1px; right: 10px;
     font-size: .55rem; font-weight: 700; text-transform: uppercase;
@@ -912,8 +919,12 @@ function renderViewedMatchup(fixtureId) {
     // Update active card highlight
     updateActiveCard(fixtureId);
 
-    // Scroll to hero
-    document.getElementById('hero-card').scrollIntoView({behavior: 'smooth', block: 'start'});
+    // Only scroll to hero if it's completely out of view
+    var hero = document.getElementById('hero-card');
+    var rect = hero.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        hero.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
 }
 
 function updateActiveCard(fixtureId) {
