@@ -392,12 +392,12 @@ def get_position_needs(league_id, session_id, team_id):
     """
     slots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
 
-    # Sum required per position (on-field + position-specific bench)
+    # Sum required per position (on-field starters only — bench/reserves can be anyone)
     required = {}
     flex_count = 0
     for s in slots:
         code = s.position_code.upper()
-        if code in ("FLEX", "UTIL", "BENCH"):
+        if s.is_bench or code in ("FLEX", "UTIL", "BENCH"):
             flex_count += s.count
         else:
             required[code] = required.get(code, 0) + s.count
