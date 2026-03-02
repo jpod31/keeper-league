@@ -105,10 +105,13 @@
                   {% if session.draft_round_type == 'supplemental' %}Supplemental draft{% else %}Session{% endif %} created
                 </span>
               </div>
-              <form method="POST">
-                <input type="hidden" name="action" value="start">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-play-fill me-1"></i>Start Draft Now</button>
-              </form>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-outline-primary"><i class="bi bi-door-open me-1"></i>Enter Lobby</a>
+                <form method="POST" class="d-inline">
+                  <input type="hidden" name="action" value="start">
+                  <button type="submit" class="btn btn-primary"><i class="bi bi-play-fill me-1"></i>Start Draft Now</button>
+                </form>
+              </div>
             </div>
             {% if session.scheduled_start %}
               <div class="mt-2 p-3" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;">
