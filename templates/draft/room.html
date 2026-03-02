@@ -115,6 +115,7 @@
     <div>
       <h2>Live Draft</h2>
       <div class="d-flex align-items-center gap-3 mt-1">
+        <span id="conn-status" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;" title="Connecting..."></span>
         <span id="draft-status" class="status-pill status-{{ session.status }}">{{ session.status }}</span>
         <span style="font-size:.8rem;color:#8b949e;">{{ league.draft_type|capitalize }} &middot; {{ session.pick_timer_secs }}s timer</span>
       </div>
@@ -515,9 +516,19 @@ let sortDir = 'desc';
 // Connect to SocketIO
 const socket = io('/draft', { transports: ['websocket', 'polling'] });
 
+function updateConnStatus(connected) {
+  const el = document.getElementById('conn-status');
+  if (!el) return;
+  el.style.background = connected ? '#3fb950' : '#f85149';
+  el.title = connected ? 'Connected' : 'Disconnected — picks will not work';
+}
+
 socket.on('connect', () => {
+  updateConnStatus(true);
   socket.emit('join_draft', { league_id: LEAGUE_ID });
 });
+socket.on('disconnect', () => { updateConnStatus(false); });
+socket.on('connect_error', () => { updateConnStatus(false); });
 
 socket.on('draft_state', (state) => {
   draftState = state;
@@ -855,9 +866,22 @@ function pickPlayer(playerId, playerName, playerPos, playerTeam) {
 
 function confirmPick() {
   if (!pendingPickPlayerId) return;
+  if (!socket.connected) {
+    alert('Not connected to server — please refresh the page and try again.');
+    return;
+  }
+  const btn = document.getElementById('confirm-pick-btn');
+  btn.disabled = true;
+  btn.textContent = 'Picking...';
   socket.emit('make_pick', { league_id: LEAGUE_ID, player_id: pendingPickPlayerId });
   pendingPickPlayerId = null;
-  bootstrap.Modal.getInstance(document.getElementById('confirmPickModal')).hide();
+  // Close modal after brief delay so user sees feedback
+  setTimeout(() => {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmPickModal'));
+    if (modal) modal.hide();
+    btn.disabled = false;
+    btn.textContent = 'Confirm';
+  }, 500);
 }
 
 function showPassModal() {

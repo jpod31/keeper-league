@@ -34,6 +34,48 @@ def _get_active_draft_session(league_id, include_mock=False):
     return q2.order_by(DraftSession.id.desc()).first()
 
 
+# ── Cached score lookup to avoid re-ranking 786 players on every request ──
+import time as _time
+_score_cache = {}  # key: (league_id, weights_tuple) -> {"lookup": dict, "ts": float}
+_CACHE_TTL = 30  # seconds
+
+def _get_score_lookup(league_id, weights):
+    """Return {(name, team): score} dict, cached for 30s per weight combo."""
+    wkey = (league_id, tuple(sorted(weights.items())))
+    cached = _score_cache.get(wkey)
+    if cached and (_time.monotonic() - cached["ts"]) < _CACHE_TTL:
+        return cached["lookup"]
+
+    from models.database import AflPlayer as AflPlayerModel
+    from models.player import orm_to_player
+    from models.draft_model import rank_players, _apply_custom_sc_projection
+
+    league = db.session.get(League, league_id)
+    all_afl = AflPlayerModel.query.all()
+    all_dcs = [orm_to_player(p) for p in all_afl]
+
+    if league and league.scoring_type in ("custom", "hybrid"):
+        from models.database import CustomScoringRule
+        rules = CustomScoringRule.query.filter_by(league_id=league_id).all()
+        if rules:
+            _apply_custom_sc_projection(all_dcs, all_afl, rules)
+    elif league and league.scoring_type == "afl_fantasy":
+        from models.draft_model import _apply_af_projection
+        _apply_af_projection(all_dcs, all_afl)
+
+    rank_players(all_dcs, weights)
+    lookup = {(dc.name, dc.team): dc.draft_score for dc in all_dcs}
+
+    _score_cache[wkey] = {"lookup": lookup, "ts": _time.monotonic()}
+    # Evict old entries
+    now = _time.monotonic()
+    for k in list(_score_cache):
+        if now - _score_cache[k]["ts"] > _CACHE_TTL * 4:
+            del _score_cache[k]
+
+    return lookup
+
+
 @draft_bp.route("/<int:league_id>/draft")
 @login_required
 def draft_room(league_id):
@@ -325,13 +367,12 @@ def api_available_players(league_id):
     players = get_available_players(session.id, search=search or None,
                                     position=position or None, limit=limit)
 
-    # Compute per-user draft scores — rank ALL players so normalisation
-    # is consistent with the player pool, then filter to available ones.
-    from models.database import UserDraftWeights, LeagueDraftWeights, AflPlayer as AflPlayerModel
-    from models.player import orm_to_player
-    from models.draft_model import rank_players, _apply_custom_sc_projection, DRAFT_WEIGHTS
+    # Compute per-user draft scores.
+    # Uses a per-weights cache so we don't re-rank all 786 players on
+    # every request — critical with 6 users to avoid blocking eventlet.
+    from models.database import UserDraftWeights, LeagueDraftWeights
+    from models.draft_model import DRAFT_WEIGHTS
 
-    # Check for weight overrides from query params (sent by slider Apply)
     weight_keys = ["sc_average", "age_factor", "positional_scarcity",
                     "trajectory", "durability", "rating_potential"]
     has_overrides = any(request.args.get(f"w_{k}") for k in weight_keys)
@@ -350,28 +391,8 @@ def api_available_players(league_id):
             weights = lw.to_dict() if lw else DRAFT_WEIGHTS
 
     if players:
-        league = db.session.get(League, league_id)
+        score_lookup = _get_score_lookup(league_id, weights)
 
-        # Rank the full player pool so 0-99 normalisation matches the Players tab
-        all_afl = AflPlayerModel.query.all()
-        all_dcs = [orm_to_player(p) for p in all_afl]
-
-        if league and league.scoring_type in ("custom", "hybrid"):
-            from models.database import CustomScoringRule
-            rules = CustomScoringRule.query.filter_by(league_id=league_id).all()
-            if rules:
-                _apply_custom_sc_projection(all_dcs, all_afl, rules)
-        elif league and league.scoring_type == "afl_fantasy":
-            from models.draft_model import _apply_af_projection
-            _apply_af_projection(all_dcs, all_afl)
-
-        rank_players(all_dcs, weights)
-
-        # Build lookup from full ranked set
-        score_lookup = {(dc.name, dc.team): dc.draft_score for dc in all_dcs}
-
-        # Return only available players with scores from the full ranking
-        available_ids = {p.id for p in players}
         result = []
         for p in players:
             sc = p.sc_avg if p.sc_avg else p.sc_avg_prev
