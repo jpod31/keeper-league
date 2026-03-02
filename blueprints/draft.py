@@ -335,13 +335,14 @@ def api_available_players(league_id):
         result = []
         for p in players:
             dc = name_to_dc.get((p.name, p.afl_team))
+            sc = p.sc_avg if p.sc_avg else p.sc_avg_prev
             result.append({
                 "id": p.id,
                 "name": p.name,
                 "afl_team": p.afl_team,
                 "position": p.position,
                 "age": p.age,
-                "sc_avg": p.sc_avg,
+                "sc_avg": sc,
                 "draft_score": dc.draft_score if dc else p.draft_score,
                 "rating": p.rating,
                 "potential": p.potential,
