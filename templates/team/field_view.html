@@ -576,7 +576,7 @@ function fvStartSub(pid) {
   });
 }
 
-// ── Swap: complete with animation + soft refresh ──
+// ── Swap: complete with animation + inline DOM swap ──
 function fvCompleteSub(targetPid) {
   if (!swapSourceId || swapSourceId === targetPid) return;
   const targetCard = document.querySelector(`.fv-card[data-player-id="${targetPid}"]`);
@@ -599,37 +599,44 @@ function fvCompleteSub(targetPid) {
   sourceCard.style.transform = `translate(${dx}px, ${dy}px)`;
   targetCard.style.transform = `translate(${-dx}px, ${-dy}px)`;
 
-  // After animation, call API
-  setTimeout(() => {
-    fvApi('/swap', {player_id_1: savedSource, player_id_2: targetPid}).then(data => {
-      if (data && !data.error) {
-        // Fade and soft-refresh for seamless update
-        const wrapper = document.getElementById('fvWrapper');
-        wrapper.style.transition = 'opacity 0.15s ease';
-        wrapper.style.opacity = '0.5';
-        fvRefresh().then(() => {
-          const w = document.getElementById('fvWrapper');
-          if (w) {
-            w.style.transition = 'opacity 0.25s ease';
-            w.style.opacity = '1';
-          }
-          fvToast('Players swapped', 'success');
+  // Fire API in parallel with animation
+  const apiPromise = fvApi('/swap', {player_id_1: savedSource, player_id_2: targetPid});
+  const animDone = new Promise(r => setTimeout(r, 370));
+
+  Promise.all([apiPromise, animDone]).then(([data]) => {
+    if (data && !data.error) {
+      // Swap DOM nodes in place — instant, no flash
+      const ph = document.createComment('');
+      sourceCard.parentNode.insertBefore(ph, sourceCard);
+      targetCard.parentNode.insertBefore(sourceCard, targetCard);
+      ph.parentNode.insertBefore(targetCard, ph);
+      ph.remove();
+
+      // Reset animation styles
+      [sourceCard, targetCard].forEach(c => {
+        c.style.transform = '';
+        c.style.transition = '';
+        c.style.zIndex = '';
+      });
+
+      fvToast('Players swapped', 'success');
+
+      // Silent background refresh to fix action buttons/classes
+      fvRefresh();
+    } else {
+      // Reverse animation on error
+      sourceCard.style.transition = 'transform 0.25s ease';
+      targetCard.style.transition = 'transform 0.25s ease';
+      sourceCard.style.transform = '';
+      targetCard.style.transform = '';
+      setTimeout(() => {
+        [sourceCard, targetCard].forEach(c => {
+          c.style.zIndex = '';
+          c.style.transition = '';
         });
-      } else {
-        // Reverse animation on error
-        sourceCard.style.transition = 'transform 0.25s ease';
-        targetCard.style.transition = 'transform 0.25s ease';
-        sourceCard.style.transform = '';
-        targetCard.style.transform = '';
-        setTimeout(() => {
-          sourceCard.style.zIndex = '';
-          targetCard.style.zIndex = '';
-          sourceCard.style.transition = '';
-          targetCard.style.transition = '';
-        }, 260);
-      }
-    });
-  }, 370);
+      }, 260);
+    }
+  });
 }
 
 // ── Swap: cancel ──
