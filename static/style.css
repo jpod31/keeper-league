@@ -2436,3 +2436,221 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .fv-grid-5 { grid-template-columns: repeat(5, 150px); }
   .fv-grid-4 { grid-template-columns: repeat(4, 150px); }
 }
+
+/* ══════════════════════════════════════════════════
+   MOBILE BOTTOM NAVIGATION
+   ══════════════════════════════════════════════════ */
+
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: var(--kl-bg-card);
+  border-top: 1px solid var(--kl-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1040;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mob-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  min-width: 64px;
+  min-height: 48px;
+  font-size: .6rem;
+  font-weight: 500;
+  color: var(--kl-text-secondary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color .15s;
+}
+.mob-nav-item:hover { color: var(--kl-text-primary); text-decoration: none; }
+.mob-nav-item.active { color: var(--kl-accent-blue); }
+.mob-nav-item i { font-size: 1.25rem; }
+
+/* ── More Sheet ── */
+.more-sheet-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 1050;
+}
+.more-sheet-backdrop.open { display: block; }
+
+.more-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--kl-bg-card);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 12px 16px 24px;
+  z-index: 1055;
+  transform: translateY(100%);
+  transition: transform .25s ease;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.more-sheet.open { transform: translateY(0); }
+
+.more-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--kl-border-light);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.more-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.more-sheet-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 8px;
+  border-radius: 12px;
+  background: var(--kl-bg-elevated);
+  color: var(--kl-text-primary);
+  text-decoration: none;
+  font-size: .75rem;
+  font-weight: 500;
+  transition: background .15s;
+}
+.more-sheet-item:hover { background: var(--kl-bg-hover); color: var(--kl-text-primary); text-decoration: none; }
+.more-sheet-item i { font-size: 1.3rem; color: var(--kl-accent-blue); }
+
+/* ══════════════════════════════════════════════════
+   PLAYER POOL CARD VIEW (mobile)
+   ══════════════════════════════════════════════════ */
+
+.pool-view-toggle {
+  display: none;
+  gap: 4px;
+}
+.pool-view-btn {
+  background: var(--kl-bg-elevated);
+  border: 1px solid var(--kl-border);
+  color: var(--kl-text-secondary);
+  border-radius: 6px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: .85rem;
+  transition: background .15s, color .15s;
+}
+.pool-view-btn.active { background: var(--kl-accent-blue); color: #fff; border-color: var(--kl-accent-blue); }
+
+.pool-cards-container {
+  display: none;
+  padding: .75rem;
+}
+.pool-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.pool-card {
+  background: var(--kl-bg-card);
+  border: 1px solid var(--kl-border);
+  border-radius: 10px;
+  padding: .75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  text-decoration: none;
+  color: var(--kl-text-primary);
+  transition: border-color .15s;
+}
+.pool-card:hover { border-color: var(--kl-border-light); color: var(--kl-text-primary); text-decoration: none; }
+.pool-card-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
+.pool-card-info { flex: 1; min-width: 0; }
+.pool-card-name { font-weight: 700; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pool-card-meta { font-size: .7rem; color: var(--kl-text-secondary); display: flex; gap: .5rem; flex-wrap: wrap; }
+.pool-card-stats { font-size: .72rem; color: var(--kl-text-secondary); margin-top: 2px; display: flex; gap: .75rem; }
+.pool-card-stats strong { color: var(--kl-text-primary); }
+.pool-card-rank {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--kl-text-muted);
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 30px;
+}
+.pool-card-status {
+  flex-shrink: 0;
+}
+.pool-card.pool-card-taken { opacity: .55; }
+
+/* ══════════════════════════════════════════════════
+   MOBILE BREAKPOINT (<=768px)
+   ══════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* Space for bottom nav */
+  body.has-bottom-nav main.container { padding-bottom: 80px; }
+
+  /* All interactive elements: 44px minimum touch target */
+  .btn { min-height: 44px; padding: .5rem 1rem; }
+  .btn-sm { min-height: 38px; }
+  .form-control, .form-select { min-height: 44px; }
+  .dropdown-item { padding: .6rem 1rem; }
+
+  /* Top navbar — compact */
+  .navbar { padding: .35rem 0; }
+  .navbar-brand span.fw-semibold { display: none; }
+
+  /* Reduce container padding for more room */
+  .container { max-width: 100%; padding-left: .75rem; padding-right: .75rem; }
+
+  /* Cards: reduce padding */
+  .card { border-radius: 8px; }
+  .card-header { padding: .6rem .75rem; }
+  .card-body { padding: .6rem .75rem; }
+
+  /* League nav compact on mobile */
+  .league-nav { margin: -.75rem -.75rem 1rem; padding: 0 .75rem; }
+  .league-nav-inner { gap: .5rem; }
+
+  /* Player pool filters — stack vertically */
+  .filter-bar { flex-direction: column; gap: .4rem; }
+  .filter-bar > * { width: 100% !important; max-width: 100% !important; flex: none !important; }
+
+  /* Show card/table toggle */
+  .pool-view-toggle { display: flex; }
+
+  /* Page headers */
+  .page-header h2 { font-size: 1.15rem; }
+  .page-header .page-breadcrumb { font-size: .7rem; }
+
+  /* League subnav tabs */
+  .league-subnav { gap: 0; }
+  .league-subtab { padding: .5rem .6rem; font-size: .72rem; }
+}
+
+/* ══════════════════════════════════════════════════
+   PWA STANDALONE MODE
+   ══════════════════════════════════════════════════ */
+
+@media (display-mode: standalone) {
+  .navbar { display: none; }
+  main.container { padding-top: 1rem; }
+  .league-nav { margin-top: 0; }
+}

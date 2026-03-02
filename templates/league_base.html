@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% block body_class %}has-bottom-nav{% endblock %}
 {% block content %}
-{# ═══ League tab navigation bar ═══ #}
+{# ═══ League tab navigation bar (desktop) ═══ #}
 <div class="league-nav">
   <div class="league-nav-inner">
     {# League selector #}
@@ -38,8 +39,8 @@
       </ul>
     </div>
 
-    {# Tab bar #}
-    <nav class="league-tabs" id="league-tabs">
+    {# Tab bar — visible on desktop only #}
+    <nav class="league-tabs d-none d-lg-flex" id="league-tabs">
       {% if nav_user_team|default(none) %}
         <a class="league-tab{% if active_tab|default('') == 'team' %} active{% endif %}"
            href="{{ url_for('team.squad', league_id=league.id, team_id=nav_user_team.id) }}">
@@ -87,4 +88,71 @@
 </div>
 
 {% block league_content %}{% endblock %}
+
+{# ═══ Mobile bottom nav — hidden on desktop ═══ #}
+<nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav">
+  {% if nav_user_team|default(none) %}
+    <a class="mob-nav-item{% if active_tab|default('') == 'team' %} active{% endif %}"
+       href="{{ url_for('team.squad', league_id=league.id, team_id=nav_user_team.id) }}">
+      <i class="bi bi-people"></i><span>Team</span>
+    </a>
+    <a class="mob-nav-item{% if active_tab|default('') == 'gameday' %} active{% endif %}"
+       href="{{ url_for('matchups.gameday', league_id=league.id) }}">
+      <i class="bi bi-controller"></i><span>Gameday</span>
+    </a>
+  {% endif %}
+  <a class="mob-nav-item{% if active_tab|default('') == 'players' %} active{% endif %}"
+     href="{{ url_for('leagues.player_pool', league_id=league.id) }}">
+    <i class="bi bi-person-plus"></i><span>Players</span>
+  </a>
+  <a class="mob-nav-item{% if active_tab|default('') == 'league' %} active{% endif %}"
+     href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
+    <i class="bi bi-calendar-week"></i><span>League</span>
+  </a>
+  {% set more_tabs = ['season', 'stats', 'keepers', 'history', 'comms', 'settings'] %}
+  <button class="mob-nav-item{% if active_tab|default('') in more_tabs %} active{% endif %}" onclick="toggleMoreSheet()" type="button">
+    <i class="bi bi-grid-3x3-gap"></i><span>More</span>
+  </button>
+</nav>
+
+{# ═══ More sheet overlay ═══ #}
+<div class="more-sheet-backdrop" id="moreBackdrop" onclick="toggleMoreSheet()"></div>
+<div class="more-sheet" id="moreSheet">
+  <div class="more-sheet-handle"></div>
+  <div class="more-sheet-grid">
+    <a class="more-sheet-item" href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
+      <i class="bi bi-calendar-range"></i><span>List Mgmt</span>
+    </a>
+    <a class="more-sheet-item" href="{{ url_for('leagues.advanced_stats', league_id=league.id) }}">
+      <i class="bi bi-graph-up"></i><span>Stats</span>
+    </a>
+    <a class="more-sheet-item" href="{{ url_for('leagues.keeper_values', league_id=league.id) }}">
+      <i class="bi bi-star"></i><span>Keepers</span>
+    </a>
+    <a class="more-sheet-item" href="{{ url_for('leagues.league_history', league_id=league.id) }}">
+      <i class="bi bi-clock-history"></i><span>Records</span>
+    </a>
+    <a class="more-sheet-item" href="{{ url_for('comms.league_chat', league_id=league.id) }}">
+      <i class="bi bi-megaphone"></i><span>Comms</span>
+    </a>
+    <a class="more-sheet-item" href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
+      <i class="bi bi-gear"></i><span>Settings</span>
+    </a>
+  </div>
+</div>
+
+<script>
+function toggleMoreSheet() {
+  var sheet = document.getElementById('moreSheet');
+  var backdrop = document.getElementById('moreBackdrop');
+  var isOpen = sheet.classList.contains('open');
+  if (isOpen) {
+    sheet.classList.remove('open');
+    backdrop.classList.remove('open');
+  } else {
+    sheet.classList.add('open');
+    backdrop.classList.add('open');
+  }
+}
+</script>
 {% endblock %}

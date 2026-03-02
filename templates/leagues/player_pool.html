@@ -71,8 +71,14 @@
       <h2 class="mb-0">Player Pool</h2>
       <span style="font-size:.78rem;color:#8b949e;">Ranked by draft value</span>
     </div>
-    <div class="pool-count">
-      <span id="visible-count"><strong>{{ players|length }}</strong> players</span>
+    <div class="d-flex align-items-center gap-2">
+      <div class="pool-view-toggle" id="poolViewToggle">
+        <button class="pool-view-btn active" data-view="table" onclick="setPoolView('table')" title="Table view"><i class="bi bi-list-ul"></i></button>
+        <button class="pool-view-btn" data-view="cards" onclick="setPoolView('cards')" title="Card view"><i class="bi bi-grid-fill"></i></button>
+      </div>
+      <div class="pool-count">
+        <span id="visible-count"><strong>{{ players|length }}</strong> players</span>
+      </div>
     </div>
   </div>
 </div>
@@ -130,7 +136,53 @@
       </select>
     </div>
   </div>
-  <div class="card-body p-0" style="max-height:78vh;overflow:auto;">
+  {# ── Card view (mobile) ── #}
+  <div class="pool-cards-container" id="poolCards">
+    <div class="pool-cards-grid">
+      {% set max_ds = players[0].draft_score if players and players[0].draft_score else 1 %}
+      {% for p in players %}
+        {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
+        {% set owner_team = rostered_map.get(p.id) %}
+        {% set tc = team_colours.get(owner_team, {}) %}
+        <a href="{{ url_for('player_detail', name=p.name) }}"
+           class="pool-card{{ ' pool-card-taken' if owner_team else '' }}"
+           data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
+           data-team="{{ p.afl_team or '' }}" data-age="{{ p.age or 0 }}"
+           data-status="{{ 'taken' if owner_team else 'available' }}"
+           data-owner="{{ owner_team or '' }}">
+          {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+            <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pool-card-logo">
+          {% endif %}
+          <div class="pool-card-info">
+            <div class="pool-card-name">{{ p.name }}</div>
+            <div class="pool-card-meta">
+              {% for pos in (p.position or 'MID').split('/') %}
+                <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.6rem;">{{ pos }}</span>
+              {% endfor %}
+              <span>{{ p.afl_team or '' }}</span>
+              {% if p.age %}<span>Age {{ p.age }}</span>{% endif %}
+            </div>
+            <div class="pool-card-stats">
+              {% if sc_display %}<span>SC: <strong>{{ '%.1f'|format(sc_display) }}</strong></span>{% endif %}
+              {% if p.rating %}<span>Rtg: <strong>{{ p.rating }}</strong></span>{% endif %}
+              {% if p.draft_score %}<span>Val: <strong>{{ '%.1f'|format(p.draft_score) }}</strong></span>{% endif %}
+            </div>
+          </div>
+          <div class="pool-card-rank">#{{ p._rank }}</div>
+          <div class="pool-card-status">
+            {% if owner_team %}
+              <span class="status-chip" style="background:{{ tc.bg }};color:{{ tc.fg }};font-size:.6rem;">{{ owner_team }}</span>
+            {% else %}
+              <span class="status-chip" style="background:rgba(88,166,255,.12);color:#79c0ff;font-size:.6rem;">Avail</span>
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Table view (default) ── #}
+  <div class="card-body p-0" id="poolTable" style="max-height:78vh;overflow:auto;">
     <table class="table table-sm mb-0 pool-table">
       <thead class="sticky-top" style="background:#161b22;z-index:2;">
         <tr>
@@ -263,47 +315,56 @@
 
 {% block scripts %}
 <script>
+function matchRow(el, q, pos, team, ageFilter, status, owner) {
+  var nameMatch = !q || (el.dataset.name || '').includes(q);
+  var posMatch = !pos || (el.dataset.pos || '').includes(pos);
+  var teamMatch = !team || el.dataset.team === team;
+  var statusMatch = !status || el.dataset.status === status;
+  var ownerMatch = !owner || el.dataset.owner === owner;
+  var ageMatch = true;
+  if (ageFilter) {
+    var age = parseFloat(el.dataset.age) || 0;
+    if (ageFilter === '30+') ageMatch = age >= 30;
+    else if (ageFilter === '25-30') ageMatch = age >= 25 && age <= 30;
+    else ageMatch = age > 0 && age < parseInt(ageFilter);
+  }
+  return nameMatch && posMatch && teamMatch && statusMatch && ageMatch && ownerMatch;
+}
+
 function filterPool() {
-  const q = document.getElementById('pool-search').value.toLowerCase();
-  const pos = document.getElementById('pool-pos-filter').value;
-  const team = document.getElementById('pool-team-filter').value;
-  const ageFilter = document.getElementById('pool-age-filter').value;
-  const status = document.getElementById('pool-status-filter').value;
-  const owner = document.getElementById('pool-owner-filter').value;
-  let count = 0;
-  document.querySelectorAll('#pool-body tr').forEach(row => {
-    const nameMatch = !q || row.dataset.name.includes(q);
-    const posMatch = !pos || (row.dataset.pos || '').includes(pos);
-    const teamMatch = !team || row.dataset.team === team;
-    const statusMatch = !status || row.dataset.status === status;
-    const ownerMatch = !owner || row.dataset.owner === owner;
-    let ageMatch = true;
-    if (ageFilter) {
-      const age = parseFloat(row.dataset.age) || 0;
-      if (ageFilter === '30+') ageMatch = age >= 30;
-      else if (ageFilter === '25-30') ageMatch = age >= 25 && age <= 30;
-      else ageMatch = age > 0 && age < parseInt(ageFilter);
-    }
-    const show = nameMatch && posMatch && teamMatch && statusMatch && ageMatch && ownerMatch;
+  var q = document.getElementById('pool-search').value.toLowerCase();
+  var pos = document.getElementById('pool-pos-filter').value;
+  var team = document.getElementById('pool-team-filter').value;
+  var ageFilter = document.getElementById('pool-age-filter').value;
+  var status = document.getElementById('pool-status-filter').value;
+  var owner = document.getElementById('pool-owner-filter').value;
+  var count = 0;
+
+  // Filter table rows
+  document.querySelectorAll('#pool-body tr').forEach(function(row) {
+    var show = matchRow(row, q, pos, team, ageFilter, status, owner);
     row.style.display = show ? '' : 'none';
     if (show) count++;
   });
+
+  // Filter card items
+  document.querySelectorAll('#poolCards .pool-card').forEach(function(card) {
+    var show = matchRow(card, q, pos, team, ageFilter, status, owner);
+    card.style.display = show ? '' : 'none';
+  });
+
   document.getElementById('visible-count').innerHTML = '<strong>' + count + '</strong> players';
 }
 
-let sortKey = 'rank', sortAsc = true;
+var sortKey = 'rank', sortAsc = true;
 function sortPool(key) {
-  // Toggle direction or switch key
   if (sortKey === key) { sortAsc = !sortAsc; } else { sortKey = key; sortAsc = (key === 'name' || key === 'pos'); }
-
-  // Update header styling
-  document.querySelectorAll('.pool-table th.sortable').forEach(th => th.classList.remove('sort-active'));
+  document.querySelectorAll('.pool-table th.sortable').forEach(function(th) { th.classList.remove('sort-active'); });
   event.currentTarget.classList.add('sort-active');
-
-  const tbody = document.getElementById('pool-body');
-  const rows = Array.from(tbody.querySelectorAll('tr'));
-  rows.sort((a, b) => {
-    let va, vb;
+  var tbody = document.getElementById('pool-body');
+  var rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort(function(a, b) {
+    var va, vb;
     if (key === 'name') {
       va = a.dataset.name; vb = b.dataset.name;
       return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
@@ -312,13 +373,29 @@ function sortPool(key) {
       va = a.dataset.pos || 'ZZZ'; vb = b.dataset.pos || 'ZZZ';
       return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     }
-    const attrMap = {sc_avg: 'sc', draft_score: 'ds', rating: 'rtg', potential: 'pot'};
-    const attr = attrMap[key] || key;
+    var attrMap = {sc_avg: 'sc', draft_score: 'ds', rating: 'rtg', potential: 'pot'};
+    var attr = attrMap[key] || key;
     va = parseFloat(a.dataset[attr]) || 0;
     vb = parseFloat(b.dataset[attr]) || 0;
     return sortAsc ? va - vb : vb - va;
   });
-  rows.forEach(r => tbody.appendChild(r));
+  rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+// View toggle (table/cards)
+function setPoolView(view) {
+  var table = document.getElementById('poolTable');
+  var cards = document.getElementById('poolCards');
+  document.querySelectorAll('.pool-view-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+  if (view === 'cards') {
+    table.style.display = 'none';
+    cards.style.display = 'block';
+  } else {
+    table.style.display = '';
+    cards.style.display = 'none';
+  }
 }
 </script>
 {% endblock %}
