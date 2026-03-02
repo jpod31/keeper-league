@@ -155,16 +155,20 @@ def squad(league_id, team_id):
         ltil_player_ids = {lt.player_id for lt in ltil_entries}
 
         # Reserves: all roster players not on-field, not in FLEX, not on LTIL
-        # Grouped by primary position, sorted by SC avg (fallback to rating)
+        # Grouped by highest-priority position (FWD > DEF > RUC > MID),
+        # sorted within each group by SC avg (fallback to rating)
         _reserve_players = [p for p in players if p.id not in used_ids and p.id not in ltil_player_ids]
         _sort_key = lambda p: (p.sc_avg or 0, p.rating or 0)
+        _pos_priority = {"FWD": 0, "DEF": 1, "RUC": 2, "MID": 3}
         _pos_order = ["DEF", "MID", "RUC", "FWD"]
         reserves_by_pos = {}
         for p in _reserve_players:
-            primary = (p.position or "MID").split("/")[0]
-            if primary not in _pos_order:
-                primary = "MID"
-            reserves_by_pos.setdefault(primary, []).append(p)
+            positions = (p.position or "MID").split("/")
+            # Pick highest-priority position for grouping
+            best = min(positions, key=lambda x: _pos_priority.get(x, 99))
+            if best not in _pos_priority:
+                best = "MID"
+            reserves_by_pos.setdefault(best, []).append(p)
         for pos in reserves_by_pos:
             reserves_by_pos[pos].sort(key=_sort_key, reverse=True)
         # Flat list for backward compat
