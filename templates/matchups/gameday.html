@@ -46,14 +46,6 @@
 {# ═══════════════════════ MATCHUP VIEWER ═══════════════════════ #}
 <div id="matchup-viewer">
 
-  {# "Viewing other matchup" banner — hidden initially #}
-  <div id="viewing-banner" style="display:none;">
-    <span id="viewing-banner-text"></span>
-    <button type="button" id="back-to-mine-btn" onclick="viewMyMatchup()">
-      <i class="bi bi-arrow-left me-1"></i>Back to my match
-    </button>
-  </div>
-
   {# ── BYE placeholder (shown when is_bye, hidden once a matchup is clicked) ── #}
   {% if is_bye %}
   <div class="gameday-hero hero-upcoming" id="bye-message" style="text-align:center;">
@@ -450,22 +442,6 @@
   .game-badge-sched { font-size: .6rem; background: var(--kl-bg-elevated); color: var(--kl-text-secondary); }
 
   /* ════════════════════════════════════════════════
-     VIEWING BANNER (shown when viewing another matchup)
-     ════════════════════════════════════════════════ */
-  #viewing-banner {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 14px; margin-bottom: 8px;
-    background: rgba(31,111,235,.08); border: 1px solid rgba(31,111,235,.2);
-    border-radius: 8px; font-size: .78rem; color: var(--kl-accent-blue);
-  }
-  #back-to-mine-btn {
-    background: none; border: 1px solid rgba(31,111,235,.3); color: var(--kl-accent-blue);
-    padding: 3px 10px; border-radius: 6px; font-size: .72rem; cursor: pointer;
-    transition: background .15s;
-  }
-  #back-to-mine-btn:hover { background: rgba(31,111,235,.12); }
-
-  /* ════════════════════════════════════════════════
      HERO CARD
      ════════════════════════════════════════════════ */
   .gameday-hero {
@@ -715,7 +691,6 @@
     .gameday-matchups-grid { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
     .gameday-pos-badge { display: none !important; }
     .gameday-margin-pct { font-size: .6rem; }
-    #viewing-banner { font-size: .7rem; flex-wrap: wrap; gap: 6px; }
   }
 </style>
 {% endblock %}
@@ -804,11 +779,6 @@ function viewMatchup(fixtureId) {
     }
 }
 
-function viewMyMatchup() {
-    if (!FIXTURE_ID) return; // bye — no own matchup
-    viewMatchup(FIXTURE_ID);
-}
-
 function showLoadingState(meta) {
     var heroCard = document.getElementById('hero-card');
     var playerRow = document.getElementById('player-cards-row');
@@ -833,18 +803,6 @@ function renderViewedMatchup(fixtureId) {
 
     currentFixtureId = fixtureId;
     var isOwn = (fixtureId === FIXTURE_ID);
-
-    // Show/hide viewing banner
-    var banner = document.getElementById('viewing-banner');
-    var backBtn = document.getElementById('back-to-mine-btn');
-    if (isOwn) {
-        banner.style.display = 'none';
-    } else {
-        banner.style.display = 'flex';
-        document.getElementById('viewing-banner-text').textContent =
-            'Viewing: ' + meta.home_team_name + ' vs ' + meta.away_team_name;
-        backBtn.style.display = IS_BYE ? 'none' : '';
-    }
 
     // Ensure viewer is visible
     var heroCard = document.getElementById('hero-card');
