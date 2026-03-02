@@ -1132,12 +1132,6 @@ socket.on('draft_chat_msg', function(data) {
   }
 });
 
-// Also post pick events as system messages in chat
-socket.on('pick_made', function() {
-  // The existing pick_made handler already runs — we just add a chat note
-  // We'll do this in the addPickToHistory wrapper instead
-});
-
 function addChatSystemMsg(text) {
   const container = document.getElementById('chat-messages');
   if (!container) return;

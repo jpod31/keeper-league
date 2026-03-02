@@ -240,10 +240,11 @@ def make_pick(session_id, player_id, is_auto=False):
         # Remove from all queues
         DraftQueue.query.filter_by(player_id=player_id).delete()
 
-        # Check if draft is complete
+        # Check if draft is complete (exclude passed picks)
         remaining = (
             DraftPick.query
             .filter_by(draft_session_id=session_id, player_id=None)
+            .filter(DraftPick.is_pass == False)
             .count()
         )
         if remaining == 0:
@@ -678,7 +679,7 @@ def reset_mock_draft(session_id):
         return None, "Not a mock draft session."
     # Clear all picks
     DraftPick.query.filter_by(draft_session_id=session_id).update(
-        {"player_id": None, "is_auto_pick": False, "picked_at": None}
+        {"player_id": None, "is_auto_pick": False, "is_pass": False, "picked_at": None}
     )
     session.status = "scheduled"
     session.started_at = None
