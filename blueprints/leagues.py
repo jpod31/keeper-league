@@ -444,7 +444,13 @@ def league_settings(league_id):
         mid_enabled = request.form.get("mid_season_draft_enabled") == "on"
         season_cfg.mid_season_draft_enabled = mid_enabled
         season_cfg.mid_season_trade_enabled = mid_enabled
-        season_cfg.trades_all_year = request.form.get("trades_all_year") == "on"
+        trade_mode = request.form.get("mid_season_trade_mode", "window")
+        if trade_mode in ("all_year", "until_round", "window"):
+            season_cfg.mid_season_trade_mode = trade_mode
+            season_cfg.trades_all_year = (trade_mode == "all_year")  # keep legacy in sync
+        trade_until = request.form.get("mid_season_trade_until_round", type=int)
+        if trade_until is not None:
+            season_cfg.mid_season_trade_until_round = max(1, min(24, trade_until))
         mid_round = request.form.get("mid_season_draft_after_round", type=int)
         if mid_round is not None:
             season_cfg.mid_season_draft_after_round = max(1, min(24, mid_round))

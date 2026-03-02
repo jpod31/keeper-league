@@ -225,35 +225,70 @@
                   <span class="toggle-track"></span>
                 </label>
               </div>
-              {# All-year trading toggle #}
-              {% set all_year = season_config and season_config.trades_all_year %}
-              <div class="d-flex align-items-center justify-content-between mb-2 pb-2" style="border-bottom:1px solid #21262d;">
-                <div class="d-flex align-items-center gap-2">
+              {# Trading mode selector #}
+              {% set trade_mode = (season_config.mid_season_trade_mode if season_config and season_config.mid_season_trade_mode else 'window') %}
+              <div class="mb-3 pb-2" style="border-bottom:1px solid #21262d;">
+                <div class="d-flex align-items-center gap-2 mb-2">
                   <i class="bi bi-arrow-left-right" style="color:#d29922;"></i>
-                  <div>
-                    <span class="fw-bold" style="font-size:.85rem;">All-Year Trading</span>
-                    <div style="font-size:.68rem;color:#6e7681;">Trades are open the entire season instead of a window</div>
-                  </div>
+                  <span class="fw-bold" style="font-size:.85rem;">Trading</span>
                 </div>
-                <label class="settings-toggle mb-0">
-                  <input type="checkbox" name="trades_all_year" id="trades_all_year"
-                         {{ 'checked' if all_year }}
-                         onchange="document.getElementById('mid-round-row').style.display = this.checked ? 'none' : '';">
-                  <span class="toggle-track"></span>
-                </label>
+                <div class="d-flex flex-column gap-2" style="padding-left:4px;">
+                  <label class="d-flex align-items-start gap-2" style="cursor:pointer;">
+                    <input type="radio" name="mid_season_trade_mode" value="all_year"
+                           {{ 'checked' if trade_mode == 'all_year' }}
+                           onchange="updateTradeMode()" style="margin-top:3px;">
+                    <div>
+                      <span style="font-size:.8rem;font-weight:600;color:#c9d1d9;">All Season</span>
+                      <div style="font-size:.68rem;color:#6e7681;">Trades open the entire year</div>
+                    </div>
+                  </label>
+                  <label class="d-flex align-items-start gap-2" style="cursor:pointer;">
+                    <input type="radio" name="mid_season_trade_mode" value="until_round"
+                           {{ 'checked' if trade_mode == 'until_round' }}
+                           onchange="updateTradeMode()" style="margin-top:3px;">
+                    <div>
+                      <span style="font-size:.8rem;font-weight:600;color:#c9d1d9;">Until Round</span>
+                      <div style="font-size:.68rem;color:#6e7681;">Trades open from start of season until a round</div>
+                    </div>
+                  </label>
+                  <label class="d-flex align-items-start gap-2" style="cursor:pointer;">
+                    <input type="radio" name="mid_season_trade_mode" value="window"
+                           {{ 'checked' if trade_mode == 'window' }}
+                           onchange="updateTradeMode()" style="margin-top:3px;">
+                    <div>
+                      <span style="font-size:.8rem;font-weight:600;color:#c9d1d9;">2-Day Window</span>
+                      <div style="font-size:.68rem;color:#6e7681;">Trade window opens for 2 days after a specific round</div>
+                    </div>
+                  </label>
+                </div>
               </div>
-              <div class="row g-3" id="mid-round-row" style="{{ 'display:none;' if all_year }}">
+              {# Until-round picker (shown for until_round mode) #}
+              <div class="row g-3 mb-2" id="trade-until-row" style="{{ 'display:none;' if trade_mode != 'until_round' }}">
                 <div class="col-md-6">
-                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">Draft After Round</label>
+                  <label class="form-label" style="font-size:.75rem;">Trades Open Until Round</label>
+                  <input type="number" class="form-control form-control-sm" name="mid_season_trade_until_round"
+                         value="{{ season_config.mid_season_trade_until_round if season_config and season_config.mid_season_trade_until_round else 18 }}"
+                         min="1" max="24" placeholder="18">
+                </div>
+              </div>
+              {# Draft after round picker (always shown — controls when the supplemental draft happens) #}
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">Supplemental Draft After Round</label>
                   <input type="number" class="form-control form-control-sm" id="mid_season_draft_after_round"
                          name="mid_season_draft_after_round"
                          value="{{ season_config.mid_season_draft_after_round if season_config and season_config.mid_season_draft_after_round else 12 }}"
                          min="1" max="24" placeholder="12">
                 </div>
               </div>
-              <div class="mt-2" style="font-size:.7rem;color:#6e7681;" id="mid-round-help" {{ 'hidden' if all_year }}>
+              <div class="mt-2" style="font-size:.7rem;color:#6e7681;">
                 <i class="bi bi-info-circle me-1"></i>
-                Trade window opens for 2 days after this round, then 1 day delist period, then supplemental draft
+                <span id="trade-mode-help">
+                  {% if trade_mode == 'all_year' %}Trades always open. Delist period + supplemental draft runs after the round above.
+                  {% elif trade_mode == 'until_round' %}Trades close after the specified round. Delist period + supplemental draft runs after the draft round.
+                  {% else %}Trade window opens for 2 days after the draft round, then 1 day delist period, then supplemental draft.
+                  {% endif %}
+                </span>
               </div>
             </div>
           </div>
@@ -405,6 +440,15 @@ function generateFixtures() {
 }
 
 // Toggle expandable settings sections
+function updateTradeMode() {
+  const mode = document.querySelector('input[name="mid_season_trade_mode"]:checked').value;
+  document.getElementById('trade-until-row').style.display = mode === 'until_round' ? '' : 'none';
+  const help = document.getElementById('trade-mode-help');
+  if (mode === 'all_year') help.textContent = 'Trades always open. Delist period + supplemental draft runs after the round above.';
+  else if (mode === 'until_round') help.textContent = 'Trades close after the specified round. Delist period + supplemental draft runs after the draft round.';
+  else help.textContent = 'Trade window opens for 2 days after the draft round, then 1 day delist period, then supplemental draft.';
+}
+
 function toggleSection(name, expanded) {
   var body = document.getElementById(name + 'Body');
   var header = document.getElementById(name + 'Header');

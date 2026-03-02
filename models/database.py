@@ -201,13 +201,26 @@ class League(db.Model):
 
     @property
     def trade_window_open(self):
-        """Check if trade window is open via date-based windows or legacy toggle."""
+        """Check if trade window is open via trade mode, date windows, or legacy toggle."""
         now = datetime.now(timezone.utc)
         cfg = SeasonConfig.query.filter_by(league_id=self.id, year=self.season_year).first()
         if cfg:
-            # All-year trading — always open
-            if cfg.trades_all_year:
+            mode = cfg.mid_season_trade_mode or ("all_year" if cfg.trades_all_year else "window")
+
+            if mode == "all_year":
                 return True
+
+            if mode == "until_round" and cfg.mid_season_trade_until_round:
+                # Open until the specified round is completed
+                latest_completed = (
+                    db.session.query(db.func.max(Fixture.afl_round))
+                    .filter_by(league_id=self.id, year=self.season_year,
+                               status="completed", is_final=False)
+                    .scalar()
+                ) or 0
+                return latest_completed < cfg.mid_season_trade_until_round
+
+            # mode == "window" — use date-based windows
             if cfg.mid_trade_window_open and cfg.mid_trade_window_close:
                 if cfg.mid_trade_window_open <= now <= cfg.mid_trade_window_close:
                     return True
@@ -631,7 +644,9 @@ class SeasonConfig(db.Model):
     mid_season_delist_required = db.Column(db.Integer, default=1)
     mid_season_trade_enabled = db.Column(db.Boolean, default=False)
     mid_season_trade_after_round = db.Column(db.Integer)
-    trades_all_year = db.Column(db.Boolean, default=False)
+    trades_all_year = db.Column(db.Boolean, default=False)  # legacy, use trade_mode
+    mid_season_trade_mode = db.Column(db.String(20), default="window")  # window|all_year|until_round
+    mid_season_trade_until_round = db.Column(db.Integer)
 
     # Trade/delist window duration settings (configured in Settings)
     mid_trade_duration_days = db.Column(db.Integer, default=2)     # 1-3 days
@@ -897,6 +912,8 @@ def _run_migrations(app):
             ("mid_season_trade_enabled", "BOOLEAN DEFAULT 0"),
             ("mid_season_trade_after_round", "INTEGER"),
             ("trades_all_year", "BOOLEAN DEFAULT 0"),
+            ("mid_season_trade_mode", 'VARCHAR(20) DEFAULT "window"'),
+            ("mid_season_trade_until_round", "INTEGER"),
             ("offseason_trade_enabled", "BOOLEAN DEFAULT 1"),
             ("offseason_delist_min", "INTEGER DEFAULT 3"),
             ("ssp_enabled", "BOOLEAN DEFAULT 1"),
