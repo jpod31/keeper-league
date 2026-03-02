@@ -3,6 +3,21 @@
 {% block title %}Draft Room — {{ league.name }}{% endblock %}
 {% block league_content %}
 <style>
+/* ── Available Players table — prominent styling ── */
+.draft-avail-tbl { font-size: .82rem; }
+.draft-avail-tbl thead th {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: #8b949e;
+  padding: .5rem .45rem;
+  border-bottom: 2px solid var(--kl-border);
+}
+.draft-avail-tbl tbody td { padding: .45rem; vertical-align: middle; }
+.draft-avail-tbl tbody tr:hover { background: rgba(88,166,255,.06); }
+.draft-avail-tbl .player-name { font-weight: 600; color: var(--kl-text-heading); white-space: nowrap; }
+.draft-avail-tbl .stat-cell { font-weight: 600; font-variant-numeric: tabular-nums; }
+
 /* ── Mobile-responsive draft room ──────────────────────────────── */
 @media (max-width: 991.98px) {
   .draft-banner { flex-direction: column; gap: .5rem; text-align: center; padding: .75rem; }
@@ -11,10 +26,10 @@
   .draft-timer { font-size: 1.5rem !important; }
   #commissioner-controls { flex-wrap: wrap; justify-content: center !important; }
   #commissioner-controls .btn { font-size: .65rem !important; padding: 2px 6px !important; }
-  /* Hide AFL Team column in available players */
+  /* Columns: Player, Pos, Team, Age, SC, Rtg, Pot, Value, Pick */
+  /* Hide Team (3), Rtg (6) on tablet */
   .draft-avail-tbl th:nth-child(3),
   .draft-avail-tbl td:nth-child(3) { display: none; }
-  /* Hide Rating column */
   .draft-avail-tbl th:nth-child(6),
   .draft-avail-tbl td:nth-child(6) { display: none; }
   /* Hide AFL Team in pick history */
@@ -32,6 +47,9 @@
   .draft-hist-tbl th:nth-child(2), .draft-hist-tbl td:nth-child(2) { display: none; }
   #weight-panel .d-flex.align-items-center.gap-2 span:first-child { width: 45px !important; font-size: .65rem !important; }
   .col-lg-5, .col-lg-7 { padding-left: 0; padding-right: 0; }
+  /* Also hide Pot (7) on small phones to save space */
+  .draft-avail-tbl th:nth-child(7),
+  .draft-avail-tbl td:nth-child(7) { display: none; }
 }
 @media (hover: none) and (pointer: coarse) {
   .draft-avail-tbl .btn { min-width: 44px; min-height: 36px; font-size: .75rem !important; }
@@ -110,8 +128,8 @@
 
 <div class="row g-3">
   <!-- Available Players (left) -->
-  <div class="col-lg-5">
-    <div class="card" style="max-height:75vh;overflow:hidden;display:flex;flex-direction:column;">
+  <div class="col-lg-7">
+    <div class="card" style="max-height:78vh;overflow:hidden;display:flex;flex-direction:column;">
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
@@ -209,6 +227,7 @@
               <th>Age</th>
               <th>SC</th>
               <th>Rtg</th>
+              <th>Pot</th>
               <th>Value</th>
               <th></th>
             </tr>
@@ -222,7 +241,7 @@
   </div>
 
   <!-- Pick History + Your Team (right) -->
-  <div class="col-lg-7">
+  <div class="col-lg-5">
     <!-- Pick History -->
     <div class="card mb-3" style="max-height:40vh;overflow:hidden;display:flex;flex-direction:column;">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -545,17 +564,20 @@ function searchPlayers() {
         const posClass = (p.position||'mid').split('/')[0].toLowerCase();
         const rtg = p.rating != null ? p.rating : '-';
         const rtgColor = p.rating >= 80 ? '#3fb950' : p.rating >= 70 ? '#d29922' : p.rating >= 60 ? '#f0883e' : p.rating != null ? '#f85149' : '#8b949e';
+        const pot = p.potential != null ? p.potential : '-';
+        const potColor = p.potential >= 80 ? '#3fb950' : p.potential >= 70 ? '#58a6ff' : p.potential >= 60 ? '#d29922' : p.potential != null ? '#8b949e' : '#8b949e';
         const blocked = isPositionBlocked(p.position);
         const pickDisabled = !canPick() || blocked;
         const blockedStyle = blocked ? 'opacity:.45;' : '';
         return `<tr style="${blockedStyle}">
-          <td>${p.name}</td>
+          <td class="player-name">${p.name}</td>
           <td><span class="pos-badge badge-${posClass}">${p.position || ''}</span></td>
           <td>${p.afl_team || ''}</td>
           <td style="color:#8b949e;">${p.age || '-'}</td>
-          <td>${p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
-          <td><span style="color:${rtgColor};font-weight:600;">${rtg}</span></td>
-          <td><span style="color:#58a6ff;font-weight:600;">${p.draft_score ? p.draft_score.toFixed(1) : '-'}</span></td>
+          <td class="stat-cell">${p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
+          <td class="stat-cell"><span style="color:${rtgColor}">${rtg}</span></td>
+          <td class="stat-cell"><span style="color:${potColor}">${pot}</span></td>
+          <td class="stat-cell"><span style="color:#58a6ff;">${p.draft_score ? p.draft_score.toFixed(1) : '-'}</span></td>
           <td>
             <button class="btn btn-outline-primary btn-sm py-0 px-2"
                     onclick="pickPlayer(${p.id}, ${JSON.stringify(p.name)}, ${JSON.stringify(p.position || '')}, ${JSON.stringify(p.afl_team || '')})"
