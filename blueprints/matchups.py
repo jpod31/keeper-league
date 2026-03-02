@@ -405,6 +405,39 @@ def gameday(league_id):
         else:
             round_dates = f"{fmt(earliest)} – {fmt(latest)}"
 
+    # ── Shared round-level data (needed by all states inc. bye) ──
+    round_fixtures = get_round_fixtures(league_id, year, afl_round)
+    round_scores = get_live_scores(league_id, afl_round, year)
+    afl_games = get_game_statuses(afl_round, year)
+    locked_ids = get_locked_player_ids(afl_round, year)
+
+    if any(f.status == "live" for f in round_fixtures):
+        gameday_state = "live"
+    elif round_fixtures and all(f.status == "completed" for f in round_fixtures):
+        gameday_state = "completed"
+    else:
+        gameday_state = "upcoming"
+
+    live_config = LiveScoringConfig.query.get(league_id)
+    live_enabled = live_config.enabled if live_config else False
+    scoring = get_scoring_context(league)
+
+    # Shared template vars passed to every render
+    shared = dict(
+        league=league,
+        afl_round=afl_round,
+        round_dates=round_dates,
+        first_bounce=first_bounce,
+        round_fixtures=round_fixtures,
+        round_scores=round_scores,
+        afl_games=afl_games,
+        locked_player_ids=locked_ids,
+        live_enabled=live_enabled,
+        gameday_state=gameday_state,
+        user_team=user_team,
+        scoring=scoring,
+    )
+
     # ── Find user's fixture (or bye) ──
     fixture = Fixture.query.filter(
         Fixture.league_id == league_id,
@@ -418,44 +451,18 @@ def gameday(league_id):
     ).first()
 
     if not fixture:
-        # Bye round — render in template, don't redirect
-        scoring = get_scoring_context(league)
-        bye_round_fixtures = get_round_fixtures(league_id, year, afl_round)
-        bye_round_scores = get_live_scores(league_id, afl_round, year)
         return render_template(
-            "matchups/gameday.html",
-            league=league,
-            afl_round=afl_round,
-            is_bye=True,
-            round_dates=round_dates,
-            round_fixtures=bye_round_fixtures,
-            round_scores=bye_round_scores,
-            user_team=user_team,
-            scoring=scoring,
+            "matchups/gameday.html", is_bye=True, **shared,
         )
 
-    # ── Determine gameday state ──
-    round_fixtures = get_round_fixtures(league_id, year, afl_round)
-    if any(f.status == "live" for f in round_fixtures):
-        gameday_state = "live"
-    elif all(f.status == "completed" for f in round_fixtures):
-        gameday_state = "completed"
-    else:
-        gameday_state = "upcoming"
-
-    # Scores for all teams in round (for all-matchups section)
-    round_scores = get_live_scores(league_id, afl_round, year)
-
-    # Determine which side the user is on
+    # ── User's matchup data ──
     is_home = fixture.home_team_id == user_team.id
     my_team = fixture.home_team if is_home else fixture.away_team
     opp_team = fixture.away_team if is_home else fixture.home_team
 
-    # Fetch player breakdowns
     my_players = get_player_score_breakdown(my_team.id, afl_round, year, league_id, include_reserves=True)
     opp_players = get_player_score_breakdown(opp_team.id, afl_round, year, league_id, include_reserves=True)
 
-    # Scores
     my_rs = RoundScore.query.filter_by(
         team_id=my_team.id, afl_round=afl_round, year=year
     ).first()
@@ -468,22 +475,10 @@ def gameday(league_id):
     my_captain_bonus = my_rs.captain_bonus if my_rs else 0
     opp_captain_bonus = opp_rs.captain_bonus if opp_rs else 0
 
-    # AFL game statuses + locked players
-    afl_games = get_game_statuses(afl_round, year)
-    locked_ids = get_locked_player_ids(afl_round, year)
-
-    # Live scoring config
-    live_config = LiveScoringConfig.query.get(league_id)
-    live_enabled = live_config.enabled if live_config else False
-
-    scoring = get_scoring_context(league)
-
     return render_template(
         "matchups/gameday.html",
-        league=league,
-        afl_round=afl_round,
-        fixture=fixture,
         is_bye=False,
+        fixture=fixture,
         is_home=is_home,
         my_team=my_team,
         opp_team=opp_team,
@@ -493,16 +488,7 @@ def gameday(league_id):
         opp_score=opp_score,
         my_captain_bonus=my_captain_bonus,
         opp_captain_bonus=opp_captain_bonus,
-        afl_games=afl_games,
-        locked_player_ids=locked_ids,
-        live_enabled=live_enabled,
-        gameday_state=gameday_state,
-        first_bounce=first_bounce,
-        round_dates=round_dates,
-        round_fixtures=round_fixtures,
-        round_scores=round_scores,
-        user_team=user_team,
-        scoring=scoring,
+        **shared,
     )
 
 
