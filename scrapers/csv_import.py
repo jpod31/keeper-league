@@ -22,6 +22,9 @@ def import_players_csv(filepath: str, merge: bool = True) -> List[Player]:
     """
     incoming_df = pd.read_csv(filepath)
 
+    # Sanitise: drop fully-empty rows, strip strings, reject NaN in critical fields
+    incoming_df = incoming_df.dropna(how="all")
+
     # Normalise column names to lowercase/underscore
     incoming_df.columns = [c.strip().lower().replace(" ", "_") for c in incoming_df.columns]
 
@@ -29,6 +32,14 @@ def import_players_csv(filepath: str, merge: bool = True) -> List[Player]:
     if not required.issubset(set(incoming_df.columns)):
         missing = required - set(incoming_df.columns)
         raise ValueError(f"CSV is missing required columns: {missing}")
+
+    # Drop rows with missing critical fields
+    incoming_df = incoming_df.dropna(subset=["name", "team", "position"])
+    # Strip whitespace from string columns
+    for col in incoming_df.select_dtypes(include="object").columns:
+        incoming_df[col] = incoming_df[col].str.strip()
+    # Remove duplicate player entries (keep last)
+    incoming_df = incoming_df.drop_duplicates(subset=["name", "team"], keep="last")
 
     incoming = df_to_players(incoming_df)
 
@@ -54,12 +65,23 @@ def import_sc_scores_csv(filepath: str, year: int) -> pd.DataFrame:
     Overwrites the existing sc_scores_{year}.csv.
     """
     df = pd.read_csv(filepath)
+    df = df.dropna(how="all")
     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
 
     required = {"name", "round", "sc_score"}
     if not required.issubset(set(df.columns)):
         missing = required - set(df.columns)
         raise ValueError(f"CSV is missing required columns: {missing}")
+
+    # Sanitise: drop rows with missing critical fields, coerce numeric types
+    df = df.dropna(subset=["name", "round", "sc_score"])
+    df["round"] = pd.to_numeric(df["round"], errors="coerce")
+    df["sc_score"] = pd.to_numeric(df["sc_score"], errors="coerce")
+    df = df.dropna(subset=["round", "sc_score"])
+    df["round"] = df["round"].astype(int)
+    df["sc_score"] = df["sc_score"].astype(int)
+    # Remove duplicate entries (keep last)
+    df = df.drop_duplicates(subset=["name", "round"], keep="last")
 
     os.makedirs(DATA_DIR, exist_ok=True)
     path = os.path.join(DATA_DIR, f"sc_scores_{year}.csv")

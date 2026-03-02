@@ -181,53 +181,66 @@ def run_manual_score_sync():
 
 
 def _poll_live_scores():
-    """Poll for live AFL scores and push updates via SocketIO."""
+    """Poll for live AFL scores and push updates via SocketIO.
+
+    Retries up to 2 times on transient network failures before giving up.
+    """
     if not _app or not _socketio:
         return
 
-    with _app.app_context():
-        try:
-            from models.database import AflGame
-            from models.live_sync import sync_live_scores, get_game_statuses, get_locked_player_ids
-            from scrapers.squiggle import get_current_round
-            import config
+    import time as _time
 
-            year = config.CURRENT_YEAR
+    max_retries = 2
+    for attempt in range(max_retries + 1):
+        with _app.app_context():
+            try:
+                from models.database import AflGame
+                from models.live_sync import sync_live_scores, get_game_statuses, get_locked_player_ids
+                from scrapers.squiggle import get_current_round
+                import config
 
-            # Determine active round
-            active_round = _get_active_round(year)
-            if active_round is None:
-                return
+                year = config.CURRENT_YEAR
 
-            # Check if any games are live
-            live_games = AflGame.query.filter_by(
-                year=year, afl_round=active_round, status="live"
-            ).all()
-            if not live_games:
-                # Also check for recently completed games that might need final scoring
-                recent_complete = AflGame.query.filter_by(
-                    year=year, afl_round=active_round, status="complete"
-                ).all()
-                if not recent_complete:
-                    logger.debug("No live/recent games for R%d, skipping poll", active_round)
+                # Determine active round
+                active_round = _get_active_round(year)
+                if active_round is None:
                     return
 
-            # Sync scores
-            changed_data = sync_live_scores(year, active_round)
+                # Check if any games are live
+                live_games = AflGame.query.filter_by(
+                    year=year, afl_round=active_round, status="live"
+                ).all()
+                if not live_games:
+                    # Also check for recently completed games that might need final scoring
+                    recent_complete = AflGame.query.filter_by(
+                        year=year, afl_round=active_round, status="complete"
+                    ).all()
+                    if not recent_complete:
+                        logger.debug("No live/recent games for R%d, skipping poll", active_round)
+                        return
 
-            # Broadcast via SocketIO
-            if changed_data:
-                game_statuses = get_game_statuses(active_round, year)
-                locked_ids = list(get_locked_player_ids(active_round, year))
+                # Sync scores
+                changed_data = sync_live_scores(year, active_round)
 
-                for league_id, fixtures_data in changed_data.items():
-                    _broadcast_score_update(
-                        league_id, active_round,
-                        fixtures_data, game_statuses, locked_ids
-                    )
+                # Broadcast via SocketIO
+                if changed_data:
+                    game_statuses = get_game_statuses(active_round, year)
+                    locked_ids = list(get_locked_player_ids(active_round, year))
 
-        except Exception:
-            logger.exception("Error in live score poll")
+                    for league_id, fixtures_data in changed_data.items():
+                        _broadcast_score_update(
+                            league_id, active_round,
+                            fixtures_data, game_statuses, locked_ids
+                        )
+                return  # Success — exit retry loop
+
+            except Exception:
+                if attempt < max_retries:
+                    logger.warning("Live score poll attempt %d failed, retrying in 10s...",
+                                   attempt + 1, exc_info=True)
+                    _time.sleep(10)
+                else:
+                    logger.exception("Live score poll failed after %d attempts", max_retries + 1)
 
 
 def _sync_round_schedule():

@@ -8,7 +8,7 @@ import pandas as pd
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
-from models.database import db, League, FantasyTeam, FantasyRoster, AflPlayer, UserDraftWeights, LeagueDraftWeights, LiveScoringConfig
+from models.database import db, League, FantasyTeam, FantasyRoster, AflPlayer, UserDraftWeights, LeagueDraftWeights, LiveScoringConfig, DraftPick, DraftSession
 from models.league_manager import (
     create_league, join_league, get_user_leagues, get_league_teams,
     set_custom_scoring, get_custom_scoring, update_league_settings,
@@ -1449,3 +1449,744 @@ def player_compare(league_id):
                            selected_ids=player_ids,
                            all_players=all_players,
                            active_tab="players")
+
+
+# ── Keeper Value Tracking ────────────────────────────────────────────
+
+
+@leagues_bp.route("/<int:league_id>/keepers")
+@login_required
+def keeper_values(league_id):
+    """Keeper value tracker: shows draft cost vs current value for every rostered player."""
+    from blueprints import check_league_access
+
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    # ── Gather all teams and their active rosters ────────────────────
+    teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    team_map = {t.id: t for t in teams}
+
+    rosters = (
+        FantasyRoster.query
+        .filter(
+            FantasyRoster.team_id.in_([t.id for t in teams]),
+            FantasyRoster.is_active == True,
+        )
+        .all()
+    )
+
+    # ── Build draft-pick lookup: player_id -> DraftPick ──────────────
+    # Get all draft sessions for this league (initial + supplemental)
+    sessions = DraftSession.query.filter_by(league_id=league_id).all()
+    session_ids = [s.id for s in sessions]
+    session_map = {s.id: s for s in sessions}
+
+    draft_picks = (
+        DraftPick.query
+        .filter(
+            DraftPick.draft_session_id.in_(session_ids),
+            DraftPick.player_id.isnot(None),
+        )
+        .all()
+    ) if session_ids else []
+
+    # Map player_id -> their draft pick info
+    player_draft = {}  # player_id -> {round, round_type, pick_number}
+    for dp in draft_picks:
+        sess = session_map.get(dp.draft_session_id)
+        round_type = sess.draft_round_type if sess else "initial"
+        # Keep the earliest draft pick if a player was drafted multiple times
+        if dp.player_id not in player_draft:
+            player_draft[dp.player_id] = {
+                "round": dp.draft_round,
+                "pick_number": dp.pick_number,
+                "round_type": round_type,
+                "total_rounds": sess.total_rounds if sess else 10,
+            }
+
+    # ── Determine total rounds for baseline calculation ──────────────
+    initial_sessions = [s for s in sessions if s.draft_round_type == "initial"]
+    total_rounds = max((s.total_rounds or 10 for s in initial_sessions), default=10)
+
+    # ── Find the best draft_score among all rostered players ─────────
+    rostered_player_ids = [r.player_id for r in rosters]
+    all_rostered_players = (
+        AflPlayer.query
+        .filter(AflPlayer.id.in_(rostered_player_ids))
+        .all()
+    ) if rostered_player_ids else []
+    player_obj_map = {p.id: p for p in all_rostered_players}
+
+    best_draft_score = max(
+        (p.draft_score for p in all_rostered_players if p.draft_score),
+        default=1.0,
+    )
+    if best_draft_score <= 0:
+        best_draft_score = 1.0
+
+    # Baseline value per round: what a "fair" pick at each round is worth
+    baseline_per_round = best_draft_score / total_rounds
+
+    # ── Keeper longevity multiplier (from draft_model.py) ────────────
+    # Players 29+ lose 8% per year over 30, floor 0.55
+    def _keeper_age_mult(age):
+        if age is None:
+            return 1.0
+        if age > 30:
+            return max(0.55, 1.0 - (age - 30) * 0.08)
+        return 1.0
+
+    # ── Compute rolling averages for trend data ──────────────────────
+    rolling = _compute_rolling_averages()
+
+    # ── Build per-team keeper data ───────────────────────────────────
+    teams_data = []  # list of {team, players: [{...}]}
+
+    # Collect all keeper entries for the projected rankings
+    all_keepers = []
+
+    for team in sorted(teams, key=lambda t: t.name):
+        team_rosters = [r for r in rosters if r.team_id == team.id]
+        team_players = []
+
+        for roster_entry in team_rosters:
+            player = player_obj_map.get(roster_entry.player_id)
+            if not player:
+                continue
+
+            draft_info = player_draft.get(player.id)
+            draft_score = player.draft_score or 0
+
+            # Determine cost label and effective round cost
+            if draft_info:
+                if draft_info["round_type"] == "supplemental":
+                    cost_label = f"Supp R{draft_info['round']}"
+                    # Supplemental picks treated as mid-round value
+                    effective_round = total_rounds * 0.6
+                else:
+                    cost_label = f"R{draft_info['round']}"
+                    effective_round = draft_info["round"]
+            elif roster_entry.acquired_via == "trade":
+                cost_label = "Trade"
+                # Trades treated as mid-round value
+                effective_round = total_rounds * 0.5
+            else:
+                cost_label = "Undrafted"
+                # Undrafted = treat as last round pick
+                effective_round = total_rounds
+
+            # Keeper value = draft_score / (effective_round_cost * baseline)
+            expected_value = effective_round * baseline_per_round
+            if expected_value > 0:
+                keeper_value = draft_score / expected_value
+            else:
+                keeper_value = 0
+
+            # Recommendation
+            if keeper_value > 1.2:
+                recommendation = "KEEP"
+            elif keeper_value >= 0.8:
+                recommendation = "TRADE"
+            else:
+                recommendation = "DROP"
+
+            # Season trend
+            pr = rolling.get(player.name, {})
+            sc_display = player.sc_avg or player.sc_avg_prev or 0
+            if pr.get("l3") and sc_display:
+                trend_val = pr["l3"] - sc_display
+                trend_pct = (trend_val / sc_display * 100) if sc_display else 0
+            else:
+                trend_val = 0
+                trend_pct = 0
+
+            # Projected next-year value (age decline)
+            age_mult_now = _keeper_age_mult(player.age)
+            age_mult_next = _keeper_age_mult((player.age + 1) if player.age else None)
+            projected_score = draft_score * (age_mult_next / age_mult_now) if age_mult_now > 0 else draft_score
+
+            # Projected keeper value next year
+            if expected_value > 0:
+                projected_kv = projected_score / expected_value
+            else:
+                projected_kv = 0
+
+            entry = {
+                "player": player,
+                "cost_label": cost_label,
+                "effective_round": effective_round,
+                "draft_score": round(draft_score, 1),
+                "keeper_value": round(keeper_value, 2),
+                "recommendation": recommendation,
+                "trend_val": round(trend_val, 1),
+                "trend_pct": round(trend_pct, 1),
+                "projected_score": round(projected_score, 1),
+                "projected_kv": round(projected_kv, 2),
+                "age_mult_next": round(age_mult_next, 2),
+                "team_name": team.name,
+                "team_id": team.id,
+            }
+
+            team_players.append(entry)
+            all_keepers.append(entry)
+
+        # Sort team players by keeper value descending
+        team_players.sort(key=lambda x: x["keeper_value"], reverse=True)
+
+        teams_data.append({
+            "team": team,
+            "players": team_players,
+        })
+
+    # ── Projected keeper rankings (all players, sorted by projected KV) ──
+    projected_rankings = sorted(all_keepers, key=lambda x: x["projected_kv"], reverse=True)
+
+    return render_template(
+        "leagues/keepers.html",
+        league=league,
+        teams_data=teams_data,
+        projected_rankings=projected_rankings,
+        best_draft_score=best_draft_score,
+        total_rounds=total_rounds,
+        active_tab="players",
+    )
+
+
+# ── League Records (all-time history) ────────────────────────────────
+
+
+@leagues_bp.route("/<int:league_id>/records")
+@login_required
+def league_history(league_id):
+    """All-time league records: champions, records, head-to-head, standings."""
+    from collections import defaultdict
+    from blueprints import check_league_access
+    from models.database import SeasonStanding, Fixture, RoundScore
+
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    team_map = {t.id: t.name for t in teams}
+
+    # ── Champions per year ────────────────────────────────────────
+    all_standings = (
+        SeasonStanding.query
+        .filter_by(league_id=league_id)
+        .order_by(SeasonStanding.year, SeasonStanding.ladder_points.desc(),
+                  SeasonStanding.percentage.desc())
+        .all()
+    )
+
+    # Group by year, pick #1
+    standings_by_year = defaultdict(list)
+    for s in all_standings:
+        standings_by_year[s.year].append(s)
+
+    champions = []
+    for year in sorted(standings_by_year.keys()):
+        rows = standings_by_year[year]
+        if rows:
+            champ = rows[0]
+            champions.append({
+                "year": year,
+                "team_name": team_map.get(champ.team_id, "Unknown"),
+                "team_id": champ.team_id,
+                "wins": champ.wins,
+                "losses": champ.losses,
+                "draws": champ.draws,
+                "points_for": champ.points_for,
+                "ladder_points": champ.ladder_points,
+                "percentage": champ.percentage,
+            })
+
+    # ── All-time aggregate standings ──────────────────────────────
+    alltime = {}
+    for s in all_standings:
+        tid = s.team_id
+        if tid not in alltime:
+            alltime[tid] = {
+                "team_name": team_map.get(tid, "Unknown"),
+                "team_id": tid,
+                "wins": 0, "losses": 0, "draws": 0,
+                "points_for": 0.0, "points_against": 0.0,
+                "seasons": 0,
+            }
+        alltime[tid]["wins"] += s.wins
+        alltime[tid]["losses"] += s.losses
+        alltime[tid]["draws"] += s.draws
+        alltime[tid]["points_for"] += s.points_for
+        alltime[tid]["points_against"] += s.points_against
+        alltime[tid]["seasons"] += 1
+
+    for tid in alltime:
+        a = alltime[tid]
+        total = a["wins"] + a["losses"] + a["draws"]
+        a["total_games"] = total
+        a["win_pct"] = (a["wins"] / total * 100) if total > 0 else 0
+        a["percentage"] = (
+            (a["points_for"] / a["points_against"] * 100)
+            if a["points_against"] > 0 else 0
+        )
+
+    alltime_sorted = sorted(
+        alltime.values(),
+        key=lambda x: (-x["wins"], -x["win_pct"], -x["points_for"]),
+    )
+
+    # ── Records: highest round score, highest season PF, biggest blowout ─
+    # Highest single-round scores
+    top_round_scores = (
+        db.session.query(RoundScore, FantasyTeam)
+        .join(FantasyTeam, RoundScore.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id)
+        .order_by(RoundScore.total_score.desc())
+        .limit(10)
+        .all()
+    )
+    top_scores = []
+    for rs, ft in top_round_scores:
+        top_scores.append({
+            "team_name": ft.name,
+            "score": rs.total_score,
+            "round": rs.afl_round,
+            "year": rs.year,
+        })
+
+    # Highest season points for
+    top_season_pf = sorted(
+        all_standings, key=lambda s: s.points_for, reverse=True
+    )[:5]
+    top_season_pf_list = [{
+        "team_name": team_map.get(s.team_id, "Unknown"),
+        "year": s.year,
+        "points_for": s.points_for,
+        "wins": s.wins,
+        "losses": s.losses,
+    } for s in top_season_pf]
+
+    # Biggest blowout (largest margin in completed fixtures)
+    blowout_fixtures = (
+        Fixture.query
+        .filter_by(league_id=league_id, status="completed", is_final=False)
+        .all()
+    )
+    blowouts = []
+    for f in blowout_fixtures:
+        if f.home_score is not None and f.away_score is not None:
+            margin = abs(f.home_score - f.away_score)
+            if f.home_score > f.away_score:
+                winner = team_map.get(f.home_team_id, "Unknown")
+                loser = team_map.get(f.away_team_id, "Unknown")
+                winner_score = f.home_score
+                loser_score = f.away_score
+            else:
+                winner = team_map.get(f.away_team_id, "Unknown")
+                loser = team_map.get(f.home_team_id, "Unknown")
+                winner_score = f.away_score
+                loser_score = f.home_score
+            blowouts.append({
+                "winner": winner,
+                "loser": loser,
+                "winner_score": winner_score,
+                "loser_score": loser_score,
+                "margin": margin,
+                "round": f.afl_round,
+                "year": f.year,
+            })
+    blowouts.sort(key=lambda x: x["margin"], reverse=True)
+    blowouts = blowouts[:5]
+
+    # ── Longest win streaks ───────────────────────────────────────
+    completed = (
+        Fixture.query
+        .filter_by(league_id=league_id, status="completed", is_final=False)
+        .order_by(Fixture.year, Fixture.afl_round)
+        .all()
+    )
+    team_results = defaultdict(list)
+    for f in completed:
+        if f.home_score is not None and f.away_score is not None:
+            if f.home_score > f.away_score:
+                team_results[f.home_team_id].append(("W", f.afl_round, f.year))
+                team_results[f.away_team_id].append(("L", f.afl_round, f.year))
+            elif f.away_score > f.home_score:
+                team_results[f.away_team_id].append(("W", f.afl_round, f.year))
+                team_results[f.home_team_id].append(("L", f.afl_round, f.year))
+            else:
+                team_results[f.home_team_id].append(("D", f.afl_round, f.year))
+                team_results[f.away_team_id].append(("D", f.afl_round, f.year))
+
+    win_streaks = []
+    for tid, results in team_results.items():
+        results.sort(key=lambda x: (x[2], x[1]))
+        best_streak = 0
+        current_streak = 0
+        streak_start = None
+        best_start = None
+        best_end = None
+        for r in results:
+            if r[0] == "W":
+                if current_streak == 0:
+                    streak_start = (r[2], r[1])
+                current_streak += 1
+                if current_streak > best_streak:
+                    best_streak = current_streak
+                    best_start = streak_start
+                    best_end = (r[2], r[1])
+            else:
+                current_streak = 0
+        if best_streak > 0:
+            win_streaks.append({
+                "team_name": team_map.get(tid, "Unknown"),
+                "streak": best_streak,
+                "start_year": best_start[0] if best_start else None,
+                "start_round": best_start[1] if best_start else None,
+                "end_year": best_end[0] if best_end else None,
+                "end_round": best_end[1] if best_end else None,
+            })
+    win_streaks.sort(key=lambda x: x["streak"], reverse=True)
+    win_streaks = win_streaks[:10]
+
+    # ── Head-to-head matrix ───────────────────────────────────────
+    h2h = defaultdict(lambda: {"wins": 0, "losses": 0, "draws": 0})
+    for f in completed:
+        if f.home_score is not None and f.away_score is not None:
+            hid, aid = f.home_team_id, f.away_team_id
+            if f.home_score > f.away_score:
+                h2h[(hid, aid)]["wins"] += 1
+                h2h[(aid, hid)]["losses"] += 1
+            elif f.away_score > f.home_score:
+                h2h[(aid, hid)]["wins"] += 1
+                h2h[(hid, aid)]["losses"] += 1
+            else:
+                h2h[(hid, aid)]["draws"] += 1
+                h2h[(aid, hid)]["draws"] += 1
+
+    # Convert to serialisable dict for template
+    h2h_data = {}
+    for (t1, t2), record in h2h.items():
+        key = f"{t1}-{t2}"
+        h2h_data[key] = {
+            "team1_id": t1,
+            "team2_id": t2,
+            "team1_name": team_map.get(t1, "Unknown"),
+            "team2_name": team_map.get(t2, "Unknown"),
+            "wins": record["wins"],
+            "losses": record["losses"],
+            "draws": record["draws"],
+        }
+
+    return render_template("leagues/history.html",
+                           league=league,
+                           champions=champions,
+                           alltime_standings=alltime_sorted,
+                           top_scores=top_scores,
+                           top_season_pf=top_season_pf_list,
+                           blowouts=blowouts,
+                           win_streaks=win_streaks,
+                           h2h_data=h2h_data,
+                           teams=teams,
+                           team_map=team_map,
+                           active_tab="league")
+
+
+# ── Advanced Stats Dashboard ────────────────────────────────────────
+
+
+@leagues_bp.route("/<int:league_id>/stats")
+@login_required
+def advanced_stats(league_id):
+    """Advanced stats dashboard: league leaders, player lookup, team analysis."""
+    import json
+    import statistics
+    from blueprints import check_league_access
+    from models.database import (
+        ScScore, PlayerStat, RoundScore, AflByeRound,
+        FantasyRoster, FantasyTeam, AflPlayer,
+    )
+
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    year = league.season_year
+    prev_year = year - 1
+
+    # ── Rostered player IDs in this league ──
+    roster_rows = (
+        db.session.query(FantasyRoster.player_id, FantasyTeam.name, FantasyTeam.id)
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+        .all()
+    )
+    rostered_ids = {r[0] for r in roster_rows}
+    player_team_map = {r[0]: r[1] for r in roster_rows}  # player_id -> fantasy team name
+
+    # ── Gather SC scores for rostered players (current year) ──
+    sc_rows = (
+        db.session.query(ScScore.player_id, ScScore.round, ScScore.sc_score)
+        .filter(ScScore.year == year, ScScore.player_id.in_(rostered_ids))
+        .order_by(ScScore.player_id, ScScore.round)
+        .all()
+    )
+
+    # Build per-player score lists
+    player_scores = {}  # player_id -> [(round, score), ...]
+    for pid, rnd, sc in sc_rows:
+        if sc is not None:
+            player_scores.setdefault(pid, []).append((rnd, sc))
+
+    # ── Previous year averages (for "most improved") ──
+    prev_sc_rows = (
+        db.session.query(ScScore.player_id, ScScore.sc_score)
+        .filter(ScScore.year == prev_year, ScScore.player_id.in_(rostered_ids))
+        .all()
+    )
+    prev_totals = {}
+    prev_counts = {}
+    for pid, sc in prev_sc_rows:
+        if sc is not None:
+            prev_totals[pid] = prev_totals.get(pid, 0) + sc
+            prev_counts[pid] = prev_counts.get(pid, 0) + 1
+    prev_avgs = {pid: prev_totals[pid] / prev_counts[pid] for pid in prev_totals if prev_counts[pid] > 0}
+
+    # ── Player name lookup ──
+    player_objs = {
+        p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_(rostered_ids)).all()
+    }
+
+    # ── Compute per-player metrics ──
+    player_metrics = []
+    for pid, scores_list in player_scores.items():
+        if not scores_list:
+            continue
+        player = player_objs.get(pid)
+        if not player:
+            continue
+
+        vals = [s[1] for s in scores_list]
+        games = len(vals)
+        if games < 1:
+            continue
+
+        avg = sum(vals) / games
+        std_dev = statistics.pstdev(vals) if games > 1 else 0.0
+        ceiling = max(vals)
+        floor = min(vals)
+        best_round = scores_list[vals.index(ceiling)][0]
+
+        player_metrics.append({
+            "id": pid,
+            "name": player.name,
+            "fantasy_team": player_team_map.get(pid, ""),
+            "avg": avg,
+            "games": games,
+            "std_dev": std_dev,
+            "ceiling": ceiling,
+            "floor": floor,
+            "best_round": best_round,
+            "prev_avg": prev_avgs.get(pid),
+        })
+
+    # ── Build leader tables ──
+    leaders = {}
+
+    # Top 10 scoring average (min 3 games)
+    qualified = [p for p in player_metrics if p["games"] >= 3]
+    leaders["scoring_avg"] = sorted(qualified, key=lambda x: x["avg"], reverse=True)[:10]
+
+    # Most consistent (lowest std dev, min 3 games)
+    leaders["consistency"] = sorted(qualified, key=lambda x: x["std_dev"])[:10]
+
+    # Highest ceiling
+    leaders["ceiling"] = sorted(player_metrics, key=lambda x: x["ceiling"], reverse=True)[:10]
+
+    # Most improved (biggest avg increase from prev year, min 3 games both years)
+    improved = []
+    for p in qualified:
+        if p["prev_avg"] is not None and p["prev_avg"] > 0:
+            improvement = p["avg"] - p["prev_avg"]
+            improved.append({
+                "name": p["name"],
+                "prev_avg": p["prev_avg"],
+                "curr_avg": p["avg"],
+                "improvement": improvement,
+            })
+    leaders["most_improved"] = sorted(improved, key=lambda x: x["improvement"], reverse=True)[:10]
+
+    # Ironman (most games)
+    leaders["ironman"] = sorted(player_metrics, key=lambda x: x["games"], reverse=True)[:10]
+
+    # ── All players for search (JSON) ──
+    all_players_list = (
+        AflPlayer.query
+        .filter(AflPlayer.sc_avg.isnot(None))
+        .order_by(AflPlayer.sc_avg.desc())
+        .limit(600)
+        .all()
+    )
+    all_players_json = json.dumps([
+        {"id": p.id, "name": p.name, "position": p.position or "", "afl_team": p.afl_team or ""}
+        for p in all_players_list
+    ])
+
+    # ── Teams for dropdown ──
+    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.name).all()
+
+    # ── Team analysis data (precomputed for all teams) ──
+    team_analysis = {}
+    for team in teams:
+        # Round scores
+        round_scores = (
+            RoundScore.query.filter_by(team_id=team.id, year=year)
+            .order_by(RoundScore.afl_round.asc())
+            .all()
+        )
+        rs_data = [{"round": rs.afl_round, "score": rs.total_score or 0} for rs in round_scores]
+
+        # Position group contribution
+        roster_entries = (
+            FantasyRoster.query.filter_by(team_id=team.id, is_active=True, is_benched=False)
+            .all()
+        )
+        pos_scores = {"DEF": 0.0, "MID": 0.0, "FWD": 0.0, "RUC": 0.0}
+        for entry in roster_entries:
+            if entry.position_code not in pos_scores:
+                continue
+            p_scores = player_scores.get(entry.player_id, [])
+            if p_scores:
+                p_avg = sum(s[1] for s in p_scores) / len(p_scores)
+                pos_scores[entry.position_code] += p_avg
+
+        # Bye round impact
+        player_teams = {
+            entry.player_id: entry.player.afl_team
+            for entry in roster_entries if entry.player
+        }
+        bye_rows = AflByeRound.query.filter_by(year=year).all()
+        bye_map = {}
+        for b in bye_rows:
+            bye_map.setdefault(b.afl_round, set()).add(b.afl_team)
+
+        bye_impact = []
+        for rnd, bye_teams in sorted(bye_map.items()):
+            affected_players = [
+                pid for pid, afl_team in player_teams.items()
+                if afl_team in bye_teams
+            ]
+            if affected_players:
+                est_loss = 0
+                for pid in affected_players:
+                    p_scores = player_scores.get(pid, [])
+                    if p_scores:
+                        est_loss += sum(s[1] for s in p_scores) / len(p_scores)
+                    else:
+                        player = player_objs.get(pid)
+                        est_loss += (player.sc_avg or 0) if player else 0
+                bye_impact.append({
+                    "round": rnd,
+                    "players_out": len(affected_players),
+                    "estimated_loss": est_loss,
+                })
+
+        team_analysis[str(team.id)] = {
+            "name": team.name,
+            "round_scores": rs_data,
+            "position_breakdown": pos_scores,
+            "bye_impact": bye_impact,
+        }
+
+    team_analysis_json = json.dumps(team_analysis)
+
+    return render_template("leagues/stats.html",
+                           league=league,
+                           leaders=leaders,
+                           teams=teams,
+                           all_players_json=all_players_json,
+                           team_analysis_json=team_analysis_json,
+                           active_tab="players")
+
+
+@leagues_bp.route("/<int:league_id>/stats/api/player/<int:player_id>")
+@login_required
+def api_player_stats(league_id, player_id):
+    """API endpoint returning JSON with player round-by-round scores and metrics."""
+    import statistics
+    from blueprints import check_league_access
+    from models.database import ScScore, PlayerStat, AflPlayer
+
+    league, user_team = check_league_access(league_id)
+    if not league:
+        return jsonify({"error": "Access denied"}), 403
+
+    player = db.session.get(AflPlayer, player_id)
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+
+    year = league.season_year
+
+    # Current year scores
+    scores = (
+        ScScore.query.filter_by(player_id=player_id, year=year)
+        .order_by(ScScore.round.asc())
+        .all()
+    )
+    sc_vals = [s.sc_score for s in scores if s.sc_score is not None]
+    games = len(sc_vals)
+    avg = sum(sc_vals) / games if games else (player.sc_avg or 0)
+    std_dev = statistics.pstdev(sc_vals) if games > 1 else 0.0
+    ceiling = max(sc_vals) if sc_vals else 0
+    floor = min(sc_vals) if sc_vals else 0
+
+    last3 = sc_vals[-3:] if sc_vals else []
+    last5 = sc_vals[-5:] if sc_vals else []
+    l3_avg = sum(last3) / len(last3) if last3 else None
+    l5_avg = sum(last5) / len(last5) if last5 else None
+
+    # Break-even: the score needed in the next game to maintain current avg
+    # breakeven = avg (you need to score your average to keep it the same)
+    breakeven = avg
+
+    # Detailed stats averages (last 5 games)
+    stats = (
+        PlayerStat.query.filter_by(player_id=player_id, year=year)
+        .order_by(PlayerStat.round.desc())
+        .limit(5)
+        .all()
+    )
+    stat_avgs = {}
+    if stats:
+        for col in ["kicks", "handballs", "marks", "tackles", "goals",
+                     "behinds", "hitouts", "disposals", "clearances",
+                     "contested_possessions", "inside_fifties"]:
+            vals = [getattr(s, col) or 0 for s in stats]
+            stat_avgs[col] = round(sum(vals) / len(vals), 1) if vals else 0
+
+    scores_by_round = [
+        {"round": s.round, "score": s.sc_score}
+        for s in scores if s.sc_score is not None
+    ]
+
+    return jsonify({
+        "id": player.id,
+        "name": player.name,
+        "afl_team": player.afl_team,
+        "position": player.position,
+        "games": games,
+        "avg": round(avg, 1),
+        "std_dev": round(std_dev, 1),
+        "ceiling": ceiling,
+        "floor": floor,
+        "l3_avg": round(l3_avg, 1) if l3_avg is not None else None,
+        "l5_avg": round(l5_avg, 1) if l5_avg is not None else None,
+        "breakeven": round(breakeven, 1),
+        "stat_avgs": stat_avgs,
+        "scores_by_round": scores_by_round,
+    })

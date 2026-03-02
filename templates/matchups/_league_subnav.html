@@ -18,4 +18,8 @@
      href="{{ url_for('matchups.history_list', league_id=league.id) }}">
     <i class="bi bi-archive"></i>History
   </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'records' %} active{% endif %}"
+     href="{{ url_for('leagues.league_history', league_id=league.id) }}">
+    <i class="bi bi-trophy"></i>Records
+  </a>
 </div>

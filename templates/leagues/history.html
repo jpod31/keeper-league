@@ -1,0 +1,640 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'records' %}
+{% block title %}League Records — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "matchups/_league_subnav.html" %}
+
+<style>
+  .rec-header {
+    display:flex; align-items:center; gap:12px; margin-bottom:24px;
+  }
+  .rec-header h2 {
+    font-size:1.4rem; font-weight:700; color:#e6edf3; margin:0;
+  }
+  .rec-header .rec-icon {
+    width:44px; height:44px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.3rem;
+    background:rgba(210,153,34,.12); color:#d29922;
+  }
+
+  /* Tabs */
+  .rec-tabs {
+    display:flex; gap:4px; margin-bottom:24px;
+    border-bottom:1px solid #21262d; padding-bottom:0;
+  }
+  .rec-tab {
+    padding:8px 16px; font-size:.82rem; font-weight:500;
+    color:#8b949e; cursor:pointer; border-bottom:2px solid transparent;
+    transition:all .15s; text-decoration:none; background:none; border:none;
+    border-radius:0;
+  }
+  .rec-tab:hover { color:#e6edf3; }
+  .rec-tab.active {
+    color:#58a6ff; border-bottom-color:#58a6ff;
+  }
+
+  /* Cards */
+  .rec-card {
+    background:#161b22; border:1px solid #21262d; border-radius:10px;
+    overflow:hidden; margin-bottom:20px;
+  }
+  .rec-card-header {
+    padding:14px 18px; border-bottom:1px solid #21262d;
+    display:flex; align-items:center; gap:8px;
+  }
+  .rec-card-header h5 {
+    margin:0; font-size:.9rem; font-weight:600; color:#e6edf3;
+  }
+  .rec-card-header i { color:#8b949e; }
+  .rec-card-body { padding:0; }
+  .rec-card-body-padded { padding:16px 18px; }
+
+  /* Tables */
+  .rec-table {
+    width:100%; border-collapse:collapse; font-size:.82rem;
+  }
+  .rec-table th {
+    font-size:.65rem; font-weight:600; color:#484f58; text-transform:uppercase;
+    letter-spacing:.5px; padding:10px 14px; border-bottom:1px solid #21262d;
+    white-space:nowrap;
+  }
+  .rec-table td {
+    padding:10px 14px; border-bottom:1px solid rgba(33,38,45,.6);
+    color:#8b949e; font-variant-numeric:tabular-nums;
+  }
+  .rec-table tbody tr { transition:background .1s; }
+  .rec-table tbody tr:hover { background:rgba(22,27,34,.5); }
+  .rec-table tbody tr:last-child td { border-bottom:none; }
+
+  .rec-name { color:#e6edf3; font-weight:600; }
+  .rec-year { color:#484f58; font-size:.75rem; }
+  .rec-score { color:#58a6ff; font-weight:700; }
+  .rec-win { color:#3fb950; font-weight:600; }
+  .rec-loss { color:#f85149; font-weight:600; }
+  .rec-draw { color:#d29922; font-weight:600; }
+
+  /* Champion row highlight */
+  .champ-row td:first-child { position:relative; }
+  .champ-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:28px; height:28px; border-radius:6px; font-size:.75rem; font-weight:700;
+    background:rgba(255,215,0,.15); color:#FFD700;
+  }
+
+  /* H2H selectors */
+  .h2h-select {
+    background:#0d1117; color:#e6edf3; border:1px solid #30363d;
+    border-radius:6px; padding:6px 12px; font-size:.85rem;
+    appearance:auto;
+  }
+  .h2h-select:focus { outline:none; border-color:#58a6ff; }
+
+  .h2h-result-card {
+    background:#0d1117; border:1px solid #30363d; border-radius:10px;
+    padding:24px; text-align:center; margin-top:16px;
+  }
+  .h2h-vs { color:#484f58; font-size:.85rem; font-weight:600; margin:0 16px; }
+  .h2h-team-name { color:#e6edf3; font-size:1.1rem; font-weight:700; }
+  .h2h-record { font-size:2rem; font-weight:800; color:#e6edf3; margin-top:12px; letter-spacing:2px; }
+  .h2h-labels { font-size:.7rem; color:#484f58; letter-spacing:1px; margin-top:4px; }
+
+  .rec-empty {
+    text-align:center; padding:40px 20px; color:#484f58;
+  }
+  .rec-empty i { font-size:2rem; display:block; margin-bottom:12px; color:#30363d; }
+
+  /* Streak badge */
+  .streak-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:2px 8px; border-radius:4px; font-size:.75rem; font-weight:700;
+    background:rgba(63,185,80,.12); color:#3fb950;
+  }
+
+  /* Panel visibility */
+  .rec-panel { display:none; }
+  .rec-panel.active { display:block; }
+
+  /* Win pct bar */
+  .winpct-bar {
+    height:6px; border-radius:3px; background:#21262d; overflow:hidden;
+    width:80px; display:inline-block; vertical-align:middle; margin-left:6px;
+  }
+  .winpct-fill { height:100%; border-radius:3px; background:#3fb950; }
+</style>
+
+<div class="rec-header">
+  <div class="rec-icon"><i class="bi bi-trophy"></i></div>
+  <div>
+    <h2>League Records</h2>
+    <span style="font-size:.8rem;color:#8b949e;">All-time records for {{ league.name }}</span>
+  </div>
+</div>
+
+{# ═══ Tab bar ═══ #}
+<div class="rec-tabs" role="tablist">
+  <button class="rec-tab active" data-panel="champions" role="tab">
+    <i class="bi bi-trophy-fill me-1"></i>Champions
+  </button>
+  <button class="rec-tab" data-panel="records" role="tab">
+    <i class="bi bi-lightning-fill me-1"></i>Records
+  </button>
+  <button class="rec-tab" data-panel="h2h" role="tab">
+    <i class="bi bi-arrow-left-right me-1"></i>Head-to-Head
+  </button>
+  <button class="rec-tab" data-panel="alltime" role="tab">
+    <i class="bi bi-bar-chart-fill me-1"></i>All-Time Standings
+  </button>
+</div>
+
+{# ═══════════════════════════════════════════════════════════════════ #}
+{# CHAMPIONS TAB                                                      #}
+{# ═══════════════════════════════════════════════════════════════════ #}
+<div class="rec-panel active" id="panel-champions">
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-trophy-fill" style="color:#d29922;"></i>
+      <h5>Season Champions</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if champions %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:60px;">Year</th>
+              <th>Champion</th>
+              <th class="text-center">W</th>
+              <th class="text-center">L</th>
+              <th class="text-center">D</th>
+              <th class="text-center">Pts</th>
+              <th class="text-end">Points For</th>
+              <th class="text-end">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in champions %}
+            <tr class="champ-row">
+              <td><span class="rec-year" style="font-size:.85rem;color:#e6edf3;font-weight:600;">{{ c.year }}</span></td>
+              <td>
+                <span class="rec-name">{{ c.team_name }}</span>
+              </td>
+              <td class="text-center rec-win">{{ c.wins }}</td>
+              <td class="text-center rec-loss">{{ c.losses }}</td>
+              <td class="text-center">{{ c.draws }}</td>
+              <td class="text-center rec-score">{{ c.ladder_points }}</td>
+              <td class="text-end">{{ '%.0f'|format(c.points_for) }}</td>
+              <td class="text-end">{{ '%.1f'|format(c.percentage) }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty">
+          <i class="bi bi-trophy"></i>
+          <p>No season champions yet. Complete a season to see champions here.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════════════ #}
+{# RECORDS TAB                                                        #}
+{# ═══════════════════════════════════════════════════════════════════ #}
+<div class="rec-panel" id="panel-records">
+
+  {# Highest single-round scores #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-lightning-fill" style="color:#58a6ff;"></i>
+      <h5>Highest Single-Round Scores</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if top_scores %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Team</th>
+              <th class="text-center">Round</th>
+              <th class="text-center">Year</th>
+              <th class="text-end">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in top_scores %}
+            <tr>
+              <td>
+                {% if loop.index == 1 %}
+                  <span class="champ-badge">1</span>
+                {% else %}
+                  <span style="color:#484f58;">{{ loop.index }}</span>
+                {% endif %}
+              </td>
+              <td class="rec-name">{{ s.team_name }}</td>
+              <td class="text-center">R{{ s.round }}</td>
+              <td class="text-center rec-year">{{ s.year }}</td>
+              <td class="text-end rec-score" style="font-size:.95rem;">{{ '%.0f'|format(s.score) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty">
+          <i class="bi bi-lightning"></i>
+          <p>No round scores recorded yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Highest season points for #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-graph-up-arrow" style="color:#3fb950;"></i>
+      <h5>Highest Season Points For</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if top_season_pf %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Team</th>
+              <th class="text-center">Year</th>
+              <th class="text-center">Record</th>
+              <th class="text-end">Points For</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in top_season_pf %}
+            <tr>
+              <td>
+                {% if loop.index == 1 %}
+                  <span class="champ-badge">1</span>
+                {% else %}
+                  <span style="color:#484f58;">{{ loop.index }}</span>
+                {% endif %}
+              </td>
+              <td class="rec-name">{{ s.team_name }}</td>
+              <td class="text-center rec-year">{{ s.year }}</td>
+              <td class="text-center">
+                <span class="rec-win">{{ s.wins }}</span>-<span class="rec-loss">{{ s.losses }}</span>
+              </td>
+              <td class="text-end rec-score">{{ '%.0f'|format(s.points_for) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty">
+          <i class="bi bi-graph-up"></i>
+          <p>No season data recorded yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Longest win streaks #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-fire" style="color:#f0883e;"></i>
+      <h5>Longest Win Streaks</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if win_streaks %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Team</th>
+              <th class="text-center">Streak</th>
+              <th>Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ws in win_streaks %}
+            <tr>
+              <td>
+                {% if loop.index == 1 %}
+                  <span class="champ-badge" style="background:rgba(240,136,62,.15);color:#f0883e;">1</span>
+                {% else %}
+                  <span style="color:#484f58;">{{ loop.index }}</span>
+                {% endif %}
+              </td>
+              <td class="rec-name">{{ ws.team_name }}</td>
+              <td class="text-center">
+                <span class="streak-badge">{{ ws.streak }}W</span>
+              </td>
+              <td>
+                <span style="color:#8b949e;font-size:.78rem;">
+                  {% if ws.start_year == ws.end_year %}
+                    {{ ws.start_year }} R{{ ws.start_round }}&ndash;R{{ ws.end_round }}
+                  {% else %}
+                    {{ ws.start_year }} R{{ ws.start_round }} &ndash; {{ ws.end_year }} R{{ ws.end_round }}
+                  {% endif %}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty">
+          <i class="bi bi-fire"></i>
+          <p>No completed fixtures yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Biggest blowouts #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-wind" style="color:#f85149;"></i>
+      <h5>Biggest Blowouts</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if blowouts %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Winner</th>
+              <th class="text-center">Score</th>
+              <th>Loser</th>
+              <th class="text-center">Score</th>
+              <th class="text-center">Margin</th>
+              <th class="text-center">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in blowouts %}
+            <tr>
+              <td>
+                {% if loop.index == 1 %}
+                  <span class="champ-badge" style="background:rgba(248,81,73,.15);color:#f85149;">1</span>
+                {% else %}
+                  <span style="color:#484f58;">{{ loop.index }}</span>
+                {% endif %}
+              </td>
+              <td class="rec-name">{{ b.winner }}</td>
+              <td class="text-center rec-win">{{ '%.0f'|format(b.winner_score) }}</td>
+              <td style="color:#8b949e;">{{ b.loser }}</td>
+              <td class="text-center rec-loss">{{ '%.0f'|format(b.loser_score) }}</td>
+              <td class="text-center rec-score">{{ '%.0f'|format(b.margin) }}</td>
+              <td class="text-center rec-year">{{ b.year }} R{{ b.round }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty">
+          <i class="bi bi-wind"></i>
+          <p>No completed fixtures yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════════════ #}
+{# HEAD-TO-HEAD TAB                                                   #}
+{# ═══════════════════════════════════════════════════════════════════ #}
+<div class="rec-panel" id="panel-h2h">
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-arrow-left-right" style="color:#bc8cff;"></i>
+      <h5>Head-to-Head Records</h5>
+    </div>
+    <div class="rec-card-body-padded">
+      {% if teams|length >= 2 %}
+        <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+          <select id="h2h-team1" class="h2h-select">
+            <option value="">Select team...</option>
+            {% for t in teams|sort(attribute='name') %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+            {% endfor %}
+          </select>
+          <span class="h2h-vs">vs</span>
+          <select id="h2h-team2" class="h2h-select">
+            <option value="">Select team...</option>
+            {% for t in teams|sort(attribute='name') %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div id="h2h-result" style="display:none;">
+          <div class="h2h-result-card">
+            <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
+              <span class="h2h-team-name" id="h2h-name1"></span>
+              <span class="h2h-vs">vs</span>
+              <span class="h2h-team-name" id="h2h-name2"></span>
+            </div>
+            <div class="h2h-record" id="h2h-record-text"></div>
+            <div class="h2h-labels">
+              <span id="h2h-label1"></span> WINS &mdash; DRAWS &mdash; <span id="h2h-label2"></span> WINS
+            </div>
+          </div>
+        </div>
+
+        <div id="h2h-empty" style="display:none;">
+          <div class="rec-empty" style="padding:24px;">
+            <i class="bi bi-arrow-left-right"></i>
+            <p>These teams have no head-to-head record.</p>
+          </div>
+        </div>
+
+        <div id="h2h-same" style="display:none;">
+          <div class="rec-empty" style="padding:24px;">
+            <p style="color:#8b949e;">Please select two different teams.</p>
+          </div>
+        </div>
+
+        {# Full H2H matrix table #}
+        <div class="mt-4">
+          <h6 style="font-size:.82rem;font-weight:600;color:#8b949e;margin-bottom:12px;">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Full Head-to-Head Matrix
+          </h6>
+          <div class="table-responsive">
+            <table class="rec-table" style="font-size:.75rem;">
+              <thead>
+                <tr>
+                  <th></th>
+                  {% for t in teams|sort(attribute='name') %}
+                    <th class="text-center" style="writing-mode:vertical-lr;transform:rotate(180deg);max-width:30px;padding:8px 4px;">{{ t.name }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for t1 in teams|sort(attribute='name') %}
+                <tr>
+                  <td class="rec-name" style="white-space:nowrap;">{{ t1.name }}</td>
+                  {% for t2 in teams|sort(attribute='name') %}
+                    {% if t1.id == t2.id %}
+                      <td class="text-center" style="background:rgba(33,38,45,.5);color:#30363d;">&mdash;</td>
+                    {% else %}
+                      {% set key = '%d-%d'|format(t1.id, t2.id) %}
+                      {% if key in h2h_data %}
+                        {% set rec = h2h_data[key] %}
+                        <td class="text-center" style="font-weight:600;{% if rec.wins > rec.losses %}color:#3fb950;{% elif rec.losses > rec.wins %}color:#f85149;{% else %}color:#d29922;{% endif %}">
+                          {{ rec.wins }}-{{ rec.draws }}-{{ rec.losses }}
+                        </td>
+                      {% else %}
+                        <td class="text-center" style="color:#30363d;">0-0-0</td>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:.68rem;color:#30363d;margin-top:8px;">Format: W-D-L (from row team's perspective)</p>
+        </div>
+      {% else %}
+        <div class="rec-empty">
+          <i class="bi bi-arrow-left-right"></i>
+          <p>Need at least 2 teams for head-to-head records.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════════════ #}
+{# ALL-TIME STANDINGS TAB                                             #}
+{# ═══════════════════════════════════════════════════════════════════ #}
+<div class="rec-panel" id="panel-alltime">
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-bar-chart-fill" style="color:#58a6ff;"></i>
+      <h5>All-Time Standings</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if alltime_standings %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Team</th>
+              <th class="text-center">Seasons</th>
+              <th class="text-center">P</th>
+              <th class="text-center">W</th>
+              <th class="text-center">L</th>
+              <th class="text-center">D</th>
+              <th class="text-center">Win %</th>
+              <th class="text-end">Total PF</th>
+              <th class="text-end">Total PA</th>
+              <th class="text-end">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in alltime_standings %}
+            <tr>
+              <td>
+                {% if loop.index == 1 %}
+                  <span class="champ-badge">1</span>
+                {% elif loop.index == 2 %}
+                  <span class="champ-badge" style="background:rgba(192,192,192,.1);color:#C0C0C0;">2</span>
+                {% elif loop.index == 3 %}
+                  <span class="champ-badge" style="background:rgba(205,127,50,.1);color:#CD7F32;">3</span>
+                {% else %}
+                  <span style="color:#484f58;">{{ loop.index }}</span>
+                {% endif %}
+              </td>
+              <td class="rec-name">{{ s.team_name }}</td>
+              <td class="text-center">{{ s.seasons }}</td>
+              <td class="text-center">{{ s.total_games }}</td>
+              <td class="text-center rec-win">{{ s.wins }}</td>
+              <td class="text-center rec-loss">{{ s.losses }}</td>
+              <td class="text-center">{{ s.draws }}</td>
+              <td class="text-center">
+                <span style="{% if s.win_pct >= 60 %}color:#3fb950;{% elif s.win_pct < 40 %}color:#f85149;{% else %}color:#e6edf3;{% endif %}font-weight:600;">
+                  {{ '%.1f'|format(s.win_pct) }}%
+                </span>
+                <span class="winpct-bar">
+                  <span class="winpct-fill" style="width:{{ s.win_pct }}%;{% if s.win_pct >= 60 %}background:#3fb950;{% elif s.win_pct < 40 %}background:#f85149;{% else %}background:#58a6ff;{% endif %}"></span>
+                </span>
+              </td>
+              <td class="text-end">{{ '%.0f'|format(s.points_for) }}</td>
+              <td class="text-end">{{ '%.0f'|format(s.points_against) }}</td>
+              <td class="text-end">
+                <span style="{% if s.percentage >= 110 %}color:#3fb950;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}font-weight:500;">
+                  {% if s.percentage > 0 %}{{ '%.1f'|format(s.percentage) }}%{% else %}&ndash;{% endif %}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty">
+          <i class="bi bi-bar-chart"></i>
+          <p>No standings data yet. Complete a season to see all-time standings.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Tab switching
+  var tabs = document.querySelectorAll('.rec-tab');
+  var panels = document.querySelectorAll('.rec-panel');
+
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      panels.forEach(function(p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      var panel = document.getElementById('panel-' + tab.getAttribute('data-panel'));
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  // H2H dropdown logic
+  var h2hData = {{ h2h_data | tojson }};
+  var teamMap = {{ team_map | tojson }};
+  var sel1 = document.getElementById('h2h-team1');
+  var sel2 = document.getElementById('h2h-team2');
+
+  function updateH2H() {
+    var t1 = sel1 ? sel1.value : '';
+    var t2 = sel2 ? sel2.value : '';
+    var resultEl = document.getElementById('h2h-result');
+    var emptyEl = document.getElementById('h2h-empty');
+    var sameEl = document.getElementById('h2h-same');
+    if (!resultEl) return;
+
+    resultEl.style.display = 'none';
+    emptyEl.style.display = 'none';
+    sameEl.style.display = 'none';
+
+    if (!t1 || !t2) return;
+    if (t1 === t2) { sameEl.style.display = 'block'; return; }
+
+    var key = t1 + '-' + t2;
+    var rec = h2hData[key];
+
+    if (!rec || (rec.wins === 0 && rec.losses === 0 && rec.draws === 0)) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    document.getElementById('h2h-name1').textContent = teamMap[t1] || 'Team 1';
+    document.getElementById('h2h-name2').textContent = teamMap[t2] || 'Team 2';
+    document.getElementById('h2h-record-text').textContent = rec.wins + ' - ' + rec.draws + ' - ' + rec.losses;
+    document.getElementById('h2h-label1').textContent = (teamMap[t1] || 'T1').toUpperCase();
+    document.getElementById('h2h-label2').textContent = (teamMap[t2] || 'T2').toUpperCase();
+    resultEl.style.display = 'block';
+  }
+
+  if (sel1) sel1.addEventListener('change', updateH2H);
+  if (sel2) sel2.addEventListener('change', updateH2H);
+})();
+</script>
+{% endblock %}

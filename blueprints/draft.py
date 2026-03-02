@@ -590,3 +590,202 @@ def mock_delete(league_id):
         delete_mock_draft(session.id)
         flash("Mock draft deleted.", "info")
     return redirect(url_for("draft_live.draft_setup", league_id=league_id))
+
+
+# ── Draft Recap & Grades ──────────────────────────────────────────
+
+
+@draft_bp.route("/<int:league_id>/draft/recap")
+@draft_bp.route("/<int:league_id>/draft/recap/<int:session_id>")
+@login_required
+def draft_recap(league_id, session_id=None):
+    """Show draft grades and full recap for a completed draft session."""
+    from models.database import DraftPick, AflPlayer
+
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("League not found.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    # Find the draft session
+    if session_id:
+        session = db.session.get(DraftSession, session_id)
+        if not session or session.league_id != league_id:
+            flash("Draft session not found.", "warning")
+            return redirect(url_for("draft_live.draft_setup", league_id=league_id))
+    else:
+        # Latest completed non-mock session
+        session = DraftSession.query.filter_by(
+            league_id=league_id, status="completed", is_mock=False
+        ).order_by(DraftSession.completed_at.desc()).first()
+        if not session:
+            flash("No completed draft found.", "info")
+            return redirect(url_for("draft_live.draft_setup", league_id=league_id))
+
+    # Get all picks for this session, ordered by pick number
+    all_picks = (
+        DraftPick.query
+        .filter_by(draft_session_id=session.id)
+        .order_by(DraftPick.pick_number)
+        .all()
+    )
+
+    if not all_picks:
+        flash("No picks found for this draft.", "info")
+        return redirect(url_for("draft_live.draft_setup", league_id=league_id))
+
+    # Get all players with draft scores for expected-value calculation
+    all_players = AflPlayer.query.filter(AflPlayer.draft_score.isnot(None)).all()
+    all_scores_sorted = sorted(
+        [p.draft_score for p in all_players if p.draft_score and p.draft_score > 0],
+        reverse=True,
+    )
+
+    # Number of teams in the league
+    teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    num_teams = len(teams) if teams else league.num_teams
+    team_map = {t.id: t.name for t in teams}
+
+    # Track which players have been picked so far (to compute "available at time of pick")
+    picked_player_ids = set()
+    # Build a set of all draft_scores for available players tracking
+    available_scores = list(all_scores_sorted)  # copy
+
+    # Build pick data with expected values
+    pick_data = []
+    # Per-team accumulators
+    team_totals = {}  # team_id -> {"actual": float, "expected": float, "picks": []}
+
+    for pick in all_picks:
+        team_name = team_map.get(pick.team_id, "Unknown")
+
+        if pick.team_id not in team_totals:
+            team_totals[pick.team_id] = {
+                "actual": 0.0,
+                "expected": 0.0,
+                "picks": [],
+                "team_name": team_name,
+            }
+
+        if pick.is_pass or not pick.player_id:
+            pick_data.append({
+                "pick_number": pick.pick_number,
+                "draft_round": pick.draft_round,
+                "team_name": team_name,
+                "player_name": None,
+                "position": None,
+                "afl_team": None,
+                "draft_score": None,
+                "expected_value": None,
+                "value_diff": None,
+                "is_pass": True,
+                "is_auto_pick": pick.is_auto_pick,
+            })
+            continue
+
+        player = pick.player
+        actual_score = player.draft_score if player and player.draft_score else 0.0
+
+        # Expected value = average of top N available scores (N = num_teams)
+        if available_scores:
+            top_n = available_scores[:num_teams]
+            expected_value = sum(top_n) / len(top_n) if top_n else 0.0
+        else:
+            expected_value = 0.0
+
+        value_diff = actual_score - expected_value
+
+        pick_data.append({
+            "pick_number": pick.pick_number,
+            "draft_round": pick.draft_round,
+            "team_name": team_name,
+            "player_name": player.name if player else "Unknown",
+            "position": player.position if player else None,
+            "afl_team": player.afl_team if player else None,
+            "draft_score": actual_score,
+            "expected_value": expected_value,
+            "value_diff": value_diff,
+            "is_pass": False,
+            "is_auto_pick": pick.is_auto_pick,
+        })
+
+        # Update team totals
+        team_totals[pick.team_id]["actual"] += actual_score
+        team_totals[pick.team_id]["expected"] += expected_value
+        team_totals[pick.team_id]["picks"].append({
+            "player_name": player.name if player else "Unknown",
+            "value_diff": value_diff,
+        })
+
+        # Remove this player's score from available pool
+        if actual_score in available_scores:
+            available_scores.remove(actual_score)
+        picked_player_ids.add(pick.player_id)
+
+    # Calculate grades for each team
+    def get_grade(ratio):
+        """Convert actual/expected ratio to letter grade."""
+        if ratio >= 1.15:
+            return "A+"
+        elif ratio >= 1.05:
+            return "A"
+        elif ratio >= 0.95:
+            return "B"
+        elif ratio >= 0.85:
+            return "C"
+        elif ratio >= 0.75:
+            return "D"
+        else:
+            return "F"
+
+    def get_grade_color(grade):
+        """Return a colour hex for each grade."""
+        colors = {
+            "A+": "#3fb950",
+            "A": "#3fb950",
+            "B": "#58a6ff",
+            "C": "#d29922",
+            "D": "#f0883e",
+            "F": "#f85149",
+        }
+        return colors.get(grade, "#8b949e")
+
+    grades = []
+    for team_id, data in team_totals.items():
+        actual = data["actual"]
+        expected = data["expected"]
+        ratio = actual / expected if expected > 0 else 1.0
+        grade = get_grade(ratio)
+
+        # Find best and worst picks
+        best_pick = None
+        worst_pick = None
+        for p in data["picks"]:
+            if best_pick is None or p["value_diff"] > best_pick["value_diff"]:
+                best_pick = p
+            if worst_pick is None or p["value_diff"] < worst_pick["value_diff"]:
+                worst_pick = p
+
+        grades.append({
+            "team_id": team_id,
+            "team_name": data["team_name"],
+            "grade": grade,
+            "grade_color": get_grade_color(grade),
+            "total_value": actual,
+            "expected_value": expected,
+            "ratio": ratio,
+            "picks_count": len(data["picks"]),
+            "best_pick": best_pick,
+            "worst_pick": worst_pick,
+        })
+
+    # Sort grades by ratio descending (best drafter first)
+    grades.sort(key=lambda g: g["ratio"], reverse=True)
+
+    return render_template(
+        "draft/recap.html",
+        league=league,
+        session=session,
+        picks=pick_data,
+        grades=grades,
+    )

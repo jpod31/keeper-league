@@ -62,6 +62,18 @@
          href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
         <i class="bi bi-calendar-range"></i><span>List Management</span>
       </a>
+      <a class="league-tab{% if active_tab|default('') == 'stats' %} active{% endif %}"
+         href="{{ url_for('leagues.advanced_stats', league_id=league.id) }}">
+        <i class="bi bi-graph-up"></i><span>Stats</span>
+      </a>
+      <a class="league-tab{% if active_tab|default('') == 'keepers' %} active{% endif %}"
+         href="{{ url_for('leagues.keeper_values', league_id=league.id) }}">
+        <i class="bi bi-star"></i><span>Keepers</span>
+      </a>
+      <a class="league-tab{% if active_tab|default('') == 'history' %} active{% endif %}"
+         href="{{ url_for('leagues.league_history', league_id=league.id) }}">
+        <i class="bi bi-clock-history"></i><span>Records</span>
+      </a>
       <a class="league-tab{% if active_tab|default('') == 'comms' %} active{% endif %}"
          href="{{ url_for('comms.league_chat', league_id=league.id) }}">
         <i class="bi bi-megaphone"></i><span>Comms</span>

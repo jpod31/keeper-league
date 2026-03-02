@@ -2,6 +2,42 @@
 {% set active_tab = 'season' %}
 {% block title %}Draft Room — {{ league.name }}{% endblock %}
 {% block league_content %}
+<style>
+/* ── Mobile-responsive draft room ──────────────────────────────── */
+@media (max-width: 991.98px) {
+  .draft-banner { flex-direction: column; gap: .5rem; text-align: center; padding: .75rem; }
+  .draft-banner .draft-pick-badge { width: 36px; height: 36px; font-size: .85rem; }
+  .draft-timer-block { margin-top: .25rem; }
+  .draft-timer { font-size: 1.5rem !important; }
+  #commissioner-controls { flex-wrap: wrap; justify-content: center !important; }
+  #commissioner-controls .btn { font-size: .65rem !important; padding: 2px 6px !important; }
+  /* Hide AFL Team column in available players */
+  .draft-avail-tbl th:nth-child(3),
+  .draft-avail-tbl td:nth-child(3) { display: none; }
+  /* Hide Rating column */
+  .draft-avail-tbl th:nth-child(6),
+  .draft-avail-tbl td:nth-child(6) { display: none; }
+  /* Hide AFL Team in pick history */
+  .draft-hist-tbl th:nth-child(6),
+  .draft-hist-tbl td:nth-child(6) { display: none; }
+  .col-lg-5 .card, .col-lg-7 .card { max-height: 50vh !important; }
+  .table td, .table th { padding: .25rem .35rem; font-size: .75rem; }
+  .card-header .row.g-2 { flex-wrap: wrap; }
+  .card-header .row.g-2 .col { min-width: 100%; margin-bottom: .25rem; }
+  .card-header .row.g-2 .col-auto { min-width: auto; }
+}
+@media (max-width: 575.98px) {
+  .page-header h2 { font-size: 1.1rem; }
+  .draft-pick-badge { width: 30px; height: 30px; font-size: .75rem; }
+  .draft-hist-tbl th:nth-child(2), .draft-hist-tbl td:nth-child(2) { display: none; }
+  #weight-panel .d-flex.align-items-center.gap-2 span:first-child { width: 45px !important; font-size: .65rem !important; }
+  .col-lg-5, .col-lg-7 { padding-left: 0; padding-right: 0; }
+}
+@media (hover: none) and (pointer: coarse) {
+  .draft-avail-tbl .btn { min-width: 44px; min-height: 36px; font-size: .75rem !important; }
+  #pos-filter, #age-filter, #player-search { font-size: .85rem; min-height: 38px; }
+}
+</style>
 <div class="page-header">
   <div class="page-breadcrumb">
     <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> /
@@ -164,7 +200,7 @@
         </div>
       </div>
       <div class="card-body p-0" style="overflow-y:auto;">
-        <table class="table table-hover table-sm mb-0">
+        <table class="table table-hover table-sm mb-0 draft-avail-tbl">
           <thead class="sticky-top" style="background:#161b22;">
             <tr>
               <th>Player</th>
@@ -206,7 +242,7 @@
         </span>
       </div>
       <div class="card-body p-0" style="overflow-y:auto;" id="pick-history-scroll">
-        <table class="table table-hover table-sm mb-0">
+        <table class="table table-hover table-sm mb-0 draft-hist-tbl">
           <thead class="sticky-top" style="background:#161b22;">
             <tr>
               <th>#</th>

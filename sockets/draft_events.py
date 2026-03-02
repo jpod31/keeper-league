@@ -1,6 +1,7 @@
 """SocketIO event handlers for the live draft room."""
 
 import logging
+import time
 
 from flask import request
 from flask_login import current_user
@@ -320,7 +321,10 @@ def register_draft_events(socketio):
 
 
 def _start_timer(socketio, session_id, league_id):
-    """Start the countdown timer for the current pick."""
+    """Start the countdown timer for the current pick.
+
+    Uses monotonic clock to avoid drift from green-thread scheduling delays.
+    """
     from flask import current_app
     app = current_app._get_current_object()
 
@@ -330,8 +334,10 @@ def _start_timer(socketio, session_id, league_id):
 
     prev_gen = _timers.get(session_id, {}).get("generation", 0)
     gen = prev_gen + 1
+    duration = session.pick_timer_secs
     _timers[session_id] = {
-        "remaining": session.pick_timer_secs,
+        "remaining": duration,
+        "deadline": time.monotonic() + duration,
         "running": True,
         "generation": gen,
     }
@@ -345,7 +351,10 @@ def _start_timer(socketio, session_id, league_id):
                 if _timers.get(session_id, {}).get("generation") != my_gen:
                     return
 
-                remaining = _timers[session_id]["remaining"]
+                # Calculate remaining from monotonic deadline (drift-proof)
+                deadline = _timers[session_id]["deadline"]
+                remaining = max(0, int(deadline - time.monotonic()))
+                _timers[session_id]["remaining"] = remaining
                 socketio.emit("timer_tick", {"remaining": remaining}, namespace="/draft", room=room)
 
                 if remaining <= 0:
@@ -383,11 +392,6 @@ def _start_timer(socketio, session_id, league_id):
                     return
 
                 socketio.sleep(1)
-                # Check generation again after waking from sleep
-                if _timers.get(session_id, {}).get("generation") != my_gen:
-                    return
-                if _timers.get(session_id, {}).get("running", False):
-                    _timers[session_id]["remaining"] -= 1
         except Exception:
             logger.exception(f"Error in draft timer for session {session_id}")
             _timers.pop(session_id, None)

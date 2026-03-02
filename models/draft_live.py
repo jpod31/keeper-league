@@ -192,11 +192,16 @@ def make_pick(session_id, player_id, is_auto=False):
         session = db.session.get(DraftSession, session_id)
         if not session or session.status != "in_progress":
             return None, "Draft is not in progress."
+        # Refresh to get latest DB state inside the lock
+        db.session.refresh(session)
+        if session.status != "in_progress":
+            return None, "Draft is not in progress."
 
-        # Find current pick (first unpicked)
+        # Find current pick (first unpicked, not passed)
         current_pick = (
             DraftPick.query
             .filter_by(draft_session_id=session_id, player_id=None)
+            .filter(DraftPick.is_pass == False)
             .order_by(DraftPick.pick_number)
             .first()
         )

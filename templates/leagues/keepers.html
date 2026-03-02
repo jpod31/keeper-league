@@ -1,0 +1,523 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'players' %}
+{% set active_subtab = 'keepers' %}
+{% block title %}Keeper Values — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "leagues/_players_subnav.html" %}
+<style>
+  .keeper-table th {
+    padding: .5rem .6rem;
+    font-size: .7rem;
+    border-bottom: 2px solid #30363d;
+    position: relative;
+  }
+  .keeper-table th.sortable { cursor: pointer; user-select: none; }
+  .keeper-table th.sortable:hover { color: #58a6ff; }
+  .keeper-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
+  .keeper-table th.sort-active .sort-icon { opacity: 1; color: #58a6ff; }
+  .keeper-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
+  .keeper-table tbody tr { transition: background .1s; }
+  .keeper-table tbody tr:hover { background: rgba(88,166,255,.04) !important; }
+  .player-link { text-decoration: none; display: flex; align-items: center; gap: .5rem; }
+  .player-link:hover .p-name { color: #58a6ff; }
+  .p-name { color: #e6edf3; font-weight: 600; font-size: .82rem; transition: color .1s; white-space: nowrap; }
+  .team-icon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+  .trend-pill {
+    display: inline-flex; align-items: center; gap: 2px;
+    padding: 1px 6px; border-radius: 10px; font-size: .7rem; font-weight: 600;
+    line-height: 1.4;
+  }
+  .trend-up { background: rgba(63,185,80,.1); color: #56d364; }
+  .trend-down { background: rgba(248,81,73,.1); color: #f85149; }
+  .trend-flat { color: #484f58; font-weight: 500; }
+
+  .rec-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: .65rem; font-weight: 700; letter-spacing: .3px; white-space: nowrap;
+    text-transform: uppercase;
+  }
+  .rec-keep { background: rgba(63,185,80,.15); color: #56d364; }
+  .rec-trade { background: rgba(210,153,34,.15); color: #e3b341; }
+  .rec-drop { background: rgba(248,81,73,.15); color: #f85149; }
+
+  .cost-badge {
+    display: inline-block; padding: 2px 7px; border-radius: 8px;
+    font-size: .7rem; font-weight: 600; letter-spacing: .3px;
+    background: rgba(88,166,255,.1); color: #79c0ff;
+  }
+  .cost-badge.cost-trade { background: rgba(210,153,34,.12); color: #e3b341; }
+  .cost-badge.cost-supp { background: rgba(188,140,255,.12); color: #d2a8ff; }
+  .cost-badge.cost-undrafted { background: rgba(139,148,158,.1); color: #8b949e; }
+
+  .kv-bar-wrap {
+    width: 60px; height: 6px; border-radius: 3px;
+    background: rgba(255,255,255,.06); overflow: hidden; display: inline-block;
+    vertical-align: middle; margin-left: 6px;
+  }
+  .kv-bar {
+    height: 100%; border-radius: 3px;
+    transition: width .3s;
+  }
+  .kv-val { font-weight: 700; font-size: .82rem; }
+  .kv-great { color: #56d364; }
+  .kv-good { color: #79c0ff; }
+  .kv-fair { color: #e3b341; }
+  .kv-poor { color: #f85149; }
+
+  .team-section { margin-bottom: 1.5rem; }
+  .team-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .6rem .8rem; background: #161b22; border-bottom: 1px solid #30363d;
+    border-radius: 6px 6px 0 0;
+  }
+  .team-section-header h3 {
+    font-size: .9rem; font-weight: 700; color: #e6edf3; margin: 0;
+  }
+  .team-stat {
+    font-size: .72rem; color: #8b949e; display: flex; gap: .8rem;
+  }
+  .team-stat strong { color: #c9d1d9; }
+
+  .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+  .filter-bar .form-control-sm, .filter-bar .form-select-sm {
+    background: #0d1117; border-color: #30363d; font-size: .78rem;
+  }
+
+  .projected-rank { color: #484f58; font-size: .7rem; font-weight: 700; }
+
+  .chart-container { position: relative; height: 280px; margin-top: 1rem; }
+
+  .section-title {
+    font-size: 1rem; font-weight: 700; color: #e6edf3; margin: 1.5rem 0 .75rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .section-title i { color: #58a6ff; }
+</style>
+
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Players / Keepers</div>
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <h2 class="mb-0">Keeper Values</h2>
+      <span style="font-size:.78rem;color:#8b949e;">Draft cost vs current value for every rostered player</span>
+    </div>
+    <div class="filter-bar">
+      <select class="form-select form-select-sm" id="team-filter" onchange="filterTeams()" style="width:auto;">
+        <option value="">All Teams</option>
+        {% for td in teams_data %}
+          <option value="{{ td.team.id }}">{{ td.team.name }}</option>
+        {% endfor %}
+      </select>
+      <select class="form-select form-select-sm" id="rec-filter" onchange="filterTeams()" style="width:auto;">
+        <option value="">All Rec.</option>
+        <option value="KEEP">Keep</option>
+        <option value="TRADE">Trade</option>
+        <option value="DROP">Drop</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+{# ── Per-Team Keeper Tables ───────────────────────────────────────── #}
+<div id="team-sections">
+{% for td in teams_data %}
+  {% set team = td.team %}
+  {% set players = td.players %}
+  {% if players %}
+  <div class="card team-section" data-team-id="{{ team.id }}">
+    <div class="team-section-header">
+      <h3><i class="bi bi-people-fill me-2" style="color:#58a6ff;"></i>{{ team.name }}</h3>
+      <div class="team-stat">
+        {% set ns = namespace(keeps=0, trades=0, drops=0, total_kv=0) %}
+        {% for p in players %}
+          {% if p.recommendation == 'KEEP' %}{% set ns.keeps = ns.keeps + 1 %}
+          {% elif p.recommendation == 'TRADE' %}{% set ns.trades = ns.trades + 1 %}
+          {% else %}{% set ns.drops = ns.drops + 1 %}{% endif %}
+          {% set ns.total_kv = ns.total_kv + p.keeper_value %}
+        {% endfor %}
+        <span><strong>{{ players|length }}</strong> players</span>
+        <span style="color:#56d364;"><strong>{{ ns.keeps }}</strong> keep</span>
+        <span style="color:#e3b341;"><strong>{{ ns.trades }}</strong> trade</span>
+        <span style="color:#f85149;"><strong>{{ ns.drops }}</strong> drop</span>
+        <span>Avg KV: <strong>{{ '%.2f'|format(ns.total_kv / players|length) }}</strong></span>
+      </div>
+    </div>
+    <div class="card-body p-0" style="overflow-x:auto;">
+      <table class="table table-sm mb-0 keeper-table">
+        <thead style="background:#161b22;">
+          <tr>
+            <th style="width:35px;">#</th>
+            <th>Player</th>
+            <th style="width:55px;">Pos</th>
+            <th class="text-center" style="width:55px;">AFL</th>
+            <th class="text-center" style="width:70px;">Cost</th>
+            <th class="text-end" style="width:75px;">Score</th>
+            <th class="text-center" style="width:80px;">Trend</th>
+            <th class="text-end" style="width:120px;">Keeper Value</th>
+            <th class="text-center" style="width:70px;">Rec.</th>
+            <th class="text-end" style="width:85px;">Proj. Next Yr</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in players %}
+            {% set p = entry.player %}
+            <tr data-rec="{{ entry.recommendation }}">
+              <td class="projected-rank">{{ loop.index }}</td>
+              <td>
+                <a href="{{ url_for('player_detail', name=p.name) }}" class="player-link">
+                  {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                    <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="team-icon">
+                  {% endif %}
+                  <span class="p-name">{{ p.name }}</span>
+                </a>
+              </td>
+              <td>
+                {% set player_positions = (p.position or 'MID').split('/') %}
+                <div style="display:flex;gap:3px;flex-wrap:nowrap;">
+                  {% for pos in ['FWD', 'DEF', 'RUC', 'MID'] %}
+                    {% if pos in player_positions %}
+                      <span class="pos-badge badge-{{ pos|lower }}" style="padding:2px 5px;font-size:.65rem;">{{ pos }}</span>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </td>
+              <td class="text-center" style="color:#8b949e;font-size:.75rem;">{{ p.afl_team or '-' }}</td>
+              <td class="text-center">
+                {% if 'Supp' in entry.cost_label %}
+                  <span class="cost-badge cost-supp">{{ entry.cost_label }}</span>
+                {% elif entry.cost_label == 'Trade' %}
+                  <span class="cost-badge cost-trade">{{ entry.cost_label }}</span>
+                {% elif entry.cost_label == 'Undrafted' %}
+                  <span class="cost-badge cost-undrafted">{{ entry.cost_label }}</span>
+                {% else %}
+                  <span class="cost-badge">{{ entry.cost_label }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if entry.draft_score %}
+                  <span style="color:#58a6ff;font-weight:700;">{{ entry.draft_score }}</span>
+                {% else %}
+                  <span style="color:#484f58;">-</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if entry.trend_val > 5 %}
+                  <span class="trend-pill trend-up"><i class="bi bi-caret-up-fill"></i>+{{ '%.0f'|format(entry.trend_val) }}</span>
+                {% elif entry.trend_val < -5 %}
+                  <span class="trend-pill trend-down"><i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(entry.trend_val) }}</span>
+                {% elif entry.trend_val != 0 %}
+                  <span class="trend-flat">{{ '%+.0f'|format(entry.trend_val) }}</span>
+                {% else %}
+                  <span style="color:#484f58;">-</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% set kv = entry.keeper_value %}
+                {% if kv > 1.5 %}
+                  {% set kv_class = 'kv-great' %}{% set bar_color = '#56d364' %}
+                {% elif kv > 1.2 %}
+                  {% set kv_class = 'kv-good' %}{% set bar_color = '#58a6ff' %}
+                {% elif kv >= 0.8 %}
+                  {% set kv_class = 'kv-fair' %}{% set bar_color = '#e3b341' %}
+                {% else %}
+                  {% set kv_class = 'kv-poor' %}{% set bar_color = '#f85149' %}
+                {% endif %}
+                <span class="kv-val {{ kv_class }}">{{ '%.2f'|format(kv) }}x</span>
+                <div class="kv-bar-wrap">
+                  <div class="kv-bar" style="width:{{ [kv / 2.5 * 100, 100]|min }}%;background:{{ bar_color }};"></div>
+                </div>
+              </td>
+              <td class="text-center">
+                {% if entry.recommendation == 'KEEP' %}
+                  <span class="rec-badge rec-keep">Keep</span>
+                {% elif entry.recommendation == 'TRADE' %}
+                  <span class="rec-badge rec-trade">Trade</span>
+                {% else %}
+                  <span class="rec-badge rec-drop">Drop</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if entry.projected_score %}
+                  <span style="color:#c9d1d9;font-weight:600;font-size:.8rem;">{{ entry.projected_score }}</span>
+                  {% if entry.age_mult_next < 1.0 %}
+                    <span style="font-size:.6rem;color:#f85149;margin-left:2px;">
+                      <i class="bi bi-arrow-down-short"></i>{{ '%+.0f'|format((entry.age_mult_next - 1) * 100) }}%
+                    </span>
+                  {% endif %}
+                {% else %}
+                  <span style="color:#484f58;">-</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
+</div>
+
+{# ── Projected Keeper Rankings ─────────────────────────────────────── #}
+<div class="section-title"><i class="bi bi-trophy"></i> Projected Keeper Rankings — Next Season</div>
+<div class="card">
+  <div class="card-body p-0" style="max-height:60vh;overflow:auto;">
+    <table class="table table-sm mb-0 keeper-table">
+      <thead class="sticky-top" style="background:#161b22;z-index:2;">
+        <tr>
+          <th style="width:35px;">#</th>
+          <th>Player</th>
+          <th style="width:55px;">Pos</th>
+          <th class="text-center" style="width:45px;">Age</th>
+          <th class="text-center" style="width:100px;">Team</th>
+          <th class="text-center" style="width:70px;">Cost</th>
+          <th class="text-end" style="width:85px;">Current Score</th>
+          <th class="text-end" style="width:95px;">Proj. Score</th>
+          <th class="text-end" style="width:100px;">Proj. KV</th>
+          <th class="text-center" style="width:75px;">Age Mult.</th>
+          <th class="text-center" style="width:70px;">Rec.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in projected_rankings %}
+          {% set p = entry.player %}
+          <tr>
+            <td class="projected-rank">{{ loop.index }}</td>
+            <td>
+              <a href="{{ url_for('player_detail', name=p.name) }}" class="player-link">
+                {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                  <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="team-icon">
+                {% endif %}
+                <span class="p-name">{{ p.name }}</span>
+              </a>
+            </td>
+            <td>
+              {% set player_positions = (p.position or 'MID').split('/') %}
+              <div style="display:flex;gap:3px;flex-wrap:nowrap;">
+                {% for pos in ['FWD', 'DEF', 'RUC', 'MID'] %}
+                  {% if pos in player_positions %}
+                    <span class="pos-badge badge-{{ pos|lower }}" style="padding:2px 5px;font-size:.65rem;">{{ pos }}</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </td>
+            <td class="text-center" style="color:#8b949e;">{{ p.age or '-' }}</td>
+            <td class="text-center">
+              <span style="font-size:.72rem;color:#c9d1d9;font-weight:600;">{{ entry.team_name }}</span>
+            </td>
+            <td class="text-center">
+              {% if 'Supp' in entry.cost_label %}
+                <span class="cost-badge cost-supp">{{ entry.cost_label }}</span>
+              {% elif entry.cost_label == 'Trade' %}
+                <span class="cost-badge cost-trade">{{ entry.cost_label }}</span>
+              {% elif entry.cost_label == 'Undrafted' %}
+                <span class="cost-badge cost-undrafted">{{ entry.cost_label }}</span>
+              {% else %}
+                <span class="cost-badge">{{ entry.cost_label }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if entry.draft_score %}
+                <span style="color:#58a6ff;font-weight:700;">{{ entry.draft_score }}</span>
+              {% else %}
+                <span style="color:#484f58;">-</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if entry.projected_score %}
+                <span style="color:#c9d1d9;font-weight:600;">{{ entry.projected_score }}</span>
+              {% else %}
+                <span style="color:#484f58;">-</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% set kv = entry.projected_kv %}
+              {% if kv > 1.5 %}
+                {% set kv_class = 'kv-great' %}{% set bar_color = '#56d364' %}
+              {% elif kv > 1.2 %}
+                {% set kv_class = 'kv-good' %}{% set bar_color = '#58a6ff' %}
+              {% elif kv >= 0.8 %}
+                {% set kv_class = 'kv-fair' %}{% set bar_color = '#e3b341' %}
+              {% else %}
+                {% set kv_class = 'kv-poor' %}{% set bar_color = '#f85149' %}
+              {% endif %}
+              <span class="kv-val {{ kv_class }}">{{ '%.2f'|format(kv) }}x</span>
+              <div class="kv-bar-wrap">
+                <div class="kv-bar" style="width:{{ [kv / 2.5 * 100, 100]|min }}%;background:{{ bar_color }};"></div>
+              </div>
+            </td>
+            <td class="text-center">
+              {% if entry.age_mult_next < 1.0 %}
+                <span style="font-size:.72rem;color:#f85149;font-weight:600;">{{ '%.0f'|format(entry.age_mult_next * 100) }}%</span>
+              {% else %}
+                <span style="font-size:.72rem;color:#56d364;font-weight:600;">100%</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if entry.recommendation == 'KEEP' %}
+                <span class="rec-badge rec-keep">Keep</span>
+              {% elif entry.recommendation == 'TRADE' %}
+                <span class="rec-badge rec-trade">Trade</span>
+              {% else %}
+                <span class="rec-badge rec-drop">Drop</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Keeper Value Chart ────────────────────────────────────────────── #}
+{% if teams_data|length > 0 %}
+<div class="section-title"><i class="bi bi-bar-chart-line"></i> Team Keeper Value Comparison</div>
+<div class="card">
+  <div class="card-body">
+    <div class="chart-container">
+      <canvas id="keeper-chart"></canvas>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+function filterTeams() {
+  const teamId = document.getElementById('team-filter').value;
+  const rec = document.getElementById('rec-filter').value;
+
+  document.querySelectorAll('.team-section').forEach(section => {
+    const sectionTeamId = section.dataset.teamId;
+    const teamMatch = !teamId || sectionTeamId === teamId;
+
+    if (!teamMatch) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = '';
+
+    // Filter rows within the section by recommendation
+    section.querySelectorAll('tbody tr').forEach(row => {
+      const rowRec = row.dataset.rec;
+      const recMatch = !rec || rowRec === rec;
+      row.style.display = recMatch ? '' : 'none';
+    });
+  });
+}
+
+// ── Team Keeper Value Bar Chart ──
+(function() {
+  const ctx = document.getElementById('keeper-chart');
+  if (!ctx) return;
+
+  const teamNames = [];
+  const avgKVs = [];
+  const totalKVs = [];
+  const keepCounts = [];
+  const barColors = [
+    'rgba(88,166,255,.7)', 'rgba(240,136,62,.7)', 'rgba(188,140,255,.7)',
+    'rgba(63,185,80,.7)', 'rgba(210,153,34,.7)', 'rgba(248,81,73,.7)',
+    'rgba(121,192,255,.7)', 'rgba(219,97,162,.7)',
+  ];
+  const borderColors = [
+    '#58a6ff', '#f0883e', '#bc8cff',
+    '#3fb950', '#d29922', '#f85149',
+    '#79c0ff', '#db61a2',
+  ];
+
+  {% for td in teams_data %}
+    {% if td.players %}
+      {% set ns = namespace(total_kv=0, keeps=0) %}
+      {% for p in td.players %}
+        {% set ns.total_kv = ns.total_kv + p.keeper_value %}
+        {% if p.recommendation == 'KEEP' %}{% set ns.keeps = ns.keeps + 1 %}{% endif %}
+      {% endfor %}
+      teamNames.push('{{ td.team.name|e }}');
+      avgKVs.push({{ '%.2f'|format(ns.total_kv / td.players|length) }});
+      totalKVs.push({{ '%.1f'|format(ns.total_kv) }});
+      keepCounts.push({{ ns.keeps }});
+    {% endif %}
+  {% endfor %}
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: teamNames,
+      datasets: [{
+        label: 'Avg Keeper Value',
+        data: avgKVs,
+        backgroundColor: barColors.slice(0, teamNames.length),
+        borderColor: borderColors.slice(0, teamNames.length),
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#161b22',
+          borderColor: '#30363d',
+          borderWidth: 1,
+          titleColor: '#e6edf3',
+          bodyColor: '#c9d1d9',
+          callbacks: {
+            afterLabel: function(ctx) {
+              const i = ctx.dataIndex;
+              return 'Total KV: ' + totalKVs[i] + '\nKeep-worthy: ' + keepCounts[i] + ' players';
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(48,54,61,.5)' },
+          ticks: { color: '#8b949e', font: { size: 11 } },
+          title: {
+            display: true,
+            text: 'Average Keeper Value',
+            color: '#8b949e',
+            font: { size: 12 }
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#c9d1d9', font: { size: 11, weight: '600' } }
+        }
+      },
+      // Draw a reference line at 1.0 (break-even)
+      animation: {
+        onComplete: function() {
+          const chart = this;
+          const yScale = chart.scales.y;
+          const xScale = chart.scales.x;
+          const yPixel = yScale.getPixelForValue(1.0);
+          const ctxCanvas = chart.ctx;
+          ctxCanvas.save();
+          ctxCanvas.beginPath();
+          ctxCanvas.setLineDash([5, 5]);
+          ctxCanvas.strokeStyle = 'rgba(139,148,158,.5)';
+          ctxCanvas.lineWidth = 1;
+          ctxCanvas.moveTo(xScale.left, yPixel);
+          ctxCanvas.lineTo(xScale.right, yPixel);
+          ctxCanvas.stroke();
+          // Label
+          ctxCanvas.fillStyle = '#8b949e';
+          ctxCanvas.font = '10px sans-serif';
+          ctxCanvas.fillText('Break-even (1.0x)', xScale.right - 100, yPixel - 5);
+          ctxCanvas.restore();
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

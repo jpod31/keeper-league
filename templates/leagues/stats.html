@@ -1,0 +1,663 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'players' %}
+{% set active_subtab = 'stats' %}
+{% block title %}Advanced Stats — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "leagues/_players_subnav.html" %}
+<style>
+  .stat-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+  .stat-card .card-header { border-bottom: 1px solid #30363d; padding: .6rem .9rem; }
+  .stat-card .card-header h6 { margin: 0; font-size: .85rem; font-weight: 600; color: #e6edf3; }
+  .stat-table th {
+    padding: .4rem .6rem; font-size: .7rem; color: #8b949e;
+    text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 2px solid #30363d;
+  }
+  .stat-table td { padding: .4rem .6rem; font-size: .8rem; vertical-align: middle; color: #c9d1d9; }
+  .stat-table tbody tr { transition: background .1s; }
+  .stat-table tbody tr:hover { background: rgba(88,166,255,.04); }
+  .stat-rank {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; font-size: .65rem; font-weight: 700;
+  }
+  .rank-1 { background: rgba(210,153,34,.2); color: #e3b341; }
+  .rank-2 { background: rgba(139,148,158,.15); color: #8b949e; }
+  .rank-3 { background: rgba(205,127,50,.2); color: #cd7f32; }
+  .rank-other { background: #21262d; color: #484f58; }
+  .metric-big { font-size: 1.6rem; font-weight: 800; color: #58a6ff; line-height: 1; }
+  .metric-label { font-size: .7rem; color: #8b949e; text-transform: uppercase; letter-spacing: .5px; }
+  .metric-sub { font-size: .78rem; color: #c9d1d9; }
+  .player-search-box {
+    background: #0d1117; border: 1px solid #30363d; color: #e6edf3;
+    border-radius: 6px; padding: .5rem .75rem; font-size: .85rem; width: 100%;
+  }
+  .player-search-box::placeholder { color: #484f58; }
+  .player-search-box:focus { border-color: #58a6ff; outline: none; box-shadow: 0 0 0 2px rgba(88,166,255,.15); }
+  .search-results {
+    position: absolute; z-index: 10; width: 100%; background: #161b22;
+    border: 1px solid #30363d; border-radius: 6px; max-height: 300px; overflow-y: auto;
+    display: none; margin-top: 2px;
+  }
+  .search-results .search-item {
+    padding: .5rem .75rem; cursor: pointer; font-size: .82rem;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #21262d;
+  }
+  .search-results .search-item:hover { background: rgba(88,166,255,.06); }
+  .search-results .search-item .s-name { color: #e6edf3; font-weight: 600; }
+  .search-results .search-item .s-meta { color: #8b949e; font-size: .72rem; }
+  .player-detail-card { display: none; }
+  .player-detail-card.active { display: block; }
+  .chart-container { position: relative; height: 260px; }
+  .team-chart-container { position: relative; height: 300px; }
+  .breakdown-bar {
+    height: 24px; border-radius: 4px; display: flex; overflow: hidden;
+  }
+  .breakdown-bar div { height: 100%; transition: width .3s; }
+  .tab-button {
+    background: none; border: 1px solid #30363d; color: #8b949e; padding: .4rem 1rem;
+    border-radius: 6px; font-size: .8rem; cursor: pointer; transition: all .15s;
+  }
+  .tab-button:hover { color: #c9d1d9; border-color: #484f58; }
+  .tab-button.active { background: rgba(88,166,255,.12); border-color: #58a6ff; color: #58a6ff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .bye-impact-row { display: flex; align-items: center; gap: .5rem; padding: .4rem 0; }
+  .bye-round-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 28px; padding: 2px 8px; border-radius: 12px;
+    font-size: .7rem; font-weight: 700; background: #21262d; color: #8b949e;
+  }
+  .pos-bar-label { font-size: .72rem; color: #8b949e; min-width: 40px; text-align: right; }
+  .pos-bar-fill { height: 18px; border-radius: 3px; min-width: 2px; transition: width .3s; }
+  .pos-bar-value { font-size: .72rem; color: #c9d1d9; margin-left: 6px; font-weight: 600; }
+</style>
+
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Players</div>
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <h2 class="mb-0">Advanced Stats</h2>
+      <span style="font-size:.78rem;color:#8b949e;">{{ league.season_year }} Season Analytics</span>
+    </div>
+  </div>
+</div>
+
+{# Tab buttons #}
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  <button class="tab-button active" onclick="switchTab('leaders')">
+    <i class="bi bi-award me-1"></i>League Leaders
+  </button>
+  <button class="tab-button" onclick="switchTab('lookup')">
+    <i class="bi bi-search me-1"></i>Player Lookup
+  </button>
+  <button class="tab-button" onclick="switchTab('team')">
+    <i class="bi bi-bar-chart me-1"></i>Team Analysis
+  </button>
+</div>
+
+{# ═══ TAB 1: League Leaders ═══ #}
+<div class="tab-panel active" id="tab-leaders">
+  <div class="row g-3">
+
+    {# Scoring Average #}
+    <div class="col-lg-6">
+      <div class="stat-card">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-trophy-fill" style="color:#e3b341;"></i>
+          <h6>Top Scorers (Avg)</h6>
+        </div>
+        <div class="p-0">
+          <table class="table table-sm mb-0 stat-table">
+            <thead><tr><th style="width:32px;">#</th><th>Player</th><th>Team</th><th class="text-end">Avg</th><th class="text-end">GP</th></tr></thead>
+            <tbody>
+              {% for p in leaders.scoring_avg %}
+              <tr>
+                <td><span class="stat-rank rank-{{ loop.index if loop.index <= 3 else 'other' }}">{{ loop.index }}</span></td>
+                <td><strong>{{ p.name }}</strong></td>
+                <td style="color:#8b949e;">{{ p.fantasy_team or '-' }}</td>
+                <td class="text-end"><strong style="color:#58a6ff;">{{ '%.1f'|format(p.avg) }}</strong></td>
+                <td class="text-end" style="color:#8b949e;">{{ p.games }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# Most Consistent #}
+    <div class="col-lg-6">
+      <div class="stat-card">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-bullseye" style="color:#3fb950;"></i>
+          <h6>Most Consistent (Lowest Std Dev)</h6>
+        </div>
+        <div class="p-0">
+          <table class="table table-sm mb-0 stat-table">
+            <thead><tr><th style="width:32px;">#</th><th>Player</th><th class="text-end">Avg</th><th class="text-end">Std Dev</th></tr></thead>
+            <tbody>
+              {% for p in leaders.consistency %}
+              <tr>
+                <td><span class="stat-rank rank-{{ loop.index if loop.index <= 3 else 'other' }}">{{ loop.index }}</span></td>
+                <td><strong>{{ p.name }}</strong></td>
+                <td class="text-end" style="color:#8b949e;">{{ '%.1f'|format(p.avg) }}</td>
+                <td class="text-end"><strong style="color:#3fb950;">{{ '%.1f'|format(p.std_dev) }}</strong></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# Highest Ceiling #}
+    <div class="col-lg-6">
+      <div class="stat-card">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-lightning-fill" style="color:#d29922;"></i>
+          <h6>Highest Ceiling (Best Single Round)</h6>
+        </div>
+        <div class="p-0">
+          <table class="table table-sm mb-0 stat-table">
+            <thead><tr><th style="width:32px;">#</th><th>Player</th><th class="text-end">Best</th><th class="text-end">Avg</th><th class="text-end">Rd</th></tr></thead>
+            <tbody>
+              {% for p in leaders.ceiling %}
+              <tr>
+                <td><span class="stat-rank rank-{{ loop.index if loop.index <= 3 else 'other' }}">{{ loop.index }}</span></td>
+                <td><strong>{{ p.name }}</strong></td>
+                <td class="text-end"><strong style="color:#d29922;">{{ p.ceiling }}</strong></td>
+                <td class="text-end" style="color:#8b949e;">{{ '%.1f'|format(p.avg) }}</td>
+                <td class="text-end" style="color:#8b949e;">{{ p.best_round }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# Most Improved #}
+    <div class="col-lg-6">
+      <div class="stat-card">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-graph-up-arrow" style="color:#a371f7;"></i>
+          <h6>Most Improved (Avg Increase)</h6>
+        </div>
+        <div class="p-0">
+          <table class="table table-sm mb-0 stat-table">
+            <thead><tr><th style="width:32px;">#</th><th>Player</th><th class="text-end">Prev</th><th class="text-end">Now</th><th class="text-end">Diff</th></tr></thead>
+            <tbody>
+              {% for p in leaders.most_improved %}
+              <tr>
+                <td><span class="stat-rank rank-{{ loop.index if loop.index <= 3 else 'other' }}">{{ loop.index }}</span></td>
+                <td><strong>{{ p.name }}</strong></td>
+                <td class="text-end" style="color:#8b949e;">{{ '%.1f'|format(p.prev_avg) }}</td>
+                <td class="text-end" style="color:#c9d1d9;">{{ '%.1f'|format(p.curr_avg) }}</td>
+                <td class="text-end"><strong style="color:#a371f7;">+{{ '%.1f'|format(p.improvement) }}</strong></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# Ironman (Most Games) #}
+    <div class="col-lg-6">
+      <div class="stat-card">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-heart-pulse-fill" style="color:#f85149;"></i>
+          <h6>Ironman (Most Games)</h6>
+        </div>
+        <div class="p-0">
+          <table class="table table-sm mb-0 stat-table">
+            <thead><tr><th style="width:32px;">#</th><th>Player</th><th class="text-end">Games</th><th class="text-end">Avg</th></tr></thead>
+            <tbody>
+              {% for p in leaders.ironman %}
+              <tr>
+                <td><span class="stat-rank rank-{{ loop.index if loop.index <= 3 else 'other' }}">{{ loop.index }}</span></td>
+                <td><strong>{{ p.name }}</strong></td>
+                <td class="text-end"><strong style="color:#f85149;">{{ p.games }}</strong></td>
+                <td class="text-end" style="color:#8b949e;">{{ '%.1f'|format(p.avg) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# ═══ TAB 2: Player Lookup ═══ #}
+<div class="tab-panel" id="tab-lookup">
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="stat-card">
+        <div class="card-header">
+          <h6><i class="bi bi-search me-2" style="color:#8b949e;"></i>Find Player</h6>
+        </div>
+        <div class="card-body p-3">
+          <div style="position:relative;">
+            <input type="text" class="player-search-box" id="player-search"
+                   placeholder="Type a player name..." autocomplete="off"
+                   oninput="searchPlayers(this.value)">
+            <div class="search-results" id="search-results"></div>
+          </div>
+          <div id="player-quick-stats" class="mt-3" style="display:none;">
+            <div class="d-flex flex-wrap gap-3 justify-content-center mt-2">
+              <div class="text-center">
+                <div class="metric-big" id="qs-avg">-</div>
+                <div class="metric-label">Avg</div>
+              </div>
+              <div class="text-center">
+                <div class="metric-big" id="qs-games" style="color:#3fb950;">-</div>
+                <div class="metric-label">Games</div>
+              </div>
+              <div class="text-center">
+                <div class="metric-big" id="qs-ceiling" style="color:#d29922;">-</div>
+                <div class="metric-label">Ceiling</div>
+              </div>
+              <div class="text-center">
+                <div class="metric-big" id="qs-floor" style="color:#f85149;">-</div>
+                <div class="metric-label">Floor</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Detailed metrics card #}
+      <div class="stat-card mt-3" id="player-metrics" style="display:none;">
+        <div class="card-header">
+          <h6 id="player-metrics-title">Metrics</h6>
+        </div>
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
+            <span style="color:#8b949e;">Consistency (Std Dev)</span>
+            <span id="pm-stddev" style="color:#c9d1d9;font-weight:600;">-</span>
+          </div>
+          <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
+            <span style="color:#8b949e;">Break-even Score</span>
+            <span id="pm-breakeven" style="color:#c9d1d9;font-weight:600;">-</span>
+          </div>
+          <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
+            <span style="color:#8b949e;">Last 3 Avg</span>
+            <span id="pm-l3" style="color:#c9d1d9;font-weight:600;">-</span>
+          </div>
+          <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
+            <span style="color:#8b949e;">Last 5 Avg</span>
+            <span id="pm-l5" style="color:#c9d1d9;font-weight:600;">-</span>
+          </div>
+          <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
+            <span style="color:#8b949e;">Ceiling (Best)</span>
+            <span id="pm-ceiling" style="color:#d29922;font-weight:600;">-</span>
+          </div>
+          <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
+            <span style="color:#8b949e;">Floor (Worst)</span>
+            <span id="pm-floor" style="color:#f85149;font-weight:600;">-</span>
+          </div>
+          <hr style="border-color:#30363d;margin:.5rem 0;">
+          <h6 style="font-size:.78rem;color:#8b949e;margin-bottom:.5rem;">Per-Game Stat Averages</h6>
+          <div id="pm-stat-breakdown"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      {# Season scoring chart #}
+      <div class="stat-card" id="player-chart-card" style="display:none;">
+        <div class="card-header">
+          <h6 id="player-chart-title">Season Scoring</h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="playerScoreChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ═══ TAB 3: Team Analysis ═══ #}
+<div class="tab-panel" id="tab-team">
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <select class="form-select form-select-sm" id="team-select" onchange="loadTeamAnalysis()"
+                style="max-width:280px;background:#0d1117;border-color:#30363d;font-size:.82rem;">
+          <option value="">Select a team...</option>
+          {% for t in teams %}
+            <option value="{{ t.id }}">{{ t.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    {# Team scoring trend #}
+    <div class="col-lg-8">
+      <div class="stat-card" id="team-trend-card" style="display:none;">
+        <div class="card-header">
+          <h6 id="team-trend-title">Scoring Trend</h6>
+        </div>
+        <div class="card-body">
+          <div class="team-chart-container">
+            <canvas id="teamTrendChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      {# Position group breakdown #}
+      <div class="stat-card" id="team-pos-card" style="display:none;">
+        <div class="card-header">
+          <h6>Position Group Contribution</h6>
+        </div>
+        <div class="card-body p-3" id="team-pos-body">
+        </div>
+      </div>
+
+      {# Bye round impact #}
+      <div class="stat-card mt-3" id="team-bye-card" style="display:none;">
+        <div class="card-header">
+          <h6><i class="bi bi-calendar-x me-2" style="color:#d29922;"></i>Bye Round Impact</h6>
+        </div>
+        <div class="card-body p-3" id="team-bye-body">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ═══ Chart.js CDN ═══ #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+
+<script>
+// ── Tab switching ──
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tabName).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── Player search data (embedded from server) ──
+const allPlayers = {{ all_players_json|safe }};
+let playerChart = null;
+
+function searchPlayers(query) {
+  const results = document.getElementById('search-results');
+  if (!query || query.length < 2) {
+    results.style.display = 'none';
+    return;
+  }
+  const q = query.toLowerCase();
+  const matches = allPlayers.filter(p => p.name.toLowerCase().includes(q)).slice(0, 15);
+  if (matches.length === 0) {
+    results.innerHTML = '<div class="px-3 py-2" style="color:#8b949e;font-size:.8rem;">No players found</div>';
+  } else {
+    results.innerHTML = matches.map(p =>
+      `<div class="search-item" onclick="selectPlayer(${p.id})">
+        <span class="s-name">${p.name}</span>
+        <span class="s-meta">${p.position || ''} &middot; ${p.afl_team || ''}</span>
+      </div>`
+    ).join('');
+  }
+  results.style.display = 'block';
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#player-search') && !e.target.closest('#search-results')) {
+    document.getElementById('search-results').style.display = 'none';
+  }
+});
+
+function selectPlayer(playerId) {
+  document.getElementById('search-results').style.display = 'none';
+  const player = allPlayers.find(p => p.id === playerId);
+  if (player) {
+    document.getElementById('player-search').value = player.name;
+  }
+
+  // Fetch player stats via API
+  fetch(`{{ url_for('leagues.advanced_stats', league_id=league.id) }}/api/player/${playerId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        console.error(data.error);
+        return;
+      }
+      renderPlayerDetail(data);
+    })
+    .catch(err => console.error('Failed to fetch player stats:', err));
+}
+
+function renderPlayerDetail(data) {
+  // Quick stats
+  document.getElementById('player-quick-stats').style.display = 'block';
+  document.getElementById('qs-avg').textContent = data.avg.toFixed(1);
+  document.getElementById('qs-games').textContent = data.games;
+  document.getElementById('qs-ceiling').textContent = data.ceiling;
+  document.getElementById('qs-floor').textContent = data.floor;
+
+  // Metrics card
+  document.getElementById('player-metrics').style.display = 'block';
+  document.getElementById('player-metrics-title').textContent = data.name + ' — Metrics';
+  document.getElementById('pm-stddev').textContent = data.std_dev.toFixed(1);
+  document.getElementById('pm-breakeven').textContent = data.breakeven.toFixed(1);
+  document.getElementById('pm-l3').textContent = data.l3_avg !== null ? data.l3_avg.toFixed(1) : '-';
+  document.getElementById('pm-l5').textContent = data.l5_avg !== null ? data.l5_avg.toFixed(1) : '-';
+  document.getElementById('pm-ceiling').textContent = data.ceiling;
+  document.getElementById('pm-floor').textContent = data.floor;
+
+  // Stat breakdown
+  const brkDiv = document.getElementById('pm-stat-breakdown');
+  if (data.stat_avgs && Object.keys(data.stat_avgs).length > 0) {
+    brkDiv.innerHTML = Object.entries(data.stat_avgs).map(([stat, val]) =>
+      `<div class="d-flex justify-content-between py-1" style="font-size:.78rem;">
+        <span style="color:#8b949e;text-transform:capitalize;">${stat.replace(/_/g, ' ')}</span>
+        <span style="color:#c9d1d9;font-weight:600;">${val.toFixed(1)}</span>
+      </div>`
+    ).join('');
+  } else {
+    brkDiv.innerHTML = '<span style="color:#484f58;font-size:.78rem;">No detailed stats available</span>';
+  }
+
+  // Chart
+  document.getElementById('player-chart-card').style.display = 'block';
+  document.getElementById('player-chart-title').textContent = data.name + ' — Season Scoring';
+
+  const ctx = document.getElementById('playerScoreChart').getContext('2d');
+  if (playerChart) playerChart.destroy();
+
+  const rounds = data.scores_by_round.map(s => 'R' + s.round);
+  const scores = data.scores_by_round.map(s => s.score);
+  const avgLine = rounds.map(() => data.avg);
+
+  playerChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: rounds,
+      datasets: [
+        {
+          label: 'SC Score',
+          data: scores,
+          borderColor: '#58a6ff',
+          backgroundColor: 'rgba(88,166,255,.1)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#58a6ff',
+          tension: 0.2,
+          fill: true,
+        },
+        {
+          label: 'Season Avg',
+          data: avgLine,
+          borderColor: '#f8514980',
+          borderWidth: 1.5,
+          borderDash: [6, 3],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: '#8b949e', font: { size: 11 } }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#8b949e', font: { size: 10 } },
+          grid: { color: 'rgba(48,54,61,.5)' }
+        },
+        y: {
+          ticks: { color: '#8b949e', font: { size: 10 } },
+          grid: { color: 'rgba(48,54,61,.5)' },
+          beginAtZero: false,
+        }
+      }
+    }
+  });
+}
+
+// ── Team Analysis ──
+let teamTrendChart = null;
+
+function loadTeamAnalysis() {
+  const teamId = document.getElementById('team-select').value;
+  if (!teamId) {
+    document.getElementById('team-trend-card').style.display = 'none';
+    document.getElementById('team-pos-card').style.display = 'none';
+    document.getElementById('team-bye-card').style.display = 'none';
+    return;
+  }
+
+  // Team data is embedded from server
+  const teamData = teamAnalysisData[teamId];
+  if (!teamData) return;
+
+  // Trend chart
+  document.getElementById('team-trend-card').style.display = 'block';
+  document.getElementById('team-trend-title').textContent = teamData.name + ' — Scoring Trend';
+
+  const ctx = document.getElementById('teamTrendChart').getContext('2d');
+  if (teamTrendChart) teamTrendChart.destroy();
+
+  const tRounds = teamData.round_scores.map(s => 'R' + s.round);
+  const tScores = teamData.round_scores.map(s => s.score);
+  const tAvg = tScores.length > 0 ? tScores.reduce((a, b) => a + b, 0) / tScores.length : 0;
+  const tAvgLine = tRounds.map(() => tAvg);
+
+  teamTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: tRounds,
+      datasets: [
+        {
+          label: 'Team Score',
+          data: tScores,
+          borderColor: '#3fb950',
+          backgroundColor: 'rgba(63,185,80,.1)',
+          borderWidth: 2.5,
+          pointRadius: 5,
+          pointBackgroundColor: '#3fb950',
+          tension: 0.2,
+          fill: true,
+        },
+        {
+          label: 'Average (' + tAvg.toFixed(0) + ')',
+          data: tAvgLine,
+          borderColor: '#d2992280',
+          borderWidth: 1.5,
+          borderDash: [6, 3],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: '#8b949e', font: { size: 11 } }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#8b949e', font: { size: 10 } },
+          grid: { color: 'rgba(48,54,61,.5)' }
+        },
+        y: {
+          ticks: { color: '#8b949e', font: { size: 10 } },
+          grid: { color: 'rgba(48,54,61,.5)' },
+          beginAtZero: false,
+        }
+      }
+    }
+  });
+
+  // Position breakdown
+  document.getElementById('team-pos-card').style.display = 'block';
+  const posBody = document.getElementById('team-pos-body');
+  const posData = teamData.position_breakdown;
+  const posTotal = Object.values(posData).reduce((a, b) => a + b, 0) || 1;
+  const posColors = { DEF: '#58a6ff', MID: '#3fb950', FWD: '#d29922', RUC: '#a371f7' };
+
+  // Breakdown bar
+  let barHtml = '<div class="breakdown-bar mb-3">';
+  for (const [pos, val] of Object.entries(posData)) {
+    const pct = (val / posTotal * 100).toFixed(1);
+    barHtml += `<div style="width:${pct}%;background:${posColors[pos] || '#484f58'};" title="${pos}: ${pct}%"></div>`;
+  }
+  barHtml += '</div>';
+
+  // Individual bars
+  let detailHtml = '';
+  for (const [pos, val] of Object.entries(posData)) {
+    const pct = (val / posTotal * 100).toFixed(1);
+    detailHtml += `
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="pos-bar-label">${pos}</span>
+        <div style="flex:1;background:#21262d;border-radius:3px;height:18px;">
+          <div class="pos-bar-fill" style="width:${pct}%;background:${posColors[pos] || '#484f58'};"></div>
+        </div>
+        <span class="pos-bar-value">${val.toFixed(0)} <span style="color:#8b949e;font-weight:400;">(${pct}%)</span></span>
+      </div>`;
+  }
+
+  posBody.innerHTML = barHtml + detailHtml;
+
+  // Bye round impact
+  document.getElementById('team-bye-card').style.display = 'block';
+  const byeBody = document.getElementById('team-bye-body');
+  const byeData = teamData.bye_impact;
+
+  if (byeData && byeData.length > 0) {
+    byeBody.innerHTML = byeData.map(b =>
+      `<div class="bye-impact-row">
+        <span class="bye-round-badge">R${b.round}</span>
+        <span style="font-size:.8rem;color:#c9d1d9;"><strong>${b.players_out}</strong> players on bye</span>
+        <span style="font-size:.75rem;color:#8b949e;margin-left:auto;">~${b.estimated_loss.toFixed(0)} pts lost</span>
+      </div>`
+    ).join('');
+  } else {
+    byeBody.innerHTML = '<span style="color:#484f58;font-size:.82rem;">No bye data available</span>';
+  }
+}
+
+// ── Team analysis data (embedded from server) ──
+const teamAnalysisData = {{ team_analysis_json|safe }};
+</script>
+{% endblock %}

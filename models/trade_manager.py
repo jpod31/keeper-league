@@ -1,5 +1,6 @@
 """Trade management: propose, accept/reject, cancel, veto, validate, expire."""
 
+import threading
 from datetime import datetime, timezone, timedelta
 
 from models.database import (
@@ -7,6 +8,8 @@ from models.database import (
     FantasyTeam, League, AflPlayer, FutureDraftPick,
 )
 
+# Thread lock to serialise trade acceptance and prevent concurrent roster corruption
+_trade_lock = threading.Lock()
 
 TRADE_REVIEW_HOURS = 48
 
@@ -89,45 +92,49 @@ def propose_trade(league_id, proposer_team_id, recipient_team_id,
 def respond_to_trade(trade_id, accept):
     """Accept or reject a trade proposal.
     Returns (trade, None) on success or (None, error_msg) on failure.
+    Uses _trade_lock to prevent concurrent acceptance from corrupting rosters.
     """
-    trade = db.session.get(Trade, trade_id)
-    if not trade:
-        return None, "Trade not found."
-    if trade.status != "pending":
-        return None, f"Trade is already {trade.status}."
+    with _trade_lock:
+        # Re-fetch inside the lock to get the latest state
+        trade = db.session.get(Trade, trade_id)
+        if not trade:
+            return None, "Trade not found."
+        db.session.refresh(trade)
+        if trade.status != "pending":
+            return None, f"Trade is already {trade.status}."
 
-    if accept:
-        # Re-validate before executing (exclude this trade from double-dealing check)
-        give_ids = [a.player_id for a in trade.assets if a.from_team_id == trade.proposer_team_id and a.player_id]
-        receive_ids = [a.player_id for a in trade.assets if a.from_team_id == trade.recipient_team_id and a.player_id]
-        give_pick_ids = [a.future_pick_id for a in trade.assets if a.from_team_id == trade.proposer_team_id and a.future_pick_id]
-        receive_pick_ids = [a.future_pick_id for a in trade.assets if a.from_team_id == trade.recipient_team_id and a.future_pick_id]
-        error = check_trade_validity(trade.league_id, trade.proposer_team_id,
-                                      trade.recipient_team_id, give_ids, receive_ids,
-                                      exclude_trade_id=trade.id,
-                                      give_pick_ids=give_pick_ids,
-                                      receive_pick_ids=receive_pick_ids)
-        if error:
-            return None, f"Trade no longer valid: {error}"
+        if accept:
+            # Re-validate before executing (exclude this trade from double-dealing check)
+            give_ids = [a.player_id for a in trade.assets if a.from_team_id == trade.proposer_team_id and a.player_id]
+            receive_ids = [a.player_id for a in trade.assets if a.from_team_id == trade.recipient_team_id and a.player_id]
+            give_pick_ids = [a.future_pick_id for a in trade.assets if a.from_team_id == trade.proposer_team_id and a.future_pick_id]
+            receive_pick_ids = [a.future_pick_id for a in trade.assets if a.from_team_id == trade.recipient_team_id and a.future_pick_id]
+            error = check_trade_validity(trade.league_id, trade.proposer_team_id,
+                                          trade.recipient_team_id, give_ids, receive_ids,
+                                          exclude_trade_id=trade.id,
+                                          give_pick_ids=give_pick_ids,
+                                          receive_pick_ids=receive_pick_ids)
+            if error:
+                return None, f"Trade no longer valid: {error}"
 
-        # Check if trade window is open — if closed, mark as agreed (execute later)
-        league = db.session.get(League, trade.league_id)
-        if league and not league.trade_window_open:
-            trade.status = "agreed"
-            trade.responded_at = datetime.now(timezone.utc)
-            db.session.commit()
-            return trade, None
+            # Check if trade window is open — if closed, mark as agreed (execute later)
+            league = db.session.get(League, trade.league_id)
+            if league and not league.trade_window_open:
+                trade.status = "agreed"
+                trade.responded_at = datetime.now(timezone.utc)
+                db.session.commit()
+                return trade, None
 
-        # Execute the swap
-        _execute_trade(trade)
-        trade.status = "accepted"
-    else:
-        trade.status = "rejected"
+            # Execute the swap
+            _execute_trade(trade)
+            trade.status = "accepted"
+        else:
+            trade.status = "rejected"
 
-    trade.responded_at = datetime.now(timezone.utc)
-    db.session.commit()
+        trade.responded_at = datetime.now(timezone.utc)
+        db.session.commit()
 
-    # Log activity
+    # Log activity (outside lock)
     try:
         from models.activity_feed import log_activity
         status_label = trade.status.replace("_", " ").title()
