@@ -45,8 +45,11 @@ def register_draft_events(socketio):
 
     @socketio.on("connect", namespace="/draft")
     def handle_connect():
+        print(f"[DRAFT] connect: authenticated={current_user.is_authenticated} user={getattr(current_user, 'username', 'anon')}", flush=True)
         if not current_user.is_authenticated:
+            print("[DRAFT] REJECTING unauthenticated socket connection", flush=True)
             return False  # reject connection
+        print(f"[DRAFT] socket connected OK for {current_user.username}", flush=True)
 
     @socketio.on("join_draft", namespace="/draft")
     def handle_join(data):
