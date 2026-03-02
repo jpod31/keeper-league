@@ -2,70 +2,80 @@
 {% set active_tab = 'gameday' %}
 {% block title %}Gameday — Round {{ afl_round }} — {{ league.name }}{% endblock %}
 {% block league_content %}
-<div class="page-header">
-  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Gameday</div>
-  <div class="d-flex justify-content-between align-items-start">
-    <div class="d-flex align-items-center gap-3">
-      {% if afl_round > min_round %}
-        <a href="{{ url_for('matchups.gameday', league_id=league.id, round=afl_round-1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i></a>
-      {% endif %}
-      <h2 class="mb-0">Round {{ afl_round }}</h2>
-      {% if afl_round < max_round %}
-        <a href="{{ url_for('matchups.gameday', league_id=league.id, round=afl_round+1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-right"></i></a>
-      {% endif %}
-    </div>
-    <div class="d-flex gap-2 align-items-center">
-      {% if live_enabled %}
-      <button type="button" class="sync-scores-btn" id="syncScoresBtn"
-              onclick="manualSyncScores()">
-        <i class="bi bi-arrow-repeat"></i>Sync Scores
-      </button>
-      {% endif %}
-      <span id="connection-status" class="badge" style="font-size:.65rem;background:#21262d;color:#484f58;">
-        <i class="bi bi-circle-fill me-1" style="font-size:.4rem;"></i>Connecting...
-      </span>
-      <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=afl_round) }}" class="btn btn-outline-secondary btn-sm">All Matchups</a>
-    </div>
+
+{# ═══════════════════════ BYE ROUND ═══════════════════════ #}
+{% if is_bye %}
+<div class="gameday-hero" style="text-align:center;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="gameday-round-title mb-0">ROUND {{ afl_round }}</h2>
+    <span class="gameday-state-badge badge-bye">Bye</span>
   </div>
+  {% if round_dates %}
+    <div class="gameday-round-dates">{{ round_dates }}</div>
+  {% endif %}
+  <p style="color:#c9d1d9;font-size:.95rem;margin-bottom:6px;margin-top:20px;">You have a bye this round.</p>
+  <p style="color:#484f58;font-size:.85rem;margin-bottom:20px;">Check out the other matchups.</p>
+  <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">View All Matchups</a>
 </div>
 
-{# ── AFL Game Status Bar ── #}
-{% if afl_games %}
-<div class="mb-3 d-flex flex-wrap gap-2">
-  {% for g in afl_games %}
-    <div class="game-status-pill" id="game-{{ g.game_id }}">
-      <span class="game-teams">{{ g.home_team[:3]|upper }} v {{ g.away_team[:3]|upper }}</span>
-      {% if g.status == 'live' %}
-        <span class="badge bg-success" style="font-size:.6rem;animation:pulse 2s infinite;">LIVE</span>
-      {% elif g.status == 'complete' %}
-        <span class="badge" style="font-size:.6rem;background:#238636;">FT</span>
-      {% else %}
-        <span class="badge" style="font-size:.6rem;background:#21262d;color:#8b949e;">
-          {% if g.scheduled_start %}{{ g.scheduled_start[11:16] }}{% else %}TBC{% endif %}
-        </span>
-      {% endif %}
-      {% if g.home_score is not none %}
-        <span class="game-afl-score">{{ g.home_score }}-{{ g.away_score }}</span>
-      {% endif %}
-    </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-{# ── Score Hero Card ── #}
-{% set total = (my_score + opp_score) or 1 %}
-{% set my_pct = (my_score / total * 100)|round(1) %}
+{% else %}
+{# ═══════════════════════ HERO CARD ═══════════════════════ #}
 <div class="gameday-hero" id="hero-card">
-  <div class="row align-items-center text-center">
+  {# Header: Round title + state badge #}
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="gameday-round-title mb-0">ROUND {{ afl_round }}</h2>
+    {% if gameday_state == 'live' %}
+      <span class="gameday-state-badge badge-live"><span class="live-pulse-dot"></span> Live</span>
+    {% elif gameday_state == 'completed' %}
+      <span class="gameday-state-badge badge-final">Final</span>
+    {% else %}
+      <span class="gameday-state-badge badge-upcoming">Upcoming</span>
+    {% endif %}
+  </div>
+
+  {# Round dates — upcoming only #}
+  {% if gameday_state == 'upcoming' and round_dates %}
+    <div class="gameday-round-dates">{{ round_dates }}</div>
+  {% endif %}
+
+  {# AFL game pills — live state only, inside hero #}
+  {% if gameday_state == 'live' and afl_games %}
+  <div class="gameday-afl-pills mt-2 mb-3">
+    {% for g in afl_games %}
+      <div class="game-status-pill" id="game-{{ g.game_id }}">
+        <span class="game-teams">{{ g.home_team[:3]|upper }} v {{ g.away_team[:3]|upper }}</span>
+        {% if g.status == 'live' %}
+          <span class="badge bg-success" style="font-size:.6rem;animation:pulse 2s infinite;">LIVE</span>
+        {% elif g.status == 'complete' %}
+          <span class="badge" style="font-size:.6rem;background:#238636;">FT</span>
+        {% else %}
+          <span class="badge" style="font-size:.6rem;background:#21262d;color:#8b949e;">
+            {% if g.scheduled_start %}{{ g.scheduled_start[11:16] }}{% else %}TBC{% endif %}
+          </span>
+        {% endif %}
+        {% if g.home_score is not none %}
+          <span class="game-afl-score">{{ g.home_score }}-{{ g.away_score }}</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Score area ── #}
+  {% set total = (my_score + opp_score) or 1 %}
+  {% set my_pct = (my_score / total * 100)|round(1) %}
+  <div class="row align-items-center text-center gameday-score-row">
     <div class="col-5">
       <div class="gameday-team-name">{{ my_team.name }}</div>
-      <div class="gameday-score {{ 'gameday-winning' if my_score > opp_score else '' }}" id="hero-my-score">{{ '%.0f'|format(my_score) }}</div>
-      {% if league.scoring_type == 'ultimate_footy' %}
-        <div style="color:#8b949e;font-size:.7rem;">categories won</div>
-      {% elif my_captain_bonus > 0 %}
-        <div class="captain-bonus" id="hero-my-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
-      {% else %}
-        <div class="captain-bonus" id="hero-my-cap" style="display:none;"></div>
+      {% if gameday_state != 'upcoming' %}
+        <div class="gameday-score {{ 'gameday-winning' if my_score > opp_score else '' }}" id="hero-my-score">{{ '%.0f'|format(my_score) }}</div>
+        {% if league.scoring_type == 'ultimate_footy' %}
+          <div style="color:#8b949e;font-size:.7rem;">categories won</div>
+        {% elif my_captain_bonus > 0 %}
+          <div class="captain-bonus" id="hero-my-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
+        {% else %}
+          <div class="captain-bonus" id="hero-my-cap" style="display:none;"></div>
+        {% endif %}
       {% endif %}
     </div>
     <div class="col-2">
@@ -73,31 +83,60 @@
     </div>
     <div class="col-5">
       <div class="gameday-team-name">{{ opp_team.name }}</div>
-      <div class="gameday-score {{ 'gameday-winning' if opp_score > my_score else '' }}" id="hero-opp-score">{{ '%.0f'|format(opp_score) }}</div>
-      {% if league.scoring_type == 'ultimate_footy' %}
-        <div style="color:#8b949e;font-size:.7rem;">categories won</div>
-      {% elif opp_captain_bonus > 0 %}
-        <div class="captain-bonus" id="hero-opp-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
-      {% else %}
-        <div class="captain-bonus" id="hero-opp-cap" style="display:none;"></div>
+      {% if gameday_state != 'upcoming' %}
+        <div class="gameday-score {{ 'gameday-winning' if opp_score > my_score else '' }}" id="hero-opp-score">{{ '%.0f'|format(opp_score) }}</div>
+        {% if league.scoring_type == 'ultimate_footy' %}
+          <div style="color:#8b949e;font-size:.7rem;">categories won</div>
+        {% elif opp_captain_bonus > 0 %}
+          <div class="captain-bonus" id="hero-opp-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
+        {% else %}
+          <div class="captain-bonus" id="hero-opp-cap" style="display:none;"></div>
+        {% endif %}
       {% endif %}
     </div>
   </div>
 
-  {# Margin bar #}
+  {# Margin bar — live/completed only #}
+  {% if gameday_state != 'upcoming' %}
   <div class="gameday-margin-bar mt-3">
     <div class="gameday-margin-fill" id="margin-fill" style="width:{{ my_pct }}%;"></div>
   </div>
   <div class="text-center mt-2" style="font-size:.8rem;color:#8b949e;" id="margin-text">
     {% set diff = (my_score - opp_score)|abs|round(0)|int %}
-    {% if my_score > opp_score %}
-      Leading by {{ diff }}
-    {% elif opp_score > my_score %}
-      Trailing by {{ diff }}
+    {% if gameday_state == 'completed' %}
+      {% if my_score > opp_score %}Won by {{ diff }}{% elif opp_score > my_score %}Lost by {{ diff }}{% else %}Draw{% endif %}
     {% else %}
-      Tied
+      {% if my_score > opp_score %}Leading by {{ diff }}{% elif opp_score > my_score %}Trailing by {{ diff }}{% else %}Tied{% endif %}
     {% endif %}
   </div>
+  {% endif %}
+
+  {# First bounce — upcoming only #}
+  {% if gameday_state == 'upcoming' and first_bounce %}
+  <div class="text-center mt-3" style="color:#8b949e;font-size:.85rem;">
+    <i class="bi bi-clock me-1"></i>First bounce: {{ first_bounce }}
+  </div>
+  {% endif %}
+
+  {# Set lineup CTA — upcoming only, lineup not set #}
+  {% if gameday_state == 'upcoming' and not lineup_set %}
+  <div class="text-center mt-3">
+    <a href="{{ url_for('team.lineup', league_id=league.id, team_id=user_team.id, afl_round=afl_round) }}"
+       class="btn btn-primary btn-sm">
+      <i class="bi bi-pencil-square me-1"></i>Set Your Lineup
+    </a>
+  </div>
+  {% endif %}
+
+  {# View breakdown — completed only #}
+  {% if gameday_state == 'completed' %}
+  <div class="text-center mt-3">
+    <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=fixture.id) }}"
+       class="btn btn-outline-secondary btn-sm">
+      View Full Breakdown
+    </a>
+  </div>
+  {% endif %}
 </div>
 
 {# ── Player row macro ── #}
@@ -123,7 +162,7 @@
 </div>
 {% endmacro %}
 
-{# ── Player Comparison ── #}
+{# ═══════════════════════ PLAYER COMPARISON ═══════════════════════ #}
 <div class="row g-3 mt-2">
   {# My team #}
   <div class="col-md-6">
@@ -204,30 +243,63 @@
   </div>
 </div>
 
-<div class="mt-3 d-flex align-items-center gap-2" style="font-size:.75rem;color:#484f58;">
-  {% if live_enabled %}
-    <i class="bi bi-broadcast me-1" style="color:#238636;"></i>Live updates via WebSocket
-  {% else %}
-    <i class="bi bi-arrow-clockwise me-1"></i>Auto-refreshes every 60 seconds
-  {% endif %}
+{# ── Footer ── #}
+<div class="mt-3 d-flex align-items-center justify-content-between" style="font-size:.75rem;color:#484f58;">
+  <span>
+    {% if gameday_state == 'live' %}
+      <i class="bi bi-broadcast me-1" style="color:#238636;"></i>Live updates via WebSocket
+    {% elif gameday_state == 'completed' %}
+      Final results
+    {% else %}
+      &nbsp;
+    {% endif %}
+  </span>
+  <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" style="color:#58a6ff;text-decoration:none;font-size:.75rem;">
+    View all rounds &rarr;
+  </a>
 </div>
+{% endif %}
 
 <style>
-  /* Game status pills (shared pattern with live.html) */
+  /* ── State badges ── */
+  .gameday-state-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .7rem; font-weight: 700; padding: 4px 10px;
+    border-radius: 12px; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .badge-upcoming { background: #21262d; color: #8b949e; }
+  .badge-live { background: rgba(35,134,54,.15); color: #3fb950; border: 1px solid rgba(35,134,54,.3); }
+  .badge-final { background: #21262d; color: #c9d1d9; }
+  .badge-bye { background: #21262d; color: #8b949e; }
+
+  .live-pulse-dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: #3fb950; border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  .gameday-round-title {
+    font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; color: #c9d1d9;
+  }
+  .gameday-round-dates { color: #8b949e; font-size: .8rem; }
+
+  /* ── Game status pills ── */
+  .gameday-afl-pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
   .game-status-pill {
     display: inline-flex; align-items: center; gap: 6px;
-    background: #161b22; border: 1px solid #30363d; border-radius: 16px;
-    padding: 4px 10px; font-size: .75rem;
+    background: #0d1117; border: 1px solid #30363d; border-radius: 16px;
+    padding: 4px 10px; font-size: .72rem;
   }
   .game-teams { color: #c9d1d9; font-weight: 600; }
   .game-afl-score { color: #8b949e; font-size: .7rem; }
   .captain-bonus { color: #d29922; font-size: .75rem; }
 
-  /* Hero card */
+  /* ── Hero card ── */
   .gameday-hero {
     background: #161b22; border: 1px solid #30363d; border-radius: 12px;
-    padding: 28px 20px 20px; margin-bottom: 4px;
+    padding: 24px 20px 20px; margin-bottom: 4px;
   }
+  .gameday-score-row { margin-top: 8px; }
   .gameday-team-name { color: #c9d1d9; font-weight: 600; font-size: .95rem; margin-bottom: 4px; }
   .gameday-score {
     font-size: 2.8rem; font-weight: 800; color: #8b949e; line-height: 1;
@@ -236,7 +308,7 @@
   .gameday-winning { color: #3fb950; }
   .gameday-vs { color: #484f58; font-size: .85rem; font-weight: 600; }
 
-  /* Margin bar */
+  /* ── Margin bar ── */
   .gameday-margin-bar {
     height: 6px; background: #f85149; border-radius: 3px; overflow: hidden;
   }
@@ -245,7 +317,7 @@
     transition: width .6s ease;
   }
 
-  /* Player cards */
+  /* ── Player cards ── */
   .gameday-player-card {
     background: #0d1117; border: 1px solid #21262d; border-radius: 10px; overflow: hidden;
   }
@@ -269,7 +341,7 @@
   .gameday-player-score { font-weight: 600; white-space: nowrap; }
   .gameday-live-dot { font-size: .35rem; color: #238636; vertical-align: middle; margin-left: 3px; }
 
-  /* Badges */
+  /* ── Badges ── */
   .gameday-badge-c {
     display: inline-block; background: #d29922; color: #000; font-size: .55rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
@@ -293,20 +365,16 @@
   .gameday-badge-sub i { font-size: .6rem; vertical-align: middle; }
   .gameday-sub-note { color: #3fb950; font-size: .65rem; font-style: italic; }
 
-  /* DNP player row — dimmed with strikethrough */
+  /* ── Player states ── */
   .player-dnp { opacity: 0.45; }
   .player-dnp .gameday-player-name { text-decoration: line-through; }
   .score-dnp { color: #484f58 !important; }
-
-  /* Subbed-on emergency — highlighted */
   .player-subbed-on { background: rgba(35,134,54,.08); }
-
-  /* Reserve player — dimmed, non-scoring */
   .player-reserve { opacity: 0.5; }
   .player-reserve .gameday-player-name { color: #484f58; }
   .score-reserve { color: #30363d !important; }
 
-  /* Section headers */
+  /* ── Section headers ── */
   .gameday-section-hdr {
     padding: 6px 14px; font-size: .65rem; font-weight: 700;
     color: #8b949e; text-transform: uppercase; letter-spacing: .5px;
@@ -318,7 +386,7 @@
     color: #30363d; margin-left: 4px; font-style: italic;
   }
 
-  /* Animations */
+  /* ── Animations ── */
   .score-flash { animation: scoreFlash 1.5s ease-out; }
   @keyframes scoreFlash {
     0% { color: #58a6ff; text-shadow: 0 0 8px rgba(88,166,255,.5); }
@@ -329,18 +397,22 @@
     50% { opacity: 0.4; }
   }
 
-  /* Mobile */
+  /* ── Mobile ── */
   @media (max-width: 767.98px) {
     .gameday-score { font-size: 2rem; }
     .gameday-team-name { font-size: .8rem; }
     .gameday-hero { padding: 18px 12px 14px; }
     .gameday-player-row { padding: 6px 10px; font-size: .75rem; }
     .gameday-player-meta { display: none; }
+    .gameday-round-title { font-size: 1.1rem; }
+    .gameday-afl-pills { gap: 4px; }
+    .game-status-pill { font-size: .65rem; padding: 3px 8px; }
   }
 </style>
 {% endblock %}
 
 {% block scripts %}
+{% if not is_bye %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 const LEAGUE_ID = {{ league.id }};
@@ -348,35 +420,8 @@ const AFL_ROUND = {{ afl_round }};
 const FIXTURE_ID = {{ fixture.id }};
 const IS_HOME = {{ 'true' if is_home else 'false' }};
 const LIVE_ENABLED = {{ 'true' if live_enabled else 'false' }};
+const GAMEDAY_STATE = "{{ gameday_state }}";
 const FALLBACK_URL = "{{ url_for('matchups.api_live_scores', league_id=league.id, afl_round=afl_round) }}";
-const SYNC_URL = "{{ url_for('matchups.sync_scores', league_id=league.id) }}";
-
-function manualSyncScores() {
-    var btn = document.getElementById('syncScoresBtn');
-    if (!btn) return;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border"></span> Syncing...';
-    fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check-lg"></i> Synced!';
-            setTimeout(function() {
-                btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sync Scores';
-            }, 2000);
-            // Refresh scores via the normal poll endpoint
-            return fetch(FALLBACK_URL);
-        })
-        .then(function(r) { if (r) return r.json(); })
-        .then(function(data) { if (data) handleUpdate(data); })
-        .catch(function(err) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-x-lg"></i> Failed';
-            setTimeout(function() {
-                btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sync Scores';
-            }, 2000);
-        });
-}
 
 function flashScore(el) {
     el.classList.remove('score-flash');
@@ -387,6 +432,7 @@ function flashScore(el) {
 function updateHero(myScore, oppScore, myCapBonus, oppCapBonus) {
     const myEl = document.getElementById('hero-my-score');
     const oppEl = document.getElementById('hero-opp-score');
+    if (!myEl || !oppEl) return;
 
     const oldMy = myEl.textContent.trim();
     const oldOpp = oppEl.textContent.trim();
@@ -404,31 +450,44 @@ function updateHero(myScore, oppScore, myCapBonus, oppCapBonus) {
 
     // Captain bonus
     const myCapEl = document.getElementById('hero-my-cap');
-    if (myCapBonus > 0) {
-        myCapEl.textContent = '+' + Math.round(myCapBonus) + ' (C)';
-        myCapEl.style.display = '';
-    } else {
-        myCapEl.style.display = 'none';
+    if (myCapEl) {
+        if (myCapBonus > 0) {
+            myCapEl.textContent = '+' + Math.round(myCapBonus) + ' (C)';
+            myCapEl.style.display = '';
+        } else {
+            myCapEl.style.display = 'none';
+        }
     }
     const oppCapEl = document.getElementById('hero-opp-cap');
-    if (oppCapBonus > 0) {
-        oppCapEl.textContent = '+' + Math.round(oppCapBonus) + ' (C)';
-        oppCapEl.style.display = '';
-    } else {
-        oppCapEl.style.display = 'none';
+    if (oppCapEl) {
+        if (oppCapBonus > 0) {
+            oppCapEl.textContent = '+' + Math.round(oppCapBonus) + ' (C)';
+            oppCapEl.style.display = '';
+        } else {
+            oppCapEl.style.display = 'none';
+        }
     }
 
     // Margin bar
     const total = (myScore + oppScore) || 1;
     const pct = (myScore / total * 100).toFixed(1);
-    document.getElementById('margin-fill').style.width = pct + '%';
+    const fillEl = document.getElementById('margin-fill');
+    if (fillEl) fillEl.style.width = pct + '%';
 
     // Margin text
     const diff = Math.abs(Math.round(myScore - oppScore));
     const marginEl = document.getElementById('margin-text');
-    if (myScore > oppScore) marginEl.textContent = 'Leading by ' + diff;
-    else if (oppScore > myScore) marginEl.textContent = 'Trailing by ' + diff;
-    else marginEl.textContent = 'Tied';
+    if (marginEl) {
+        if (GAMEDAY_STATE === 'completed') {
+            if (myScore > oppScore) marginEl.textContent = 'Won by ' + diff;
+            else if (oppScore > myScore) marginEl.textContent = 'Lost by ' + diff;
+            else marginEl.textContent = 'Draw';
+        } else {
+            if (myScore > oppScore) marginEl.textContent = 'Leading by ' + diff;
+            else if (oppScore > myScore) marginEl.textContent = 'Trailing by ' + diff;
+            else marginEl.textContent = 'Tied';
+        }
+    }
 }
 
 function renderPlayerRow(p, lockedIds) {
@@ -477,23 +536,16 @@ function renderPlayerList(containerId, players, lockedIds) {
     const reserves = players.filter(function(p) { return p.lineup_type === 'reserve'; });
 
     let html = '';
-
-    // Field section
     html += '<div class="gameday-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>';
     field.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
-
-    // Bench section
     if (bench.length > 0) {
         html += '<div class="gameday-section-hdr"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>';
         bench.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
     }
-
-    // Reserves section
     if (reserves.length > 0) {
         html += '<div class="gameday-section-hdr gameday-section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>';
         reserves.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
     }
-
     container.innerHTML = html;
 }
 
@@ -525,12 +577,10 @@ function updateGameStatusPills(gameStatuses) {
 }
 
 function handleUpdate(data) {
-    // Find our fixture in the payload
     if (data.fixtures) {
         data.fixtures.forEach(function(f) {
             if (f.fixture_id !== FIXTURE_ID) return;
 
-            // Map home/away to my/opp based on IS_HOME
             const myScore = IS_HOME ? f.home_score : f.away_score;
             const oppScore = IS_HOME ? f.away_score : f.home_score;
             const myCapBonus = IS_HOME ? f.home_captain_bonus : f.away_captain_bonus;
@@ -545,46 +595,39 @@ function handleUpdate(data) {
             if (oppPlayers) renderPlayerList('opp-players', oppPlayers, lockedIds);
         });
     }
-
     updateGameStatusPills(data.game_statuses);
 }
 
-// --- SocketIO connection ---
-if (LIVE_ENABLED && typeof io !== 'undefined') {
-    const socket = io('/matchups');
-    const statusEl = document.getElementById('connection-status');
+// ── Live state: SocketIO + AJAX fallback ──
+if (GAMEDAY_STATE === 'live') {
+    if (LIVE_ENABLED && typeof io !== 'undefined') {
+        const socket = io('/matchups');
+        socket.on('connect', function() {
+            socket.emit('join_live', {league_id: LEAGUE_ID, afl_round: AFL_ROUND});
+            socket.emit('request_scores', {league_id: LEAGUE_ID, afl_round: AFL_ROUND});
+        });
+        socket.on('score_update', function(data) { handleUpdate(data); });
+        socket.on('joined', function(data) { console.log('Joined live room:', data.room); });
+    } else {
+        // AJAX polling every 60s
+        setInterval(function() {
+            fetch(FALLBACK_URL)
+                .then(function(r) { return r.json(); })
+                .then(function(data) { handleUpdate(data); })
+                .catch(function(err) { console.error('Poll error:', err); });
+        }, 60000);
+    }
+}
 
-    socket.on('connect', function() {
-        statusEl.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:.4rem;color:#238636;"></i>Connected';
-        statusEl.style.color = '#238636';
-        socket.emit('join_live', {league_id: LEAGUE_ID, afl_round: AFL_ROUND});
-        socket.emit('request_scores', {league_id: LEAGUE_ID, afl_round: AFL_ROUND});
-    });
-
-    socket.on('disconnect', function() {
-        statusEl.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:.4rem;color:#f85149;"></i>Disconnected';
-        statusEl.style.color = '#f85149';
-    });
-
-    socket.on('score_update', function(data) {
-        handleUpdate(data);
-    });
-
-    socket.on('joined', function(data) {
-        console.log('Joined live room:', data.room);
-    });
-} else {
-    // Fallback: AJAX polling every 60 seconds
-    const statusEl = document.getElementById('connection-status');
-    statusEl.innerHTML = '<i class="bi bi-arrow-clockwise me-1" style="font-size:.4rem;"></i>Polling';
-    statusEl.style.color = '#8b949e';
-
+// ── Upcoming state: light poll to detect transition to live ──
+if (GAMEDAY_STATE === 'upcoming') {
     setInterval(function() {
-        fetch(FALLBACK_URL)
-            .then(function(r) { return r.json(); })
-            .then(function(data) { handleUpdate(data); })
-            .catch(function(err) { console.error('Poll error:', err); });
-    }, 60000);
+        // Reload page to pick up state change when round goes live
+        fetch(window.location.href, { headers: { 'X-Requested-With': 'StateCheck' } })
+            .then(function() { window.location.reload(); })
+            .catch(function() {});
+    }, 5 * 60 * 1000);  // every 5 minutes
 }
 </script>
+{% endif %}
 {% endblock %}

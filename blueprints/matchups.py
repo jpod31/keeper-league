@@ -1,11 +1,12 @@
 """Matchups blueprint: fixtures, standings, scoring, finals, delist, live scoring."""
 
 import logging
+from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
-from models.database import db, League, FantasyTeam, SeasonConfig, DelistPeriod, AflGame, LiveScoringConfig
+from models.database import db, League, FantasyTeam, SeasonConfig, DelistPeriod, AflGame, LiveScoringConfig, WeeklyLineup
 from models.fixture_manager import (
     generate_round_robin, get_fixture, get_round_fixtures, get_matchup,
     generate_finals, get_finals,
@@ -25,7 +26,6 @@ from models.live_sync import (
 )
 from models.database import Fixture, FantasyRoster, RoundScore, DraftPick, Trade
 from blueprints import check_league_access
-from scrapers.squiggle import get_current_round
 import config
 
 logger = logging.getLogger(__name__)
@@ -292,33 +292,70 @@ def api_live_scores(league_id, afl_round):
     })
 
 
-def _detect_current_round(year: int) -> int | None:
-    """Auto-detect the current AFL round.
+def _detect_gameday_round(league_id: int, year: int) -> int | None:
+    """Auto-detect the gameday round for a specific league.
 
-    Priority: 1) DB AflGame with status='live'
-              2) Squiggle API get_current_round()
-              3) Latest fixture round in the DB
+    Priority:
+      1. Live fixtures for THIS league → that round
+      2. Tuesday rollover logic (AEST):
+         - Before Tue 10am AEST (Fri–Mon, Tue morning) → latest completed round
+         - After Tue 10am AEST (Tue afternoon–Thu) → next scheduled round
+      3. Fallbacks: latest completed → first scheduled → round 1
     """
-    # 1. Check for any live game in DB
-    live_game = AflGame.query.filter_by(year=year, status="live").first()
-    if live_game:
-        return live_game.afl_round
+    # 1. Live fixtures in this league
+    live_fixture = Fixture.query.filter_by(
+        league_id=league_id, year=year, status="live", is_final=False
+    ).first()
+    if live_fixture:
+        return live_fixture.afl_round
 
-    # 2. Ask Squiggle
-    try:
-        squiggle_round = get_current_round(year)
-        if squiggle_round:
-            return squiggle_round
-    except Exception:
-        logger.debug("Squiggle current-round lookup failed", exc_info=True)
+    # 2. Tuesday rollover
+    now_utc = datetime.now(timezone.utc)
+    now_aest = now_utc + timedelta(hours=10)  # AEST = UTC+10
 
-    # 3. Fallback: latest fixture round in DB for this year
-    latest = (
+    # weekday: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+    before_cutoff = (
+        now_aest.weekday() in (4, 5, 6, 0)  # Fri–Mon
+        or (now_aest.weekday() == 1 and now_aest.hour < 10)  # Tue before 10am
+    )
+
+    if before_cutoff:
+        # Show latest completed round (results mode)
+        latest_completed = (
+            db.session.query(db.func.max(Fixture.afl_round))
+            .filter_by(league_id=league_id, year=year, status="completed", is_final=False)
+            .scalar()
+        )
+        if latest_completed:
+            return latest_completed
+    else:
+        # Show next scheduled round (preview mode)
+        next_scheduled = (
+            db.session.query(db.func.min(Fixture.afl_round))
+            .filter_by(league_id=league_id, year=year, status="scheduled", is_final=False)
+            .scalar()
+        )
+        if next_scheduled:
+            return next_scheduled
+
+    # 3. Fallbacks
+    latest_completed = (
         db.session.query(db.func.max(Fixture.afl_round))
-        .filter_by(year=year)
+        .filter_by(league_id=league_id, year=year, status="completed", is_final=False)
         .scalar()
     )
-    return latest
+    if latest_completed:
+        return latest_completed
+
+    first_scheduled = (
+        db.session.query(db.func.min(Fixture.afl_round))
+        .filter_by(league_id=league_id, year=year, status="scheduled", is_final=False)
+        .scalar()
+    )
+    if first_scheduled:
+        return first_scheduled
+
+    return 1
 
 
 @matchups_bp.route("/<int:league_id>/gameday")
@@ -340,15 +377,36 @@ def gameday(league_id):
         flash("You don't have a team in this league.", "warning")
         return redirect(url_for("leagues.dashboard", league_id=league_id))
 
-    # Determine round (query param or auto-detect)
-    afl_round = request.args.get("round", type=int)
-    if not afl_round:
-        afl_round = _detect_current_round(year)
+    # Auto-detect round (no manual override)
+    afl_round = _detect_gameday_round(league_id, year)
     if not afl_round:
         flash("No fixtures found yet. The season may not have started.", "info")
         return redirect(url_for("matchups.fixture_view", league_id=league_id))
 
-    # Find user's fixture for this round (home or away)
+    # ── Compute round dates + first bounce from AflGame schedule ──
+    afl_games_for_round = (
+        AflGame.query.filter_by(year=year, afl_round=afl_round)
+        .order_by(AflGame.scheduled_start)
+        .all()
+    )
+    first_bounce = None
+    round_dates = None
+    starts = [g.scheduled_start for g in afl_games_for_round if g.scheduled_start]
+    if starts:
+        aest = timedelta(hours=10)
+        earliest = min(starts) + aest
+        latest = max(starts) + aest
+        # First bounce display (e.g. "Thu 7:20pm AEST")
+        fb_hour = earliest.strftime("%I:%M%p").lstrip("0").lower()
+        first_bounce = f"{earliest.strftime('%a')} {fb_hour} AEST"
+        # Date range (e.g. "Thu 10 Apr – Mon 14 Apr")
+        fmt = lambda dt: f"{dt.strftime('%a')} {dt.day} {dt.strftime('%b')}"
+        if earliest.date() == latest.date():
+            round_dates = fmt(earliest)
+        else:
+            round_dates = f"{fmt(earliest)} – {fmt(latest)}"
+
+    # ── Find user's fixture (or bye) ──
     fixture = Fixture.query.filter(
         Fixture.league_id == league_id,
         Fixture.year == year,
@@ -361,8 +419,25 @@ def gameday(league_id):
     ).first()
 
     if not fixture:
-        flash(f"You don't have a matchup in round {afl_round} (bye round?).", "info")
-        return redirect(url_for("matchups.fixture_view", league_id=league_id))
+        # Bye round — render in template, don't redirect
+        scoring = get_scoring_context(league)
+        return render_template(
+            "matchups/gameday.html",
+            league=league,
+            afl_round=afl_round,
+            is_bye=True,
+            round_dates=round_dates,
+            scoring=scoring,
+        )
+
+    # ── Determine gameday state ──
+    round_fixtures = get_round_fixtures(league_id, year, afl_round)
+    if any(f.status == "live" for f in round_fixtures):
+        gameday_state = "live"
+    elif all(f.status == "completed" for f in round_fixtures):
+        gameday_state = "completed"
+    else:
+        gameday_state = "upcoming"
 
     # Determine which side the user is on
     is_home = fixture.home_team_id == user_team.id
@@ -394,17 +469,10 @@ def gameday(league_id):
     live_config = LiveScoringConfig.query.get(league_id)
     live_enabled = live_config.enabled if live_config else False
 
-    # Round navigation bounds
-    min_round = (
-        db.session.query(db.func.min(Fixture.afl_round))
-        .filter_by(league_id=league_id, year=year, is_final=False)
-        .scalar()
-    ) or 1
-    max_round = (
-        db.session.query(db.func.max(Fixture.afl_round))
-        .filter_by(league_id=league_id, year=year, is_final=False)
-        .scalar()
-    ) or config.SC_ROUNDS
+    # Check if user has set their lineup for this round
+    lineup_set = WeeklyLineup.query.filter_by(
+        team_id=user_team.id, afl_round=afl_round, year=year
+    ).first() is not None
 
     scoring = get_scoring_context(league)
 
@@ -413,6 +481,7 @@ def gameday(league_id):
         league=league,
         afl_round=afl_round,
         fixture=fixture,
+        is_bye=False,
         is_home=is_home,
         my_team=my_team,
         opp_team=opp_team,
@@ -425,8 +494,11 @@ def gameday(league_id):
         afl_games=afl_games,
         locked_player_ids=locked_ids,
         live_enabled=live_enabled,
-        min_round=min_round,
-        max_round=max_round,
+        gameday_state=gameday_state,
+        first_bounce=first_bounce,
+        round_dates=round_dates,
+        lineup_set=lineup_set,
+        user_team=user_team,
         scoring=scoring,
     )
 
