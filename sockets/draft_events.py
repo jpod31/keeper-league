@@ -10,7 +10,7 @@ from flask_socketio import emit, join_room, leave_room
 from models.database import db, DraftSession, FantasyTeam, League, DraftChatMessage
 from models.draft_live import (
     get_draft_state, make_pick, pass_pick, auto_pick, start_draft,
-    pause_draft, resume_draft, end_draft,
+    pause_draft, resume_draft, end_draft, undo_pick,
 )
 
 logger = logging.getLogger(__name__)
@@ -422,6 +422,56 @@ def register_draft_events(socketio):
             logger.exception("Error in end_draft handler")
             db.session.rollback()
             emit("error", {"message": "An error occurred ending the draft"})
+
+
+    @socketio.on("undo_pick", namespace="/draft")
+    def handle_undo_pick(data):
+        try:
+            league_id = data.get("league_id")
+            if not league_id:
+                return
+
+            league = db.session.get(League, league_id)
+            if not league or league.commissioner_id != current_user.id:
+                emit("error", {"message": "Only the commissioner can undo picks"})
+                return
+
+            session = _get_active_session(league_id)
+            if not session:
+                emit("error", {"message": "No active draft session"})
+                return
+
+            result, error = undo_pick(session.id)
+            if error:
+                emit("error", {"message": error})
+                return
+
+            print(f"[DRAFT] undo_pick: {result['team_name']}'s pick #{result['pick_number']} ({result['player_name']}) undone by {current_user.username}", flush=True)
+
+            # Reset timer for the restored pick
+            _reset_timer(session.id)
+
+            room = f"draft_{league_id}"
+            state = get_draft_state(session.id)
+            socketio.emit("draft_state", state, namespace="/draft", room=room)
+
+            # Start timer for the restored pick
+            _start_timer(socketio, session.id, league_id)
+
+            # Chat system message
+            msg = f"Pick #{result['pick_number']} undone — {result['team_name']}'s pick of {result['player_name']} reversed"
+            chat_msg = DraftChatMessage(
+                draft_session_id=session.id, user_id=current_user.id,
+                team_name="System", message=msg, is_system=True
+            )
+            db.session.add(chat_msg)
+            db.session.commit()
+            socketio.emit("draft_chat_msg", {"team_name": "System", "message": msg, "user_id": 0, "is_system": True}, namespace="/draft", room=room)
+
+        except Exception:
+            logger.exception("Error in undo_pick handler")
+            db.session.rollback()
+            emit("error", {"message": "An error occurred undoing the pick"})
 
 
 def _start_timer(socketio, session_id, league_id):

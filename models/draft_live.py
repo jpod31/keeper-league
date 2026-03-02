@@ -259,6 +259,47 @@ def make_pick(session_id, player_id, is_auto=False):
         return current_pick, None
 
 
+def undo_pick(session_id):
+    """Undo the last pick in the draft. Commissioner only.
+    Returns (undone_pick, None) on success or (None, error_msg) on failure.
+    """
+    with _pick_lock:
+        session = db.session.get(DraftSession, session_id)
+        if not session or session.status not in ("in_progress", "paused"):
+            return None, "Draft is not active."
+
+        # Find the last completed pick
+        last_pick = (
+            DraftPick.query
+            .filter_by(draft_session_id=session_id)
+            .filter(db.or_(DraftPick.player_id.isnot(None), DraftPick.is_pass == True))
+            .order_by(DraftPick.pick_number.desc())
+            .first()
+        )
+        if not last_pick:
+            return None, "No picks to undo."
+
+        player_id = last_pick.player_id
+        player_name = last_pick.player.name if last_pick.player else "PASS"
+        team_name = last_pick.team.name if last_pick.team else "Unknown"
+
+        # Remove from roster if it was a real pick (not pass, not mock)
+        if player_id and not session.is_mock:
+            FantasyRoster.query.filter_by(
+                team_id=last_pick.team_id, player_id=player_id
+            ).delete()
+
+        # Reset the pick
+        last_pick.player_id = None
+        last_pick.is_auto_pick = False
+        last_pick.is_pass = False
+        last_pick.picked_at = None
+
+        db.session.commit()
+        return {"pick_number": last_pick.pick_number, "player_name": player_name,
+                "team_name": team_name}, None
+
+
 def pass_pick(session_id):
     """Pass on the current pick (supplemental drafts only).
     Marks the pick as passed (no player selected) and advances to next pick.

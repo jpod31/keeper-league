@@ -679,6 +679,7 @@ function updateUI() {
   const controls = document.getElementById('commissioner-controls');
   if (controls && IS_COMMISSIONER) {
     const overrideBtn = `<button id="comm-override-btn" class="btn btn-outline-warning btn-sm${commOverride ? ' active' : ''}" onclick="toggleCommOverride()" style="font-size:.7rem;" title="Pick on behalf of other teams"><i class="bi bi-shield${commOverride ? '-fill-check' : ''} me-1"></i>${commOverride ? 'Override ON' : 'Override'}</button>`;
+    const undoBtn = (draftState.picks_made > 0) ? `<button class="btn btn-outline-info btn-sm" onclick="undoPick()" style="font-size:.7rem;" title="Undo the last pick"><i class="bi bi-arrow-counterclockwise me-1"></i>Undo</button>` : '';
     const restartBtn = CAN_RESTART ? `<button class="btn btn-outline-danger btn-sm" onclick="confirmRestart()" style="font-size:.7rem;" title="Delete draft and return to settings"><i class="bi bi-arrow-counterclockwise me-1"></i>Restart</button>` : '';
     const endBtn = (draftState.status === 'in_progress' || draftState.status === 'paused')
       ? `<button class="btn btn-outline-danger btn-sm" onclick="showEndDraftModal()" style="font-size:.7rem;" title="End draft early — remaining picks become passes"><i class="bi bi-stop-fill me-1"></i>End Draft</button>` : '';
@@ -690,7 +691,7 @@ function updateUI() {
     } else if (draftState.status === 'paused') {
       statusBtn = '<button class="btn btn-primary btn-sm" onclick="resumeDraft()"><i class="bi bi-play-fill me-1"></i>Resume</button>';
     }
-    controls.innerHTML = overrideBtn + statusBtn + endBtn + restartBtn;
+    controls.innerHTML = overrideBtn + statusBtn + undoBtn + endBtn + restartBtn;
   }
 
   // Show/hide Pass button for supplemental drafts
@@ -988,6 +989,11 @@ function pauseDraft() {
   socket.emit('pause_draft', { league_id: LEAGUE_ID });
 }
 function resumeDraft() { socket.emit('resume_draft', { league_id: LEAGUE_ID }); }
+
+function undoPick() {
+  if (!confirm('Undo the last pick?')) return;
+  socket.emit('undo_pick', { league_id: LEAGUE_ID });
+}
 
 function confirmRestart() {
   if (!confirm('Are you sure you want to restart the draft?\n\nThis will DELETE the current draft session, remove all drafted players from rosters, and take you to settings where you can make changes before re-drafting.\n\nThis cannot be undone.')) return;
