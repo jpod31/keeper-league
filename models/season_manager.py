@@ -221,26 +221,37 @@ def create_supplemental_draft(league_id):
 # ── Long-Term Injury List (LTIL) ────────────────────────────────────
 
 
-def get_team_ltil(team_id, year=None):
-    """Get all active LTIL entries for a team (optionally filtered by year)."""
+def get_team_ltil(team_id, year=None, include_pending=False):
+    """Get active LTIL entries for a team (optionally filtered by year).
+    By default only returns approved entries. Set include_pending=True for both."""
     q = LongTermInjury.query.filter_by(team_id=team_id, removed_at=None)
+    if include_pending:
+        q = q.filter(LongTermInjury.status.in_(["approved", "pending"]))
+    else:
+        q = q.filter_by(status="approved")
     if year:
         q = q.filter_by(year=year)
     return q.all()
 
 
-def get_league_ltil(league_id, year=None):
-    """Get all active LTIL entries for a league."""
+def get_league_ltil(league_id, year=None, include_pending=False):
+    """Get active LTIL entries for a league.
+    By default only returns approved entries. Set include_pending=True for both."""
     q = LongTermInjury.query.filter_by(league_id=league_id, removed_at=None)
+    if include_pending:
+        q = q.filter(LongTermInjury.status.in_(["approved", "pending"]))
+    else:
+        q = q.filter_by(status="approved")
     if year:
         q = q.filter_by(year=year)
     return q.all()
 
 
 def add_to_ltil(team_id, player_id, league_id, year):
-    """Place a player on the long-term injury list.
+    """Request to place a player on the long-term injury list.
 
-    Removes the player from the active roster position (marks as injured).
+    Creates a pending LTIL entry that requires commissioner approval.
+    Player stays in their current position until approved.
     Returns (ltil_entry, None) on success or (None, error_msg) on failure.
     """
     # Check player is on the team's active roster
@@ -250,11 +261,13 @@ def add_to_ltil(team_id, player_id, league_id, year):
     if not roster_entry:
         return None, "Player is not on your active roster."
 
-    # Check not already on LTIL
+    # Check not already on LTIL (pending or approved)
     existing = LongTermInjury.query.filter_by(
         team_id=team_id, player_id=player_id, removed_at=None
-    ).first()
+    ).filter(LongTermInjury.status.in_(["pending", "approved"])).first()
     if existing:
+        if existing.status == "pending":
+            return None, "LTIL request already pending for this player."
         return None, "Player is already on the long-term injury list."
 
     # Check SSP round cutoff
@@ -268,47 +281,43 @@ def add_to_ltil(team_id, player_id, league_id, year):
         if latest_completed >= season_cfg.ssp_cutoff_round:
             return None, f"SSP window closed after round {season_cfg.ssp_cutoff_round}."
 
-    # Check SSP slot limit
+    # Check SSP slot limit (count pending + approved)
     max_slots = season_cfg.ssp_slots if season_cfg and season_cfg.ssp_slots else 1
     current_ltil = LongTermInjury.query.filter_by(
         team_id=team_id, year=year, removed_at=None
-    ).count()
+    ).filter(LongTermInjury.status.in_(["pending", "approved"])).count()
     if current_ltil >= max_slots:
         return None, f"Maximum LTIL slots reached ({max_slots})."
 
-    # Move player off active lineup (keep on roster but bench them)
-    roster_entry.is_benched = True
-    roster_entry.position_code = None
-    roster_entry.is_captain = False
-    roster_entry.is_vice_captain = False
-    roster_entry.is_emergency = False
-
+    # Do NOT bench the player — stays in position until commissioner approves
     ltil = LongTermInjury(
         league_id=league_id,
         team_id=team_id,
         player_id=player_id,
         year=year,
+        status="pending",
     )
     db.session.add(ltil)
     db.session.commit()
     return ltil, None
 
 
-def remove_from_ltil(team_id, player_id, league_id=None):
+def remove_from_ltil(team_id, player_id, league_id=None, commissioner_override=False):
     """Remove a player from the long-term injury list.
 
-    Only allowed when the league status is 'offseason' or 'setup'.
+    Only allowed when the league status is 'offseason' or 'setup',
+    unless commissioner_override=True (commissioner can remove any time).
     If a replacement player was selected via SSP, the replacement is dropped
     from the team's roster.
     Returns (ltil_entry, None) on success or (None, error_msg) on failure.
     """
-    if league_id:
+    if league_id and not commissioner_override:
         league = db.session.get(League, league_id)
         if league and league.status not in ("offseason", "setup"):
             return None, "Players can only be removed from LTIL during the off-season."
 
     ltil = LongTermInjury.query.filter_by(
-        team_id=team_id, player_id=player_id, removed_at=None
+        team_id=team_id, player_id=player_id, removed_at=None, status="approved"
     ).first()
     if not ltil:
         return None, "Player is not on the long-term injury list."
@@ -352,6 +361,9 @@ def ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id):
     if not ltil or ltil.team_id != team_id or ltil.removed_at is not None:
         return None, "Invalid LTIL entry."
 
+    if ltil.status != "approved":
+        return None, "LTIL entry must be approved before selecting a replacement."
+
     if ltil.replacement_player_id:
         return None, "A replacement has already been selected for this LTIL entry."
 
@@ -385,5 +397,52 @@ def ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id):
 
     # Record on the LTIL entry
     ltil.replacement_player_id = replacement_player_id
+    db.session.commit()
+    return ltil, None
+
+
+def approve_ltil(ltil_id):
+    """Commissioner approves a pending LTIL entry.
+
+    Benches the player (clears position, captain/vc/emergency flags).
+    Returns (ltil_entry, None) on success or (None, error_msg) on failure.
+    """
+    ltil = db.session.get(LongTermInjury, ltil_id)
+    if not ltil:
+        return None, "LTIL entry not found."
+    if ltil.status != "pending":
+        return None, "Only pending LTIL entries can be approved."
+
+    # Bench the player
+    roster_entry = FantasyRoster.query.filter_by(
+        team_id=ltil.team_id, player_id=ltil.player_id, is_active=True
+    ).first()
+    if roster_entry:
+        roster_entry.is_benched = True
+        roster_entry.position_code = None
+        roster_entry.is_captain = False
+        roster_entry.is_vice_captain = False
+        roster_entry.is_emergency = False
+
+    ltil.status = "approved"
+    ltil.reviewed_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return ltil, None
+
+
+def reject_ltil(ltil_id):
+    """Commissioner rejects a pending LTIL entry.
+
+    Player stays in their current position.
+    Returns (ltil_entry, None) on success or (None, error_msg) on failure.
+    """
+    ltil = db.session.get(LongTermInjury, ltil_id)
+    if not ltil:
+        return None, "LTIL entry not found."
+    if ltil.status != "pending":
+        return None, "Only pending LTIL entries can be rejected."
+
+    ltil.status = "rejected"
+    ltil.reviewed_at = datetime.now(timezone.utc)
     db.session.commit()
     return ltil, None

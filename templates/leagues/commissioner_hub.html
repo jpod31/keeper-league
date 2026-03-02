@@ -1,0 +1,372 @@
+{% extends "league_base.html" %}
+{% block league_content %}
+<div class="container py-3" style="max-width:960px;">
+  {# ── Header ── #}
+  <div class="d-flex align-items-center mb-3">
+    <i class="bi bi-shield-lock me-2" style="font-size:1.4rem;color:#d29922;"></i>
+    <h4 class="mb-0 fw-bold" style="font-size:1.15rem;">Commissioner Hub</h4>
+  </div>
+
+  {# ── Summary cards ── #}
+  <div class="row g-2 mb-4">
+    <div class="col-4">
+      <div class="comm-summary-card comm-summary-pending">
+        <div class="comm-summary-num">{{ pending_ltil|length }}</div>
+        <div class="comm-summary-label">Pending LTIL</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="comm-summary-card comm-summary-active">
+        <div class="comm-summary-num">{{ active_ltil|length }}</div>
+        <div class="comm-summary-label">Active LTIL</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="comm-summary-card comm-summary-trades">
+        <div class="comm-summary-num">{{ pending_trades_count }}</div>
+        <div class="comm-summary-label">Pending Trades</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Pending LTIL Requests ── #}
+  <div class="card mb-4" style="border-color:rgba(210,153,34,.35);">
+    <div class="card-header" style="background:rgba(210,153,34,.08);border-bottom:1px solid rgba(210,153,34,.2);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-hourglass-split me-2" style="color:#d29922;"></i>Pending LTIL Requests</h5>
+    </div>
+    <div class="card-body p-0">
+      {% if pending_ltil %}
+        {% for lt in pending_ltil %}
+        <div class="comm-ltil-pending-row" id="pending-row-{{ lt.id }}">
+          <div class="comm-ltil-info">
+            <div class="comm-ltil-player">{{ lt.player.name }}</div>
+            <div class="comm-ltil-meta">{{ lt.team.name }} &bull; {{ lt.player.position or '-' }} &bull; {{ lt.added_at.strftime('%d %b %Y') if lt.added_at else '-' }}</div>
+          </div>
+          <div class="comm-ltil-actions">
+            <button class="btn btn-sm btn-outline-success" onclick="commLtilApprove({{ lt.id }})" title="Approve">
+              <i class="bi bi-check-lg"></i> Approve
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="commLtilReject({{ lt.id }})" title="Reject">
+              <i class="bi bi-x-lg"></i> Reject
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-3" style="font-size:.8rem;color:#8b949e;">No pending LTIL requests</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Active LTIL Entries ── #}
+  <div class="card mb-4" style="border-color:rgba(63,185,80,.2);">
+    <div class="card-header" style="background:rgba(63,185,80,.06);border-bottom:1px solid rgba(63,185,80,.15);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-bandaid me-2" style="color:#3fb950;"></i>Active LTIL Entries</h5>
+    </div>
+    <div class="card-body p-0">
+      {% if active_ltil %}
+        {% for lt in active_ltil %}
+        <div class="comm-active-row" id="active-row-{{ lt.id }}">
+          <div class="comm-ltil-info">
+            <div class="comm-ltil-player">{{ lt.player.name }}</div>
+            <div class="comm-ltil-meta">
+              {{ lt.team.name }} &bull; {{ lt.added_at.strftime('%d %b %Y') if lt.added_at else '-' }}
+              {% if lt.replacement_player %}
+                &bull; <span style="color:#58a6ff;">SSP: {{ lt.replacement_player.name }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="comm-ltil-actions">
+            <button class="btn btn-sm btn-outline-danger" onclick="commLtilRemove({{ lt.team_id }}, {{ lt.player_id }})" title="Remove from LTIL">
+              <i class="bi bi-x-circle"></i> Remove
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-3" style="font-size:.8rem;color:#8b949e;">No active LTIL entries</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Commissioner Tools ── #}
+  <div class="card mb-4" style="border-color:rgba(210,153,34,.3);">
+    <div class="card-header" style="background:rgba(210,153,34,.08);border-bottom:1px solid rgba(210,153,34,.2);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-tools me-2" style="color:#d29922;"></i>Commissioner Tools</h5>
+    </div>
+    <div class="card-body">
+      {# Delist a player #}
+      <div class="mb-4 pb-3" style="border-bottom:1px solid #21262d;">
+        <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#f85149;"><i class="bi bi-person-dash me-2"></i>Delist Player</h6>
+        <p style="font-size:.75rem;color:#8b949e;margin-bottom:10px;">Remove a player from a team's roster (e.g. incorrect draft pick). Opens up a roster spot.</p>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label" style="font-size:.75rem;">Team</label>
+            <select class="form-select form-select-sm" id="delist-team" onchange="loadTeamRoster('delist')">
+              <option value="">Select team...</option>
+              {% for t in teams %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label" style="font-size:.75rem;">Player</label>
+            <select class="form-select form-select-sm" id="delist-player" disabled>
+              <option value="">Select team first...</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="commissionerDelist()" id="delistBtn" disabled>
+              Delist
+            </button>
+          </div>
+        </div>
+        <div id="delist-result" class="mt-2" style="font-size:.8rem;"></div>
+      </div>
+
+      {# Force move a player #}
+      <div>
+        <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#58a6ff;"><i class="bi bi-arrow-left-right me-2"></i>Force Move Player</h6>
+        <p style="font-size:.75rem;color:#8b949e;margin-bottom:10px;">Move a player between teams (e.g. correcting a misplaced draft pick). No trade history created.</p>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label" style="font-size:.75rem;">From Team</label>
+            <select class="form-select form-select-sm" id="move-from-team" onchange="loadTeamRoster('move')">
+              <option value="">Select team...</option>
+              {% for t in teams %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" style="font-size:.75rem;">Player</label>
+            <select class="form-select form-select-sm" id="move-player" disabled>
+              <option value="">Select team first...</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" style="font-size:.75rem;">To Team</label>
+            <select class="form-select form-select-sm" id="move-to-team" disabled>
+              <option value="">Select player first...</option>
+              {% for t in teams %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="mt-2">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick="commissionerMove()" id="moveBtn" disabled>
+            <i class="bi bi-arrow-left-right me-1"></i>Move Player
+          </button>
+        </div>
+        <div id="move-result" class="mt-2" style="font-size:.8rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Recent LTIL History ── #}
+  {% if recent_history %}
+  <div class="card mb-4" style="border-color:var(--kl-border);">
+    <div class="card-header" style="background:var(--kl-bg-elevated);border-bottom:1px solid var(--kl-border);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-clock-history me-2" style="color:#8b949e;"></i>Recent LTIL History</h5>
+    </div>
+    <div class="card-body p-0">
+      {% for lt in recent_history %}
+      <div class="comm-history-row">
+        <div class="comm-ltil-info">
+          <div class="comm-ltil-player">{{ lt.player.name }}</div>
+          <div class="comm-ltil-meta">{{ lt.team.name }} &bull;
+            {% if lt.status == 'rejected' %}
+              <span style="color:#f85149;">Rejected</span>
+            {% elif lt.removed_at %}
+              <span style="color:#8b949e;">Removed</span>
+            {% endif %}
+            &bull; {{ lt.reviewed_at.strftime('%d %b %Y') if lt.reviewed_at else (lt.removed_at.strftime('%d %b %Y') if lt.removed_at else '-') }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+function commLtilApprove(id) {
+  if (!confirm('Approve this LTIL request? The player will be benched.')) return;
+  fetch('/leagues/{{ league.id }}/commissioner/ltil-approve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+    body: JSON.stringify({ ltil_id: id })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      var row = document.getElementById('pending-row-' + id);
+      if (row) row.style.display = 'none';
+      location.reload();
+    } else {
+      alert(data.error || 'Failed to approve');
+    }
+  })
+  .catch(() => alert('Request failed'));
+}
+
+function commLtilReject(id) {
+  if (!confirm('Reject this LTIL request? The player will stay in their position.')) return;
+  fetch('/leagues/{{ league.id }}/commissioner/ltil-reject', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+    body: JSON.stringify({ ltil_id: id })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      var row = document.getElementById('pending-row-' + id);
+      if (row) row.style.display = 'none';
+      location.reload();
+    } else {
+      alert(data.error || 'Failed to reject');
+    }
+  })
+  .catch(() => alert('Request failed'));
+}
+
+function commLtilRemove(teamId, playerId) {
+  if (!confirm('Remove this player from LTIL? If they have an SSP replacement, the replacement will be dropped.')) return;
+  fetch('/leagues/{{ league.id }}/commissioner/ltil-remove', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+    body: JSON.stringify({ team_id: teamId, player_id: playerId })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      location.reload();
+    } else {
+      alert(data.error || 'Failed to remove');
+    }
+  })
+  .catch(() => alert('Request failed'));
+}
+
+// ── Delist / Force Move (moved from settings) ──
+function loadTeamRoster(mode) {
+  var teamSel, playerSel;
+  if (mode === 'delist') {
+    teamSel = document.getElementById('delist-team');
+    playerSel = document.getElementById('delist-player');
+  } else {
+    teamSel = document.getElementById('move-from-team');
+    playerSel = document.getElementById('move-player');
+  }
+  if (!teamSel || !playerSel) return;
+  var teamId = teamSel.value;
+  if (!teamId) {
+    playerSel.innerHTML = '<option value="">Select team first...</option>';
+    playerSel.disabled = true;
+    if (mode === 'delist') document.getElementById('delistBtn').disabled = true;
+    else { document.getElementById('move-to-team').disabled = true; document.getElementById('moveBtn').disabled = true; }
+    return;
+  }
+  playerSel.innerHTML = '<option value="">Loading...</option>';
+  playerSel.disabled = true;
+  fetch('/leagues/{{ league.id }}/commissioner/team-roster/' + teamId)
+    .then(function(r) { return r.json(); })
+    .then(function(players) {
+      playerSel.innerHTML = '<option value="">Select player...</option>';
+      players.sort(function(a, b) { return a.name.localeCompare(b.name); });
+      players.forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name + ' (' + (p.position || '?') + ' - ' + (p.afl_team || '?') + ')';
+        playerSel.appendChild(opt);
+      });
+      playerSel.disabled = false;
+      if (mode === 'delist') {
+        playerSel.onchange = function() { document.getElementById('delistBtn').disabled = !this.value; };
+      } else {
+        playerSel.onchange = function() {
+          var toTeam = document.getElementById('move-to-team');
+          toTeam.disabled = !this.value;
+          document.getElementById('moveBtn').disabled = !this.value;
+        };
+      }
+    })
+    .catch(function() {
+      playerSel.innerHTML = '<option value="">Error loading roster</option>';
+    });
+}
+
+function commissionerDelist() {
+  var teamId = document.getElementById('delist-team').value;
+  var playerId = document.getElementById('delist-player').value;
+  var playerName = document.getElementById('delist-player').selectedOptions[0].textContent;
+  if (!teamId || !playerId) return;
+  if (!confirm('Delist ' + playerName + '? This opens up a roster spot on their team.')) return;
+  var btn = document.getElementById('delistBtn');
+  btn.disabled = true;
+  btn.textContent = 'Delisting...';
+  fetch('/leagues/{{ league.id }}/commissioner/delist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+    body: JSON.stringify({ team_id: parseInt(teamId), player_id: parseInt(playerId) })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var result = document.getElementById('delist-result');
+    if (data.ok) {
+      result.innerHTML = '<span style="color:#3fb950;"><i class="bi bi-check-circle me-1"></i>' + data.message + '</span>';
+      loadTeamRoster('delist');
+    } else {
+      result.innerHTML = '<span style="color:#f85149;"><i class="bi bi-x-circle me-1"></i>' + data.error + '</span>';
+    }
+    btn.textContent = 'Delist';
+    btn.disabled = false;
+  })
+  .catch(function() {
+    document.getElementById('delist-result').innerHTML = '<span style="color:#f85149;">Request failed</span>';
+    btn.textContent = 'Delist';
+    btn.disabled = false;
+  });
+}
+
+function commissionerMove() {
+  var fromTeamId = document.getElementById('move-from-team').value;
+  var toTeamId = document.getElementById('move-to-team').value;
+  var playerId = document.getElementById('move-player').value;
+  var playerName = document.getElementById('move-player').selectedOptions[0].textContent;
+  var toTeamName = document.getElementById('move-to-team').selectedOptions[0].textContent;
+  if (!fromTeamId || !toTeamId || !playerId) return;
+  if (fromTeamId === toTeamId) { alert('Source and destination teams must be different.'); return; }
+  if (!confirm('Move ' + playerName + ' to ' + toTeamName + '? No trade history will be created.')) return;
+  var btn = document.getElementById('moveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Moving...';
+  fetch('/leagues/{{ league.id }}/commissioner/force-move', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+    body: JSON.stringify({ from_team_id: parseInt(fromTeamId), to_team_id: parseInt(toTeamId), player_id: parseInt(playerId) })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var result = document.getElementById('move-result');
+    if (data.ok) {
+      result.innerHTML = '<span style="color:#3fb950;"><i class="bi bi-check-circle me-1"></i>' + data.message + '</span>';
+      loadTeamRoster('move');
+    } else {
+      result.innerHTML = '<span style="color:#f85149;"><i class="bi bi-x-circle me-1"></i>' + data.error + '</span>';
+    }
+    btn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i>Move Player';
+    btn.disabled = false;
+  })
+  .catch(function() {
+    document.getElementById('move-result').innerHTML = '<span style="color:#f85149;">Request failed</span>';
+    btn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i>Move Player';
+    btn.disabled = false;
+  });
+}
+</script>
+{% endblock %}

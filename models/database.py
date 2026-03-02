@@ -735,6 +735,8 @@ class LongTermInjury(db.Model):
     year = db.Column(db.Integer, nullable=False)
     added_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     removed_at = db.Column(db.DateTime)  # null = still on LTIL
+    status = db.Column(db.String(20), default="approved")  # pending, approved, rejected
+    reviewed_at = db.Column(db.DateTime)  # when commissioner acted
     replacement_player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"))
 
     team = db.relationship("FantasyTeam", lazy="joined")

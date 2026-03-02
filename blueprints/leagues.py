@@ -1419,9 +1419,9 @@ def player_pool(league_id):
         roster_count = FantasyRoster.query.filter_by(
             team_id=user_team.id, is_active=True
         ).count()
-        # LTIL players free up a list spot
+        # LTIL players free up a list spot (approved only)
         ltil_count = LongTermInjury.query.filter_by(
-            team_id=user_team.id, removed_at=None, year=league.season_year
+            team_id=user_team.id, removed_at=None, year=league.season_year, status="approved"
         ).count()
         effective_count = roster_count - ltil_count
         below_cap = effective_count < (league.squad_size or 0)
@@ -1475,9 +1475,9 @@ def player_pickup(league_id):
     roster_count = FantasyRoster.query.filter_by(
         team_id=user_team.id, is_active=True
     ).count()
-    # LTIL players free up a list spot
+    # LTIL players free up a list spot (approved only)
     ltil_count = LongTermInjury.query.filter_by(
-        team_id=user_team.id, removed_at=None, year=league.season_year
+        team_id=user_team.id, removed_at=None, year=league.season_year, status="approved"
     ).count()
     effective_count = roster_count - ltil_count
     if effective_count >= (league.squad_size or 0):
@@ -1535,7 +1535,7 @@ def player_pickup(league_id):
         team_id=user_team.id, is_active=True
     ).count()
     new_ltil = LongTermInjury.query.filter_by(
-        team_id=user_team.id, removed_at=None, year=league.season_year
+        team_id=user_team.id, removed_at=None, year=league.season_year, status="approved"
     ).count()
     return jsonify({
         "ok": True,
@@ -2316,6 +2316,123 @@ def api_player_stats(league_id, player_id):
         "stat_avgs": stat_avgs,
         "scores_by_round": scores_by_round,
     })
+
+
+# ── Commissioner Hub ──────────────────────────────────────────────
+
+
+@leagues_bp.route("/<int:league_id>/commissioner")
+@login_required
+def commissioner_hub(league_id):
+    """Commissioner Central Hub — manage LTIL approvals and other tools."""
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("League not found.", "danger")
+        return redirect(url_for("leagues.my_leagues"))
+    if league.commissioner_id != current_user.id:
+        flash("Commissioner access required.", "warning")
+        return redirect(url_for("leagues.dashboard", league_id=league_id))
+
+    from models.database import LongTermInjury, Trade
+    # Pending LTIL requests
+    pending_ltil = LongTermInjury.query.filter_by(
+        league_id=league_id, removed_at=None, status="pending"
+    ).order_by(LongTermInjury.added_at.desc()).all()
+
+    # Active LTIL entries (approved)
+    active_ltil = LongTermInjury.query.filter_by(
+        league_id=league_id, removed_at=None, status="approved"
+    ).order_by(LongTermInjury.added_at.desc()).all()
+
+    # Recent history (rejected + removed, limit 20)
+    recent_history = LongTermInjury.query.filter_by(
+        league_id=league_id
+    ).filter(
+        db.or_(
+            LongTermInjury.status == "rejected",
+            LongTermInjury.removed_at.isnot(None),
+        )
+    ).order_by(LongTermInjury.reviewed_at.desc().nullslast(),
+               LongTermInjury.removed_at.desc().nullslast()).limit(20).all()
+
+    # Pending trades count
+    pending_trades_count = Trade.query.filter_by(
+        league_id=league_id, status="pending"
+    ).count()
+
+    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.name).all()
+
+    return render_template(
+        "leagues/commissioner_hub.html",
+        league=league,
+        pending_ltil=pending_ltil,
+        active_ltil=active_ltil,
+        recent_history=recent_history,
+        pending_trades_count=pending_trades_count,
+        teams=teams,
+        active_tab="commissioner",
+    )
+
+
+@leagues_bp.route("/<int:league_id>/commissioner/ltil-approve", methods=["POST"])
+@login_required
+def commissioner_ltil_approve(league_id):
+    """Commissioner approves a pending LTIL entry."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        return jsonify({"error": "Commissioner access required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    ltil_id = data.get("ltil_id")
+    if not ltil_id:
+        return jsonify({"error": "Missing ltil_id"}), 400
+
+    from models.season_manager import approve_ltil
+    ltil, err = approve_ltil(ltil_id)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify({"ok": True, "message": f"{ltil.player.name} approved for LTIL"})
+
+
+@leagues_bp.route("/<int:league_id>/commissioner/ltil-reject", methods=["POST"])
+@login_required
+def commissioner_ltil_reject(league_id):
+    """Commissioner rejects a pending LTIL entry."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        return jsonify({"error": "Commissioner access required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    ltil_id = data.get("ltil_id")
+    if not ltil_id:
+        return jsonify({"error": "Missing ltil_id"}), 400
+
+    from models.season_manager import reject_ltil
+    ltil, err = reject_ltil(ltil_id)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify({"ok": True, "message": f"LTIL request rejected for {ltil.player.name}"})
+
+
+@leagues_bp.route("/<int:league_id>/commissioner/ltil-remove", methods=["POST"])
+@login_required
+def commissioner_ltil_remove(league_id):
+    """Commissioner removes an active LTIL entry (overrides offseason restriction)."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        return jsonify({"error": "Commissioner access required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    team_id = data.get("team_id")
+    player_id = data.get("player_id")
+    if not team_id or not player_id:
+        return jsonify({"error": "Missing team_id or player_id"}), 400
+
+    from models.season_manager import remove_from_ltil
+    ltil, err = remove_from_ltil(team_id, player_id, league_id=league_id, commissioner_override=True)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify({"ok": True, "message": f"{ltil.player.name} removed from LTIL"})
 
 
 # ── Commissioner Tools ──────────────────────────────────────────────

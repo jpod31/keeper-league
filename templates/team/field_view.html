@@ -229,7 +229,17 @@
           {% endif %}
         </div>
         {% endfor %}
-        {% for i in range(field_data.ssp_slots - field_data.ltil_entries|length) %}
+        {% for lt in field_data.pending_ltil|default([]) %}
+        <div class="fv-ltil-sidebar-card fv-ltil-sidebar-pending" data-ltil-id="{{ lt.id }}">
+          <div class="fv-ltil-sidebar-info">
+            <div class="fv-ltil-sidebar-name">{{ lt.player.name }}</div>
+            <div class="fv-ltil-sidebar-meta" style="color:#d29922;">Pending approval</div>
+          </div>
+          <i class="bi bi-hourglass-split" style="font-size:.7rem;color:#d29922;"></i>
+        </div>
+        {% endfor %}
+        {% set used_slots = field_data.ltil_entries|length + field_data.pending_ltil|default([])|length %}
+        {% for i in range(field_data.ssp_slots - used_slots) %}
         <div class="fv-ltil-sidebar-card fv-ltil-sidebar-empty">
           <i class="bi bi-bandaid" style="font-size:.7rem;color:#484f58;"></i>
           <span style="font-size:.6rem;color:#484f58;">LTIL Slot</span>
@@ -757,10 +767,10 @@ function fvShowPlayer(pid) {
 
 // ── LTIL / SSP functions ──
 function fvAddToLTIL(pid) {
-  if (!confirm('Place this player on the Long-Term Injury List?')) return;
+  if (!confirm('Request LTIL placement for this player? Commissioner approval is required.')) return;
   fvApi('/add-to-ltil', {player_id: pid}).then(data => {
     if (data && !data.error) {
-      fvToast('Player added to LTIL', 'success');
+      fvToast('LTIL request submitted — awaiting commissioner approval', 'success');
       fvRefresh();
     }
   });

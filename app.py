@@ -359,6 +359,13 @@ def create_app():
                     ).filter(
                         DraftSession.status.in_(["scheduled", "in_progress", "paused"])
                     ).first() is not None
+                    # Commissioner nav helpers
+                    if _lg.commissioner_id == current_user.id:
+                        ctx["nav_is_commissioner"] = True
+                        from models.database import LongTermInjury as _LTI
+                        ctx["pending_ltil_count"] = _LTI.query.filter_by(
+                            league_id=league_id, removed_at=None, status="pending"
+                        ).count()
         return ctx
 
     # ── Security headers ────────────────────────────────────────────

@@ -277,12 +277,12 @@ def check_trade_validity(league_id, proposer_team_id, recipient_team_id,
             return "Draft pick(s) already involved in a pending trade."
 
     # Validate roster sizes post-swap (only player assets affect roster)
-    # LTIL players free up a list spot — subtract them from effective count
+    # LTIL players free up a list spot — subtract them from effective count (approved only)
     proposer_ltil = LongTermInjury.query.filter_by(
-        team_id=proposer_team_id, removed_at=None, year=league.season_year
+        team_id=proposer_team_id, removed_at=None, year=league.season_year, status="approved"
     ).count()
     recipient_ltil = LongTermInjury.query.filter_by(
-        team_id=recipient_team_id, removed_at=None, year=league.season_year
+        team_id=recipient_team_id, removed_at=None, year=league.season_year, status="approved"
     ).count()
     proposer_size = len(proposer_roster) - proposer_ltil - len(give_player_ids) + len(receive_player_ids)
     recipient_size = len(recipient_roster) - recipient_ltil - len(receive_player_ids) + len(give_player_ids)

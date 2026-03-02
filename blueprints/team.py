@@ -144,9 +144,13 @@ def squad(league_id, team_id):
 
         flex_filled = sum(1 for fd in flex_data if fd["player"] is not None)
 
-        # LTIL entries — exclude from reserves
+        # LTIL entries — exclude from reserves (approved only)
         ltil_entries = LongTermInjury.query.filter_by(
-            team_id=team_id, removed_at=None, year=league.season_year
+            team_id=team_id, removed_at=None, year=league.season_year, status="approved"
+        ).all()
+        # Pending LTIL entries — show in sidebar with different styling
+        pending_ltil = LongTermInjury.query.filter_by(
+            team_id=team_id, removed_at=None, year=league.season_year, status="pending"
         ).all()
         ltil_player_ids = {lt.player_id for lt in ltil_entries}
 
@@ -278,6 +282,7 @@ def squad(league_id, team_id):
             "emergency_ids": emergency_ids,
             "next_lockout_time": next_lockout_time,
             "ltil_entries": ltil_entries,
+            "pending_ltil": pending_ltil,
             "ssp_slots": ssp_slots,
             "ssp_enabled": ssp_enabled,
             "ssp_window_active": ssp_window_active,
