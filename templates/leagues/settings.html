@@ -225,16 +225,33 @@
                   <span class="toggle-track"></span>
                 </label>
               </div>
-              <div class="row g-3">
+              {# All-year trading toggle #}
+              {% set all_year = season_config and season_config.trades_all_year %}
+              <div class="d-flex align-items-center justify-content-between mb-2 pb-2" style="border-bottom:1px solid #21262d;">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-arrow-left-right" style="color:#d29922;"></i>
+                  <div>
+                    <span class="fw-bold" style="font-size:.85rem;">All-Year Trading</span>
+                    <div style="font-size:.68rem;color:#6e7681;">Trades are open the entire season instead of a window</div>
+                  </div>
+                </div>
+                <label class="settings-toggle mb-0">
+                  <input type="checkbox" name="trades_all_year" id="trades_all_year"
+                         {{ 'checked' if all_year }}
+                         onchange="document.getElementById('mid-round-row').style.display = this.checked ? 'none' : '';">
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+              <div class="row g-3" id="mid-round-row" style="{{ 'display:none;' if all_year }}">
                 <div class="col-md-6">
-                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">After Round</label>
+                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">Draft After Round</label>
                   <input type="number" class="form-control form-control-sm" id="mid_season_draft_after_round"
                          name="mid_season_draft_after_round"
                          value="{{ season_config.mid_season_draft_after_round if season_config and season_config.mid_season_draft_after_round else 12 }}"
                          min="1" max="24" placeholder="12">
                 </div>
               </div>
-              <div class="mt-2" style="font-size:.7rem;color:#6e7681;">
+              <div class="mt-2" style="font-size:.7rem;color:#6e7681;" id="mid-round-help" {{ 'hidden' if all_year }}>
                 <i class="bi bi-info-circle me-1"></i>
                 Trade window opens for 2 days after this round, then 1 day delist period, then supplemental draft
               </div>

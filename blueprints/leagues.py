@@ -444,6 +444,7 @@ def league_settings(league_id):
         mid_enabled = request.form.get("mid_season_draft_enabled") == "on"
         season_cfg.mid_season_draft_enabled = mid_enabled
         season_cfg.mid_season_trade_enabled = mid_enabled
+        season_cfg.trades_all_year = request.form.get("trades_all_year") == "on"
         mid_round = request.form.get("mid_season_draft_after_round", type=int)
         if mid_round is not None:
             season_cfg.mid_season_draft_after_round = max(1, min(24, mid_round))

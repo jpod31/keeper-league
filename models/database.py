@@ -205,6 +205,9 @@ class League(db.Model):
         now = datetime.now(timezone.utc)
         cfg = SeasonConfig.query.filter_by(league_id=self.id, year=self.season_year).first()
         if cfg:
+            # All-year trading — always open
+            if cfg.trades_all_year:
+                return True
             if cfg.mid_trade_window_open and cfg.mid_trade_window_close:
                 if cfg.mid_trade_window_open <= now <= cfg.mid_trade_window_close:
                     return True
@@ -628,6 +631,7 @@ class SeasonConfig(db.Model):
     mid_season_delist_required = db.Column(db.Integer, default=1)
     mid_season_trade_enabled = db.Column(db.Boolean, default=False)
     mid_season_trade_after_round = db.Column(db.Integer)
+    trades_all_year = db.Column(db.Boolean, default=False)
 
     # Trade/delist window duration settings (configured in Settings)
     mid_trade_duration_days = db.Column(db.Integer, default=2)     # 1-3 days
@@ -892,6 +896,7 @@ def _run_migrations(app):
             ("mid_season_delist_required", "INTEGER DEFAULT 1"),
             ("mid_season_trade_enabled", "BOOLEAN DEFAULT 0"),
             ("mid_season_trade_after_round", "INTEGER"),
+            ("trades_all_year", "BOOLEAN DEFAULT 0"),
             ("offseason_trade_enabled", "BOOLEAN DEFAULT 1"),
             ("offseason_delist_min", "INTEGER DEFAULT 3"),
             ("ssp_enabled", "BOOLEAN DEFAULT 1"),
