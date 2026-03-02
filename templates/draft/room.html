@@ -36,6 +36,13 @@
 .draft-right-col > .card { flex-shrink: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 .draft-right-col > .card > .card-body { overflow-y: auto; flex: 1; min-height: 0; }
 
+/* ── Sortable table headers ── */
+.sortable-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.sortable-th:hover { color: #c9d1d9 !important; }
+.sortable-th .sort-icon { font-size: .55rem; opacity: .4; margin-left: 1px; }
+.sortable-th.active-sort .sort-icon { opacity: 1; color: #58a6ff; }
+.sortable-th.active-sort { color: #58a6ff !important; }
+
 /* ── Available Players table — prominent styling ── */
 .draft-avail-tbl { font-size: .82rem; }
 .draft-avail-tbl thead th {
@@ -262,14 +269,14 @@
         <table class="table table-hover table-sm mb-0 draft-avail-tbl">
           <thead class="sticky-top" style="background:#161b22;">
             <tr>
-              <th>Player</th>
-              <th>Pos</th>
-              <th>Team</th>
-              <th>Age</th>
-              <th>SC</th>
-              <th>Rtg</th>
-              <th>Pot</th>
-              <th>Value</th>
+              <th class="sortable-th" data-sort="name" onclick="toggleSort('name')">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable-th" data-sort="position" onclick="toggleSort('position')">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable-th" data-sort="afl_team" onclick="toggleSort('afl_team')">Team <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable-th" data-sort="age" onclick="toggleSort('age')">Age <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable-th" data-sort="sc_avg" onclick="toggleSort('sc_avg')">SC <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable-th" data-sort="rating" onclick="toggleSort('rating')">Rtg <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable-th" data-sort="potential" onclick="toggleSort('potential')">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable-th active-sort" data-sort="draft_score" onclick="toggleSort('draft_score')">Value <i class="bi bi-chevron-down sort-icon"></i></th>
               <th></th>
             </tr>
           </thead>
@@ -373,7 +380,6 @@
         <div class="card-body p-0" id="chat-messages" style="height:200px;overflow-y:auto;padding:.5rem !important;">
           <div class="text-center py-3" style="color:#484f58;font-size:.75rem;">
             <i class="bi bi-chat-dots" style="font-size:1.2rem;"></i>
-            <div class="mt-1">Talk trash, celebrate picks, roast auto-picks...</div>
           </div>
         </div>
         <div style="border-top:1px solid var(--kl-border);padding:.5rem .65rem;display:flex;gap:.4rem;">
@@ -464,6 +470,8 @@ const CAN_RESTART = {{ 'true' if can_restart else 'false' }};
 const DRAFT_ROUND_TYPE = {{ (session.draft_round_type|tojson) if session.draft_round_type else '"initial"' }};
 let draftState = {{ state|tojson }};
 let pendingPickPlayerId = null;
+let sortColumn = 'draft_score';
+let sortDir = 'desc';
 
 // Connect to SocketIO
 const socket = io('/draft', { transports: ['websocket', 'polling'] });
@@ -615,6 +623,45 @@ function isPositionBlocked(playerPos) {
   return positions.every(p => positionNeeds.blocked_positions.includes(p));
 }
 
+function toggleSort(col) {
+  if (sortColumn === col) {
+    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortColumn = col;
+    // Text columns default ascending, numeric columns default descending
+    sortDir = ['name', 'position', 'afl_team'].includes(col) ? 'asc' : 'desc';
+  }
+  // Update header icons
+  document.querySelectorAll('.sortable-th').forEach(th => {
+    const icon = th.querySelector('.sort-icon');
+    if (th.dataset.sort === sortColumn) {
+      th.classList.add('active-sort');
+      icon.className = 'bi sort-icon ' + (sortDir === 'desc' ? 'bi-chevron-down' : 'bi-chevron-up');
+    } else {
+      th.classList.remove('active-sort');
+      icon.className = 'bi bi-chevron-expand sort-icon';
+    }
+  });
+  searchPlayers();
+}
+
+function sortPlayers(players) {
+  const col = sortColumn;
+  const dir = sortDir === 'asc' ? 1 : -1;
+  return players.slice().sort((a, b) => {
+    let va = a[col], vb = b[col];
+    // Nulls always last
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    // String comparison for text columns
+    if (typeof va === 'string' && typeof vb === 'string') {
+      return dir * va.localeCompare(vb);
+    }
+    return dir * (va - vb);
+  });
+}
+
 function searchPlayers() {
   const q = document.getElementById('player-search').value;
   const pos = document.getElementById('pos-filter').value;
@@ -632,6 +679,8 @@ function searchPlayers() {
           return p.age < parseInt(ageFilter);
         });
       }
+      // Sort
+      filtered = sortPlayers(filtered);
       const tbody = document.getElementById('available-players');
       tbody.innerHTML = filtered.slice(0, 100).map(p => {
         const posClass = (p.position||'mid').split('/')[0].toLowerCase();
