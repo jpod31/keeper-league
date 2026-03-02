@@ -2523,6 +2523,11 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 }
 .more-sheet-item:hover { background: var(--kl-bg-hover); color: var(--kl-text-primary); text-decoration: none; }
 .more-sheet-item i { font-size: 1.3rem; color: var(--kl-accent-blue); }
+.more-sheet-item-draft {
+  background: rgba(210,153,34,.1);
+  border: 1px solid rgba(210,153,34,.25);
+}
+.more-sheet-item-draft i { color: #d29922; }
 
 /* ══════════════════════════════════════════════════
    PLAYER POOL CARD VIEW (mobile)

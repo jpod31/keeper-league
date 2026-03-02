@@ -60,6 +60,12 @@
          href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
         <i class="bi bi-calendar-week"></i><span>League</span>
       </a>
+      {% if nav_active_draft|default(false) %}
+        <a class="league-tab{% if active_tab|default('') == 'draft' %} active{% endif %}"
+           href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" style="color:#d29922;">
+          <i class="bi bi-list-check"></i><span>Draft Room</span>
+        </a>
+      {% endif %}
       <a class="league-tab{% if active_tab|default('') == 'season' %} active{% endif %}"
          href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
         <i class="bi bi-calendar-range"></i><span>List Management</span>
@@ -109,6 +115,11 @@
 <div class="more-sheet" id="moreSheet">
   <div class="more-sheet-handle"></div>
   <div class="more-sheet-grid">
+    {% if nav_active_draft|default(false) %}
+      <a class="more-sheet-item more-sheet-item-draft" href="{{ url_for('draft_live.draft_room', league_id=league.id) }}">
+        <i class="bi bi-list-check"></i><span>Draft Room</span>
+      </a>
+    {% endif %}
     <a class="more-sheet-item" href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
       <i class="bi bi-calendar-range"></i><span>List Mgmt</span>
     </a>

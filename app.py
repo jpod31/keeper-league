@@ -342,11 +342,17 @@ def create_app():
                 )
                 ctx["nav_user_team"] = nav_team
                 # Finals config for subnav visibility
-                from models.database import League as _League, SeasonConfig as _SC
+                from models.database import League as _League, SeasonConfig as _SC, DraftSession
                 _lg = db.session.get(_League, league_id)
                 if _lg:
                     _sc = _SC.query.filter_by(league_id=league_id, year=_lg.season_year).first()
                     ctx["nav_finals_teams"] = _sc.finals_teams if _sc else 4
+                    # Active draft session for nav link visibility
+                    ctx["nav_active_draft"] = DraftSession.query.filter_by(
+                        league_id=league_id, is_mock=False
+                    ).filter(
+                        DraftSession.status.in_(["scheduled", "in_progress", "paused"])
+                    ).first() is not None
         return ctx
 
     # ── Security headers ────────────────────────────────────────────
