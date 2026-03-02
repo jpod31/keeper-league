@@ -247,9 +247,7 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
                 f.home_score = home_wins
                 f.away_score = away_wins
 
-                if all_complete:
-                    f.status = "completed"
-                elif f.status == "scheduled":
+                if f.status == "scheduled":
                     f.status = "live"
 
                 league_data[f.id] = {
@@ -288,9 +286,7 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
                 f.away_score = away_total
 
                 # Auto-transition fixture status
-                if all_complete:
-                    f.status = "completed"
-                elif f.status == "scheduled":
+                if f.status == "scheduled":
                     f.status = "live"
 
                 league_data[f.id] = {
@@ -309,13 +305,10 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
 
     db.session.commit()
 
-    # If all games complete, recalculate standings and advance finals
+    # If all games complete, schedule delayed finalization (45 min)
     if all_complete:
-        from models.scoring_engine import recalculate_standings
-        from models.fixture_manager import advance_finals
-        for league_id in changed_data:
-            recalculate_standings(league_id, year)
-            advance_finals(league_id, year)
+        from models.scheduler import schedule_round_finalization
+        schedule_round_finalization(year, afl_round)
 
     return changed_data
 

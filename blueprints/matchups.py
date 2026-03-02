@@ -11,7 +11,7 @@ from models.fixture_manager import (
     generate_finals, get_finals,
 )
 from models.scoring_engine import (
-    finalize_round, get_standings, get_live_scores,
+    get_standings, get_live_scores,
     get_team_round_scores, get_scoring_context,
     compute_uf_breakdown, compute_custom_breakdown, compute_player_breakdown,
 )
@@ -210,29 +210,6 @@ def standings(league_id):
                            standings=standing_list,
                            finals_teams=finals_teams,
                            scoring=scoring)
-
-
-@matchups_bp.route("/<int:league_id>/score/<int:afl_round>", methods=["POST"])
-@login_required
-def score_round_view(league_id, afl_round):
-    league = db.session.get(League, league_id)
-    if not league or league.commissioner_id != current_user.id:
-        flash("Only the commissioner can score rounds.", "warning")
-        return redirect(url_for("matchups.round_view", league_id=league_id, afl_round=afl_round))
-
-    # Check if already finalized before scoring
-    fixtures = Fixture.query.filter_by(
-        league_id=league_id, afl_round=afl_round, year=league.season_year
-    ).all()
-    if fixtures and all(f.status == "completed" for f in fixtures):
-        flash(f"Round {afl_round} has already been finalized. Scores unchanged.", "info")
-        return redirect(url_for("matchups.round_view", league_id=league_id, afl_round=afl_round))
-
-    # Score all teams, update fixtures, recalculate standings, advance finals
-    finalize_round(league_id, afl_round, league.season_year)
-
-    flash(f"Round {afl_round} scored and standings updated.", "success")
-    return redirect(url_for("matchups.round_view", league_id=league_id, afl_round=afl_round))
 
 
 @matchups_bp.route("/<int:league_id>/live/<int:afl_round>")

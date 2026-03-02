@@ -93,6 +93,88 @@ def init_scheduler(app, socketio):
     logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC)")
 
 
+def schedule_round_finalization(year: int, afl_round: int):
+    """Schedule a one-time job to finalize a round 45 minutes from now.
+
+    If the job already exists (timer already running), skip to avoid resetting it.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    job_id = f"auto_finalize_{year}_R{afl_round}"
+
+    # Don't reset the timer if already scheduled
+    if scheduler.get_job(job_id):
+        logger.info("Auto-finalize already scheduled for %d R%d, skipping", year, afl_round)
+        return
+
+    run_at = datetime.now(timezone.utc) + timedelta(minutes=45)
+    scheduler.add_job(
+        _auto_finalize_round,
+        "date",
+        run_date=run_at,
+        args=[year, afl_round],
+        id=job_id,
+        replace_existing=False,
+        max_instances=1,
+    )
+    logger.info("Auto-finalize scheduled for %d R%d at %s", year, afl_round, run_at.isoformat())
+
+
+def _auto_finalize_round(year: int, afl_round: int):
+    """Delayed finalization: final score refresh then finalize all leagues."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from models.database import AflGame, Fixture, League
+            from models.live_sync import sync_live_scores
+            from models.scoring_engine import finalize_round
+
+            # Verify all AFL games are still complete
+            all_games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+            if not all_games or not all(g.status == "complete" for g in all_games):
+                logger.warning(
+                    "Auto-finalize aborted for %d R%d: not all games complete", year, afl_round
+                )
+                return
+
+            # Final score refresh
+            logger.info("Auto-finalize: running final score sync for %d R%d", year, afl_round)
+            sync_live_scores(year, afl_round)
+
+            # Find all leagues with fixtures for this round
+            league_ids = (
+                db.session.query(Fixture.league_id)
+                .filter_by(year=year, afl_round=afl_round)
+                .distinct()
+                .all()
+            )
+
+            for (league_id,) in league_ids:
+                try:
+                    finalize_round(league_id, afl_round, year)
+                    logger.info("Auto-finalize: finalized league %d for %d R%d", league_id, year, afl_round)
+                except Exception:
+                    logger.exception("Auto-finalize failed for league %d, %d R%d", league_id, year, afl_round)
+
+            # Broadcast completion via SocketIO
+            if _socketio:
+                from models.live_sync import get_game_statuses, get_locked_player_ids
+                game_statuses = get_game_statuses(afl_round, year)
+                locked_ids = list(get_locked_player_ids(afl_round, year))
+                for (league_id,) in league_ids:
+                    _broadcast_score_update(
+                        league_id, afl_round,
+                        {}, game_statuses, locked_ids
+                    )
+
+            logger.info("Auto-finalize complete for %d R%d", year, afl_round)
+
+        except Exception:
+            logger.exception("Error in auto-finalize for %d R%d", year, afl_round)
+
+
 def run_manual_score_sync():
     """Trigger a score sync on demand (called from the gameday manual sync route)."""
     _poll_live_scores()
