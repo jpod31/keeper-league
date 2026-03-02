@@ -8,7 +8,7 @@ from flask_socketio import emit, join_room, leave_room
 
 from models.database import db, DraftSession, FantasyTeam, League
 from models.draft_live import (
-    get_draft_state, make_pick, auto_pick, start_draft,
+    get_draft_state, make_pick, pass_pick, auto_pick, start_draft,
     pause_draft, resume_draft,
 )
 
@@ -135,6 +135,78 @@ def register_draft_events(socketio):
             logger.exception("Error in make_pick handler")
             db.session.rollback()
             emit("error", {"message": "An error occurred making the pick"})
+
+    @socketio.on("pass_pick", namespace="/draft")
+    def handle_pass_pick(data):
+        try:
+            league_id = data.get("league_id")
+            if not league_id:
+                emit("error", {"message": "Missing league_id"})
+                return
+
+            session = _get_active_session(league_id)
+            if not session:
+                emit("error", {"message": "No draft session"})
+                return
+
+            # Only allowed for supplemental drafts
+            if session.draft_round_type != "supplemental":
+                emit("error", {"message": "Passing is only allowed in supplemental drafts"})
+                return
+
+            # Verify it's this user's turn
+            state = get_draft_state(session.id)
+            if not state or not state.get("current_team_id"):
+                emit("error", {"message": "Draft is not active"})
+                return
+
+            user_team = FantasyTeam.query.filter_by(
+                league_id=league_id, owner_id=current_user.id
+            ).first()
+
+            league = db.session.get(League, league_id)
+            is_commissioner = league and league.commissioner_id == current_user.id
+            is_current_picker = user_team and user_team.id == state["current_team_id"]
+
+            if not is_commissioner and not is_current_picker:
+                emit("error", {"message": "It's not your turn to pick"})
+                return
+
+            pick, error = pass_pick(session.id)
+            if error:
+                emit("error", {"message": error})
+                return
+
+            # Reset timer
+            _reset_timer(session.id)
+
+            # Broadcast updated state to all in the room
+            new_state = get_draft_state(session.id)
+            room = f"draft_{league_id}"
+            pick_data = {
+                "pick_number": pick.pick_number,
+                "round": pick.draft_round,
+                "team_id": pick.team_id,
+                "team_name": pick.team.name if pick.team else "Unknown",
+                "player_id": None,
+                "player_name": None,
+                "player_position": None,
+                "player_afl_team": None,
+                "is_auto_pick": False,
+                "is_pass": True,
+            }
+            emit("pick_made", pick_data, room=room)
+
+            if new_state["status"] == "completed":
+                _cleanup_timer(session.id)
+                emit("draft_completed", new_state, room=room)
+            else:
+                emit("draft_state", new_state, room=room)
+                _start_timer(socketio, session.id, league_id)
+        except Exception:
+            logger.exception("Error in pass_pick handler")
+            db.session.rollback()
+            emit("error", {"message": "An error occurred passing the pick"})
 
     @socketio.on("start_draft", namespace="/draft")
     def handle_start_draft(data):

@@ -289,6 +289,20 @@ def migrate_ssp_cutoff_round(app):
         print("  [done] ssp_cutoff_round migration complete")
 
 
+def migrate_draft_pick_is_pass(app):
+    """Add is_pass column to draft_pick table (idempotent)."""
+    with app.app_context():
+        conn = db.engine.raw_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("ALTER TABLE draft_pick ADD COLUMN is_pass BOOLEAN DEFAULT 0")
+        except Exception:
+            pass  # column already exists
+        conn.commit()
+        conn.close()
+        print("  [done] draft_pick is_pass migration complete")
+
+
 def main():
     print("=== Keeper League CSV -> SQLite Migration ===\n")
     os.makedirs(config.DATA_DIR, exist_ok=True)
@@ -309,6 +323,9 @@ def main():
 
     print("\n5. Migrating SSP cutoff round...")
     migrate_ssp_cutoff_round(app)
+
+    print("\n6. Migrating draft_pick is_pass...")
+    migrate_draft_pick_is_pass(app)
 
     print("\n=== Migration complete! ===")
     db_path = os.path.join(config.DATA_DIR, "keeper_league.db")

@@ -93,7 +93,7 @@ def get_draft_state(session_id):
         return None
 
     picks = DraftPick.query.filter_by(draft_session_id=session_id).order_by(DraftPick.pick_number).all()
-    current_pick = next((p for p in picks if p.player_id is None), None)
+    current_pick = next((p for p in picks if p.player_id is None and not p.is_pass), None)
 
     # Get teams
     teams = FantasyTeam.query.filter_by(league_id=session.league_id).order_by(FantasyTeam.draft_order).all()
@@ -113,6 +113,7 @@ def get_draft_state(session_id):
         "league_id": session.league_id,
         "status": session.status,
         "draft_type": session.draft_type,
+        "draft_round_type": session.draft_round_type,
         "is_mock": session.is_mock,
         "pick_timer_secs": session.pick_timer_secs,
         "timer_remaining": timer_remaining,
@@ -122,7 +123,7 @@ def get_draft_state(session_id):
         "current_team_name": current_pick.team.name if current_pick else None,
         "total_rounds": session.total_rounds,
         "total_picks": len(picks),
-        "picks_made": len([p for p in picks if p.player_id is not None]),
+        "picks_made": len([p for p in picks if p.player_id is not None or p.is_pass]),
         "teams": [{"id": t.id, "name": t.name, "owner_id": t.owner_id,
                     "draft_order": t.draft_order} for t in teams],
         "pick_history": [
@@ -136,8 +137,9 @@ def get_draft_state(session_id):
                 "player_position": p.player.position if p.player else None,
                 "player_afl_team": p.player.afl_team if p.player else None,
                 "is_auto_pick": p.is_auto_pick,
+                "is_pass": p.is_pass,
             }
-            for p in picks if p.player_id is not None
+            for p in picks if p.player_id is not None or p.is_pass
         ],
         "picked_player_ids": list(picked_ids),
     }
@@ -237,6 +239,54 @@ def make_pick(session_id, player_id, is_auto=False):
         remaining = (
             DraftPick.query
             .filter_by(draft_session_id=session_id, player_id=None)
+            .count()
+        )
+        if remaining == 0:
+            session.status = "completed"
+            session.completed_at = datetime.now(timezone.utc)
+            if not session.is_mock:
+                league = db.session.get(League, session.league_id)
+                if league:
+                    league.status = "active"
+
+        db.session.commit()
+
+        return current_pick, None
+
+
+def pass_pick(session_id):
+    """Pass on the current pick (supplemental drafts only).
+    Marks the pick as passed (no player selected) and advances to next pick.
+    Returns (pick, None) on success or (None, error_msg) on failure.
+    """
+    with _pick_lock:
+        session = db.session.get(DraftSession, session_id)
+        if not session or session.status != "in_progress":
+            return None, "Draft is not in progress."
+
+        if session.draft_round_type != "supplemental":
+            return None, "Passing is only allowed in supplemental drafts."
+
+        # Find current pick (first unpicked and not passed)
+        current_pick = (
+            DraftPick.query
+            .filter_by(draft_session_id=session_id, player_id=None)
+            .filter(DraftPick.is_pass == False)
+            .order_by(DraftPick.pick_number)
+            .first()
+        )
+        if not current_pick:
+            return None, "All picks have been made."
+
+        # Mark as passed
+        current_pick.is_pass = True
+        current_pick.picked_at = datetime.now(timezone.utc)
+
+        # Check if draft is complete (all picks either have a player or are passed)
+        remaining = (
+            DraftPick.query
+            .filter_by(draft_session_id=session_id, player_id=None)
+            .filter(DraftPick.is_pass == False)
             .count()
         )
         if remaining == 0:

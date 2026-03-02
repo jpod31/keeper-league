@@ -440,29 +440,14 @@ def league_settings(league_id):
         if finals_teams:
             season_cfg.finals_teams = finals_teams
 
-        # Mid-season config
-        season_cfg.mid_season_trade_enabled = request.form.get("mid_season_trade_enabled") == "on"
-        season_cfg.mid_season_draft_enabled = request.form.get("mid_season_draft_enabled") == "on"
-        mid_trade_round = request.form.get("mid_season_trade_after_round", type=int)
-        if mid_trade_round:
-            season_cfg.mid_season_trade_after_round = mid_trade_round
-        mid_draft_round = request.form.get("mid_season_draft_after_round", type=int)
-        if mid_draft_round:
-            season_cfg.mid_season_draft_after_round = mid_draft_round
-        mid_picks = request.form.get("mid_season_draft_picks", type=int)
-        if mid_picks is not None:
-            season_cfg.mid_season_draft_picks = mid_picks
-        mid_delist = request.form.get("mid_season_delist_required", type=int)
-        if mid_delist is not None:
-            season_cfg.mid_season_delist_required = mid_delist
-
-        # Mid-season trade/delist duration
-        mid_trade_dur = request.form.get("mid_trade_duration_days", type=int)
-        if mid_trade_dur is not None:
-            season_cfg.mid_trade_duration_days = max(1, min(3, mid_trade_dur))
-        mid_delist_dur = request.form.get("mid_delist_duration_days", type=int)
-        if mid_delist_dur is not None:
-            season_cfg.mid_delist_duration_days = max(1, min(3, mid_delist_dur))
+        # Mid-season config (single toggle — trade follows draft toggle)
+        mid_enabled = request.form.get("mid_season_draft_enabled") == "on"
+        season_cfg.mid_season_draft_enabled = mid_enabled
+        season_cfg.mid_season_trade_enabled = mid_enabled
+        mid_round = request.form.get("mid_season_draft_after_round", type=int)
+        if mid_round is not None:
+            season_cfg.mid_season_draft_after_round = max(1, min(24, mid_round))
+            season_cfg.mid_season_trade_after_round = season_cfg.mid_season_draft_after_round
 
         # SSP config
         season_cfg.ssp_enabled = request.form.get("ssp_enabled") == "on"

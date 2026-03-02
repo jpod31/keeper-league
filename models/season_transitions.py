@@ -76,6 +76,7 @@ def check_and_transition(league_id):
                 offseason_delist_min=cfg.offseason_delist_min,
                 ssp_enabled=cfg.ssp_enabled,
                 ssp_slots=cfg.ssp_slots,
+                ssp_cutoff_round=cfg.ssp_cutoff_round,
                 auto_transition_enabled=cfg.auto_transition_enabled,
             )
             db.session.add(new_cfg)

@@ -384,6 +384,7 @@ class DraftPick(db.Model):
     team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
     player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=True)
     is_auto_pick = db.Column(db.Boolean, default=False)
+    is_pass = db.Column(db.Boolean, default=False)
     picked_at = db.Column(db.DateTime)
 
     team = db.relationship("FantasyTeam", lazy="joined")

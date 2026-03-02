@@ -199,106 +199,44 @@
       </div>
 
       {# ── Mid-Season (expandable toggle) ── #}
-      {% set mid_any_enabled = season_config and (season_config.mid_season_draft_enabled or season_config.mid_season_trade_enabled) %}
+      {% set mid_enabled = season_config and season_config.mid_season_draft_enabled %}
       <div class="card mb-4">
-        <div class="settings-section-header {{ 'section-active' if mid_any_enabled }}" id="midSeasonHeader">
+        <div class="settings-section-header {{ 'section-active' if mid_enabled }}" id="midSeasonHeader">
           <h5 class="mb-0 fw-bold d-flex align-items-center" style="font-size:.95rem;">
             <i class="bi bi-arrow-repeat me-2" style="color:#2dd4bf;"></i>Mid-Season
-            <span class="settings-status {{ 'status-on' if mid_any_enabled }}" id="midSeasonDot"></span>
+            <span class="settings-status {{ 'status-on' if mid_enabled }}" id="midSeasonDot"></span>
           </h5>
           <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;"
                   onclick="toggleSection('midSeason', !document.getElementById('midSeasonBody').classList.contains('expanded'))">
             <i class="bi bi-chevron-down"></i>
           </button>
         </div>
-        <div class="settings-expand {{ 'expanded' if mid_any_enabled }}" id="midSeasonBody">
+        <div class="settings-expand {{ 'expanded' if mid_enabled }}" id="midSeasonBody">
           <div class="row g-3">
             <div class="col-12">
-              <div class="d-flex align-items-center gap-2 mb-3" style="font-size:.75rem;color:#8b949e;">
-                <i class="bi bi-info-circle"></i>
-                Mid-season activities occur between halves of the AFL season. Teams must delist before drafting.
-              </div>
-            </div>
-
-            {# Trade window toggle + settings #}
-            <div class="col-12">
               <div class="d-flex align-items-center justify-content-between mb-2 pb-2" style="border-bottom:1px solid #21262d;">
                 <div class="d-flex align-items-center gap-2">
-                  <i class="bi bi-arrow-left-right" style="color:#f0883e;"></i>
-                  <span class="fw-bold" style="font-size:.85rem;">Trade Window</span>
+                  <i class="bi bi-arrow-repeat" style="color:#2dd4bf;"></i>
+                  <span class="fw-bold" style="font-size:.85rem;">Enable Mid-Season</span>
                 </div>
                 <label class="settings-toggle mb-0">
-                  <input type="checkbox" name="mid_season_trade_enabled"
-                         {{ 'checked' if season_config and season_config.mid_season_trade_enabled }}>
-                  <span class="toggle-track"></span>
-                </label>
-              </div>
-              <div class="row g-3 mb-3">
-                <div class="col-md-4">
-                  <label for="mid_season_trade_after_round" class="form-label" style="font-size:.75rem;">Opens after AFL Round</label>
-                  <input type="number" class="form-control form-control-sm" id="mid_season_trade_after_round"
-                         name="mid_season_trade_after_round"
-                         value="{{ season_config.mid_season_trade_after_round if season_config and season_config.mid_season_trade_after_round else '' }}"
-                         min="1" max="24" placeholder="e.g. 12">
-                </div>
-                <div class="col-md-4">
-                  <label for="mid_trade_duration_days" class="form-label" style="font-size:.75rem;">Trade Window Duration (days)</label>
-                  <input type="number" class="form-control form-control-sm" id="mid_trade_duration_days"
-                         name="mid_trade_duration_days"
-                         value="{{ season_config.mid_trade_duration_days if season_config and season_config.mid_trade_duration_days else 2 }}"
-                         min="1" max="3">
-                  <div class="form-text" style="font-size:.7rem;">Max 3 days</div>
-                </div>
-                <div class="col-md-4">
-                  <label for="mid_delist_duration_days" class="form-label" style="font-size:.75rem;">Delist Period Duration (days)</label>
-                  <input type="number" class="form-control form-control-sm" id="mid_delist_duration_days"
-                         name="mid_delist_duration_days"
-                         value="{{ season_config.mid_delist_duration_days if season_config and season_config.mid_delist_duration_days else 2 }}"
-                         min="1" max="3">
-                  <div class="form-text" style="font-size:.7rem;">Max 3 days</div>
-                </div>
-              </div>
-              <div class="mb-3" style="font-size:.7rem;color:#6e7681;">
-                <i class="bi bi-info-circle me-1"></i>
-                Order: <strong style="color:#c9d1d9;">Trade Window</strong> &rarr; <strong style="color:#c9d1d9;">Delist Period</strong> &rarr; <strong style="color:#c9d1d9;">Supplemental Draft</strong>
-              </div>
-            </div>
-
-            {# Delist + Draft toggle + settings #}
-            <div class="col-12">
-              <div class="d-flex align-items-center justify-content-between mb-2 pb-2" style="border-bottom:1px solid #21262d;">
-                <div class="d-flex align-items-center gap-2">
-                  <i class="bi bi-list-check" style="color:#58a6ff;"></i>
-                  <span class="fw-bold" style="font-size:.85rem;">Delist &amp; Mini-Draft</span>
-                </div>
-                <label class="settings-toggle mb-0">
-                  <input type="checkbox" id="mid_season_draft_enabled" name="mid_season_draft_enabled"
-                         {{ 'checked' if season_config and season_config.mid_season_draft_enabled }}>
+                  <input type="checkbox" name="mid_season_draft_enabled"
+                         {{ 'checked' if mid_enabled }}>
                   <span class="toggle-track"></span>
                 </label>
               </div>
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">Draft after AFL Round</label>
+                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">After Round</label>
                   <input type="number" class="form-control form-control-sm" id="mid_season_draft_after_round"
                          name="mid_season_draft_after_round"
-                         value="{{ season_config.mid_season_draft_after_round if season_config and season_config.mid_season_draft_after_round else '' }}"
-                         min="1" max="24" placeholder="e.g. 13">
+                         value="{{ season_config.mid_season_draft_after_round if season_config and season_config.mid_season_draft_after_round else 12 }}"
+                         min="1" max="24" placeholder="12">
                 </div>
-                <div class="col-md-3">
-                  <label for="mid_season_draft_picks" class="form-label" style="font-size:.75rem;">Draft Picks per Team</label>
-                  <input type="number" class="form-control form-control-sm" id="mid_season_draft_picks"
-                         name="mid_season_draft_picks"
-                         value="{{ season_config.mid_season_draft_picks if season_config and season_config.mid_season_draft_picks else 1 }}"
-                         min="1" max="10">
-                </div>
-                <div class="col-md-3">
-                  <label for="mid_season_delist_required" class="form-label" style="font-size:.75rem;">Delists Required</label>
-                  <input type="number" class="form-control form-control-sm" id="mid_season_delist_required"
-                         name="mid_season_delist_required"
-                         value="{{ season_config.mid_season_delist_required if season_config and season_config.mid_season_delist_required else 1 }}"
-                         min="0" max="10">
-                </div>
+              </div>
+              <div class="mt-2" style="font-size:.7rem;color:#6e7681;">
+                <i class="bi bi-info-circle me-1"></i>
+                Trade window opens for 2 days after this round, then 1 day delist period, then supplemental draft
               </div>
             </div>
           </div>
