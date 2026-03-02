@@ -22,8 +22,8 @@
         {% endif %}
       </div>
     </div>
-    <div class="squad-hero-actions">
-      {# List Management dropdown #}
+    {# Desktop: original pill actions #}
+    <div class="squad-hero-actions d-none d-lg-flex">
       <div class="dropdown">
         <button class="squad-pill squad-pill-manage dropdown-toggle" data-bs-toggle="dropdown">
           <i class="bi bi-gear"></i>List Management
@@ -38,7 +38,6 @@
       </div>
       <a href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}" class="squad-pill squad-pill-stats"><i class="bi bi-graph-up"></i>Stats</a>
       <a href="{{ url_for('team.team_analytics', league_id=league.id, team_id=team.id) }}" class="squad-pill squad-pill-manage"><i class="bi bi-bar-chart-line"></i>Analytics</a>
-      {# View toggle — separate pills #}
       <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}"
          class="squad-pill squad-pill-field {{ 'active' if view|default('field') == 'field' }}">
         <i class="bi bi-diagram-3"></i>Field
@@ -49,6 +48,27 @@
       </a>
     </div>
   </div>
+</div>
+
+{# ── Mobile: clean horizontal tab bar ── #}
+<div class="mob-subnav d-lg-none">
+  <a class="mob-subnav-item {{ 'active' if view|default('field') == 'field' }}"
+     href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">
+    <i class="bi bi-diagram-3"></i><span>Field</span>
+  </a>
+  <a class="mob-subnav-item {{ 'active' if view|default('field') == 'table' }}"
+     href="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='table') }}">
+    <i class="bi bi-table"></i><span>List</span>
+  </a>
+  <a class="mob-subnav-item" href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}">
+    <i class="bi bi-graph-up"></i><span>Stats</span>
+  </a>
+  <a class="mob-subnav-item" href="{{ url_for('team.team_analytics', league_id=league.id, team_id=team.id) }}">
+    <i class="bi bi-bar-chart-line"></i><span>Analytics</span>
+  </a>
+  <a class="mob-subnav-item" href="{{ url_for('trades.trade_center', league_id=league.id) }}">
+    <i class="bi bi-arrow-left-right"></i><span>Trades</span>
+  </a>
 </div>
 
 {% if not is_owner %}

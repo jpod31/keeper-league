@@ -83,17 +83,17 @@
   </div>
 </div>
 
-{# Tab buttons #}
-<div class="d-flex gap-2 mb-3 flex-wrap">
-  <button class="tab-button active" onclick="switchTab('leaders')">
-    <i class="bi bi-award me-1"></i>League Leaders
-  </button>
-  <button class="tab-button" onclick="switchTab('lookup')">
-    <i class="bi bi-search me-1"></i>Player Lookup
-  </button>
-  <button class="tab-button" onclick="switchTab('team')">
-    <i class="bi bi-bar-chart me-1"></i>Team Analysis
-  </button>
+{# Tab buttons — use subnav style #}
+<div class="league-subnav" style="margin-bottom:1rem;">
+  <a class="league-subtab active" href="#" onclick="event.preventDefault();switchTab('leaders');" data-tab="leaders">
+    <i class="bi bi-award"></i>Leaders
+  </a>
+  <a class="league-subtab" href="#" onclick="event.preventDefault();switchTab('lookup');" data-tab="lookup">
+    <i class="bi bi-search"></i>Lookup
+  </a>
+  <a class="league-subtab" href="#" onclick="event.preventDefault();switchTab('team');" data-tab="team">
+    <i class="bi bi-bar-chart"></i>Team
+  </a>
 </div>
 
 {# ═══ TAB 1: League Leaders ═══ #}
@@ -380,9 +380,10 @@
 // ── Tab switching ──
 function switchTab(tabName) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.league-subtab[data-tab]').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tabName).classList.add('active');
-  event.currentTarget.classList.add('active');
+  var activeTab = document.querySelector('.league-subtab[data-tab="' + tabName + '"]');
+  if (activeTab) activeTab.classList.add('active');
 }
 
 // ── Player search data (embedded from server) ──

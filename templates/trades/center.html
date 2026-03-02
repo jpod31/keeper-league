@@ -25,26 +25,24 @@
   </div>
 {% endif %}
 
-<ul class="nav nav-tabs mb-4">
-  <li class="nav-item">
-    <a class="nav-link {{ 'active' if tab == 'incoming' }}"
-       href="{{ url_for('trades.trade_center', league_id=league.id, tab='incoming') }}">
-      Incoming
-      {% set pending_count = incoming|selectattr('status', 'equalto', 'pending')|list|length %}
-      {% if pending_count %}
-        <span class="badge" style="background:#f85149;font-size:.65rem;margin-left:4px;">{{ pending_count }}</span>
-      {% endif %}
-    </a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link {{ 'active' if tab == 'outgoing' }}"
-       href="{{ url_for('trades.trade_center', league_id=league.id, tab='outgoing') }}">Outgoing</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link {{ 'active' if tab == 'history' }}"
-       href="{{ url_for('trades.trade_center', league_id=league.id, tab='history') }}">History</a>
-  </li>
-</ul>
+<div class="league-subnav">
+  <a class="league-subtab{{ ' active' if tab == 'incoming' }}"
+     href="{{ url_for('trades.trade_center', league_id=league.id, tab='incoming') }}">
+    <i class="bi bi-inbox"></i>Incoming
+    {% set pending_count = incoming|selectattr('status', 'equalto', 'pending')|list|length %}
+    {% if pending_count %}
+      <span class="badge" style="background:#f85149;font-size:.55rem;margin-left:4px;border-radius:8px;">{{ pending_count }}</span>
+    {% endif %}
+  </a>
+  <a class="league-subtab{{ ' active' if tab == 'outgoing' }}"
+     href="{{ url_for('trades.trade_center', league_id=league.id, tab='outgoing') }}">
+    <i class="bi bi-send"></i>Outgoing
+  </a>
+  <a class="league-subtab{{ ' active' if tab == 'history' }}"
+     href="{{ url_for('trades.trade_center', league_id=league.id, tab='history') }}">
+    <i class="bi bi-clock-history"></i>History
+  </a>
+</div>
 
 {% macro trade_row(trade) %}
   <a href="{{ url_for('trades.trade_detail', league_id=league.id, trade_id=trade.id) }}" class="trade-card">

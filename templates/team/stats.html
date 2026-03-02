@@ -6,11 +6,29 @@
   <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">{{ team.name }}</a> / Stats</div>
   <div class="d-flex justify-content-between align-items-start">
     <h2>{{ team.name }} — Stats</h2>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 d-none d-lg-flex">
       <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-people me-1"></i>Squad</a>
       <a href="{{ url_for('team.lineup', league_id=league.id, team_id=team.id, afl_round=1) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-layout-text-window me-1"></i>Lineup</a>
     </div>
   </div>
+</div>
+{# ── Mobile: clean horizontal tab bar ── #}
+<div class="mob-subnav d-lg-none">
+  <a class="mob-subnav-item" href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">
+    <i class="bi bi-diagram-3"></i><span>Field</span>
+  </a>
+  <a class="mob-subnav-item" href="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='table') }}">
+    <i class="bi bi-table"></i><span>List</span>
+  </a>
+  <a class="mob-subnav-item active" href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}">
+    <i class="bi bi-graph-up"></i><span>Stats</span>
+  </a>
+  <a class="mob-subnav-item" href="{{ url_for('team.team_analytics', league_id=league.id, team_id=team.id) }}">
+    <i class="bi bi-bar-chart-line"></i><span>Analytics</span>
+  </a>
+  <a class="mob-subnav-item" href="{{ url_for('trades.trade_center', league_id=league.id) }}">
+    <i class="bi bi-arrow-left-right"></i><span>Trades</span>
+  </a>
 </div>
 
 <div class="row g-3 mb-4">
