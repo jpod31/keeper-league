@@ -331,14 +331,23 @@ def api_available_players(league_id):
     from models.player import orm_to_player
     from models.draft_model import rank_players, _apply_custom_sc_projection, DRAFT_WEIGHTS
 
-    user_weights_row = UserDraftWeights.query.filter_by(
-        user_id=current_user.id, league_id=league_id
-    ).first()
-    if user_weights_row:
-        weights = user_weights_row.to_dict()
+    # Check for weight overrides from query params (sent by slider Apply)
+    weight_keys = ["sc_average", "age_factor", "positional_scarcity",
+                    "trajectory", "durability", "rating_potential"]
+    has_overrides = any(request.args.get(f"w_{k}") for k in weight_keys)
+    if has_overrides:
+        raw = {k: float(request.args.get(f"w_{k}", 0.2)) for k in weight_keys}
+        total = sum(raw.values())
+        weights = {k: round(v / total, 4) if total > 0 else 0.2 for k, v in raw.items()}
     else:
-        lw = LeagueDraftWeights.query.filter_by(league_id=league_id).first()
-        weights = lw.to_dict() if lw else DRAFT_WEIGHTS
+        user_weights_row = UserDraftWeights.query.filter_by(
+            user_id=current_user.id, league_id=league_id
+        ).first()
+        if user_weights_row:
+            weights = user_weights_row.to_dict()
+        else:
+            lw = LeagueDraftWeights.query.filter_by(league_id=league_id).first()
+            weights = lw.to_dict() if lw else DRAFT_WEIGHTS
 
     if players:
         league = db.session.get(League, league_id)

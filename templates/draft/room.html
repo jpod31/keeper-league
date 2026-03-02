@@ -779,7 +779,10 @@ function searchPlayers() {
   const q = document.getElementById('player-search').value;
   const pos = document.getElementById('pos-filter').value;
   const ageFilter = document.getElementById('age-filter').value;
-  fetch(`/leagues/${LEAGUE_ID}/draft/api/available?q=${encodeURIComponent(q)}&pos=${pos}&limit=200`)
+  // Include current slider weights so Apply works without saving
+  const w = getWeightValues();
+  const wParams = WEIGHT_KEYS.map(k => `w_${k}=${w[k]}`).join('&');
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/available?q=${encodeURIComponent(q)}&pos=${pos}&limit=200&${wParams}`)
     .then(r => r.json())
     .then(players => {
       // Client-side age filter
@@ -999,8 +1002,6 @@ function getWeightValues() {
 }
 
 function applyWeights() {
-  // Re-fetch available players — the server uses saved weights,
-  // but we can pass overrides as query params for instant preview
   searchPlayers();
 }
 
