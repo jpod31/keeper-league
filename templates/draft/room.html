@@ -4,7 +4,7 @@
 {% block league_content %}
 <style>
 /* ── Draft Chat ── */
-.draft-chat-card { max-height: 320px; }
+.draft-chat-card { flex-shrink: 0; }
 .chat-msg {
   padding: .3rem .6rem;
   font-size: .78rem;
@@ -25,6 +25,16 @@
   padding: .25rem .6rem;
 }
 .chat-toggle-collapsed { transform: rotate(-90deg); }
+
+/* ── Right column layout — keep everything in viewport ── */
+.draft-right-col {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 180px); /* banner + header + padding */
+  gap: .75rem;
+}
+.draft-right-col > .card { flex-shrink: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.draft-right-col > .card > .card-body { overflow-y: auto; flex: 1; min-height: 0; }
 
 /* ── Available Players table — prominent styling ── */
 .draft-avail-tbl { font-size: .82rem; }
@@ -58,11 +68,19 @@
   /* Hide AFL Team in pick history */
   .draft-hist-tbl th:nth-child(6),
   .draft-hist-tbl td:nth-child(6) { display: none; }
-  .col-lg-5 .card, .col-lg-7 .card { max-height: 50vh !important; }
+  /* Right col becomes normal flow on mobile */
+  .draft-right-col { max-height: none; }
+  /* Cap individual cards on mobile */
+  .col-lg-5 > .card,
+  .col-lg-7 > .card { max-height: 50vh !important; }
+  .draft-chat-card { max-height: none !important; } /* chat keeps its own sizing */
+  #chat-messages { height: 150px !important; }
   .table td, .table th { padding: .25rem .35rem; font-size: .75rem; }
   .card-header .row.g-2 { flex-wrap: wrap; }
   .card-header .row.g-2 .col { min-width: 100%; margin-bottom: .25rem; }
   .card-header .row.g-2 .col-auto { min-width: auto; }
+  /* Bottom padding so chat input isn't behind bottom nav */
+  .draft-right-col { padding-bottom: 80px; }
 }
 @media (max-width: 575.98px) {
   .page-header h2 { font-size: 1.1rem; }
@@ -263,10 +281,11 @@
     </div>
   </div>
 
-  <!-- Pick History + Your Team (right) -->
+  <!-- Pick History + Your Team + Chat (right) -->
   <div class="col-lg-5">
+   <div class="draft-right-col">
     <!-- Pick History -->
-    <div class="card mb-3" style="max-height:40vh;overflow:hidden;display:flex;flex-direction:column;">
+    <div class="card" style="flex:2;">
       <div class="card-header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
@@ -319,7 +338,7 @@
 
     <!-- Your Team -->
     {% if user_team %}
-      <div class="card mb-3" style="max-height:30vh;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="card" style="flex:1;">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
             <i class="bi bi-person-badge me-2" style="color:#58a6ff;"></i>{{ user_team.name }}
@@ -340,7 +359,7 @@
     {% endif %}
 
     <!-- Draft Chat -->
-    <div class="card draft-chat-card" style="display:flex;flex-direction:column;">
+    <div class="card draft-chat-card" style="flex-shrink:0;">
       <div class="card-header d-flex justify-content-between align-items-center" style="cursor:pointer;" onclick="toggleChat()">
         <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
           <i class="bi bi-chat-dots me-2" style="color:#d29922;"></i>Draft Chat
@@ -368,6 +387,7 @@
         </div>
       </div>
     </div>
+   </div>{# /draft-right-col #}
   </div>
 </div>
 {% endblock %}
@@ -951,6 +971,15 @@ addPickToHistory = function(pick) {
     addChatSystemMsg(pick.team_name + ' drafted ' + pick.player_name);
   }
 };
+
+// Start chat collapsed on mobile
+if (window.innerWidth < 992) {
+  chatOpen = false;
+  var chatBody = document.getElementById('chat-body');
+  var chatIcon = document.getElementById('chat-toggle-icon');
+  if (chatBody) chatBody.style.display = 'none';
+  if (chatIcon) chatIcon.classList.add('chat-toggle-collapsed');
+}
 
 // Initial load
 fetchPositionNeeds();
