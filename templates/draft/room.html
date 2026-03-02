@@ -848,6 +848,7 @@ function canPick() {
 }
 
 function pickPlayer(playerId, playerName, playerPos, playerTeam) {
+  alert('pickPlayer called: ' + playerName + ' (id=' + playerId + ') connected=' + socket.connected);
   if (!socket.connected) {
     alert('Not connected — refresh the page.');
     return;
