@@ -217,7 +217,7 @@
 <div class="row g-3">
   <!-- Available Players (left) -->
   <div class="col-lg-7">
-    <div class="card" style="max-height:78vh;overflow:hidden;display:flex;flex-direction:column;">
+    <div class="card" style="display:flex;flex-direction:column;">
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
@@ -303,9 +303,17 @@
               <option value="30+">30+</option>
             </select>
           </div>
+          <div class="col-auto">
+            <select class="form-select form-select-sm" id="club-filter" onchange="searchPlayers()" style="width:auto;">
+              <option value="">All Clubs</option>
+              {% for team_name in TEAM_LOGOS.keys()|sort %}
+              <option value="{{ team_name }}">{{ team_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
-      <div class="card-body p-0" style="overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <div class="card-body p-0" style="overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:70vh;">
         <table class="table table-hover table-sm mb-0 draft-avail-tbl">
           <thead class="sticky-top" style="background:#161b22;">
             <tr>
@@ -792,21 +800,27 @@ function searchPlayers() {
   const q = document.getElementById('player-search').value;
   const pos = document.getElementById('pos-filter').value;
   const ageFilter = document.getElementById('age-filter').value;
+  const clubFilter = document.getElementById('club-filter').value;
   // Include current slider weights so Apply works without saving
   const w = getWeightValues();
   const wParams = WEIGHT_KEYS.map(k => `w_${k}=${w[k]}`).join('&');
-  fetch(`/leagues/${LEAGUE_ID}/draft/api/available?q=${encodeURIComponent(q)}&pos=${pos}&limit=200&${wParams}`)
+  const fetchLimit = clubFilter ? 800 : 200;
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/available?q=${encodeURIComponent(q)}&pos=${pos}&limit=${fetchLimit}&${wParams}`)
     .then(r => r.json())
     .then(players => {
       // Client-side age filter
       let filtered = players;
       if (ageFilter) {
-        filtered = players.filter(p => {
+        filtered = filtered.filter(p => {
           if (!p.age) return false;
           if (ageFilter === '30+') return p.age >= 30;
           if (ageFilter === '25-30') return p.age >= 25 && p.age <= 30;
           return p.age < parseInt(ageFilter);
         });
+      }
+      // Client-side club filter
+      if (clubFilter) {
+        filtered = filtered.filter(p => p.afl_team === clubFilter);
       }
       // Sort
       filtered = sortPlayers(filtered);
