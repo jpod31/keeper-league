@@ -176,11 +176,6 @@ def register_draft_events(socketio):
                 emit("error", {"message": "No draft session"})
                 return
 
-            # Only allowed for supplemental drafts
-            if session.draft_round_type != "supplemental":
-                emit("error", {"message": "Passing is only allowed in supplemental drafts"})
-                return
-
             # Verify it's this user's turn
             state = get_draft_state(session.id)
             if not state or not state.get("current_team_id"):

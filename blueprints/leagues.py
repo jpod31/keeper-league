@@ -1415,12 +1415,91 @@ def player_pool(league_id):
 
     rolling = _compute_rolling_averages()
 
+    # SSP pickup: check if user's team is below squad_size
+    user_team = FantasyTeam.query.filter_by(
+        league_id=league_id, owner_id=current_user.id
+    ).first()
+    roster_count = 0
+    can_pickup = False
+    if user_team:
+        roster_count = FantasyRoster.query.filter_by(
+            team_id=user_team.id, is_active=True
+        ).count()
+        can_pickup = roster_count < (league.squad_size or 0)
+
     return render_template("leagues/player_pool.html",
                            league=league,
                            players=players,
                            rolling=rolling,
                            rostered_map=rostered_map,
-                           team_colours=team_colours)
+                           team_colours=team_colours,
+                           user_team=user_team,
+                           roster_count=roster_count,
+                           can_pickup=can_pickup)
+
+
+@leagues_bp.route("/<int:league_id>/player-pool/pickup", methods=["POST"])
+@login_required
+def player_pickup(league_id):
+    """Pick up a free agent when team is below squad_size."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+
+    user_team = FantasyTeam.query.filter_by(
+        league_id=league_id, owner_id=current_user.id
+    ).first()
+    if not user_team:
+        return jsonify({"error": "You don't have a team in this league"}), 403
+
+    roster_count = FantasyRoster.query.filter_by(
+        team_id=user_team.id, is_active=True
+    ).count()
+    if roster_count >= (league.squad_size or 0):
+        return jsonify({"error": "Your roster is full (%d/%d)" % (roster_count, league.squad_size)}), 409
+
+    data = request.get_json(silent=True) or {}
+    player_id = data.get("player_id")
+    if not player_id:
+        return jsonify({"error": "Missing player_id"}), 400
+
+    player = db.session.get(AflPlayer, player_id)
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+
+    # Check player isn't already rostered in this league
+    already = (
+        db.session.query(FantasyRoster.id)
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .filter(
+            FantasyTeam.league_id == league_id,
+            FantasyRoster.player_id == player_id,
+            FantasyRoster.is_active == True,
+        )
+        .first()
+    )
+    if already:
+        return jsonify({"error": "%s is already rostered" % player.name}), 409
+
+    # Add to roster
+    entry = FantasyRoster(
+        team_id=user_team.id,
+        player_id=player_id,
+        is_active=True,
+        acquired_via="free_agent",
+    )
+    db.session.add(entry)
+    db.session.commit()
+
+    new_count = FantasyRoster.query.filter_by(
+        team_id=user_team.id, is_active=True
+    ).count()
+    return jsonify({
+        "ok": True,
+        "player_name": player.name,
+        "roster_count": new_count,
+        "squad_size": league.squad_size,
+    })
 
 
 @leagues_bp.route("/<int:league_id>/players/compare")
