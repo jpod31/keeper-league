@@ -17,28 +17,50 @@
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sort-numeric-down me-2" style="color:#8b949e;"></i>Draft Order</h5>
-        <form method="POST" class="d-inline">
-          <input type="hidden" name="action" value="randomize">
-          <button type="submit" class="btn btn-outline-secondary btn-sm" {% if session and session.status != 'scheduled' %}disabled{% endif %}>
-            <i class="bi bi-shuffle me-1"></i>Randomize
-          </button>
-        </form>
+        <div class="d-flex gap-2">
+          <form method="POST" class="d-inline">
+            <input type="hidden" name="action" value="randomize">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" {% if session and session.status != 'scheduled' %}disabled{% endif %}>
+              <i class="bi bi-shuffle me-1"></i>Randomize
+            </button>
+          </form>
+        </div>
       </div>
       <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-          <thead><tr><th style="width:60px;">Pick</th><th>Team</th><th>Owner</th></tr></thead>
-          <tbody>
-            {% for team in teams %}
-              <tr>
-                <td>
-                  <span class="d-inline-flex align-items-center justify-content-center rounded" style="width:28px;height:28px;background:#21262d;font-size:.75rem;font-weight:600;border-radius:6px !important;">{{ team.draft_order }}</span>
-                </td>
-                <td class="fw-bold">{{ team.name }}</td>
-                <td style="color:#8b949e;">{{ team.owner.display_name }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        {% set can_edit = not session or session.status == 'scheduled' %}
+        <form method="POST" id="orderForm">
+          <input type="hidden" name="action" value="save_order">
+          <input type="hidden" name="order" id="orderInput">
+        </form>
+        <div class="draft-order-list" id="draftOrderList">
+          {% for team in teams %}
+            <div class="draft-order-row{% if can_edit %} draggable{% endif %}" data-team-id="{{ team.id }}"{% if can_edit %} draggable="true"{% endif %}>
+              <div class="draft-order-grip">
+                {% if can_edit %}<i class="bi bi-grip-vertical"></i>{% endif %}
+              </div>
+              <div class="draft-order-pick">
+                <span class="pick-badge">{{ loop.index }}</span>
+              </div>
+              <div class="draft-order-info">
+                <div class="draft-order-name">{{ team.name }}</div>
+                <div class="draft-order-owner">{{ team.owner.display_name }}</div>
+              </div>
+              {% if can_edit %}
+                <div class="draft-order-arrows">
+                  <button type="button" class="arrow-btn" onclick="moveRow(this, -1)" {% if loop.first %}disabled{% endif %}><i class="bi bi-chevron-up"></i></button>
+                  <button type="button" class="arrow-btn" onclick="moveRow(this, 1)" {% if loop.last %}disabled{% endif %}><i class="bi bi-chevron-down"></i></button>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        {% if can_edit %}
+          <div class="draft-order-save d-none" id="saveBar">
+            <button type="button" class="btn btn-primary btn-sm w-100" onclick="saveOrder()">
+              <i class="bi bi-check-lg me-1"></i>Save Order
+            </button>
+          </div>
+        {% endif %}
       </div>
     </div>
 
@@ -360,4 +382,254 @@
 
   </div>
 </div>
+
+<style>
+.draft-order-list { display: flex; flex-direction: column; }
+.draft-order-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .65rem 1rem;
+  border-bottom: 1px solid var(--kl-border);
+  background: var(--kl-bg-card);
+  transition: background .12s, transform .12s, box-shadow .12s;
+  user-select: none;
+}
+.draft-order-row:last-child { border-bottom: none; }
+.draft-order-row.draggable { cursor: grab; }
+.draft-order-row.dragging {
+  opacity: .85;
+  background: var(--kl-bg-elevated);
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  z-index: 10;
+}
+.draft-order-row.drag-over-above { box-shadow: inset 0 2px 0 var(--kl-accent-blue); }
+.draft-order-row.drag-over-below { box-shadow: inset 0 -2px 0 var(--kl-accent-blue); }
+.draft-order-grip {
+  color: var(--kl-text-faint);
+  font-size: 1.1rem;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.draft-order-row.draggable:hover .draft-order-grip { color: var(--kl-text-secondary); }
+.pick-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  background: #21262d;
+  font-size: .75rem;
+  font-weight: 700;
+  border-radius: 6px;
+  color: var(--kl-text-primary);
+}
+.draft-order-info { flex: 1; min-width: 0; }
+.draft-order-name { font-weight: 600; font-size: .85rem; color: var(--kl-text-heading); }
+.draft-order-owner { font-size: .72rem; color: var(--kl-text-muted); }
+.draft-order-arrows { display: flex; flex-direction: column; gap: 2px; }
+.arrow-btn {
+  background: none;
+  border: 1px solid var(--kl-border);
+  color: var(--kl-text-secondary);
+  border-radius: 4px;
+  padding: 0;
+  width: 24px; height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: .65rem;
+  transition: background .12s, color .12s;
+}
+.arrow-btn:hover:not(:disabled) { background: var(--kl-bg-elevated); color: var(--kl-text-heading); }
+.arrow-btn:disabled { opacity: .25; cursor: default; }
+.draft-order-save { padding: .75rem 1rem; border-top: 1px solid var(--kl-border); }
+.draft-order-changed .pick-badge { background: var(--kl-accent-blue); color: #fff; }
+@media (max-width: 768px) {
+  .draft-order-row { padding: .6rem .75rem; gap: .5rem; }
+  .arrow-btn { width: 32px; height: 28px; font-size: .75rem; }
+  .draft-order-grip { font-size: 1.3rem; }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var list = document.getElementById('draftOrderList');
+  var saveBar = document.getElementById('saveBar');
+  if (!list) return;
+
+  var originalOrder = getOrder();
+  var dragEl = null;
+  var touchStartY = 0;
+  var touchClone = null;
+  var touchCurrentTarget = null;
+
+  function getOrder() {
+    return Array.from(list.querySelectorAll('.draft-order-row')).map(function(r) { return r.dataset.teamId; });
+  }
+
+  function updatePicks() {
+    var rows = list.querySelectorAll('.draft-order-row');
+    rows.forEach(function(row, i) {
+      row.querySelector('.pick-badge').textContent = i + 1;
+      /* Update arrow disabled states */
+      var arrows = row.querySelectorAll('.arrow-btn');
+      if (arrows.length === 2) {
+        arrows[0].disabled = (i === 0);
+        arrows[1].disabled = (i === rows.length - 1);
+      }
+    });
+    /* Show/hide save bar */
+    var changed = JSON.stringify(getOrder()) !== JSON.stringify(originalOrder);
+    if (saveBar) {
+      saveBar.classList.toggle('d-none', !changed);
+      list.classList.toggle('draft-order-changed', changed);
+    }
+  }
+
+  /* ── Arrow buttons ── */
+  window.moveRow = function(btn, dir) {
+    var row = btn.closest('.draft-order-row');
+    if (dir === -1 && row.previousElementSibling) {
+      list.insertBefore(row, row.previousElementSibling);
+    } else if (dir === 1 && row.nextElementSibling) {
+      list.insertBefore(row.nextElementSibling, row);
+    }
+    updatePicks();
+  };
+
+  /* ── Save order ── */
+  window.saveOrder = function() {
+    document.getElementById('orderInput').value = getOrder().join(',');
+    document.getElementById('orderForm').submit();
+  };
+
+  /* ── HTML5 Drag & Drop (desktop) ── */
+  list.addEventListener('dragstart', function(e) {
+    var row = e.target.closest('.draft-order-row');
+    if (!row || !row.classList.contains('draggable')) return;
+    dragEl = row;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  });
+
+  list.addEventListener('dragend', function() {
+    if (dragEl) dragEl.classList.remove('dragging');
+    clearIndicators();
+    dragEl = null;
+    updatePicks();
+  });
+
+  list.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var target = e.target.closest('.draft-order-row');
+    if (!target || target === dragEl) return;
+    clearIndicators();
+    var rect = target.getBoundingClientRect();
+    var mid = rect.top + rect.height / 2;
+    if (e.clientY < mid) {
+      target.classList.add('drag-over-above');
+    } else {
+      target.classList.add('drag-over-below');
+    }
+  });
+
+  list.addEventListener('drop', function(e) {
+    e.preventDefault();
+    var target = e.target.closest('.draft-order-row');
+    if (!target || !dragEl || target === dragEl) return;
+    var rect = target.getBoundingClientRect();
+    var mid = rect.top + rect.height / 2;
+    if (e.clientY < mid) {
+      list.insertBefore(dragEl, target);
+    } else {
+      list.insertBefore(dragEl, target.nextSibling);
+    }
+    clearIndicators();
+  });
+
+  /* ── Touch drag (mobile) ── */
+  list.addEventListener('touchstart', function(e) {
+    var row = e.target.closest('.draft-order-row.draggable');
+    if (!row) return;
+    var grip = e.target.closest('.draft-order-grip');
+    if (!grip) return; /* Only drag from grip handle */
+    e.preventDefault();
+    dragEl = row;
+    touchStartY = e.touches[0].clientY;
+
+    /* Create floating clone */
+    touchClone = row.cloneNode(true);
+    touchClone.style.cssText = 'position:fixed;left:0;right:0;z-index:9999;pointer-events:none;opacity:.9;box-shadow:0 8px 24px rgba(0,0,0,.4);';
+    var rect = row.getBoundingClientRect();
+    touchClone.style.top = rect.top + 'px';
+    touchClone.style.width = rect.width + 'px';
+    document.body.appendChild(touchClone);
+
+    row.style.opacity = '.3';
+  }, { passive: false });
+
+  list.addEventListener('touchmove', function(e) {
+    if (!dragEl || !touchClone) return;
+    e.preventDefault();
+    var y = e.touches[0].clientY;
+    var rect = dragEl.getBoundingClientRect();
+    touchClone.style.top = (y - rect.height / 2) + 'px';
+
+    /* Find target row under finger */
+    clearIndicators();
+    var rows = list.querySelectorAll('.draft-order-row');
+    touchCurrentTarget = null;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i] === dragEl) continue;
+      var r = rows[i].getBoundingClientRect();
+      if (y > r.top && y < r.bottom) {
+        touchCurrentTarget = rows[i];
+        var mid = r.top + r.height / 2;
+        if (y < mid) {
+          rows[i].classList.add('drag-over-above');
+        } else {
+          rows[i].classList.add('drag-over-below');
+        }
+        break;
+      }
+    }
+  }, { passive: false });
+
+  list.addEventListener('touchend', function() {
+    if (!dragEl) return;
+    if (touchClone) {
+      touchClone.remove();
+      touchClone = null;
+    }
+    dragEl.style.opacity = '';
+
+    if (touchCurrentTarget) {
+      if (touchCurrentTarget.classList.contains('drag-over-above')) {
+        list.insertBefore(dragEl, touchCurrentTarget);
+      } else {
+        list.insertBefore(dragEl, touchCurrentTarget.nextSibling);
+      }
+    }
+
+    clearIndicators();
+    dragEl = null;
+    touchCurrentTarget = null;
+    updatePicks();
+  });
+
+  function clearIndicators() {
+    list.querySelectorAll('.drag-over-above,.drag-over-below').forEach(function(el) {
+      el.classList.remove('drag-over-above', 'drag-over-below');
+    });
+  }
+})();
+</script>
 {% endblock %}

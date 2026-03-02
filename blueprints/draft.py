@@ -110,6 +110,18 @@ def draft_setup(league_id):
             flash("Draft order randomized!", "success")
             return redirect(url_for("draft_live.draft_setup", league_id=league_id))
 
+        elif action == "save_order":
+            order_str = request.form.get("order", "")
+            if order_str:
+                team_ids = [int(x) for x in order_str.split(",") if x.strip()]
+                for i, tid in enumerate(team_ids):
+                    team = db.session.get(FantasyTeam, tid)
+                    if team and team.league_id == league_id:
+                        team.draft_order = i + 1
+                db.session.commit()
+                flash("Draft order saved!", "success")
+            return redirect(url_for("draft_live.draft_setup", league_id=league_id))
+
         elif action == "create_session":
             if initial_session:
                 flash("Draft session already exists.", "warning")
