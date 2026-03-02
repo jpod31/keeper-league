@@ -280,6 +280,31 @@ def api_draft_state(league_id):
     return jsonify(get_draft_state(session.id))
 
 
+@draft_bp.route("/<int:league_id>/draft/api/update_schedule", methods=["POST"])
+@login_required
+def api_update_schedule(league_id):
+    """Commissioner can update the draft scheduled start from the draft room."""
+    league = db.session.get(League, league_id)
+    if not league or league.commissioner_id != current_user.id:
+        return jsonify({"error": "Not authorised"}), 403
+    session = _get_active_draft_session(league_id)
+    if not session or session.status != "scheduled":
+        return jsonify({"error": "No scheduled draft session"}), 400
+    data = request.get_json(silent=True) or {}
+    sched = data.get("scheduled_start")
+    from datetime import datetime
+    if sched:
+        try:
+            session.scheduled_start = datetime.fromisoformat(sched)
+        except ValueError:
+            return jsonify({"error": "Invalid date/time"}), 400
+    else:
+        session.scheduled_start = None
+    db.session.commit()
+    iso = session.scheduled_start.isoformat() if session.scheduled_start else None
+    return jsonify({"status": "ok", "scheduled_start": iso})
+
+
 @draft_bp.route("/<int:league_id>/draft/api/available")
 @login_required
 def api_available_players(league_id):

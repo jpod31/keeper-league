@@ -61,6 +61,7 @@
 /* ── Mobile-responsive draft room ──────────────────────────────── */
 @media (max-width: 991.98px) {
   .draft-banner { flex-direction: column; gap: .5rem; text-align: center; padding: .75rem; }
+  #schedule-input { font-size: .7rem !important; max-width: 180px; }
   .draft-banner .draft-pick-badge { width: 36px; height: 36px; font-size: .85rem; }
   .draft-timer-block { margin-top: .25rem; }
   .draft-timer { font-size: 1.5rem !important; }
@@ -150,8 +151,45 @@
 </form>
 {% endif %}
 
+<!-- Pre-draft Countdown (only when scheduled) -->
+<div id="countdown-banner" class="draft-banner" style="display:{% if session.status == 'scheduled' %}flex{% else %}none{% endif %};">
+  <div class="d-flex align-items-center gap-3">
+    <div class="draft-pick-badge" style="background:rgba(210,153,34,.15);color:#d29922;">
+      <i class="bi bi-hourglass-split" style="font-size:1rem;"></i>
+    </div>
+    <div>
+      <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;">Draft Starts In</div>
+      <div id="countdown-text" style="font-size:1.1rem;font-weight:700;color:#d29922;">
+        {% if session.scheduled_start %}
+          Loading...
+        {% else %}
+          No time set
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    {% if is_commissioner %}
+      <div class="d-flex align-items-center gap-2">
+        <input type="datetime-local" id="schedule-input" class="form-control form-control-sm"
+               value="{{ session.scheduled_start.strftime('%Y-%m-%dT%H:%M') if session.scheduled_start else '' }}"
+               style="font-size:.75rem;background:#0d1117;border-color:#30363d;color:#c9d1d9;width:auto;">
+        <button class="btn btn-outline-warning btn-sm" onclick="updateSchedule()" style="font-size:.7rem;white-space:nowrap;">
+          <i class="bi bi-clock me-1"></i>Set Time
+        </button>
+      </div>
+    {% else %}
+      <div id="countdown-date-display" style="font-size:.8rem;color:#8b949e;">
+        {% if session.scheduled_start %}
+          {{ session.scheduled_start.strftime('%a %d %b, %I:%M %p') }}
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Current Pick Banner -->
-<div id="current-pick-banner" class="draft-banner{% if user_team and state.current_team_id == user_team.id %} draft-banner-your-pick{% endif %}">
+<div id="current-pick-banner" class="draft-banner{% if user_team and state.current_team_id == user_team.id %} draft-banner-your-pick{% endif %}" style="{% if session.status == 'scheduled' %}display:none;{% endif %}">
   <div class="d-flex align-items-center gap-3">
     <div class="draft-pick-badge">
       <span id="current-pick-num">{{ state.current_pick or '-' }}</span>
@@ -518,10 +556,85 @@ socket.on('error', (data) => {
   alert(data.message);
 });
 
+// ── Pre-draft countdown ──
+let scheduledStart = {{ (session.scheduled_start.isoformat()|tojson) if session.scheduled_start else 'null' }};
+let countdownInterval = null;
+
+function formatCountdown(diffMs) {
+  if (diffMs <= 0) return 'Starting soon...';
+  const secs = Math.floor(diffMs / 1000);
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor((secs % 86400) / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
+  if (h > 0) return h + 'h ' + m + 'm ' + s + 's';
+  if (m > 0) return m + 'm ' + s + 's';
+  return s + 's';
+}
+
+function startCountdown() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  const el = document.getElementById('countdown-text');
+  if (!scheduledStart) {
+    el.textContent = 'No time set';
+    return;
+  }
+  function tick() {
+    const diff = new Date(scheduledStart) - new Date();
+    el.textContent = formatCountdown(diff);
+    if (diff <= 0) {
+      el.textContent = 'Starting soon...';
+      el.style.color = '#3fb950';
+    } else {
+      el.style.color = '#d29922';
+    }
+  }
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+}
+
+function updateSchedule() {
+  const input = document.getElementById('schedule-input');
+  const val = input.value;
+  socket.emit('update_schedule', { league_id: LEAGUE_ID, scheduled_start: val || null });
+}
+
+socket.on('schedule_updated', (data) => {
+  scheduledStart = data.scheduled_start;
+  startCountdown();
+  // Update the date display for non-commissioners
+  const dateEl = document.getElementById('countdown-date-display');
+  if (dateEl && scheduledStart) {
+    const d = new Date(scheduledStart);
+    dateEl.textContent = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+      + ', ' + d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+  }
+  // Update input if present
+  const input = document.getElementById('schedule-input');
+  if (input && scheduledStart) {
+    input.value = scheduledStart.slice(0, 16);
+  }
+});
+
+if (draftState.status === 'scheduled') startCountdown();
+
 function updateUI() {
   const statusEl = document.getElementById('draft-status');
   statusEl.textContent = draftState.status;
   statusEl.className = 'status-pill status-' + draftState.status.replace('_', '-');
+
+  // Toggle countdown vs pick banner
+  const countdownBanner = document.getElementById('countdown-banner');
+  const pickBanner = document.getElementById('current-pick-banner');
+  if (draftState.status === 'scheduled') {
+    countdownBanner.style.display = 'flex';
+    pickBanner.style.display = 'none';
+  } else {
+    countdownBanner.style.display = 'none';
+    pickBanner.style.display = 'flex';
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  }
 
   document.getElementById('current-pick-num').textContent = draftState.current_pick || '-';
   document.getElementById('current-round').textContent = draftState.current_round || '-';

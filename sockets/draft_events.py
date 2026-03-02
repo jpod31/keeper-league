@@ -310,6 +310,43 @@ def register_draft_events(socketio):
         except Exception:
             logger.exception("Error in draft_chat handler")
 
+    @socketio.on("update_schedule", namespace="/draft")
+    def handle_update_schedule(data):
+        """Commissioner updates the draft scheduled start — broadcast to room."""
+        try:
+            league_id = data.get("league_id")
+            scheduled_start = data.get("scheduled_start")  # ISO string or null
+            if not league_id:
+                return
+
+            league = db.session.get(League, league_id)
+            if not league or league.commissioner_id != current_user.id:
+                emit("error", {"message": "Only the commissioner can change the draft time"})
+                return
+
+            session = _get_active_session(league_id)
+            if not session or session.status != "scheduled":
+                emit("error", {"message": "Draft is not in scheduled state"})
+                return
+
+            from datetime import datetime
+            if scheduled_start:
+                try:
+                    session.scheduled_start = datetime.fromisoformat(scheduled_start)
+                except ValueError:
+                    emit("error", {"message": "Invalid date/time"})
+                    return
+            else:
+                session.scheduled_start = None
+            db.session.commit()
+
+            iso = session.scheduled_start.isoformat() if session.scheduled_start else None
+            emit("schedule_updated", {"scheduled_start": iso}, room=f"draft_{league_id}")
+        except Exception:
+            logger.exception("Error in update_schedule handler")
+            db.session.rollback()
+            emit("error", {"message": "An error occurred updating the schedule"})
+
     @socketio.on("end_draft", namespace="/draft")
     def handle_end_draft(data):
         try:
