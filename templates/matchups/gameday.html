@@ -5,51 +5,50 @@
 
 {# ═══════════════════════ BYE ROUND ═══════════════════════ #}
 {% if is_bye %}
-<div class="gameday-hero" style="text-align:center;">
+<div class="gameday-hero hero-upcoming" style="text-align:center;">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="gameday-round-title mb-0">ROUND {{ afl_round }}</h2>
-    <span class="gameday-state-badge badge-bye">Bye</span>
+    <span class="gameday-state-badge badge-bye"><i class="bi bi-dash-circle me-1"></i>BYE</span>
   </div>
   {% if round_dates %}
     <div class="gameday-round-dates">{{ round_dates }}</div>
   {% endif %}
-  <p style="color:#c9d1d9;font-size:.95rem;margin-bottom:6px;margin-top:20px;">You have a bye this round.</p>
-  <p style="color:#484f58;font-size:.85rem;margin-bottom:20px;">Check out the other matchups.</p>
-  <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">View All Matchups</a>
+  <p style="color:var(--kl-text-primary);font-size:.95rem;margin-bottom:6px;margin-top:20px;">You have a bye this round.</p>
+  <p style="color:var(--kl-text-faint);font-size:.85rem;margin-bottom:20px;">Check out the other matchups below.</p>
 </div>
 
 {% else %}
 {# ═══════════════════════ HERO CARD ═══════════════════════ #}
-<div class="gameday-hero" id="hero-card">
+<div class="gameday-hero hero-{{ gameday_state }}" id="hero-card">
   {# Header: Round title + state badge #}
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h2 class="gameday-round-title mb-0">ROUND {{ afl_round }}</h2>
     {% if gameday_state == 'live' %}
-      <span class="gameday-state-badge badge-live"><span class="live-pulse-dot"></span> Live</span>
+      <span class="gameday-state-badge badge-live"><i class="bi bi-broadcast me-1"></i><span class="live-pulse-dot"></span> LIVE</span>
     {% elif gameday_state == 'completed' %}
-      <span class="gameday-state-badge badge-final">Final</span>
+      <span class="gameday-state-badge badge-final"><i class="bi bi-check-circle-fill me-1"></i>FINAL</span>
     {% else %}
-      <span class="gameday-state-badge badge-upcoming">Upcoming</span>
+      <span class="gameday-state-badge badge-upcoming"><i class="bi bi-calendar-event me-1"></i>UPCOMING</span>
     {% endif %}
   </div>
 
-  {# Round dates — upcoming only #}
-  {% if gameday_state == 'upcoming' and round_dates %}
+  {# Round dates #}
+  {% if round_dates %}
     <div class="gameday-round-dates">{{ round_dates }}</div>
   {% endif %}
 
-  {# AFL game pills — live state only, inside hero #}
-  {% if gameday_state == 'live' and afl_games %}
+  {# ── AFL game pills — ALL states ── #}
+  {% if afl_games %}
   <div class="gameday-afl-pills mt-2 mb-3">
     {% for g in afl_games %}
       <div class="game-status-pill" id="game-{{ g.game_id }}">
         <span class="game-teams">{{ g.home_team[:3]|upper }} v {{ g.away_team[:3]|upper }}</span>
         {% if g.status == 'live' %}
-          <span class="badge bg-success" style="font-size:.6rem;animation:pulse 2s infinite;">LIVE</span>
+          <span class="badge game-badge-live">LIVE</span>
         {% elif g.status == 'complete' %}
-          <span class="badge" style="font-size:.6rem;background:#238636;">FT</span>
+          <span class="badge game-badge-ft">FT</span>
         {% else %}
-          <span class="badge" style="font-size:.6rem;background:#21262d;color:#8b949e;">
+          <span class="badge game-badge-sched">
             {% if g.scheduled_start %}{{ g.scheduled_start[11:16] }}{% else %}TBC{% endif %}
           </span>
         {% endif %}
@@ -64,13 +63,17 @@
   {# ── Score area ── #}
   {% set total = (my_score + opp_score) or 1 %}
   {% set my_pct = (my_score / total * 100)|round(1) %}
+  {% set opp_pct = (100 - my_pct)|round(1) %}
   <div class="row align-items-center text-center gameday-score-row">
     <div class="col-5">
+      <div class="gameday-team-initials-wrap">
+        <span class="gameday-team-initial my-initial">{{ my_team.name[:2]|upper }}</span>
+      </div>
       <div class="gameday-team-name">{{ my_team.name }}</div>
       {% if gameday_state != 'upcoming' %}
         <div class="gameday-score {{ 'gameday-winning' if my_score > opp_score else '' }}" id="hero-my-score">{{ '%.0f'|format(my_score) }}</div>
         {% if league.scoring_type == 'ultimate_footy' %}
-          <div style="color:#8b949e;font-size:.7rem;">categories won</div>
+          <div style="color:var(--kl-text-secondary);font-size:.7rem;">categories won</div>
         {% elif my_captain_bonus > 0 %}
           <div class="captain-bonus" id="hero-my-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
         {% else %}
@@ -82,11 +85,14 @@
       <div class="gameday-vs">vs</div>
     </div>
     <div class="col-5">
+      <div class="gameday-team-initials-wrap">
+        <span class="gameday-team-initial opp-initial">{{ opp_team.name[:2]|upper }}</span>
+      </div>
       <div class="gameday-team-name">{{ opp_team.name }}</div>
       {% if gameday_state != 'upcoming' %}
         <div class="gameday-score {{ 'gameday-winning' if opp_score > my_score else '' }}" id="hero-opp-score">{{ '%.0f'|format(opp_score) }}</div>
         {% if league.scoring_type == 'ultimate_footy' %}
-          <div style="color:#8b949e;font-size:.7rem;">categories won</div>
+          <div style="color:var(--kl-text-secondary);font-size:.7rem;">categories won</div>
         {% elif opp_captain_bonus > 0 %}
           <div class="captain-bonus" id="hero-opp-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
         {% else %}
@@ -98,10 +104,14 @@
 
   {# Margin bar — live/completed only #}
   {% if gameday_state != 'upcoming' %}
-  <div class="gameday-margin-bar mt-3">
-    <div class="gameday-margin-fill" id="margin-fill" style="width:{{ my_pct }}%;"></div>
+  <div class="gameday-margin-wrap mt-3">
+    <span class="gameday-margin-pct left">{{ my_pct }}%</span>
+    <div class="gameday-margin-bar">
+      <div class="gameday-margin-fill" id="margin-fill" style="width:{{ my_pct }}%;"></div>
+    </div>
+    <span class="gameday-margin-pct right">{{ opp_pct }}%</span>
   </div>
-  <div class="text-center mt-2" style="font-size:.8rem;color:#8b949e;" id="margin-text">
+  <div class="text-center mt-2" style="font-size:.8rem;color:var(--kl-text-secondary);" id="margin-text">
     {% set diff = (my_score - opp_score)|abs|round(0)|int %}
     {% if gameday_state == 'completed' %}
       {% if my_score > opp_score %}Won by {{ diff }}{% elif opp_score > my_score %}Lost by {{ diff }}{% else %}Draw{% endif %}
@@ -113,7 +123,7 @@
 
   {# First bounce — upcoming only #}
   {% if gameday_state == 'upcoming' and first_bounce %}
-  <div class="text-center mt-3" style="color:#8b949e;font-size:.85rem;">
+  <div class="text-center mt-3" style="color:var(--kl-text-secondary);font-size:.85rem;">
     <i class="bi bi-clock me-1"></i>First bounce: {{ first_bounce }}
   </div>
   {% endif %}
@@ -123,31 +133,35 @@
   <div class="text-center mt-3">
     <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=fixture.id) }}"
        class="btn btn-outline-secondary btn-sm">
-      View Full Breakdown
+      <i class="bi bi-bar-chart-line me-1"></i>View Full Breakdown
     </a>
   </div>
   {% endif %}
 </div>
 
 {# ── Player row macro ── #}
-{% macro player_row(p, locked_ids) %}
-<div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}{{ ' player-reserve' if p.get('lineup_type') == 'reserve' else '' }}">
+{% macro player_row(p, locked_ids, gameday_state) %}
+{% set yet_to_play = (not p.get('game_started', True)) and gameday_state == 'live' %}
+<div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}{{ ' player-reserve' if p.get('lineup_type') == 'reserve' else '' }}{{ ' player-yet-to-play' if yet_to_play else '' }}">
   <span class="gameday-player-info">
+    {% if p.position %}
+      <span class="pos-badge pos-{{ p.position[:3]|upper }} gameday-pos-badge">{{ p.position[:3]|upper }}</span>
+    {% endif %}
     {% if p.is_captain %}<span class="gameday-badge-c">C</span> {% endif %}
     {% if p.is_vice_captain %}<span class="gameday-badge-vc">VC</span> {% endif %}
     {% if p.get('is_dnp') %}<span class="gameday-badge-dnp">DNP</span> {% endif %}
     {% if p.get('subbed_on') %}<span class="gameday-badge-sub"><i class="bi bi-arrow-up-short"></i>SUB</span> {% endif %}
     {% if p.is_emergency and not p.get('subbed_on') %}<span class="gameday-badge-emg">EMG</span> {% endif %}
-    {% if p.player_id in locked_ids %}<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> {% endif %}
+    {% if p.player_id in locked_ids %}<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.6rem;"></i> {% endif %}
     <span class="gameday-player-name">{{ p.name }}</span>
     <span class="gameday-player-meta">
-      {{ p.afl_team }} &middot; {{ p.position }}
+      {{ p.afl_team }}
       {% if p.get('replaces') %}<span class="gameday-sub-note">&rarr; replacing {{ p.replaces }}</span>{% endif %}
     </span>
   </span>
-  <span class="gameday-player-score {{ 'text-success' if p.is_live else 'text-secondary' }}{{ ' score-dnp' if p.get('is_dnp') else '' }}{{ ' score-reserve' if p.get('lineup_type') == 'reserve' else '' }}">
-    {% if p.get('lineup_type') == 'reserve' %}&ndash;{% else %}{{ p.score or 0 }}{% endif %}
-    {% if p.is_live %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}
+  <span class="gameday-player-score {{ 'score-dnp' if p.get('is_dnp') else ('score-reserve' if p.get('lineup_type') == 'reserve' else ('score-ytp' if yet_to_play else ('text-success' if p.is_live else ''))) }}">
+    {% if p.get('lineup_type') == 'reserve' %}&ndash;{% elif yet_to_play %}<i class="bi bi-clock" style="font-size:.65rem;margin-right:2px;"></i>&mdash;{% else %}{{ p.score or 0 }}{% endif %}
+    {% if p.is_live and not yet_to_play %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}
   </span>
 </div>
 {% endmacro %}
@@ -156,13 +170,18 @@
 <div class="row g-3 mt-2">
   {# My team #}
   <div class="col-md-6">
-    <div class="gameday-player-card">
-      <div class="gameday-player-card-header">{{ my_team.name }}</div>
+    <div class="gameday-player-card card-my-team">
+      <div class="gameday-player-card-header">
+        <span>{{ my_team.name }}</span>
+        {% if gameday_state != 'upcoming' %}
+          <span class="gameday-card-score" id="card-my-score">{{ '%.0f'|format(my_score) }}</span>
+        {% endif %}
+      </div>
       <div class="gameday-player-list" id="my-players">
         {% if my_players %}
-          <div class="gameday-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>
+          <div class="gameday-section-hdr section-field"><i class="bi bi-people-fill me-1"></i>Field</div>
           {% for p in my_players if p.lineup_type == 'field' %}
-            {{ player_row(p, locked_player_ids) }}
+            {{ player_row(p, locked_player_ids, gameday_state) }}
           {% endfor %}
 
           {% set bench_emg = [] %}
@@ -170,9 +189,9 @@
             {% if bench_emg.append(p) %}{% endif %}
           {% endfor %}
           {% if bench_emg %}
-            <div class="gameday-section-hdr"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
+            <div class="gameday-section-hdr section-bench"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
             {% for p in bench_emg %}
-              {{ player_row(p, locked_player_ids) }}
+              {{ player_row(p, locked_player_ids, gameday_state) }}
             {% endfor %}
           {% endif %}
 
@@ -181,13 +200,13 @@
             {% if reserve_list.append(p) %}{% endif %}
           {% endfor %}
           {% if reserve_list %}
-            <div class="gameday-section-hdr gameday-section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
+            <div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
             {% for p in reserve_list %}
-              {{ player_row(p, locked_player_ids) }}
+              {{ player_row(p, locked_player_ids, gameday_state) }}
             {% endfor %}
           {% endif %}
         {% else %}
-          <div class="text-center py-3" style="color:#484f58;font-size:.8rem;">No lineup submitted</div>
+          <div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">No lineup submitted</div>
         {% endif %}
       </div>
     </div>
@@ -195,13 +214,18 @@
 
   {# Opponent #}
   <div class="col-md-6">
-    <div class="gameday-player-card">
-      <div class="gameday-player-card-header">{{ opp_team.name }}</div>
+    <div class="gameday-player-card card-opp-team">
+      <div class="gameday-player-card-header">
+        <span>{{ opp_team.name }}</span>
+        {% if gameday_state != 'upcoming' %}
+          <span class="gameday-card-score" id="card-opp-score">{{ '%.0f'|format(opp_score) }}</span>
+        {% endif %}
+      </div>
       <div class="gameday-player-list" id="opp-players">
         {% if opp_players %}
-          <div class="gameday-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>
+          <div class="gameday-section-hdr section-field"><i class="bi bi-people-fill me-1"></i>Field</div>
           {% for p in opp_players if p.lineup_type == 'field' %}
-            {{ player_row(p, locked_player_ids) }}
+            {{ player_row(p, locked_player_ids, gameday_state) }}
           {% endfor %}
 
           {% set opp_bench_emg = [] %}
@@ -209,9 +233,9 @@
             {% if opp_bench_emg.append(p) %}{% endif %}
           {% endfor %}
           {% if opp_bench_emg %}
-            <div class="gameday-section-hdr"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
+            <div class="gameday-section-hdr section-bench"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
             {% for p in opp_bench_emg %}
-              {{ player_row(p, locked_player_ids) }}
+              {{ player_row(p, locked_player_ids, gameday_state) }}
             {% endfor %}
           {% endif %}
 
@@ -220,132 +244,248 @@
             {% if opp_reserve_list.append(p) %}{% endif %}
           {% endfor %}
           {% if opp_reserve_list %}
-            <div class="gameday-section-hdr gameday-section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
+            <div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
             {% for p in opp_reserve_list %}
-              {{ player_row(p, locked_player_ids) }}
+              {{ player_row(p, locked_player_ids, gameday_state) }}
             {% endfor %}
           {% endif %}
         {% else %}
-          <div class="text-center py-3" style="color:#484f58;font-size:.8rem;">No lineup submitted</div>
+          <div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">No lineup submitted</div>
         {% endif %}
       </div>
     </div>
   </div>
 </div>
+{% endif %}
+
+{# ═══════════════════════ ALL MATCHUPS SECTION ═══════════════════════ #}
+{% if round_fixtures %}
+<div class="gameday-all-matchups mt-4" id="all-matchups">
+  <div class="gameday-matchups-header">
+    <i class="bi bi-grid-3x2-gap me-2"></i>ROUND {{ afl_round }} MATCHUPS
+  </div>
+  <div class="gameday-matchups-grid">
+    {% for f in round_fixtures %}
+      {% set h_score = round_scores.get(f.home_team_id, {}).get('total_score', 0) %}
+      {% set a_score = round_scores.get(f.away_team_id, {}).get('total_score', 0) %}
+      {% set is_users = (not is_bye) and (user_team and (f.home_team_id == user_team.id or f.away_team_id == user_team.id)) %}
+      {% set f_total = (h_score + a_score) or 1 %}
+      {% set h_pct = (h_score / f_total * 100)|round(0)|int %}
+      <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=f.id) }}"
+         class="gameday-matchup-card {{ 'matchup-yours' if is_users else '' }}"
+         id="matchup-card-{{ f.id }}"
+         data-fixture-id="{{ f.id }}"
+         data-home-team-id="{{ f.home_team_id }}"
+         data-away-team-id="{{ f.away_team_id }}">
+        {% if is_users %}<span class="matchup-your-tag">Your Match</span>{% endif %}
+        <div class="matchup-team-row">
+          <span class="matchup-team-name {{ 'matchup-winner' if h_score > a_score and f.status != 'scheduled' else '' }}">
+            {{ f.home_team.name }}
+          </span>
+          <span class="matchup-team-score" data-side="home">
+            {% if f.status != 'scheduled' %}{{ '%.0f'|format(h_score) }}{% endif %}
+            {% if h_score > a_score and f.status != 'scheduled' %}<i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.7rem;"></i>{% endif %}
+          </span>
+        </div>
+        <div class="matchup-team-row">
+          <span class="matchup-team-name {{ 'matchup-winner' if a_score > h_score and f.status != 'scheduled' else '' }}">
+            {{ f.away_team.name }}
+          </span>
+          <span class="matchup-team-score" data-side="away">
+            {% if f.status != 'scheduled' %}{{ '%.0f'|format(a_score) }}{% endif %}
+            {% if a_score > h_score and f.status != 'scheduled' %}<i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.7rem;"></i>{% endif %}
+          </span>
+        </div>
+        {% if f.status != 'scheduled' %}
+          <div class="matchup-mini-bar">
+            <div class="matchup-mini-fill" style="width:{{ h_pct }}%;"></div>
+          </div>
+          {% set margin = (h_score - a_score)|abs|round(0)|int %}
+          <div class="matchup-margin">
+            {% if h_score > a_score %}{{ f.home_team.name[:10] }} +{{ margin }}{% elif a_score > h_score %}{{ f.away_team.name[:10] }} +{{ margin }}{% else %}Draw{% endif %}
+          </div>
+        {% else %}
+          <div class="matchup-status-text">
+            <i class="bi bi-calendar-event" style="font-size:.6rem;"></i> Upcoming
+          </div>
+        {% endif %}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 {# ── Footer ── #}
-<div class="mt-3 d-flex align-items-center justify-content-between" style="font-size:.75rem;color:#484f58;">
+<div class="mt-3 d-flex align-items-center justify-content-between" style="font-size:.75rem;color:var(--kl-text-faint);">
   <span>
-    {% if gameday_state == 'live' %}
-      <i class="bi bi-broadcast me-1" style="color:#238636;"></i>Live updates via WebSocket
-    {% elif gameday_state == 'completed' %}
+    {% if not is_bye and gameday_state == 'live' %}
+      <i class="bi bi-broadcast me-1" style="color:var(--kl-accent-green);"></i>Live updates via WebSocket
+    {% elif not is_bye and gameday_state == 'completed' %}
       Final results
     {% else %}
       &nbsp;
     {% endif %}
   </span>
-  <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" style="color:#58a6ff;text-decoration:none;font-size:.75rem;">
-    View all rounds &rarr;
+  <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" style="color:var(--kl-text-secondary);text-decoration:none;font-size:.7rem;">
+    Season Fixture &rarr;
   </a>
 </div>
-{% endif %}
 
 <style>
+  /* ════════════════════════════════════════════════
+     HERO CARD — state-based accents
+     ════════════════════════════════════════════════ */
+  .gameday-hero {
+    background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 12px;
+    padding: 24px 20px 20px; margin-bottom: 4px; position: relative;
+    border-top: 3px solid transparent;
+  }
+  .hero-live {
+    border-image: linear-gradient(90deg, #238636, #3fb950) 1;
+    box-shadow: 0 0 20px rgba(35,134,54,.1), 0 0 40px rgba(35,134,54,.05);
+  }
+  .hero-completed {
+    border-top-color: var(--kl-text-secondary);
+  }
+  .hero-upcoming {
+    border-image: linear-gradient(90deg, #1f6feb, #58a6ff) 1;
+  }
+
   /* ── State badges ── */
   .gameday-state-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: .7rem; font-weight: 700; padding: 4px 10px;
-    border-radius: 12px; text-transform: uppercase; letter-spacing: .5px;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: .72rem; font-weight: 700; padding: 5px 12px;
+    border-radius: 14px; text-transform: uppercase; letter-spacing: .5px;
   }
-  .badge-upcoming { background: #21262d; color: #8b949e; }
+  .badge-upcoming { background: rgba(31,111,235,.12); color: var(--kl-accent-blue); border: 1px solid rgba(31,111,235,.25); }
   .badge-live { background: rgba(35,134,54,.15); color: #3fb950; border: 1px solid rgba(35,134,54,.3); }
-  .badge-final { background: #21262d; color: #c9d1d9; }
-  .badge-bye { background: #21262d; color: #8b949e; }
+  .badge-final { background: var(--kl-bg-elevated); color: var(--kl-text-primary); }
+  .badge-bye { background: var(--kl-bg-elevated); color: var(--kl-text-secondary); }
 
   .live-pulse-dot {
-    display: inline-block; width: 6px; height: 6px;
+    display: inline-block; width: 7px; height: 7px;
     background: #3fb950; border-radius: 50%;
     animation: pulse 2s infinite;
   }
 
   .gameday-round-title {
-    font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; color: #c9d1d9;
+    font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; color: var(--kl-text-heading);
   }
-  .gameday-round-dates { color: #8b949e; font-size: .8rem; }
+  .gameday-round-dates { color: var(--kl-text-secondary); font-size: .8rem; }
+
+  /* ── Team initials ── */
+  .gameday-team-initials-wrap { margin-bottom: 6px; }
+  .gameday-team-initial {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%; font-weight: 800;
+    font-size: .85rem; letter-spacing: .5px;
+  }
+  .my-initial { background: linear-gradient(135deg, #238636, #3fb950); color: #fff; }
+  .opp-initial { background: linear-gradient(135deg, #6e40c9, #bc8cff); color: #fff; }
+
+  /* ── Score area ── */
+  .gameday-score-row { margin-top: 8px; }
+  .gameday-team-name { color: var(--kl-text-heading); font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+  .gameday-score {
+    font-size: 3.2rem; font-weight: 800; color: var(--kl-text-secondary); line-height: 1;
+    font-variant-numeric: tabular-nums; transition: color .3s;
+  }
+  .gameday-winning { color: var(--kl-accent-green) !important; }
+  .gameday-vs { color: var(--kl-text-faint); font-size: .85rem; font-weight: 600; }
+  .captain-bonus { color: var(--kl-accent-yellow); font-size: .75rem; }
 
   /* ── Game status pills ── */
   .gameday-afl-pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
   .game-status-pill {
     display: inline-flex; align-items: center; gap: 6px;
-    background: #0d1117; border: 1px solid #30363d; border-radius: 16px;
+    background: var(--kl-bg-body); border: 1px solid var(--kl-border); border-radius: 16px;
     padding: 4px 10px; font-size: .72rem;
   }
-  .game-teams { color: #c9d1d9; font-weight: 600; }
-  .game-afl-score { color: #8b949e; font-size: .7rem; }
-  .captain-bonus { color: #d29922; font-size: .75rem; }
-
-  /* ── Hero card ── */
-  .gameday-hero {
-    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
-    padding: 24px 20px 20px; margin-bottom: 4px;
-  }
-  .gameday-score-row { margin-top: 8px; }
-  .gameday-team-name { color: #c9d1d9; font-weight: 600; font-size: .95rem; margin-bottom: 4px; }
-  .gameday-score {
-    font-size: 2.8rem; font-weight: 800; color: #8b949e; line-height: 1;
-    transition: color .3s;
-  }
-  .gameday-winning { color: #3fb950; }
-  .gameday-vs { color: #484f58; font-size: .85rem; font-weight: 600; }
+  .game-teams { color: var(--kl-text-primary); font-weight: 600; }
+  .game-afl-score { color: var(--kl-text-secondary); font-size: .7rem; font-variant-numeric: tabular-nums; }
+  .game-badge-live { font-size: .6rem; background: #238636; color: #fff; animation: pulse 2s infinite; }
+  .game-badge-ft { font-size: .6rem; background: #238636; color: #fff; }
+  .game-badge-sched { font-size: .6rem; background: var(--kl-bg-elevated); color: var(--kl-text-secondary); }
 
   /* ── Margin bar ── */
+  .gameday-margin-wrap {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .gameday-margin-pct {
+    font-size: .65rem; color: var(--kl-text-muted); font-weight: 600;
+    font-variant-numeric: tabular-nums; min-width: 32px;
+  }
+  .gameday-margin-pct.left { text-align: right; }
+  .gameday-margin-pct.right { text-align: left; }
   .gameday-margin-bar {
-    height: 6px; background: #f85149; border-radius: 3px; overflow: hidden;
+    flex: 1; height: 8px;
+    background: linear-gradient(90deg, #f85149, #da3633);
+    border-radius: 4px; overflow: hidden;
   }
   .gameday-margin-fill {
-    height: 100%; background: #3fb950; border-radius: 3px;
-    transition: width .6s ease;
+    height: 100%;
+    background: linear-gradient(90deg, #238636, #3fb950);
+    border-radius: 4px; transition: width .6s ease;
   }
 
-  /* ── Player cards ── */
+  /* ════════════════════════════════════════════════
+     PLAYER CARDS
+     ════════════════════════════════════════════════ */
   .gameday-player-card {
-    background: #0d1117; border: 1px solid #21262d; border-radius: 10px; overflow: hidden;
+    background: var(--kl-bg-body); border: 1px solid var(--kl-bg-elevated); border-radius: 10px; overflow: hidden;
   }
+  .card-my-team { border-left: 3px solid var(--kl-accent-green); }
+  .card-opp-team { border-left: 3px solid var(--kl-text-muted); }
+
   .gameday-player-card-header {
-    background: #161b22; padding: 10px 14px; font-weight: 600; font-size: .85rem;
-    color: #c9d1d9; border-bottom: 1px solid #21262d;
+    background: var(--kl-bg-card); padding: 10px 14px; font-weight: 600; font-size: .85rem;
+    color: var(--kl-text-primary); border-bottom: 1px solid var(--kl-bg-elevated);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .gameday-card-score {
+    font-weight: 800; font-size: .95rem; color: var(--kl-text-heading);
+    font-variant-numeric: tabular-nums;
   }
   .gameday-player-list { max-height: 600px; overflow-y: auto; }
   .gameday-player-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 7px 14px; border-bottom: 1px solid #161b22; font-size: .8rem;
+    padding: 7px 14px; border-bottom: 1px solid var(--kl-bg-card); font-size: .8rem;
     transition: background .15s;
   }
   .gameday-player-row:last-child { border-bottom: none; }
-  .gameday-player-row:hover { background: #161b22; }
+  .gameday-player-row:hover { background: var(--kl-bg-card); }
   .player-locked { opacity: 0.7; }
 
   .gameday-player-info { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
-  .gameday-player-name { color: #c9d1d9; white-space: nowrap; }
-  .gameday-player-meta { color: #484f58; font-size: .7rem; white-space: nowrap; }
-  .gameday-player-score { font-weight: 600; white-space: nowrap; }
-  .gameday-live-dot { font-size: .35rem; color: #238636; vertical-align: middle; margin-left: 3px; }
+  .gameday-player-name { color: var(--kl-text-primary); white-space: nowrap; }
+  .gameday-player-meta { color: var(--kl-text-faint); font-size: .7rem; white-space: nowrap; }
+  .gameday-player-score {
+    font-weight: 600; white-space: nowrap; color: var(--kl-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .gameday-live-dot { font-size: .35rem; color: #238636; vertical-align: middle; margin-left: 3px; animation: pulse 2s infinite; }
 
-  /* ── Badges ── */
+  /* Position badges (small inline) */
+  .gameday-pos-badge {
+    padding: 1px 5px !important; font-size: .55rem !important; border-radius: 3px !important;
+    line-height: 1.4;
+  }
+
+  /* ── Player badges ── */
   .gameday-badge-c {
-    display: inline-block; background: #d29922; color: #000; font-size: .55rem;
+    display: inline-block; background: var(--kl-accent-yellow); color: #000; font-size: .55rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-vc {
-    display: inline-block; background: #58a6ff; color: #000; font-size: .55rem;
+    display: inline-block; background: var(--kl-accent-blue); color: #000; font-size: .55rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-emg {
-    display: inline-block; background: #f85149; color: #fff; font-size: .55rem;
+    display: inline-block; background: var(--kl-accent-red); color: #fff; font-size: .55rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-dnp {
-    display: inline-block; background: #484f58; color: #c9d1d9; font-size: .55rem;
+    display: inline-block; background: var(--kl-text-faint); color: var(--kl-text-primary); font-size: .55rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-sub {
@@ -353,50 +493,133 @@
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-sub i { font-size: .6rem; vertical-align: middle; }
-  .gameday-sub-note { color: #3fb950; font-size: .65rem; font-style: italic; }
+  .gameday-sub-note { color: var(--kl-accent-green); font-size: .65rem; font-style: italic; }
 
   /* ── Player states ── */
   .player-dnp { opacity: 0.45; }
-  .player-dnp .gameday-player-name { text-decoration: line-through; }
-  .score-dnp { color: #484f58 !important; }
+  .player-dnp .gameday-player-name { text-decoration: line-through; color: var(--kl-accent-red); }
+  .score-dnp { color: var(--kl-text-faint) !important; }
   .player-subbed-on { background: rgba(35,134,54,.08); }
   .player-reserve { opacity: 0.5; }
-  .player-reserve .gameday-player-name { color: #484f58; }
-  .score-reserve { color: #30363d !important; }
+  .player-reserve .gameday-player-name { color: var(--kl-text-faint); }
+  .score-reserve { color: var(--kl-border) !important; }
+  .player-yet-to-play .gameday-player-score { color: var(--kl-text-muted); }
+  .score-ytp { color: var(--kl-text-muted) !important; }
 
   /* ── Section headers ── */
   .gameday-section-hdr {
     padding: 6px 14px; font-size: .65rem; font-weight: 700;
-    color: #8b949e; text-transform: uppercase; letter-spacing: .5px;
-    background: #161b22; border-bottom: 1px solid #21262d;
+    color: var(--kl-text-secondary); text-transform: uppercase; letter-spacing: .5px;
+    background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-bg-elevated);
+    border-left: 3px solid transparent;
   }
-  .gameday-section-reserve { color: #484f58; }
+  .section-field { border-left-color: var(--kl-accent-green); }
+  .section-bench { border-left-color: var(--kl-accent-blue); }
+  .section-reserve { border-left-color: var(--kl-text-faint); color: var(--kl-text-faint); }
   .gameday-section-note {
     font-weight: 400; text-transform: none; letter-spacing: 0;
-    color: #30363d; margin-left: 4px; font-style: italic;
+    color: var(--kl-border); margin-left: 4px; font-style: italic;
   }
 
-  /* ── Animations ── */
+  /* ════════════════════════════════════════════════
+     ALL MATCHUPS SECTION
+     ════════════════════════════════════════════════ */
+  .gameday-all-matchups {
+    background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 12px;
+    overflow: hidden;
+  }
+  .gameday-matchups-header {
+    padding: 12px 16px; font-size: .75rem; font-weight: 700; color: var(--kl-text-secondary);
+    text-transform: uppercase; letter-spacing: .8px;
+    background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-border);
+  }
+  .gameday-matchups-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px; padding: 14px;
+  }
+
+  .gameday-matchup-card {
+    display: block; text-decoration: none; color: inherit;
+    background: var(--kl-bg-body); border: 1px solid var(--kl-bg-elevated);
+    border-radius: 8px; padding: 12px 14px; position: relative;
+    transition: transform .15s, border-color .15s, box-shadow .15s;
+  }
+  .gameday-matchup-card:hover {
+    transform: translateY(-2px); border-color: var(--kl-border-light);
+    box-shadow: 0 4px 12px rgba(0,0,0,.3); color: inherit; text-decoration: none;
+  }
+  .matchup-yours {
+    border-color: var(--kl-accent-blue) !important;
+    background: rgba(31,111,235,.04);
+  }
+  .matchup-your-tag {
+    position: absolute; top: -1px; right: 10px;
+    font-size: .55rem; font-weight: 700; text-transform: uppercase;
+    color: var(--kl-accent-blue); background: rgba(31,111,235,.15);
+    padding: 2px 8px; border-radius: 0 0 6px 6px; letter-spacing: .3px;
+  }
+
+  .matchup-team-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 3px 0; font-size: .8rem;
+  }
+  .matchup-team-name { color: var(--kl-text-primary); font-weight: 500; }
+  .matchup-winner { color: var(--kl-text-heading); font-weight: 700; }
+  .matchup-team-score {
+    font-weight: 700; font-size: .85rem; color: var(--kl-text-secondary);
+    font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 3px;
+  }
+
+  .matchup-mini-bar {
+    height: 4px; background: var(--kl-accent-red); border-radius: 2px;
+    overflow: hidden; margin-top: 8px; opacity: 0.6;
+  }
+  .matchup-mini-fill {
+    height: 100%; background: var(--kl-accent-green); border-radius: 2px;
+    transition: width .6s ease;
+  }
+  .matchup-margin {
+    font-size: .65rem; color: var(--kl-text-muted); text-align: center; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .matchup-status-text {
+    font-size: .65rem; color: var(--kl-text-faint); text-align: center; margin-top: 8px;
+  }
+
+  /* ════════════════════════════════════════════════
+     ANIMATIONS
+     ════════════════════════════════════════════════ */
   .score-flash { animation: scoreFlash 1.5s ease-out; }
   @keyframes scoreFlash {
-    0% { color: #58a6ff; text-shadow: 0 0 8px rgba(88,166,255,.5); }
+    0% { color: var(--kl-accent-blue); text-shadow: 0 0 8px rgba(88,166,255,.5); }
     100% { color: inherit; text-shadow: none; }
   }
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
   }
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(35,134,54,.1), 0 0 40px rgba(35,134,54,.05); }
+    50% { box-shadow: 0 0 30px rgba(35,134,54,.15), 0 0 60px rgba(35,134,54,.08); }
+  }
+  .hero-live { animation: glowPulse 4s ease-in-out infinite; }
 
-  /* ── Mobile ── */
+  /* ════════════════════════════════════════════════
+     MOBILE
+     ════════════════════════════════════════════════ */
   @media (max-width: 767.98px) {
-    .gameday-score { font-size: 2rem; }
-    .gameday-team-name { font-size: .8rem; }
+    .gameday-score { font-size: 2.2rem; }
+    .gameday-team-name { font-size: .85rem; }
+    .gameday-team-initial { width: 30px; height: 30px; font-size: .7rem; }
     .gameday-hero { padding: 18px 12px 14px; }
     .gameday-player-row { padding: 6px 10px; font-size: .75rem; }
     .gameday-player-meta { display: none; }
     .gameday-round-title { font-size: 1.1rem; }
     .gameday-afl-pills { gap: 4px; }
     .game-status-pill { font-size: .65rem; padding: 3px 8px; }
+    .gameday-matchups-grid { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
+    .gameday-pos-badge { display: none !important; }
+    .gameday-margin-pct { font-size: .6rem; }
   }
 </style>
 {% endblock %}
@@ -412,6 +635,8 @@ const IS_HOME = {{ 'true' if is_home else 'false' }};
 const LIVE_ENABLED = {{ 'true' if live_enabled else 'false' }};
 const GAMEDAY_STATE = "{{ gameday_state }}";
 const FALLBACK_URL = "{{ url_for('matchups.api_live_scores', league_id=league.id, afl_round=afl_round) }}";
+const MY_TEAM_ID = {{ my_team.id }};
+const OPP_TEAM_ID = {{ opp_team.id }};
 
 function flashScore(el) {
     el.classList.remove('score-flash');
@@ -438,6 +663,12 @@ function updateHero(myScore, oppScore, myCapBonus, oppCapBonus) {
     myEl.classList.toggle('gameday-winning', myScore > oppScore);
     oppEl.classList.toggle('gameday-winning', oppScore > myScore);
 
+    // Card header scores
+    const cardMyEl = document.getElementById('card-my-score');
+    const cardOppEl = document.getElementById('card-opp-score');
+    if (cardMyEl) cardMyEl.textContent = newMy;
+    if (cardOppEl) cardOppEl.textContent = newOpp;
+
     // Captain bonus
     const myCapEl = document.getElementById('hero-my-cap');
     if (myCapEl) {
@@ -458,11 +689,16 @@ function updateHero(myScore, oppScore, myCapBonus, oppCapBonus) {
         }
     }
 
-    // Margin bar
+    // Margin bar + percentages
     const total = (myScore + oppScore) || 1;
     const pct = (myScore / total * 100).toFixed(1);
+    const oppPct = (100 - parseFloat(pct)).toFixed(1);
     const fillEl = document.getElementById('margin-fill');
     if (fillEl) fillEl.style.width = pct + '%';
+    const leftPct = document.querySelector('.gameday-margin-pct.left');
+    const rightPct = document.querySelector('.gameday-margin-pct.right');
+    if (leftPct) leftPct.textContent = pct + '%';
+    if (rightPct) rightPct.textContent = oppPct + '%';
 
     // Margin text
     const diff = Math.abs(Math.round(myScore - oppScore));
@@ -485,13 +721,26 @@ function renderPlayerRow(p, lockedIds) {
     const isDnp = p.is_dnp || false;
     const isSubOn = p.subbed_on || false;
     const isReserve = (p.lineup_type || '') === 'reserve';
+    const yetToPlay = !(p.game_started === undefined ? true : p.game_started) && GAMEDAY_STATE === 'live';
     let rowClass = 'gameday-player-row';
     if (isLocked) rowClass += ' player-locked';
     if (isDnp) rowClass += ' player-dnp';
     if (isSubOn) rowClass += ' player-subbed-on';
     if (isReserve) rowClass += ' player-reserve';
+    if (yetToPlay) rowClass += ' player-yet-to-play';
 
-    const scoreClass = isReserve ? 'score-reserve' : (isDnp ? 'score-dnp' : (p.is_live ? 'text-success' : 'text-secondary'));
+    let scoreClass = 'gameday-player-score';
+    if (isReserve) scoreClass += ' score-reserve';
+    else if (isDnp) scoreClass += ' score-dnp';
+    else if (yetToPlay) scoreClass += ' score-ytp';
+    else if (p.is_live) scoreClass += ' text-success';
+
+    // Position badge
+    let posBadge = '';
+    if (p.position) {
+        const posCode = (p.position || '').substring(0, 3).toUpperCase();
+        posBadge = '<span class="pos-badge pos-' + posCode + ' gameday-pos-badge">' + posCode + '</span> ';
+    }
 
     let badges = '';
     if (p.is_captain) badges += '<span class="gameday-badge-c">C</span> ';
@@ -499,19 +748,23 @@ function renderPlayerRow(p, lockedIds) {
     if (isDnp) badges += '<span class="gameday-badge-dnp">DNP</span> ';
     if (isSubOn) badges += '<span class="gameday-badge-sub"><i class="bi bi-arrow-up-short"></i>SUB</span> ';
     if (p.is_emergency && !isSubOn) badges += '<span class="gameday-badge-emg">EMG</span> ';
-    if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> ';
+    if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.6rem;"></i> ';
 
-    const liveDot = p.is_live ? ' <i class="bi bi-circle-fill gameday-live-dot"></i>' : '';
+    const liveDot = (p.is_live && !yetToPlay) ? ' <i class="bi bi-circle-fill gameday-live-dot"></i>' : '';
     const subNote = p.replaces ? '<span class="gameday-sub-note">&rarr; replacing ' + p.replaces + '</span>' : '';
-    const scoreText = isReserve ? '&ndash;' : (p.score || 0);
+
+    let scoreText;
+    if (isReserve) scoreText = '&ndash;';
+    else if (yetToPlay) scoreText = '<i class="bi bi-clock" style="font-size:.65rem;margin-right:2px;"></i>&mdash;';
+    else scoreText = (p.score || 0);
 
     return '<div class="' + rowClass + '">'
         + '<span class="gameday-player-info">'
-        + badges
+        + posBadge + badges
         + '<span class="gameday-player-name">' + p.name + '</span>'
-        + '<span class="gameday-player-meta">' + (p.afl_team || '') + ' &middot; ' + (p.position || '') + subNote + '</span>'
+        + '<span class="gameday-player-meta">' + (p.afl_team || '') + subNote + '</span>'
         + '</span>'
-        + '<span class="gameday-player-score ' + scoreClass + '">'
+        + '<span class="' + scoreClass + '">'
         + scoreText + liveDot
         + '</span>'
         + '</div>';
@@ -526,14 +779,14 @@ function renderPlayerList(containerId, players, lockedIds) {
     const reserves = players.filter(function(p) { return p.lineup_type === 'reserve'; });
 
     let html = '';
-    html += '<div class="gameday-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>';
+    html += '<div class="gameday-section-hdr section-field"><i class="bi bi-people-fill me-1"></i>Field</div>';
     field.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
     if (bench.length > 0) {
-        html += '<div class="gameday-section-hdr"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>';
+        html += '<div class="gameday-section-hdr section-bench"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>';
         bench.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
     }
     if (reserves.length > 0) {
-        html += '<div class="gameday-section-hdr gameday-section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>';
+        html += '<div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>';
         reserves.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
     }
     container.innerHTML = html;
@@ -547,21 +800,61 @@ function updateGameStatusPills(gameStatuses) {
         const badges = el.querySelectorAll('.badge');
         badges.forEach(function(badge) {
             if (g.status === 'live') {
-                badge.className = 'badge bg-success';
-                badge.style.fontSize = '.6rem';
-                badge.style.animation = 'pulse 2s infinite';
+                badge.className = 'badge game-badge-live';
                 badge.textContent = 'LIVE';
             } else if (g.status === 'complete') {
-                badge.className = 'badge';
-                badge.style.background = '#238636';
-                badge.style.fontSize = '.6rem';
-                badge.style.animation = '';
+                badge.className = 'badge game-badge-ft';
                 badge.textContent = 'FT';
             }
         });
         const scoreSpan = el.querySelector('.game-afl-score');
         if (scoreSpan && g.home_score !== null) {
             scoreSpan.textContent = g.home_score + '-' + g.away_score;
+        }
+    });
+}
+
+function updateMatchupCards(data) {
+    if (!data.fixtures) return;
+    data.fixtures.forEach(function(f) {
+        const card = document.getElementById('matchup-card-' + f.fixture_id);
+        if (!card) return;
+
+        const homeTeamId = parseInt(card.dataset.homeTeamId);
+        const awayTeamId = parseInt(card.dataset.awayTeamId);
+        const hScore = f.home_score || 0;
+        const aScore = f.away_score || 0;
+
+        // Update scores
+        const scoreEls = card.querySelectorAll('.matchup-team-score');
+        if (scoreEls.length >= 2) {
+            scoreEls[0].innerHTML = Math.round(hScore) + (hScore > aScore ? ' <i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.7rem;"></i>' : '');
+            scoreEls[1].innerHTML = Math.round(aScore) + (aScore > hScore ? ' <i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.7rem;"></i>' : '');
+        }
+
+        // Update team name highlights
+        const nameEls = card.querySelectorAll('.matchup-team-name');
+        if (nameEls.length >= 2) {
+            nameEls[0].classList.toggle('matchup-winner', hScore > aScore);
+            nameEls[1].classList.toggle('matchup-winner', aScore > hScore);
+        }
+
+        // Update mini bar
+        const miniBar = card.querySelector('.matchup-mini-fill');
+        if (miniBar) {
+            const total = (hScore + aScore) || 1;
+            miniBar.style.width = (hScore / total * 100).toFixed(0) + '%';
+        }
+
+        // Update margin text
+        const marginEl = card.querySelector('.matchup-margin');
+        if (marginEl) {
+            const diff = Math.abs(Math.round(hScore - aScore));
+            const homeName = nameEls[0] ? nameEls[0].textContent.trim().substring(0, 10) : '';
+            const awayName = nameEls[1] ? nameEls[1].textContent.trim().substring(0, 10) : '';
+            if (hScore > aScore) marginEl.textContent = homeName + ' +' + diff;
+            else if (aScore > hScore) marginEl.textContent = awayName + ' +' + diff;
+            else marginEl.textContent = 'Draw';
         }
     });
 }
@@ -586,6 +879,7 @@ function handleUpdate(data) {
         });
     }
     updateGameStatusPills(data.game_statuses);
+    updateMatchupCards(data);
 }
 
 // ── Live state: SocketIO + AJAX fallback ──
@@ -612,7 +906,6 @@ if (GAMEDAY_STATE === 'live') {
 // ── Upcoming state: light poll to detect transition to live ──
 if (GAMEDAY_STATE === 'upcoming') {
     setInterval(function() {
-        // Reload page to pick up state change when round goes live
         fetch(window.location.href, { headers: { 'X-Requested-With': 'StateCheck' } })
             .then(function() { window.location.reload(); })
             .catch(function() {});

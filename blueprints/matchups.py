@@ -420,12 +420,17 @@ def gameday(league_id):
     if not fixture:
         # Bye round — render in template, don't redirect
         scoring = get_scoring_context(league)
+        bye_round_fixtures = get_round_fixtures(league_id, year, afl_round)
+        bye_round_scores = get_live_scores(league_id, afl_round, year)
         return render_template(
             "matchups/gameday.html",
             league=league,
             afl_round=afl_round,
             is_bye=True,
             round_dates=round_dates,
+            round_fixtures=bye_round_fixtures,
+            round_scores=bye_round_scores,
+            user_team=user_team,
             scoring=scoring,
         )
 
@@ -437,6 +442,9 @@ def gameday(league_id):
         gameday_state = "completed"
     else:
         gameday_state = "upcoming"
+
+    # Scores for all teams in round (for all-matchups section)
+    round_scores = get_live_scores(league_id, afl_round, year)
 
     # Determine which side the user is on
     is_home = fixture.home_team_id == user_team.id
@@ -491,6 +499,9 @@ def gameday(league_id):
         gameday_state=gameday_state,
         first_bounce=first_bounce,
         round_dates=round_dates,
+        round_fixtures=round_fixtures,
+        round_scores=round_scores,
+        user_team=user_team,
         scoring=scoring,
     )
 
