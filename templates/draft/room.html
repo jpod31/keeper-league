@@ -817,7 +817,6 @@ function searchPlayers() {
         const pot = p.potential != null ? p.potential : '-';
         const potColor = p.potential >= 80 ? '#3fb950' : p.potential >= 70 ? '#58a6ff' : p.potential >= 60 ? '#d29922' : p.potential != null ? '#8b949e' : '#8b949e';
         const blocked = isPositionBlocked(p.position);
-        const pickDisabled = !canPick() || blocked;
         const blockedStyle = blocked ? 'opacity:.45;' : '';
         return `<tr style="${blockedStyle}">
           <td class="player-name">${p.name}</td>
@@ -831,7 +830,6 @@ function searchPlayers() {
           <td>
             <button class="btn btn-outline-primary btn-sm py-0 px-2"
                     onclick="pickPlayer(${p.id}, ${JSON.stringify(p.name)}, ${JSON.stringify(p.position || '')}, ${JSON.stringify(p.afl_team || '')})"
-                    ${pickDisabled ? 'disabled' : ''}
                     title="${blocked ? 'Position blocked — draft other positions first' : ''}">${blocked ? '<i class="bi bi-lock-fill"></i>' : 'Pick'}</button>
           </td>
         </tr>`;
@@ -854,12 +852,6 @@ function pickPlayer(playerId, playerName, playerPos, playerTeam) {
     alert('Not connected — refresh the page.');
     return;
   }
-  if (draftState.status !== 'in_progress') {
-    alert('Draft status is "' + draftState.status + '" — wait for it to start or refresh the page.');
-    return;
-  }
-  // Disable all pick buttons immediately to prevent double-clicks
-  document.querySelectorAll('#available-players button').forEach(b => b.disabled = true);
   socket.emit('make_pick', { league_id: LEAGUE_ID, player_id: playerId });
 }
 
