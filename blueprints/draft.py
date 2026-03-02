@@ -361,9 +361,28 @@ def api_end_draft(league_id):
     if not session:
         return jsonify({"error": "No active draft session"}), 404
 
-    _, error = end_draft(session.id)
+    session_id = session.id
+    _, error = end_draft(session_id)
     if error:
         return jsonify({"error": error}), 400
+
+    # Clean up timer (in-memory and DB deadline)
+    from sockets.draft_events import _cleanup_timer
+    try:
+        _cleanup_timer(session_id)
+    except Exception:
+        pass  # timer may not exist if server restarted
+
+    # Broadcast draft_completed to all connected clients in the room
+    try:
+        from flask import current_app
+        socketio = current_app.extensions.get("socketio")
+        if socketio:
+            state = get_draft_state(session_id)
+            socketio.emit("draft_completed", state, namespace="/draft",
+                          to=f"draft_{league_id}")
+    except Exception:
+        pass  # broadcasting is best-effort
 
     return jsonify({"ok": True, "status": "completed"})
 

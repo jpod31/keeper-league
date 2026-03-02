@@ -379,6 +379,11 @@ def end_draft(session_id):
             if league:
                 league.status = "active"
 
+        # Clean up stale draft queues for all teams in this league
+        team_ids = [t.id for t in FantasyTeam.query.filter_by(league_id=session.league_id).all()]
+        if team_ids:
+            DraftQueue.query.filter(DraftQueue.team_id.in_(team_ids)).delete(synchronize_session=False)
+
         db.session.commit()
         return session, None
 

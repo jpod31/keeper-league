@@ -564,12 +564,17 @@ socket.on('timer_tick', (data) => {
 
 socket.on('draft_completed', (state) => {
   draftState = state;
-  const statusEl = document.getElementById('draft-status');
-  statusEl.textContent = 'completed';
-  statusEl.className = 'status-pill status-completed';
+  draftState.status = 'completed';
+  updateUI();
+  // Override banner styling for completed state
   document.getElementById('current-pick-banner').className = 'draft-banner draft-banner-complete';
   document.getElementById('current-team').textContent = 'Draft Complete!';
   document.getElementById('timer').textContent = '-';
+  // Clear pick button area
+  const pickBtn = document.getElementById('pick-button-area');
+  if (pickBtn) pickBtn.style.display = 'none';
+  const passBtn = document.getElementById('pass-btn');
+  if (passBtn) passBtn.style.display = 'none';
 });
 
 socket.on('error', (data) => {
