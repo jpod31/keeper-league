@@ -484,9 +484,10 @@ function confirmPickup() {
   var btn = document.getElementById('pickup-confirm-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Adding...';
+  var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
   fetch('{{ url_for("leagues.player_pickup", league_id=league.id) }}', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || ''},
     body: JSON.stringify({player_id: _pickupPlayerId})
   })
   .then(function(r) { return r.json(); })

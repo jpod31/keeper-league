@@ -352,26 +352,41 @@ def api_update_schedule(league_id):
 @draft_bp.route("/<int:league_id>/draft/api/end", methods=["POST"])
 @login_required
 def api_end_draft(league_id):
-    """HTTP fallback to end draft when socket is disconnected."""
+    """HTTP endpoint to end draft."""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[END_DRAFT] HTTP request from user={current_user.username} league={league_id}")
+    print(f"[END_DRAFT] HTTP request from user={current_user.username} league={league_id}", flush=True)
+
     league = db.session.get(League, league_id)
-    if not league or league.commissioner_id != current_user.id:
+    if not league:
+        print(f"[END_DRAFT] League {league_id} not found", flush=True)
+        return jsonify({"error": "League not found"}), 404
+    if league.commissioner_id != current_user.id:
+        print(f"[END_DRAFT] User {current_user.id} is not commissioner (commissioner={league.commissioner_id})", flush=True)
         return jsonify({"error": "Only the commissioner can end the draft"}), 403
 
     session = _get_active_draft_session(league_id)
     if not session:
+        print(f"[END_DRAFT] No active draft session for league {league_id}", flush=True)
         return jsonify({"error": "No active draft session"}), 404
 
+    print(f"[END_DRAFT] Found session {session.id}, status={session.status}", flush=True)
+
     session_id = session.id
-    _, error = end_draft(session_id)
+    result, error = end_draft(session_id)
     if error:
+        print(f"[END_DRAFT] end_draft() returned error: {error}", flush=True)
         return jsonify({"error": error}), 400
+
+    print(f"[END_DRAFT] Draft ended successfully. Session {session_id} now completed.", flush=True)
 
     # Clean up timer (in-memory and DB deadline)
     from sockets.draft_events import _cleanup_timer
     try:
         _cleanup_timer(session_id)
-    except Exception:
-        pass  # timer may not exist if server restarted
+    except Exception as e:
+        print(f"[END_DRAFT] Timer cleanup error (non-fatal): {e}", flush=True)
 
     # Broadcast draft_completed to all connected clients in the room
     try:
@@ -381,8 +396,9 @@ def api_end_draft(league_id):
             state = get_draft_state(session_id)
             socketio.emit("draft_completed", state, namespace="/draft",
                           to=f"draft_{league_id}")
-    except Exception:
-        pass  # broadcasting is best-effort
+            print(f"[END_DRAFT] Broadcasted draft_completed to room draft_{league_id}", flush=True)
+    except Exception as e:
+        print(f"[END_DRAFT] Broadcast error (non-fatal): {e}", flush=True)
 
     return jsonify({"ok": True, "status": "completed"})
 

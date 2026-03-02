@@ -1036,19 +1036,33 @@ function confirmEndDraft() {
   const modal = bootstrap.Modal.getInstance(document.getElementById('confirmEndDraftModal'));
   if (modal) modal.hide();
 
-  if (socket.connected) {
-    socket.emit('end_draft', { league_id: LEAGUE_ID });
-  } else {
-    // Fallback: HTTP POST when socket is disconnected
-    fetch(`/leagues/${LEAGUE_ID}/draft/api/end`, { method: 'POST' })
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) { alert(data.error); return; }
-        alert('Draft ended successfully!');
-        location.reload();
-      })
-      .catch(() => alert('Failed to end draft — please refresh and try again.'));
-  }
+  // Always use HTTP — socket can appear connected but be stale after server restarts
+  const btn = document.querySelector('#confirmEndDraftModal .btn-danger') || null;
+  const banner = document.getElementById('current-team');
+  if (banner) banner.textContent = 'Ending draft...';
+
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  fetch(`/leagues/${LEAGUE_ID}/draft/api/end`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken || '',
+    },
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) {
+      alert('Error: ' + data.error);
+      if (banner) banner.textContent = 'Error ending draft';
+      return;
+    }
+    alert('Draft ended successfully!');
+    location.reload();
+  })
+  .catch(err => {
+    alert('Failed to end draft: ' + err.message + '. Please try refreshing the page.');
+    if (banner) banner.textContent = 'Failed — refresh and retry';
+  });
 }
 
 // ── Inline draft value weights ──

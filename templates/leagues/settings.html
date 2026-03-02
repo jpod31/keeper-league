@@ -723,9 +723,10 @@ function commissionerDelist() {
   var btn = document.getElementById('delistBtn');
   btn.disabled = true;
   btn.textContent = 'Delisting...';
+  var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
   fetch('/leagues/{{ league.id }}/commissioner/delist', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
     body: JSON.stringify({ team_id: parseInt(teamId), player_id: parseInt(playerId) })
   })
   .then(function(r) { return r.json(); })
@@ -759,9 +760,10 @@ function commissionerMove() {
   var btn = document.getElementById('moveBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Moving...';
+  var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
   fetch('/leagues/{{ league.id }}/commissioner/force-move', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
     body: JSON.stringify({ from_team_id: parseInt(fromTeamId), to_team_id: parseInt(toTeamId), player_id: parseInt(playerId) })
   })
   .then(function(r) { return r.json(); })
