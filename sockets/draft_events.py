@@ -61,9 +61,12 @@ def register_draft_events(socketio):
             session = _get_active_session(league_id)
             if session:
                 # If draft is in_progress but timer isn't running (e.g. after server restart),
-                # recover the timer from the persisted pick_deadline
-                if session.status == "in_progress" and session.id not in _timers:
-                    _recover_timer(socketio, session.id, league_id)
+                # recover from persisted deadline or start a fresh timer
+                if session.status == "in_progress" and not _timers.get(session.id, {}).get("running"):
+                    if session.pick_deadline:
+                        _recover_timer(socketio, session.id, league_id)
+                    else:
+                        _start_timer(socketio, session.id, league_id)
 
                 state = get_draft_state(session.id)
                 emit("draft_state", state)
