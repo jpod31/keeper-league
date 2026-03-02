@@ -192,19 +192,19 @@
   </div>
 
   {# ── Table view (default) ── #}
-  <div class="card-body p-0" id="poolTable" style="max-height:78vh;overflow:auto;">
+  <div class="card-body p-0 pool-table-wrap" id="poolTable" style="max-height:78vh;overflow:auto;">
     <table class="table table-sm mb-0 pool-table">
       <thead class="sticky-top" style="background:#161b22;z-index:2;">
         <tr>
-          <th class="sortable sort-active" style="width:40px;" onclick="sortPool('rank')"># <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable" onclick="sortPool('name')">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable" style="width:80px;" onclick="sortPool('pos')">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable text-center" style="width:45px;" onclick="sortPool('age')">Age <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable text-end" style="width:65px;" onclick="sortPool('sc_avg')">SC <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable text-center" style="width:75px;" onclick="sortPool('trend')">Trend <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable text-end" style="width:50px;" onclick="sortPool('rating')">Rtg <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable text-end" style="width:50px;" onclick="sortPool('potential')">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable text-end" style="width:110px;" onclick="sortPool('draft_score')">Value <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable sort-active" style="width:40px;" onclick="sortPool('rank',this)"># <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable" onclick="sortPool('name',this)">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable" style="width:80px;" onclick="sortPool('pos',this)">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-center" style="width:45px;" onclick="sortPool('age',this)">Age <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-end" style="width:65px;" onclick="sortPool('sc_avg',this)">SC <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-center" style="width:75px;" onclick="sortPool('trend',this)">Trend <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-end" style="width:50px;" onclick="sortPool('rating',this)">Rtg <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-end" style="width:50px;" onclick="sortPool('potential',this)">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-end" style="width:110px;" onclick="sortPool('draft_score',this)">Value <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="text-center" style="width:110px;">Status</th>
         </tr>
       </thead>
@@ -364,13 +364,30 @@ function filterPool() {
   });
 
   document.getElementById('visible-count').innerHTML = '<strong>' + count + '</strong> players';
+
+  // Update filter count badge
+  var activeFilters = 0;
+  if (pos) activeFilters++;
+  if (team) activeFilters++;
+  if (ageFilter) activeFilters++;
+  if (status) activeFilters++;
+  if (owner) activeFilters++;
+  var badge = document.getElementById('filterCount');
+  if (badge) {
+    if (activeFilters > 0) {
+      badge.textContent = activeFilters;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
 }
 
 var sortKey = 'rank', sortAsc = true;
-function sortPool(key) {
+function sortPool(key, el) {
   if (sortKey === key) { sortAsc = !sortAsc; } else { sortKey = key; sortAsc = (key === 'name' || key === 'pos'); }
   document.querySelectorAll('.pool-table th.sortable').forEach(function(th) { th.classList.remove('sort-active'); });
-  event.currentTarget.classList.add('sort-active');
+  if (el) el.classList.add('sort-active');
   var tbody = document.getElementById('pool-body');
   var rows = Array.from(tbody.querySelectorAll('tr'));
   rows.sort(function(a, b) {

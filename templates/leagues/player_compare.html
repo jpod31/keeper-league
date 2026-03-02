@@ -101,7 +101,7 @@
   <div class="col-lg-6">
     <div class="chart-card">
       <h6 class="fw-bold mb-3"><i class="bi bi-hexagon me-2" style="color:var(--kl-accent-purple);"></i>Stat Radar</h6>
-      <canvas id="radarChart" height="300"></canvas>
+      <div style="position:relative;max-height:300px;"><canvas id="radarChart"></canvas></div>
     </div>
   </div>
 
@@ -109,7 +109,7 @@
   <div class="col-lg-6">
     <div class="chart-card">
       <h6 class="fw-bold mb-3"><i class="bi bi-graph-up me-2" style="color:var(--kl-accent-blue);"></i>Score Trend</h6>
-      <canvas id="trendChart" height="300"></canvas>
+      <div style="position:relative;max-height:300px;"><canvas id="trendChart"></canvas></div>
     </div>
   </div>
 </div>
@@ -126,6 +126,7 @@
 {% block scripts %}
 {% if players_data %}
 <script>
+if (typeof Chart === 'undefined') { /* Chart.js not loaded — skip charts */ } else {
 (function() {
   var colors = ['#58a6ff', '#3fb950', '#f0883e', '#bc8cff'];
   var playersData = {{ players_data|tojson }};
@@ -149,6 +150,7 @@
     data: { labels: radarLabels, datasets: radarDatasets },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
         r: {
           beginAtZero: true,
@@ -192,6 +194,7 @@
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: { position: 'bottom', labels: { color: '#c9d1d9', boxWidth: 12 } }
       },
@@ -202,6 +205,7 @@
     }
   });
 })();
+}
 </script>
 {% endif %}
 {% endblock %}

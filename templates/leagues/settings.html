@@ -91,22 +91,22 @@
             {% endif %}
           {% endfor %}
           <div class="row g-2 mb-2">
-            <div class="col">
+            <div class="col-3">
               <label class="form-label" style="font-size:.75rem;color:#58a6ff;">DEF</label>
               <input type="number" class="form-control form-control-sm" name="def_count"
                      value="{{ on_field_slots.get('DEF', 5) }}" min="1" max="10">
             </div>
-            <div class="col">
+            <div class="col-3">
               <label class="form-label" style="font-size:.75rem;color:#bc8cff;">MID</label>
               <input type="number" class="form-control form-control-sm" name="mid_count"
                      value="{{ on_field_slots.get('MID', 7) }}" min="1" max="12">
             </div>
-            <div class="col">
+            <div class="col-3">
               <label class="form-label" style="font-size:.75rem;color:#f0883e;">FWD</label>
               <input type="number" class="form-control form-control-sm" name="fwd_count"
                      value="{{ on_field_slots.get('FWD', 5) }}" min="1" max="10">
             </div>
-            <div class="col">
+            <div class="col-3">
               <label class="form-label" style="font-size:.75rem;color:#3fb950;">RUC</label>
               <input type="number" class="form-control form-control-sm" name="ruc_count"
                      value="{{ on_field_slots.get('RUC', 1) }}" min="1" max="3">
@@ -125,22 +125,22 @@
             {% endif %}
           {% endfor %}
           <div class="row g-2 mb-2">
-            <div class="col">
+            <div class="col-3">
               <label class="form-label" style="font-size:.7rem;color:#58a6ff;">B.DEF</label>
               <input type="number" class="form-control form-control-sm" name="bench_def"
                      value="{{ bench_slots.get('DEF', 1) }}" min="0" max="15">
             </div>
-            <div class="col">
+            <div class="col-3">
               <label class="form-label" style="font-size:.7rem;color:#bc8cff;">B.MID</label>
               <input type="number" class="form-control form-control-sm" name="bench_mid"
                      value="{{ bench_slots.get('MID', 2) }}" min="0" max="15">
             </div>
-            <div class="col">
+            <div class="col-3">
               <label class="form-label" style="font-size:.7rem;color:#f0883e;">B.FWD</label>
               <input type="number" class="form-control form-control-sm" name="bench_fwd"
                      value="{{ bench_slots.get('FWD', 1) }}" min="0" max="15">
             </div>
-            <div class="col">
+            <div class="col-3">
               <label class="form-label" style="font-size:.7rem;color:#8b949e;">FLEX</label>
               <input type="number" class="form-control form-control-sm" name="bench_flex"
                      value="{{ bench_slots.get('FLEX', 1) }}" min="0" max="30">

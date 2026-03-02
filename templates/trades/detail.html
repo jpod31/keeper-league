@@ -56,8 +56,9 @@
     </div>
   </div>
 
-  <div class="col-md-2 d-flex align-items-center justify-content-center">
-    <i class="bi bi-arrow-left-right" style="font-size:2rem;color:#30363d;"></i>
+  <div class="col-md-2 d-flex align-items-center justify-content-center py-2 py-md-0">
+    <i class="bi bi-arrow-down-up d-md-none" style="font-size:1.5rem;color:#30363d;"></i>
+    <i class="bi bi-arrow-left-right d-none d-md-inline" style="font-size:2rem;color:#30363d;"></i>
   </div>
 
   <div class="col-md-5">
@@ -148,7 +149,7 @@
     {% endif %}
     {% if is_commissioner %}
       <form method="POST" action="{{ url_for('trades.trade_veto', league_id=league.id, trade_id=trade.id) }}" class="d-flex gap-2">
-        <input type="text" class="form-control form-control-sm" name="reason" placeholder="Veto reason (optional)" style="width:200px;">
+        <input type="text" class="form-control form-control-sm" name="reason" placeholder="Veto reason (optional)" style="min-width:150px;flex:1;">
         <button type="submit" class="btn btn-outline-secondary btn-sm" style="border-color:#f85149;color:#f85149;" onclick="return confirm('Veto this trade?')">Veto</button>
       </form>
     {% endif %}

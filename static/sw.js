@@ -1,7 +1,8 @@
 /* Keeper League Service Worker — Caching + Push Notifications */
 
-var SHELL_CACHE = 'kl-shell-v2';
-var DYNAMIC_CACHE = 'kl-dynamic-v2';
+var SHELL_CACHE = 'kl-shell-v3';
+var DYNAMIC_CACHE = 'kl-dynamic-v3';
+var CDN_CACHE = 'kl-cdn-v3';
 var MAX_DYNAMIC = 50;
 
 var SHELL_ASSETS = [
@@ -10,6 +11,17 @@ var SHELL_ASSETS = [
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png'
 ];
+
+/* CDN origins we want to cache */
+var CDN_ORIGINS = [
+  'cdn.jsdelivr.net',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com'
+];
+
+function isCdnRequest(url) {
+  return CDN_ORIGINS.some(function(origin) { return url.hostname === origin; });
+}
 
 /* ── Install: cache app shell ── */
 self.addEventListener('install', function(event) {
@@ -24,11 +36,12 @@ self.addEventListener('install', function(event) {
 
 /* ── Activate: clean old caches ── */
 self.addEventListener('activate', function(event) {
+  var currentCaches = [SHELL_CACHE, DYNAMIC_CACHE, CDN_CACHE];
   event.waitUntil(
     caches.keys().then(function(keys) {
       return Promise.all(
         keys.filter(function(k) {
-          return k !== SHELL_CACHE && k !== DYNAMIC_CACHE;
+          return currentCaches.indexOf(k) === -1;
         }).map(function(k) {
           return caches.delete(k);
         })
@@ -39,12 +52,31 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-/* ── Fetch: shell=cache-first, pages=network-first ── */
+/* ── Fetch: shell=cache-first, CDN=cache-first, pages=network-first ── */
 self.addEventListener('fetch', function(event) {
   var url = new URL(event.request.url);
 
-  // Skip non-GET and cross-origin
+  // Skip non-GET
   if (event.request.method !== 'GET') return;
+
+  // CDN assets (Bootstrap, Chart.js, Socket.IO, fonts) — cache-first
+  if (isCdnRequest(url)) {
+    event.respondWith(
+      caches.match(event.request).then(function(cached) {
+        if (cached) return cached;
+        return fetch(event.request).then(function(resp) {
+          if (resp && resp.ok) {
+            var clone = resp.clone();
+            caches.open(CDN_CACHE).then(function(c) { c.put(event.request, clone); });
+          }
+          return resp;
+        });
+      })
+    );
+    return;
+  }
+
+  // Skip other cross-origin requests
   if (url.origin !== self.location.origin) return;
 
   // Shell assets — cache-first
@@ -68,10 +100,10 @@ self.addEventListener('fetch', function(event) {
         var clone = resp.clone();
         caches.open(DYNAMIC_CACHE).then(function(cache) {
           cache.put(event.request, clone);
-          // LRU eviction
+          // LRU eviction — delete excess entries
           cache.keys().then(function(keys) {
-            if (keys.length > MAX_DYNAMIC) {
-              cache.delete(keys[0]);
+            while (keys.length > MAX_DYNAMIC) {
+              cache.delete(keys.shift());
             }
           });
         });
@@ -83,7 +115,7 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // Other static assets (CDN CSS/JS, fonts) — stale-while-revalidate
+  // Other local static assets — stale-while-revalidate
   event.respondWith(
     caches.match(event.request).then(function(cached) {
       var fetchPromise = fetch(event.request).then(function(resp) {

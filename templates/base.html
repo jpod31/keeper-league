@@ -41,9 +41,9 @@
           <div class="dropdown-menu dropdown-menu-end p-0 notif-panel" id="notifPanelMobile">
             <div class="d-flex justify-content-between align-items-center px-3 py-2 notif-panel-header">
               <span class="fw-bold" style="font-size:.85rem;">Notifications</span>
-              <a href="#" class="mark-all-read-btn" style="font-size:.72rem;color:#58a6ff;text-decoration:none;">Mark all read</a>
+              <a href="#" class="mark-all-read-btn" id="markAllReadBtnMobile" style="font-size:.72rem;color:#58a6ff;text-decoration:none;">Mark all read</a>
             </div>
-            <div class="notif-list-container" style="font-size:.82rem;">
+            <div class="notif-list-container" id="notifListMobile" style="font-size:.82rem;">
               <div class="text-center text-secondary py-3" style="font-size:.8rem;">Loading...</div>
             </div>
           </div>
@@ -196,6 +196,7 @@
     var notifSocket = io('/notifications', {transports: ['websocket', 'polling']});
     var dot = document.getElementById('notifDot');
     var list = document.getElementById('notifList');
+    var listMobile = document.getElementById('notifListMobile');
     var panel = document.getElementById('notifPanel');
     var bell = document.getElementById('notifBell');
     var loaded = false;
@@ -256,67 +257,87 @@
         url = '/leagues/{{ (user_leagues|default([]))[0][0].id if user_leagues|default([]) else 0 }}/notifications/api';
         {% endif %}
       }
-      if (!url) { list.innerHTML = '<div class="text-center text-secondary py-3" style="font-size:.8rem;">No leagues joined</div>'; return; }
+      if (!url) {
+        var emptyMsg = '<div class="text-center text-secondary py-3" style="font-size:.8rem;">No leagues joined</div>';
+        if (list) list.innerHTML = emptyMsg;
+        if (listMobile) listMobile.innerHTML = emptyMsg;
+        return;
+      }
       fetch(url).then(function(r) { return r.json(); }).then(function(data) {
         if (!data.length) {
-          list.innerHTML = '<div class="text-center text-secondary py-3" style="font-size:.8rem;">No notifications yet</div>';
+          var noMsg = '<div class="text-center text-secondary py-3" style="font-size:.8rem;">No notifications yet</div>';
+          if (list) list.innerHTML = noMsg;
+          if (listMobile) listMobile.innerHTML = noMsg;
           return;
         }
-        list.innerHTML = data.map(renderNotif).join('');
+        var html = data.map(renderNotif).join('');
+        if (list) list.innerHTML = html;
+        if (listMobile) listMobile.innerHTML = html;
         var hasUnread = data.some(function(n) { return !n.is_read; });
         if (hasUnread) showDot(); else hideDot();
       }).catch(function() {
-        list.innerHTML = '<div class="text-center text-secondary py-3" style="font-size:.8rem;">Failed to load</div>';
+        var errMsg = '<div class="text-center text-secondary py-3" style="font-size:.8rem;">Failed to load</div>';
+        if (list) list.innerHTML = errMsg;
+        if (listMobile) listMobile.innerHTML = errMsg;
       });
       loaded = true;
     }
 
-    // Load on first open
+    // Load on first open (desktop bell)
     if (bell) {
       bell.addEventListener('click', function() {
         if (!loaded) loadNotifs();
       });
     }
-
-    // Mark all read
-    var markBtn = document.getElementById('markAllReadBtn');
-    if (markBtn) {
-      markBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var leagueId;
-        var m = window.location.pathname.match(/\/leagues\/(\d+)/);
-        if (m) leagueId = m[1];
-        {% if user_leagues|default([]) %}
-        if (!leagueId) leagueId = '{{ (user_leagues|default([]))[0][0].id if user_leagues|default([]) else 0 }}';
-        {% endif %}
-        if (!leagueId) return;
-        var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        fetch('/leagues/' + leagueId + '/notifications/read-all', {
-          method: 'POST',
-          headers: {'X-CSRFToken': csrf}
-        }).then(function() {
-          document.querySelectorAll('.notif-unread').forEach(function(el) {
-            el.classList.remove('notif-unread');
-          });
-          hideDot();
-        });
+    // Load on first open (mobile bell)
+    var mobileBell = document.querySelector('#notif-dropdown-mobile > a[data-bs-toggle="dropdown"]');
+    if (mobileBell) {
+      mobileBell.addEventListener('click', function() {
+        if (!loaded) loadNotifs();
       });
     }
+
+    // Mark all read handler (shared)
+    function handleMarkAllRead(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var leagueId;
+      var m = window.location.pathname.match(/\/leagues\/(\d+)/);
+      if (m) leagueId = m[1];
+      {% if user_leagues|default([]) %}
+      if (!leagueId) leagueId = '{{ (user_leagues|default([]))[0][0].id if user_leagues|default([]) else 0 }}';
+      {% endif %}
+      if (!leagueId) return;
+      var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      fetch('/leagues/' + leagueId + '/notifications/read-all', {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrf}
+      }).then(function() {
+        document.querySelectorAll('.notif-unread').forEach(function(el) {
+          el.classList.remove('notif-unread');
+        });
+        hideDot();
+      });
+    }
+    var markBtn = document.getElementById('markAllReadBtn');
+    if (markBtn) markBtn.addEventListener('click', handleMarkAllRead);
+    var markBtnMobile = document.getElementById('markAllReadBtnMobile');
+    if (markBtnMobile) markBtnMobile.addEventListener('click', handleMarkAllRead);
 
     // Real-time: new notification
     notifSocket.on('new_notification', function(data) {
       showDot();
-      if (loaded && list) {
+      if (loaded) {
         var html = renderNotif({id: data.id, type: data.type, title: data.title, body: data.body, link: data.link, is_read: false, created_at: data.created_at});
-        list.insertAdjacentHTML('afterbegin', html);
+        if (list) list.insertAdjacentHTML('afterbegin', html);
+        if (listMobile) listMobile.insertAdjacentHTML('afterbegin', html);
       }
     });
   })();
   </script>
   {% endif %}
   {# PWA Install Banner #}
-  <div id="pwaInstallBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:1060;background:linear-gradient(135deg,#238636,#1f6feb);padding:10px 16px;font-size:.82rem;color:#fff;text-align:center;">
+  <div id="pwaInstallBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:1030;background:linear-gradient(135deg,#238636,#1f6feb);padding:10px 16px;font-size:.82rem;color:#fff;text-align:center;">
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
       <span>Install <strong>Keeper League</strong> for a better experience</span>
       <button id="pwaInstallBtn" style="background:#fff;color:#1f6feb;border:none;border-radius:6px;padding:4px 14px;font-size:.78rem;font-weight:600;cursor:pointer;">Install</button>

@@ -135,6 +135,7 @@
 {% block scripts %}
 <script>
 (function() {
+  if (typeof Chart === 'undefined') return;
   var formData = {{ form_data|tojson }};
   if (!formData.length) return;
   var ctx = document.getElementById('formChart').getContext('2d');

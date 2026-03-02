@@ -1535,16 +1535,6 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 .league-subtab i { font-size: .8rem; }
 
-/* ═══ Responsive ═══ */
-@media (max-width: 768px) {
-  .league-nav-inner { gap: .25rem; }
-  .league-selector-btn { font-size: .7rem; padding: .25rem .5rem; }
-  .league-tab { padding: .5rem .55rem; font-size: .7rem; }
-  .league-tab span { display: none; }
-  .league-tab i { font-size: .95rem; }
-  .league-subtab { padding: .45rem .65rem; font-size: .72rem; }
-}
-
 /* ═══ Field View Responsive ═══ */
 @media (max-width: 768px) {
   .fv-wrapper { flex-direction: column; }
@@ -2606,12 +2596,12 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 @media (max-width: 768px) {
 
   /* ── Base spacing ── */
-  body.has-bottom-nav main.container { padding-bottom: 80px; }
+  body.has-bottom-nav main.container { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
   .container { max-width: 100%; padding-left: .6rem; padding-right: .6rem; }
 
   /* ── Touch targets (44px minimum) ── */
   .btn { min-height: 44px; padding: .5rem 1rem; }
-  .btn-sm { min-height: 38px; }
+  .btn-sm { min-height: 44px; padding: .4rem .75rem; }
   .form-control, .form-select { min-height: 44px; font-size: 16px; /* prevent iOS zoom */ }
   .dropdown-item { padding: .65rem 1rem; min-height: 44px; display: flex; align-items: center; }
 
@@ -2679,6 +2669,9 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .filter-bar > * { width: 100% !important; max-width: 100% !important; flex: none !important; }
   .filter-toggle-btn { display: flex !important; }
 
+  /* ── Player pool — remove nested scroll on mobile ── */
+  .pool-table-wrap { max-height: none !important; overflow: visible !important; overflow-x: auto !important; }
+
   /* ── Pool card/table toggle ── */
   .pool-view-toggle { display: flex; }
 
@@ -2717,11 +2710,13 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .table { font-size: .75rem; }
   .table th { font-size: .6rem; padding: .4rem .5rem; }
   .table td { padding: .4rem .5rem; }
-  /* Any parent of a table should scroll horizontally */
-  .card-body:has(> table), .p-0:has(> table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Fallback: explicit overflow on card-body containing tables (works on all browsers) */
+  .card-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .card-body.p-0, .p-0 { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-responsive { -webkit-overflow-scrolling: touch; }
 
   /* ── Chat — fit mobile viewport with bottom nav ── */
-  .chat-wrapper { height: calc(100vh - 220px) !important; }
+  .chat-wrapper { height: calc(100dvh - 300px) !important; }
 
   /* ── Trade nav tabs ── */
   .nav-tabs { overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
@@ -2734,6 +2729,12 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 
   /* ── Commissioner dropdown ── */
   .lm-timer { font-size: .7rem; padding: .3rem .6rem; }
+
+  /* ── Field view toast — above bottom nav ── */
+  .fv-toast { bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+
+  /* ── Trade detail tables ── */
+  .trade-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* ══════════════════════════════════════════════════
