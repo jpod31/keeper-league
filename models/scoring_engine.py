@@ -439,17 +439,49 @@ def finalize_round(league_id, afl_round, year):
 
 
 def get_live_scores(league_id, afl_round, year):
-    """Get current round scores for all teams (for live display)."""
+    """Get current round scores for all teams (for live display).
+
+    Includes players_played / players_total counts so mini-cards can
+    show progress (e.g. '5/18 played').
+    """
     teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    team_ids = [t.id for t in teams]
+
+    # Batch: all active roster entries for all teams
+    all_roster = FantasyRoster.query.filter(
+        FantasyRoster.team_id.in_(team_ids),
+        FantasyRoster.is_active == True,
+    ).all()
+
+    # Group on-field player IDs by team (field + bench starters, not emergency/reserve)
+    team_field = {}
+    for r in all_roster:
+        if not r.is_benched and not r.is_emergency:
+            team_field.setdefault(r.team_id, []).append(r.player_id)
+
+    # Batch: which of those players have stats this round (= their game has produced data)
+    all_field_ids = [pid for pids in team_field.values() for pid in pids]
+    played_set = set()
+    if all_field_ids:
+        stats = PlayerStat.query.filter(
+            PlayerStat.player_id.in_(all_field_ids),
+            PlayerStat.year == year,
+            PlayerStat.round == afl_round,
+        ).with_entities(PlayerStat.player_id).all()
+        played_set = {s[0] for s in stats}
+
     scores = {}
     for team in teams:
         rs = RoundScore.query.filter_by(
             team_id=team.id, afl_round=afl_round, year=year
         ).first()
+        field_ids = team_field.get(team.id, [])
         scores[team.id] = {
             "team_name": team.name,
             "total_score": rs.total_score if rs else 0,
             "captain_bonus": rs.captain_bonus if rs else 0,
+            "players_played": sum(1 for pid in field_ids if pid in played_set),
+            "players_total": len(field_ids),
         }
     return scores
 
