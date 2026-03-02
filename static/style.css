@@ -2592,7 +2592,6 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 .pool-card-status {
   flex-shrink: 0;
 }
-.pool-card.pool-card-taken { opacity: .55; }
 
 /* ══════════════════════════════════════════════════
    MOBILE BREAKPOINT (<=768px)
