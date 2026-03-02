@@ -854,6 +854,8 @@ function pickPlayer(playerId, playerName, playerPos, playerTeam) {
     alert('Not connected to server — please refresh the page and try again.');
     return;
   }
+  // Disable all pick buttons immediately to prevent double-clicks
+  document.querySelectorAll('#available-players button').forEach(b => b.disabled = true);
   socket.emit('make_pick', { league_id: LEAGUE_ID, player_id: playerId });
 }
 
