@@ -172,6 +172,15 @@ _NAME_FIXES: Dict[str, str] = {
     "jamarra u-hagan": "Jamarra Ugle-Hagan",
     "callum c-jones": "Callum Coleman-Jones",
     "andy m-wakefield": "Andy Moniz-Wakefield",
+    "jason h-francis": "Jason Horne-Francis",
+    "nasiah w-milera": "Nasiah Wanganeen-Milera",
+    "darcy b-jones": "Darcy Byrne-Jones",
+    "brandon z-thatcher": "Brandon Zerk-Thatcher",
+    "sam p-pepper": "Sam Powell-Pepper",
+    "alex n-bullen": "Alex Neal-Bullen",
+    "saad e-hawli": "Saad El-Hawli",
+    "archer d-wicks": "Archer Day-Wicks",
+    "will h-elliott": "Will Hoskin-Elliott",
 }
 
 

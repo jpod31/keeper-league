@@ -21,6 +21,23 @@ from models.database import db, AflPlayer, PlayerStat
 
 app = create_app()
 
+# Abbreviated hyphenated names (footywire) → full names (AflPlayer DB)
+_NAME_FIXES = {
+    "luke d-uniacke": "Luke Davies-Uniacke",
+    "jamarra u-hagan": "Jamarra Ugle-Hagan",
+    "callum c-jones": "Callum Coleman-Jones",
+    "andy m-wakefield": "Andy Moniz-Wakefield",
+    "jason h-francis": "Jason Horne-Francis",
+    "nasiah w-milera": "Nasiah Wanganeen-Milera",
+    "darcy b-jones": "Darcy Byrne-Jones",
+    "brandon z-thatcher": "Brandon Zerk-Thatcher",
+    "sam p-pepper": "Sam Powell-Pepper",
+    "alex n-bullen": "Alex Neal-Bullen",
+    "saad e-hawli": "Saad El-Hawli",
+    "archer d-wicks": "Archer Day-Wicks",
+    "will h-elliott": "Will Hoskin-Elliott",
+}
+
 FINALS_MAP = {
     "Qualifying Final": 25,
     "Elimination Final": 26,
@@ -120,6 +137,8 @@ def import_year(year, name_to_id, data_dir):
         reader = csv.DictReader(f)
         for row in reader:
             name = row.get("Player", "").strip()
+            # Fix abbreviated hyphenated names from footywire
+            name = _NAME_FIXES.get(name.lower(), name)
             pid = name_to_id.get(name)
             if not pid:
                 skipped_name += 1
