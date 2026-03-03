@@ -239,16 +239,6 @@
                 {{ player_row(p, locked_player_ids, gameday_state) }}
               {% endfor %}
             {% endif %}
-            {% set reserve_list = [] %}
-            {% for p in my_players if p.lineup_type == 'reserve' and p.afl_team in teams_playing %}
-              {% if reserve_list.append(p) %}{% endif %}
-            {% endfor %}
-            {% if reserve_list %}
-              <div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
-              {% for p in reserve_list %}
-                {{ player_row(p, locked_player_ids, gameday_state) }}
-              {% endfor %}
-            {% endif %}
             {% set my_no_game = [] %}
             {% for p in my_players if p.afl_team not in teams_playing %}
               {% if my_no_game.append(p) %}{% endif %}
@@ -295,16 +285,6 @@
             {% if opp_emg_list %}
               <div class="gameday-section-hdr section-emergency"><i class="bi bi-shield-exclamation me-1"></i>Emergency <span class="gameday-section-note">only scores if field player is DNP</span></div>
               {% for p in opp_emg_list %}
-                {{ player_row(p, locked_player_ids, gameday_state) }}
-              {% endfor %}
-            {% endif %}
-            {% set opp_reserve_list = [] %}
-            {% for p in opp_players if p.lineup_type == 'reserve' and p.afl_team in teams_playing %}
-              {% if opp_reserve_list.append(p) %}{% endif %}
-            {% endfor %}
-            {% if opp_reserve_list %}
-              <div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
-              {% for p in opp_reserve_list %}
                 {{ player_row(p, locked_player_ids, gameday_state) }}
               {% endfor %}
             {% endif %}
@@ -1097,7 +1077,6 @@ function renderPlayerList(containerId, players, lockedIds) {
     var field = players.filter(function(p) { return (p.lineup_type || 'field') === 'field'; });
     var bench = players.filter(function(p) { return p.lineup_type === 'bench'; });
     var emg = players.filter(function(p) { return p.lineup_type === 'emergency'; });
-    var reserves = players.filter(function(p) { return p.lineup_type === 'reserve'; });
 
     var html = '';
     html += '<div class="gameday-section-hdr section-field"><i class="bi bi-people-fill me-1"></i>Field</div>';
@@ -1109,10 +1088,6 @@ function renderPlayerList(containerId, players, lockedIds) {
     if (emg.length > 0) {
         html += '<div class="gameday-section-hdr section-emergency"><i class="bi bi-shield-exclamation me-1"></i>Emergency <span class="gameday-section-note">only scores if field player is DNP</span></div>';
         emg.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
-    }
-    if (reserves.length > 0) {
-        html += '<div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>';
-        reserves.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
     }
     container.innerHTML = html;
 }

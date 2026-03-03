@@ -548,32 +548,43 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
         started_teams.add(g.away_team)
 
     # Determine which emergencies auto-subbed for DNP field players
+    # Highest-scoring emergency subs in first, then second-highest, etc.
     used_emergencies = set()        # emergency player_id -> True
     dnp_replaced_by = {}            # field player_id -> emergency player_id
     emergency_replaces = {}         # emergency player_id -> field player name
 
+    # Pre-calculate emergency scores and sort by highest first
+    em_scored = []
+    for em in emergencies:
+        em_stat = stats_map.get(em.player_id)
+        if em_stat is not None:
+            em_score = _compute_player_score(em_stat, league_id, scoring_type, hybrid_base)
+            em_scored.append((em, em_score))
+    em_scored.sort(key=lambda x: x[1], reverse=True)
+
+    # Collect DNP field entries
+    dnp_field_entries = []
     for entry in on_field:
         stat = stats_map.get(entry.player_id)
         if stat is not None:
             continue  # played — no sub needed
-        # Only consider DNP if the player's team game has started
         player = entry.player
         player_team = player.afl_team if player else ""
         if player_team not in started_teams:
             continue  # game hasn't started — not DNP yet
-        # DNP — find first available emergency who played (position-aware)
-        for em in emergencies:
+        dnp_field_entries.append(entry)
+
+    # Assign highest-scoring emergencies to DNP slots
+    for entry in dnp_field_entries:
+        for em, em_score in em_scored:
             if em.player_id in used_emergencies:
                 continue
-            # Position check: emergency must be compatible with field player's position
             if not _breakdown_positions_compatible(entry, em):
                 continue
-            em_stat = stats_map.get(em.player_id)
-            if em_stat is not None:
-                used_emergencies.add(em.player_id)
-                dnp_replaced_by[entry.player_id] = em.player_id
-                emergency_replaces[em.player_id] = entry.player.name if entry.player else "Unknown"
-                break
+            used_emergencies.add(em.player_id)
+            dnp_replaced_by[entry.player_id] = em.player_id
+            emergency_replaces[em.player_id] = entry.player.name if entry.player else "Unknown"
+            break
 
     # Build breakdown list
     breakdown = []

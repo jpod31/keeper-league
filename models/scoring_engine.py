@@ -50,34 +50,42 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
     total = 0.0
     captain_bonus = 0.0
     breakdown = {}
-    used_emergencies = set()
 
+    # Pre-calculate emergency scores and sort by highest first
+    em_scores = []
+    for em in emergencies:
+        em_score = _get_player_score(em.player_id, afl_round, year, league_id, scoring_type, hybrid_base)
+        if em_score is not None:
+            em_scores.append((em, em_score))
+    em_scores.sort(key=lambda x: x[1], reverse=True)
+
+    # Identify DNP field entries
+    dnp_entries = []
     for entry in on_field:
         player_score = _get_player_score(entry.player_id, afl_round, year, league_id, scoring_type, hybrid_base)
-
-        # If player didn't play (None = DNP), check for emergency sub
         if player_score is None:
-            for em in emergencies:
-                if em.player_id in used_emergencies:
-                    continue
-                # Position-aware: only sub within compatible positions
-                if not _positions_compatible(entry, em):
-                    continue
-                em_score = _get_player_score(
-                    em.player_id, afl_round, year, league_id, scoring_type, hybrid_base
-                )
-                if em_score is not None:
-                    player_score = em_score
-                    used_emergencies.add(em.player_id)
-                    breakdown[f"emergency_{em.player_id}"] = em_score
-                    break
+            dnp_entries.append(entry)
+        else:
+            total += player_score
+            breakdown[str(entry.player_id)] = player_score
 
-        # DNP with no emergency = 0
-        if player_score is None:
-            player_score = 0
-
-        total += player_score
-        breakdown[str(entry.player_id)] = player_score
+    # Assign highest-scoring emergencies to DNP slots
+    used_emergencies = set()
+    for entry in dnp_entries:
+        replaced = False
+        for em, em_score in em_scores:
+            if em.player_id in used_emergencies:
+                continue
+            if not _positions_compatible(entry, em):
+                continue
+            used_emergencies.add(em.player_id)
+            total += em_score
+            breakdown[str(entry.player_id)] = 0
+            breakdown[f"emergency_{em.player_id}"] = em_score
+            replaced = True
+            break
+        if not replaced:
+            breakdown[str(entry.player_id)] = 0
 
     # Captain bonus (check league toggle)
     sc = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()

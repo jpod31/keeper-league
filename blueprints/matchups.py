@@ -281,8 +281,8 @@ def api_live_scores(league_id, afl_round):
             "away_score": away_rs.total_score if away_rs else 0,
             "home_captain_bonus": home_rs.captain_bonus if home_rs else 0,
             "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
-            "home_players": get_player_score_breakdown(f.home_team_id, afl_round, year, league_id, include_reserves=True),
-            "away_players": get_player_score_breakdown(f.away_team_id, afl_round, year, league_id, include_reserves=True),
+            "home_players": get_player_score_breakdown(f.home_team_id, afl_round, year, league_id),
+            "away_players": get_player_score_breakdown(f.away_team_id, afl_round, year, league_id),
         })
 
     return jsonify({
@@ -471,8 +471,8 @@ def gameday(league_id):
     my_team = fixture.home_team if is_home else fixture.away_team
     opp_team = fixture.away_team if is_home else fixture.home_team
 
-    my_players = get_player_score_breakdown(my_team.id, afl_round, year, league_id, include_reserves=True)
-    opp_players = get_player_score_breakdown(opp_team.id, afl_round, year, league_id, include_reserves=True)
+    my_players = get_player_score_breakdown(my_team.id, afl_round, year, league_id)
+    opp_players = get_player_score_breakdown(opp_team.id, afl_round, year, league_id)
 
     # Sort players within each lineup type by AFL game kickoff time
     # (earliest game first = "next cab off the rank")
