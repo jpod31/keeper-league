@@ -83,7 +83,7 @@
       <tbody>
         {% for s in standings %}
           {% set pos = loop.index %}
-          {% set in_finals = pos <= finals_teams %}
+          {% set in_finals = finals_teams > 0 and pos <= finals_teams %}
           <tr{% if in_finals and pos == finals_teams %} class="s7-finals-line"{% endif %}{% if in_finals %} style="background:rgba(188,140,255,.03);"{% endif %}>
             <td style="text-align:center;">
               <span class="s7-pos{% if pos == 1 %} s7-pos-1{% elif pos == 2 %} s7-pos-2{% elif in_finals %} s7-pos-finals{% else %} s7-pos-out{% endif %}">
@@ -112,7 +112,11 @@
       </tbody>
     </table>
     <div class="s7-footer">
-      <span>Top {{ finals_teams }} qualify for 7s Finals</span>
+      {% if finals_teams > 0 %}
+        <span>Top {{ finals_teams }} qualify for 7s Finals</span>
+      {% else %}
+        <span>No finals this season</span>
+      {% endif %}
       <span class="s7-title-badge">{{ scoring.label }}</span>
     </div>
   </div>

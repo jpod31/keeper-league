@@ -720,7 +720,7 @@ def generate_finals_view(league_id):
 
     finals, error = generate_finals(league_id, league.season_year)
 
-    # Auto-generate 7s finals (top-2 GF) to match
+    # Auto-generate 7s finals to match (respects SeasonConfig.finals_teams)
     if not error:
         from models.fixture_manager import generate_7s_finals
         generate_7s_finals(league_id, league.season_year)

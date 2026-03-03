@@ -386,6 +386,12 @@ def generate_7s_finals(league_id, year, num_finals_teams=None):
     config_obj = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
     if num_finals_teams is None:
         num_finals_teams = config_obj.finals_teams if config_obj else 4
+
+    # No finals configured — just clear any existing and return
+    if num_finals_teams == 0:
+        db.session.commit()
+        return [], None
+
     base_round = (config_obj.num_regular_rounds if config_obj else 23) + 1
 
     standings = (
