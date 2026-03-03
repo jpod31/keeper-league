@@ -1,0 +1,146 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'rankings' %}
+{% block title %}Power Rankings — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "matchups/_league_subnav.html" %}
+
+<style>
+  .pr-header {
+    display:flex; align-items:center; gap:12px; margin-bottom:24px;
+  }
+  .pr-header h2 { font-size:1.4rem; font-weight:700; color:#e6edf3; margin:0; }
+  .pr-header .pr-icon {
+    width:44px; height:44px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:1.3rem;
+    background:rgba(88,166,255,.12); color:#58a6ff;
+  }
+  .pr-card {
+    background:#161b22; border:1px solid #21262d; border-radius:10px;
+    overflow:hidden;
+  }
+  .pr-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  .pr-table th {
+    font-size:.65rem; font-weight:600; color:#484f58; text-transform:uppercase;
+    letter-spacing:.5px; padding:12px 16px; border-bottom:1px solid #21262d;
+    white-space:nowrap;
+  }
+  .pr-table td {
+    padding:14px 16px; border-bottom:1px solid rgba(33,38,45,.6);
+    color:#8b949e; vertical-align:middle;
+  }
+  .pr-table tbody tr { transition:background .1s; }
+  .pr-table tbody tr:hover { background:rgba(22,27,34,.5); }
+  .pr-table tbody tr:last-child td { border-bottom:none; }
+
+  .pr-rank {
+    font-size:1.1rem; font-weight:800; color:#e6edf3;
+    width:36px; text-align:center;
+  }
+  .pr-rank-1 { color:#FFD700; }
+  .pr-rank-2 { color:#C0C0C0; }
+  .pr-rank-3 { color:#CD7F32; }
+
+  .pr-movement {
+    font-size:.75rem; font-weight:700; min-width:36px; text-align:center;
+  }
+  .pr-move-up { color:#3fb950; }
+  .pr-move-down { color:#f85149; }
+  .pr-move-same { color:#484f58; }
+
+  .pr-team-name { color:#e6edf3; font-weight:600; }
+  .pr-score { color:#58a6ff; font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .pr-form { display:flex; gap:3px; }
+  .pr-form-dot {
+    width:18px; height:18px; border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.6rem; font-weight:800; letter-spacing:0;
+  }
+  .pr-form-W { background:rgba(63,185,80,.15); color:#3fb950; }
+  .pr-form-L { background:rgba(248,81,73,.12); color:#f85149; }
+  .pr-form-D { background:rgba(210,153,34,.12); color:#d29922; }
+
+  .pr-bar-wrap {
+    width:80px; height:6px; border-radius:3px; background:#21262d;
+    overflow:hidden; display:inline-block; vertical-align:middle; margin-left:8px;
+  }
+  .pr-bar-fill { height:100%; border-radius:3px; background:#58a6ff; }
+
+  .pr-empty {
+    text-align:center; padding:48px 20px; color:#484f58;
+  }
+  .pr-empty i { font-size:2.5rem; display:block; margin-bottom:12px; color:#30363d; }
+</style>
+
+<div class="pr-header">
+  <div class="pr-icon"><i class="bi bi-graph-up-arrow"></i></div>
+  <div>
+    <h2>Power Rankings</h2>
+    <span style="font-size:.8rem;color:#8b949e;">
+      {% if rankings %}Round {{ rankings[0].afl_round }} — {% endif %}
+      Composite score based on form, scoring power &amp; strength of wins
+    </span>
+  </div>
+</div>
+
+{% if rankings %}
+<div class="pr-card">
+  <table class="pr-table">
+    <thead>
+      <tr>
+        <th style="width:50px;">#</th>
+        <th style="width:50px;"></th>
+        <th>Team</th>
+        <th class="text-center">Score</th>
+        <th>Form</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pr in rankings %}
+      <tr>
+        <td>
+          <span class="pr-rank pr-rank-{{ pr.rank }}">{{ pr.rank }}</span>
+        </td>
+        <td>
+          <span class="pr-movement {% if pr.movement > 0 %}pr-move-up{% elif pr.movement < 0 %}pr-move-down{% else %}pr-move-same{% endif %}">
+            {% if pr.movement > 0 %}
+              <i class="bi bi-caret-up-fill"></i>{{ pr.movement }}
+            {% elif pr.movement < 0 %}
+              <i class="bi bi-caret-down-fill"></i>{{ pr.movement|abs }}
+            {% else %}
+              &mdash;
+            {% endif %}
+          </span>
+        </td>
+        <td>
+          <span class="pr-team-name">{{ pr.team.name }}</span>
+        </td>
+        <td class="text-center">
+          <span class="pr-score">{{ '%.1f'|format(pr.score) }}</span>
+          <span class="pr-bar-wrap">
+            <span class="pr-bar-fill" style="width:{{ pr.score }}%;"></span>
+          </span>
+        </td>
+        <td>
+          <div class="pr-form">
+            {% for r in team_form.get(pr.team_id, []) %}
+              <span class="pr-form-dot pr-form-{{ r }}">{{ r }}</span>
+            {% endfor %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="pr-card">
+  <div class="pr-empty">
+    <i class="bi bi-graph-up-arrow"></i>
+    <p>Power rankings will appear after the first round is finalised.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

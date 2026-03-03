@@ -32,6 +32,7 @@ class AflPlayer(db.Model):
     injury_type = db.Column(db.String(100))      # "Hamstring", "Knee", etc. NULL = not injured
     injury_return = db.Column(db.String(60))     # "Test", "1-2 weeks", "Season", etc.
     injury_severity = db.Column(db.String(10))   # "test", "short", "long". NULL = not injured
+    keeper_value = db.Column(db.Float)           # 0-99 Keeper Value Index
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))
 
@@ -964,6 +965,30 @@ class PageView(db.Model):
     ip_hash = db.Column(db.String(64))
 
 
+# ── Power Rankings ────────────────────────────────────────────────────
+
+
+class PowerRanking(db.Model):
+    __tablename__ = "power_ranking"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    afl_round = db.Column(db.Integer, nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    rank = db.Column(db.Integer, nullable=False)
+    score = db.Column(db.Float, nullable=False)
+    previous_rank = db.Column(db.Integer)
+    movement = db.Column(db.Integer, default=0)
+
+    team = db.relationship("FantasyTeam", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("league_id", "year", "afl_round", "team_id",
+                            name="uq_power_ranking_round_team"),
+    )
+
+
 # ── Database init ────────────────────────────────────────────────────
 
 
@@ -1123,13 +1148,14 @@ def _run_migrations(app):
                 )
         db.session.commit()
 
-    # AflPlayer injury columns
+    # AflPlayer injury + keeper_value columns
     if "afl_player" in inspector.get_table_names():
         existing_ap = {c["name"] for c in inspector.get_columns("afl_player")}
         for col_name, col_def in [
             ("injury_type", "VARCHAR(100)"),
             ("injury_return", "VARCHAR(60)"),
             ("injury_severity", "VARCHAR(10)"),
+            ("keeper_value", "FLOAT"),
         ]:
             if col_name not in existing_ap:
                 db.session.execute(

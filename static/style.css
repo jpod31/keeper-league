@@ -3086,6 +3086,45 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 .player-injury-short    { background: rgba(248,81,73,.10); color: #f85149; }
 .player-injury-long     { background: rgba(182,35,36,.12); color: #f85149; }
 
+/* ── Gameday projections + win probability ── */
+.gameday-proj-wrap {
+  text-align:center;
+  padding:8px 0 4px;
+}
+.gameday-proj-scores {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:.82rem; color:var(--kl-text-secondary); margin-bottom:6px;
+}
+.gameday-proj-label {
+  font-size:.65rem; font-weight:600; text-transform:uppercase;
+  letter-spacing:.5px; color:#484f58; margin-right:4px;
+}
+.gameday-proj-score { font-weight:700; color:#8b949e; }
+.gameday-proj-dash { color:#30363d; }
+.gameday-prob-bar-wrap {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.gameday-prob-pct {
+  font-size:.72rem; font-weight:600; min-width:32px;
+}
+.gameday-prob-pct.left { text-align:right; color:#3fb950; }
+.gameday-prob-pct.right { text-align:left; color:#f85149; }
+.gameday-prob-bar {
+  width:140px; height:6px; border-radius:3px;
+  background:#21262d; overflow:hidden;
+}
+.gameday-prob-fill {
+  height:100%; border-radius:3px;
+  background:linear-gradient(90deg, #3fb950, #58a6ff);
+  transition:width .3s;
+}
+
+/* ── Form arrows (field view) ── */
+.fv-form { position:absolute; bottom:1px; right:3px; font-size:.6rem; line-height:1; }
+.fv-form-up { color:#3fb950; }
+.fv-form-down { color:#f85149; }
+.fv-form-flat { color:#484f58; }
+
 /* ── Modal slide-in animation ── */
 @keyframes modalSlideIn {
   from { opacity: 0; transform: scale(.95) translateY(8px); }

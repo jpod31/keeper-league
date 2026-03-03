@@ -313,6 +313,11 @@ def squad(league_id, team_id):
             league_id=league_id, year=league.season_year, is_final=False,
         ).first() is not None
 
+        # Form arrows (up/down/flat) for field view
+        from models.form_utils import compute_player_form
+        all_pids = [p.id for p in players if p]
+        player_form = compute_player_form(all_pids, league.season_year)
+
         field_data = {
             "zones": zones,
             "flex_data": flex_data,
@@ -339,6 +344,7 @@ def squad(league_id, team_id):
             "sevens_round": sevens_round,
             "has_7s_fixture": has_7s_fixture,
             "age_cutoff": AGE_CUTOFF,
+            "player_form": player_form,
         }
 
     # ── All-time stats for table view ──

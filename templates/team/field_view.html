@@ -118,6 +118,13 @@
           <span class="fv-stat-label">AGE</span>
         </div>
       </div>
+      {# Form arrow #}
+      {% set form = field_data.player_form.get(p.id, 'flat') if field_data is defined and field_data.player_form is defined else 'flat' %}
+      {% if form != 'flat' %}
+      <span class="fv-form fv-form-{{ form }}">
+        <i class="bi bi-caret-{{ 'up' if form == 'up' else 'down' }}-fill"></i>
+      </span>
+      {% endif %}
     </div>
   {% else %}
     {# Empty slot #}

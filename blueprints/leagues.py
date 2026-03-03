@@ -2047,14 +2047,178 @@ def league_history(league_id):
             "draws": record["draws"],
         }
 
+    # ── Lowest single-round scores ──────────────────────────────────
+    bottom_round_scores = (
+        db.session.query(RoundScore, FantasyTeam)
+        .join(FantasyTeam, RoundScore.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id, RoundScore.total_score > 0)
+        .order_by(RoundScore.total_score.asc())
+        .limit(10)
+        .all()
+    )
+    lowest_scores = [{
+        "team_name": ft.name, "score": rs.total_score,
+        "round": rs.afl_round, "year": rs.year,
+    } for rs, ft in bottom_round_scores]
+
+    # ── Closest matches ─────────────────────────────────────────────
+    close_matches = []
+    for f in blowout_fixtures:
+        if f.home_score is not None and f.away_score is not None:
+            margin = abs(f.home_score - f.away_score)
+            close_matches.append({
+                "home": team_map.get(f.home_team_id, "Unknown"),
+                "away": team_map.get(f.away_team_id, "Unknown"),
+                "home_score": f.home_score,
+                "away_score": f.away_score,
+                "margin": margin,
+                "round": f.afl_round,
+                "year": f.year,
+            })
+    close_matches.sort(key=lambda x: x["margin"])
+    close_matches = close_matches[:10]
+
+    # ── Highest & lowest combined scores ─────────────────────────────
+    combined = []
+    for f in blowout_fixtures:
+        if f.home_score is not None and f.away_score is not None:
+            total = f.home_score + f.away_score
+            combined.append({
+                "home": team_map.get(f.home_team_id, "Unknown"),
+                "away": team_map.get(f.away_team_id, "Unknown"),
+                "home_score": f.home_score,
+                "away_score": f.away_score,
+                "total": total,
+                "round": f.afl_round,
+                "year": f.year,
+            })
+    highest_combined = sorted(combined, key=lambda x: x["total"], reverse=True)[:5]
+    lowest_combined = sorted(combined, key=lambda x: x["total"])[:5]
+
+    # ── Longest losing streaks ──────────────────────────────────────
+    loss_streaks = []
+    for tid, results in team_results.items():
+        results_sorted = sorted(results, key=lambda x: (x[2], x[1]))
+        best_streak = 0
+        current_streak = 0
+        streak_start = None
+        best_start = None
+        best_end = None
+        for r in results_sorted:
+            if r[0] == "L":
+                if current_streak == 0:
+                    streak_start = (r[2], r[1])
+                current_streak += 1
+                if current_streak > best_streak:
+                    best_streak = current_streak
+                    best_start = streak_start
+                    best_end = (r[2], r[1])
+            else:
+                current_streak = 0
+        if best_streak > 0:
+            loss_streaks.append({
+                "team_name": team_map.get(tid, "Unknown"),
+                "streak": best_streak,
+                "start_year": best_start[0] if best_start else None,
+                "start_round": best_start[1] if best_start else None,
+                "end_year": best_end[0] if best_end else None,
+                "end_round": best_end[1] if best_end else None,
+            })
+    loss_streaks.sort(key=lambda x: x["streak"], reverse=True)
+    loss_streaks = loss_streaks[:10]
+
+    # ── Player records (from RoundScore breakdown JSON) ─────────────
+    import json as _json
+    all_round_scores = (
+        db.session.query(RoundScore, FantasyTeam)
+        .join(FantasyTeam, RoundScore.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id)
+        .all()
+    )
+
+    # Build player name lookup
+    from models.database import AflPlayer
+    player_score_records = []  # (player_name, score, team_name, round, year)
+    player_season_scores = defaultdict(list)  # (player_id, year) -> [scores]
+    player_name_map = {}
+
+    for rs, ft in all_round_scores:
+        if not rs.breakdown:
+            continue
+        try:
+            bd = _json.loads(rs.breakdown) if isinstance(rs.breakdown, str) else rs.breakdown
+        except Exception:
+            continue
+        for key, score in bd.items():
+            if not key.isdigit():
+                continue
+            pid = int(key)
+            if score and score > 0:
+                player_score_records.append((pid, score, ft.name, rs.afl_round, rs.year))
+                player_season_scores[(pid, rs.year)].append(score)
+
+    # Resolve player names
+    all_pids = list({r[0] for r in player_score_records})
+    if all_pids:
+        pname_rows = db.session.query(AflPlayer.id, AflPlayer.name).filter(
+            AflPlayer.id.in_(all_pids)
+        ).all()
+        player_name_map = {pid: name for pid, name in pname_rows}
+
+    # Top individual scores
+    player_score_records.sort(key=lambda x: x[1], reverse=True)
+    top_player_scores = [{
+        "player_name": player_name_map.get(r[0], f"Player #{r[0]}"),
+        "score": r[1],
+        "team_name": r[2],
+        "round": r[3],
+        "year": r[4],
+    } for r in player_score_records[:10]]
+
+    # Most 100+ scores in a season
+    hundred_plus = []
+    for (pid, year), scores in player_season_scores.items():
+        count = sum(1 for s in scores if s >= 100)
+        if count > 0:
+            hundred_plus.append({
+                "player_name": player_name_map.get(pid, f"Player #{pid}"),
+                "count": count,
+                "year": year,
+                "games": len(scores),
+            })
+    hundred_plus.sort(key=lambda x: x["count"], reverse=True)
+    hundred_plus = hundred_plus[:10]
+
+    # Highest season average (min 10 games)
+    best_averages = []
+    for (pid, year), scores in player_season_scores.items():
+        if len(scores) >= 10:
+            avg = sum(scores) / len(scores)
+            best_averages.append({
+                "player_name": player_name_map.get(pid, f"Player #{pid}"),
+                "avg": round(avg, 1),
+                "year": year,
+                "games": len(scores),
+            })
+    best_averages.sort(key=lambda x: x["avg"], reverse=True)
+    best_averages = best_averages[:10]
+
     return render_template("leagues/history.html",
                            league=league,
                            champions=champions,
                            alltime_standings=alltime_sorted,
                            top_scores=top_scores,
+                           lowest_scores=lowest_scores,
                            top_season_pf=top_season_pf_list,
                            blowouts=blowouts,
+                           close_matches=close_matches,
+                           highest_combined=highest_combined,
+                           lowest_combined=lowest_combined,
                            win_streaks=win_streaks,
+                           loss_streaks=loss_streaks,
+                           top_player_scores=top_player_scores,
+                           hundred_plus=hundred_plus,
+                           best_averages=best_averages,
                            h2h_data=h2h_data,
                            teams=teams,
                            team_map=team_map,
@@ -2354,6 +2518,7 @@ def api_player_stats(league_id, player_id):
         "breakeven": round(breakeven, 1),
         "stat_avgs": stat_avgs,
         "scores_by_round": scores_by_round,
+        "keeper_value": round(player.keeper_value, 1) if player.keeper_value else None,
     })
 
 

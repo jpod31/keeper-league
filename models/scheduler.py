@@ -99,6 +99,17 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Weekly KVI recompute: Tuesday 05:00 UTC (before injury sync)
+    scheduler.add_job(
+        _recompute_kvi,
+        "cron",
+        day_of_week="tue",
+        hour=5,
+        minute=0,
+        id="weekly_kvi_recompute",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
     logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 07:30 UTC)")
 
@@ -449,3 +460,25 @@ def _check_season_transitions():
                 logger.info("Season transition check: %d leagues checked", len(configs))
         except Exception:
             logger.exception("Error in season transition check")
+
+
+def _recompute_kvi():
+    """Weekly job: recompute Keeper Value Index for all players."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from models.keeper_value import recompute_all_kvi
+            from models.database import League
+            # Use the most common season year across active leagues
+            leagues = League.query.all()
+            if leagues:
+                year = max(l.season_year for l in leagues)
+            else:
+                from datetime import datetime
+                year = datetime.now().year
+            count = recompute_all_kvi(year)
+            logger.info("KVI recompute: %d players updated", count)
+        except Exception:
+            logger.exception("Error in KVI recompute")

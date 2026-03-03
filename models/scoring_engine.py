@@ -459,6 +459,14 @@ def finalize_round(league_id, afl_round, year):
         import logging
         logging.getLogger(__name__).warning("7s finalize failed", exc_info=True)
 
+    # 6. Recompute power rankings
+    try:
+        from models.power_rankings import compute_power_rankings
+        compute_power_rankings(league_id, afl_round, year)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("Power rankings failed", exc_info=True)
+
     return scores
 
 

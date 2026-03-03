@@ -138,7 +138,10 @@
     <i class="bi bi-trophy-fill me-1"></i>Champions
   </button>
   <button class="rec-tab" data-panel="records" role="tab">
-    <i class="bi bi-lightning-fill me-1"></i>Records
+    <i class="bi bi-lightning-fill me-1"></i>Team Records
+  </button>
+  <button class="rec-tab" data-panel="players" role="tab">
+    <i class="bi bi-person-fill me-1"></i>Player Records
   </button>
   <button class="rec-tab" data-panel="h2h" role="tab">
     <i class="bi bi-arrow-left-right me-1"></i>Head-to-Head
@@ -394,6 +397,340 @@
           <i class="bi bi-wind"></i>
           <p>No completed fixtures yet.</p>
         </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Lowest single-round scores #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-arrow-down-circle" style="color:#f85149;"></i>
+      <h5>Lowest Single-Round Scores</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if lowest_scores %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Team</th>
+              <th class="text-center">Round</th>
+              <th class="text-center">Year</th>
+              <th class="text-end">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in lowest_scores %}
+            <tr>
+              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td class="rec-name">{{ s.team_name }}</td>
+              <td class="text-center">R{{ s.round }}</td>
+              <td class="text-center rec-year">{{ s.year }}</td>
+              <td class="text-end rec-loss">{{ '%.0f'|format(s.score) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty"><i class="bi bi-arrow-down-circle"></i><p>No round scores recorded yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Closest matches #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-bullseye" style="color:#d29922;"></i>
+      <h5>Closest Matches</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if close_matches %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Home</th>
+              <th class="text-center">Score</th>
+              <th>Away</th>
+              <th class="text-center">Score</th>
+              <th class="text-center">Margin</th>
+              <th class="text-center">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in close_matches %}
+            <tr>
+              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td class="rec-name">{{ m.home }}</td>
+              <td class="text-center">{{ '%.0f'|format(m.home_score) }}</td>
+              <td class="rec-name">{{ m.away }}</td>
+              <td class="text-center">{{ '%.0f'|format(m.away_score) }}</td>
+              <td class="text-center" style="color:#d29922;font-weight:700;">{{ '%.0f'|format(m.margin) }}</td>
+              <td class="text-center rec-year">{{ m.year }} R{{ m.round }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty"><i class="bi bi-bullseye"></i><p>No completed fixtures yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Highest combined scores #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-arrow-up-circle" style="color:#3fb950;"></i>
+      <h5>Highest Combined Scores</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if highest_combined %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Home</th>
+              <th class="text-center">Score</th>
+              <th>Away</th>
+              <th class="text-center">Score</th>
+              <th class="text-end">Total</th>
+              <th class="text-center">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in highest_combined %}
+            <tr>
+              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td class="rec-name">{{ c.home }}</td>
+              <td class="text-center">{{ '%.0f'|format(c.home_score) }}</td>
+              <td class="rec-name">{{ c.away }}</td>
+              <td class="text-center">{{ '%.0f'|format(c.away_score) }}</td>
+              <td class="text-end rec-score">{{ '%.0f'|format(c.total) }}</td>
+              <td class="text-center rec-year">{{ c.year }} R{{ c.round }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty"><i class="bi bi-arrow-up-circle"></i><p>No completed fixtures yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Lowest combined scores #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-arrow-down-circle" style="color:#484f58;"></i>
+      <h5>Lowest Combined Scores</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if lowest_combined %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Home</th>
+              <th class="text-center">Score</th>
+              <th>Away</th>
+              <th class="text-center">Score</th>
+              <th class="text-end">Total</th>
+              <th class="text-center">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in lowest_combined %}
+            <tr>
+              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td class="rec-name">{{ c.home }}</td>
+              <td class="text-center">{{ '%.0f'|format(c.home_score) }}</td>
+              <td class="rec-name">{{ c.away }}</td>
+              <td class="text-center">{{ '%.0f'|format(c.away_score) }}</td>
+              <td class="text-end" style="color:#f85149;font-weight:700;">{{ '%.0f'|format(c.total) }}</td>
+              <td class="text-center rec-year">{{ c.year }} R{{ c.round }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty"><i class="bi bi-arrow-down-circle"></i><p>No completed fixtures yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Longest losing streaks #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-emoji-frown" style="color:#f85149;"></i>
+      <h5>Longest Losing Streaks</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if loss_streaks %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Team</th>
+              <th class="text-center">Streak</th>
+              <th>Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ls in loss_streaks %}
+            <tr>
+              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td class="rec-name">{{ ls.team_name }}</td>
+              <td class="text-center">
+                <span class="streak-badge" style="background:rgba(248,81,73,.12);color:#f85149;">{{ ls.streak }}L</span>
+              </td>
+              <td>
+                <span style="color:#8b949e;font-size:.78rem;">
+                  {% if ls.start_year == ls.end_year %}
+                    {{ ls.start_year }} R{{ ls.start_round }}&ndash;R{{ ls.end_round }}
+                  {% else %}
+                    {{ ls.start_year }} R{{ ls.start_round }} &ndash; {{ ls.end_year }} R{{ ls.end_round }}
+                  {% endif %}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty"><i class="bi bi-emoji-frown"></i><p>No completed fixtures yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════════════ #}
+{# PLAYER RECORDS TAB                                                 #}
+{# ═══════════════════════════════════════════════════════════════════ #}
+<div class="rec-panel" id="panel-players">
+
+  {# Highest individual player scores #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-person-fill" style="color:#58a6ff;"></i>
+      <h5>Highest Individual Scores</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if top_player_scores %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Player</th>
+              <th>Team</th>
+              <th class="text-center">Round</th>
+              <th class="text-center">Year</th>
+              <th class="text-end">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in top_player_scores %}
+            <tr>
+              <td>
+                {% if loop.index == 1 %}
+                  <span class="champ-badge">1</span>
+                {% else %}
+                  <span style="color:#484f58;">{{ loop.index }}</span>
+                {% endif %}
+              </td>
+              <td class="rec-name">{{ s.player_name }}</td>
+              <td style="color:#8b949e;">{{ s.team_name }}</td>
+              <td class="text-center">R{{ s.round }}</td>
+              <td class="text-center rec-year">{{ s.year }}</td>
+              <td class="text-end rec-score" style="font-size:.95rem;">{{ '%.0f'|format(s.score) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty"><i class="bi bi-person"></i><p>No player score data available yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Most 100+ scores in a season #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-1-circle-fill" style="color:#3fb950;"></i>
+      <h5>Most 100+ Scores in a Season</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if hundred_plus %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Player</th>
+              <th class="text-center">Year</th>
+              <th class="text-center">100+ Count</th>
+              <th class="text-center">Games</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in hundred_plus %}
+            <tr>
+              <td>
+                {% if loop.index == 1 %}
+                  <span class="champ-badge" style="background:rgba(63,185,80,.15);color:#3fb950;">1</span>
+                {% else %}
+                  <span style="color:#484f58;">{{ loop.index }}</span>
+                {% endif %}
+              </td>
+              <td class="rec-name">{{ h.player_name }}</td>
+              <td class="text-center rec-year">{{ h.year }}</td>
+              <td class="text-center rec-score">{{ h.count }}</td>
+              <td class="text-center">{{ h.games }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty"><i class="bi bi-1-circle"></i><p>No player score data available yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Highest season average (min 10 games) #}
+  <div class="rec-card">
+    <div class="rec-card-header">
+      <i class="bi bi-graph-up" style="color:#f0883e;"></i>
+      <h5>Highest Season Average (min 10 games)</h5>
+    </div>
+    <div class="rec-card-body">
+      {% if best_averages %}
+        <table class="rec-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Player</th>
+              <th class="text-center">Year</th>
+              <th class="text-center">Games</th>
+              <th class="text-end">Average</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in best_averages %}
+            <tr>
+              <td>
+                {% if loop.index == 1 %}
+                  <span class="champ-badge" style="background:rgba(240,136,62,.15);color:#f0883e;">1</span>
+                {% else %}
+                  <span style="color:#484f58;">{{ loop.index }}</span>
+                {% endif %}
+              </td>
+              <td class="rec-name">{{ a.player_name }}</td>
+              <td class="text-center rec-year">{{ a.year }}</td>
+              <td class="text-center">{{ a.games }}</td>
+              <td class="text-end rec-score">{{ a.avg }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="rec-empty"><i class="bi bi-graph-up"></i><p>Need at least one player with 10+ games for season averages.</p></div>
       {% endif %}
     </div>
   </div>

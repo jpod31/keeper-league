@@ -525,6 +525,16 @@ def gameday(league_id):
     my_played, my_eligible = _count_played(my_players)
     opp_played, opp_eligible = _count_played(opp_players)
 
+    # ── Win probability + projected scores ──
+    projections = None
+    try:
+        from models.matchup_projections import project_matchup
+        projections = project_matchup(
+            my_team.id, opp_team.id, afl_round, year, league_id, teams_playing
+        )
+    except Exception:
+        logger.debug("Projection calc failed", exc_info=True)
+
     return render_template(
         "matchups/gameday.html",
         is_bye=False,
@@ -542,6 +552,7 @@ def gameday(league_id):
         my_eligible=my_eligible,
         opp_played=opp_played,
         opp_eligible=opp_eligible,
+        projections=projections,
         **shared,
     )
 
@@ -565,6 +576,50 @@ def sync_scores(league_id):
     except Exception as e:
         logger.exception("Manual score sync failed")
         return jsonify({"error": str(e)}), 500
+
+
+@matchups_bp.route("/<int:league_id>/power-rankings")
+@login_required
+def power_rankings(league_id):
+    """Team power rankings — composite score separate from the ladder."""
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    from models.power_rankings import get_latest_power_rankings
+    rankings = get_latest_power_rankings(league_id, league.season_year)
+
+    # Get recent form (last 3 results) for each team
+    from models.database import Fixture as Fx
+    completed = (
+        Fx.query
+        .filter_by(league_id=league_id, status="completed", is_final=False, year=league.season_year)
+        .order_by(Fx.afl_round.desc())
+        .all()
+    )
+    team_form = {}
+    for f in completed:
+        if f.home_score is None or f.away_score is None:
+            continue
+        for tid, won in [(f.home_team_id, f.home_score > f.away_score),
+                         (f.away_team_id, f.away_score > f.home_score)]:
+            if tid not in team_form:
+                team_form[tid] = []
+            if len(team_form[tid]) < 3:
+                if f.home_score == f.away_score:
+                    team_form[tid].append("D")
+                elif won:
+                    team_form[tid].append("W")
+                else:
+                    team_form[tid].append("L")
+
+    return render_template("matchups/power_rankings.html",
+                           league=league,
+                           rankings=rankings,
+                           team_form=team_form,
+                           active_tab="league",
+                           active_subtab="rankings")
 
 
 @matchups_bp.route("/<int:league_id>/teams")

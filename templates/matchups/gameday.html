@@ -165,6 +165,25 @@
       {% endif %}
     </div>
 
+    {# Win probability + projected scores #}
+    {% if projections is defined and projections and gameday_state != 'completed' %}
+    <div class="gameday-proj-wrap mt-3">
+      <div class="gameday-proj-scores">
+        <span class="gameday-proj-label">Proj</span>
+        <span class="gameday-proj-score left">{{ projections.my_projected|round(0)|int }}</span>
+        <span class="gameday-proj-dash">&ndash;</span>
+        <span class="gameday-proj-score right">{{ projections.opp_projected|round(0)|int }}</span>
+      </div>
+      <div class="gameday-prob-bar-wrap">
+        <span class="gameday-prob-pct left">{{ projections.my_win_pct|round(0)|int }}%</span>
+        <div class="gameday-prob-bar">
+          <div class="gameday-prob-fill" style="width:{{ projections.my_win_pct|round(1) }}%"></div>
+        </div>
+        <span class="gameday-prob-pct right">{{ projections.opp_win_pct|round(0)|int }}%</span>
+      </div>
+    </div>
+    {% endif %}
+
     {# First bounce — upcoming only #}
     {% if gameday_state == 'upcoming' and first_bounce %}
     <div class="text-center mt-3" id="first-bounce-info" style="color:var(--kl-text-secondary);font-size:.85rem;">
