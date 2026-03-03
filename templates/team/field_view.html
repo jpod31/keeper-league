@@ -29,8 +29,6 @@
              title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
           {% if p.injury_severity in ('short', 'long') %}
             <span class="fv-injury-slash"></span>
-          {% else %}
-            <i class="bi bi-circle-fill"></i>
           {% endif %}
         </div>
       {% endif %}

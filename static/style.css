@@ -834,8 +834,8 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 /* ── Bubble badge (C / VC / E) ── */
 .fv-ribbon {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -6px;
+  right: -6px;
   z-index: 3;
   pointer-events: none;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
@@ -844,11 +844,11 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .5rem;
+  font-size: .55rem;
   font-weight: 800;
   letter-spacing: .3px;
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   line-height: 1;
   border: 2px solid var(--kl-bg-card, #161b22);
@@ -3034,21 +3034,18 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   border: 2px solid var(--kl-bg-card, #161b22);
   filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
 }
-.fv-injury i { font-size: .65rem; line-height: 1; }
 /* BYE shifts right when injury dot is present */
 .fv-bye-shifted { left: 18px; }
 
-/* Test — solid pink (might play this round) */
+/* Test — solid pink fill */
 .fv-injury-test {
   background: linear-gradient(135deg, #ff6b9d, #e84393);
 }
-.fv-injury-test i { color: #fff; }
 
-/* Suspension — yellow */
+/* Suspension — solid yellow fill */
 .fv-injury-suspension {
   background: linear-gradient(135deg, #f0c040, #d29922);
 }
-.fv-injury-suspension i { color: #fff; }
 
 /* Short/Long — white circle, red border, red diagonal slash */
 .fv-injury-short,
@@ -3059,8 +3056,8 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 }
 .fv-injury-slash {
   position: absolute;
-  width: 2px;
-  height: 60%;
+  width: 2.5px;
+  height: 55%;
   background: #da3633;
   border-radius: 1px;
   transform: rotate(45deg);
@@ -3076,33 +3073,18 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 .player-injury-banner {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   margin-top: 6px;
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: .75rem;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: .7rem;
   font-weight: 600;
+  letter-spacing: .2px;
 }
-.player-injury-test {
-  background: rgba(255,107,157,.15);
-  color: #ff6b9d;
-  border: 1px solid rgba(255,107,157,.3);
-}
-.player-injury-suspension {
-  background: rgba(210,153,34,.15);
-  color: #f0c040;
-  border: 1px solid rgba(210,153,34,.3);
-}
-.player-injury-short {
-  background: rgba(248,81,73,.12);
-  color: #f85149;
-  border: 1px solid rgba(248,81,73,.3);
-}
-.player-injury-long {
-  background: rgba(182,35,36,.15);
-  color: #f85149;
-  border: 1px solid rgba(182,35,36,.3);
-}
+.player-injury-test     { background: rgba(255,107,157,.12); color: #ff6b9d; }
+.player-injury-suspension { background: rgba(210,153,34,.12); color: #f0c040; }
+.player-injury-short    { background: rgba(248,81,73,.10); color: #f85149; }
+.player-injury-long     { background: rgba(182,35,36,.12); color: #f85149; }
 
 /* ── Modal slide-in animation ── */
 @keyframes modalSlideIn {
