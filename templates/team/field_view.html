@@ -23,9 +23,19 @@
         <div class="fv-ribbon fv-ribbon-7s"><span>{% if is_7c %}7C{% else %}7{% endif %}</span></div>
       {% endif %}
 
-      {# No-game indicator #}
+      {# Top-left badges: injury then BYE #}
+      {% if p.injury_severity %}
+        <div class="fv-injury fv-injury-{{ p.injury_severity }}"
+             title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
+          {% if p.injury_severity == 'long' %}
+            <i class="bi bi-slash-circle-fill"></i>
+          {% else %}
+            <i class="bi bi-circle-fill"></i>
+          {% endif %}
+        </div>
+      {% endif %}
       {% if teams_playing and p.afl_team and p.afl_team not in teams_playing %}
-        <div class="fv-bye-badge" title="No game this round">BYE</div>
+        <div class="fv-bye-badge{% if p.injury_severity %} fv-bye-shifted{% endif %}" title="No game this round">BYE</div>
       {% endif %}
 
       {# Hover action bubbles (owner only) #}
@@ -80,18 +90,6 @@
         {% endif %}
         <span class="fv-pos-pip fv-pip-{{ (p.position or 'MID').split('/')[0]|lower }}">{{ (p.position or 'MID').split('/')[0] }}</span>
       </div>
-
-      {# Injury indicator — between position and name #}
-      {% if p.injury_severity %}
-        <div class="fv-injury fv-injury-{{ p.injury_severity }}"
-             title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
-          {% if p.injury_severity == 'long' %}
-            <i class="bi bi-slash-circle-fill"></i>
-          {% else %}
-            <i class="bi bi-circle-fill"></i>
-          {% endif %}
-        </div>
-      {% endif %}
 
       {# Player name #}
       {% set fname = p.name.split()[0] %}
