@@ -1,22 +1,26 @@
 {# AFL Field View — included from squad.html when view == 'field' #}
 {# Expects: field_data, TEAM_LOGOS, is_owner, league, team #}
 
-{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing) %}
+{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing, sevens_ids=[], sevens_captain_id=None, has_7s_fixture=false) %}
   {% if p %}
     {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
-    <div class="fv-card fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}"
+    {% set is_7s = sevens_ids is defined and p.id in sevens_ids %}
+    {% set is_7c = sevens_captain_id is defined and p.id == sevens_captain_id %}
+    <div class="fv-card fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if is_7s %} fv-card-7s{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}"
          data-player-id="{{ p.id }}"
          data-section="{% if is_reserve %}reserve{% elif is_flex %}flex{% else %}field{% endif %}"
          data-positions="{{ p.position or 'MID' }}"
          data-field-pos="{{ pos_class|upper if not is_flex and not is_reserve else '' }}"
          onclick="fvShowPlayer({{ p.id }})">
-      {# Captain / VC / Emergency ribbon #}
+      {# Captain / VC / Emergency / 7s ribbon #}
       {% if cap_id == p.id %}
         <div class="fv-ribbon fv-ribbon-cap"><span>C</span></div>
       {% elif vc_id == p.id %}
         <div class="fv-ribbon fv-ribbon-vc"><span>VC</span></div>
       {% elif is_emg %}
         <div class="fv-ribbon fv-ribbon-emg"><span>E</span></div>
+      {% elif is_7s %}
+        <div class="fv-ribbon fv-ribbon-7s"><span>{% if is_7c %}7C{% else %}7{% endif %}</span></div>
       {% endif %}
 
       {# No-game indicator #}
@@ -40,6 +44,14 @@
         {% if is_reserve %}
         <button class="fv-action-btn fv-act-emg{% if is_emg %} active{% endif %}"
                 title="Toggle Emergency" onclick="event.stopPropagation(); fvSetEmergency({{ p.id }})">E</button>
+        {% if has_7s_fixture %}
+        <button class="fv-action-btn fv-act-7s{% if is_7s %} active{% endif %}"
+                title="Toggle 7s" onclick="event.stopPropagation(); fv7sToggle({{ p.id }})">7</button>
+        {% if is_7s %}
+        <button class="fv-action-btn fv-act-7c{% if is_7c %} active{% endif %}"
+                title="Set 7s Captain" onclick="event.stopPropagation(); fv7sCaptain({{ p.id }})">7C</button>
+        {% endif %}
+        {% endif %}
         {% endif %}
         {% if is_flex or is_reserve %}
         <button class="fv-action-btn fv-act-ltil"
@@ -295,7 +307,7 @@
         </div>
         <div class="fv-reserves-grid">
           {% for p in pos_players %}
-            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing) }}
+            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture) }}
           {% endfor %}
         </div>
       </div>
@@ -520,6 +532,50 @@ function fvSetEmergency(pid) {
       card.querySelectorAll('.fv-act-emg').forEach(b => b.classList.remove('active'));
       fvToast('Emergency removed', 'info');
     }
+  });
+}
+
+// ── 7s Toggle — inline DOM update ──
+function fv7sToggle(pid) {
+  fvApi('/toggle-7s', {player_id: pid}).then(data => {
+    if (data.error) return;
+    const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+    if (!card) return;
+    if (data.in_7s) {
+      card.classList.add('fv-card-7s');
+      // Remove emergency if it was set (mutual exclusivity)
+      card.classList.remove('fv-card-emergency');
+      const emgR = card.querySelector('.fv-ribbon-emg'); if (emgR) emgR.remove();
+      card.querySelectorAll('.fv-act-emg').forEach(b => b.classList.remove('active'));
+      // Add 7s ribbon
+      if (!card.querySelector('.fv-ribbon-7s')) {
+        // Remove any existing ribbon first
+        const oldR = card.querySelector('.fv-ribbon'); if (oldR) oldR.remove();
+        const ribbon = document.createElement('div');
+        ribbon.className = 'fv-ribbon fv-ribbon-7s';
+        ribbon.innerHTML = '<span>7</span>';
+        card.insertBefore(ribbon, card.firstChild);
+      }
+      card.querySelectorAll('.fv-act-7s').forEach(b => b.classList.add('active'));
+      fvToast(`Added to 7s (${data.sevens_count}/7)`, 'success');
+      // Refresh to show the 7C button
+      fvRefresh();
+    } else {
+      card.classList.remove('fv-card-7s');
+      const r = card.querySelector('.fv-ribbon-7s'); if (r) r.remove();
+      card.querySelectorAll('.fv-act-7s').forEach(b => b.classList.remove('active'));
+      fvToast(`Removed from 7s (${data.sevens_count}/7)`, 'info');
+      fvRefresh();
+    }
+  });
+}
+
+// ── 7s Captain — inline DOM update ──
+function fv7sCaptain(pid) {
+  fvApi('/set-7s-captain', {player_id: pid}).then(data => {
+    if (data.error) return;
+    fvToast('7s Captain updated', 'success');
+    fvRefresh();
   });
 }
 

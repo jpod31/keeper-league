@@ -825,6 +825,11 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   box-shadow: 0 0 8px rgba(56,166,215,.25);
   background: linear-gradient(135deg, rgba(56,166,215,.06), var(--kl-bg-card) 50%);
 }
+.fv-card-7s {
+  border-color: rgba(188,140,255,.4);
+  box-shadow: 0 0 8px rgba(188,140,255,.25);
+  background: linear-gradient(135deg, rgba(188,140,255,.08), var(--kl-bg-card) 50%);
+}
 
 /* ── Bubble badge (C / VC / E) ── */
 .fv-ribbon {
@@ -862,6 +867,11 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   background: linear-gradient(135deg, #2196c9, #38a6d7);
   color: #fff;
 }
+.fv-ribbon-7s span {
+  background: linear-gradient(135deg, #9b59b6, #bc8cff);
+  color: #fff;
+  font-size: .45rem;
+}
 
 /* ── BYE badge — no game this round ── */
 .fv-bye-badge {
@@ -895,7 +905,8 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 /* Bubble overlaps the corner — no extra padding needed */
 .fv-card-captain .fv-card-top,
 .fv-card-vc .fv-card-top,
-.fv-card-emergency .fv-card-top {
+.fv-card-emergency .fv-card-top,
+.fv-card-7s .fv-card-top {
   padding-top: 6px;
 }
 .fv-logo {
@@ -1392,6 +1403,27 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   background: linear-gradient(135deg, #2196c9, #38a6d7);
   color: #fff;
   border-color: #38a6d7;
+}
+.fv-act-7s {
+  background: #9b59b6;
+  color: #fff;
+  border-color: #9b59b6;
+}
+.fv-act-7s:hover, .fv-act-7s.active {
+  background: linear-gradient(135deg, #9b59b6, #bc8cff);
+  color: #fff;
+  border-color: #bc8cff;
+}
+.fv-act-7c {
+  background: #7d3c98;
+  color: #fff;
+  border-color: #7d3c98;
+  font-size: .5rem;
+}
+.fv-act-7c:hover, .fv-act-7c.active {
+  background: linear-gradient(135deg, #7d3c98, #bc8cff);
+  color: #fff;
+  border-color: #bc8cff;
 }
 
 /* ═══ Swap Mode ═══ */

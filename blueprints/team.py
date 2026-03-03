@@ -298,6 +298,21 @@ def squad(league_id, team_id):
             ssp_window_active = season_cfg.ssp_window_open <= now <= season_cfg.ssp_window_close
         can_remove_ltil = league.status in ("offseason", "setup")
 
+        # Reserve 7s lineup IDs for the upcoming round
+        from models.database import Reserve7sLineup, Reserve7sFixture
+        from blueprints.reserve7s import _get_next_7s_round, AGE_CUTOFF
+        sevens_round = _get_next_7s_round(league_id, league.season_year)
+        sevens_entries = Reserve7sLineup.query.filter_by(
+            league_id=league_id, team_id=team_id,
+            afl_round=sevens_round, year=league.season_year,
+        ).all()
+        sevens_ids = [e.player_id for e in sevens_entries]
+        sevens_captain_id = next((e.player_id for e in sevens_entries if e.is_captain), None)
+        # Check if 7s fixture exists (so we know to show the bubbles)
+        has_7s_fixture = Reserve7sFixture.query.filter_by(
+            league_id=league_id, year=league.season_year, is_final=False,
+        ).first() is not None
+
         field_data = {
             "zones": zones,
             "flex_data": flex_data,
@@ -319,6 +334,11 @@ def squad(league_id, team_id):
             "ssp_window_active": ssp_window_active,
             "teams_playing": teams_playing,
             "can_remove_ltil": can_remove_ltil,
+            "sevens_ids": sevens_ids,
+            "sevens_captain_id": sevens_captain_id,
+            "sevens_round": sevens_round,
+            "has_7s_fixture": has_7s_fixture,
+            "age_cutoff": AGE_CUTOFF,
         }
 
     # ── All-time stats for table view ──
@@ -803,6 +823,18 @@ def api_set_emergency(league_id, team_id):
         # Toggle off
         entry.is_emergency = False
     else:
+        # Check mutual exclusivity with 7s
+        from models.database import Reserve7sLineup
+        from blueprints.reserve7s import _get_next_7s_round
+        sevens_round = _get_next_7s_round(league_id, league.season_year)
+        in_7s = Reserve7sLineup.query.filter_by(
+            league_id=league_id, team_id=team_id,
+            afl_round=sevens_round, year=league.season_year,
+            player_id=player_id,
+        ).first()
+        if in_7s:
+            return jsonify({"error": "Player is in 7s lineup — remove from 7s first"}), 409
+
         # Check limit
         current_count = FantasyRoster.query.filter_by(
             team_id=team_id, is_active=True, is_emergency=True
@@ -813,6 +845,131 @@ def api_set_emergency(league_id, team_id):
 
     db.session.commit()
     return jsonify({"ok": True, "is_emergency": entry.is_emergency})
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/api/toggle-7s", methods=["POST"])
+@login_required
+def api_toggle_7s(league_id, team_id):
+    """Toggle a reserve player in/out of the Reserve 7s lineup for the upcoming round."""
+    from models.database import Reserve7sLineup, Reserve7sFixture
+    from blueprints.reserve7s import _get_next_7s_round, AGE_CUTOFF
+
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    player_id = data.get("player_id")
+    if not player_id:
+        return jsonify({"error": "Missing player_id"}), 400
+
+    entry, err = _get_roster_entry(player_id, team, current_user)
+    if err:
+        return err
+
+    # Must be a reserve (is_benched=True)
+    if not entry.is_benched:
+        return jsonify({"error": "Only reserve players can be in the 7s"}), 409
+
+    year = league.season_year
+    sevens_round = _get_next_7s_round(league_id, year)
+
+    # Check if already in 7s
+    existing = Reserve7sLineup.query.filter_by(
+        league_id=league_id, team_id=team_id,
+        afl_round=sevens_round, year=year, player_id=player_id,
+    ).first()
+
+    if existing:
+        # Toggle off
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({"ok": True, "in_7s": False, "sevens_count": Reserve7sLineup.query.filter_by(
+            league_id=league_id, team_id=team_id, afl_round=sevens_round, year=year,
+        ).count()})
+    else:
+        # Adding — check 7-player limit
+        current_count = Reserve7sLineup.query.filter_by(
+            league_id=league_id, team_id=team_id,
+            afl_round=sevens_round, year=year,
+        ).count()
+        if current_count >= 7:
+            return jsonify({"error": "Already have 7 players in 7s lineup"}), 409
+
+        # Check age constraint: max 2 seniors
+        player = db.session.get(AflPlayer, player_id)
+        is_young = player and (player.age or 99) < AGE_CUTOFF
+
+        if not is_young:
+            senior_count = 0
+            current_entries = Reserve7sLineup.query.filter_by(
+                league_id=league_id, team_id=team_id,
+                afl_round=sevens_round, year=year,
+            ).all()
+            for e in current_entries:
+                p = db.session.get(AflPlayer, e.player_id)
+                if p and (p.age or 99) >= AGE_CUTOFF:
+                    senior_count += 1
+            if senior_count >= 2:
+                return jsonify({"error": "Max 2 senior (24+) players in 7s"}), 409
+
+        # Mutually exclusive with emergency
+        if entry.is_emergency:
+            entry.is_emergency = False
+
+        new_entry = Reserve7sLineup(
+            league_id=league_id, team_id=team_id,
+            afl_round=sevens_round, year=year,
+            player_id=player_id, is_captain=False,
+        )
+        db.session.add(new_entry)
+        db.session.commit()
+        return jsonify({"ok": True, "in_7s": True, "sevens_count": Reserve7sLineup.query.filter_by(
+            league_id=league_id, team_id=team_id, afl_round=sevens_round, year=year,
+        ).count()})
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/api/set-7s-captain", methods=["POST"])
+@login_required
+def api_set_7s_captain(league_id, team_id):
+    """Set or unset captain for the 7s lineup."""
+    from models.database import Reserve7sLineup
+    from blueprints.reserve7s import _get_next_7s_round
+
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id or team.owner_id != current_user.id:
+        return jsonify({"error": "Not your team"}), 403
+
+    data = request.get_json(silent=True) or {}
+    player_id = data.get("player_id")
+    if not player_id:
+        return jsonify({"error": "Missing player_id"}), 400
+
+    year = league.season_year
+    sevens_round = _get_next_7s_round(league_id, year)
+
+    # Must be in the 7s lineup
+    entry = Reserve7sLineup.query.filter_by(
+        league_id=league_id, team_id=team_id,
+        afl_round=sevens_round, year=year, player_id=player_id,
+    ).first()
+    if not entry:
+        return jsonify({"error": "Player not in 7s lineup"}), 404
+
+    # Clear all captains first
+    Reserve7sLineup.query.filter_by(
+        league_id=league_id, team_id=team_id,
+        afl_round=sevens_round, year=year,
+    ).update({"is_captain": False})
+
+    # Toggle: if already captain, we just cleared; otherwise set
+    if not entry.is_captain:
+        entry.is_captain = True
+
+    db.session.commit()
+    return jsonify({"ok": True, "captain_id": player_id if entry.is_captain else None})
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/api/player/<int:player_id>")
