@@ -24,18 +24,10 @@
     </div>
     {# Desktop: original pill actions #}
     <div class="squad-hero-actions d-none d-lg-flex">
-      <div class="dropdown">
-        <button class="squad-pill squad-pill-manage dropdown-toggle" data-bs-toggle="dropdown">
-          <i class="bi bi-gear"></i>List Management
-        </button>
-        <ul class="dropdown-menu dropdown-menu-dark">
-          <li><a class="dropdown-item" href="{{ url_for('trades.trade_center', league_id=league.id) }}"><i class="bi bi-arrow-left-right me-2"></i>Trade Center</a></li>
-          {% if is_owner %}
-          <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item" href="{{ url_for('team.draft_weights', league_id=league.id) }}"><i class="bi bi-bar-chart me-2"></i>Draft Weights</a></li>
-          {% endif %}
-        </ul>
-      </div>
+      <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="squad-pill squad-pill-manage"><i class="bi bi-arrow-left-right"></i>Trades</a>
+      {% if is_owner %}
+      <a href="{{ url_for('team.draft_weights', league_id=league.id) }}" class="squad-pill squad-pill-manage"><i class="bi bi-sliders"></i>Draft Weights</a>
+      {% endif %}
       <a href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}" class="squad-pill squad-pill-stats"><i class="bi bi-graph-up"></i>Stats</a>
       <a href="{{ url_for('team.team_analytics', league_id=league.id, team_id=team.id) }}" class="squad-pill squad-pill-manage"><i class="bi bi-bar-chart-line"></i>Analytics</a>
       {% if is_owner %}

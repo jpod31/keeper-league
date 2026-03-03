@@ -1489,6 +1489,55 @@ def player_pool(league_id):
         from models.keeper_value import compute_keeper_values
         kvi_map = compute_keeper_values(rostered_pids, league.season_year)
 
+    # Acquisition info: player_id -> {coach, method, pick_number, draft_year, draft_type}
+    acquired_map = {}
+    acq_rows = (
+        db.session.query(
+            FantasyRoster.player_id,
+            FantasyRoster.acquired_via,
+            FantasyTeam.name.label("team_name"),
+            FantasyTeam.owner_id,
+        )
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+        .all()
+    )
+    from models.database import User
+    owner_ids = {r.owner_id for r in acq_rows if r.owner_id}
+    owner_names = {}
+    if owner_ids:
+        for u in User.query.filter(User.id.in_(owner_ids)).all():
+            owner_names[u.id] = u.display_name or u.username
+    # Get draft pick details for players acquired via draft/supplemental
+    draft_pick_map = {}
+    league_drafts = DraftSession.query.filter_by(league_id=league_id, status="completed").all()
+    if league_drafts:
+        ds_ids = [ds.id for ds in league_drafts]
+        draft_picks = DraftPick.query.filter(
+            DraftPick.draft_session_id.in_(ds_ids),
+            DraftPick.player_id.isnot(None),
+        ).all()
+        ds_lookup = {ds.id: ds for ds in league_drafts}
+        for dp in draft_picks:
+            ds = ds_lookup.get(dp.draft_session_id)
+            draft_pick_map[dp.player_id] = {
+                "pick_number": dp.pick_number,
+                "draft_year": ds.started_at.year if ds and ds.started_at else (ds.scheduled_start.year if ds and ds.scheduled_start else ""),
+                "draft_type": ds.draft_round_type if ds else "initial",
+            }
+
+    for r in acq_rows:
+        info = {
+            "coach": owner_names.get(r.owner_id, ""),
+            "method": r.acquired_via or "draft",
+        }
+        dp = draft_pick_map.get(r.player_id)
+        if dp and r.acquired_via in ("draft", "supplemental", None):
+            info["pick_number"] = dp["pick_number"]
+            info["draft_year"] = dp["draft_year"]
+            info["draft_type"] = dp["draft_type"]
+        acquired_map[r.player_id] = info
+
     return render_template("leagues/player_pool.html",
                            league=league,
                            players=players,
@@ -1501,7 +1550,8 @@ def player_pool(league_id):
                            ltil_count=ltil_count,
                            can_pickup=can_pickup,
                            ssp_cutoff_round=ssp_cutoff_round,
-                           kvi_map=kvi_map)
+                           kvi_map=kvi_map,
+                           acquired_map=acquired_map)
 
 
 @leagues_bp.route("/<int:league_id>/player-pool/pickup", methods=["POST"])

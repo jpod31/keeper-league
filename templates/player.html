@@ -35,6 +35,16 @@
       <span>{{ player_injury.type or 'Injured' }} — {{ player_injury.display or player_injury['return'] or '' }}</span>
     </div>
     {% endif %}
+    {% if acquisition_info %}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+      {% for acq in acquisition_info %}
+      <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.12);border-radius:6px;font-size:.75rem;">
+        <i class="bi {% if acq.method == 'trade' %}bi-arrow-left-right{% elif acq.method == 'free_agent' %}bi-person-plus{% else %}bi-hammer{% endif %}" style="color:{% if acq.method == 'trade' %}#bc8cff{% elif acq.method == 'free_agent' %}#3fb950{% else %}#58a6ff{% endif %};"></i>
+        <span style="color:#c9d1d9;">Acquired by <strong>{{ acq.coach }}</strong>{% if acq.get('pick_number') %} with pick #{{ acq.pick_number }} in the {{ acq.draft_year }}{% if acq.draft_type == 'supplemental' %} midseason{% endif %} draft{% elif acq.method == 'trade' %} via trade{% elif acq.method == 'free_agent' %} as a free agent{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
   <div class="d-flex align-items-center gap-3">
     {% if player.draft_score %}

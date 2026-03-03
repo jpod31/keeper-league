@@ -485,6 +485,47 @@ def create_app():
                     "display": friendly_return_text(afl_row.injury_return, current_round),
                 }
 
+        # Acquisition info: find which league/team drafted this player
+        acquisition_info = []
+        if afl_row:
+            from models.database import FantasyRoster, FantasyTeam, DraftPick, DraftSession, User, League
+            acq_rows = (
+                db.session.query(FantasyRoster, FantasyTeam)
+                .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+                .filter(FantasyRoster.player_id == afl_row.id, FantasyRoster.is_active == True)
+                .all()
+            )
+            for fr, ft in acq_rows:
+                owner = User.query.get(ft.owner_id) if ft.owner_id else None
+                coach_name = (owner.display_name or owner.username) if owner else ft.name
+                info = {
+                    "coach": coach_name,
+                    "team": ft.name,
+                    "method": fr.acquired_via or "draft",
+                    "league_name": "",
+                }
+                lg = db.session.get(League, ft.league_id)
+                if lg:
+                    info["league_name"] = lg.name
+                # Find draft pick details
+                if fr.acquired_via in ("draft", "supplemental", None):
+                    dp = (
+                        DraftPick.query
+                        .join(DraftSession, DraftPick.draft_session_id == DraftSession.id)
+                        .filter(
+                            DraftSession.league_id == ft.league_id,
+                            DraftPick.player_id == afl_row.id,
+                            DraftPick.team_id == ft.id,
+                        )
+                        .first()
+                    )
+                    if dp:
+                        ds = DraftSession.query.get(dp.draft_session_id)
+                        info["pick_number"] = dp.pick_number
+                        info["draft_year"] = ds.started_at.year if ds and ds.started_at else (ds.scheduled_start.year if ds and ds.scheduled_start else "")
+                        info["draft_type"] = ds.draft_round_type if ds else "initial"
+                acquisition_info.append(info)
+
         return render_template("player.html",
                                player=player,
                                breakdown=breakdown,
@@ -493,7 +534,8 @@ def create_app():
                                draft_history=draft_history,
                                weights=config.DRAFT_WEIGHTS,
                                player_ratings=player_ratings,
-                               player_injury=player_injury)
+                               player_injury=player_injury,
+                               acquisition_info=acquisition_info)
 
     # ── Legacy team routes (keep working — no login required) ────────
 

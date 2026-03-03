@@ -216,6 +216,7 @@
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('potential',this)">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:110px;" onclick="sortPool('draft_score',this)">Value <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('kvi',this)">KVI <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th style="width:130px;">Acquired</th>
           <th class="text-center" style="width:110px;">Status</th>
         </tr>
       </thead>
@@ -324,6 +325,24 @@
               {% if rostered_map.get(p.id) and kvi_map.get(p.id) %}
                 {% set kvi = kvi_map[p.id] %}
                 <span style="font-weight:700;font-size:.78rem;{% if kvi >= 60 %}color:#3fb950;{% elif kvi >= 40 %}color:#58a6ff;{% elif kvi >= 20 %}color:#d29922;{% else %}color:#f85149;{% endif %}">{{ '%.0f'|format(kvi) }}</span>
+              {% else %}
+                <span style="color:#30363d;">-</span>
+              {% endif %}
+            </td>
+            {# Acquired by #}
+            <td>
+              {% set acq = acquired_map.get(p.id) %}
+              {% if acq %}
+                <div style="font-size:.7rem;line-height:1.3;">
+                  <span style="color:#c9d1d9;font-weight:600;">{{ acq.coach }}</span>
+                  {% if acq.get('pick_number') %}
+                  <div style="color:#484f58;">Pick #{{ acq.pick_number }}{% if acq.get('draft_year') %} · {{ acq.draft_year }}{% endif %}{% if acq.draft_type == 'supplemental' %} <span style="color:#d29922;">mid</span>{% endif %}</div>
+                  {% elif acq.method == 'trade' %}
+                  <div style="color:#bc8cff;">Trade</div>
+                  {% elif acq.method == 'free_agent' %}
+                  <div style="color:#3fb950;">Free Agent</div>
+                  {% endif %}
+                </div>
               {% else %}
                 <span style="color:#30363d;">-</span>
               {% endif %}
