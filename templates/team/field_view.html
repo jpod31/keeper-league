@@ -79,17 +79,19 @@
           <span class="fv-flex-pip">FLEX</span>
         {% endif %}
         <span class="fv-pos-pip fv-pip-{{ (p.position or 'MID').split('/')[0]|lower }}">{{ (p.position or 'MID').split('/')[0] }}</span>
-        {% if p.injury_severity %}
-          <span class="fv-injury fv-injury-{{ p.injury_severity }}"
-                title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
-            {% if p.injury_severity == 'long' %}
-              <i class="bi bi-slash-circle-fill"></i>
-            {% else %}
-              <i class="bi bi-circle-fill"></i>
-            {% endif %}
-          </span>
-        {% endif %}
       </div>
+
+      {# Injury indicator — between position and name #}
+      {% if p.injury_severity %}
+        <div class="fv-injury fv-injury-{{ p.injury_severity }}"
+             title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
+          {% if p.injury_severity == 'long' %}
+            <i class="bi bi-slash-circle-fill"></i>
+          {% else %}
+            <i class="bi bi-circle-fill"></i>
+          {% endif %}
+        </div>
+      {% endif %}
 
       {# Player name #}
       {% set fname = p.name.split()[0] %}
