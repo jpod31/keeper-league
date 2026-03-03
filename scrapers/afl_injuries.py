@@ -110,7 +110,7 @@ def friendly_return_text(return_text: str, current_round: int | None) -> str:
     lower = text.lower()
 
     if lower == "test":
-        return "Expected to play this round"
+        return "Test for this round"
 
     # Already a specific round: "Round X"
     m = re.match(r"^round\s+(\d+)$", lower)
