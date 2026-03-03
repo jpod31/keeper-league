@@ -29,6 +29,9 @@ class AflPlayer(db.Model):
     draft_score = db.Column(db.Float)
     rating = db.Column(db.Integer)              # FIFA-style 54–90
     potential = db.Column(db.Integer)            # FIFA-style 64–94
+    injury_type = db.Column(db.String(100))      # "Hamstring", "Knee", etc. NULL = not injured
+    injury_return = db.Column(db.String(60))     # "Test", "1-2 weeks", "Season", etc.
+    injury_severity = db.Column(db.String(10))   # "test", "short", "long". NULL = not injured
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))
 
@@ -1117,5 +1120,19 @@ def _run_migrations(app):
             if col_name not in existing_ps:
                 db.session.execute(
                     text(f"ALTER TABLE player_stat ADD COLUMN {col_name} {col_def}")
+                )
+        db.session.commit()
+
+    # AflPlayer injury columns
+    if "afl_player" in inspector.get_table_names():
+        existing_ap = {c["name"] for c in inspector.get_columns("afl_player")}
+        for col_name, col_def in [
+            ("injury_type", "VARCHAR(100)"),
+            ("injury_return", "VARCHAR(60)"),
+            ("injury_severity", "VARCHAR(10)"),
+        ]:
+            if col_name not in existing_ap:
+                db.session.execute(
+                    text(f"ALTER TABLE afl_player ADD COLUMN {col_name} {col_def}")
                 )
         db.session.commit()

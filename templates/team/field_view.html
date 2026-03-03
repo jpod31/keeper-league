@@ -28,6 +28,18 @@
         <div class="fv-bye-badge" title="No game this round">BYE</div>
       {% endif %}
 
+      {# Injury indicator — bottom-left, separate from ribbon chain #}
+      {% if p.injury_severity %}
+        <div class="fv-injury fv-injury-{{ p.injury_severity }}"
+             title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
+          {% if p.injury_severity == 'long' %}
+            <i class="bi bi-slash-circle-fill"></i>
+          {% else %}
+            <i class="bi bi-circle-fill"></i>
+          {% endif %}
+        </div>
+      {% endif %}
+
       {# Hover action bubbles (owner only) #}
       {% if is_owner %}
       <div class="fv-actions" onclick="event.stopPropagation()">
@@ -338,6 +350,7 @@
             <div class="pm-bio-name" id="pmBioName"></div>
             <div class="pm-bio-meta" id="pmTeamPos"></div>
             <div class="pm-bio-meta"><strong id="pmAge">-</strong> age &nbsp; <strong id="pmHeight">-</strong> cm &nbsp; <strong id="pmGames">-</strong> career games</div>
+            <div id="pmInjury" style="display:none;margin-top:4px;font-size:.7rem;color:#f85149;"><i class="bi bi-bandaid me-1"></i><span id="pmInjuryText"></span></div>
           </div>
           <div class="pm-rings">
             <div style="text-align:center;">
@@ -782,6 +795,15 @@ function fvShowPlayer(pid) {
       document.getElementById('pmAge').textContent = data.age || '-';
       document.getElementById('pmHeight').textContent = data.height_cm || '-';
       document.getElementById('pmGames').textContent = data.career_games || '-';
+      // Injury info
+      const injEl = document.getElementById('pmInjury');
+      if (data.injury_severity) {
+        document.getElementById('pmInjuryText').textContent =
+          (data.injury_type || 'Injured') + ' — ' + (data.injury_return || '');
+        injEl.style.display = '';
+      } else {
+        injEl.style.display = 'none';
+      }
       document.getElementById('pmScAvg').textContent =
         data.sc_avg ? Math.round(data.sc_avg) : '-';
       document.getElementById('pmScPrev').textContent =

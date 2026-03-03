@@ -3018,6 +3018,42 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .league-nav { margin-top: 0; }
 }
 
+/* ── Injury indicator — bottom-left of player card ── */
+.fv-injury {
+  position: absolute;
+  bottom: -4px;
+  left: -4px;
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--kl-bg-card, #161b22);
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
+}
+.fv-injury i { font-size: .55rem; line-height: 1; }
+
+/* Test — semi-transparent red (might play) */
+.fv-injury-test {
+  background: rgba(248,81,73,.35);
+}
+.fv-injury-test i { color: rgba(255,255,255,.8); }
+
+/* Short — solid red (out this week, short-term) */
+.fv-injury-short {
+  background: linear-gradient(135deg, #f85149, #da3633);
+}
+.fv-injury-short i { color: #fff; }
+
+/* Long — solid dark red with slash icon (2+ weeks / season) */
+.fv-injury-long {
+  background: linear-gradient(135deg, #f85149, #b62324);
+}
+.fv-injury-long i { color: #fff; }
+
 /* ── Modal slide-in animation ── */
 @keyframes modalSlideIn {
   from { opacity: 0; transform: scale(.95) translateY(8px); }

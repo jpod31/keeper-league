@@ -89,8 +89,18 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Daily injury list sync: 07:30 UTC (5:30pm AEST, after AFL Tuesday update)
+    scheduler.add_job(
+        _sync_injuries,
+        "cron",
+        hour=7,
+        minute=30,
+        id="daily_injury_sync",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
-    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC)")
+    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 07:30 UTC)")
 
 
 def schedule_round_finalization(year: int, afl_round: int):
@@ -402,6 +412,20 @@ def _send_weekly_digest():
 
         except Exception:
             logger.exception("Error in weekly email digest")
+
+
+def _sync_injuries():
+    """Daily job: sync AFL injury list to database."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from scrapers.afl_injuries import sync_injuries_to_db
+            count = sync_injuries_to_db()
+            logger.info("Injury sync: %d injuries updated", count)
+        except Exception:
+            logger.exception("Error in injury sync")
 
 
 def _check_season_transitions():
