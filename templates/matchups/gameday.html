@@ -216,11 +216,11 @@
         <div class="gameday-player-list" id="left-players">
           {% if not is_bye and my_players %}
             <div class="gameday-section-hdr section-field"><i class="bi bi-people-fill me-1"></i>Field</div>
-            {% for p in my_players if p.lineup_type == 'field' %}
+            {% for p in my_players if p.lineup_type == 'field' and p.afl_team in teams_playing %}
               {{ player_row(p, locked_player_ids, gameday_state) }}
             {% endfor %}
             {% set bench_emg = [] %}
-            {% for p in my_players if p.lineup_type in ['bench', 'emergency'] %}
+            {% for p in my_players if p.lineup_type in ['bench', 'emergency'] and p.afl_team in teams_playing %}
               {% if bench_emg.append(p) %}{% endif %}
             {% endfor %}
             {% if bench_emg %}
@@ -230,12 +230,22 @@
               {% endfor %}
             {% endif %}
             {% set reserve_list = [] %}
-            {% for p in my_players if p.lineup_type == 'reserve' %}
+            {% for p in my_players if p.lineup_type == 'reserve' and p.afl_team in teams_playing %}
               {% if reserve_list.append(p) %}{% endif %}
             {% endfor %}
             {% if reserve_list %}
               <div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
               {% for p in reserve_list %}
+                {{ player_row(p, locked_player_ids, gameday_state) }}
+              {% endfor %}
+            {% endif %}
+            {% set my_no_game = [] %}
+            {% for p in my_players if p.afl_team not in teams_playing %}
+              {% if my_no_game.append(p) %}{% endif %}
+            {% endfor %}
+            {% if my_no_game %}
+              <div class="gameday-section-hdr" style="color:var(--kl-text-secondary);"><i class="bi bi-calendar-x me-1"></i>No Game This Round</div>
+              {% for p in my_no_game %}
                 {{ player_row(p, locked_player_ids, gameday_state) }}
               {% endfor %}
             {% endif %}
@@ -255,11 +265,11 @@
         <div class="gameday-player-list" id="right-players">
           {% if not is_bye and opp_players %}
             <div class="gameday-section-hdr section-field"><i class="bi bi-people-fill me-1"></i>Field</div>
-            {% for p in opp_players if p.lineup_type == 'field' %}
+            {% for p in opp_players if p.lineup_type == 'field' and p.afl_team in teams_playing %}
               {{ player_row(p, locked_player_ids, gameday_state) }}
             {% endfor %}
             {% set opp_bench_emg = [] %}
-            {% for p in opp_players if p.lineup_type in ['bench', 'emergency'] %}
+            {% for p in opp_players if p.lineup_type in ['bench', 'emergency'] and p.afl_team in teams_playing %}
               {% if opp_bench_emg.append(p) %}{% endif %}
             {% endfor %}
             {% if opp_bench_emg %}
@@ -269,12 +279,22 @@
               {% endfor %}
             {% endif %}
             {% set opp_reserve_list = [] %}
-            {% for p in opp_players if p.lineup_type == 'reserve' %}
+            {% for p in opp_players if p.lineup_type == 'reserve' and p.afl_team in teams_playing %}
               {% if opp_reserve_list.append(p) %}{% endif %}
             {% endfor %}
             {% if opp_reserve_list %}
               <div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>
               {% for p in opp_reserve_list %}
+                {{ player_row(p, locked_player_ids, gameday_state) }}
+              {% endfor %}
+            {% endif %}
+            {% set opp_no_game = [] %}
+            {% for p in opp_players if p.afl_team not in teams_playing %}
+              {% if opp_no_game.append(p) %}{% endif %}
+            {% endfor %}
+            {% if opp_no_game %}
+              <div class="gameday-section-hdr" style="color:var(--kl-text-secondary);"><i class="bi bi-calendar-x me-1"></i>No Game This Round</div>
+              {% for p in opp_no_game %}
                 {{ player_row(p, locked_player_ids, gameday_state) }}
               {% endfor %}
             {% endif %}
