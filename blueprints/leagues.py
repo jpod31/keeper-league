@@ -1482,6 +1482,13 @@ def player_pool(league_id):
 
         can_pickup = below_cap and current_round < ssp_cutoff_round
 
+    # Keeper Value Index for rostered players
+    rostered_pids = list(rostered_map.keys())
+    kvi_map = {}
+    if rostered_pids:
+        from models.keeper_value import compute_keeper_values
+        kvi_map = compute_keeper_values(rostered_pids, league.season_year)
+
     return render_template("leagues/player_pool.html",
                            league=league,
                            players=players,
@@ -1493,7 +1500,8 @@ def player_pool(league_id):
                            effective_roster_count=roster_count - ltil_count,
                            ltil_count=ltil_count,
                            can_pickup=can_pickup,
-                           ssp_cutoff_round=ssp_cutoff_round)
+                           ssp_cutoff_round=ssp_cutoff_round,
+                           kvi_map=kvi_map)
 
 
 @leagues_bp.route("/<int:league_id>/player-pool/pickup", methods=["POST"])
@@ -2203,6 +2211,94 @@ def league_history(league_id):
     best_averages.sort(key=lambda x: x["avg"], reverse=True)
     best_averages = best_averages[:10]
 
+    # ── H2H Fun Facts ─────────────────────────────────────────────
+    rivalry_facts = []
+
+    # Most one-sided matchup
+    for (t1, t2), rec in h2h.items():
+        total = rec["wins"] + rec["losses"] + rec["draws"]
+        if total >= 3:
+            dominance = rec["wins"] / total * 100 if total > 0 else 0
+            if dominance >= 75:
+                rivalry_facts.append({
+                    "type": "dominance",
+                    "text": f"{team_map.get(t1, '?')} dominates {team_map.get(t2, '?')} — {rec['wins']}-{rec['draws']}-{rec['losses']} all-time ({dominance:.0f}% win rate)",
+                    "value": dominance,
+                })
+            if rec["losses"] == 0 and rec["wins"] >= 2:
+                rivalry_facts.append({
+                    "type": "unbeaten",
+                    "text": f"{team_map.get(t1, '?')} has NEVER lost to {team_map.get(t2, '?')} ({rec['wins']}-{rec['draws']}-0)",
+                    "value": rec["wins"],
+                })
+
+    # H2H win streaks (consecutive wins in one direction)
+    h2h_results = defaultdict(list)
+    for f in completed:
+        if f.home_score is None or f.away_score is None:
+            continue
+        if f.home_score > f.away_score:
+            h2h_results[(f.home_team_id, f.away_team_id)].append(("W", f.year, f.afl_round))
+            h2h_results[(f.away_team_id, f.home_team_id)].append(("L", f.year, f.afl_round))
+        elif f.away_score > f.home_score:
+            h2h_results[(f.away_team_id, f.home_team_id)].append(("W", f.year, f.afl_round))
+            h2h_results[(f.home_team_id, f.away_team_id)].append(("L", f.year, f.afl_round))
+
+    for (t1, t2), results in h2h_results.items():
+        sorted_r = sorted(results, key=lambda x: (x[1], x[2]))
+        streak = 0
+        best_streak = 0
+        for r in sorted_r:
+            if r[0] == "W":
+                streak += 1
+                best_streak = max(best_streak, streak)
+            else:
+                streak = 0
+        # Current streak (is it still active?)
+        current = 0
+        for r in reversed(sorted_r):
+            if r[0] == "W":
+                current += 1
+            else:
+                break
+        if current >= 3:
+            rivalry_facts.append({
+                "type": "streak",
+                "text": f"{team_map.get(t1, '?')} is on a {current}-game winning streak vs {team_map.get(t2, '?')}",
+                "value": current,
+            })
+
+    # Closest rivalry (smallest win% difference, min 4 games)
+    closest_rivalry = None
+    closest_diff = 999
+    for (t1, t2), rec in h2h.items():
+        total = rec["wins"] + rec["losses"] + rec["draws"]
+        if total >= 4:
+            diff = abs(rec["wins"] - rec["losses"])
+            if diff < closest_diff:
+                closest_diff = diff
+                closest_rivalry = {
+                    "team1": team_map.get(t1, "?"),
+                    "team2": team_map.get(t2, "?"),
+                    "record": f"{rec['wins']}-{rec['draws']}-{rec['losses']}",
+                    "total": total,
+                }
+
+    # Sort facts by interestingness
+    rivalry_facts.sort(key=lambda x: x["value"], reverse=True)
+    rivalry_facts = rivalry_facts[:8]
+
+    # ── Milestone tracking ─────────────────────────────────────────
+    milestones = []
+    # Check if any team is approaching all-time records
+    if top_scores and alltime_sorted:
+        record_score = top_scores[0]["score"] if top_scores else 0
+        for a in alltime_sorted[:3]:
+            # Approaching wins milestone
+            for milestone in [10, 25, 50, 75, 100]:
+                if a["wins"] >= milestone - 3 and a["wins"] < milestone:
+                    milestones.append(f"{a['team_name']} is {milestone - a['wins']} wins away from {milestone} all-time wins")
+
     return render_template("leagues/history.html",
                            league=league,
                            champions=champions,
@@ -2220,6 +2316,9 @@ def league_history(league_id):
                            hundred_plus=hundred_plus,
                            best_averages=best_averages,
                            h2h_data=h2h_data,
+                           rivalry_facts=rivalry_facts,
+                           closest_rivalry=closest_rivalry,
+                           milestones=milestones,
                            teams=teams,
                            team_map=team_map,
                            active_tab="league")

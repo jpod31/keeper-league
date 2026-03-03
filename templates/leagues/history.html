@@ -132,6 +132,18 @@
   </div>
 </div>
 
+{# Milestone alerts #}
+{% if milestones %}
+<div style="margin-bottom:16px;">
+  {% for m in milestones %}
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:6px;background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.2);border-radius:8px;font-size:.8rem;color:#e3b341;">
+    <i class="bi bi-stars"></i>
+    <span>{{ m }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 {# ═══ Tab bar ═══ #}
 <div class="rec-tabs" role="tablist">
   <button class="rec-tab active" data-panel="champions" role="tab">
@@ -789,6 +801,32 @@
             <p style="color:#8b949e;">Please select two different teams.</p>
           </div>
         </div>
+
+        {# Rivalry fun facts #}
+        {% if rivalry_facts or closest_rivalry %}
+        <div class="mt-4" style="margin-bottom:20px;">
+          <h6 style="font-size:.82rem;font-weight:600;color:#8b949e;margin-bottom:12px;">
+            <i class="bi bi-fire me-1"></i>Rivalry Fun Facts
+          </h6>
+          {% if closest_rivalry %}
+          <div style="background:rgba(188,140,255,.06);border:1px solid rgba(188,140,255,.15);border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+            <i class="bi bi-people-fill" style="color:#bc8cff;font-size:1.1rem;"></i>
+            <div>
+              <div style="font-size:.8rem;font-weight:600;color:#e6edf3;">Closest Rivalry</div>
+              <div style="font-size:.75rem;color:#8b949e;">
+                {{ closest_rivalry.team1 }} vs {{ closest_rivalry.team2 }} — {{ closest_rivalry.record }} across {{ closest_rivalry.total }} games
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% for fact in rivalry_facts %}
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:6px;background:{% if fact.type == 'dominance' %}rgba(63,185,80,.05);border:1px solid rgba(63,185,80,.12){% elif fact.type == 'unbeaten' %}rgba(210,153,34,.06);border:1px solid rgba(210,153,34,.15){% else %}rgba(88,166,255,.05);border:1px solid rgba(88,166,255,.12){% endif %};border-radius:8px;font-size:.78rem;">
+            <i class="bi {% if fact.type == 'dominance' %}bi-trophy-fill{% elif fact.type == 'unbeaten' %}bi-shield-fill-check{% else %}bi-lightning-fill{% endif %}" style="color:{% if fact.type == 'dominance' %}#3fb950{% elif fact.type == 'unbeaten' %}#d29922{% else %}#58a6ff{% endif %};"></i>
+            <span style="color:#c9d1d9;">{{ fact.text }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
 
         {# Full H2H matrix table #}
         <div class="mt-4">

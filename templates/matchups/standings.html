@@ -54,10 +54,60 @@
   [data-type="custom"] { color:#bc8cff !important; background:rgba(188,140,255,.1) !important; }
   [data-type="hybrid"] { color:#f0883e !important; background:rgba(240,136,62,.1) !important; }
   [data-type="uf"] { color:#39d2c0 !important; background:rgba(57,210,192,.1) !important; }
+
+  /* View toggle */
+  .ldr-toggle {
+    display:inline-flex; border:1px solid #30363d; border-radius:6px; overflow:hidden;
+    margin-bottom:16px;
+  }
+  .ldr-toggle-btn {
+    padding:6px 16px; font-size:.78rem; font-weight:600; cursor:pointer;
+    background:transparent; color:#8b949e; border:none; transition:all .15s;
+  }
+  .ldr-toggle-btn.active { background:rgba(88,166,255,.12); color:#58a6ff; }
+  .ldr-toggle-btn:hover:not(.active) { color:#c9d1d9; }
+
+  /* Rankings inline */
+  .pr-row { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid #161b22; transition:background .1s; }
+  .pr-row:hover { background:rgba(22,27,34,.5); }
+  .pr-row:last-child { border-bottom:none; }
+  .pr-rank-num { font-size:1.1rem; font-weight:800; min-width:28px; text-align:center; }
+  .pr-rank-1 { color:#FFD700; }
+  .pr-rank-2 { color:#C0C0C0; }
+  .pr-rank-3 { color:#CD7F32; }
+  .pr-rank-other { color:#484f58; }
+  .pr-move { font-size:.72rem; font-weight:700; min-width:32px; text-align:center; }
+  .pr-move-up { color:#3fb950; }
+  .pr-move-down { color:#f85149; }
+  .pr-move-same { color:#30363d; }
+  .pr-info { flex:1; }
+  .pr-team { color:#e6edf3; font-weight:600; font-size:.88rem; }
+  .pr-blurb { color:#8b949e; font-size:.72rem; margin-top:1px; font-style:italic; }
+  .pr-right { display:flex; align-items:center; gap:12px; }
+  .pr-score-badge { color:#58a6ff; font-weight:700; font-size:.85rem; }
+  .pr-form-dots { display:flex; gap:2px; }
+  .pr-dot {
+    width:16px; height:16px; border-radius:3px; font-size:.55rem; font-weight:800;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pr-dot-W { background:rgba(63,185,80,.15); color:#3fb950; }
+  .pr-dot-L { background:rgba(248,81,73,.12); color:#f85149; }
+  .pr-dot-D { background:rgba(210,153,34,.12); color:#d29922; }
 </style>
 
 {% set _st = scoring.label|lower %}
 {% set sc_type = 'sc' if 'supercoach' in _st else ('af' if 'fantasy' in _st else ('uf' if 'ultimate' in _st else ('hybrid' if 'hybrid' in _st else 'custom'))) %}
+
+{# Toggle: Ladder / Rankings #}
+{% if rankings %}
+<div class="ldr-toggle">
+  <button class="ldr-toggle-btn active" onclick="showView('ladder')">Ladder</button>
+  <button class="ldr-toggle-btn" onclick="showView('rankings')">Power Rankings</button>
+</div>
+{% endif %}
+
+{# ═══ LADDER VIEW ═══ #}
+<div id="view-ladder">
 {% if standings %}
   <div class="ldr-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
     <table class="ldr-table" style="min-width:580px;">
@@ -96,18 +146,10 @@
             <td style="text-align:center;">{{ s.draws }}</td>
             <td style="text-align:center;"><span class="ldr-pts">{{ s.ladder_points }}</span></td>
             <td style="text-align:right;">
-              {% if scoring.is_uf %}
-                {{ '%.0f'|format(s.points_for) if s.points_for > 0 else '–' }}
-              {% else %}
-                {{ '%.0f'|format(s.points_for) if s.points_for > 0 else '–' }}
-              {% endif %}
+              {{ '%.0f'|format(s.points_for) if s.points_for > 0 else '–' }}
             </td>
             <td style="text-align:right;">
-              {% if scoring.is_uf %}
-                {{ '%.0f'|format(s.points_against) if s.points_against > 0 else '–' }}
-              {% else %}
-                {{ '%.0f'|format(s.points_against) if s.points_against > 0 else '–' }}
-              {% endif %}
+              {{ '%.0f'|format(s.points_against) if s.points_against > 0 else '–' }}
             </td>
             <td style="text-align:right;">
               <span class="ldr-pct" style="{% if s.percentage >= 110 %}color:#3fb950;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '–' }}{% if s.percentage > 0 %}%{% endif %}</span>
@@ -128,4 +170,57 @@
     <p style="font-size:.8rem;">Teams will appear here once they join the league.</p>
   </div>
 {% endif %}
+</div>
+
+{# ═══ POWER RANKINGS VIEW ═══ #}
+<div id="view-rankings" style="display:none;">
+{% if rankings %}
+  <div class="ldr-wrap">
+    <div style="padding:12px 16px;border-bottom:1px solid #21262d;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:.72rem;color:#8b949e;">
+        <i class="bi bi-graph-up-arrow me-1"></i>Round {{ rankings[0].afl_round }} — Based on form, scoring power &amp; strength of wins
+      </span>
+    </div>
+    {% for pr in rankings %}
+    <div class="pr-row">
+      <span class="pr-rank-num pr-rank-{{ pr.rank if pr.rank <= 3 else 'other' }}">{{ pr.rank }}</span>
+      <span class="pr-move {% if pr.movement > 0 %}pr-move-up{% elif pr.movement < 0 %}pr-move-down{% else %}pr-move-same{% endif %}">
+        {% if pr.movement > 0 %}<i class="bi bi-caret-up-fill"></i>{{ pr.movement }}
+        {% elif pr.movement < 0 %}<i class="bi bi-caret-down-fill"></i>{{ pr.movement|abs }}
+        {% else %}&mdash;{% endif %}
+      </span>
+      <div class="pr-info">
+        <div class="pr-team">{{ pr.team.name }}</div>
+        {% if ranking_blurbs.get(pr.team_id) %}
+          <div class="pr-blurb">{{ ranking_blurbs[pr.team_id] }}</div>
+        {% endif %}
+      </div>
+      <div class="pr-right">
+        <span class="pr-score-badge">{{ '%.1f'|format(pr.score) }}</span>
+        <div class="pr-form-dots">
+          {% for r in team_form.get(pr.team_id, []) %}
+            <span class="pr-dot pr-dot-{{ r }}">{{ r }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="ldr-wrap" style="text-align:center;padding:48px 20px;color:#484f58;">
+    <i class="bi bi-graph-up-arrow" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
+    <p style="font-size:.85rem;">Power rankings will appear after the first round is finalised.</p>
+  </div>
+{% endif %}
+</div>
+
+<script>
+function showView(view) {
+  document.getElementById('view-ladder').style.display = view === 'ladder' ? '' : 'none';
+  document.getElementById('view-rankings').style.display = view === 'rankings' ? '' : 'none';
+  document.querySelectorAll('.ldr-toggle-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.textContent.trim().toLowerCase().replace(' ', '') === (view === 'ladder' ? 'ladder' : 'powerrankings'));
+  });
+}
+</script>
 {% endblock %}

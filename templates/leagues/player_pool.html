@@ -215,6 +215,7 @@
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('rating',this)">Rtg <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('potential',this)">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:110px;" onclick="sortPool('draft_score',this)">Value <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-end" style="width:50px;" onclick="sortPool('kvi',this)">KVI <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="text-center" style="width:110px;">Status</th>
         </tr>
       </thead>
@@ -239,6 +240,7 @@
               data-pot="{{ p.potential or 0 }}" data-rank="{{ p._rank }}"
               data-l3="{{ pr.l3 or 0 }}" data-l5="{{ pr.l5 or 0 }}"
               data-trend="{{ trend_val }}"
+              data-kvi="{{ kvi_map.get(p.id, 0) }}"
               data-status="{{ 'taken' if owner_team else 'available' }}"
               data-owner="{{ owner_team or '' }}">
             {# Rank #}
@@ -316,6 +318,15 @@
                   </div>
                 </div>
               {% else %}<span style="color:#484f58;">-</span>{% endif %}
+            </td>
+            {# KVI (rostered players only) #}
+            <td class="text-end">
+              {% if rostered_map.get(p.id) and kvi_map.get(p.id) %}
+                {% set kvi = kvi_map[p.id] %}
+                <span style="font-weight:700;font-size:.78rem;{% if kvi >= 60 %}color:#3fb950;{% elif kvi >= 40 %}color:#58a6ff;{% elif kvi >= 20 %}color:#d29922;{% else %}color:#f85149;{% endif %}">{{ '%.0f'|format(kvi) }}</span>
+              {% else %}
+                <span style="color:#30363d;">-</span>
+              {% endif %}
             </td>
             {# Status #}
             <td class="text-center">

@@ -211,11 +211,83 @@ def standings(league_id):
 
     scoring = get_scoring_context(league)
 
+    # Power rankings data for inline toggle
+    from models.power_rankings import get_latest_power_rankings
+    rankings = get_latest_power_rankings(league_id, year)
+
+    # Recent form for rankings display
+    from models.database import Fixture as Fx
+    completed_fx = (
+        Fx.query.filter_by(league_id=league_id, status="completed", is_final=False, year=year)
+        .order_by(Fx.afl_round.desc()).all()
+    )
+    team_form = {}
+    for f in completed_fx:
+        if f.home_score is None or f.away_score is None:
+            continue
+        for tid, won in [(f.home_team_id, f.home_score > f.away_score),
+                         (f.away_team_id, f.away_score > f.home_score)]:
+            if tid not in team_form:
+                team_form[tid] = []
+            if len(team_form[tid]) < 5:
+                if f.home_score == f.away_score:
+                    team_form[tid].append("D")
+                elif won:
+                    team_form[tid].append("W")
+                else:
+                    team_form[tid].append("L")
+
+    # Auto-generate fun blurbs for each ranked team
+    ranking_blurbs = {}
+    if rankings:
+        # Get avg scores for blurbs
+        avg_rs = {}
+        rs_rows = (
+            db.session.query(RoundScore.team_id, db.func.avg(RoundScore.total_score))
+            .filter(RoundScore.team_id.in_([r.team_id for r in rankings]), RoundScore.year == year)
+            .group_by(RoundScore.team_id).all()
+        )
+        for tid, avg in rs_rows:
+            avg_rs[tid] = avg
+        league_avg = sum(avg_rs.values()) / len(avg_rs) if avg_rs else 0
+
+        for pr in rankings:
+            form = team_form.get(pr.team_id, [])
+            wins = sum(1 for r in form if r == "W")
+            losses = sum(1 for r in form if r == "L")
+            avg = avg_rs.get(pr.team_id, 0)
+            pct_above = ((avg - league_avg) / league_avg * 100) if league_avg > 0 else 0
+
+            if wins >= 4 and pct_above > 10:
+                blurb = f"Dominant — {wins} from last {len(form)}, scoring {pct_above:+.0f}% above league average"
+            elif wins >= 3:
+                blurb = f"On fire — {wins} wins from last {len(form)}"
+            elif pr.movement >= 3:
+                blurb = f"Surging — up {pr.movement} spots this round"
+            elif losses >= 4:
+                blurb = f"In freefall — {losses} losses from last {len(form)}"
+            elif pr.movement <= -3:
+                blurb = f"Sliding — dropped {abs(pr.movement)} spots"
+            elif losses >= 3:
+                blurb = f"Struggling — {losses} losses from last {len(form)}"
+            elif pct_above > 5:
+                blurb = f"Solid — scoring {pct_above:+.0f}% above average"
+            elif pct_above < -5:
+                blurb = f"Underperforming — scoring {pct_above:+.0f}% vs league average"
+            elif wins == losses and len(form) >= 4:
+                blurb = f"Treading water — {wins}W {losses}L from last {len(form)}"
+            else:
+                blurb = f"Steady — holding at #{pr.rank}"
+            ranking_blurbs[pr.team_id] = blurb
+
     return render_template("matchups/standings.html",
                            league=league,
                            standings=standing_list,
                            finals_teams=finals_teams,
-                           scoring=scoring)
+                           scoring=scoring,
+                           rankings=rankings,
+                           team_form=team_form,
+                           ranking_blurbs=ranking_blurbs)
 
 
 @matchups_bp.route("/<int:league_id>/live/<int:afl_round>")
