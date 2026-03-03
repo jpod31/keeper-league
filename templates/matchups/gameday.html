@@ -56,6 +56,10 @@
   {% endif %}
 
   {# ── Hero card (matchup scores) ── #}
+  {% if not is_bye %}
+    {% set my_data = round_scores.get(my_team.id, {}) %}
+    {% set opp_data = round_scores.get(opp_team.id, {}) %}
+  {% endif %}
   <div class="gameday-hero hero-{{ gameday_state }}" id="hero-card" {% if is_bye %}style="display:none;"{% endif %}>
     {# Score area #}
     <div class="row align-items-center text-center gameday-score-row">
@@ -64,35 +68,32 @@
           <span class="gameday-team-initial left-initial" id="left-initial">{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
         </div>
         <div class="gameday-team-name" id="left-team-name">{% if not is_bye %}{{ my_team.name }}{% endif %}</div>
-        {% if not is_bye and gameday_state != 'upcoming' %}
-          <div class="gameday-score" id="hero-left-score">{{ '%.0f'|format(my_score) }}</div>
-          {% if league.scoring_type == 'ultimate_footy' %}
-            <div style="color:var(--kl-text-secondary);font-size:.7rem;">categories won</div>
-          {% elif my_captain_bonus > 0 %}
-            <div class="captain-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
+        {% if not is_bye %}
+          <div class="gameday-score" id="hero-left-score" {% if gameday_state == 'upcoming' %}style="display:none;"{% endif %}>{{ '%.0f'|format(my_score) }}</div>
+          {% if my_captain_bonus > 0 %}
+            <div class="captain-bonus" id="hero-left-cap" style="font-size:.7rem;color:#d29922;margin-top:2px;">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
           {% else %}
             <div class="captain-bonus" id="hero-left-cap" style="display:none;"></div>
           {% endif %}
-          {% set my_id = my_team.id if not is_bye else 0 %}
-          {% set my_data = round_scores.get(my_id, {}) %}
-          {% set my_pp = my_data.get('players_played', 0) %}
-          {% set my_pt = my_data.get('players_total', 0) %}
-          <div class="hero-players-count" id="hero-left-players-count" style="font-size:.7rem;color:var(--kl-text-faint);margin-top:2px;">
-            {% if my_pt %}{{ my_pp }}/{{ my_pt }} played{% endif %}
+          <div class="hero-players-count" id="hero-left-players-count" style="margin-top:4px;">
+            <span style="font-size:.75rem;font-weight:600;color:var(--kl-text-primary);">{{ my_played|default(0) }}</span><span style="font-size:.65rem;color:var(--kl-text-faint);">/{{ my_eligible|default(0) }} played</span>
           </div>
-          <div class="hero-cap-badges" id="hero-left-cap-badges" style="margin-top:2px;">
+          <div style="width:60%;margin:4px auto 0;height:3px;border-radius:2px;background:rgba(139,148,158,.15);overflow:hidden;">
+            <div style="height:100%;border-radius:2px;background:var(--kl-accent-green);width:{{ ((my_played|default(0)) / (my_eligible|default(1) or 1) * 100)|round(0)|int }}%;transition:width .3s;"></div>
+          </div>
+          <div class="hero-cap-badges" id="hero-left-cap-badges" style="margin-top:5px;">
             {% if my_data.get('has_captain') %}
-              <span class="hero-cap-badge" style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if my_data.get('captain_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">C</span>
+              <span style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if my_data.get('captain_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">C</span>
             {% endif %}
             {% if my_data.get('has_vc') %}
-              <span class="hero-vc-badge" style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if my_data.get('vc_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">VC</span>
+              <span style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if my_data.get('vc_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">VC</span>
             {% endif %}
           </div>
         {% else %}
           <div class="gameday-score" id="hero-left-score" style="display:none;"></div>
           <div class="captain-bonus" id="hero-left-cap" style="display:none;"></div>
-          <div class="hero-players-count" id="hero-left-players-count" style="font-size:.7rem;color:var(--kl-text-faint);margin-top:2px;display:none;"></div>
-          <div class="hero-cap-badges" id="hero-left-cap-badges" style="margin-top:2px;display:none;"></div>
+          <div class="hero-players-count" id="hero-left-players-count" style="display:none;"></div>
+          <div class="hero-cap-badges" id="hero-left-cap-badges" style="display:none;"></div>
         {% endif %}
       </div>
       <div class="col-2">
@@ -103,35 +104,32 @@
           <span class="gameday-team-initial right-initial" id="right-initial">{% if not is_bye %}{{ opp_team.name[:2]|upper }}{% endif %}</span>
         </div>
         <div class="gameday-team-name" id="right-team-name">{% if not is_bye %}{{ opp_team.name }}{% endif %}</div>
-        {% if not is_bye and gameday_state != 'upcoming' %}
-          <div class="gameday-score" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</div>
-          {% if league.scoring_type == 'ultimate_footy' %}
-            <div style="color:var(--kl-text-secondary);font-size:.7rem;">categories won</div>
-          {% elif opp_captain_bonus > 0 %}
-            <div class="captain-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
+        {% if not is_bye %}
+          <div class="gameday-score" id="hero-right-score" {% if gameday_state == 'upcoming' %}style="display:none;"{% endif %}>{{ '%.0f'|format(opp_score) }}</div>
+          {% if opp_captain_bonus > 0 %}
+            <div class="captain-bonus" id="hero-right-cap" style="font-size:.7rem;color:#d29922;margin-top:2px;">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
           {% else %}
             <div class="captain-bonus" id="hero-right-cap" style="display:none;"></div>
           {% endif %}
-          {% set opp_id = opp_team.id if not is_bye else 0 %}
-          {% set opp_data = round_scores.get(opp_id, {}) %}
-          {% set opp_pp = opp_data.get('players_played', 0) %}
-          {% set opp_pt = opp_data.get('players_total', 0) %}
-          <div class="hero-players-count" id="hero-right-players-count" style="font-size:.7rem;color:var(--kl-text-faint);margin-top:2px;">
-            {% if opp_pt %}{{ opp_pp }}/{{ opp_pt }} played{% endif %}
+          <div class="hero-players-count" id="hero-right-players-count" style="margin-top:4px;">
+            <span style="font-size:.75rem;font-weight:600;color:var(--kl-text-primary);">{{ opp_played|default(0) }}</span><span style="font-size:.65rem;color:var(--kl-text-faint);">/{{ opp_eligible|default(0) }} played</span>
           </div>
-          <div class="hero-cap-badges" id="hero-right-cap-badges" style="margin-top:2px;">
+          <div style="width:60%;margin:4px auto 0;height:3px;border-radius:2px;background:rgba(139,148,158,.15);overflow:hidden;">
+            <div style="height:100%;border-radius:2px;background:var(--kl-accent-green);width:{{ ((opp_played|default(0)) / (opp_eligible|default(1) or 1) * 100)|round(0)|int }}%;transition:width .3s;"></div>
+          </div>
+          <div class="hero-cap-badges" id="hero-right-cap-badges" style="margin-top:5px;">
             {% if opp_data.get('has_captain') %}
-              <span class="hero-cap-badge" style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if opp_data.get('captain_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">C</span>
+              <span style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if opp_data.get('captain_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">C</span>
             {% endif %}
             {% if opp_data.get('has_vc') %}
-              <span class="hero-vc-badge" style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if opp_data.get('vc_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">VC</span>
+              <span style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if opp_data.get('vc_played') else 'background:rgba(139,148,158,.15);color:#6e7681;' }}">VC</span>
             {% endif %}
           </div>
         {% else %}
           <div class="gameday-score" id="hero-right-score" style="display:none;"></div>
           <div class="captain-bonus" id="hero-right-cap" style="display:none;"></div>
-          <div class="hero-players-count" id="hero-right-players-count" style="font-size:.7rem;color:var(--kl-text-faint);margin-top:2px;display:none;"></div>
-          <div class="hero-cap-badges" id="hero-right-cap-badges" style="margin-top:2px;display:none;"></div>
+          <div class="hero-players-count" id="hero-right-players-count" style="display:none;"></div>
+          <div class="hero-cap-badges" id="hero-right-cap-badges" style="display:none;"></div>
         {% endif %}
       </div>
     </div>

@@ -508,6 +508,17 @@ def gameday(league_id):
     my_captain_bonus = my_rs.captain_bonus if my_rs else 0
     opp_captain_bonus = opp_rs.captain_bonus if opp_rs else 0
 
+    # Compute players played / eligible (only field+flex with a game this round)
+    def _count_played(players):
+        eligible = [p for p in players
+                    if p.get("lineup_type") in ("field", "flex")
+                    and p.get("afl_team", "") in teams_playing]
+        played = sum(1 for p in eligible if p.get("game_started") and not p.get("is_dnp"))
+        return played, len(eligible)
+
+    my_played, my_eligible = _count_played(my_players)
+    opp_played, opp_eligible = _count_played(opp_players)
+
     return render_template(
         "matchups/gameday.html",
         is_bye=False,
@@ -521,6 +532,10 @@ def gameday(league_id):
         opp_score=opp_score,
         my_captain_bonus=my_captain_bonus,
         opp_captain_bonus=opp_captain_bonus,
+        my_played=my_played,
+        my_eligible=my_eligible,
+        opp_played=opp_played,
+        opp_eligible=opp_eligible,
         **shared,
     )
 
