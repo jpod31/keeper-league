@@ -194,6 +194,7 @@
       <span class="gameday-player-name">{{ p.name }}</span>
       <span class="gameday-player-meta">
         {{ p.afl_team }}
+        {% if afl_matchup_info.get(p.afl_team) %}<span style="color:var(--kl-text-faint);font-size:.65rem;margin-left:2px;">{{ afl_matchup_info[p.afl_team] }}</span>{% endif %}
         {% if p.get('replaces') %}<span class="gameday-sub-note">&rarr; replacing {{ p.replaces }}</span>{% endif %}
       </span>
     </span>

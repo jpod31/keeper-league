@@ -405,11 +405,14 @@ def gameday(league_id):
         else:
             round_dates = f"{fmt(earliest)} – {fmt(latest)}"
 
-    # Build set of AFL teams that have a game this round
+    # Build set of AFL teams that have a game this round + matchup info
     teams_playing = set()
+    afl_matchup_info = {}  # e.g. {"Collingwood": "v Ess (H)", "Essendon": "v Coll (A)"}
     for g in afl_games_for_round:
         teams_playing.add(g.home_team)
         teams_playing.add(g.away_team)
+        afl_matchup_info[g.home_team] = f"v {g.away_team[:4]} (H)"
+        afl_matchup_info[g.away_team] = f"v {g.home_team[:4]} (A)"
 
     # ── Shared round-level data (needed by all states inc. bye) ──
     round_fixtures = get_round_fixtures(league_id, year, afl_round)
@@ -443,6 +446,7 @@ def gameday(league_id):
         user_team=user_team,
         scoring=scoring,
         teams_playing=teams_playing,
+        afl_matchup_info=afl_matchup_info,
     )
 
     # ── Find user's fixture (or bye) ──
