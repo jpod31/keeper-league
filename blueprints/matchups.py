@@ -326,7 +326,7 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
             .filter_by(league_id=league_id, year=year, status="completed", is_final=False)
             .scalar()
         )
-        if latest_completed:
+        if latest_completed is not None:
             return latest_completed
     else:
         # Show next scheduled round (preview mode)
@@ -335,7 +335,7 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
             .filter_by(league_id=league_id, year=year, status="scheduled", is_final=False)
             .scalar()
         )
-        if next_scheduled:
+        if next_scheduled is not None:
             return next_scheduled
 
     # 3. Fallbacks
@@ -344,7 +344,7 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
         .filter_by(league_id=league_id, year=year, status="completed", is_final=False)
         .scalar()
     )
-    if latest_completed:
+    if latest_completed is not None:
         return latest_completed
 
     first_scheduled = (
@@ -352,7 +352,7 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
         .filter_by(league_id=league_id, year=year, status="scheduled", is_final=False)
         .scalar()
     )
-    if first_scheduled:
+    if first_scheduled is not None:
         return first_scheduled
 
     return 1
