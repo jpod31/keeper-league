@@ -3050,17 +3050,27 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 }
 .fv-injury-suspension i { color: #fff; }
 
-/* Short — red no-parking (out short-term) */
-.fv-injury-short {
-  background: linear-gradient(135deg, #f85149, #da3633);
-}
-.fv-injury-short i { color: #fff; }
-
-/* Long — dark red no-parking (2+ weeks / season) */
+/* Short/Long — white circle, red border, red diagonal slash */
+.fv-injury-short,
 .fv-injury-long {
-  background: linear-gradient(135deg, #f85149, #b62324);
+  background: #fff;
+  border-color: #da3633;
+  overflow: hidden;
 }
-.fv-injury-long i { color: #fff; }
+.fv-injury-slash {
+  position: absolute;
+  width: 2px;
+  height: 60%;
+  background: #da3633;
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+.fv-injury-long {
+  border-color: #b62324;
+}
+.fv-injury-long .fv-injury-slash {
+  background: #b62324;
+}
 
 /* ── Modal slide-in animation ── */
 @keyframes modalSlideIn {
