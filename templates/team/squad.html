@@ -186,9 +186,9 @@
     <div class="card-header d-flex justify-content-between align-items-center">
       <span class="fw-bold" style="font-size:.9rem;">Squad Roster</span>
       <div class="btn-group btn-group-sm" role="group">
-        <button class="btn btn-sm btn-outline-secondary" id="btnMyClub" onclick="switchStats('myclub')">In My 23</button>
+        <button class="btn btn-sm btn-primary" id="btnMyClub" onclick="switchStats('myclub')">In My 23</button>
         <button class="btn btn-sm btn-outline-secondary" id="btnSeason" onclick="switchStats('season')">Season</button>
-        <button class="btn btn-sm btn-primary" id="btnCareer" onclick="switchStats('career')">Career</button>
+        <button class="btn btn-sm btn-outline-secondary" id="btnCareer" onclick="switchStats('career')">Career</button>
       </div>
     </div>
     <div class="card-body p-0" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
@@ -282,9 +282,9 @@
     let careerCache = {};
     let seasonCache = null;
     let myClubCache = null;
-    let currentMode = 'career';
+    let currentMode = 'myclub';
 
-    // Cache career values from the DOM on load
+    // Cache career values from the DOM on load (server-rendered)
     document.querySelectorAll('#rosterTable tbody tr[data-pid]').forEach(row => {
       const pid = row.dataset.pid;
       careerCache[pid] = {};
@@ -293,6 +293,20 @@
         if (cell) careerCache[pid][field] = cell.textContent.trim();
       });
     });
+
+    // Auto-fetch "In My 23" on load (default view)
+    fetchAndCache(MY_CLUB_API, 'myclub', 'btnMyClub', 'In My 23')
+      .then(() => {
+        // If In My 23 returned all zeros (no finalized rounds), fall back to career
+        if (myClubCache) {
+          const hasData = Object.values(myClubCache).some(s => s.games > 0);
+          if (!hasData) {
+            currentMode = 'career';
+            setActiveBtn('career');
+            updateCells(careerCache);
+          }
+        }
+      });
 
     function scHeatClass(val) {
       const n = parseFloat(val);
