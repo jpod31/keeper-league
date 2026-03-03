@@ -38,6 +38,9 @@
       </div>
       <a href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}" class="squad-pill squad-pill-stats"><i class="bi bi-graph-up"></i>Stats</a>
       <a href="{{ url_for('team.team_analytics', league_id=league.id, team_id=team.id) }}" class="squad-pill squad-pill-manage"><i class="bi bi-bar-chart-line"></i>Analytics</a>
+      {% if is_owner %}
+      <a href="{{ url_for('reserve7s.sevens_team', league_id=league.id) }}" class="squad-pill squad-pill-manage" style="color:#bc8cff;border-color:rgba(188,140,255,.3);"><i class="bi bi-7-circle"></i>7s</a>
+      {% endif %}
       <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}"
          class="squad-pill squad-pill-field {{ 'active' if view|default('field') == 'field' }}">
         <i class="bi bi-diagram-3"></i>Field
@@ -66,6 +69,11 @@
   <a class="mob-subnav-item" href="{{ url_for('team.team_analytics', league_id=league.id, team_id=team.id) }}">
     <i class="bi bi-bar-chart-line"></i><span>Analytics</span>
   </a>
+  {% if is_owner %}
+  <a class="mob-subnav-item" href="{{ url_for('reserve7s.sevens_team', league_id=league.id) }}" style="color:#bc8cff;">
+    <i class="bi bi-7-circle"></i><span>7s</span>
+  </a>
+  {% endif %}
   <a class="mob-subnav-item" href="{{ url_for('trades.trade_center', league_id=league.id) }}">
     <i class="bi bi-arrow-left-right"></i><span>Trades</span>
   </a>

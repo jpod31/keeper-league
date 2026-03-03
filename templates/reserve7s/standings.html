@@ -1,0 +1,125 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'ladder' %}
+{% block title %}Reserve 7s Ladder — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "matchups/_league_subnav.html" %}
+{% include "reserve7s/_subnav.html" %}
+
+<style>
+  .s7-title {
+    display:flex; align-items:center; gap:10px; margin-bottom:16px;
+  }
+  .s7-title h3 {
+    font-size:1.1rem; font-weight:700; color:#e6edf3; margin:0;
+  }
+  .s7-title-badge {
+    font-size:.6rem; font-weight:700; padding:3px 8px; border-radius:4px;
+    background:rgba(188,140,255,.1); color:#bc8cff; letter-spacing:.5px;
+  }
+
+  .s7-wrap {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden;
+  }
+  .s7-table { width:100%; border-collapse:collapse; }
+  .s7-table th {
+    font-size:.65rem; font-weight:600; color:#484f58; text-transform:uppercase;
+    letter-spacing:.5px; padding:10px 12px; border-bottom:1px solid #21262d;
+    white-space:nowrap;
+  }
+  .s7-table td {
+    font-size:.8rem; padding:10px 12px; border-bottom:1px solid #161b22;
+    color:#8b949e; font-variant-numeric:tabular-nums;
+  }
+  .s7-table tbody tr { transition:background .1s; }
+  .s7-table tbody tr:hover { background:rgba(22,27,34,.5); }
+  .s7-table tbody tr:last-child td { border-bottom:none; }
+  .s7-finals-line td { border-bottom:2px solid rgba(188,140,255,.4) !important; }
+
+  .s7-pos {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:24px; height:24px; border-radius:6px; font-size:.7rem; font-weight:700;
+  }
+  .s7-pos-1 { background:rgba(255,215,0,.15); color:#FFD700; text-shadow:0 0 6px rgba(255,215,0,.4); }
+  .s7-pos-2 { background:rgba(192,192,192,.1); color:#C0C0C0; }
+  .s7-pos-finals { background:rgba(188,140,255,.08); color:#bc8cff; }
+  .s7-pos-out { color:#484f58; }
+
+  .s7-name { color:#e6edf3; font-weight:600; text-decoration:none; transition:color .1s; }
+  .s7-name:hover { color:#bc8cff; }
+  .s7-pts { color:#bc8cff; font-weight:700; }
+  .s7-pct { font-weight:500; }
+
+  .s7-footer {
+    padding:8px 16px; font-size:.68rem; color:#30363d;
+    border-top:1px solid #161b22;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+</style>
+
+<div class="s7-title">
+  <h3><i class="bi bi-7-circle me-1" style="color:#bc8cff;"></i>Reserve 7s Ladder</h3>
+  <span class="s7-title-badge">RESERVE 7s</span>
+</div>
+
+{% if standings %}
+  <div class="s7-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <table class="s7-table" style="min-width:580px;">
+      <thead>
+        <tr>
+          <th style="width:40px;text-align:center;">#</th>
+          <th>Team</th>
+          <th style="text-align:center;">P</th>
+          <th style="text-align:center;">W</th>
+          <th style="text-align:center;">L</th>
+          <th style="text-align:center;">D</th>
+          <th style="text-align:center;">Pts</th>
+          <th style="text-align:right;">For</th>
+          <th style="text-align:right;">Agst</th>
+          <th style="text-align:right;">%</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in standings %}
+          {% set pos = loop.index %}
+          {% set in_finals = pos <= 2 %}
+          <tr{% if in_finals and pos == 2 %} class="s7-finals-line"{% endif %}{% if in_finals %} style="background:rgba(188,140,255,.03);"{% endif %}>
+            <td style="text-align:center;">
+              <span class="s7-pos{% if pos == 1 %} s7-pos-1{% elif pos == 2 %} s7-pos-2{% elif in_finals %} s7-pos-finals{% else %} s7-pos-out{% endif %}">
+                {{ pos }}
+              </span>
+            </td>
+            <td>
+              <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}" class="s7-name">
+                {{ s.team.name }}
+              </a>
+            </td>
+            <td style="text-align:center;">{{ s.wins + s.losses + s.draws }}</td>
+            <td style="text-align:center;{% if s.wins > 0 %}color:#3fb950;font-weight:600;{% endif %}">{{ s.wins }}</td>
+            <td style="text-align:center;{% if s.losses > 0 %}color:#f85149;font-weight:600;{% endif %}">{{ s.losses }}</td>
+            <td style="text-align:center;">{{ s.draws }}</td>
+            <td style="text-align:center;"><span class="s7-pts">{{ s.ladder_points }}</span></td>
+            <td style="text-align:right;">{{ '%.0f'|format(s.points_for) if s.points_for > 0 else '&ndash;'|safe }}</td>
+            <td style="text-align:right;">{{ '%.0f'|format(s.points_against) if s.points_against > 0 else '&ndash;'|safe }}</td>
+            <td style="text-align:right;">
+              <span class="s7-pct" style="{% if s.percentage >= 110 %}color:#3fb950;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}">
+                {{ '%.1f'|format(s.percentage) if s.percentage > 0 else '&ndash;'|safe }}{% if s.percentage > 0 %}%{% endif %}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="s7-footer">
+      <span>Top 2 qualify for 7s Grand Final</span>
+      <span class="s7-title-badge">{{ scoring.label }}</span>
+    </div>
+  </div>
+{% else %}
+  <div style="text-align:center;padding:60px 20px;color:#484f58;">
+    <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
+    <h4 style="color:#8b949e;font-size:1rem;font-weight:600;">No teams yet</h4>
+    <p style="font-size:.8rem;">Teams will appear here once they join the league.</p>
+  </div>
+{% endif %}
+{% endblock %}

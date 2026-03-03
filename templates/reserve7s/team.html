@@ -1,0 +1,426 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'team' %}
+{% block title %}Reserve 7s — Round {{ afl_round }} — {{ league.name }}{% endblock %}
+{% block league_content %}
+
+<style>
+  .sevens-hero {
+    padding:24px 20px 16px; margin-bottom:20px;
+    background:linear-gradient(135deg, rgba(31,111,235,.08), rgba(188,140,255,.06));
+    border:1px solid #21262d; border-radius:12px;
+  }
+  .sevens-hero-title { font-size:1.3rem; font-weight:700; color:#e6edf3; margin:0; }
+  .sevens-hero-sub { font-size:.8rem; color:#8b949e; margin-top:4px; }
+  .sevens-rule-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 12px; border-radius:8px; font-size:.75rem; font-weight:600;
+    background:rgba(188,140,255,.1); color:#bc8cff; border:1px solid rgba(188,140,255,.2);
+    margin-top:10px;
+  }
+  .sevens-counter {
+    display:flex; gap:16px; margin-top:12px; flex-wrap:wrap;
+  }
+  .sevens-counter-item {
+    font-size:.75rem; color:#8b949e;
+  }
+  .sevens-counter-item strong { color:#e6edf3; }
+
+  .sevens-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:20px;
+    margin-bottom:24px;
+  }
+  @media (max-width:991px) { .sevens-grid { grid-template-columns:1fr; } }
+
+  .sevens-panel {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden;
+  }
+  .sevens-panel-hdr {
+    padding:12px 16px; border-bottom:1px solid #21262d;
+    font-size:.8rem; font-weight:600; color:#e6edf3;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .sevens-panel-body { padding:0; }
+
+  .sevens-player-row {
+    display:flex; align-items:center; padding:10px 16px; gap:10px;
+    border-bottom:1px solid #161b22; cursor:pointer; transition:background .1s;
+  }
+  .sevens-player-row:last-child { border-bottom:none; }
+  .sevens-player-row:hover { background:#161b22; }
+  .sevens-player-row.selected { background:rgba(31,111,235,.08); }
+  .sevens-player-row.locked { opacity:.5; cursor:not-allowed; }
+
+  .sevens-player-name {
+    flex:1; font-size:.82rem; font-weight:500; color:#c9d1d9;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sevens-player-meta {
+    font-size:.7rem; color:#6e7681; white-space:nowrap;
+  }
+  .sevens-age-badge {
+    font-size:.65rem; font-weight:700; padding:2px 6px; border-radius:4px;
+    display:inline-block; min-width:32px; text-align:center;
+  }
+  .age-young { background:rgba(63,185,80,.12); color:#3fb950; }
+  .age-senior { background:rgba(210,153,34,.12); color:#d29922; }
+
+  .sevens-sc {
+    font-size:.75rem; font-weight:600; min-width:36px; text-align:right;
+  }
+
+  .sevens-cap-star {
+    cursor:pointer; font-size:.9rem; color:#30363d; transition:color .15s;
+  }
+  .sevens-cap-star.active { color:#FFD700; text-shadow:0 0 6px rgba(255,215,0,.4); }
+  .sevens-cap-star:hover { color:#d29922; }
+
+  .sevens-check {
+    width:18px; height:18px; border-radius:4px; border:2px solid #30363d;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    transition:all .15s;
+  }
+  .sevens-check.checked {
+    background:#1f6feb; border-color:#1f6feb;
+  }
+  .sevens-check.checked::after { content:'\2713'; color:#fff; font-size:.7rem; font-weight:700; }
+
+  .sevens-lock-icon { color:#484f58; font-size:.75rem; }
+
+  .sevens-actions {
+    display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;
+  }
+  .sevens-btn {
+    padding:8px 20px; border-radius:8px; font-size:.8rem; font-weight:600;
+    border:1px solid; cursor:pointer; transition:all .15s;
+  }
+  .sevens-btn-primary {
+    background:#1f6feb; border-color:#1f6feb; color:#fff;
+  }
+  .sevens-btn-primary:hover { background:#388bfd; }
+  .sevens-btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+  .sevens-btn-secondary {
+    background:transparent; border-color:#30363d; color:#8b949e;
+  }
+  .sevens-btn-secondary:hover { border-color:#484f58; color:#c9d1d9; }
+
+  .sevens-feedback {
+    margin-top:10px; padding:8px 14px; border-radius:6px; font-size:.78rem;
+    display:none;
+  }
+  .sevens-feedback.error { display:block; background:rgba(248,81,73,.1); color:#f85149; border:1px solid rgba(248,81,73,.2); }
+  .sevens-feedback.success { display:block; background:rgba(63,185,80,.1); color:#3fb950; border:1px solid rgba(63,185,80,.2); }
+
+  .sevens-filter-bar {
+    display:flex; gap:8px; padding:8px 16px; border-bottom:1px solid #21262d;
+  }
+  .sevens-filter-input {
+    flex:1; background:#0d1117; border:1px solid #30363d; border-radius:6px;
+    padding:5px 10px; font-size:.75rem; color:#c9d1d9; outline:none;
+  }
+  .sevens-filter-input:focus { border-color:#484f58; }
+</style>
+
+{# ── Hero Header ── #}
+<div class="sevens-hero">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <h2 class="sevens-hero-title"><i class="bi bi-7-circle me-2" style="color:#bc8cff;"></i>Reserve 7s — Round {{ afl_round }}</h2>
+      <div class="sevens-hero-sub">{{ team.name }} — Select your 7 players</div>
+      <div class="sevens-rule-badge">
+        <i class="bi bi-info-circle"></i>
+        Min 5 under-{{ age_cutoff }} &bull; Max 2 over-{{ age_cutoff }}
+      </div>
+    </div>
+    <div>
+      <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}" class="sevens-btn sevens-btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Squad
+      </a>
+    </div>
+  </div>
+  <div class="sevens-counter" id="counters">
+    <div class="sevens-counter-item">Selected: <strong id="cntSelected">0</strong>/7</div>
+    <div class="sevens-counter-item">Under-{{ age_cutoff }}: <strong id="cntYoung">0</strong></div>
+    <div class="sevens-counter-item">Senior: <strong id="cntSenior">0</strong>/2</div>
+    <div class="sevens-counter-item">Captain: <strong id="cntCaptain">—</strong></div>
+  </div>
+</div>
+
+{# ── Two-column Layout ── #}
+<div class="sevens-grid">
+  {# ── Selected (left) ── #}
+  <div class="sevens-panel">
+    <div class="sevens-panel-hdr">
+      <span><i class="bi bi-check-circle me-1" style="color:#3fb950;"></i>Selected 7</span>
+      <span id="selectedCount" style="font-size:.7rem; color:#484f58;">0/7</span>
+    </div>
+    <div class="sevens-panel-body" id="selectedList">
+      <div style="padding:30px 16px; text-align:center; color:#484f58; font-size:.8rem;" id="emptySelected">
+        Click players from the available list to add them
+      </div>
+    </div>
+  </div>
+
+  {# ── Available (right) ── #}
+  <div class="sevens-panel">
+    <div class="sevens-panel-hdr">
+      <span><i class="bi bi-people me-1"></i>Available Players</span>
+      <span style="font-size:.7rem; color:#484f58;">{{ players|length }} on roster</span>
+    </div>
+    <div class="sevens-filter-bar">
+      <input type="text" class="sevens-filter-input" id="filterInput" placeholder="Search players...">
+    </div>
+    <div class="sevens-panel-body" id="availableList" style="max-height:500px; overflow-y:auto;">
+      {% for p in players|sort(attribute='age') %}
+      {% set is_young = (p.age or 99) < age_cutoff %}
+      {% set is_locked = p.id in locked_ids %}
+      {% set is_sel = p.id in selected_ids %}
+      <div class="sevens-player-row{% if is_sel %} selected{% endif %}{% if is_locked %} locked{% endif %}"
+           data-pid="{{ p.id }}"
+           data-name="{{ p.name|lower }}"
+           data-age="{{ p.age or 99 }}"
+           data-young="{{ '1' if is_young else '0' }}"
+           data-locked="{{ '1' if is_locked else '0' }}"
+           data-scavg="{{ p.sc_avg or 0 }}"
+           onclick="togglePlayer(this)">
+        <div class="sevens-check{% if is_sel %} checked{% endif %}"></div>
+        <span class="sevens-age-badge {{ 'age-young' if is_young else 'age-senior' }}">{{ p.age or '?' }}</span>
+        <span class="sevens-player-name">{{ p.name }}</span>
+        <span class="sevens-player-meta">{{ p.afl_team or '' }}</span>
+        <span class="sevens-player-meta">{{ (p.position or '')[:7] }}</span>
+        <span class="sevens-sc" style="color:{% if (p.sc_avg or 0) >= 80 %}#3fb950{% elif (p.sc_avg or 0) >= 60 %}#58a6ff{% else %}#6e7681{% endif %}">{{ '%.0f'|format(p.sc_avg) if p.sc_avg else '—' }}</span>
+        {% if is_locked %}<span class="sevens-lock-icon"><i class="bi bi-lock-fill"></i></span>{% endif %}
+        <span class="sevens-cap-star{% if p.id == captain_id %} active{% endif %}" onclick="event.stopPropagation(); setCaptain({{ p.id }})" title="Set as captain">&#9733;</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{# ── Actions ── #}
+<div class="sevens-actions">
+  <button class="sevens-btn sevens-btn-primary" id="btnSave" onclick="saveLineup()" disabled>
+    <i class="bi bi-check-lg me-1"></i>Save 7s Lineup
+  </button>
+  <button class="sevens-btn sevens-btn-secondary" id="btnAutoFill" onclick="autoFill()">
+    <i class="bi bi-magic me-1"></i>Auto-Fill Best 7
+  </button>
+</div>
+<div class="sevens-feedback" id="feedback"></div>
+
+<script>
+(function() {
+  const AGE_CUTOFF = {{ age_cutoff }};
+  const AFL_ROUND = {{ afl_round }};
+  const LEAGUE_ID = {{ league.id }};
+  const SAVE_URL = "{{ url_for('reserve7s.sevens_team_set', league_id=league.id) }}";
+  const CSRF_TOKEN = "{{ csrf_token() }}";
+
+  let selected = new Set({{ selected_ids|list|tojson }});
+  let captainId = {{ captain_id|tojson }};
+
+  function getRows() { return Array.from(document.querySelectorAll('#availableList .sevens-player-row')); }
+
+  function getPlayerData(row) {
+    return {
+      pid: parseInt(row.dataset.pid),
+      age: parseInt(row.dataset.age),
+      isYoung: row.dataset.young === '1',
+      isLocked: row.dataset.locked === '1',
+      scAvg: parseFloat(row.dataset.scavg) || 0,
+    };
+  }
+
+  function updateUI() {
+    let youngCount = 0, seniorCount = 0;
+    getRows().forEach(row => {
+      const d = getPlayerData(row);
+      const isSel = selected.has(d.pid);
+      row.classList.toggle('selected', isSel);
+      row.querySelector('.sevens-check').classList.toggle('checked', isSel);
+      const star = row.querySelector('.sevens-cap-star');
+      star.classList.toggle('active', d.pid === captainId);
+      if (isSel) {
+        if (d.isYoung) youngCount++;
+        else seniorCount++;
+      }
+    });
+
+    document.getElementById('cntSelected').textContent = selected.size;
+    document.getElementById('cntYoung').textContent = youngCount;
+    document.getElementById('cntSenior').textContent = seniorCount;
+    document.getElementById('selectedCount').textContent = selected.size + '/7';
+
+    // Captain name
+    if (captainId) {
+      const capRow = document.querySelector('[data-pid="' + captainId + '"]');
+      document.getElementById('cntCaptain').textContent = capRow ?
+        capRow.querySelector('.sevens-player-name').textContent.trim() : '—';
+    } else {
+      document.getElementById('cntCaptain').textContent = '—';
+    }
+
+    // Build selected list
+    const selList = document.getElementById('selectedList');
+    const empty = document.getElementById('emptySelected');
+    if (selected.size === 0) {
+      selList.innerHTML = '';
+      selList.appendChild(empty);
+      empty.style.display = 'block';
+    } else {
+      selList.innerHTML = '';
+      getRows().filter(r => selected.has(parseInt(r.dataset.pid))).forEach(row => {
+        const d = getPlayerData(row);
+        const name = row.querySelector('.sevens-player-name').textContent.trim();
+        const team = row.querySelectorAll('.sevens-player-meta')[0]?.textContent?.trim() || '';
+        const isCap = d.pid === captainId;
+        const div = document.createElement('div');
+        div.className = 'sevens-player-row selected';
+        div.style.cursor = 'default';
+        div.innerHTML = `
+          <span class="sevens-age-badge ${d.isYoung ? 'age-young' : 'age-senior'}">${d.age}</span>
+          <span class="sevens-player-name">${name}</span>
+          <span class="sevens-player-meta">${team}</span>
+          ${isCap ? '<span style="color:#FFD700;font-size:.7rem;font-weight:700;">CAPTAIN</span>' : ''}
+          <span class="sevens-sc" style="color:#8b949e;">${d.scAvg > 0 ? Math.round(d.scAvg) : '—'}</span>
+        `;
+        selList.appendChild(div);
+      });
+    }
+
+    // Enable/disable save
+    const valid = selected.size === 7 && youngCount >= 5 && seniorCount <= 2;
+    document.getElementById('btnSave').disabled = !valid;
+  }
+
+  window.togglePlayer = function(row) {
+    const d = getPlayerData(row);
+    if (d.isLocked && selected.has(d.pid)) return; // can't remove locked
+
+    if (selected.has(d.pid)) {
+      selected.delete(d.pid);
+      if (captainId === d.pid) captainId = null;
+    } else {
+      if (selected.size >= 7) return;
+      // Check age constraint before adding
+      let youngCount = 0, seniorCount = 0;
+      selected.forEach(pid => {
+        const r = document.querySelector('[data-pid="' + pid + '"]');
+        if (r && r.dataset.young === '1') youngCount++;
+        else seniorCount++;
+      });
+      if (!d.isYoung && seniorCount >= 2) {
+        showFeedback('Maximum 2 senior players allowed', 'error');
+        return;
+      }
+      selected.add(d.pid);
+    }
+    hideFeedback();
+    updateUI();
+  };
+
+  window.setCaptain = function(pid) {
+    if (!selected.has(pid)) return;
+    captainId = (captainId === pid) ? null : pid;
+    updateUI();
+  };
+
+  window.autoFill = function() {
+    selected.clear();
+    captainId = null;
+
+    const rows = getRows();
+    const youngPlayers = rows.filter(r => r.dataset.young === '1')
+      .sort((a, b) => (parseFloat(b.dataset.scavg) || 0) - (parseFloat(a.dataset.scavg) || 0));
+    const seniorPlayers = rows.filter(r => r.dataset.young === '0')
+      .sort((a, b) => (parseFloat(b.dataset.scavg) || 0) - (parseFloat(a.dataset.scavg) || 0));
+
+    // Pick best 5 young, then up to 2 seniors, then fill with more young
+    let added = 0;
+    for (const row of youngPlayers) {
+      if (added >= 5) break;
+      selected.add(parseInt(row.dataset.pid));
+      added++;
+    }
+    for (const row of seniorPlayers) {
+      if (selected.size >= 7) break;
+      selected.add(parseInt(row.dataset.pid));
+    }
+    for (const row of youngPlayers) {
+      if (selected.size >= 7) break;
+      if (!selected.has(parseInt(row.dataset.pid))) {
+        selected.add(parseInt(row.dataset.pid));
+      }
+    }
+
+    // Auto-captain: highest SC avg from selected
+    let bestPid = null, bestSc = -1;
+    selected.forEach(pid => {
+      const r = document.querySelector('[data-pid="' + pid + '"]');
+      const sc = parseFloat(r?.dataset.scavg || 0);
+      if (sc > bestSc) { bestSc = sc; bestPid = pid; }
+    });
+    captainId = bestPid;
+
+    updateUI();
+    showFeedback('Auto-filled best 7 by SC average', 'success');
+  };
+
+  window.saveLineup = function() {
+    if (selected.size !== 7) return;
+
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+    fetch(SAVE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': CSRF_TOKEN,
+      },
+      body: JSON.stringify({
+        player_ids: Array.from(selected),
+        captain_id: captainId,
+        afl_round: AFL_ROUND,
+      }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        showFeedback(data.message || 'Lineup saved!', 'success');
+      } else {
+        showFeedback(data.error || 'Failed to save', 'error');
+      }
+      btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Save 7s Lineup';
+      updateUI();
+    })
+    .catch(() => {
+      showFeedback('Network error — try again', 'error');
+      btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Save 7s Lineup';
+      updateUI();
+    });
+  };
+
+  function showFeedback(msg, type) {
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    el.className = 'sevens-feedback ' + type;
+  }
+  function hideFeedback() {
+    document.getElementById('feedback').className = 'sevens-feedback';
+  }
+
+  // Filter
+  document.getElementById('filterInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    getRows().forEach(row => {
+      row.style.display = row.dataset.name.includes(q) ? '' : 'none';
+    });
+  });
+
+  // Init
+  updateUI();
+})();
+</script>
+
+{% endblock %}

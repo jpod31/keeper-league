@@ -1,0 +1,205 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'league' %}
+{% set active_subtab = 'fixture' %}
+{% block title %}Reserve 7s Season — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "matchups/_league_subnav.html" %}
+{% include "reserve7s/_subnav.html" %}
+
+<style>
+  .s7f-title {
+    display:flex; align-items:center; gap:10px; margin-bottom:16px;
+  }
+  .s7f-title h3 {
+    font-size:1.1rem; font-weight:700; color:#e6edf3; margin:0;
+  }
+  .s7f-title-badge {
+    font-size:.6rem; font-weight:700; padding:3px 8px; border-radius:4px;
+    background:rgba(188,140,255,.1); color:#bc8cff; letter-spacing:.5px;
+  }
+
+  /* Round strip — same as main fixture */
+  .s7f-strip {
+    display:flex; align-items:stretch; background:#0d1117; border:1px solid #21262d;
+    border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; margin-bottom:20px;
+  }
+  .s7f-strip::-webkit-scrollbar { display:none; }
+  .s7f-item {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    flex:1 1 0; min-width:44px; padding:12px 2px 10px; text-decoration:none;
+    border-right:1px solid #161b22; transition:background .12s; position:relative; cursor:pointer;
+  }
+  .s7f-item:last-child { border-right:none; }
+  .s7f-item:hover { background:#161b22; }
+  .s7f-item.active { background:#161b22; }
+  .s7f-item.active::after {
+    content:''; position:absolute; bottom:0; left:20%; right:20%;
+    height:2px; background:#bc8cff; border-radius:1px 1px 0 0;
+    box-shadow:0 0 6px rgba(188,140,255,.5);
+  }
+  .s7f-num {
+    font-size:.78rem; font-weight:600; color:#484f58; line-height:1;
+    transition:color .12s;
+  }
+  .s7f-item:hover .s7f-num { color:#8b949e; }
+  .s7f-item.active .s7f-num { color:#e6edf3; }
+  .s7f-item.s7f-done .s7f-num { color:#8b949e; }
+  .s7f-item.s7f-live .s7f-num { color:#3fb950; }
+  .s7f-dot {
+    width:5px; height:5px; border-radius:50%; margin-top:4px;
+  }
+  .s7f-dot-done { background:#bc8cff; }
+  .s7f-dot-live { background:#3fb950; animation:livePulse 1.8s ease-in-out infinite; }
+  .s7f-dot-none { background:transparent; }
+
+  /* Matchup list */
+  .s7f-list {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px;
+    overflow:hidden;
+  }
+  .s7f-row {
+    display:grid; grid-template-columns:1fr auto 1fr;
+    align-items:center; padding:14px 20px; gap:0;
+    border-bottom:1px solid #161b22; transition:background .1s;
+  }
+  .s7f-row:last-child { border-bottom:none; }
+  .s7f-row:hover { background:rgba(22,27,34,.6); }
+  .s7f-team {
+    font-size:.85rem; font-weight:500; color:#c9d1d9;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .s7f-team-home { text-align:left; padding-right:12px; }
+  .s7f-team-away { text-align:right; padding-left:12px; }
+  .s7f-team.won { color:#e6edf3; font-weight:700; }
+  .s7f-centre {
+    display:flex; align-items:center; justify-content:center;
+    min-width:100px; gap:0;
+  }
+  .s7f-sc {
+    font-size:.95rem; font-weight:700; min-width:34px; text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  .s7f-sc.won { color:#3fb950; }
+  .s7f-sc.lost { color:#6e7681; }
+  .s7f-sep { color:#21262d; margin:0 4px; font-weight:300; font-size:.8rem; }
+  .s7f-vs {
+    font-size:.65rem; font-weight:700; color:#30363d; letter-spacing:1.5px;
+    text-transform:uppercase;
+  }
+
+  /* Round header */
+  .s7f-round-hdr {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #21262d;
+  }
+  .s7f-round-hdr h3 {
+    font-size:1.05rem; font-weight:700; color:#e6edf3; margin:0;
+  }
+  .s7f-rh-badge {
+    font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px;
+    letter-spacing:.3px; text-transform:uppercase;
+  }
+  .s7f-rh-complete { background:rgba(188,140,255,.1); color:#bc8cff; }
+  .s7f-rh-live { background:rgba(63,185,80,.12); color:#3fb950; }
+
+  .s7f-empty {
+    text-align:center; padding:60px 20px; color:#484f58;
+  }
+  .s7f-empty i { font-size:2rem; margin-bottom:12px; display:block; color:#30363d; }
+  .s7f-empty h4 { color:#8b949e; font-size:1rem; font-weight:600; }
+  .s7f-generate-btn {
+    display:inline-block; margin-top:12px; padding:8px 20px; border-radius:8px;
+    font-size:.8rem; font-weight:600; color:#bc8cff;
+    background:rgba(188,140,255,.08); border:1px solid rgba(188,140,255,.2);
+    text-decoration:none; transition:all .15s;
+  }
+  .s7f-generate-btn:hover { background:rgba(188,140,255,.15); color:#d2b4ff; }
+</style>
+
+<div class="s7f-title">
+  <h3><i class="bi bi-7-circle me-1" style="color:#bc8cff;"></i>Reserve 7s Season</h3>
+  <span class="s7f-title-badge">RESERVE 7s</span>
+</div>
+
+{% if rounds %}
+  {# ── Round strip ── #}
+  <div class="s7f-strip" id="s7fStrip">
+    {% set sorted_rounds = round_meta.keys()|sort|list %}
+    {% for rnd_num in sorted_rounds %}
+      {% set st = round_meta[rnd_num] %}
+      <a href="{{ url_for('reserve7s.sevens_fixture', league_id=league.id, round=rnd_num) }}"
+         class="s7f-item{% if rnd_num == selected_round %} active{% endif %}{% if st == 'completed' %} s7f-done{% elif st == 'live' %} s7f-live{% endif %}">
+        <span class="s7f-num">{{ rnd_num }}</span>
+        <span class="s7f-dot {% if st == 'completed' %}s7f-dot-done{% elif st == 'live' %}s7f-dot-live{% else %}s7f-dot-none{% endif %}"></span>
+      </a>
+    {% endfor %}
+  </div>
+
+  {# ── Round header ── #}
+  {% set rs = round_meta.get(selected_round, 'scheduled') %}
+  <div class="s7f-round-hdr">
+    <div style="display:flex; align-items:baseline; gap:10px;">
+      <h3>Round {{ selected_round }}</h3>
+      {% if rs == 'completed' %}
+        <span class="s7f-rh-badge s7f-rh-complete">Complete</span>
+      {% elif rs == 'live' %}
+        <span class="s7f-rh-badge s7f-rh-live"><i class="bi bi-broadcast me-1"></i>Live</span>
+      {% endif %}
+      <span class="s7f-title-badge">{{ scoring.label }}</span>
+    </div>
+  </div>
+
+  {# ── Matchup list ── #}
+  <div class="s7f-list">
+    {% for f in current_fixtures %}
+      {% set home_won = f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}
+      {% set away_won = f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}
+      <div class="s7f-row">
+        <span class="s7f-team s7f-team-home{{ ' won' if home_won }}">{{ f.home_team.name }}</span>
+        <div class="s7f-centre">
+          {% if f.status == 'completed' %}
+            <span class="s7f-sc{{ ' won' if home_won else ' lost' }}">{{ '%.0f'|format(f.home_score or 0) }}</span>
+            <span class="s7f-sep">&ndash;</span>
+            <span class="s7f-sc{{ ' won' if away_won else ' lost' }}">{{ '%.0f'|format(f.away_score or 0) }}</span>
+          {% else %}
+            <span class="s7f-vs">vs</span>
+          {% endif %}
+        </div>
+        <span class="s7f-team s7f-team-away{{ ' won' if away_won }}">{{ f.away_team.name }}</span>
+      </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <div class="s7f-empty">
+    <i class="bi bi-calendar-week"></i>
+    <h4>No Reserve 7s fixture generated</h4>
+    {% if is_commissioner %}
+      <p style="font-size:.8rem;">Generate the 7s fixture to get started.</p>
+      <form method="POST" action="{{ url_for('reserve7s.sevens_generate_fixture', league_id=league.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="s7f-generate-btn">
+          <i class="bi bi-plus-circle me-1"></i>Generate 7s Fixture
+        </button>
+      </form>
+    {% else %}
+      <p style="font-size:.8rem;">The commissioner hasn't set up the 7s fixture yet.</p>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var strip = document.getElementById('s7fStrip');
+  var active = strip && strip.querySelector('.s7f-item.active');
+  if (strip && active) {
+    var offset = active.offsetLeft - strip.offsetWidth / 2 + active.offsetWidth / 2;
+    strip.scrollLeft = Math.max(0, offset);
+  }
+})();
+</script>
+{% endblock %}

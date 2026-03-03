@@ -22,4 +22,8 @@
      href="{{ url_for('leagues.league_history', league_id=league.id) }}">
     <i class="bi bi-trophy"></i>Records
   </a>
+  <a class="league-subtab{% if active_subtab|default('') == '7s' %} active{% endif %}"
+     href="{{ url_for('reserve7s.sevens_standings', league_id=league.id) }}" style="{% if active_subtab|default('') == '7s' %}color:#bc8cff;{% endif %}">
+    <i class="bi bi-7-circle"></i>7s
+  </a>
 </div>

@@ -306,6 +306,7 @@ def create_app():
     from blueprints.matchups import matchups_bp
     from blueprints.admin import admin_bp
     from blueprints.comms import comms_bp
+    from blueprints.reserve7s import reserve7s_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(leagues_bp)
     app.register_blueprint(draft_bp)
@@ -320,6 +321,8 @@ def create_app():
     app.register_blueprint(matchups_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(comms_bp)
+    app.register_blueprint(reserve7s_bp)
+    csrf.exempt(reserve7s_bp)  # 7s team API uses @login_required + ownership checks
 
     # Context processor — inject globals into all templates
     @app.context_processor

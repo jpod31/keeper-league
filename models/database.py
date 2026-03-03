@@ -744,6 +744,94 @@ class LongTermInjury(db.Model):
     replacement_player = db.relationship("AflPlayer", foreign_keys=[replacement_player_id], lazy="joined")
 
 
+# ── Reserve 7s Sub-Competition ────────────────────────────────────────
+
+
+class Reserve7sLineup(db.Model):
+    """Per-round selection of 7 players for each team in the 7s comp."""
+    __tablename__ = "reserve7s_lineup"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    afl_round = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=False)
+    is_captain = db.Column(db.Boolean, default=False)
+
+    player = db.relationship("AflPlayer", lazy="joined")
+    team = db.relationship("FantasyTeam", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("league_id", "team_id", "afl_round", "year", "player_id",
+                            name="uq_7s_lineup_team_round_player"),
+    )
+
+
+class Reserve7sFixture(db.Model):
+    """Separate fixture table for 7s round-robin and finals."""
+    __tablename__ = "reserve7s_fixture"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
+    afl_round = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    home_team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    away_team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    home_score = db.Column(db.Float, default=0)
+    away_score = db.Column(db.Float, default=0)
+    status = db.Column(db.String(20), default="scheduled")  # scheduled/live/completed
+    is_final = db.Column(db.Boolean, default=False)
+    final_type = db.Column(db.String(10))  # GF
+
+    home_team = db.relationship("FantasyTeam", foreign_keys=[home_team_id], lazy="joined")
+    away_team = db.relationship("FantasyTeam", foreign_keys=[away_team_id], lazy="joined")
+
+
+class Reserve7sRoundScore(db.Model):
+    """Per-team round scores for 7s."""
+    __tablename__ = "reserve7s_round_score"
+
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    afl_round = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    total_score = db.Column(db.Float, default=0)
+    captain_bonus = db.Column(db.Float, default=0)
+    breakdown = db.Column(db.JSON)
+
+    team = db.relationship("FantasyTeam", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("team_id", "afl_round", "year",
+                            name="uq_7s_round_score_team_round"),
+    )
+
+
+class Reserve7sStanding(db.Model):
+    """Separate ladder for 7s."""
+    __tablename__ = "reserve7s_standing"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    wins = db.Column(db.Integer, default=0)
+    losses = db.Column(db.Integer, default=0)
+    draws = db.Column(db.Integer, default=0)
+    points_for = db.Column(db.Float, default=0)
+    points_against = db.Column(db.Float, default=0)
+    percentage = db.Column(db.Float, default=0)
+    ladder_points = db.Column(db.Integer, default=0)
+
+    team = db.relationship("FantasyTeam", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("league_id", "team_id", "year",
+                            name="uq_7s_standing_league_team_year"),
+    )
+
+
 # ── Notifications & Messaging ─────────────────────────────────────────
 
 

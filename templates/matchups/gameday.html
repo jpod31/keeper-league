@@ -3,6 +3,12 @@
 {% block title %}Gameday — {% if afl_round == 0 %}Pre-Season{% else %}Round {{ afl_round }}{% endif %} — {{ league.name }}{% endblock %}
 {% block league_content %}
 
+{# ═══════════════════════ COMP TOGGLE ═══════════════════════ #}
+<div style="display:flex;gap:0;justify-content:center;margin-bottom:16px;">
+  <a href="{{ url_for('matchups.gameday', league_id=league.id) }}" style="padding:6px 18px;font-size:.75rem;font-weight:600;text-decoration:none;border:1px solid rgba(88,166,255,.3);color:#58a6ff;background:rgba(88,166,255,.08);border-radius:8px 0 0 8px;">Main</a>
+  <a href="{{ url_for('reserve7s.sevens_gameday', league_id=league.id) }}" style="padding:6px 18px;font-size:.75rem;font-weight:600;text-decoration:none;border:1px solid #30363d;color:#8b949e;border-radius:0 8px 8px 0;border-left:0;">7s</a>
+</div>
+
 {# ═══════════════════════ ROUND HEADER ═══════════════════════ #}
 <div class="gameday-round-header">
   <div class="d-flex justify-content-between align-items-center">

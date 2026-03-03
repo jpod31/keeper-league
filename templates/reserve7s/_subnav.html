@@ -1,0 +1,11 @@
+{# Sub-navigation bar for the Reserve 7s "League" section #}
+<div class="league-subnav">
+  <a class="league-subtab{% if active_subtab|default('') == 'ladder' %} active{% endif %}"
+     href="{{ url_for('reserve7s.sevens_standings', league_id=league.id) }}">
+    <i class="bi bi-bar-chart"></i>Ladder
+  </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'fixture' %} active{% endif %}"
+     href="{{ url_for('reserve7s.sevens_fixture', league_id=league.id) }}">
+    <i class="bi bi-calendar-week"></i>Season
+  </a>
+</div>

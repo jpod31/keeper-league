@@ -446,6 +446,19 @@ def finalize_round(league_id, afl_round, year):
         from models.fixture_manager import advance_finals
         advance_finals(league_id, year)
 
+    # 5. Auto-finalize Reserve 7s alongside main comp
+    try:
+        from models.reserve7s_engine import finalize_7s_round as _fin7s
+        from models.database import Reserve7sFixture
+        has_7s = Reserve7sFixture.query.filter_by(
+            league_id=league_id, afl_round=afl_round, year=year,
+        ).first() is not None
+        if has_7s:
+            _fin7s(league_id, afl_round, year)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("7s finalize failed", exc_info=True)
+
     return scores
 
 

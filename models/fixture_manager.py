@@ -329,3 +329,144 @@ def get_finals(league_id, year):
         .order_by(Fixture.afl_round, Fixture.id)
         .all()
     )
+
+
+# ── Reserve 7s Fixture Functions ────────────────────────────────────────
+
+
+def generate_7s_round_robin(league_id, year, num_rounds=23):
+    """Generate an independent round-robin fixture for 7s.
+
+    Uses the same circle method but with a different random shuffle,
+    so the draw differs from the main comp.
+    """
+    from models.database import Reserve7sFixture
+
+    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
+    if len(teams) < 2:
+        return [], "Need at least 2 teams."
+
+    # Delete existing 7s fixtures for this year
+    Reserve7sFixture.query.filter_by(league_id=league_id, year=year, is_final=False).delete()
+
+    # Shuffle independently from main comp
+    shuffled = list(teams)
+    random.shuffle(shuffled)
+
+    base_rounds = _circle_method_pairings(shuffled)
+    if not base_rounds:
+        return [], "Could not generate 7s fixture."
+
+    cycle_len = len(base_rounds)
+
+    round_schedule = []
+    num_cycles = (num_rounds + cycle_len - 1) // cycle_len
+    for c in range(num_cycles):
+        indices = list(range(cycle_len))
+        if c > 0:
+            random.shuffle(indices)
+        round_schedule.extend(indices)
+    round_schedule = round_schedule[:num_rounds]
+
+    home_counts = defaultdict(int)
+    pair_last_home = {}
+
+    fixtures = []
+    for afl_round, base_idx in enumerate(round_schedule, 1):
+        for t1, t2 in base_rounds[base_idx]:
+            pair_key = frozenset({t1.id, t2.id})
+            last_home = pair_last_home.get(pair_key)
+
+            if last_home is not None:
+                if last_home == t1.id:
+                    home, away = t2, t1
+                else:
+                    home, away = t1, t2
+            else:
+                if home_counts[t1.id] <= home_counts[t2.id]:
+                    home, away = t1, t2
+                else:
+                    home, away = t2, t1
+
+            home_counts[home.id] += 1
+            pair_last_home[pair_key] = home.id
+
+            fixture = Reserve7sFixture(
+                league_id=league_id,
+                afl_round=afl_round,
+                year=year,
+                home_team_id=home.id,
+                away_team_id=away.id,
+            )
+            db.session.add(fixture)
+            fixtures.append(fixture)
+
+    db.session.commit()
+    return fixtures, None
+
+
+def generate_7s_finals(league_id, year):
+    """Generate 7s finals: top 2 grand final (1st vs 2nd)."""
+    from models.database import Reserve7sFixture, Reserve7sStanding
+
+    # Delete existing 7s finals
+    Reserve7sFixture.query.filter_by(league_id=league_id, year=year, is_final=True).delete()
+
+    standings = (
+        Reserve7sStanding.query
+        .filter_by(league_id=league_id, year=year)
+        .order_by(Reserve7sStanding.ladder_points.desc(), Reserve7sStanding.percentage.desc())
+        .limit(2)
+        .all()
+    )
+
+    if len(standings) < 2:
+        return [], "Not enough teams in 7s standings for finals."
+
+    config_obj = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    base_round = (config_obj.num_regular_rounds if config_obj else 23) + 1
+
+    gf = Reserve7sFixture(
+        league_id=league_id,
+        afl_round=base_round,
+        year=year,
+        home_team_id=standings[0].team_id,
+        away_team_id=standings[1].team_id,
+        is_final=True,
+        final_type="GF",
+    )
+    db.session.add(gf)
+    db.session.commit()
+    return [gf], None
+
+
+def get_7s_fixture(league_id, year):
+    """Get the full 7s season fixture grouped by round."""
+    from models.database import Reserve7sFixture
+
+    fixtures = (
+        Reserve7sFixture.query
+        .filter_by(league_id=league_id, year=year, is_final=False)
+        .order_by(Reserve7sFixture.afl_round, Reserve7sFixture.id)
+        .all()
+    )
+
+    rounds = {}
+    for f in fixtures:
+        rnd = f.afl_round
+        if rnd not in rounds:
+            rounds[rnd] = []
+        rounds[rnd].append(f)
+
+    return rounds
+
+
+def get_7s_round_fixtures(league_id, year, afl_round):
+    """Get 7s fixtures for a specific round."""
+    from models.database import Reserve7sFixture
+
+    return (
+        Reserve7sFixture.query
+        .filter_by(league_id=league_id, year=year, afl_round=afl_round, is_final=False)
+        .all()
+    )
