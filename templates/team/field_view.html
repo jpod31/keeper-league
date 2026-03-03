@@ -42,9 +42,11 @@
           <i class="bi bi-arrow-left-right"></i>
         </button>
         {% if is_reserve %}
+        {% if not is_7s %}
         <button class="fv-action-btn fv-act-emg{% if is_emg %} active{% endif %}"
                 title="Toggle Emergency" onclick="event.stopPropagation(); fvSetEmergency({{ p.id }})">E</button>
-        {% if has_7s_fixture %}
+        {% endif %}
+        {% if has_7s_fixture and not is_emg %}
         <button class="fv-action-btn fv-act-7s{% if is_7s %} active{% endif %}"
                 title="Toggle 7s" onclick="event.stopPropagation(); fv7sToggle({{ p.id }})">7</button>
         {% if is_7s %}
