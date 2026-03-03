@@ -613,28 +613,17 @@ def sevens_fixture(league_id):
 @reserve7s_bp.route("/<int:league_id>/reserve7s/generate-fixture", methods=["POST"])
 @login_required
 def sevens_generate_fixture(league_id):
-    """Generate 7s fixture draw."""
+    """Generate 7s fixture by mirroring the main comp fixture."""
     league = db.session.get(League, league_id)
     if not league or league.commissioner_id != current_user.id:
         flash("Only the commissioner can generate fixtures.", "warning")
         return redirect(url_for("reserve7s.sevens_fixture", league_id=league_id))
 
-    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
-    num_rounds = season_cfg.num_regular_rounds if season_cfg else 23
-
-    # Check if main fixture includes round 0 (pre-season)
-    from models.database import Fixture
-    has_round_0 = Fixture.query.filter_by(
-        league_id=league_id, year=league.season_year, afl_round=0, is_final=False,
-    ).first() is not None
-    start_round = 0 if has_round_0 else 1
-    total_rounds = num_rounds + (1 if has_round_0 else 0)
-
-    fixtures, error = generate_7s_round_robin(league_id, league.season_year, total_rounds, start_round=start_round)
+    fixtures, error = generate_7s_round_robin(league_id, league.season_year)
     if error:
         flash(error, "danger")
     else:
-        flash(f"Generated {len(fixtures)} Reserve 7s fixtures across {num_rounds} rounds.", "success")
+        flash(f"Mirrored {len(fixtures)} Reserve 7s fixtures from the main comp draw.", "success")
     return redirect(url_for("reserve7s.sevens_fixture", league_id=league_id))
 
 

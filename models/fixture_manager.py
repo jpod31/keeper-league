@@ -335,71 +335,38 @@ def get_finals(league_id, year):
 
 
 def generate_7s_round_robin(league_id, year, num_rounds=23, start_round=1):
-    """Generate an independent round-robin fixture for 7s.
+    """Mirror the main comp's regular-season fixture into Reserve7sFixture.
 
-    Uses the same circle method but with a different random shuffle,
-    so the draw differs from the main comp.
+    Copies every non-final Fixture row so the 7s draw matches the main
+    comp exactly (same matchups, same home/away, same rounds).
     """
     from models.database import Reserve7sFixture
 
-    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
-    if len(teams) < 2:
-        return [], "Need at least 2 teams."
-
-    # Delete existing 7s fixtures for this year
+    # Delete existing 7s regular-season fixtures
     Reserve7sFixture.query.filter_by(league_id=league_id, year=year, is_final=False).delete()
 
-    # Shuffle independently from main comp
-    shuffled = list(teams)
-    random.shuffle(shuffled)
+    # Read main comp fixtures
+    main_fixtures = (
+        Fixture.query
+        .filter_by(league_id=league_id, year=year, is_final=False)
+        .order_by(Fixture.afl_round, Fixture.id)
+        .all()
+    )
 
-    base_rounds = _circle_method_pairings(shuffled)
-    if not base_rounds:
-        return [], "Could not generate 7s fixture."
-
-    cycle_len = len(base_rounds)
-
-    round_schedule = []
-    num_cycles = (num_rounds + cycle_len - 1) // cycle_len
-    for c in range(num_cycles):
-        indices = list(range(cycle_len))
-        if c > 0:
-            random.shuffle(indices)
-        round_schedule.extend(indices)
-    round_schedule = round_schedule[:num_rounds]
-
-    home_counts = defaultdict(int)
-    pair_last_home = {}
+    if not main_fixtures:
+        return [], "No main comp fixture to mirror."
 
     fixtures = []
-    for afl_round, base_idx in enumerate(round_schedule, start_round):
-        for t1, t2 in base_rounds[base_idx]:
-            pair_key = frozenset({t1.id, t2.id})
-            last_home = pair_last_home.get(pair_key)
-
-            if last_home is not None:
-                if last_home == t1.id:
-                    home, away = t2, t1
-                else:
-                    home, away = t1, t2
-            else:
-                if home_counts[t1.id] <= home_counts[t2.id]:
-                    home, away = t1, t2
-                else:
-                    home, away = t2, t1
-
-            home_counts[home.id] += 1
-            pair_last_home[pair_key] = home.id
-
-            fixture = Reserve7sFixture(
-                league_id=league_id,
-                afl_round=afl_round,
-                year=year,
-                home_team_id=home.id,
-                away_team_id=away.id,
-            )
-            db.session.add(fixture)
-            fixtures.append(fixture)
+    for mf in main_fixtures:
+        f7 = Reserve7sFixture(
+            league_id=league_id,
+            afl_round=mf.afl_round,
+            year=year,
+            home_team_id=mf.home_team_id,
+            away_team_id=mf.away_team_id,
+        )
+        db.session.add(f7)
+        fixtures.append(f7)
 
     db.session.commit()
     return fixtures, None
@@ -441,35 +408,38 @@ def generate_7s_finals(league_id, year):
 
 
 def generate_7s_preseason(league_id, year):
-    """Generate 7s pre-season fixtures (afl_round=0) using sequential pairings.
+    """Mirror the main comp's pre-season (round 0) fixtures into 7s.
 
-    Mirrors main comp's generate_preseason() but writes to Reserve7sFixture.
+    Copies round-0 Fixture rows so 7s matchups match the main comp.
+    Called automatically when main comp pre-season is generated.
     """
     from models.database import Reserve7sFixture
-
-    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
-    if len(teams) < 2:
-        return [], "Need at least 2 teams."
 
     # Delete existing 7s pre-season fixtures
     Reserve7sFixture.query.filter_by(league_id=league_id, year=year, afl_round=0, is_final=False).delete()
 
+    # Read main comp round-0 fixtures
+    main_fixtures = (
+        Fixture.query
+        .filter_by(league_id=league_id, year=year, afl_round=0, is_final=False)
+        .order_by(Fixture.id)
+        .all()
+    )
+
+    if not main_fixtures:
+        return [], "No main comp pre-season fixture to mirror."
+
     fixtures = []
-    # Shuffle for independent draw from main comp
-    shuffled = list(teams)
-    random.shuffle(shuffled)
-    for i in range(0, len(shuffled) - 1, 2):
-        home = shuffled[i]
-        away = shuffled[i + 1]
-        fixture = Reserve7sFixture(
+    for mf in main_fixtures:
+        f7 = Reserve7sFixture(
             league_id=league_id,
             afl_round=0,
             year=year,
-            home_team_id=home.id,
-            away_team_id=away.id,
+            home_team_id=mf.home_team_id,
+            away_team_id=mf.away_team_id,
         )
-        db.session.add(fixture)
-        fixtures.append(fixture)
+        db.session.add(f7)
+        fixtures.append(f7)
 
     db.session.commit()
     return fixtures, None
