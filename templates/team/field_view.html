@@ -1,7 +1,7 @@
 {# AFL Field View — included from squad.html when view == 'field' #}
 {# Expects: field_data, TEAM_LOGOS, is_owner, league, team #}
 
-{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids) %}
+{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing) %}
   {% if p %}
     {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
     <div class="fv-card fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}"
@@ -17,6 +17,11 @@
         <div class="fv-ribbon fv-ribbon-vc"><span>VC</span></div>
       {% elif is_emg %}
         <div class="fv-ribbon fv-ribbon-emg"><span>E</span></div>
+      {% endif %}
+
+      {# No-game indicator #}
+      {% if teams_playing and p.afl_team and p.afl_team not in teams_playing %}
+        <div class="fv-bye-badge" title="No game this round">BYE</div>
       {% endif %}
 
       {# Hover action bubbles (owner only) #}
@@ -170,7 +175,7 @@
         {% for row_size in rows %}
           <div class="fv-zone-grid fv-grid-{{ row_size }}"{% if not loop.first %} style="margin-top:8px"{% endif %}>
             {% for p in players_list[ns.offset:ns.offset + row_size] %}
-              {{ player_card(p, pos_class, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+              {{ player_card(p, pos_class, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing) }}
             {% endfor %}
           </div>
           {% set ns.offset = ns.offset + row_size %}
@@ -196,7 +201,7 @@
         {% for slot in field_data.flex_data %}
           {% set p = slot.player %}
           {% set flex_pos_class = (p.position or 'MID').split('/')[0]|lower if p else 'flex' %}
-          {{ player_card(p, flex_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids) }}
+          {{ player_card(p, flex_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing) }}
         {% endfor %}
       </div>
     </div>
@@ -290,7 +295,7 @@
         </div>
         <div class="fv-reserves-grid">
           {% for p in pos_players %}
-            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids) }}
+            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing) }}
           {% endfor %}
         </div>
       </div>

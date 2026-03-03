@@ -1,5 +1,7 @@
 """Fantasy team management blueprint: lineup, squad, stats."""
 
+from datetime import datetime, timezone
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
@@ -256,29 +258,35 @@ def squad(league_id, team_id):
 
         # Next lockout time — earliest scheduled game start for players on team
         next_lockout_time = None
+        teams_playing = set()
         try:
             team_afl_teams = set(p.afl_team for p in players if p and p.afl_team)
-            from models.database import AflGame
-            upcoming_games = (
+            # Find the current/next round: first check live games, then scheduled
+            current_round_game = (
                 AflGame.query
-                .filter(
-                    AflGame.status == "scheduled",
-                    AflGame.scheduled_start.isnot(None),
-                    db.or_(
-                        AflGame.home_team.in_(team_afl_teams),
-                        AflGame.away_team.in_(team_afl_teams),
-                    ),
-                )
+                .filter(AflGame.year == league.season_year,
+                        AflGame.status.in_(["live", "scheduled"]))
                 .order_by(AflGame.scheduled_start.asc())
                 .first()
             )
-            if upcoming_games and upcoming_games.scheduled_start:
-                next_lockout_time = upcoming_games.scheduled_start.isoformat()
+            if current_round_game:
+                current_afl_round = current_round_game.afl_round
+                round_games = AflGame.query.filter_by(
+                    year=league.season_year, afl_round=current_afl_round
+                ).all()
+                for g in round_games:
+                    teams_playing.add(g.home_team)
+                    teams_playing.add(g.away_team)
+                # Find earliest scheduled game for lockout countdown
+                for g in sorted(round_games, key=lambda x: x.scheduled_start or datetime.max):
+                    if g.status == "scheduled" and g.scheduled_start:
+                        if g.home_team in team_afl_teams or g.away_team in team_afl_teams:
+                            next_lockout_time = g.scheduled_start.isoformat()
+                            break
         except Exception:
             pass
 
         # LTIL / SSP config
-        from datetime import datetime, timezone
         season_cfg = SeasonConfig.query.filter_by(
             league_id=league_id, year=league.season_year
         ).first()
@@ -309,6 +317,7 @@ def squad(league_id, team_id):
             "ssp_slots": ssp_slots,
             "ssp_enabled": ssp_enabled,
             "ssp_window_active": ssp_window_active,
+            "teams_playing": teams_playing,
             "can_remove_ltil": can_remove_ltil,
         }
 

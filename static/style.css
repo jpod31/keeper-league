@@ -862,6 +862,28 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   color: #fff;
 }
 
+/* ── BYE badge — no game this round ── */
+.fv-bye-badge {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .4rem;
+  font-weight: 800;
+  letter-spacing: .5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6e7681, #484f58);
+  color: #c9d1d9;
+  border: 2px solid var(--kl-bg-card, #161b22);
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
+}
+
 /* ── Card top row: logo + position pip ── */
 .fv-card-top {
   display: flex;
