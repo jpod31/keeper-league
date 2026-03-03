@@ -91,7 +91,7 @@ def draft_room(league_id):
             return redirect(url_for("draft_live.draft_setup", league_id=league_id))
         else:
             flash("The draft hasn't been set up yet. Ask your commissioner to create a draft session.", "info")
-            return redirect(url_for("leagues.season_hub", league_id=league_id))
+            return redirect(url_for("leagues.dashboard", league_id=league_id))
 
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
     is_commissioner = league.commissioner_id == current_user.id

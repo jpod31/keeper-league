@@ -394,6 +394,41 @@ def squad(league_id, team_id):
                     "sc_avg": round(float(r.sc_avg or 0), 1),
                 }
 
+    # ── Trade / draft alerts (owner only) ──
+    pending_incoming = 0
+    trade_is_open = False
+    trade_close_date = None
+    has_active_draft = False
+    active_draft_round = None
+    if is_owner:
+        from models.database import Trade, DraftSession as DS2
+        pending_incoming = Trade.query.filter_by(
+            league_id=league_id, recipient_team_id=team.id, status="pending"
+        ).count()
+
+        season_cfg = SeasonConfig.query.filter_by(
+            league_id=league_id, year=league.season_year
+        ).first()
+        if season_cfg:
+            now_utc = datetime.now(timezone.utc)
+            # Check mid-season trade window
+            if (season_cfg.mid_trade_window_open and season_cfg.mid_trade_window_close
+                    and now_utc < season_cfg.mid_trade_window_close):
+                trade_is_open = True
+                trade_close_date = season_cfg.mid_trade_window_close
+            # Check off-season trade window
+            elif (season_cfg.off_trade_window_open and season_cfg.off_trade_window_close
+                    and now_utc < season_cfg.off_trade_window_close):
+                trade_is_open = True
+                trade_close_date = season_cfg.off_trade_window_close
+
+        draft_live = DS2.query.filter_by(
+            league_id=league_id, is_mock=False
+        ).filter(DS2.status.in_(["in_progress", "paused", "scheduled"])).first()
+        if draft_live:
+            has_active_draft = True
+            active_draft_round = draft_live.current_round
+
     return render_template("team/squad.html",
                            league=league,
                            team=team,
@@ -408,7 +443,12 @@ def squad(league_id, team_id):
                            delist_period=delist_period,
                            team_delist_count=team_delist_count,
                            min_delists=min_delists,
-                           delisted_player_ids=delisted_player_ids)
+                           delisted_player_ids=delisted_player_ids,
+                           pending_incoming=pending_incoming,
+                           trade_is_open=trade_is_open,
+                           trade_close_date=trade_close_date,
+                           has_active_draft=has_active_draft,
+                           active_draft_round=active_draft_round)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/lineup/<int:afl_round>", methods=["GET", "POST"])

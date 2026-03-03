@@ -66,10 +66,6 @@
           <i class="bi bi-list-check"></i><span>Draft Room</span>
         </a>
       {% endif %}
-      <a class="league-tab{% if active_tab|default('') == 'season' %} active{% endif %}"
-         href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
-        <i class="bi bi-calendar-range"></i><span>List Management</span>
-      </a>
       <a class="league-tab{% if active_tab|default('') == 'comms' %} active{% endif %}"
          href="{{ url_for('comms.league_chat', league_id=league.id) }}">
         <i class="bi bi-megaphone"></i><span>Comms</span>
@@ -110,7 +106,7 @@
      href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
     <i class="bi bi-calendar-week"></i><span>League</span>
   </a>
-  {% set more_tabs = ['season', 'comms', 'commissioner', 'settings'] %}
+  {% set more_tabs = ['comms', 'commissioner', 'settings'] %}
   <button class="mob-nav-item{% if active_tab|default('') in more_tabs %} active{% endif %}" onclick="toggleMoreSheet()" type="button">
     <i class="bi bi-grid-3x3-gap"></i><span>More</span>
   </button>
@@ -126,9 +122,6 @@
         <i class="bi bi-list-check"></i><span>Draft Room</span>
       </a>
     {% endif %}
-    <a class="more-sheet-item" href="{{ url_for('leagues.season_hub', league_id=league.id) }}">
-      <i class="bi bi-calendar-range"></i><span>List Mgmt</span>
-    </a>
     <a class="more-sheet-item" href="{{ url_for('comms.league_chat', league_id=league.id) }}">
       <i class="bi bi-megaphone"></i><span>Comms</span>
     </a>

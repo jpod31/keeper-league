@@ -836,242 +836,18 @@ def draft_values_preview(league_id):
 @leagues_bp.route("/<int:league_id>/season")
 @login_required
 def season_hub(league_id):
-    """Unified season hub showing draft, mid-season, and off-season lifecycle."""
+    """Redirect — List Management is now split between My Team and Commissioner Hub."""
     league = db.session.get(League, league_id)
     if not league:
         flash("League not found.", "warning")
         return redirect(url_for("leagues.league_list"))
 
-    from models.database import (
-        SeasonConfig, DelistPeriod, DraftSession, LongTermInjury, DelistAction, Trade,
-    )
-    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
-    if not season_cfg:
-        season_cfg = SeasonConfig(league_id=league_id, year=league.season_year)
-        db.session.add(season_cfg)
-        db.session.commit()
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
-    is_commissioner = league.commissioner_id == current_user.id
-
-    # ── Current phase ──
-    if league.status in ("setup", "drafting"):
-        current_phase = "pre_season"
-    elif league.status == "active" and season_cfg and season_cfg.season_phase == "midseason":
-        current_phase = "midseason"
-    elif league.status == "active":
-        current_phase = "regular"
-    elif league.status == "finals":
-        current_phase = "finals"
-    elif league.status == "offseason":
-        current_phase = "offseason"
-    else:
-        current_phase = "pre_season"
-
-    # ── Trade window dates for template ──
-    now = datetime.now(timezone.utc)
-    trade_window_dates = {
-        "mid_open": season_cfg.mid_trade_window_open,
-        "mid_close": season_cfg.mid_trade_window_close,
-        "mid_draft": season_cfg.mid_draft_date,
-        "off_open": season_cfg.off_trade_window_open,
-        "off_close": season_cfg.off_trade_window_close,
-    }
-
-    # ── Draft data ──
-    draft_sessions = DraftSession.query.filter_by(
-        league_id=league_id, is_mock=False
-    ).order_by(DraftSession.id).all()
-
-    initial_draft = None
-    supplemental_drafts = []
-    for ds in draft_sessions:
-        if ds.draft_round_type == "initial":
-            initial_draft = ds
-        elif ds.draft_round_type == "supplemental":
-            supplemental_drafts.append(ds)
-
-    # ── Mid-season step statuses ──
-    mid_trade_status = "locked"
-    if season_cfg and season_cfg.season_phase == "midseason":
-        if season_cfg.mid_trade_window_open and season_cfg.mid_trade_window_close:
-            if now < season_cfg.mid_trade_window_close:
-                mid_trade_status = "active"
-            else:
-                mid_trade_status = "completed"
-        elif league.trade_window_open:
-            mid_trade_status = "active"
-        elif season_cfg.mid_trade_window_close:
-            mid_trade_status = "completed"
-
-    mid_delist_status = "locked"
-    delist_period = DelistPeriod.query.filter_by(
-        league_id=league_id, year=league.season_year
-    ).order_by(DelistPeriod.id.desc()).first()
-    if current_phase == "midseason":
-        if delist_period and delist_period.status == "open":
-            mid_delist_status = "active"
-        elif mid_trade_status == "completed":
-            mid_delist_status = "pending"
-
-    mid_draft_status = "locked"
-    if season_cfg and season_cfg.mid_season_draft_enabled:
-        mid_supp = DraftSession.query.filter_by(
-            league_id=league_id, draft_round_type="supplemental", is_mock=False
-        ).order_by(DraftSession.id.desc()).first()
-        if mid_supp and mid_supp.status == "in_progress" and current_phase == "midseason":
-            mid_draft_status = "active"
-        elif mid_supp and mid_supp.status == "completed" and current_phase == "midseason":
-            mid_draft_status = "completed"
-        elif (mid_delist_status == "completed" or (delist_period and delist_period.status == "closed")) and current_phase == "midseason":
-            mid_draft_status = "pending"
-
-    mid_lock_status = "locked"
-    if mid_draft_status == "completed":
-        mid_lock_status = "completed"
-
-    # ── Off-season step statuses ──
-    off_delist_status = "pending" if current_phase == "offseason" else "locked"
-    if current_phase == "offseason":
-        if delist_period and delist_period.status == "open":
-            off_delist_status = "active"
-        elif delist_period and delist_period.status == "closed":
-            off_delist_status = "completed"
-
-    off_ssp_status = "locked"
-    ltil_entries = []
-    if season_cfg and season_cfg.ssp_enabled:
-        ltil_entries = LongTermInjury.query.filter_by(
-            league_id=league_id, year=league.season_year, removed_at=None
-        ).all()
-        if off_delist_status == "completed":
-            off_ssp_status = "active" if ltil_entries else "completed"
-
-    off_draft_status = "locked"
-    off_supp = DraftSession.query.filter_by(
-        league_id=league_id, draft_round_type="supplemental", is_mock=False
-    ).order_by(DraftSession.id.desc()).first()
-    if current_phase == "offseason":
-        if off_supp and off_supp.status == "in_progress":
-            off_draft_status = "active"
-        elif off_supp and off_supp.status == "completed":
-            off_draft_status = "completed"
-        elif off_delist_status == "completed" and off_ssp_status in ("completed", "locked"):
-            off_draft_status = "pending"
-
-    off_trade_status = "locked"
-    if current_phase == "offseason":
-        if season_cfg.off_trade_window_open and season_cfg.off_trade_window_close:
-            if now < season_cfg.off_trade_window_close:
-                off_trade_status = "active"
-            else:
-                off_trade_status = "completed"
-        elif league.trade_window_open:
-            off_trade_status = "active"
-        else:
-            off_trade_status = "pending"
-
-    # ── Team delist count ──
-    team_delist_count = 0
-    if user_team and delist_period:
-        team_delist_count = DelistAction.query.filter_by(
-            delist_period_id=delist_period.id, team_id=user_team.id
-        ).count()
-
-    # ── User roster for inline delist management ──
-    user_roster = []
-    delisted_player_ids = set()
     if user_team:
-        user_roster = (
-            FantasyRoster.query
-            .filter_by(team_id=user_team.id, is_active=True)
-            .join(AflPlayer, FantasyRoster.player_id == AflPlayer.id)
-            .order_by(AflPlayer.position, AflPlayer.sc_avg.desc())
-            .all()
-        )
-        if delist_period:
-            from models.database import DelistAction
-            delisted_actions = DelistAction.query.filter_by(
-                delist_period_id=delist_period.id, team_id=user_team.id
-            ).all()
-            delisted_player_ids = {a.player_id for a in delisted_actions}
-
-    # ── Delist inline data ──
-    min_delists = 3
-    if delist_period and delist_period.min_delists:
-        min_delists = delist_period.min_delists
-    elif season_cfg:
-        if current_phase == "midseason" and season_cfg.mid_season_delist_required:
-            min_delists = season_cfg.mid_season_delist_required
-        elif season_cfg.offseason_delist_min:
-            min_delists = season_cfg.offseason_delist_min
-
-    all_teams_progress = []
-    if is_commissioner and delist_period and delist_period.status == "open":
-        teams = FantasyTeam.query.filter_by(league_id=league_id).all()
-        for t in teams:
-            count = DelistAction.query.filter_by(
-                delist_period_id=delist_period.id, team_id=t.id
-            ).count()
-            all_teams_progress.append({
-                "name": t.name,
-                "owner": t.owner.display_name if t.owner else "?",
-                "count": count,
-                "met": count >= min_delists,
-            })
-
-    is_midseason = (league.status == "active" and season_cfg
-                    and season_cfg.season_phase == "midseason")
-    close_route = ("leagues.midseason_start_step" if is_midseason
-                   else "leagues.offseason_start_step")
-
-    # ── Mock draft ──
-    mock_draft = DraftSession.query.filter_by(league_id=league_id, is_mock=True).first()
-
-    # ── Trade data ──
-    pending_incoming = 0
-    pending_outgoing = 0
-    recent_trades = []
-    if user_team:
-        pending_incoming = Trade.query.filter_by(
-            league_id=league_id, recipient_team_id=user_team.id, status="pending"
-        ).count()
-        pending_outgoing = Trade.query.filter_by(
-            league_id=league_id, proposer_team_id=user_team.id, status="pending"
-        ).count()
-    recent_trades = Trade.query.filter_by(league_id=league_id).order_by(
-        Trade.proposed_at.desc()
-    ).limit(5).all()
-
-    return render_template("leagues/season_hub.html",
-                           league=league,
-                           season_cfg=season_cfg,
-                           user_team=user_team,
-                           is_commissioner=is_commissioner,
-                           current_phase=current_phase,
-                           initial_draft=initial_draft,
-                           supplemental_drafts=supplemental_drafts,
-                           mid_trade_status=mid_trade_status,
-                           mid_delist_status=mid_delist_status,
-                           mid_draft_status=mid_draft_status,
-                           mid_lock_status=mid_lock_status,
-                           off_delist_status=off_delist_status,
-                           off_ssp_status=off_ssp_status,
-                           off_draft_status=off_draft_status,
-                           off_trade_status=off_trade_status,
-                           delist_period=delist_period,
-                           team_delist_count=team_delist_count,
-                           min_delists=min_delists,
-                           all_teams_progress=all_teams_progress,
-                           close_route=close_route,
-                           ltil_entries=ltil_entries,
-                           pending_incoming=pending_incoming,
-                           pending_outgoing=pending_outgoing,
-                           recent_trades=recent_trades,
-                           user_roster=user_roster,
-                           delisted_player_ids=delisted_player_ids,
-                           trade_window_dates=trade_window_dates,
-                           mock_draft=mock_draft,
-                           rolling=_compute_rolling_averages())
+        return redirect(url_for("team.squad", league_id=league_id, team_id=user_team.id))
+    if league.commissioner_id == current_user.id:
+        return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
+    return redirect(url_for("leagues.dashboard", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/season/auto-transition", methods=["POST"])
@@ -1081,7 +857,7 @@ def save_auto_transition(league_id):
     league = db.session.get(League, league_id)
     if not league or league.commissioner_id != current_user.id:
         flash("Only the commissioner can change automation settings.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
+        return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
     from models.season_manager import get_or_create_season_config
     from datetime import datetime as dt
@@ -1112,14 +888,14 @@ def save_auto_transition(league_id):
     cfg.finals_start_round = finals_round
     db.session.commit()
     flash("Season automation settings saved.", "success")
-    return redirect(url_for("leagues.season_hub", league_id=league_id))
+    return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/midseason")
 @login_required
 def midseason_hub(league_id):
-    """Redirect to unified season hub."""
-    return redirect(url_for("leagues.season_hub", league_id=league_id))
+    """Redirect to commissioner hub."""
+    return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/midseason/start-step", methods=["POST"])
@@ -1129,7 +905,7 @@ def midseason_start_step(league_id):
     league = db.session.get(League, league_id)
     if not league or league.commissioner_id != current_user.id:
         flash("Only the commissioner can manage season steps.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
+        return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
     from models.database import SeasonConfig
     season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
@@ -1219,14 +995,14 @@ def midseason_start_step(league_id):
         db.session.commit()
         flash("Rosters locked. Season resumed.", "success")
 
-    return redirect(url_for("leagues.season_hub", league_id=league_id))
+    return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/offseason")
 @login_required
 def offseason_hub(league_id):
-    """Redirect to unified season hub."""
-    return redirect(url_for("leagues.season_hub", league_id=league_id))
+    """Redirect to commissioner hub."""
+    return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/offseason/start-step", methods=["POST"])
@@ -1236,7 +1012,7 @@ def offseason_start_step(league_id):
     league = db.session.get(League, league_id)
     if not league or league.commissioner_id != current_user.id:
         flash("Only the commissioner can manage season steps.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
+        return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
     from models.database import SeasonConfig
     season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
@@ -1251,7 +1027,7 @@ def offseason_start_step(league_id):
         # Don't allow off-season delists during setup/drafting (pre-season)
         if league.status in ("setup", "drafting"):
             flash("Off-season delists can't be opened before the season starts.", "warning")
-            return redirect(url_for("leagues.season_hub", league_id=league_id))
+            return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
         season_cfg.season_phase = "offseason"
         league.status = "offseason"
         min_delists = season_cfg.offseason_delist_min or 3
@@ -1318,7 +1094,7 @@ def offseason_start_step(league_id):
         db.session.commit()
         flash("Off-season complete. Season is ready.", "success")
 
-    return redirect(url_for("leagues.season_hub", league_id=league_id))
+    return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/season/delist", methods=["POST"])
@@ -1338,12 +1114,14 @@ def delist_player_action(league_id):
     is_offseason = league.status == "offseason"
     if not is_midseason and not is_offseason:
         flash("Delisting is only available during mid-season and off-season periods.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
+        return redirect(url_for("leagues.dashboard", league_id=league_id))
 
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
     if not user_team:
         flash("You need a team to delist players.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
+        return redirect(url_for("leagues.dashboard", league_id=league_id))
+
+    team_url = url_for("team.squad", league_id=league_id, team_id=user_team.id)
 
     from models.database import DelistPeriod
     delist_period = DelistPeriod.query.filter_by(
@@ -1351,12 +1129,12 @@ def delist_player_action(league_id):
     ).first()
     if not delist_period:
         flash("No active delist period.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
+        return redirect(team_url)
 
     player_id = request.form.get("player_id", type=int)
     if not player_id:
         flash("No player selected.", "warning")
-        return redirect(url_for("leagues.season_hub", league_id=league_id))
+        return redirect(team_url)
 
     from models.season_manager import delist_player
     _, error = delist_player(delist_period.id, user_team.id, player_id)
@@ -1377,21 +1155,21 @@ def delist_player_action(league_id):
                 league_id=league_id,
                 notif_type="player_delisted",
                 title=f"{user_team.name} delisted {player_name}",
-                link=url_for("leagues.season_hub", league_id=league_id),
+                link=url_for("leagues.dashboard", league_id=league_id),
             )
         flash("Player delisted.", "success")
 
     next_url = request.form.get("next")
     if next_url:
         return redirect(next_url)
-    return redirect(url_for("leagues.season_hub", league_id=league_id))
+    return redirect(team_url)
 
 
 @leagues_bp.route("/<int:league_id>/delist-hub")
 @login_required
 def delist_hub(league_id):
-    """Redirect to unified season hub — delists are now inline."""
-    return redirect(url_for("leagues.season_hub", league_id=league_id))
+    """Redirect — delists are now inline on My Team."""
+    return redirect(url_for("leagues.season_hub", league_id=league_id))  # season_hub itself redirects
 
 
 @leagues_bp.route("/<int:league_id>/player-pool")
@@ -2685,7 +2463,7 @@ def api_player_stats(league_id, player_id):
 @leagues_bp.route("/<int:league_id>/commissioner")
 @login_required
 def commissioner_hub(league_id):
-    """Commissioner Central Hub — manage LTIL approvals and other tools."""
+    """Commissioner Central Hub — season controls, LTIL approvals, tools."""
     league = db.session.get(League, league_id)
     if not league:
         flash("League not found.", "danger")
@@ -2694,18 +2472,162 @@ def commissioner_hub(league_id):
         flash("Commissioner access required.", "warning")
         return redirect(url_for("leagues.dashboard", league_id=league_id))
 
-    from models.database import LongTermInjury, Trade
-    # Pending LTIL requests
+    from models.database import (
+        LongTermInjury, Trade, SeasonConfig, DelistPeriod, DelistAction,
+    )
+
+    # ── Season phase data (moved from season_hub) ──
+    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
+    if not season_cfg:
+        season_cfg = SeasonConfig(league_id=league_id, year=league.season_year)
+        db.session.add(season_cfg)
+        db.session.commit()
+
+    now = datetime.now(timezone.utc)
+
+    # Current phase
+    if league.status in ("setup", "drafting"):
+        current_phase = "pre_season"
+    elif league.status == "active" and season_cfg and season_cfg.season_phase == "midseason":
+        current_phase = "midseason"
+    elif league.status == "active":
+        current_phase = "regular"
+    elif league.status == "finals":
+        current_phase = "finals"
+    elif league.status == "offseason":
+        current_phase = "offseason"
+    else:
+        current_phase = "pre_season"
+
+    # Mid-season step statuses
+    mid_trade_status = "locked"
+    if season_cfg and season_cfg.season_phase == "midseason":
+        if season_cfg.mid_trade_window_open and season_cfg.mid_trade_window_close:
+            if now < season_cfg.mid_trade_window_close:
+                mid_trade_status = "active"
+            else:
+                mid_trade_status = "completed"
+        elif league.trade_window_open:
+            mid_trade_status = "active"
+        elif season_cfg.mid_trade_window_close:
+            mid_trade_status = "completed"
+
+    delist_period = DelistPeriod.query.filter_by(
+        league_id=league_id, year=league.season_year
+    ).order_by(DelistPeriod.id.desc()).first()
+
+    mid_delist_status = "locked"
+    if current_phase == "midseason":
+        if delist_period and delist_period.status == "open":
+            mid_delist_status = "active"
+        elif mid_trade_status == "completed":
+            mid_delist_status = "pending"
+
+    mid_draft_status = "locked"
+    if season_cfg and season_cfg.mid_season_draft_enabled:
+        mid_supp = DraftSession.query.filter_by(
+            league_id=league_id, draft_round_type="supplemental", is_mock=False
+        ).order_by(DraftSession.id.desc()).first()
+        if mid_supp and mid_supp.status == "in_progress" and current_phase == "midseason":
+            mid_draft_status = "active"
+        elif mid_supp and mid_supp.status == "completed" and current_phase == "midseason":
+            mid_draft_status = "completed"
+        elif (mid_delist_status == "completed" or (delist_period and delist_period.status == "closed")) and current_phase == "midseason":
+            mid_draft_status = "pending"
+
+    mid_lock_status = "locked"
+    if mid_draft_status == "completed":
+        mid_lock_status = "completed"
+
+    # Off-season step statuses
+    off_delist_status = "pending" if current_phase == "offseason" else "locked"
+    if current_phase == "offseason":
+        if delist_period and delist_period.status == "open":
+            off_delist_status = "active"
+        elif delist_period and delist_period.status == "closed":
+            off_delist_status = "completed"
+
+    off_ssp_status = "locked"
+    if season_cfg and season_cfg.ssp_enabled:
+        ltil_entries = LongTermInjury.query.filter_by(
+            league_id=league_id, year=league.season_year, removed_at=None
+        ).all()
+        if off_delist_status == "completed":
+            off_ssp_status = "active" if ltil_entries else "completed"
+
+    off_draft_status = "locked"
+    off_supp = DraftSession.query.filter_by(
+        league_id=league_id, draft_round_type="supplemental", is_mock=False
+    ).order_by(DraftSession.id.desc()).first()
+    if current_phase == "offseason":
+        if off_supp and off_supp.status == "in_progress":
+            off_draft_status = "active"
+        elif off_supp and off_supp.status == "completed":
+            off_draft_status = "completed"
+        elif off_delist_status == "completed" and off_ssp_status in ("completed", "locked"):
+            off_draft_status = "pending"
+
+    off_trade_status = "locked"
+    if current_phase == "offseason":
+        if season_cfg.off_trade_window_open and season_cfg.off_trade_window_close:
+            if now < season_cfg.off_trade_window_close:
+                off_trade_status = "active"
+            else:
+                off_trade_status = "completed"
+        elif league.trade_window_open:
+            off_trade_status = "active"
+        else:
+            off_trade_status = "pending"
+
+    delist_is_open = delist_period and delist_period.status == "open"
+
+    # Min delists
+    min_delists = 3
+    if delist_period and delist_period.min_delists:
+        min_delists = delist_period.min_delists
+    elif season_cfg:
+        if current_phase == "midseason" and season_cfg.mid_season_delist_required:
+            min_delists = season_cfg.mid_season_delist_required
+        elif season_cfg.offseason_delist_min:
+            min_delists = season_cfg.offseason_delist_min
+
+    # All-teams delist progress
+    all_teams_progress = []
+    if delist_is_open:
+        all_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+        for t in all_teams:
+            count = DelistAction.query.filter_by(
+                delist_period_id=delist_period.id, team_id=t.id
+            ).count()
+            all_teams_progress.append({
+                "name": t.name,
+                "owner": t.owner.display_name if t.owner else "?",
+                "count": count,
+                "met": count >= min_delists,
+            })
+
+    is_midseason = (league.status == "active" and season_cfg
+                    and season_cfg.season_phase == "midseason")
+    close_route = ("leagues.midseason_start_step" if is_midseason
+                   else "leagues.offseason_start_step")
+
+    # Trade window dates
+    trade_window_dates = {
+        "mid_open": season_cfg.mid_trade_window_open,
+        "mid_close": season_cfg.mid_trade_window_close,
+        "off_open": season_cfg.off_trade_window_open,
+        "off_close": season_cfg.off_trade_window_close,
+    }
+
+    # ── LTIL data ──
     pending_ltil = LongTermInjury.query.filter_by(
         league_id=league_id, removed_at=None, status="pending"
     ).order_by(LongTermInjury.added_at.desc()).all()
 
-    # Active LTIL entries (approved)
     active_ltil = LongTermInjury.query.filter_by(
         league_id=league_id, removed_at=None, status="approved"
     ).order_by(LongTermInjury.added_at.desc()).all()
 
-    # Recent history (rejected + removed, limit 20)
     recent_history = LongTermInjury.query.filter_by(
         league_id=league_id
     ).filter(
@@ -2716,7 +2638,6 @@ def commissioner_hub(league_id):
     ).order_by(LongTermInjury.reviewed_at.desc().nullslast(),
                LongTermInjury.removed_at.desc().nullslast()).limit(20).all()
 
-    # Pending trades count
     pending_trades_count = Trade.query.filter_by(
         league_id=league_id, status="pending"
     ).count()
@@ -2726,6 +2647,22 @@ def commissioner_hub(league_id):
     return render_template(
         "leagues/commissioner_hub.html",
         league=league,
+        season_cfg=season_cfg,
+        current_phase=current_phase,
+        mid_trade_status=mid_trade_status,
+        mid_delist_status=mid_delist_status,
+        mid_draft_status=mid_draft_status,
+        mid_lock_status=mid_lock_status,
+        off_delist_status=off_delist_status,
+        off_ssp_status=off_ssp_status,
+        off_draft_status=off_draft_status,
+        off_trade_status=off_trade_status,
+        delist_period=delist_period,
+        delist_is_open=delist_is_open,
+        min_delists=min_delists,
+        all_teams_progress=all_teams_progress,
+        close_route=close_route,
+        trade_window_dates=trade_window_dates,
         pending_ltil=pending_ltil,
         active_ltil=active_ltil,
         recent_history=recent_history,

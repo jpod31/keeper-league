@@ -78,6 +78,27 @@
 </div>
 {% endif %}
 
+{# ── Trade / Draft Alerts (owner only) ── #}
+{% if is_owner and (trade_is_open or has_active_draft) %}
+  <div class="lm-alerts">
+    {% if trade_is_open %}
+      <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="lm-alert-row">
+        <i class="bi bi-arrow-left-right" style="color:var(--kl-accent-orange);"></i>
+        <span>Trade window open{% if trade_close_date %} — closes {{ trade_close_date.strftime('%d %b') }}{% endif %}</span>
+        {% if pending_incoming %}<span class="lm-alert-badge">{{ pending_incoming }} incoming</span>{% endif %}
+        <i class="bi bi-arrow-right ms-auto" style="color:var(--kl-accent-blue);font-size:.7rem;"></i>
+      </a>
+    {% endif %}
+    {% if has_active_draft %}
+      <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="lm-alert-row">
+        <i class="bi bi-list-check" style="color:var(--kl-accent-blue);"></i>
+        <span>Draft live{% if active_draft_round %} — Rd {{ active_draft_round }}{% endif %}</span>
+        <i class="bi bi-arrow-right ms-auto" style="color:var(--kl-accent-blue);font-size:.7rem;"></i>
+      </a>
+    {% endif %}
+  </div>
+{% endif %}
+
 {% if players %}
   {# ── Compute Summary Stats ── #}
   {% set ns = namespace(total_sc=0, sc_count=0, total_age=0, age_count=0,

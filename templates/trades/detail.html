@@ -1,9 +1,9 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'season' %}
+{% set active_tab = 'team' %}
 {% block title %}Trade #{{ trade.id }} — {{ league.name }}{% endblock %}
 {% block league_content %}
 <div class="page-header">
-  <div class="page-breadcrumb"><a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">List Management</a> / <a href="{{ url_for('trades.trade_center', league_id=league.id) }}">Trades</a> / #{{ trade.id }}</div>
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('trades.trade_center', league_id=league.id) }}">Trades</a> / #{{ trade.id }}</div>
   <div class="d-flex justify-content-between align-items-start">
     <div class="d-flex align-items-center gap-3">
       <a href="{{ url_for('trades.trade_center', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary" style="padding:4px 10px;">

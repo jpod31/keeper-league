@@ -1,12 +1,12 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'season' %}
+{% set active_tab = 'team' %}
 {% block title %}Trade Center — {{ league.name }}{% endblock %}
 {% block league_content %}
 <div class="page-header">
-  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('leagues.season_hub', league_id=league.id) }}">List Management</a> / Trades</div>
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a>{% if user_team %} / <a href="{{ url_for('team.squad', league_id=league.id, team_id=user_team.id) }}">My Team</a>{% endif %} / Trades</div>
   <div class="d-flex justify-content-between align-items-start">
     <div class="d-flex align-items-center gap-3">
-      <a href="{{ url_for('leagues.season_hub', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary" style="padding:4px 10px;">
+      <a href="{% if user_team %}{{ url_for('team.squad', league_id=league.id, team_id=user_team.id) }}{% else %}{{ url_for('leagues.dashboard', league_id=league.id) }}{% endif %}" class="btn btn-sm btn-outline-secondary" style="padding:4px 10px;">
         <i class="bi bi-arrow-left"></i>
       </a>
       <h2 class="mb-0">Trade Center</h2>

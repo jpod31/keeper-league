@@ -7,6 +7,116 @@
     <h4 class="mb-0 fw-bold" style="font-size:1.15rem;">Commissioner Hub</h4>
   </div>
 
+  {# ── Season Controls ── #}
+  <div class="card mb-4" style="border-color:rgba(210,153,34,.35);">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background:rgba(210,153,34,.08);border-bottom:1px solid rgba(210,153,34,.2);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-calendar-range me-2" style="color:#d29922;"></i>Season Controls</h5>
+      <span class="badge" style="background:{% if current_phase == 'midseason' %}#d29922{% elif current_phase == 'offseason' %}#8b949e{% elif current_phase == 'regular' %}#3fb950{% elif current_phase == 'finals' %}#f85149{% else %}#58a6ff{% endif %};font-size:.7rem;">{{ current_phase|replace('_',' ')|title }}</span>
+    </div>
+    <div class="card-body">
+      {# ── Delist progress (when open) ── #}
+      {% if delist_is_open and delist_period %}
+        <div class="mb-3 p-3" style="background:rgba(248,81,73,.05);border:1px solid rgba(248,81,73,.15);border-radius:8px;">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-exclamation-triangle-fill" style="color:#f85149;"></i>
+            <span style="font-size:.85rem;font-weight:600;color:#f85149;">Delist Period Open</span>
+            {% if delist_period.closes_at %}
+              <span class="ms-auto" style="font-size:.75rem;color:#8b949e;">Closes {{ delist_period.closes_at.strftime('%d %b') }}</span>
+            {% endif %}
+          </div>
+          {% if all_teams_progress %}
+            <div class="row g-1">
+              {% for tp in all_teams_progress %}
+                <div class="col-6 col-md-4">
+                  <div class="d-flex justify-content-between align-items-center px-2 py-1" style="background:{% if tp.met %}rgba(63,185,80,.08){% else %}rgba(139,148,158,.05){% endif %};border:1px solid {% if tp.met %}rgba(63,185,80,.2){% else %}rgba(139,148,158,.1){% endif %};border-radius:6px;font-size:.75rem;">
+                    <span style="color:#c9d1d9;">{{ tp.name }}</span>
+                    <span style="color:{% if tp.met %}#3fb950{% else %}#f85149{% endif %};font-weight:600;">{{ tp.count }}/{{ min_delists }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {# ── Phase action buttons ── #}
+      <div class="d-flex flex-wrap gap-2">
+        {% if current_phase == 'midseason' %}
+          {% if mid_trade_status == 'locked' and season_cfg and season_cfg.mid_season_trade_enabled %}
+            <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-inline">
+              <input type="hidden" name="step" value="trade_window">
+              <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-play-fill me-1"></i>Open Trade Window</button>
+            </form>
+          {% endif %}
+          {% if mid_trade_status == 'active' %}
+            <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-inline">
+              <input type="hidden" name="step" value="close_trades">
+              <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-stop-fill me-1"></i>Close Trade Window</button>
+            </form>
+          {% endif %}
+          {% if mid_delist_status in ('pending', 'locked') %}
+            <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-inline">
+              <input type="hidden" name="step" value="open_delists">
+              <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-play-fill me-1"></i>Open Delist Period</button>
+            </form>
+          {% endif %}
+          {% if mid_delist_status == 'active' %}
+            <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-inline" onsubmit="return confirm('Close delist period?');">
+              <input type="hidden" name="step" value="close_delists">
+              <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-stop-fill me-1"></i>Close Delist Period</button>
+            </form>
+          {% endif %}
+          {% if mid_draft_status == 'completed' and mid_lock_status != 'completed' %}
+            <form method="POST" action="{{ url_for('leagues.midseason_start_step', league_id=league.id) }}" class="d-inline">
+              <input type="hidden" name="step" value="roster_lock">
+              <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-lock me-1"></i>Lock Rosters</button>
+            </form>
+          {% endif %}
+        {% elif current_phase == 'offseason' %}
+          {% if not delist_is_open and off_delist_status == 'pending' %}
+            <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" class="d-inline">
+              <input type="hidden" name="step" value="open_delists">
+              <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-play-fill me-1"></i>Open Delist Period</button>
+            </form>
+          {% endif %}
+          {% if delist_is_open %}
+            <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" class="d-inline" onsubmit="return confirm('Close delist period?');">
+              <input type="hidden" name="step" value="close_delists">
+              <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-stop-fill me-1"></i>Close Delist Period</button>
+            </form>
+          {% endif %}
+          {% if off_trade_status == 'pending' %}
+            <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" class="d-inline">
+              <input type="hidden" name="step" value="open_trades">
+              <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-play-fill me-1"></i>Open Trade Window</button>
+            </form>
+          {% elif off_trade_status == 'active' %}
+            <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" class="d-inline">
+              <input type="hidden" name="step" value="close_trades">
+              <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-stop-fill me-1"></i>Close Trade Window</button>
+            </form>
+          {% endif %}
+          {% if off_trade_status in ('completed', 'pending') and off_draft_status == 'completed' %}
+            <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" class="d-inline" onsubmit="return confirm('End the off-season?');">
+              <input type="hidden" name="step" value="finish_offseason">
+              <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-circle me-1"></i>Finish Off-Season</button>
+            </form>
+          {% endif %}
+        {% elif current_phase == 'pre_season' %}
+          <span style="font-size:.8rem;color:#8b949e;">Pre-season — set up your draft to get started.</span>
+        {% elif current_phase == 'regular' %}
+          <span style="font-size:.8rem;color:#8b949e;">Regular season in progress. Use settings to trigger midseason or offseason.</span>
+        {% endif %}
+      </div>
+
+      {# ── Quick links ── #}
+      <div class="d-flex gap-2 mt-3 pt-3" style="border-top:1px solid #21262d;">
+        <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-list-check me-1"></i>Draft Setup</a>
+        <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear me-1"></i>League Settings</a>
+      </div>
+    </div>
+  </div>
+
   {# ── Summary cards ── #}
   <div class="row g-2 mb-4">
     <div class="col-4">
