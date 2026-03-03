@@ -1381,6 +1381,9 @@ def delist_player_action(league_id):
             )
         flash("Player delisted.", "success")
 
+    next_url = request.form.get("next")
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for("leagues.season_hub", league_id=league_id))
 
 
@@ -2349,6 +2352,10 @@ def league_history(league_id):
                 if a["wins"] >= milestone - 3 and a["wins"] < milestone:
                     milestones.append(f"{a['team_name']} is {milestone - a['wins']} wins away from {milestone} all-time wins")
 
+    # ── List Changes (transaction history) ──────────────────────────
+    from models.league_records import compute_list_changes
+    list_changes = compute_list_changes(league_id)
+
     return render_template("leagues/history.html",
                            league=league,
                            champions=champions,
@@ -2371,6 +2378,7 @@ def league_history(league_id):
                            milestones=milestones,
                            teams=teams,
                            team_map=team_map,
+                           list_changes=list_changes,
                            active_tab="league")
 
 

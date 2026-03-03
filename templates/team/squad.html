@@ -127,6 +127,22 @@
   {% if view|default('field') == 'field' %}
     {% include "team/field_view.html" %}
   {% else %}
+  {# ── Delist Banner (list view only) ── #}
+  {% if delist_is_open and is_owner %}
+  <div class="d-flex align-items-center gap-3 mb-3 px-3 py-3" style="background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.2);border-radius:10px;">
+    <i class="bi bi-exclamation-triangle-fill" style="color:#f85149;font-size:1.2rem;"></i>
+    <div style="flex:1;">
+      <div style="font-size:.85rem;font-weight:600;color:#f85149;">Delist Period Open</div>
+      <div style="font-size:.78rem;color:#8b949e;">
+        {{ team_delist_count }}/{{ min_delists }} delisted{% if team_delist_count < min_delists %} &mdash; <strong style="color:#f85149;">{{ min_delists - team_delist_count }} more required</strong>{% else %} &mdash; <span style="color:#3fb950;">requirement met</span>{% endif %}
+        {% if delist_period.closes_at %}
+          &nbsp;&middot;&nbsp; Closes {{ delist_period.closes_at.strftime('%d %b %Y') }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   {# ── Enhanced List View ── #}
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -152,6 +168,7 @@
             <th class="text-center sortable squad-hide-mobile" data-sort="tackles">Tackles</th>
             <th class="text-end sortable" data-sort="sc_avg">SC Avg</th>
             <th>Acquired</th>
+            {% if delist_is_open and is_owner %}<th class="text-center">Delist</th>{% endif %}
           </tr>
         </thead>
         <tbody>
@@ -194,6 +211,19 @@
                   <span class="squad-acq squad-acq-{{ acq }}">{{ acq|replace('_', ' ')|title }}</span>
                 {% endif %}
               </td>
+              {% if delist_is_open and is_owner %}
+              <td class="text-center">
+                {% if p.id in delisted_player_ids %}
+                  <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.7rem;">Delisted</span>
+                {% else %}
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                          style="font-size:.7rem;padding:2px 8px;border-radius:4px;"
+                          onclick="showDelistModal({{ p.id }}, '{{ p.name|e }}')">
+                    <i class="bi bi-x-circle me-1"></i>Delist
+                  </button>
+                {% endif %}
+              </td>
+              {% endif %}
             </tr>
           {% endfor %}
         </tbody>
@@ -336,6 +366,47 @@
   })();
   </script>
   {% endif %}
+
+  {# ── Delist Confirmation Modal ── #}
+  {% if delist_is_open and is_owner %}
+  <div class="modal fade" id="delistModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background:#161b22;border:1px solid #30363d;border-radius:12px;">
+        <div class="modal-header" style="border-bottom:1px solid #21262d;padding:16px 20px;">
+          <h5 class="modal-title" style="font-size:.95rem;font-weight:600;color:#f85149;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Delist
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <p style="color:#c9d1d9;font-size:.88rem;margin-bottom:0;">
+            Are you sure you want to delist <strong id="delistPlayerName" style="color:#f85149;"></strong>?
+            This action cannot be undone.
+          </p>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #21262d;padding:12px 20px;">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <form method="POST" action="{{ url_for('leagues.delist_player_action', league_id=league.id) }}" id="delistForm" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="player_id" id="delistPlayerId">
+            <input type="hidden" name="next" value="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='table') }}">
+            <button type="submit" class="btn btn-sm btn-danger">
+              <i class="bi bi-x-circle me-1"></i>Delist Player
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+  function showDelistModal(playerId, playerName) {
+    document.getElementById('delistPlayerId').value = playerId;
+    document.getElementById('delistPlayerName').textContent = playerName;
+    new bootstrap.Modal(document.getElementById('delistModal')).show();
+  }
+  </script>
+  {% endif %}
+
 {% else %}
   <div class="empty-state">
     <div class="empty-icon"><i class="bi bi-people" style="font-size:1.5rem;"></i></div>

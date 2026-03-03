@@ -11,7 +11,7 @@ from models.database import (
     db, League, FantasyTeam, FantasyRoster, AflPlayer, AflGame,
     LeaguePositionSlot, WeeklyLineup, LineupSlot,
     PlayerStat, RoundScore, UserDraftWeights, LeagueDraftWeights,
-    LongTermInjury, SeasonConfig,
+    LongTermInjury, SeasonConfig, DelistPeriod, DelistAction,
 )
 from blueprints import check_league_access
 from models.lineup_manager import (
@@ -44,6 +44,27 @@ def squad(league_id, team_id):
 
     is_owner = team.owner_id == current_user.id
     view = request.args.get("view", "field")
+
+    # ── Delist period info for list view ──
+    delist_is_open = False
+    delist_period = None
+    team_delist_count = 0
+    min_delists = 0
+    delisted_player_ids = set()
+    if is_owner:
+        delist_period = DelistPeriod.query.filter_by(
+            league_id=league_id, year=league.season_year, status="open"
+        ).first()
+        if delist_period:
+            delist_is_open = True
+            min_delists = delist_period.min_delists or 0
+            team_delist_count = DelistAction.query.filter_by(
+                delist_period_id=delist_period.id, team_id=team_id
+            ).count()
+            delisted_actions = DelistAction.query.filter_by(
+                delist_period_id=delist_period.id, team_id=team_id
+            ).all()
+            delisted_player_ids = {a.player_id for a in delisted_actions}
 
     # For field view, build structured position data server-side
     field_data = None
@@ -382,7 +403,12 @@ def squad(league_id, team_id):
                            view=view,
                            field_data=field_data,
                            alltime_stats=alltime_stats,
-                           TEAM_LOGOS=TEAM_LOGOS)
+                           TEAM_LOGOS=TEAM_LOGOS,
+                           delist_is_open=delist_is_open,
+                           delist_period=delist_period,
+                           team_delist_count=team_delist_count,
+                           min_delists=min_delists,
+                           delisted_player_ids=delisted_player_ids)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/lineup/<int:afl_round>", methods=["GET", "POST"])
