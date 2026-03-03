@@ -269,7 +269,11 @@ def sync_injuries_to_db() -> int:
 
         player.injury_type = entry["injury"]
         player.injury_return = entry["return_text"]
-        player.injury_severity = classify_severity(entry["return_text"])
+        severity = classify_severity(entry["return_text"])
+        # Override: suspensions get their own category
+        if "suspension" in entry["injury"].lower():
+            severity = "suspension"
+        player.injury_severity = severity
         count += 1
 
     db.session.commit()

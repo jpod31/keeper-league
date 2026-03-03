@@ -27,8 +27,8 @@
       {% if p.injury_severity %}
         <div class="fv-injury fv-injury-{{ p.injury_severity }}"
              title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
-          {% if p.injury_severity == 'long' %}
-            <i class="bi bi-slash-circle-fill"></i>
+          {% if p.injury_severity in ('short', 'long') %}
+            <i class="bi bi-sign-no-parking-fill"></i>
           {% else %}
             <i class="bi bi-circle-fill"></i>
           {% endif %}
