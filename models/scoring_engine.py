@@ -218,10 +218,10 @@ def recalculate_standings(league_id, year):
     team_stats = {t.id: {"wins": 0, "losses": 0, "draws": 0,
                           "pf": 0.0, "pa": 0.0} for t in teams}
 
-    # Get all completed non-finals fixtures
+    # Get all completed non-finals fixtures (exclude pre-season round 0)
     fixtures = Fixture.query.filter_by(
         league_id=league_id, year=year, status="completed", is_final=False
-    ).all()
+    ).filter(Fixture.afl_round > 0).all()
 
     for f in fixtures:
         hs = f.home_score or 0

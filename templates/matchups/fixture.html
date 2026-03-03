@@ -157,7 +157,7 @@
       {% set st = round_meta[rnd_num] %}
       <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=rnd_num) }}"
          class="rnd-item{% if rnd_num == selected_round %} active{% endif %}{% if st == 'completed' %} rnd-done{% elif st == 'live' %} rnd-live{% endif %}">
-        <span class="rnd-num">{{ rnd_num }}</span>
+        <span class="rnd-num">{% if rnd_num == 0 %}PS{% else %}{{ rnd_num }}{% endif %}</span>
         <span class="rnd-dot {% if st == 'completed' %}rnd-dot-done{% elif st == 'live' %}rnd-dot-live{% elif st == 'partial' %}rnd-dot-part{% else %}rnd-dot-none{% endif %}"></span>
       </a>
     {% endfor %}
@@ -167,7 +167,7 @@
   {% set rs = round_meta.get(selected_round, 'scheduled') %}
   <div class="round-hdr">
     <div class="round-hdr-left">
-      <h3>Round {{ selected_round }}</h3>
+      <h3>{% if selected_round == 0 %}Pre-Season{% else %}Round {{ selected_round }}{% endif %}</h3>
       {% if rs == 'completed' %}
         <span class="rh-badge rh-complete">Complete</span>
       {% elif rs == 'live' %}

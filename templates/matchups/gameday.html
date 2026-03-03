@@ -1,12 +1,12 @@
 {% extends "league_base.html" %}
 {% set active_tab = 'gameday' %}
-{% block title %}Gameday — Round {{ afl_round }} — {{ league.name }}{% endblock %}
+{% block title %}Gameday — {% if afl_round == 0 %}Pre-Season{% else %}Round {{ afl_round }}{% endif %} — {{ league.name }}{% endblock %}
 {% block league_content %}
 
 {# ═══════════════════════ ROUND HEADER ═══════════════════════ #}
 <div class="gameday-round-header">
   <div class="d-flex justify-content-between align-items-center">
-    <h2 class="gameday-round-title mb-0">ROUND {{ afl_round }}</h2>
+    <h2 class="gameday-round-title mb-0">{% if afl_round == 0 %}PRE-SEASON{% else %}ROUND {{ afl_round }}{% endif %}</h2>
     {% if gameday_state == 'live' %}
       <span class="gameday-state-badge badge-live"><i class="bi bi-broadcast me-1"></i><span class="live-pulse-dot"></span> LIVE</span>
     {% elif gameday_state == 'completed' %}
@@ -292,7 +292,7 @@
 {% if round_fixtures %}
 <div class="gameday-all-matchups mt-4" id="all-matchups">
   <div class="gameday-matchups-header">
-    <span><i class="bi bi-grid-3x2-gap me-2"></i>ROUND {{ afl_round }} MATCHUPS</span>
+    <span><i class="bi bi-grid-3x2-gap me-2"></i>{% if afl_round == 0 %}PRE-SEASON{% else %}ROUND {{ afl_round }}{% endif %} MATCHUPS</span>
     {% if round_dates %}
       <span class="matchups-header-dates">{{ round_dates }}</span>
     {% endif %}

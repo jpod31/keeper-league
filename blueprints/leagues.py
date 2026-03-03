@@ -512,9 +512,14 @@ def league_settings(league_id):
         league_id=league_id, is_mock=False
     ).filter(DraftSession.status.in_(["scheduled", "in_progress", "paused"])).first() is not None
     teams = FantasyTeam.query.filter_by(league_id=league_id).all() if is_commissioner else []
+    from models.database import Fixture
+    has_preseason = Fixture.query.filter_by(
+        league_id=league_id, year=league.season_year, afl_round=0, is_final=False
+    ).first() is not None
     return render_template("leagues/settings.html", league=league, live_config=live_config,
                            season_config=season_config, is_commissioner=is_commissioner,
-                           has_active_draft=has_active_draft, teams=teams)
+                           has_active_draft=has_active_draft, teams=teams,
+                           has_preseason=has_preseason)
 
 
 @leagues_bp.route("/<int:league_id>/scoring", methods=["GET", "POST"])
@@ -643,6 +648,30 @@ def regenerate_fixtures(league_id):
     return redirect(url_for("leagues.league_settings", league_id=league_id))
 
 
+@leagues_bp.route("/<int:league_id>/fixture/generate-preseason", methods=["POST"])
+@login_required
+def generate_preseason_route(league_id):
+    """Commissioner generates pre-season (round 0) fixtures."""
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("League not found.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    if league.commissioner_id != current_user.id:
+        flash("Only the commissioner can generate pre-season fixtures.", "warning")
+        return redirect(url_for("leagues.dashboard", league_id=league_id))
+
+    from models.fixture_manager import generate_preseason
+    fixtures, error = generate_preseason(league_id, league.season_year)
+
+    if error:
+        flash(error, "danger")
+    else:
+        flash(f"Pre-season generated: {len(fixtures)} match{'es' if len(fixtures) != 1 else ''}.", "success")
+
+    return redirect(url_for("leagues.league_settings", league_id=league_id))
+
+
 @leagues_bp.route("/<int:league_id>/finalize-round/<int:afl_round>", methods=["POST"])
 @login_required
 def finalize_round_route(league_id, afl_round):
@@ -659,7 +688,8 @@ def finalize_round_route(league_id, afl_round):
     try:
         from models.scoring_engine import finalize_round
         scores = finalize_round(league_id, afl_round, league.season_year)
-        flash(f"Round {afl_round} finalized. {len(scores)} teams scored.", "success")
+        label = "Pre-Season" if afl_round == 0 else f"Round {afl_round}"
+        flash(f"{label} finalized. {len(scores)} teams scored.", "success")
     except Exception as e:
         db.session.rollback()
         flash(f"Failed to finalize round: {e}", "danger")

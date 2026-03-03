@@ -160,6 +160,20 @@
           <div id="fixture-error-bar" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:6px;color:#f85149;font-size:.75rem;font-weight:600;">
           </div>
           <div class="form-text mt-1" style="color:#484f58;font-size:.7rem;">AFL season has 24 rounds. Regular season + finals weeks must not exceed this.</div>
+          {% if is_commissioner %}
+          <hr style="border-color:#21262d;margin:12px 0;">
+          <div class="d-flex align-items-center gap-3">
+            <form method="POST" action="{{ url_for('leagues.generate_preseason_route', league_id=league.id) }}" style="margin:0;"
+                  onsubmit="return confirm('Generate pre-season fixtures? {% if has_preseason %}This will replace existing pre-season matches.{% endif %}')">
+              <button type="submit" class="btn btn-outline-info btn-sm">
+                <i class="bi bi-trophy me-1"></i>{% if has_preseason %}Regenerate{% else %}Generate{% endif %} Pre-Season Match
+              </button>
+            </form>
+            {% if has_preseason %}
+              <span class="badge" style="background:rgba(56,139,253,.15);color:#58a6ff;font-size:.7rem;">Pre-season fixtures exist</span>
+            {% endif %}
+          </div>
+          {% endif %}
         </div>
       </div>
 

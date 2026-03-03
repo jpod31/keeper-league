@@ -1,7 +1,7 @@
 {% extends "league_base.html" %}
 {% set active_tab = 'league' %}
 {% set active_subtab = 'fixture' %}
-{% block title %}Round {{ afl_round }} — {{ league.name }}{% endblock %}
+{% block title %}{% if afl_round == 0 %}Pre-Season{% else %}Round {{ afl_round }}{% endif %} — {{ league.name }}{% endblock %}
 {% block league_content %}
 {% include "matchups/_league_subnav.html" %}
 <style>
@@ -70,16 +70,16 @@
 
 <div class="page-header" style="margin-top:0;">
   <div class="page-breadcrumb">
-    <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=afl_round) }}">Season</a> / Round {{ afl_round }}
+    <a href="{{ url_for('matchups.fixture_view', league_id=league.id, round=afl_round) }}">Season</a> / {% if afl_round == 0 %}Pre-Season{% else %}Round {{ afl_round }}{% endif %}
   </div>
 </div>
 
 <div class="rd-hdr">
   <div class="rd-hdr-left">
-    {% if afl_round > 1 %}
+    {% if afl_round > 0 %}
       <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round-1) }}" class="rd-nav"><i class="bi bi-chevron-left"></i></a>
     {% endif %}
-    <h3>Round {{ afl_round }}</h3>
+    <h3>{% if afl_round == 0 %}Pre-Season{% else %}Round {{ afl_round }}{% endif %}</h3>
     <span class="rd-scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
     {% if afl_round < max_round %}
       <a href="{{ url_for('matchups.round_view', league_id=league.id, afl_round=afl_round+1) }}" class="rd-nav"><i class="bi bi-chevron-right"></i></a>

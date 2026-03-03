@@ -43,6 +43,38 @@ def _circle_method_pairings(teams):
     return rounds
 
 
+def generate_preseason(league_id, year):
+    """Generate pre-season fixtures (afl_round=0) using simple sequential pairings.
+
+    Pairs teams by draft order: 1v2, 3v4, 5v6, etc.
+    Odd team count → last team gets a bye (no fixture).
+    Idempotent: deletes existing round-0 fixtures before creating new ones.
+    """
+    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
+    if len(teams) < 2:
+        return [], "Need at least 2 teams."
+
+    # Delete existing pre-season fixtures
+    Fixture.query.filter_by(league_id=league_id, year=year, afl_round=0, is_final=False).delete()
+
+    fixtures = []
+    for i in range(0, len(teams) - 1, 2):
+        home = teams[i]
+        away = teams[i + 1]
+        fixture = Fixture(
+            league_id=league_id,
+            afl_round=0,
+            year=year,
+            home_team_id=home.id,
+            away_team_id=away.id,
+        )
+        db.session.add(fixture)
+        fixtures.append(fixture)
+
+    db.session.commit()
+    return fixtures, None
+
+
 def generate_round_robin(league_id, year, num_rounds=23):
     """Generate a fair round-robin fixture for the season.
 

@@ -25,6 +25,8 @@ from scrapers.footywire_live import scrape_live_round
 
 logger = logging.getLogger(__name__)
 
+_R0_ID_OFFSET = 10_000_000  # Offset added to AflGame IDs for round 0 copies
+
 
 # ── Schedule sync ────────────────────────────────────────────────────
 
@@ -76,7 +78,20 @@ def sync_game_schedule(year: int, afl_round: int) -> int:
 
     db.session.commit()
     logger.info("Synced %d games for %d R%d", count, year, afl_round)
+
+    # Mirror game schedule to round 0 if pre-season is active
+    if afl_round == 1:
+        _mirror_game_schedule_to_r0(year)
+
     return count
+
+
+def _mirror_game_schedule_to_r0(year: int):
+    """Copy AflGame rows from round 1 to round 0 for pre-season display."""
+    if not _has_active_preseason(year):
+        return
+    _mirror_afl_games(year, source_round=1, target_round=0)
+    db.session.commit()
 
 
 # ── Live scores sync ─────────────────────────────────────────────────
@@ -180,10 +195,93 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
     else:
         logger.info("Player matching: %d/%d matched for %d R%d", matched, total_scraped, year, afl_round)
 
-    # 6. Rescore affected fantasy matchups
+    # 6. Mirror data to round 0 if any league has active pre-season fixtures
+    if afl_round == 1:
+        _mirror_round_data(year, source_round=1, target_round=0)
+
+    # 7. Rescore affected fantasy matchups
     changed_data = _rescore_affected_matchups(year, afl_round, updated_player_ids)
 
     return changed_data
+
+
+def _has_active_preseason(year: int) -> bool:
+    """Check if any league has non-completed round 0 fixtures."""
+    return Fixture.query.filter_by(
+        year=year, afl_round=0, is_final=False
+    ).filter(Fixture.status != "completed").first() is not None
+
+
+def _mirror_afl_games(year: int, source_round: int, target_round: int):
+    """Copy AflGame rows from source_round to target_round using ID offset."""
+    source_games = AflGame.query.filter_by(year=year, afl_round=source_round).all()
+    for g in source_games:
+        mirror_id = g.id + _R0_ID_OFFSET
+        existing = db.session.get(AflGame, mirror_id)
+        if existing:
+            existing.status = g.status
+            existing.home_score = g.home_score
+            existing.away_score = g.away_score
+            existing.venue = g.venue
+            existing.scheduled_start = g.scheduled_start
+        else:
+            db.session.add(AflGame(
+                id=mirror_id, year=year, afl_round=target_round,
+                home_team=g.home_team, away_team=g.away_team,
+                venue=g.venue, scheduled_start=g.scheduled_start,
+                status=g.status, home_score=g.home_score, away_score=g.away_score,
+            ))
+
+
+_STAT_COLS = (
+    "kicks", "handballs", "marks", "tackles", "goals", "behinds", "hitouts",
+    "disposals", "inside_50s", "clearances", "rebounds", "turnovers",
+    "intercepts", "contested_possessions", "uncontested_possessions",
+    "tackles_inside_50", "metres_gained", "score_involvements",
+)
+
+
+def _mirror_round_data(year: int, source_round: int, target_round: int):
+    """Copy AflGame and PlayerStat rows from source_round to target_round.
+
+    Gives pre-season (round 0) its own data rows mirrored from AFL R1.
+    Only runs if there are active pre-season fixtures.
+    """
+    if not _has_active_preseason(year):
+        return
+
+    _mirror_afl_games(year, source_round, target_round)
+
+    # Mirror PlayerStat rows
+    source_stats = PlayerStat.query.filter_by(year=year, round=source_round).all()
+    for s in source_stats:
+        existing = PlayerStat.query.filter_by(
+            player_id=s.player_id, year=year, round=target_round
+        ).first()
+        if existing:
+            existing.supercoach_score = s.supercoach_score
+            existing.afl_fantasy_score = s.afl_fantasy_score
+            existing.is_live = s.is_live
+            for col in _STAT_COLS:
+                val = getattr(s, col, None)
+                if val is not None:
+                    setattr(existing, col, val)
+        else:
+            mirror = PlayerStat(
+                player_id=s.player_id, year=year, round=target_round,
+                supercoach_score=s.supercoach_score,
+                afl_fantasy_score=s.afl_fantasy_score,
+                is_live=s.is_live,
+            )
+            for col in _STAT_COLS:
+                val = getattr(s, col, None)
+                if val is not None:
+                    setattr(mirror, col, val)
+            db.session.add(mirror)
+
+    db.session.commit()
+    logger.info("Mirrored R%d data to R%d (%d games, %d stats)",
+                source_round, target_round, len(source_stats), len(source_stats))
 
 
 def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: set[int]) -> dict:
@@ -223,9 +321,20 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
         if not league:
             continue
 
+        # When AFL R1 data arrives, check if this league has active pre-season
+        # (round 0) fixtures. If so, rescore round 0 INSTEAD of round 1.
+        # Round 1 only gets live scoring after round 0 is fully completed.
+        fantasy_round = afl_round
+        if afl_round == 1:
+            r0_active = Fixture.query.filter_by(
+                league_id=league_id, year=year, afl_round=0, is_final=False
+            ).filter(Fixture.status != "completed").first()
+            if r0_active:
+                fantasy_round = 0
+
         # Update fixture scores for this league/round
         fixtures = Fixture.query.filter_by(
-            league_id=league_id, year=year, afl_round=afl_round
+            league_id=league_id, year=year, afl_round=fantasy_round
         ).all()
 
         if league.scoring_type == "ultimate_footy":
@@ -237,7 +346,7 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
                 if f.status == "completed":
                     continue  # Already finalized — don't touch
                 if categories:
-                    breakdown = _compute_uf_fixture(f, league_id, afl_round, year, categories)
+                    breakdown = _compute_uf_fixture(f, league_id, f.afl_round, year, categories)
                     home_wins = sum(1 for b in breakdown if b["winner"] == "home")
                     away_wins = sum(1 for b in breakdown if b["winner"] == "away")
                 else:
@@ -264,19 +373,19 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
             if league_data:
                 changed_data[league_id] = league_data
         else:
-            # Standard scoring: rescore each affected team
+            # Standard scoring: rescore each affected team for the fantasy round
             for team_id in team_ids:
-                score_team_round(team_id, league_id, afl_round, year, league.scoring_type, league.hybrid_base)
+                score_team_round(team_id, league_id, fantasy_round, year, league.scoring_type, league.hybrid_base)
 
             league_data = {}
             for f in fixtures:
                 if f.status == "completed":
                     continue  # Already finalized — don't touch
                 home_rs = RoundScore.query.filter_by(
-                    team_id=f.home_team_id, afl_round=afl_round, year=year
+                    team_id=f.home_team_id, afl_round=fantasy_round, year=year
                 ).first()
                 away_rs = RoundScore.query.filter_by(
-                    team_id=f.away_team_id, afl_round=afl_round, year=year
+                    team_id=f.away_team_id, afl_round=fantasy_round, year=year
                 ).first()
 
                 home_total = home_rs.total_score if home_rs else 0

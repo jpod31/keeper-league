@@ -48,7 +48,7 @@ def fixture_view(league_id):
 
     # Determine which round to show (query param or auto-detect)
     selected_round = request.args.get("round", type=int)
-    if not selected_round and rounds:
+    if selected_round is None and rounds:
         # Default: latest round with a completed game, or the first scheduled
         completed_rounds = [r for r, fxs in rounds.items()
                             if any(f.status == "completed" for f in fxs)]

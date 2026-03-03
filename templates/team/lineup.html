@@ -1,16 +1,16 @@
 {% extends "league_base.html" %}
 {% set active_tab = 'team' %}
-{% block title %}Round {{ afl_round }} Lineup — {{ team.name }}{% endblock %}
+{% block title %}{% if afl_round == 0 %}Pre-Season{% else %}Round {{ afl_round }}{% endif %} Lineup — {{ team.name }}{% endblock %}
 {% block league_content %}
 <div class="page-header">
   <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">{{ team.name }}</a> / Lineup</div>
   <div class="d-flex justify-content-between align-items-start">
     <div class="d-flex align-items-center gap-3">
-      {% if afl_round > 1 %}
+      {% if afl_round > 0 %}
         <a href="{{ url_for('team.lineup', league_id=league.id, team_id=team.id, afl_round=afl_round-1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i></a>
       {% endif %}
       <div>
-        <h2 class="mb-0">Round {{ afl_round }} Lineup</h2>
+        <h2 class="mb-0">{% if afl_round == 0 %}Pre-Season{% else %}Round {{ afl_round }}{% endif %} Lineup</h2>
         {% if lineup.is_locked %}<span class="status-pill" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.7rem;">Locked</span>{% endif %}
       </div>
       {% if afl_round < max_round %}

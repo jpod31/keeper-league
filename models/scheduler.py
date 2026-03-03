@@ -143,18 +143,32 @@ def _auto_finalize_round(year: int, afl_round: int):
             logger.info("Auto-finalize: running final score sync for %d R%d", year, afl_round)
             sync_live_scores(year, afl_round)
 
-            # Find all leagues with fixtures for this round
+            # Find all leagues with fixtures for this round (or round 0 when AFL R1)
+            rounds_to_check = [afl_round]
+            if afl_round == 1:
+                rounds_to_check.append(0)
             league_ids = (
                 db.session.query(Fixture.league_id)
-                .filter_by(year=year, afl_round=afl_round)
+                .filter(Fixture.year == year, Fixture.afl_round.in_(rounds_to_check))
                 .distinct()
                 .all()
             )
 
             for (league_id,) in league_ids:
                 try:
-                    finalize_round(league_id, afl_round, year)
-                    logger.info("Auto-finalize: finalized league %d for %d R%d", league_id, year, afl_round)
+                    # When AFL R1 completes, finalize round 0 (pre-season)
+                    # instead of round 1 if round 0 is still active
+                    fantasy_round = afl_round
+                    if afl_round == 1:
+                        r0_active = Fixture.query.filter_by(
+                            league_id=league_id, year=year, afl_round=0, is_final=False
+                        ).filter(Fixture.status != "completed").first()
+                        if r0_active:
+                            fantasy_round = 0
+
+                    finalize_round(league_id, fantasy_round, year)
+                    logger.info("Auto-finalize: finalized league %d for %d R%d (fantasy R%d)",
+                                league_id, year, afl_round, fantasy_round)
                 except Exception:
                     logger.exception("Auto-finalize failed for league %d, %d R%d", league_id, year, afl_round)
 
