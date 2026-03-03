@@ -95,89 +95,54 @@ def scrape_injury_list() -> list[dict]:
     """Fetch the AFL injury list page, return a list of injury dicts.
 
     Each dict: {"name": str, "team": str, "injury": str, "return_text": str}
+
+    The AFL page has a sidebar with ``club-list__club-name`` spans listing
+    teams in order, and an ``article__body`` div containing one ``<table>``
+    per team in the same order.  Tables may be empty for teams with no
+    injuries.
     """
     resp = requests.get(_INJURY_URL, headers=_HEADERS, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
 
     injuries = []
-    current_team = None
 
-    # The page uses team sections — look for headings followed by tables/rows
-    # Try multiple selector strategies for robustness
+    # 1. Build ordered team list from sidebar club-name spans (deduplicated)
+    team_order = []
+    seen = set()
+    for span in soup.find_all("span", class_="club-list__club-name"):
+        raw = span.get_text(strip=True)
+        if raw not in seen:
+            seen.add(raw)
+            team_order.append(_AFL_TEAM_MAP.get(raw, raw))
 
-    # Strategy 1: Look for table-based layout with team headings
-    for section in soup.select("[class*='injury'], [class*='Injury']"):
-        # Try to find team headings and tables within sections
-        headings = section.find_all(["h2", "h3", "h4", "h5"])
-        tables = section.find_all("table")
-        if headings and tables:
-            for heading, table in zip(headings, tables):
-                team_raw = heading.get_text(strip=True)
-                team = _AFL_TEAM_MAP.get(team_raw, team_raw)
-                for row in table.find_all("tr")[1:]:  # skip header
-                    cells = row.find_all(["td", "th"])
-                    if len(cells) >= 3:
-                        injuries.append({
-                            "name": cells[0].get_text(strip=True),
-                            "team": team,
-                            "injury": cells[1].get_text(strip=True),
-                            "return_text": cells[2].get_text(strip=True),
-                        })
-            if injuries:
-                return injuries
+    # 2. Collect tables from the article body — one per team, same order
+    article_body = soup.find("div", class_="article__body")
+    tables = article_body.find_all("table") if article_body else soup.find_all("table")
 
-    # Strategy 2: Walk all headings and sibling tables
-    for heading in soup.find_all(["h2", "h3", "h4", "h5"]):
-        team_raw = heading.get_text(strip=True)
-        canonical = _AFL_TEAM_MAP.get(team_raw)
-        if not canonical:
-            continue
-        current_team = canonical
+    if not team_order or not tables:
+        logger.warning("Injury scrape: could not find teams (%d) or tables (%d)",
+                       len(team_order), len(tables))
+        return injuries
 
-        # Find the next table sibling
-        table = heading.find_next("table")
-        if not table:
+    for idx, table in enumerate(tables):
+        team = team_order[idx] if idx < len(team_order) else None
+        if not team:
             continue
 
         for row in table.find_all("tr"):
-            cells = row.find_all(["td", "th"])
-            if len(cells) >= 3:
-                name = cells[0].get_text(strip=True)
-                # Skip header rows
-                if name.upper() in ("PLAYER", "NAME", ""):
-                    continue
-                injuries.append({
-                    "name": name,
-                    "team": current_team,
-                    "injury": cells[1].get_text(strip=True),
-                    "return_text": cells[2].get_text(strip=True),
-                })
-
-    if injuries:
-        return injuries
-
-    # Strategy 3: Generic — find all tables with 3+ columns
-    for table in soup.find_all("table"):
-        rows = table.find_all("tr")
-        # Check if a preceding heading gives us a team name
-        prev = table.find_previous(["h2", "h3", "h4", "h5"])
-        team_raw = prev.get_text(strip=True) if prev else ""
-        team = _AFL_TEAM_MAP.get(team_raw, "")
-
-        for row in rows:
-            cells = row.find_all(["td", "th"])
-            if len(cells) >= 3:
-                name = cells[0].get_text(strip=True)
-                if name.upper() in ("PLAYER", "NAME", ""):
-                    continue
-                if team:
-                    injuries.append({
-                        "name": name,
-                        "team": team,
-                        "injury": cells[1].get_text(strip=True),
-                        "return_text": cells[2].get_text(strip=True),
-                    })
+            cells = row.find_all("td")
+            if len(cells) < 3:
+                continue
+            name = cells[0].get_text(strip=True)
+            if not name or name.lower() in ("player", "name", "updated:"):
+                continue
+            injuries.append({
+                "name": name,
+                "team": team,
+                "injury": cells[1].get_text(strip=True),
+                "return_text": cells[2].get_text(strip=True),
+            })
 
     logger.info("Scraped %d injuries from AFL injury list", len(injuries))
     return injuries
