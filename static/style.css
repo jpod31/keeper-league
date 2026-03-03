@@ -3072,6 +3072,38 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   background: #b62324;
 }
 
+/* ── Player profile injury banner ── */
+.player-injury-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: .75rem;
+  font-weight: 600;
+}
+.player-injury-test {
+  background: rgba(255,107,157,.15);
+  color: #ff6b9d;
+  border: 1px solid rgba(255,107,157,.3);
+}
+.player-injury-suspension {
+  background: rgba(210,153,34,.15);
+  color: #f0c040;
+  border: 1px solid rgba(210,153,34,.3);
+}
+.player-injury-short {
+  background: rgba(248,81,73,.12);
+  color: #f85149;
+  border: 1px solid rgba(248,81,73,.3);
+}
+.player-injury-long {
+  background: rgba(182,35,36,.15);
+  color: #f85149;
+  border: 1px solid rgba(182,35,36,.3);
+}
+
 /* ── Modal slide-in animation ── */
 @keyframes modalSlideIn {
   from { opacity: 0; transform: scale(.95) translateY(8px); }

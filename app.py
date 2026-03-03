@@ -468,11 +468,22 @@ def create_app():
         from models.database import AflPlayer as _AP
         afl_row = _AP.query.filter_by(name=name).first()
         player_ratings = {}
+        player_injury = {}
         if afl_row:
             player_ratings = {
                 "rating": afl_row.rating,
                 "potential": afl_row.potential,
             }
+            if afl_row.injury_severity:
+                from scrapers.afl_injuries import friendly_return_text
+                from scrapers.squiggle import get_current_round
+                current_round = get_current_round(config.CURRENT_YEAR)
+                player_injury = {
+                    "type": afl_row.injury_type,
+                    "return": afl_row.injury_return,
+                    "severity": afl_row.injury_severity,
+                    "display": friendly_return_text(afl_row.injury_return, current_round),
+                }
 
         return render_template("player.html",
                                player=player,
@@ -481,7 +492,8 @@ def create_app():
                                detailed=detailed,
                                draft_history=draft_history,
                                weights=config.DRAFT_WEIGHTS,
-                               player_ratings=player_ratings)
+                               player_ratings=player_ratings,
+                               player_injury=player_injury)
 
     # ── Legacy team routes (keep working — no login required) ────────
 
