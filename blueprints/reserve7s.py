@@ -545,10 +545,14 @@ def sevens_standings(league_id):
 
     scoring = get_scoring_context(league)
 
+    config_obj = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    finals_teams = config_obj.finals_teams if config_obj else 4
+
     return render_template("reserve7s/standings.html",
                            league=league,
                            standings=standing_list,
-                           scoring=scoring)
+                           scoring=scoring,
+                           finals_teams=finals_teams)
 
 
 @reserve7s_bp.route("/<int:league_id>/reserve7s/fixture")

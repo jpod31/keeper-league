@@ -372,39 +372,115 @@ def generate_7s_round_robin(league_id, year, num_rounds=23, start_round=1):
     return fixtures, None
 
 
-def generate_7s_finals(league_id, year):
-    """Generate 7s finals: top 2 grand final (1st vs 2nd)."""
+def generate_7s_finals(league_id, year, num_finals_teams=None):
+    """Generate 7s finals mirroring the main comp's finals format.
+
+    Uses the same structure (top-4 bracket by default) but with 7s standings.
+    num_finals_teams defaults to whatever SeasonConfig.finals_teams is set to.
+    """
     from models.database import Reserve7sFixture, Reserve7sStanding
 
     # Delete existing 7s finals
     Reserve7sFixture.query.filter_by(league_id=league_id, year=year, is_final=True).delete()
 
+    config_obj = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    if num_finals_teams is None:
+        num_finals_teams = config_obj.finals_teams if config_obj else 4
+    base_round = (config_obj.num_regular_rounds if config_obj else 23) + 1
+
     standings = (
         Reserve7sStanding.query
         .filter_by(league_id=league_id, year=year)
         .order_by(Reserve7sStanding.ladder_points.desc(), Reserve7sStanding.percentage.desc())
-        .limit(2)
+        .limit(num_finals_teams)
         .all()
     )
 
-    if len(standings) < 2:
-        return [], "Not enough teams in 7s standings for finals."
+    if len(standings) < num_finals_teams:
+        return [], f"Not enough teams in 7s standings for finals (need {num_finals_teams}, have {len(standings)})."
 
-    config_obj = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
-    base_round = (config_obj.num_regular_rounds if config_obj else 23) + 1
+    finals = []
+
+    # Top-4 format (same as main comp)
+    # QF1: 1st vs 4th
+    qf1 = Reserve7sFixture(
+        league_id=league_id, afl_round=base_round, year=year,
+        home_team_id=standings[0].team_id, away_team_id=standings[3].team_id,
+        is_final=True, final_type="QF1",
+    )
+    db.session.add(qf1)
+    finals.append(qf1)
+
+    # QF2: 2nd vs 3rd
+    qf2 = Reserve7sFixture(
+        league_id=league_id, afl_round=base_round, year=year,
+        home_team_id=standings[1].team_id, away_team_id=standings[2].team_id,
+        is_final=True, final_type="QF2",
+    )
+    db.session.add(qf2)
+    finals.append(qf2)
+
+    # PF and GF as placeholders
+    pf = Reserve7sFixture(
+        league_id=league_id, afl_round=base_round + 1, year=year,
+        home_team_id=-1, away_team_id=-1,
+        is_final=True, final_type="PF",
+    )
+    db.session.add(pf)
+    finals.append(pf)
 
     gf = Reserve7sFixture(
-        league_id=league_id,
-        afl_round=base_round,
-        year=year,
-        home_team_id=standings[0].team_id,
-        away_team_id=standings[1].team_id,
-        is_final=True,
-        final_type="GF",
+        league_id=league_id, afl_round=base_round + 2, year=year,
+        home_team_id=-1, away_team_id=-1,
+        is_final=True, final_type="GF",
     )
     db.session.add(gf)
+    finals.append(gf)
+
     db.session.commit()
-    return [gf], None
+    return finals, None
+
+
+def advance_7s_finals(league_id, year):
+    """Advance 7s finals winners, mirroring main comp's advance_finals."""
+    from models.database import Reserve7sFixture
+
+    finals = Reserve7sFixture.query.filter_by(
+        league_id=league_id, year=year, is_final=True,
+    ).all()
+
+    by_type = {f.final_type: f for f in finals}
+    updated = []
+
+    qf1 = by_type.get("QF1")
+    qf2 = by_type.get("QF2")
+    pf = by_type.get("PF")
+    gf = by_type.get("GF")
+
+    if qf1 and qf1.status == "completed" and qf2 and qf2.status == "completed":
+        qf1_winner = qf1.home_team_id if (qf1.home_score or 0) >= (qf1.away_score or 0) else qf1.away_team_id
+        qf1_loser = qf1.away_team_id if qf1_winner == qf1.home_team_id else qf1.home_team_id
+        qf2_winner = qf2.home_team_id if (qf2.home_score or 0) >= (qf2.away_score or 0) else qf2.away_team_id
+
+        if pf and pf.home_team_id == -1:
+            pf.home_team_id = qf1_loser
+            pf.away_team_id = qf2_winner
+            updated.append("PF")
+
+        if gf and gf.home_team_id == -1:
+            gf.home_team_id = qf1_winner
+            updated.append("GF_home")
+
+    if pf and pf.status == "completed" and gf:
+        pf_winner = pf.home_team_id if (pf.home_score or 0) >= (pf.away_score or 0) else pf.away_team_id
+        if gf.away_team_id == -1:
+            gf.away_team_id = pf_winner
+            updated.append("GF")
+
+    if updated:
+        db.session.commit()
+
+    return updated
 
 
 def generate_7s_preseason(league_id, year):
