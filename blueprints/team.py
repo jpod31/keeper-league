@@ -51,6 +51,7 @@ def squad(league_id, team_id):
     team_delist_count = 0
     min_delists = 0
     delisted_player_ids = set()
+    next_delist_info = None
     if is_owner:
         delist_period = DelistPeriod.query.filter_by(
             league_id=league_id, year=league.season_year, status="open"
@@ -65,6 +66,18 @@ def squad(league_id, team_id):
                 delist_period_id=delist_period.id, team_id=team_id
             ).all()
             delisted_player_ids = {a.player_id for a in delisted_actions}
+        else:
+            # Compute next delist period info for countdown
+            season_cfg = SeasonConfig.query.filter_by(
+                league_id=league_id, year=league.season_year
+            ).first()
+            if season_cfg:
+                phase = season_cfg.season_phase or "regular"
+                if phase == "regular" and season_cfg.mid_season_draft_enabled and season_cfg.mid_season_draft_after_round:
+                    next_delist_info = f"After Round {season_cfg.mid_season_draft_after_round} (Midseason)"
+                elif phase in ("regular", "midseason") and season_cfg.offseason_start_date:
+                    next_delist_info = season_cfg.offseason_start_date.strftime("Opens %d %b %Y (Offseason)")
+                # If offseason and delist already closed, no upcoming
 
     # For field view, build structured position data server-side
     field_data = None
@@ -448,7 +461,8 @@ def squad(league_id, team_id):
                            trade_is_open=trade_is_open,
                            trade_close_date=trade_close_date,
                            has_active_draft=has_active_draft,
-                           active_draft_round=active_draft_round)
+                           active_draft_round=active_draft_round,
+                           next_delist_info=next_delist_info)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/lineup/<int:afl_round>", methods=["GET", "POST"])

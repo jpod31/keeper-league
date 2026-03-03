@@ -29,7 +29,7 @@ def update_season_config(league_id, year, **kwargs):
     return config
 
 
-def open_delist_period(league_id, year, opens_at=None, closes_at=None, min_delists=3):
+def open_delist_period(league_id, year, opens_at=None, closes_at=None, min_delists=3, period_type="offseason"):
     """Open a delist period for the league."""
     existing = DelistPeriod.query.filter_by(
         league_id=league_id, year=year, status="open"
@@ -44,6 +44,7 @@ def open_delist_period(league_id, year, opens_at=None, closes_at=None, min_delis
         opens_at=opens_at or datetime.now(timezone.utc),
         closes_at=closes_at,
         min_delists=min_delists,
+        period_type=period_type,
     )
     db.session.add(period)
     db.session.commit()

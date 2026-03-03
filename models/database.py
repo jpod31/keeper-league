@@ -696,6 +696,7 @@ class SeasonConfig(db.Model):
     season_start_date = db.Column(db.DateTime)
     offseason_start_date = db.Column(db.DateTime)
     finals_start_round = db.Column(db.Integer)
+    supplemental_draft_date = db.Column(db.DateTime)  # e.g. Nov 30 after AFL draft
 
     __table_args__ = (
         db.UniqueConstraint("league_id", "year", name="uq_season_config_league_year"),
@@ -712,6 +713,7 @@ class DelistPeriod(db.Model):
     opens_at = db.Column(db.DateTime)
     closes_at = db.Column(db.DateTime)
     min_delists = db.Column(db.Integer, default=3)
+    period_type = db.Column(db.String(20), default="offseason")  # midseason|offseason
 
 
 class DelistAction(db.Model):
@@ -1098,7 +1100,21 @@ def _run_migrations(app):
                 db.session.execute(
                     text(f"ALTER TABLE season_config ADD COLUMN {col_name} {col_def}")
                 )
+        # Supplemental draft date
+        if "supplemental_draft_date" not in existing:
+            db.session.execute(
+                text("ALTER TABLE season_config ADD COLUMN supplemental_draft_date DATETIME")
+            )
         db.session.commit()
+
+    # DelistPeriod.period_type column
+    if "delist_period" in inspector.get_table_names():
+        existing_dp = {c["name"] for c in inspector.get_columns("delist_period")}
+        if "period_type" not in existing_dp:
+            db.session.execute(
+                text('ALTER TABLE delist_period ADD COLUMN period_type VARCHAR(20) DEFAULT "offseason"')
+            )
+            db.session.commit()
 
     # Trade.intended_period column
     if "trade" in inspector.get_table_names():

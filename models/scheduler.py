@@ -89,6 +89,16 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Daily auto-close expired delist periods: 05:30 UTC (after transitions)
+    scheduler.add_job(
+        _auto_close_delist_periods,
+        "cron",
+        hour=5,
+        minute=30,
+        id="daily_delist_autoclose",
+        replace_existing=True,
+        max_instances=1,
+    )
     # Daily injury list sync: 08:00 UTC (6pm AEST)
     scheduler.add_job(
         _sync_injuries,
@@ -460,6 +470,44 @@ def _check_season_transitions():
                 logger.info("Season transition check: %d leagues checked", len(configs))
         except Exception:
             logger.exception("Error in season transition check")
+
+
+def _auto_close_delist_periods():
+    """Daily job: auto-close expired delist periods (deadline is absolute)."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from datetime import datetime, timezone
+            from models.database import DelistPeriod
+            from models.season_manager import close_delist_period
+
+            now = datetime.now(timezone.utc)
+            expired = DelistPeriod.query.filter(
+                DelistPeriod.status == "open",
+                DelistPeriod.closes_at <= now,
+            ).all()
+
+            for period in expired:
+                _, error = close_delist_period(period.id)
+                if error:
+                    # Force-close anyway — the deadline is absolute
+                    logger.warning(
+                        "Force-closing delist period %d (league %d): %s",
+                        period.id, period.league_id, error,
+                    )
+                    period.status = "closed"
+                else:
+                    logger.info("Auto-closed delist period %d (league %d)", period.id, period.league_id)
+
+            if expired:
+                from models.database import db
+                db.session.commit()
+                logger.info("Delist auto-close: %d periods processed", len(expired))
+
+        except Exception:
+            logger.exception("Error in delist auto-close")
 
 
 def _recompute_kvi():

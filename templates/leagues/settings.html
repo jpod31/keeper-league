@@ -275,6 +275,26 @@
                          min="1" max="24" placeholder="12">
                 </div>
               </div>
+              {# Mid-season delist settings #}
+              <hr class="my-3" style="border-color:#21262d;">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-x-circle" style="color:#f85149;"></i>
+                <span class="fw-bold" style="font-size:.85rem;">Mid-Season Delist</span>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label" style="font-size:.75rem;">Delist Period Duration (days)</label>
+                  <input type="number" class="form-control form-control-sm" name="mid_delist_duration_days"
+                         value="{{ season_config.mid_delist_duration_days if season_config and season_config.mid_delist_duration_days else 2 }}"
+                         min="1" max="7">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" style="font-size:.75rem;">Min Delists Required</label>
+                  <input type="number" class="form-control form-control-sm" name="mid_season_delist_required"
+                         value="{{ season_config.mid_season_delist_required if season_config and season_config.mid_season_delist_required else 1 }}"
+                         min="0" max="10">
+                </div>
+              </div>
               <div class="mt-2" style="font-size:.7rem;color:#6e7681;">
                 <i class="bi bi-info-circle me-1"></i>
                 <span id="trade-mode-help">
@@ -319,6 +339,51 @@
                      min="0" max="5">
               <div class="form-text" style="font-size:.7rem;">Max long-term injury replacements per team per season</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Off-Season ── #}
+      <div class="card mb-4">
+        <div class="settings-section-header section-active" id="offseasonHeader">
+          <h5 class="mb-0 fw-bold d-flex align-items-center" style="font-size:.95rem;">
+            <i class="bi bi-calendar-x me-2" style="color:#f0883e;"></i>Off-Season
+          </h5>
+          <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;"
+                  onclick="toggleSection('offseason', !document.getElementById('offseasonBody').classList.contains('expanded'))">
+            <i class="bi bi-chevron-down"></i>
+          </button>
+        </div>
+        <div class="settings-expand expanded" id="offseasonBody">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:.75rem;">Delist Period Duration (days)</label>
+              <input type="number" class="form-control form-control-sm" name="off_delist_duration_days"
+                     value="{{ season_config.off_delist_duration_days if season_config and season_config.off_delist_duration_days else 14 }}"
+                     min="1" max="30">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:.75rem;">Min Delists Required</label>
+              <input type="number" class="form-control form-control-sm" name="offseason_delist_min"
+                     value="{{ season_config.offseason_delist_min if season_config and season_config.offseason_delist_min else 3 }}"
+                     min="0" max="15">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:.75rem;">Trade Window Duration (days)</label>
+              <input type="number" class="form-control form-control-sm" name="off_trade_duration_days"
+                     value="{{ season_config.off_trade_duration_days if season_config and season_config.off_trade_duration_days else 14 }}"
+                     min="1" max="30">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:.75rem;">Supplemental Draft Date</label>
+              <input type="date" class="form-control form-control-sm" name="supplemental_draft_date"
+                     value="{{ season_config.supplemental_draft_date.strftime('%Y-%m-%d') if season_config and season_config.supplemental_draft_date else '' }}">
+              <div class="form-text" style="font-size:.65rem;color:#6e7681;">After AFL draft ~Nov 30</div>
+            </div>
+          </div>
+          <div class="mt-2" style="font-size:.7rem;color:#6e7681;">
+            <i class="bi bi-info-circle me-1"></i>
+            Delist period and trade window open in parallel when the season transitions to off-season.
           </div>
         </div>
       </div>

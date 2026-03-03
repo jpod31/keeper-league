@@ -453,6 +453,33 @@ def league_settings(league_id):
             season_cfg.mid_season_draft_after_round = max(1, min(24, mid_round))
             season_cfg.mid_season_trade_after_round = season_cfg.mid_season_draft_after_round
 
+        # Mid-season delist config
+        mid_delist_days = request.form.get("mid_delist_duration_days", type=int)
+        if mid_delist_days is not None:
+            season_cfg.mid_delist_duration_days = max(1, min(7, mid_delist_days))
+        mid_delist_req = request.form.get("mid_season_delist_required", type=int)
+        if mid_delist_req is not None:
+            season_cfg.mid_season_delist_required = max(0, min(10, mid_delist_req))
+
+        # Off-season delist/trade config
+        off_delist_days = request.form.get("off_delist_duration_days", type=int)
+        if off_delist_days is not None:
+            season_cfg.off_delist_duration_days = max(1, min(30, off_delist_days))
+        off_delist_min = request.form.get("offseason_delist_min", type=int)
+        if off_delist_min is not None:
+            season_cfg.offseason_delist_min = max(0, min(15, off_delist_min))
+        off_trade_days = request.form.get("off_trade_duration_days", type=int)
+        if off_trade_days is not None:
+            season_cfg.off_trade_duration_days = max(1, min(30, off_trade_days))
+        supp_draft_date = request.form.get("supplemental_draft_date", "").strip()
+        if supp_draft_date:
+            try:
+                season_cfg.supplemental_draft_date = datetime.strptime(supp_draft_date, "%Y-%m-%d")
+            except ValueError:
+                pass
+        else:
+            season_cfg.supplemental_draft_date = None
+
         # Captain scoring toggle
         season_cfg.captain_scoring_enabled = request.form.get("captain_scoring_enabled") == "on"
 
@@ -971,7 +998,8 @@ def midseason_start_step(league_id):
             delist_days = season_cfg.mid_delist_duration_days or 2
             closes_at = datetime.now(timezone.utc) + timedelta(days=delist_days)
             _, error = open_delist_period(league_id, league.season_year,
-                                          min_delists=min_delists, closes_at=closes_at)
+                                          min_delists=min_delists, closes_at=closes_at,
+                                          period_type="midseason")
             if error:
                 flash(error, "warning")
             else:
@@ -1035,7 +1063,8 @@ def offseason_start_step(league_id):
         closes_at = datetime.now(timezone.utc) + timedelta(days=delist_days)
         from models.season_manager import open_delist_period
         _, error = open_delist_period(league_id, league.season_year,
-                                      min_delists=min_delists, closes_at=closes_at)
+                                      min_delists=min_delists, closes_at=closes_at,
+                                      period_type="offseason")
         if error:
             flash(error, "warning")
         else:

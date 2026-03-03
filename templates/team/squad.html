@@ -148,8 +148,9 @@
   {% if view|default('field') == 'field' %}
     {% include "team/field_view.html" %}
   {% else %}
-  {# ── Delist Banner (list view only) ── #}
-  {% if delist_is_open and is_owner %}
+  {# ── Delist Banner (list view only, always shown for owner) ── #}
+  {% if is_owner %}
+  {% if delist_is_open %}
   <div class="d-flex align-items-center gap-3 mb-3 px-3 py-3" style="background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.2);border-radius:10px;">
     <i class="bi bi-exclamation-triangle-fill" style="color:#f85149;font-size:1.2rem;"></i>
     <div style="flex:1;">
@@ -157,11 +158,27 @@
       <div style="font-size:.78rem;color:#8b949e;">
         {{ team_delist_count }}/{{ min_delists }} delisted{% if team_delist_count < min_delists %} &mdash; <strong style="color:#f85149;">{{ min_delists - team_delist_count }} more required</strong>{% else %} &mdash; <span style="color:#3fb950;">requirement met</span>{% endif %}
         {% if delist_period.closes_at %}
-          &nbsp;&middot;&nbsp; Closes {{ delist_period.closes_at.strftime('%d %b %Y') }}
+          &nbsp;&middot;&nbsp; <span class="delist-countdown" data-target="{{ delist_period.closes_at.strftime('%Y-%m-%dT%H:%M:%SZ') }}">Closes {{ delist_period.closes_at.strftime('%d %b %Y') }}</span>
         {% endif %}
       </div>
     </div>
   </div>
+  {% elif next_delist_info %}
+  <div class="d-flex align-items-center gap-3 mb-3 px-3 py-3" style="background:rgba(139,148,158,.06);border:1px solid #30363d;border-radius:10px;">
+    <i class="bi bi-clock" style="color:#8b949e;font-size:1.2rem;"></i>
+    <div style="flex:1;">
+      <div style="font-size:.85rem;font-weight:600;color:#8b949e;">Next Delist Period</div>
+      <div style="font-size:.78rem;color:#6e7681;">{{ next_delist_info }}</div>
+    </div>
+  </div>
+  {% else %}
+  <div class="d-flex align-items-center gap-3 mb-3 px-3 py-3" style="background:rgba(139,148,158,.04);border:1px solid #21262d;border-radius:10px;">
+    <i class="bi bi-clock" style="color:#484f58;font-size:1.2rem;"></i>
+    <div style="flex:1;">
+      <div style="font-size:.85rem;color:#484f58;">No upcoming delist period</div>
+    </div>
+  </div>
+  {% endif %}
   {% endif %}
 
   {# ── Enhanced List View ── #}
@@ -189,7 +206,7 @@
             <th class="text-center sortable squad-hide-mobile" data-sort="tackles">Tackles</th>
             <th class="text-end sortable" data-sort="sc_avg">SC Avg</th>
             <th>Acquired</th>
-            {% if delist_is_open and is_owner %}<th class="text-center">Delist</th>{% endif %}
+            {% if is_owner %}<th class="text-center">Delist</th>{% endif %}
           </tr>
         </thead>
         <tbody>
@@ -232,14 +249,19 @@
                   <span class="squad-acq squad-acq-{{ acq }}">{{ acq|replace('_', ' ')|title }}</span>
                 {% endif %}
               </td>
-              {% if delist_is_open and is_owner %}
+              {% if is_owner %}
               <td class="text-center">
                 {% if p.id in delisted_player_ids %}
                   <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.7rem;">Delisted</span>
-                {% else %}
+                {% elif delist_is_open %}
                   <button type="button" class="btn btn-sm btn-outline-danger"
                           style="font-size:.7rem;padding:2px 8px;border-radius:4px;"
                           onclick="showDelistModal({{ p.id }}, '{{ p.name|e }}')">
+                    <i class="bi bi-x-circle me-1"></i>Delist
+                  </button>
+                {% else %}
+                  <button type="button" class="btn btn-sm btn-outline-secondary" disabled
+                          style="font-size:.7rem;padding:2px 8px;border-radius:4px;opacity:.4;">
                     <i class="bi bi-x-circle me-1"></i>Delist
                   </button>
                 {% endif %}
@@ -389,7 +411,7 @@
   {% endif %}
 
   {# ── Delist Confirmation Modal ── #}
-  {% if delist_is_open and is_owner %}
+  {% if is_owner %}
   <div class="modal fade" id="delistModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content" style="background:#161b22;border:1px solid #30363d;border-radius:12px;">
@@ -425,6 +447,32 @@
     document.getElementById('delistPlayerName').textContent = playerName;
     new bootstrap.Modal(document.getElementById('delistModal')).show();
   }
+  </script>
+  {# ── Delist countdown timer ── #}
+  <script>
+  (function() {
+    function updateCountdowns() {
+      document.querySelectorAll('.delist-countdown[data-target]').forEach(function(el) {
+        var target = new Date(el.dataset.target).getTime();
+        var now = Date.now();
+        var diff = target - now;
+        if (diff <= 0) {
+          el.textContent = 'Closed';
+          return;
+        }
+        var d = Math.floor(diff / 86400000);
+        var h = Math.floor((diff % 86400000) / 3600000);
+        var m = Math.floor((diff % 3600000) / 60000);
+        var parts = [];
+        if (d > 0) parts.push(d + 'd');
+        if (h > 0) parts.push(h + 'h');
+        parts.push(m + 'm');
+        el.textContent = 'Closes in ' + parts.join(' ');
+      });
+    }
+    updateCountdowns();
+    setInterval(updateCountdowns, 60000);
+  })();
   </script>
   {% endif %}
 
