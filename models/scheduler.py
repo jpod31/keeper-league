@@ -89,12 +89,12 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
-    # Daily injury list sync: 07:30 UTC (5:30pm AEST, after AFL Tuesday update)
+    # Daily injury list sync: 08:00 UTC (6pm AEST)
     scheduler.add_job(
         _sync_injuries,
         "cron",
-        hour=7,
-        minute=30,
+        hour=8,
+        minute=0,
         id="daily_injury_sync",
         replace_existing=True,
         max_instances=1,
