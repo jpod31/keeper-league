@@ -178,7 +178,8 @@
   {# ── Player row macro ── #}
   {% macro player_row(p, locked_ids, gameday_state) %}
   {% set yet_to_play = (not p.get('game_started', True)) and gameday_state == 'live' %}
-  <div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}{{ ' player-reserve' if p.get('lineup_type') == 'reserve' else '' }}{{ ' player-yet-to-play' if yet_to_play else '' }}">
+  {% set is_emg_standby = p.is_emergency and not p.get('subbed_on') %}
+  <div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}{{ ' player-reserve' if p.get('lineup_type') == 'reserve' else '' }}{{ ' player-emergency-standby' if is_emg_standby else '' }}{{ ' player-yet-to-play' if yet_to_play else '' }}">
     <span class="gameday-player-info">
       {% if p.position %}
         <span class="pos-badge pos-{{ p.position[:3]|upper }} gameday-pos-badge">{{ p.position[:3]|upper }}</span>
@@ -196,9 +197,9 @@
         {% if p.get('replaces') %}<span class="gameday-sub-note">&rarr; replacing {{ p.replaces }}</span>{% endif %}
       </span>
     </span>
-    <span class="gameday-player-score {{ 'score-dnp' if p.get('is_dnp') else ('score-reserve' if p.get('lineup_type') == 'reserve' else ('score-ytp' if yet_to_play else ('text-success' if p.is_live else ''))) }}">
-      {% if p.get('lineup_type') == 'reserve' %}&ndash;{% elif yet_to_play %}<i class="bi bi-clock" style="font-size:.65rem;margin-right:2px;"></i>&mdash;{% else %}{{ p.score or 0 }}{% endif %}
-      {% if p.is_live and not yet_to_play %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}
+    <span class="gameday-player-score {{ 'score-dnp' if p.get('is_dnp') else ('score-reserve' if p.get('lineup_type') == 'reserve' else ('score-emg-standby' if is_emg_standby else ('score-ytp' if yet_to_play else ('text-success' if p.is_live else '')))) }}">
+      {% if p.get('lineup_type') == 'reserve' %}&ndash;{% elif is_emg_standby %}&ndash;{% elif yet_to_play %}<i class="bi bi-clock" style="font-size:.65rem;margin-right:2px;"></i>&mdash;{% else %}{{ p.score or 0 }}{% endif %}
+      {% if p.is_live and not yet_to_play and not is_emg_standby %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}
     </span>
   </div>
   {% endmacro %}
@@ -218,13 +219,23 @@
             {% for p in my_players if p.lineup_type == 'field' and p.afl_team in teams_playing %}
               {{ player_row(p, locked_player_ids, gameday_state) }}
             {% endfor %}
-            {% set bench_emg = [] %}
-            {% for p in my_players if p.lineup_type in ['bench', 'emergency'] and p.afl_team in teams_playing %}
-              {% if bench_emg.append(p) %}{% endif %}
+            {% set bench_list = [] %}
+            {% for p in my_players if p.lineup_type == 'bench' and p.afl_team in teams_playing %}
+              {% if bench_list.append(p) %}{% endif %}
             {% endfor %}
-            {% if bench_emg %}
+            {% if bench_list %}
               <div class="gameday-section-hdr section-bench"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
-              {% for p in bench_emg %}
+              {% for p in bench_list %}
+                {{ player_row(p, locked_player_ids, gameday_state) }}
+              {% endfor %}
+            {% endif %}
+            {% set emg_list = [] %}
+            {% for p in my_players if p.lineup_type == 'emergency' and p.afl_team in teams_playing %}
+              {% if emg_list.append(p) %}{% endif %}
+            {% endfor %}
+            {% if emg_list %}
+              <div class="gameday-section-hdr section-emergency"><i class="bi bi-shield-exclamation me-1"></i>Emergency <span class="gameday-section-note">only scores if field player is DNP</span></div>
+              {% for p in emg_list %}
                 {{ player_row(p, locked_player_ids, gameday_state) }}
               {% endfor %}
             {% endif %}
@@ -267,13 +278,23 @@
             {% for p in opp_players if p.lineup_type == 'field' and p.afl_team in teams_playing %}
               {{ player_row(p, locked_player_ids, gameday_state) }}
             {% endfor %}
-            {% set opp_bench_emg = [] %}
-            {% for p in opp_players if p.lineup_type in ['bench', 'emergency'] and p.afl_team in teams_playing %}
-              {% if opp_bench_emg.append(p) %}{% endif %}
+            {% set opp_bench_list = [] %}
+            {% for p in opp_players if p.lineup_type == 'bench' and p.afl_team in teams_playing %}
+              {% if opp_bench_list.append(p) %}{% endif %}
             {% endfor %}
-            {% if opp_bench_emg %}
+            {% if opp_bench_list %}
               <div class="gameday-section-hdr section-bench"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
-              {% for p in opp_bench_emg %}
+              {% for p in opp_bench_list %}
+                {{ player_row(p, locked_player_ids, gameday_state) }}
+              {% endfor %}
+            {% endif %}
+            {% set opp_emg_list = [] %}
+            {% for p in opp_players if p.lineup_type == 'emergency' and p.afl_team in teams_playing %}
+              {% if opp_emg_list.append(p) %}{% endif %}
+            {% endfor %}
+            {% if opp_emg_list %}
+              <div class="gameday-section-hdr section-emergency"><i class="bi bi-shield-exclamation me-1"></i>Emergency <span class="gameday-section-note">only scores if field player is DNP</span></div>
+              {% for p in opp_emg_list %}
                 {{ player_row(p, locked_player_ids, gameday_state) }}
               {% endfor %}
             {% endif %}
@@ -598,7 +619,11 @@
   }
   .section-field { border-left-color: var(--kl-accent-green); }
   .section-bench { border-left-color: var(--kl-accent-blue); }
+  .section-emergency { border-left-color: #d29922; color: #d29922; }
   .section-reserve { border-left-color: var(--kl-text-faint); color: var(--kl-text-faint); }
+  .player-emergency-standby { opacity: 0.6; }
+  .player-emergency-standby .gameday-player-name { color: #d29922; }
+  .score-emg-standby { color: var(--kl-border) !important; }
   .gameday-section-note {
     font-weight: 400; text-transform: none; letter-spacing: 0;
     color: var(--kl-border); margin-left: 4px; font-style: italic;
@@ -1009,16 +1034,19 @@ function renderPlayerRow(p, lockedIds) {
     var isDnp = p.is_dnp || false;
     var isSubOn = p.subbed_on || false;
     var isReserve = (p.lineup_type || '') === 'reserve';
+    var isEmgStandby = p.is_emergency && !isSubOn;
     var yetToPlay = !(p.game_started === undefined ? true : p.game_started) && GAMEDAY_STATE === 'live';
     var rowClass = 'gameday-player-row';
     if (isLocked) rowClass += ' player-locked';
     if (isDnp) rowClass += ' player-dnp';
     if (isSubOn) rowClass += ' player-subbed-on';
     if (isReserve) rowClass += ' player-reserve';
+    if (isEmgStandby) rowClass += ' player-emergency-standby';
     if (yetToPlay) rowClass += ' player-yet-to-play';
 
     var scoreClass = 'gameday-player-score';
     if (isReserve) scoreClass += ' score-reserve';
+    else if (isEmgStandby) scoreClass += ' score-emg-standby';
     else if (isDnp) scoreClass += ' score-dnp';
     else if (yetToPlay) scoreClass += ' score-ytp';
     else if (p.is_live) scoreClass += ' text-success';
@@ -1034,14 +1062,15 @@ function renderPlayerRow(p, lockedIds) {
     if (p.is_vice_captain) badges += '<span class="gameday-badge-vc">VC</span> ';
     if (isDnp) badges += '<span class="gameday-badge-dnp">DNP</span> ';
     if (isSubOn) badges += '<span class="gameday-badge-sub"><i class="bi bi-arrow-up-short"></i>SUB</span> ';
-    if (p.is_emergency && !isSubOn) badges += '<span class="gameday-badge-emg">EMG</span> ';
+    if (isEmgStandby) badges += '<span class="gameday-badge-emg">EMG</span> ';
     if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.6rem;"></i> ';
 
-    var liveDot = (p.is_live && !yetToPlay) ? ' <i class="bi bi-circle-fill gameday-live-dot"></i>' : '';
+    var liveDot = (p.is_live && !yetToPlay && !isEmgStandby) ? ' <i class="bi bi-circle-fill gameday-live-dot"></i>' : '';
     var subNote = p.replaces ? '<span class="gameday-sub-note">&rarr; replacing ' + p.replaces + '</span>' : '';
 
     var scoreText;
     if (isReserve) scoreText = '&ndash;';
+    else if (isEmgStandby) scoreText = '&ndash;';
     else if (yetToPlay) scoreText = '<i class="bi bi-clock" style="font-size:.65rem;margin-right:2px;"></i>&mdash;';
     else scoreText = (p.score || 0);
 
@@ -1066,7 +1095,8 @@ function renderPlayerList(containerId, players, lockedIds) {
     }
 
     var field = players.filter(function(p) { return (p.lineup_type || 'field') === 'field'; });
-    var bench = players.filter(function(p) { return p.lineup_type === 'bench' || p.lineup_type === 'emergency'; });
+    var bench = players.filter(function(p) { return p.lineup_type === 'bench'; });
+    var emg = players.filter(function(p) { return p.lineup_type === 'emergency'; });
     var reserves = players.filter(function(p) { return p.lineup_type === 'reserve'; });
 
     var html = '';
@@ -1075,6 +1105,10 @@ function renderPlayerList(containerId, players, lockedIds) {
     if (bench.length > 0) {
         html += '<div class="gameday-section-hdr section-bench"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>';
         bench.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
+    }
+    if (emg.length > 0) {
+        html += '<div class="gameday-section-hdr section-emergency"><i class="bi bi-shield-exclamation me-1"></i>Emergency <span class="gameday-section-note">only scores if field player is DNP</span></div>';
+        emg.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
     }
     if (reserves.length > 0) {
         html += '<div class="gameday-section-hdr section-reserve"><i class="bi bi-clock me-1"></i>Reserves <span class="gameday-section-note">not scoring</span></div>';
