@@ -521,7 +521,15 @@ def sevens_generate_fixture(league_id):
     season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
     num_rounds = season_cfg.num_regular_rounds if season_cfg else 23
 
-    fixtures, error = generate_7s_round_robin(league_id, league.season_year, num_rounds)
+    # Check if main fixture includes round 0 (pre-season)
+    from models.database import Fixture
+    has_round_0 = Fixture.query.filter_by(
+        league_id=league_id, year=league.season_year, afl_round=0, is_final=False,
+    ).first() is not None
+    start_round = 0 if has_round_0 else 1
+    total_rounds = num_rounds + (1 if has_round_0 else 0)
+
+    fixtures, error = generate_7s_round_robin(league_id, league.season_year, total_rounds, start_round=start_round)
     if error:
         flash(error, "danger")
     else:

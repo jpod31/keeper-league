@@ -334,7 +334,7 @@ def get_finals(league_id, year):
 # ── Reserve 7s Fixture Functions ────────────────────────────────────────
 
 
-def generate_7s_round_robin(league_id, year, num_rounds=23):
+def generate_7s_round_robin(league_id, year, num_rounds=23, start_round=1):
     """Generate an independent round-robin fixture for 7s.
 
     Uses the same circle method but with a different random shuffle,
@@ -372,7 +372,7 @@ def generate_7s_round_robin(league_id, year, num_rounds=23):
     pair_last_home = {}
 
     fixtures = []
-    for afl_round, base_idx in enumerate(round_schedule, 1):
+    for afl_round, base_idx in enumerate(round_schedule, start_round):
         for t1, t2 in base_rounds[base_idx]:
             pair_key = frozenset({t1.id, t2.id})
             last_home = pair_last_home.get(pair_key)
