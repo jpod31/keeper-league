@@ -91,6 +91,75 @@ def classify_severity(return_text: str) -> str:
     return "long"
 
 
+def friendly_return_text(return_text: str, current_round: int | None) -> str:
+    """Convert a raw return estimate into a round-based display string.
+
+    Examples:
+      "Test"       → "Expected to play this round"
+      "1 week"     → "Expected to return Round 3"
+      "1-2 weeks"  → "Expected to return Round 3 or 4"
+      "3-4 weeks"  → "Expected to return between Round 5 and 6"
+      "Round 5"    → "Expected to return Round 5"
+      "Season"     → "Out for the season"
+      "TBC"        → "Return date TBC"
+    """
+    if not return_text:
+        return ""
+
+    text = return_text.strip()
+    lower = text.lower()
+
+    if lower == "test":
+        return "Expected to play this round"
+
+    # Already a specific round: "Round X"
+    m = re.match(r"^round\s+(\d+)$", lower)
+    if m:
+        return f"Expected to return Round {m.group(1)}"
+
+    if lower in ("season", "indefinite"):
+        return "Out for the season"
+
+    if lower == "tbc":
+        return "Return date TBC"
+
+    # "X weeks" or "X-Y weeks" or "X-plus weeks" or "X months"
+    if current_round is not None:
+        # "X-plus weeks" → treat as X weeks minimum
+        m = re.match(r"^(\d+)-?plus\s+weeks?$", lower)
+        if m:
+            lo = int(m.group(1))
+            r_lo = current_round + lo
+            return f"Expected to return Round {r_lo}+"
+
+        # "X months" → approximate as X*4 weeks
+        m = re.match(r"^(\d+)\s+months?$", lower)
+        if m:
+            weeks = int(m.group(1)) * 4
+            r_lo = current_round + weeks
+            return f"Expected to return Round {r_lo}+"
+
+        # "X-Y weeks"
+        m = re.match(r"^(\d+)\s*-\s*(\d+)\s+weeks?$", lower)
+        if m:
+            lo, hi = int(m.group(1)), int(m.group(2))
+            r_lo = current_round + lo
+            r_hi = current_round + hi
+            if r_lo == r_hi:
+                return f"Expected to return Round {r_lo}"
+            return f"Expected to return between Round {r_lo} and {r_hi}"
+
+        # "X weeks"
+        m = re.match(r"^(\d+)\s+weeks?$", lower)
+        if m:
+            weeks = int(m.group(1))
+            r_ret = current_round + weeks
+            return f"Expected to return Round {r_ret}"
+
+    # Fallback: just return the raw text
+    return text
+
+
 def scrape_injury_list() -> list[dict]:
     """Fetch the AFL injury list page, return a list of injury dicts.
 

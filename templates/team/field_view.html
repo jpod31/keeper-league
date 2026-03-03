@@ -798,8 +798,9 @@ function fvShowPlayer(pid) {
       // Injury info
       const injEl = document.getElementById('pmInjury');
       if (data.injury_severity) {
-        document.getElementById('pmInjuryText').textContent =
-          (data.injury_type || 'Injured') + ' — ' + (data.injury_return || '');
+        const label = data.injury_type || 'Injured';
+        const detail = data.injury_return_display || data.injury_return || '';
+        document.getElementById('pmInjuryText').textContent = label + ' — ' + detail;
         injEl.style.display = '';
       } else {
         injEl.style.display = 'none';

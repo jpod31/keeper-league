@@ -563,6 +563,16 @@ def draft_weights(league_id):
                            weight_keys=weight_keys)
 
 
+def _injury_return_display(player):
+    """Build a friendly round-based injury return string for the modal."""
+    if not player.injury_severity:
+        return None
+    from scrapers.afl_injuries import friendly_return_text
+    from scrapers.squiggle import get_current_round
+    current_round = get_current_round(config.CURRENT_YEAR)
+    return friendly_return_text(player.injury_return, current_round)
+
+
 # ── Lineup AJAX helpers ──────────────────────────────────────────────
 
 
@@ -1082,6 +1092,7 @@ def api_player_detail(league_id, team_id, player_id):
         "injury_type": player.injury_type,
         "injury_return": player.injury_return,
         "injury_severity": player.injury_severity,
+        "injury_return_display": _injury_return_display(player),
         "recent_scores": scores_list,
         "last_game": last_game,
         "season_avg": season_avg,
