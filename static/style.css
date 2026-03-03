@@ -847,6 +847,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   border-radius: 50%;
   line-height: 1;
   border: 2px solid var(--kl-bg-card, #161b22);
+  box-shadow: 0 2px 6px rgba(0,0,0,.35), inset 0 1px 2px rgba(255,255,255,.15);
 }
 .fv-ribbon-cap span {
   background: linear-gradient(135deg, var(--kl-accent-yellow), #e8b84a);
@@ -1407,6 +1408,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .fv-swap-mode .fv-card {
   opacity: .35;
   pointer-events: none;
+  filter: grayscale(.5) brightness(.8);
 }
 .fv-swap-mode .fv-card .fv-actions {
   display: none;
@@ -1415,6 +1417,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .fv-swap-mode .fv-card.fv-swap-active {
   opacity: 1;
   pointer-events: auto;
+  filter: none;
   border-color: var(--kl-accent-yellow);
   animation: pulse-border 1.2s ease-in-out infinite;
 }
@@ -1425,6 +1428,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .fv-swap-mode .fv-card.fv-swap-eligible {
   opacity: 1;
   pointer-events: auto;
+  filter: none;
   border-color: #0d8a72;
   box-shadow: 0 0 8px rgba(13,138,114,.3);
 }
@@ -2980,4 +2984,16 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .navbar { display: none; }
   main.container { padding-top: .75rem; }
   .league-nav { margin-top: 0; }
+}
+
+/* ── Modal slide-in animation ── */
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: scale(.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal.fade .modal-dialog {
+  animation: none;
+}
+.modal.show .modal-dialog {
+  animation: modalSlideIn .25s ease-out;
 }

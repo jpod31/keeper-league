@@ -439,7 +439,11 @@
   .live-pulse-dot {
     display: inline-block; width: 7px; height: 7px;
     background: #3fb950; border-radius: 50%;
-    animation: pulse 2s infinite;
+    animation: liveDotGlow 2s ease-in-out infinite;
+  }
+  @keyframes liveDotGlow {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(63,185,80,.4); }
+    50% { opacity: .4; box-shadow: 0 0 10px rgba(63,185,80,.8), 0 0 20px rgba(63,185,80,.3); }
   }
 
   /* ════════════════════════════════════════════════
@@ -513,7 +517,7 @@
   .gameday-margin-fill {
     height: 100%;
     background: linear-gradient(90deg, #238636, #3fb950);
-    border-radius: 4px; transition: width .6s ease;
+    border-radius: 4px; transition: width .8s cubic-bezier(.25,.46,.45,.94);
   }
 
   /* ════════════════════════════════════════════════
@@ -541,6 +545,7 @@
   }
   .gameday-player-row:last-child { border-bottom: none; }
   .gameday-player-row:hover { background: var(--kl-bg-card); }
+  .gameday-player-row:hover .gameday-player-name { color: var(--kl-accent-blue); }
   .player-locked { opacity: 0.7; }
   .gameday-player-info { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
   .gameday-player-name { color: var(--kl-text-primary); white-space: nowrap; }
@@ -588,6 +593,8 @@
   .player-reserve .gameday-player-name { color: var(--kl-text-faint); }
   .score-reserve { color: var(--kl-border) !important; }
   .player-yet-to-play .gameday-player-score { color: var(--kl-text-muted); }
+  @keyframes ytpPulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+  .hero-live .player-yet-to-play .gameday-player-score { animation: ytpPulse 2s ease-in-out infinite; }
   .score-ytp { color: var(--kl-text-muted) !important; }
 
   /* ── Section headers ── */
@@ -597,9 +604,9 @@
     background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-bg-elevated);
     border-left: 3px solid transparent;
   }
-  .section-field { border-left-color: var(--kl-accent-green); }
+  .section-field { border-left-color: var(--kl-accent-green); background: rgba(63,185,80,.04); }
   .section-bench { border-left-color: var(--kl-accent-blue); }
-  .section-emergency { border-left-color: #d29922; color: #d29922; }
+  .section-emergency { border-left-color: #d29922; color: #d29922; background: rgba(210,153,34,.06); }
   .section-reserve { border-left-color: var(--kl-text-faint); color: var(--kl-text-faint); }
   .player-emergency-standby { opacity: 0.6; }
   .player-emergency-standby .gameday-player-name { color: #d29922; }
@@ -684,10 +691,11 @@
   /* ════════════════════════════════════════════════
      ANIMATIONS
      ════════════════════════════════════════════════ */
-  .score-flash { animation: scoreFlash 1.5s ease-out; }
-  @keyframes scoreFlash {
-    0% { color: var(--kl-accent-blue); text-shadow: 0 0 8px rgba(88,166,255,.5); }
-    100% { color: inherit; text-shadow: none; }
+  .score-flash { animation: scorePopIn 1.5s ease-out; }
+  @keyframes scorePopIn {
+    0% { transform: scale(1.15); color: var(--kl-accent-blue); text-shadow: 0 0 8px rgba(88,166,255,.5); }
+    40% { transform: scale(.97); }
+    100% { transform: scale(1); color: inherit; text-shadow: none; }
   }
   @keyframes pulse {
     0%, 100% { opacity: 1; }
