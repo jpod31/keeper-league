@@ -534,6 +534,8 @@ function fvSetEmergency(pid) {
       card.querySelectorAll('.fv-act-emg').forEach(b => b.classList.remove('active'));
       fvToast('Emergency removed', 'info');
     }
+    // Refresh so 7/E buttons re-render (mutually exclusive)
+    fvRefresh();
   });
 }
 
