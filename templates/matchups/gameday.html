@@ -69,7 +69,7 @@
         </div>
         <div class="gameday-team-name" id="left-team-name">{% if not is_bye %}{{ my_team.name }}{% endif %}</div>
         {% if not is_bye %}
-          <div class="gameday-score" id="hero-left-score" {% if gameday_state == 'upcoming' %}style="display:none;"{% endif %}>{{ '%.0f'|format(my_score) }}</div>
+          <div class="gameday-score" id="hero-left-score">{{ '%.0f'|format(my_score) }}</div>
           {% if my_captain_bonus > 0 %}
             <div class="captain-bonus" id="hero-left-cap" style="font-size:.7rem;color:#d29922;margin-top:2px;">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
           {% else %}
@@ -105,7 +105,7 @@
         </div>
         <div class="gameday-team-name" id="right-team-name">{% if not is_bye %}{{ opp_team.name }}{% endif %}</div>
         {% if not is_bye %}
-          <div class="gameday-score" id="hero-right-score" {% if gameday_state == 'upcoming' %}style="display:none;"{% endif %}>{{ '%.0f'|format(opp_score) }}</div>
+          <div class="gameday-score" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</div>
           {% if opp_captain_bonus > 0 %}
             <div class="captain-bonus" id="hero-right-cap" style="font-size:.7rem;color:#d29922;margin-top:2px;">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
           {% else %}
@@ -140,7 +140,7 @@
       {% set my_pct = (my_score / total * 100)|round(1) %}
       {% set opp_pct = (100 - my_pct)|round(1) %}
     {% endif %}
-    <div class="gameday-margin-wrap mt-3" id="margin-wrap" {% if is_bye or gameday_state == 'upcoming' %}style="display:none;"{% endif %}>
+    <div class="gameday-margin-wrap mt-3" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
       <span class="gameday-margin-pct left" id="margin-pct-left">{% if not is_bye %}{{ my_pct }}%{% endif %}</span>
       <div class="gameday-margin-bar">
         <div class="gameday-margin-fill" id="margin-fill" style="width:{% if not is_bye %}{{ my_pct }}{% else %}50{% endif %}%;"></div>
@@ -148,7 +148,7 @@
       <span class="gameday-margin-pct right" id="margin-pct-right">{% if not is_bye %}{{ opp_pct }}%{% endif %}</span>
     </div>
     <div class="text-center mt-2" id="margin-text"
-         style="font-size:.8rem;color:var(--kl-text-secondary);{% if is_bye or gameday_state == 'upcoming' %}display:none;{% endif %}">
+         style="font-size:.8rem;color:var(--kl-text-secondary);{% if is_bye %}display:none;{% endif %}">
       {% if not is_bye %}
         {% set diff = (my_score - opp_score)|abs|round(0)|int %}
         {% if gameday_state == 'completed' %}
