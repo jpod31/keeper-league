@@ -3018,23 +3018,19 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .league-nav { margin-top: 0; }
 }
 
-/* ── Injury indicator — bottom-left of player card ── */
+/* ── Injury indicator — inline in card-top, after position pip ── */
 .fv-injury {
-  position: absolute;
-  bottom: -4px;
-  left: -4px;
-  z-index: 3;
-  pointer-events: none;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 2px solid var(--kl-bg-card, #161b22);
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
+  flex-shrink: 0;
+  margin-left: 2px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.3));
 }
-.fv-injury i { font-size: .55rem; line-height: 1; }
+.fv-injury i { font-size: .45rem; line-height: 1; }
 
 /* Test — semi-transparent red (might play) */
 .fv-injury-test {

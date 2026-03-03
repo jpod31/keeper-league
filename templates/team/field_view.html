@@ -28,18 +28,6 @@
         <div class="fv-bye-badge" title="No game this round">BYE</div>
       {% endif %}
 
-      {# Injury indicator — bottom-left, separate from ribbon chain #}
-      {% if p.injury_severity %}
-        <div class="fv-injury fv-injury-{{ p.injury_severity }}"
-             title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
-          {% if p.injury_severity == 'long' %}
-            <i class="bi bi-slash-circle-fill"></i>
-          {% else %}
-            <i class="bi bi-circle-fill"></i>
-          {% endif %}
-        </div>
-      {% endif %}
-
       {# Hover action bubbles (owner only) #}
       {% if is_owner %}
       <div class="fv-actions" onclick="event.stopPropagation()">
@@ -91,6 +79,16 @@
           <span class="fv-flex-pip">FLEX</span>
         {% endif %}
         <span class="fv-pos-pip fv-pip-{{ (p.position or 'MID').split('/')[0]|lower }}">{{ (p.position or 'MID').split('/')[0] }}</span>
+        {% if p.injury_severity %}
+          <span class="fv-injury fv-injury-{{ p.injury_severity }}"
+                title="{{ p.injury_type or 'Injured' }} — {{ p.injury_return or '' }}">
+            {% if p.injury_severity == 'long' %}
+              <i class="bi bi-slash-circle-fill"></i>
+            {% else %}
+              <i class="bi bi-circle-fill"></i>
+            {% endif %}
+          </span>
+        {% endif %}
       </div>
 
       {# Player name #}
