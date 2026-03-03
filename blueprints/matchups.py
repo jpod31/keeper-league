@@ -379,7 +379,7 @@ def gameday(league_id):
 
     # Auto-detect round (no manual override)
     afl_round = _detect_gameday_round(league_id, year)
-    if not afl_round:
+    if afl_round is None:
         flash("No fixtures found yet. The season may not have started.", "info")
         return redirect(url_for("matchups.fixture_view", league_id=league_id))
 
