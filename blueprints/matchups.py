@@ -107,6 +107,12 @@ def generate_fixture(league_id):
 
     num_rounds = request.form.get("num_rounds", type=int) or 23
     fixtures, error = generate_round_robin(league_id, league.season_year, num_rounds)
+
+    # Auto-generate 7s fixture to match
+    if not error:
+        from models.fixture_manager import generate_7s_round_robin
+        generate_7s_round_robin(league_id, league.season_year, num_rounds)
+
     if error:
         flash(error, "danger")
     else:
@@ -713,6 +719,12 @@ def generate_finals_view(league_id):
         return redirect(url_for("matchups.finals_view", league_id=league_id))
 
     finals, error = generate_finals(league_id, league.season_year)
+
+    # Auto-generate 7s finals (top-2 GF) to match
+    if not error:
+        from models.fixture_manager import generate_7s_finals
+        generate_7s_finals(league_id, league.season_year)
+
     if error:
         flash(error, "danger")
     else:

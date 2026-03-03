@@ -256,8 +256,9 @@ def league_create():
             db.session.add(LockoutConfig(league_id=league.id, lockout_type="game_start"))
         db.session.commit()
 
-        from models.fixture_manager import generate_round_robin
+        from models.fixture_manager import generate_round_robin, generate_7s_round_robin
         generate_round_robin(league.id, league.season_year, num_rounds=23)
+        generate_7s_round_robin(league.id, league.season_year, num_rounds=23)
 
         flash(f"League '{league.name}' created!", "success")
         return redirect(url_for("leagues.dashboard", league_id=league.id))
@@ -632,8 +633,12 @@ def regenerate_fixtures(league_id):
     season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
     num_rounds = int(request.form.get("num_rounds", 23))
 
-    from models.fixture_manager import generate_round_robin
+    from models.fixture_manager import generate_round_robin, generate_7s_round_robin
     fixtures, error = generate_round_robin(league_id, league.season_year, num_rounds)
+
+    # Auto-generate 7s fixture to match
+    if not error:
+        generate_7s_round_robin(league_id, league.season_year, num_rounds)
 
     # Support AJAX requests (no page reload)
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -661,8 +666,12 @@ def generate_preseason_route(league_id):
         flash("Only the commissioner can generate pre-season fixtures.", "warning")
         return redirect(url_for("leagues.dashboard", league_id=league_id))
 
-    from models.fixture_manager import generate_preseason
+    from models.fixture_manager import generate_preseason, generate_7s_preseason
     fixtures, error = generate_preseason(league_id, league.season_year)
+
+    # Auto-generate 7s pre-season to match
+    if not error:
+        generate_7s_preseason(league_id, league.season_year)
 
     if error:
         flash(error, "danger")

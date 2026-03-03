@@ -175,17 +175,16 @@
 {% else %}
   <div class="s7f-empty">
     <i class="bi bi-calendar-week"></i>
-    <h4>No Reserve 7s fixture generated</h4>
+    <h4>No Reserve 7s fixture yet</h4>
+    <p style="font-size:.8rem;">The 7s fixture auto-generates when the main season fixture is created.</p>
     {% if is_commissioner %}
-      <p style="font-size:.8rem;">Generate the 7s fixture to get started.</p>
+      <p style="font-size:.75rem;color:#484f58;margin-top:8px;">Or generate manually:</p>
       <form method="POST" action="{{ url_for('reserve7s.sevens_generate_fixture', league_id=league.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="s7f-generate-btn">
           <i class="bi bi-plus-circle me-1"></i>Generate 7s Fixture
         </button>
       </form>
-    {% else %}
-      <p style="font-size:.8rem;">The commissioner hasn't set up the 7s fixture yet.</p>
     {% endif %}
   </div>
 {% endif %}

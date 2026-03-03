@@ -440,6 +440,41 @@ def generate_7s_finals(league_id, year):
     return [gf], None
 
 
+def generate_7s_preseason(league_id, year):
+    """Generate 7s pre-season fixtures (afl_round=0) using sequential pairings.
+
+    Mirrors main comp's generate_preseason() but writes to Reserve7sFixture.
+    """
+    from models.database import Reserve7sFixture
+
+    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
+    if len(teams) < 2:
+        return [], "Need at least 2 teams."
+
+    # Delete existing 7s pre-season fixtures
+    Reserve7sFixture.query.filter_by(league_id=league_id, year=year, afl_round=0, is_final=False).delete()
+
+    fixtures = []
+    # Shuffle for independent draw from main comp
+    shuffled = list(teams)
+    random.shuffle(shuffled)
+    for i in range(0, len(shuffled) - 1, 2):
+        home = shuffled[i]
+        away = shuffled[i + 1]
+        fixture = Reserve7sFixture(
+            league_id=league_id,
+            afl_round=0,
+            year=year,
+            home_team_id=home.id,
+            away_team_id=away.id,
+        )
+        db.session.add(fixture)
+        fixtures.append(fixture)
+
+    db.session.commit()
+    return fixtures, None
+
+
 def get_7s_fixture(league_id, year):
     """Get the full 7s season fixture grouped by round."""
     from models.database import Reserve7sFixture
