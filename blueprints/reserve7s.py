@@ -255,7 +255,7 @@ def sevens_team_set(league_id):
 @reserve7s_bp.route("/<int:league_id>/reserve7s/gameday")
 @login_required
 def sevens_gameday(league_id):
-    """7s gameday view."""
+    """7s gameday view — full parity with main comp."""
     league = db.session.get(League, league_id)
     if not league:
         flash("League not found.", "warning")
@@ -271,25 +271,41 @@ def sevens_gameday(league_id):
 
     afl_round = _detect_7s_gameday_round(league_id, year)
 
-    # Round dates from AFL game schedule
+    # ── Round dates + first bounce from AFL game schedule ──
     afl_games_for_round = (
         AflGame.query.filter_by(year=year, afl_round=afl_round)
         .order_by(AflGame.scheduled_start)
         .all()
     )
+    first_bounce = None
     round_dates = None
     starts = [g.scheduled_start for g in afl_games_for_round if g.scheduled_start]
     if starts:
         earliest = min(starts)
         latest = max(starts)
+        fb_hour = earliest.strftime("%I:%M%p").lstrip("0").lower()
+        first_bounce = f"{earliest.strftime('%a')} {fb_hour}"
         fmt = lambda dt: f"{dt.strftime('%a')} {dt.day} {dt.strftime('%b')}"
         if earliest.date() == latest.date():
             round_dates = fmt(earliest)
         else:
             round_dates = f"{fmt(earliest)} – {fmt(latest)}"
 
-    # All 7s fixtures this round
+    # Build set of AFL teams with games this round
+    teams_playing = set()
+    for g in afl_games_for_round:
+        teams_playing.add(g.home_team)
+        teams_playing.add(g.away_team)
+
+    # ── Shared round-level data ──
     round_fixtures = get_7s_round_fixtures(league_id, year, afl_round)
+    afl_games = get_game_statuses(afl_round, year)
+    locked_ids = get_locked_player_ids(afl_round, year)
+    sevens_scores = get_7s_live_scores(league_id, afl_round, year)
+    scoring = get_scoring_context(league)
+
+    live_config = LiveScoringConfig.query.get(league_id)
+    live_enabled = live_config.enabled if live_config else False
 
     # Determine gameday state
     if any(f.status == "live" for f in round_fixtures):
@@ -298,14 +314,6 @@ def sevens_gameday(league_id):
         gameday_state = "completed"
     else:
         gameday_state = "upcoming"
-
-    # AFL game statuses
-    afl_games = get_game_statuses(afl_round, year)
-
-    # 7s live scores
-    sevens_scores = get_7s_live_scores(league_id, afl_round, year)
-
-    scoring = get_scoring_context(league)
 
     # Find user's 7s fixture
     fixture = Reserve7sFixture.query.filter(
@@ -320,9 +328,8 @@ def sevens_gameday(league_id):
     ).first()
 
     is_bye = fixture is None
-
-    my_lineup = []
-    opp_lineup = []
+    my_players = []
+    opp_players = []
     my_score = 0
     opp_score = 0
     my_captain_bonus = 0
@@ -330,17 +337,21 @@ def sevens_gameday(league_id):
     my_team = user_team
     opp_team = None
     is_home = True
+    my_played = 0
+    my_eligible = 0
+    opp_played = 0
+    opp_eligible = 0
 
     if fixture:
         is_home = fixture.home_team_id == user_team.id
         my_team = fixture.home_team if is_home else fixture.away_team
         opp_team = fixture.away_team if is_home else fixture.home_team
 
-        # Build lineup player data
-        my_lineup = _build_7s_player_list(
+        # Per-player breakdowns (full detail for JS rendering)
+        my_players = _get_7s_player_breakdown(
             league_id, my_team.id, afl_round, year, league,
         )
-        opp_lineup = _build_7s_player_list(
+        opp_players = _get_7s_player_breakdown(
             league_id, opp_team.id, afl_round, year, league,
         )
 
@@ -356,10 +367,20 @@ def sevens_gameday(league_id):
         my_captain_bonus = my_rs.captain_bonus if my_rs else 0
         opp_captain_bonus = opp_rs.captain_bonus if opp_rs else 0
 
+        # Players played / eligible counts
+        def _count_7s_played(players):
+            eligible = [p for p in players if p.get("afl_team", "") in teams_playing]
+            played = sum(1 for p in eligible if p.get("game_started") and p.get("has_played"))
+            return played, len(eligible)
+
+        my_played, my_eligible = _count_7s_played(my_players)
+        opp_played, opp_eligible = _count_7s_played(opp_players)
+
     return render_template("reserve7s/gameday.html",
                            league=league,
                            afl_round=afl_round,
                            round_dates=round_dates,
+                           first_bounce=first_bounce,
                            gameday_state=gameday_state,
                            afl_games=afl_games,
                            user_team=user_team,
@@ -369,14 +390,21 @@ def sevens_gameday(league_id):
                            is_home=is_home,
                            my_team=my_team,
                            opp_team=opp_team,
-                           my_lineup=my_lineup,
-                           opp_lineup=opp_lineup,
+                           my_players=my_players,
+                           opp_players=opp_players,
                            my_score=my_score,
                            opp_score=opp_score,
                            my_captain_bonus=my_captain_bonus,
                            opp_captain_bonus=opp_captain_bonus,
+                           my_played=my_played,
+                           my_eligible=my_eligible,
+                           opp_played=opp_played,
+                           opp_eligible=opp_eligible,
                            round_fixtures=round_fixtures,
-                           sevens_scores=sevens_scores)
+                           sevens_scores=sevens_scores,
+                           locked_player_ids=locked_ids,
+                           teams_playing=teams_playing,
+                           live_enabled=live_enabled)
 
 
 def _build_7s_player_list(league_id, team_id, afl_round, year, league):
@@ -407,6 +435,79 @@ def _build_7s_player_list(league_id, team_id, afl_round, year, league):
             "score": score if score is not None else 0,
             "has_played": score is not None,
             "is_captain": entry.is_captain,
+        })
+
+    # Sort: captain first, then by score descending
+    players.sort(key=lambda x: (-x["is_captain"], -x["score"]))
+    return players
+
+
+def _get_7s_player_breakdown(league_id, team_id, afl_round, year, league):
+    """Return per-player breakdown matching the main comp API format.
+
+    Each player dict contains fields needed by the JS renderer:
+    player_id, name, afl_team, position, score, is_captain,
+    is_live, game_started, has_played, lineup_type (always 'field' for 7s).
+    """
+    lineup = Reserve7sLineup.query.filter_by(
+        league_id=league_id, team_id=team_id,
+        afl_round=afl_round, year=year,
+    ).all()
+
+    if not lineup:
+        return []
+
+    # Which AFL teams have games started (live or complete)?
+    started_games = AflGame.query.filter(
+        AflGame.year == year,
+        AflGame.afl_round == afl_round,
+        AflGame.status.in_(["live", "complete"]),
+    ).all()
+    started_teams = set()
+    live_teams = set()
+    for g in started_games:
+        started_teams.add(g.home_team)
+        started_teams.add(g.away_team)
+        if g.status == "live":
+            live_teams.add(g.home_team)
+            live_teams.add(g.away_team)
+
+    # Pre-fetch stats for all lineup players
+    player_ids = [e.player_id for e in lineup]
+    stats_rows = PlayerStat.query.filter(
+        PlayerStat.player_id.in_(player_ids),
+        PlayerStat.year == year,
+        PlayerStat.round == afl_round,
+    ).all() if player_ids else []
+    stats_map = {s.player_id: s for s in stats_rows}
+
+    players = []
+    for entry in lineup:
+        p = entry.player
+        if not p:
+            continue
+
+        afl_team = p.afl_team or ""
+        game_started = afl_team in started_teams
+        is_live = afl_team in live_teams
+        has_stat = entry.player_id in stats_map
+
+        score = _get_player_score(
+            p.id, afl_round, year, league_id,
+            league.scoring_type, league.hybrid_base,
+        )
+
+        players.append({
+            "player_id": p.id,
+            "name": p.name,
+            "afl_team": afl_team,
+            "position": p.position or "",
+            "score": score if score is not None else 0,
+            "is_captain": entry.is_captain,
+            "is_live": is_live and has_stat,
+            "game_started": game_started,
+            "has_played": has_stat,
+            "lineup_type": "field",
         })
 
     # Sort: captain first, then by score descending
@@ -543,7 +644,7 @@ def sevens_generate_fixture(league_id):
 @reserve7s_bp.route("/<int:league_id>/reserve7s/api/live/<int:afl_round>")
 @login_required
 def api_7s_live(league_id, afl_round):
-    """Live score polling for 7s gameday."""
+    """Live score polling for 7s gameday — returns per-player breakdowns."""
     league, user_team = check_league_access(league_id)
     if not league:
         return jsonify({"error": "Not a league member"}), 403
@@ -551,6 +652,7 @@ def api_7s_live(league_id, afl_round):
     year = league.season_year
     fixtures = get_7s_round_fixtures(league_id, year, afl_round)
     game_statuses = get_game_statuses(afl_round, year)
+    locked_ids = list(get_locked_player_ids(afl_round, year))
 
     fixture_list = []
     for f in fixtures:
@@ -561,6 +663,13 @@ def api_7s_live(league_id, afl_round):
             team_id=f.away_team_id, afl_round=afl_round, year=year,
         ).first()
 
+        home_players = _get_7s_player_breakdown(
+            league_id, f.home_team_id, afl_round, year, league,
+        )
+        away_players = _get_7s_player_breakdown(
+            league_id, f.away_team_id, afl_round, year, league,
+        )
+
         fixture_list.append({
             "fixture_id": f.id,
             "home_team": f.home_team.name,
@@ -569,9 +678,12 @@ def api_7s_live(league_id, afl_round):
             "away_score": away_rs.total_score if away_rs else 0,
             "home_captain_bonus": home_rs.captain_bonus if home_rs else 0,
             "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
+            "home_players": home_players,
+            "away_players": away_players,
         })
 
     return jsonify({
         "fixtures": fixture_list,
         "game_statuses": game_statuses,
+        "locked_player_ids": locked_ids,
     })
