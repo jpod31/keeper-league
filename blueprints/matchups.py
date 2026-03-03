@@ -463,6 +463,28 @@ def gameday(league_id):
     my_players = get_player_score_breakdown(my_team.id, afl_round, year, league_id, include_reserves=True)
     opp_players = get_player_score_breakdown(opp_team.id, afl_round, year, league_id, include_reserves=True)
 
+    # Sort players within each lineup type by AFL game kickoff time
+    # (earliest game first = "next cab off the rank")
+    _team_start = {}
+    for g in afl_games_for_round:
+        ts = g.scheduled_start
+        for t in (g.home_team, g.away_team):
+            if t not in _team_start or (ts and (not _team_start[t] or ts < _team_start[t])):
+                _team_start[t] = ts
+
+    _type_order = {"field": 0, "flex": 1, "emergency": 2, "reserve": 3}
+    _far_future = datetime(2099, 1, 1)
+
+    def _player_sort_key(p):
+        return (
+            _type_order.get(p.get("lineup_type", "field"), 9),
+            _team_start.get(p.get("afl_team", ""), _far_future) or _far_future,
+            p.get("name", ""),
+        )
+
+    my_players.sort(key=_player_sort_key)
+    opp_players.sort(key=_player_sort_key)
+
     my_rs = RoundScore.query.filter_by(
         team_id=my_team.id, afl_round=afl_round, year=year
     ).first()
