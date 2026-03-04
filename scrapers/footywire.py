@@ -288,6 +288,16 @@ def build_master_player_list(
     else:
         sc_df = scrape_sc_scores(sc_year)
 
+    # If current-year SC file is empty (season hasn't started), fall back to previous year
+    if sc_df.empty or "sc_score" not in sc_df.columns or sc_df["sc_score"].dropna().empty:
+        sc_year = sc_year - 1
+        sc_prev_year = sc_year - 1
+        sc_path = os.path.join(DATA_DIR, f"sc_scores_{sc_year}.csv")
+        if os.path.exists(sc_path):
+            sc_df = pd.read_csv(sc_path)
+        else:
+            sc_df = pd.DataFrame()
+
     # Load previous-year SC scores for trajectory (don't scrape automatically)
     sc_prev_path = os.path.join(DATA_DIR, f"sc_scores_{sc_prev_year}.csv")
     if os.path.exists(sc_prev_path):
