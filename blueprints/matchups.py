@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
-from models.database import db, League, FantasyTeam, SeasonConfig, DelistPeriod, AflGame, LiveScoringConfig
+from models.database import db, League, FantasyTeam, SeasonConfig, DelistPeriod, AflGame, LiveScoringConfig, AflTeamSelection
 from models.fixture_manager import (
     generate_round_robin, get_fixture, get_round_fixtures, get_matchup,
     generate_finals, get_finals,
@@ -939,3 +939,135 @@ def delist_view(league_id):
                            teams=teams,
                            is_commissioner=is_commissioner,
                            user_team=user_team)
+
+
+@matchups_bp.route("/<int:league_id>/team-lineups")
+@login_required
+def team_lineups(league_id):
+    """AFL team lineups page — shows official team selections with roster indicators."""
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    year = league.season_year
+
+    # Get all rounds that have lineup data
+    round_rows = (
+        db.session.query(AflTeamSelection.afl_round)
+        .filter_by(year=year)
+        .distinct()
+        .order_by(AflTeamSelection.afl_round)
+        .all()
+    )
+    round_list = [r[0] for r in round_rows]
+
+    if not round_list:
+        return render_template("matchups/team_lineups.html",
+                               league=league,
+                               round_list=[],
+                               selected_round=None,
+                               matches=[],
+                               rostered_set=set(),
+                               injury_map={})
+
+    # Selected round (query param or latest available)
+    selected_round = request.args.get("round", type=int)
+    if selected_round is None or selected_round not in round_list:
+        selected_round = round_list[-1]
+
+    # Get all selections for the round
+    selections = (
+        AflTeamSelection.query
+        .filter_by(year=year, afl_round=selected_round)
+        .all()
+    )
+
+    # Get AFL games for this round (for venue/time info)
+    afl_games = AflGame.query.filter_by(year=year, afl_round=selected_round).all()
+    game_map = {}  # (home_team, away_team) -> AflGame
+    team_to_game = {}  # team_name -> AflGame
+    for g in afl_games:
+        game_map[(g.home_team, g.away_team)] = g
+        team_to_game[g.home_team] = g
+        team_to_game[g.away_team] = g
+
+    # Build rostered set: player IDs on the current user's fantasy roster
+    rostered_set = set()
+    if user_team:
+        roster_rows = FantasyRoster.query.filter_by(
+            team_id=user_team.id, is_active=True
+        ).all()
+        rostered_set = {r.player_id for r in roster_rows if r.player_id}
+
+    # Build injury map: player_id -> severity
+    from models.database import AflPlayer
+    injured = AflPlayer.query.filter(AflPlayer.injury_severity.isnot(None)).all()
+    injury_map = {p.id: p.injury_severity for p in injured}
+
+    # Group selections by team
+    from collections import defaultdict
+    team_selections = defaultdict(list)
+    for sel in selections:
+        team_selections[sel.afl_team].append(sel)
+
+    # Build match list from AflGame schedule
+    from scrapers.team_lineups import group_selections_by_line
+    matches = []
+    seen_teams = set()
+
+    for g in sorted(afl_games, key=lambda g: g.scheduled_start or datetime(2099, 1, 1)):
+        home_sels = team_selections.get(g.home_team, [])
+        away_sels = team_selections.get(g.away_team, [])
+        seen_teams.add(g.home_team)
+        seen_teams.add(g.away_team)
+
+        matches.append({
+            "game": g,
+            "home_team": g.home_team,
+            "away_team": g.away_team,
+            "venue": g.venue,
+            "start_time": g.scheduled_start,
+            "home_lines": group_selections_by_line(home_sels),
+            "away_lines": group_selections_by_line(away_sels),
+        })
+
+    # Handle teams with selections but no AflGame entry (fallback)
+    remaining_teams = set(team_selections.keys()) - seen_teams
+    if remaining_teams:
+        # Group remaining by match_id
+        match_groups = defaultdict(list)
+        for team in remaining_teams:
+            for sel in team_selections[team]:
+                key = sel.match_id or team
+                match_groups[key].append(sel)
+
+        for key, sels in match_groups.items():
+            teams_in_match = list({s.afl_team for s in sels})
+            if len(teams_in_match) >= 2:
+                home = teams_in_match[0]
+                away = teams_in_match[1]
+            else:
+                home = teams_in_match[0]
+                away = ""
+
+            home_sels = [s for s in sels if s.afl_team == home]
+            away_sels = [s for s in sels if s.afl_team == away]
+
+            matches.append({
+                "game": None,
+                "home_team": home,
+                "away_team": away,
+                "venue": None,
+                "start_time": None,
+                "home_lines": group_selections_by_line(home_sels),
+                "away_lines": group_selections_by_line(away_sels),
+            })
+
+    return render_template("matchups/team_lineups.html",
+                           league=league,
+                           round_list=round_list,
+                           selected_round=selected_round,
+                           matches=matches,
+                           rostered_set=rostered_set,
+                           injury_map=injury_map)

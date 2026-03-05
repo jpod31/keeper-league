@@ -120,8 +120,19 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Team lineups sync: Wednesday + Thursday 10:00 UTC (after AFL team announcements)
+    scheduler.add_job(
+        _sync_team_lineups,
+        "cron",
+        day_of_week="wed,thu",
+        hour=10,
+        minute=0,
+        id="lineup_sync",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
-    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 07:30 UTC)")
+    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 07:30 UTC, lineup sync: Wed+Thu 10:00 UTC)")
 
 
 def schedule_round_finalization(year: int, afl_round: int):
@@ -530,3 +541,26 @@ def _recompute_kvi():
             logger.info("KVI recompute: %d players updated", count)
         except Exception:
             logger.exception("Error in KVI recompute")
+
+
+def _sync_team_lineups():
+    """Wed/Thu job: sync AFL team lineups for the upcoming round."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from scrapers.team_lineups import sync_lineups_to_db
+            from scrapers.squiggle import get_current_round
+            import config
+
+            year = config.CURRENT_YEAR
+            current_round = get_current_round(year)
+            if current_round is None:
+                logger.info("Lineup sync: could not determine current round")
+                return
+
+            count = sync_lineups_to_db(year, current_round)
+            logger.info("Lineup sync: %d selections for %d R%d", count, year, current_round)
+        except Exception:
+            logger.exception("Error in team lineup sync")

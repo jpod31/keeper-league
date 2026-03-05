@@ -12,4 +12,8 @@
      href="{{ url_for('leagues.advanced_stats', league_id=league.id) }}">
     <i class="bi bi-graph-up"></i>Stats
   </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'lineups' %} active{% endif %}"
+     href="{{ url_for('matchups.team_lineups', league_id=league.id) }}">
+    <i class="bi bi-person-check"></i>Lineups
+  </a>
 </div>

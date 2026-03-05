@@ -655,6 +655,29 @@ class AflByeRound(db.Model):
     )
 
 
+class AflTeamSelection(db.Model):
+    __tablename__ = "afl_team_selection"
+
+    id = db.Column(db.Integer, primary_key=True)
+    year = db.Column(db.Integer, nullable=False)
+    afl_round = db.Column(db.Integer, nullable=False)
+    match_id = db.Column(db.String(30))
+    afl_team = db.Column(db.String(60), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=True)
+    player_name = db.Column(db.String(120), nullable=False)
+    jumper_number = db.Column(db.Integer)
+    position = db.Column(db.String(10))
+    is_captain = db.Column(db.Boolean, default=False)
+    team_type = db.Column(db.String(10))
+
+    player = db.relationship("AflPlayer", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("year", "afl_round", "afl_team", "player_name",
+                            name="uq_selection_round_team_player"),
+    )
+
+
 class SeasonConfig(db.Model):
     __tablename__ = "season_config"
 

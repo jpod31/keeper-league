@@ -1,0 +1,249 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'players' %}
+{% set active_subtab = 'lineups' %}
+{% block title %}Team Lineups — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "leagues/_players_subnav.html" %}
+<style>
+  /* ── Round pill bar ── */
+  .lu-rnd-bar {
+    display:flex; align-items:stretch; background:#0d1117; border:1px solid #21262d;
+    border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; margin-bottom:20px;
+  }
+  .lu-rnd-bar::-webkit-scrollbar { display:none; }
+  .lu-rnd-pill {
+    display:flex; align-items:center; justify-content:center;
+    flex:1 1 0; min-width:44px; padding:10px 2px; text-decoration:none;
+    border-right:1px solid #161b22; transition:background .12s; cursor:pointer;
+    font-size:.78rem; font-weight:600; color:#484f58; line-height:1;
+  }
+  .lu-rnd-pill:last-child { border-right:none; }
+  .lu-rnd-pill:hover { background:#161b22; color:#8b949e; }
+  .lu-rnd-pill.active {
+    background:#161b22; color:#e6edf3; position:relative;
+  }
+  .lu-rnd-pill.active::after {
+    content:''; position:absolute; bottom:0; left:20%; right:20%;
+    height:2px; background:#58a6ff; border-radius:1px 1px 0 0;
+    box-shadow:0 0 6px rgba(88,166,255,.5);
+  }
+
+  /* ── Match card ── */
+  .lu-match {
+    background:#0d1117; border:1px solid #21262d; border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .lu-match-hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; border-bottom:1px solid #161b22;
+    background:#0a0e14;
+  }
+  .lu-match-team {
+    display:flex; align-items:center; gap:8px;
+    font-size:.9rem; font-weight:600; color:#e6edf3;
+  }
+  .lu-match-vs {
+    font-size:.65rem; font-weight:700; color:#30363d; letter-spacing:1.5px;
+    text-transform:uppercase;
+  }
+  .lu-match-meta {
+    font-size:.65rem; color:#484f58; text-align:center;
+  }
+
+  /* ── Two-column team layout ── */
+  .lu-teams {
+    display:grid; grid-template-columns:1fr 1fr; min-height:0;
+  }
+  .lu-team-col {
+    padding:12px 16px;
+  }
+  .lu-team-col + .lu-team-col {
+    border-left:1px solid #161b22;
+  }
+  .lu-team-label {
+    font-size:.6rem; font-weight:700; color:#484f58; text-transform:uppercase;
+    letter-spacing:1px; margin-bottom:10px;
+  }
+
+  /* ── Line group ── */
+  .lu-line-hdr {
+    font-size:.6rem; font-weight:700; color:#30363d; text-transform:uppercase;
+    letter-spacing:.8px; margin:10px 0 4px; padding-top:6px;
+    border-top:1px solid #161b2280;
+  }
+  .lu-line-hdr:first-child { border-top:none; margin-top:0; padding-top:0; }
+
+  /* ── Player row ── */
+  .lu-player {
+    display:flex; align-items:center; gap:6px;
+    padding:3px 0; font-size:.78rem; color:#c9d1d9;
+  }
+  .lu-player a {
+    color:#c9d1d9; text-decoration:none; transition:color .1s;
+  }
+  .lu-player a:hover { color:#58a6ff; }
+  .lu-jumper {
+    font-size:.65rem; color:#484f58; min-width:18px; text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .lu-captain {
+    font-size:.55rem; font-weight:700; color:#d29922;
+    background:rgba(210,153,34,.12); padding:1px 4px; border-radius:3px;
+    margin-left:2px;
+  }
+
+  /* ── Indicator icons ── */
+  .lu-ind { font-size:.7rem; min-width:14px; text-align:center; }
+  .lu-ind-roster { color:#3fb950; }
+  .lu-ind-none { color:#f85149; opacity:.5; }
+
+  /* Inline injury dot (smaller than field-view version) */
+  .lu-inj {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:14px; height:14px; border-radius:50%; position:relative;
+    border:1.5px solid #161b22; min-width:14px;
+  }
+  .lu-inj-test { background:linear-gradient(135deg,#ff6b9d,#e84393); }
+  .lu-inj-suspension { background:linear-gradient(135deg,#f0c040,#d29922); }
+  .lu-inj-short, .lu-inj-long { background:#fff; border-color:#da3633; overflow:hidden; }
+  .lu-inj-long { border-color:#b62324; }
+  .lu-inj-slash {
+    position:absolute; width:1.5px; height:55%; background:#da3633;
+    border-radius:1px; transform:rotate(45deg);
+  }
+  .lu-inj-long .lu-inj-slash { background:#b62324; }
+
+  /* ── Empty state ── */
+  .lu-empty {
+    text-align:center; padding:60px 20px; color:#484f58;
+  }
+  .lu-empty i { font-size:2rem; margin-bottom:12px; display:block; color:#30363d; }
+  .lu-empty h4 { color:#8b949e; font-size:1rem; font-weight:600; margin-bottom:4px; }
+  .lu-empty p { font-size:.8rem; }
+
+  /* ── Mobile ── */
+  @media (max-width:640px) {
+    .lu-teams { grid-template-columns:1fr; }
+    .lu-team-col + .lu-team-col { border-left:none; border-top:1px solid #161b22; }
+    .lu-match-hdr { flex-direction:column; gap:4px; text-align:center; }
+  }
+</style>
+
+{# ── Macro: render a single player row ── #}
+{% macro _render_player(sel) %}
+<div class="lu-player">
+  {# Indicator: green tick (rostered) > injury > red circle #}
+  {% if sel.player_id and sel.player_id in rostered_set %}
+    <i class="bi bi-check-circle-fill lu-ind lu-ind-roster"></i>
+  {% elif sel.player_id and sel.player_id in injury_map %}
+    {% set sev = injury_map[sel.player_id] %}
+    <span class="lu-inj lu-inj-{{ sev }}">
+      {% if sev in ('short', 'long') %}<span class="lu-inj-slash"></span>{% endif %}
+    </span>
+  {% else %}
+    <i class="bi bi-circle lu-ind lu-ind-none"></i>
+  {% endif %}
+
+  {# Jumper number #}
+  {% if sel.jumper_number %}
+    <span class="lu-jumper">{{ sel.jumper_number }}</span>
+  {% endif %}
+
+  {# Player name (linked if matched) #}
+  {% if sel.player_id and sel.player %}
+    <a href="{{ url_for('player_detail', name=sel.player.name) }}">{{ sel.player_name }}</a>
+  {% else %}
+    <span>{{ sel.player_name }}</span>
+  {% endif %}
+
+  {# Captain badge #}
+  {% if sel.is_captain %}
+    <span class="lu-captain">C</span>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% if not round_list %}
+<div class="lu-empty">
+  <i class="bi bi-person-check"></i>
+  <h4>No lineup data yet</h4>
+  <p>Team lineups will appear here once they're announced for the current round.</p>
+</div>
+{% else %}
+
+{# ── Round selector ── #}
+<div class="lu-rnd-bar">
+  {% for rnd in round_list %}
+    <a class="lu-rnd-pill{% if rnd == selected_round %} active{% endif %}"
+       href="{{ url_for('matchups.team_lineups', league_id=league.id, round=rnd) }}">
+      {{ rnd }}
+    </a>
+  {% endfor %}
+</div>
+
+<h3 style="font-size:1rem;font-weight:700;color:#e6edf3;margin-bottom:16px;">
+  Round {{ selected_round }} Team Lineups
+</h3>
+
+{% if not matches %}
+<div class="lu-empty">
+  <i class="bi bi-person-check"></i>
+  <h4>No lineups for Round {{ selected_round }}</h4>
+</div>
+{% endif %}
+
+{% for match in matches %}
+<div class="lu-match">
+  {# ── Match header ── #}
+  <div class="lu-match-hdr">
+    <div class="lu-match-team">{{ match.home_team }}</div>
+    <div style="text-align:center;">
+      <div class="lu-match-vs">VS</div>
+      {% if match.venue or match.start_time %}
+        <div class="lu-match-meta">
+          {% if match.venue %}{{ match.venue }}{% endif %}
+          {% if match.start_time %}
+            &middot; {{ match.start_time.strftime('%a %d %b %I:%M%p').lstrip('0').lower() }}
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+    <div class="lu-match-team" style="justify-content:flex-end;">{{ match.away_team }}</div>
+  </div>
+
+  {# ── Two-column team lineups ── #}
+  <div class="lu-teams">
+    {# Home team #}
+    <div class="lu-team-col">
+      <div class="lu-team-label">{{ match.home_team }}</div>
+      {% for line_name, players in match.home_lines.items() %}
+        <div class="lu-line-hdr">{{ line_name }}</div>
+        {% for sel in players %}
+          {{ _render_player(sel) }}
+        {% endfor %}
+      {% endfor %}
+      {% if not match.home_lines %}
+        <div style="font-size:.75rem;color:#484f58;padding:8px 0;">No selections</div>
+      {% endif %}
+    </div>
+
+    {# Away team #}
+    <div class="lu-team-col">
+      <div class="lu-team-label">{{ match.away_team }}</div>
+      {% for line_name, players in match.away_lines.items() %}
+        <div class="lu-line-hdr">{{ line_name }}</div>
+        {% for sel in players %}
+          {{ _render_player(sel) }}
+        {% endfor %}
+      {% endfor %}
+      {% if not match.away_lines %}
+        <div style="font-size:.75rem;color:#484f58;padding:8px 0;">No selections</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endif %}
+{% endblock %}
