@@ -274,12 +274,69 @@ def scrape_match_stats(match_id: int) -> list[dict]:
     return results
 
 
+def scrape_preseason_sc_scores() -> list[dict]:
+    """Scrape SuperCoach scores from the pre-season / Community Series page.
+
+    URL: https://www.footywire.com/afl/footy/pre_season_supercoach
+
+    Returns list of dicts: {name, team, sc_score}
+    The page aggregates all pre-season games (Total column).
+    """
+    url = f"{FOOTYWIRE_BASE}/pre_season_supercoach"
+    logger.info("Scraping pre-season SC scores")
+
+    try:
+        soup = _get_cached(url)
+    except requests.RequestException as e:
+        logger.error("Failed to fetch pre-season SC page: %s", e)
+        return []
+
+    results = []
+    for tr in soup.find_all("tr"):
+        cells = tr.find_all("td", recursive=False)
+        if len(cells) < 7:
+            continue
+        # Cell layout: [rank, player_link, team, games, price, total, avg, value]
+        link = tr.find("a", href=lambda h: h and h.startswith("pp-"))
+        if not link:
+            # Try alternate link pattern
+            link = tr.find("a", href=lambda h: h and ("pp-" in str(h) or "pu-" in str(h)))
+        if not link:
+            continue
+
+        name = link.get_text(strip=True)
+        # Strip position markers like "(MID)" from end of name
+        import re
+        name = re.sub(r'\s*\([A-Z, ]+\)\s*$', '', name).strip()
+
+        team_raw = cells[2].get_text(strip=True)
+        total_text = cells[5].get_text(strip=True).replace(",", "")
+
+        if not name or not total_text.lstrip("-").isdigit():
+            continue
+
+        sc_score = int(total_text)
+        if sc_score == 0:
+            continue
+
+        results.append({
+            "name": name,
+            "team": normalise_team(team_raw),
+            "sc_score": sc_score,
+        })
+
+    logger.info("Scraped %d pre-season SC scores", len(results))
+    return results
+
+
 def scrape_live_round(year: int, afl_round: int) -> list[dict]:
     """Scrape SC scores for all players in a round.
 
     This is the main entry point used by the live sync module.
     Returns list of {name, team, sc_score} dicts.
     """
+    if afl_round == 0:
+        return scrape_preseason_sc_scores()
     return scrape_live_sc_scores(year, afl_round)
 
 
