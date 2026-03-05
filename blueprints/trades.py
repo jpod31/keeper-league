@@ -180,6 +180,26 @@ def trade_respond(league_id, trade_id):
                     link=url_for("trades.trade_detail", league_id=league_id, trade_id=trade_id),
                     trade_id=trade_id,
                 )
+                # Notify all other league members about the completed trade
+                from models.database import TradeAsset
+                assets = TradeAsset.query.filter_by(trade_id=trade_id).all()
+                outgoing = [a.player.name for a in assets if a.player and a.from_team_id == trade.proposer_team_id]
+                incoming = [a.player.name for a in assets if a.player and a.from_team_id == trade.recipient_team_id]
+                trade_summary = f"{trade.proposer_team.name} traded {', '.join(outgoing or ['picks'])} for {', '.join(incoming or ['picks'])}"
+                other_teams = FantasyTeam.query.filter(
+                    FantasyTeam.league_id == league_id,
+                    FantasyTeam.id != trade.proposer_team_id,
+                    FantasyTeam.id != trade.recipient_team_id,
+                ).all()
+                for t in other_teams:
+                    create_notification(
+                        user_id=t.owner_id,
+                        league_id=league_id,
+                        notif_type="list_change",
+                        title="Trade completed",
+                        body=trade_summary,
+                        link=url_for("leagues.list_changes_page", league_id=league_id),
+                    )
             flash("Trade accepted! Rosters have been updated.", "success")
     elif action == "reject":
         _, error = respond_to_trade(trade_id, accept=False)

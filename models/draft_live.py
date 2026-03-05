@@ -247,6 +247,7 @@ def make_pick(session_id, player_id, is_auto=False):
             .filter(DraftPick.is_pass == False)
             .count()
         )
+        is_supplemental = session.draft_round_type == "supplemental"
         if remaining == 0:
             session.status = "completed"
             session.completed_at = datetime.now(timezone.utc)
@@ -256,6 +257,38 @@ def make_pick(session_id, player_id, is_auto=False):
                     league.status = "active"
 
         db.session.commit()
+
+        # Notifications (after commit so data is persisted)
+        if not session.is_mock:
+            from models.notification_manager import create_notification
+            player = db.session.get(AflPlayer, player_id)
+            player_name = player.name if player else "Unknown"
+            team = db.session.get(FantasyTeam, current_pick.team_id)
+            team_name = team.name if team else "Unknown"
+
+            # Supplemental pick notification
+            if is_supplemental:
+                all_teams = FantasyTeam.query.filter_by(league_id=session.league_id).all()
+                for t in all_teams:
+                    create_notification(
+                        user_id=t.owner_id,
+                        league_id=session.league_id,
+                        notif_type="list_change",
+                        title=f"{team_name} selected {player_name} (Supplemental Draft)",
+                    )
+
+            # Draft completed notification
+            if remaining == 0:
+                draft_label = "Supplemental draft" if is_supplemental else "Draft"
+                all_teams = FantasyTeam.query.filter_by(league_id=session.league_id).all()
+                for t in all_teams:
+                    create_notification(
+                        user_id=t.owner_id,
+                        league_id=session.league_id,
+                        notif_type="list_change",
+                        title=f"{draft_label} completed",
+                        body=session.completed_at.strftime("%d %b %Y %H:%M"),
+                    )
 
         return current_pick, None
 
@@ -345,6 +378,20 @@ def pass_pick(session_id):
                     league.status = "active"
 
         db.session.commit()
+
+        # Draft completed notification (via pass)
+        if remaining == 0 and not session.is_mock:
+            from models.notification_manager import create_notification
+            draft_label = "Supplemental draft" if session.draft_round_type == "supplemental" else "Draft"
+            all_teams = FantasyTeam.query.filter_by(league_id=session.league_id).all()
+            for t in all_teams:
+                create_notification(
+                    user_id=t.owner_id,
+                    league_id=session.league_id,
+                    notif_type="list_change",
+                    title=f"{draft_label} completed",
+                    body=session.completed_at.strftime("%d %b %Y %H:%M"),
+                )
 
         return current_pick, None
 
