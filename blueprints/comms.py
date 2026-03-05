@@ -310,8 +310,24 @@ def activity_feed(league_id):
         flash("You don't have access to this league.", "warning")
         return redirect(url_for("leagues.league_list"))
 
-    from models.activity_feed import get_recent_activity
-    entries = get_recent_activity(league_id, limit=50)
+    from models.database import Notification
+    # Show all notifications for this league (deduplicated by title+created_at)
+    all_notifs = (
+        Notification.query
+        .filter_by(league_id=league_id)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+    # Deduplicate: same title + same second = one entry
+    seen = set()
+    entries = []
+    for n in all_notifs:
+        key = (n.title, n.created_at.strftime("%Y-%m-%d %H:%M:%S") if n.created_at else "")
+        if key not in seen:
+            seen.add(key)
+            entries.append(n)
+        if len(entries) >= 100:
+            break
 
     return render_template("comms/activity_feed.html",
                            league=league, user_team=user_team,

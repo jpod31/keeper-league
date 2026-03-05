@@ -12,25 +12,23 @@
 </div>
 
 {% set type_icons = {
+  'trade_received': 'bi-arrow-left-right',
   'trade_accepted': 'bi-check-circle',
   'trade_rejected': 'bi-x-circle',
   'trade_vetoed': 'bi-shield-exclamation',
-  'trade_proposed': 'bi-arrow-left-right',
-  'draft_pick': 'bi-person-plus',
-  'round_finalized': 'bi-trophy',
   'player_delisted': 'bi-person-dash',
-  'season_transition': 'bi-calendar-event',
+  'message_received': 'bi-chat-dots',
+  'list_change': 'bi-clock-history',
 } %}
 
 {% set type_colors = {
+  'trade_received': 'var(--kl-accent-yellow)',
   'trade_accepted': 'var(--kl-accent-green)',
   'trade_rejected': 'var(--kl-accent-red)',
   'trade_vetoed': 'var(--kl-text-secondary)',
-  'trade_proposed': 'var(--kl-accent-yellow)',
-  'draft_pick': 'var(--kl-accent-blue)',
-  'round_finalized': 'var(--kl-accent-green)',
   'player_delisted': 'var(--kl-accent-red)',
-  'season_transition': 'var(--kl-accent-purple)',
+  'message_received': 'var(--kl-accent-blue)',
+  'list_change': 'var(--kl-accent-blue)',
 } %}
 
 <div class="card">
@@ -48,7 +46,6 @@
         {% endif %}
         <div style="font-size:.65rem;color:var(--kl-text-muted);margin-top:3px;">
           {{ entry.created_at.strftime('%d %b %Y, %H:%M') }}
-          {% if entry.actor %} &middot; {{ entry.actor.display_name or entry.actor.username }}{% endif %}
         </div>
       </div>
     </a>
@@ -57,7 +54,7 @@
     <div class="empty-state">
       <div class="empty-icon"><i class="bi bi-activity" style="font-size:1.5rem;"></i></div>
       <h4>No activity yet</h4>
-      <p>League activity (trades, draft picks, scored rounds) will appear here.</p>
+      <p>League activity (trades, SSP signings, delists) will appear here.</p>
     </div>
     {% endif %}
   </div>
