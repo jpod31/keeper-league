@@ -952,29 +952,41 @@ def team_lineups(league_id):
 
     year = league.season_year
 
-    # Get all rounds that have lineup data
+    # Build round list from Fixture schedule (all rounds, like the fixture tab)
     round_rows = (
-        db.session.query(AflTeamSelection.afl_round)
-        .filter_by(year=year)
+        db.session.query(Fixture.afl_round)
+        .filter_by(league_id=league_id, year=year, is_final=False)
         .distinct()
-        .order_by(AflTeamSelection.afl_round)
+        .order_by(Fixture.afl_round)
         .all()
     )
     round_list = [r[0] for r in round_rows]
+
+    # Track which rounds have lineup data
+    lineup_rounds = set(
+        r[0] for r in db.session.query(AflTeamSelection.afl_round)
+        .filter_by(year=year).distinct().all()
+    )
 
     if not round_list:
         return render_template("matchups/team_lineups.html",
                                league=league,
                                round_list=[],
+                               lineup_rounds=set(),
                                selected_round=None,
                                matches=[],
                                rostered_set=set(),
                                injury_map={})
 
-    # Selected round (query param or latest available)
+    # Selected round: query param, or latest round with lineup data, or current gameday round
     selected_round = request.args.get("round", type=int)
     if selected_round is None or selected_round not in round_list:
-        selected_round = round_list[-1]
+        # Default to latest round with lineup data
+        rounds_with_data = [r for r in round_list if r in lineup_rounds]
+        if rounds_with_data:
+            selected_round = rounds_with_data[-1]
+        else:
+            selected_round = _detect_gameday_round(league_id, year) or round_list[0]
 
     # Get all selections for the round
     selections = (
@@ -1067,6 +1079,7 @@ def team_lineups(league_id):
     return render_template("matchups/team_lineups.html",
                            league=league,
                            round_list=round_list,
+                           lineup_rounds=lineup_rounds,
                            selected_round=selected_round,
                            matches=matches,
                            rostered_set=rostered_set,
