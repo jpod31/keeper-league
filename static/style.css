@@ -1660,34 +1660,46 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   }
   .fv-sidebar .fv-flex-section { flex: 1; min-width: 200px; }
   .fv-sidebar .fv-flex-stack { flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .fv-sidebar .fv-card-flex { width: auto; min-width: 0; }
-  .fv-field { padding: 1.5rem 1rem; min-height: 550px; border-radius: 46% / 4%; }
-  .fv-card { width: auto; min-width: 0; }
-  .fv-card-flex { width: auto; min-width: 0; }
-  .fv-reserves-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
-  .fv-logo { width: 18px; height: 18px; }
-  .fv-card-flex .fv-logo, .fv-card-reserve .fv-logo { width: 16px; height: 16px; }
-  .fv-surname { font-size: .55rem; }
-  .fv-name-long { font-size: .45rem; }
+  .fv-sidebar .fv-card-flex { width: 90px; }
+
+  /* Scrollable wide field — cards stay readable */
+  .fv-outer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .fv-field {
+    padding: 1.5rem 1.25rem;
+    min-height: 600px;
+    min-width: 520px;
+    border-radius: 46% / 4%;
+  }
+  .fv-card { width: 90px; }
+  .fv-card-flex { width: 90px; }
+  .fv-reserves-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+
+  /* Card content sizing */
+  .fv-logo { width: 22px; height: 22px; }
+  .fv-card-flex .fv-logo, .fv-card-reserve .fv-logo { width: 20px; height: 20px; }
+  .fv-surname { font-size: .6rem; }
+  .fv-name-long { font-size: .5rem; }
   .fv-firstname { display: none; }
   .fv-initial { display: inline; }
   .fv-stat-num { font-size: .55rem; }
-  .fv-zone-grid { gap: 5px; }
   .fv-pos-pip { font-size: .45rem; }
+  .fv-zone-grid { gap: 6px; }
+  .fv-card-top { padding: 4px 6px 0; }
 
-  /* Responsive 1fr grids — cards auto-size to fill width */
-  .fv-grid-5 { grid-template-columns: repeat(5, 1fr); }
-  .fv-grid-4 { grid-template-columns: repeat(4, 1fr); }
-  .fv-grid-3 { grid-template-columns: repeat(3, 1fr); max-width: 240px; margin: 0 auto; }
-  .fv-grid-2 { grid-template-columns: repeat(2, 1fr); max-width: 160px; margin: 0 auto; }
-  .fv-grid-1 { grid-template-columns: 1fr; max-width: 80px; margin: 0 auto; }
-  .fv-card-top { padding: 4px 5px 0; }
+  /* Grid columns — 90px fixed for readable cards */
+  .fv-grid-5 { grid-template-columns: repeat(5, 90px); }
+  .fv-grid-4 { grid-template-columns: repeat(4, 90px); }
+  .fv-grid-3 { grid-template-columns: repeat(3, 90px); }
+  .fv-grid-2 { grid-template-columns: repeat(2, 90px); }
+  .fv-grid-1 { grid-template-columns: 90px; }
 
-  /* Shrink ribbon badges from 26px → 16px */
-  .fv-ribbon { top: -3px; right: -3px; }
-  .fv-ribbon span { width: 16px; height: 16px; font-size: .45rem; }
-  .fv-selected, .fv-injury, .fv-bye-badge { width: 16px; height: 16px; font-size: .5rem; top: -3px; left: -3px; }
-  .fv-bye-shifted { left: 12px; }
+  /* ALL badges consistent 20px on mobile */
+  .fv-ribbon { top: -5px; right: -5px; }
+  .fv-ribbon span { width: 20px; height: 20px; font-size: .45rem; border-width: 1.5px; }
+  .fv-selected { width: 20px; height: 20px; font-size: .55rem; top: -5px; left: -5px; border-width: 1.5px; }
+  .fv-injury { width: 20px; height: 20px; top: -5px; left: -5px; border-width: 1.5px; }
+  .fv-bye-badge { width: 20px; height: 20px; font-size: .4rem; top: -5px; left: -5px; border-width: 1.5px; }
+  .fv-bye-shifted { left: 14px; }
 }
 
 /* ═══ Toast Notifications (field view) ═══ */
@@ -2516,26 +2528,10 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .container { padding-left: 0.75rem; padding-right: 0.75rem; }
   .notif-panel { width: calc(100vw - 2rem); max-width: 340px; }
 
-  /* Field view — compact cards */
-  .fv-card { width: 55px; }
-  .fv-grid-5 { grid-template-columns: repeat(5, 55px); }
-  .fv-grid-4 { grid-template-columns: repeat(4, 55px); }
-  .fv-grid-3 { grid-template-columns: repeat(3, 55px); }
-  .fv-grid-2 { grid-template-columns: repeat(2, 55px); }
-  .fv-grid-1 { grid-template-columns: 55px; }
-  .fv-firstname { display: none; }
+  /* Field view — hide stats bar on small screens, keep cards readable via 768px rules */
   .fv-stats-bar { display: none; }
   .fv-actions { display: none; }
-  .fv-surname { font-size: .5rem; }
-  .fv-field { padding: 1rem .5rem; min-height: 400px; }
-  .fv-logo { width: 16px; height: 16px; }
-  .fv-pos-pip { font-size: .4rem; padding: 1px 3px; }
-  .fv-zone-pill { font-size: .5rem; padding: 1px 6px; }
-  .fv-card-flex { width: 55px; }
-  .fv-sidebar .fv-card-flex { width: 55px; }
-  .fv-card-top { padding: 3px 4px 0; }
-  .fv-name-block { padding: 1px 4px 2px; min-height: 24px; }
-  .fv-zone-grid { gap: 4px; }
+  .fv-name-block { padding: 2px 5px 3px; min-height: 26px; }
 
   /* Stat cards 1 column on very small */
   .squad-stat-cards { grid-template-columns: 1fr; }
@@ -2543,18 +2539,6 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 
   /* Hide stat cards on mobile field view */
   .fv-stats-hide-mob { display: none !important; }
-
-  /* Hide decorative zone/section headers — cards already have pos badges */
-  .fv-zone-hdr { display: none; }
-  .fv-flex-hdr { display: none; }
-  .fv-ltil-hdr { display: none; }
-  .fv-reserves-hdr { display: none; }
-  .fv-reserves-group-hdr { display: none; }
-
-  /* Tighter field spacing */
-  .fv-zone { padding: .2rem 0; }
-  .fv-field { gap: .3rem; }
-  .fv-reserves-group { margin-bottom: .35rem; }
 
   /* Tables — horizontal scroll */
   .table-responsive-kl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -3130,14 +3114,50 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   /* ── Gameday ── */
   .gameday-round-title { font-size: 1.1rem !important; }
 
-  /* ── All tables — ensure horizontal scroll ── */
-  .table { font-size: .75rem; }
-  .table th { font-size: .6rem; padding: .4rem .5rem; }
-  .table td { padding: .4rem .5rem; }
-  /* Fallback: explicit overflow on card-body containing tables (works on all browsers) */
+  /* ── All tables — mobile-native styling ── */
+  .table {
+    font-size: .78rem;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .table th {
+    font-size: .6rem;
+    padding: .55rem .6rem;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    color: var(--kl-text-muted);
+    border-bottom: 2px solid var(--kl-border) !important;
+    background: var(--kl-bg-card);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .table td {
+    padding: .65rem .6rem;
+    border-bottom: 1px solid rgba(48,54,61,.5);
+    vertical-align: middle;
+  }
+  .table tbody tr {
+    transition: background .1s;
+  }
+  .table-hover tbody tr:active {
+    background: rgba(88,166,255,.08) !important;
+  }
+  /* Fallback: explicit overflow on card-body containing tables */
   .card-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .card-body.p-0, .p-0 { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table-responsive { -webkit-overflow-scrolling: touch; }
+
+  /* Cards containing tables — rounder, more modern */
+  .card {
+    border-radius: 12px;
+    overflow: hidden;
+    border-color: rgba(48,54,61,.6);
+  }
+  .card-header {
+    padding: .65rem .85rem;
+    border-bottom-color: rgba(48,54,61,.5);
+  }
 
   /* ── Chat — fit mobile viewport with bottom nav ── */
   .chat-wrapper { height: calc(100dvh - 300px) !important; }
@@ -3467,18 +3487,28 @@ img[src*="Carlton.png"] {
 /* ══════════════════════════════════════════════════
    SQUAD MOBILE CARDS
    ══════════════════════════════════════════════════ */
+.squad-cards-mobile {
+  background: var(--kl-bg-card);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
 .squad-mob-card {
   display: flex;
   align-items: center;
-  gap: .6rem;
-  padding: .6rem .75rem;
-  border-bottom: 1px solid var(--kl-border);
+  gap: .75rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid rgba(48,54,61,.5);
+  transition: background .1s;
 }
+.squad-mob-card:last-child { border-bottom: none; }
+.squad-mob-card:active { background: rgba(88,166,255,.06); }
 .squad-mob-logo {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.3));
 }
 .squad-mob-info {
   flex: 1;
@@ -3486,24 +3516,25 @@ img[src*="Carlton.png"] {
 }
 .squad-mob-name {
   font-weight: 700;
-  font-size: .82rem;
+  font-size: .85rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--kl-text-heading);
 }
 .squad-mob-meta {
-  font-size: .68rem;
+  font-size: .7rem;
   color: var(--kl-text-secondary);
   display: flex;
-  gap: .4rem;
+  gap: .5rem;
   align-items: center;
+  margin-top: 2px;
 }
 .squad-mob-sc {
-  font-weight: 700;
-  font-size: .9rem;
-  color: var(--kl-accent-green);
+  font-weight: 800;
+  font-size: 1rem;
   flex-shrink: 0;
-  min-width: 30px;
+  min-width: 36px;
   text-align: right;
 }
 
@@ -3513,27 +3544,28 @@ img[src*="Carlton.png"] {
 .ldr-cards-mobile {
   background: var(--kl-bg-card);
   border: 1px solid var(--kl-border);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
 }
 .ldr-mob-card {
   display: flex;
   align-items: center;
-  gap: .5rem;
-  padding: .5rem .75rem;
-  border-bottom: 1px solid var(--kl-border);
-  font-size: .82rem;
+  gap: .75rem;
+  padding: .7rem 1rem;
+  border-bottom: 1px solid rgba(48,54,61,.5);
+  transition: background .1s;
 }
 .ldr-mob-card:last-of-type { border-bottom: none; }
+.ldr-mob-card:active { background: rgba(88,166,255,.06); }
 .ldr-mob-rank {
-  font-weight: 700;
-  min-width: 28px;
-  text-align: center;
-  font-size: .78rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  font-weight: 800; font-size: .8rem; flex-shrink: 0;
 }
 .ldr-mob-name {
   flex: 1;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: .88rem;
   color: var(--kl-text-heading);
   text-decoration: none;
   white-space: nowrap;
@@ -3543,18 +3575,23 @@ img[src*="Carlton.png"] {
 .ldr-mob-name:hover { color: var(--kl-accent-blue); }
 .ldr-mob-record {
   color: var(--kl-text-secondary);
-  font-size: .75rem;
+  font-size: .72rem;
+  font-weight: 500;
+  letter-spacing: .3px;
 }
 .ldr-mob-pts {
-  font-weight: 700;
-  min-width: 40px;
+  font-weight: 800;
+  font-size: .92rem;
+  min-width: 44px;
   text-align: right;
   color: var(--kl-accent-blue);
 }
 .ldr-mob-mine {
-  background: rgba(88,166,255,.06);
+  background: rgba(88,166,255,.07);
   border-left: 3px solid var(--kl-accent-blue);
 }
 .ldr-mob-finals {
-  background: rgba(63,185,80,.03);
+  background: rgba(63,185,80,.04);
 }
+.ldr-mob-finals .ldr-mob-rank { background: rgba(46,160,67,.1); color: #2ea043; }
+.ldr-mob-card:not(.ldr-mob-finals) .ldr-mob-rank { color: #484f58; }
