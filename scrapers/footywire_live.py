@@ -334,10 +334,293 @@ def scrape_live_round(year: int, afl_round: int) -> list[dict]:
 
     This is the main entry point used by the live sync module.
     Returns list of {name, team, sc_score} dicts.
+
+    Tries Footywire first. If no data (e.g. early-season before Footywire
+    populates), falls back to footyinfo match pages.
     """
-    if afl_round == 0:
-        return scrape_preseason_sc_scores()
-    return scrape_live_sc_scores(year, afl_round)
+    results = scrape_live_sc_scores(year, afl_round)
+    if results:
+        return results
+
+    logger.info("Footywire returned no data for %d R%d, trying footyinfo fallback", year, afl_round)
+    return scrape_footyinfo_sc_scores(year, afl_round)
+
+
+# ── Footyinfo fallback scraper ──────────────────────────────────────
+
+FOOTYINFO_BASE = "https://www.footyinfo.com"
+
+# Footyinfo team_id → our canonical team name
+_FOOTYINFO_TEAM_ID_MAP = {
+    1: "Adelaide",
+    2: "Brisbane Lions",
+    3: "Carlton",
+    4: "Collingwood",
+    5: "Essendon",
+    6: "Fremantle",
+    7: "Geelong",
+    8: "Gold Coast",
+    9: "GWS",
+    10: "Hawthorn",
+    11: "Melbourne",
+    12: "North Melbourne",
+    13: "Port Adelaide",
+    14: "Sydney",
+    15: "Richmond",
+    16: "St Kilda",
+    17: "West Coast",
+    18: "Western Bulldogs",
+}
+
+
+def _extract_json_from_html(html: str, key: str) -> dict | None:
+    """Extract a JSON object containing `key` from embedded script data.
+
+    Footyinfo uses TanStack Query dehydrated state embedded in the page.
+    We look for the playerStats object within script tags.
+    """
+    import json
+
+    # Look for __NEXT_DATA__ script tag (Next.js pattern)
+    match = re.search(
+        r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>',
+        html,
+        re.DOTALL,
+    )
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # Fallback: look for dehydrated state with playerStats
+    # The TanStack Query state is often in a script tag as JSON
+    for match in re.finditer(r'<script[^>]*>(.*?)</script>', html, re.DOTALL):
+        text = match.group(1)
+        if key in text:
+            # Try to find JSON object containing the key
+            # Look for the outermost JSON object
+            start = text.find('{')
+            if start == -1:
+                continue
+            try:
+                return json.loads(text[start:])
+            except (json.JSONDecodeError, ValueError):
+                pass
+
+            # Try extracting just the playerStats portion
+            idx = text.find('"playerStats"')
+            if idx == -1:
+                idx = text.find("playerStats")
+            if idx != -1:
+                # Walk back to find enclosing {
+                brace_start = text.rfind('{', 0, idx)
+                if brace_start != -1:
+                    # Try progressively larger chunks
+                    depth = 0
+                    for i in range(brace_start, len(text)):
+                        if text[i] == '{':
+                            depth += 1
+                        elif text[i] == '}':
+                            depth -= 1
+                            if depth == 0:
+                                try:
+                                    return json.loads(text[brace_start:i + 1])
+                                except (json.JSONDecodeError, ValueError):
+                                    break
+
+    return None
+
+
+def _find_player_stats(data, depth=0) -> dict | None:
+    """Recursively search a nested dict/list for playerStats data."""
+    if depth > 15:
+        return None
+    if isinstance(data, dict):
+        if "playerStats" in data:
+            ps = data["playerStats"]
+            if isinstance(ps, dict) and ("home" in ps or "away" in ps):
+                return ps
+        for v in data.values():
+            result = _find_player_stats(v, depth + 1)
+            if result:
+                return result
+    elif isinstance(data, list):
+        for item in data:
+            result = _find_player_stats(item, depth + 1)
+            if result:
+                return result
+    return None
+
+
+def _parse_footyinfo_match(url: str) -> list[dict]:
+    """Parse a footyinfo match page and extract player SC scores.
+
+    Returns list of {name, team, sc_score} dicts.
+    """
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=30)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        logger.error("Failed to fetch footyinfo match %s: %s", url, e)
+        return []
+
+    html = resp.text
+
+    # Try to extract embedded JSON data
+    data = _extract_json_from_html(html, "playerStats")
+    if not data:
+        logger.warning("No embedded JSON found in footyinfo match page: %s", url)
+        # Fallback: try parsing HTML tables
+        return _parse_footyinfo_match_tables(html, url)
+
+    player_stats = _find_player_stats(data)
+    if not player_stats:
+        logger.warning("No playerStats found in footyinfo data: %s", url)
+        return _parse_footyinfo_match_tables(html, url)
+
+    results = []
+    for side in ("home", "away"):
+        side_data = player_stats.get(side, {})
+        rows = side_data.get("rows", [])
+        for row in rows:
+            sort_name = row.get("player_sort_name", "")
+            sc_score = row.get("supercoach")
+            team_id = row.get("team_id")
+
+            if not sort_name or sc_score is None:
+                continue
+
+            # Convert "Gulden Errol" → "Errol Gulden"
+            parts = sort_name.strip().split(None, 1)
+            if len(parts) == 2:
+                name = f"{parts[1]} {parts[0]}"
+            else:
+                name = sort_name
+
+            team = _FOOTYINFO_TEAM_ID_MAP.get(team_id, "")
+
+            try:
+                sc_val = int(sc_score)
+            except (ValueError, TypeError):
+                continue
+
+            results.append({
+                "name": name,
+                "team": team,
+                "sc_score": sc_val,
+            })
+
+    return results
+
+
+def _parse_footyinfo_match_tables(html: str, url: str) -> list[dict]:
+    """Fallback: parse footyinfo match page using HTML tables (SC column)."""
+    soup = BeautifulSoup(html, "lxml")
+    results = []
+
+    tables = soup.find_all("table")
+    for table in tables:
+        rows = table.find_all("tr")
+        if len(rows) < 2:
+            continue
+
+        # Find SC column index from headers
+        header_cells = rows[0].find_all(["th", "td"])
+        headers = [c.get_text(strip=True) for c in header_cells]
+
+        sc_idx = None
+        name_idx = None
+        for i, h in enumerate(headers):
+            if h.upper() == "SC":
+                sc_idx = i
+            if h.upper() in ("PLAYER", ""):
+                # Player name is often the second column (after guernsey)
+                if name_idx is None and i <= 2:
+                    name_idx = i
+
+        if sc_idx is None:
+            continue
+
+        for row in rows[1:]:
+            cells = row.find_all("td")
+            if len(cells) <= sc_idx:
+                continue
+
+            # Try to find player name
+            name_cell = cells[name_idx] if name_idx is not None and name_idx < len(cells) else None
+            player_link = row.find("a", href=lambda h: h and "/player/" in str(h))
+
+            if player_link:
+                name = player_link.get_text(strip=True)
+            elif name_cell:
+                name = name_cell.get_text(strip=True)
+            else:
+                continue
+
+            sc_text = cells[sc_idx].get_text(strip=True).replace(",", "")
+            if not sc_text.lstrip("-").isdigit():
+                continue
+
+            results.append({
+                "name": name,
+                "team": "",  # Unknown from table alone
+                "sc_score": int(sc_text),
+            })
+
+    logger.info("Parsed %d players from footyinfo tables: %s", len(results), url)
+    return results
+
+
+def scrape_footyinfo_sc_scores(year: int, afl_round: int) -> list[dict]:
+    """Scrape SC scores from footyinfo match pages for a round.
+
+    Discovers match URLs from the round overview page, then scrapes
+    each match page for player SC scores.
+
+    Returns list of {name, team, sc_score} dicts.
+    """
+    round_url = f"{FOOTYINFO_BASE}/supercoach/afl/{year}/round/{afl_round}"
+    logger.info("Scraping footyinfo SC scores: %d R%d", year, afl_round)
+
+    try:
+        resp = requests.get(round_url, headers=HEADERS, timeout=30)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        logger.error("Failed to fetch footyinfo round page: %s", e)
+        return []
+
+    # Extract match URLs from the round page
+    soup = BeautifulSoup(resp.text, "lxml")
+    match_urls = []
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if "/match/australian-football-league/" in href and href not in match_urls:
+            full_url = f"{FOOTYINFO_BASE}{href}" if href.startswith("/") else href
+            if full_url not in match_urls:
+                match_urls.append(full_url)
+
+    if not match_urls:
+        # Try extracting from embedded JSON
+        import json
+        for script in soup.find_all("script"):
+            text = script.string or ""
+            for m in re.finditer(r'/match/australian-football-league/[^"\'\\]+', text):
+                url = f"{FOOTYINFO_BASE}{m.group(0)}"
+                if url not in match_urls:
+                    match_urls.append(url)
+
+    logger.info("Found %d match URLs for %d R%d", len(match_urls), year, afl_round)
+
+    all_results = []
+    for url in match_urls:
+        time.sleep(1)  # polite delay between requests
+        players = _parse_footyinfo_match(url)
+        all_results.extend(players)
+        logger.info("Scraped %d players from %s", len(players), url.split("/")[-1])
+
+    logger.info("Footyinfo total: %d SC scores for %d R%d", len(all_results), year, afl_round)
+    return all_results
 
 
 def clear_cache():
