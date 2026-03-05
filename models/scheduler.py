@@ -108,35 +108,14 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
-    # Team lineups sync: Wed 10:00, Thu 10:00 + 22:00, Fri 06:00 UTC
-    # (covers initial announcement + late changes before games)
+    # Team lineups sync: daily at 08:00 + 21:00 UTC (7pm + 8am AEST)
+    # Covers initial announcements + late changes for any round
     scheduler.add_job(
         _sync_team_lineups,
         "cron",
-        day_of_week="wed",
-        hour=10,
+        hour="8,21",
         minute=0,
-        id="lineup_sync_wed",
-        replace_existing=True,
-        max_instances=1,
-    )
-    scheduler.add_job(
-        _sync_team_lineups,
-        "cron",
-        day_of_week="thu",
-        hour="10,22",
-        minute=0,
-        id="lineup_sync_thu",
-        replace_existing=True,
-        max_instances=1,
-    )
-    scheduler.add_job(
-        _sync_team_lineups,
-        "cron",
-        day_of_week="fri",
-        hour=6,
-        minute=0,
-        id="lineup_sync_fri",
+        id="lineup_sync_daily",
         replace_existing=True,
         max_instances=1,
     )
