@@ -375,6 +375,17 @@ def squad(league_id, team_id):
         all_pids = [p.id for p in players if p]
         player_form = compute_player_form(all_pids, league.season_year)
 
+        # Determine which roles are locked in (player's game already started)
+        _player_by_id = {p.id: p for p in players if p}
+        def _is_pid_locked(pid):
+            pl = _player_by_id.get(pid)
+            return bool(pl and pl.afl_team and locked_teams and pl.afl_team in locked_teams)
+
+        cap_locked = _is_pid_locked(cap_id) if cap_id else False
+        vc_locked = _is_pid_locked(vc_id) if vc_id else False
+        locked_emg_count = sum(1 for eid in emergency_ids if _is_pid_locked(eid))
+        locked_7s_count = sum(1 for sid in sevens_ids if _is_pid_locked(sid))
+
         field_data = {
             "zones": zones,
             "flex_data": flex_data,
@@ -404,6 +415,10 @@ def squad(league_id, team_id):
             "age_cutoff": AGE_CUTOFF,
             "player_form": player_form,
             "selected_player_ids": selected_player_ids,
+            "cap_locked": cap_locked,
+            "vc_locked": vc_locked,
+            "locked_emg_count": locked_emg_count,
+            "locked_7s_count": locked_7s_count,
         }
 
     # ── All-time stats for table view ──
@@ -838,14 +853,20 @@ def api_set_captain(league_id, team_id):
     if _check_player_locked(player_id, league.season_year):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
+    # If current captain is locked, can't change captain at all
+    current_cap = FantasyRoster.query.filter_by(
+        team_id=team_id, is_active=True, is_captain=True
+    ).first()
+    if current_cap and current_cap.player_id != player_id and _check_player_locked(current_cap.player_id, league.season_year):
+        return jsonify({"error": "Captain is locked (game started)"}), 409
+
     # Only on-field/flex players can be captain
     if entry.is_benched:
         return jsonify({"error": "Only on-field players can be captain"}), 409
 
     # Clear old captain on this team
-    FantasyRoster.query.filter_by(team_id=team_id, is_active=True, is_captain=True).update(
-        {"is_captain": False}
-    )
+    if current_cap:
+        current_cap.is_captain = False
     entry.is_captain = True
     # Can't be both captain and VC
     entry.is_vice_captain = False
@@ -873,14 +894,20 @@ def api_set_vc(league_id, team_id):
     if _check_player_locked(player_id, league.season_year):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
+    # If current VC is locked, can't change VC at all
+    current_vc = FantasyRoster.query.filter_by(
+        team_id=team_id, is_active=True, is_vice_captain=True
+    ).first()
+    if current_vc and current_vc.player_id != player_id and _check_player_locked(current_vc.player_id, league.season_year):
+        return jsonify({"error": "Vice Captain is locked (game started)"}), 409
+
     # Only on-field/flex players can be vice-captain
     if entry.is_benched:
         return jsonify({"error": "Only on-field players can be vice-captain"}), 409
 
     # Clear old VC on this team
-    FantasyRoster.query.filter_by(team_id=team_id, is_active=True, is_vice_captain=True).update(
-        {"is_vice_captain": False}
-    )
+    if current_vc:
+        current_vc.is_vice_captain = False
     entry.is_vice_captain = True
     # Can't be both captain and VC
     entry.is_captain = False
@@ -1068,12 +1095,20 @@ def api_set_emergency(league_id, team_id):
         if in_7s:
             return jsonify({"error": "Player is in 7s lineup — remove from 7s first"}), 409
 
-        # Check limit
-        current_count = FantasyRoster.query.filter_by(
+        # Check limit — if full, bump the earliest unlocked emergency player
+        current_emgs = FantasyRoster.query.filter_by(
             team_id=team_id, is_active=True, is_emergency=True
-        ).count()
-        if current_count >= MAX_EMERGENCIES:
-            return jsonify({"error": f"Max {MAX_EMERGENCIES} emergencies allowed"}), 409
+        ).all()
+        if len(current_emgs) >= MAX_EMERGENCIES:
+            # Find an unlocked emergency to bump (earliest = lowest player_id)
+            bumped = None
+            for emg_entry in sorted(current_emgs, key=lambda e: e.player_id):
+                if not _check_player_locked(emg_entry.player_id, league.season_year):
+                    bumped = emg_entry
+                    break
+            if not bumped:
+                return jsonify({"error": "All emergency slots are locked"}), 409
+            bumped.is_emergency = False
         entry.is_emergency = True
 
     db.session.commit()
@@ -1122,13 +1157,20 @@ def api_toggle_7s(league_id, team_id):
             league_id=league_id, team_id=team_id, afl_round=sevens_round, year=year,
         ).count()})
     else:
-        # Adding — check 7-player limit
-        current_count = Reserve7sLineup.query.filter_by(
+        # Adding — if full, bump the earliest unlocked 7s player
+        current_7s = Reserve7sLineup.query.filter_by(
             league_id=league_id, team_id=team_id,
             afl_round=sevens_round, year=year,
-        ).count()
-        if current_count >= 7:
-            return jsonify({"error": "Already have 7 players in 7s lineup"}), 409
+        ).all()
+        if len(current_7s) >= 7:
+            bumped = None
+            for s_entry in sorted(current_7s, key=lambda e: e.player_id):
+                if not _check_player_locked(s_entry.player_id, league.season_year):
+                    bumped = s_entry
+                    break
+            if not bumped:
+                return jsonify({"error": "All 7s slots are locked"}), 409
+            db.session.delete(bumped)
 
         # Check age constraint: max 2 seniors
         player = db.session.get(AflPlayer, player_id)

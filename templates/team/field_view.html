@@ -1,7 +1,7 @@
 {# AFL Field View — included from squad.html when view == 'field' #}
 {# Expects: field_data, TEAM_LOGOS, is_owner, league, team #}
 
-{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing, sevens_ids=[], sevens_captain_id=None, has_7s_fixture=false, selected_player_ids=set(), locked_teams=set()) %}
+{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing, sevens_ids=[], sevens_captain_id=None, has_7s_fixture=false, selected_player_ids=set(), locked_teams=set(), cap_locked=false, vc_locked=false, emg_available=4, sevens_available=7) %}
   {% if p %}
     {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
     {% set is_7s = sevens_ids is defined and p.id in sevens_ids %}
@@ -51,21 +51,29 @@
       {% if is_owner and not is_locked %}
       <div class="fv-actions" onclick="event.stopPropagation()">
         {% if not is_reserve %}
+        {# C button: hide if captain is already locked in #}
+        {% if not cap_locked %}
         <button class="fv-action-btn fv-act-cap{% if cap_id == p.id %} active{% endif %}"
                 title="Set Captain" onclick="event.stopPropagation(); fvSetCaptain({{ p.id }})">C</button>
+        {% endif %}
+        {# VC button: hide if VC is already locked in #}
+        {% if not vc_locked %}
         <button class="fv-action-btn fv-act-vc{% if vc_id == p.id %} active{% endif %}"
                 title="Set Vice Captain" onclick="event.stopPropagation(); fvSetVC({{ p.id }})">VC</button>
+        {% endif %}
         {% endif %}
         <button class="fv-action-btn fv-act-sub"
                 title="Swap Player" onclick="event.stopPropagation(); fvStartSub({{ p.id }})">
           <i class="bi bi-arrow-left-right"></i>
         </button>
         {% if is_reserve %}
-        {% if not is_7s %}
+        {# E button: show if player has E (toggle off) or available slots exist (open or bumpable) #}
+        {% if not is_7s and (is_emg or emg_available > 0) %}
         <button class="fv-action-btn fv-act-emg{% if is_emg %} active{% endif %}"
                 title="Toggle Emergency" onclick="event.stopPropagation(); fvSetEmergency({{ p.id }})">E</button>
         {% endif %}
-        {% if has_7s_fixture and not is_emg %}
+        {# 7s button: show if in 7s (toggle off) or available slots exist (open or bumpable) #}
+        {% if has_7s_fixture and not is_emg and (is_7s or sevens_available > 0) %}
         <button class="fv-action-btn fv-act-7s{% if is_7s %} active{% endif %}"
                 title="Toggle 7s" onclick="event.stopPropagation(); fv7sToggle({{ p.id }})">7</button>
         {% if is_7s %}
@@ -188,6 +196,12 @@
   })();
   </script>
   {% endif %}
+  {# Pre-compute lockout-aware slot availability #}
+  {% set _cap_locked = field_data.cap_locked|default(false) %}
+  {% set _vc_locked = field_data.vc_locked|default(false) %}
+  {# Available = max slots minus locked slots (open + bumpable unlocked ones) #}
+  {% set _emg_available = 4 - field_data.locked_emg_count|default(0) %}
+  {% set _7s_available = 7 - field_data.locked_7s_count|default(0) %}
   <div class="fv-wrapper">
   <div class="fv-field">
     {# SVG field markings #}
@@ -215,7 +229,7 @@
         {% for row_size in rows %}
           <div class="fv-zone-grid fv-grid-{{ row_size }}"{% if not loop.first %} style="margin-top:8px"{% endif %}>
             {% for p in players_list[ns.offset:ns.offset + row_size] %}
-              {{ player_card(p, pos_class, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams) }}
+              {{ player_card(p, pos_class, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked) }}
             {% endfor %}
           </div>
           {% set ns.offset = ns.offset + row_size %}
@@ -241,7 +255,7 @@
         {% for slot in field_data.flex_data %}
           {% set p = slot.player %}
           {% set flex_pos_class = (p.position or 'MID').split('/')[0]|lower if p else 'flex' %}
-          {{ player_card(p, flex_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams) }}
+          {{ player_card(p, flex_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked) }}
         {% endfor %}
       </div>
     </div>
@@ -335,7 +349,7 @@
         </div>
         <div class="fv-reserves-grid">
           {% for p in pos_players %}
-            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams) }}
+            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available) }}
           {% endfor %}
         </div>
       </div>
@@ -991,6 +1005,9 @@ function fvOpenActionSheet(pid) {
   const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
   if (!card) return;
 
+  // Locked players — only show View Profile
+  const isLocked = card.dataset.locked === '1';
+
   const section = card.dataset.section; // field, flex, reserve
   const positions = card.dataset.positions || 'MID';
   const fieldPos = card.dataset.fieldPos || '';
@@ -1025,43 +1042,55 @@ function fvOpenActionSheet(pid) {
   grid.innerHTML = '';
   const btns = [];
 
-  // Captain & VC (only for field/flex players, not reserves)
-  if (!isReserve) {
-    btns.push(`<button class="fv-action-sheet-btn fv-as-cap${isCap ? ' active' : ''}" onclick="fvSetCaptain(${pid}); fvCloseActionSheet();">
-      <i class="bi bi-star-fill"></i>Captain</button>`);
-    btns.push(`<button class="fv-action-sheet-btn fv-as-vc${isVC ? ' active' : ''}" onclick="fvSetVC(${pid}); fvCloseActionSheet();">
-      <i class="bi bi-star-half"></i>Vice Capt</button>`);
-  }
+  if (!isLocked) {
+    // Lockout-aware flags (injected from server)
+    const capLocked = {{ 'true' if field_data.cap_locked|default(false) else 'false' }};
+    const vcLocked = {{ 'true' if field_data.vc_locked|default(false) else 'false' }};
+    const emgAvailable = {{ (4 - field_data.locked_emg_count|default(0)) }};
+    const sevensAvailable = {{ (7 - field_data.locked_7s_count|default(0)) }};
 
-  // Swap (all players)
-  btns.push(`<button class="fv-action-sheet-btn fv-as-swap" onclick="fvCloseActionSheet(); fvStartSub(${pid});">
-    <i class="bi bi-arrow-left-right"></i>Swap</button>`);
-
-  // Emergency (reserves only, not if in 7s)
-  if (isReserve && !is7s) {
-    btns.push(`<button class="fv-action-sheet-btn fv-as-emg${isEmg ? ' active' : ''}" onclick="fvSetEmergency(${pid}); fvCloseActionSheet();">
-      <i class="bi bi-shield-exclamation"></i>Emergency</button>`);
-  }
-
-  // 7s toggle (reserves only if has_7s_fixture, not if emergency)
-  {% if field_data.has_7s_fixture %}
-  if (isReserve && !isEmg) {
-    btns.push(`<button class="fv-action-sheet-btn fv-as-7s${is7s ? ' active' : ''}" onclick="fv7sToggle(${pid}); fvCloseActionSheet();">
-      <i class="bi bi-7-circle"></i>7s</button>`);
-    if (is7s) {
-      btns.push(`<button class="fv-action-sheet-btn fv-as-7c${is7c ? ' active' : ''}" onclick="fv7sCaptain(${pid}); fvCloseActionSheet();">
-        <i class="bi bi-7-circle-fill"></i>7s Capt</button>`);
+    // Captain & VC (only for field/flex players, not reserves)
+    if (!isReserve) {
+      if (!capLocked) {
+        btns.push(`<button class="fv-action-sheet-btn fv-as-cap${isCap ? ' active' : ''}" onclick="fvSetCaptain(${pid}); fvCloseActionSheet();">
+          <i class="bi bi-star-fill"></i>Captain</button>`);
+      }
+      if (!vcLocked) {
+        btns.push(`<button class="fv-action-sheet-btn fv-as-vc${isVC ? ' active' : ''}" onclick="fvSetVC(${pid}); fvCloseActionSheet();">
+          <i class="bi bi-star-half"></i>Vice Capt</button>`);
+      }
     }
-  }
-  {% endif %}
 
-  // LTIL (flex and reserves)
-  if (isFlex || isReserve) {
-    btns.push(`<button class="fv-action-sheet-btn fv-as-ltil" onclick="fvCloseActionSheet(); fvAddToLTIL(${pid});">
-      <i class="bi bi-bandaid"></i>LTIL</button>`);
-  }
+    // Swap (all unlocked players)
+    btns.push(`<button class="fv-action-sheet-btn fv-as-swap" onclick="fvCloseActionSheet(); fvStartSub(${pid});">
+      <i class="bi bi-arrow-left-right"></i>Swap</button>`);
 
-  // View Profile (always)
+    // Emergency (reserves only, not if in 7s; show if has E or available slots)
+    if (isReserve && !is7s && (isEmg || emgAvailable > 0)) {
+      btns.push(`<button class="fv-action-sheet-btn fv-as-emg${isEmg ? ' active' : ''}" onclick="fvSetEmergency(${pid}); fvCloseActionSheet();">
+        <i class="bi bi-shield-exclamation"></i>Emergency</button>`);
+    }
+
+    // 7s toggle (reserves only if has_7s_fixture, not if emergency; show if in 7s or available slots)
+    {% if field_data.has_7s_fixture %}
+    if (isReserve && !isEmg && (is7s || sevensAvailable > 0)) {
+      btns.push(`<button class="fv-action-sheet-btn fv-as-7s${is7s ? ' active' : ''}" onclick="fv7sToggle(${pid}); fvCloseActionSheet();">
+        <i class="bi bi-7-circle"></i>7s</button>`);
+      if (is7s) {
+        btns.push(`<button class="fv-action-sheet-btn fv-as-7c${is7c ? ' active' : ''}" onclick="fv7sCaptain(${pid}); fvCloseActionSheet();">
+          <i class="bi bi-7-circle-fill"></i>7s Capt</button>`);
+      }
+    }
+    {% endif %}
+
+    // LTIL (flex and reserves)
+    if (isFlex || isReserve) {
+      btns.push(`<button class="fv-action-sheet-btn fv-as-ltil" onclick="fvCloseActionSheet(); fvAddToLTIL(${pid});">
+        <i class="bi bi-bandaid"></i>LTIL</button>`);
+    }
+  } // end if (!isLocked)
+
+  // View Profile (always, even locked)
   btns.push(`<button class="fv-action-sheet-btn fv-as-view" onclick="fvCloseActionSheet(); _origFvShowPlayer(${pid});">
     <i class="bi bi-person-lines-fill"></i>View Profile</button>`);
 
