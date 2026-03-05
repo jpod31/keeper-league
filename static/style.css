@@ -3359,7 +3359,7 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   font-size: .7rem;
 }
 .fv-selected.fv-locked {
-  background: linear-gradient(135deg, #9e6a03, #d29922);
+  background: linear-gradient(135deg, #484f58, #6e7681);
 }
 
 /* ── Injury indicator — top-left of card ── */
@@ -3639,7 +3639,7 @@ img[src*="Carlton.png"] {
 }
 .mob-lock-icon {
   font-size: .6rem;
-  color: #d29922;
+  color: #8b949e;
   margin-left: 4px;
   vertical-align: middle;
 }
