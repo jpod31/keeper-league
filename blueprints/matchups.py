@@ -345,6 +345,29 @@ def api_live_scores(league_id, afl_round):
     game_statuses = get_game_statuses(afl_round, year)
     locked_ids = list(get_locked_player_ids(afl_round, year))
 
+    # Build kickoff-time sort key (same as gameday route)
+    afl_games_for_round = (
+        AflGame.query.filter_by(year=year, afl_round=afl_round)
+        .order_by(AflGame.scheduled_start)
+        .all()
+    )
+    _team_start = {}
+    for g in afl_games_for_round:
+        ts = g.scheduled_start
+        for t in (g.home_team, g.away_team):
+            if t not in _team_start or (ts and (not _team_start[t] or ts < _team_start[t])):
+                _team_start[t] = ts
+
+    _type_order = {"field": 0, "flex": 1, "emergency": 2, "reserve": 3}
+    _far_future = datetime(2099, 1, 1)
+
+    def _player_sort_key(p):
+        return (
+            _type_order.get(p.get("lineup_type", "field"), 9),
+            _team_start.get(p.get("afl_team", ""), _far_future) or _far_future,
+            p.get("name", ""),
+        )
+
     fixture_list = []
     for f in fixtures:
         home_rs = RoundScore.query.filter_by(
@@ -354,14 +377,19 @@ def api_live_scores(league_id, afl_round):
             team_id=f.away_team_id, afl_round=afl_round, year=year
         ).first()
 
+        home_players = get_player_score_breakdown(f.home_team_id, afl_round, year, league_id)
+        away_players = get_player_score_breakdown(f.away_team_id, afl_round, year, league_id)
+        home_players.sort(key=_player_sort_key)
+        away_players.sort(key=_player_sort_key)
+
         fixture_list.append({
             "fixture_id": f.id,
             "home_score": home_rs.total_score if home_rs else 0,
             "away_score": away_rs.total_score if away_rs else 0,
             "home_captain_bonus": home_rs.captain_bonus if home_rs else 0,
             "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
-            "home_players": get_player_score_breakdown(f.home_team_id, afl_round, year, league_id),
-            "away_players": get_player_score_breakdown(f.away_team_id, afl_round, year, league_id),
+            "home_players": home_players,
+            "away_players": away_players,
         })
 
     return jsonify({
