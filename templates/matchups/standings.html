@@ -115,7 +115,8 @@
       {% set pos = loop.index %}
       {% set in_finals = finals_teams > 0 and pos <= finals_teams %}
       {% set is_finals_line = in_finals and pos == finals_teams %}
-      <div class="ldr-mob-card{% if s.team_id == nav_user_team.id if nav_user_team|default(none) else false %} ldr-mob-mine{% endif %}{% if in_finals %} ldr-mob-finals{% endif %}"{% if is_finals_line %} style="border-bottom:2px solid rgba(63,185,80,.5);"{% endif %}>
+      {% set is_mine = nav_user_team is defined and nav_user_team and s.team_id == nav_user_team.id %}
+      <div class="ldr-mob-card{% if is_mine %} ldr-mob-mine{% endif %}{% if in_finals %} ldr-mob-finals{% endif %}"{% if is_finals_line %} style="border-bottom:2px solid rgba(63,185,80,.5);"{% endif %}>
         <span class="ldr-mob-rank{% if pos == 1 %} ldr-pos-1{% elif pos == 2 %} ldr-pos-2{% elif pos == 3 %} ldr-pos-3{% elif in_finals %} ldr-pos-finals{% else %} ldr-pos-out{% endif %}">{{ pos }}</span>
         <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}" class="ldr-mob-name">{{ s.team.name }}</a>
         <span class="ldr-mob-record">{{ s.wins }}-{{ s.losses }}{% if s.draws %}-{{ s.draws }}{% endif %}</span>
