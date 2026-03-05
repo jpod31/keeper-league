@@ -32,96 +32,121 @@
   .rnd-item:hover .rnd-num { color:#8b949e; }
   .rnd-item.active .rnd-num { color:#e6edf3; }
   .rnd-item.rnd-has-data .rnd-num { color:#8b949e; }
-  .rnd-dot {
-    width:5px; height:5px; border-radius:50%; margin-top:4px;
-  }
+  .rnd-dot { width:5px; height:5px; border-radius:50%; margin-top:4px; }
   .rnd-dot-data { background:#2ea043; }
   .rnd-dot-none { background:transparent; }
 
   /* ── Match card ── */
   .lu-match {
     background:#0d1117; border:1px solid #21262d; border-radius:10px;
-    margin-bottom:16px; overflow:hidden;
+    margin-bottom:20px; overflow:hidden;
   }
   .lu-match-hdr {
     display:flex; align-items:center; justify-content:space-between;
-    padding:14px 18px; border-bottom:1px solid #161b22;
-    background:#0a0e14;
+    padding:12px 18px; border-bottom:1px solid #161b22; background:#0a0e14;
   }
   .lu-match-team {
     display:flex; align-items:center; gap:8px;
-    font-size:.9rem; font-weight:600; color:#e6edf3;
+    font-size:.85rem; font-weight:600; color:#e6edf3;
   }
+  .lu-match-team img { width:22px; height:22px; }
   .lu-match-vs {
-    font-size:.65rem; font-weight:700; color:#30363d; letter-spacing:1.5px;
+    font-size:.6rem; font-weight:700; color:#30363d; letter-spacing:1.5px;
     text-transform:uppercase;
   }
   .lu-match-meta {
-    font-size:.65rem; color:#484f58; text-align:center;
+    font-size:.6rem; color:#484f58; text-align:center;
   }
 
-  /* ── Two-column team layout ── */
-  .lu-teams {
-    display:grid; grid-template-columns:1fr 1fr; min-height:0;
+  /* ── Stacked field ── */
+  .lu-field {
+    position:relative; padding:16px 8px;
+    background: linear-gradient(180deg, #0f1a12 0%, #0d1117 35%, #0d1117 65%, #0f1a12 100%);
   }
-  .lu-team-col {
-    padding:12px 16px;
+  .lu-field-divider {
+    border:none; border-top:1px dashed #21262d; margin:8px 0;
   }
-  .lu-team-col + .lu-team-col {
-    border-left:1px solid #161b22;
-  }
-  .lu-team-label {
-    font-size:.6rem; font-weight:700; color:#484f58; text-transform:uppercase;
-    letter-spacing:1px; margin-bottom:10px;
+  .lu-team-hdr {
+    text-align:center; font-size:.55rem; font-weight:700; color:#484f58;
+    text-transform:uppercase; letter-spacing:1.5px; padding:4px 0;
   }
 
-  /* ── Line group ── */
-  .lu-line-hdr {
-    font-size:.6rem; font-weight:700; color:#30363d; text-transform:uppercase;
-    letter-spacing:.8px; margin:10px 0 4px; padding-top:6px;
-    border-top:1px solid #161b2280;
+  /* ── Line row (horizontal group of players) ── */
+  .lu-line {
+    display:flex; justify-content:center; gap:4px; padding:2px 0;
+    flex-wrap:wrap;
   }
-  .lu-line-hdr:first-child { border-top:none; margin-top:0; padding-top:0; }
-
-  /* ── Player row ── */
-  .lu-player {
-    display:flex; align-items:center; gap:6px;
-    padding:3px 0; font-size:.78rem; color:#c9d1d9;
-  }
-  .lu-player a {
-    color:#c9d1d9; text-decoration:none; transition:color .1s;
-  }
-  .lu-player a:hover { color:#58a6ff; }
-  .lu-jumper {
-    font-size:.65rem; color:#484f58; min-width:18px; text-align:right;
-    font-variant-numeric:tabular-nums;
-  }
-  .lu-captain {
-    font-size:.55rem; font-weight:700; color:#d29922;
-    background:rgba(210,153,34,.12); padding:1px 4px; border-radius:3px;
-    margin-left:2px;
+  .lu-line-label {
+    width:100%; text-align:center;
+    font-size:.5rem; font-weight:700; color:#30363d; text-transform:uppercase;
+    letter-spacing:.8px; margin:2px 0 0;
   }
 
-  /* ── Indicator icons ── */
-  .lu-ind { font-size:.7rem; min-width:14px; text-align:center; }
-  .lu-ind-roster { color:#3fb950; }
-  .lu-ind-none { color:#f85149; opacity:.5; }
-
-  /* Inline injury dot (smaller than field-view version) */
-  .lu-inj {
-    display:inline-flex; align-items:center; justify-content:center;
-    width:14px; height:14px; border-radius:50%; position:relative;
-    border:1.5px solid #161b22; min-width:14px;
+  /* ── Player chip ── */
+  .lu-chip {
+    display:flex; flex-direction:column; align-items:center;
+    width:72px; padding:5px 2px 4px; position:relative;
+    background:#161b22; border:1px solid #21262d; border-radius:6px;
+    text-decoration:none; transition:border-color .12s;
   }
-  .lu-inj-test { background:linear-gradient(135deg,#ff6b9d,#e84393); }
-  .lu-inj-suspension { background:linear-gradient(135deg,#f0c040,#d29922); }
-  .lu-inj-short, .lu-inj-long { background:#fff; border-color:#da3633; overflow:hidden; }
-  .lu-inj-long { border-color:#b62324; }
-  .lu-inj-slash {
+  .lu-chip:hover { border-color:#30363d; }
+  .lu-chip-roster { border-color:rgba(63,185,80,.4); }
+  .lu-chip-roster:hover { border-color:rgba(63,185,80,.7); }
+
+  .lu-chip-num {
+    font-size:.55rem; color:#484f58; font-weight:600;
+    font-variant-numeric:tabular-nums; line-height:1;
+  }
+  .lu-chip-name {
+    font-size:.6rem; font-weight:600; color:#c9d1d9; text-align:center;
+    line-height:1.15; margin-top:2px; max-width:68px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .lu-chip a { color:#c9d1d9; text-decoration:none; }
+  .lu-chip a:hover { color:#58a6ff; }
+
+  /* ── Badge (top-right of chip) ── */
+  .lu-badge {
+    position:absolute; top:-5px; right:-5px; z-index:2;
+    width:14px; height:14px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    border:1.5px solid #161b22; font-size:.5rem;
+  }
+  .lu-badge-roster {
+    background:linear-gradient(135deg,#2ea043,#3fb950); color:#fff;
+  }
+  .lu-badge-inj { overflow:hidden; }
+  .lu-badge-test { background:linear-gradient(135deg,#ff6b9d,#e84393); }
+  .lu-badge-suspension { background:linear-gradient(135deg,#f0c040,#d29922); }
+  .lu-badge-short, .lu-badge-long { background:#fff; border-color:#da3633; }
+  .lu-badge-long { border-color:#b62324; }
+  .lu-badge-slash {
     position:absolute; width:1.5px; height:55%; background:#da3633;
     border-radius:1px; transform:rotate(45deg);
   }
-  .lu-inj-long .lu-inj-slash { background:#b62324; }
+  .lu-badge-long .lu-badge-slash { background:#b62324; }
+  .lu-badge-none {
+    background:#21262d; border-color:#30363d;
+  }
+
+  .lu-captain-badge {
+    position:absolute; top:-5px; left:-5px; z-index:2;
+    width:14px; height:14px; border-radius:50%;
+    background:#d29922; border:1.5px solid #161b22;
+    font-size:.5rem; font-weight:700; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ── Interchange / Emergency section ── */
+  .lu-bench {
+    display:flex; flex-wrap:wrap; justify-content:center; gap:4px;
+    padding:4px 8px;
+  }
+  .lu-bench-label {
+    width:100%; text-align:center;
+    font-size:.5rem; font-weight:700; color:#30363d; text-transform:uppercase;
+    letter-spacing:.8px; margin:4px 0 2px;
+  }
 
   /* ── Empty state ── */
   .lu-empty {
@@ -133,43 +158,44 @@
 
   /* ── Mobile ── */
   @media (max-width:640px) {
-    .lu-teams { grid-template-columns:1fr; }
-    .lu-team-col + .lu-team-col { border-left:none; border-top:1px solid #161b22; }
+    .lu-chip { width:58px; }
+    .lu-chip-name { font-size:.5rem; max-width:54px; }
     .lu-match-hdr { flex-direction:column; gap:4px; text-align:center; }
   }
 </style>
 
-{# ── Macro: render a single player row ── #}
-{% macro _render_player(sel) %}
-<div class="lu-player">
-  {# Indicator: green tick (rostered) > injury > red circle #}
+{# ── Macro: render a player chip ── #}
+{% macro chip(sel) %}
+<div class="lu-chip{% if sel.player_id and sel.player_id in rostered_set %} lu-chip-roster{% endif %}">
+  {# Captain badge (top-left) #}
+  {% if sel.is_captain %}
+    <span class="lu-captain-badge">C</span>
+  {% endif %}
+
+  {# Status badge (top-right): rostered tick > injury > grey dot #}
   {% if sel.player_id and sel.player_id in rostered_set %}
-    <i class="bi bi-check-circle-fill lu-ind lu-ind-roster"></i>
+    <span class="lu-badge lu-badge-roster"><i class="bi bi-check-lg" style="font-size:.5rem;"></i></span>
   {% elif sel.player_id and sel.player_id in injury_map %}
     {% set sev = injury_map[sel.player_id] %}
-    <span class="lu-inj lu-inj-{{ sev }}">
-      {% if sev in ('short', 'long') %}<span class="lu-inj-slash"></span>{% endif %}
+    <span class="lu-badge lu-badge-inj lu-badge-{{ sev }}">
+      {% if sev in ('short', 'long') %}<span class="lu-badge-slash"></span>{% endif %}
     </span>
   {% else %}
-    <i class="bi bi-circle lu-ind lu-ind-none"></i>
+    <span class="lu-badge lu-badge-none"></span>
   {% endif %}
 
   {# Jumper number #}
-  {% if sel.jumper_number %}
-    <span class="lu-jumper">{{ sel.jumper_number }}</span>
-  {% endif %}
+  <span class="lu-chip-num">{{ sel.jumper_number or '' }}</span>
 
-  {# Player name (linked if matched) #}
-  {% if sel.player_id and sel.player %}
-    <a href="{{ url_for('player_detail', name=sel.player.name) }}">{{ sel.player_name }}</a>
-  {% else %}
-    <span>{{ sel.player_name }}</span>
-  {% endif %}
-
-  {# Captain badge #}
-  {% if sel.is_captain %}
-    <span class="lu-captain">C</span>
-  {% endif %}
+  {# Surname #}
+  <div class="lu-chip-name">
+    {% set surname = sel.player_name.split()[-1] if sel.player_name else '' %}
+    {% if sel.player_id and sel.player %}
+      <a href="{{ url_for('player_detail', name=sel.player.name) }}" title="{{ sel.player_name }}">{{ surname }}</a>
+    {% else %}
+      <span title="{{ sel.player_name }}">{{ surname }}</span>
+    {% endif %}
+  </div>
 </div>
 {% endmacro %}
 
@@ -181,7 +207,7 @@
 </div>
 {% else %}
 
-{# ── Round strip (matches fixture page) ── #}
+{# ── Round strip ── #}
 <div class="rnd-strip">
   {% for rnd in round_list %}
     <a class="rnd-item{% if rnd == selected_round %} active{% endif %}{% if rnd in lineup_rounds %} rnd-has-data{% endif %}"
@@ -204,11 +230,18 @@
 </div>
 {% endif %}
 
+{# Line display order: home team top-to-bottom = FWD→HF→C→HB→B→FOL, then I/C, then away team inverted #}
+{% set home_line_order = ['Forwards', 'Half Forwards', 'Centre', 'Half Backs', 'Backs', 'Followers'] %}
+{% set away_line_order = ['Backs', 'Half Backs', 'Centre', 'Half Forwards', 'Forwards', 'Followers'] %}
+
 {% for match in matches %}
 <div class="lu-match">
   {# ── Match header ── #}
   <div class="lu-match-hdr">
-    <div class="lu-match-team">{{ match.home_team }}</div>
+    <div class="lu-match-team">
+      {% if match.home_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[match.home_team] }}" alt="">{% endif %}
+      {{ match.home_team }}
+    </div>
     <div style="text-align:center;">
       <div class="lu-match-vs">VS</div>
       {% if match.venue or match.start_time %}
@@ -220,39 +253,69 @@
         </div>
       {% endif %}
     </div>
-    <div class="lu-match-team" style="justify-content:flex-end;">{{ match.away_team }}</div>
-  </div>
-
-  {# ── Two-column team lineups ── #}
-  <div class="lu-teams">
-    {# Home team #}
-    <div class="lu-team-col">
-      <div class="lu-team-label">{{ match.home_team }}</div>
-      {% for line_name, players in match.home_lines.items() %}
-        <div class="lu-line-hdr">{{ line_name }}</div>
-        {% for sel in players %}
-          {{ _render_player(sel) }}
-        {% endfor %}
-      {% endfor %}
-      {% if not match.home_lines %}
-        <div style="font-size:.75rem;color:#484f58;padding:8px 0;">No selections</div>
-      {% endif %}
-    </div>
-
-    {# Away team #}
-    <div class="lu-team-col">
-      <div class="lu-team-label">{{ match.away_team }}</div>
-      {% for line_name, players in match.away_lines.items() %}
-        <div class="lu-line-hdr">{{ line_name }}</div>
-        {% for sel in players %}
-          {{ _render_player(sel) }}
-        {% endfor %}
-      {% endfor %}
-      {% if not match.away_lines %}
-        <div style="font-size:.75rem;color:#484f58;padding:8px 0;">No selections</div>
-      {% endif %}
+    <div class="lu-match-team" style="justify-content:flex-end;">
+      {{ match.away_team }}
+      {% if match.away_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[match.away_team] }}" alt="">{% endif %}
     </div>
   </div>
+
+  {# ── Stacked field ── #}
+  <div class="lu-field">
+    {# Home team: forwards at top, backs at bottom #}
+    <div class="lu-team-hdr">{{ match.home_team }}</div>
+    {% for line in home_line_order %}
+      {% if line in match.home_lines %}
+        <div class="lu-line-label">{{ line }}</div>
+        <div class="lu-line">
+          {% for sel in match.home_lines[line] %}
+            {{ chip(sel) }}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
+    {# Home interchange + emergencies #}
+    {% if 'Interchange' in match.home_lines or 'Emergencies' in match.home_lines %}
+      <div class="lu-bench-label">Interchange</div>
+      <div class="lu-bench">
+        {% for sel in match.home_lines.get('Interchange', []) %}
+          {{ chip(sel) }}
+        {% endfor %}
+        {% for sel in match.home_lines.get('Emergencies', []) %}
+          {{ chip(sel) }}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <hr class="lu-field-divider">
+
+    {# Away team: backs at top (meeting home backs), forwards at bottom #}
+    <div class="lu-team-hdr">{{ match.away_team }}</div>
+    {% if 'Interchange' in match.away_lines or 'Emergencies' in match.away_lines %}
+      <div class="lu-bench-label">Interchange</div>
+      <div class="lu-bench">
+        {% for sel in match.away_lines.get('Interchange', []) %}
+          {{ chip(sel) }}
+        {% endfor %}
+        {% for sel in match.away_lines.get('Emergencies', []) %}
+          {{ chip(sel) }}
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% for line in away_line_order %}
+      {% if line in match.away_lines %}
+        <div class="lu-line-label">{{ line }}</div>
+        <div class="lu-line">
+          {% for sel in match.away_lines[line] %}
+            {{ chip(sel) }}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  {% if not match.home_lines and not match.away_lines %}
+    <div style="text-align:center;padding:20px;color:#484f58;font-size:.8rem;">No selections</div>
+  {% endif %}
 </div>
 {% endfor %}
 

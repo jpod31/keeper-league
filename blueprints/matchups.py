@@ -27,6 +27,7 @@ from models.live_sync import (
 from models.database import Fixture, FantasyRoster, RoundScore, DraftPick, Trade
 from blueprints import check_league_access
 import config
+from config import TEAM_LOGOS
 
 logger = logging.getLogger(__name__)
 
@@ -976,7 +977,8 @@ def team_lineups(league_id):
                                selected_round=None,
                                matches=[],
                                rostered_set=set(),
-                               injury_map={})
+                               injury_map={},
+                               TEAM_LOGOS=TEAM_LOGOS)
 
     # Selected round: query param, or latest round with lineup data, or current gameday round
     selected_round = request.args.get("round", type=int)
@@ -1083,4 +1085,5 @@ def team_lineups(league_id):
                            selected_round=selected_round,
                            matches=matches,
                            rostered_set=rostered_set,
-                           injury_map=injury_map)
+                           injury_map=injury_map,
+                           TEAM_LOGOS=TEAM_LOGOS)

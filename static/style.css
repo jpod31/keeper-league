@@ -3018,6 +3018,26 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .league-nav { margin-top: 0; }
 }
 
+/* ── Selected to play indicator — top-left green tick ── */
+.fv-selected {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--kl-bg-card, #161b22);
+  background: linear-gradient(135deg, #2ea043, #3fb950);
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
+  color: #fff;
+  font-size: .7rem;
+}
+
 /* ── Injury indicator — top-left of card ── */
 .fv-injury {
   position: absolute;

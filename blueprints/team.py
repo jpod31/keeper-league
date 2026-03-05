@@ -12,6 +12,7 @@ from models.database import (
     LeaguePositionSlot, WeeklyLineup, LineupSlot,
     PlayerStat, RoundScore, UserDraftWeights, LeagueDraftWeights,
     LongTermInjury, SeasonConfig, DelistPeriod, DelistAction,
+    AflTeamSelection,
 )
 from blueprints import check_league_access
 from models.lineup_manager import (
@@ -293,6 +294,7 @@ def squad(league_id, team_id):
         # Next lockout time — earliest scheduled game start for players on team
         next_lockout_time = None
         teams_playing = set()
+        current_afl_round = None
         try:
             team_afl_teams = set(p.afl_team for p in players if p and p.afl_team)
             # Find the current/next round: first check live games, then scheduled
@@ -319,6 +321,14 @@ def squad(league_id, team_id):
                             break
         except Exception:
             pass
+
+        # Build set of player IDs selected in AFL team lineups this round
+        selected_player_ids = set()
+        if current_afl_round is not None:
+            sel_rows = AflTeamSelection.query.filter_by(
+                year=league.season_year, afl_round=current_afl_round
+            ).filter(AflTeamSelection.player_id.isnot(None)).all()
+            selected_player_ids = {s.player_id for s in sel_rows}
 
         # LTIL / SSP config
         season_cfg = SeasonConfig.query.filter_by(
@@ -379,6 +389,7 @@ def squad(league_id, team_id):
             "has_7s_fixture": has_7s_fixture,
             "age_cutoff": AGE_CUTOFF,
             "player_form": player_form,
+            "selected_player_ids": selected_player_ids,
         }
 
     # ── All-time stats for table view ──
