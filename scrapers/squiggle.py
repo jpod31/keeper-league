@@ -90,9 +90,10 @@ def parse_game_status(game: dict) -> str:
 
     Returns: 'scheduled', 'live', or 'complete'.
     """
-    if game.get("complete") == 100:
+    complete = game.get("complete")
+    if complete == 100:
         return "complete"
-    if game.get("is_live"):
+    if game.get("is_live") or (complete is not None and complete > 0):
         return "live"
     return "scheduled"
 
@@ -157,9 +158,9 @@ def get_current_round(year: int) -> Optional[int]:
 
     result = None
 
-    # Find first round with any live game
+    # Find first round with any live game (is_live or partial completion)
     for rnd in sorted(rounds.keys()):
-        if any(g.get("is_live") for g in rounds[rnd]):
+        if any(g.get("is_live") or (g.get("complete") or 0) not in (0, 100) for g in rounds[rnd]):
             result = rnd
             break
 

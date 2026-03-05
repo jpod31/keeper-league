@@ -272,20 +272,8 @@ def _poll_live_scores():
                 if active_round is None:
                     return
 
-                # Check if any games are live
-                live_games = AflGame.query.filter_by(
-                    year=year, afl_round=active_round, status="live"
-                ).all()
-                if not live_games:
-                    # Also check for recently completed games that might need final scoring
-                    recent_complete = AflGame.query.filter_by(
-                        year=year, afl_round=active_round, status="complete"
-                    ).all()
-                    if not recent_complete:
-                        logger.debug("No live/recent games for R%d, skipping poll", active_round)
-                        return
-
-                # Sync scores
+                # Sync scores (this updates game statuses from Squiggle first,
+                # then scrapes scores if any games are active)
                 changed_data = sync_live_scores(year, active_round)
 
                 # Broadcast via SocketIO

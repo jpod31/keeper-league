@@ -315,14 +315,16 @@ def squad(league_id, team_id):
                     teams_playing.add(g.home_team)
                     teams_playing.add(g.away_team)
                 # Build set of teams whose game has started (locked)
+                # Check both status AND scheduled_start time as fallback
                 locked_teams = set()
+                now = datetime.now()
                 for g in round_games:
-                    if g.status in ("live", "complete"):
+                    if g.status in ("live", "complete") or (g.scheduled_start and g.scheduled_start <= now):
                         locked_teams.add(g.home_team)
                         locked_teams.add(g.away_team)
-                # Find earliest scheduled game for lockout countdown
+                # Find earliest not-yet-started game for lockout countdown
                 for g in sorted(round_games, key=lambda x: x.scheduled_start or datetime.max):
-                    if g.status == "scheduled" and g.scheduled_start:
+                    if g.scheduled_start and g.scheduled_start > now and g.status == "scheduled":
                         if g.home_team in team_afl_teams or g.away_team in team_afl_teams:
                             next_lockout_time = g.scheduled_start.isoformat()
                             break
@@ -751,20 +753,57 @@ def _injury_return_display(player):
 
 
 def _check_player_locked(player_id, year):
-    """Return True if the player's AFL game has started (rolling lockout)."""
+    """Return True if the player's AFL game has started (rolling lockout).
+
+    Uses both DB game status AND scheduled_start time as fallback,
+    so lockout works even if game status hasn't been synced yet.
+    """
+    from datetime import datetime
     from models.live_sync import get_locked_player_ids
-    # Find the current AFL round from the most recent live/complete game
-    latest_game = (
-        AflGame.query
-        .filter_by(year=year)
-        .filter(AflGame.status.in_(["live", "complete"]))
-        .order_by(AflGame.afl_round.desc())
-        .first()
-    )
-    if not latest_game:
+
+    player = db.session.get(AflPlayer, player_id)
+    if not player or not player.afl_team:
         return False
-    locked = get_locked_player_ids(latest_game.afl_round, year)
-    return player_id in locked
+
+    # Find the current/active round
+    from scrapers.squiggle import get_current_round
+    active_round = get_current_round(year)
+    if active_round is None:
+        # Fallback: check DB for any round with live/complete games
+        latest_game = (
+            AflGame.query
+            .filter_by(year=year)
+            .filter(AflGame.status.in_(["live", "complete"]))
+            .order_by(AflGame.afl_round.desc())
+            .first()
+        )
+        if not latest_game:
+            return False
+        active_round = latest_game.afl_round
+
+    # Check if player's team has a game this round that has started
+    game = AflGame.query.filter(
+        AflGame.year == year,
+        AflGame.afl_round == active_round,
+        db.or_(
+            AflGame.home_team == player.afl_team,
+            AflGame.away_team == player.afl_team,
+        ),
+    ).first()
+
+    if not game:
+        return False
+
+    # Lock if game status is live/complete
+    if game.status in ("live", "complete"):
+        return True
+
+    # Fallback: lock if scheduled_start has passed (even if status not updated yet)
+    # scheduled_start is stored in Melbourne local time
+    if game.scheduled_start and game.scheduled_start <= datetime.now():
+        return True
+
+    return False
 
 
 def _get_roster_entry(player_id, team, user):
