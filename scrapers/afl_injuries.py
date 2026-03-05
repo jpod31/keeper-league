@@ -63,12 +63,40 @@ _AFL_TEAM_MAP = {
 }
 
 
-def classify_severity(return_text: str) -> str:
-    """Map an estimated-return string to 'test', 'short', or 'long'.
+def _parse_weeks(return_text: str) -> int | None:
+    """Extract the maximum number of weeks from a return estimate, or None."""
+    lower = return_text.strip().lower()
 
-    - "test"  — return text is exactly "Test"
-    - "short" — "1 week", "1-2 weeks", or a specific next-round target
-    - "long"  — everything else (2+ weeks, Season, TBC, Indefinite, etc.)
+    # "X-Y weeks" → Y
+    m = re.match(r"^(\d+)\s*-\s*(\d+)\s+weeks?$", lower)
+    if m:
+        return int(m.group(2))
+
+    # "X-plus weeks" → X (minimum, treat as that many)
+    m = re.match(r"^(\d+)-?plus\s+weeks?$", lower)
+    if m:
+        return int(m.group(1))
+
+    # "X weeks"
+    m = re.match(r"^(\d+)\s+weeks?$", lower)
+    if m:
+        return int(m.group(1))
+
+    # "X months" → X*4
+    m = re.match(r"^(\d+)\s+months?$", lower)
+    if m:
+        return int(m.group(1)) * 4
+
+    return None
+
+
+def classify_severity(return_text: str) -> str:
+    """Map an estimated-return string to test/short/medium/long.
+
+    - "test"   — return text is exactly "Test"
+    - "short"  — up to 2 weeks
+    - "medium" — 3-6 weeks
+    - "long"   — beyond 6 weeks, Season, TBC, Indefinite, etc.
     """
     if not return_text:
         return "long"
@@ -79,14 +107,20 @@ def classify_severity(return_text: str) -> str:
     if lower == "test":
         return "test"
 
-    # "1 week" or "1-2 weeks" → short
-    if re.match(r"^1\s*(-\s*2)?\s*weeks?$", lower):
-        return "short"
+    if lower in ("season", "indefinite", "tbc"):
+        return "long"
 
-    # "Round X" where X is the next round → treat as short
-    # (single round target is short-term)
+    # "Round X" — treat as short (specific near-term target)
     if re.match(r"^round\s+\d+$", lower):
         return "short"
+
+    weeks = _parse_weeks(text)
+    if weeks is not None:
+        if weeks <= 2:
+            return "short"
+        if weeks <= 6:
+            return "medium"
+        return "long"
 
     return "long"
 
