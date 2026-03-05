@@ -335,14 +335,9 @@ def scrape_live_round(year: int, afl_round: int) -> list[dict]:
     This is the main entry point used by the live sync module.
     Returns list of {name, team, sc_score} dicts.
 
-    Tries Footywire first. If no data (e.g. early-season before Footywire
-    populates), falls back to footyinfo match pages.
+    Uses footyinfo as the sole live source — it has reliable per-match
+    SC scores embedded in HTML tables for both regular season and R0.
     """
-    results = scrape_live_sc_scores(year, afl_round)
-    if results:
-        return results
-
-    logger.info("Footywire returned no data for %d R%d, trying footyinfo fallback", year, afl_round)
     return scrape_footyinfo_sc_scores(year, afl_round)
 
 
