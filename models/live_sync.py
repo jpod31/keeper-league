@@ -162,9 +162,19 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
 
         # Surname-only matching (footyinfo fallback)
         if not afl_player and is_surname_only and team:
-            surname_candidates = surname_team_lookup.get((name, team), [])
-            if len(surname_candidates) == 1:
-                afl_player = surname_candidates[0]
+            # Name might be "Gulden" (pure surname) or "O Hollands" (initial + surname)
+            parts = name.split(None, 1)
+            if len(parts) == 2 and len(parts[0]) <= 2:
+                # Initial + surname: "O Hollands" → match initial against first name
+                initial, surname = parts[0], parts[1]
+                surname_candidates = surname_team_lookup.get((surname, team), [])
+                matched = [p for p in surname_candidates if p.name.startswith(initial)]
+                if len(matched) == 1:
+                    afl_player = matched[0]
+            else:
+                surname_candidates = surname_team_lookup.get((name, team), [])
+                if len(surname_candidates) == 1:
+                    afl_player = surname_candidates[0]
 
         if not afl_player:
             unmatched_count += 1
