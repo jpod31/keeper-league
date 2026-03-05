@@ -2522,6 +2522,21 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .squad-stat-cards { grid-template-columns: 1fr; }
   .squad-hero-title { font-size: 1.1rem; }
 
+  /* Hide stat cards on mobile field view */
+  .fv-stats-hide-mob { display: none !important; }
+
+  /* Hide decorative zone/section headers — cards already have pos badges */
+  .fv-zone-hdr { display: none; }
+  .fv-flex-hdr { display: none; }
+  .fv-ltil-hdr { display: none; }
+  .fv-reserves-hdr { display: none; }
+  .fv-reserves-group-hdr { display: none; }
+
+  /* Tighter field spacing */
+  .fv-zone { padding: .2rem 0; }
+  .fv-field { gap: .3rem; }
+  .fv-reserves-group { margin-bottom: .35rem; }
+
   /* Tables — horizontal scroll */
   .table-responsive-kl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
@@ -2955,7 +2970,7 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .card-body { padding: .5rem .75rem; }
 
   /* ── League top nav bar ── */
-  .league-nav { margin: -.5rem -.6rem .75rem; padding: 0 .6rem; }
+  .league-nav { margin: -.5rem -.6rem .5rem; padding: 0 .6rem; }
   .league-nav-inner { gap: .35rem; }
   .league-selector-btn { font-size: .7rem; padding: .25rem .5rem; }
 

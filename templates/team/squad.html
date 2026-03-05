@@ -16,9 +16,9 @@
       </div>
       <div class="d-flex align-items-center gap-2 flex-wrap">
         <h2 class="squad-hero-title">{{ team.name }}</h2>
-        <span class="squad-hero-count">{{ players|length }} players</span>
+        <span class="squad-hero-count d-none d-lg-inline">{{ players|length }} players</span>
         {% if is_owner %}
-        <span class="squad-hero-owner">Your Team</span>
+        <span class="squad-hero-owner d-none d-lg-inline">Your Team</span>
         {% endif %}
       </div>
     </div>
@@ -130,7 +130,7 @@
   {% endfor %}
 
   {# ── Summary Stat Cards (both views) ── #}
-  <div class="squad-stat-cards">
+  <div class="squad-stat-cards{% if view|default('field') == 'field' %} fv-stats-hide-mob{% endif %}">
     <div class="stat-card">
       <div class="stat-value" style="color:#3fb950;">{{ '%.0f'|format(ns.total_sc) }}</div>
       <div class="stat-label">Total SC Value</div>
