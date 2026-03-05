@@ -1201,6 +1201,54 @@ def delist_hub(league_id):
     return redirect(url_for("leagues.season_hub", league_id=league_id))  # season_hub itself redirects
 
 
+@leagues_bp.route("/<int:league_id>/injuries")
+@login_required
+def player_injuries(league_id):
+    from blueprints import check_league_access
+    from scrapers.afl_injuries import friendly_return_text
+    from scrapers.squiggle import get_current_round
+
+    league, _ = check_league_access(league_id)
+    if not league:
+        flash("League not found or access denied.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    # All injured/suspended players
+    players = AflPlayer.query.filter(AflPlayer.injury_severity.isnot(None)).order_by(AflPlayer.name).all()
+
+    # Build rostered lookup: player_id -> team name
+    rostered_map = {}
+    roster_rows = (
+        db.session.query(FantasyRoster.player_id, FantasyTeam.name)
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+        .all()
+    )
+    for pid, tname in roster_rows:
+        rostered_map[pid] = tname
+
+    # Current round for friendly return text
+    current_round = get_current_round(config.CURRENT_YEAR)
+
+    # Compute return display for each player
+    for p in players:
+        p._return_display = friendly_return_text(p.injury_return, current_round)
+
+    # Fantasy teams for owner filter dropdown
+    fantasy_teams = sorted(
+        [t.name for t in FantasyTeam.query.filter_by(league_id=league_id).all()]
+    )
+
+    return render_template(
+        "leagues/player_injuries.html",
+        league=league,
+        players=players,
+        rostered_map=rostered_map,
+        current_round=current_round,
+        fantasy_teams=fantasy_teams,
+    )
+
+
 @leagues_bp.route("/<int:league_id>/player-pool")
 @login_required
 def player_pool(league_id):

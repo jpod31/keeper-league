@@ -1,0 +1,228 @@
+{% extends "league_base.html" %}
+{% set active_tab = 'players' %}
+{% set active_subtab = 'injuries' %}
+{% block title %}Injuries — {{ league.name }}{% endblock %}
+{% block league_content %}
+{% include "leagues/_players_subnav.html" %}
+<style>
+  .inj-table th {
+    padding: .5rem .6rem;
+    font-size: .7rem;
+    border-bottom: 2px solid #30363d;
+    position: relative;
+  }
+  .inj-table th.sortable { cursor: pointer; user-select: none; }
+  .inj-table th.sortable:hover { color: #58a6ff; }
+  .inj-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
+  .inj-table th.sort-active .sort-icon { opacity: 1; color: #58a6ff; }
+  .inj-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
+  .inj-table tbody tr { transition: background .1s; }
+  .inj-table tbody tr:hover { background: rgba(88,166,255,.04) !important; }
+  .player-link { text-decoration: none; display: flex; align-items: center; gap: .5rem; }
+  .player-link:hover .p-name { color: #58a6ff; }
+  .p-name { color: #e6edf3; font-weight: 600; font-size: .82rem; transition: color .1s; white-space: nowrap; }
+  .team-icon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+  .sev-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
+  }
+  .sev-test       { background: rgba(247,100,190,.15); color: #f778ba; }
+  .sev-short      { background: rgba(248,81,73,.15);   color: #f85149; }
+  .sev-long       { background: rgba(140,30,30,.25);    color: #ff4040; }
+  .sev-suspension { background: rgba(227,179,65,.15);   color: #e3b341; }
+  .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+  .filter-bar .form-control-sm, .filter-bar .form-select-sm {
+    background: #0d1117; border-color: #30363d; font-size: .78rem;
+  }
+  .inj-count {
+    font-size: .75rem; color: #8b949e; white-space: nowrap;
+    display: flex; align-items: center; gap: .35rem;
+  }
+  .inj-count strong { color: #c9d1d9; }
+</style>
+
+<div class="page-header">
+  <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Players</div>
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <h2 class="mb-0">Injury List</h2>
+      <span style="font-size:.78rem;color:#8b949e;">All currently injured &amp; suspended players</span>
+    </div>
+    <div class="inj-count">
+      <span id="visible-count"><strong>{{ players|length }}</strong> players</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header py-2">
+    <div class="d-flex gap-2 align-items-center mb-2 mb-lg-0">
+      <button class="filter-toggle-btn" onclick="document.querySelector('.filter-bar').classList.toggle('filter-open')" type="button">
+        <i class="bi bi-funnel"></i>Filters<span class="filter-count" id="filterCount" style="display:none;">0</span>
+      </button>
+      <div class="d-lg-none" style="flex:1;">
+        <input type="text" class="form-control form-control-sm" id="inj-search-mobile"
+               placeholder="Search..." oninput="document.getElementById('inj-search').value=this.value;filterInj()">
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div style="flex:1 1 200px;max-width:280px;">
+        <input type="text" class="form-control form-control-sm" id="inj-search"
+               placeholder="Search by name..." oninput="filterInj()">
+      </div>
+      <select class="form-select form-select-sm" id="inj-club-filter" onchange="filterInj()" style="width:auto;">
+        <option value="">All Clubs</option>
+        {% set clubs_seen = [] %}
+        {% for p in players %}
+          {% if p.afl_team and p.afl_team not in clubs_seen %}
+            {% if clubs_seen.append(p.afl_team) %}{% endif %}
+          {% endif %}
+        {% endfor %}
+        {% for c in clubs_seen|sort %}
+          <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+      </select>
+      <select class="form-select form-select-sm" id="inj-owner-filter" onchange="filterInj()" style="width:auto;">
+        <option value="">All Coaches</option>
+        {% for t in fantasy_teams %}
+          <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
+      </select>
+      <select class="form-select form-select-sm" id="inj-severity-filter" onchange="filterInj()" style="width:auto;">
+        <option value="">All Severity</option>
+        <option value="test">Test</option>
+        <option value="short">Short</option>
+        <option value="long">Long</option>
+        <option value="suspension">Suspension</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card-body p-0" style="max-height:78vh;overflow:auto;">
+    <table class="table table-sm mb-0 inj-table">
+      <thead class="sticky-top" style="background:#161b22;z-index:2;">
+        <tr>
+          <th class="sortable sort-active" onclick="sortInj('name',this)">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable" onclick="sortInj('team',this)">Club <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable" style="width:70px;" onclick="sortInj('pos',this)">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-end" style="width:60px;" onclick="sortInj('avg',this)">Avg <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable" onclick="sortInj('injury',this)">Injury <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-center" style="width:95px;" onclick="sortInj('severity',this)">Severity <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th style="width:220px;">Est. Return</th>
+          <th class="sortable" style="width:130px;" onclick="sortInj('owner',this)">Owner <i class="bi bi-chevron-expand sort-icon"></i></th>
+        </tr>
+      </thead>
+      <tbody id="inj-body">
+        {% for p in players %}
+          {% set sc_display = p.sc_avg if p.sc_avg else (p.sc_avg_prev if p.sc_avg_prev else None) %}
+          {% set owner_team = rostered_map.get(p.id) %}
+          <tr data-name="{{ p.name|lower }}"
+              data-team="{{ p.afl_team or '' }}"
+              data-pos="{{ p.position or '' }}"
+              data-avg="{{ sc_display or 0 }}"
+              data-injury="{{ p.injury_type or '' }}"
+              data-severity="{{ p.injury_severity or '' }}"
+              data-owner="{{ owner_team or '' }}">
+            <td>
+              <a href="{{ url_for('player_detail', name=p.name) }}" class="player-link">
+                {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                  <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="team-icon">
+                {% endif %}
+                <span class="p-name">{{ p.name }}</span>
+              </a>
+            </td>
+            <td>{{ p.afl_team or '' }}</td>
+            <td>
+              {% for pos in (p.position or 'MID').split('/') %}
+                <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.6rem;">{{ pos }}</span>
+              {% endfor %}
+            </td>
+            <td class="text-end">{% if sc_display %}{{ '%.1f'|format(sc_display) }}{% else %}&mdash;{% endif %}</td>
+            <td>{{ p.injury_type or '' }}</td>
+            <td class="text-center">
+              <span class="sev-badge sev-{{ p.injury_severity or 'long' }}">{{ (p.injury_severity or 'long')|capitalize }}</span>
+            </td>
+            <td style="font-size:.75rem;color:#8b949e;">{{ p._return_display or '' }}</td>
+            <td>
+              {% if owner_team %}
+                <span style="font-weight:600;color:#c9d1d9;">{{ owner_team }}</span>
+              {% else %}
+                <span style="color:#484f58;">&mdash;</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function matchInjRow(el, q, club, owner, severity) {
+  var nameMatch = !q || (el.dataset.name || '').includes(q);
+  var clubMatch = !club || el.dataset.team === club;
+  var ownerMatch = !owner || el.dataset.owner === owner;
+  var sevMatch = !severity || el.dataset.severity === severity;
+  return nameMatch && clubMatch && ownerMatch && sevMatch;
+}
+
+function filterInj() {
+  var q = document.getElementById('inj-search').value.toLowerCase();
+  var club = document.getElementById('inj-club-filter').value;
+  var owner = document.getElementById('inj-owner-filter').value;
+  var severity = document.getElementById('inj-severity-filter').value;
+  var count = 0;
+
+  document.querySelectorAll('#inj-body tr').forEach(function(row) {
+    var show = matchInjRow(row, q, club, owner, severity);
+    row.style.display = show ? '' : 'none';
+    if (show) count++;
+  });
+
+  document.getElementById('visible-count').innerHTML = '<strong>' + count + '</strong> players';
+
+  var activeFilters = 0;
+  if (club) activeFilters++;
+  if (owner) activeFilters++;
+  if (severity) activeFilters++;
+  var badge = document.getElementById('filterCount');
+  if (badge) {
+    if (activeFilters > 0) {
+      badge.textContent = activeFilters;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+var injSortKey = 'name', injSortAsc = true;
+function sortInj(key, el) {
+  if (injSortKey === key) { injSortAsc = !injSortAsc; } else { injSortKey = key; injSortAsc = (key === 'name' || key === 'team' || key === 'pos' || key === 'injury' || key === 'owner'); }
+  document.querySelectorAll('.inj-table th.sortable').forEach(function(th) { th.classList.remove('sort-active'); });
+  if (el) el.classList.add('sort-active');
+  var tbody = document.getElementById('inj-body');
+  var rows = Array.from(tbody.querySelectorAll('tr'));
+  var sevOrder = {test: 0, short: 1, long: 2, suspension: 3};
+  rows.sort(function(a, b) {
+    var va, vb;
+    if (key === 'avg') {
+      va = parseFloat(a.dataset.avg) || 0;
+      vb = parseFloat(b.dataset.avg) || 0;
+      return injSortAsc ? va - vb : vb - va;
+    }
+    if (key === 'severity') {
+      va = sevOrder[a.dataset.severity] !== undefined ? sevOrder[a.dataset.severity] : 9;
+      vb = sevOrder[b.dataset.severity] !== undefined ? sevOrder[b.dataset.severity] : 9;
+      return injSortAsc ? va - vb : vb - va;
+    }
+    // String-based sorts
+    var attr = key;
+    va = (a.dataset[attr] || '').toLowerCase();
+    vb = (b.dataset[attr] || '').toLowerCase();
+    return injSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+}
+</script>
+{% endblock %}
