@@ -831,6 +831,11 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   background: linear-gradient(135deg, rgba(188,140,255,.08), var(--kl-bg-card) 50%);
 }
 
+/* Locked card — game started, no action bubbles */
+.fv-card-locked { opacity: .7; }
+.fv-card-locked .fv-actions { display: none !important; }
+.fv-card-locked .fv-swap-overlay { display: none !important; }
+
 /* ── Bubble badge (C / VC / E) ── */
 .fv-ribbon {
   position: absolute;

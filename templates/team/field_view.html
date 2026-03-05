@@ -6,11 +6,12 @@
     {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
     {% set is_7s = sevens_ids is defined and p.id in sevens_ids %}
     {% set is_7c = sevens_captain_id is defined and p.id == sevens_captain_id %}
-    <div class="fv-card fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if is_7s %} fv-card-7s{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}"
+    <div class="fv-card fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if is_7s %} fv-card-7s{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}{% if is_locked %} fv-card-locked{% endif %}"
          data-player-id="{{ p.id }}"
          data-section="{% if is_reserve %}reserve{% elif is_flex %}flex{% else %}field{% endif %}"
          data-positions="{{ p.position or 'MID' }}"
          data-field-pos="{{ pos_class|upper if not is_flex and not is_reserve else '' }}"
+         data-locked="{% if is_locked %}1{% endif %}"
          onclick="fvShowPlayer({{ p.id }})">
       {# Captain / VC / Emergency / 7s ribbon #}
       {% if cap_id == p.id %}
@@ -46,8 +47,8 @@
         <div class="fv-bye-badge{% if is_selected or p.injury_severity %} fv-bye-shifted{% endif %}" title="No game this round">BYE</div>
       {% endif %}
 
-      {# Hover action bubbles (owner only) #}
-      {% if is_owner %}
+      {# Hover action bubbles (owner only, not locked players) #}
+      {% if is_owner and not is_locked %}
       <div class="fv-actions" onclick="event.stopPropagation()">
         {% if not is_reserve %}
         <button class="fv-action-btn fv-act-cap{% if cap_id == p.id %} active{% endif %}"
@@ -648,6 +649,9 @@ function fvStartSub(pid) {
       card.classList.add('fv-swap-active');
       return;
     }
+
+    // Locked players can't be swap targets
+    if (card.dataset.locked === '1') return;
 
     const tgtSection = card.dataset.section;
     const tgtPositions = card.dataset.positions.split('/');
