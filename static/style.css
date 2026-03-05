@@ -3585,6 +3585,9 @@ img[src*="Carlton.png"] {
   transition: background .1s;
 }
 .mob-pos-row:active { background: rgba(88,166,255,.08) !important; }
+/* Swap mode highlighting on mobile rows */
+.mob-pos-row.fv-swap-active { background: rgba(88,166,255,.15) !important; border-left: 3px solid #58a6ff !important; }
+.mob-pos-row.fv-swap-eligible { background: rgba(63,185,80,.08) !important; border-left: 3px solid #3fb950 !important; }
 .mob-pos-logo {
   width: 26px;
   height: 26px;

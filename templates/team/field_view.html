@@ -6,6 +6,8 @@
     {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
     {% set is_7s = sevens_ids is defined and p.id in sevens_ids %}
     {% set is_7c = sevens_captain_id is defined and p.id == sevens_captain_id %}
+    {% set is_selected = selected_player_ids is defined and p.id in selected_player_ids %}
+    {% set is_locked = locked_teams is defined and locked_teams and p.afl_team in locked_teams %}
     <div class="fv-card fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}{% if is_reserve %} fv-card-reserve{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if is_7s %} fv-card-7s{% endif %}{% if cap_id == p.id %} fv-card-captain{% endif %}{% if vc_id == p.id %} fv-card-vc{% endif %}{% if is_locked %} fv-card-locked{% endif %}"
          data-player-id="{{ p.id }}"
          data-section="{% if is_reserve %}reserve{% elif is_flex %}flex{% else %}field{% endif %}"
@@ -23,10 +25,6 @@
       {% elif is_7s %}
         <div class="fv-ribbon fv-ribbon-7s"><span>{% if is_7c %}7C{% else %}7{% endif %}</span></div>
       {% endif %}
-
-      {# Top-left badge: locked > selected tick > injury > nothing #}
-      {% set is_selected = selected_player_ids is defined and p.id in selected_player_ids %}
-      {% set is_locked = locked_teams is defined and locked_teams and p.afl_team in locked_teams %}
       {% if is_locked and is_selected %}
         <div class="fv-selected fv-locked" title="Locked — game started">
           <i class="bi bi-lock-fill"></i>
@@ -491,6 +489,11 @@ function fvApi(endpoint, body) {
 
 // ── Soft-refresh: fetch page, replace field wrapper seamlessly ──
 function fvRefresh() {
+  // On mobile, do a full page reload since the mob-pos-rows live outside fvWrapper
+  if (window.innerWidth < 992) {
+    window.location.reload();
+    return Promise.resolve();
+  }
   return fetch(location.href)
     .then(r => r.text())
     .then(html => {
@@ -640,6 +643,26 @@ function fv7sCaptain(pid) {
   });
 }
 
+// ── Swap eligibility check (shared by desktop + mobile) ──
+function _checkSwapEligible(srcSection, srcPositions, srcFieldPos, tgtSection, tgtPositions, tgtFieldPos) {
+  if (srcSection === tgtSection && srcSection === 'field') {
+    return srcPositions.includes(tgtFieldPos) && tgtPositions.includes(srcFieldPos);
+  } else if (srcSection === 'field' && tgtSection === 'flex') {
+    return tgtPositions.includes(srcFieldPos);
+  } else if (srcSection === 'field' && tgtSection === 'reserve') {
+    return tgtPositions.includes(srcFieldPos);
+  } else if (srcSection === 'flex' && tgtSection === 'field') {
+    return srcPositions.includes(tgtFieldPos);
+  } else if (srcSection === 'flex' && (tgtSection === 'flex' || tgtSection === 'reserve')) {
+    return true;
+  } else if (srcSection === 'reserve' && tgtSection === 'field') {
+    return srcPositions.includes(tgtFieldPos);
+  } else if (srcSection === 'reserve' && (tgtSection === 'flex' || tgtSection === 'reserve')) {
+    return true;
+  }
+  return false;
+}
+
 // ── Swap: start ──
 function fvStartSub(pid) {
   if (swapSourceId === pid) {
@@ -648,14 +671,19 @@ function fvStartSub(pid) {
   }
   swapSourceId = pid;
   const wrapper = document.getElementById('fvWrapper');
-  wrapper.classList.add('fv-swap-mode');
+  if (wrapper) wrapper.classList.add('fv-swap-mode');
 
-  const sourceCard = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
-  const srcSection = sourceCard.dataset.section;
-  const srcPositions = sourceCard.dataset.positions.split('/');
-  const srcFieldPos = sourceCard.dataset.fieldPos;
+  // Get source data from whichever element exists (mobile row or desktop card)
+  const src = document.querySelector(`.mob-pos-row[data-player-id="${pid}"]`)
+           || document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+  if (!src) return;
+  const srcSection = src.dataset.section;
+  const srcPositions = src.dataset.positions.split('/');
+  const srcFieldPos = src.dataset.fieldPos;
 
-  document.querySelectorAll('.fv-card[data-player-id]').forEach(card => {
+  // Mark eligible targets on both desktop cards AND mobile rows
+  document.querySelectorAll('[data-player-id]').forEach(card => {
+    if (!card.classList.contains('fv-card') && !card.classList.contains('mob-pos-row')) return;
     card.classList.remove('fv-swap-active', 'fv-swap-eligible');
     const tid = parseInt(card.dataset.playerId);
 
@@ -666,46 +694,32 @@ function fvStartSub(pid) {
 
     // Locked players can't be swap targets
     if (card.dataset.locked === '1') return;
+    if (!card.dataset.section) return;
 
     const tgtSection = card.dataset.section;
     const tgtPositions = card.dataset.positions.split('/');
     const tgtFieldPos = card.dataset.fieldPos;
-    let eligible = false;
 
-    if (srcSection === tgtSection && srcSection === 'field') {
-      eligible = srcPositions.includes(tgtFieldPos) && tgtPositions.includes(srcFieldPos);
-    } else if (srcSection === 'field' && tgtSection === 'flex') {
-      // FLEX accepts any position, target just needs to fit source's field slot
-      eligible = tgtPositions.includes(srcFieldPos);
-    } else if (srcSection === 'field' && tgtSection === 'reserve') {
-      eligible = tgtPositions.includes(srcFieldPos);
-    } else if (srcSection === 'flex' && tgtSection === 'field') {
-      eligible = srcPositions.includes(tgtFieldPos);
-    } else if (srcSection === 'flex' && tgtSection === 'flex') {
-      eligible = true;
-    } else if (srcSection === 'flex' && tgtSection === 'reserve') {
-      eligible = true;
-    } else if (srcSection === 'reserve' && tgtSection === 'field') {
-      eligible = srcPositions.includes(tgtFieldPos);
-    } else if (srcSection === 'reserve' && tgtSection === 'flex') {
-      eligible = true; // FLEX accepts any position
-    } else if (srcSection === 'reserve' && tgtSection === 'reserve') {
-      eligible = true;
-    }
-
-    if (eligible) {
+    if (_checkSwapEligible(srcSection, srcPositions, srcFieldPos, tgtSection, tgtPositions, tgtFieldPos)) {
       card.classList.add('fv-swap-eligible');
     }
   });
+
+  // On mobile, show a toast so the user knows to tap a target
+  if (window.innerWidth < 768) {
+    fvToast('Tap a highlighted player to swap', 'info');
+  }
 }
 
 // ── Swap: complete with animation + inline DOM swap ──
 function fvCompleteSub(targetPid) {
   if (!swapSourceId || swapSourceId === targetPid) return;
-  const targetCard = document.querySelector(`.fv-card[data-player-id="${targetPid}"]`);
+  const targetCard = document.querySelector(`.mob-pos-row[data-player-id="${targetPid}"]`)
+                  || document.querySelector(`.fv-card[data-player-id="${targetPid}"]`);
   if (!targetCard || !targetCard.classList.contains('fv-swap-eligible')) return;
 
-  const sourceCard = document.querySelector(`.fv-card[data-player-id="${swapSourceId}"]`);
+  const sourceCard = document.querySelector(`.mob-pos-row[data-player-id="${swapSourceId}"]`)
+                  || document.querySelector(`.fv-card[data-player-id="${swapSourceId}"]`);
   const savedSource = swapSourceId;
   fvCancelSub();
 
@@ -766,8 +780,8 @@ function fvCompleteSub(targetPid) {
 function fvCancelSub() {
   swapSourceId = null;
   const wrapper = document.getElementById('fvWrapper');
-  wrapper.classList.remove('fv-swap-mode');
-  document.querySelectorAll('.fv-card').forEach(card => {
+  if (wrapper) wrapper.classList.remove('fv-swap-mode');
+  document.querySelectorAll('.fv-card, .mob-pos-row').forEach(card => {
     card.classList.remove('fv-swap-active', 'fv-swap-eligible');
   });
 }
@@ -993,6 +1007,17 @@ function fvSSPPick(replacementId) {
 // ── Mobile Action Sheet ──
 const _origFvShowPlayer = fvShowPlayer;
 fvShowPlayer = function(pid) {
+  // If in swap mode, complete the swap instead of opening action sheet
+  if (swapSourceId) {
+    const row = document.querySelector(`.mob-pos-row[data-player-id="${pid}"]`)
+             || document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+    if (row && row.classList.contains('fv-swap-eligible')) {
+      fvCompleteSub(pid);
+    } else if (pid === swapSourceId) {
+      fvCancelSub();
+    }
+    return;
+  }
   if (window.innerWidth < 768) {
     fvOpenActionSheet(pid);
   } else {
@@ -1002,7 +1027,9 @@ fvShowPlayer = function(pid) {
 
 function fvOpenActionSheet(pid) {
   if (swapSourceId) return;
-  const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+  // Try mobile row first (visible on mobile), then desktop fv-card
+  const card = document.querySelector(`.mob-pos-row[data-player-id="${pid}"]`)
+             || document.querySelector(`.fv-card[data-player-id="${pid}"]`);
   if (!card) return;
 
   // Locked players — only show View Profile
@@ -1020,11 +1047,14 @@ function fvOpenActionSheet(pid) {
   const isFlex = section === 'flex';
   const isField = section === 'field';
 
-  // Player info from card
+  // Player info — try mobile name first, then desktop card
+  const mobName = card.querySelector('.mob-pos-name');
   const nameEl = card.querySelector('.fv-surname');
   const fnameEl = card.querySelector('.fv-firstname');
-  const playerName = (fnameEl?.textContent || '') + ' ' + (nameEl?.textContent || '');
-  const logoImg = card.querySelector('.fv-card-top .fv-logo img');
+  const playerName = mobName
+    ? mobName.childNodes[0]?.textContent?.trim() || ''
+    : ((fnameEl?.textContent || '') + ' ' + (nameEl?.textContent || '')).trim();
+  const logoImg = card.querySelector('.mob-pos-logo') || card.querySelector('.fv-card-top .fv-logo img');
   const posText = positions + (fieldPos ? ' (' + fieldPos + ')' : '');
 
   document.getElementById('fvAsName').textContent = playerName.trim();
