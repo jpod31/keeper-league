@@ -9,8 +9,10 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
+from sqlalchemy import func as sa_func
+
 from models.database import (
-    db, AflGame, AflPlayer, PlayerStat, Fixture, FantasyTeam,
+    db, AflGame, AflPlayer, PlayerStat, ScScore, Fixture, FantasyTeam,
     FantasyRoster, LiveScoringConfig, RoundScore, League,
     CustomScoringRule,
 )
@@ -26,6 +28,41 @@ from scrapers.footywire_live import scrape_live_round
 logger = logging.getLogger(__name__)
 
 _R0_ID_OFFSET = 10_000_000  # Offset added to AflGame IDs for round 0 copies
+
+
+# ── SC average recompute ─────────────────────────────────────────────
+
+
+def recompute_sc_averages(year: int) -> int:
+    """Recompute AflPlayer.sc_avg from PlayerStat for the given year.
+
+    Returns the number of players updated with a 2026 average.
+    """
+    rows = db.session.query(
+        PlayerStat.player_id,
+        sa_func.avg(PlayerStat.supercoach_score).label("avg_sc"),
+        sa_func.count(PlayerStat.id).label("games"),
+    ).filter(
+        PlayerStat.year == year,
+        PlayerStat.supercoach_score.isnot(None),
+    ).group_by(PlayerStat.player_id).all()
+
+    avg_map = {r.player_id: (r.avg_sc, r.games) for r in rows}
+
+    updated = 0
+    for p in AflPlayer.query.all():
+        if p.id in avg_map:
+            avg_sc, games = avg_map[p.id]
+            p.sc_avg = round(float(avg_sc), 1)
+            p.games_played = int(games)
+            updated += 1
+        else:
+            p.sc_avg = None
+            p.games_played = 0
+
+    db.session.commit()
+    logger.info("Recomputed sc_avg for year %d: %d players with data", year, updated)
+    return updated
 
 
 # ── Schedule sync ────────────────────────────────────────────────────
@@ -217,6 +254,32 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
         )
     else:
         logger.info("Player matching: %d/%d matched for %d R%d", matched, total_scraped, year, afl_round)
+
+    # 5b. Sync ScScore rows alongside PlayerStat (for form/analytics queries)
+    if updated_player_ids:
+        sc_synced = 0
+        for pid in updated_player_ids:
+            ps = PlayerStat.query.filter_by(
+                player_id=pid, year=year, round=afl_round
+            ).first()
+            if not ps or ps.supercoach_score is None:
+                continue
+            sc = ScScore.query.filter_by(
+                player_id=pid, year=year, round=afl_round
+            ).first()
+            if sc:
+                sc.sc_score = ps.supercoach_score
+            else:
+                db.session.add(ScScore(
+                    player_id=pid, year=year, round=afl_round,
+                    sc_score=ps.supercoach_score,
+                ))
+            sc_synced += 1
+        db.session.commit()
+        logger.info("ScScore sync: %d rows for %d R%d", sc_synced, year, afl_round)
+
+    # 5c. Recompute sc_avg from 2026 PlayerStat data
+    recompute_sc_averages(year)
 
     # 6. Mirror data to round 0 if any league has active pre-season fixtures
     if afl_round == 1:

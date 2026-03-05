@@ -259,8 +259,11 @@ def _sync_players_to_db(app, force=False):
             key = (orm_data["name"], orm_data["afl_team"])
             if key in existing:
                 row = existing[key]
+                # Skip sc_avg/sc_avg_prev/games_played — these are now
+                # computed from live PlayerStat data, not from CSV.
+                _LIVE_COLS = {"name", "afl_team", "sc_avg", "sc_avg_prev", "games_played"}
                 for col, val in orm_data.items():
-                    if col not in ("name", "afl_team"):
+                    if col not in _LIVE_COLS:
                         setattr(row, col, val)
                 updated += 1
             else:
