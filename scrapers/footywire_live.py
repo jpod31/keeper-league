@@ -373,91 +373,59 @@ _FOOTYINFO_TEAM_ID_MAP = {
 }
 
 
-def _extract_json_from_html(html: str, key: str) -> dict | None:
-    """Extract a JSON object containing `key` from embedded script data.
 
-    Footyinfo uses TanStack Query dehydrated state embedded in the page.
-    We look for the playerStats object within script tags.
+def _teams_from_url(url: str) -> tuple[str, str]:
+    """Extract (home_team, away_team) canonical names from a footyinfo match URL.
+
+    URL pattern: .../round-0/sydney-vs-carlton-18938
     """
-    import json
+    # Footyinfo slug → canonical name
+    _SLUG_MAP = {
+        "adelaide": "Adelaide",
+        "brisbane": "Brisbane Lions",
+        "carlton": "Carlton",
+        "collingwood": "Collingwood",
+        "essendon": "Essendon",
+        "fremantle": "Fremantle",
+        "geelong": "Geelong",
+        "gold-coast": "Gold Coast",
+        "gws": "GWS",
+        "hawthorn": "Hawthorn",
+        "melbourne": "Melbourne",
+        "north-melbourne": "North Melbourne",
+        "port-adelaide": "Port Adelaide",
+        "richmond": "Richmond",
+        "st-kilda": "St Kilda",
+        "sydney": "Sydney",
+        "west-coast": "West Coast",
+        "western-bulldogs": "Western Bulldogs",
+    }
 
-    # Look for __NEXT_DATA__ script tag (Next.js pattern)
-    match = re.search(
-        r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>',
-        html,
-        re.DOTALL,
-    )
-    if match:
-        try:
-            return json.loads(match.group(1))
-        except (json.JSONDecodeError, ValueError):
-            pass
+    # Extract the slug part: "sydney-vs-carlton-18938"
+    match = re.search(r'/([a-z-]+-vs-[a-z-]+-\d+)$', url)
+    if not match:
+        return ("", "")
 
-    # Fallback: look for dehydrated state with playerStats
-    # The TanStack Query state is often in a script tag as JSON
-    for match in re.finditer(r'<script[^>]*>(.*?)</script>', html, re.DOTALL):
-        text = match.group(1)
-        if key in text:
-            # Try to find JSON object containing the key
-            # Look for the outermost JSON object
-            start = text.find('{')
-            if start == -1:
-                continue
-            try:
-                return json.loads(text[start:])
-            except (json.JSONDecodeError, ValueError):
-                pass
+    slug = match.group(1)
+    # Remove trailing match ID: "sydney-vs-carlton"
+    slug = re.sub(r'-\d+$', '', slug)
+    parts = slug.split("-vs-")
+    if len(parts) != 2:
+        return ("", "")
 
-            # Try extracting just the playerStats portion
-            idx = text.find('"playerStats"')
-            if idx == -1:
-                idx = text.find("playerStats")
-            if idx != -1:
-                # Walk back to find enclosing {
-                brace_start = text.rfind('{', 0, idx)
-                if brace_start != -1:
-                    # Try progressively larger chunks
-                    depth = 0
-                    for i in range(brace_start, len(text)):
-                        if text[i] == '{':
-                            depth += 1
-                        elif text[i] == '}':
-                            depth -= 1
-                            if depth == 0:
-                                try:
-                                    return json.loads(text[brace_start:i + 1])
-                                except (json.JSONDecodeError, ValueError):
-                                    break
-
-    return None
-
-
-def _find_player_stats(data, depth=0) -> dict | None:
-    """Recursively search a nested dict/list for playerStats data."""
-    if depth > 15:
-        return None
-    if isinstance(data, dict):
-        if "playerStats" in data:
-            ps = data["playerStats"]
-            if isinstance(ps, dict) and ("home" in ps or "away" in ps):
-                return ps
-        for v in data.values():
-            result = _find_player_stats(v, depth + 1)
-            if result:
-                return result
-    elif isinstance(data, list):
-        for item in data:
-            result = _find_player_stats(item, depth + 1)
-            if result:
-                return result
-    return None
+    home = _SLUG_MAP.get(parts[0], "")
+    away = _SLUG_MAP.get(parts[1], "")
+    return (home, away)
 
 
 def _parse_footyinfo_match(url: str) -> list[dict]:
     """Parse a footyinfo match page and extract player SC scores.
 
     Returns list of {name, team, sc_score} dicts.
+    Names are surname-only (from HTML tables). Team is canonical.
     """
+    home_team, away_team = _teams_from_url(url)
+
     try:
         resp = requests.get(url, headers=HEADERS, timeout=30)
         resp.raise_for_status()
@@ -465,59 +433,20 @@ def _parse_footyinfo_match(url: str) -> list[dict]:
         logger.error("Failed to fetch footyinfo match %s: %s", url, e)
         return []
 
-    html = resp.text
-
-    # Try to extract embedded JSON data
-    data = _extract_json_from_html(html, "playerStats")
-    if not data:
-        logger.warning("No embedded JSON found in footyinfo match page: %s", url)
-        # Fallback: try parsing HTML tables
-        return _parse_footyinfo_match_tables(html, url)
-
-    player_stats = _find_player_stats(data)
-    if not player_stats:
-        logger.warning("No playerStats found in footyinfo data: %s", url)
-        return _parse_footyinfo_match_tables(html, url)
-
-    results = []
-    for side in ("home", "away"):
-        side_data = player_stats.get(side, {})
-        rows = side_data.get("rows", [])
-        for row in rows:
-            sort_name = row.get("player_sort_name", "")
-            sc_score = row.get("supercoach")
-            team_id = row.get("team_id")
-
-            if not sort_name or sc_score is None:
-                continue
-
-            # Convert "Gulden Errol" → "Errol Gulden"
-            parts = sort_name.strip().split(None, 1)
-            if len(parts) == 2:
-                name = f"{parts[1]} {parts[0]}"
-            else:
-                name = sort_name
-
-            team = _FOOTYINFO_TEAM_ID_MAP.get(team_id, "")
-
-            try:
-                sc_val = int(sc_score)
-            except (ValueError, TypeError):
-                continue
-
-            results.append({
-                "name": name,
-                "team": team,
-                "sc_score": sc_val,
-            })
-
-    return results
+    return _parse_footyinfo_match_tables(resp.text, url, home_team, away_team)
 
 
-def _parse_footyinfo_match_tables(html: str, url: str) -> list[dict]:
-    """Fallback: parse footyinfo match page using HTML tables (SC column)."""
+def _parse_footyinfo_match_tables(html: str, url: str,
+                                   home_team: str = "", away_team: str = "") -> list[dict]:
+    """Parse footyinfo match page HTML tables for SC scores.
+
+    Tables appear in order: table 0 = home, table 1 = away.
+    Headers: #, Player, KI, HB, DI, MA, FF, FA, TA, HO, G.B, ToG, AF, SC
+    """
     soup = BeautifulSoup(html, "lxml")
     results = []
+    team_order = [home_team, away_team]
+    table_idx = 0
 
     tables = soup.find_all("table")
     for table in tables:
@@ -525,37 +454,37 @@ def _parse_footyinfo_match_tables(html: str, url: str) -> list[dict]:
         if len(rows) < 2:
             continue
 
-        # Find SC column index from headers
+        # Find SC and Player column indices from headers
         header_cells = rows[0].find_all(["th", "td"])
-        headers = [c.get_text(strip=True) for c in header_cells]
+        headers = [c.get_text(strip=True).upper() for c in header_cells]
 
         sc_idx = None
         name_idx = None
         for i, h in enumerate(headers):
-            if h.upper() == "SC":
+            if h == "SC":
                 sc_idx = i
-            if h.upper() in ("PLAYER", ""):
-                # Player name is often the second column (after guernsey)
-                if name_idx is None and i <= 2:
-                    name_idx = i
+            if h == "PLAYER":
+                name_idx = i
 
         if sc_idx is None:
             continue
+
+        # Assign team based on table order (first = home, second = away)
+        team = team_order[table_idx] if table_idx < len(team_order) else ""
+        table_idx += 1
 
         for row in rows[1:]:
             cells = row.find_all("td")
             if len(cells) <= sc_idx:
                 continue
 
-            # Try to find player name
-            name_cell = cells[name_idx] if name_idx is not None and name_idx < len(cells) else None
-            player_link = row.find("a", href=lambda h: h and "/player/" in str(h))
-
-            if player_link:
-                name = player_link.get_text(strip=True)
-            elif name_cell:
-                name = name_cell.get_text(strip=True)
+            # Player name (surname only from footyinfo tables)
+            if name_idx is not None and name_idx < len(cells):
+                name = cells[name_idx].get_text(strip=True)
             else:
+                continue
+
+            if not name:
                 continue
 
             sc_text = cells[sc_idx].get_text(strip=True).replace(",", "")
@@ -564,8 +493,9 @@ def _parse_footyinfo_match_tables(html: str, url: str) -> list[dict]:
 
             results.append({
                 "name": name,
-                "team": "",  # Unknown from table alone
+                "team": team,
                 "sc_score": int(sc_text),
+                "is_surname_only": True,  # Flag for matching logic
             })
 
     logger.info("Parsed %d players from footyinfo tables: %s", len(results), url)

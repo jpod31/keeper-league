@@ -123,9 +123,15 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
     all_players = AflPlayer.query.all()
     player_lookup: dict[tuple[str, str], AflPlayer] = {}
     player_name_lookup: dict[str, list[AflPlayer]] = {}
+    # Surname + team lookup for footyinfo (returns surname-only names)
+    surname_team_lookup: dict[tuple[str, str], list[AflPlayer]] = {}
     for p in all_players:
         player_lookup[(p.name, p.afl_team)] = p
         player_name_lookup.setdefault(p.name, []).append(p)
+        # Extract surname (last word of name)
+        surname = p.name.split()[-1] if p.name else ""
+        if surname:
+            surname_team_lookup.setdefault((surname, p.afl_team), []).append(p)
 
     # Build set of teams in active games
     active_teams = set()
@@ -144,6 +150,7 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
         name = entry["name"]
         team = entry["team"]
         sc_score = entry["sc_score"]
+        is_surname_only = entry.get("is_surname_only", False)
 
         # Match by (name, team) first
         afl_player = player_lookup.get((name, team))
@@ -152,6 +159,12 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
             candidates = player_name_lookup.get(name, [])
             if len(candidates) == 1:
                 afl_player = candidates[0]
+
+        # Surname-only matching (footyinfo fallback)
+        if not afl_player and is_surname_only and team:
+            surname_candidates = surname_team_lookup.get((name, team), [])
+            if len(surname_candidates) == 1:
+                afl_player = surname_candidates[0]
 
         if not afl_player:
             unmatched_count += 1
