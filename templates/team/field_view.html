@@ -339,6 +339,22 @@
   {% endif %}
 </div>{# /fv-outer #}
 
+{% if is_owner %}
+{# ═══ Mobile Action Sheet (outside fvWrapper so fvRefresh() doesn't destroy it) ═══ #}
+<div class="fv-action-sheet-backdrop" id="fvAsBackdrop" onclick="fvCloseActionSheet()"></div>
+<div class="fv-action-sheet" id="fvActionSheet">
+  <div class="fv-action-sheet-handle"></div>
+  <div class="fv-action-sheet-header">
+    <img id="fvAsLogo" src="" alt="" style="display:none;">
+    <div>
+      <div class="fv-as-name" id="fvAsName"></div>
+      <div class="fv-as-meta" id="fvAsMeta"></div>
+    </div>
+  </div>
+  <div class="fv-action-sheet-grid" id="fvAsGrid"></div>
+</div>
+{% endif %}
+
 {# ═══ Player Scouting Report Modal ═══ #}
 <div class="modal fade" id="playerModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -949,6 +965,106 @@ function fvSSPPick(replacementId) {
       fvRefresh();
     }
   });
+}
+
+// ── Mobile Action Sheet ──
+const _origFvShowPlayer = fvShowPlayer;
+fvShowPlayer = function(pid) {
+  if (window.innerWidth < 768) {
+    fvOpenActionSheet(pid);
+  } else {
+    _origFvShowPlayer(pid);
+  }
+};
+
+function fvOpenActionSheet(pid) {
+  if (swapSourceId) return;
+  const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+  if (!card) return;
+
+  const section = card.dataset.section; // field, flex, reserve
+  const positions = card.dataset.positions || 'MID';
+  const fieldPos = card.dataset.fieldPos || '';
+  const isCap = card.classList.contains('fv-card-captain');
+  const isVC = card.classList.contains('fv-card-vc');
+  const isEmg = card.classList.contains('fv-card-emergency');
+  const is7s = card.classList.contains('fv-card-7s');
+  const is7c = is7s && card.querySelector('.fv-ribbon-7s span')?.textContent === '7C';
+  const isReserve = section === 'reserve';
+  const isFlex = section === 'flex';
+  const isField = section === 'field';
+
+  // Player info from card
+  const nameEl = card.querySelector('.fv-surname');
+  const fnameEl = card.querySelector('.fv-firstname');
+  const playerName = (fnameEl?.textContent || '') + ' ' + (nameEl?.textContent || '');
+  const logoImg = card.querySelector('.fv-card-top .fv-logo img');
+  const posText = positions + (fieldPos ? ' (' + fieldPos + ')' : '');
+
+  document.getElementById('fvAsName').textContent = playerName.trim();
+  document.getElementById('fvAsMeta').textContent = posText;
+  const asLogo = document.getElementById('fvAsLogo');
+  if (logoImg && logoImg.src) {
+    asLogo.src = logoImg.src;
+    asLogo.style.display = '';
+  } else {
+    asLogo.style.display = 'none';
+  }
+
+  // Build action buttons
+  const grid = document.getElementById('fvAsGrid');
+  grid.innerHTML = '';
+  const btns = [];
+
+  // Captain & VC (only for field/flex players, not reserves)
+  if (!isReserve) {
+    btns.push(`<button class="fv-action-sheet-btn fv-as-cap${isCap ? ' active' : ''}" onclick="fvSetCaptain(${pid}); fvCloseActionSheet();">
+      <i class="bi bi-star-fill"></i>Captain</button>`);
+    btns.push(`<button class="fv-action-sheet-btn fv-as-vc${isVC ? ' active' : ''}" onclick="fvSetVC(${pid}); fvCloseActionSheet();">
+      <i class="bi bi-star-half"></i>Vice Capt</button>`);
+  }
+
+  // Swap (all players)
+  btns.push(`<button class="fv-action-sheet-btn fv-as-swap" onclick="fvCloseActionSheet(); fvStartSub(${pid});">
+    <i class="bi bi-arrow-left-right"></i>Swap</button>`);
+
+  // Emergency (reserves only, not if in 7s)
+  if (isReserve && !is7s) {
+    btns.push(`<button class="fv-action-sheet-btn fv-as-emg${isEmg ? ' active' : ''}" onclick="fvSetEmergency(${pid}); fvCloseActionSheet();">
+      <i class="bi bi-shield-exclamation"></i>Emergency</button>`);
+  }
+
+  // 7s toggle (reserves only if has_7s_fixture, not if emergency)
+  {% if field_data.has_7s_fixture %}
+  if (isReserve && !isEmg) {
+    btns.push(`<button class="fv-action-sheet-btn fv-as-7s${is7s ? ' active' : ''}" onclick="fv7sToggle(${pid}); fvCloseActionSheet();">
+      <i class="bi bi-7-circle"></i>7s</button>`);
+    if (is7s) {
+      btns.push(`<button class="fv-action-sheet-btn fv-as-7c${is7c ? ' active' : ''}" onclick="fv7sCaptain(${pid}); fvCloseActionSheet();">
+        <i class="bi bi-7-circle-fill"></i>7s Capt</button>`);
+    }
+  }
+  {% endif %}
+
+  // LTIL (flex and reserves)
+  if (isFlex || isReserve) {
+    btns.push(`<button class="fv-action-sheet-btn fv-as-ltil" onclick="fvCloseActionSheet(); fvAddToLTIL(${pid});">
+      <i class="bi bi-bandaid"></i>LTIL</button>`);
+  }
+
+  // View Profile (always)
+  btns.push(`<button class="fv-action-sheet-btn fv-as-view" onclick="fvCloseActionSheet(); _origFvShowPlayer(${pid});">
+    <i class="bi bi-person-lines-fill"></i>View Profile</button>`);
+
+  grid.innerHTML = btns.join('');
+
+  document.getElementById('fvAsBackdrop').classList.add('open');
+  document.getElementById('fvActionSheet').classList.add('open');
+}
+
+function fvCloseActionSheet() {
+  document.getElementById('fvAsBackdrop').classList.remove('open');
+  document.getElementById('fvActionSheet').classList.remove('open');
 }
 
 // ── Position Eligibility Hover (event delegation — survives soft refresh) ──

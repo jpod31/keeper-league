@@ -92,7 +92,7 @@
   <div class="card-header py-2">
     {# Mobile filter toggle #}
     <div class="d-flex gap-2 align-items-center mb-2 mb-lg-0">
-      <button class="filter-toggle-btn" onclick="document.querySelector('.filter-bar').classList.toggle('filter-open')" type="button">
+      <button class="filter-toggle-btn" onclick="toggleFilterSheet()" type="button">
         <i class="bi bi-funnel"></i>Filters<span class="filter-count" id="filterCount" style="display:none;">0</span>
       </button>
       <div class="d-lg-none" style="flex:1;">
@@ -406,6 +406,18 @@
   </div>
 </div>
 {% endif %}
+
+{# ── Mobile Filter Bottom Sheet ── #}
+<div class="filter-sheet-backdrop" id="filterSheetBackdrop" onclick="closeFilterSheet()"></div>
+<div class="filter-sheet" id="filterSheet">
+  <div class="filter-sheet-handle"></div>
+  <div class="filter-sheet-title">Filters</div>
+  <div id="filterSheetBody"></div>
+  <div class="filter-sheet-actions">
+    <button class="btn btn-sm btn-outline-secondary" onclick="clearPoolFilters()">Clear</button>
+    <button class="btn btn-sm btn-primary" onclick="filterPool(); closeFilterSheet();">Apply</button>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -554,6 +566,41 @@ function setPoolView(view) {
     table.style.display = '';
     cards.style.display = 'none';
   }
+}
+
+// ── Filter Bottom Sheet (mobile) ──
+var _filterSheetInit = false;
+function toggleFilterSheet() {
+  if (window.innerWidth >= 992) {
+    // Desktop: toggle inline
+    document.querySelector('.filter-bar').classList.toggle('filter-open');
+    return;
+  }
+  if (!_filterSheetInit) {
+    // Move filter-bar into sheet body
+    var bar = document.querySelector('.filter-bar');
+    var body = document.getElementById('filterSheetBody');
+    body.appendChild(bar);
+    bar.classList.add('filter-open');
+    _filterSheetInit = true;
+  }
+  document.getElementById('filterSheetBackdrop').classList.add('open');
+  document.getElementById('filterSheet').classList.add('open');
+}
+function closeFilterSheet() {
+  document.getElementById('filterSheetBackdrop').classList.remove('open');
+  document.getElementById('filterSheet').classList.remove('open');
+}
+function clearPoolFilters() {
+  document.getElementById('pool-search').value = '';
+  var mob = document.getElementById('pool-search-mobile');
+  if (mob) mob.value = '';
+  document.getElementById('pool-pos-filter').value = '';
+  document.getElementById('pool-team-filter').value = '';
+  document.getElementById('pool-age-filter').value = '';
+  document.getElementById('pool-status-filter').value = '';
+  document.getElementById('pool-owner-filter').value = '';
+  filterPool();
 }
 
 {% if can_pickup %}

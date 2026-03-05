@@ -1,5 +1,5 @@
 {# Sub-navigation bar for the "League" section #}
-<div class="league-subnav">
+<div class="league-subnav d-none d-lg-flex">
   <a class="league-subtab{% if active_subtab|default('') == 'ladder' %} active{% endif %}"
      href="{{ url_for('matchups.standings', league_id=league.id) }}">
     <i class="bi bi-bar-chart"></i>Ladder
@@ -24,6 +24,34 @@
   </a>
   <a class="league-subtab{% if active_subtab|default('') == '7s' %} active{% endif %}"
      href="{{ url_for('reserve7s.sevens_standings', league_id=league.id) }}" style="{% if active_subtab|default('') == '7s' %}color:#bc8cff;{% endif %}">
+    <i class="bi bi-7-circle"></i>7s
+  </a>
+</div>
+<div class="mob-subnav d-lg-none">
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'ladder' %} active{% endif %}"
+     href="{{ url_for('matchups.standings', league_id=league.id) }}">
+    <i class="bi bi-bar-chart"></i>Ladder
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'fixture' %} active{% endif %}"
+     href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
+    <i class="bi bi-calendar-week"></i>Season
+  </a>
+  {% if nav_finals_teams is defined and nav_finals_teams and nav_finals_teams > 0 %}
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'finals' %} active{% endif %}"
+     href="{{ url_for('matchups.finals_view', league_id=league.id) }}">
+    <i class="bi bi-trophy"></i>Finals
+  </a>
+  {% endif %}
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'list_changes' %} active{% endif %}"
+     href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">
+    <i class="bi bi-clock-history"></i>Changes
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'records' %} active{% endif %}"
+     href="{{ url_for('leagues.league_history', league_id=league.id) }}">
+    <i class="bi bi-trophy"></i>Records
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == '7s' %} active{% endif %}"
+     href="{{ url_for('reserve7s.sevens_standings', league_id=league.id) }}" {% if active_subtab|default('') == '7s' %}style="color:#bc8cff;border-bottom-color:#bc8cff;"{% endif %}>
     <i class="bi bi-7-circle"></i>7s
   </a>
 </div>

@@ -118,11 +118,11 @@
           <th style="text-align:center;">P</th>
           <th style="text-align:center;">W</th>
           <th style="text-align:center;">L</th>
-          <th style="text-align:center;">D</th>
+          <th class="ldr-hide-mobile" style="text-align:center;">D</th>
           <th style="text-align:center;">Pts</th>
-          <th style="text-align:right;">{{ scoring.for_label }}</th>
-          <th style="text-align:right;">{{ scoring.against_label }}</th>
-          <th style="text-align:right;">{{ scoring.pct_label }}</th>
+          <th class="ldr-hide-mobile" style="text-align:right;">{{ scoring.for_label }}</th>
+          <th class="ldr-hide-mobile" style="text-align:right;">{{ scoring.against_label }}</th>
+          <th class="ldr-hide-mobile" style="text-align:right;">{{ scoring.pct_label }}</th>
         </tr>
       </thead>
       <tbody>
@@ -143,15 +143,15 @@
             <td style="text-align:center;">{{ s.wins + s.losses + s.draws }}</td>
             <td style="text-align:center;{% if s.wins > 0 %}color:#3fb950;font-weight:600;{% endif %}">{{ s.wins }}</td>
             <td style="text-align:center;{% if s.losses > 0 %}color:#f85149;font-weight:600;{% endif %}">{{ s.losses }}</td>
-            <td style="text-align:center;">{{ s.draws }}</td>
+            <td class="ldr-hide-mobile" style="text-align:center;">{{ s.draws }}</td>
             <td style="text-align:center;"><span class="ldr-pts">{{ s.ladder_points }}</span></td>
-            <td style="text-align:right;">
+            <td class="ldr-hide-mobile" style="text-align:right;">
               {{ '%.0f'|format(s.points_for) if s.points_for > 0 else '–' }}
             </td>
-            <td style="text-align:right;">
+            <td class="ldr-hide-mobile" style="text-align:right;">
               {{ '%.0f'|format(s.points_against) if s.points_against > 0 else '–' }}
             </td>
-            <td style="text-align:right;">
+            <td class="ldr-hide-mobile" style="text-align:right;">
               <span class="ldr-pct" style="{% if s.percentage >= 110 %}color:#3fb950;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '–' }}{% if s.percentage > 0 %}%{% endif %}</span>
             </td>
           </tr>

@@ -1,5 +1,5 @@
 {# Sub-navigation bar for the "Comms" section #}
-<div class="league-subnav">
+<div class="league-subnav d-none d-lg-flex">
   <a class="league-subtab{% if active_subtab|default('') == 'chat' %} active{% endif %}"
      href="{{ url_for('comms.league_chat', league_id=league.id) }}">
     <i class="bi bi-megaphone"></i>League Chat
@@ -9,6 +9,20 @@
     <i class="bi bi-chat-dots"></i>Messages
   </a>
   <a class="league-subtab{% if active_subtab|default('') == 'activity' %} active{% endif %}"
+     href="{{ url_for('comms.activity_feed', league_id=league.id) }}">
+    <i class="bi bi-activity"></i>Activity
+  </a>
+</div>
+<div class="mob-subnav d-lg-none">
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'chat' %} active{% endif %}"
+     href="{{ url_for('comms.league_chat', league_id=league.id) }}">
+    <i class="bi bi-megaphone"></i>Chat
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'messages' %} active{% endif %}"
+     href="{{ url_for('comms.inbox', league_id=league.id) }}">
+    <i class="bi bi-chat-dots"></i>Messages
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'activity' %} active{% endif %}"
      href="{{ url_for('comms.activity_feed', league_id=league.id) }}">
     <i class="bi bi-activity"></i>Activity
   </a>

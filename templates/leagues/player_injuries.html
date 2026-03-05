@@ -58,7 +58,7 @@
 <div class="card">
   <div class="card-header py-2">
     <div class="d-flex gap-2 align-items-center mb-2 mb-lg-0">
-      <button class="filter-toggle-btn" onclick="document.querySelector('.filter-bar').classList.toggle('filter-open')" type="button">
+      <button class="filter-toggle-btn" onclick="toggleInjFilterSheet()" type="button">
         <i class="bi bi-funnel"></i>Filters<span class="filter-count" id="filterCount" style="display:none;">0</span>
       </button>
       <div class="d-lg-none" style="flex:1;">
@@ -159,6 +159,59 @@
   </div>
 </div>
 
+{# ── Mobile Filter Bottom Sheet ── #}
+<div class="filter-sheet-backdrop" id="injFilterBackdrop" onclick="closeInjFilterSheet()"></div>
+<div class="filter-sheet" id="injFilterSheet">
+  <div class="filter-sheet-handle"></div>
+  <div class="filter-sheet-title">Filters</div>
+  <div id="injFilterBody"></div>
+  <div class="filter-sheet-actions">
+    <button class="btn btn-sm btn-outline-secondary" onclick="clearInjFilters()">Clear</button>
+    <button class="btn btn-sm btn-primary" onclick="filterInj(); closeInjFilterSheet();">Apply</button>
+  </div>
+</div>
+
+{# ── Mobile Card View ── #}
+<div class="pool-cards-container d-lg-none" id="injCards" style="display:block;">
+  <div class="pool-cards-grid">
+    {% for p in players %}
+      {% set sc_display = p.sc_avg if p.sc_avg else (p.sc_avg_prev if p.sc_avg_prev else None) %}
+      {% set owner_team = rostered_map.get(p.id) %}
+      <a href="{{ url_for('player_detail', name=p.name) }}"
+         class="pool-card inj-card-item"
+         data-name="{{ p.name|lower }}"
+         data-team="{{ p.afl_team or '' }}"
+         data-severity="{{ p.injury_severity or '' }}"
+         data-owner="{{ owner_team or '' }}">
+        {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+          <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pool-card-logo">
+        {% endif %}
+        <div class="pool-card-info">
+          <div class="pool-card-name">{{ p.name }}</div>
+          <div class="pool-card-meta">
+            {% for pos in (p.position or 'MID').split('/') %}
+              <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.6rem;">{{ pos }}</span>
+            {% endfor %}
+            <span>{{ p.afl_team or '' }}</span>
+          </div>
+          <div class="pool-card-stats">
+            <span>{{ p.injury_type or 'Injured' }}</span>
+            <span class="sev-badge sev-{{ p.injury_severity or 'long' }}" style="font-size:.55rem;padding:1px 6px;">{{ (p.injury_severity or 'long')|capitalize }}</span>
+            {% if sc_display %}<span>AVG: <strong>{{ '%.1f'|format(sc_display) }}</strong></span>{% endif %}
+          </div>
+        </div>
+        <div class="pool-card-rank" style="font-size:.65rem;">
+          {% if owner_team %}
+            <span style="color:#c9d1d9;font-weight:600;">{{ owner_team }}</span>
+          {% else %}
+            <span style="color:#484f58;">&mdash;</span>
+          {% endif %}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
 <script>
 function matchInjRow(el, q, club, owner, severity) {
   var nameMatch = !q || (el.dataset.name || '').includes(q);
@@ -179,6 +232,12 @@ function filterInj() {
     var show = matchInjRow(row, q, club, owner, severity);
     row.style.display = show ? '' : 'none';
     if (show) count++;
+  });
+
+  // Filter card items too
+  document.querySelectorAll('#injCards .inj-card-item').forEach(function(card) {
+    var show = matchInjRow(card, q, club, owner, severity);
+    card.style.display = show ? '' : 'none';
   });
 
   document.getElementById('visible-count').innerHTML = '<strong>' + count + '</strong> players';
@@ -225,6 +284,43 @@ function sortInj(key, el) {
     return injSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
   });
   rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+// ── Filter Bottom Sheet (mobile) ──
+var _injFilterInit = false;
+function toggleInjFilterSheet() {
+  if (window.innerWidth >= 992) {
+    document.querySelector('.filter-bar').classList.toggle('filter-open');
+    return;
+  }
+  if (!_injFilterInit) {
+    var bar = document.querySelector('.filter-bar');
+    var body = document.getElementById('injFilterBody');
+    body.appendChild(bar);
+    bar.classList.add('filter-open');
+    _injFilterInit = true;
+  }
+  document.getElementById('injFilterBackdrop').classList.add('open');
+  document.getElementById('injFilterSheet').classList.add('open');
+}
+function closeInjFilterSheet() {
+  document.getElementById('injFilterBackdrop').classList.remove('open');
+  document.getElementById('injFilterSheet').classList.remove('open');
+}
+function clearInjFilters() {
+  document.getElementById('inj-search').value = '';
+  var mob = document.getElementById('inj-search-mobile');
+  if (mob) mob.value = '';
+  document.getElementById('inj-club-filter').value = '';
+  document.getElementById('inj-owner-filter').value = '';
+  document.getElementById('inj-severity-filter').value = '';
+  filterInj();
+}
+
+// Hide table on mobile, show cards instead
+if (window.innerWidth < 992) {
+  var tbl = document.querySelector('.card-body.p-0');
+  if (tbl) tbl.style.display = 'none';
 }
 </script>
 {% endblock %}
