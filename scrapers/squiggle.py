@@ -7,6 +7,7 @@ Requires User-Agent header per Squiggle policy.
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -115,12 +116,21 @@ def parse_scheduled_start(game: dict) -> Optional[datetime]:
             return None
 
 
+_current_round_cache: dict[int, tuple[float, Optional[int]]] = {}
+_CURRENT_ROUND_TTL = 300  # cache for 5 minutes
+
+
 def get_current_round(year: int) -> Optional[int]:
     """Determine the current AFL round from Squiggle.
 
     Finds the first round that has live or upcoming games.
     Falls back to the last round with completed games.
+    Results are cached for 5 minutes to avoid repeated API calls.
     """
+    cached = _current_round_cache.get(year)
+    if cached and (time.time() - cached[0]) < _CURRENT_ROUND_TTL:
+        return cached[1]
+
     try:
         resp = requests.get(
             SQUIGGLE_BASE,
@@ -135,6 +145,7 @@ def get_current_round(year: int) -> Optional[int]:
         return None
 
     if not games:
+        _current_round_cache[year] = (time.time(), None)
         return None
 
     # Group by round
@@ -144,15 +155,24 @@ def get_current_round(year: int) -> Optional[int]:
         if rnd is not None:
             rounds.setdefault(rnd, []).append(g)
 
+    result = None
+
     # Find first round with any live game
     for rnd in sorted(rounds.keys()):
         if any(g.get("is_live") for g in rounds[rnd]):
-            return rnd
+            result = rnd
+            break
 
     # Find first round with any scheduled (not complete) game
-    for rnd in sorted(rounds.keys()):
-        if any(g.get("complete", 0) != 100 for g in rounds[rnd]):
-            return rnd
+    if result is None:
+        for rnd in sorted(rounds.keys()):
+            if any(g.get("complete", 0) != 100 for g in rounds[rnd]):
+                result = rnd
+                break
 
     # All rounds complete — return the last one
-    return max(rounds.keys()) if rounds else None
+    if result is None and rounds:
+        result = max(rounds.keys())
+
+    _current_round_cache[year] = (time.time(), result)
+    return result
