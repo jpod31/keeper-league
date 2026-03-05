@@ -255,9 +255,11 @@ def _poll_live_scores():
         return
 
     from datetime import datetime
-    hour = datetime.now().hour  # server is AEST
-    if hour < 12:
+    now = datetime.now()  # server is AEST
+    if now.hour < 12:
         return  # no games before midday
+    if now.weekday() in (0, 1, 2):
+        return  # no games Mon-Wed
 
     import time as _time
 
