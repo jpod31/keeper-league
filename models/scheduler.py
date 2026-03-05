@@ -345,13 +345,29 @@ def _sync_positions():
 
 
 def _get_active_round(year: int) -> int | None:
-    """Determine the currently active round from the DB or Squiggle."""
-    from models.database import AflGame
+    """Determine the currently active round from the DB or Squiggle.
+
+    Prioritises: live games > recently completed (not yet finalized) > Squiggle.
+    This ensures we keep polling for score adjustments after games end
+    (SC scores can change for ~45 mins post-game).
+    """
+    from models.database import AflGame, Fixture
 
     # First check DB for any round with live games
     live_game = AflGame.query.filter_by(year=year, status="live").first()
     if live_game:
         return live_game.afl_round
+
+    # Check for rounds with complete games but un-finalized fantasy fixtures
+    # (keeps polling until the 45-min finalization runs)
+    complete_game = AflGame.query.filter_by(year=year, status="complete").first()
+    if complete_game:
+        afl_round = complete_game.afl_round
+        has_pending = Fixture.query.filter_by(
+            year=year, afl_round=afl_round
+        ).filter(Fixture.status != "completed").first()
+        if has_pending:
+            return afl_round
 
     # Check Squiggle
     from scrapers.squiggle import get_current_round
