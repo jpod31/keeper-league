@@ -271,10 +271,8 @@
   </script>
 
   {% elif view|default('field') == 'field' %}
-    {# Desktop: full field view #}
-    <div class="d-none d-lg-block">
-      {% include "team/field_view.html" %}
-    </div>
+    {# Field view (desktop grid hidden on mobile, but action sheet + JS visible everywhere) #}
+    {% include "team/field_view.html" %}
 
     {# Mobile: position-grouped list #}
     <div class="d-lg-none mob-squad-list">
