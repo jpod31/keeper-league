@@ -323,11 +323,15 @@ def squad(league_id, team_id):
             pass
 
         # Build set of player IDs selected in AFL team lineups this round
+        # Excludes emergencies — they are NOT playing
         selected_player_ids = set()
         if current_afl_round is not None:
             sel_rows = AflTeamSelection.query.filter_by(
                 year=league.season_year, afl_round=current_afl_round
-            ).filter(AflTeamSelection.player_id.isnot(None)).all()
+            ).filter(
+                AflTeamSelection.player_id.isnot(None),
+                AflTeamSelection.position != "EMERG",
+            ).all()
             selected_player_ids = {s.player_id for s in sel_rows}
 
         # LTIL / SSP config

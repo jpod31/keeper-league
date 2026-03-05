@@ -120,19 +120,40 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
-    # Team lineups sync: Wednesday + Thursday 10:00 UTC (after AFL team announcements)
+    # Team lineups sync: Wed 10:00, Thu 10:00 + 22:00, Fri 06:00 UTC
+    # (covers initial announcement + late changes before games)
     scheduler.add_job(
         _sync_team_lineups,
         "cron",
-        day_of_week="wed,thu",
+        day_of_week="wed",
         hour=10,
         minute=0,
-        id="lineup_sync",
+        id="lineup_sync_wed",
+        replace_existing=True,
+        max_instances=1,
+    )
+    scheduler.add_job(
+        _sync_team_lineups,
+        "cron",
+        day_of_week="thu",
+        hour="10,22",
+        minute=0,
+        id="lineup_sync_thu",
+        replace_existing=True,
+        max_instances=1,
+    )
+    scheduler.add_job(
+        _sync_team_lineups,
+        "cron",
+        day_of_week="fri",
+        hour=6,
+        minute=0,
+        id="lineup_sync_fri",
         replace_existing=True,
         max_instances=1,
     )
     scheduler.start()
-    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 07:30 UTC, lineup sync: Wed+Thu 10:00 UTC)")
+    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 07:30 UTC, lineup sync: Wed+Thu+Fri)")
 
 
 def schedule_round_finalization(year: int, afl_round: int):

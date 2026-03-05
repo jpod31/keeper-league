@@ -129,6 +129,27 @@ TEAM_LOGOS = {
     "Western Bulldogs": f"{_LOGO_BASE}Bulldogs.png",
 }
 
+TEAM_COLOURS = {
+    "Adelaide":         ("#05173f", "#ffd600"),
+    "Brisbane Lions":   ("#9b0033", "#feba35"),
+    "Carlton":          ("#021a31", "#ffffff"),
+    "Collingwood":      ("#000000", "#ffffff"),
+    "Essendon":         ("#000000", "#ff1100"),
+    "Fremantle":        ("#1d1160", "#ffffff"),
+    "Geelong":          ("#05173f", "#ffffff"),
+    "Gold Coast":       ("#fc1921", "#ffe831"),
+    "GWS":              ("#f78f1e", "#54534a"),
+    "Hawthorn":         ("#361500", "#ffb300"),
+    "Melbourne":        ("#021a31", "#cc0c00"),
+    "North Melbourne":  ("#0e2b8d", "#ffffff"),
+    "Port Adelaide":    ("#000000", "#008e8f"),
+    "Richmond":         ("#000000", "#ffd600"),
+    "St Kilda":         ("#000000", "#fc1921"),
+    "Sydney":           ("#f20017", "#ffffff"),
+    "West Coast":       ("#05173f", "#ffc211"),
+    "Western Bulldogs": ("#0e2b8d", "#f20017"),
+}
+
 # ---------- Available stat columns for custom scoring ----------
 AVAILABLE_STATS = [
     "kicks", "handballs", "disposals", "marks", "goals", "behinds",
@@ -248,23 +269,3 @@ SCORING_TYPE_LABELS = {
     "ultimate_footy": "Ultimate Footy",
 }
 
-TEAM_COLOURS = {
-    "Adelaide":         ("#002B5C", "#FFD200"),
-    "Brisbane Lions":   ("#69003B", "#FFB81C"),
-    "Carlton":          ("#002F6C", "#FFFFFF"),
-    "Collingwood":      ("#000000", "#FFFFFF"),
-    "Essendon":         ("#CC2031", "#000000"),
-    "Fremantle":        ("#2A0D45", "#FFFFFF"),
-    "Geelong":          ("#002F6C", "#FFFFFF"),
-    "Gold Coast":       ("#D63239", "#FFD200"),
-    "GWS":              ("#F47920", "#3D3D3D"),
-    "Hawthorn":         ("#4D2004", "#FFB81C"),
-    "Melbourne":        ("#0F1131", "#CC2031"),
-    "North Melbourne":  ("#003690", "#FFFFFF"),
-    "Port Adelaide":    ("#008AAB", "#000000"),
-    "Richmond":         ("#FFD200", "#000000"),
-    "St Kilda":         ("#ED1C24", "#000000"),
-    "Sydney":           ("#ED171F", "#FFFFFF"),
-    "West Coast":       ("#002B5C", "#FFD200"),
-    "Western Bulldogs": ("#002F6C", "#CC2031"),
-}
