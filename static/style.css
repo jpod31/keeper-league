@@ -3552,6 +3552,7 @@ img[src*="Carlton.png"] {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding-bottom: 100px;
 }
 .mob-pos-group {
   background: var(--kl-bg-card);
