@@ -317,6 +317,20 @@ def migrate_captain_scoring_enabled(app):
         print("  [done] captain_scoring_enabled migration complete")
 
 
+def migrate_rating_start(app):
+    """Add rating_start column to afl_player (idempotent)."""
+    with app.app_context():
+        conn = db.engine.raw_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("ALTER TABLE afl_player ADD COLUMN rating_start INTEGER")
+        except Exception:
+            pass  # column already exists
+        conn.commit()
+        conn.close()
+        print("  [done] rating_start migration complete")
+
+
 def main():
     print("=== Keeper League CSV -> SQLite Migration ===\n")
     os.makedirs(config.DATA_DIR, exist_ok=True)
@@ -343,6 +357,9 @@ def main():
 
     print("\n7. Migrating captain_scoring_enabled...")
     migrate_captain_scoring_enabled(app)
+
+    print("\n8. Migrating rating_start...")
+    migrate_rating_start(app)
 
     print("\n=== Migration complete! ===")
     db_path = os.path.join(config.DATA_DIR, "keeper_league.db")

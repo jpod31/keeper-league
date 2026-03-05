@@ -125,7 +125,19 @@ def _sync_ratings_to_db(app):
         wb = openpyxl.load_workbook(_XLSX_PATH, read_only=True, data_only=True)
         ws = wb["Player Database"]
 
-        # Read rows: col 0=Player, 2=Rating, 3=Potential, 4=Team
+        # Find the current-year column for start-of-year rating
+        # After Dec 1 use next year's column; before Dec 1 use current year
+        from datetime import date
+        today = date.today()
+        target_year = today.year + 1 if today.month == 12 else today.year
+        headers = next(ws.iter_rows(min_row=1, max_row=1, values_only=True))
+        year_col_idx = None
+        for ci, h in enumerate(headers):
+            if h and str(h).strip().isdigit() and int(str(h)) == target_year:
+                year_col_idx = ci
+                break
+
+        # Read rows: col 0=Player, 2=Rating, 3=Potential, 4=Team, year_col_idx=start-of-year
         xlsx_players = []
         for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
             name = row[0]
@@ -135,11 +147,16 @@ def _sync_ratings_to_db(app):
             team = _XLSX_TEAM_MAP.get(team_raw, team_raw)
             rating = row[2] if isinstance(row[2], (int, float)) else None
             potential = row[3] if isinstance(row[3], (int, float)) else None
+            rating_start = None
+            if year_col_idx is not None and len(row) > year_col_idx:
+                val = row[year_col_idx]
+                if isinstance(val, (int, float)):
+                    rating_start = int(val)
             if rating is not None:
                 rating = int(rating)
             if potential is not None:
                 potential = int(potential)
-            xlsx_players.append((name.strip(), team.strip(), rating, potential))
+            xlsx_players.append((name.strip(), team.strip(), rating, potential, rating_start))
         wb.close()
 
         # Build DB lookup: (lowercase name, team) -> AflPlayer
@@ -159,7 +176,7 @@ def _sync_ratings_to_db(app):
         matched = 0
         unmatched = []
 
-        for xlsx_name, xlsx_team, rating, potential in xlsx_players:
+        for xlsx_name, xlsx_team, rating, potential, rating_start in xlsx_players:
             # Pass 1: exact match on (name, team)
             key = (xlsx_name.lower(), xlsx_team)
             ap = db_lookup.get(key)
@@ -179,6 +196,8 @@ def _sync_ratings_to_db(app):
             if ap:
                 ap.rating = rating
                 ap.potential = potential
+                if rating_start is not None:
+                    ap.rating_start = rating_start
                 matched += 1
             else:
                 unmatched.append((xlsx_name, xlsx_team))

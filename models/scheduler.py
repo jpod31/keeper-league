@@ -119,6 +119,16 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Ratings XLSX sync: every 6 hours (picks up user edits to the spreadsheet)
+    scheduler.add_job(
+        _sync_ratings,
+        "cron",
+        hour="0,6,12,18",
+        minute=15,
+        id="ratings_sync_6h",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
     logger.info("Scheduler started (live score poll: every 3min, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 08:00 UTC, lineup sync: Wed+Thu+Fri)")
 
@@ -564,3 +574,16 @@ def _sync_team_lineups():
             logger.info("Lineup sync: %d selections for %d R%d", count, year, current_round)
         except Exception:
             logger.exception("Error in team lineup sync")
+
+
+def _sync_ratings():
+    """Periodic job: re-sync ratings from XLSX if the file has been updated."""
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from app import _sync_ratings_to_db
+            _sync_ratings_to_db(_app)
+        except Exception:
+            logger.exception("Error in ratings sync")

@@ -217,6 +217,7 @@
           <th class="sortable text-end" style="width:65px;" onclick="sortPool('sc_avg',this)">SC <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-center" style="width:75px;" onclick="sortPool('trend',this)">Trend <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('rating',this)">Rtg <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-center" style="width:50px;" onclick="sortPool('rtg_move',this)">+/- <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('potential',this)">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:110px;" onclick="sortPool('draft_score',this)">Value <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('kvi',this)">KVI <i class="bi bi-chevron-expand sort-icon"></i></th>
@@ -243,6 +244,7 @@
               data-team="{{ p.afl_team or '' }}"
               data-sc="{{ sc_display or 0 }}" data-ds="{{ p.draft_score or 0 }}"
               data-age="{{ p.age or 0 }}" data-rtg="{{ p.rating or 0 }}"
+              data-rtgmove="{{ (p.rating - p.rating_start) if p.rating and p.rating_start else 0 }}"
               data-pot="{{ p.potential or 0 }}" data-rank="{{ p._rank }}"
               data-l3="{{ pr.l3 or 0 }}" data-l5="{{ pr.l5 or 0 }}"
               data-trend="{{ trend_val }}"
@@ -301,6 +303,19 @@
             <td class="text-end">
               {% if p.rating %}
                 <span style="color:#c9d1d9;font-weight:600;">{{ p.rating }}</span>
+              {% else %}<span style="color:#484f58;">-</span>{% endif %}
+            </td>
+            {# Rating Movement (current - start of year) #}
+            <td class="text-center">
+              {% if p.rating and p.rating_start %}
+                {% set rtg_move = p.rating - p.rating_start %}
+                {% if rtg_move > 0 %}
+                  <span style="color:#3fb950;font-weight:600;font-size:.78rem;">+{{ rtg_move }}</span>
+                {% elif rtg_move < 0 %}
+                  <span style="color:#f85149;font-weight:600;font-size:.78rem;">{{ rtg_move }}</span>
+                {% else %}
+                  <span style="color:#484f58;font-size:.78rem;">-</span>
+                {% endif %}
               {% else %}<span style="color:#484f58;">-</span>{% endif %}
             </td>
             {# Potential #}
@@ -543,7 +558,7 @@ function sortPool(key, el) {
       va = a.dataset.pos || 'ZZZ'; vb = b.dataset.pos || 'ZZZ';
       return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     }
-    var attrMap = {sc_avg: 'sc', draft_score: 'ds', rating: 'rtg', potential: 'pot'};
+    var attrMap = {sc_avg: 'sc', draft_score: 'ds', rating: 'rtg', potential: 'pot', rtg_move: 'rtgmove'};
     var attr = attrMap[key] || key;
     va = parseFloat(a.dataset[attr]) || 0;
     vb = parseFloat(b.dataset[attr]) || 0;

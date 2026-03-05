@@ -29,6 +29,7 @@ class AflPlayer(db.Model):
     draft_score = db.Column(db.Float)
     rating = db.Column(db.Integer)              # FIFA-style 54–90
     potential = db.Column(db.Integer)            # FIFA-style 64–94
+    rating_start = db.Column(db.Integer)         # Rating at start of year (from XLSX year column)
     injury_type = db.Column(db.String(100))      # "Hamstring", "Knee", etc. NULL = not injured
     injury_return = db.Column(db.String(60))     # "Test", "1-2 weeks", "Season", etc.
     injury_severity = db.Column(db.String(10))   # "test", "short", "long". NULL = not injured
