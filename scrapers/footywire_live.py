@@ -31,7 +31,7 @@ DELAY = 1.5  # seconds between requests (polite crawling)
 
 # Simple in-memory response cache: {url: (timestamp, soup)}
 _cache: dict[str, tuple[float, BeautifulSoup]] = {}
-_CACHE_TTL = 90  # seconds
+_CACHE_TTL = 45  # seconds
 
 
 def _get_cached(url: str) -> BeautifulSoup:

@@ -26,13 +26,12 @@ def init_scheduler(app, socketio):
     _app = app
     _socketio = socketio
 
-    # Live score polling: every 3 minutes during AFL game windows
-    # Thu-Mon, 03:00-14:00 UTC (1pm-midnight AEST) covers all game slots
-    # _poll_live_scores() already bails early if no live/complete games exist
+    # Live score polling: every 60 seconds
+    # _poll_live_scores() bails early if no live/complete games exist
     scheduler.add_job(
         _poll_live_scores,
         "interval",
-        minutes=3,
+        seconds=60,
         id="live_score_poll",
         replace_existing=True,
         max_instances=1,
