@@ -3145,6 +3145,11 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 .fv-form-down { color:#f85149; }
 .fv-form-flat { color:#484f58; }
 
+/* ── Dark-logo team fix (Carlton navy → white on dark bg) ── */
+img[src*="Carlton.png"] {
+  filter: brightness(0) invert(1);
+}
+
 /* ── Modal slide-in animation ── */
 @keyframes modalSlideIn {
   from { opacity: 0; transform: scale(.95) translateY(8px); }
