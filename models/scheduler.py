@@ -248,10 +248,16 @@ def run_manual_score_sync():
 def _poll_live_scores():
     """Poll for live AFL scores and push updates via SocketIO.
 
+    Only runs between 12pm-midnight AEST (game hours).
     Retries up to 2 times on transient network failures before giving up.
     """
     if not _app or not _socketio:
         return
+
+    from datetime import datetime
+    hour = datetime.now().hour  # server is AEST
+    if hour < 12:
+        return  # no games before midday
 
     import time as _time
 
