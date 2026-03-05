@@ -3358,6 +3358,9 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   color: #fff;
   font-size: .7rem;
 }
+.fv-selected.fv-locked {
+  background: linear-gradient(135deg, #9e6a03, #d29922);
+}
 
 /* ── Injury indicator — top-left of card ── */
 .fv-injury {

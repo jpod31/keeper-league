@@ -1,7 +1,7 @@
 {# AFL Field View — included from squad.html when view == 'field' #}
 {# Expects: field_data, TEAM_LOGOS, is_owner, league, team #}
 
-{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing, sevens_ids=[], sevens_captain_id=None, has_7s_fixture=false, selected_player_ids=set()) %}
+{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing, sevens_ids=[], sevens_captain_id=None, has_7s_fixture=false, selected_player_ids=set(), locked_teams=set()) %}
   {% if p %}
     {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
     {% set is_7s = sevens_ids is defined and p.id in sevens_ids %}
@@ -23,9 +23,14 @@
         <div class="fv-ribbon fv-ribbon-7s"><span>{% if is_7c %}7C{% else %}7{% endif %}</span></div>
       {% endif %}
 
-      {# Top-left badge: selected tick > injury > nothing #}
+      {# Top-left badge: locked > selected tick > injury > nothing #}
       {% set is_selected = selected_player_ids is defined and p.id in selected_player_ids %}
-      {% if is_selected %}
+      {% set is_locked = locked_teams is defined and locked_teams and p.afl_team in locked_teams %}
+      {% if is_locked and is_selected %}
+        <div class="fv-selected fv-locked" title="Locked — game started">
+          <i class="bi bi-lock-fill"></i>
+        </div>
+      {% elif is_selected %}
         <div class="fv-selected" title="Selected to play">
           <i class="bi bi-check-lg"></i>
         </div>
@@ -209,7 +214,7 @@
         {% for row_size in rows %}
           <div class="fv-zone-grid fv-grid-{{ row_size }}"{% if not loop.first %} style="margin-top:8px"{% endif %}>
             {% for p in players_list[ns.offset:ns.offset + row_size] %}
-              {{ player_card(p, pos_class, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing, selected_player_ids=field_data.selected_player_ids) }}
+              {{ player_card(p, pos_class, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams) }}
             {% endfor %}
           </div>
           {% set ns.offset = ns.offset + row_size %}
@@ -235,7 +240,7 @@
         {% for slot in field_data.flex_data %}
           {% set p = slot.player %}
           {% set flex_pos_class = (p.position or 'MID').split('/')[0]|lower if p else 'flex' %}
-          {{ player_card(p, flex_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing, selected_player_ids=field_data.selected_player_ids) }}
+          {{ player_card(p, flex_pos_class, field_data.cap_id, field_data.vc_id, true, is_owner, league.id, team.id, false, field_data.emergency_ids, field_data.teams_playing, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams) }}
         {% endfor %}
       </div>
     </div>
@@ -329,7 +334,7 @@
         </div>
         <div class="fv-reserves-grid">
           {% for p in pos_players %}
-            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids) }}
+            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams) }}
           {% endfor %}
         </div>
       </div>
