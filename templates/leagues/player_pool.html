@@ -168,7 +168,7 @@
            style="position:relative;">
           <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}"
              onclick="toggleWishlist({{ p.id }}, this); event.preventDefault(); event.stopPropagation();"
-             style="position:absolute;top:6px;right:6px;cursor:pointer;font-size:.85rem;color:#484f58;z-index:2;transition:color .15s;"></i>
+             style="position:absolute;top:6px;right:6px;cursor:pointer;font-size:.9rem;color:#6e7681;z-index:2;transition:color .15s;"></i>
           {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
             <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pool-card-logo">
           {% endif %}
@@ -210,7 +210,7 @@
     <table class="table table-sm mb-0 pool-table">
       <thead class="sticky-top" style="background:#161b22;z-index:2;">
         <tr>
-          <th style="width:30px;"></th>
+          <th style="width:32px;text-align:center;"><i class="bi bi-star" style="font-size:.7rem;color:#6e7681;"></i></th>
           <th class="sortable sort-active" style="width:40px;" onclick="sortPool('rank',this)"># <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable" onclick="sortPool('name',this)">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable" style="width:80px;" onclick="sortPool('pos',this)">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
@@ -250,9 +250,9 @@
               data-status="{{ 'taken' if owner_team else 'available' }}"
               data-owner="{{ owner_team or '' }}">
             {# Wishlist star #}
-            <td class="text-center" style="padding:0;">
+            <td class="text-center" style="padding:0;vertical-align:middle;">
               <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}" onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"
-                 style="cursor:pointer;font-size:.85rem;color:#484f58;transition:color .15s;"></i>
+                 style="cursor:pointer;font-size:.9rem;color:#6e7681;transition:color .15s;"></i>
             </td>
             {# Rank #}
             <td style="color:#484f58;font-size:.7rem;font-weight:700;">{{ p._rank }}</td>
