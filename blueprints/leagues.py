@@ -1433,10 +1433,23 @@ def player_pickup(league_id):
         team_id=user_team.id,
         player_id=player_id,
         is_active=True,
-        acquired_via="free_agent",
+        acquired_via="ssp",
     )
     db.session.add(entry)
     db.session.commit()
+
+    # Notify all league members about the SSP signing
+    from models.notification_manager import create_notification
+    all_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    for t in all_teams:
+        create_notification(
+            user_id=t.owner_id,
+            league_id=league_id,
+            notif_type="list_change",
+            title=f"{user_team.name} signed {player.name} (SSP)",
+            body=f"{user_team.name} selected {player.name} as an SSP replacement.",
+            link=url_for("leagues.list_changes_page", league_id=league_id),
+        )
 
     new_count = FantasyRoster.query.filter_by(
         team_id=user_team.id, is_active=True
