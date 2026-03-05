@@ -23,12 +23,15 @@
   .rec-tabs {
     display:flex; gap:4px; margin-bottom:24px;
     border-bottom:1px solid #21262d; padding-bottom:0;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
   }
+  .rec-tabs::-webkit-scrollbar { display:none; }
   .rec-tab {
     padding:8px 16px; font-size:.82rem; font-weight:500;
     color:#8b949e; cursor:pointer; border-bottom:2px solid transparent;
     transition:all .15s; text-decoration:none; background:none; border:none;
-    border-radius:0;
+    border-radius:0; white-space:nowrap; flex-shrink:0;
   }
   .rec-tab:hover { color:#e6edf3; }
   .rec-tab.active {
@@ -182,10 +185,10 @@
               <th>Champion</th>
               <th class="text-center">W</th>
               <th class="text-center">L</th>
-              <th class="text-center">D</th>
+              <th class="text-center d-none d-md-table-cell">D</th>
               <th class="text-center">Pts</th>
-              <th class="text-end">Points For</th>
-              <th class="text-end">%</th>
+              <th class="text-end d-none d-md-table-cell">Points For</th>
+              <th class="text-end d-none d-md-table-cell">%</th>
             </tr>
           </thead>
           <tbody>
@@ -197,10 +200,10 @@
               </td>
               <td class="text-center rec-win">{{ c.wins }}</td>
               <td class="text-center rec-loss">{{ c.losses }}</td>
-              <td class="text-center">{{ c.draws }}</td>
+              <td class="text-center d-none d-md-table-cell">{{ c.draws }}</td>
               <td class="text-center rec-score">{{ c.ladder_points }}</td>
-              <td class="text-end">{{ '%.0f'|format(c.points_for) }}</td>
-              <td class="text-end">{{ '%.1f'|format(c.percentage) }}%</td>
+              <td class="text-end d-none d-md-table-cell">{{ '%.0f'|format(c.points_for) }}</td>
+              <td class="text-end d-none d-md-table-cell">{{ '%.1f'|format(c.percentage) }}%</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -378,11 +381,11 @@
             <tr>
               <th style="width:40px;">#</th>
               <th>Winner</th>
-              <th class="text-center">Score</th>
+              <th class="text-center d-none d-md-table-cell">Score</th>
               <th>Loser</th>
-              <th class="text-center">Score</th>
+              <th class="text-center d-none d-md-table-cell">Score</th>
               <th class="text-center">Margin</th>
-              <th class="text-center">When</th>
+              <th class="text-center d-none d-md-table-cell">When</th>
             </tr>
           </thead>
           <tbody>
@@ -396,11 +399,11 @@
                 {% endif %}
               </td>
               <td class="rec-name">{{ b.winner }}</td>
-              <td class="text-center rec-win">{{ '%.0f'|format(b.winner_score) }}</td>
+              <td class="text-center rec-win d-none d-md-table-cell">{{ '%.0f'|format(b.winner_score) }}</td>
               <td style="color:#8b949e;">{{ b.loser }}</td>
-              <td class="text-center rec-loss">{{ '%.0f'|format(b.loser_score) }}</td>
+              <td class="text-center rec-loss d-none d-md-table-cell">{{ '%.0f'|format(b.loser_score) }}</td>
               <td class="text-center rec-score">{{ '%.0f'|format(b.margin) }}</td>
-              <td class="text-center rec-year">{{ b.year }} R{{ b.round }}</td>
+              <td class="text-center rec-year d-none d-md-table-cell">{{ b.year }} R{{ b.round }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -463,11 +466,11 @@
             <tr>
               <th style="width:40px;">#</th>
               <th>Home</th>
-              <th class="text-center">Score</th>
+              <th class="text-center d-none d-md-table-cell">Score</th>
               <th>Away</th>
-              <th class="text-center">Score</th>
+              <th class="text-center d-none d-md-table-cell">Score</th>
               <th class="text-center">Margin</th>
-              <th class="text-center">When</th>
+              <th class="text-center d-none d-md-table-cell">When</th>
             </tr>
           </thead>
           <tbody>
@@ -475,11 +478,11 @@
             <tr>
               <td><span style="color:#484f58;">{{ loop.index }}</span></td>
               <td class="rec-name">{{ m.home }}</td>
-              <td class="text-center">{{ '%.0f'|format(m.home_score) }}</td>
+              <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(m.home_score) }}</td>
               <td class="rec-name">{{ m.away }}</td>
-              <td class="text-center">{{ '%.0f'|format(m.away_score) }}</td>
+              <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(m.away_score) }}</td>
               <td class="text-center" style="color:#d29922;font-weight:700;">{{ '%.0f'|format(m.margin) }}</td>
-              <td class="text-center rec-year">{{ m.year }} R{{ m.round }}</td>
+              <td class="text-center rec-year d-none d-md-table-cell">{{ m.year }} R{{ m.round }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -503,11 +506,11 @@
             <tr>
               <th style="width:40px;">#</th>
               <th>Home</th>
-              <th class="text-center">Score</th>
+              <th class="text-center d-none d-md-table-cell">Score</th>
               <th>Away</th>
-              <th class="text-center">Score</th>
+              <th class="text-center d-none d-md-table-cell">Score</th>
               <th class="text-end">Total</th>
-              <th class="text-center">When</th>
+              <th class="text-center d-none d-md-table-cell">When</th>
             </tr>
           </thead>
           <tbody>
@@ -515,11 +518,11 @@
             <tr>
               <td><span style="color:#484f58;">{{ loop.index }}</span></td>
               <td class="rec-name">{{ c.home }}</td>
-              <td class="text-center">{{ '%.0f'|format(c.home_score) }}</td>
+              <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(c.home_score) }}</td>
               <td class="rec-name">{{ c.away }}</td>
-              <td class="text-center">{{ '%.0f'|format(c.away_score) }}</td>
+              <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(c.away_score) }}</td>
               <td class="text-end rec-score">{{ '%.0f'|format(c.total) }}</td>
-              <td class="text-center rec-year">{{ c.year }} R{{ c.round }}</td>
+              <td class="text-center rec-year d-none d-md-table-cell">{{ c.year }} R{{ c.round }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -543,11 +546,11 @@
             <tr>
               <th style="width:40px;">#</th>
               <th>Home</th>
-              <th class="text-center">Score</th>
+              <th class="text-center d-none d-md-table-cell">Score</th>
               <th>Away</th>
-              <th class="text-center">Score</th>
+              <th class="text-center d-none d-md-table-cell">Score</th>
               <th class="text-end">Total</th>
-              <th class="text-center">When</th>
+              <th class="text-center d-none d-md-table-cell">When</th>
             </tr>
           </thead>
           <tbody>
@@ -555,11 +558,11 @@
             <tr>
               <td><span style="color:#484f58;">{{ loop.index }}</span></td>
               <td class="rec-name">{{ c.home }}</td>
-              <td class="text-center">{{ '%.0f'|format(c.home_score) }}</td>
+              <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(c.home_score) }}</td>
               <td class="rec-name">{{ c.away }}</td>
-              <td class="text-center">{{ '%.0f'|format(c.away_score) }}</td>
+              <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(c.away_score) }}</td>
               <td class="text-end" style="color:#f85149;font-weight:700;">{{ '%.0f'|format(c.total) }}</td>
-              <td class="text-center rec-year">{{ c.year }} R{{ c.round }}</td>
+              <td class="text-center rec-year d-none d-md-table-cell">{{ c.year }} R{{ c.round }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -829,8 +832,8 @@
         </div>
         {% endif %}
 
-        {# Full H2H matrix table #}
-        <div class="mt-4">
+        {# Full H2H matrix table (desktop only — too wide for phones) #}
+        <div class="mt-4 d-none d-lg-block">
           <h6 style="font-size:.82rem;font-weight:600;color:#8b949e;margin-bottom:12px;">
             <i class="bi bi-grid-3x3-gap me-1"></i>Full Head-to-Head Matrix
           </h6>
@@ -891,6 +894,27 @@
     </div>
     <div class="rec-card-body">
       {% if alltime_standings %}
+        {# ── Mobile: compact cards ── #}
+        <div class="d-lg-none" style="padding:0;">
+          {% for s in alltime_standings %}
+            <div style="display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid rgba(48,54,61,.5);">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-weight:800;font-size:.8rem;flex-shrink:0;{% if loop.index == 1 %}background:rgba(255,215,0,.15);color:#FFD700;{% elif loop.index == 2 %}background:rgba(192,192,192,.1);color:#C0C0C0;{% elif loop.index == 3 %}background:rgba(205,127,50,.1);color:#CD7F32;{% else %}color:#484f58;{% endif %}">{{ loop.index }}</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:700;font-size:.85rem;color:#e6edf3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.team_name }}</div>
+                <div style="font-size:.68rem;color:#8b949e;display:flex;gap:.5rem;align-items:center;margin-top:1px;">
+                  <span>{{ s.wins }}-{{ s.losses }}{% if s.draws %}-{{ s.draws }}{% endif %}</span>
+                  <span>{{ s.seasons }} szn{{ 's' if s.seasons != 1 }}</span>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-weight:700;font-size:.88rem;{% if s.win_pct >= 60 %}color:#3fb950;{% elif s.win_pct < 40 %}color:#f85149;{% else %}color:#e6edf3;{% endif %}">{{ '%.1f'|format(s.win_pct) }}%</div>
+                <div style="font-size:.6rem;color:#484f58;">win rate</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {# ── Desktop: full table ── #}
+        <div class="d-none d-lg-block">
         <table class="rec-table">
           <thead>
             <tr>
@@ -946,6 +970,7 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
       {% else %}
         <div class="rec-empty">
           <i class="bi bi-bar-chart"></i>

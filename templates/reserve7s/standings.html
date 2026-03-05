@@ -64,7 +64,29 @@
 </div>
 
 {% if standings %}
-  <div class="s7-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+  {# ── Mobile 7s ladder cards ── #}
+  <div class="d-lg-none ldr-cards-mobile" style="border-color:rgba(188,140,255,.2);">
+    {% for s in standings %}
+      {% set pos = loop.index %}
+      {% set in_finals = finals_teams > 0 and pos <= finals_teams %}
+      {% set is_finals_line = in_finals and pos == finals_teams %}
+      {% set is_mine = nav_user_team is defined and nav_user_team and s.team_id == nav_user_team.id %}
+      <div class="ldr-mob-card{% if is_mine %} ldr-mob-mine{% endif %}"{% if in_finals %} style="background:rgba(188,140,255,.04);{% if is_finals_line %}border-bottom:2px solid rgba(188,140,255,.4);{% endif %}"{% endif %}>
+        <span class="ldr-mob-rank" style="{% if pos == 1 %}background:rgba(255,215,0,.15);color:#FFD700;{% elif pos == 2 %}background:rgba(192,192,192,.1);color:#C0C0C0;{% elif in_finals %}background:rgba(188,140,255,.08);color:#bc8cff;{% else %}color:#484f58;{% endif %}">{{ pos }}</span>
+        <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}" class="ldr-mob-name">{{ s.team.name }}</a>
+        <span class="ldr-mob-record">{{ s.wins }}-{{ s.losses }}{% if s.draws %}-{{ s.draws }}{% endif %}</span>
+        <span class="ldr-mob-pts" style="color:#bc8cff;">{{ s.ladder_points }}<span style="font-size:.65rem;font-weight:500;color:#8b949e;"> pts</span></span>
+      </div>
+    {% endfor %}
+    {% if finals_teams > 0 %}
+    <div style="font-size:.65rem;color:#484f58;padding:8px 12px;text-align:center;background:rgba(188,140,255,.03);">
+      <i class="bi bi-trophy-fill" style="color:#bc8cff;margin-right:4px;"></i>Top {{ finals_teams }} qualify for 7s Finals
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Desktop 7s ladder table ── #}
+  <div class="d-none d-lg-block s7-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
     <table class="s7-table" style="min-width:580px;">
       <thead>
         <tr>

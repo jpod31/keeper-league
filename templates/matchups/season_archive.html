@@ -30,11 +30,11 @@
                   <th>Team</th>
                   <th class="text-center">W</th>
                   <th class="text-center">L</th>
-                  <th class="text-center">D</th>
+                  <th class="text-center d-none d-md-table-cell">D</th>
                   <th class="text-center">Pts</th>
-                  <th class="text-end">For</th>
-                  <th class="text-end">Against</th>
-                  <th class="text-end">%</th>
+                  <th class="text-end d-none d-md-table-cell">For</th>
+                  <th class="text-end d-none d-md-table-cell">Against</th>
+                  <th class="text-end d-none d-md-table-cell">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -44,11 +44,11 @@
                   <td class="fw-semibold">{{ s.team.name }}</td>
                   <td class="text-center">{{ s.wins }}</td>
                   <td class="text-center">{{ s.losses }}</td>
-                  <td class="text-center">{{ s.draws }}</td>
+                  <td class="text-center d-none d-md-table-cell">{{ s.draws }}</td>
                   <td class="text-center fw-bold">{{ s.ladder_points }}</td>
-                  <td class="text-end">{{ '%.1f'|format(s.points_for) }}</td>
-                  <td class="text-end">{{ '%.1f'|format(s.points_against) }}</td>
-                  <td class="text-end">{{ '%.1f'|format(s.percentage) }}%</td>
+                  <td class="text-end d-none d-md-table-cell">{{ '%.1f'|format(s.points_for) }}</td>
+                  <td class="text-end d-none d-md-table-cell">{{ '%.1f'|format(s.points_against) }}</td>
+                  <td class="text-end d-none d-md-table-cell">{{ '%.1f'|format(s.percentage) }}%</td>
                 </tr>
                 {% endfor %}
               </tbody>

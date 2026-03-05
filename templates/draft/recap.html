@@ -98,7 +98,39 @@
       {{ picks|length }} picks
     </span>
   </div>
-  <div class="card-body p-0">
+  {# ── Mobile: draft pick cards ── #}
+  <div class="d-lg-none squad-cards-mobile">
+    {% for p in picks %}
+      <div class="squad-mob-card" style="gap:.5rem;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#21262d;font-size:.7rem;font-weight:700;border-radius:6px;flex-shrink:0;color:#8b949e;">{{ p.pick_number }}</span>
+        {% if p.is_pass %}
+          <div class="squad-mob-info">
+            <div class="squad-mob-name" style="color:#d29922;">PASS</div>
+            <div class="squad-mob-meta"><span>{{ p.team_name }}</span><span>Rd {{ p.draft_round }}</span></div>
+          </div>
+        {% else %}
+          <div class="squad-mob-info">
+            <div class="squad-mob-name">{{ p.player_name }}{% if p.is_auto_pick %} <span style="color:#8b949e;font-size:.65rem;">(auto)</span>{% endif %}</div>
+            <div class="squad-mob-meta">
+              <span class="pos-badge pos-{{ (p.position or 'mid').split('/')[0] }}" style="font-size:.55rem;">{{ p.position or '' }}</span>
+              <span>{{ p.team_name }}</span>
+              <span>Rd {{ p.draft_round }}</span>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            {% if p.value_diff is not none %}
+              <div style="font-weight:700;font-size:.85rem;color:{{ '#3fb950' if p.value_diff >= 0 else '#f85149' }};">{{ "+" if p.value_diff >= 0 }}{{ "%.1f"|format(p.value_diff) }}</div>
+              <div style="font-size:.6rem;color:#8b949e;">{{ "%.0f"|format(p.draft_score) if p.draft_score else '-' }} SC</div>
+            {% else %}
+              <span style="color:#8b949e;">-</span>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  {# ── Desktop: full draft board table ── #}
+  <div class="card-body p-0 d-none d-lg-block">
     <div style="overflow-x:auto;">
       <table class="table table-hover table-sm mb-0">
         <thead class="sticky-top" style="background:#161b22;">

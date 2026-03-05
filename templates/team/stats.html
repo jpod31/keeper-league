@@ -80,7 +80,22 @@
   <div class="col-md-6">
     <div class="card">
       <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-star me-2" style="color:#d29922;"></i>Top 10 by SC Avg</h5></div>
-      <div class="card-body p-0">
+      {# ── Mobile: compact list ── #}
+      <div class="d-lg-none squad-cards-mobile">
+        {% for p in players[:10] %}
+          {% set primary = (p.position or 'MID').split('/')[0] %}
+          <a href="{{ url_for('player_detail', name=p.name) }}" class="squad-mob-card" style="text-decoration:none;color:inherit;">
+            <span style="font-weight:800;font-size:.8rem;color:{% if loop.index <= 3 %}#FFD700{% else %}#484f58{% endif %};min-width:20px;">{{ loop.index }}</span>
+            <div class="squad-mob-info">
+              <div class="squad-mob-name">{{ p.name }}</div>
+              <div class="squad-mob-meta"><span class="pos-badge pos-{{ primary }}" style="font-size:.55rem;">{{ primary }}</span></div>
+            </div>
+            <div class="squad-mob-sc" style="color:#3fb950;">{{ '%.1f'|format(p.sc_avg) if p.sc_avg else '-' }}</div>
+          </a>
+        {% endfor %}
+      </div>
+      {# ── Desktop table ── #}
+      <div class="card-body p-0 d-none d-lg-block">
         <table class="table table-sm mb-0">
           <thead><tr><th style="width:30px;">#</th><th>Player</th><th>Pos</th><th class="text-end">SC Avg</th></tr></thead>
           <tbody>
@@ -101,7 +116,26 @@
 
 <div class="card">
   <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-list-ul me-2" style="color:#8b949e;"></i>All Players</h5></div>
-  <div class="card-body p-0">
+  {# ── Mobile card list ── #}
+  <div class="d-lg-none squad-cards-mobile">
+    {% for p in players %}
+      {% set primary = (p.position or 'MID').split('/')[0] %}
+      <a href="{{ url_for('player_detail', name=p.name) }}" class="squad-mob-card" style="text-decoration:none;color:inherit;">
+        <span class="pos-badge pos-{{ primary }}" style="min-width:32px;text-align:center;font-size:.65rem;">{{ primary }}</span>
+        <div class="squad-mob-info">
+          <div class="squad-mob-name">{{ p.name }}</div>
+          <div class="squad-mob-meta">
+            <span>{{ p.afl_team or '' }}</span>
+            <span>Age {{ p.age or '?' }}</span>
+            {% if p.career_games %}<span>{{ p.career_games }} gms</span>{% endif %}
+          </div>
+        </div>
+        <div class="squad-mob-sc" style="color:{{ '#3fb950' if p.sc_avg and p.sc_avg >= 80 else '#58a6ff' if p.sc_avg and p.sc_avg >= 60 else '#8b949e' }};">{{ '%.0f'|format(p.sc_avg) if p.sc_avg else '-' }}</div>
+      </a>
+    {% endfor %}
+  </div>
+  {# ── Desktop table ── #}
+  <div class="card-body p-0 d-none d-lg-block">
     <table class="table table-hover table-sm mb-0">
       <thead><tr><th>Player</th><th>Pos</th><th class="text-center">Age</th><th>AFL Team</th><th class="text-end">SC Avg</th><th class="text-center">Games</th><th class="text-end">Draft Score</th></tr></thead>
       <tbody>
