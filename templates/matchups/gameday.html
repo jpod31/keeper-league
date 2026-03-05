@@ -13,13 +13,18 @@
 <div class="gameday-round-header">
   <div class="d-flex justify-content-between align-items-center">
     <h2 class="gameday-round-title mb-0">{% if afl_round == 0 %}PRE-SEASON{% else %}ROUND {{ afl_round }}{% endif %}</h2>
-    {% if gameday_state == 'live' %}
-      <span class="gameday-state-badge badge-live"><i class="bi bi-broadcast me-1"></i><span class="live-pulse-dot"></span> LIVE</span>
-    {% elif gameday_state == 'completed' %}
-      <span class="gameday-state-badge badge-final"><i class="bi bi-check-circle-fill me-1"></i>FINAL</span>
-    {% else %}
-      <span class="gameday-state-badge badge-upcoming"><i class="bi bi-calendar-event me-1"></i>UPCOMING</span>
-    {% endif %}
+    <div class="d-flex align-items-center gap-2">
+      {% if gameday_state == 'live' %}
+        <span class="gameday-state-badge badge-live"><i class="bi bi-broadcast me-1"></i><span class="live-pulse-dot"></span> LIVE</span>
+      {% elif gameday_state == 'completed' %}
+        <span class="gameday-state-badge badge-final"><i class="bi bi-check-circle-fill me-1"></i>FINAL</span>
+      {% else %}
+        <span class="gameday-state-badge badge-upcoming"><i class="bi bi-calendar-event me-1"></i>UPCOMING</span>
+      {% endif %}
+      <button id="btnRefreshScores" onclick="refreshScores()" class="btn btn-sm" style="background:rgba(88,166,255,.1);color:#58a6ff;border:1px solid rgba(88,166,255,.25);font-size:.7rem;padding:3px 10px;border-radius:6px;" title="Refresh scores">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
   </div>
   {% if round_dates %}
     <div class="gameday-round-dates mt-1">{{ round_dates }}</div>
@@ -1308,6 +1313,25 @@ if (GAMEDAY_STATE === 'upcoming') {
             })
             .catch(function() {});
     }, 5 * 60 * 1000);
+}
+
+/* ── Auto-reload page every 5 minutes when live ── */
+if (GAMEDAY_STATE === 'live') {
+    setInterval(function() { window.location.reload(); }, 5 * 60 * 1000);
+}
+
+/* ── Manual refresh button ── */
+function refreshScores() {
+    var btn = document.getElementById('btnRefreshScores');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span>';
+    fetch('{{ url_for("matchups.sync_scores", league_id=league.id) }}', {method: 'POST', headers: {'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''}})
+        .then(function(r) { return r.json(); })
+        .then(function() { window.location.reload(); })
+        .catch(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+        });
 }
 </script>
 {% endblock %}

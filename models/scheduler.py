@@ -26,25 +26,14 @@ def init_scheduler(app, socketio):
     _app = app
     _socketio = socketio
 
-    # Score sync: Thu-Sun at 11pm AEST (13:00 UTC)
+    # Live score polling: every 3 minutes during AFL game windows
+    # Thu-Mon, 03:00-14:00 UTC (1pm-midnight AEST) covers all game slots
+    # _poll_live_scores() already bails early if no live/complete games exist
     scheduler.add_job(
         _poll_live_scores,
-        "cron",
-        day_of_week="thu,fri,sat,sun",
-        hour=13,
-        minute=0,
-        id="nightly_score_sync",
-        replace_existing=True,
-        max_instances=1,
-    )
-    # Extra Saturday sync at 5pm AEST (07:00 UTC)
-    scheduler.add_job(
-        _poll_live_scores,
-        "cron",
-        day_of_week="sat",
-        hour=7,
-        minute=0,
-        id="saturday_afternoon_sync",
+        "interval",
+        minutes=3,
+        id="live_score_poll",
         replace_existing=True,
         max_instances=1,
     )
@@ -153,7 +142,7 @@ def init_scheduler(app, socketio):
         max_instances=1,
     )
     scheduler.start()
-    logger.info("Scheduler started (score sync: Thu-Sun 11pm + Sat 5pm AEST, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 07:30 UTC, lineup sync: Wed+Thu+Fri)")
+    logger.info("Scheduler started (live score poll: every 3min, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 08:00 UTC, lineup sync: Wed+Thu+Fri)")
 
 
 def schedule_round_finalization(year: int, afl_round: int):

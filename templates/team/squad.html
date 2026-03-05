@@ -298,7 +298,8 @@
           {% for p in zone_players %}
             {% if p %}
               {% set r = roster_map.get(p.id) %}
-              <div class="mob-pos-row" style="background:{{ colors.row }};">
+              {% set is_locked = fd.locked_teams is defined and p.afl_team in fd.locked_teams %}
+              <div class="mob-pos-row{% if is_locked %} mob-pos-locked{% endif %}" style="background:{{ colors.row }};">
                 {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
                   <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo">
                 {% else %}
@@ -307,6 +308,7 @@
                 <div class="mob-pos-info">
                   <div class="mob-pos-name">
                     {{ p.name }}
+                    {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% endif %}
                     {% if fd.cap_id == p.id %}<span class="mob-pos-badge mob-badge-cap">C</span>{% endif %}
                     {% if fd.vc_id == p.id %}<span class="mob-pos-badge mob-badge-vc">VC</span>{% endif %}
                     {% if fd.emergency_ids is defined and p.id in fd.emergency_ids %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
@@ -343,7 +345,8 @@
             {% if p %}
               {% set primary = (p.position or 'MID').split('/')[0] %}
               {% set colors = pos_colors.get(primary, pos_colors.MID) %}
-              <div class="mob-pos-row" style="background:{{ colors.row }};">
+              {% set is_locked = fd.locked_teams is defined and p.afl_team in fd.locked_teams %}
+              <div class="mob-pos-row{% if is_locked %} mob-pos-locked{% endif %}" style="background:{{ colors.row }};">
                 {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
                   <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo">
                 {% else %}
@@ -352,6 +355,7 @@
                 <div class="mob-pos-info">
                   <div class="mob-pos-name">
                     {{ p.name }}
+                    {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% endif %}
                     {% if fd.cap_id == p.id %}<span class="mob-pos-badge mob-badge-cap">C</span>{% endif %}
                     {% if fd.vc_id == p.id %}<span class="mob-pos-badge mob-badge-vc">VC</span>{% endif %}
                   </div>
@@ -383,14 +387,18 @@
         {% for p in fd.reserves %}
           {% set primary = (p.position or 'MID').split('/')[0] %}
           {% set colors = pos_colors.get(primary, pos_colors.MID) %}
-          <div class="mob-pos-row mob-pos-reserve" style="border-left:3px solid {{ colors.text }}22;">
+          {% set is_locked = fd.locked_teams is defined and p.afl_team in fd.locked_teams %}
+          <div class="mob-pos-row mob-pos-reserve{% if is_locked %} mob-pos-locked{% endif %}" style="border-left:3px solid {{ colors.text }}22;">
             {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
               <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo">
             {% else %}
               <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
             {% endif %}
             <div class="mob-pos-info">
-              <div class="mob-pos-name" style="color:#8b949e;">{{ p.name }}</div>
+              <div class="mob-pos-name" style="color:#8b949e;">
+                {{ p.name }}
+                {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% endif %}
+              </div>
               <div class="mob-pos-meta">
                 {% for ps in (p.position or 'MID').split('/') %}
                   <span class="pos-badge pos-{{ ps }}" style="font-size:.55rem;padding:0 4px;">{{ ps }}</span>

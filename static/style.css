@@ -3631,6 +3631,15 @@ img[src*="Carlton.png"] {
 .mob-reserves-group .mob-pos-row {
   padding-left: 1.1rem;
 }
+.mob-pos-locked {
+  opacity: .6;
+}
+.mob-lock-icon {
+  font-size: .6rem;
+  color: #d29922;
+  margin-left: 4px;
+  vertical-align: middle;
+}
 
 /* ══════════════════════════════════════════════════
    LADDER MOBILE CARDS

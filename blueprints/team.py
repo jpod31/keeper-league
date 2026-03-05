@@ -294,6 +294,7 @@ def squad(league_id, team_id):
         # Next lockout time — earliest scheduled game start for players on team
         next_lockout_time = None
         teams_playing = set()
+        locked_teams = set()
         current_afl_round = None
         try:
             team_afl_teams = set(p.afl_team for p in players if p and p.afl_team)
@@ -313,6 +314,12 @@ def squad(league_id, team_id):
                 for g in round_games:
                     teams_playing.add(g.home_team)
                     teams_playing.add(g.away_team)
+                # Build set of teams whose game has started (locked)
+                locked_teams = set()
+                for g in round_games:
+                    if g.status in ("live", "complete"):
+                        locked_teams.add(g.home_team)
+                        locked_teams.add(g.away_team)
                 # Find earliest scheduled game for lockout countdown
                 for g in sorted(round_games, key=lambda x: x.scheduled_start or datetime.max):
                     if g.status == "scheduled" and g.scheduled_start:
@@ -386,6 +393,7 @@ def squad(league_id, team_id):
             "ssp_enabled": ssp_enabled,
             "ssp_window_active": ssp_window_active,
             "teams_playing": teams_playing,
+            "locked_teams": locked_teams,
             "can_remove_ltil": can_remove_ltil,
             "sevens_ids": sevens_ids,
             "sevens_captain_id": sevens_captain_id,
@@ -925,6 +933,12 @@ def api_swap(league_id, team_id):
     if err:
         return err
 
+    # Rolling lockout — block swap if either player's game has started
+    if _check_player_locked(pid1, league.season_year):
+        return jsonify({"error": f"{entry1.player.name} is locked (game started)"}), 409
+    if _check_player_locked(pid2, league.season_year):
+        return jsonify({"error": f"{entry2.player.name} is locked (game started)"}), 409
+
     # Validate position eligibility before swapping
     p1 = entry1.player
     p2 = entry2.player
@@ -988,6 +1002,10 @@ def api_set_emergency(league_id, team_id):
     entry, err = _get_roster_entry(player_id, team, current_user)
     if err:
         return err
+
+    # Rolling lockout — block if player's game has started
+    if _check_player_locked(player_id, league.season_year):
+        return jsonify({"error": "Player is locked (game started)"}), 409
 
     # Must be a reserve (is_benched=True)
     if not entry.is_benched:
