@@ -427,6 +427,22 @@ class DraftQueue(db.Model):
     )
 
 
+class PlayerWishlist(db.Model):
+    __tablename__ = "player_wishlist"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=False)
+    added_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    player = db.relationship("AflPlayer", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "league_id", "player_id", name="uq_wishlist_user_league_player"),
+    )
+
+
 class DraftChatMessage(db.Model):
     __tablename__ = "draft_chat_message"
 

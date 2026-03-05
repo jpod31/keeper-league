@@ -442,6 +442,70 @@ def squad(league_id, team_id):
             has_active_draft = True
             active_draft_round = draft_live.current_round
 
+    # ── Wishlist data (owner only, wishlist view) ──
+    wishlist_players = []
+    if view == "wishlist" and is_owner:
+        from models.database import PlayerWishlist, ScScore
+        import os, pandas as pd
+
+        wl_rows = PlayerWishlist.query.filter_by(
+            user_id=current_user.id, league_id=league_id
+        ).all()
+        wl_player_ids = [w.player_id for w in wl_rows]
+        wl_player_map = {w.player_id: w for w in wl_rows}
+
+        if wl_player_ids:
+            wl_players_db = AflPlayer.query.filter(AflPlayer.id.in_(wl_player_ids)).all()
+
+            # Build rostered map for status
+            all_rostered = (
+                db.session.query(FantasyRoster.player_id, FantasyTeam.name)
+                .join(FantasyTeam, FantasyTeam.id == FantasyRoster.team_id)
+                .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+                .all()
+            )
+            rostered_map = {r[0]: r[1] for r in all_rostered}
+
+            # Rolling averages for trend
+            rolling = {}
+            current_year = config.CURRENT_YEAR
+            prev_year = current_year - 1
+            frames = []
+            for year_val in (prev_year, current_year):
+                path = os.path.join(config.DATA_DIR, f"player_stats_{year_val}.csv")
+                if os.path.exists(path):
+                    try:
+                        df = pd.read_csv(path, usecols=["Player", "Round", "SC", "Season"])
+                        df = df.dropna(subset=["SC"])
+                        frames.append(df)
+                    except Exception:
+                        pass
+            if frames:
+                all_scores = pd.concat(frames, ignore_index=True)
+                wl_names = {p.name for p in wl_players_db}
+                all_scores = all_scores[all_scores["Player"].isin(wl_names)]
+                for name, group in all_scores.groupby("Player"):
+                    scores = group["SC"].values
+                    n = len(scores)
+                    l3 = float(scores[-3:].mean()) if n >= 3 else (float(scores.mean()) if n else None)
+                    rolling[name] = {"l3": round(l3, 1) if l3 is not None else None}
+
+            for p in wl_players_db:
+                sc_display = p.sc_avg or p.sc_avg_prev
+                pr = rolling.get(p.name, {})
+                l3 = pr.get("l3")
+                trend_val = round(l3 - sc_display, 1) if l3 and sc_display else 0
+                wishlist_players.append({
+                    "player": p,
+                    "sc_avg": round(sc_display, 1) if sc_display else None,
+                    "l3": l3,
+                    "trend": trend_val,
+                    "games": p.games_played or p.career_games or 0,
+                    "owner": rostered_map.get(p.id),
+                    "added_at": wl_player_map[p.id].added_at,
+                })
+            wishlist_players.sort(key=lambda x: x["sc_avg"] or 0, reverse=True)
+
     return render_template("team/squad.html",
                            league=league,
                            team=team,
@@ -462,7 +526,8 @@ def squad(league_id, team_id):
                            trade_close_date=trade_close_date,
                            has_active_draft=has_active_draft,
                            active_draft_round=active_draft_round,
-                           next_delist_info=next_delist_info)
+                           next_delist_info=next_delist_info,
+                           wishlist_players=wishlist_players)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/lineup/<int:afl_round>", methods=["GET", "POST"])

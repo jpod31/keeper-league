@@ -2924,3 +2924,50 @@ def commissioner_force_move(league_id):
         "ok": True,
         "message": f"{player_name} moved from {from_team.name} to {to_team.name}"
     })
+
+
+# ── Wishlist API ──────────────────────────────────────────────────────
+
+
+@leagues_bp.route("/<int:league_id>/wishlist/toggle", methods=["POST"])
+@login_required
+def wishlist_toggle(league_id):
+    from models.database import PlayerWishlist
+    from blueprints import check_league_access
+    league, _ = check_league_access(league_id)
+    if not league:
+        return jsonify({"error": "Access denied"}), 403
+
+    data = request.get_json(silent=True) or {}
+    player_id = data.get("player_id")
+    if not player_id:
+        return jsonify({"error": "player_id required"}), 400
+
+    existing = PlayerWishlist.query.filter_by(
+        user_id=current_user.id, league_id=league_id, player_id=player_id
+    ).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({"wishlisted": False})
+
+    db.session.add(PlayerWishlist(
+        user_id=current_user.id, league_id=league_id, player_id=player_id
+    ))
+    db.session.commit()
+    return jsonify({"wishlisted": True})
+
+
+@leagues_bp.route("/<int:league_id>/wishlist/api")
+@login_required
+def wishlist_api(league_id):
+    from models.database import PlayerWishlist
+    from blueprints import check_league_access
+    league, _ = check_league_access(league_id)
+    if not league:
+        return jsonify({"error": "Access denied"}), 403
+
+    rows = PlayerWishlist.query.filter_by(
+        user_id=current_user.id, league_id=league_id
+    ).all()
+    return jsonify({"player_ids": [r.player_id for r in rows]})

@@ -41,6 +41,12 @@
          class="squad-pill squad-pill-list {{ 'active' if view|default('field') == 'table' }}">
         <i class="bi bi-table"></i>List
       </a>
+      {% if is_owner %}
+      <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='wishlist') }}"
+         class="squad-pill squad-pill-manage {{ 'active' if view == 'wishlist' }}" style="color:#d29922;border-color:rgba(210,153,34,.3);">
+        <i class="bi bi-star"></i>Wishlist
+      </a>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -64,6 +70,9 @@
   {% if is_owner %}
   <a class="mob-subnav-item" href="{{ url_for('reserve7s.sevens_team', league_id=league.id) }}" style="color:#bc8cff;">
     <i class="bi bi-7-circle"></i><span>7s</span>
+  </a>
+  <a class="mob-subnav-item {{ 'active' if view == 'wishlist' }}" href="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='wishlist') }}" style="color:#d29922;">
+    <i class="bi bi-star"></i><span>Wishlist</span>
   </a>
   {% endif %}
   <a class="mob-subnav-item" href="{{ url_for('trades.trade_center', league_id=league.id) }}">
@@ -145,7 +154,123 @@
     </div>
   </div>
 
-  {% if view|default('field') == 'field' %}
+  {% if view == 'wishlist' and is_owner %}
+  {# ── Wishlist View ── #}
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-bold" style="font-size:.9rem;"><i class="bi bi-star me-1" style="color:#d29922;"></i>My Wishlist</span>
+      <span style="font-size:.75rem;color:#8b949e;">{{ wishlist_players|length }} player{{ 's' if wishlist_players|length != 1 }}</span>
+    </div>
+    {% if wishlist_players %}
+    <div class="card-body p-0" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <table class="table table-hover mb-0" style="font-size:.82rem;">
+        <thead>
+          <tr>
+            <th style="width:30px;"></th>
+            <th>Player</th>
+            <th>Pos</th>
+            <th>AFL Team</th>
+            <th class="text-center">Age</th>
+            <th class="text-end">SC Avg</th>
+            <th class="text-center">Trend</th>
+            <th class="text-center">Games</th>
+            <th class="text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for wp in wishlist_players %}
+            {% set p = wp.player %}
+            <tr>
+              <td class="text-center" style="padding:0;vertical-align:middle;">
+                <i class="bi bi-star-fill wishlist-remove" data-pid="{{ p.id }}"
+                   onclick="removeFromWishlist({{ p.id }}, this)"
+                   style="cursor:pointer;font-size:.85rem;color:#d29922;transition:color .15s;"
+                   title="Remove from wishlist"></i>
+              </td>
+              <td>
+                <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:#c9d1d9;">
+                  {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                    <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" height="18" class="me-1" style="vertical-align:middle;">
+                  {% endif %}
+                  {{ p.name }}
+                </a>
+              </td>
+              <td>
+                {% for pos in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge pos-{{ pos }}" style="font-size:.65rem;padding:1px 5px;">{{ pos }}</span>
+                {% endfor %}
+              </td>
+              <td style="color:#8b949e;font-size:.78rem;">{{ p.afl_team or '-' }}</td>
+              <td class="text-center" style="color:#8b949e;">{{ p.age or '-' }}</td>
+              <td class="text-end">
+                {% if wp.sc_avg %}
+                  <span style="font-weight:600;">{{ wp.sc_avg }}</span>
+                {% else %}
+                  <span style="color:#484f58;">-</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if wp.trend > 5 %}
+                  <span class="trend-pill trend-up" style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:10px;font-size:.7rem;font-weight:600;background:rgba(63,185,80,.1);color:#56d364;">
+                    <i class="bi bi-caret-up-fill"></i>+{{ '%.0f'|format(wp.trend) }}
+                  </span>
+                {% elif wp.trend < -5 %}
+                  <span class="trend-pill trend-down" style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:10px;font-size:.7rem;font-weight:600;background:rgba(248,81,73,.1);color:#f85149;">
+                    <i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(wp.trend) }}
+                  </span>
+                {% else %}
+                  <span style="color:#484f58;font-size:.7rem;">{{ '%+.0f'|format(wp.trend) if wp.trend else '-' }}</span>
+                {% endif %}
+              </td>
+              <td class="text-center" style="color:#8b949e;">{{ wp.games or '-' }}</td>
+              <td class="text-center">
+                {% if wp.owner %}
+                  <span class="status-chip" style="background:rgba(248,81,73,.1);color:#f85149;font-size:.65rem;">{{ wp.owner }}</span>
+                {% else %}
+                  <span class="status-chip" style="background:rgba(63,185,80,.1);color:#3fb950;font-size:.65rem;">Available</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-body text-center py-5">
+      <i class="bi bi-star" style="font-size:2rem;color:#484f58;"></i>
+      <p class="mt-2 mb-1" style="color:#8b949e;font-size:.88rem;">No players on your wishlist yet.</p>
+      <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-primary mt-1">
+        <i class="bi bi-search me-1"></i>Browse Player Pool
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+  function removeFromWishlist(pid, el) {
+    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    fetch('{{ url_for("leagues.wishlist_toggle", league_id=league.id) }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || ''},
+      body: JSON.stringify({player_id: pid})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.wishlisted) {
+        var row = el.closest('tr');
+        if (row) row.remove();
+        // Update count
+        var remaining = document.querySelectorAll('.wishlist-remove').length;
+        var countEl = document.querySelector('.card-header span:last-child');
+        if (countEl) countEl.textContent = remaining + ' player' + (remaining !== 1 ? 's' : '');
+        if (remaining === 0) location.reload();
+      }
+    })
+    .catch(function() {});
+  }
+  </script>
+
+  {% elif view|default('field') == 'field' %}
     {% include "team/field_view.html" %}
   {% else %}
   {# ── Delist Banner (list view only, always shown for owner) ── #}
