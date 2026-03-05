@@ -99,12 +99,12 @@
 
   /* Rostered pill highlight */
   .ts-pill-roster {
-    border-color:rgba(63,185,80,.35);
-    background:rgba(63,185,80,.06);
+    border-color:rgba(56,139,253,.4);
+    background:rgba(56,139,253,.08);
   }
   .ts-pill-roster:hover {
-    border-color:rgba(63,185,80,.6);
-    background:rgba(63,185,80,.1);
+    border-color:rgba(56,139,253,.65);
+    background:rgba(56,139,253,.12);
   }
 
   .ts-pill-num {
@@ -116,11 +116,19 @@
     background:rgba(210,153,34,.15); padding:1px 4px; border-radius:2px;
   }
 
-  /* Roster indicator dot */
+  /* Roster indicator — person icon for "on my roster" */
+  .ts-pill-mine {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:18px; height:18px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,#388bfd,#58a6ff);
+    color:#fff; font-size:.55rem; line-height:1;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));
+  }
+
+  /* Injury indicator dot */
   .ts-pill-dot {
     width:7px; height:7px; border-radius:50%; flex-shrink:0;
   }
-  .ts-dot-roster { background:#3fb950; }
   .ts-dot-inj-test { background:linear-gradient(135deg,#ff6b9d,#e84393); }
   .ts-dot-inj-suspension { background:linear-gradient(135deg,#f0c040,#d29922); }
   .ts-dot-inj-short { background:#da3633; }
@@ -164,9 +172,9 @@
 {% macro pill(sel, is_emerg=false) %}
 {% set on_roster = sel.player_id and sel.player_id in rostered_set %}
 <div class="ts-pill{% if on_roster %} ts-pill-roster{% endif %}">
-  {# Roster / injury dot #}
+  {# Roster / injury indicator #}
   {% if on_roster %}
-    <span class="ts-pill-dot ts-dot-roster"></span>
+    <span class="ts-pill-mine" title="On my roster"><i class="bi bi-person-fill"></i></span>
   {% elif sel.player_id and sel.player_id in injury_map %}
     <span class="ts-pill-dot ts-dot-inj-{{ injury_map[sel.player_id] }}"></span>
   {% endif %}
