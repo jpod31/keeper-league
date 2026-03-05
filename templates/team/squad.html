@@ -856,4 +856,11 @@
     <p>Players will appear here after the draft.</p>
   </div>
 {% endif %}
+
+{# ── Auto-reload when games are live (updates scores + lock icons) ── #}
+{% if field_data and field_data.locked_teams %}
+<script>
+setInterval(function() { window.location.reload(); }, 5 * 60 * 1000);
+</script>
+{% endif %}
 {% endblock %}
