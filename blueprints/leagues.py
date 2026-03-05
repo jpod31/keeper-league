@@ -1182,9 +1182,9 @@ def delist_player_action(league_id):
             create_notification(
                 user_id=t.owner_id,
                 league_id=league_id,
-                notif_type="player_delisted",
+                notif_type="list_change",
                 title=f"{user_team.name} delisted {player_name}",
-                link=url_for("leagues.dashboard", league_id=league_id),
+                link=url_for("leagues.list_changes_page", league_id=league_id),
             )
         flash("Player delisted.", "success")
 
@@ -1688,6 +1688,29 @@ def keeper_values(league_id):
     )
 
 
+# ── List Changes (transaction history) ─────────────────────────────
+
+
+@leagues_bp.route("/<int:league_id>/list-changes")
+@login_required
+def list_changes_page(league_id):
+    """Standalone list changes / transaction history page."""
+    from blueprints import check_league_access
+    from models.league_records import compute_list_changes
+
+    league, user_team = check_league_access(league_id)
+    if not league:
+        flash("You don't have access to this league.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    list_changes = compute_list_changes(league_id)
+
+    return render_template("leagues/list_changes.html",
+                           league=league,
+                           list_changes=list_changes,
+                           active_tab="league")
+
+
 # ── League Records (all-time history) ────────────────────────────────
 
 
@@ -2159,10 +2182,6 @@ def league_history(league_id):
                 if a["wins"] >= milestone - 3 and a["wins"] < milestone:
                     milestones.append(f"{a['team_name']} is {milestone - a['wins']} wins away from {milestone} all-time wins")
 
-    # ── List Changes (transaction history) ──────────────────────────
-    from models.league_records import compute_list_changes
-    list_changes = compute_list_changes(league_id)
-
     return render_template("leagues/history.html",
                            league=league,
                            champions=champions,
@@ -2185,7 +2204,6 @@ def league_history(league_id):
                            milestones=milestones,
                            teams=teams,
                            team_map=team_map,
-                           list_changes=list_changes,
                            active_tab="league")
 
 
@@ -2875,6 +2893,19 @@ def commissioner_force_move(league_id):
     )
     db.session.add(new_entry)
     db.session.commit()
+
+    # Notify all league members
+    from models.notification_manager import create_notification
+    all_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    for t in all_teams:
+        create_notification(
+            user_id=t.owner_id,
+            league_id=league_id,
+            notif_type="list_change",
+            title=f"Commissioner moved {player_name} to {to_team.name}",
+            body=f"{player_name} moved from {from_team.name} to {to_team.name}.",
+            link=url_for("leagues.list_changes_page", league_id=league_id),
+        )
 
     return jsonify({
         "ok": True,

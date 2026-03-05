@@ -1390,6 +1390,22 @@ def api_ssp_pick(league_id, team_id):
     ltil, err = ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id)
     if err:
         return jsonify({"error": err}), 409
+
+    # Notify all league members about the SSP signing
+    from models.notification_manager import create_notification
+    replacement_player = db.session.get(AflPlayer, replacement_player_id)
+    player_name = replacement_player.name if replacement_player else "Unknown"
+    all_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    for t in all_teams:
+        create_notification(
+            user_id=t.owner_id,
+            league_id=league_id,
+            notif_type="list_change",
+            title=f"{team.name} signed {player_name} (SSP)",
+            body=f"{team.name} selected {player_name} as an SSP replacement.",
+            link=url_for("leagues.list_changes_page", league_id=league_id),
+        )
+
     return jsonify({"ok": True})
 
 
