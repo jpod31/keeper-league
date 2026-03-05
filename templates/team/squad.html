@@ -271,7 +271,168 @@
   </script>
 
   {% elif view|default('field') == 'field' %}
-    {% include "team/field_view.html" %}
+    {# Desktop: full field view #}
+    <div class="d-none d-lg-block">
+      {% include "team/field_view.html" %}
+    </div>
+
+    {# Mobile: position-grouped list #}
+    <div class="d-lg-none mob-squad-list">
+      {% set fd = field_data %}
+      {% set pos_colors = {'DEF': {'bg': 'rgba(26,63,102,.35)', 'border': 'rgba(121,192,255,.3)', 'text': '#79c0ff', 'row': 'rgba(26,63,102,.08)'},
+                            'MID': {'bg': 'rgba(53,29,74,.35)', 'border': 'rgba(210,168,255,.3)', 'text': '#d2a8ff', 'row': 'rgba(53,29,74,.08)'},
+                            'RUC': {'bg': 'rgba(29,61,46,.35)', 'border': 'rgba(126,231,135,.3)', 'text': '#7ee787', 'row': 'rgba(29,61,46,.08)'},
+                            'FWD': {'bg': 'rgba(70,41,10,.35)', 'border': 'rgba(255,180,113,.3)', 'text': '#ffb471', 'row': 'rgba(70,41,10,.08)'}} %}
+      {% set pos_order = ['DEF', 'MID', 'RUC', 'FWD'] %}
+
+      {# ── On-field positions ── #}
+      {% for pos in pos_order %}
+        {% set colors = pos_colors[pos] %}
+        {% set zone_players = fd.zones.get(pos, []) %}
+        {% if zone_players %}
+        <div class="mob-pos-group">
+          <div class="mob-pos-header" style="background:{{ colors.bg }};border-left:3px solid {{ colors.text }};">
+            <span class="mob-pos-label" style="color:{{ colors.text }};">{{ pos }}</span>
+            <span class="mob-pos-count">{{ zone_players|reject('none')|list|length }}/{{ zone_players|length }}</span>
+          </div>
+          {% for p in zone_players %}
+            {% if p %}
+              {% set r = roster_map.get(p.id) %}
+              <div class="mob-pos-row" style="background:{{ colors.row }};">
+                {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                  <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo">
+                {% else %}
+                  <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
+                {% endif %}
+                <div class="mob-pos-info">
+                  <div class="mob-pos-name">
+                    {{ p.name }}
+                    {% if fd.cap_id == p.id %}<span class="mob-pos-badge mob-badge-cap">C</span>{% endif %}
+                    {% if fd.vc_id == p.id %}<span class="mob-pos-badge mob-badge-vc">VC</span>{% endif %}
+                    {% if fd.emergency_ids is defined and p.id in fd.emergency_ids %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
+                  </div>
+                  <div class="mob-pos-meta">
+                    {% for ps in (p.position or 'MID').split('/') %}
+                      <span class="pos-badge pos-{{ ps }}" style="font-size:.55rem;padding:0 4px;">{{ ps }}</span>
+                    {% endfor %}
+                    <span>{{ p.afl_team or '' }}</span>
+                    {% if p.injury_severity %}<span style="color:#f85149;"><i class="bi bi-bandaid-fill"></i></span>{% endif %}
+                  </div>
+                </div>
+                <div class="mob-pos-sc">
+                  {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+
+      {# ── FLEX ── #}
+      {% if fd.flex_data %}
+        {% set flex_players = fd.flex_data|selectattr('player')|list %}
+        {% if flex_players %}
+        <div class="mob-pos-group">
+          <div class="mob-pos-header" style="background:rgba(139,148,158,.15);border-left:3px solid #8b949e;">
+            <span class="mob-pos-label" style="color:#8b949e;">FLEX</span>
+            <span class="mob-pos-count">{{ flex_players|length }}/{{ fd.flex_count }}</span>
+          </div>
+          {% for slot in fd.flex_data %}
+            {% set p = slot.player %}
+            {% if p %}
+              {% set primary = (p.position or 'MID').split('/')[0] %}
+              {% set colors = pos_colors.get(primary, pos_colors.MID) %}
+              <div class="mob-pos-row" style="background:{{ colors.row }};">
+                {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+                  <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo">
+                {% else %}
+                  <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
+                {% endif %}
+                <div class="mob-pos-info">
+                  <div class="mob-pos-name">
+                    {{ p.name }}
+                    {% if fd.cap_id == p.id %}<span class="mob-pos-badge mob-badge-cap">C</span>{% endif %}
+                    {% if fd.vc_id == p.id %}<span class="mob-pos-badge mob-badge-vc">VC</span>{% endif %}
+                  </div>
+                  <div class="mob-pos-meta">
+                    {% for ps in (p.position or 'MID').split('/') %}
+                      <span class="pos-badge pos-{{ ps }}" style="font-size:.55rem;padding:0 4px;">{{ ps }}</span>
+                    {% endfor %}
+                    <span>{{ p.afl_team or '' }}</span>
+                    {% if p.injury_severity %}<span style="color:#f85149;"><i class="bi bi-bandaid-fill"></i></span>{% endif %}
+                  </div>
+                </div>
+                <div class="mob-pos-sc">
+                  {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endif %}
+
+      {# ── Reserves ── #}
+      {% if fd.reserves %}
+      <div class="mob-pos-group mob-reserves-group">
+        <div class="mob-pos-header" style="background:rgba(48,54,61,.4);border-left:3px solid #484f58;">
+          <span class="mob-pos-label" style="color:#6e7681;">BENCH</span>
+          <span class="mob-pos-count">{{ fd.reserves|length }}</span>
+        </div>
+        {% for p in fd.reserves %}
+          {% set primary = (p.position or 'MID').split('/')[0] %}
+          {% set colors = pos_colors.get(primary, pos_colors.MID) %}
+          <div class="mob-pos-row mob-pos-reserve" style="border-left:3px solid {{ colors.text }}22;">
+            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo">
+            {% else %}
+              <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
+            {% endif %}
+            <div class="mob-pos-info">
+              <div class="mob-pos-name" style="color:#8b949e;">{{ p.name }}</div>
+              <div class="mob-pos-meta">
+                {% for ps in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.55rem;padding:0 4px;">{{ ps }}</span>
+                {% endfor %}
+                <span>{{ p.afl_team or '' }}</span>
+                {% if p.injury_severity %}<span style="color:#f85149;"><i class="bi bi-bandaid-fill"></i></span>{% endif %}
+              </div>
+            </div>
+            <div class="mob-pos-sc">
+              {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;opacity:.7;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# ── LTIL ── #}
+      {% if fd.ltil_entries %}
+      <div class="mob-pos-group">
+        <div class="mob-pos-header" style="background:rgba(248,81,73,.1);border-left:3px solid #f85149;">
+          <span class="mob-pos-label" style="color:#f85149;">LTIL</span>
+          <span class="mob-pos-count">{{ fd.ltil_entries|length }}</span>
+        </div>
+        {% for lt in fd.ltil_entries %}
+          {% set p = lt.player %}
+          <div class="mob-pos-row" style="background:rgba(248,81,73,.03);">
+            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo" style="opacity:.5;">
+            {% else %}
+              <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
+            {% endif %}
+            <div class="mob-pos-info">
+              <div class="mob-pos-name" style="color:#8b949e;">{{ p.name }}</div>
+              <div class="mob-pos-meta">
+                <span style="color:#f85149;font-size:.65rem;"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
   {% else %}
   {# ── Delist Banner (list view only, always shown for owner) ── #}
   {% if is_owner %}
