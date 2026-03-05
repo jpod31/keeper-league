@@ -99,7 +99,7 @@
       {% set sname = p.name.split()[1:] | join(' ') %}
       <div class="fv-name-block">
         <div class="fv-firstname">{{ fname }}</div>
-        <div class="fv-surname{% if sname|length > 9 %} fv-name-long{% endif %}" title="{{ p.name }}">{{ sname }}</div>
+        <div class="fv-surname{% if sname|length > 9 %} fv-name-long{% endif %}" title="{{ p.name }}"><span class="fv-initial">{{ fname[0] }}. </span>{{ sname }}</div>
       </div>
 
       {# Stats bar #}

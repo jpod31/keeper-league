@@ -967,6 +967,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.fv-initial { display: none; }
 .fv-surname {
   font-size: .8rem;
   font-weight: 800;
@@ -1659,23 +1660,34 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   }
   .fv-sidebar .fv-flex-section { flex: 1; min-width: 200px; }
   .fv-sidebar .fv-flex-stack { flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .fv-sidebar .fv-card-flex { width: 80px; }
+  .fv-sidebar .fv-card-flex { width: auto; min-width: 0; }
   .fv-field { padding: 1.5rem 1rem; min-height: 550px; border-radius: 46% / 4%; }
-  .fv-card { width: 80px; }
-  .fv-reserves-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
-  .fv-logo { width: 20px; height: 20px; }
-  .fv-card-flex .fv-logo, .fv-card-reserve .fv-logo { width: 18px; height: 18px; }
-  .fv-surname { font-size: .6rem; }
-  .fv-name-long { font-size: .5rem; }
-  .fv-firstname { font-size: .5rem; }
+  .fv-card { width: auto; min-width: 0; }
+  .fv-card-flex { width: auto; min-width: 0; }
+  .fv-reserves-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+  .fv-logo { width: 18px; height: 18px; }
+  .fv-card-flex .fv-logo, .fv-card-reserve .fv-logo { width: 16px; height: 16px; }
+  .fv-surname { font-size: .55rem; }
+  .fv-name-long { font-size: .45rem; }
+  .fv-firstname { display: none; }
+  .fv-initial { display: inline; }
   .fv-stat-num { font-size: .55rem; }
   .fv-zone-grid { gap: 5px; }
-  .fv-grid-5 { grid-template-columns: repeat(5, 80px); }
-  .fv-grid-4 { grid-template-columns: repeat(4, 80px); }
-  .fv-grid-3 { grid-template-columns: repeat(3, 80px); }
-  .fv-grid-2 { grid-template-columns: repeat(2, 80px); }
-  .fv-grid-1 { grid-template-columns: 80px; }
+  .fv-pos-pip { font-size: .45rem; }
+
+  /* Responsive 1fr grids — cards auto-size to fill width */
+  .fv-grid-5 { grid-template-columns: repeat(5, 1fr); }
+  .fv-grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .fv-grid-3 { grid-template-columns: repeat(3, 1fr); max-width: 240px; margin: 0 auto; }
+  .fv-grid-2 { grid-template-columns: repeat(2, 1fr); max-width: 160px; margin: 0 auto; }
+  .fv-grid-1 { grid-template-columns: 1fr; max-width: 80px; margin: 0 auto; }
   .fv-card-top { padding: 4px 5px 0; }
+
+  /* Shrink ribbon badges from 26px → 16px */
+  .fv-ribbon { top: -3px; right: -3px; }
+  .fv-ribbon span { width: 16px; height: 16px; font-size: .45rem; }
+  .fv-selected, .fv-injury, .fv-bye-badge { width: 16px; height: 16px; font-size: .5rem; top: -3px; left: -3px; }
+  .fv-bye-shifted { left: 12px; }
 }
 
 /* ═══ Toast Notifications (field view) ═══ */
@@ -2236,6 +2248,13 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
     grid-template-columns: 1fr 1fr;
   }
   .squad-hide-mobile { display: none !important; }
+
+  /* Compact delist/alert banners on mobile */
+  .lm-alerts { margin-bottom: .5rem; }
+  .lm-alert-row { padding: .5rem .75rem; font-size: .78rem; }
+
+  /* Compact read-only viewer banner */
+  .squad-hero { padding: .6rem .75rem; }
 }
 
 /* ═══ Settings — Toggle Switch + Expandable Sections ═══ */
@@ -2653,6 +2672,47 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   border: 1px solid rgba(210,153,34,.25);
 }
 .more-sheet-item-draft i { color: #d29922; }
+
+/* ── Sub-tab sheet (reuses more-sheet pattern) ── */
+.subtab-sheet-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 1050;
+}
+.subtab-sheet-backdrop.open { display: block; }
+.subtab-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--kl-bg-card);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 12px 16px 24px;
+  z-index: 1055;
+  transform: translateY(100%);
+  transition: transform .25s ease;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.subtab-sheet.open { transform: translateY(0); }
+.subtab-sheet-title {
+  font-size: .8rem;
+  font-weight: 700;
+  padding-bottom: 8px;
+  color: var(--kl-text-secondary);
+}
+/* Active sub-tab highlight */
+.more-sheet-item.subtab-active {
+  border: 1.5px solid var(--kl-accent-blue);
+  background: rgba(88,166,255,.08);
+}
+
+/* ── Hide inline mob-subnav on mobile (replaced by bottom sheet) ── */
+@media (max-width: 768px) {
+  .mob-subnav { display: none !important; }
+}
 
 /* ══════════════════════════════════════════════════
    FIELD VIEW ACTION SHEET (mobile)
@@ -3402,4 +3462,99 @@ img[src*="Carlton.png"] {
 }
 .modal.show .modal-dialog {
   animation: modalSlideIn .25s ease-out;
+}
+
+/* ══════════════════════════════════════════════════
+   SQUAD MOBILE CARDS
+   ══════════════════════════════════════════════════ */
+.squad-mob-card {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .6rem .75rem;
+  border-bottom: 1px solid var(--kl-border);
+}
+.squad-mob-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.squad-mob-info {
+  flex: 1;
+  min-width: 0;
+}
+.squad-mob-name {
+  font-weight: 700;
+  font-size: .82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.squad-mob-meta {
+  font-size: .68rem;
+  color: var(--kl-text-secondary);
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.squad-mob-sc {
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--kl-accent-green);
+  flex-shrink: 0;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* ══════════════════════════════════════════════════
+   LADDER MOBILE CARDS
+   ══════════════════════════════════════════════════ */
+.ldr-cards-mobile {
+  background: var(--kl-bg-card);
+  border: 1px solid var(--kl-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ldr-mob-card {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--kl-border);
+  font-size: .82rem;
+}
+.ldr-mob-card:last-of-type { border-bottom: none; }
+.ldr-mob-rank {
+  font-weight: 700;
+  min-width: 28px;
+  text-align: center;
+  font-size: .78rem;
+}
+.ldr-mob-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--kl-text-heading);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ldr-mob-name:hover { color: var(--kl-accent-blue); }
+.ldr-mob-record {
+  color: var(--kl-text-secondary);
+  font-size: .75rem;
+}
+.ldr-mob-pts {
+  font-weight: 700;
+  min-width: 40px;
+  text-align: right;
+  color: var(--kl-accent-blue);
+}
+.ldr-mob-mine {
+  background: rgba(88,166,255,.06);
+  border-left: 3px solid var(--kl-accent-blue);
+}
+.ldr-mob-finals {
+  background: rgba(63,185,80,.03);
 }

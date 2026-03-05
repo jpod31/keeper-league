@@ -89,23 +89,23 @@
 {# ═══ Mobile bottom nav — hidden on desktop ═══ #}
 <nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav">
   {% if nav_user_team|default(none) %}
-    <a class="mob-nav-item{% if active_tab|default('') == 'team' %} active{% endif %}"
-       href="{{ url_for('team.squad', league_id=league.id, team_id=nav_user_team.id) }}">
+    <button class="mob-nav-item{% if active_tab|default('') == 'team' %} active{% endif %}" type="button"
+            data-section="team" onclick="handleNavTap(this)">
       <i class="bi bi-people"></i><span>Team</span>
-    </a>
+    </button>
     <a class="mob-nav-item{% if active_tab|default('') == 'gameday' %} active{% endif %}"
        href="{{ url_for('matchups.gameday', league_id=league.id) }}">
       <i class="bi bi-controller"></i><span>Gameday</span>
     </a>
   {% endif %}
-  <a class="mob-nav-item{% if active_tab|default('') == 'players' %} active{% endif %}"
-     href="{{ url_for('leagues.player_pool', league_id=league.id) }}">
+  <button class="mob-nav-item{% if active_tab|default('') == 'players' %} active{% endif %}" type="button"
+          data-section="players" onclick="handleNavTap(this)">
     <i class="bi bi-person-plus"></i><span>Players</span>
-  </a>
-  <a class="mob-nav-item{% if active_tab|default('') == 'league' %} active{% endif %}"
-     href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
+  </button>
+  <button class="mob-nav-item{% if active_tab|default('') == 'league' %} active{% endif %}" type="button"
+          data-section="league" onclick="handleNavTap(this)">
     <i class="bi bi-calendar-week"></i><span>League</span>
-  </a>
+  </button>
   {% set more_tabs = ['comms', 'commissioner', 'settings'] %}
   <button class="mob-nav-item{% if active_tab|default('') in more_tabs %} active{% endif %}" onclick="toggleMoreSheet()" type="button">
     <i class="bi bi-grid-3x3-gap"></i><span>More</span>
@@ -136,6 +136,14 @@
   </div>
 </div>
 
+{# ═══ Sub-tab sheet overlay ═══ #}
+<div class="subtab-sheet-backdrop" id="subtabBackdrop" onclick="closeSubtabSheet()"></div>
+<div class="subtab-sheet" id="subtabSheet">
+  <div class="more-sheet-handle"></div>
+  <div class="subtab-sheet-title" id="subtabTitle"></div>
+  <div class="more-sheet-grid" id="subtabGrid"></div>
+</div>
+
 <script>
 function toggleMoreSheet() {
   var sheet = document.getElementById('moreSheet');
@@ -148,6 +156,90 @@ function toggleMoreSheet() {
     sheet.classList.add('open');
     backdrop.classList.add('open');
   }
+}
+
+/* ── Sub-tab sheet logic ── */
+var _subtabData = {
+  {% if nav_user_team|default(none) %}
+  team: {
+    title: 'My Team',
+    tabs: [
+      {label:'Field', icon:'bi-diagram-3', url:'{{ url_for("team.squad", league_id=league.id, team_id=nav_user_team.id) }}', key:'field'},
+      {label:'List', icon:'bi-table', url:'{{ url_for("team.squad", league_id=league.id, team_id=nav_user_team.id, view="table") }}', key:'table'},
+      {label:'Stats', icon:'bi-graph-up', url:'{{ url_for("team.team_stats", league_id=league.id, team_id=nav_user_team.id) }}', key:'stats'},
+      {label:'Analytics', icon:'bi-bar-chart-line', url:'{{ url_for("team.team_analytics", league_id=league.id, team_id=nav_user_team.id) }}', key:'analytics'},
+      {% if is_owner|default(false) %}
+      {label:'7s', icon:'bi-7-circle', url:'{{ url_for("reserve7s.sevens_team", league_id=league.id) }}', key:'7s', style:'color:#bc8cff'},
+      {label:'Wishlist', icon:'bi-star', url:'{{ url_for("team.squad", league_id=league.id, team_id=nav_user_team.id, view="wishlist") }}', key:'wishlist', style:'color:#d29922'},
+      {% endif %}
+      {label:'Trades', icon:'bi-arrow-left-right', url:'{{ url_for("trades.trade_center", league_id=league.id) }}', key:'trades'}
+    ]
+  },
+  {% endif %}
+  players: {
+    title: 'Players',
+    tabs: [
+      {label:'Pool', icon:'bi-person-plus', url:'{{ url_for("leagues.player_pool", league_id=league.id) }}', key:'pool'},
+      {label:'Compare', icon:'bi-people', url:'{{ url_for("leagues.player_compare", league_id=league.id) }}', key:'compare'},
+      {label:'Stats', icon:'bi-graph-up', url:'{{ url_for("leagues.advanced_stats", league_id=league.id) }}', key:'stats'},
+      {label:'Lineups', icon:'bi-person-check', url:'{{ url_for("matchups.team_lineups", league_id=league.id) }}', key:'lineups'},
+      {label:'Injuries', icon:'bi-bandaid', url:'{{ url_for("leagues.player_injuries", league_id=league.id) }}', key:'injuries'}
+    ]
+  },
+  league: {
+    title: 'League',
+    tabs: [
+      {label:'Ladder', icon:'bi-bar-chart', url:'{{ url_for("matchups.standings", league_id=league.id) }}', key:'ladder'},
+      {label:'Season', icon:'bi-calendar-week', url:'{{ url_for("matchups.fixture_view", league_id=league.id) }}', key:'fixture'},
+      {% if nav_finals_teams is defined and nav_finals_teams and nav_finals_teams > 0 %}
+      {label:'Finals', icon:'bi-trophy', url:'{{ url_for("matchups.finals_view", league_id=league.id) }}', key:'finals'},
+      {% endif %}
+      {label:'List Changes', icon:'bi-clock-history', url:'{{ url_for("leagues.list_changes_page", league_id=league.id) }}', key:'list_changes'},
+      {label:'Records', icon:'bi-trophy', url:'{{ url_for("leagues.league_history", league_id=league.id) }}', key:'records'},
+      {label:'7s', icon:'bi-7-circle', url:'{{ url_for("reserve7s.sevens_standings", league_id=league.id) }}', key:'7s', style:'color:#bc8cff'}
+    ]
+  }
+};
+
+var _activeSubtab = '{{ active_subtab|default("") }}';
+var _activeTab = '{{ active_tab|default("") }}';
+{# For team section, the "view" variable determines active subtab #}
+{% if active_tab|default('') == 'team' %}
+  {% set _team_subtab = view|default('field') %}
+  _activeSubtab = '{{ _team_subtab }}';
+{% endif %}
+
+function handleNavTap(btn) {
+  var section = btn.dataset.section;
+  var data = _subtabData[section];
+  if (!data) return;
+
+  var sheet = document.getElementById('subtabSheet');
+  var backdrop = document.getElementById('subtabBackdrop');
+  var title = document.getElementById('subtabTitle');
+  var grid = document.getElementById('subtabGrid');
+
+  title.textContent = data.title;
+  grid.innerHTML = '';
+
+  data.tabs.forEach(function(tab) {
+    var a = document.createElement('a');
+    a.className = 'more-sheet-item';
+    var isActive = (_activeTab === section && _activeSubtab === tab.key);
+    if (isActive) a.classList.add('subtab-active');
+    a.href = tab.url;
+    if (tab.style) a.setAttribute('style', tab.style);
+    a.innerHTML = '<i class="bi ' + tab.icon + '"></i><span>' + tab.label + '</span>';
+    grid.appendChild(a);
+  });
+
+  sheet.classList.add('open');
+  backdrop.classList.add('open');
+}
+
+function closeSubtabSheet() {
+  document.getElementById('subtabSheet').classList.remove('open');
+  document.getElementById('subtabBackdrop').classList.remove('open');
 }
 </script>
 {% endblock %}

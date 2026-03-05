@@ -11,7 +11,7 @@
 <div class="squad-hero">
   <div class="squad-hero-inner">
     <div>
-      <div class="squad-hero-crumb">
+      <div class="squad-hero-crumb d-none d-lg-block">
         <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / {{ team.name }}
       </div>
       <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -306,8 +306,48 @@
   {% endif %}
   {% endif %}
 
-  {# ── Enhanced List View ── #}
-  <div class="card">
+  {# ── Mobile Squad Cards ── #}
+  <div class="d-lg-none squad-cards-mobile">
+    <div class="d-flex justify-content-between align-items-center px-2 py-2">
+      <span class="fw-bold" style="font-size:.85rem;">Squad Roster</span>
+      <div class="btn-group btn-group-sm" role="group">
+        <button class="btn btn-sm btn-primary" id="btnMyClubMob" onclick="switchStats('myclub')">My 23</button>
+        <button class="btn btn-sm btn-outline-secondary" id="btnSeasonMob" onclick="switchStats('season')">Season</button>
+        <button class="btn btn-sm btn-outline-secondary" id="btnCareerMob" onclick="switchStats('career')">Career</button>
+      </div>
+    </div>
+    {% for p in players %}
+      {% set r = roster_map.get(p.id) %}
+      {% set st = alltime_stats.get(p.id, {}) %}
+      {% set primary = (p.position or 'MID').split('/')[0] %}
+      {% set sc_val = st.get('sc_avg', 0) or 0 %}
+      <div class="squad-mob-card" data-pid="{{ p.id }}">
+        {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+          <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="squad-mob-logo">
+        {% else %}
+          <div class="squad-mob-logo" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:#484f58;"><i class="bi bi-shield-fill" style="font-size:.7rem;"></i></div>
+        {% endif %}
+        <div class="squad-mob-info">
+          <div class="squad-mob-name">
+            <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:#c9d1d9;">{{ p.name }}</a>
+            {% if r and r.is_captain %}<span class="squad-badge squad-badge-cap">C</span>{% endif %}
+            {% if r and r.is_vice_captain %}<span class="squad-badge squad-badge-vc">VC</span>{% endif %}
+          </div>
+          <div class="squad-mob-meta">
+            <span class="pos-badge pos-{{ primary }}" style="font-size:.6rem;padding:0 4px;">{{ primary }}</span>
+            <span>{{ p.afl_team or '-' }}</span>
+            {% if p.age %}<span>Age {{ p.age }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="squad-mob-sc stat-sc-avg-mob">
+          {% if sc_val %}<span class="squad-sc {% if sc_val >= 100 %}squad-sc-elite{% elif sc_val >= 80 %}squad-sc-good{% elif sc_val >= 60 %}squad-sc-avg{% else %}squad-sc-low{% endif %}">{{ sc_val }}</span>{% else %}-{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ── Enhanced List View (desktop) ── #}
+  <div class="card d-none d-lg-block">
     <div class="card-header d-flex justify-content-between align-items-center">
       <span class="fw-bold" style="font-size:.9rem;">Squad Roster</span>
       <div class="btn-group btn-group-sm" role="group">
@@ -463,14 +503,38 @@
           }
         });
       });
+      // Also update mobile cards SC avg
+      document.querySelectorAll('.squad-mob-card[data-pid]').forEach(card => {
+        const pid = card.dataset.pid;
+        const stats = data[pid] || {};
+        const scCell = card.querySelector('.stat-sc-avg-mob');
+        if (scCell) {
+          const val = stats.sc_avg;
+          const displayVal = (val !== undefined && val !== null) ? val : '-';
+          if (displayVal !== '-' && parseFloat(displayVal)) {
+            scCell.innerHTML = '<span class="squad-sc ' + scHeatClass(displayVal) + '">' + displayVal + '</span>';
+          } else {
+            scCell.textContent = '-';
+          }
+        }
+      });
     }
 
     function setActiveBtn(mode) {
       ['btnMyClub', 'btnSeason', 'btnCareer'].forEach(id => {
-        document.getElementById(id).className = 'btn btn-sm btn-outline-secondary';
+        var el = document.getElementById(id);
+        if (el) el.className = 'btn btn-sm btn-outline-secondary';
+      });
+      ['btnMyClubMob', 'btnSeasonMob', 'btnCareerMob'].forEach(id => {
+        var el = document.getElementById(id);
+        if (el) el.className = 'btn btn-sm btn-outline-secondary';
       });
       const map = { myclub: 'btnMyClub', season: 'btnSeason', career: 'btnCareer' };
-      document.getElementById(map[mode]).className = 'btn btn-sm btn-primary';
+      const mapMob = { myclub: 'btnMyClubMob', season: 'btnSeasonMob', career: 'btnCareerMob' };
+      var el = document.getElementById(map[mode]);
+      if (el) el.className = 'btn btn-sm btn-primary';
+      var elMob = document.getElementById(mapMob[mode]);
+      if (elMob) elMob.className = 'btn btn-sm btn-primary';
     }
 
     function fetchAndCache(api, mode, btnId, label) {
