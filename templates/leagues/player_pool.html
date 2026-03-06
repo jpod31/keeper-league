@@ -359,8 +359,8 @@
                   <div style="color:#484f58;">Pick #{{ acq.pick_number }}{% if acq.get('draft_year') %} · {{ acq.draft_year }}{% endif %}{% if acq.draft_type == 'supplemental' %} <span style="color:#d29922;">mid</span>{% endif %}</div>
                   {% elif acq.method == 'trade' %}
                   <div style="color:#bc8cff;">Trade</div>
-                  {% elif acq.method == 'free_agent' %}
-                  <div style="color:#3fb950;">Free Agent</div>
+                  {% elif acq.method in ('ssp', 'free_agent') %}
+                  <div style="color:#3fb950;">SSP{% if acq.acquired_at %} · {{ acq.acquired_at.strftime('%d %b') }}{% endif %}</div>
                   {% endif %}
                 </div>
               {% else %}

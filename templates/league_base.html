@@ -133,6 +133,9 @@
     <a class="more-sheet-item" href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
       <i class="bi bi-gear"></i><span>Settings</span>
     </a>
+    <a class="more-sheet-item" href="#" id="moreSheetInstall" style="display:none;color:#3fb950;" onclick="event.preventDefault();triggerPwaInstall();">
+      <i class="bi bi-download"></i><span>Install App</span>
+    </a>
   </div>
 </div>
 

@@ -1353,6 +1353,7 @@ def player_pool(league_id):
         db.session.query(
             FantasyRoster.player_id,
             FantasyRoster.acquired_via,
+            FantasyRoster.acquired_at,
             FantasyTeam.name.label("team_name"),
             FantasyTeam.owner_id,
         )
@@ -1388,6 +1389,7 @@ def player_pool(league_id):
         info = {
             "coach": owner_names.get(r.owner_id, ""),
             "method": r.acquired_via or "draft",
+            "acquired_at": r.acquired_at,
         }
         dp = draft_pick_map.get(r.player_id)
         if dp and r.acquired_via in ("draft", "supplemental", None):

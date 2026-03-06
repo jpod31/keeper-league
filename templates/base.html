@@ -346,23 +346,26 @@
   </div>
   <script>
   // PWA Install Prompt
+  var _pwaDeferred = null;
   (function() {
-    var deferredPrompt;
     var banner = document.getElementById('pwaInstallBanner');
     var dismissed = localStorage.getItem('pwa-install-dismissed');
 
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
-      deferredPrompt = e;
+      _pwaDeferred = e;
       if (!dismissed) banner.style.display = '';
+      // Show fallback install option in More sheet
+      var moreBtn = document.getElementById('moreSheetInstall');
+      if (moreBtn) moreBtn.style.display = '';
     });
 
     var installBtn = document.getElementById('pwaInstallBtn');
     if (installBtn) {
       installBtn.addEventListener('click', function() {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then(function() { banner.style.display = 'none'; });
+        if (_pwaDeferred) {
+          _pwaDeferred.prompt();
+          _pwaDeferred.userChoice.then(function() { banner.style.display = 'none'; });
         }
       });
     }
@@ -374,20 +377,25 @@
       });
     }
   })();
+
+  function triggerPwaInstall() {
+    if (_pwaDeferred) {
+      _pwaDeferred.prompt();
+      _pwaDeferred.userChoice.then(function() {
+        document.getElementById('pwaInstallBanner').style.display = 'none';
+        var moreBtn = document.getElementById('moreSheetInstall');
+        if (moreBtn) moreBtn.style.display = 'none';
+      });
+    }
+  }
   </script>
 
   <script>
-  // Unregister old service workers to prevent stale cache issues
+  // Register service worker for PWA install + caching
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      registrations.forEach(function(reg) { reg.unregister(); });
+    navigator.serviceWorker.register('/static/sw.js').catch(function(err) {
+      console.log('SW registration failed:', err);
     });
-    // Clear all caches
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        names.forEach(function(name) { caches.delete(name); });
-      });
-    }
   }
   </script>
   {% block scripts %}{% endblock %}
