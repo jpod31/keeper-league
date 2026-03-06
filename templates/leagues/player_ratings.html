@@ -26,17 +26,25 @@
   .rtg-old { color: #8b949e; font-size: .8rem; }
   .rtg-arrow { color: #484f58; font-size: .7rem; }
   .rtg-new { font-weight: 700; font-size: .9rem; }
+  .rtg-pot { color: #bc8cff; font-size: .75rem; font-weight: 600; min-width: 22px; text-align: center; }
   .rtg-diff { font-weight: 700; font-size: .78rem; min-width: 30px; text-align: right; }
   .rtg-up { color: #3fb950; }
   .rtg-down { color: #f85149; }
-  .empty-state {
-    padding: 3rem 1rem; text-align: center; color: #484f58;
-  }
+  .empty-state { padding: 3rem 1rem; text-align: center; color: #484f58; }
   .empty-state i { font-size: 2.5rem; margin-bottom: .5rem; }
-  .section-note {
+  .section-header {
     font-size: .75rem; color: #8b949e; padding: .4rem .75rem;
     background: #161b22; border-bottom: 1px solid #21262d;
+    display: flex; justify-content: space-between; align-items: center;
   }
+  .sort-pills { display: flex; gap: .3rem; }
+  .sort-pill {
+    padding: 2px 8px; border-radius: 10px; font-size: .65rem; font-weight: 600;
+    background: transparent; border: 1px solid #30363d; color: #8b949e;
+    cursor: pointer; transition: all .12s;
+  }
+  .sort-pill:hover { border-color: #58a6ff; color: #c9d1d9; }
+  .sort-pill.active { background: #21262d; border-color: #58a6ff; color: #e6edf3; }
 </style>
 
 <div class="page-header">
@@ -53,14 +61,25 @@
 <div id="updateTab">
   <div class="card">
     {% if last_update %}
-      <div class="section-note">
-        <i class="bi bi-clock" style="margin-right:3px;"></i>
-        {{ last_update_date.strftime('%d %b %Y, %H:%M') if last_update_date else '' }}
-        &middot; {{ last_update|length }} change{{ 's' if last_update|length != 1 else '' }}
+      <div class="section-header">
+        <span>
+          <i class="bi bi-clock" style="margin-right:3px;"></i>
+          {{ last_update_date.strftime('%d %b %Y, %H:%M') if last_update_date else '' }}
+          &middot; {{ last_update|length }} change{{ 's' if last_update|length != 1 else '' }}
+        </span>
+        <div class="sort-pills">
+          <button class="sort-pill active" onclick="sortList('update','move',this)">Move</button>
+          <button class="sort-pill" onclick="sortList('update','name',this)">Name</button>
+          <button class="sort-pill" onclick="sortList('update','rating',this)">Rating</button>
+          <button class="sort-pill" onclick="sortList('update','potential',this)">Pot</button>
+        </div>
       </div>
-      <div class="card-body p-0" style="max-height:80vh;overflow:auto;">
+      <div class="card-body p-0" style="max-height:80vh;overflow:auto;" id="updateList">
         {% for log, pname, pteam, ppos in last_update %}
-          <a href="{{ url_for('player_detail', name=pname) }}" class="rtg-row">
+          {% set diff = (log.new_rating or 0) - (log.old_rating or 0) %}
+          <a href="{{ url_for('player_detail', name=pname) }}" class="rtg-row"
+             data-name="{{ pname|lower }}" data-rating="{{ log.new_rating or 0 }}"
+             data-move="{{ diff }}" data-potential="{{ log.new_potential or 0 }}">
             {% if pteam and pteam in TEAM_LOGOS %}
               <img src="{{ TEAM_LOGOS[pteam] }}" alt="" class="rtg-logo">
             {% endif %}
@@ -76,9 +95,9 @@
             <div class="rtg-vals">
               <span class="rtg-old">{{ log.old_rating or '-' }}</span>
               <span class="rtg-arrow">&rarr;</span>
-              {% set diff = (log.new_rating or 0) - (log.old_rating or 0) %}
               <span class="rtg-new {% if diff > 0 %}rtg-up{% elif diff < 0 %}rtg-down{% endif %}">{{ log.new_rating or '-' }}</span>
             </div>
+            <span class="rtg-pot">{{ log.new_potential or '-' }}</span>
             <span class="rtg-diff {% if diff > 0 %}rtg-up{% elif diff < 0 %}rtg-down{% endif %}">
               {% if diff > 0 %}+{{ diff }}{% elif diff < 0 %}{{ diff }}{% else %}-{% endif %}
             </span>
@@ -99,13 +118,21 @@
 <div id="seasonTab" style="display:none;">
   <div class="card">
     {% if season_movers %}
-      <div class="section-note">
-        {{ season_movers|length }} player{{ 's' if season_movers|length != 1 else '' }} moved since start of season
+      <div class="section-header">
+        <span>{{ season_movers|length }} player{{ 's' if season_movers|length != 1 else '' }} moved since start of season</span>
+        <div class="sort-pills">
+          <button class="sort-pill active" onclick="sortList('season','move',this)">Move</button>
+          <button class="sort-pill" onclick="sortList('season','name',this)">Name</button>
+          <button class="sort-pill" onclick="sortList('season','rating',this)">Rating</button>
+          <button class="sort-pill" onclick="sortList('season','potential',this)">Pot</button>
+        </div>
       </div>
-      <div class="card-body p-0" style="max-height:80vh;overflow:auto;">
+      <div class="card-body p-0" style="max-height:80vh;overflow:auto;" id="seasonList">
         {% for p in season_movers %}
           {% set move = p.rating - p.rating_start %}
-          <a href="{{ url_for('player_detail', name=p.name) }}" class="rtg-row">
+          <a href="{{ url_for('player_detail', name=p.name) }}" class="rtg-row"
+             data-name="{{ p.name|lower }}" data-rating="{{ p.rating }}"
+             data-move="{{ move }}" data-potential="{{ p.potential or 0 }}">
             {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
               <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="rtg-logo">
             {% endif %}
@@ -123,6 +150,7 @@
               <span class="rtg-arrow">&rarr;</span>
               <span class="rtg-new {% if move > 0 %}rtg-up{% elif move < 0 %}rtg-down{% endif %}">{{ p.rating }}</span>
             </div>
+            <span class="rtg-pot">{{ p.potential or '-' }}</span>
             <span class="rtg-diff {% if move > 0 %}rtg-up{% elif move < 0 %}rtg-down{% endif %}">
               {% if move > 0 %}+{{ move }}{% elif move < 0 %}{{ move }}{% else %}-{% endif %}
             </span>
@@ -145,6 +173,33 @@ function switchRtgTab(tab, btn) {
   document.getElementById('seasonTab').style.display = tab === 'season' ? '' : 'none';
   document.querySelectorAll('.tab-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
+}
+
+function sortList(listId, key, btn) {
+  var containerId = listId === 'update' ? 'updateList' : 'seasonList';
+  var container = document.getElementById(containerId);
+  if (!container) return;
+
+  // Update active pill
+  btn.closest('.sort-pills').querySelectorAll('.sort-pill').forEach(function(p) { p.classList.remove('active'); });
+  btn.classList.add('active');
+
+  var rows = Array.from(container.querySelectorAll('.rtg-row'));
+  rows.sort(function(a, b) {
+    if (key === 'name') {
+      return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+    }
+    if (key === 'move') {
+      // Sort by absolute move desc, then positive first
+      var am = Math.abs(parseFloat(a.dataset.move) || 0);
+      var bm = Math.abs(parseFloat(b.dataset.move) || 0);
+      if (am !== bm) return bm - am;
+      return (parseFloat(b.dataset.move) || 0) - (parseFloat(a.dataset.move) || 0);
+    }
+    // rating, potential — descending
+    return (parseFloat(b.dataset[key]) || 0) - (parseFloat(a.dataset[key]) || 0);
+  });
+  rows.forEach(function(r) { container.appendChild(r); });
 }
 </script>
 {% endblock %}
