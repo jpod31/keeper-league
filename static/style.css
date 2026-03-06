@@ -2995,14 +2995,14 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 
 /* Status dot: selected / injured / available */
 .status-dot {
-  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .status-dot-taken { background: #3fb950; }
-.status-dot-taken::after { content: ''; display: block; width: 4px; height: 2px; border-bottom: 1.5px solid #0d1117; border-left: 1.5px solid #0d1117; transform: rotate(-45deg) translate(0.5px, -0.5px); }
+.status-dot-taken::after { content: ''; display: block; width: 5px; height: 3px; border-bottom: 2px solid #0d1117; border-left: 2px solid #0d1117; transform: rotate(-45deg) translate(0.5px, -0.5px); }
 .status-dot-injured { background: #f85149; }
-.status-dot-injured::after { content: '+'; font-size: 7px; font-weight: 900; color: #0d1117; line-height: 1; }
-.status-dot-available { border: 1.5px solid #484f58; background: transparent; }
+.status-dot-injured::after { content: '+'; font-size: 9px; font-weight: 900; color: #0d1117; line-height: 1; }
+.status-dot-available { border: 2px solid #8b949e; background: transparent; }
 
 /* ══════════════════════════════════════════════════
    MOBILE BREAKPOINT (<=768px)
