@@ -1249,6 +1249,49 @@ def player_injuries(league_id):
     )
 
 
+@leagues_bp.route("/<int:league_id>/player-ratings")
+@login_required
+def player_ratings(league_id):
+    from blueprints import check_league_access
+    from models.database import RatingLog
+
+    league, _ = check_league_access(league_id)
+    if not league:
+        flash("League not found or access denied.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    # All players with a rating
+    players = AflPlayer.query.filter(AflPlayer.rating.isnot(None)).order_by(AflPlayer.name).all()
+
+    # Build rostered lookup: player_id -> team name
+    rostered_map = {}
+    roster_rows = (
+        db.session.query(FantasyRoster.player_id, FantasyTeam.name)
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+        .all()
+    )
+    for pid, tname in roster_rows:
+        rostered_map[pid] = tname
+
+    # Recent rating changes (last 200)
+    recent_changes = (
+        db.session.query(RatingLog, AflPlayer.name, AflPlayer.afl_team, AflPlayer.position)
+        .join(AflPlayer, RatingLog.player_id == AflPlayer.id)
+        .order_by(RatingLog.changed_at.desc())
+        .limit(200)
+        .all()
+    )
+
+    return render_template(
+        "leagues/player_ratings.html",
+        league=league,
+        players=players,
+        rostered_map=rostered_map,
+        recent_changes=recent_changes,
+    )
+
+
 @leagues_bp.route("/<int:league_id>/player-pool")
 @login_required
 def player_pool(league_id):

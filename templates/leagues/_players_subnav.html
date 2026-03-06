@@ -20,6 +20,10 @@
      href="{{ url_for('leagues.player_injuries', league_id=league.id) }}">
     <i class="bi bi-bandaid"></i>Injuries
   </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'ratings' %} active{% endif %}"
+     href="{{ url_for('leagues.player_ratings', league_id=league.id) }}">
+    <i class="bi bi-star-fill"></i>Ratings
+  </a>
 </div>
 <div class="mob-subnav d-lg-none">
   <a class="mob-subnav-item{% if active_subtab|default('') == 'pool' %} active{% endif %}"
@@ -41,5 +45,9 @@
   <a class="mob-subnav-item{% if active_subtab|default('') == 'injuries' %} active{% endif %}"
      href="{{ url_for('leagues.player_injuries', league_id=league.id) }}">
     <i class="bi bi-bandaid"></i>Injuries
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'ratings' %} active{% endif %}"
+     href="{{ url_for('leagues.player_ratings', league_id=league.id) }}">
+    <i class="bi bi-star-fill"></i>Ratings
   </a>
 </div>

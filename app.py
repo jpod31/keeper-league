@@ -102,7 +102,7 @@ def _name_variants(name: str):
 
 def _sync_ratings_to_db(app):
     """Import rating & potential from AFL 2025.1.xlsx into the afl_player table."""
-    from models.database import AflPlayer
+    from models.database import AflPlayer, RatingLog
 
     if not os.path.exists(_XLSX_PATH):
         app.logger.info("Ratings sync: XLSX not found, skipping")
@@ -194,6 +194,19 @@ def _sync_ratings_to_db(app):
                         break
 
             if ap:
+                # Log changes before applying
+                rating_changed = (ap.rating != rating) if rating is not None else False
+                potential_changed = (ap.potential != potential) if potential is not None else False
+                if rating_changed or potential_changed:
+                    log = RatingLog(
+                        player_id=ap.id,
+                        old_rating=ap.rating,
+                        new_rating=rating,
+                        old_potential=ap.potential,
+                        new_potential=potential,
+                        rating_start=rating_start if rating_start is not None else ap.rating_start,
+                    )
+                    db.session.add(log)
                 ap.rating = rating
                 ap.potential = potential
                 if rating_start is not None:

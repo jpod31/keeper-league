@@ -48,6 +48,22 @@ class AflPlayer(db.Model):
         return f"<AflPlayer {self.name} ({self.afl_team})>"
 
 
+class RatingLog(db.Model):
+    """Tracks every rating change from XLSX sync for the Ratings tab."""
+    __tablename__ = "rating_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=False, index=True)
+    old_rating = db.Column(db.Integer)
+    new_rating = db.Column(db.Integer)
+    old_potential = db.Column(db.Integer)
+    new_potential = db.Column(db.Integer)
+    rating_start = db.Column(db.Integer)
+    changed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    player = db.relationship("AflPlayer", backref="rating_logs")
+
+
 class ScScore(db.Model):
     __tablename__ = "sc_score"
 
