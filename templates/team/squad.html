@@ -512,6 +512,13 @@
       {% set primary = (p.position or 'MID').split('/')[0] %}
       {% set sc_val = st.get('sc_avg', 0) or 0 %}
       <div class="squad-mob-card" data-pid="{{ p.id }}">
+        {% if p.id in selected_player_ids %}
+          <span class="status-dot status-dot-taken"></span>
+        {% elif p.injury_severity %}
+          <span class="status-dot status-dot-injured"></span>
+        {% else %}
+          <span class="status-dot status-dot-available"></span>
+        {% endif %}
         {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
           <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="squad-mob-logo">
         {% else %}
@@ -550,6 +557,7 @@
       <table class="table table-hover mb-0" id="rosterTable">
         <thead>
           <tr>
+            <th style="width:24px;"></th>
             <th style="width:40px;">#</th>
             <th class="sortable" data-sort="name">Player</th>
             <th>Pos</th>
@@ -571,6 +579,15 @@
             {% set primary_pos = (p.position or 'MID').split('/')[0]|lower %}
             {% set sc_val = st.get('sc_avg', 0) or 0 %}
             <tr data-pid="{{ p.id }}" class="squad-row-{{ primary_pos }}" data-name="{{ p.name|lower }}">
+              <td class="text-center">
+                {% if p.id in selected_player_ids %}
+                  <span class="status-dot status-dot-taken"></span>
+                {% elif p.injury_severity %}
+                  <span class="status-dot status-dot-injured"></span>
+                {% else %}
+                  <span class="status-dot status-dot-available"></span>
+                {% endif %}
+              </td>
               <td style="color:#484f58;">{{ loop.index }}</td>
               <td>
                 <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:#c9d1d9;">{{ p.name }}</a>

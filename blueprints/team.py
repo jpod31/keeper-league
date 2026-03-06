@@ -80,6 +80,28 @@ def squad(league_id, team_id):
                     next_delist_info = season_cfg.offseason_start_date.strftime("Opens %d %b %Y (Offseason)")
                 # If offseason and delist already closed, no upcoming
 
+    # Build selected_player_ids for ALL views (status dots)
+    selected_player_ids = set()
+    try:
+        _round_game = (
+            AflGame.query
+            .filter(AflGame.year == league.season_year,
+                    AflGame.status.in_(["live", "scheduled"]))
+            .order_by(AflGame.scheduled_start.asc())
+            .first()
+        )
+        _sel_round = _round_game.afl_round if _round_game else None
+        if _sel_round is not None:
+            sel_rows = AflTeamSelection.query.filter_by(
+                year=league.season_year, afl_round=_sel_round
+            ).filter(
+                AflTeamSelection.player_id.isnot(None),
+                AflTeamSelection.position != "EMERG",
+            ).all()
+            selected_player_ids = {s.player_id for s in sel_rows}
+    except Exception:
+        pass
+
     # For field view, build structured position data server-side
     field_data = None
     if view == "field":
@@ -567,7 +589,8 @@ def squad(league_id, team_id):
                            has_active_draft=has_active_draft,
                            active_draft_round=active_draft_round,
                            next_delist_info=next_delist_info,
-                           wishlist_players=wishlist_players)
+                           wishlist_players=wishlist_players,
+                           selected_player_ids=selected_player_ids)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/lineup/<int:afl_round>", methods=["GET", "POST"])
