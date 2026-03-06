@@ -108,12 +108,17 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
-    # Team lineups sync: daily at 08:00 + 21:00 UTC (7pm + 8am AEST)
-    # Covers initial announcements + late changes for any round
+    # Team lineups sync: multiple times daily to catch announcements + late changes
+    # Thu ~6pm AEST (07:00 UTC): initial extended bench
+    # Thu ~10pm AEST (11:00 UTC): after late changes
+    # Fri 8am AEST (21:00 UTC prev day): overnight updates
+    # Fri 1pm AEST (02:00 UTC): final teams / late ins
+    # Fri 5pm AEST (06:00 UTC): pre-game lockout window
+    # Sat 10am AEST (23:00 UTC prev day): weekend game coverage
     scheduler.add_job(
         _sync_team_lineups,
         "cron",
-        hour="8,21",
+        hour="2,6,7,11,21,23",
         minute=0,
         id="lineup_sync_daily",
         replace_existing=True,
