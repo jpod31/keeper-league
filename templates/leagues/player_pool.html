@@ -41,6 +41,15 @@
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
   }
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .status-dot-taken { background: #3fb950; }
+  .status-dot-taken::after { content: ''; display: block; width: 4px; height: 2px; border-bottom: 1.5px solid #0d1117; border-left: 1.5px solid #0d1117; transform: rotate(-45deg) translate(0.5px, -0.5px); }
+  .status-dot-injured { background: #f85149; }
+  .status-dot-injured::after { content: '+'; font-size: 7px; font-weight: 900; color: #0d1117; line-height: 1; }
+  .status-dot-available { border: 1.5px solid #484f58; background: transparent; }
   .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
   .filter-bar .form-control-sm, .filter-bar .form-select-sm {
     background: #0d1117; border-color: #30363d; font-size: .78rem;
@@ -169,6 +178,13 @@
           <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}"
              onclick="toggleWishlist({{ p.id }}, this); event.preventDefault(); event.stopPropagation();"
              style="position:absolute;top:6px;right:6px;cursor:pointer;font-size:.9rem;color:#6e7681;z-index:2;transition:color .15s;"></i>
+          {% if owner_team %}
+            <span class="status-dot status-dot-taken"></span>
+          {% elif p.injury_severity %}
+            <span class="status-dot status-dot-injured"></span>
+          {% else %}
+            <span class="status-dot status-dot-available"></span>
+          {% endif %}
           {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
             <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pool-card-logo">
           {% endif %}
@@ -210,6 +226,7 @@
     <table class="table table-sm mb-0 pool-table">
       <thead class="sticky-top" style="background:#161b22;z-index:2;">
         <tr>
+          <th style="width:18px;"></th>
           <th class="sortable sort-active" style="width:40px;" onclick="sortPool('rank',this)"># <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable" onclick="sortPool('name',this)">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable" style="width:80px;" onclick="sortPool('pos',this)">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
@@ -251,6 +268,16 @@
               data-kvi="{{ kvi_map.get(p.id, 0) }}"
               data-status="{{ 'taken' if owner_team else 'available' }}"
               data-owner="{{ owner_team or '' }}">
+            {# Status dot #}
+            <td style="padding:0 0 0 .4rem;vertical-align:middle;">
+              {% if owner_team %}
+                <span class="status-dot status-dot-taken"></span>
+              {% elif p.injury_severity %}
+                <span class="status-dot status-dot-injured"></span>
+              {% else %}
+                <span class="status-dot status-dot-available"></span>
+              {% endif %}
+            </td>
             {# Rank #}
             <td style="color:#484f58;font-size:.7rem;font-weight:700;">{{ p._rank }}</td>
             {# Player name + team logo #}
