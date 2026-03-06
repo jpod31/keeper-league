@@ -1260,35 +1260,46 @@ def player_ratings(league_id):
         flash("League not found or access denied.", "warning")
         return redirect(url_for("leagues.league_list"))
 
-    # All players with a rating
-    players = AflPlayer.query.filter(AflPlayer.rating.isnot(None)).order_by(AflPlayer.name).all()
+    # ── Last Update: most recent sync batch ──
+    latest_ts = db.session.query(db.func.max(RatingLog.changed_at)).scalar()
+    last_update = []
+    last_update_date = None
+    if latest_ts:
+        cutoff = latest_ts - timedelta(minutes=5)
+        last_update = (
+            db.session.query(RatingLog, AflPlayer.name, AflPlayer.afl_team, AflPlayer.position)
+            .join(AflPlayer, RatingLog.player_id == AflPlayer.id)
+            .filter(RatingLog.changed_at >= cutoff)
+            .order_by(
+                db.case(
+                    (RatingLog.new_rating > RatingLog.old_rating, 0),
+                    (RatingLog.new_rating < RatingLog.old_rating, 1),
+                    else_=2,
+                ),
+                (RatingLog.new_rating - RatingLog.old_rating).desc(),
+            )
+            .all()
+        )
+        last_update_date = latest_ts
 
-    # Build rostered lookup: player_id -> team name
-    rostered_map = {}
-    roster_rows = (
-        db.session.query(FantasyRoster.player_id, FantasyTeam.name)
-        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
-        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+    # ── Season Movers: rating != rating_start ──
+    season_movers = (
+        AflPlayer.query
+        .filter(
+            AflPlayer.rating.isnot(None),
+            AflPlayer.rating_start.isnot(None),
+            AflPlayer.rating != AflPlayer.rating_start,
+        )
         .all()
     )
-    for pid, tname in roster_rows:
-        rostered_map[pid] = tname
-
-    # Recent rating changes (last 200)
-    recent_changes = (
-        db.session.query(RatingLog, AflPlayer.name, AflPlayer.afl_team, AflPlayer.position)
-        .join(AflPlayer, RatingLog.player_id == AflPlayer.id)
-        .order_by(RatingLog.changed_at.desc())
-        .limit(200)
-        .all()
-    )
+    season_movers.sort(key=lambda p: abs(p.rating - p.rating_start), reverse=True)
 
     return render_template(
         "leagues/player_ratings.html",
         league=league,
-        players=players,
-        rostered_map=rostered_map,
-        recent_changes=recent_changes,
+        last_update=last_update,
+        last_update_date=last_update_date,
+        season_movers=season_movers,
     )
 
 

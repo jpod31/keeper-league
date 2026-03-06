@@ -5,467 +5,146 @@
 {% block league_content %}
 {% include "leagues/_players_subnav.html" %}
 <style>
-  .rtg-table th {
-    padding: .5rem .6rem;
-    font-size: .7rem;
-    border-bottom: 2px solid #30363d;
-    position: relative;
-  }
-  .rtg-table th.sortable { cursor: pointer; user-select: none; }
-  .rtg-table th.sortable:hover { color: #58a6ff; }
-  .rtg-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
-  .rtg-table th.sort-active .sort-icon { opacity: 1; color: #58a6ff; }
-  .rtg-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
-  .rtg-table tbody tr { transition: background .1s; }
-  .rtg-table tbody tr:hover { background: rgba(88,166,255,.04) !important; }
-  .player-link { text-decoration: none; display: flex; align-items: center; gap: .5rem; }
-  .player-link:hover .p-name { color: #58a6ff; }
-  .p-name { color: #e6edf3; font-weight: 600; font-size: .82rem; transition: color .1s; white-space: nowrap; }
-  .team-icon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
-  .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-  .filter-bar .form-control-sm, .filter-bar .form-select-sm {
-    background: #0d1117; border-color: #30363d; font-size: .78rem;
-  }
-  .rtg-count {
-    font-size: .75rem; color: #8b949e; white-space: nowrap;
-    display: flex; align-items: center; gap: .35rem;
-  }
-  .rtg-count strong { color: #c9d1d9; }
-  .rtg-badge {
-    display: inline-block; padding: 2px 8px; border-radius: 10px;
-    font-size: .65rem; font-weight: 700; letter-spacing: .3px; white-space: nowrap;
-  }
-  .rtg-elite    { background: rgba(88,166,255,.15);  color: #79c0ff; }
-  .rtg-good     { background: rgba(63,185,80,.15);   color: #7ee787; }
-  .rtg-avg      { background: rgba(210,153,34,.15);  color: #e3b341; }
-  .rtg-low      { background: rgba(248,81,73,.15);   color: #f85149; }
-  .log-section { margin-top: 1.5rem; }
-  .log-entry { padding: .5rem .75rem; border-bottom: 1px solid #21262d; font-size: .78rem; display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
-  .log-entry:last-child { border-bottom: none; }
-  .log-date { color: #484f58; font-size: .7rem; min-width: 90px; }
-  .log-name { color: #e6edf3; font-weight: 600; min-width: 140px; }
-  .log-arrow { color: #484f58; }
   .tab-toggle { display: flex; gap: 0; margin-bottom: 1rem; }
   .tab-toggle-btn {
-    padding: .4rem 1rem; font-size: .78rem; font-weight: 600; border: 1px solid #30363d;
+    padding: .45rem 1.1rem; font-size: .8rem; font-weight: 600; border: 1px solid #30363d;
     background: transparent; color: #8b949e; cursor: pointer; transition: all .15s;
   }
   .tab-toggle-btn:first-child { border-radius: 6px 0 0 6px; }
   .tab-toggle-btn:last-child { border-radius: 0 6px 6px 0; }
   .tab-toggle-btn.active { background: #21262d; color: #e6edf3; border-color: #58a6ff; }
+  .rtg-row {
+    display: flex; align-items: center; gap: .65rem; padding: .6rem .75rem;
+    border-bottom: 1px solid #21262d; text-decoration: none; transition: background .1s;
+  }
+  .rtg-row:hover { background: rgba(88,166,255,.04); }
+  .rtg-logo { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
+  .rtg-info { flex: 1; min-width: 0; }
+  .rtg-name { color: #e6edf3; font-weight: 600; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rtg-meta { font-size: .7rem; color: #8b949e; display: flex; gap: .4rem; align-items: center; margin-top: 1px; }
+  .rtg-vals { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+  .rtg-old { color: #8b949e; font-size: .8rem; }
+  .rtg-arrow { color: #484f58; font-size: .7rem; }
+  .rtg-new { font-weight: 700; font-size: .9rem; }
+  .rtg-diff { font-weight: 700; font-size: .78rem; min-width: 30px; text-align: right; }
+  .rtg-up { color: #3fb950; }
+  .rtg-down { color: #f85149; }
+  .empty-state {
+    padding: 3rem 1rem; text-align: center; color: #484f58;
+  }
+  .empty-state i { font-size: 2.5rem; margin-bottom: .5rem; }
+  .section-note {
+    font-size: .75rem; color: #8b949e; padding: .4rem .75rem;
+    background: #161b22; border-bottom: 1px solid #21262d;
+  }
 </style>
 
 <div class="page-header">
   <div class="page-breadcrumb"><a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / Players</div>
-  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
-    <div>
-      <h2 class="mb-0">Ratings</h2>
-      <span style="font-size:.78rem;color:#8b949e;">Player ratings, movement from start of year &amp; change log</span>
-    </div>
-    <div class="rtg-count">
-      <span id="visible-count"><strong>{{ players|length }}</strong> rated players</span>
-    </div>
-  </div>
+  <h2 class="mb-0">Ratings</h2>
 </div>
 
-{# ── Tab Toggle: Movers / Change Log ── #}
 <div class="tab-toggle">
-  <button class="tab-toggle-btn active" onclick="switchRtgTab('movers',this)">Movers</button>
-  <button class="tab-toggle-btn" onclick="switchRtgTab('log',this)">Change Log</button>
+  <button class="tab-toggle-btn active" onclick="switchRtgTab('update',this)">Last Update</button>
+  <button class="tab-toggle-btn" onclick="switchRtgTab('season',this)">Season Movers</button>
 </div>
 
-{# ══════════ MOVERS TAB ══════════ #}
-<div id="moversTab">
+{# ══════════ LAST UPDATE TAB ══════════ #}
+<div id="updateTab">
   <div class="card">
-    <div class="card-header py-2">
-      <div class="d-flex gap-2 align-items-center mb-2 mb-lg-0">
-        <button class="filter-toggle-btn" onclick="toggleRtgFilterSheet()" type="button">
-          <i class="bi bi-funnel"></i>Filters<span class="filter-count" id="filterCount" style="display:none;">0</span>
-        </button>
-        <div class="d-lg-none" style="flex:1;">
-          <input type="text" class="form-control form-control-sm" id="rtg-search-mobile"
-                 placeholder="Search..." oninput="document.getElementById('rtg-search').value=this.value;filterRtg()">
-        </div>
+    {% if last_update %}
+      <div class="section-note">
+        <i class="bi bi-clock" style="margin-right:3px;"></i>
+        {{ last_update_date.strftime('%d %b %Y, %H:%M') if last_update_date else '' }}
+        &middot; {{ last_update|length }} change{{ 's' if last_update|length != 1 else '' }}
       </div>
-      <div class="filter-bar">
-        <div style="flex:1 1 200px;max-width:280px;">
-          <input type="text" class="form-control form-control-sm" id="rtg-search"
-                 placeholder="Search by name..." oninput="filterRtg()">
-        </div>
-        <select class="form-select form-select-sm" id="rtg-club-filter" onchange="filterRtg()" style="width:auto;">
-          <option value="">All Clubs</option>
-          {% set clubs_seen = [] %}
-          {% for p in players %}
-            {% if p.afl_team and p.afl_team not in clubs_seen %}
-              {% if clubs_seen.append(p.afl_team) %}{% endif %}
+      <div class="card-body p-0" style="max-height:80vh;overflow:auto;">
+        {% for log, pname, pteam, ppos in last_update %}
+          <a href="{{ url_for('player_detail', name=pname) }}" class="rtg-row">
+            {% if pteam and pteam in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[pteam] }}" alt="" class="rtg-logo">
             {% endif %}
-          {% endfor %}
-          {% for c in clubs_seen|sort %}
-            <option value="{{ c }}">{{ c }}</option>
-          {% endfor %}
-        </select>
-        <select class="form-select form-select-sm" id="rtg-pos-filter" onchange="filterRtg()" style="width:auto;">
-          <option value="">All Positions</option>
-          <option value="DEF">DEF</option>
-          <option value="MID">MID</option>
-          <option value="FWD">FWD</option>
-          <option value="RUC">RUC</option>
-        </select>
-        <select class="form-select form-select-sm" id="rtg-owner-filter" onchange="filterRtg()" style="width:auto;">
-          <option value="">All Coaches</option>
-          {% set owners_seen = [] %}
-          {% for p in players %}
-            {% set owner = rostered_map.get(p.id) %}
-            {% if owner and owner not in owners_seen %}
-              {% if owners_seen.append(owner) %}{% endif %}
-            {% endif %}
-          {% endfor %}
-          {% for o in owners_seen|sort %}
-            <option value="{{ o }}">{{ o }}</option>
-          {% endfor %}
-        </select>
-        <select class="form-select form-select-sm" id="rtg-direction-filter" onchange="filterRtg()" style="width:auto;">
-          <option value="">All Movement</option>
-          <option value="up">Upgraded</option>
-          <option value="down">Downgraded</option>
-          <option value="none">No Change</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="card-body p-0" style="max-height:78vh;overflow:auto;">
-      <table class="table table-sm mb-0 rtg-table">
-        <thead class="sticky-top" style="background:#161b22;z-index:2;">
-          <tr>
-            <th class="sortable" onclick="sortRtg('name',this)">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
-            <th class="sortable" onclick="sortRtg('team',this)">Club <i class="bi bi-chevron-expand sort-icon"></i></th>
-            <th class="sortable" style="width:70px;" onclick="sortRtg('pos',this)">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
-            <th class="sortable text-end sort-active" style="width:70px;" onclick="sortRtg('rating',this)">Rating <i class="bi bi-chevron-expand sort-icon"></i></th>
-            <th class="sortable text-end" style="width:70px;" onclick="sortRtg('start',this)">Start <i class="bi bi-chevron-expand sort-icon"></i></th>
-            <th class="sortable text-center" style="width:70px;" onclick="sortRtg('move',this)">Move <i class="bi bi-chevron-expand sort-icon"></i></th>
-            <th class="sortable text-end" style="width:70px;" onclick="sortRtg('potential',this)">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
-            <th class="text-center" style="width:70px;">Tier</th>
-            <th class="sortable" style="width:130px;" onclick="sortRtg('owner',this)">Owner <i class="bi bi-chevron-expand sort-icon"></i></th>
-          </tr>
-        </thead>
-        <tbody id="rtg-body">
-          {% for p in players|sort(attribute='rating', reverse=true) %}
-            {% set move = (p.rating - p.rating_start) if p.rating and p.rating_start else 0 %}
-            {% set owner_team = rostered_map.get(p.id, '') %}
-            {% set dir = 'up' if move > 0 else ('down' if move < 0 else 'none') %}
-            <tr data-name="{{ p.name|lower }}"
-                data-team="{{ p.afl_team or '' }}"
-                data-pos="{{ p.position or '' }}"
-                data-rating="{{ p.rating or 0 }}"
-                data-start="{{ p.rating_start or 0 }}"
-                data-move="{{ move }}"
-                data-potential="{{ p.potential or 0 }}"
-                data-owner="{{ owner_team }}"
-                data-dir="{{ dir }}">
-              <td>
-                <a href="{{ url_for('player_detail', name=p.name) }}" class="player-link">
-                  {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
-                    <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="team-icon">
-                  {% endif %}
-                  <span class="p-name">{{ p.name }}</span>
-                </a>
-              </td>
-              <td>{{ p.afl_team or '' }}</td>
-              <td>
-                {% for pos in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.6rem;">{{ pos }}</span>
+            <div class="rtg-info">
+              <div class="rtg-name">{{ pname }}</div>
+              <div class="rtg-meta">
+                {% for pos in (ppos or 'MID').split('/') %}
+                  <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.55rem;">{{ pos }}</span>
                 {% endfor %}
-              </td>
-              <td class="text-end"><span style="color:#c9d1d9;font-weight:700;">{{ p.rating }}</span></td>
-              <td class="text-end">
-                {% if p.rating_start %}
-                  <span style="color:#8b949e;">{{ p.rating_start }}</span>
-                {% else %}
-                  <span style="color:#484f58;">-</span>
-                {% endif %}
-              </td>
-              <td class="text-center">
-                {% if p.rating and p.rating_start %}
-                  {% if move > 0 %}
-                    <span style="color:#3fb950;font-weight:700;font-size:.82rem;">+{{ move }}</span>
-                  {% elif move < 0 %}
-                    <span style="color:#f85149;font-weight:700;font-size:.82rem;">{{ move }}</span>
-                  {% else %}
-                    <span style="color:#484f58;">-</span>
-                  {% endif %}
-                {% else %}
-                  <span style="color:#484f58;">-</span>
-                {% endif %}
-              </td>
-              <td class="text-end">
-                {% if p.potential %}
-                  <span style="color:#bc8cff;font-weight:600;">{{ p.potential }}</span>
-                {% else %}
-                  <span style="color:#484f58;">-</span>
-                {% endif %}
-              </td>
-              <td class="text-center">
-                {% if p.rating >= 80 %}
-                  <span class="rtg-badge rtg-elite">Elite</span>
-                {% elif p.rating >= 70 %}
-                  <span class="rtg-badge rtg-good">Good</span>
-                {% elif p.rating >= 60 %}
-                  <span class="rtg-badge rtg-avg">Average</span>
-                {% else %}
-                  <span class="rtg-badge rtg-low">Developing</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if owner_team %}
-                  <span style="font-weight:600;color:#c9d1d9;">{{ owner_team }}</span>
-                {% else %}
-                  <span style="color:#484f58;">&mdash;</span>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-{# ══════════ CHANGE LOG TAB ══════════ #}
-<div id="logTab" style="display:none;">
-  <div class="card">
-    <div class="card-header py-2">
-      <span style="font-size:.78rem;color:#8b949e;">Recent rating changes from XLSX sync</span>
-    </div>
-    <div class="card-body p-0" style="max-height:78vh;overflow:auto;">
-      {% if recent_changes %}
-        {% set prev_date = namespace(val='') %}
-        {% for log, pname, pteam, ppos in recent_changes %}
-          {% set log_date = log.changed_at.strftime('%d %b %Y') if log.changed_at else '' %}
-          {% if log_date != prev_date.val %}
-            <div style="padding:.5rem .75rem;background:#161b22;font-size:.7rem;font-weight:700;color:#58a6ff;border-bottom:1px solid #21262d;">
-              {{ log_date }}
+                <span>{{ pteam or '' }}</span>
+              </div>
             </div>
-            {% set prev_date.val = log_date %}
-          {% endif %}
-          <div class="log-entry">
-            <span class="log-date">{{ log.changed_at.strftime('%H:%M') if log.changed_at else '' }}</span>
-            <a href="{{ url_for('player_detail', name=pname) }}" class="log-name" style="text-decoration:none;">{{ pname }}</a>
-            <span style="color:#8b949e;font-size:.7rem;">{{ pteam or '' }}</span>
-            {% for pos in (ppos or 'MID').split('/') %}
-              <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.55rem;">{{ pos }}</span>
-            {% endfor %}
-            {# Rating change #}
-            {% if log.old_rating != log.new_rating %}
-              <span style="color:#8b949e;">Rating:</span>
-              <span style="color:#c9d1d9;font-weight:600;">{{ log.old_rating or '-' }}</span>
-              <span class="log-arrow">&rarr;</span>
-              {% if log.new_rating and log.old_rating and log.new_rating > log.old_rating %}
-                <span style="color:#3fb950;font-weight:700;">{{ log.new_rating }}</span>
-                <span style="color:#3fb950;font-size:.7rem;">(+{{ log.new_rating - log.old_rating }})</span>
-              {% elif log.new_rating and log.old_rating and log.new_rating < log.old_rating %}
-                <span style="color:#f85149;font-weight:700;">{{ log.new_rating }}</span>
-                <span style="color:#f85149;font-size:.7rem;">({{ log.new_rating - log.old_rating }})</span>
-              {% else %}
-                <span style="color:#c9d1d9;font-weight:600;">{{ log.new_rating or '-' }}</span>
-              {% endif %}
-            {% endif %}
-            {# Potential change #}
-            {% if log.old_potential != log.new_potential %}
-              <span style="color:#8b949e;margin-left:.5rem;">Potential:</span>
-              <span style="color:#c9d1d9;">{{ log.old_potential or '-' }}</span>
-              <span class="log-arrow">&rarr;</span>
-              <span style="color:#bc8cff;font-weight:600;">{{ log.new_potential or '-' }}</span>
-            {% endif %}
-          </div>
+            <div class="rtg-vals">
+              <span class="rtg-old">{{ log.old_rating or '-' }}</span>
+              <span class="rtg-arrow">&rarr;</span>
+              {% set diff = (log.new_rating or 0) - (log.old_rating or 0) %}
+              <span class="rtg-new {% if diff > 0 %}rtg-up{% elif diff < 0 %}rtg-down{% endif %}">{{ log.new_rating or '-' }}</span>
+            </div>
+            <span class="rtg-diff {% if diff > 0 %}rtg-up{% elif diff < 0 %}rtg-down{% endif %}">
+              {% if diff > 0 %}+{{ diff }}{% elif diff < 0 %}{{ diff }}{% else %}-{% endif %}
+            </span>
+          </a>
         {% endfor %}
-      {% else %}
-        <div style="padding:2rem;text-align:center;color:#484f58;">
-          <i class="bi bi-clock-history" style="font-size:2rem;"></i>
-          <div style="margin-top:.5rem;">No rating changes recorded yet.</div>
-          <div style="font-size:.75rem;margin-top:.25rem;">Changes will appear here after the next ratings sync.</div>
-        </div>
-      {% endif %}
-    </div>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-arrow-repeat"></i>
+        <div>No rating changes yet</div>
+        <div style="font-size:.75rem;margin-top:.3rem;">Changes will appear here after the next ratings sync.</div>
+      </div>
+    {% endif %}
   </div>
 </div>
 
-{# ── Mobile Filter Bottom Sheet ── #}
-<div class="filter-sheet-backdrop" id="rtgFilterBackdrop" onclick="closeRtgFilterSheet()"></div>
-<div class="filter-sheet" id="rtgFilterSheet">
-  <div class="filter-sheet-handle"></div>
-  <div class="filter-sheet-title">Filters</div>
-  <div id="rtgFilterBody"></div>
-  <div class="filter-sheet-actions">
-    <button class="btn btn-sm btn-outline-secondary" onclick="clearRtgFilters()">Clear</button>
-    <button class="btn btn-sm btn-primary" onclick="filterRtg(); closeRtgFilterSheet();">Apply</button>
-  </div>
-</div>
-
-{# ── Mobile Card View ── #}
-<div class="pool-cards-container d-lg-none" id="rtgCards" style="display:block;">
-  <div class="pool-cards-grid">
-    {% for p in players|sort(attribute='rating', reverse=true) %}
-      {% set move = (p.rating - p.rating_start) if p.rating and p.rating_start else 0 %}
-      {% set owner_team = rostered_map.get(p.id, '') %}
-      {% set dir = 'up' if move > 0 else ('down' if move < 0 else 'none') %}
-      <a href="{{ url_for('player_detail', name=p.name) }}"
-         class="pool-card rtg-card-item"
-         data-name="{{ p.name|lower }}"
-         data-team="{{ p.afl_team or '' }}"
-         data-pos="{{ p.position or '' }}"
-         data-owner="{{ owner_team }}"
-         data-dir="{{ dir }}">
-        {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
-          <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pool-card-logo">
-        {% endif %}
-        <div class="pool-card-info">
-          <div class="pool-card-name">{{ p.name }}</div>
-          <div class="pool-card-meta">
-            {% for pos in (p.position or 'MID').split('/') %}
-              <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.6rem;">{{ pos }}</span>
-            {% endfor %}
-            <span>{{ p.afl_team or '' }}</span>
-          </div>
-          <div class="pool-card-stats">
-            <span>RTG: <strong style="color:#c9d1d9;">{{ p.rating }}</strong></span>
-            {% if p.potential %}<span>POT: <strong style="color:#bc8cff;">{{ p.potential }}</strong></span>{% endif %}
-            {% if move != 0 %}
-              <span>
-                {% if move > 0 %}
-                  <span style="color:#3fb950;font-weight:700;">+{{ move }}</span>
-                {% else %}
-                  <span style="color:#f85149;font-weight:700;">{{ move }}</span>
-                {% endif %}
-              </span>
+{# ══════════ SEASON MOVERS TAB ══════════ #}
+<div id="seasonTab" style="display:none;">
+  <div class="card">
+    {% if season_movers %}
+      <div class="section-note">
+        {{ season_movers|length }} player{{ 's' if season_movers|length != 1 else '' }} moved since start of season
+      </div>
+      <div class="card-body p-0" style="max-height:80vh;overflow:auto;">
+        {% for p in season_movers %}
+          {% set move = p.rating - p.rating_start %}
+          <a href="{{ url_for('player_detail', name=p.name) }}" class="rtg-row">
+            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="rtg-logo">
             {% endif %}
-          </div>
-        </div>
-        <div class="pool-card-rank" style="font-size:.75rem;">
-          {% if owner_team %}
-            <span style="color:#c9d1d9;font-weight:600;">{{ owner_team }}</span>
-          {% else %}
-            <span style="color:#484f58;">&mdash;</span>
-          {% endif %}
-        </div>
-      </a>
-    {% endfor %}
+            <div class="rtg-info">
+              <div class="rtg-name">{{ p.name }}</div>
+              <div class="rtg-meta">
+                {% for pos in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.55rem;">{{ pos }}</span>
+                {% endfor %}
+                <span>{{ p.afl_team or '' }}</span>
+              </div>
+            </div>
+            <div class="rtg-vals">
+              <span class="rtg-old">{{ p.rating_start }}</span>
+              <span class="rtg-arrow">&rarr;</span>
+              <span class="rtg-new {% if move > 0 %}rtg-up{% elif move < 0 %}rtg-down{% endif %}">{{ p.rating }}</span>
+            </div>
+            <span class="rtg-diff {% if move > 0 %}rtg-up{% elif move < 0 %}rtg-down{% endif %}">
+              {% if move > 0 %}+{{ move }}{% elif move < 0 %}{{ move }}{% else %}-{% endif %}
+            </span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-dash-circle"></i>
+        <div>No rating movement yet</div>
+        <div style="font-size:.75rem;margin-top:.3rem;">Players whose ratings change from their start-of-year values will appear here.</div>
+      </div>
+    {% endif %}
   </div>
 </div>
 
 <script>
-/* ── Tab Switching ── */
 function switchRtgTab(tab, btn) {
-  document.getElementById('moversTab').style.display = tab === 'movers' ? '' : 'none';
-  document.getElementById('logTab').style.display = tab === 'log' ? '' : 'none';
+  document.getElementById('updateTab').style.display = tab === 'update' ? '' : 'none';
+  document.getElementById('seasonTab').style.display = tab === 'season' ? '' : 'none';
   document.querySelectorAll('.tab-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
-  // On mobile, show/hide cards vs log
-  var cards = document.getElementById('rtgCards');
-  if (cards) cards.style.display = tab === 'movers' ? 'block' : 'none';
-}
-
-/* ── Filtering ── */
-function matchRtgRow(el, q, club, pos, owner, dir) {
-  var nameMatch = !q || (el.dataset.name || '').includes(q);
-  var clubMatch = !club || el.dataset.team === club;
-  var posMatch = !pos || (el.dataset.pos || '').indexOf(pos) !== -1;
-  var ownerMatch = !owner || el.dataset.owner === owner;
-  var dirMatch = !dir || el.dataset.dir === dir;
-  return nameMatch && clubMatch && posMatch && ownerMatch && dirMatch;
-}
-
-function filterRtg() {
-  var q = document.getElementById('rtg-search').value.toLowerCase();
-  var club = document.getElementById('rtg-club-filter').value;
-  var pos = document.getElementById('rtg-pos-filter').value;
-  var owner = document.getElementById('rtg-owner-filter').value;
-  var dir = document.getElementById('rtg-direction-filter').value;
-  var count = 0;
-
-  document.querySelectorAll('#rtg-body tr').forEach(function(row) {
-    var show = matchRtgRow(row, q, club, pos, owner, dir);
-    row.style.display = show ? '' : 'none';
-    if (show) count++;
-  });
-
-  document.querySelectorAll('#rtgCards .rtg-card-item').forEach(function(card) {
-    var show = matchRtgRow(card, q, club, pos, owner, dir);
-    card.style.display = show ? '' : 'none';
-  });
-
-  document.getElementById('visible-count').innerHTML = '<strong>' + count + '</strong> rated players';
-
-  var activeFilters = 0;
-  if (club) activeFilters++;
-  if (pos) activeFilters++;
-  if (owner) activeFilters++;
-  if (dir) activeFilters++;
-  var badge = document.getElementById('filterCount');
-  if (badge) {
-    if (activeFilters > 0) { badge.textContent = activeFilters; badge.style.display = ''; }
-    else { badge.style.display = 'none'; }
-  }
-}
-
-/* ── Sorting ── */
-var rtgSortKey = 'rating', rtgSortAsc = false;
-function sortRtg(key, el) {
-  if (rtgSortKey === key) { rtgSortAsc = !rtgSortAsc; }
-  else { rtgSortKey = key; rtgSortAsc = (key === 'name' || key === 'team' || key === 'pos' || key === 'owner'); }
-  document.querySelectorAll('.rtg-table th.sortable').forEach(function(th) { th.classList.remove('sort-active'); });
-  if (el) el.classList.add('sort-active');
-  var tbody = document.getElementById('rtg-body');
-  var rows = Array.from(tbody.querySelectorAll('tr'));
-  rows.sort(function(a, b) {
-    var va, vb;
-    if (key === 'rating' || key === 'start' || key === 'move' || key === 'potential') {
-      va = parseFloat(a.dataset[key]) || 0;
-      vb = parseFloat(b.dataset[key]) || 0;
-      return rtgSortAsc ? va - vb : vb - va;
-    }
-    va = (a.dataset[key] || '').toLowerCase();
-    vb = (b.dataset[key] || '').toLowerCase();
-    return rtgSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
-  });
-  rows.forEach(function(r) { tbody.appendChild(r); });
-}
-
-/* ── Filter Bottom Sheet (mobile) ── */
-var _rtgFilterInit = false;
-function toggleRtgFilterSheet() {
-  if (window.innerWidth >= 992) {
-    document.querySelector('.filter-bar').classList.toggle('filter-open');
-    return;
-  }
-  if (!_rtgFilterInit) {
-    var bar = document.querySelector('.filter-bar');
-    var body = document.getElementById('rtgFilterBody');
-    body.appendChild(bar);
-    bar.classList.add('filter-open');
-    _rtgFilterInit = true;
-  }
-  document.getElementById('rtgFilterBackdrop').classList.add('open');
-  document.getElementById('rtgFilterSheet').classList.add('open');
-}
-function closeRtgFilterSheet() {
-  document.getElementById('rtgFilterBackdrop').classList.remove('open');
-  document.getElementById('rtgFilterSheet').classList.remove('open');
-}
-function clearRtgFilters() {
-  document.getElementById('rtg-search').value = '';
-  var mob = document.getElementById('rtg-search-mobile');
-  if (mob) mob.value = '';
-  document.getElementById('rtg-club-filter').value = '';
-  document.getElementById('rtg-pos-filter').value = '';
-  document.getElementById('rtg-owner-filter').value = '';
-  document.getElementById('rtg-direction-filter').value = '';
-  filterRtg();
-}
-
-// Hide table on mobile, show cards instead
-if (window.innerWidth < 992) {
-  var tbl = document.querySelector('.card-body.p-0');
-  if (tbl) tbl.style.display = 'none';
 }
 </script>
 {% endblock %}
