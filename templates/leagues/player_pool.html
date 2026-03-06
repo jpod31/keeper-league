@@ -178,7 +178,7 @@
           <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}"
              onclick="toggleWishlist({{ p.id }}, this); event.preventDefault(); event.stopPropagation();"
              style="position:absolute;top:6px;right:6px;cursor:pointer;font-size:.9rem;color:#6e7681;z-index:2;transition:color .15s;"></i>
-          {% if owner_team %}
+          {% if p.id in selected_set %}
             <span class="status-dot status-dot-taken"></span>
           {% elif p.injury_severity %}
             <span class="status-dot status-dot-injured"></span>
@@ -268,9 +268,9 @@
               data-kvi="{{ kvi_map.get(p.id, 0) }}"
               data-status="{{ 'taken' if owner_team else 'available' }}"
               data-owner="{{ owner_team or '' }}">
-            {# Status dot #}
+            {# Status dot: selected to play > injured > not selected #}
             <td style="padding:0 0 0 .4rem;vertical-align:middle;">
-              {% if owner_team %}
+              {% if p.id in selected_set %}
                 <span class="status-dot status-dot-taken"></span>
               {% elif p.injury_severity %}
                 <span class="status-dot status-dot-injured"></span>

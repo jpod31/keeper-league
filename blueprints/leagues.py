@@ -1452,6 +1452,19 @@ def player_pool(league_id):
             info["draft_type"] = dp["draft_type"]
         acquired_map[r.player_id] = info
 
+    # Build set of player IDs selected to play this round (for status dot)
+    from models.database import AflTeamSelection
+    from scrapers.squiggle import get_current_round
+    current_afl_round = get_current_round(config.CURRENT_YEAR)
+    if current_afl_round is None:
+        current_afl_round = 0
+    selected_set = set(
+        r[0] for r in db.session.query(AflTeamSelection.player_id)
+        .filter_by(year=config.CURRENT_YEAR, afl_round=current_afl_round)
+        .filter(AflTeamSelection.player_id.isnot(None))
+        .all()
+    )
+
     return render_template("leagues/player_pool.html",
                            league=league,
                            players=players,
@@ -1465,7 +1478,8 @@ def player_pool(league_id):
                            can_pickup=can_pickup,
                            ssp_cutoff_round=ssp_cutoff_round,
                            kvi_map=kvi_map,
-                           acquired_map=acquired_map)
+                           acquired_map=acquired_map,
+                           selected_set=selected_set)
 
 
 @leagues_bp.route("/<int:league_id>/player-pool/pickup", methods=["POST"])
