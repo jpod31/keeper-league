@@ -19,8 +19,10 @@ def project_matchup(my_team_id, opp_team_id, afl_round, year, league_id, teams_p
         'opp_win_pct': float,
     }
     """
-    my_proj = _project_team(my_team_id, afl_round, year, league_id, teams_playing)
-    opp_proj = _project_team(opp_team_id, afl_round, year, league_id, teams_playing)
+    completed_teams = _get_completed_teams(afl_round, year)
+
+    my_proj = _project_team(my_team_id, afl_round, year, league_id, teams_playing, completed_teams)
+    opp_proj = _project_team(opp_team_id, afl_round, year, league_id, teams_playing, completed_teams)
 
     margin = my_proj - opp_proj
     # Sigmoid with spread factor of 120 (typical SC scores ~1200-2000 range)
@@ -35,7 +37,17 @@ def project_matchup(my_team_id, opp_team_id, afl_round, year, league_id, teams_p
     }
 
 
-def _project_team(team_id, afl_round, year, league_id, teams_playing):
+def _get_completed_teams(afl_round, year):
+    """Get set of AFL teams whose game is complete this round."""
+    completed = set()
+    for g in AflGame.query.filter_by(year=year, afl_round=afl_round).all():
+        if g.status == "complete":
+            completed.add(g.home_team)
+            completed.add(g.away_team)
+    return completed
+
+
+def _project_team(team_id, afl_round, year, league_id, teams_playing, completed_teams):
     """Project total score for a team in a given round."""
     roster_entries = FantasyRoster.query.filter_by(
         team_id=team_id, is_active=True
@@ -43,19 +55,20 @@ def _project_team(team_id, afl_round, year, league_id, teams_playing):
 
     on_field = [r for r in roster_entries
                 if r.position_code in FIELD_POSITIONS and not r.is_emergency]
+    emergencies = [r for r in roster_entries if r.is_emergency]
 
     if not on_field:
         return 0
 
-    # Batch-load all player objects
-    pids = [r.player_id for r in on_field]
-    players = {p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_(pids)).all()}
+    # Batch-load all player objects (field + emergency)
+    all_pids = [r.player_id for r in on_field] + [r.player_id for r in emergencies]
+    players = {p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_(all_pids)).all()}
 
     # Batch-load any actual stats for this round
     actual_stats = {
         ps.player_id: ps.supercoach_score
         for ps in PlayerStat.query.filter(
-            PlayerStat.player_id.in_(pids),
+            PlayerStat.player_id.in_(all_pids),
             PlayerStat.round == afl_round,
             PlayerStat.year == year,
         ).all()
@@ -71,34 +84,89 @@ def _project_team(team_id, afl_round, year, league_id, teams_playing):
 
     total = 0.0
     captain_proj = 0.0
+    dnp_entries = []
 
     for entry in on_field:
         pid = entry.player_id
         player = players.get(pid)
 
         if pid in actual_stats:
-            # Already have an actual score for this round
             score = actual_stats[pid]
         elif player and player.afl_team and player.afl_team in teams_playing:
-            # Their team is playing but no score yet — project using avg
-            score = player.sc_avg or 0
+            if player.afl_team in completed_teams:
+                # Game finished but no stat → confirmed DNP
+                score = None
+            else:
+                # Game not started or in progress — project using avg
+                score = player.sc_avg or 0
         else:
-            # BYE or unknown
+            # BYE or team not playing this round
             score = 0
 
-        total += score
+        if score is None:
+            dnp_entries.append(entry)
+        else:
+            total += score
 
         # Track captain/VC projection
-        if captain_enabled:
+        if captain_enabled and score is not None:
             if captain_entry and captain_entry.player_id == pid:
                 captain_proj = score
             elif vc_entry and vc_entry.player_id == pid and captain_proj == 0:
-                # VC only kicks in if captain hasn't played; for projections
-                # assume captain plays, so VC bonus usually 0
                 pass
 
-    # Captain bonus (double the captain's score)
-    if captain_enabled and captain_proj > 0:
-        total += captain_proj
+    # Emergency substitutions for DNP field players
+    em_scores = []
+    for em in emergencies:
+        pid = em.player_id
+        player = players.get(pid)
+        if pid in actual_stats:
+            em_scores.append((em, actual_stats[pid]))
+        elif player and player.afl_team and player.afl_team in teams_playing:
+            if player.afl_team not in completed_teams:
+                em_scores.append((em, player.sc_avg or 0))
+    em_scores.sort(key=lambda x: x[1], reverse=True)
+
+    used = set()
+    for entry in dnp_entries:
+        for em, em_score in em_scores:
+            if em.player_id in used:
+                continue
+            if _positions_compatible(entry, em, players):
+                used.add(em.player_id)
+                total += em_score
+                break
+
+    # Captain bonus
+    if captain_enabled:
+        if captain_proj > 0:
+            total += captain_proj
+        elif vc_entry:
+            # Captain DNP — use VC bonus
+            vc_pid = vc_entry.player_id
+            vc_score = actual_stats.get(vc_pid)
+            if vc_score is None:
+                vc_player = players.get(vc_pid)
+                if vc_player and vc_player.afl_team and vc_player.afl_team in teams_playing:
+                    if vc_player.afl_team not in completed_teams:
+                        vc_score = vc_player.sc_avg or 0
+            if vc_score and vc_score > 0:
+                total += vc_score
 
     return total
+
+
+def _positions_compatible(field_entry, emergency_entry, players):
+    """Check if an emergency can sub for a field player."""
+    field_pos = (field_entry.position_code or "").upper()
+    em_player = players.get(emergency_entry.player_id)
+
+    if not field_pos or not em_player or not em_player.position:
+        return True
+
+    em_positions = set(em_player.position.upper().split("/"))
+
+    if field_pos in ("BENCH", "UTIL", "FLEX"):
+        return True
+
+    return field_pos in em_positions
