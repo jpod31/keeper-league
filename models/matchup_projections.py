@@ -92,28 +92,25 @@ def _project_team(team_id, afl_round, year, league_id, teams_playing, completed_
 
         if pid in actual_stats:
             score = actual_stats[pid]
+            total += score
         elif player and player.afl_team and player.afl_team in teams_playing:
             if player.afl_team in completed_teams:
                 # Game finished but no stat → confirmed DNP
+                dnp_entries.append(entry)
                 score = None
             else:
                 # Game not started or in progress — project using avg
                 score = player.sc_avg or 0
+                total += score
         else:
-            # BYE or team not playing this round
-            score = 0
-
-        if score is None:
+            # BYE or team not playing — no stat possible, treat as DNP
             dnp_entries.append(entry)
-        else:
-            total += score
+            score = None
 
         # Track captain/VC projection
-        if captain_enabled and score is not None:
+        if captain_enabled and score is not None and score > 0:
             if captain_entry and captain_entry.player_id == pid:
                 captain_proj = score
-            elif vc_entry and vc_entry.player_id == pid and captain_proj == 0:
-                pass
 
     # Emergency substitutions for DNP field players
     em_scores = []
