@@ -1277,6 +1277,28 @@ function handleUpdate(data) {
     // Always update the matchup mini-cards + AFL pills
     updateMatchupCards(data);
     updateGameStatusPills(data.game_statuses);
+
+    // Update projections + win probability
+    if (data.projections) {
+        var p = data.projections;
+        var projWrap = document.querySelector('.gameday-proj-wrap');
+        if (projWrap) {
+            var projScores = projWrap.querySelectorAll('.gameday-proj-score');
+            if (projScores.length >= 2) {
+                projScores[0].textContent = Math.round(p.my_projected);
+                projScores[1].textContent = Math.round(p.opp_projected);
+            }
+            var probPcts = projWrap.querySelectorAll('.gameday-prob-pct');
+            if (probPcts.length >= 2) {
+                probPcts[0].textContent = Math.round(p.my_win_pct) + '%';
+                probPcts[1].textContent = Math.round(p.opp_win_pct) + '%';
+            }
+            var probFill = projWrap.querySelector('.gameday-prob-fill');
+            if (probFill) {
+                probFill.style.width = p.my_win_pct.toFixed(1) + '%';
+            }
+        }
+    }
 }
 
 /* ════════════════════════════════════════════════

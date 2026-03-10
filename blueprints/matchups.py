@@ -392,10 +392,33 @@ def api_live_scores(league_id, afl_round):
             "away_players": away_players,
         })
 
+    # Compute projections for the user's fixture
+    projections = None
+    if user_team:
+        user_fixture = next(
+            (f for f in fixtures
+             if f.home_team_id == user_team.id or f.away_team_id == user_team.id),
+            None,
+        )
+        if user_fixture:
+            teams_playing = set()
+            for g in afl_games_for_round:
+                teams_playing.add(g.home_team)
+                teams_playing.add(g.away_team)
+            is_home = user_fixture.home_team_id == user_team.id
+            my_tid = user_team.id
+            opp_tid = user_fixture.away_team_id if is_home else user_fixture.home_team_id
+            try:
+                from models.matchup_projections import project_matchup
+                projections = project_matchup(my_tid, opp_tid, afl_round, year, league_id, teams_playing)
+            except Exception:
+                pass
+
     return jsonify({
         "fixtures": fixture_list,
         "game_statuses": game_statuses,
         "locked_player_ids": locked_ids,
+        "projections": projections,
     })
 
 
