@@ -207,6 +207,23 @@ def _trajectory_scores_batch(players: List[Player]) -> List[float]:
                 if not valid.empty:
                     avgs = valid.groupby(name_col)[sc_col].mean()
                     year_avgs[year] = avgs.to_dict()
+                    continue
+
+        # Source 3: DB fallback (no CSVs available for this year)
+        try:
+            from models.database import db, PlayerStat, AflPlayer
+            rows = (
+                db.session.query(AflPlayer.name, PlayerStat.supercoach_score)
+                .join(AflPlayer, AflPlayer.id == PlayerStat.player_id)
+                .filter(PlayerStat.year == year, PlayerStat.supercoach_score.isnot(None))
+                .all()
+            )
+            if rows:
+                df = pd.DataFrame(rows, columns=["Player", "SC"])
+                avgs = df.groupby("Player")["SC"].mean()
+                year_avgs[year] = avgs.to_dict()
+        except Exception:
+            pass
 
     if not year_avgs:
         # No historical data at all — fall back to old single-year delta

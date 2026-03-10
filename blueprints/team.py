@@ -529,28 +529,8 @@ def squad(league_id, team_id):
             rostered_map = {r[0]: r[1] for r in all_rostered}
 
             # Rolling averages for trend
-            rolling = {}
-            current_year = config.CURRENT_YEAR
-            prev_year = current_year - 1
-            frames = []
-            for year_val in (prev_year, current_year):
-                path = os.path.join(config.DATA_DIR, f"player_stats_{year_val}.csv")
-                if os.path.exists(path):
-                    try:
-                        df = pd.read_csv(path, usecols=["Player", "Round", "SC", "Season"])
-                        df = df.dropna(subset=["SC"])
-                        frames.append(df)
-                    except Exception:
-                        pass
-            if frames:
-                all_scores = pd.concat(frames, ignore_index=True)
-                wl_names = {p.name for p in wl_players_db}
-                all_scores = all_scores[all_scores["Player"].isin(wl_names)]
-                for name, group in all_scores.groupby("Player"):
-                    scores = group["SC"].values
-                    n = len(scores)
-                    l3 = float(scores[-3:].mean()) if n >= 3 else (float(scores.mean()) if n else None)
-                    rolling[name] = {"l3": round(l3, 1) if l3 is not None else None}
+            from blueprints.leagues import _compute_rolling_averages
+            rolling = _compute_rolling_averages()
 
             for p in wl_players_db:
                 sc_display = p.sc_avg or p.sc_avg_prev

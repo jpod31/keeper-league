@@ -52,8 +52,8 @@ def _compute_rolling_averages():
             df["_year"] = year
             df["_rnd"] = df["Round"].apply(_round_sort_key)
             frames.append(df)
-        elif year == current_year:
-            # No CSV yet for current year — pull from DB
+        else:
+            # No CSV for this year — pull from DB
             from models.database import PlayerStat, AflPlayer
             rows = (
                 db.session.query(AflPlayer.name, PlayerStat.round, PlayerStat.supercoach_score)
