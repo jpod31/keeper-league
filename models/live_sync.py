@@ -166,9 +166,14 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
         player_lookup[(p.name, p.afl_team)] = p
         player_name_lookup.setdefault(p.name, []).append(p)
         # Extract surname (last word of name)
-        surname = p.name.split()[-1] if p.name else ""
+        words = p.name.split() if p.name else []
+        surname = words[-1] if words else ""
         if surname:
             surname_team_lookup.setdefault((surname, p.afl_team), []).append(p)
+        # Multi-word surnames (De Koning, De Goey, Van Rooyen, etc.)
+        if len(words) >= 3:
+            two_word_surname = " ".join(words[-2:])
+            surname_team_lookup.setdefault((two_word_surname, p.afl_team), []).append(p)
 
     # Build set of teams in active games
     active_teams = set()
@@ -208,7 +213,8 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
                 matched = [p for p in surname_candidates if p.name.startswith(initial)]
                 if len(matched) == 1:
                     afl_player = matched[0]
-            else:
+            # Direct surname/multi-word surname match (De Koning, De Goey, etc.)
+            if not afl_player:
                 surname_candidates = surname_team_lookup.get((name, team), [])
                 if len(surname_candidates) == 1:
                     afl_player = surname_candidates[0]
