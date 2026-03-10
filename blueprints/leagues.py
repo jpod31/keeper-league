@@ -46,13 +46,27 @@ def _compute_rolling_averages():
     frames = []
     for year in (prev_year, current_year):
         path = os.path.join(config.DATA_DIR, f"player_stats_{year}.csv")
-        if not os.path.exists(path):
-            continue
-        df = pd.read_csv(path, usecols=["Player", "Round", "SC", "Season"])
-        df = df.dropna(subset=["SC"])
-        df["_year"] = year
-        df["_rnd"] = df["Round"].apply(_round_sort_key)
-        frames.append(df)
+        if os.path.exists(path):
+            df = pd.read_csv(path, usecols=["Player", "Round", "SC", "Season"])
+            df = df.dropna(subset=["SC"])
+            df["_year"] = year
+            df["_rnd"] = df["Round"].apply(_round_sort_key)
+            frames.append(df)
+        elif year == current_year:
+            # No CSV yet for current year — pull from DB
+            from models.database import PlayerStat, AflPlayer
+            rows = (
+                db.session.query(AflPlayer.name, PlayerStat.round, PlayerStat.supercoach_score)
+                .join(AflPlayer, AflPlayer.id == PlayerStat.player_id)
+                .filter(PlayerStat.year == year, PlayerStat.supercoach_score.isnot(None))
+                .all()
+            )
+            if rows:
+                df = pd.DataFrame(rows, columns=["Player", "Round", "SC"])
+                df["Season"] = year
+                df["_year"] = year
+                df["_rnd"] = df["Round"]
+                frames.append(df)
 
     if not frames:
         return {}
