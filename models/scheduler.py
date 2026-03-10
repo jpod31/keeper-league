@@ -97,6 +97,15 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Also run injury sync on startup (30s delay to let app fully boot)
+    from datetime import datetime, timedelta
+    scheduler.add_job(
+        _sync_injuries,
+        "date",
+        run_date=datetime.now() + timedelta(seconds=30),
+        id="startup_injury_sync",
+        replace_existing=True,
+    )
     # Weekly KVI recompute: Tuesday 05:00 UTC (before injury sync)
     scheduler.add_job(
         _recompute_kvi,
