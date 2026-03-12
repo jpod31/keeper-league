@@ -103,7 +103,7 @@
         {% if is_flex %}
           <span class="fv-flex-pip">FLEX</span>
         {% endif %}
-        <span class="fv-pos-pip fv-pip-{{ (p.position or 'MID').split('/')[0]|lower }}">{{ (p.position or 'MID').split('/')[0] }}</span>
+        <span class="fv-pos-pip fv-pip-{{ (p.position or 'MID').split('/')[0]|lower }}">{{ p.position or 'MID' }}</span>
       </div>
 
       {# Player name #}

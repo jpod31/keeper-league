@@ -212,7 +212,7 @@
   <div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}{{ ' player-reserve' if p.get('lineup_type') == 'reserve' else '' }}{{ ' player-emergency-standby' if is_emg_standby else '' }}{{ ' player-yet-to-play' if yet_to_play else '' }}">
     <span class="gameday-player-info">
       {% if p.position %}
-        <span class="pos-badge pos-{{ p.position[:3]|upper }} gameday-pos-badge">{{ p.position[:3]|upper }}</span>
+        <span class="pos-badge pos-{{ p.position.split('/')[0]|upper }} gameday-pos-badge">{{ p.position|upper }}</span>
       {% endif %}
       {% if p.is_captain %}<span class="gameday-badge-c">C</span> {% endif %}
       {% if p.is_vice_captain %}<span class="gameday-badge-vc">VC</span> {% endif %}
@@ -1071,8 +1071,9 @@ function renderPlayerRow(p, lockedIds) {
 
     var posBadge = '';
     if (p.position) {
-        var posCode = (p.position || '').substring(0, 3).toUpperCase();
-        posBadge = '<span class="pos-badge pos-' + posCode + ' gameday-pos-badge">' + posCode + '</span> ';
+        var posClass = (p.position || '').split('/')[0].toUpperCase();
+        var posDisplay = (p.position || '').toUpperCase();
+        posBadge = '<span class="pos-badge pos-' + posClass + ' gameday-pos-badge">' + posDisplay + '</span> ';
     }
 
     var badges = '';
