@@ -645,22 +645,20 @@ function fv7sCaptain(pid) {
 
 // ── Swap eligibility check (shared by desktop + mobile) ──
 function _checkSwapEligible(srcSection, srcPositions, srcFieldPos, tgtSection, tgtPositions, tgtFieldPos) {
-  if (srcSection === tgtSection && srcSection === 'field') {
-    return srcPositions.includes(tgtFieldPos) && tgtPositions.includes(srcFieldPos);
-  } else if (srcSection === 'field' && tgtSection === 'flex') {
-    return tgtPositions.includes(srcFieldPos);
-  } else if (srcSection === 'field' && tgtSection === 'reserve') {
-    return tgtPositions.includes(srcFieldPos);
-  } else if (srcSection === 'flex' && tgtSection === 'field') {
-    return srcPositions.includes(tgtFieldPos);
-  } else if (srcSection === 'flex' && (tgtSection === 'flex' || tgtSection === 'reserve')) {
-    return true;
-  } else if (srcSection === 'reserve' && tgtSection === 'field') {
-    return srcPositions.includes(tgtFieldPos);
-  } else if (srcSection === 'reserve' && (tgtSection === 'flex' || tgtSection === 'reserve')) {
-    return true;
+  // FLEX accepts any position, so treat it as a wildcard.
+  // When swapping, each player must be able to fill the OTHER's slot.
+  // field slot requires matching position; flex/reserve slots accept anyone.
+
+  function _canFillSlot(playerPositions, slotSection, slotFieldPos) {
+    // Flex and reserve slots accept any player
+    if (slotSection === 'flex' || slotSection === 'reserve') return true;
+    // Field slot requires the player to have that position
+    return playerPositions.includes(slotFieldPos);
   }
-  return false;
+
+  // Both players must be able to fill each other's slot
+  return _canFillSlot(srcPositions, tgtSection, tgtFieldPos)
+      && _canFillSlot(tgtPositions, srcSection, srcFieldPos);
 }
 
 // ── Swap: start ──
