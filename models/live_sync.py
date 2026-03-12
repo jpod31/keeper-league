@@ -57,8 +57,10 @@ def recompute_sc_averages(year: int) -> int:
             p.games_played = int(games)
             updated += 1
         else:
-            p.sc_avg = None
-            p.games_played = 0
+            # Don't wipe sc_avg for players who haven't played yet this year.
+            # Keep their existing average (from previous season / CSV import)
+            # so player cards still show a value instead of "-".
+            pass
 
     db.session.commit()
     logger.info("Recomputed sc_avg for year %d: %d players with data", year, updated)
