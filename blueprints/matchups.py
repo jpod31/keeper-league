@@ -580,8 +580,10 @@ def gameday(league_id):
         flash("You don't have a team in this league.", "warning")
         return redirect(url_for("leagues.dashboard", league_id=league_id))
 
-    # Auto-detect round (no manual override)
-    afl_round = _detect_gameday_round(league_id, year)
+    # Allow manual round override via query param, else auto-detect
+    afl_round = request.args.get("round", type=int)
+    if afl_round is None:
+        afl_round = _detect_gameday_round(league_id, year)
     if afl_round is None:
         flash("No fixtures found yet. The season may not have started.", "info")
         return redirect(url_for("matchups.fixture_view", league_id=league_id))

@@ -192,14 +192,14 @@
       {% set home_won = f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}
       {% set away_won = f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}
       {% set is_draw = f.status == 'completed' and (f.home_score or 0) == (f.away_score or 0) %}
-      <div class="mx-row" style="position:relative;">
+      <a href="{{ url_for('matchups.gameday', league_id=league.id, round=selected_round) }}"
+         class="mx-row" style="position:relative; text-decoration:none; color:inherit; cursor:pointer;">
         {% if home_won %}<div class="mx-win-bar" style="background:#3fb950;"></div>{% endif %}
         {% if away_won %}<div class="mx-win-bar" style="background:rgba(248,81,73,.4);"></div>{% endif %}
 
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.home_team_id) }}"
-           class="mx-team mx-team-home{{ ' won' if home_won }}">
+        <span class="mx-team mx-team-home{{ ' won' if home_won }}">
           {{ f.home_team.name }}
-        </a>
+        </span>
 
         <div class="mx-centre">
           {% if f.status == 'completed' %}
@@ -213,17 +213,14 @@
           {% endif %}
         </div>
 
-        <a href="{{ url_for('team.squad', league_id=league.id, team_id=f.away_team_id) }}"
-           class="mx-team mx-team-away{{ ' won' if away_won }}">
+        <span class="mx-team mx-team-away{{ ' won' if away_won }}">
           {{ f.away_team.name }}
-        </a>
+        </span>
 
         <div class="mx-arrow">
-          <a href="{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=f.id) }}">
-            <i class="bi bi-chevron-right" style="font-size:.65rem;"></i>
-          </a>
+          <i class="bi bi-chevron-right" style="font-size:.65rem;"></i>
         </div>
-      </div>
+      </a>
     {% endfor %}
   </div>
 
