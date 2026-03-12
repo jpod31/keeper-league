@@ -45,6 +45,19 @@ def init_scheduler(app, socketio):
         id="daily_schedule_sync",
         replace_existing=True,
     )
+    # Tuesday auto-finalize: 00:30 UTC (10:30am AEST) — safety net
+    # Catches any rounds that completed over the weekend but weren't finalized
+    # (e.g., server restart lost the 45-min timer, or Monday game was missed)
+    scheduler.add_job(
+        _tuesday_auto_finalize,
+        "cron",
+        day_of_week="tue",
+        hour=0,
+        minute=30,
+        id="tuesday_auto_finalize",
+        replace_existing=True,
+        max_instances=1,
+    )
     # Weekly position sync: Tuesday 04:00 UTC (after weekend rounds)
     scheduler.add_job(
         _sync_positions,
@@ -144,7 +157,7 @@ def init_scheduler(app, socketio):
         max_instances=1,
     )
     scheduler.start()
-    logger.info("Scheduler started (live score poll: every 3min, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 08:00 UTC, lineup sync: Wed+Thu+Fri)")
+    logger.info("Scheduler started (live score poll: every 60s, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, auto-finalize: Tue 00:30 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 08:00 UTC, lineup sync: multi-daily)")
 
 
 def schedule_round_finalization(year: int, afl_round: int):
@@ -243,6 +256,103 @@ def _auto_finalize_round(year: int, afl_round: int):
             logger.exception("Error in auto-finalize for %d R%d", year, afl_round)
 
 
+def _tuesday_auto_finalize():
+    """Tuesday safety-net: finalize any rounds that completed but weren't finalized.
+
+    Runs at 00:30 UTC (10:30am AEST) on Tuesdays. Finds rounds where all AFL
+    games are complete (by schedule or status) but league fixtures are still
+    not marked "completed", then finalizes them.
+    """
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            from datetime import datetime, timedelta, timezone
+            from models.database import AflGame, Fixture, League, db
+            from models.scoring_engine import finalize_round
+            from models.live_sync import sync_live_scores
+            import config
+
+            year = config.CURRENT_YEAR
+            now_utc = datetime.now(timezone.utc)
+            game_end_buffer = timedelta(hours=4)
+
+            # Find rounds where all AFL games are done (status=complete OR
+            # scheduled_start + 4hrs has passed) but fantasy fixtures aren't finalized
+            rounds_with_games = (
+                db.session.query(AflGame.afl_round)
+                .filter_by(year=year)
+                .distinct()
+                .all()
+            )
+
+            for (afl_round,) in rounds_with_games:
+                games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+                if not games:
+                    continue
+
+                # Check all AFL games in this round are finished
+                all_finished = all(
+                    g.status == "complete" or
+                    (g.scheduled_start and g.scheduled_start + game_end_buffer < now_utc)
+                    for g in games
+                )
+                if not all_finished:
+                    continue
+
+                # Check if any league has un-finalized fixtures for this round
+                pending_fixtures = Fixture.query.filter(
+                    Fixture.year == year,
+                    Fixture.afl_round == afl_round,
+                    Fixture.status != "completed",
+                    Fixture.is_final == False,
+                ).all()
+
+                if not pending_fixtures:
+                    continue  # Already finalized everywhere
+
+                # Get distinct league IDs with pending fixtures
+                pending_league_ids = set(f.league_id for f in pending_fixtures)
+
+                logger.info(
+                    "Tuesday auto-finalize: R%d has %d pending fixtures across %d leagues",
+                    afl_round, len(pending_fixtures), len(pending_league_ids),
+                )
+
+                # Run a final score sync before finalizing
+                try:
+                    sync_live_scores(year, afl_round)
+                except Exception:
+                    logger.warning("Tuesday auto-finalize: score sync failed for R%d", afl_round, exc_info=True)
+
+                # Finalize each league
+                for league_id in pending_league_ids:
+                    try:
+                        # Handle pre-season round 0 mapped to AFL R1
+                        fantasy_round = afl_round
+                        if afl_round == 1:
+                            r0_active = Fixture.query.filter_by(
+                                league_id=league_id, year=year, afl_round=0, is_final=False
+                            ).filter(Fixture.status != "completed").first()
+                            if r0_active:
+                                fantasy_round = 0
+
+                        finalize_round(league_id, fantasy_round, year)
+                        logger.info(
+                            "Tuesday auto-finalize: finalized league %d for %d R%d (fantasy R%d)",
+                            league_id, year, afl_round, fantasy_round,
+                        )
+                    except Exception:
+                        logger.exception(
+                            "Tuesday auto-finalize failed for league %d, %d R%d",
+                            league_id, year, afl_round,
+                        )
+
+        except Exception:
+            logger.exception("Error in Tuesday auto-finalize")
+
+
 def run_manual_score_sync():
     """Trigger a score sync on demand (called from the gameday manual sync route)."""
     _poll_live_scores()
@@ -257,12 +367,13 @@ def _poll_live_scores():
     if not _app or not _socketio:
         return
 
-    from datetime import datetime
+    from datetime import datetime, timedelta, timezone as tz
     now = datetime.now()  # server is AEST
     if now.hour < 12:
         return  # no games before midday
-    if now.weekday() in (0, 1, 2):
-        return  # no games Mon-Wed
+    # Skip Tue/Wed (never AFL games); allow Mon for public holiday rounds
+    if now.weekday() in (1, 2):
+        return  # no games Tue-Wed
 
     import time as _time
 

@@ -83,6 +83,18 @@ def sync_positions():
     return redirect(url_for("admin.dashboard"))
 
 
+@admin_bp.route("/sync-injuries", methods=["POST"])
+@admin_required
+def sync_injuries():
+    from scrapers.afl_injuries import sync_injuries_to_db
+    count = sync_injuries_to_db()
+    if count:
+        flash(f"Injury sync complete: {count} player(s) updated.", "success")
+    else:
+        flash("Injury sync complete: no injuries found (page may have changed).", "info")
+    return redirect(url_for("admin.dashboard"))
+
+
 @admin_bp.route("/users")
 @admin_required
 def users():

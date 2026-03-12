@@ -14,7 +14,7 @@ from sqlalchemy import func as sa_func
 from models.database import (
     db, AflGame, AflPlayer, PlayerStat, ScScore, Fixture, FantasyTeam,
     FantasyRoster, LiveScoringConfig, RoundScore, League,
-    CustomScoringRule,
+    CustomScoringRule, WeeklyLineup, LineupSlot,
 )
 from models.scoring_engine import score_team_round, _compute_uf_fixture
 from scrapers.squiggle import (
@@ -596,13 +596,6 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
     If include_reserves is True, also returns benched (reserve) players
     with lineup_type='reserve'.
     """
-    roster_entries = FantasyRoster.query.filter_by(
-        team_id=team_id, is_active=True
-    ).all()
-
-    if not roster_entries:
-        return []
-
     # Determine scoring type
     scoring_type = "supercoach"
     hybrid_base = None
@@ -612,10 +605,37 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             scoring_type = league.scoring_type
             hybrid_base = league.hybrid_base
 
-    # Separate on-field vs emergencies vs reserves
-    on_field = [r for r in roster_entries if not r.is_benched and not r.is_emergency]
-    emergencies = [r for r in roster_entries if r.is_emergency]
-    reserves = [r for r in roster_entries if r.is_benched and not r.is_emergency]
+    # Check for a locked WeeklyLineup — if one exists, read from LineupSlot
+    # instead of FantasyRoster so we use the snapshot that was locked in.
+    locked_lineup = WeeklyLineup.query.filter_by(
+        team_id=team_id, afl_round=afl_round, year=year, is_locked=True
+    ).first()
+
+    if locked_lineup:
+        lineup_slots = LineupSlot.query.filter_by(lineup_id=locked_lineup.id).all()
+        if not lineup_slots:
+            return []
+
+        # LineupSlot uses position_code to distinguish on-field vs bench.
+        # On-field positions: DEF, MID, FWD, RUC, FLEX (same as FIELD_POSITIONS).
+        _FIELD_POS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
+        on_field = [s for s in lineup_slots
+                    if not s.is_emergency and (s.position_code or "").upper() in _FIELD_POS]
+        emergencies = [s for s in lineup_slots if s.is_emergency]
+        reserves = [s for s in lineup_slots
+                    if not s.is_emergency and (s.position_code or "").upper() not in _FIELD_POS]
+    else:
+        # Fallback: no locked lineup, use live FantasyRoster state
+        roster_entries = FantasyRoster.query.filter_by(
+            team_id=team_id, is_active=True
+        ).all()
+
+        if not roster_entries:
+            return []
+
+        on_field = [r for r in roster_entries if not r.is_benched and not r.is_emergency]
+        emergencies = [r for r in roster_entries if r.is_emergency]
+        reserves = [r for r in roster_entries if r.is_benched and not r.is_emergency]
 
     # Pre-fetch stats for all relevant players in one query
     relevant_ids = [r.player_id for r in on_field] + [r.player_id for r in emergencies]

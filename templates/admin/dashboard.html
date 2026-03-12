@@ -52,6 +52,11 @@
         <i class="bi bi-arrow-repeat me-1"></i>Sync Player Positions
       </button>
     </form>
+    <form action="{{ url_for('admin.sync_injuries') }}" method="post" class="d-inline ms-2">
+      <button type="submit" class="btn btn-outline-warning btn-sm">
+        <i class="bi bi-bandaid me-1"></i>Sync Injury List
+      </button>
+    </form>
   </div>
 </div>
 

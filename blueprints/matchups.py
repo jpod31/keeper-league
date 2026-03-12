@@ -425,32 +425,95 @@ def api_live_scores(league_id, afl_round):
 def _detect_gameday_round(league_id: int, year: int) -> int | None:
     """Auto-detect the gameday round for a specific league.
 
+    Uses AFL game schedule dates as the primary signal (not just fixture
+    status) so that round advancement works even if finalization hasn't run.
+
     Priority:
-      1. Live fixtures for THIS league → that round
-      2. Tuesday rollover logic (AEST):
-         - Before Tue 10am AEST (Fri–Mon, Tue morning) → latest completed round
-         - After Tue 10am AEST (Tue afternoon–Thu) → next scheduled round
-      3. Fallbacks: latest completed → first scheduled → round 1
+      1. Live AFL games → that round (games actively in progress)
+      2. Date-based detection using AflGame schedule:
+         - Find the most recent round whose games have ALL finished
+           (last game scheduled_start + 4 hours < now)
+         - Tuesday 10am AEST rollover:
+           * Before cutoff → show that "just finished" round (results mode)
+           * After cutoff → show the NEXT round (preview mode)
+      3. Fallbacks: latest completed fixture → first scheduled fixture → round 1
     """
-    # 1. Live fixtures in this league
+    now_utc = datetime.now(timezone.utc)
+    now_aest = now_utc + timedelta(hours=10)  # AEST = UTC+10
+
+    # 1. Live AFL games — show that round regardless of day/time
+    live_game = AflGame.query.filter_by(year=year, status="live").first()
+    if live_game:
+        return live_game.afl_round
+
+    # Also check fantasy fixture status (covers edge cases where AflGame
+    # status hasn't synced yet but fixture was marked live)
     live_fixture = Fixture.query.filter_by(
         league_id=league_id, year=year, status="live", is_final=False
     ).first()
     if live_fixture:
         return live_fixture.afl_round
 
-    # 2. Tuesday rollover
-    now_utc = datetime.now(timezone.utc)
-    now_aest = now_utc + timedelta(hours=10)  # AEST = UTC+10
+    # 2. Date-based round detection from AFL schedule
+    #    Find the latest round where ALL games have finished.
+    #    A game is "finished" if scheduled_start + 4 hours < now (covers
+    #    longest AFL games including extra time).
+    game_end_buffer = timedelta(hours=4)
 
+    # Get all rounds that have AflGame entries this year, ordered desc
+    rounds_with_games = (
+        db.session.query(AflGame.afl_round)
+        .filter_by(year=year)
+        .distinct()
+        .order_by(AflGame.afl_round.desc())
+        .all()
+    )
+
+    latest_finished_round = None
+    for (rnd,) in rounds_with_games:
+        games = AflGame.query.filter_by(year=year, afl_round=rnd).all()
+        if not games:
+            continue
+        # Check if all games in this round have finished
+        all_finished = all(
+            g.status in ("complete",) or
+            (g.scheduled_start and g.scheduled_start + game_end_buffer < now_utc)
+            for g in games
+        )
+        if all_finished:
+            latest_finished_round = rnd
+            break  # This is the highest round that's done
+
+    # Tuesday rollover logic
     # weekday: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
     before_cutoff = (
         now_aest.weekday() in (4, 5, 6, 0)  # Fri–Mon
         or (now_aest.weekday() == 1 and now_aest.hour < 10)  # Tue before 10am
     )
 
+    if latest_finished_round is not None:
+        if before_cutoff:
+            # Show the just-finished round (results mode)
+            return latest_finished_round
+        else:
+            # After Tuesday 10am — show next round (preview mode)
+            # Next round = latest_finished_round + 1, but verify it exists
+            # in either AflGame schedule or league fixtures
+            next_rnd = latest_finished_round + 1
+            has_next_games = AflGame.query.filter_by(
+                year=year, afl_round=next_rnd
+            ).first()
+            has_next_fixture = Fixture.query.filter_by(
+                league_id=league_id, year=year, afl_round=next_rnd, is_final=False
+            ).first()
+            if has_next_games or has_next_fixture:
+                return next_rnd
+            # No next round exists yet — stay on finished round
+            return latest_finished_round
+
+    # 3. Fallback to fixture-status-based detection (handles cases where
+    #    AflGame table isn't populated yet, e.g. start of season)
     if before_cutoff:
-        # Show latest completed round (results mode)
         latest_completed = (
             db.session.query(db.func.max(Fixture.afl_round))
             .filter_by(league_id=league_id, year=year, status="completed", is_final=False)
@@ -459,7 +522,6 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
         if latest_completed is not None:
             return latest_completed
     else:
-        # Show next scheduled round (preview mode)
         next_scheduled = (
             db.session.query(db.func.min(Fixture.afl_round))
             .filter_by(league_id=league_id, year=year, status="scheduled", is_final=False)
@@ -468,7 +530,7 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
         if next_scheduled is not None:
             return next_scheduled
 
-    # 3. Fallbacks
+    # Final fallbacks
     latest_completed = (
         db.session.query(db.func.max(Fixture.afl_round))
         .filter_by(league_id=league_id, year=year, status="completed", is_final=False)

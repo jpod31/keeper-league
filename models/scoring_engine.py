@@ -3,6 +3,7 @@
 from models.database import (
     db, RoundScore, SeasonStanding, Fixture, FantasyTeam, FantasyRoster,
     PlayerStat, CustomScoringRule, League, SeasonConfig,
+    WeeklyLineup, LineupSlot,
 )
 
 FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
@@ -33,15 +34,29 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
 
     NOTE: Does NOT commit — caller is responsible for db.session.commit().
     """
-    # Get on-field roster entries
-    roster_entries = FantasyRoster.query.filter_by(
-        team_id=team_id, is_active=True
-    ).all()
+    # Check for a locked WeeklyLineup — if one exists, read from LineupSlot
+    # instead of FantasyRoster so we score the locked snapshot.
+    locked_lineup = WeeklyLineup.query.filter_by(
+        team_id=team_id, afl_round=afl_round, year=year, is_locked=True
+    ).first()
 
-    on_field = [r for r in roster_entries if r.position_code in FIELD_POSITIONS and not r.is_emergency]
-    emergencies = [r for r in roster_entries if r.is_emergency]
-    captain_entry = next((r for r in roster_entries if r.is_captain), None)
-    vc_entry = next((r for r in roster_entries if r.is_vice_captain), None)
+    if locked_lineup:
+        lineup_slots = LineupSlot.query.filter_by(lineup_id=locked_lineup.id).all()
+        on_field = [s for s in lineup_slots
+                    if not s.is_emergency and (s.position_code or "").upper() in FIELD_POSITIONS]
+        emergencies = [s for s in lineup_slots if s.is_emergency]
+        captain_entry = next((s for s in lineup_slots if s.is_captain), None)
+        vc_entry = next((s for s in lineup_slots if s.is_vice_captain), None)
+    else:
+        # Fallback: no locked lineup, use live FantasyRoster state
+        roster_entries = FantasyRoster.query.filter_by(
+            team_id=team_id, is_active=True
+        ).all()
+
+        on_field = [r for r in roster_entries if r.position_code in FIELD_POSITIONS and not r.is_emergency]
+        emergencies = [r for r in roster_entries if r.is_emergency]
+        captain_entry = next((r for r in roster_entries if r.is_captain), None)
+        vc_entry = next((r for r in roster_entries if r.is_vice_captain), None)
 
     if not on_field:
         _save_round_score(team_id, afl_round, year, 0, 0, {})
