@@ -439,6 +439,7 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
       3. Fallbacks: latest completed fixture → first scheduled fixture → round 1
     """
     now_utc = datetime.now(timezone.utc)
+    now_naive = now_utc.replace(tzinfo=None)  # naive UTC for DB comparisons
     now_aest = now_utc + timedelta(hours=10)  # AEST = UTC+10
 
     # 1. Live AFL games — show that round regardless of day/time
@@ -446,21 +447,32 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
     if live_game:
         return live_game.afl_round
 
-    # Also check fantasy fixture status (covers edge cases where AflGame
-    # status hasn't synced yet but fixture was marked live)
+    # Also check fantasy fixture status, but ONLY if the round's AFL games
+    # are actually still in progress (not stale "live" status from a missed
+    # finalization).
     live_fixture = Fixture.query.filter_by(
         league_id=league_id, year=year, status="live", is_final=False
     ).first()
     if live_fixture:
-        return live_fixture.afl_round
+        # Verify the round's AFL games haven't all finished already
+        round_games = AflGame.query.filter_by(
+            year=year, afl_round=live_fixture.afl_round
+        ).all()
+        games_still_live = not round_games or any(
+            g.status not in ("complete",) and
+            (not g.scheduled_start or g.scheduled_start + timedelta(hours=4) > now_naive)
+            for g in round_games
+        )
+        if games_still_live:
+            return live_fixture.afl_round
+        # Otherwise fall through — the "live" status is stale
 
     # 2. Date-based round detection from AFL schedule
     #    Find the latest round where ALL games have finished.
-    #    A game is "finished" if scheduled_start + 4 hours < now (covers
-    #    longest AFL games including extra time).
+    #    A game is "finished" if status == "complete" OR
+    #    scheduled_start + 4 hours < now (covers longest AFL games).
     game_end_buffer = timedelta(hours=4)
 
-    # Get all rounds that have AflGame entries this year, ordered desc
     rounds_with_games = (
         db.session.query(AflGame.afl_round)
         .filter_by(year=year)
@@ -474,15 +486,14 @@ def _detect_gameday_round(league_id: int, year: int) -> int | None:
         games = AflGame.query.filter_by(year=year, afl_round=rnd).all()
         if not games:
             continue
-        # Check if all games in this round have finished
         all_finished = all(
             g.status in ("complete",) or
-            (g.scheduled_start and g.scheduled_start + game_end_buffer < now_utc)
+            (g.scheduled_start and g.scheduled_start + game_end_buffer < now_naive)
             for g in games
         )
         if all_finished:
             latest_finished_round = rnd
-            break  # This is the highest round that's done
+            break
 
     # Tuesday rollover logic
     # weekday: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
