@@ -34,21 +34,25 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
 
     NOTE: Does NOT commit — caller is responsible for db.session.commit().
     """
-    # Check for a locked WeeklyLineup — if one exists, read from LineupSlot
-    # instead of FantasyRoster so we score the locked snapshot.
-    locked_lineup = WeeklyLineup.query.filter_by(
-        team_id=team_id, afl_round=afl_round, year=year, is_locked=True
+    # Check for a WeeklyLineup snapshot (rolling lockout).
+    # Use it if it has slots — frozen for started games, live-updated for others.
+    snapshot_lineup = WeeklyLineup.query.filter_by(
+        team_id=team_id, afl_round=afl_round, year=year
     ).first()
 
-    if locked_lineup:
-        lineup_slots = LineupSlot.query.filter_by(lineup_id=locked_lineup.id).all()
-        on_field = [s for s in lineup_slots
-                    if not s.is_emergency and (s.position_code or "").upper() in FIELD_POSITIONS]
-        emergencies = [s for s in lineup_slots if s.is_emergency]
-        captain_entry = next((s for s in lineup_slots if s.is_captain), None)
-        vc_entry = next((s for s in lineup_slots if s.is_vice_captain), None)
-    else:
-        # Fallback: no locked lineup, use live FantasyRoster state
+    if snapshot_lineup:
+        lineup_slots = LineupSlot.query.filter_by(lineup_id=snapshot_lineup.id).all()
+        if lineup_slots:
+            on_field = [s for s in lineup_slots
+                        if not s.is_emergency and (s.position_code or "").upper() in FIELD_POSITIONS]
+            emergencies = [s for s in lineup_slots if s.is_emergency]
+            captain_entry = next((s for s in lineup_slots if s.is_captain), None)
+            vc_entry = next((s for s in lineup_slots if s.is_vice_captain), None)
+        else:
+            snapshot_lineup = None  # fall through
+
+    if not snapshot_lineup:
+        # Fallback: no snapshot, use live FantasyRoster state
         roster_entries = FantasyRoster.query.filter_by(
             team_id=team_id, is_active=True
         ).all()

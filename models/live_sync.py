@@ -605,27 +605,27 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             scoring_type = league.scoring_type
             hybrid_base = league.hybrid_base
 
-    # Check for a locked WeeklyLineup — if one exists, read from LineupSlot
-    # instead of FantasyRoster so we use the snapshot that was locked in.
-    locked_lineup = WeeklyLineup.query.filter_by(
-        team_id=team_id, afl_round=afl_round, year=year, is_locked=True
+    # Check for a WeeklyLineup snapshot (created by rolling lockout).
+    # Use it if it has slots — even if not fully locked yet, the snapshot
+    # reflects the correct state (frozen for started games, live for others).
+    snapshot_lineup = WeeklyLineup.query.filter_by(
+        team_id=team_id, afl_round=afl_round, year=year
     ).first()
 
-    if locked_lineup:
-        lineup_slots = LineupSlot.query.filter_by(lineup_id=locked_lineup.id).all()
-        if not lineup_slots:
-            return []
+    if snapshot_lineup:
+        lineup_slots = LineupSlot.query.filter_by(lineup_id=snapshot_lineup.id).all()
+        if lineup_slots:
+            _FIELD_POS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
+            on_field = [s for s in lineup_slots
+                        if not s.is_emergency and (s.position_code or "").upper() in _FIELD_POS]
+            emergencies = [s for s in lineup_slots if s.is_emergency]
+            reserves = [s for s in lineup_slots
+                        if not s.is_emergency and (s.position_code or "").upper() not in _FIELD_POS]
+        else:
+            snapshot_lineup = None  # fall through to FantasyRoster
 
-        # LineupSlot uses position_code to distinguish on-field vs bench.
-        # On-field positions: DEF, MID, FWD, RUC, FLEX (same as FIELD_POSITIONS).
-        _FIELD_POS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
-        on_field = [s for s in lineup_slots
-                    if not s.is_emergency and (s.position_code or "").upper() in _FIELD_POS]
-        emergencies = [s for s in lineup_slots if s.is_emergency]
-        reserves = [s for s in lineup_slots
-                    if not s.is_emergency and (s.position_code or "").upper() not in _FIELD_POS]
-    else:
-        # Fallback: no locked lineup, use live FantasyRoster state
+    if not snapshot_lineup:
+        # Fallback: no snapshot exists, use live FantasyRoster state
         roster_entries = FantasyRoster.query.filter_by(
             team_id=team_id, is_active=True
         ).all()

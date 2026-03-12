@@ -245,68 +245,106 @@ def lock_lineup(team_id, afl_round, year):
 
 
 def snapshot_lineups_for_round(afl_round, year):
-    """Snapshot every team's current FantasyRoster into WeeklyLineup/LineupSlot.
+    """Rolling lineup snapshot — called every poll cycle during a live round.
 
-    Called automatically when the first game of a round goes live.
-    Only creates snapshots for teams that don't already have a locked lineup
-    for this round.  Returns the number of teams snapshotted.
+    For each team:
+      - Players whose AFL game has started → frozen in LineupSlot (not updated)
+      - Players whose AFL game hasn't started → updated from current FantasyRoster
+      - is_locked set True only when ALL games in the round have started
+
+    This supports rolling lockout: you can still move unlocked players until
+    their game kicks off, and gameday/scoring sees the correct state for each.
     """
     import logging
+    from models.live_sync import get_locked_player_ids
+    from models.database import AflGame
+
     logger = logging.getLogger(__name__)
+
+    locked_player_ids = get_locked_player_ids(afl_round, year)
+
+    # Check if ALL games in the round have started (fully locked)
+    round_games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+    all_games_started = round_games and all(
+        g.status in ("live", "complete") for g in round_games
+    )
 
     teams = FantasyTeam.query.all()
     count = 0
 
     for team in teams:
-        # Skip if already locked for this round
+        # Skip if already fully locked
         existing = WeeklyLineup.query.filter_by(
             team_id=team.id, afl_round=afl_round, year=year
         ).first()
         if existing and existing.is_locked:
             continue
 
-        # Get current roster
         roster = FantasyRoster.query.filter_by(
             team_id=team.id, is_active=True
         ).all()
         if not roster:
             continue
 
-        # Create or reuse WeeklyLineup
+        # Create WeeklyLineup if first time
         if existing:
             lineup = existing
-            # Clear old slots
-            LineupSlot.query.filter_by(lineup_id=lineup.id).delete()
         else:
             lineup = WeeklyLineup(
                 team_id=team.id, afl_round=afl_round, year=year
             )
             db.session.add(lineup)
-            db.session.flush()  # get lineup.id
+            db.session.flush()
 
-        # Snapshot each roster entry into LineupSlot
+        # Build map of existing slots by player_id
+        existing_slots = {
+            s.player_id: s
+            for s in LineupSlot.query.filter_by(lineup_id=lineup.id).all()
+        }
+
         for entry in roster:
+            pid = entry.player_id
             pos = entry.position_code or ""
-            # Benched players without a field position get "BENCH"
             if entry.is_benched and not entry.is_emergency:
                 pos = pos if pos else "BENCH"
 
-            slot = LineupSlot(
-                lineup_id=lineup.id,
-                player_id=entry.player_id,
-                position_code=pos,
-                is_captain=entry.is_captain,
-                is_vice_captain=entry.is_vice_captain,
-                is_emergency=entry.is_emergency,
-            )
-            db.session.add(slot)
+            if pid in existing_slots:
+                # Slot already exists — only update if player is NOT locked
+                if pid not in locked_player_ids:
+                    slot = existing_slots[pid]
+                    slot.position_code = pos
+                    slot.is_captain = entry.is_captain
+                    slot.is_vice_captain = entry.is_vice_captain
+                    slot.is_emergency = entry.is_emergency
+                # else: player's game has started, keep snapshot frozen
+            else:
+                # New slot — player added to roster or first snapshot
+                slot = LineupSlot(
+                    lineup_id=lineup.id,
+                    player_id=pid,
+                    position_code=pos,
+                    is_captain=entry.is_captain,
+                    is_vice_captain=entry.is_vice_captain,
+                    is_emergency=entry.is_emergency,
+                )
+                db.session.add(slot)
 
-        lineup.is_locked = True
+        # Remove slots for players no longer on roster
+        current_pids = {e.player_id for e in roster}
+        for pid, slot in existing_slots.items():
+            if pid not in current_pids and pid not in locked_player_ids:
+                db.session.delete(slot)
+
+        # Only fully lock when all games have started
+        if all_games_started:
+            lineup.is_locked = True
+
         count += 1
 
     if count:
         db.session.commit()
-        logger.info("Snapshotted %d team lineups for R%d %d", count, afl_round, year)
+        if all_games_started:
+            logger.info("Fully locked %d team lineups for R%d %d", count, afl_round, year)
 
     return count
 
