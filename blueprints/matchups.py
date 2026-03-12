@@ -716,7 +716,7 @@ def gameday(league_id):
     # Compute players played / eligible (only field+flex with a game this round)
     def _count_played(players):
         eligible = [p for p in players
-                    if p.get("lineup_type") in ("field", "flex")
+                    if p.get("lineup_type") == "field"
                     and p.get("afl_team", "") in teams_playing]
         played = sum(1 for p in eligible if p.get("game_started") and not p.get("is_dnp"))
         return played, len(eligible)

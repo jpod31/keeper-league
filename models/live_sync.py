@@ -713,12 +713,8 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
 
         score = _compute_player_score(stat, league_id, scoring_type, hybrid_base) if stat else 0
 
-        # Determine lineup type from position code
-        pos = (entry.position_code or "").upper()
-        if pos == "FLEX":
-            lineup_type = "flex"
-        else:
-            lineup_type = "field"
+        # FLEX is an on-field scoring position — treat as "field" for display
+        lineup_type = "field"
 
         breakdown.append({
             "player_id": entry.player_id,
