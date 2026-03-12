@@ -393,6 +393,16 @@ def _poll_live_scores():
                 if active_round is None:
                     return
 
+                # Snapshot lineups when first game of the round goes live
+                from models.lineup_manager import snapshot_lineups_for_round
+                live_or_done = AflGame.query.filter(
+                    AflGame.year == year,
+                    AflGame.afl_round == active_round,
+                    AflGame.status.in_(["live", "complete"]),
+                ).first()
+                if live_or_done:
+                    snapshot_lineups_for_round(active_round, year)
+
                 # Sync scores (this updates game statuses from Squiggle first,
                 # then scrapes scores if any games are active)
                 changed_data = sync_live_scores(year, active_round)

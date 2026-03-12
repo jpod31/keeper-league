@@ -244,6 +244,73 @@ def lock_lineup(team_id, afl_round, year):
     return lineup
 
 
+def snapshot_lineups_for_round(afl_round, year):
+    """Snapshot every team's current FantasyRoster into WeeklyLineup/LineupSlot.
+
+    Called automatically when the first game of a round goes live.
+    Only creates snapshots for teams that don't already have a locked lineup
+    for this round.  Returns the number of teams snapshotted.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    teams = FantasyTeam.query.all()
+    count = 0
+
+    for team in teams:
+        # Skip if already locked for this round
+        existing = WeeklyLineup.query.filter_by(
+            team_id=team.id, afl_round=afl_round, year=year
+        ).first()
+        if existing and existing.is_locked:
+            continue
+
+        # Get current roster
+        roster = FantasyRoster.query.filter_by(
+            team_id=team.id, is_active=True
+        ).all()
+        if not roster:
+            continue
+
+        # Create or reuse WeeklyLineup
+        if existing:
+            lineup = existing
+            # Clear old slots
+            LineupSlot.query.filter_by(lineup_id=lineup.id).delete()
+        else:
+            lineup = WeeklyLineup(
+                team_id=team.id, afl_round=afl_round, year=year
+            )
+            db.session.add(lineup)
+            db.session.flush()  # get lineup.id
+
+        # Snapshot each roster entry into LineupSlot
+        for entry in roster:
+            pos = entry.position_code or ""
+            # Benched players without a field position get "BENCH"
+            if entry.is_benched and not entry.is_emergency:
+                pos = pos if pos else "BENCH"
+
+            slot = LineupSlot(
+                lineup_id=lineup.id,
+                player_id=entry.player_id,
+                position_code=pos,
+                is_captain=entry.is_captain,
+                is_vice_captain=entry.is_vice_captain,
+                is_emergency=entry.is_emergency,
+            )
+            db.session.add(slot)
+
+        lineup.is_locked = True
+        count += 1
+
+    if count:
+        db.session.commit()
+        logger.info("Snapshotted %d team lineups for R%d %d", count, afl_round, year)
+
+    return count
+
+
 def apply_emergencies(lineup_id):
     """Check starting players for DNP and return a mapping of activated emergencies.
     Returns a dict {original_player_id: emergency_player_id} for each substitution.
