@@ -3759,3 +3759,21 @@ img[src*="Carlton.png"] {
 [data-type="custom"] { color: #bc8cff !important; background: rgba(188,140,255,.1) !important; }
 [data-type="hybrid"] { color: #f0883e !important; background: rgba(240,136,62,.1) !important; }
 [data-type="uf"] { color: #39d2c0 !important; background: rgba(57,210,192,.1) !important; }
+
+/* ── Trend pills (shared across player pool, keepers, squad) ── */
+.trend-pill {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 1px 6px; border-radius: 10px;
+  font-size: .7rem; font-weight: 600;
+}
+.trend-up { background: rgba(63,185,80,.1); color: #56d364; }
+.trend-down { background: rgba(248,81,73,.1); color: #f85149; }
+.trend-flat { color: #484f58; font-weight: 500; }
+
+/* ── Player table shared styles (pool, keepers, injuries) ── */
+.player-link { text-decoration: none; display: flex; align-items: center; gap: .5rem; }
+.player-link:hover .p-name { color: #58a6ff; }
+.p-name { color: #e6edf3; font-weight: 600; font-size: .82rem; transition: color .1s; white-space: nowrap; }
+.team-icon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: #58a6ff; }
