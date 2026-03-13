@@ -3407,6 +3407,11 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   background: linear-gradient(135deg, #f0c040, #d29922);
 }
 
+/* Medium (3-6 weeks) — orange fill */
+.fv-injury-medium {
+  background: linear-gradient(135deg, #f0883e, #d97518);
+}
+
 /* Short/Long — white circle, red border, red diagonal slash */
 .fv-injury-short,
 .fv-injury-long {
