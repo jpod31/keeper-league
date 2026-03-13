@@ -12,7 +12,7 @@ from models.database import db, League, FantasyTeam, FantasyRoster, AflPlayer, U
 from models.league_manager import (
     create_league, join_league, get_user_leagues, get_league_teams,
     set_custom_scoring, get_custom_scoring, update_league_settings,
-    update_position_slots, update_draft_weights,
+    update_position_slots,
 )
 import config
 
@@ -824,7 +824,7 @@ def draft_values_preview(league_id):
     """JSON endpoint: preview top-20 players under custom weight sliders."""
     from models.database import AflPlayer
     from models.player import orm_to_player
-    from models.draft_model import rank_players, FACTOR_FNS
+    from models.draft_model import rank_players
 
     league = db.session.get(League, league_id)
     if not league:
