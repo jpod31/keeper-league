@@ -95,15 +95,18 @@ def league_list():
 
     leagues = get_user_leagues(current_user.id)
 
-    # Auto-redirect: if user has exactly one league with a team, go straight to My Team
-    if leagues and not request.args.get("all"):
-        first_team = FantasyTeam.query.filter_by(
-            owner_id=current_user.id
-        ).first()
-        if first_team:
-            return redirect(url_for("team.squad",
-                                    league_id=first_team.league_id,
-                                    team_id=first_team.id))
+    # Auto-redirect: if user has a team, go straight to My Team
+    first_team = FantasyTeam.query.filter_by(
+        owner_id=current_user.id
+    ).first()
+    if first_team:
+        return redirect(url_for("team.squad",
+                                league_id=first_team.league_id,
+                                team_id=first_team.id))
+
+    # No teams — show create/join page
+    if not leagues:
+        return render_template("leagues/list.html", leagues=[], dashboard_data=[])
 
     # Build dashboard data for each league
     dashboard_data = []
@@ -348,14 +351,14 @@ def league_leave(league_id):
     league = db.session.get(League, league_id)
     if not league:
         flash("League not found.", "warning")
-        return redirect(url_for("leagues.league_list", all=1))
+        return redirect(url_for("leagues.league_list"))
 
     team = FantasyTeam.query.filter_by(
         league_id=league_id, owner_id=current_user.id
     ).first()
     if not team:
         flash("You don't have a team in this league.", "warning")
-        return redirect(url_for("leagues.league_list", all=1))
+        return redirect(url_for("leagues.league_list"))
 
     # Commissioners can't leave their own league — they must delete it
     if league.commissioner_id == current_user.id:
@@ -392,7 +395,7 @@ def league_leave(league_id):
     db.session.commit()
 
     flash(f"You left '{league.name}' (team '{team_name}' removed).", "info")
-    return redirect(url_for("leagues.league_list", all=1))
+    return redirect(url_for("leagues.league_list"))
 
 
 @leagues_bp.route("/join-by-code", methods=["POST"])

@@ -475,7 +475,7 @@ def commissioner_delete_league(league_id):
     league = db.session.get(League, league_id)
     if not league:
         flash("League not found.", "warning")
-        return redirect(url_for("leagues.league_list", all=1))
+        return redirect(url_for("leagues.league_list"))
 
     if league.commissioner_id != current_user.id:
         flash("Only the commissioner can delete a league.", "danger")
@@ -508,4 +508,4 @@ def commissioner_delete_league(league_id):
     db.session.commit()
 
     flash(f"League '{league_name}' has been permanently deleted.", "info")
-    return redirect(url_for("leagues.league_list", all=1))
+    return redirect(url_for("leagues.league_list"))
