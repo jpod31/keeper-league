@@ -1240,9 +1240,10 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   border-left: 3px solid #d48830;
 }
 .fv-injury-section .fv-card-reserve {
-  opacity: .7;
-  border-color: rgba(212,136,48,.25);
-  background: linear-gradient(135deg, rgba(212,136,48,.08), var(--kl-bg-card) 60%);
+  opacity: 1;
+  border-color: rgba(255,160,40,.45);
+  background: linear-gradient(135deg, rgba(255,140,20,.18), rgba(212,100,0,.08) 60%, var(--kl-bg-card));
+  box-shadow: 0 0 8px rgba(255,140,20,.15);
 }
 
 /* ═══ LTIL Section ═══ */
