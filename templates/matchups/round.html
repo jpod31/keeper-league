@@ -86,7 +86,7 @@
     {% endif %}
   </div>
   <div class="rd-actions">
-    <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=afl_round) }}" class="rd-btn"><i class="bi bi-broadcast me-1"></i>Live</a>
+    <a href="{{ url_for('matchups.gameday', league_id=league.id, round=afl_round) }}" class="rd-btn"><i class="bi bi-broadcast me-1"></i>Live</a>
     {% if is_commissioner %}
       <form method="POST" action="{{ url_for('matchups.score_round_view', league_id=league.id, afl_round=afl_round) }}" style="margin:0;">
         <button type="submit" class="rd-btn rd-btn-primary" onclick="return confirm('Score round {{ afl_round }}?')"><i class="bi bi-calculator me-1"></i>Score</button>

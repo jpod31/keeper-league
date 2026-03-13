@@ -768,7 +768,7 @@ const FIXTURE_ID = {{ fixture.id if not is_bye else 'null' }};
 const IS_HOME = {{ 'true' if not is_bye and is_home else 'false' }};
 const LIVE_ENABLED = {{ 'true' if live_enabled else 'false' }};
 const GAMEDAY_STATE = "{{ gameday_state }}";
-const FALLBACK_URL = "{{ url_for('matchups.api_live_scores', league_id=league.id, afl_round=afl_round) }}";
+const FALLBACK_URL = "";
 const DETAIL_URL_BASE = "{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=0) }}".replace('/0', '');
 
 /* Fixture metadata for all matchups in this round */

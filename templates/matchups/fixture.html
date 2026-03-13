@@ -179,7 +179,7 @@
     </div>
     <div class="rh-actions">
       {% if current_fixtures and rs in ['live', 'completed', 'partial'] %}
-        <a href="{{ url_for('matchups.live_scores', league_id=league.id, afl_round=selected_round) }}" class="rh-btn">
+        <a href="{{ url_for('matchups.gameday', league_id=league.id, round=selected_round) }}" class="rh-btn">
           <i class="bi bi-broadcast me-1"></i>Live
         </a>
       {% endif %}
