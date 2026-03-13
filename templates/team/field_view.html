@@ -103,7 +103,17 @@
         {% if is_flex %}
           <span class="fv-flex-pip">FLEX</span>
         {% endif %}
-        <span class="fv-pos-pip fv-pip-{{ (p.position or 'MID').split('/')[0]|lower }}">{{ p.position or 'MID' }}</span>
+        {% set pos_parts = (p.position or 'MID').split('/') %}
+        {% if pos_parts|length > 1 %}
+          <span class="fv-pos-pip fv-pip-dual">
+            {%- for part in pos_parts -%}
+              {%- if not loop.first %}<span class="fv-pip-slash">/</span>{% endif -%}
+              <span class="fv-pip-{{ part|lower }}">{{ part }}</span>
+            {%- endfor -%}
+          </span>
+        {% else %}
+          <span class="fv-pos-pip fv-pip-{{ pos_parts[0]|lower }}">{{ pos_parts[0] }}</span>
+        {% endif %}
       </div>
 
       {# Player name #}
