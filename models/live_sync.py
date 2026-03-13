@@ -15,6 +15,7 @@ from models.database import (
     db, AflGame, AflPlayer, PlayerStat, ScScore, Fixture, FantasyTeam,
     FantasyRoster, LiveScoringConfig, RoundScore, League,
     CustomScoringRule, WeeklyLineup, LineupSlot,
+    Reserve7sFixture, Reserve7sRoundScore,
 )
 from models.scoring_engine import score_team_round, _compute_uf_fixture, _positions_compatible
 from scrapers.squiggle import (
@@ -505,6 +506,30 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
 
             if league_data:
                 changed_data[league_id] = league_data
+
+        # ── 7s live scoring (mirror main comp fixture status + scores) ──
+        try:
+            from models.reserve7s_engine import score_7s_round
+            sevens_fixtures = Reserve7sFixture.query.filter_by(
+                league_id=league_id, year=year, afl_round=fantasy_round,
+            ).all()
+            if sevens_fixtures:
+                score_7s_round(league_id, fantasy_round, year)
+                for sf in sevens_fixtures:
+                    if sf.status == "completed":
+                        continue
+                    hrs = Reserve7sRoundScore.query.filter_by(
+                        team_id=sf.home_team_id, afl_round=fantasy_round, year=year,
+                    ).first()
+                    ars = Reserve7sRoundScore.query.filter_by(
+                        team_id=sf.away_team_id, afl_round=fantasy_round, year=year,
+                    ).first()
+                    sf.home_score = hrs.total_score if hrs else 0
+                    sf.away_score = ars.total_score if ars else 0
+                    if sf.status == "scheduled":
+                        sf.status = "live"
+        except Exception:
+            logger.warning("7s live scoring failed for league %d", league_id, exc_info=True)
 
     db.session.commit()
 
