@@ -216,7 +216,11 @@ def squad(league_id, team_id):
         # Reserves: all roster players not on-field, not in FLEX, not on LTIL
         # Grouped by highest-priority position (FWD > DEF > RUC > MID),
         # sorted within each group by SC avg (fallback to rating)
-        _reserve_players = [p for p in players if p.id not in used_ids and p.id not in ltil_player_ids]
+        # Emergency players are separated into their own list for a dedicated UI section.
+        _all_reserve_players = [p for p in players if p.id not in used_ids and p.id not in ltil_player_ids]
+        _emg_set = set(eid for r in roster if r.is_emergency and r.is_benched for eid in [r.player_id])
+        emergency_players = [p for p in _all_reserve_players if p.id in _emg_set]
+        _reserve_players = [p for p in _all_reserve_players if p.id not in _emg_set]
         _sort_key = lambda p: (p.sc_avg or 0, p.rating or 0)
         _pos_priority = {"FWD": 0, "DEF": 1, "RUC": 2, "MID": 3}
         _pos_order = ["DEF", "MID", "RUC", "FWD"]
@@ -421,6 +425,7 @@ def squad(league_id, team_id):
             "zone_layouts": zone_layouts,
             "zone_filled": zone_filled,
             "emergency_ids": emergency_ids,
+            "emergency_players": emergency_players,
             "next_lockout_time": next_lockout_time,
             "ltil_entries": ltil_entries,
             "pending_ltil": pending_ltil,

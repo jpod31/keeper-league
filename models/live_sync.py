@@ -16,7 +16,7 @@ from models.database import (
     FantasyRoster, LiveScoringConfig, RoundScore, League,
     CustomScoringRule, WeeklyLineup, LineupSlot,
 )
-from models.scoring_engine import score_team_round, _compute_uf_fixture
+from models.scoring_engine import score_team_round, _compute_uf_fixture, _positions_compatible
 from scrapers.squiggle import (
     get_games as squiggle_get_games,
     normalise_team_name,
@@ -785,15 +785,4 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
 
 def _breakdown_positions_compatible(field_entry, emergency_entry):
     """Check if an emergency can sub for a field player based on position."""
-    field_pos = (field_entry.position_code or "").upper()
-    em_player = emergency_entry.player
-
-    if not field_pos or not em_player or not em_player.position:
-        return True
-
-    em_positions = set(em_player.position.upper().split("/"))
-
-    if field_pos in ("BENCH", "UTIL", "FLEX"):
-        return True
-
-    return field_pos in em_positions
+    return _positions_compatible(field_entry, emergency_entry)

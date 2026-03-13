@@ -353,37 +353,56 @@ def apply_emergencies(lineup_id):
     """Check starting players for DNP and return a mapping of activated emergencies.
     Returns a dict {original_player_id: emergency_player_id} for each substitution.
     Does NOT mutate the lineup — scoring engine reads this to know which emergency scored.
+
+    Uses positional matching: an emergency is eligible if they share at least one
+    position with the field slot of the DNP player. FLEX slots accept any position.
+    When multiple emergencies are eligible, the highest-scoring one is chosen.
+    Each emergency can only be used once.
     """
     from models.database import PlayerStat
+    from models.scoring_engine import _positions_compatible
 
     lineup = db.session.get(WeeklyLineup, lineup_id)
     if not lineup:
         return {}
 
     slots = LineupSlot.query.filter_by(lineup_id=lineup_id).all()
-    emergency_slots = [s for s in slots if s.is_emergency and s.emergency_for]
+    FIELD_POS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
+    on_field = [s for s in slots
+                if not s.is_emergency and (s.position_code or "").upper() in FIELD_POS]
+    emergency_slots = [s for s in slots if s.is_emergency]
 
     if not emergency_slots:
         return {}
 
-    activated = {}
-    for em_slot in emergency_slots:
-        # Check if the player they cover actually played
-        starter_stat = PlayerStat.query.filter_by(
-            player_id=em_slot.emergency_for,
-            year=lineup.year,
-            round=lineup.afl_round,
+    # Pre-calculate emergency scores and sort highest first
+    em_scored = []
+    for em in emergency_slots:
+        em_stat = PlayerStat.query.filter_by(
+            player_id=em.player_id, year=lineup.year, round=lineup.afl_round
         ).first()
+        if em_stat is not None:
+            em_scored.append((em, em_stat.supercoach_score or 0))
+    em_scored.sort(key=lambda x: x[1], reverse=True)
 
-        if starter_stat is None:
-            # Starter DNP — check emergency player actually played
-            em_stat = PlayerStat.query.filter_by(
-                player_id=em_slot.player_id,
-                year=lineup.year,
-                round=lineup.afl_round,
-            ).first()
-            if em_stat is not None:
-                activated[em_slot.emergency_for] = em_slot.player_id
+    # Find DNP field players and assign emergencies positionally
+    activated = {}
+    used_emergencies = set()
+    for entry in on_field:
+        starter_stat = PlayerStat.query.filter_by(
+            player_id=entry.player_id, year=lineup.year, round=lineup.afl_round
+        ).first()
+        if starter_stat is not None:
+            continue  # Played — no sub needed
+        # DNP — find best eligible emergency
+        for em, em_score in em_scored:
+            if em.player_id in used_emergencies:
+                continue
+            if not _positions_compatible(entry, em):
+                continue
+            used_emergencies.add(em.player_id)
+            activated[entry.player_id] = em.player_id
+            break
 
     return activated
 
