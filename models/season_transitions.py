@@ -202,7 +202,7 @@ def check_and_transition(league_id):
                         notif_type="season_transition",
                         title=f"Season phase changed to {new_phase}",
                         body=f"{league.name} has moved to the {new_phase} phase.",
-                        link=f"/leagues/{league_id}/season",
+                        link=f"/leagues/{league_id}/dashboard",
                     )
         except Exception:
             logger.debug("Failed to send transition notifications", exc_info=True)

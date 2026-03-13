@@ -722,31 +722,6 @@ def generate_preseason_route(league_id):
     return redirect(url_for("leagues.league_settings", league_id=league_id))
 
 
-@leagues_bp.route("/<int:league_id>/finalize-round/<int:afl_round>", methods=["POST"])
-@login_required
-def finalize_round_route(league_id, afl_round):
-    """Commissioner triggers end-of-round scoring, fixture resolution, standings update."""
-    league = db.session.get(League, league_id)
-    if not league:
-        flash("League not found.", "warning")
-        return redirect(url_for("leagues.league_list"))
-
-    if league.commissioner_id != current_user.id:
-        flash("Only the commissioner can finalize rounds.", "warning")
-        return redirect(url_for("leagues.dashboard", league_id=league_id))
-
-    try:
-        from models.scoring_engine import finalize_round
-        scores = finalize_round(league_id, afl_round, league.season_year)
-        label = "Pre-Season" if afl_round == 0 else f"Round {afl_round}"
-        flash(f"{label} finalized. {len(scores)} teams scored.", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Failed to finalize round: {e}", "danger")
-
-    return redirect(url_for("matchups.standings", league_id=league_id))
-
-
 @leagues_bp.route("/<int:league_id>/draft-values", methods=["GET", "POST"])
 @login_required
 def draft_values(league_id):
@@ -872,64 +847,6 @@ def draft_values_preview(league_id):
             })
 
     return jsonify(result)
-
-
-@leagues_bp.route("/<int:league_id>/season")
-@login_required
-def season_hub(league_id):
-    """Redirect — List Management is now split between My Team and Commissioner Hub."""
-    league = db.session.get(League, league_id)
-    if not league:
-        flash("League not found.", "warning")
-        return redirect(url_for("leagues.league_list"))
-
-    user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
-    if user_team:
-        return redirect(url_for("team.squad", league_id=league_id, team_id=user_team.id))
-    if league.commissioner_id == current_user.id:
-        return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
-    return redirect(url_for("leagues.dashboard", league_id=league_id))
-
-
-@leagues_bp.route("/<int:league_id>/season/auto-transition", methods=["POST"])
-@login_required
-def save_auto_transition(league_id):
-    """Save season automation settings (commissioner only)."""
-    league = db.session.get(League, league_id)
-    if not league or league.commissioner_id != current_user.id:
-        flash("Only the commissioner can change automation settings.", "warning")
-        return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
-
-    from models.season_manager import get_or_create_season_config
-    from datetime import datetime as dt
-
-    cfg = get_or_create_season_config(league_id, league.season_year)
-    cfg.auto_transition_enabled = "auto_transition_enabled" in request.form
-
-    season_start = request.form.get("season_start_date", "").strip()
-    offseason_start = request.form.get("offseason_start_date", "").strip()
-    finals_round = request.form.get("finals_start_round", type=int)
-
-    if season_start:
-        try:
-            cfg.season_start_date = dt.strptime(season_start, "%Y-%m-%d")
-        except ValueError:
-            pass
-    else:
-        cfg.season_start_date = None
-
-    if offseason_start:
-        try:
-            cfg.offseason_start_date = dt.strptime(offseason_start, "%Y-%m-%d")
-        except ValueError:
-            pass
-    else:
-        cfg.offseason_start_date = None
-
-    cfg.finals_start_round = finals_round
-    db.session.commit()
-    flash("Season automation settings saved.", "success")
-    return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
 @leagues_bp.route("/<int:league_id>/midseason/start-step", methods=["POST"])

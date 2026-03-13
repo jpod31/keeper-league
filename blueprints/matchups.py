@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 
 from models.database import db, League, FantasyTeam, SeasonConfig, AflGame, LiveScoringConfig, Fixture, RoundScore
 from models.fixture_manager import (
-    generate_round_robin, get_fixture, get_round_fixtures, get_matchup,
+    get_fixture, get_round_fixtures, get_matchup,
     generate_finals, get_finals,
 )
 from models.scoring_engine import (
@@ -88,29 +88,6 @@ def fixture_view(league_id):
                            season_config=season_cfg,
                            is_commissioner=is_commissioner,
                            scoring=scoring)
-
-
-@matchups_bp.route("/<int:league_id>/fixture/generate", methods=["POST"])
-@login_required
-def generate_fixture(league_id):
-    league = db.session.get(League, league_id)
-    if not league or league.commissioner_id != current_user.id:
-        flash("Only the commissioner can generate fixtures.", "warning")
-        return redirect(url_for("matchups.fixture_view", league_id=league_id))
-
-    num_rounds = request.form.get("num_rounds", type=int) or 23
-    fixtures, error = generate_round_robin(league_id, league.season_year, num_rounds)
-
-    # Auto-generate 7s fixture to match
-    if not error:
-        from models.fixture_manager import generate_7s_round_robin
-        generate_7s_round_robin(league_id, league.season_year, num_rounds)
-
-    if error:
-        flash(error, "danger")
-    else:
-        flash(f"Generated {len(fixtures)} fixtures across {num_rounds} rounds.", "success")
-    return redirect(url_for("matchups.fixture_view", league_id=league_id))
 
 
 @matchups_bp.route("/<int:league_id>/fixture/<int:afl_round>")
