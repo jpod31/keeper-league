@@ -409,6 +409,21 @@ def squad(league_id, team_id):
                     best = "MID"
                 reserves_by_pos.setdefault(best, []).append(p)
 
+        # Injury list: injured reserves not in field/emergency/7s, sorted by severity
+        _severity_order = {"test": 0, "short": 1, "medium": 2, "long": 3, "season": 4}
+        injury_list = [p for p in reserves if p.injury_severity]
+        injury_list.sort(key=lambda p: _severity_order.get(p.injury_severity, 99))
+        if injury_list:
+            _injury_ids = {p.id for p in injury_list}
+            reserves = [p for p in reserves if p.id not in _injury_ids]
+            reserves_by_pos = {}
+            for p in reserves:
+                positions = (p.position or "MID").split("/")
+                best = min(positions, key=lambda x: _pos_priority.get(x, 99))
+                if best not in _pos_priority:
+                    best = "MID"
+                reserves_by_pos.setdefault(best, []).append(p)
+
         # Form arrows (up/down/flat) for field view
         from models.form_utils import compute_player_form
         all_pids = [p.id for p in players if p]
@@ -440,6 +455,7 @@ def squad(league_id, team_id):
             "emergency_ids": emergency_ids,
             "emergency_players": emergency_players,
             "sevens_players": sevens_players,
+            "injury_list": injury_list,
             "next_lockout_time": next_lockout_time,
             "ltil_entries": ltil_entries,
             "pending_ltil": pending_ltil,

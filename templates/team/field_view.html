@@ -374,6 +374,21 @@
   </div>
   {% endif %}
 
+  {# ═══════════ INJURY LIST: injured reserves ═══════════ #}
+  {% if field_data.injury_list %}
+  <div class="fv-injury-section">
+    <div class="fv-injury-hdr">
+      <i class="bi bi-bandaid me-1"></i>Injury List
+      <span class="fv-zone-tally ms-2">{{ field_data.injury_list|length }}</span>
+    </div>
+    <div class="fv-reserves-grid">
+      {% for p in field_data.injury_list %}
+        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available) }}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   {# ═══════════ RESERVES: grouped by position ═══════════ #}
   {% if field_data.reserves %}
   <div class="fv-reserves-section">

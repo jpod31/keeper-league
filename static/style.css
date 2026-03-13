@@ -1225,6 +1225,26 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   background: linear-gradient(135deg, rgba(155,89,182,.1), var(--kl-bg-card) 60%);
 }
 
+/* ═══ Injury List Section ═══ */
+.fv-injury-section {
+  padding: .5rem 0;
+}
+.fv-injury-hdr {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #f0a050;
+  margin-bottom: .75rem;
+  display: flex;
+  align-items: center;
+  padding-left: .25rem;
+  border-left: 3px solid #d48830;
+}
+.fv-injury-section .fv-card-reserve {
+  opacity: .7;
+  border-color: rgba(212,136,48,.25);
+  background: linear-gradient(135deg, rgba(212,136,48,.08), var(--kl-bg-card) 60%);
+}
+
 /* ═══ LTIL Section ═══ */
 .fv-ltil-section {
   background: #1a0f0f;
