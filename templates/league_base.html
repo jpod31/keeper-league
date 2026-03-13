@@ -14,8 +14,8 @@
       </button>
       <ul class="dropdown-menu" style="background:var(--kl-bg-card);border-color:var(--kl-border);">
         {% for lg, tm in user_leagues|default([]) %}
-          <li>
-            <a class="dropdown-item{% if lg.id == league.id %} active{% endif %}"
+          <li style="position:relative;">
+            <a class="dropdown-item{% if lg.id == league.id %} active{% endif %}" style="padding-right:32px;"
                href="{{ url_for('leagues.dashboard', league_id=lg.id) }}">
               {{ lg.name }}
               {% if lg.invite_code %}
@@ -23,6 +23,13 @@
               {% endif %}
               <span class="text-secondary ms-1" style="font-size:.7rem;">{{ lg.season_year }}</span>
             </a>
+            {% if lg.commissioner_id != current_user.id %}
+            <button type="button" class="btn-leave-league"
+                    onclick="event.stopPropagation();confirmLeaveLeague({{ lg.id }}, '{{ lg.name|e }}')"
+                    title="Leave league">
+              <i class="bi bi-x-lg"></i>
+            </button>
+            {% endif %}
           </li>
         {% endfor %}
         <li><hr class="dropdown-divider" style="border-color:var(--kl-border);"></li>
@@ -252,5 +259,57 @@ function closeSubtabSheet() {
   document.getElementById('subtabSheet').classList.remove('open');
   document.getElementById('subtabBackdrop').classList.remove('open');
 }
+
+/* ── Leave league confirmation ── */
+function confirmLeaveLeague(leagueId, leagueName) {
+  var modal = document.getElementById('leaveLeagueModal');
+  document.getElementById('leaveLeagueName').textContent = leagueName;
+  document.getElementById('leaveLeagueForm').action = '/leagues/' + leagueId + '/leave';
+  var bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+}
 </script>
+
+{# ── Leave League Confirmation Modal ── #}
+<div class="modal fade" id="leaveLeagueModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" style="background:var(--kl-bg-card);border:1px solid var(--kl-border);border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--kl-border);padding:16px 20px 12px;">
+        <h6 class="modal-title" style="color:var(--kl-accent-red);font-weight:700;font-size:.9rem;">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>Leave League
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="font-size:.6rem;"></button>
+      </div>
+      <div class="modal-body" style="padding:16px 20px;font-size:.85rem;color:var(--kl-text-primary);">
+        <p style="margin-bottom:8px;">Are you sure you want to leave <strong id="leaveLeagueName"></strong>?</p>
+        <p style="color:var(--kl-text-faint);font-size:.75rem;margin-bottom:0;">Your team, roster, and all history will be permanently removed.</p>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid var(--kl-border);padding:12px 20px;gap:8px;">
+        <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
+                style="background:var(--kl-bg-elevated);color:var(--kl-text-secondary);border:1px solid var(--kl-border);font-size:.75rem;padding:5px 14px;border-radius:6px;">
+          Cancel
+        </button>
+        <form id="leaveLeagueForm" method="POST" style="margin:0;">
+          <button type="submit" class="btn btn-sm"
+                  style="background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.3);font-size:.75rem;padding:5px 14px;border-radius:6px;font-weight:600;">
+            Leave League
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-leave-league {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--kl-text-faint); cursor: pointer;
+  padding: 2px 4px; font-size: .65rem; line-height: 1; border-radius: 4px;
+  opacity: 0; transition: opacity .15s, color .15s, background .15s;
+}
+.dropdown-menu li:hover .btn-leave-league { opacity: 1; }
+.btn-leave-league:hover {
+  color: #f85149; background: rgba(248,81,73,.12);
+}
+</style>
 {% endblock %}

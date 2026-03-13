@@ -95,6 +95,16 @@ def league_list():
 
     leagues = get_user_leagues(current_user.id)
 
+    # Auto-redirect: if user has exactly one league with a team, go straight to My Team
+    if leagues and not request.args.get("all"):
+        first_team = FantasyTeam.query.filter_by(
+            owner_id=current_user.id
+        ).first()
+        if first_team:
+            return redirect(url_for("team.squad",
+                                    league_id=first_team.league_id,
+                                    team_id=first_team.id))
+
     # Build dashboard data for each league
     dashboard_data = []
     for lg in leagues:
@@ -323,6 +333,66 @@ def league_join(league_id):
     else:
         flash(f"Joined with team '{team.name}'!", "success")
     return redirect(url_for("leagues.dashboard", league_id=league_id))
+
+
+@leagues_bp.route("/<int:league_id>/leave", methods=["POST"])
+@login_required
+def league_leave(league_id):
+    """Leave a league — removes the user's team and all associated data."""
+    from models.database import (
+        FantasyRoster, WeeklyLineup, LineupSlot, RoundScore,
+        Reserve7sLineup, Reserve7sRoundScore, Reserve7sStanding,
+        LongTermInjury, SeasonStanding, Trade, TradeItem, KeeperHistory,
+    )
+
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("League not found.", "warning")
+        return redirect(url_for("leagues.league_list", all=1))
+
+    team = FantasyTeam.query.filter_by(
+        league_id=league_id, owner_id=current_user.id
+    ).first()
+    if not team:
+        flash("You don't have a team in this league.", "warning")
+        return redirect(url_for("leagues.league_list", all=1))
+
+    # Commissioners can't leave their own league — they must delete it
+    if league.commissioner_id == current_user.id:
+        flash("You're the commissioner — transfer ownership first or delete the league.", "warning")
+        return redirect(url_for("leagues.dashboard", league_id=league_id))
+
+    team_id = team.id
+    team_name = team.name
+
+    # Clean up all team-related data
+    Reserve7sLineup.query.filter_by(team_id=team_id).delete()
+    Reserve7sRoundScore.query.filter_by(team_id=team_id).delete()
+    Reserve7sStanding.query.filter_by(team_id=team_id).delete()
+    LineupSlot.query.filter(
+        LineupSlot.lineup_id.in_(
+            db.session.query(WeeklyLineup.id).filter_by(team_id=team_id)
+        )
+    ).delete(synchronize_session=False)
+    WeeklyLineup.query.filter_by(team_id=team_id).delete()
+    RoundScore.query.filter_by(team_id=team_id).delete()
+    SeasonStanding.query.filter_by(team_id=team_id).delete()
+    LongTermInjury.query.filter_by(team_id=team_id).delete()
+    KeeperHistory.query.filter(
+        (KeeperHistory.original_team_id == team_id) |
+        (KeeperHistory.current_owner_id == team_id)
+    ).delete(synchronize_session=False)
+    # Cancel pending trades involving this team
+    Trade.query.filter(
+        ((Trade.proposer_team_id == team_id) | (Trade.recipient_team_id == team_id)),
+        Trade.status == "pending",
+    ).update({"status": "cancelled"}, synchronize_session=False)
+    FantasyRoster.query.filter_by(team_id=team_id).delete()
+    db.session.delete(team)
+    db.session.commit()
+
+    flash(f"You left '{league.name}' (team '{team_name}' removed).", "info")
+    return redirect(url_for("leagues.league_list", all=1))
 
 
 @leagues_bp.route("/join-by-code", methods=["POST"])
