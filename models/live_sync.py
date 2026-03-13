@@ -510,10 +510,15 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
         # ── 7s live scoring (mirror main comp fixture status + scores) ──
         try:
             from models.reserve7s_engine import score_7s_round
+            from blueprints.reserve7s import _ensure_7s_lineup
             sevens_fixtures = Reserve7sFixture.query.filter_by(
                 league_id=league_id, year=year, afl_round=fantasy_round,
             ).all()
             if sevens_fixtures:
+                # Auto-carry lineups forward for all teams in this round
+                for sf in sevens_fixtures:
+                    _ensure_7s_lineup(league_id, sf.home_team_id, fantasy_round, year)
+                    _ensure_7s_lineup(league_id, sf.away_team_id, fantasy_round, year)
                 score_7s_round(league_id, fantasy_round, year)
                 for sf in sevens_fixtures:
                     if sf.status == "completed":

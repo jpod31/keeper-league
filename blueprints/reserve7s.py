@@ -105,6 +105,66 @@ def _get_next_7s_round(league_id, year):
     return next_main or 1
 
 
+def _ensure_7s_lineup(league_id, team_id, afl_round, year):
+    """Auto-carry 7s lineup from the most recent round if none exists for this round.
+
+    The 7s squad is persistent — users set it once on My Team and it carries
+    forward each round automatically. This copies the latest lineup forward
+    when a new round starts.
+
+    Returns the lineup entries for the requested round.
+    """
+    existing = Reserve7sLineup.query.filter_by(
+        league_id=league_id, team_id=team_id,
+        afl_round=afl_round, year=year,
+    ).all()
+    if existing:
+        return existing
+
+    # Find most recent round that has a lineup for this team
+    latest_round = (
+        db.session.query(db.func.max(Reserve7sLineup.afl_round))
+        .filter(
+            Reserve7sLineup.league_id == league_id,
+            Reserve7sLineup.team_id == team_id,
+            Reserve7sLineup.year == year,
+            Reserve7sLineup.afl_round < afl_round,
+        )
+        .scalar()
+    )
+    if latest_round is None:
+        return []
+
+    prev_entries = Reserve7sLineup.query.filter_by(
+        league_id=league_id, team_id=team_id,
+        afl_round=latest_round, year=year,
+    ).all()
+
+    # Only carry forward players still on the active roster
+    from models.database import FantasyRoster
+    active_ids = {
+        r.player_id for r in
+        FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    }
+
+    new_entries = []
+    for e in prev_entries:
+        if e.player_id not in active_ids:
+            continue
+        new_e = Reserve7sLineup(
+            league_id=league_id, team_id=team_id,
+            afl_round=afl_round, year=year,
+            player_id=e.player_id, is_captain=e.is_captain,
+        )
+        db.session.add(new_e)
+        new_entries.append(new_e)
+
+    if new_entries:
+        db.session.commit()
+
+    return new_entries
+
+
 # ── Team Management ────────────────────────────────────────────────────
 
 
@@ -343,6 +403,10 @@ def sevens_gameday(league_id):
     opp_eligible = 0
 
     if fixture:
+        # Auto-carry lineups forward for both teams
+        _ensure_7s_lineup(league_id, fixture.home_team_id, afl_round, year)
+        _ensure_7s_lineup(league_id, fixture.away_team_id, afl_round, year)
+
         is_home = fixture.home_team_id == user_team.id
         my_team = fixture.home_team if is_home else fixture.away_team
         opp_team = fixture.away_team if is_home else fixture.home_team

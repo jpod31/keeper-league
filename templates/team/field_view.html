@@ -354,17 +354,23 @@
   {% endif %}
 
   {# ═══════════ 7s: dedicated section ═══════════ #}
-  {% if field_data.sevens_players %}
+  {% if field_data.has_7s_fixture %}
   <div class="fv-7s-section">
     <div class="fv-7s-hdr">
       <i class="bi bi-7-circle me-1"></i>7s Squad
       <span class="fv-zone-tally ms-2">{{ field_data.sevens_players|length }} / 7</span>
     </div>
+    {% if field_data.sevens_players %}
     <div class="fv-reserves-grid">
       {% for p in field_data.sevens_players %}
         {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available) }}
       {% endfor %}
     </div>
+    {% else %}
+    <div class="text-center py-3" style="color:#484f58;font-size:.8rem;">
+      Tap the <span style="color:#bc8cff;font-weight:600;">7</span> button on any reserve to add them to your 7s squad
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 

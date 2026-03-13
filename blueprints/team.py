@@ -384,12 +384,11 @@ def squad(league_id, team_id):
 
         # Reserve 7s lineup IDs for the upcoming round
         from models.database import Reserve7sLineup, Reserve7sFixture
-        from blueprints.reserve7s import _get_next_7s_round, AGE_CUTOFF
+        from blueprints.reserve7s import _get_next_7s_round, _ensure_7s_lineup, AGE_CUTOFF
         sevens_round = _get_next_7s_round(league_id, league.season_year)
-        sevens_entries = Reserve7sLineup.query.filter_by(
-            league_id=league_id, team_id=team_id,
-            afl_round=sevens_round, year=league.season_year,
-        ).all()
+        sevens_entries = _ensure_7s_lineup(
+            league_id, team_id, sevens_round, league.season_year,
+        )
         sevens_ids = [e.player_id for e in sevens_entries]
         sevens_captain_id = next((e.player_id for e in sevens_entries if e.is_captain), None)
         # Check if 7s fixture exists (so we know to show the bubbles)
@@ -1143,7 +1142,7 @@ def api_set_emergency(league_id, team_id):
 def api_toggle_7s(league_id, team_id):
     """Toggle a reserve player in/out of the Reserve 7s lineup for the upcoming round."""
     from models.database import Reserve7sLineup, Reserve7sFixture
-    from blueprints.reserve7s import _get_next_7s_round, AGE_CUTOFF
+    from blueprints.reserve7s import _get_next_7s_round, _ensure_7s_lineup, AGE_CUTOFF
 
     league = db.session.get(League, league_id)
     team = db.session.get(FantasyTeam, team_id)
@@ -1165,6 +1164,9 @@ def api_toggle_7s(league_id, team_id):
 
     year = league.season_year
     sevens_round = _get_next_7s_round(league_id, year)
+
+    # Auto-carry lineup from previous round if this round has none yet
+    _ensure_7s_lineup(league_id, team_id, sevens_round, year)
 
     # Check if already in 7s
     existing = Reserve7sLineup.query.filter_by(
