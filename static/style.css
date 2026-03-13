@@ -3397,42 +3397,14 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 /* BYE shifts right when injury dot is present */
 .fv-bye-shifted { left: 18px; }
 
-/* Test — solid pink fill */
-.fv-injury-test {
-  background: linear-gradient(135deg, #ff6b9d, #e84393);
-}
+/* Injury red scale — darker = worse */
+.fv-injury-test       { background: #f0887a; }  /* light red — fitness test */
+.fv-injury-short      { background: #da3633; }  /* 1-2 weeks */
+.fv-injury-medium     { background: #b62324; }  /* 3-6 weeks */
+.fv-injury-long       { background: #7d1a1a; }  /* 6+ weeks / TBC / indefinite */
 
-/* Suspension — solid yellow fill */
-.fv-injury-suspension {
-  background: linear-gradient(135deg, #f0c040, #d29922);
-}
-
-/* Medium (3-6 weeks) — orange fill */
-.fv-injury-medium {
-  background: linear-gradient(135deg, #f0883e, #d97518);
-}
-
-/* Short/Long — white circle, red border, red diagonal slash */
-.fv-injury-short,
-.fv-injury-long {
-  background: #fff;
-  border-color: #da3633;
-  overflow: hidden;
-}
-.fv-injury-slash {
-  position: absolute;
-  width: 2.5px;
-  height: 55%;
-  background: #da3633;
-  border-radius: 1px;
-  transform: rotate(45deg);
-}
-.fv-injury-long {
-  border-color: #b62324;
-}
-.fv-injury-long .fv-injury-slash {
-  background: #b62324;
-}
+/* Suspension — yellow (distinct from injury) */
+.fv-injury-suspension { background: linear-gradient(135deg, #f0c040, #d29922); }
 
 /* ── Player profile injury banner ── */
 .player-injury-banner {
