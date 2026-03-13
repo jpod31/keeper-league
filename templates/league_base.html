@@ -194,11 +194,10 @@ var _subtabData = {
     title: 'League',
     tabs: [
       {label:'Ladder', icon:'bi-bar-chart', url:'{{ url_for("matchups.standings", league_id=league.id) }}', key:'ladder'},
-      {label:'Season', icon:'bi-calendar-week', url:'{{ url_for("matchups.fixture_view", league_id=league.id) }}', key:'fixture'},
+      {label:'Fixtures', icon:'bi-calendar-week', url:'{{ url_for("matchups.fixture_view", league_id=league.id) }}', key:'fixture'},
       {% if nav_finals_teams is defined and nav_finals_teams and nav_finals_teams > 0 %}
       {label:'Finals', icon:'bi-trophy', url:'{{ url_for("matchups.finals_view", league_id=league.id) }}', key:'finals'},
       {% endif %}
-      {label:'List Changes', icon:'bi-clock-history', url:'{{ url_for("leagues.list_changes_page", league_id=league.id) }}', key:'list_changes'},
       {label:'Records', icon:'bi-trophy', url:'{{ url_for("leagues.league_history", league_id=league.id) }}', key:'records'},
       {label:'7s', icon:'bi-7-circle', url:'{{ url_for("reserve7s.sevens_standings", league_id=league.id) }}', key:'7s', style:'color:#bc8cff'}
     ]

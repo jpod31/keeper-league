@@ -6,7 +6,7 @@
   </a>
   <a class="league-subtab{% if active_subtab|default('') == 'fixture' %} active{% endif %}"
      href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
-    <i class="bi bi-calendar-week"></i>Season
+    <i class="bi bi-calendar-week"></i>Fixtures
   </a>
   {% if nav_finals_teams is defined and nav_finals_teams and nav_finals_teams > 0 %}
   <a class="league-subtab{% if active_subtab|default('') == 'finals' %} active{% endif %}"
@@ -14,10 +14,6 @@
     <i class="bi bi-trophy"></i>Finals
   </a>
   {% endif %}
-  <a class="league-subtab{% if active_subtab|default('') == 'list_changes' %} active{% endif %}"
-     href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">
-    <i class="bi bi-clock-history"></i>List Changes
-  </a>
   <a class="league-subtab{% if active_subtab|default('') == 'records' %} active{% endif %}"
      href="{{ url_for('leagues.league_history', league_id=league.id) }}">
     <i class="bi bi-trophy"></i>Records
@@ -34,7 +30,7 @@
   </a>
   <a class="mob-subnav-item{% if active_subtab|default('') == 'fixture' %} active{% endif %}"
      href="{{ url_for('matchups.fixture_view', league_id=league.id) }}">
-    <i class="bi bi-calendar-week"></i>Season
+    <i class="bi bi-calendar-week"></i>Fixtures
   </a>
   {% if nav_finals_teams is defined and nav_finals_teams and nav_finals_teams > 0 %}
   <a class="mob-subnav-item{% if active_subtab|default('') == 'finals' %} active{% endif %}"
@@ -42,10 +38,6 @@
     <i class="bi bi-trophy"></i>Finals
   </a>
   {% endif %}
-  <a class="mob-subnav-item{% if active_subtab|default('') == 'list_changes' %} active{% endif %}"
-     href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">
-    <i class="bi bi-clock-history"></i>Changes
-  </a>
   <a class="mob-subnav-item{% if active_subtab|default('') == 'records' %} active{% endif %}"
      href="{{ url_for('leagues.league_history', league_id=league.id) }}">
     <i class="bi bi-trophy"></i>Records
