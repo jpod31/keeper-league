@@ -216,10 +216,11 @@ def squad(league_id, team_id):
         # Reserves: all roster players not on-field, not in FLEX, not on LTIL
         # Grouped by highest-priority position (FWD > DEF > RUC > MID),
         # sorted within each group by SC avg (fallback to rating)
-        # Emergency players are separated into their own list for a dedicated UI section.
+        # Emergency and 7s players are separated into their own lists for dedicated UI sections.
         _all_reserve_players = [p for p in players if p.id not in used_ids and p.id not in ltil_player_ids]
         _emg_set = set(eid for r in roster if r.is_emergency and r.is_benched for eid in [r.player_id])
         emergency_players = [p for p in _all_reserve_players if p.id in _emg_set]
+        # 7s players separated (computed later after sevens_ids is built)
         _reserve_players = [p for p in _all_reserve_players if p.id not in _emg_set]
         _sort_key = lambda p: (p.sc_avg or 0, p.rating or 0)
         _pos_priority = {"FWD": 0, "DEF": 1, "RUC": 2, "MID": 3}
@@ -396,6 +397,19 @@ def squad(league_id, team_id):
             league_id=league_id, year=league.season_year, is_final=False,
         ).first() is not None
 
+        # Separate 7s players from reserves into dedicated section
+        _sevens_set = set(sevens_ids)
+        sevens_players = [p for p in reserves if p.id in _sevens_set]
+        if _sevens_set:
+            reserves = [p for p in reserves if p.id not in _sevens_set]
+            reserves_by_pos = {}
+            for p in reserves:
+                positions = (p.position or "MID").split("/")
+                best = min(positions, key=lambda x: _pos_priority.get(x, 99))
+                if best not in _pos_priority:
+                    best = "MID"
+                reserves_by_pos.setdefault(best, []).append(p)
+
         # Form arrows (up/down/flat) for field view
         from models.form_utils import compute_player_form
         all_pids = [p.id for p in players if p]
@@ -426,6 +440,7 @@ def squad(league_id, team_id):
             "zone_filled": zone_filled,
             "emergency_ids": emergency_ids,
             "emergency_players": emergency_players,
+            "sevens_players": sevens_players,
             "next_lockout_time": next_lockout_time,
             "ltil_entries": ltil_entries,
             "pending_ltil": pending_ltil,
