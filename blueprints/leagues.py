@@ -932,13 +932,6 @@ def save_auto_transition(league_id):
     return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
-@leagues_bp.route("/<int:league_id>/midseason")
-@login_required
-def midseason_hub(league_id):
-    """Redirect to commissioner hub."""
-    return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
-
-
 @leagues_bp.route("/<int:league_id>/midseason/start-step", methods=["POST"])
 @login_required
 def midseason_start_step(league_id):
@@ -1037,13 +1030,6 @@ def midseason_start_step(league_id):
         db.session.commit()
         flash("Rosters locked. Season resumed.", "success")
 
-    return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
-
-
-@leagues_bp.route("/<int:league_id>/offseason")
-@login_required
-def offseason_hub(league_id):
-    """Redirect to commissioner hub."""
     return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
@@ -1206,13 +1192,6 @@ def delist_player_action(league_id):
     if next_url:
         return redirect(next_url)
     return redirect(team_url)
-
-
-@leagues_bp.route("/<int:league_id>/delist-hub")
-@login_required
-def delist_hub(league_id):
-    """Redirect — delists are now inline on My Team."""
-    return redirect(url_for("leagues.season_hub", league_id=league_id))  # season_hub itself redirects
 
 
 @leagues_bp.route("/<int:league_id>/injuries")
