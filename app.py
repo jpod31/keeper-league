@@ -17,16 +17,9 @@ from models.database import db, init_db
 
 csrf = CSRFProtect()
 from models.auth import login_manager
-from models.player import load_players_csv, save_players_csv
+from models.player import load_players_csv
 from models.draft_model import rank_players, factor_breakdown, compute_historical_draft_scores
-from models.team_manager import (
-    load_teams, save_teams, set_team_roster, resolve_roster,
-    select_best_23, team_projections, analyse_weaknesses,
-    add_player_to_team, remove_player_from_team,
-)
-from models.club_profiler import all_team_profiles, comparison_table
 from scrapers.footywire import (
-    scrape_rosters, scrape_sc_scores, scrape_sc_scores_batch,
     build_master_player_list, load_player_sc_history,
 )
 from scrapers.csv_import import import_players_csv, import_sc_scores_csv
@@ -572,128 +565,6 @@ def create_app():
                                player_injury=player_injury,
                                acquisition_info=acquisition_info)
 
-    # ── Legacy team routes (keep working — no login required) ────────
-
-    @app.route("/my_team")
-    @app.route("/my_team/<team_name>")
-    def my_team(team_name=None):
-        teams = load_teams()
-        if not teams:
-            flash("No teams configured yet. Add teams via League page.", "info")
-            return redirect(url_for("league"))
-
-        if team_name is None:
-            team_name = list(teams.keys())[0]
-
-        master = load_players_csv()
-        if master:
-            rank_players(master, config.DRAFT_WEIGHTS)
-
-        roster = resolve_roster(team_name, master)
-        best_23 = select_best_23(roster)
-        projections = team_projections(roster, years=3)
-        warnings = analyse_weaknesses(roster)
-
-        return render_template("my_team.html",
-                               team_name=team_name,
-                               teams=list(teams.keys()),
-                               roster=roster,
-                               best_23=best_23,
-                               projections=projections,
-                               warnings=warnings,
-                               positions=config.POSITIONS)
-
-    @app.route("/my_team/<team_name>/add", methods=["POST"])
-    def team_add_player(team_name):
-        player_name = request.form.get("player_name", "").strip()
-        if player_name:
-            add_player_to_team(team_name, player_name)
-            flash(f"Added {player_name} to {team_name}.", "success")
-        return redirect(url_for("my_team", team_name=team_name))
-
-    @app.route("/my_team/<team_name>/remove", methods=["POST"])
-    def team_remove_player(team_name):
-        player_name = request.form.get("player_name", "").strip()
-        if player_name:
-            remove_player_from_team(team_name, player_name)
-            flash(f"Removed {player_name} from {team_name}.", "success")
-        return redirect(url_for("my_team", team_name=team_name))
-
-    @app.route("/league")
-    def league():
-        teams = load_teams()
-        master = load_players_csv()
-        profiles = all_team_profiles(master)
-        comp = comparison_table(master)
-        return render_template("league.html",
-                               teams=teams,
-                               profiles=profiles,
-                               comparison=comp)
-
-    @app.route("/league/create_team", methods=["POST"])
-    def create_team():
-        name = request.form.get("team_name", "").strip()
-        if name:
-            teams = load_teams()
-            if name not in teams:
-                teams[name] = []
-                save_teams(teams)
-                flash(f"Team '{name}' created.", "success")
-            else:
-                flash(f"Team '{name}' already exists.", "warning")
-        return redirect(url_for("league"))
-
-    @app.route("/league/delete_team", methods=["POST"])
-    def delete_team():
-        name = request.form.get("team_name", "").strip()
-        teams = load_teams()
-        if name in teams:
-            del teams[name]
-            save_teams(teams)
-            flash(f"Team '{name}' deleted.", "success")
-        return redirect(url_for("league"))
-
-    @app.route("/settings", methods=["GET", "POST"])
-    def settings():
-        if request.method == "POST":
-            try:
-                new_weights = {}
-                for key in config.DRAFT_WEIGHTS:
-                    val = float(request.form.get(key, 0))
-                    new_weights[key] = val
-
-                total = sum(new_weights.values())
-                if abs(total - 1.0) > 0.01:
-                    # Auto-normalise
-                    for k in new_weights:
-                        new_weights[k] = round(new_weights[k] / total, 2)
-                    flash("Weights were normalised to sum to 1.0.", "info")
-
-                config.DRAFT_WEIGHTS.update(new_weights)
-
-                # Age curve
-                for key in config.AGE_CURVE:
-                    val = request.form.get(f"age_{key}")
-                    if val is not None:
-                        config.AGE_CURVE[key] = float(val)
-
-                # Positional scarcity
-                for pos in config.POSITIONAL_SCARCITY:
-                    val = request.form.get(f"scarcity_{pos}")
-                    if val is not None:
-                        config.POSITIONAL_SCARCITY[pos] = float(val)
-
-                flash("Settings saved.", "success")
-            except (ValueError, TypeError) as e:
-                flash(f"Invalid input: {e}", "danger")
-
-            return redirect(url_for("settings"))
-
-        return render_template("settings.html",
-                               weights=config.DRAFT_WEIGHTS,
-                               age_curve=config.AGE_CURVE,
-                               scarcity=config.POSITIONAL_SCARCITY)
-
     @app.route("/refresh", methods=["POST"])
     def trigger_refresh_all():
         """One-button refresh: rosters, SC scores, and fitzRoy detailed stats."""
@@ -809,7 +680,7 @@ def create_app():
             steps.append(f"Schema migration: {e}")
 
         flash("Refresh complete — " + " | ".join(steps), "success")
-        return redirect(url_for("settings"))
+        return redirect(url_for("admin.dashboard"))
 
     @app.route("/push/vapid-key")
     def vapid_key():
@@ -831,11 +702,11 @@ def create_app():
         f = request.files.get("file")
         if not f or f.filename == "":
             flash("No file uploaded.", "warning")
-            return redirect(url_for("settings"))
+            return redirect(url_for("admin.dashboard"))
         filename = secure_filename(f.filename)
         if not filename.lower().endswith(".csv"):
             flash("Only CSV files are allowed.", "danger")
-            return redirect(url_for("settings"))
+            return redirect(url_for("admin.dashboard"))
         path = os.path.join(config.DATA_DIR, "import_temp.csv")
         os.makedirs(config.DATA_DIR, exist_ok=True)
         f.save(path)
@@ -845,7 +716,7 @@ def create_app():
         except Exception as e:
             app.logger.exception("Player import failed")
             flash("Import failed. Check the CSV format and try again.", "danger")
-        return redirect(url_for("settings"))
+        return redirect(url_for("admin.dashboard"))
 
     @app.route("/import/sc_scores", methods=["POST"])
     def trigger_import_sc():
@@ -853,11 +724,11 @@ def create_app():
         year = request.form.get("year", type=int) or config.CURRENT_YEAR
         if not f or f.filename == "":
             flash("No file uploaded.", "warning")
-            return redirect(url_for("settings"))
+            return redirect(url_for("admin.dashboard"))
         filename = secure_filename(f.filename)
         if not filename.lower().endswith(".csv"):
             flash("Only CSV files are allowed.", "danger")
-            return redirect(url_for("settings"))
+            return redirect(url_for("admin.dashboard"))
         path = os.path.join(config.DATA_DIR, "import_sc_temp.csv")
         os.makedirs(config.DATA_DIR, exist_ok=True)
         f.save(path)
@@ -867,7 +738,7 @@ def create_app():
         except Exception as e:
             app.logger.exception("SC scores import failed")
             flash("Import failed. Check the CSV format and try again.", "danger")
-        return redirect(url_for("settings"))
+        return redirect(url_for("admin.dashboard"))
 
     return app
 
