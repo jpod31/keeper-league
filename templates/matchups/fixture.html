@@ -135,16 +135,6 @@
   .season-empty h4 { color:#8b949e; font-size:1rem; font-weight:600; margin-bottom:4px; }
   .season-empty p { font-size:.8rem; }
   .season-empty a { color:#58a6ff; }
-  .mx-scoring-tag {
-    font-size:.55rem; font-weight:600; padding:2px 6px; border-radius:3px;
-    color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
-    text-transform:uppercase;
-  }
-  [data-type="sc"] { color:#58a6ff !important; background:rgba(88,166,255,.1) !important; }
-  [data-type="af"] { color:#3fb950 !important; background:rgba(63,185,80,.1) !important; }
-  [data-type="custom"] { color:#bc8cff !important; background:rgba(188,140,255,.1) !important; }
-  [data-type="hybrid"] { color:#f0883e !important; background:rgba(240,136,62,.1) !important; }
-  [data-type="uf"] { color:#39d2c0 !important; background:rgba(57,210,192,.1) !important; }
 </style>
 
 {% set _st = scoring.label|lower %}
@@ -175,7 +165,7 @@
       {% elif rs == 'partial' %}
         <span class="rh-badge rh-progress">In Progress</span>
       {% endif %}
-      <span class="mx-scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
+      <span class="scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
     </div>
     <div class="rh-actions">
       {% if current_fixtures and rs in ['live', 'completed', 'partial'] %}

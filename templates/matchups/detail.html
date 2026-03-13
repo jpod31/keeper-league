@@ -40,11 +40,6 @@
   .mu-margin {
     font-size:.65rem; color:#484f58; margin-top:2px;
   }
-  .mu-scoring-tag {
-    font-size:.55rem; font-weight:600; padding:2px 6px; border-radius:3px;
-    color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
-    text-transform:uppercase; margin-top:4px;
-  }
   .mu-tname.lost { color:#6e7681; }
   .pb-total.pb-won { border-top:2px solid #3fb950; }
   .pb-total.pb-lost { border-top:2px solid rgba(248,81,73,.3); }
@@ -70,16 +65,6 @@
     font-size:.75rem; font-weight:600; color:#8b949e;
     display:flex; justify-content:space-between; align-items:center;
   }
-  .bd-hdr-tag {
-    font-size:.55rem; font-weight:600; padding:2px 6px; border-radius:3px;
-    color:#484f58; background:rgba(72,79,88,.08); letter-spacing:.3px;
-    text-transform:uppercase;
-  }
-  [data-type="sc"] { color:#58a6ff !important; background:rgba(88,166,255,.1) !important; }
-  [data-type="af"] { color:#3fb950 !important; background:rgba(63,185,80,.1) !important; }
-  [data-type="custom"] { color:#bc8cff !important; background:rgba(188,140,255,.1) !important; }
-  [data-type="hybrid"] { color:#f0883e !important; background:rgba(240,136,62,.1) !important; }
-  [data-type="uf"] { color:#39d2c0 !important; background:rgba(57,210,192,.1) !important; }
   .bd-row {
     display:grid; grid-template-columns:1fr auto 1fr; padding:8px 16px;
     border-bottom:1px solid #161b22; font-size:.8rem; align-items:center;
@@ -166,7 +151,7 @@
       {% else %}
         <span class="mu-sched">VS</span>
       {% endif %}
-      <span class="mu-scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
+      <span class="scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
     </div>
 
     <a href="{{ url_for('team.squad', league_id=league.id, team_id=fixture.away_team_id) }}" class="mu-hero-team">
@@ -200,7 +185,7 @@
 <div class="bd-wrap">
   <div class="bd-hdr">
     <span>Category Breakdown</span>
-    <span class="bd-hdr-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
+    <span class="scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
   </div>
   {% for row in uf_breakdown %}
     <div class="bd-row">
@@ -221,7 +206,7 @@
 <div class="bd-wrap">
   <div class="bd-hdr">
     <span>Stat Breakdown</span>
-    <span class="bd-hdr-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
+    <span class="scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
   </div>
   {% set ns = namespace(home_total=0, away_total=0) %}
   {% for row in custom_breakdown %}
@@ -255,7 +240,7 @@
 <div class="bd-wrap">
   <div class="bd-hdr">
     <span>Player Scores</span>
-    <span class="bd-hdr-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
+    <span class="scoring-tag" data-type="{{ sc_type }}">{{ scoring.label }}</span>
   </div>
   <div class="pb-grid">
     <div class="pb-side">

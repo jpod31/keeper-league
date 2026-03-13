@@ -3747,3 +3747,15 @@ img[src*="Carlton.png"] {
 }
 .ldr-mob-finals .ldr-mob-rank { background: rgba(46,160,67,.1); color: #2ea043; }
 .ldr-mob-card:not(.ldr-mob-finals) .ldr-mob-rank { color: #484f58; }
+
+/* ── Scoring type tag (shared across fixture, round, standings, detail) ── */
+.scoring-tag {
+  font-size: .55rem; font-weight: 600; padding: 2px 6px; border-radius: 3px;
+  color: #484f58; background: rgba(72,79,88,.08); letter-spacing: .3px;
+  text-transform: uppercase;
+}
+[data-type="sc"] { color: #58a6ff !important; background: rgba(88,166,255,.1) !important; }
+[data-type="af"] { color: #3fb950 !important; background: rgba(63,185,80,.1) !important; }
+[data-type="custom"] { color: #bc8cff !important; background: rgba(188,140,255,.1) !important; }
+[data-type="hybrid"] { color: #f0883e !important; background: rgba(240,136,62,.1) !important; }
+[data-type="uf"] { color: #39d2c0 !important; background: rgba(57,210,192,.1) !important; }
