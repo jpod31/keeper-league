@@ -202,6 +202,13 @@ var _subtabData = {
       {label:'Records', icon:'bi-trophy', url:'{{ url_for("leagues.league_history", league_id=league.id) }}', key:'records'},
       {label:'7s', icon:'bi-7-circle', url:'{{ url_for("reserve7s.sevens_standings", league_id=league.id) }}', key:'7s', style:'color:#bc8cff'}
     ]
+  },
+  settings: {
+    title: 'Settings',
+    tabs: [
+      {label:'General', icon:'bi-gear', url:'{{ url_for("leagues.league_settings", league_id=league.id) }}', key:'general'},
+      {label:'Scoring', icon:'bi-calculator', url:'{{ url_for("leagues.league_scoring", league_id=league.id) }}', key:'scoring'}
+    ]
   }
 };
 

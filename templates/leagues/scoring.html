@@ -1,7 +1,9 @@
 {% extends "league_base.html" %}
 {% set active_tab = 'settings' %}
+{% set active_subtab = 'scoring' %}
 {% block title %}Scoring — {{ league.name }}{% endblock %}
 {% block league_content %}
+{% include "leagues/_settings_subnav.html" %}
 <style>
   .scoring-card { cursor:pointer; border:2px solid #30363d; border-radius:8px; padding:1.25rem; transition:all .15s; text-align:center; }
   .scoring-card:hover { border-color:#58a6ff; }

@@ -1,0 +1,21 @@
+{# Sub-navigation bar for the "Settings" section #}
+<div class="league-subnav d-none d-lg-flex">
+  <a class="league-subtab{% if active_subtab|default('') == 'general' %} active{% endif %}"
+     href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
+    <i class="bi bi-gear"></i>General
+  </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'scoring' %} active{% endif %}"
+     href="{{ url_for('leagues.league_scoring', league_id=league.id) }}">
+    <i class="bi bi-calculator"></i>Scoring
+  </a>
+</div>
+<div class="mob-subnav d-lg-none">
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'general' %} active{% endif %}"
+     href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
+    <i class="bi bi-gear"></i>General
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'scoring' %} active{% endif %}"
+     href="{{ url_for('leagues.league_scoring', league_id=league.id) }}">
+    <i class="bi bi-calculator"></i>Scoring
+  </a>
+</div>
