@@ -20,6 +20,14 @@
      href="{{ url_for('leagues.player_ratings', league_id=league.id) }}">
     <i class="bi bi-star-fill"></i>Ratings
   </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'keepers' %} active{% endif %}"
+     href="{{ url_for('leagues.keeper_values', league_id=league.id) }}">
+    <i class="bi bi-shield-check"></i>Keepers
+  </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'changes' %} active{% endif %}"
+     href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">
+    <i class="bi bi-clock-history"></i>Changes
+  </a>
 </div>
 <div class="mob-subnav d-lg-none">
   <a class="mob-subnav-item{% if active_subtab|default('') == 'pool' %} active{% endif %}"
@@ -41,5 +49,13 @@
   <a class="mob-subnav-item{% if active_subtab|default('') == 'ratings' %} active{% endif %}"
      href="{{ url_for('leagues.player_ratings', league_id=league.id) }}">
     <i class="bi bi-star-fill"></i>Ratings
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'keepers' %} active{% endif %}"
+     href="{{ url_for('leagues.keeper_values', league_id=league.id) }}">
+    <i class="bi bi-shield-check"></i>Keepers
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'changes' %} active{% endif %}"
+     href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">
+    <i class="bi bi-clock-history"></i>Changes
   </a>
 </div>

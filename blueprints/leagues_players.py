@@ -652,7 +652,7 @@ def list_changes_page(league_id):
     return render_template("leagues/list_changes.html",
                            league=league,
                            list_changes=list_changes,
-                           active_tab="league")
+                           active_tab="players")
 
 
 # ── League Records (all-time history) ────────────────────────────────
