@@ -1,9 +1,13 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'settings' %}
+{% set active_tab = 'commissioner' if nav_is_commissioner|default(false) else 'settings' %}
 {% set active_subtab = 'scoring' %}
 {% block title %}Scoring — {{ league.name }}{% endblock %}
 {% block league_content %}
-{% include "leagues/_settings_subnav.html" %}
+{% if nav_is_commissioner|default(false) %}
+  {% include "leagues/_commissioner_subnav.html" %}
+{% else %}
+  {% include "leagues/_settings_subnav.html" %}
+{% endif %}
 <style>
   .scoring-card { cursor:pointer; border:2px solid #30363d; border-radius:8px; padding:1.25rem; transition:all .15s; text-align:center; }
   .scoring-card:hover { border-color:#58a6ff; }

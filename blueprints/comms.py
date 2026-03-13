@@ -255,7 +255,7 @@ def league_chat(league_id):
     return render_template("comms/league_chat.html",
                            league=league, user_team=user_team,
                            chat=chat, messages=messages,
-                           active_tab="chat")
+                           )
 
 
 @comms_bp.route("/<int:league_id>/chat/send", methods=["POST"])
@@ -331,4 +331,4 @@ def activity_feed(league_id):
 
     return render_template("comms/activity_feed.html",
                            league=league, user_team=user_team,
-                           entries=entries, active_tab="chat")
+                           entries=entries)

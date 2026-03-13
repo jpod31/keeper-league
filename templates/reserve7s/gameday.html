@@ -70,100 +70,97 @@
     {% set opp_data = sevens_scores.get(opp_team.id, {}) %}
   {% endif %}
   <div class="s7gd-hero s7gd-hero-{{ gameday_state }}" id="hero-card" {% if is_bye %}style="display:none;"{% endif %}>
-    <div class="row align-items-center text-center s7gd-score-row">
-      <div class="col-5">
-        <div class="s7gd-initials-wrap">
-          <span class="s7gd-initial s7gd-initial-left" id="left-initial">{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
+    {# ── Scoreboard ── #}
+    <div class="s7-hero-board">
+      {# Left team #}
+      <div class="s7-hero-team">
+        <span class="s7-hero-crest s7-crest-left" id="left-initial">{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
+        <div class="s7-hero-name" id="left-team-name">{% if not is_bye %}{{ my_team.name }}{% endif %}</div>
+        <div class="s7-hero-badges">
+          <span class="s7-hero-count" id="hero-left-players-count">{% if not is_bye %}{{ my_played|default(0) }}/{{ my_eligible|default(0) }}{% endif %}</span>
+          <span id="hero-left-cap-badges">
+            {% if not is_bye and my_data.get('captain_id') %}
+              <span class="s7-role-badge s7-role-active">C</span>
+            {% endif %}
+          </span>
         </div>
-        <div class="s7gd-team-name" id="left-team-name">{% if not is_bye %}{{ my_team.name }}{% endif %}</div>
+      </div>
+
+      {# Score block #}
+      <div class="s7-hero-score-block">
         {% if not is_bye %}
-          <div class="s7gd-score" id="hero-left-score">{{ '%.0f'|format(my_score) }}</div>
-          {% if my_captain_bonus > 0 %}
-            <div class="s7gd-cap-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
-          {% else %}
-            <div class="s7gd-cap-bonus" id="hero-left-cap" style="display:none;"></div>
-          {% endif %}
-          <div class="s7gd-players-count" id="hero-left-players-count" style="margin-top:4px;">
-            <span style="font-size:.75rem;font-weight:600;color:#e6edf3;">{{ my_played|default(0) }}</span><span style="font-size:.65rem;color:#484f58;">/{{ my_eligible|default(0) }} played</span>
+          <div class="s7-hero-scores">
+            <span class="s7-big-score {{ 's7-score-winning' if my_score > opp_score else '' }}" id="hero-left-score">{{ '%.0f'|format(my_score) }}</span>
+            <span class="s7-score-sep"></span>
+            <span class="s7-big-score {{ 's7-score-winning' if opp_score > my_score else '' }}" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</span>
           </div>
-          <div style="width:60%;margin:4px auto 0;height:3px;border-radius:2px;background:rgba(139,148,158,.15);overflow:hidden;">
-            <div style="height:100%;border-radius:2px;background:#3fb950;width:{{ ((my_played|default(0)) / (my_eligible|default(1) or 1) * 100)|round(0)|int }}%;transition:width .3s;"></div>
-          </div>
-          <div class="s7gd-cap-badges" id="hero-left-cap-badges" style="margin-top:5px;">
-            {% if my_data.get('captain_id') %}
-              <span style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;background:rgba(188,140,255,.2);color:#bc8cff;">C</span>
+          <div class="s7-cap-row">
+            {% if my_captain_bonus > 0 %}
+              <span class="s7-cap-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</span>
+            {% else %}
+              <span class="s7-cap-bonus" id="hero-left-cap" style="display:none;"></span>
+            {% endif %}
+            <span class="s7-cap-spacer"></span>
+            {% if opp_captain_bonus > 0 %}
+              <span class="s7-cap-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</span>
+            {% else %}
+              <span class="s7-cap-bonus" id="hero-right-cap" style="display:none;"></span>
             {% endif %}
           </div>
         {% else %}
-          <div class="s7gd-score" id="hero-left-score" style="display:none;"></div>
-          <div class="s7gd-cap-bonus" id="hero-left-cap" style="display:none;"></div>
-          <div class="s7gd-players-count" id="hero-left-players-count" style="display:none;"></div>
-          <div class="s7gd-cap-badges" id="hero-left-cap-badges" style="display:none;"></div>
+          <div class="s7-hero-scores">
+            <span class="s7-big-score" id="hero-left-score" style="display:none;"></span>
+            <span class="s7-score-sep"></span>
+            <span class="s7-big-score" id="hero-right-score" style="display:none;"></span>
+          </div>
+          <div class="s7-cap-row">
+            <span class="s7-cap-bonus" id="hero-left-cap" style="display:none;"></span>
+            <span class="s7-cap-spacer"></span>
+            <span class="s7-cap-bonus" id="hero-right-cap" style="display:none;"></span>
+          </div>
         {% endif %}
       </div>
-      <div class="col-2">
-        <div class="s7gd-vs">vs</div>
-      </div>
-      <div class="col-5">
-        <div class="s7gd-initials-wrap">
-          <span class="s7gd-initial s7gd-initial-right" id="right-initial">{% if not is_bye %}{{ opp_team.name[:2]|upper }}{% endif %}</span>
-        </div>
-        <div class="s7gd-team-name" id="right-team-name">{% if not is_bye %}{{ opp_team.name }}{% endif %}</div>
-        {% if not is_bye %}
-          <div class="s7gd-score" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</div>
-          {% if opp_captain_bonus > 0 %}
-            <div class="s7gd-cap-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
-          {% else %}
-            <div class="s7gd-cap-bonus" id="hero-right-cap" style="display:none;"></div>
-          {% endif %}
-          <div class="s7gd-players-count" id="hero-right-players-count" style="margin-top:4px;">
-            <span style="font-size:.75rem;font-weight:600;color:#e6edf3;">{{ opp_played|default(0) }}</span><span style="font-size:.65rem;color:#484f58;">/{{ opp_eligible|default(0) }} played</span>
-          </div>
-          <div style="width:60%;margin:4px auto 0;height:3px;border-radius:2px;background:rgba(139,148,158,.15);overflow:hidden;">
-            <div style="height:100%;border-radius:2px;background:#3fb950;width:{{ ((opp_played|default(0)) / (opp_eligible|default(1) or 1) * 100)|round(0)|int }}%;transition:width .3s;"></div>
-          </div>
-          <div class="s7gd-cap-badges" id="hero-right-cap-badges" style="margin-top:5px;">
-            {% if opp_data.get('captain_id') %}
-              <span style="font-size:.65rem;padding:1px 5px;border-radius:4px;font-weight:700;background:rgba(188,140,255,.2);color:#bc8cff;">C</span>
+
+      {# Right team #}
+      <div class="s7-hero-team">
+        <span class="s7-hero-crest s7-crest-right" id="right-initial">{% if not is_bye %}{{ opp_team.name[:2]|upper }}{% endif %}</span>
+        <div class="s7-hero-name" id="right-team-name">{% if not is_bye %}{{ opp_team.name }}{% endif %}</div>
+        <div class="s7-hero-badges">
+          <span class="s7-hero-count" id="hero-right-players-count">{% if not is_bye %}{{ opp_played|default(0) }}/{{ opp_eligible|default(0) }}{% endif %}</span>
+          <span id="hero-right-cap-badges">
+            {% if not is_bye and opp_data.get('captain_id') %}
+              <span class="s7-role-badge s7-role-active">C</span>
             {% endif %}
-          </div>
-        {% else %}
-          <div class="s7gd-score" id="hero-right-score" style="display:none;"></div>
-          <div class="s7gd-cap-bonus" id="hero-right-cap" style="display:none;"></div>
-          <div class="s7gd-players-count" id="hero-right-players-count" style="display:none;"></div>
-          <div class="s7gd-cap-badges" id="hero-right-cap-badges" style="display:none;"></div>
-        {% endif %}
+          </span>
+        </div>
       </div>
     </div>
 
-    {# Margin bar #}
+    {# ── Margin callout ── #}
     {% if not is_bye %}
       {% set total = (my_score + opp_score) or 1 %}
       {% set my_pct = (my_score / total * 100)|round(1) %}
       {% set opp_pct = (100 - my_pct)|round(1) %}
+      {% set diff = (my_score - opp_score)|abs|round(0)|int %}
     {% endif %}
-    <div class="s7gd-margin-wrap mt-3" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
-      <span class="s7gd-margin-pct left" id="margin-pct-left">{% if not is_bye %}{{ my_pct }}%{% endif %}</span>
-      <div class="s7gd-margin-bar">
-        <div class="s7gd-margin-fill" id="margin-fill" style="width:{% if not is_bye %}{{ my_pct }}{% else %}50{% endif %}%;"></div>
-      </div>
-      <span class="s7gd-margin-pct right" id="margin-pct-right">{% if not is_bye %}{{ opp_pct }}%{% endif %}</span>
-    </div>
-    <div class="text-center mt-2" id="margin-text"
-         style="font-size:.8rem;color:#8b949e;{% if is_bye %}display:none;{% endif %}">
-      {% if not is_bye %}
-        {% set diff = (my_score - opp_score)|abs|round(0)|int %}
-        {% if gameday_state == 'completed' %}
-          {% if my_score > opp_score %}Won by {{ diff }}{% elif opp_score > my_score %}Lost by {{ diff }}{% else %}Draw{% endif %}
-        {% else %}
-          {% if my_score > opp_score %}Leading by {{ diff }}{% elif opp_score > my_score %}Trailing by {{ diff }}{% else %}Tied{% endif %}
+    <div class="s7-margin-callout" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
+      <div class="s7-margin-chip" id="margin-text" {% if is_bye %}style="display:none;"{% endif %}>
+        {% if not is_bye %}
+          {% if gameday_state == 'completed' %}
+            {% if my_score > opp_score %}WON BY {{ diff }}{% elif opp_score > my_score %}LOST BY {{ diff }}{% else %}DRAW{% endif %}
+          {% else %}
+            {% if my_score > opp_score %}UP {{ diff }}{% elif opp_score > my_score %}DOWN {{ diff }}{% else %}TIED{% endif %}
+          {% endif %}
         {% endif %}
-      {% endif %}
+      </div>
     </div>
+    <span id="margin-pct-left" style="display:none;">{% if not is_bye %}{{ my_pct }}%{% endif %}</span>
+    <span id="margin-pct-right" style="display:none;">{% if not is_bye %}{{ opp_pct }}%{% endif %}</span>
+    <div id="margin-fill" style="display:none;width:{% if not is_bye %}{{ my_pct }}{% else %}50{% endif %}%;"></div>
 
     {# First bounce — upcoming only #}
     {% if gameday_state == 'upcoming' and first_bounce %}
-    <div class="text-center mt-3" id="first-bounce-info" style="color:#8b949e;font-size:.85rem;">
+    <div class="text-center mt-3" id="first-bounce-info" style="color:var(--kl-text-secondary);font-size:.85rem;">
       <i class="bi bi-clock me-1"></i>First bounce: {{ first_bounce }}
     </div>
     {% endif %}
@@ -382,57 +379,108 @@
      HERO CARD
      ════════════════════════════════════════════════ */
   .s7gd-hero {
-    background: #0d1117; border: 1px solid #21262d; border-radius: 12px;
-    padding: 24px 20px 20px; margin-bottom: 4px; position: relative;
-    border-top: 3px solid transparent;
+    background: var(--kl-bg-card, #161b22); border: 1px solid var(--kl-border, #21262d);
+    border-radius: 18px; padding: 24px 12px 18px; margin-bottom: 4px;
+    position: relative; overflow: hidden;
   }
-  .s7gd-hero-live {
-    border-image: linear-gradient(90deg, #238636, #3fb950) 1;
-    box-shadow: 0 0 20px rgba(35,134,54,.1), 0 0 40px rgba(35,134,54,.05);
-    animation: s7gdGlow 4s ease-in-out infinite;
+  /* Purple diagonal slash background */
+  .s7gd-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg,
+      rgba(110,64,201,.06) 0%, rgba(110,64,201,.02) 48%,
+      transparent 48%, transparent 52%,
+      rgba(188,140,255,.02) 52%, rgba(188,140,255,.06) 100%);
+    pointer-events: none;
   }
-  .s7gd-hero-completed { border-top-color: #8b949e; }
-  .s7gd-hero-upcoming { border-image: linear-gradient(90deg, #6e40c9, #bc8cff) 1; }
+  .s7gd-hero::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .s7gd-hero-live { border-color: rgba(35,134,54,.35); }
+  .s7gd-hero-live::after {
+    background: linear-gradient(90deg, #238636, #3fb950, #238636);
+    background-size: 200% 100%; animation: s7Shimmer 3s linear infinite;
+  }
+  .s7gd-hero-completed { border-color: rgba(139,148,158,.2); }
+  .s7gd-hero-completed::after { background: linear-gradient(90deg, rgba(139,148,158,.3), rgba(139,148,158,.6), rgba(139,148,158,.3)); }
+  .s7gd-hero-upcoming { border-color: rgba(110,64,201,.3); }
+  .s7gd-hero-upcoming::after {
+    background: linear-gradient(90deg, #6e40c9, #bc8cff, #6e40c9);
+    background-size: 200% 100%; animation: s7Shimmer 4s linear infinite;
+  }
+  @keyframes s7Shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   @keyframes s7gdGlow {
-    0%, 100% { box-shadow: 0 0 20px rgba(35,134,54,.1), 0 0 40px rgba(35,134,54,.05); }
+    0%, 100% { box-shadow: 0 0 20px rgba(35,134,54,.1); }
     50% { box-shadow: 0 0 30px rgba(35,134,54,.15), 0 0 60px rgba(35,134,54,.08); }
   }
+  .s7gd-hero-live { animation: s7gdGlow 4s ease-in-out infinite; }
 
-  .s7gd-initials-wrap { margin-bottom: 6px; }
-  .s7gd-initial {
+  /* ── Board layout ── */
+  .s7-hero-board {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 0; position: relative; z-index: 1;
+  }
+  .s7-hero-team {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;
+  }
+  .s7-hero-crest {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 38px; height: 38px; border-radius: 50%; font-weight: 800;
-    font-size: .85rem; letter-spacing: .5px;
+    width: 48px; height: 48px; border-radius: 14px; font-weight: 800;
+    font-size: 1rem; letter-spacing: .5px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4); transition: box-shadow .4s;
   }
-  .s7gd-initial-left { background: linear-gradient(135deg, #238636, #3fb950); color: #fff; }
-  .s7gd-initial-right { background: linear-gradient(135deg, #6e40c9, #bc8cff); color: #fff; }
+  .s7-crest-left { background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; }
+  .s7-crest-right { background: linear-gradient(145deg, #2d1060, #6e40c9, #bc8cff); color: #fff; }
+  .s7-hero-name {
+    color: var(--kl-text-heading, #e6edf3); font-weight: 700; font-size: .82rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%; text-align: center;
+  }
+  .s7-hero-badges {
+    display: flex; align-items: center; gap: 4px; justify-content: center; flex-wrap: wrap;
+  }
+  .s7-hero-count {
+    font-size: .65rem; color: var(--kl-text-faint, #484f58); font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .s7-role-badge {
+    font-size: .55rem; padding: 1px 5px; border-radius: 4px; font-weight: 700;
+    background: rgba(139,148,158,.12); color: #6e7681;
+  }
+  .s7-role-badge.s7-role-active { background: rgba(188,140,255,.2); color: #bc8cff; }
 
-  .s7gd-score-row { margin-top: 8px; }
-  .s7gd-team-name { color: #e6edf3; font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
-  .s7gd-score {
-    font-size: 3.2rem; font-weight: 800; color: #8b949e; line-height: 1;
-    font-variant-numeric: tabular-nums; transition: color .3s;
+  /* ── Score block ── */
+  .s7-hero-score-block { text-align: center; padding: 0 8px; }
+  .s7-hero-scores { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .s7-big-score {
+    font-size: 3.2rem; font-weight: 900; line-height: 1;
+    color: var(--kl-text-secondary, #8b949e); font-variant-numeric: tabular-nums;
+    transition: color .4s, text-shadow .4s; min-width: 60px; text-align: center;
   }
-  .s7gd-winning { color: #3fb950 !important; }
-  .s7gd-vs { color: #484f58; font-size: .85rem; font-weight: 600; }
-  .s7gd-cap-bonus { color: #bc8cff; font-size: .7rem; margin-top: 2px; }
+  .s7-big-score.s7-score-winning {
+    color: #bc8cff;
+    text-shadow: 0 0 30px rgba(188,140,255,.3), 0 0 60px rgba(188,140,255,.1);
+  }
+  .s7-score-sep {
+    display: block; width: 3px; height: 32px; border-radius: 2px;
+    background: linear-gradient(180deg, transparent, var(--kl-text-faint, #484f58), transparent);
+    opacity: .4; flex-shrink: 0;
+  }
+  .s7-cap-row { display: flex; justify-content: center; gap: 10px; margin-top: 2px; }
+  .s7-cap-spacer { width: 3px; flex-shrink: 0; }
+  .s7-cap-bonus {
+    color: #bc8cff; font-size: .65rem; font-weight: 700;
+    min-width: 60px; text-align: center;
+  }
 
-  .s7gd-margin-wrap { display: flex; align-items: center; gap: 8px; }
-  .s7gd-margin-pct {
-    font-size: .65rem; color: #6e7681; font-weight: 600;
-    font-variant-numeric: tabular-nums; min-width: 32px;
+  /* ── Margin chip ── */
+  .s7-margin-callout {
+    display: flex; justify-content: center; margin-top: 14px; position: relative; z-index: 1;
   }
-  .s7gd-margin-pct.left { text-align: right; }
-  .s7gd-margin-pct.right { text-align: left; }
-  .s7gd-margin-bar {
-    flex: 1; height: 8px;
-    background: linear-gradient(90deg, #f85149, #da3633);
-    border-radius: 4px; overflow: hidden;
-  }
-  .s7gd-margin-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #238636, #3fb950);
-    border-radius: 4px; transition: width .8s cubic-bezier(.25,.46,.45,.94);
+  .s7-margin-chip {
+    display: inline-block; padding: 5px 18px; border-radius: 20px;
+    font-size: .75rem; font-weight: 800; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--kl-text-primary, #e6edf3);
+    background: var(--kl-bg-elevated, #161b22); border: 1px solid var(--kl-border, #21262d);
   }
 
   /* ════════════════════════════════════════════════
@@ -570,10 +618,12 @@
      MOBILE
      ════════════════════════════════════════════════ */
   @media (max-width: 767.98px) {
-    .s7gd-score { font-size: 2.2rem; }
-    .s7gd-team-name { font-size: .85rem; }
-    .s7gd-initial { width: 30px; height: 30px; font-size: .7rem; }
-    .s7gd-hero { padding: 18px 12px 14px; }
+    .s7-big-score { font-size: 2.4rem; min-width: 44px; }
+    .s7-hero-name { font-size: .72rem; }
+    .s7-hero-crest { width: 38px; height: 38px; font-size: .85rem; border-radius: 11px; }
+    .s7gd-hero { padding: 18px 8px 14px; }
+    .s7-score-sep { height: 24px; }
+    .s7-margin-chip { font-size: .65rem; padding: 4px 14px; }
     .s7gd-player-row { padding: 6px 10px; font-size: .75rem; }
     .s7gd-player-meta { display: none; }
     .s7gd-round-title { font-size: .95rem; }
@@ -581,7 +631,7 @@
     .s7gd-game-pill { font-size: .65rem; padding: 3px 8px; }
     .s7gd-matchups-grid { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
     .s7gd-pos-badge { display: none !important; }
-    .s7gd-margin-pct { font-size: .6rem; }
+    .s7-margin-chip { font-size: .6rem; }
   }
 </style>
 {% endblock %}

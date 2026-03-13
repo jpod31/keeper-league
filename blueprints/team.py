@@ -1697,5 +1697,4 @@ def team_analytics(league_id, team_id):
                            projection=projection,
                            captain_recs=captain_recs,
                            bye_clashes=bye_clashes,
-                           form_data=form_data,
-                           active_tab="team")
+                           form_data=form_data)

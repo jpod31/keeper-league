@@ -76,15 +76,16 @@
         <i class="bi bi-megaphone"></i><span>Comms</span>
       </a>
       {% if nav_is_commissioner|default(false) %}
-      <a class="league-tab{% if active_tab|default('') == 'commissioner' %} active{% endif %}"
+      <a class="league-tab{% if active_tab|default('') == 'commissioner' or active_tab|default('') == 'settings' %} active{% endif %}"
          href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}" style="color:#d29922;">
-        <i class="bi bi-shield-lock"></i><span>Commissioner{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.55rem;vertical-align:middle;">{{ pending_ltil_count }}</span>{% endif %}</span>
+        <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.55rem;vertical-align:middle;">{{ pending_ltil_count }}</span>{% endif %}</span>
       </a>
-      {% endif %}
+      {% else %}
       <a class="league-tab{% if active_tab|default('') == 'settings' %} active{% endif %}"
          href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
         <i class="bi bi-gear"></i><span>Settings</span>
       </a>
+      {% endif %}
     </nav>
   </div>
 </div>
@@ -132,12 +133,13 @@
     </a>
     {% if nav_is_commissioner|default(false) %}
     <a class="more-sheet-item" href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}" style="color:#d29922;">
-      <i class="bi bi-shield-lock"></i><span>Commissioner{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.55rem;">{{ pending_ltil_count }}</span>{% endif %}</span>
+      <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.55rem;">{{ pending_ltil_count }}</span>{% endif %}</span>
     </a>
-    {% endif %}
+    {% else %}
     <a class="more-sheet-item" href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
       <i class="bi bi-gear"></i><span>Settings</span>
     </a>
+    {% endif %}
     <a class="more-sheet-item" href="#" id="moreSheetInstall" style="display:none;color:#3fb950;" onclick="event.preventDefault();triggerPwaInstall();">
       <i class="bi bi-download"></i><span>Install App</span>
     </a>
@@ -191,9 +193,7 @@ var _subtabData = {
       {label:'Compare', icon:'bi-people', url:'{{ url_for("leagues.player_compare", league_id=league.id) }}', key:'compare'},
       {label:'Stats', icon:'bi-graph-up', url:'{{ url_for("leagues.advanced_stats", league_id=league.id) }}', key:'stats'},
       {label:'Injuries', icon:'bi-bandaid', url:'{{ url_for("leagues.player_injuries", league_id=league.id) }}', key:'injuries'},
-      {label:'Ratings', icon:'bi-star-fill', url:'{{ url_for("leagues.player_ratings", league_id=league.id) }}', key:'ratings'},
-      {label:'Keepers', icon:'bi-shield-check', url:'{{ url_for("leagues.keeper_values", league_id=league.id) }}', key:'keepers'},
-      {label:'Changes', icon:'bi-clock-history', url:'{{ url_for("leagues.list_changes_page", league_id=league.id) }}', key:'changes'}
+      {label:'Ratings', icon:'bi-star-fill', url:'{{ url_for("leagues.player_ratings", league_id=league.id) }}', key:'ratings'}
     ]
   },
   league: {
@@ -205,6 +205,8 @@ var _subtabData = {
       {label:'Finals', icon:'bi-trophy', url:'{{ url_for("matchups.finals_view", league_id=league.id) }}', key:'finals'},
       {% endif %}
       {label:'Records', icon:'bi-trophy', url:'{{ url_for("leagues.league_history", league_id=league.id) }}', key:'records'},
+      {label:'Keepers', icon:'bi-shield-check', url:'{{ url_for("leagues.keeper_values", league_id=league.id) }}', key:'keepers'},
+      {label:'Changes', icon:'bi-clock-history', url:'{{ url_for("leagues.list_changes_page", league_id=league.id) }}', key:'changes'},
       {label:'7s', icon:'bi-7-circle', url:'{{ url_for("reserve7s.sevens_standings", league_id=league.id) }}', key:'7s', style:'color:#bc8cff'}
     ]
   },

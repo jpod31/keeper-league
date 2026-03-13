@@ -1,0 +1,29 @@
+{# Sub-navigation bar for the "Admin" section (Commissioner + Settings) #}
+<div class="league-subnav d-none d-lg-flex">
+  <a class="league-subtab{% if active_subtab|default('') != 'general' and active_subtab|default('') != 'scoring' %} active{% endif %}"
+     href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}">
+    <i class="bi bi-shield-lock"></i>Commissioner
+  </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'general' %} active{% endif %}"
+     href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
+    <i class="bi bi-gear"></i>Settings
+  </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'scoring' %} active{% endif %}"
+     href="{{ url_for('leagues.league_scoring', league_id=league.id) }}">
+    <i class="bi bi-calculator"></i>Scoring
+  </a>
+</div>
+<div class="mob-subnav d-lg-none">
+  <a class="mob-subnav-item{% if active_subtab|default('') != 'general' and active_subtab|default('') != 'scoring' %} active{% endif %}"
+     href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}">
+    <i class="bi bi-shield-lock"></i>Hub
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'general' %} active{% endif %}"
+     href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
+    <i class="bi bi-gear"></i>Settings
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'scoring' %} active{% endif %}"
+     href="{{ url_for('leagues.league_scoring', league_id=league.id) }}">
+    <i class="bi bi-calculator"></i>Scoring
+  </a>
+</div>

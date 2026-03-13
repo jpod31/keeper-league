@@ -221,7 +221,6 @@ def commissioner_hub(league_id):
         recent_history=recent_history,
         pending_trades_count=pending_trades_count,
         teams=teams,
-        active_tab="commissioner",
     )
 
 

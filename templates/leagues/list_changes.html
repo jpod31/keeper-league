@@ -1,9 +1,9 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'players' %}
+{% set active_tab = 'league' %}
 {% set active_subtab = 'changes' %}
 {% block title %}List Changes — {{ league.name }}{% endblock %}
 {% block league_content %}
-{% include "leagues/_players_subnav.html" %}
+{% include "matchups/_league_subnav.html" %}
 
 <style>
   .lc-header {

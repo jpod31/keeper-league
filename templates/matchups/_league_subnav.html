@@ -18,6 +18,14 @@
      href="{{ url_for('leagues.league_history', league_id=league.id) }}">
     <i class="bi bi-trophy"></i>Records
   </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'keepers' %} active{% endif %}"
+     href="{{ url_for('leagues.keeper_values', league_id=league.id) }}">
+    <i class="bi bi-shield-check"></i>Keepers
+  </a>
+  <a class="league-subtab{% if active_subtab|default('') == 'changes' %} active{% endif %}"
+     href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">
+    <i class="bi bi-clock-history"></i>Changes
+  </a>
   <a class="league-subtab{% if active_subtab|default('') == '7s' %} active{% endif %}"
      href="{{ url_for('reserve7s.sevens_standings', league_id=league.id) }}" style="{% if active_subtab|default('') == '7s' %}color:#bc8cff;{% endif %}">
     <i class="bi bi-7-circle"></i>7s
@@ -41,6 +49,14 @@
   <a class="mob-subnav-item{% if active_subtab|default('') == 'records' %} active{% endif %}"
      href="{{ url_for('leagues.league_history', league_id=league.id) }}">
     <i class="bi bi-trophy"></i>Records
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'keepers' %} active{% endif %}"
+     href="{{ url_for('leagues.keeper_values', league_id=league.id) }}">
+    <i class="bi bi-shield-check"></i>Keepers
+  </a>
+  <a class="mob-subnav-item{% if active_subtab|default('') == 'changes' %} active{% endif %}"
+     href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">
+    <i class="bi bi-clock-history"></i>Changes
   </a>
   <a class="mob-subnav-item{% if active_subtab|default('') == '7s' %} active{% endif %}"
      href="{{ url_for('reserve7s.sevens_standings', league_id=league.id) }}" {% if active_subtab|default('') == '7s' %}style="color:#bc8cff;border-bottom-color:#bc8cff;"{% endif %}>

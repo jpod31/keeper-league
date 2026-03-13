@@ -72,116 +72,111 @@
     {% set opp_data = round_scores.get(opp_team.id, {}) %}
   {% endif %}
   <div class="gameday-hero hero-{{ gameday_state }}" id="hero-card" {% if is_bye %}style="display:none;"{% endif %}>
-    {# Score area #}
-    <div class="hero-matchup">
-      {# ── Left team ── #}
-      <div class="hero-side hero-left">
-        <div class="hero-initial-wrap">
-          <span class="gameday-team-initial left-initial" id="left-initial">{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
-        </div>
+    {# ── Scoreboard ── #}
+    <div class="hero-board">
+      {# Left team #}
+      <div class="hero-team hero-team-left">
+        <span class="hero-crest left-initial" id="left-initial">{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
         <div class="hero-team-name" id="left-team-name">{% if not is_bye %}{{ my_team.name }}{% endif %}</div>
-        {% if not is_bye %}
-          <div class="gameday-score" id="hero-left-score">{{ '%.0f'|format(my_score) }}</div>
-          {% if my_captain_bonus > 0 %}
-            <div class="captain-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</div>
-          {% else %}
-            <div class="captain-bonus" id="hero-left-cap" style="display:none;"></div>
-          {% endif %}
-          <div class="hero-meta">
-            <span class="hero-players-count" id="hero-left-players-count">{{ my_played|default(0) }}/{{ my_eligible|default(0) }} played</span>
-            <span class="hero-cap-badges" id="hero-left-cap-badges">
-              {% if my_data.get('has_captain') %}
-                <span class="hero-role-badge {{ 'role-active' if my_data.get('captain_played') else '' }}">C</span>
-              {% endif %}
-              {% if my_data.get('has_vc') %}
-                <span class="hero-role-badge {{ 'role-active' if my_data.get('vc_played') else '' }}">VC</span>
-              {% endif %}
-            </span>
-          </div>
-        {% else %}
-          <div class="gameday-score" id="hero-left-score" style="display:none;"></div>
-          <div class="captain-bonus" id="hero-left-cap" style="display:none;"></div>
-          <div class="hero-meta"><span class="hero-players-count" id="hero-left-players-count" style="display:none;"></span><span class="hero-cap-badges" id="hero-left-cap-badges" style="display:none;"></span></div>
-        {% endif %}
-      </div>
-
-      {# ── Centre divider ── #}
-      <div class="hero-centre">
-        <div class="hero-vs-circle">VS</div>
-      </div>
-
-      {# ── Right team ── #}
-      <div class="hero-side hero-right">
-        <div class="hero-initial-wrap">
-          <span class="gameday-team-initial right-initial" id="right-initial">{% if not is_bye %}{{ opp_team.name[:2]|upper }}{% endif %}</span>
+        <div class="hero-badges">
+          <span class="hero-players-count" id="hero-left-players-count">{% if not is_bye %}{{ my_played|default(0) }}/{{ my_eligible|default(0) }}{% endif %}</span>
+          <span class="hero-cap-badges" id="hero-left-cap-badges">
+            {% if not is_bye %}
+              {% if my_data.get('has_captain') %}<span class="hero-role-badge {{ 'role-active' if my_data.get('captain_played') else '' }}">C</span>{% endif %}
+              {% if my_data.get('has_vc') %}<span class="hero-role-badge {{ 'role-active' if my_data.get('vc_played') else '' }}">VC</span>{% endif %}
+            {% endif %}
+          </span>
         </div>
-        <div class="hero-team-name" id="right-team-name">{% if not is_bye %}{{ opp_team.name }}{% endif %}</div>
+      </div>
+
+      {# Score block #}
+      <div class="hero-score-block">
         {% if not is_bye %}
-          <div class="gameday-score" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</div>
-          {% if opp_captain_bonus > 0 %}
-            <div class="captain-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</div>
-          {% else %}
-            <div class="captain-bonus" id="hero-right-cap" style="display:none;"></div>
-          {% endif %}
-          <div class="hero-meta">
-            <span class="hero-players-count" id="hero-right-players-count">{{ opp_played|default(0) }}/{{ opp_eligible|default(0) }} played</span>
-            <span class="hero-cap-badges" id="hero-right-cap-badges">
-              {% if opp_data.get('has_captain') %}
-                <span class="hero-role-badge {{ 'role-active' if opp_data.get('captain_played') else '' }}">C</span>
-              {% endif %}
-              {% if opp_data.get('has_vc') %}
-                <span class="hero-role-badge {{ 'role-active' if opp_data.get('vc_played') else '' }}">VC</span>
-              {% endif %}
-            </span>
+          <div class="hero-scores">
+            <span class="hero-big-score {{ 'score-winning' if my_score > opp_score else '' }}" id="hero-left-score">{{ '%.0f'|format(my_score) }}</span>
+            <span class="hero-score-sep"></span>
+            <span class="hero-big-score {{ 'score-winning' if opp_score > my_score else '' }}" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</span>
+          </div>
+          <div class="hero-cap-row">
+            {% if my_captain_bonus > 0 %}
+              <span class="captain-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} (C)</span>
+            {% else %}
+              <span class="captain-bonus" id="hero-left-cap" style="display:none;"></span>
+            {% endif %}
+            <span class="hero-cap-spacer"></span>
+            {% if opp_captain_bonus > 0 %}
+              <span class="captain-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} (C)</span>
+            {% else %}
+              <span class="captain-bonus" id="hero-right-cap" style="display:none;"></span>
+            {% endif %}
           </div>
         {% else %}
-          <div class="gameday-score" id="hero-right-score" style="display:none;"></div>
-          <div class="captain-bonus" id="hero-right-cap" style="display:none;"></div>
-          <div class="hero-meta"><span class="hero-players-count" id="hero-right-players-count" style="display:none;"></span><span class="hero-cap-badges" id="hero-right-cap-badges" style="display:none;"></span></div>
+          <div class="hero-scores">
+            <span class="hero-big-score" id="hero-left-score" style="display:none;"></span>
+            <span class="hero-score-sep"></span>
+            <span class="hero-big-score" id="hero-right-score" style="display:none;"></span>
+          </div>
+          <div class="hero-cap-row">
+            <span class="captain-bonus" id="hero-left-cap" style="display:none;"></span>
+            <span class="hero-cap-spacer"></span>
+            <span class="captain-bonus" id="hero-right-cap" style="display:none;"></span>
+          </div>
         {% endif %}
+      </div>
+
+      {# Right team #}
+      <div class="hero-team hero-team-right">
+        <span class="hero-crest right-initial" id="right-initial">{% if not is_bye %}{{ opp_team.name[:2]|upper }}{% endif %}</span>
+        <div class="hero-team-name" id="right-team-name">{% if not is_bye %}{{ opp_team.name }}{% endif %}</div>
+        <div class="hero-badges">
+          <span class="hero-players-count" id="hero-right-players-count">{% if not is_bye %}{{ opp_played|default(0) }}/{{ opp_eligible|default(0) }}{% endif %}</span>
+          <span class="hero-cap-badges" id="hero-right-cap-badges">
+            {% if not is_bye %}
+              {% if opp_data.get('has_captain') %}<span class="hero-role-badge {{ 'role-active' if opp_data.get('captain_played') else '' }}">C</span>{% endif %}
+              {% if opp_data.get('has_vc') %}<span class="hero-role-badge {{ 'role-active' if opp_data.get('vc_played') else '' }}">VC</span>{% endif %}
+            {% endif %}
+          </span>
+        </div>
       </div>
     </div>
 
-    {# ── Margin indicator ── #}
+    {# ── Margin callout ── #}
     {% if not is_bye %}
       {% set total = (my_score + opp_score) or 1 %}
       {% set my_pct = (my_score / total * 100)|round(1) %}
       {% set opp_pct = (100 - my_pct)|round(1) %}
       {% set diff = (my_score - opp_score)|abs|round(0)|int %}
     {% endif %}
-    <div class="hero-margin-section" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
-      <div class="hero-margin-bar-track">
-        <div class="hero-margin-bar-left" id="margin-fill" style="width:{% if not is_bye %}{{ my_pct }}{% else %}50{% endif %}%;"></div>
-      </div>
-      <div class="hero-margin-label" id="margin-text" {% if is_bye %}style="display:none;"{% endif %}>
+    <div class="hero-margin-callout" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
+      <div class="hero-margin-chip" id="margin-text" {% if is_bye %}style="display:none;"{% endif %}>
         {% if not is_bye %}
           {% if gameday_state == 'completed' %}
-            {% if my_score > opp_score %}Won by {{ diff }}{% elif opp_score > my_score %}Lost by {{ diff }}{% else %}Draw{% endif %}
+            {% if my_score > opp_score %}WON BY {{ diff }}{% elif opp_score > my_score %}LOST BY {{ diff }}{% else %}DRAW{% endif %}
           {% else %}
-            {% if my_score > opp_score %}Leading by {{ diff }}{% elif opp_score > my_score %}Trailing by {{ diff }}{% else %}Tied{% endif %}
+            {% if my_score > opp_score %}UP {{ diff }}{% elif opp_score > my_score %}DOWN {{ diff }}{% else %}TIED{% endif %}
           {% endif %}
         {% endif %}
       </div>
     </div>
-    {# hidden pct spans kept for JS compat #}
+    {# hidden compat spans #}
     <span id="margin-pct-left" style="display:none;">{% if not is_bye %}{{ my_pct }}%{% endif %}</span>
     <span id="margin-pct-right" style="display:none;">{% if not is_bye %}{{ opp_pct }}%{% endif %}</span>
+    <div id="margin-fill" style="display:none;width:{% if not is_bye %}{{ my_pct }}{% else %}50{% endif %}%;"></div>
 
     {# Win probability + projected scores #}
     {% if projections is defined and projections and gameday_state != 'completed' %}
-    <div class="gameday-proj-wrap mt-3">
-      <div class="gameday-proj-scores">
-        <span class="gameday-proj-label">Proj</span>
-        <span class="gameday-proj-score left">{{ projections.my_projected|round(0)|int }}</span>
-        <span class="gameday-proj-dash">&ndash;</span>
-        <span class="gameday-proj-score right">{{ projections.opp_projected|round(0)|int }}</span>
+    <div class="hero-proj-row">
+      <div class="hero-proj-scores">
+        <span class="hero-proj-val">{{ projections.my_projected|round(0)|int }}</span>
+        <span class="hero-proj-label">PROJ</span>
+        <span class="hero-proj-val">{{ projections.opp_projected|round(0)|int }}</span>
       </div>
-      <div class="gameday-prob-bar-wrap">
-        <span class="gameday-prob-pct left">{{ projections.my_win_pct|round(0)|int }}%</span>
-        <div class="gameday-prob-bar">
-          <div class="gameday-prob-fill" style="width:{{ projections.my_win_pct|round(1) }}%"></div>
+      <div class="hero-prob-bar-wrap">
+        <span class="hero-prob-pct">{{ projections.my_win_pct|round(0)|int }}%</span>
+        <div class="hero-prob-track">
+          <div class="hero-prob-fill" style="width:{{ projections.my_win_pct|round(1) }}%"></div>
         </div>
-        <span class="gameday-prob-pct right">{{ projections.opp_win_pct|round(0)|int }}%</span>
+        <span class="hero-prob-pct">{{ projections.opp_win_pct|round(0)|int }}%</span>
       </div>
     </div>
     {% endif %}
@@ -197,7 +192,7 @@
     <div class="text-center mt-3" id="breakdown-link-wrap" {% if is_bye or gameday_state != 'completed' %}style="display:none;"{% endif %}>
       <a href="{% if not is_bye %}{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=fixture.id) }}{% else %}#{% endif %}"
          class="btn btn-outline-secondary btn-sm" id="breakdown-link">
-        <i class="bi bi-bar-chart-line me-1"></i>View Full Breakdown
+        <i class="bi bi-bar-chart-line me-1"></i>Full Breakdown
       </a>
     </div>
   </div>
@@ -496,104 +491,162 @@
      HERO CARD
      ════════════════════════════════════════════════ */
   .gameday-hero {
-    background: linear-gradient(180deg, var(--kl-bg-card) 0%, rgba(13,17,23,.95) 100%);
-    border: 1px solid var(--kl-border); border-radius: 16px;
-    padding: 28px 16px 20px; margin-bottom: 4px; position: relative;
-    overflow: hidden;
+    background: var(--kl-bg-card); border: 1px solid var(--kl-border);
+    border-radius: 18px; padding: 24px 12px 18px; margin-bottom: 4px;
+    position: relative; overflow: hidden;
   }
+  /* Diagonal slash background */
   .gameday-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg,
+      rgba(35,134,54,.06) 0%, rgba(35,134,54,.02) 48%,
+      transparent 48%, transparent 52%,
+      rgba(90,45,158,.02) 52%, rgba(90,45,158,.06) 100%);
+    pointer-events: none;
+  }
+  /* Top accent stripe */
+  .gameday-hero::after {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
   }
-  .hero-live { border-color: rgba(35,134,54,.3); }
-  .hero-live::before { background: linear-gradient(90deg, #238636, #3fb950, #238636); background-size: 200% 100%; animation: heroShimmer 3s linear infinite; }
-  .hero-completed::before { background: linear-gradient(90deg, var(--kl-text-faint), var(--kl-text-secondary), var(--kl-text-faint)); }
+  .hero-live { border-color: rgba(35,134,54,.35); }
+  .hero-live::after {
+    background: linear-gradient(90deg, #238636, #3fb950, #238636);
+    background-size: 200% 100%; animation: heroShimmer 3s linear infinite;
+  }
+  .hero-completed { border-color: rgba(139,148,158,.2); }
+  .hero-completed::after {
+    background: linear-gradient(90deg, rgba(139,148,158,.3), rgba(139,148,158,.6), rgba(139,148,158,.3));
+  }
   .hero-upcoming { border-color: rgba(31,111,235,.2); }
-  .hero-upcoming::before { background: linear-gradient(90deg, #1f6feb, #58a6ff, #1f6feb); background-size: 200% 100%; animation: heroShimmer 4s linear infinite; }
+  .hero-upcoming::after {
+    background: linear-gradient(90deg, #1f6feb, #58a6ff, #1f6feb);
+    background-size: 200% 100%; animation: heroShimmer 4s linear infinite;
+  }
   @keyframes heroShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-  /* ── Matchup layout ── */
-  .hero-matchup {
-    display: flex; align-items: flex-start; justify-content: center; gap: 0;
+  /* ── Board layout: team | scores | team ── */
+  .hero-board {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 0; position: relative; z-index: 1;
   }
-  .hero-side {
-    flex: 1; text-align: center; min-width: 0;
+  .hero-team {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    min-width: 0;
   }
-  .hero-centre {
-    display: flex; align-items: center; justify-content: center;
-    padding: 32px 6px 0; flex-shrink: 0;
-  }
-  .hero-vs-circle {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--kl-bg-elevated); border: 1px solid var(--kl-border);
-    display: flex; align-items: center; justify-content: center;
-    font-size: .65rem; font-weight: 800; color: var(--kl-text-faint);
-    letter-spacing: 1px;
-  }
-
-  /* ── Team initials ── */
-  .hero-initial-wrap { margin-bottom: 8px; }
-  .gameday-team-initial {
+  .hero-crest {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; border-radius: 50%; font-weight: 800;
-    font-size: .95rem; letter-spacing: .5px;
-    box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    width: 48px; height: 48px; border-radius: 14px; font-weight: 800;
+    font-size: 1rem; letter-spacing: .5px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    transition: box-shadow .4s;
   }
-  .left-initial { background: linear-gradient(135deg, #1a6b2b, #3fb950); color: #fff; }
-  .right-initial { background: linear-gradient(135deg, #5a2d9e, #bc8cff); color: #fff; }
-
-  /* ── Score area ── */
+  .left-initial {
+    background: linear-gradient(145deg, #0d3618, #238636, #3fb950);
+    color: #fff;
+  }
+  .right-initial {
+    background: linear-gradient(145deg, #2d1060, #5a2d9e, #bc8cff);
+    color: #fff;
+  }
   .hero-team-name {
-    color: var(--kl-text-heading); font-weight: 700; font-size: .95rem;
-    margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    padding: 0 4px;
+    color: var(--kl-text-heading); font-weight: 700; font-size: .82rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%; padding: 0 2px; text-align: center;
   }
-  .gameday-score {
-    font-size: 3rem; font-weight: 800; color: var(--kl-text-secondary); line-height: 1;
-    font-variant-numeric: tabular-nums; transition: color .4s, text-shadow .4s;
-  }
-  .gameday-winning {
-    color: var(--kl-accent-green) !important;
-    text-shadow: 0 0 20px rgba(63,185,80,.25);
-  }
-  .captain-bonus {
-    color: #d29922; font-size: .7rem; margin-top: 3px; font-weight: 600;
-  }
-
-  /* ── Meta row (played count + C/VC badges) ── */
-  .hero-meta {
-    margin-top: 6px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  .hero-badges {
+    display: flex; align-items: center; gap: 4px; justify-content: center;
+    flex-wrap: wrap;
   }
   .hero-players-count {
-    font-size: .7rem; color: var(--kl-text-faint); font-weight: 500;
+    font-size: .65rem; color: var(--kl-text-faint); font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
-  .hero-cap-badges { display: flex; gap: 3px; justify-content: center; }
+  .hero-cap-badges { display: flex; gap: 3px; }
   .hero-role-badge {
-    font-size: .6rem; padding: 1px 5px; border-radius: 4px; font-weight: 700;
+    font-size: .55rem; padding: 1px 5px; border-radius: 4px; font-weight: 700;
     background: rgba(139,148,158,.12); color: #6e7681;
   }
   .hero-role-badge.role-active {
     background: rgba(63,185,80,.18); color: #3fb950;
   }
 
-  /* ── Margin indicator ── */
-  .hero-margin-section {
-    margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  /* ── Centre score block ── */
+  .hero-score-block {
+    text-align: center; padding: 0 8px;
   }
-  .hero-margin-bar-track {
-    width: 100%; height: 6px; border-radius: 3px;
-    background: linear-gradient(90deg, rgba(248,81,73,.35), rgba(218,54,51,.2));
-    overflow: hidden; position: relative;
+  .hero-scores {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
   }
-  .hero-margin-bar-left {
-    height: 100%; border-radius: 3px;
+  .hero-big-score {
+    font-size: 3.2rem; font-weight: 900; line-height: 1;
+    color: var(--kl-text-secondary); font-variant-numeric: tabular-nums;
+    transition: color .4s, text-shadow .4s, transform .3s;
+    min-width: 60px; text-align: center;
+  }
+  .hero-big-score.score-winning,
+  .hero-big-score.gameday-winning {
+    color: #3fb950;
+    text-shadow: 0 0 30px rgba(63,185,80,.3), 0 0 60px rgba(63,185,80,.1);
+  }
+  .hero-score-sep {
+    display: block; width: 3px; height: 32px; border-radius: 2px;
+    background: linear-gradient(180deg, transparent, var(--kl-text-faint), transparent);
+    opacity: .4; flex-shrink: 0;
+  }
+  .hero-cap-row {
+    display: flex; justify-content: center; gap: 10px; margin-top: 2px;
+  }
+  .hero-cap-spacer { width: 3px; flex-shrink: 0; }
+  .captain-bonus {
+    color: #d29922; font-size: .65rem; font-weight: 700;
+    min-width: 60px; text-align: center;
+  }
+
+  /* ── Margin callout chip ── */
+  .hero-margin-callout {
+    display: flex; justify-content: center; margin-top: 14px; position: relative; z-index: 1;
+  }
+  .hero-margin-chip {
+    display: inline-block; padding: 5px 18px; border-radius: 20px;
+    font-size: .75rem; font-weight: 800; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--kl-text-primary);
+    background: var(--kl-bg-elevated); border: 1px solid var(--kl-border);
+    transition: background .3s, color .3s, box-shadow .3s;
+  }
+
+  /* ── Projection row ── */
+  .hero-proj-row {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid rgba(139,148,158,.1);
+    position: relative; z-index: 1;
+  }
+  .hero-proj-scores {
+    display: flex; justify-content: center; align-items: center; gap: 12px;
+    margin-bottom: 6px;
+  }
+  .hero-proj-val {
+    font-size: .85rem; font-weight: 700; color: var(--kl-text-secondary);
+    font-variant-numeric: tabular-nums; min-width: 30px; text-align: center;
+  }
+  .hero-proj-label {
+    font-size: .6rem; font-weight: 700; color: var(--kl-text-faint);
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .hero-prob-bar-wrap {
+    display: flex; align-items: center; gap: 8px; justify-content: center;
+  }
+  .hero-prob-pct {
+    font-size: .65rem; font-weight: 700; color: var(--kl-text-faint);
+    min-width: 28px; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  .hero-prob-track {
+    flex: 1; max-width: 160px; height: 4px; border-radius: 2px;
+    background: rgba(139,148,158,.15); overflow: hidden;
+  }
+  .hero-prob-fill {
+    height: 100%; border-radius: 2px;
     background: linear-gradient(90deg, #238636, #3fb950);
-    transition: width .8s cubic-bezier(.25,.46,.45,.94);
-    box-shadow: 0 0 6px rgba(63,185,80,.3);
-  }
-  .hero-margin-label {
-    font-size: .85rem; font-weight: 700; color: var(--kl-text-primary);
-    letter-spacing: .3px;
+    transition: width .6s ease;
   }
 
   /* ════════════════════════════════════════════════
@@ -787,12 +840,12 @@
      MOBILE
      ════════════════════════════════════════════════ */
   @media (max-width: 767.98px) {
-    .gameday-score { font-size: 2.2rem; }
-    .hero-team-name { font-size: .8rem; }
-    .gameday-team-initial { width: 34px; height: 34px; font-size: .75rem; }
-    .gameday-hero { padding: 18px 10px 14px; }
-    .hero-vs-circle { width: 28px; height: 28px; font-size: .55rem; }
-    .hero-centre { padding: 28px 2px 0; }
+    .hero-big-score { font-size: 2.4rem; min-width: 44px; }
+    .hero-team-name { font-size: .72rem; }
+    .hero-crest { width: 38px; height: 38px; font-size: .85rem; border-radius: 11px; }
+    .gameday-hero { padding: 18px 8px 14px; }
+    .hero-score-sep { height: 24px; }
+    .hero-margin-chip { font-size: .65rem; padding: 4px 14px; }
     .gameday-player-row { padding: 6px 10px; font-size: .75rem; }
     .gameday-player-meta { display: none; }
     .gameday-round-title { font-size: 1.1rem; }
@@ -962,7 +1015,9 @@ function renderViewedMatchup(fixtureId) {
         rightScoreEl.style.display = '';
 
         leftScoreEl.classList.toggle('gameday-winning', leftScore > rightScore);
+        leftScoreEl.classList.toggle('score-winning', leftScore > rightScore);
         rightScoreEl.classList.toggle('gameday-winning', rightScore > leftScore);
+        rightScoreEl.classList.toggle('score-winning', rightScore > leftScore);
     } else {
         leftScoreEl.style.display = 'none';
         rightScoreEl.style.display = 'none';
@@ -986,12 +1041,12 @@ function renderViewedMatchup(fixtureId) {
     var rightCountEl = document.getElementById('hero-right-players-count');
     if (leftCountEl && leftPlayers) {
         var lc = _countPlayers(leftPlayers, scoringTypes);
-        if (lc.total) { leftCountEl.textContent = lc.played + '/' + lc.total + ' played'; leftCountEl.style.display = ''; }
+        if (lc.total) { leftCountEl.textContent = lc.played + '/' + lc.total; leftCountEl.style.display = ''; }
         else { leftCountEl.style.display = 'none'; }
     }
     if (rightCountEl && rightPlayers) {
         var rc = _countPlayers(rightPlayers, scoringTypes);
-        if (rc.total) { rightCountEl.textContent = rc.played + '/' + rc.total + ' played'; rightCountEl.style.display = ''; }
+        if (rc.total) { rightCountEl.textContent = rc.played + '/' + rc.total; rightCountEl.style.display = ''; }
         else { rightCountEl.style.display = 'none'; }
     }
 
@@ -1007,7 +1062,7 @@ function renderViewedMatchup(fixtureId) {
         rightBadgesEl.style.display = '';
     }
 
-    // Margin bar
+    // Margin chip
     var marginWrap = document.getElementById('margin-wrap');
     var marginText = document.getElementById('margin-text');
     if (GAMEDAY_STATE !== 'upcoming' || meta.status !== 'scheduled') {
@@ -1023,21 +1078,19 @@ function renderViewedMatchup(fixtureId) {
         var diff = Math.abs(Math.round(leftScore - rightScore));
         marginText.style.display = '';
         if (isOwn && !IS_BYE) {
-            // Personal framing
             if (GAMEDAY_STATE === 'completed') {
-                if (leftScore > rightScore) marginText.textContent = 'Won by ' + diff;
-                else if (rightScore > leftScore) marginText.textContent = 'Lost by ' + diff;
-                else marginText.textContent = 'Draw';
+                if (leftScore > rightScore) marginText.textContent = 'WON BY ' + diff;
+                else if (rightScore > leftScore) marginText.textContent = 'LOST BY ' + diff;
+                else marginText.textContent = 'DRAW';
             } else {
-                if (leftScore > rightScore) marginText.textContent = 'Leading by ' + diff;
-                else if (rightScore > leftScore) marginText.textContent = 'Trailing by ' + diff;
-                else marginText.textContent = 'Tied';
+                if (leftScore > rightScore) marginText.textContent = 'UP ' + diff;
+                else if (rightScore > leftScore) marginText.textContent = 'DOWN ' + diff;
+                else marginText.textContent = 'TIED';
             }
         } else {
-            // Neutral framing for other matchups
-            if (leftScore > rightScore) marginText.textContent = leftName + ' by ' + diff;
-            else if (rightScore > leftScore) marginText.textContent = rightName + ' by ' + diff;
-            else marginText.textContent = 'Draw';
+            if (leftScore > rightScore) marginText.textContent = leftName + ' BY ' + diff;
+            else if (rightScore > leftScore) marginText.textContent = rightName + ' BY ' + diff;
+            else marginText.textContent = 'DRAW';
         }
     } else {
         marginWrap.style.display = 'none';

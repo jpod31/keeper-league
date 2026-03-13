@@ -1,9 +1,9 @@
 {% extends "league_base.html" %}
-{% set active_tab = 'players' %}
+{% set active_tab = 'league' %}
 {% set active_subtab = 'keepers' %}
 {% block title %}Keeper Values — {{ league.name }}{% endblock %}
 {% block league_content %}
-{% include "leagues/_players_subnav.html" %}
+{% include "matchups/_league_subnav.html" %}
 <style>
   .keeper-table th {
     padding: .5rem .6rem;

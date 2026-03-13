@@ -426,7 +426,7 @@ def player_compare(league_id):
                            players_data=players_data,
                            selected_ids=player_ids,
                            all_players=all_players,
-                           active_tab="players")
+                           )
 
 
 # ── Keeper Value Tracking ────────────────────────────────────────────
@@ -629,7 +629,6 @@ def keeper_values(league_id):
         projected_rankings=projected_rankings,
         best_draft_score=best_draft_score,
         total_rounds=total_rounds,
-        active_tab="players",
     )
 
 
@@ -652,8 +651,7 @@ def list_changes_page(league_id):
 
     return render_template("leagues/list_changes.html",
                            league=league,
-                           list_changes=list_changes,
-                           active_tab="players")
+                           list_changes=list_changes)
 
 
 # ── League Records (all-time history) ────────────────────────────────
@@ -1148,8 +1146,7 @@ def league_history(league_id):
                            closest_rivalry=closest_rivalry,
                            milestones=milestones,
                            teams=teams,
-                           team_map=team_map,
-                           active_tab="league")
+                           team_map=team_map)
 
 
 # ── Advanced Stats Dashboard ────────────────────────────────────────
@@ -1366,8 +1363,7 @@ def advanced_stats(league_id):
                            leaders=leaders,
                            teams=teams,
                            all_players_json=all_players_json,
-                           team_analysis_json=team_analysis_json,
-                           active_tab="players")
+                           team_analysis_json=team_analysis_json)
 
 
 @leagues_bp.route("/<int:league_id>/stats/api/player/<int:player_id>")
