@@ -1158,7 +1158,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 
 /* ═══ Reserves Section ═══ */
 .fv-reserves-section {
-  padding: 0 .25rem;
+  padding: .5rem 0;
 }
 .fv-reserves-hdr {
   font-size: .8rem;
@@ -1178,6 +1178,8 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 .fv-card-reserve {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   opacity: .85;
 }
 .fv-card-reserve .fv-logo { width: 26px; height: 26px; }
@@ -1185,7 +1187,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 /* ═══ Emergency Section ═══ */
 .fv-emg-section {
   margin-top: .5rem;
-  padding: 0 .25rem;
+  padding: .5rem 0;
 }
 .fv-emg-hdr {
   font-size: .8rem;
@@ -1205,7 +1207,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 
 /* ═══ 7s Section ═══ */
 .fv-7s-section {
-  padding: 0 .25rem;
+  padding: .5rem 0;
 }
 .fv-7s-hdr {
   font-size: .8rem;
