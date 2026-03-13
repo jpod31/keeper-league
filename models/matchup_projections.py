@@ -5,6 +5,7 @@ import math
 from models.database import (
     db, FantasyRoster, AflPlayer, PlayerStat, AflGame, SeasonConfig,
 )
+from models.scoring_engine import _positions_compatible
 
 FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
 
@@ -153,17 +154,3 @@ def _project_team(team_id, afl_round, year, league_id, teams_playing, completed_
     return total
 
 
-def _positions_compatible(field_entry, emergency_entry, players):
-    """Check if an emergency can sub for a field player."""
-    field_pos = (field_entry.position_code or "").upper()
-    em_player = players.get(emergency_entry.player_id)
-
-    if not field_pos or not em_player or not em_player.position:
-        return True
-
-    em_positions = set(em_player.position.upper().split("/"))
-
-    if field_pos in ("BENCH", "UTIL", "FLEX"):
-        return True
-
-    return field_pos in em_positions

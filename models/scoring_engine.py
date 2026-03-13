@@ -125,14 +125,23 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
     return total
 
 
-def _positions_compatible(field_entry, emergency_entry):
+def _positions_compatible(field_entry, emergency_entry, players=None):
     """Check if an emergency can sub for a field player based on position.
 
     An emergency is compatible if they share at least one position with
     the field player. Falls back to True if position data is missing.
+
+    Args:
+        players: Optional dict {player_id: AflPlayer}. If provided, looks
+                 up the emergency player there instead of via the ORM
+                 relationship (useful when batch-loading for performance).
     """
     field_pos = (field_entry.position_code or "").upper()
-    em_player = emergency_entry.player
+
+    if players is not None:
+        em_player = players.get(emergency_entry.player_id)
+    else:
+        em_player = emergency_entry.player
 
     if not field_pos or not em_player or not em_player.position:
         return True  # allow if data is missing

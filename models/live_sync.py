@@ -693,7 +693,7 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
         for em, em_score in em_scored:
             if em.player_id in used_emergencies:
                 continue
-            if not _breakdown_positions_compatible(entry, em):
+            if not _positions_compatible(entry, em):
                 continue
             used_emergencies.add(em.player_id)
             dnp_replaced_by[entry.player_id] = em.player_id
@@ -783,6 +783,3 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
     return breakdown
 
 
-def _breakdown_positions_compatible(field_entry, emergency_entry):
-    """Check if an emergency can sub for a field player based on position."""
-    return _positions_compatible(field_entry, emergency_entry)
