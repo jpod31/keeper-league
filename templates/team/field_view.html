@@ -330,8 +330,8 @@
 
   {# ═══════════ EMERGENCIES: dedicated section ═══════════ #}
   {% if field_data.emergency_players %}
-  <div class="fv-reserves-section" style="border-color:#d29922;">
-    <div class="fv-reserves-hdr" style="color:#d29922;">
+  <div class="fv-emg-section">
+    <div class="fv-emg-hdr">
       <i class="bi bi-shield-exclamation me-1"></i>Emergencies
       <span class="fv-zone-tally ms-2">{{ field_data.emergency_players|length }} / 4</span>
     </div>
@@ -345,8 +345,8 @@
 
   {# ═══════════ 7s: dedicated section ═══════════ #}
   {% if field_data.sevens_players %}
-  <div class="fv-reserves-section" style="border-color:#58a6ff;">
-    <div class="fv-reserves-hdr" style="color:#58a6ff;">
+  <div class="fv-7s-section">
+    <div class="fv-7s-hdr">
       <i class="bi bi-7-circle me-1"></i>7s Squad
       <span class="fv-zone-tally ms-2">{{ field_data.sevens_players|length }} / 7</span>
     </div>

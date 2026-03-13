@@ -821,14 +821,14 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   background: linear-gradient(135deg, rgba(31,111,235,.08), var(--kl-bg-card) 50%);
 }
 .fv-card-emergency {
-  border-color: rgba(56,166,215,.4);
-  box-shadow: 0 0 8px rgba(56,166,215,.25);
-  background: linear-gradient(135deg, rgba(56,166,215,.06), var(--kl-bg-card) 50%);
+  border-color: rgba(56,166,215,.45);
+  box-shadow: 0 0 10px rgba(56,166,215,.2);
+  background: linear-gradient(135deg, rgba(56,166,215,.12), rgba(56,166,215,.04) 70%);
 }
 .fv-card-7s {
-  border-color: rgba(188,140,255,.4);
-  box-shadow: 0 0 8px rgba(188,140,255,.25);
-  background: linear-gradient(135deg, rgba(188,140,255,.08), var(--kl-bg-card) 50%);
+  border-color: rgba(188,140,255,.45);
+  box-shadow: 0 0 10px rgba(188,140,255,.2);
+  background: linear-gradient(135deg, rgba(155,89,182,.12), rgba(155,89,182,.04) 70%);
 }
 
 /* Locked card — game started, no action bubbles */
@@ -1175,6 +1175,70 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   opacity: .85;
 }
 .fv-card-reserve .fv-logo { width: 26px; height: 26px; }
+
+/* ═══ Emergency Section ═══ */
+.fv-emg-section {
+  background: linear-gradient(135deg, rgba(56,166,215,.08), rgba(56,166,215,.03) 60%);
+  border: 1px solid rgba(56,166,215,.2);
+  border-radius: 12px;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.fv-emg-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #38a6d7, rgba(56,166,215,.2));
+  border-radius: 12px 0 0 12px;
+}
+.fv-emg-hdr {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #5ec4e8;
+  margin-bottom: .75rem;
+  display: flex;
+  align-items: center;
+}
+.fv-emg-section .fv-card-reserve {
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(56,166,215,.1), rgba(56,166,215,.03) 70%);
+  border-color: rgba(56,166,215,.3);
+}
+
+/* ═══ 7s Section ═══ */
+.fv-7s-section {
+  background: linear-gradient(135deg, rgba(155,89,182,.08), rgba(155,89,182,.03) 60%);
+  border: 1px solid rgba(188,140,255,.2);
+  border-radius: 12px;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.fv-7s-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #bc8cff, rgba(155,89,182,.2));
+  border-radius: 12px 0 0 12px;
+}
+.fv-7s-hdr {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #d4b3ff;
+  margin-bottom: .75rem;
+  display: flex;
+  align-items: center;
+}
+.fv-7s-section .fv-card-reserve {
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(155,89,182,.1), rgba(155,89,182,.03) 70%);
+  border-color: rgba(188,140,255,.3);
+}
 
 /* ═══ LTIL Section ═══ */
 .fv-ltil-section {
