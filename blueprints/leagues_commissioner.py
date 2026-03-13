@@ -470,13 +470,7 @@ def wishlist_api(league_id):
 @login_required
 def commissioner_delete_league(league_id):
     """Delete the entire league and all associated data. Commissioner only."""
-    from models.database import (
-        FantasyRoster, WeeklyLineup, LineupSlot, RoundScore, Fixture,
-        Reserve7sLineup, Reserve7sRoundScore, Reserve7sStanding, Reserve7sFixture,
-        LongTermInjury, SeasonStanding, Trade, TradeItem, KeeperHistory,
-        CustomScoringRule, SeasonConfig, LiveScoringConfig, DraftSession, DraftPick,
-        PlayerWishlist, DelistPeriod, DelistAction,
-    )
+    import sqlalchemy
 
     league = db.session.get(League, league_id)
     if not league:
@@ -490,45 +484,25 @@ def commissioner_delete_league(league_id):
     league_name = league.name
     team_ids = [t.id for t in FantasyTeam.query.filter_by(league_id=league_id).all()]
 
-    if team_ids:
-        # Clean up all team-level data
-        Reserve7sLineup.query.filter(Reserve7sLineup.team_id.in_(team_ids)).delete(synchronize_session=False)
-        Reserve7sRoundScore.query.filter(Reserve7sRoundScore.team_id.in_(team_ids)).delete(synchronize_session=False)
-        Reserve7sStanding.query.filter(Reserve7sStanding.team_id.in_(team_ids)).delete(synchronize_session=False)
-        lineup_ids = [lid for (lid,) in db.session.query(WeeklyLineup.id).filter(WeeklyLineup.team_id.in_(team_ids)).all()]
-        if lineup_ids:
-            LineupSlot.query.filter(LineupSlot.lineup_id.in_(lineup_ids)).delete(synchronize_session=False)
-        WeeklyLineup.query.filter(WeeklyLineup.team_id.in_(team_ids)).delete(synchronize_session=False)
-        RoundScore.query.filter(RoundScore.team_id.in_(team_ids)).delete(synchronize_session=False)
-        SeasonStanding.query.filter(SeasonStanding.team_id.in_(team_ids)).delete(synchronize_session=False)
-        LongTermInjury.query.filter(LongTermInjury.team_id.in_(team_ids)).delete(synchronize_session=False)
-        KeeperHistory.query.filter(
-            (KeeperHistory.original_team_id.in_(team_ids)) |
-            (KeeperHistory.current_owner_id.in_(team_ids))
-        ).delete(synchronize_session=False)
-        FantasyRoster.query.filter(FantasyRoster.team_id.in_(team_ids)).delete(synchronize_session=False)
+    # Dynamically find and clean ALL tables referencing league or fantasy_team
+    inspector = sqlalchemy.inspect(db.engine)
+    for table_name in inspector.get_table_names():
+        if table_name in ("league", "fantasy_team"):
+            continue
+        for fk in inspector.get_foreign_keys(table_name):
+            col = fk["constrained_columns"][0]
+            if fk["referred_table"] == "fantasy_team" and team_ids:
+                placeholders = ",".join(str(tid) for tid in team_ids)
+                db.session.execute(
+                    sqlalchemy.text(f"DELETE FROM \"{table_name}\" WHERE \"{col}\" IN ({placeholders})")
+                )
+            elif fk["referred_table"] == "league":
+                db.session.execute(
+                    sqlalchemy.text(f"DELETE FROM \"{table_name}\" WHERE \"{col}\" = :lid"),
+                    {"lid": league_id},
+                )
 
-    # League-level data
-    TradeItem.query.filter(
-        TradeItem.trade_id.in_(db.session.query(Trade.id).filter_by(league_id=league_id))
-    ).delete(synchronize_session=False)
-    Trade.query.filter_by(league_id=league_id).delete()
-    DraftPick.query.filter(
-        DraftPick.session_id.in_(db.session.query(DraftSession.id).filter_by(league_id=league_id))
-    ).delete(synchronize_session=False)
-    DraftSession.query.filter_by(league_id=league_id).delete()
-    Fixture.query.filter_by(league_id=league_id).delete()
-    Reserve7sFixture.query.filter_by(league_id=league_id).delete()
-    CustomScoringRule.query.filter_by(league_id=league_id).delete()
-    SeasonConfig.query.filter_by(league_id=league_id).delete()
-    LiveScoringConfig.query.filter_by(league_id=league_id).delete()
-    PlayerWishlist.query.filter_by(league_id=league_id).delete()
-    DelistAction.query.filter(
-        DelistAction.period_id.in_(db.session.query(DelistPeriod.id).filter_by(league_id=league_id))
-    ).delete(synchronize_session=False)
-    DelistPeriod.query.filter_by(league_id=league_id).delete()
-
-    # Delete teams and league
+    # Delete teams and league itself
     FantasyTeam.query.filter_by(league_id=league_id).delete()
     db.session.delete(league)
     db.session.commit()
