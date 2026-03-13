@@ -479,5 +479,31 @@ function commissionerMove() {
     btn.disabled = false;
   });
 }
+
+/* ── Delete league ── */
+function confirmDeleteLeague() {
+  var input = prompt('Type "DELETE" to permanently delete this league and all its data:');
+  if (input === 'DELETE') {
+    document.getElementById('deleteLeagueForm').submit();
+  } else if (input !== null) {
+    alert('You must type DELETE exactly to confirm.');
+  }
+}
 </script>
+
+{# ═══════════ DANGER ZONE ═══════════ #}
+<div style="margin-top:32px;padding:16px;border:1px solid rgba(248,81,73,.3);border-radius:12px;background:rgba(248,81,73,.04);">
+  <h6 style="color:#f85149;font-weight:700;font-size:.85rem;margin-bottom:8px;">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>Danger Zone
+  </h6>
+  <p style="color:var(--kl-text-faint);font-size:.75rem;margin-bottom:12px;">
+    Permanently delete <strong style="color:var(--kl-text-primary);">{{ league.name }}</strong> and all associated data — teams, rosters, fixtures, trades, draft history, standings. This cannot be undone.
+  </p>
+  <form id="deleteLeagueForm" method="POST" action="{{ url_for('leagues.commissioner_delete_league', league_id=league.id) }}">
+    <button type="button" onclick="confirmDeleteLeague()" class="btn btn-sm"
+            style="background:rgba(248,81,73,.12);color:#f85149;border:1px solid rgba(248,81,73,.3);font-size:.75rem;padding:5px 16px;border-radius:6px;font-weight:600;">
+      <i class="bi bi-trash3 me-1"></i>Delete League
+    </button>
+  </form>
+</div>
 {% endblock %}

@@ -261,7 +261,7 @@ function closeSubtabSheet() {
 /* ── Leave league confirmation ── */
 function confirmLeaveLeague(leagueId, leagueName, isCommissioner) {
   if (isCommissioner) {
-    alert("You're the commissioner of " + leagueName + " — transfer ownership first or delete the league.");
+    alert("You're the commissioner of " + leagueName + ". Go to Commissioner Hub to delete the league.");
     return;
   }
   var modal = document.getElementById('leaveLeagueModal');

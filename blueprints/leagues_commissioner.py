@@ -464,3 +464,74 @@ def wishlist_api(league_id):
         user_id=current_user.id, league_id=league_id
     ).all()
     return jsonify({"player_ids": [r.player_id for r in rows]})
+
+
+@leagues_bp.route("/<int:league_id>/commissioner/delete-league", methods=["POST"])
+@login_required
+def commissioner_delete_league(league_id):
+    """Delete the entire league and all associated data. Commissioner only."""
+    from models.database import (
+        FantasyRoster, WeeklyLineup, LineupSlot, RoundScore, Fixture,
+        Reserve7sLineup, Reserve7sRoundScore, Reserve7sStanding, Reserve7sFixture,
+        LongTermInjury, SeasonStanding, Trade, TradeItem, KeeperHistory,
+        CustomScoringRule, SeasonConfig, LiveScoringConfig, DraftSession, DraftPick,
+        PlayerWishlist, DelistPeriod, DelistAction,
+    )
+
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("League not found.", "warning")
+        return redirect(url_for("leagues.league_list", all=1))
+
+    if league.commissioner_id != current_user.id:
+        flash("Only the commissioner can delete a league.", "danger")
+        return redirect(url_for("leagues.dashboard", league_id=league_id))
+
+    league_name = league.name
+    team_ids = [t.id for t in FantasyTeam.query.filter_by(league_id=league_id).all()]
+
+    if team_ids:
+        # Clean up all team-level data
+        Reserve7sLineup.query.filter(Reserve7sLineup.team_id.in_(team_ids)).delete(synchronize_session=False)
+        Reserve7sRoundScore.query.filter(Reserve7sRoundScore.team_id.in_(team_ids)).delete(synchronize_session=False)
+        Reserve7sStanding.query.filter(Reserve7sStanding.team_id.in_(team_ids)).delete(synchronize_session=False)
+        lineup_ids = [lid for (lid,) in db.session.query(WeeklyLineup.id).filter(WeeklyLineup.team_id.in_(team_ids)).all()]
+        if lineup_ids:
+            LineupSlot.query.filter(LineupSlot.lineup_id.in_(lineup_ids)).delete(synchronize_session=False)
+        WeeklyLineup.query.filter(WeeklyLineup.team_id.in_(team_ids)).delete(synchronize_session=False)
+        RoundScore.query.filter(RoundScore.team_id.in_(team_ids)).delete(synchronize_session=False)
+        SeasonStanding.query.filter(SeasonStanding.team_id.in_(team_ids)).delete(synchronize_session=False)
+        LongTermInjury.query.filter(LongTermInjury.team_id.in_(team_ids)).delete(synchronize_session=False)
+        KeeperHistory.query.filter(
+            (KeeperHistory.original_team_id.in_(team_ids)) |
+            (KeeperHistory.current_owner_id.in_(team_ids))
+        ).delete(synchronize_session=False)
+        FantasyRoster.query.filter(FantasyRoster.team_id.in_(team_ids)).delete(synchronize_session=False)
+
+    # League-level data
+    TradeItem.query.filter(
+        TradeItem.trade_id.in_(db.session.query(Trade.id).filter_by(league_id=league_id))
+    ).delete(synchronize_session=False)
+    Trade.query.filter_by(league_id=league_id).delete()
+    DraftPick.query.filter(
+        DraftPick.session_id.in_(db.session.query(DraftSession.id).filter_by(league_id=league_id))
+    ).delete(synchronize_session=False)
+    DraftSession.query.filter_by(league_id=league_id).delete()
+    Fixture.query.filter_by(league_id=league_id).delete()
+    Reserve7sFixture.query.filter_by(league_id=league_id).delete()
+    CustomScoringRule.query.filter_by(league_id=league_id).delete()
+    SeasonConfig.query.filter_by(league_id=league_id).delete()
+    LiveScoringConfig.query.filter_by(league_id=league_id).delete()
+    PlayerWishlist.query.filter_by(league_id=league_id).delete()
+    DelistAction.query.filter(
+        DelistAction.period_id.in_(db.session.query(DelistPeriod.id).filter_by(league_id=league_id))
+    ).delete(synchronize_session=False)
+    DelistPeriod.query.filter_by(league_id=league_id).delete()
+
+    # Delete teams and league
+    FantasyTeam.query.filter_by(league_id=league_id).delete()
+    db.session.delete(league)
+    db.session.commit()
+
+    flash(f"League '{league_name}' has been permanently deleted.", "info")
+    return redirect(url_for("leagues.league_list", all=1))
