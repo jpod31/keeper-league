@@ -23,13 +23,11 @@
               {% endif %}
               <span class="text-secondary ms-1" style="font-size:.7rem;">{{ lg.season_year }}</span>
             </a>
-            {% if lg.commissioner_id != current_user.id %}
             <button type="button" class="btn-leave-league"
-                    onclick="event.stopPropagation();confirmLeaveLeague({{ lg.id }}, '{{ lg.name|e }}')"
+                    onclick="event.stopPropagation();confirmLeaveLeague({{ lg.id }}, '{{ lg.name|e }}', {{ 'true' if lg.commissioner_id == current_user.id else 'false' }})"
                     title="Leave league">
               <i class="bi bi-x-lg"></i>
             </button>
-            {% endif %}
           </li>
         {% endfor %}
         <li><hr class="dropdown-divider" style="border-color:var(--kl-border);"></li>
@@ -261,7 +259,11 @@ function closeSubtabSheet() {
 }
 
 /* ── Leave league confirmation ── */
-function confirmLeaveLeague(leagueId, leagueName) {
+function confirmLeaveLeague(leagueId, leagueName, isCommissioner) {
+  if (isCommissioner) {
+    alert("You're the commissioner of " + leagueName + " — transfer ownership first or delete the league.");
+    return;
+  }
   var modal = document.getElementById('leaveLeagueModal');
   document.getElementById('leaveLeagueName').textContent = leagueName;
   document.getElementById('leaveLeagueForm').action = '/leagues/' + leagueId + '/leave';
@@ -304,10 +306,9 @@ function confirmLeaveLeague(leagueId, leagueName) {
 .btn-leave-league {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   background: none; border: none; color: var(--kl-text-faint); cursor: pointer;
-  padding: 2px 4px; font-size: .65rem; line-height: 1; border-radius: 4px;
-  opacity: 0; transition: opacity .15s, color .15s, background .15s;
+  padding: 4px 6px; font-size: .6rem; line-height: 1; border-radius: 4px;
+  transition: color .15s, background .15s;
 }
-.dropdown-menu li:hover .btn-leave-league { opacity: 1; }
 .btn-leave-league:hover {
   color: #f85149; background: rgba(248,81,73,.12);
 }
