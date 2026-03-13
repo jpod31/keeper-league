@@ -14,6 +14,9 @@
          data-positions="{{ p.position or 'MID' }}"
          data-field-pos="{{ pos_class|upper if not is_flex and not is_reserve else '' }}"
          data-locked="{% if is_locked %}1{% endif %}"
+         data-age="{{ p.age or '' }}"
+         data-emg="{% if is_emg %}1{% endif %}"
+         data-sevens="{% if is_7s %}1{% endif %}"
          onclick="fvShowPlayer({{ p.id }})">
       {# Captain / VC / Emergency / 7s ribbon #}
       {% if cap_id == p.id %}
@@ -88,7 +91,7 @@
         {% endif %}
       </div>
       {# Swap-mode click overlay (hidden until swap mode active) #}
-      <div class="fv-swap-overlay" onclick="event.stopPropagation(); fvCompleteSub({{ p.id }})" title="Swap here"></div>
+      <div class="fv-swap-overlay" onclick="event.stopPropagation(); fvCompleteAction({{ p.id }})" title="Swap here"></div>
       {% endif %}
 
       {# Team logo + position tag #}
@@ -485,7 +488,11 @@
 {% if is_owner %}
 <script>
 const API_PREFIX = `/leagues/{{ league.id }}/team/{{ team.id }}/api`;
+const AGE_CUTOFF = {{ field_data.age_cutoff }};
+const MAX_SENIOR_7S = 2;
 let swapSourceId = null;
+let emgSourceId = null;
+let sevensSourceId = null;
 
 // ── Toast notification (replaces disruptive alert()) ──
 function fvToast(msg, type) {
@@ -602,65 +609,232 @@ function fvSetVC(pid) {
   });
 }
 
-// ── Emergency — inline DOM update ──
+// ── Cancel all selection modes ──
+function fvCancelAllModes() {
+  fvCancelSub();
+  fvCancelEmgMode();
+  fvCancel7sMode();
+}
+
+// ── Generic action dispatch for swap overlay clicks ──
+function fvCompleteAction(pid) {
+  if (swapSourceId) { fvCompleteSub(pid); return; }
+  if (emgSourceId) { fvCompleteEmg(pid); return; }
+  if (sevensSourceId) { fvComplete7s(pid); return; }
+}
+
+// ── Emergency — swap-mode selection ──
 function fvSetEmergency(pid) {
-  fvApi('/set-emergency', {player_id: pid}).then(data => {
-    if (data.error) return;
-    const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
-    if (!card) return;
-    if (data.is_emergency) {
-      card.classList.add('fv-card-emergency');
-      if (!card.querySelector('.fv-ribbon-emg')) {
-        const ribbon = document.createElement('div');
-        ribbon.className = 'fv-ribbon fv-ribbon-emg';
-        ribbon.innerHTML = '<span>E</span>';
-        card.insertBefore(ribbon, card.firstChild);
+  // If already in emg mode for this player, cancel
+  if (emgSourceId === pid) { fvCancelEmgMode(); return; }
+  // Cancel any other active modes
+  fvCancelAllModes();
+
+  const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+  if (!card || card.dataset.locked === '1') return;
+  const isEmg = card.dataset.emg === '1';
+
+  if (isEmg) {
+    // Already emergency — enter mode: source pulses, eligible reserves light up to replace
+    emgSourceId = pid;
+    const wrapper = document.getElementById('fvWrapper');
+    if (wrapper) wrapper.classList.add('fv-swap-mode');
+
+    document.querySelectorAll('.fv-card, .mob-pos-row').forEach(c => {
+      if (!c.classList.contains('fv-card') && !c.classList.contains('mob-pos-row')) return;
+      c.classList.remove('fv-swap-active', 'fv-swap-eligible');
+      const cid = parseInt(c.dataset.playerId);
+      if (cid === pid) { c.classList.add('fv-swap-active'); return; }
+      if (c.dataset.locked === '1') return;
+      // Eligible: reserve, not already emergency, not in 7s
+      if (c.dataset.section === 'reserve' && c.dataset.emg !== '1' && c.dataset.sevens !== '1') {
+        c.classList.add('fv-swap-eligible');
       }
-      card.querySelectorAll('.fv-act-emg').forEach(b => b.classList.add('active'));
-      fvToast('Emergency set', 'success');
+    });
+    fvToast('Select a reserve to swap in as emergency', 'info');
+  } else {
+    // Not emergency — check if room
+    const currentEmgCount = document.querySelectorAll('.fv-card[data-emg="1"]').length;
+    if (currentEmgCount < 4) {
+      // Room available — add directly
+      fvApi('/set-emergency', {player_id: pid}).then(data => {
+        if (!data.error) fvRefresh();
+      });
     } else {
-      card.classList.remove('fv-card-emergency');
-      const r = card.querySelector('.fv-ribbon-emg'); if (r) r.remove();
-      card.querySelectorAll('.fv-act-emg').forEach(b => b.classList.remove('active'));
-      fvToast('Emergency removed', 'info');
+      // Full — enter mode: source pulses, current (unlocked) emergencies light up
+      emgSourceId = pid;
+      const wrapper = document.getElementById('fvWrapper');
+      if (wrapper) wrapper.classList.add('fv-swap-mode');
+
+      document.querySelectorAll('.fv-card, .mob-pos-row').forEach(c => {
+        if (!c.classList.contains('fv-card') && !c.classList.contains('mob-pos-row')) return;
+        c.classList.remove('fv-swap-active', 'fv-swap-eligible');
+        const cid = parseInt(c.dataset.playerId);
+        if (cid === pid) { c.classList.add('fv-swap-active'); return; }
+        if (c.dataset.locked === '1') return;
+        // Eligible: current emergencies that are unlocked
+        if (c.dataset.emg === '1') {
+          c.classList.add('fv-swap-eligible');
+        }
+      });
+      fvToast('Emergency slots full — select one to replace', 'info');
     }
-    // Refresh so 7/E buttons re-render (mutually exclusive)
-    fvRefresh();
+  }
+}
+
+function fvCompleteEmg(targetPid) {
+  if (!emgSourceId || emgSourceId === targetPid) return;
+  const sourcePid = emgSourceId;
+  const sourceCard = document.querySelector(`.fv-card[data-player-id="${sourcePid}"]`);
+  const sourceIsEmg = sourceCard && sourceCard.dataset.emg === '1';
+  fvCancelEmgMode();
+
+  if (sourceIsEmg) {
+    // Source is emergency, target is reserve → remove source, add target
+    fvApi('/set-emergency', {player_id: sourcePid}).then(d1 => {
+      if (d1.error) return;
+      fvApi('/set-emergency', {player_id: targetPid}).then(() => fvRefresh());
+    });
+  } else {
+    // Source is reserve wanting to be emergency, target is current emergency to replace
+    fvApi('/set-emergency', {player_id: targetPid}).then(d1 => {
+      if (d1.error) return;
+      fvApi('/set-emergency', {player_id: sourcePid}).then(() => fvRefresh());
+    });
+  }
+}
+
+function fvCancelEmgMode() {
+  emgSourceId = null;
+  const wrapper = document.getElementById('fvWrapper');
+  if (wrapper) wrapper.classList.remove('fv-swap-mode');
+  document.querySelectorAll('.fv-card, .mob-pos-row').forEach(c => {
+    c.classList.remove('fv-swap-active', 'fv-swap-eligible');
   });
 }
 
-// ── 7s Toggle — inline DOM update ──
+// ── 7s — swap-mode selection ──
 function fv7sToggle(pid) {
-  fvApi('/toggle-7s', {player_id: pid}).then(data => {
-    if (data.error) return;
-    const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
-    if (!card) return;
-    if (data.in_7s) {
-      card.classList.add('fv-card-7s');
-      // Remove emergency if it was set (mutual exclusivity)
-      card.classList.remove('fv-card-emergency');
-      const emgR = card.querySelector('.fv-ribbon-emg'); if (emgR) emgR.remove();
-      card.querySelectorAll('.fv-act-emg').forEach(b => b.classList.remove('active'));
-      // Add 7s ribbon
-      if (!card.querySelector('.fv-ribbon-7s')) {
-        // Remove any existing ribbon first
-        const oldR = card.querySelector('.fv-ribbon'); if (oldR) oldR.remove();
-        const ribbon = document.createElement('div');
-        ribbon.className = 'fv-ribbon fv-ribbon-7s';
-        ribbon.innerHTML = '<span>7</span>';
-        card.insertBefore(ribbon, card.firstChild);
+  // If already in 7s mode for this player, cancel
+  if (sevensSourceId === pid) { fvCancel7sMode(); return; }
+  // Cancel any other active modes
+  fvCancelAllModes();
+
+  const card = document.querySelector(`.fv-card[data-player-id="${pid}"]`);
+  if (!card || card.dataset.locked === '1') return;
+  const is7s = card.dataset.sevens === '1';
+
+  // Count current seniors in 7s
+  const current7sCards = document.querySelectorAll('.fv-card[data-sevens="1"]');
+  let seniorCount = 0;
+  current7sCards.forEach(c => {
+    const age = parseInt(c.dataset.age);
+    if (!isNaN(age) && age >= AGE_CUTOFF) seniorCount++;
+  });
+
+  if (is7s) {
+    // Already in 7s — enter mode: source pulses, eligible reserves light up to replace
+    sevensSourceId = pid;
+    const wrapper = document.getElementById('fvWrapper');
+    if (wrapper) wrapper.classList.add('fv-swap-mode');
+
+    // If source is a senior, removing them opens a senior slot
+    const srcAge = parseInt(card.dataset.age);
+    const srcIsSenior = !isNaN(srcAge) && srcAge >= AGE_CUTOFF;
+    const seniorsAfterRemove = srcIsSenior ? seniorCount - 1 : seniorCount;
+
+    document.querySelectorAll('.fv-card, .mob-pos-row').forEach(c => {
+      if (!c.classList.contains('fv-card') && !c.classList.contains('mob-pos-row')) return;
+      c.classList.remove('fv-swap-active', 'fv-swap-eligible');
+      const cid = parseInt(c.dataset.playerId);
+      if (cid === pid) { c.classList.add('fv-swap-active'); return; }
+      if (c.dataset.locked === '1') return;
+      // Eligible: reserve, not already 7s, not emergency
+      if (c.dataset.section !== 'reserve' || c.dataset.sevens === '1' || c.dataset.emg === '1') return;
+      // Check age eligibility
+      const tgtAge = parseInt(c.dataset.age);
+      const tgtIsSenior = !isNaN(tgtAge) && tgtAge >= AGE_CUTOFF;
+      if (tgtIsSenior && seniorsAfterRemove >= MAX_SENIOR_7S) return;
+      c.classList.add('fv-swap-eligible');
+    });
+    fvToast('Select a reserve to swap into 7s', 'info');
+  } else {
+    // Not in 7s — check if room
+    if (current7sCards.length < 7) {
+      // Check age eligibility before adding directly
+      const playerAge = parseInt(card.dataset.age);
+      const playerIsSenior = !isNaN(playerAge) && playerAge >= AGE_CUTOFF;
+      if (playerIsSenior && seniorCount >= MAX_SENIOR_7S) {
+        fvToast(`Max ${MAX_SENIOR_7S} senior (${AGE_CUTOFF}+) players in 7s`, 'error');
+        return;
       }
-      card.querySelectorAll('.fv-act-7s').forEach(b => b.classList.add('active'));
-      fvToast(`Added to 7s (${data.sevens_count}/7)`, 'success');
-      // Refresh to show the 7C button
-      fvRefresh();
+      // Room available — add directly
+      fvApi('/toggle-7s', {player_id: pid}).then(data => {
+        if (!data.error) fvRefresh();
+      });
     } else {
-      card.classList.remove('fv-card-7s');
-      const r = card.querySelector('.fv-ribbon-7s'); if (r) r.remove();
-      card.querySelectorAll('.fv-act-7s').forEach(b => b.classList.remove('active'));
-      fvToast(`Removed from 7s (${data.sevens_count}/7)`, 'info');
-      fvRefresh();
+      // Full — enter mode: source pulses, current (unlocked) 7s players light up
+      sevensSourceId = pid;
+      const wrapper = document.getElementById('fvWrapper');
+      if (wrapper) wrapper.classList.add('fv-swap-mode');
+
+      // Check if source is senior (to validate replacement eligibility)
+      const srcAge = parseInt(card.dataset.age);
+      const srcIsSenior = !isNaN(srcAge) && srcAge >= AGE_CUTOFF;
+
+      document.querySelectorAll('.fv-card, .mob-pos-row').forEach(c => {
+        if (!c.classList.contains('fv-card') && !c.classList.contains('mob-pos-row')) return;
+        c.classList.remove('fv-swap-active', 'fv-swap-eligible');
+        const cid = parseInt(c.dataset.playerId);
+        if (cid === pid) { c.classList.add('fv-swap-active'); return; }
+        if (c.dataset.locked === '1') return;
+        // Eligible: current 7s players that are unlocked
+        if (c.dataset.sevens !== '1') return;
+        // If source is senior, can only replace another senior (or if under limit)
+        if (srcIsSenior) {
+          const tgtAge = parseInt(c.dataset.age);
+          const tgtIsSenior = !isNaN(tgtAge) && tgtAge >= AGE_CUTOFF;
+          // Can replace any 7s player, but if source is senior and target is junior,
+          // we'd end up with same senior count + 1 which may exceed limit
+          // seniorCount stays same if replacing junior, goes -1 if replacing senior
+          // Then adding source (senior) means net: +0 if replacing senior, +1 if replacing junior
+          if (!tgtIsSenior && seniorCount >= MAX_SENIOR_7S) return;
+        }
+        c.classList.add('fv-swap-eligible');
+      });
+      fvToast('7s squad full — select one to replace', 'info');
     }
+  }
+}
+
+function fvComplete7s(targetPid) {
+  if (!sevensSourceId || sevensSourceId === targetPid) return;
+  const sourcePid = sevensSourceId;
+  const sourceCard = document.querySelector(`.fv-card[data-player-id="${sourcePid}"]`);
+  const sourceIs7s = sourceCard && sourceCard.dataset.sevens === '1';
+  fvCancel7sMode();
+
+  if (sourceIs7s) {
+    // Source is 7s, target is reserve → remove source, add target
+    fvApi('/toggle-7s', {player_id: sourcePid}).then(d1 => {
+      if (d1.error) return;
+      fvApi('/toggle-7s', {player_id: targetPid}).then(() => fvRefresh());
+    });
+  } else {
+    // Source is reserve wanting 7s spot, target is current 7s to replace
+    fvApi('/toggle-7s', {player_id: targetPid}).then(d1 => {
+      if (d1.error) return;
+      fvApi('/toggle-7s', {player_id: sourcePid}).then(() => fvRefresh());
+    });
+  }
+}
+
+function fvCancel7sMode() {
+  sevensSourceId = null;
+  const wrapper = document.getElementById('fvWrapper');
+  if (wrapper) wrapper.classList.remove('fv-swap-mode');
+  document.querySelectorAll('.fv-card, .mob-pos-row').forEach(c => {
+    c.classList.remove('fv-swap-active', 'fv-swap-eligible');
   });
 }
 
@@ -697,6 +871,9 @@ function fvStartSub(pid) {
     fvCancelSub();
     return;
   }
+  // Cancel emg/7s modes if active
+  fvCancelEmgMode();
+  fvCancel7sMode();
   swapSourceId = pid;
   const wrapper = document.getElementById('fvWrapper');
   if (wrapper) wrapper.classList.add('fv-swap-mode');
@@ -1187,16 +1364,16 @@ document.getElementById('fvWrapper').addEventListener('mouseleave', function(e) 
   });
 }, true);
 
-// Escape key or click-off to cancel swap
+// Escape key or click-off to cancel any active mode
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && swapSourceId) {
-    fvCancelSub();
+  if (e.key === 'Escape' && (swapSourceId || emgSourceId || sevensSourceId)) {
+    fvCancelAllModes();
   }
 });
 document.getElementById('fvWrapper').addEventListener('click', function(e) {
-  if (!swapSourceId) return;
+  if (!swapSourceId && !emgSourceId && !sevensSourceId) return;
   if (e.target.closest('.fv-card[data-player-id]')) return;
-  fvCancelSub();
+  fvCancelAllModes();
 });
 </script>
 {% else %}
