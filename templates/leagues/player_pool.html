@@ -37,6 +37,140 @@
     display: flex; align-items: center; gap: .35rem;
   }
   .pool-count strong { color: #c9d1d9; }
+
+  /* ── Mobile player cards ── */
+  .pool-mob-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(48,54,61,.4);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .1s;
+  }
+  .pool-mob-card:active { background: rgba(88,166,255,.06); }
+  .pool-mob-taken { opacity: .6; }
+  .pool-mob-injured .pool-mob-name { color: #f85149; }
+
+  .pool-mob-rank {
+    width: 28px;
+    font-size: .62rem;
+    font-weight: 800;
+    color: #484f58;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .pool-mob-logo {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  .pool-mob-logo-placeholder {
+    width: 30px; height: 30px; flex-shrink: 0;
+  }
+  .pool-mob-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .pool-mob-top {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pool-mob-name {
+    font-weight: 700;
+    font-size: .82rem;
+    color: #c9d1d9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+  }
+  .pool-mob-details {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 1px;
+  }
+  .pool-mob-age {
+    font-size: .6rem;
+    color: #6e7681;
+  }
+  .pool-mob-inj {
+    color: #f85149;
+    font-size: .6rem;
+  }
+  .pool-mob-stats {
+    flex-shrink: 0;
+    text-align: center;
+    min-width: 32px;
+  }
+  .pool-mob-sc {
+    font-size: .85rem;
+    font-weight: 800;
+    color: #c9d1d9;
+    line-height: 1;
+  }
+  .pool-mob-sc-none { color: #30363d; }
+  .pool-mob-sc-label {
+    font-size: .5rem;
+    color: #484f58;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-weight: 600;
+  }
+  .pool-mob-right {
+    flex-shrink: 0;
+    min-width: 50px;
+    text-align: right;
+  }
+  .pool-mob-owner {
+    display: inline-block;
+    font-size: .55rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pool-mob-avail {
+    font-size: .6rem;
+    font-weight: 700;
+    color: #3fb950;
+    background: rgba(63,185,80,.1);
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .pool-mob-add-btn {
+    background: rgba(63,185,80,.12);
+    border: 1px solid rgba(63,185,80,.3);
+    color: #3fb950;
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    cursor: pointer;
+  }
+  .pool-mob-sentinel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  @media (max-width: 991px) {
+    .pool-cards-container { padding: 0 !important; }
+    .pool-cards-grid { gap: 0 !important; }
+    .page-header h2 { font-size: 1.1rem; }
+  }
 </style>
 
 {# Shared SVG gradient for draft score rings #}
@@ -57,7 +191,7 @@
       <span style="font-size:.78rem;color:#8b949e;">Ranked by draft value</span>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <div class="pool-view-toggle" id="poolViewToggle">
+      <div class="pool-view-toggle d-none d-lg-flex" id="poolViewToggle">
         <button class="pool-view-btn active" data-view="table" onclick="setPoolView('table')" title="Table view"><i class="bi bi-list-ul"></i></button>
         <button class="pool-view-btn" data-view="cards" onclick="setPoolView('cards')" title="Card view"><i class="bi bi-grid-fill"></i></button>
       </div>
@@ -138,69 +272,68 @@
       </select>
     </div>
   </div>
-  {# ── Card view (mobile) ── #}
-  <div class="pool-cards-container" id="poolCards">
-    <div class="pool-cards-grid">
-      {% set max_ds = players[0].draft_score if players and players[0].draft_score else 1 %}
+  {# ── Card view (mobile default, toggle on desktop) ── #}
+  <div class="pool-cards-container d-lg-none" id="poolCards" style="display:block;">
+    <div class="pool-cards-grid" id="poolCardsGrid">
       {% for p in players %}
         {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
         {% set owner_team = rostered_map.get(p.id) %}
         {% set tc = team_colours.get(owner_team, {}) %}
-        <a href="{{ url_for('player_detail', name=p.name) }}"
-           class="pool-card"
-           data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
-           data-team="{{ p.afl_team or '' }}" data-age="{{ p.age or 0 }}"
-           data-status="{{ 'taken' if owner_team else 'available' }}"
-           data-owner="{{ owner_team or '' }}"
-           style="position:relative;">
-          <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}"
-             onclick="toggleWishlist({{ p.id }}, this); event.preventDefault(); event.stopPropagation();"
-             style="position:absolute;top:6px;right:6px;cursor:pointer;font-size:.9rem;color:#6e7681;z-index:2;transition:color .15s;"></i>
-          {% if p.id in selected_set %}
-            <span class="status-dot status-dot-taken"></span>
-          {% elif p.injury_severity %}
-            <span class="status-dot status-dot-injured"></span>
-          {% else %}
-            <span class="status-dot status-dot-available"></span>
-          {% endif %}
+        <div class="pool-mob-card{% if owner_team %} pool-mob-taken{% endif %}{% if p.injury_severity %} pool-mob-injured{% endif %}"
+             data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
+             data-team="{{ p.afl_team or '' }}" data-age="{{ p.age or 0 }}"
+             data-status="{{ 'taken' if owner_team else 'available' }}"
+             data-owner="{{ owner_team or '' }}"
+             onclick="window.location='{{ url_for('player_detail', name=p.name) }}'"
+             {% if loop.index > 40 %}style="display:none;" data-lazy="1"{% endif %}>
+          <div class="pool-mob-rank">#{{ p._rank }}</div>
           {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
-            <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pool-card-logo">
+            <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pool-mob-logo">
+          {% else %}
+            <div class="pool-mob-logo-placeholder"></div>
           {% endif %}
-          <div class="pool-card-info">
-            <div class="pool-card-name">{{ p.name }}</div>
-            <div class="pool-card-meta">
-              {% for pos in (p.position or 'MID').split('/') %}
-                <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.6rem;">{{ pos }}</span>
-              {% endfor %}
-              <span>{{ p.afl_team or '' }}</span>
-              {% if p.age %}<span>Age {{ p.age }}</span>{% endif %}
+          <div class="pool-mob-body">
+            <div class="pool-mob-top">
+              <span class="pool-mob-name">{{ p.name }}</span>
+              <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}"
+                 onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"
+                 style="font-size:.75rem;color:#484f58;cursor:pointer;flex-shrink:0;"></i>
             </div>
-            <div class="pool-card-stats">
-              {% if sc_display %}<span>SC: <strong>{{ '%.1f'|format(sc_display) }}</strong></span>{% endif %}
-              {% if p.rating %}<span>Rtg: <strong>{{ p.rating }}</strong></span>{% endif %}
-              {% if p.draft_score %}<span>Val: <strong>{{ '%.1f'|format(p.draft_score) }}</strong></span>{% endif %}
+            <div class="pool-mob-details">
+              {% for pos in (p.position or 'MID').split('/') %}
+                <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.58rem;">{{ pos }}</span>
+              {% endfor %}
+              {% if p.age %}<span class="pool-mob-age">{{ p.age }}y</span>{% endif %}
+              {% if p.injury_severity %}<span class="pool-mob-inj"><i class="bi bi-bandaid-fill"></i></span>{% endif %}
             </div>
           </div>
-          <div class="pool-card-rank">#{{ p._rank }}</div>
-          <div class="pool-card-status">
+          <div class="pool-mob-stats">
+            {% if sc_display %}<div class="pool-mob-sc">{{ '%.0f'|format(sc_display) }}</div>{% else %}<div class="pool-mob-sc pool-mob-sc-none">-</div>{% endif %}
+            <div class="pool-mob-sc-label">SC</div>
+          </div>
+          <div class="pool-mob-right">
             {% if owner_team %}
-              <span class="status-chip" style="background:{{ tc.bg }};color:{{ tc.fg }};font-size:.6rem;">{{ owner_team }}</span>
+              <span class="pool-mob-owner" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
             {% elif can_pickup %}
-              <button class="btn btn-sm btn-outline-success py-0 px-1" style="font-size:.6rem;"
-                      onclick="event.preventDefault(); event.stopPropagation(); showPickupModal({{ p.id }}, '{{ p.name|e }}')">
+              <button class="pool-mob-add-btn"
+                      onclick="event.stopPropagation(); showPickupModal({{ p.id }}, '{{ p.name|e }}')">
                 <i class="bi bi-plus-lg"></i>
               </button>
             {% else %}
-              <span class="status-chip" style="background:rgba(88,166,255,.12);color:#79c0ff;font-size:.6rem;">Avail</span>
+              <span class="pool-mob-avail">FA</span>
             {% endif %}
           </div>
-        </a>
+        </div>
       {% endfor %}
+    </div>
+    <div class="pool-mob-sentinel" id="poolSentinel">
+      <div class="spinner-border spinner-border-sm text-secondary" role="status" style="width:16px;height:16px;"></div>
+      <span style="color:#6e7681;font-size:.75rem;margin-left:6px;">Loading more...</span>
     </div>
   </div>
 
-  {# ── Table view (default) ── #}
-  <div class="card-body p-0 pool-table-wrap" id="poolTable" style="max-height:78vh;overflow:auto;">
+  {# ── Table view (desktop only) ── #}
+  <div class="card-body p-0 pool-table-wrap d-none d-lg-block" id="poolTable" style="max-height:78vh;overflow:auto;">
     <table class="table table-sm mb-0 pool-table">
       <thead class="sticky-top" style="background:#161b22;z-index:2;">
         <tr>
@@ -513,18 +646,23 @@ function filterPool() {
   var owner = document.getElementById('pool-owner-filter').value;
   var count = 0;
 
-  // Filter table rows
+  // Filter table rows (desktop)
   document.querySelectorAll('#pool-body tr').forEach(function(row) {
     var show = matchRow(row, q, pos, team, ageFilter, status, owner);
     row.style.display = show ? '' : 'none';
     if (show) count++;
   });
 
-  // Filter card items
-  document.querySelectorAll('#poolCards .pool-card').forEach(function(card) {
+  // Filter card items (mobile — show all lazy cards when filtering)
+  var hasFilter = q || pos || team || ageFilter || status || owner;
+  document.querySelectorAll('#poolCardsGrid .pool-mob-card').forEach(function(card) {
+    if (hasFilter) card.removeAttribute('data-lazy');
     var show = matchRow(card, q, pos, team, ageFilter, status, owner);
     card.style.display = show ? '' : 'none';
   });
+  // Hide sentinel when filtering
+  var sentinel = document.getElementById('poolSentinel');
+  if (sentinel) sentinel.style.display = hasFilter ? 'none' : '';
 
   document.getElementById('visible-count').innerHTML = '<strong>' + count + '</strong> players';
 
@@ -572,8 +710,9 @@ function sortPool(key, el) {
   rows.forEach(function(r) { tbody.appendChild(r); });
 }
 
-// View toggle (table/cards)
+// View toggle (desktop only — mobile always shows cards)
 function setPoolView(view) {
+  if (window.innerWidth < 992) return;
   var table = document.getElementById('poolTable');
   var cards = document.getElementById('poolCards');
   document.querySelectorAll('.pool-view-btn').forEach(function(btn) {
@@ -582,11 +721,44 @@ function setPoolView(view) {
   if (view === 'cards') {
     table.style.display = 'none';
     cards.style.display = 'block';
+    cards.classList.remove('d-lg-none');
   } else {
     table.style.display = '';
-    cards.style.display = 'none';
+    cards.style.display = '';
+    cards.classList.add('d-lg-none');
   }
 }
+
+// ── Progressive card loading (mobile) ──
+(function() {
+  var BATCH = 40;
+  var sentinel = document.getElementById('poolSentinel');
+  if (!sentinel) return;
+  var lazyCards = document.querySelectorAll('#poolCardsGrid [data-lazy]');
+  if (!lazyCards.length) { sentinel.style.display = 'none'; return; }
+  var idx = 0;
+  function showNextBatch() {
+    var end = Math.min(idx + BATCH, lazyCards.length);
+    for (var i = idx; i < end; i++) {
+      lazyCards[i].style.display = '';
+      lazyCards[i].removeAttribute('data-lazy');
+    }
+    idx = end;
+    if (idx >= lazyCards.length) { sentinel.style.display = 'none'; }
+  }
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting && idx < lazyCards.length) {
+        showNextBatch();
+      }
+    }, { rootMargin: '200px' });
+    obs.observe(sentinel);
+  } else {
+    // Fallback: show all
+    showNextBatch();
+    while (idx < lazyCards.length) showNextBatch();
+  }
+})();
 
 // ── Filter Bottom Sheet (mobile) ──
 var _filterSheetInit = false;
