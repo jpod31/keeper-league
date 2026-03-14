@@ -1760,7 +1760,15 @@ def generate_logo(league_id, team_id):
             },
             timeout=60,
         )
-        resp.raise_for_status()
+        if resp.status_code != 200:
+            err_detail = resp.text[:500]
+            _logo_logger.warning("OpenAI API error %d: %s", resp.status_code, err_detail)
+            # Try to extract a user-friendly message
+            try:
+                err_msg = resp.json().get("error", {}).get("message", err_detail)
+            except Exception:
+                err_msg = err_detail
+            return jsonify(error=f"OpenAI error: {err_msg}"), 502
         data = resp.json()
         b64_image = data["data"][0]["b64_json"]
     except Exception as exc:
