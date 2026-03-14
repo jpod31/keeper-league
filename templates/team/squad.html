@@ -11,6 +11,13 @@
 <div class="squad-hero">
   <div class="squad-hero-inner">
     <div class="d-flex align-items-center gap-3">
+      <div class="squad-logo-wrap">
+        {% if team.logo_url %}
+          <img src="{{ team.logo_url }}" alt="{{ team.name }} logo" class="squad-logo-img">
+        {% else %}
+          <div class="squad-logo-placeholder">{{ team.name[:2]|upper }}</div>
+        {% endif %}
+      </div>
       <div>
         <div class="squad-hero-crumb d-none d-lg-block">
           <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / {{ team.name }}
@@ -903,4 +910,20 @@ setInterval(function() { window.location.reload(); }, 5 * 60 * 1000);
 </script>
 {% endif %}
 
+<style>
+  .squad-logo-wrap { flex-shrink: 0; }
+  .squad-logo-img {
+    width: 56px; height: 56px; border-radius: 14px; object-fit: cover;
+    border: 2px solid var(--kl-border);
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  .squad-logo-placeholder {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(145deg, #0d3618, #238636, #3fb950);
+    color: #fff; font-weight: 800; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    letter-spacing: .5px;
+  }
+</style>
 {% endblock %}
