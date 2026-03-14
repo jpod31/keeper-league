@@ -13,7 +13,7 @@
     <div class="d-flex align-items-center gap-3">
       <div class="squad-logo-wrap">
         {% if team.logo_url %}
-          <img src="{{ team.logo_url }}" alt="{{ team.name }} logo" class="squad-logo-img">
+          <img src="{{ team.logo_url }}" alt="{{ team.name }} logo" class="squad-logo-img" width="48" height="48">
         {% else %}
           <div class="squad-logo-placeholder">{{ team.name[:2]|upper }}</div>
         {% endif %}
