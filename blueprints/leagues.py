@@ -35,47 +35,36 @@ def _round_sort_key(round_str):
 def _compute_rolling_averages():
     """Compute L3 and L5 rolling SC averages for all players.
 
-    Uses current year (CURRENT_YEAR) data first, then fills from previous
-    year so that rolling windows cross seasons seamlessly.
+    Uses only current year (CURRENT_YEAR) data so that trends reflect
+    the current season, not stale cross-season scores.
     Returns dict: player_name -> {'l3': float|None, 'l5': float|None}.
     """
     current_year = config.CURRENT_YEAR
-    prev_year = current_year - 1
 
-    frames = []
-    for year in (prev_year, current_year):
-        path = os.path.join(config.DATA_DIR, f"player_stats_{year}.csv")
-        if os.path.exists(path):
-            df = pd.read_csv(path, usecols=["Player", "Round", "SC", "Season"])
-            df = df.dropna(subset=["SC"])
-            df["_year"] = year
-            df["_rnd"] = df["Round"].apply(_round_sort_key)
-            frames.append(df)
-        else:
-            # No CSV for this year — pull from DB
-            from models.database import PlayerStat, AflPlayer
-            rows = (
-                db.session.query(AflPlayer.name, PlayerStat.round, PlayerStat.supercoach_score)
-                .join(AflPlayer, AflPlayer.id == PlayerStat.player_id)
-                .filter(PlayerStat.year == year, PlayerStat.supercoach_score.isnot(None))
-                .all()
-            )
-            if rows:
-                df = pd.DataFrame(rows, columns=["Player", "Round", "SC"])
-                df["Season"] = year
-                df["_year"] = year
-                df["_rnd"] = df["Round"]
-                frames.append(df)
-
-    if not frames:
-        return {}
-
-    all_scores = pd.concat(frames, ignore_index=True)
-    all_scores = all_scores.sort_values(["_year", "_rnd"])
+    path = os.path.join(config.DATA_DIR, f"player_stats_{current_year}.csv")
+    if os.path.exists(path):
+        df = pd.read_csv(path, usecols=["Player", "Round", "SC", "Season"])
+        df = df.dropna(subset=["SC"])
+        df["_rnd"] = df["Round"].apply(_round_sort_key)
+        df = df.sort_values("_rnd")
+    else:
+        # No CSV — pull from DB
+        from models.database import PlayerStat, AflPlayer
+        rows = (
+            db.session.query(AflPlayer.name, PlayerStat.round, PlayerStat.supercoach_score)
+            .join(AflPlayer, AflPlayer.id == PlayerStat.player_id)
+            .filter(PlayerStat.year == current_year, PlayerStat.supercoach_score.isnot(None))
+            .all()
+        )
+        if not rows:
+            return {}
+        df = pd.DataFrame(rows, columns=["Player", "Round", "SC"])
+        df["_rnd"] = df["Round"]
+        df = df.sort_values("_rnd")
 
     result = {}
-    for name, group in all_scores.groupby("Player"):
-        scores = group["SC"].values  # already sorted chronologically
+    for name, group in df.groupby("Player"):
+        scores = group["SC"].values
         n = len(scores)
         l3 = float(scores[-3:].mean()) if n >= 3 else (float(scores.mean()) if n else None)
         l5 = float(scores[-5:].mean()) if n >= 5 else (float(scores.mean()) if n else None)
