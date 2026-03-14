@@ -104,6 +104,22 @@ def squad(league_id, team_id):
     except Exception:
         pass
 
+    # ── Emergency / 7s / injury data for ALL views (mobile badges) ──
+    roster_map_all = {r.player_id: r for r in roster}
+    emergency_ids_all = [r.player_id for r in roster if r.is_emergency and r.is_benched]
+    sevens_ids_all = []
+    try:
+        from models.database import Reserve7sLineup
+        from blueprints.reserve7s import _get_next_7s_round
+        _7s_round = _get_next_7s_round(league_id, league.season_year)
+        _7s_entries = Reserve7sLineup.query.filter_by(
+            league_id=league_id, team_id=team_id,
+            afl_round=_7s_round, year=league.season_year,
+        ).all()
+        sevens_ids_all = [e.player_id for e in _7s_entries]
+    except Exception:
+        pass
+
     # For field view, build structured position data server-side
     field_data = None
     if view == "field":
@@ -607,7 +623,9 @@ def squad(league_id, team_id):
                            active_draft_round=active_draft_round,
                            next_delist_info=next_delist_info,
                            wishlist_players=wishlist_players,
-                           selected_player_ids=selected_player_ids)
+                           selected_player_ids=selected_player_ids,
+                           emergency_ids_all=emergency_ids_all,
+                           sevens_ids_all=sevens_ids_all)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/lineup/<int:afl_round>", methods=["GET", "POST"])

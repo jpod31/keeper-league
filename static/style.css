@@ -3063,14 +3063,28 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   flex-shrink: 0;
 }
 
+/* Comp toggle (Main / 7s) */
+.comp-toggle { display: flex; gap: 0; justify-content: center; margin-bottom: 16px; }
+.comp-toggle-btn {
+  padding: 10px 22px;
+  font-size: .8rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid #30363d;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: background .15s, color .15s;
+}
+
 /* Status dot: selected / injured / available */
 .status-dot {
-  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .status-dot-taken { background: #3fb950; }
 .status-dot-taken::after { content: ''; display: block; width: 5px; height: 3px; border-bottom: 2px solid #0d1117; border-left: 2px solid #0d1117; transform: rotate(-45deg) translate(0.5px, -0.5px); }
-.status-dot-injured { background: #f85149; }
+.status-dot-injured { background: #f85149; box-shadow: 0 0 0 2px rgba(248,81,73,.2); }
 .status-dot-injured::after { content: '+'; font-size: 9px; font-weight: 900; color: #0d1117; line-height: 1; }
 .status-dot-available { border: 2px solid #8b949e; background: transparent; }
 
@@ -3145,7 +3159,7 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .squad-hero-title { font-size: 1.1rem; }
   .squad-hero-crumb { font-size: .65rem; margin-bottom: .2rem; }
   .squad-hero-actions { flex-wrap: wrap; gap: 6px; width: 100%; }
-  .squad-pill { padding: 6px 12px; font-size: .7rem; min-height: 36px; }
+  .squad-pill { padding: 8px 14px; font-size: .75rem; min-height: 44px; }
 
   /* ── Hide old nav-tabs on mobile, they use subnav now ── */
   .nav-tabs { display: none !important; }
@@ -3266,9 +3280,9 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
     align-items: center;
     gap: 3px;
     padding: 10px 14px;
-    min-width: 56px;
-    min-height: 48px;
-    font-size: .62rem;
+    min-width: 60px;
+    min-height: 52px;
+    font-size: .72rem;
     font-weight: 600;
     color: var(--kl-text-muted);
     text-decoration: none;
@@ -3276,7 +3290,7 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
     border-bottom: 2px solid transparent;
     transition: color .15s, border-color .15s;
   }
-  .mob-subnav-item i { font-size: 1.1rem; }
+  .mob-subnav-item i { font-size: 1.2rem; }
   .mob-subnav-item.active {
     color: var(--kl-accent-blue);
     border-bottom-color: var(--kl-accent-blue);
@@ -3669,10 +3683,11 @@ img[src*="Carlton.png"] {
 .mob-pos-meta {
   display: flex;
   align-items: center;
-  gap: .4rem;
-  font-size: .68rem;
+  gap: .5rem;
+  font-size: .72rem;
   color: #6e7681;
-  margin-top: 1px;
+  margin-top: 2px;
+  flex-wrap: wrap;
 }
 .mob-pos-sc {
   flex-shrink: 0;
@@ -3684,17 +3699,26 @@ img[src*="Carlton.png"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  font-size: .55rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: .65rem;
   font-weight: 800;
   margin-left: 4px;
   vertical-align: middle;
 }
 .mob-badge-cap { background: rgba(255,215,0,.2); color: #FFD700; }
 .mob-badge-vc { background: rgba(192,192,192,.15); color: #C0C0C0; }
-.mob-badge-emg { background: rgba(240,136,62,.15); color: #f0883e; }
+.mob-badge-emg { background: rgba(240,136,62,.2); color: #f0883e; border: 1px solid rgba(240,136,62,.3); }
+.mob-badge-7s { background: rgba(188,140,255,.2); color: #bc8cff; border: 1px solid rgba(188,140,255,.3); }
+.squad-mob-injury {
+  color: #f85149;
+  font-size: .68rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
 .mob-pos-reserve {
   opacity: .85;
 }

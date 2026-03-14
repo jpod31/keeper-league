@@ -328,10 +328,10 @@
                   </div>
                   <div class="mob-pos-meta">
                     {% for ps in (p.position or 'MID').split('/') %}
-                      <span class="pos-badge pos-{{ ps }}" style="font-size:.55rem;padding:0 4px;">{{ ps }}</span>
+                      <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
                     {% endfor %}
                     <span>{{ p.afl_team or '' }}</span>
-                    {% if p.injury_severity %}<span style="color:#f85149;"><i class="bi bi-bandaid-fill"></i></span>{% endif %}
+                    {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
                   </div>
                 </div>
                 <div class="mob-pos-sc">
@@ -380,10 +380,10 @@
                   </div>
                   <div class="mob-pos-meta">
                     {% for ps in (p.position or 'MID').split('/') %}
-                      <span class="pos-badge pos-{{ ps }}" style="font-size:.55rem;padding:0 4px;">{{ ps }}</span>
+                      <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
                     {% endfor %}
                     <span>{{ p.afl_team or '' }}</span>
-                    {% if p.injury_severity %}<span style="color:#f85149;"><i class="bi bi-bandaid-fill"></i></span>{% endif %}
+                    {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
                   </div>
                 </div>
                 <div class="mob-pos-sc">
@@ -426,14 +426,14 @@
                 {{ p.name }}
                 {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% endif %}
                 {% if is_emg %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
-                {% if is_7s %}<span class="mob-pos-badge" style="background:rgba(188,140,255,.2);color:#bc8cff;">7</span>{% endif %}
+                {% if is_7s %}<span class="mob-pos-badge mob-badge-7s">7</span>{% endif %}
               </div>
               <div class="mob-pos-meta">
                 {% for ps in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge pos-{{ ps }}" style="font-size:.55rem;padding:0 4px;">{{ ps }}</span>
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
                 {% endfor %}
                 <span>{{ p.afl_team or '' }}</span>
-                {% if p.injury_severity %}<span style="color:#f85149;"><i class="bi bi-bandaid-fill"></i></span>{% endif %}
+                {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
               </div>
             </div>
             <div class="mob-pos-sc">
@@ -538,11 +538,14 @@
             <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:#c9d1d9;">{{ p.name }}</a>
             {% if r and r.is_captain %}<span class="squad-badge squad-badge-cap">C</span>{% endif %}
             {% if r and r.is_vice_captain %}<span class="squad-badge squad-badge-vc">VC</span>{% endif %}
+            {% if r and r.is_emergency %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
+            {% if p.id in sevens_ids_all %}<span class="mob-pos-badge mob-badge-7s">7</span>{% endif %}
           </div>
           <div class="squad-mob-meta">
             <span class="pos-badge pos-{{ primary }}" style="font-size:.6rem;padding:0 4px;">{{ primary }}</span>
             <span>{{ p.afl_team or '-' }}</span>
             {% if p.age %}<span>Age {{ p.age }}</span>{% endif %}
+            {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
           </div>
         </div>
         <div class="squad-mob-sc stat-sc-avg-mob">

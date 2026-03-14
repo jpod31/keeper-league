@@ -4,9 +4,9 @@
 {% block league_content %}
 
 {# ═══════════════════════ COMP TOGGLE ═══════════════════════ #}
-<div style="display:flex;gap:0;justify-content:center;margin-bottom:16px;">
-  <a href="{{ url_for('matchups.gameday', league_id=league.id) }}" style="padding:6px 18px;font-size:.75rem;font-weight:600;text-decoration:none;border:1px solid #30363d;color:#8b949e;border-radius:8px 0 0 8px;">Main</a>
-  <a href="{{ url_for('reserve7s.sevens_gameday', league_id=league.id) }}" style="padding:6px 18px;font-size:.75rem;font-weight:600;text-decoration:none;border:1px solid rgba(188,140,255,.3);color:#bc8cff;background:rgba(188,140,255,.08);border-radius:0 8px 8px 0;border-left:0;">7s</a>
+<div class="comp-toggle">
+  <a href="{{ url_for('matchups.gameday', league_id=league.id) }}" class="comp-toggle-btn" style="border-color:#30363d;color:#8b949e;border-radius:8px 0 0 8px;">Main</a>
+  <a href="{{ url_for('reserve7s.sevens_gameday', league_id=league.id) }}" class="comp-toggle-btn comp-toggle-active" style="border-color:rgba(188,140,255,.3);color:#bc8cff;background:rgba(188,140,255,.08);border-radius:0 8px 8px 0;border-left:0;">7s</a>
 </div>
 
 {# ═══════════════════════ ROUND HEADER ═══════════════════════ #}
