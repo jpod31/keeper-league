@@ -216,8 +216,96 @@
   </div>
   {% endmacro %}
 
-  {# ═══════════════════════ PLAYER CARDS ═══════════════════════ #}
-  <div class="row g-3 mt-2" id="player-cards-row" {% if is_bye %}style="display:none;"{% endif %}>
+  {# ═══════════════════════ MOBILE SIDE-BY-SIDE ═══════════════════════ #}
+  {% if not is_bye and my_players and opp_players %}
+  <div class="d-lg-none mt-3 gd-mob-vs" id="mob-vs-view">
+    <div class="gd-mob-vs-header">
+      <span class="gd-mob-vs-team">{{ my_team.name }}</span>
+      <span class="gd-mob-vs-scores">
+        <span class="gd-mob-vs-sc {% if my_score > opp_score %}gd-mob-sc-win{% endif %}">{{ '%.0f'|format(my_score) }}</span>
+        <span style="color:#484f58;font-size:.7rem;">v</span>
+        <span class="gd-mob-vs-sc {% if opp_score > my_score %}gd-mob-sc-win{% endif %}">{{ '%.0f'|format(opp_score) }}</span>
+      </span>
+      <span class="gd-mob-vs-team" style="text-align:right;">{{ opp_team.name }}</span>
+    </div>
+    {# Build field players side by side #}
+    {% set my_field = my_players|selectattr('lineup_type','equalto','field')|list %}
+    {% set opp_field = opp_players|selectattr('lineup_type','equalto','field')|list %}
+    {% set max_field = [my_field|length, opp_field|length]|max %}
+    <div class="gd-mob-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>
+    {% for i in range(max_field) %}
+      {% set mp = my_field[i] if i < my_field|length else None %}
+      {% set op = opp_field[i] if i < opp_field|length else None %}
+      <div class="gd-mob-vs-row">
+        <div class="gd-mob-vs-left">
+          {% if mp %}
+            <span class="gd-mob-vs-name">{% if mp.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if mp.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{{ mp.name }}</span>
+            <span class="gd-mob-vs-pos pos-badge pos-{{ mp.position.split('/')[0]|upper }}">{{ mp.position.split('/')[0][:3] }}</span>
+          {% endif %}
+        </div>
+        <div class="gd-mob-vs-mid">
+          <span class="gd-mob-sc-l {% if mp and mp.is_live %}text-success{% endif %}">{% if mp %}{{ mp.score or 0 }}{% if mp.is_live %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}{% else %}-{% endif %}</span>
+          <span class="gd-mob-sc-r {% if op and op.is_live %}text-success{% endif %}">{% if op %}{{ op.score or 0 }}{% if op.is_live %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}{% else %}-{% endif %}</span>
+        </div>
+        <div class="gd-mob-vs-right">
+          {% if op %}
+            <span class="gd-mob-vs-pos pos-badge pos-{{ op.position.split('/')[0]|upper }}">{{ op.position.split('/')[0][:3] }}</span>
+            <span class="gd-mob-vs-name">{% if op.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if op.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{{ op.name }}</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    {# Bench #}
+    {% set my_bench = my_players|selectattr('lineup_type','equalto','bench')|list %}
+    {% set opp_bench = opp_players|selectattr('lineup_type','equalto','bench')|list %}
+    {% set max_bench = [my_bench|length, opp_bench|length]|max %}
+    {% if max_bench > 0 %}
+    <div class="gd-mob-section-hdr" style="color:#e3b341;"><i class="bi bi-arrow-left-right me-1"></i>Bench</div>
+    {% for i in range(max_bench) %}
+      {% set mp = my_bench[i] if i < my_bench|length else None %}
+      {% set op = opp_bench[i] if i < opp_bench|length else None %}
+      <div class="gd-mob-vs-row">
+        <div class="gd-mob-vs-left">
+          {% if mp %}<span class="gd-mob-vs-name">{{ mp.name }}</span><span class="gd-mob-vs-pos pos-badge pos-{{ mp.position.split('/')[0]|upper }}">{{ mp.position.split('/')[0][:3] }}</span>{% endif %}
+        </div>
+        <div class="gd-mob-vs-mid">
+          <span class="gd-mob-sc-l">{% if mp %}{{ mp.score or 0 }}{% else %}-{% endif %}</span>
+          <span class="gd-mob-sc-r">{% if op %}{{ op.score or 0 }}{% else %}-{% endif %}</span>
+        </div>
+        <div class="gd-mob-vs-right">
+          {% if op %}<span class="gd-mob-vs-pos pos-badge pos-{{ op.position.split('/')[0]|upper }}">{{ op.position.split('/')[0][:3] }}</span><span class="gd-mob-vs-name">{{ op.name }}</span>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    {% endif %}
+    {# Emergency #}
+    {% set my_emg = my_players|selectattr('lineup_type','equalto','emergency')|list %}
+    {% set opp_emg = opp_players|selectattr('lineup_type','equalto','emergency')|list %}
+    {% set max_emg = [my_emg|length, opp_emg|length]|max %}
+    {% if max_emg > 0 %}
+    <div class="gd-mob-section-hdr" style="color:#f0883e;"><i class="bi bi-shield-exclamation me-1"></i>Emergency</div>
+    {% for i in range(max_emg) %}
+      {% set mp = my_emg[i] if i < my_emg|length else None %}
+      {% set op = opp_emg[i] if i < opp_emg|length else None %}
+      <div class="gd-mob-vs-row" style="opacity:.7;">
+        <div class="gd-mob-vs-left">
+          {% if mp %}<span class="gd-mob-vs-name">{{ mp.name }}</span>{% endif %}
+        </div>
+        <div class="gd-mob-vs-mid">
+          <span class="gd-mob-sc-l">{% if mp and mp.get('subbed_on') %}{{ mp.score or 0 }}{% else %}&ndash;{% endif %}</span>
+          <span class="gd-mob-sc-r">{% if op and op.get('subbed_on') %}{{ op.score or 0 }}{% else %}&ndash;{% endif %}</span>
+        </div>
+        <div class="gd-mob-vs-right">
+          {% if op %}<span class="gd-mob-vs-name">{{ op.name }}</span>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ═══════════════════════ PLAYER CARDS (desktop) ═══════════════════════ #}
+  <div class="row g-3 mt-2 d-none d-lg-flex" id="player-cards-row" {% if is_bye %}style="display:none;"{% endif %}>
     {# Left team (my team for own match, home team for others) #}
     <div class="col-md-6">
       <div class="gameday-player-card card-left-team" id="left-player-card">

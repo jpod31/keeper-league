@@ -163,7 +163,63 @@
     {% endif %}
   </div>
 
-  {# ═══════════════════════ PLAYER CARDS ═══════════════════════ #}
+  {# ═══════════════════════ MOBILE SIDE-BY-SIDE ═══════════════════════ #}
+  {% if not is_bye and my_players and opp_players %}
+  <div class="d-lg-none mt-3 gd-mob-vs s7-mob-vs" id="mob-vs-view">
+    <div class="gd-mob-vs-header">
+      <span class="gd-mob-vs-team">{{ my_team.name }}</span>
+      <span class="gd-mob-vs-scores">
+        <span class="gd-mob-vs-sc {% if my_score > opp_score %}gd-mob-sc-win{% endif %}">{{ '%.0f'|format(my_score) }}</span>
+        <span style="color:#484f58;font-size:.7rem;">v</span>
+        <span class="gd-mob-vs-sc {% if opp_score > my_score %}gd-mob-sc-win{% endif %}">{{ '%.0f'|format(opp_score) }}</span>
+      </span>
+      <span class="gd-mob-vs-team" style="text-align:right;">{{ opp_team.name }}</span>
+    </div>
+    {% set my_playing = my_players|selectattr('afl_team','in',teams_playing)|list %}
+    {% set opp_playing = opp_players|selectattr('afl_team','in',teams_playing)|list %}
+    {% set max_rows = [my_playing|length, opp_playing|length]|max %}
+    {% for i in range(max_rows) %}
+      {% set mp = my_playing[i] if i < my_playing|length else None %}
+      {% set op = opp_playing[i] if i < opp_playing|length else None %}
+      <div class="gd-mob-vs-row">
+        <div class="gd-mob-vs-left">
+          {% if mp %}
+            <span class="gd-mob-vs-name">{% if mp.is_captain %}<b class="gd-mob-c" style="color:#bc8cff;">C</b>{% endif %}{{ mp.name }}</span>
+            <span class="gd-mob-vs-pos pos-badge pos-{{ mp.position[:3]|upper }}">{{ mp.position[:3] }}</span>
+          {% endif %}
+        </div>
+        <div class="gd-mob-vs-mid">
+          <span class="gd-mob-sc-l {% if mp and mp.is_live %}text-success{% endif %}">{% if mp %}{% if mp.has_played %}{{ '%.0f'|format(mp.score) }}{% if mp.is_captain %}<small style="color:#bc8cff;">x2</small>{% endif %}{% else %}&ndash;{% endif %}{% if mp.is_live %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}{% else %}-{% endif %}</span>
+          <span class="gd-mob-sc-r {% if op and op.is_live %}text-success{% endif %}">{% if op %}{% if op.has_played %}{{ '%.0f'|format(op.score) }}{% if op.is_captain %}<small style="color:#bc8cff;">x2</small>{% endif %}{% else %}&ndash;{% endif %}{% if op.is_live %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}{% else %}-{% endif %}</span>
+        </div>
+        <div class="gd-mob-vs-right">
+          {% if op %}
+            <span class="gd-mob-vs-pos pos-badge pos-{{ op.position[:3]|upper }}">{{ op.position[:3] }}</span>
+            <span class="gd-mob-vs-name">{% if op.is_captain %}<b class="gd-mob-c" style="color:#bc8cff;">C</b>{% endif %}{{ op.name }}</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    {# No Game This Round #}
+    {% set my_no = my_players|rejectattr('afl_team','in',teams_playing)|list %}
+    {% set opp_no = opp_players|rejectattr('afl_team','in',teams_playing)|list %}
+    {% set max_no = [my_no|length, opp_no|length]|max %}
+    {% if max_no > 0 %}
+    <div class="gd-mob-section-hdr" style="color:#6e7681;"><i class="bi bi-calendar-x me-1"></i>No Game</div>
+    {% for i in range(max_no) %}
+      {% set mp = my_no[i] if i < my_no|length else None %}
+      {% set op = opp_no[i] if i < opp_no|length else None %}
+      <div class="gd-mob-vs-row" style="opacity:.5;">
+        <div class="gd-mob-vs-left">{% if mp %}<span class="gd-mob-vs-name">{{ mp.name }}</span>{% endif %}</div>
+        <div class="gd-mob-vs-mid"><span class="gd-mob-sc-l">&ndash;</span><span class="gd-mob-sc-r">&ndash;</span></div>
+        <div class="gd-mob-vs-right">{% if op %}<span class="gd-mob-vs-name">{{ op.name }}</span>{% endif %}</div>
+      </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ═══════════════════════ PLAYER CARDS (desktop) ═══════════════════════ #}
   {% macro player_row_7s(p, locked_ids, gameday_state) %}
   {% set yet_to_play = (not p.get('game_started', True)) and gameday_state == 'live' %}
   <div class="s7gd-player-row {{ 'p-locked' if p.player_id in locked_ids else '' }}{{ ' p-ytp' if yet_to_play else '' }}">
@@ -183,7 +239,7 @@
   </div>
   {% endmacro %}
 
-  <div class="row g-3 mt-2" id="player-cards-row" {% if is_bye %}style="display:none;"{% endif %}>
+  <div class="row g-3 mt-2 d-none d-lg-flex" id="player-cards-row" {% if is_bye %}style="display:none;"{% endif %}>
     <div class="col-md-6">
       <div class="s7gd-player-card s7gd-card-left" id="left-player-card">
         <div class="s7gd-card-header" id="left-card-header">

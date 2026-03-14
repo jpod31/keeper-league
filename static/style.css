@@ -3063,6 +3063,109 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   flex-shrink: 0;
 }
 
+/* ── Gameday mobile side-by-side view ── */
+.gd-mob-vs {
+  background: var(--kl-bg-card, #161b22);
+  border: 1px solid var(--kl-border, #30363d);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.gd-mob-vs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--kl-border, #21262d);
+  background: rgba(48,54,61,.2);
+}
+.gd-mob-vs-team {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--kl-text-heading, #e6edf3);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gd-mob-vs-scores {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 8px;
+}
+.gd-mob-vs-sc {
+  font-size: .95rem;
+  font-weight: 800;
+  color: var(--kl-text-secondary, #8b949e);
+}
+.gd-mob-sc-win { color: #3fb950; }
+.gd-mob-vs-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(48,54,61,.3);
+  min-height: 36px;
+}
+.gd-mob-vs-row:last-child { border-bottom: none; }
+.gd-mob-vs-left, .gd-mob-vs-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gd-mob-vs-left { justify-content: flex-start; }
+.gd-mob-vs-right { justify-content: flex-end; }
+.gd-mob-vs-name {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--kl-text-primary, #c9d1d9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gd-mob-vs-pos {
+  font-size: .55rem !important;
+  padding: 0 3px !important;
+  flex-shrink: 0;
+}
+.gd-mob-vs-mid {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 70px;
+  justify-content: center;
+}
+.gd-mob-sc-l, .gd-mob-sc-r {
+  font-size: .78rem;
+  font-weight: 800;
+  min-width: 28px;
+  text-align: center;
+  color: var(--kl-text-primary, #c9d1d9);
+}
+.gd-mob-c {
+  color: #FFD700;
+  font-size: .6rem;
+  margin-right: 2px;
+}
+.gd-mob-vc {
+  color: #C0C0C0;
+  font-size: .6rem;
+  margin-right: 2px;
+}
+.gd-mob-section-hdr {
+  padding: 6px 10px;
+  font-size: .68rem;
+  font-weight: 700;
+  color: #58a6ff;
+  background: rgba(48,54,61,.15);
+  border-bottom: 1px solid rgba(48,54,61,.3);
+}
+.s7-mob-vs .gd-mob-sc-win { color: #bc8cff; }
+
 /* Comp toggle (Main / 7s) */
 .comp-toggle { display: flex; gap: 0; justify-content: center; margin-bottom: 16px; }
 .comp-toggle-btn {

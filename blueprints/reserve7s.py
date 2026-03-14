@@ -419,6 +419,22 @@ def sevens_gameday(league_id):
             league_id, opp_team.id, afl_round, year, league,
         )
 
+        # Sort by AFL game kickoff time (earliest first), captain stays priority
+        _team_start = {}
+        for g in afl_games_for_round:
+            ts = g.scheduled_start
+            for t in (g.home_team, g.away_team):
+                if t not in _team_start or (ts and (not _team_start[t] or ts < _team_start[t])):
+                    _team_start[t] = ts
+        _far_future = datetime(2099, 1, 1)
+        def _7s_sort_key(p):
+            return (
+                _team_start.get(p.get("afl_team", ""), _far_future) or _far_future,
+                p.get("name", ""),
+            )
+        my_players.sort(key=_7s_sort_key)
+        opp_players.sort(key=_7s_sort_key)
+
         # Scores
         my_rs = Reserve7sRoundScore.query.filter_by(
             team_id=my_team.id, afl_round=afl_round, year=year,
