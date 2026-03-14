@@ -71,13 +71,13 @@
   {% endif %}
   <div class="s7gd-hero s7gd-hero-{{ gameday_state }}" id="hero-card" {% if is_bye %}style="display:none;"{% endif %}>
 
-    {# ── Row 1: Scoreboard ── #}
-    <div class="s7-scoreboard">
-      <div class="s7-side s7-side-left">
+    {# ── Teams row: crest + name + meta on each side ── #}
+    <div class="s7-teams-row">
+      <div class="s7-team-block s7-team-left">
         <span class="s7-crest s7-crest-left" id="left-initial">{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
-        <div class="s7-side-info">
+        <div class="s7-team-detail">
           <div class="s7-team-name" id="left-team-name">{% if not is_bye %}{{ my_team.name }}{% endif %}</div>
-          <div class="s7-side-meta">
+          <div class="s7-team-meta">
             <span class="s7-players-count" id="hero-left-players-count">{% if not is_bye %}{{ my_played|default(0) }}/{{ my_eligible|default(0) }} played{% endif %}</span>
             <span id="hero-left-cap-badges">
               {% if not is_bye and my_data.get('captain_id') %}<span class="s7-role-badge s7-role-active">C</span>{% endif %}
@@ -85,41 +85,11 @@
           </div>
         </div>
       </div>
-
-      <div class="s7-center-score">
-        {% if not is_bye %}
-          <div class="s7-scores-row">
-            <div class="s7-score-col">
-              <span class="s7-big-score {{ 's7-score-winning' if my_score > opp_score else '' }}" id="hero-left-score">{{ '%.0f'|format(my_score) }}</span>
-              {% if my_captain_bonus > 0 %}
-                <span class="s7-cap-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} C</span>
-              {% else %}
-                <span class="s7-cap-bonus" id="hero-left-cap" style="display:none;"></span>
-              {% endif %}
-            </div>
-            <span class="s7-score-dash">&ndash;</span>
-            <div class="s7-score-col">
-              <span class="s7-big-score {{ 's7-score-winning' if opp_score > my_score else '' }}" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</span>
-              {% if opp_captain_bonus > 0 %}
-                <span class="s7-cap-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} C</span>
-              {% else %}
-                <span class="s7-cap-bonus" id="hero-right-cap" style="display:none;"></span>
-              {% endif %}
-            </div>
-          </div>
-        {% else %}
-          <div class="s7-scores-row">
-            <div class="s7-score-col"><span class="s7-big-score" id="hero-left-score" style="display:none;"></span><span class="s7-cap-bonus" id="hero-left-cap" style="display:none;"></span></div>
-            <span class="s7-score-dash">&ndash;</span>
-            <div class="s7-score-col"><span class="s7-big-score" id="hero-right-score" style="display:none;"></span><span class="s7-cap-bonus" id="hero-right-cap" style="display:none;"></span></div>
-          </div>
-        {% endif %}
-      </div>
-
-      <div class="s7-side s7-side-right">
-        <div class="s7-side-info" style="text-align:right;">
+      <span class="s7-vs">VS</span>
+      <div class="s7-team-block s7-team-right">
+        <div class="s7-team-detail" style="text-align:right;">
           <div class="s7-team-name" id="right-team-name">{% if not is_bye %}{{ opp_team.name }}{% endif %}</div>
-          <div class="s7-side-meta" style="justify-content:flex-end;">
+          <div class="s7-team-meta" style="justify-content:flex-end;">
             <span id="hero-right-cap-badges">
               {% if not is_bye and opp_data.get('captain_id') %}<span class="s7-role-badge s7-role-active">C</span>{% endif %}
             </span>
@@ -130,14 +100,41 @@
       </div>
     </div>
 
-    {# ── Row 2: Margin ── #}
+    {# ── Scores: big centred numbers ── #}
+    <div class="s7-scores-area">
+      {% if not is_bye %}
+        <div class="s7-score-col">
+          <span class="s7-big-score {{ 's7-score-winning' if my_score > opp_score else '' }}" id="hero-left-score">{{ '%.0f'|format(my_score) }}</span>
+          {% if my_captain_bonus > 0 %}
+            <span class="s7-cap-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} C</span>
+          {% else %}
+            <span class="s7-cap-bonus" id="hero-left-cap" style="display:none;"></span>
+          {% endif %}
+        </div>
+        <span class="s7-score-dash">&ndash;</span>
+        <div class="s7-score-col">
+          <span class="s7-big-score {{ 's7-score-winning' if opp_score > my_score else '' }}" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</span>
+          {% if opp_captain_bonus > 0 %}
+            <span class="s7-cap-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} C</span>
+          {% else %}
+            <span class="s7-cap-bonus" id="hero-right-cap" style="display:none;"></span>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="s7-score-col"><span class="s7-big-score" id="hero-left-score" style="display:none;"></span><span class="s7-cap-bonus" id="hero-left-cap" style="display:none;"></span></div>
+        <span class="s7-score-dash">&ndash;</span>
+        <div class="s7-score-col"><span class="s7-big-score" id="hero-right-score" style="display:none;"></span><span class="s7-cap-bonus" id="hero-right-cap" style="display:none;"></span></div>
+      {% endif %}
+    </div>
+
+    {# ── Margin ── #}
     {% if not is_bye %}
       {% set total = (my_score + opp_score) or 1 %}
       {% set my_pct = (my_score / total * 100)|round(1) %}
       {% set opp_pct = (100 - my_pct)|round(1) %}
       {% set diff = (my_score - opp_score)|abs|round(0)|int %}
     {% endif %}
-    <div class="s7-bottom-row" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
+    <div class="s7-footer" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
       <div class="s7-margin-chip" id="margin-text" {% if is_bye %}style="display:none;"{% endif %}>
         {% if not is_bye %}
           {% if gameday_state == 'completed' %}
@@ -373,8 +370,9 @@
      HERO CARD
      ════════════════════════════════════════════════ */
   .s7gd-hero {
-    background: var(--kl-bg-card, #161b22); border: 1px solid var(--kl-border, #21262d);
-    border-radius: 14px; padding: 0; margin-bottom: 4px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(22,27,34,.95) 0%, var(--kl-bg-card, #161b22) 70%);
+    border: 1px solid var(--kl-border, #21262d); border-radius: 16px;
+    padding: 0; margin-bottom: 4px;
     position: relative; overflow: hidden;
   }
   .s7gd-hero::before {
@@ -394,42 +392,46 @@
   }
   @keyframes s7Shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   @keyframes s7gdGlow {
-    0%, 100% { box-shadow: 0 0 20px rgba(35,134,54,.1); }
-    50% { box-shadow: 0 0 30px rgba(35,134,54,.15), 0 0 60px rgba(35,134,54,.08); }
+    0%, 100% { box-shadow: 0 0 20px rgba(110,64,201,.1), 0 0 40px rgba(110,64,201,.05); }
+    50% { box-shadow: 0 0 30px rgba(110,64,201,.15), 0 0 60px rgba(110,64,201,.08); }
   }
   .s7gd-hero-live { animation: s7gdGlow 4s ease-in-out infinite; }
 
-  /* ── Scoreboard row ── */
-  .s7-scoreboard {
-    display: flex; align-items: center; padding: 16px 14px 10px; gap: 0;
+  /* ── Teams row ── */
+  .s7-teams-row {
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px 20px 0; gap: 0;
   }
-  .s7-side {
-    display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;
+  .s7-team-block {
+    display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
   }
-  .s7-side-right { justify-content: flex-end; }
-  .s7-side-info { min-width: 0; flex: 1; }
-  .s7-side-left .s7-side-info { text-align: left; }
-  .s7-side-right .s7-side-info { text-align: right; }
+  .s7-team-right { justify-content: flex-end; }
+  .s7-team-detail { min-width: 0; flex: 1; }
+  .s7-vs {
+    font-size: .6rem; font-weight: 800; color: var(--kl-text-faint, #484f58);
+    letter-spacing: 2px; padding: 0 14px; opacity: .5;
+    flex-shrink: 0;
+  }
 
   .s7-crest {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; border-radius: 12px; font-weight: 800;
-    font-size: .9rem; letter-spacing: .5px; flex-shrink: 0;
-    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    width: 50px; height: 50px; border-radius: 14px; font-weight: 800;
+    font-size: 1rem; letter-spacing: .5px; flex-shrink: 0;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
   }
   .s7-crest-left { background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; }
   .s7-crest-right { background: linear-gradient(145deg, #2d1060, #6e40c9, #bc8cff); color: #fff; }
 
   .s7-team-name {
-    color: var(--kl-text-heading, #e6edf3); font-weight: 700; font-size: .85rem;
+    color: var(--kl-text-heading, #e6edf3); font-weight: 700; font-size: .88rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     line-height: 1.2;
   }
-  .s7-side-meta {
-    display: flex; align-items: center; gap: 4px; margin-top: 1px;
+  .s7-team-meta {
+    display: flex; align-items: center; gap: 4px; margin-top: 2px;
   }
   .s7-players-count {
-    font-size: .62rem; color: var(--kl-text-faint, #484f58); font-weight: 500;
+    font-size: .64rem; color: var(--kl-text-faint, #484f58); font-weight: 500;
     font-variant-numeric: tabular-nums;
   }
   .s7-role-badge {
@@ -438,49 +440,49 @@
   }
   .s7-role-badge.s7-role-active { background: rgba(188,140,255,.2); color: #bc8cff; }
 
-  /* ── Centre scores ── */
-  .s7-center-score { flex-shrink: 0; text-align: center; padding: 0 4px; }
-  .s7-scores-row {
-    display: flex; align-items: flex-start; justify-content: center; gap: 4px;
+  /* ── Scores area (big centred) ── */
+  .s7-scores-area {
+    display: flex; align-items: flex-start; justify-content: center;
+    gap: 10px; padding: 18px 20px 16px;
   }
   .s7-score-col {
-    display: flex; flex-direction: column; align-items: center; min-width: 52px;
+    display: flex; flex-direction: column; align-items: center; min-width: 70px;
   }
   .s7-big-score {
-    font-size: 2.6rem; font-weight: 900; line-height: 1;
+    font-size: 3.4rem; font-weight: 900; line-height: 1;
     color: var(--kl-text-secondary, #8b949e); font-variant-numeric: tabular-nums;
     transition: color .4s, text-shadow .4s;
   }
   .s7-big-score.s7-score-winning {
     color: #bc8cff;
-    text-shadow: 0 0 24px rgba(188,140,255,.35), 0 0 48px rgba(188,140,255,.12);
+    text-shadow: 0 0 28px rgba(188,140,255,.4), 0 0 56px rgba(188,140,255,.15);
   }
   .s7-score-dash {
-    font-size: 1.8rem; font-weight: 300; color: var(--kl-text-faint, #484f58);
-    line-height: 1; padding-top: 4px; opacity: .5;
+    font-size: 2.2rem; font-weight: 300; color: var(--kl-text-faint, #484f58);
+    line-height: 1; padding-top: 8px; opacity: .4;
   }
   .s7-cap-bonus {
-    color: #bc8cff; font-size: .6rem; font-weight: 700; margin-top: 1px;
+    color: #bc8cff; font-size: .65rem; font-weight: 700; margin-top: 3px;
     white-space: nowrap;
   }
 
-  /* ── Bottom row ── */
-  .s7-bottom-row {
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    padding: 8px 14px 12px;
-    border-top: 1px solid rgba(139,148,158,.08);
+  /* ── Footer: margin chip ── */
+  .s7-footer {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 12px 20px 16px;
+    border-top: 1px solid rgba(139,148,158,.06);
   }
   .s7-margin-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 12px; border-radius: 6px;
-    font-size: .68rem; font-weight: 800; letter-spacing: 1px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 16px; border-radius: 8px;
+    font-size: .72rem; font-weight: 800; letter-spacing: 1px;
     text-transform: uppercase; color: var(--kl-text-primary, #e6edf3);
     background: rgba(139,148,158,.08);
   }
-  .s7-margin-chip i { font-size: .55rem; }
+  .s7-margin-chip i { font-size: .6rem; }
   .s7-first-bounce {
-    text-align: center; padding: 0 14px 10px;
-    color: var(--kl-text-secondary, #8b949e); font-size: .78rem;
+    text-align: center; padding: 0 20px 12px;
+    color: var(--kl-text-secondary, #8b949e); font-size: .8rem;
   }
 
   /* ════════════════════════════════════════════════
@@ -618,14 +620,16 @@
      MOBILE
      ════════════════════════════════════════════════ */
   @media (max-width: 767.98px) {
-    .s7-scoreboard { padding: 12px 10px 8px; }
-    .s7-big-score { font-size: 2rem; min-width: 40px; }
-    .s7-score-dash { font-size: 1.4rem; }
-    .s7-team-name { font-size: .75rem; }
-    .s7-crest { width: 34px; height: 34px; font-size: .78rem; border-radius: 10px; }
-    .s7-side { gap: 6px; }
-    .s7-bottom-row { padding: 6px 10px 10px; gap: 8px; }
-    .s7-margin-chip { font-size: .6rem; padding: 3px 10px; }
+    .s7-teams-row { padding: 14px 12px 0; }
+    .s7-big-score { font-size: 2.4rem; min-width: 50px; }
+    .s7-score-dash { font-size: 1.6rem; padding-top: 5px; }
+    .s7-scores-area { padding: 14px 12px 12px; }
+    .s7-team-name { font-size: .78rem; }
+    .s7-crest { width: 40px; height: 40px; font-size: .85rem; border-radius: 11px; }
+    .s7-team-block { gap: 8px; }
+    .s7-vs { padding: 0 8px; font-size: .55rem; }
+    .s7-footer { padding: 10px 12px 14px; gap: 6px; }
+    .s7-margin-chip { font-size: .65rem; padding: 4px 12px; }
     .s7gd-player-row { padding: 6px 10px; font-size: .75rem; }
     .s7gd-player-meta { display: none; }
     .s7gd-round-title { font-size: .95rem; }
@@ -779,8 +783,8 @@ function renderViewedMatchup(fixtureId) {
         leftScoreEl.style.display = '';
         rightScoreEl.textContent = Math.round(rightScore);
         rightScoreEl.style.display = '';
-        leftScoreEl.classList.toggle('s7gd-winning', leftScore > rightScore);
-        rightScoreEl.classList.toggle('s7gd-winning', rightScore > leftScore);
+        leftScoreEl.classList.toggle('s7-score-winning', leftScore > rightScore);
+        rightScoreEl.classList.toggle('s7-score-winning', rightScore > leftScore);
     } else {
         leftScoreEl.style.display = 'none';
         rightScoreEl.style.display = 'none';
@@ -827,20 +831,23 @@ function renderViewedMatchup(fixtureId) {
 
         var diff = Math.abs(Math.round(leftScore - rightScore));
         marginText.style.display = '';
+        var _up = '<i class="bi bi-caret-up-fill"></i> ';
+        var _dn = '<i class="bi bi-caret-down-fill"></i> ';
+        var _tr = '<i class="bi bi-trophy-fill"></i> ';
         if (isOwn && !IS_BYE) {
             if (GAMEDAY_STATE === 'completed') {
-                if (leftScore > rightScore) marginText.textContent = 'Won by ' + diff;
-                else if (rightScore > leftScore) marginText.textContent = 'Lost by ' + diff;
-                else marginText.textContent = 'Draw';
+                if (leftScore > rightScore) marginText.innerHTML = _tr + 'WON BY ' + diff;
+                else if (rightScore > leftScore) marginText.innerHTML = 'LOST BY ' + diff;
+                else marginText.innerHTML = 'DRAW';
             } else {
-                if (leftScore > rightScore) marginText.textContent = 'Leading by ' + diff;
-                else if (rightScore > leftScore) marginText.textContent = 'Trailing by ' + diff;
-                else marginText.textContent = 'Tied';
+                if (leftScore > rightScore) marginText.innerHTML = _up + 'UP ' + diff;
+                else if (rightScore > leftScore) marginText.innerHTML = _dn + 'DOWN ' + diff;
+                else marginText.innerHTML = 'TIED';
             }
         } else {
-            if (leftScore > rightScore) marginText.textContent = leftName + ' by ' + diff;
-            else if (rightScore > leftScore) marginText.textContent = rightName + ' by ' + diff;
-            else marginText.textContent = 'Draw';
+            if (leftScore > rightScore) marginText.innerHTML = leftName + ' BY ' + diff;
+            else if (rightScore > leftScore) marginText.innerHTML = rightName + ' BY ' + diff;
+            else marginText.innerHTML = 'DRAW';
         }
     } else {
         marginWrap.style.display = 'none';

@@ -73,13 +73,13 @@
   {% endif %}
   <div class="gameday-hero hero-{{ gameday_state }}" id="hero-card" {% if is_bye %}style="display:none;"{% endif %}>
 
-    {# ── Row 1: Scoreboard ── #}
-    <div class="hero-scoreboard">
-      <div class="hero-side hero-side-left">
+    {# ── Teams row: crest + name + meta on each side ── #}
+    <div class="hero-teams-row">
+      <div class="hero-team-block hero-team-left">
         <span class="hero-crest left-initial" id="left-initial">{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
-        <div class="hero-side-info">
+        <div class="hero-team-detail">
           <div class="hero-team-name" id="left-team-name">{% if not is_bye %}{{ my_team.name }}{% endif %}</div>
-          <div class="hero-side-meta">
+          <div class="hero-team-meta">
             <span class="hero-players-count" id="hero-left-players-count">{% if not is_bye %}{{ my_played|default(0) }}/{{ my_eligible|default(0) }} played{% endif %}</span>
             <span class="hero-cap-badges" id="hero-left-cap-badges">
               {% if not is_bye %}
@@ -90,41 +90,11 @@
           </div>
         </div>
       </div>
-
-      <div class="hero-center-score">
-        {% if not is_bye %}
-          <div class="hero-scores-row">
-            <div class="hero-score-col hero-score-left">
-              <span class="hero-big-score {{ 'score-winning' if my_score > opp_score else '' }}" id="hero-left-score">{{ '%.0f'|format(my_score) }}</span>
-              {% if my_captain_bonus > 0 %}
-                <span class="captain-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} C</span>
-              {% else %}
-                <span class="captain-bonus" id="hero-left-cap" style="display:none;"></span>
-              {% endif %}
-            </div>
-            <span class="hero-score-dash">&ndash;</span>
-            <div class="hero-score-col hero-score-right">
-              <span class="hero-big-score {{ 'score-winning' if opp_score > my_score else '' }}" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</span>
-              {% if opp_captain_bonus > 0 %}
-                <span class="captain-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} C</span>
-              {% else %}
-                <span class="captain-bonus" id="hero-right-cap" style="display:none;"></span>
-              {% endif %}
-            </div>
-          </div>
-        {% else %}
-          <div class="hero-scores-row">
-            <div class="hero-score-col"><span class="hero-big-score" id="hero-left-score" style="display:none;"></span><span class="captain-bonus" id="hero-left-cap" style="display:none;"></span></div>
-            <span class="hero-score-dash">&ndash;</span>
-            <div class="hero-score-col"><span class="hero-big-score" id="hero-right-score" style="display:none;"></span><span class="captain-bonus" id="hero-right-cap" style="display:none;"></span></div>
-          </div>
-        {% endif %}
-      </div>
-
-      <div class="hero-side hero-side-right">
-        <div class="hero-side-info" style="text-align:right;">
+      <span class="hero-vs">VS</span>
+      <div class="hero-team-block hero-team-right">
+        <div class="hero-team-detail" style="text-align:right;">
           <div class="hero-team-name" id="right-team-name">{% if not is_bye %}{{ opp_team.name }}{% endif %}</div>
-          <div class="hero-side-meta" style="justify-content:flex-end;">
+          <div class="hero-team-meta" style="justify-content:flex-end;">
             <span class="hero-cap-badges" id="hero-right-cap-badges">
               {% if not is_bye %}
                 {% if opp_data.get('has_captain') %}<span class="hero-role-badge {{ 'role-active' if opp_data.get('captain_played') else '' }}">C</span>{% endif %}
@@ -138,14 +108,41 @@
       </div>
     </div>
 
-    {# ── Row 2: Margin + Projections ── #}
+    {# ── Scores: big centred numbers ── #}
+    <div class="hero-scores-area">
+      {% if not is_bye %}
+        <div class="hero-score-col">
+          <span class="hero-big-score {{ 'score-winning' if my_score > opp_score else '' }}" id="hero-left-score">{{ '%.0f'|format(my_score) }}</span>
+          {% if my_captain_bonus > 0 %}
+            <span class="captain-bonus" id="hero-left-cap">+{{ '%.0f'|format(my_captain_bonus) }} C</span>
+          {% else %}
+            <span class="captain-bonus" id="hero-left-cap" style="display:none;"></span>
+          {% endif %}
+        </div>
+        <span class="hero-score-dash">&ndash;</span>
+        <div class="hero-score-col">
+          <span class="hero-big-score {{ 'score-winning' if opp_score > my_score else '' }}" id="hero-right-score">{{ '%.0f'|format(opp_score) }}</span>
+          {% if opp_captain_bonus > 0 %}
+            <span class="captain-bonus" id="hero-right-cap">+{{ '%.0f'|format(opp_captain_bonus) }} C</span>
+          {% else %}
+            <span class="captain-bonus" id="hero-right-cap" style="display:none;"></span>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="hero-score-col"><span class="hero-big-score" id="hero-left-score" style="display:none;"></span><span class="captain-bonus" id="hero-left-cap" style="display:none;"></span></div>
+        <span class="hero-score-dash">&ndash;</span>
+        <div class="hero-score-col"><span class="hero-big-score" id="hero-right-score" style="display:none;"></span><span class="captain-bonus" id="hero-right-cap" style="display:none;"></span></div>
+      {% endif %}
+    </div>
+
+    {# ── Margin + Projections ── #}
     {% if not is_bye %}
       {% set total = (my_score + opp_score) or 1 %}
       {% set my_pct = (my_score / total * 100)|round(1) %}
       {% set opp_pct = (100 - my_pct)|round(1) %}
       {% set diff = (my_score - opp_score)|abs|round(0)|int %}
     {% endif %}
-    <div class="hero-bottom-row" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
+    <div class="hero-footer" id="margin-wrap" {% if is_bye %}style="display:none;"{% endif %}>
       <div class="hero-margin-chip" id="margin-text" {% if is_bye %}style="display:none;"{% endif %}>
         {% if not is_bye %}
           {% if gameday_state == 'completed' %}
@@ -156,7 +153,7 @@
         {% endif %}
       </div>
       {% if projections is defined and projections and gameday_state != 'completed' %}
-      <div class="hero-proj-inline">
+      <div class="hero-proj-row">
         <span class="hero-proj-item">Proj <b>{{ projections.my_projected|round(0)|int }}</b>&ndash;<b>{{ projections.opp_projected|round(0)|int }}</b></span>
         <span class="hero-proj-sep"></span>
         <span class="hero-proj-item">Win <b>{{ projections.my_win_pct|round(0)|int }}%</b>&ndash;<b>{{ projections.opp_win_pct|round(0)|int }}%</b></span>
@@ -478,8 +475,9 @@
      HERO CARD
      ════════════════════════════════════════════════ */
   .gameday-hero {
-    background: var(--kl-bg-card); border: 1px solid var(--kl-border);
-    border-radius: 14px; padding: 0; margin-bottom: 4px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(22,27,34,.95) 0%, var(--kl-bg-card) 70%);
+    border: 1px solid var(--kl-border); border-radius: 16px;
+    padding: 0; margin-bottom: 4px;
     position: relative; overflow: hidden;
   }
   .gameday-hero::before {
@@ -499,37 +497,41 @@
   }
   @keyframes heroShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-  /* ── Scoreboard row: crest+info | scores | info+crest ── */
-  .hero-scoreboard {
-    display: flex; align-items: center; padding: 16px 14px 10px; gap: 0;
+  /* ── Teams row ── */
+  .hero-teams-row {
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px 20px 0; gap: 0;
   }
-  .hero-side {
-    display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;
+  .hero-team-block {
+    display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
   }
-  .hero-side-right { justify-content: flex-end; }
-  .hero-side-info { min-width: 0; flex: 1; }
-  .hero-side-left .hero-side-info { text-align: left; }
-  .hero-side-right .hero-side-info { text-align: right; }
+  .hero-team-right { justify-content: flex-end; }
+  .hero-team-detail { min-width: 0; flex: 1; }
+  .hero-vs {
+    font-size: .6rem; font-weight: 800; color: var(--kl-text-faint);
+    letter-spacing: 2px; padding: 0 14px; opacity: .5;
+    flex-shrink: 0;
+  }
 
   .hero-crest {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; border-radius: 12px; font-weight: 800;
-    font-size: .9rem; letter-spacing: .5px; flex-shrink: 0;
-    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    width: 50px; height: 50px; border-radius: 14px; font-weight: 800;
+    font-size: 1rem; letter-spacing: .5px; flex-shrink: 0;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
   }
   .left-initial { background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; }
   .right-initial { background: linear-gradient(145deg, #2d1060, #5a2d9e, #bc8cff); color: #fff; }
 
   .hero-team-name {
-    color: var(--kl-text-heading); font-weight: 700; font-size: .85rem;
+    color: var(--kl-text-heading); font-weight: 700; font-size: .88rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     line-height: 1.2;
   }
-  .hero-side-meta {
-    display: flex; align-items: center; gap: 4px; margin-top: 1px;
+  .hero-team-meta {
+    display: flex; align-items: center; gap: 4px; margin-top: 2px;
   }
   .hero-players-count {
-    font-size: .62rem; color: var(--kl-text-faint); font-weight: 500;
+    font-size: .64rem; color: var(--kl-text-faint); font-weight: 500;
     font-variant-numeric: tabular-nums;
   }
   .hero-cap-badges { display: flex; gap: 2px; }
@@ -539,76 +541,73 @@
   }
   .hero-role-badge.role-active { background: rgba(63,185,80,.18); color: #3fb950; }
 
-  /* ── Centre scores ── */
-  .hero-center-score {
-    flex-shrink: 0; text-align: center; padding: 0 4px;
-  }
-  .hero-scores-row {
-    display: flex; align-items: flex-start; justify-content: center; gap: 4px;
+  /* ── Scores area (big centred) ── */
+  .hero-scores-area {
+    display: flex; align-items: flex-start; justify-content: center;
+    gap: 10px; padding: 18px 20px 16px;
   }
   .hero-score-col {
-    display: flex; flex-direction: column; align-items: center; min-width: 52px;
+    display: flex; flex-direction: column; align-items: center; min-width: 70px;
   }
   .hero-big-score {
-    font-size: 2.6rem; font-weight: 900; line-height: 1;
+    font-size: 3.4rem; font-weight: 900; line-height: 1;
     color: var(--kl-text-secondary); font-variant-numeric: tabular-nums;
     transition: color .4s, text-shadow .4s;
   }
   .hero-big-score.score-winning,
   .hero-big-score.gameday-winning {
     color: #3fb950;
-    text-shadow: 0 0 24px rgba(63,185,80,.35), 0 0 48px rgba(63,185,80,.12);
+    text-shadow: 0 0 28px rgba(63,185,80,.4), 0 0 56px rgba(63,185,80,.15);
   }
   .hero-score-dash {
-    font-size: 1.8rem; font-weight: 300; color: var(--kl-text-faint);
-    line-height: 1; padding-top: 4px; opacity: .5;
+    font-size: 2.2rem; font-weight: 300; color: var(--kl-text-faint);
+    line-height: 1; padding-top: 8px; opacity: .4;
   }
   .captain-bonus {
-    color: #d29922; font-size: .6rem; font-weight: 700; margin-top: 1px;
+    color: #d29922; font-size: .65rem; font-weight: 700; margin-top: 3px;
     white-space: nowrap;
   }
 
-  /* ── Bottom row: margin chip + projections inline ── */
-  .hero-bottom-row {
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    padding: 8px 14px 12px;
-    border-top: 1px solid rgba(139,148,158,.08);
-    flex-wrap: wrap;
+  /* ── Footer: margin chip + projections ── */
+  .hero-footer {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 12px 20px 16px;
+    border-top: 1px solid rgba(139,148,158,.06);
   }
   .hero-margin-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 12px; border-radius: 6px;
-    font-size: .68rem; font-weight: 800; letter-spacing: 1px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 16px; border-radius: 8px;
+    font-size: .72rem; font-weight: 800; letter-spacing: 1px;
     text-transform: uppercase; color: var(--kl-text-primary);
     background: rgba(139,148,158,.08);
   }
-  .hero-margin-chip i { font-size: .55rem; }
+  .hero-margin-chip i { font-size: .6rem; }
 
-  .hero-proj-inline {
-    display: flex; align-items: center; gap: 8px;
+  .hero-proj-row {
+    display: flex; align-items: center; gap: 10px;
   }
   .hero-proj-item {
-    font-size: .62rem; color: var(--kl-text-faint); font-weight: 500;
+    font-size: .66rem; color: var(--kl-text-faint); font-weight: 500;
     font-variant-numeric: tabular-nums; white-space: nowrap;
   }
   .hero-proj-item b {
     font-weight: 700; color: var(--kl-text-secondary);
   }
   .hero-proj-sep {
-    width: 1px; height: 10px; background: rgba(139,148,158,.2); flex-shrink: 0;
+    width: 1px; height: 12px; background: rgba(139,148,158,.2); flex-shrink: 0;
   }
 
   .hero-first-bounce {
-    text-align: center; padding: 0 14px 10px;
-    color: var(--kl-text-secondary); font-size: .78rem;
+    text-align: center; padding: 0 20px 12px;
+    color: var(--kl-text-secondary); font-size: .8rem;
   }
   .hero-breakdown-wrap {
-    text-align: center; padding: 0 14px 12px;
+    text-align: center; padding: 0 20px 14px;
   }
   .hero-breakdown-link {
     display: inline-flex; align-items: center; gap: 4px;
-    font-size: .7rem; font-weight: 600; color: var(--kl-accent-blue);
-    text-decoration: none; padding: 4px 12px; border-radius: 6px;
+    font-size: .72rem; font-weight: 600; color: var(--kl-accent-blue);
+    text-decoration: none; padding: 5px 14px; border-radius: 8px;
     border: 1px solid rgba(88,166,255,.2); background: rgba(88,166,255,.06);
     transition: background .15s;
   }
@@ -805,14 +804,16 @@
      MOBILE
      ════════════════════════════════════════════════ */
   @media (max-width: 767.98px) {
-    .hero-scoreboard { padding: 12px 10px 8px; gap: 0; }
-    .hero-big-score { font-size: 2rem; min-width: 40px; }
-    .hero-score-dash { font-size: 1.4rem; }
-    .hero-team-name { font-size: .75rem; }
-    .hero-crest { width: 34px; height: 34px; font-size: .78rem; border-radius: 10px; }
-    .hero-side { gap: 6px; }
-    .hero-bottom-row { padding: 6px 10px 10px; gap: 8px; }
-    .hero-margin-chip { font-size: .6rem; padding: 3px 10px; }
+    .hero-teams-row { padding: 14px 12px 0; }
+    .hero-big-score { font-size: 2.4rem; min-width: 50px; }
+    .hero-score-dash { font-size: 1.6rem; padding-top: 5px; }
+    .hero-scores-area { padding: 14px 12px 12px; }
+    .hero-team-name { font-size: .78rem; }
+    .hero-crest { width: 40px; height: 40px; font-size: .85rem; border-radius: 11px; }
+    .hero-team-block { gap: 8px; }
+    .hero-vs { padding: 0 8px; font-size: .55rem; }
+    .hero-footer { padding: 10px 12px 14px; gap: 6px; }
+    .hero-margin-chip { font-size: .65rem; padding: 4px 12px; }
     .gameday-player-row { padding: 6px 10px; font-size: .75rem; }
     .gameday-player-meta { display: none; }
     .gameday-round-title { font-size: 1.1rem; }
