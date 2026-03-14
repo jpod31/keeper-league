@@ -396,6 +396,147 @@
         {% endif %}
       {% endif %}
 
+      {# ── Emergencies ── #}
+      {% if fd.emergency_players %}
+      <div class="mob-pos-group">
+        <div class="mob-pos-header" style="background:rgba(56,166,215,.1);border-left:3px solid #38a6d7;">
+          <span class="mob-pos-label" style="color:#38a6d7;"><i class="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
+          <span class="mob-pos-count">{{ fd.emergency_players|length }} / 4</span>
+        </div>
+        {% for p in fd.emergency_players %}
+          {% set primary = (p.position or 'MID').split('/')[0] %}
+          {% set colors = pos_colors.get(primary, pos_colors.MID) %}
+          {% set is_locked = fd.locked_teams is defined and p.afl_team in fd.locked_teams %}
+          {% set is_selected = fd.selected_player_ids is defined and p.id in fd.selected_player_ids %}
+          <div class="mob-pos-row fv-card-emergency{% if is_locked %} mob-pos-locked{% endif %}"
+               data-player-id="{{ p.id }}" data-section="reserve" data-positions="{{ p.position or 'MID' }}" data-field-pos="" data-locked="{% if is_locked %}1{% endif %}"
+               onclick="fvShowPlayer({{ p.id }})" style="border-left:3px solid rgba(56,166,215,.3);cursor:pointer;">
+            {% if is_selected %}<span class="status-dot status-dot-taken"></span>
+            {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
+            {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
+            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo">
+            {% else %}
+              <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
+            {% endif %}
+            <div class="mob-pos-info">
+              <div class="mob-pos-name">
+                {{ p.name }}
+                {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% endif %}
+                <span class="mob-pos-badge mob-badge-emg">E</span>
+              </div>
+              <div class="mob-pos-meta">
+                {% for ps in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                {% endfor %}
+                <span>{{ p.afl_team or '' }}</span>
+                {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
+              </div>
+            </div>
+            <div class="mob-pos-sc">
+              {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# ── 7s Squad ── #}
+      {% if fd.has_7s_fixture %}
+      <div class="mob-pos-group">
+        <div class="mob-pos-header" style="background:rgba(188,140,255,.1);border-left:3px solid #bc8cff;">
+          <span class="mob-pos-label" style="color:#bc8cff;"><i class="bi bi-7-circle me-1"></i>7s SQUAD</span>
+          <span class="mob-pos-count">{{ fd.sevens_players|length }} / 7</span>
+        </div>
+        {% if fd.sevens_players %}
+        {% for p in fd.sevens_players %}
+          {% set primary = (p.position or 'MID').split('/')[0] %}
+          {% set colors = pos_colors.get(primary, pos_colors.MID) %}
+          {% set is_locked = fd.locked_teams is defined and p.afl_team in fd.locked_teams %}
+          {% set is_selected = fd.selected_player_ids is defined and p.id in fd.selected_player_ids %}
+          {% set is_7c = fd.sevens_captain_id is defined and p.id == fd.sevens_captain_id %}
+          <div class="mob-pos-row fv-card-7s{% if is_locked %} mob-pos-locked{% endif %}"
+               data-player-id="{{ p.id }}" data-section="reserve" data-positions="{{ p.position or 'MID' }}" data-field-pos="" data-locked="{% if is_locked %}1{% endif %}"
+               onclick="fvShowPlayer({{ p.id }})" style="border-left:3px solid rgba(188,140,255,.3);cursor:pointer;">
+            {% if is_selected %}<span class="status-dot status-dot-taken"></span>
+            {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
+            {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
+            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo">
+            {% else %}
+              <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
+            {% endif %}
+            <div class="mob-pos-info">
+              <div class="mob-pos-name">
+                {{ p.name }}
+                {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% endif %}
+                <span class="mob-pos-badge mob-badge-7s">7</span>
+                {% if is_7c %}<span class="mob-pos-badge mob-badge-cap" style="background:linear-gradient(135deg,#bc8cff,#8b5cf6);">7C</span>{% endif %}
+              </div>
+              <div class="mob-pos-meta">
+                {% for ps in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                {% endfor %}
+                <span>{{ p.afl_team or '' }}</span>
+                {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
+              </div>
+            </div>
+            <div class="mob-pos-sc">
+              {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+        {% else %}
+        <div class="mob-pos-row" style="justify-content:center;color:#484f58;font-size:.8rem;padding:12px;">
+          Tap the <span style="color:#bc8cff;font-weight:600;">7</span> button on any reserve to add them
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# ── Injury List ── #}
+      {% if fd.injury_list %}
+      <div class="mob-pos-group">
+        <div class="mob-pos-header" style="background:rgba(218,54,51,.1);border-left:3px solid #da3633;">
+          <span class="mob-pos-label" style="color:#da3633;"><i class="bi bi-bandaid me-1"></i>INJURY LIST</span>
+          <span class="mob-pos-count">{{ fd.injury_list|length }}</span>
+        </div>
+        {% for p in fd.injury_list %}
+          {% set primary = (p.position or 'MID').split('/')[0] %}
+          {% set colors = pos_colors.get(primary, pos_colors.MID) %}
+          {% set is_emg = fd.emergency_ids is defined and p.id in fd.emergency_ids %}
+          {% set is_7s = fd.sevens_ids is defined and p.id in fd.sevens_ids %}
+          <div class="mob-pos-row{% if is_emg %} fv-card-emergency{% endif %}{% if is_7s %} fv-card-7s{% endif %}"
+               data-player-id="{{ p.id }}" data-section="reserve" data-positions="{{ p.position or 'MID' }}" data-field-pos=""
+               onclick="fvShowPlayer({{ p.id }})" style="border-left:3px solid rgba(218,54,51,.3);cursor:pointer;">
+            <span class="status-dot status-dot-injured"></span>
+            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo" style="opacity:.7;">
+            {% else %}
+              <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
+            {% endif %}
+            <div class="mob-pos-info">
+              <div class="mob-pos-name" style="color:#8b949e;">
+                {{ p.name }}
+                {% if is_emg %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
+                {% if is_7s %}<span class="mob-pos-badge mob-badge-7s">7</span>{% endif %}
+              </div>
+              <div class="mob-pos-meta">
+                {% for ps in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                {% endfor %}
+                <span>{{ p.afl_team or '' }}</span>
+                <span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>
+              </div>
+            </div>
+            <div class="mob-pos-sc">
+              {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;opacity:.7;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
       {# ── Reserves ── #}
       {% if fd.reserves %}
       <div class="mob-pos-group mob-reserves-group">
