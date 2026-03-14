@@ -39,18 +39,26 @@ body {
   padding: .5rem 0;
 }
 .brand-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #238636, #1f6feb);
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.75rem;
-  color: #fff;
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
 }
-.navbar-brand { font-size: 1rem; }
+.brand-icon img {
+  width: 100%;
+  height: 100%;
+}
+.navbar-brand {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+.navbar-brand .brand-text {
+  font-weight: 800;
+  font-size: .92rem;
+  letter-spacing: -.2px;
+  color: #e6edf3;
+}
 .nav-link {
   font-size: 0.8rem;
   font-weight: 500;
@@ -331,17 +339,28 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   max-width: 420px;
 }
 .auth-card .auth-logo {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #238636, #1f6feb);
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 1rem;
-  color: #fff;
+  gap: 10px;
   margin-bottom: 1.5rem;
+}
+.auth-card .auth-logo img {
+  width: 44px;
+  height: 44px;
+}
+.auth-card .auth-logo-text {
+  font-weight: 900;
+  font-size: 1.4rem;
+  letter-spacing: -.5px;
+  color: #e6edf3;
+  line-height: 1.1;
+}
+.auth-card .auth-logo-sub {
+  font-size: .65rem;
+  font-weight: 600;
+  color: #484f58;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
 /* ── Forms (dark theme) ── */

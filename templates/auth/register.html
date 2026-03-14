@@ -3,7 +3,13 @@
 {% block content %}
 <div class="auth-wrapper">
   <div class="auth-card text-center">
-    <div class="auth-logo">KL</div>
+    <div class="auth-logo">
+      <img src="{{ url_for('static', filename='favicon.svg') }}" alt="KL">
+      <div>
+        <div class="auth-logo-text">Keeper League</div>
+        <div class="auth-logo-sub">Fantasy AFL</div>
+      </div>
+    </div>
     <h3 class="fw-bold mb-1">Create your account</h3>
     <p class="text-secondary mb-4" style="font-size:.9rem;">Join a league or create your own</p>
     <form method="POST" class="text-start">
