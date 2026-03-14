@@ -114,21 +114,193 @@
     {% set teams = current_user.fantasy_teams.all() %}
     {% if teams %}
       {% for team in teams %}
-        <a href="{{ url_for('leagues.dashboard', league_id=team.league_id) }}" class="action-card mb-2">
-          <div class="action-icon" style="background:rgba(31,111,235,.15);color:#58a6ff;">
-            <i class="bi bi-trophy"></i>
+        <div class="card mb-3" style="border-color:var(--kl-border);">
+          <div class="card-body p-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="prof-team-logo">
+                {% if team.logo_url %}
+                  <img src="{{ team.logo_url }}" alt="{{ team.name }}" class="prof-team-logo-img" id="teamLogo{{ team.id }}">
+                {% else %}
+                  <div class="prof-team-logo-ph" id="teamLogo{{ team.id }}">{{ team.name[:2]|upper }}</div>
+                {% endif %}
+              </div>
+              <div style="flex:1;min-width:0;">
+                <a href="{{ url_for('leagues.dashboard', league_id=team.league_id) }}" class="fw-bold" style="color:var(--kl-text-heading);text-decoration:none;font-size:.9rem;">{{ team.name }}</a>
+                <div style="font-size:.75rem;color:var(--kl-text-faint);">{{ team.league.name }} &middot; {{ team.league.season_year }}</div>
+              </div>
+              <button class="prof-logo-btn" onclick="openLogoModal({{ team.id }}, {{ team.league_id }}, {{ team.name|tojson }}, {{ (team.logo_url or '')|tojson }}, {{ (team.logo_prompt or '')|tojson }})">
+                <i class="bi bi-stars me-1"></i>{% if team.logo_url %}Edit Logo{% else %}Create Logo{% endif %}
+              </button>
+            </div>
           </div>
-          <div>
-            <div class="action-label">{{ team.name }}</div>
-            <div class="action-desc">{{ team.league.name }}</div>
-          </div>
-        </a>
+        </div>
       {% endfor %}
     {% else %}
       <p class="text-secondary" style="font-size:.85rem;">You haven't joined any leagues yet.</p>
     {% endif %}
   </div>
 </div>
+
+{# ═══════════════════════ LOGO GENERATION MODAL ═══════════════════════ #}
+<div id="logoModal" class="logo-modal-overlay" style="display:none;" onclick="if(event.target===this)closeLogo()">
+  <div class="logo-modal">
+    <div class="logo-modal-header">
+      <h3><i class="bi bi-stars me-2" style="color:#d29922;"></i>Team Logo — <span id="logoTeamName"></span></h3>
+      <button onclick="closeLogo()" class="logo-modal-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="logo-modal-body">
+      <div id="logoCurrent" class="logo-modal-current" style="display:none;">
+        <img id="logoCurrentImg" src="" alt="Current logo" class="logo-modal-preview">
+        <div id="logoPrevPrompt" class="logo-modal-prev-prompt"></div>
+      </div>
+
+      {# ── Input state ── #}
+      <div id="logoInputState">
+        <label class="logo-modal-label">Describe your team logo</label>
+        <textarea id="logoPrompt" class="logo-modal-input" rows="3" maxlength="400" placeholder="e.g. A fierce red dragon breathing fire, with golden wings and a shield behind it"></textarea>
+        <div class="logo-modal-hint">Be descriptive! Include colours, animals, symbols, or themes. Max 400 chars.</div>
+        <div id="logoError" class="logo-modal-error" style="display:none;"></div>
+        <button id="logoGenBtn" onclick="generateLogo()" class="logo-modal-generate">
+          <i class="bi bi-stars me-1"></i>Generate Logo
+        </button>
+      </div>
+
+      {# ── Loading state ── #}
+      <div id="logoLoading" class="logo-modal-loading" style="display:none;">
+        <div class="logo-spinner"></div>
+        <span>Generating your logo... this takes ~15 seconds</span>
+      </div>
+
+      {# ── Result state (accept / regenerate / close) ── #}
+      <div id="logoResult" style="display:none;">
+        <img id="logoResultImg" src="" alt="Generated logo" class="logo-modal-result-img">
+        <div class="logo-result-actions">
+          <button onclick="acceptLogo()" class="logo-btn-accept"><i class="bi bi-check-lg me-1"></i>Accept</button>
+          <button onclick="regenerateLogo()" class="logo-btn-regen"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button>
+          <button onclick="closeLogo()" class="logo-btn-close"><i class="bi bi-x-lg me-1"></i>Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .prof-team-logo { flex-shrink: 0; }
+  .prof-team-logo-img {
+    width: 48px; height: 48px; border-radius: 12px; object-fit: cover;
+    border: 2px solid var(--kl-border); box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  }
+  .prof-team-logo-ph {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(145deg, #0d3618, #238636, #3fb950);
+    color: #fff; font-weight: 800; font-size: .95rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.3); letter-spacing: .5px;
+  }
+  .prof-logo-btn {
+    background: rgba(210,153,34,.12); color: #d29922; border: 1px solid rgba(210,153,34,.25);
+    border-radius: 8px; padding: 5px 12px; font-size: .72rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: background .15s;
+  }
+  .prof-logo-btn:hover { background: rgba(210,153,34,.2); }
+
+  /* ── Modal ── */
+  .logo-modal-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .logo-modal {
+    background: var(--kl-bg-card, #161b22); border: 1px solid var(--kl-border, #30363d);
+    border-radius: 16px; width: 100%; max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6); overflow: hidden;
+  }
+  .logo-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--kl-border, #21262d);
+  }
+  .logo-modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--kl-text-heading, #e6edf3); margin: 0; }
+  .logo-modal-close {
+    background: none; border: none; color: var(--kl-text-faint, #484f58);
+    font-size: 1.1rem; cursor: pointer; padding: 4px;
+  }
+  .logo-modal-close:hover { color: var(--kl-text-primary, #e6edf3); }
+  .logo-modal-body { padding: 20px; }
+
+  .logo-modal-current {
+    text-align: center; margin-bottom: 16px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--kl-border, #21262d);
+  }
+  .logo-modal-preview {
+    width: 80px; height: 80px; border-radius: 16px; object-fit: cover;
+    border: 2px solid var(--kl-border, #30363d); box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  }
+  .logo-modal-prev-prompt { font-size: .72rem; color: var(--kl-text-faint, #484f58); margin-top: 8px; }
+  .logo-modal-label {
+    display: block; font-size: .8rem; font-weight: 600;
+    color: var(--kl-text-secondary, #8b949e); margin-bottom: 6px;
+  }
+  .logo-modal-input {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    background: var(--kl-bg-body, #0d1117); color: var(--kl-text-primary, #e6edf3);
+    border: 1px solid var(--kl-border, #30363d); font-size: .85rem;
+    resize: none; font-family: inherit;
+  }
+  .logo-modal-input:focus { outline: none; border-color: #d29922; box-shadow: 0 0 0 3px rgba(210,153,34,.15); }
+  .logo-modal-hint { font-size: .68rem; color: var(--kl-text-faint, #484f58); margin-top: 6px; }
+  .logo-modal-error {
+    margin-top: 10px; padding: 8px 12px; border-radius: 8px;
+    background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3);
+    color: #f85149; font-size: .78rem;
+  }
+  .logo-modal-generate {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; margin-top: 14px; padding: 10px 0;
+    background: linear-gradient(135deg, #d29922, #e3b341);
+    color: #000; font-weight: 700; font-size: .85rem;
+    border: none; border-radius: 10px; cursor: pointer; transition: opacity .15s;
+  }
+  .logo-modal-generate:hover { opacity: .9; }
+  .logo-modal-generate:disabled { opacity: .5; cursor: not-allowed; }
+  .logo-modal-loading {
+    display: flex; align-items: center; gap: 10px; justify-content: center;
+    margin-top: 14px; padding: 12px; color: var(--kl-text-secondary, #8b949e); font-size: .8rem;
+  }
+  .logo-spinner {
+    width: 20px; height: 20px; border: 2px solid var(--kl-border, #30363d);
+    border-top-color: #d29922; border-radius: 50%; animation: logoSpin 1s linear infinite;
+  }
+  @keyframes logoSpin { to { transform: rotate(360deg); } }
+
+  .logo-modal-result-img {
+    width: 140px; height: 140px; border-radius: 22px; object-fit: cover;
+    display: block; margin: 0 auto;
+    border: 2px solid var(--kl-border, #30363d); box-shadow: 0 8px 30px rgba(0,0,0,.5);
+  }
+  .logo-result-actions {
+    display: flex; gap: 8px; justify-content: center; margin-top: 16px;
+  }
+  .logo-btn-accept {
+    padding: 8px 20px; border-radius: 10px; font-size: .8rem; font-weight: 700;
+    background: #238636; color: #fff; border: none; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .logo-btn-accept:hover { opacity: .9; }
+  .logo-btn-regen {
+    padding: 8px 16px; border-radius: 10px; font-size: .8rem; font-weight: 600;
+    background: rgba(210,153,34,.15); color: #d29922; border: 1px solid rgba(210,153,34,.3);
+    cursor: pointer; transition: background .15s;
+  }
+  .logo-btn-regen:hover { background: rgba(210,153,34,.25); }
+  .logo-btn-close {
+    padding: 8px 16px; border-radius: 10px; font-size: .8rem; font-weight: 600;
+    background: rgba(139,148,158,.08); color: var(--kl-text-secondary, #8b949e);
+    border: 1px solid var(--kl-border, #30363d); cursor: pointer;
+    transition: background .15s;
+  }
+  .logo-btn-close:hover { background: rgba(139,148,158,.15); }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -188,5 +360,113 @@ document.querySelectorAll('.notif-pref').forEach(function(cb) {
     });
   });
 });
+
+/* ═══════════════ Logo Generation ═══════════════ */
+var _logoTeamId = null, _logoLeagueId = null, _logoAccepted = false;
+
+function openLogoModal(teamId, leagueId, teamName, logoUrl, logoPrompt) {
+  _logoTeamId = teamId;
+  _logoLeagueId = leagueId;
+  _logoAccepted = false;
+  document.getElementById('logoTeamName').textContent = teamName;
+  document.getElementById('logoPrompt').value = logoPrompt || '';
+  document.getElementById('logoError').style.display = 'none';
+
+  // Show current logo if exists
+  var cur = document.getElementById('logoCurrent');
+  if (logoUrl) {
+    cur.style.display = 'block';
+    document.getElementById('logoCurrentImg').src = logoUrl;
+    document.getElementById('logoPrevPrompt').textContent = logoPrompt ? 'Prompt: ' + logoPrompt : '';
+  } else {
+    cur.style.display = 'none';
+  }
+
+  // Reset to input state
+  document.getElementById('logoInputState').style.display = 'block';
+  document.getElementById('logoLoading').style.display = 'none';
+  document.getElementById('logoResult').style.display = 'none';
+  document.getElementById('logoGenBtn').disabled = false;
+  document.getElementById('logoModal').style.display = 'flex';
+}
+
+function generateLogo() {
+  var prompt = document.getElementById('logoPrompt').value.trim();
+  if (!prompt) {
+    document.getElementById('logoError').textContent = 'Please describe your logo.';
+    document.getElementById('logoError').style.display = 'block';
+    return;
+  }
+  document.getElementById('logoError').style.display = 'none';
+  document.getElementById('logoInputState').style.display = 'none';
+  document.getElementById('logoLoading').style.display = 'flex';
+  document.getElementById('logoResult').style.display = 'none';
+
+  fetch('/leagues/' + _logoLeagueId + '/team/' + _logoTeamId + '/generate-logo', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+    body: JSON.stringify({prompt: prompt})
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+  .then(function(res) {
+    document.getElementById('logoLoading').style.display = 'none';
+    if (!res.ok) {
+      document.getElementById('logoInputState').style.display = 'block';
+      document.getElementById('logoError').textContent = res.data.error || 'Generation failed.';
+      document.getElementById('logoError').style.display = 'block';
+      return;
+    }
+    // Show result
+    var newUrl = res.data.logo_url + '?t=' + Date.now();
+    document.getElementById('logoResultImg').src = newUrl;
+    document.getElementById('logoResult').style.display = 'block';
+    _logoAccepted = false;
+
+    // Update the team card's logo preview
+    var el = document.getElementById('teamLogo' + _logoTeamId);
+    if (el) {
+      if (el.tagName === 'IMG') {
+        el.src = newUrl;
+      } else {
+        var img = document.createElement('img');
+        img.src = newUrl;
+        img.alt = 'Logo';
+        img.className = 'prof-team-logo-img';
+        img.id = 'teamLogo' + _logoTeamId;
+        el.parentNode.replaceChild(img, el);
+      }
+    }
+  })
+  .catch(function(err) {
+    document.getElementById('logoLoading').style.display = 'none';
+    document.getElementById('logoInputState').style.display = 'block';
+    document.getElementById('logoError').textContent = 'Network error: ' + err.message;
+    document.getElementById('logoError').style.display = 'block';
+  });
+}
+
+function acceptLogo() {
+  _logoAccepted = true;
+  // Update current logo preview in modal
+  var src = document.getElementById('logoResultImg').src;
+  document.getElementById('logoCurrent').style.display = 'block';
+  document.getElementById('logoCurrentImg').src = src;
+  document.getElementById('logoPrevPrompt').textContent = 'Prompt: ' + document.getElementById('logoPrompt').value.trim();
+  // Update button text to "Edit Logo"
+  var btn = document.querySelector('[onclick*="openLogoModal(' + _logoTeamId + ',"]') ||
+            document.querySelector('[onclick*="openLogoModal(' + _logoTeamId + ' ,"]');
+  if (btn) btn.innerHTML = '<i class="bi bi-stars me-1"></i>Edit Logo';
+  closeLogo();
+}
+
+function regenerateLogo() {
+  document.getElementById('logoResult').style.display = 'none';
+  document.getElementById('logoInputState').style.display = 'block';
+  document.getElementById('logoGenBtn').disabled = false;
+}
+
+function closeLogo() {
+  document.getElementById('logoModal').style.display = 'none';
+}
 </script>
 {% endblock %}
