@@ -10,16 +10,29 @@
 {# ── Hero Header ── #}
 <div class="squad-hero">
   <div class="squad-hero-inner">
-    <div>
-      <div class="squad-hero-crumb d-none d-lg-block">
-        <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / {{ team.name }}
-      </div>
-      <div class="d-flex align-items-center gap-2 flex-wrap">
-        <h2 class="squad-hero-title">{{ team.name }}</h2>
-        <span class="squad-hero-count d-none d-lg-inline">{{ players|length }} players</span>
-        {% if is_owner %}
-        <span class="squad-hero-owner d-none d-lg-inline">Your Team</span>
+    <div class="d-flex align-items-center gap-3">
+      {# Team logo #}
+      <div class="squad-logo-wrap" {% if is_owner %}onclick="document.getElementById('logoModal').style.display='flex'" style="cursor:pointer;"{% endif %}>
+        {% if team.logo_url %}
+          <img src="{{ team.logo_url }}" alt="{{ team.name }} logo" class="squad-logo-img">
+        {% else %}
+          <div class="squad-logo-placeholder">{{ team.name[:2]|upper }}</div>
         {% endif %}
+        {% if is_owner %}
+          <div class="squad-logo-edit"><i class="bi bi-stars"></i></div>
+        {% endif %}
+      </div>
+      <div>
+        <div class="squad-hero-crumb d-none d-lg-block">
+          <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}">{{ league.name }}</a> / {{ team.name }}
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <h2 class="squad-hero-title">{{ team.name }}</h2>
+          <span class="squad-hero-count d-none d-lg-inline">{{ players|length }} players</span>
+          {% if is_owner %}
+          <span class="squad-hero-owner d-none d-lg-inline">Your Team</span>
+          {% endif %}
+        </div>
       </div>
     </div>
     {# Desktop: original pill actions #}
@@ -898,6 +911,240 @@
 {% if field_data and field_data.locked_teams %}
 <script>
 setInterval(function() { window.location.reload(); }, 5 * 60 * 1000);
+</script>
+{% endif %}
+
+{# ═══════════════════════ LOGO GENERATION MODAL ═══════════════════════ #}
+{% if is_owner %}
+<div id="logoModal" class="logo-modal-overlay" style="display:none;">
+  <div class="logo-modal">
+    <div class="logo-modal-header">
+      <h3><i class="bi bi-stars me-2" style="color:#d29922;"></i>Generate Team Logo</h3>
+      <button onclick="document.getElementById('logoModal').style.display='none'" class="logo-modal-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="logo-modal-body">
+      {% if team.logo_url %}
+      <div class="logo-modal-current">
+        <img src="{{ team.logo_url }}" alt="Current logo" class="logo-modal-preview">
+        {% if team.logo_prompt %}
+        <div class="logo-modal-prev-prompt">Previous prompt: <em>"{{ team.logo_prompt }}"</em></div>
+        {% endif %}
+      </div>
+      {% endif %}
+      <label class="logo-modal-label">Describe your team logo</label>
+      <textarea id="logoPrompt" class="logo-modal-input" rows="3" maxlength="400" placeholder="e.g. A fierce red dragon breathing fire, with golden wings and a shield behind it"></textarea>
+      <div class="logo-modal-hint">Be descriptive! Include colours, animals, symbols, or themes you want. Max 400 characters.</div>
+      <div id="logoError" class="logo-modal-error" style="display:none;"></div>
+      <button id="logoGenBtn" onclick="generateLogo()" class="logo-modal-generate">
+        <i class="bi bi-stars me-1"></i>Generate Logo
+      </button>
+      <div id="logoLoading" class="logo-modal-loading" style="display:none;">
+        <div class="logo-spinner"></div>
+        <span>Generating your logo... this takes ~15 seconds</span>
+      </div>
+      <div id="logoResult" style="display:none;">
+        <img id="logoResultImg" src="" alt="Generated logo" class="logo-modal-result-img">
+        <div class="logo-modal-result-msg">Logo saved! Refresh to see it everywhere.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── Logo in squad hero ── */
+  .squad-logo-wrap {
+    position: relative; flex-shrink: 0;
+  }
+  .squad-logo-img {
+    width: 56px; height: 56px; border-radius: 14px; object-fit: cover;
+    border: 2px solid var(--kl-border);
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  .squad-logo-placeholder {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(145deg, #0d3618, #238636, #3fb950);
+    color: #fff; font-weight: 800; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    letter-spacing: .5px;
+  }
+  .squad-logo-edit {
+    position: absolute; bottom: -4px; right: -4px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #d29922; color: #000; font-size: .6rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.4);
+    transition: transform .15s;
+  }
+  .squad-logo-wrap:hover .squad-logo-edit { transform: scale(1.15); }
+
+  /* ── Modal ── */
+  .logo-modal-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .logo-modal {
+    background: var(--kl-bg-card, #161b22); border: 1px solid var(--kl-border, #30363d);
+    border-radius: 16px; width: 100%; max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    overflow: hidden;
+  }
+  .logo-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--kl-border, #21262d);
+  }
+  .logo-modal-header h3 {
+    font-size: 1rem; font-weight: 700; color: var(--kl-text-heading, #e6edf3); margin: 0;
+  }
+  .logo-modal-close {
+    background: none; border: none; color: var(--kl-text-faint, #484f58);
+    font-size: 1.1rem; cursor: pointer; padding: 4px;
+  }
+  .logo-modal-close:hover { color: var(--kl-text-primary, #e6edf3); }
+  .logo-modal-body { padding: 20px; }
+
+  .logo-modal-current {
+    text-align: center; margin-bottom: 16px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--kl-border, #21262d);
+  }
+  .logo-modal-preview {
+    width: 80px; height: 80px; border-radius: 16px; object-fit: cover;
+    border: 2px solid var(--kl-border, #30363d);
+    box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  }
+  .logo-modal-prev-prompt {
+    font-size: .72rem; color: var(--kl-text-faint, #484f58); margin-top: 8px;
+  }
+
+  .logo-modal-label {
+    display: block; font-size: .8rem; font-weight: 600;
+    color: var(--kl-text-secondary, #8b949e); margin-bottom: 6px;
+  }
+  .logo-modal-input {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    background: var(--kl-bg-body, #0d1117); color: var(--kl-text-primary, #e6edf3);
+    border: 1px solid var(--kl-border, #30363d); font-size: .85rem;
+    resize: none; font-family: inherit;
+  }
+  .logo-modal-input:focus {
+    outline: none; border-color: #d29922;
+    box-shadow: 0 0 0 3px rgba(210,153,34,.15);
+  }
+  .logo-modal-hint {
+    font-size: .68rem; color: var(--kl-text-faint, #484f58); margin-top: 6px;
+  }
+  .logo-modal-error {
+    margin-top: 10px; padding: 8px 12px; border-radius: 8px;
+    background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3);
+    color: #f85149; font-size: .78rem;
+  }
+  .logo-modal-generate {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; margin-top: 14px; padding: 10px 0;
+    background: linear-gradient(135deg, #d29922, #e3b341);
+    color: #000; font-weight: 700; font-size: .85rem;
+    border: none; border-radius: 10px; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .logo-modal-generate:hover { opacity: .9; }
+  .logo-modal-generate:disabled { opacity: .5; cursor: not-allowed; }
+
+  .logo-modal-loading {
+    display: flex; align-items: center; gap: 10px; justify-content: center;
+    margin-top: 14px; padding: 12px; color: var(--kl-text-secondary, #8b949e);
+    font-size: .8rem;
+  }
+  .logo-spinner {
+    width: 20px; height: 20px; border: 2px solid var(--kl-border, #30363d);
+    border-top-color: #d29922; border-radius: 50%;
+    animation: logoSpin 1s linear infinite;
+  }
+  @keyframes logoSpin { to { transform: rotate(360deg); } }
+
+  .logo-modal-result-img {
+    width: 120px; height: 120px; border-radius: 20px; object-fit: cover;
+    display: block; margin: 14px auto 0;
+    border: 2px solid var(--kl-border, #30363d);
+    box-shadow: 0 6px 24px rgba(0,0,0,.4);
+  }
+  .logo-modal-result-msg {
+    text-align: center; margin-top: 10px;
+    font-size: .78rem; color: #3fb950; font-weight: 600;
+  }
+</style>
+
+<script>
+function generateLogo() {
+    var prompt = document.getElementById('logoPrompt').value.trim();
+    var errorEl = document.getElementById('logoError');
+    var btn = document.getElementById('logoGenBtn');
+    var loading = document.getElementById('logoLoading');
+    var result = document.getElementById('logoResult');
+    errorEl.style.display = 'none';
+    result.style.display = 'none';
+
+    if (!prompt) {
+        errorEl.textContent = 'Please describe what you want your logo to look like.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.style.display = 'none';
+    loading.style.display = 'flex';
+
+    fetch("{{ url_for('team.generate_logo', league_id=league.id, team_id=team.id) }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+        },
+        body: JSON.stringify({ prompt: prompt })
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+        loading.style.display = 'none';
+        if (res.ok && res.data.ok) {
+            document.getElementById('logoResultImg').src = res.data.logo_url + '?t=' + Date.now();
+            result.style.display = 'block';
+            // Update the squad hero logo immediately
+            var wrap = document.querySelector('.squad-logo-wrap');
+            if (wrap) {
+                var existing = wrap.querySelector('.squad-logo-img');
+                if (existing) {
+                    existing.src = res.data.logo_url + '?t=' + Date.now();
+                } else {
+                    var ph = wrap.querySelector('.squad-logo-placeholder');
+                    if (ph) {
+                        var img = document.createElement('img');
+                        img.src = res.data.logo_url + '?t=' + Date.now();
+                        img.alt = 'Team logo';
+                        img.className = 'squad-logo-img';
+                        ph.replaceWith(img);
+                    }
+                }
+            }
+            btn.textContent = '';
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Regenerate';
+            btn.disabled = false;
+            btn.style.display = 'flex';
+        } else {
+            errorEl.textContent = res.data.error || 'Something went wrong.';
+            errorEl.style.display = 'block';
+            btn.disabled = false;
+            btn.style.display = 'flex';
+        }
+    })
+    .catch(function(err) {
+        loading.style.display = 'none';
+        errorEl.textContent = 'Network error. Please try again.';
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.style.display = 'flex';
+    });
+}
 </script>
 {% endif %}
 {% endblock %}

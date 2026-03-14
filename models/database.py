@@ -295,6 +295,8 @@ class FantasyTeam(db.Model):
     league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     name = db.Column(db.String(120), nullable=False)
+    logo_url = db.Column(db.String(300))      # path to AI-generated team logo
+    logo_prompt = db.Column(db.String(500))    # prompt used to generate the logo
     draft_order = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 

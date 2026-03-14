@@ -76,7 +76,10 @@
     {# ── Teams row: crest + name + meta on each side ── #}
     <div class="hero-teams-row">
       <div class="hero-team-block hero-team-left">
-        <span class="hero-crest left-initial" id="left-initial">{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
+        {% if not is_bye and my_team.logo_url %}
+          <img src="{{ my_team.logo_url }}" alt="" class="hero-crest-img" id="left-logo">
+        {% endif %}
+        <span class="hero-crest left-initial" id="left-initial" {% if not is_bye and my_team.logo_url %}style="display:none;"{% endif %}>{% if not is_bye %}{{ my_team.name[:2]|upper }}{% endif %}</span>
         <div class="hero-team-detail">
           <div class="hero-team-name" id="left-team-name">{% if not is_bye %}{{ my_team.name }}{% endif %}</div>
           <div class="hero-team-meta">
@@ -104,7 +107,10 @@
             <span class="hero-players-count" id="hero-right-players-count">{% if not is_bye %}{{ opp_played|default(0) }}/{{ opp_eligible|default(0) }} played{% endif %}</span>
           </div>
         </div>
-        <span class="hero-crest right-initial" id="right-initial">{% if not is_bye %}{{ opp_team.name[:2]|upper }}{% endif %}</span>
+        {% if not is_bye and opp_team.logo_url %}
+          <img src="{{ opp_team.logo_url }}" alt="" class="hero-crest-img" id="right-logo">
+        {% endif %}
+        <span class="hero-crest right-initial" id="right-initial" {% if not is_bye and opp_team.logo_url %}style="display:none;"{% endif %}>{% if not is_bye %}{{ opp_team.name[:2]|upper }}{% endif %}</span>
       </div>
     </div>
 
@@ -521,6 +527,11 @@
   }
   .left-initial { background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; }
   .right-initial { background: linear-gradient(145deg, #2d1060, #5a2d9e, #bc8cff); color: #fff; }
+  .hero-crest-img {
+    width: 50px; height: 50px; border-radius: 14px; object-fit: cover; flex-shrink: 0;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    border: 2px solid rgba(255,255,255,.08);
+  }
 
   .hero-team-name {
     color: var(--kl-text-heading); font-weight: 700; font-size: .88rem;
@@ -810,6 +821,7 @@
     .hero-scores-area { padding: 14px 12px 12px; }
     .hero-team-name { font-size: .78rem; }
     .hero-crest { width: 40px; height: 40px; font-size: .85rem; border-radius: 11px; }
+    .hero-crest-img { width: 40px; height: 40px; border-radius: 11px; }
     .hero-team-block { gap: 8px; }
     .hero-vs { padding: 0 8px; font-size: .55rem; }
     .hero-footer { padding: 10px 12px 14px; gap: 6px; }
@@ -847,6 +859,8 @@ const FIXTURES_META = {
     away_team_id: {{ f.away_team_id }},
     home_team_name: {{ f.home_team.name|tojson }},
     away_team_name: {{ f.away_team.name|tojson }},
+    home_logo: {{ (f.home_team.logo_url or '')|tojson }},
+    away_logo: {{ (f.away_team.logo_url or '')|tojson }},
     status: "{{ f.status }}"
   },
   {% endfor %}
@@ -857,6 +871,29 @@ let currentFixtureId = FIXTURE_ID; // null for bye initially
 let cachedFixtureData = {};        // fixture_id -> API data
 let fetchInProgress = false;
 let pendingFixtureId = null;       // most recently requested fixture
+
+/* ── Logo swap helper ── */
+function _swapLogo(side, logoUrl) {
+    var initialEl = document.getElementById(side + '-initial');
+    var logoEl = document.getElementById(side + '-logo');
+    if (logoUrl) {
+        if (logoEl) {
+            logoEl.src = logoUrl;
+            logoEl.style.display = '';
+        } else {
+            logoEl = document.createElement('img');
+            logoEl.id = side + '-logo';
+            logoEl.className = 'hero-crest-img';
+            logoEl.src = logoUrl;
+            logoEl.alt = '';
+            initialEl.parentNode.insertBefore(logoEl, initialEl);
+        }
+        initialEl.style.display = 'none';
+    } else {
+        if (logoEl) logoEl.style.display = 'none';
+        initialEl.style.display = '';
+    }
+}
 
 /* ════════════════════════════════════════════════
    VIEW MATCHUP — swap hero + player cards inline
@@ -967,11 +1004,17 @@ function renderViewedMatchup(fixtureId) {
         rightName = meta.away_team_name;
     }
 
-    // Hero: team names + initials
+    // Hero: team names + initials + logos
     document.getElementById('left-team-name').textContent = leftName;
     document.getElementById('right-team-name').textContent = rightName;
     document.getElementById('left-initial').textContent = leftName.substring(0,2).toUpperCase();
     document.getElementById('right-initial').textContent = rightName.substring(0,2).toUpperCase();
+
+    // Swap logos if available
+    var leftLogo = (isOwn && !IS_BYE) ? (IS_HOME ? meta.home_logo : meta.away_logo) : meta.home_logo;
+    var rightLogo = (isOwn && !IS_BYE) ? (IS_HOME ? meta.away_logo : meta.home_logo) : meta.away_logo;
+    _swapLogo('left', leftLogo);
+    _swapLogo('right', rightLogo);
 
     // Hero: scores
     var leftScoreEl = document.getElementById('hero-left-score');

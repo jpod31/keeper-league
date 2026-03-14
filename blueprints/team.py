@@ -1,8 +1,10 @@
 """Fantasy team management blueprint: lineup, squad, stats."""
 
+import os
+import logging
 from datetime import datetime, timezone
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from flask_login import login_required, current_user
 
 from sqlalchemy import func as sa_func
@@ -1698,3 +1700,95 @@ def team_analytics(league_id, team_id):
                            captain_recs=captain_recs,
                            bye_clashes=bye_clashes,
                            form_data=form_data)
+
+
+# ── Team logo generation & serving ──────────────────────────────────
+
+_logo_logger = logging.getLogger(__name__)
+
+LOGO_DIR = os.path.join(config.DATA_DIR, "team_logos")
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/generate-logo",
+               methods=["POST"])
+@login_required
+def generate_logo(league_id, team_id):
+    """Generate a team logo via OpenAI DALL-E from a user prompt."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify(error="Team not found"), 404
+    if team.owner_id != current_user.id:
+        return jsonify(error="Only the team owner can generate a logo"), 403
+
+    api_key = os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        return jsonify(error="Logo generation is not configured. Ask the commissioner to add an OPENAI_API_KEY."), 400
+
+    user_prompt = (request.json or {}).get("prompt", "").strip()
+    if not user_prompt:
+        return jsonify(error="Please describe what you want your logo to look like."), 400
+    if len(user_prompt) > 400:
+        return jsonify(error="Prompt is too long (max 400 characters)."), 400
+
+    # Build the full prompt — enforce logo style constraints
+    full_prompt = (
+        f"A professional sports team logo for a fantasy AFL football team. "
+        f"The team is called \"{team.name}\". "
+        f"User description: {user_prompt}. "
+        f"Style: clean vector-style emblem on a solid dark background (#0d1117), "
+        f"circular or shield shape, bold and modern, suitable as a small avatar icon. "
+        f"No text or letters in the logo."
+    )
+
+    try:
+        import requests as _req
+
+        resp = _req.post(
+            "https://api.openai.com/v1/images/generations",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "dall-e-3",
+                "prompt": full_prompt,
+                "n": 1,
+                "size": "1024x1024",
+                "quality": "standard",
+                "response_format": "b64_json",
+            },
+            timeout=60,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        b64_image = data["data"][0]["b64_json"]
+    except Exception as exc:
+        _logo_logger.warning("Logo generation failed: %s", exc, exc_info=True)
+        return jsonify(error=f"Logo generation failed: {exc}"), 502
+
+    # Save to disk
+    import base64
+
+    os.makedirs(LOGO_DIR, exist_ok=True)
+    filename = f"team_{team_id}.png"
+    filepath = os.path.join(LOGO_DIR, filename)
+    with open(filepath, "wb") as f:
+        f.write(base64.b64decode(b64_image))
+
+    # Update DB
+    team.logo_url = f"/leagues/{league_id}/team/{team_id}/logo"
+    team.logo_prompt = user_prompt
+    db.session.commit()
+
+    return jsonify(ok=True, logo_url=team.logo_url, prompt=user_prompt)
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/logo")
+def team_logo(league_id, team_id):
+    """Serve a team's AI-generated logo."""
+    filename = f"team_{team_id}.png"
+    filepath = os.path.join(LOGO_DIR, filename)
+    if not os.path.isfile(filepath):
+        return "", 404
+    return send_from_directory(LOGO_DIR, filename, mimetype="image/png")
