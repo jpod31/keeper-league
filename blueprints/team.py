@@ -573,7 +573,7 @@ def squad(league_id, team_id):
                 sc_display = p.sc_avg or p.sc_avg_prev
                 pr = rolling.get(p.name, {})
                 l3 = pr.get("l3")
-                trend_val = round(l3 - sc_display, 1) if l3 and sc_display else 0
+                trend_val = round(sc_display - l3, 1) if l3 and sc_display else 0
                 wishlist_players.append({
                     "player": p,
                     "sc_avg": round(sc_display, 1) if sc_display else None,

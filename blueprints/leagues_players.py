@@ -575,7 +575,7 @@ def keeper_values(league_id):
             pr = rolling.get(player.name, {})
             sc_display = player.sc_avg or player.sc_avg_prev or 0
             if pr.get("l3") and sc_display:
-                trend_val = pr["l3"] - sc_display
+                trend_val = sc_display - pr["l3"]
                 trend_pct = (trend_val / sc_display * 100) if sc_display else 0
             else:
                 trend_val = 0
