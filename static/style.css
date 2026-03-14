@@ -44,11 +44,11 @@ body {
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: var(--kl-bg-elevated);
-  border: 1px solid var(--kl-border);
+  background: linear-gradient(135deg, #0c1018, #141c2c);
+  border: 1px solid rgba(88,166,255,.15);
   border-radius: 8px;
   font-weight: 900;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: -.5px;
   color: var(--kl-accent-blue);
 }
@@ -355,8 +355,8 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: var(--kl-bg-elevated);
-  border: 1px solid var(--kl-border);
+  background: linear-gradient(135deg, #0c1018, #141c2c);
+  border: 1px solid rgba(88,166,255,.15);
   border-radius: 12px;
   font-weight: 900;
   font-size: 1rem;
