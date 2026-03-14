@@ -230,7 +230,7 @@
           {% set tc = team_colours.get(owner_team, {}) %}
           {# Trend: compare L3 to season avg #}
           {% if pr.l3 and sc_display %}
-            {% set trend_val = pr.l3 - sc_display %}
+            {% set trend_val = sc_display - pr.l3 %}
           {% else %}
             {% set trend_val = 0 %}
           {% endif %}
@@ -292,7 +292,7 @@
             {# Trend (L3 vs avg) #}
             <td class="text-center">
               {% if pr.l3 and sc_display %}
-                {% set diff = pr.l3 - sc_display %}
+                {% set diff = sc_display - pr.l3 %}
                 {% if diff > 5 %}
                   <span class="trend-pill trend-up"><i class="bi bi-caret-up-fill"></i>+{{ '%.0f'|format(diff) }}</span>
                 {% elif diff < -5 %}
