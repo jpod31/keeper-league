@@ -805,6 +805,7 @@ def league_history(league_id):
     completed = (
         Fixture.query
         .filter_by(league_id=league_id, status="completed", is_final=False)
+        .filter(Fixture.afl_round > 0)
         .order_by(Fixture.year, Fixture.afl_round)
         .all()
     )
