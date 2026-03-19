@@ -20,7 +20,20 @@ from blueprints import check_league_access
 from models.lineup_manager import (
     get_or_create_lineup, get_lineup_with_slots, set_lineup,
     auto_fill_lineup, lock_lineup, get_bye_players,
+    snapshot_lineups_for_round,
 )
+
+
+def _refresh_snapshot_if_live(league):
+    """Refresh the weekly lineup snapshot if a round is currently live."""
+    from scrapers.squiggle import get_current_round
+    try:
+        afl_round = get_current_round(league.season_year)
+        if afl_round:
+            snapshot_lineups_for_round(afl_round, league.season_year)
+            db.session.commit()
+    except Exception:
+        pass  # don't block the API response
 import config
 from config import TEAM_LOGOS
 
@@ -930,6 +943,7 @@ def api_set_captain(league_id, team_id):
     # Can't be both captain and VC
     entry.is_vice_captain = False
     db.session.commit()
+    _refresh_snapshot_if_live(league)
     return jsonify({"ok": True, "captain_id": player_id})
 
 
@@ -971,6 +985,7 @@ def api_set_vc(league_id, team_id):
     # Can't be both captain and VC
     entry.is_captain = False
     db.session.commit()
+    _refresh_snapshot_if_live(league)
     return jsonify({"ok": True, "vc_id": player_id})
 
 
@@ -1107,6 +1122,7 @@ def api_swap(league_id, team_id):
         entry2.is_vice_captain = False
 
     db.session.commit()
+    _refresh_snapshot_if_live(league)
     return jsonify({"ok": True})
 
 
@@ -1171,6 +1187,7 @@ def api_set_emergency(league_id, team_id):
         entry.is_emergency = True
 
     db.session.commit()
+    _refresh_snapshot_if_live(league)
     return jsonify({"ok": True, "is_emergency": entry.is_emergency})
 
 
@@ -1215,6 +1232,7 @@ def api_toggle_7s(league_id, team_id):
         # Toggle off
         db.session.delete(existing)
         db.session.commit()
+        _refresh_snapshot_if_live(league)
         return jsonify({"ok": True, "in_7s": False, "sevens_count": Reserve7sLineup.query.filter_by(
             league_id=league_id, team_id=team_id, afl_round=sevens_round, year=year,
         ).count()})
@@ -1262,6 +1280,7 @@ def api_toggle_7s(league_id, team_id):
         )
         db.session.add(new_entry)
         db.session.commit()
+        _refresh_snapshot_if_live(league)
         return jsonify({"ok": True, "in_7s": True, "sevens_count": Reserve7sLineup.query.filter_by(
             league_id=league_id, team_id=team_id, afl_round=sevens_round, year=year,
         ).count()})
@@ -1306,6 +1325,7 @@ def api_set_7s_captain(league_id, team_id):
         entry.is_captain = True
 
     db.session.commit()
+    _refresh_snapshot_if_live(league)
     return jsonify({"ok": True, "captain_id": player_id if entry.is_captain else None})
 
 
