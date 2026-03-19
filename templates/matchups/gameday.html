@@ -746,8 +746,8 @@
     font-weight: 600; white-space: nowrap; color: var(--kl-text-primary);
     font-variant-numeric: tabular-nums;
   }
-  .gameday-live-dot { font-size: .35rem; color: #3fb950; vertical-align: middle; margin-left: 3px; animation: pulse 2s infinite; }
-  .gameday-player-score.text-success { color: #3fb950 !important; }
+  .gameday-live-dot { font-size: .35rem; color: #56d364; vertical-align: middle; margin-left: 3px; animation: pulse 2s infinite; }
+  .gameday-player-score.text-success { color: #56d364 !important; }
   .gameday-pos-badge {
     padding: 1px 5px !important; font-size: .55rem !important; border-radius: 3px !important;
     line-height: 1.4;
@@ -1308,6 +1308,15 @@ function renderPlayerRow(p, lockedIds) {
         + '</div>';
 }
 
+function _sortPlayers(arr) {
+    return arr.sort(function(a, b) {
+        var aStarted = a.game_started ? 0 : 1;
+        var bStarted = b.game_started ? 0 : 1;
+        if (aStarted !== bStarted) return aStarted - bStarted;
+        return (a.name || '').localeCompare(b.name || '');
+    });
+}
+
 function renderPlayerList(containerId, players, lockedIds) {
     var container = document.getElementById(containerId);
     if (!container) return;
@@ -1316,9 +1325,9 @@ function renderPlayerList(containerId, players, lockedIds) {
         return;
     }
 
-    var field = players.filter(function(p) { return (p.lineup_type || 'field') === 'field'; });
-    var bench = players.filter(function(p) { return p.lineup_type === 'bench'; });
-    var emg = players.filter(function(p) { return p.lineup_type === 'emergency'; });
+    var field = _sortPlayers(players.filter(function(p) { return (p.lineup_type || 'field') === 'field'; }));
+    var bench = _sortPlayers(players.filter(function(p) { return p.lineup_type === 'bench'; }));
+    var emg = _sortPlayers(players.filter(function(p) { return p.lineup_type === 'emergency'; }));
 
     var html = '';
     html += '<div class="gameday-section-hdr section-field"><i class="bi bi-people-fill me-1"></i>Field</div>';
