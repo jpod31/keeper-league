@@ -1121,6 +1121,19 @@ def api_swap(league_id, team_id):
         entry2.is_captain = False
         entry2.is_vice_captain = False
 
+    # Auto-remove from 7s if a player moved out of reserves (to field)
+    from models.database import Reserve7sLineup
+    from blueprints.reserve7s import _get_next_7s_round
+    sevens_round = _get_next_7s_round(league_id, league.season_year)
+    if sevens_round:
+        for entry in (entry1, entry2):
+            if not entry.is_benched:
+                Reserve7sLineup.query.filter_by(
+                    league_id=league_id, team_id=team_id,
+                    afl_round=sevens_round, year=league.season_year,
+                    player_id=entry.player_id,
+                ).delete()
+
     db.session.commit()
     _refresh_snapshot_if_live(league)
     return jsonify({"ok": True})
