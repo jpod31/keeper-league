@@ -600,6 +600,51 @@ def gameday(league_id):
     )
 
 
+@matchups_bp.route("/<int:league_id>/gameday/api/fixtures")
+@login_required
+def api_gameday_fixtures(league_id):
+    """Return all fixture player breakdowns for the current gameday round."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+
+    year = league.season_year
+    afl_round = request.args.get("round", type=int)
+    if afl_round is None:
+        afl_round = _detect_gameday_round(league_id, year)
+    if afl_round is None:
+        return jsonify({"error": "No round detected"}), 404
+
+    round_fixtures = get_round_fixtures(league_id, year, afl_round)
+    locked_ids = get_locked_player_ids(afl_round, year)
+
+    fixtures_out = []
+    for f in round_fixtures:
+        home_players = get_player_score_breakdown(f.home_team_id, afl_round, year, league_id)
+        away_players = get_player_score_breakdown(f.away_team_id, afl_round, year, league_id)
+
+        home_rs = RoundScore.query.filter_by(team_id=f.home_team_id, afl_round=afl_round, year=year).first()
+        away_rs = RoundScore.query.filter_by(team_id=f.away_team_id, afl_round=afl_round, year=year).first()
+
+        fixtures_out.append({
+            "fixture_id": f.id,
+            "home_team_id": f.home_team_id,
+            "away_team_id": f.away_team_id,
+            "home_score": home_rs.total_score if home_rs else 0,
+            "away_score": away_rs.total_score if away_rs else 0,
+            "home_captain_bonus": home_rs.captain_bonus if home_rs else 0,
+            "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
+            "home_players": home_players,
+            "away_players": away_players,
+            "status": f.status,
+        })
+
+    return jsonify({
+        "fixtures": fixtures_out,
+        "locked_player_ids": list(locked_ids),
+    })
+
+
 @matchups_bp.route("/<int:league_id>/gameday/sync-scores", methods=["POST"])
 @login_required
 def sync_scores(league_id):
