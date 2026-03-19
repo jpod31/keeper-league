@@ -749,6 +749,9 @@ class SeasonConfig(db.Model):
     # Captain scoring toggle
     captain_scoring_enabled = db.Column(db.Boolean, default=True)
 
+    # 7s captain (double score for one 7s player)
+    sevens_captain_enabled = db.Column(db.Boolean, default=False)
+
     # Season automation (Phase F)
     auto_transition_enabled = db.Column(db.Boolean, default=False)
     season_start_date = db.Column(db.DateTime)

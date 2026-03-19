@@ -471,7 +471,7 @@
                 {{ p.name }}
                 {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% endif %}
                 <span class="mob-pos-badge mob-badge-7s">7</span>
-                {% if is_7c %}<span class="mob-pos-badge mob-badge-cap" style="background:linear-gradient(135deg,#bc8cff,#8b5cf6);">7C</span>{% endif %}
+                {% if is_7c and fd.sevens_captain_enabled %}<span class="mob-pos-badge mob-badge-cap" style="background:linear-gradient(135deg,#bc8cff,#8b5cf6);">7C</span>{% endif %}
               </div>
               <div class="mob-pos-meta">
                 {% for ps in (p.position or 'MID').split('/') %}

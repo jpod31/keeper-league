@@ -1,7 +1,7 @@
 {# AFL Field View — included from squad.html when view == 'field' #}
 {# Expects: field_data, TEAM_LOGOS, is_owner, league, team #}
 
-{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing, sevens_ids=[], sevens_captain_id=None, has_7s_fixture=false, selected_player_ids=set(), locked_teams=set(), cap_locked=false, vc_locked=false, emg_available=4, sevens_available=7) %}
+{% macro player_card(p, pos_class, cap_id, vc_id, is_flex, is_owner, league_id, team_id, is_reserve, emergency_ids, teams_playing, sevens_ids=[], sevens_captain_id=None, has_7s_fixture=false, selected_player_ids=set(), locked_teams=set(), cap_locked=false, vc_locked=false, emg_available=4, sevens_available=7, sevens_captain_enabled=false) %}
   {% if p %}
     {% set is_emg = emergency_ids is defined and p.id in emergency_ids %}
     {% set is_7s = sevens_ids is defined and p.id in sevens_ids %}
@@ -74,7 +74,7 @@
         {% if has_7s_fixture and not is_emg and (is_7s or sevens_available > 0) %}
         <button class="fv-action-btn fv-act-7s{% if is_7s %} active{% endif %}"
                 title="Toggle 7s" onclick="event.stopPropagation(); fv7sToggle({{ p.id }})">7</button>
-        {% if is_7s %}
+        {% if is_7s and sevens_captain_enabled %}
         <button class="fv-action-btn fv-act-7c{% if is_7c %} active{% endif %}"
                 title="Set 7s Captain" onclick="event.stopPropagation(); fv7sCaptain({{ p.id }})">7C</button>
         {% endif %}
@@ -347,7 +347,7 @@
     </div>
     <div class="fv-reserves-grid">
       {% for p in field_data.emergency_players %}
-        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available) }}
+        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available, sevens_captain_enabled=field_data.sevens_captain_enabled) }}
       {% endfor %}
     </div>
   </div>
@@ -363,7 +363,7 @@
     {% if field_data.sevens_players %}
     <div class="fv-reserves-grid">
       {% for p in field_data.sevens_players %}
-        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available) }}
+        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available, sevens_captain_enabled=field_data.sevens_captain_enabled) }}
       {% endfor %}
     </div>
     {% else %}
@@ -383,7 +383,7 @@
     </div>
     <div class="fv-reserves-grid">
       {% for p in field_data.injury_list %}
-        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available) }}
+        {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available, sevens_captain_enabled=field_data.sevens_captain_enabled) }}
       {% endfor %}
     </div>
   </div>
@@ -408,7 +408,7 @@
         </div>
         <div class="fv-reserves-grid">
           {% for p in pos_players %}
-            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available) }}
+            {{ player_card(p, (p.position or 'MID').split('/')[0]|lower, field_data.cap_id, field_data.vc_id, false, is_owner, league.id, team.id, true, field_data.emergency_ids, field_data.teams_playing, field_data.sevens_ids, field_data.sevens_captain_id, field_data.has_7s_fixture, selected_player_ids=field_data.selected_player_ids, locked_teams=field_data.locked_teams, cap_locked=_cap_locked, vc_locked=_vc_locked, emg_available=_emg_available, sevens_available=_7s_available, sevens_captain_enabled=field_data.sevens_captain_enabled) }}
           {% endfor %}
         </div>
       </div>
@@ -518,6 +518,7 @@
 const API_PREFIX = `/leagues/{{ league.id }}/team/{{ team.id }}/api`;
 const AGE_CUTOFF = {{ field_data.age_cutoff }};
 const MAX_SENIOR_7S = 2;
+const _fv7sCaptainEnabled = {{ 'true' if field_data.sevens_captain_enabled else 'false' }};
 let swapSourceId = null;
 let emgSourceId = null;
 let sevensSourceId = null;
@@ -1305,7 +1306,7 @@ function fvOpenActionSheet(pid) {
     if (isReserve && !isEmg && (is7s || sevensAvailable > 0)) {
       btns.push(`<button class="fv-action-sheet-btn fv-as-7s${is7s ? ' active' : ''}" onclick="fv7sToggle(${pid}); fvCloseActionSheet();">
         <i class="bi bi-7-circle"></i>7s</button>`);
-      if (is7s) {
+      if (is7s && _fv7sCaptainEnabled) {
         btns.push(`<button class="fv-action-sheet-btn fv-as-7c${is7c ? ' active' : ''}" onclick="fv7sCaptain(${pid}); fvCloseActionSheet();">
           <i class="bi bi-7-circle-fill"></i>7s Capt</button>`);
       }

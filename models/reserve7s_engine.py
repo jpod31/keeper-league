@@ -61,8 +61,10 @@ def _score_7s_team(team_id, league_id, afl_round, year, scoring_type, hybrid_bas
         else:
             breakdown[str(entry.player_id)] = 0
 
-    # Captain bonus (score doubled = original + bonus)
-    if captain_entry:
+    # Captain bonus (score doubled = original + bonus) — only if enabled
+    from models.database import SeasonConfig
+    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    if captain_entry and season_cfg and season_cfg.sevens_captain_enabled:
         cap_score = _get_player_score(
             captain_entry.player_id, afl_round, year,
             league_id, scoring_type, hybrid_base,

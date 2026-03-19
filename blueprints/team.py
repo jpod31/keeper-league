@@ -487,6 +487,7 @@ def squad(league_id, team_id):
             "sevens_captain_id": sevens_captain_id,
             "sevens_round": sevens_round,
             "has_7s_fixture": has_7s_fixture,
+            "sevens_captain_enabled": season_cfg.sevens_captain_enabled if season_cfg else False,
             "age_cutoff": AGE_CUTOFF,
             "player_form": player_form,
             "selected_player_ids": selected_player_ids,

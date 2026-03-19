@@ -133,6 +133,9 @@ def league_settings(league_id):
         # Captain scoring toggle
         season_cfg.captain_scoring_enabled = request.form.get("captain_scoring_enabled") == "on"
 
+        # 7s captain toggle
+        season_cfg.sevens_captain_enabled = request.form.get("sevens_captain_enabled") == "on"
+
         # SSP config
         season_cfg.ssp_enabled = request.form.get("ssp_enabled") == "on"
         ssp_cutoff = request.form.get("ssp_cutoff_round", type=int)
