@@ -663,23 +663,10 @@ function fvSetEmergency(pid) {
   const isEmg = card.dataset.emg === '1';
 
   if (isEmg) {
-    // Already emergency — enter mode: source pulses, eligible reserves light up to replace
-    emgSourceId = pid;
-    const wrapper = document.getElementById('fvWrapper');
-    if (wrapper) wrapper.classList.add('fv-swap-mode');
-
-    document.querySelectorAll('.fv-card, .mob-pos-row').forEach(c => {
-      if (!c.classList.contains('fv-card') && !c.classList.contains('mob-pos-row')) return;
-      c.classList.remove('fv-swap-active', 'fv-swap-eligible');
-      const cid = parseInt(c.dataset.playerId);
-      if (cid === pid) { c.classList.add('fv-swap-active'); return; }
-      if (c.dataset.locked === '1') return;
-      // Eligible: reserve, not already emergency, not in 7s
-      if (c.dataset.section === 'reserve' && c.dataset.emg !== '1' && c.dataset.sevens !== '1') {
-        c.classList.add('fv-swap-eligible');
-      }
+    // Already emergency — toggle off
+    fvApi('/set-emergency', {player_id: pid}).then(data => {
+      if (!data.error) fvRefresh();
     });
-    fvToast('Select a reserve to swap in as emergency', 'info');
   } else {
     // Not emergency — check if room
     const currentEmgCount = document.querySelectorAll('.fv-card[data-emg="1"]').length;
@@ -761,31 +748,10 @@ function fv7sToggle(pid) {
   });
 
   if (is7s) {
-    // Already in 7s — enter mode: source pulses, eligible reserves light up to replace
-    sevensSourceId = pid;
-    const wrapper = document.getElementById('fvWrapper');
-    if (wrapper) wrapper.classList.add('fv-swap-mode');
-
-    // If source is a senior, removing them opens a senior slot
-    const srcAge = parseInt(card.dataset.age);
-    const srcIsSenior = !isNaN(srcAge) && srcAge >= AGE_CUTOFF;
-    const seniorsAfterRemove = srcIsSenior ? seniorCount - 1 : seniorCount;
-
-    document.querySelectorAll('.fv-card, .mob-pos-row').forEach(c => {
-      if (!c.classList.contains('fv-card') && !c.classList.contains('mob-pos-row')) return;
-      c.classList.remove('fv-swap-active', 'fv-swap-eligible');
-      const cid = parseInt(c.dataset.playerId);
-      if (cid === pid) { c.classList.add('fv-swap-active'); return; }
-      if (c.dataset.locked === '1') return;
-      // Eligible: reserve, not already 7s, not emergency
-      if (c.dataset.section !== 'reserve' || c.dataset.sevens === '1' || c.dataset.emg === '1') return;
-      // Check age eligibility
-      const tgtAge = parseInt(c.dataset.age);
-      const tgtIsSenior = !isNaN(tgtAge) && tgtAge >= AGE_CUTOFF;
-      if (tgtIsSenior && seniorsAfterRemove >= MAX_SENIOR_7S) return;
-      c.classList.add('fv-swap-eligible');
+    // Already in 7s — toggle off
+    fvApi('/toggle-7s', {player_id: pid}).then(data => {
+      if (!data.error) fvRefresh();
     });
-    fvToast('Select a reserve to swap into 7s', 'info');
   } else {
     // Not in 7s — check if room
     if (current7sCards.length < 7) {
