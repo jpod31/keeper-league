@@ -230,7 +230,7 @@
       {% if p.is_captain %}<span class="s7gd-badge-c">C</span> {% endif %}
       {% if p.player_id in locked_ids %}<i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i> {% endif %}
       <span class="s7gd-player-name">{{ p.name }}</span>
-      <span class="s7gd-player-meta">{{ p.afl_team }}</span>
+      <span class="s7gd-player-meta">{% if p.afl_team and p.afl_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" title="{{ p.afl_team }}" class="s7gd-team-logo">{% else %}{{ p.afl_team }}{% endif %}</span>
     </span>
     <span class="s7gd-player-score {{ 'score-ytp' if yet_to_play else ('text-success' if p.is_live else '') }}">
       {% if yet_to_play %}<i class="bi bi-clock" style="font-size:.65rem;margin-right:2px;"></i>&mdash;{% elif p.has_played %}{{ '%.0f'|format(p.score) }}{% if p.is_captain %}<span style="font-size:.6rem;color:#a855f7;"> x2</span>{% endif %}{% else %}&ndash;{% endif %}
@@ -592,6 +592,7 @@
   }
   .s7gd-live-dot { font-size: .35rem; color: #a855f7; vertical-align: middle; margin-left: 3px; animation: s7gdPulse 2s infinite; }
   .s7gd-player-score.text-success { color: #a855f7 !important; }
+  .s7gd-team-logo { width: 16px; height: 16px; vertical-align: middle; margin-right: 2px; }
   .s7gd-pos-badge {
     padding: 1px 5px !important; font-size: .55rem !important; border-radius: 3px !important;
     line-height: 1.4;
@@ -720,6 +721,7 @@ var FIXTURE_ID = {{ fixture.id if not is_bye else 'null' }};
 var IS_HOME = {{ 'true' if not is_bye and is_home else 'false' }};
 var GAMEDAY_STATE = "{{ gameday_state }}";
 var POLL_URL = "{{ url_for('reserve7s.api_7s_live', league_id=league.id, afl_round=afl_round) }}";
+var TEAM_LOGOS_7S = {{ TEAM_LOGOS | tojson }};
 
 /* Fixture metadata for all matchups this round */
 var FIXTURES_META = {
@@ -1023,7 +1025,7 @@ function render7sPlayerRow(p, lockedIds) {
         + '<span class="s7gd-player-info">'
         + posBadge + badges
         + '<span class="s7gd-player-name">' + p.name + '</span>'
-        + '<span class="s7gd-player-meta">' + (p.afl_team || '') + '</span>'
+        + '<span class="s7gd-player-meta">' + (TEAM_LOGOS_7S[p.afl_team] ? '<img src="' + TEAM_LOGOS_7S[p.afl_team] + '" alt="' + p.afl_team + '" title="' + p.afl_team + '" class="s7gd-team-logo">' : (p.afl_team || '')) + '</span>'
         + '</span>'
         + '<span class="' + scoreClass + '">'
         + scoreText + liveDot

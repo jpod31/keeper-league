@@ -204,7 +204,7 @@
       {% if p.player_id in locked_ids %}<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.6rem;"></i> {% endif %}
       <span class="gameday-player-name">{{ p.name }}</span>
       <span class="gameday-player-meta">
-        {{ p.afl_team }}
+        {% if p.afl_team and p.afl_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" title="{{ p.afl_team }}" class="gameday-team-logo">{% else %}{{ p.afl_team }}{% endif %}
         {% if afl_matchup_info.get(p.afl_team) %}<span style="color:var(--kl-text-faint);font-size:.65rem;margin-left:2px;">{{ afl_matchup_info[p.afl_team] }}</span>{% endif %}
         {% if p.get('replaces') %}<span class="gameday-sub-note">&rarr; replacing {{ p.replaces }}</span>{% endif %}
       </span>
@@ -748,6 +748,7 @@
   }
   .gameday-live-dot { font-size: .35rem; color: #56d364; vertical-align: middle; margin-left: 3px; animation: pulse 2s infinite; }
   .gameday-player-score.text-success { color: #56d364 !important; }
+  .gameday-team-logo { width: 16px; height: 16px; vertical-align: middle; margin-right: 2px; }
   .gameday-pos-badge {
     padding: 1px 5px !important; font-size: .55rem !important; border-radius: 3px !important;
     line-height: 1.4;
@@ -939,6 +940,7 @@ const LIVE_ENABLED = {{ 'true' if live_enabled else 'false' }};
 const GAMEDAY_STATE = "{{ gameday_state }}";
 const FALLBACK_URL = "{{ url_for('matchups.api_gameday_fixtures', league_id=league.id) }}?round={{ afl_round }}";
 const DETAIL_URL_BASE = "{{ url_for('matchups.matchup_detail', league_id=league.id, fixture_id=0) }}".replace('/0', '');
+const TEAM_LOGOS_GD = {{ TEAM_LOGOS | tojson }};
 
 /* Fixture metadata for all matchups in this round */
 const FIXTURES_META = {
@@ -1300,7 +1302,7 @@ function renderPlayerRow(p, lockedIds) {
         + '<span class="gameday-player-info">'
         + posBadge + badges
         + '<span class="gameday-player-name">' + p.name + '</span>'
-        + '<span class="gameday-player-meta">' + (p.afl_team || '') + subNote + '</span>'
+        + '<span class="gameday-player-meta">' + (TEAM_LOGOS_GD[p.afl_team] ? '<img src="' + TEAM_LOGOS_GD[p.afl_team] + '" alt="' + p.afl_team + '" title="' + p.afl_team + '" class="gameday-team-logo">' : (p.afl_team || '')) + subNote + '</span>'
         + '</span>'
         + '<span class="' + scoreClass + '">'
         + scoreText + liveDot
