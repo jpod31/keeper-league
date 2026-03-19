@@ -194,7 +194,7 @@ def _auto_finalize_round(year: int, afl_round: int):
 
     with _app.app_context():
         try:
-            from models.database import AflGame, Fixture, League
+            from models.database import db, AflGame, Fixture, League
             from models.live_sync import sync_live_scores
             from models.scoring_engine import finalize_round
 
@@ -269,7 +269,7 @@ def _tuesday_auto_finalize():
     with _app.app_context():
         try:
             from datetime import datetime, timedelta, timezone
-            from models.database import AflGame, Fixture, League, db
+            from models.database import db, AflGame, Fixture, League
             from models.scoring_engine import finalize_round
             from models.live_sync import sync_live_scores
             import config
