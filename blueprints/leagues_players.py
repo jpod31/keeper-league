@@ -739,15 +739,22 @@ def league_history(league_id):
     )
 
     # ── Records: highest round score, highest season PF, biggest blowout ─
-    # Highest single-round scores
+    # Highest single-round scores (exclude R0, only completed fixtures)
+    completed_rounds = db.session.query(Fixture.afl_round, Fixture.year).filter_by(
+        league_id=league_id, status="completed", is_final=False
+    ).filter(Fixture.afl_round > 0).distinct().all()
+    completed_round_set = set((r, y) for r, y in completed_rounds)
+
     top_round_scores = (
         db.session.query(RoundScore, FantasyTeam)
         .join(FantasyTeam, RoundScore.team_id == FantasyTeam.id)
-        .filter(FantasyTeam.league_id == league_id)
+        .filter(FantasyTeam.league_id == league_id, RoundScore.afl_round > 0)
         .order_by(RoundScore.total_score.desc())
         .limit(10)
         .all()
     )
+    # Filter to only completed rounds
+    top_round_scores = [(rs, ft) for rs, ft in top_round_scores if (rs.afl_round, rs.year) in completed_round_set]
     top_scores = []
     for rs, ft in top_round_scores:
         top_scores.append({
@@ -769,10 +776,11 @@ def league_history(league_id):
         "losses": s.losses,
     } for s in top_season_pf]
 
-    # Biggest blowout (largest margin in completed fixtures)
+    # Biggest blowout (largest margin in completed fixtures, exclude R0)
     blowout_fixtures = (
         Fixture.query
         .filter_by(league_id=league_id, status="completed", is_final=False)
+        .filter(Fixture.afl_round > 0)
         .all()
     )
     blowouts = []
@@ -882,19 +890,19 @@ def league_history(league_id):
             "draws": record["draws"],
         }
 
-    # ── Lowest single-round scores ──────────────────────────────────
+    # ── Lowest single-round scores (exclude R0, only completed rounds) ──
     bottom_round_scores = (
         db.session.query(RoundScore, FantasyTeam)
         .join(FantasyTeam, RoundScore.team_id == FantasyTeam.id)
-        .filter(FantasyTeam.league_id == league_id, RoundScore.total_score > 0)
+        .filter(FantasyTeam.league_id == league_id, RoundScore.total_score > 0, RoundScore.afl_round > 0)
         .order_by(RoundScore.total_score.asc())
-        .limit(10)
+        .limit(20)
         .all()
     )
     lowest_scores = [{
         "team_name": ft.name, "score": rs.total_score,
         "round": rs.afl_round, "year": rs.year,
-    } for rs, ft in bottom_round_scores]
+    } for rs, ft in bottom_round_scores if (rs.afl_round, rs.year) in completed_round_set][:10]
 
     # ── Closest matches ─────────────────────────────────────────────
     close_matches = []
