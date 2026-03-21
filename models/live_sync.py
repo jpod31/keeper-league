@@ -681,15 +681,22 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
     stats_map = {s.player_id: s for s in stats_rows}
 
     # Determine which AFL teams have started playing (live or complete)
-    started_games = AflGame.query.filter(
+    # Also build team→kickoff map for sorting
+    all_round_games = AflGame.query.filter(
         AflGame.year == year,
         AflGame.afl_round == afl_round,
-        AflGame.status.in_(["live", "complete"]),
     ).all()
     started_teams = set()
-    for g in started_games:
-        started_teams.add(g.home_team)
-        started_teams.add(g.away_team)
+    team_kickoff = {}
+    for g in all_round_games:
+        if g.status in ("live", "complete"):
+            started_teams.add(g.home_team)
+            started_teams.add(g.away_team)
+        if g.scheduled_start:
+            ts = g.scheduled_start.isoformat()
+            for t in (g.home_team, g.away_team):
+                if t not in team_kickoff or ts < team_kickoff[t]:
+                    team_kickoff[t] = ts
 
     # Determine which emergencies auto-subbed for DNP field players
     # Highest-scoring emergency subs in first, then second-highest, etc.
@@ -758,6 +765,7 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             "is_emergency": False,
             "is_dnp": is_dnp,
             "game_started": game_started,
+            "game_kickoff": team_kickoff.get(player_team, ""),
             "replaced_by": replaced_by_id,
             "lineup_type": lineup_type,
         })
@@ -781,6 +789,7 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             "is_emergency": True,
             "is_dnp": False,
             "game_started": (player.afl_team if player else "") in started_teams,
+            "game_kickoff": team_kickoff.get(player.afl_team if player else "", ""),
             "subbed_on": subbed_on,
             "replaces": emergency_replaces.get(entry.player_id, ""),
             "lineup_type": "emergency",

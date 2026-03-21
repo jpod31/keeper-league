@@ -1315,9 +1315,14 @@ function renderPlayerRow(p, lockedIds) {
 
 function _sortPlayers(arr) {
     return arr.sort(function(a, b) {
-        var aStarted = a.game_started ? 0 : 1;
-        var bStarted = b.game_started ? 0 : 1;
-        if (aStarted !== bStarted) return aStarted - bStarted;
+        // Primary: game kickoff time (earliest first, empty/upcoming last)
+        var aKick = a.game_kickoff || 'zzzz';
+        var bKick = b.game_kickoff || 'zzzz';
+        if (aKick !== bKick) return aKick < bKick ? -1 : 1;
+        // Secondary: team name (group teammates)
+        var aTeam = a.afl_team || '';
+        var bTeam = b.afl_team || '';
+        if (aTeam !== bTeam) return aTeam.localeCompare(bTeam);
         return (a.name || '').localeCompare(b.name || '');
     });
 }
