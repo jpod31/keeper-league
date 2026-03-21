@@ -585,7 +585,7 @@ def _format_game_time(dt):
 
 def get_game_statuses(afl_round: int, year: int) -> list[dict]:
     """Return list of game status dicts for a round (for frontend display)."""
-    games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+    games = AflGame.query.filter_by(year=year, afl_round=afl_round).order_by(AflGame.scheduled_start).all()
     return [
         {
             "game_id": g.id,
