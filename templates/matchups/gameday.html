@@ -31,9 +31,26 @@
   {% endif %}
 </div>
 
-{# ═══════════════════════ AFL GAME PILLS (top-level) ═══════════════════════ #}
+{# ═══════════════════════ MOBILE: Keeper League mini-cards ═══════════════════════ #}
+{% if round_fixtures %}
+<div class="d-lg-none gameday-afl-bar" id="kl-mini-bar" style="margin-bottom:6px;">
+  {% for f in round_fixtures %}
+    {% set h_score = round_scores.get(f.home_team_id, {}).get('total_score', 0) %}
+    {% set a_score = round_scores.get(f.away_team_id, {}).get('total_score', 0) %}
+    {% set is_users = (not is_bye) and (user_team and (f.home_team_id == user_team.id or f.away_team_id == user_team.id)) %}
+    <div class="game-status-pill{% if is_users %} matchup-yours{% endif %}" style="cursor:pointer;{% if is_users %}border-color:var(--kl-accent-blue);{% endif %}" onclick="viewMatchup({{ f.id }})">
+      <span class="game-teams">{{ f.home_team.name[:6] }} v {{ f.away_team.name[:6] }}</span>
+      {% if f.status != 'scheduled' %}
+        <span class="game-afl-score">{{ '%.0f'|format(h_score) }}-{{ '%.0f'|format(a_score) }}</span>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ═══════════════════════ AFL GAME PILLS (desktop only) ═══════════════════════ #}
 {% if afl_games %}
-<div class="gameday-afl-bar" id="afl-pills-bar">
+<div class="gameday-afl-bar d-none d-lg-flex" id="afl-pills-bar">
   {% for g in afl_games %}
     <a href="{{ url_for('matchups.afl_game_view', league_id=league.id, game_id=g.game_id) }}" class="game-status-pill" id="game-{{ g.game_id }}" style="text-decoration:none;color:inherit;">
       <span class="game-teams">{{ g.home_team[:3]|upper }} v {{ g.away_team[:3]|upper }}</span>
@@ -417,7 +434,7 @@
       <span class="matchups-header-dates">{{ round_dates }}</span>
     {% endif %}
   </div>
-  <div class="gameday-matchups-grid">
+  <div class="gameday-matchups-grid d-none d-lg-grid">
     {% for f in round_fixtures %}
       {% set h_score = round_scores.get(f.home_team_id, {}).get('total_score', 0) %}
       {% set a_score = round_scores.get(f.away_team_id, {}).get('total_score', 0) %}
