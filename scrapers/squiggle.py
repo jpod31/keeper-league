@@ -89,12 +89,23 @@ def parse_game_status(game: dict) -> str:
     """Derive our status string from Squiggle game fields.
 
     Returns: 'scheduled', 'live', or 'complete'.
+    Falls back to time-based detection if Squiggle is slow to update.
     """
     complete = game.get("complete")
     if complete == 100:
         return "complete"
     if game.get("is_live") or (complete is not None and complete > 0):
         return "live"
+
+    # Time-based fallback: if scheduled start has passed, treat as live
+    unixtime = game.get("unixtime")
+    if unixtime:
+        from datetime import datetime, timezone
+        scheduled_utc = datetime.fromtimestamp(unixtime, tz=timezone.utc)
+        now_utc = datetime.now(timezone.utc)
+        if now_utc > scheduled_utc:
+            return "live"
+
     return "scheduled"
 
 
