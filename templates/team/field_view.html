@@ -578,7 +578,14 @@ function fvRefresh() {
           old.parentNode.replaceChild(fresh, old);
         });
         _initHoverListeners();
+      } else {
+        console.warn('fvRefresh: wrapper not found, forcing reload');
+        window.location.reload();
       }
+    })
+    .catch(err => {
+      console.error('fvRefresh error:', err);
+      window.location.reload();
     });
 }
 
