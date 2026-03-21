@@ -86,7 +86,16 @@ def _detect_7s_gameday_round(league_id, year):
 
 
 def _get_next_7s_round(league_id, year):
-    """Get the next round that needs a lineup (first scheduled or next after latest completed)."""
+    """Get the current/next round that needs a lineup (first live or scheduled)."""
+    # Check for live round first
+    live_round = (
+        db.session.query(db.func.min(Reserve7sFixture.afl_round))
+        .filter_by(league_id=league_id, year=year, status="live", is_final=False)
+        .scalar()
+    )
+    if live_round is not None:
+        return live_round
+
     next_sched = (
         db.session.query(db.func.min(Reserve7sFixture.afl_round))
         .filter_by(league_id=league_id, year=year, status="scheduled", is_final=False)
@@ -97,6 +106,14 @@ def _get_next_7s_round(league_id, year):
 
     # If no scheduled rounds, check main comp's next round
     from models.database import Fixture
+    live_main = (
+        db.session.query(db.func.min(Fixture.afl_round))
+        .filter_by(league_id=league_id, year=year, status="live", is_final=False)
+        .scalar()
+    )
+    if live_main is not None:
+        return live_main
+
     next_main = (
         db.session.query(db.func.min(Fixture.afl_round))
         .filter_by(league_id=league_id, year=year, status="scheduled", is_final=False)
