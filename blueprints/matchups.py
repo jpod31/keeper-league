@@ -643,6 +643,88 @@ def api_gameday_fixtures(league_id):
     })
 
 
+@matchups_bp.route("/<int:league_id>/gameday/afl-game/<int:game_id>")
+@login_required
+def afl_game_view(league_id, game_id):
+    """Show all players and SC scores for a specific AFL game."""
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("League not found.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    game = db.session.get(AflGame, game_id)
+    if not game:
+        flash("Game not found.", "warning")
+        return redirect(url_for("matchups.gameday", league_id=league_id))
+
+    from models.database import PlayerStat, AflPlayer
+
+    # Get all players from both teams with stats for this round
+    home_players = []
+    away_players = []
+
+    for team_name, player_list in [(game.home_team, home_players), (game.away_team, away_players)]:
+        players = AflPlayer.query.filter_by(afl_team=team_name).all()
+        for p in players:
+            stat = PlayerStat.query.filter_by(
+                player_id=p.id, year=game.year, round=game.afl_round
+            ).first()
+            if stat and stat.supercoach_score is not None:
+                player_list.append({
+                    "name": p.name,
+                    "position": p.position or "",
+                    "sc_score": stat.supercoach_score,
+                    "is_live": stat.is_live if stat else False,
+                })
+
+        player_list.sort(key=lambda x: x["sc_score"], reverse=True)
+
+    return render_template(
+        "matchups/afl_game.html",
+        league=league,
+        game=game,
+        home_players=home_players,
+        away_players=away_players,
+    )
+
+
+@matchups_bp.route("/<int:league_id>/gameday/api/afl-game/<int:game_id>")
+@login_required
+def api_afl_game(league_id, game_id):
+    """API: return player SC scores for an AFL game."""
+    game = db.session.get(AflGame, game_id)
+    if not game:
+        return jsonify({"error": "Game not found"}), 404
+
+    from models.database import PlayerStat, AflPlayer
+
+    result = {"home": [], "away": [], "game": {
+        "home_team": game.home_team,
+        "away_team": game.away_team,
+        "status": game.status,
+        "home_score": game.home_score,
+        "away_score": game.away_score,
+    }}
+
+    for team_name, key in [(game.home_team, "home"), (game.away_team, "away")]:
+        players = AflPlayer.query.filter_by(afl_team=team_name).all()
+        for p in players:
+            stat = PlayerStat.query.filter_by(
+                player_id=p.id, year=game.year, round=game.afl_round
+            ).first()
+            if stat and stat.supercoach_score is not None:
+                result[key].append({
+                    "name": p.name,
+                    "position": p.position or "",
+                    "sc_score": stat.supercoach_score,
+                    "is_live": stat.is_live if stat else False,
+                })
+
+        result[key].sort(key=lambda x: x["sc_score"], reverse=True)
+
+    return jsonify(result)
+
+
 @matchups_bp.route("/<int:league_id>/gameday/sync-scores", methods=["POST"])
 @login_required
 def sync_scores(league_id):
