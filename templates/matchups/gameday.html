@@ -842,6 +842,7 @@
     box-shadow: 0 4px 12px rgba(0,0,0,.3);
   }
   .matchup-yours { border-color: var(--kl-accent-blue) !important; background: rgba(31,111,235,.04); }
+  .matchup-yours-dimmed { border-color: #30363d !important; background: transparent !important; }
   .matchup-active {
     box-shadow: 0 0 0 2px var(--kl-accent-blue), 0 4px 12px rgba(0,0,0,.2) !important;
     border-color: var(--kl-accent-blue) !important;
@@ -1248,7 +1249,10 @@ function renderViewedMatchup(fixtureId) {
 
 function updateActiveCard(fixtureId) {
     document.querySelectorAll('.gameday-matchup-card').forEach(function(card) {
-        card.classList.toggle('matchup-active', parseInt(card.dataset.fixtureId) === fixtureId);
+        var isActive = parseInt(card.dataset.fixtureId) === fixtureId;
+        card.classList.toggle('matchup-active', isActive);
+        // Dim "Your Match" highlight when viewing another matchup
+        card.classList.toggle('matchup-yours-dimmed', card.classList.contains('matchup-yours') && !isActive);
     });
 }
 
