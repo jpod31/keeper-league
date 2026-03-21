@@ -1041,9 +1041,12 @@ function render7sPlayerList(containerId, players, lockedIds) {
         return;
     }
     players.sort(function(a, b) {
-        var aStarted = a.game_started ? 0 : 1;
-        var bStarted = b.game_started ? 0 : 1;
-        if (aStarted !== bStarted) return aStarted - bStarted;
+        var aKick = a.game_kickoff || 'zzzz';
+        var bKick = b.game_kickoff || 'zzzz';
+        if (aKick !== bKick) return aKick < bKick ? -1 : 1;
+        var aTeam = a.afl_team || '';
+        var bTeam = b.afl_team || '';
+        if (aTeam !== bTeam) return aTeam.localeCompare(bTeam);
         return (a.name || '').localeCompare(b.name || '');
     });
     var html = '';

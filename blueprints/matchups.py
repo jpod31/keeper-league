@@ -532,13 +532,11 @@ def gameday(league_id):
     _far_future = datetime(2099, 1, 1)
 
     def _player_sort_key(p):
-        # Within each lineup type: live/complete first, then upcoming (by kickoff), then bye
         team = p.get("afl_team", "")
-        game_started = p.get("game_started", False)
         return (
             _type_order.get(p.get("lineup_type", "field"), 9),
-            0 if game_started else 1,  # playing/played first
             _team_start.get(team, _far_future) or _far_future,
+            team,
             p.get("name", ""),
         )
 

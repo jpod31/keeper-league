@@ -428,10 +428,10 @@ def sevens_gameday(league_id):
                     _team_start[t] = ts
         _far_future = datetime(2099, 1, 1)
         def _7s_sort_key(p):
-            game_started = p.get("game_started", False)
+            team = p.get("afl_team", "")
             return (
-                0 if game_started else 1,
-                _team_start.get(p.get("afl_team", ""), _far_future) or _far_future,
+                _team_start.get(team, _far_future) or _far_future,
+                team,
                 p.get("name", ""),
             )
         my_players.sort(key=_7s_sort_key)
@@ -540,16 +540,22 @@ def _get_7s_player_breakdown(league_id, team_id, afl_round, year, league):
         return []
 
     # Which AFL teams have games started (live or complete)?
-    started_games = AflGame.query.filter(
+    all_round_games = AflGame.query.filter(
         AflGame.year == year,
         AflGame.afl_round == afl_round,
-        AflGame.status.in_(["live", "complete"]),
     ).all()
     started_teams = set()
     live_teams = set()
-    for g in started_games:
-        started_teams.add(g.home_team)
-        started_teams.add(g.away_team)
+    team_kickoff = {}
+    for g in all_round_games:
+        if g.scheduled_start:
+            ts = g.scheduled_start.isoformat()
+            for t in (g.home_team, g.away_team):
+                if t not in team_kickoff or ts < team_kickoff[t]:
+                    team_kickoff[t] = ts
+        if g.status in ("live", "complete"):
+            started_teams.add(g.home_team)
+            started_teams.add(g.away_team)
         if g.status == "live":
             live_teams.add(g.home_team)
             live_teams.add(g.away_team)
@@ -588,6 +594,7 @@ def _get_7s_player_breakdown(league_id, team_id, afl_round, year, league):
             "is_captain": entry.is_captain,
             "is_live": is_live and has_stat,
             "game_started": game_started,
+            "game_kickoff": team_kickoff.get(afl_team, ""),
             "has_played": has_stat,
             "lineup_type": "field",
         })
