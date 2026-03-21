@@ -1,148 +1,136 @@
-{% extends "base.html" %}
-{% block title %}{{ game.home_team }} v {{ game.away_team }} — R{{ game.afl_round }}{% endblock %}
+{% extends "league_base.html" %}
+{% set active_tab = 'live' %}
+{% block title %}{{ game.home_team }} v {{ game.away_team }}{% endblock %}
 
-{% block content %}
+{% block league_content %}
 <style>
-  .afl-game-wrap { max-width: 900px; margin: 0 auto; padding: 1rem; }
-  .afl-game-hero {
-    display: flex; justify-content: space-between; align-items: center;
+  .ag-wrap { max-width: 600px; margin: 0 auto; padding: .5rem; }
+  .ag-back { color: #58a6ff; font-size: .75rem; text-decoration: none; display: inline-block; margin-bottom: .5rem; }
+  .ag-back:hover { text-decoration: underline; }
+
+  .ag-hero {
+    display: flex; align-items: center; justify-content: space-between;
     background: var(--kl-bg-card); border: 1px solid #30363d; border-radius: 10px;
-    padding: 1rem 1.5rem; margin-bottom: 1rem;
+    padding: 12px 16px; margin-bottom: .75rem;
   }
-  .afl-hero-team { text-align: center; flex: 1; }
-  .afl-hero-name { font-size: 1.1rem; font-weight: 700; color: #e6edf3; }
-  .afl-hero-score { font-size: 2rem; font-weight: 800; color: #e6edf3; margin-top: .25rem; }
-  .afl-hero-vs { color: #484f58; font-size: .8rem; padding: 0 1rem; }
-  .afl-hero-status {
-    text-align: center; margin-bottom: .5rem; font-size: .7rem; font-weight: 600;
-    padding: 2px 10px; border-radius: 20px; display: inline-block;
-  }
-  .afl-status-live { background: rgba(86,211,100,.15); color: #56d364; border: 1px solid rgba(86,211,100,.3); }
-  .afl-status-complete { background: rgba(139,92,246,.15); color: #a855f7; border: 1px solid rgba(139,92,246,.3); }
-  .afl-status-scheduled { background: rgba(72,79,88,.3); color: #8b949e; }
-  .afl-hero-center { display: flex; flex-direction: column; align-items: center; }
+  .ag-hero-team { text-align: center; flex: 1; }
+  .ag-hero-logo { width: 36px; height: 36px; margin-bottom: 4px; }
+  .ag-hero-name { font-size: .8rem; font-weight: 700; color: #e6edf3; }
+  .ag-hero-score { font-size: 1.8rem; font-weight: 800; color: #e6edf3; }
+  .ag-hero-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .ag-hero-vs { color: #484f58; font-size: .7rem; }
+  .ag-badge { font-size: .55rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .ag-badge-live { background: rgba(86,211,100,.15); color: #56d364; border: 1px solid rgba(86,211,100,.3); }
+  .ag-badge-ft { background: rgba(139,92,246,.15); color: #a855f7; }
+  .ag-badge-sched { background: rgba(72,79,88,.3); color: #8b949e; }
 
-  .afl-teams-row { display: flex; gap: 1rem; }
-  .afl-team-col { flex: 1; }
-  .afl-team-hdr {
-    font-size: .8rem; font-weight: 700; color: #e6edf3; padding: .5rem .75rem;
-    background: var(--kl-bg-card); border: 1px solid #30363d; border-radius: 8px 8px 0 0;
-    display: flex; justify-content: space-between;
+  .ag-toggle {
+    display: flex; margin-bottom: .5rem; border-radius: 8px; overflow: hidden;
+    border: 1px solid #30363d;
   }
-  .afl-player-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 10px; border-bottom: 1px solid #21262d; font-size: .75rem;
+  .ag-toggle-btn {
+    flex: 1; padding: 8px; text-align: center; font-size: .75rem; font-weight: 600;
+    background: transparent; color: #8b949e; border: none; cursor: pointer;
+    transition: all .15s;
   }
-  .afl-player-row:last-child { border-bottom: none; }
-  .afl-player-info { display: flex; align-items: center; gap: 6px; }
-  .afl-player-name { color: #c9d1d9; }
-  .afl-player-pos {
-    font-size: .55rem; padding: 1px 4px; border-radius: 3px;
-    background: #21262d; color: #8b949e;
-  }
-  .afl-player-sc { font-weight: 700; font-variant-numeric: tabular-nums; color: #e6edf3; }
-  .afl-player-sc.live { color: #56d364; }
-  .afl-live-dot { font-size: .3rem; color: #56d364; margin-left: 3px; animation: pulse 2s infinite; }
-  .afl-team-list {
-    background: var(--kl-bg-surface); border: 1px solid #21262d; border-top: none;
-    border-radius: 0 0 8px 8px;
-  }
-  .afl-back-link { color: #58a6ff; font-size: .8rem; text-decoration: none; margin-bottom: .75rem; display: inline-block; }
-  .afl-back-link:hover { text-decoration: underline; }
+  .ag-toggle-btn.active { background: #21262d; color: #e6edf3; }
+  .ag-toggle-btn:hover:not(.active) { color: #c9d1d9; }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .4; }
+  .ag-table { width: 100%; border-collapse: collapse; font-size: .7rem; }
+  .ag-table th {
+    text-align: center; padding: 6px 4px; color: #8b949e; font-weight: 600;
+    border-bottom: 1px solid #30363d; position: sticky; top: 0; background: var(--kl-bg-surface);
   }
+  .ag-table th:first-child { text-align: left; }
+  .ag-table td { text-align: center; padding: 5px 3px; border-bottom: 1px solid #161b22; color: #c9d1d9; }
+  .ag-table td:first-child { text-align: left; }
+  .ag-player-name { font-weight: 600; color: #e6edf3; white-space: nowrap; }
+  .ag-pos { font-size: .55rem; color: #8b949e; background: #21262d; padding: 1px 4px; border-radius: 3px; margin-right: 4px; }
+  .ag-sc { font-weight: 700; color: #e6edf3; }
+  .ag-sc-live { color: #56d364; }
+  .ag-live-dot { font-size: .3rem; color: #56d364; margin-left: 2px; animation: agPulse 2s infinite; }
+  @keyframes agPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .ag-table-wrap { max-height: 70vh; overflow-y: auto; border: 1px solid #30363d; border-radius: 8px; }
 
-  /* Mobile: stack columns */
   @media (max-width: 767.98px) {
-    .afl-teams-row { flex-direction: column; }
-    .afl-hero-score { font-size: 1.6rem; }
-    .afl-hero-name { font-size: .9rem; }
+    .ag-hero-score { font-size: 1.4rem; }
+    .ag-hero-logo { width: 28px; height: 28px; }
+    .ag-table { font-size: .65rem; }
   }
 </style>
 
-<div class="afl-game-wrap">
-  <a href="{{ url_for('matchups.gameday', league_id=league.id) }}" class="afl-back-link"><i class="bi bi-arrow-left me-1"></i>Back to Gameday</a>
+<div class="ag-wrap">
+  <a href="{{ url_for('matchups.afl_live', league_id=league.id) }}" class="ag-back"><i class="bi bi-arrow-left me-1"></i>All Games</a>
 
-  <div class="afl-game-hero">
-    <div class="afl-hero-team">
-      {% if game.home_team in TEAM_LOGOS %}
-        <img src="{{ TEAM_LOGOS[game.home_team] }}" alt="{{ game.home_team }}" style="width:40px;height:40px;margin-bottom:4px;"><br>
-      {% endif %}
-      <div class="afl-hero-name">{{ game.home_team }}</div>
-      {% if game.home_score is not none %}
-        <div class="afl-hero-score">{{ game.home_score }}</div>
-      {% endif %}
+  <div class="ag-hero">
+    <div class="ag-hero-team">
+      {% if game.home_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[game.home_team] }}" class="ag-hero-logo"><br>{% endif %}
+      <div class="ag-hero-name">{{ game.home_team }}</div>
+      {% if game.home_score is not none %}<div class="ag-hero-score">{{ game.home_score }}</div>{% endif %}
     </div>
-    <div class="afl-hero-center">
-      {% if game.status == 'live' %}
-        <span class="afl-hero-status afl-status-live"><i class="bi bi-broadcast me-1"></i>LIVE</span>
-      {% elif game.status == 'complete' %}
-        <span class="afl-hero-status afl-status-complete">FINAL</span>
-      {% else %}
-        <span class="afl-hero-status afl-status-scheduled">UPCOMING</span>
-      {% endif %}
-      <span class="afl-hero-vs">v</span>
+    <div class="ag-hero-center">
+      {% if game.status == 'live' %}<span class="ag-badge ag-badge-live"><i class="bi bi-broadcast me-1"></i>LIVE</span>
+      {% elif game.status == 'complete' %}<span class="ag-badge ag-badge-ft">FINAL</span>
+      {% else %}<span class="ag-badge ag-badge-sched">UPCOMING</span>{% endif %}
+      <span class="ag-hero-vs">v</span>
     </div>
-    <div class="afl-hero-team">
-      {% if game.away_team in TEAM_LOGOS %}
-        <img src="{{ TEAM_LOGOS[game.away_team] }}" alt="{{ game.away_team }}" style="width:40px;height:40px;margin-bottom:4px;"><br>
-      {% endif %}
-      <div class="afl-hero-name">{{ game.away_team }}</div>
-      {% if game.away_score is not none %}
-        <div class="afl-hero-score">{{ game.away_score }}</div>
-      {% endif %}
+    <div class="ag-hero-team">
+      {% if game.away_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[game.away_team] }}" class="ag-hero-logo"><br>{% endif %}
+      <div class="ag-hero-name">{{ game.away_team }}</div>
+      {% if game.away_score is not none %}<div class="ag-hero-score">{{ game.away_score }}</div>{% endif %}
     </div>
   </div>
 
-  <div class="afl-teams-row">
-    <div class="afl-team-col">
-      <div class="afl-team-hdr">
-        <span>{{ game.home_team }}</span>
-        <span>SC</span>
-      </div>
-      <div class="afl-team-list">
-        {% for p in home_players %}
-        <div class="afl-player-row">
-          <span class="afl-player-info">
-            <span class="afl-player-pos">{{ p.position.split('/')[0][:3] }}</span>
-            <span class="afl-player-name">{{ p.name }}</span>
-          </span>
-          <span class="afl-player-sc{% if p.is_live %} live{% endif %}">
-            {{ p.sc_score }}{% if p.is_live %}<i class="bi bi-circle-fill afl-live-dot"></i>{% endif %}
-          </span>
-        </div>
-        {% endfor %}
-        {% if not home_players %}
-          <div class="afl-player-row" style="color:#484f58;">No scores yet</div>
-        {% endif %}
-      </div>
-    </div>
+  <div class="ag-toggle">
+    <button class="ag-toggle-btn{% if show_team == 'home' %} active{% endif %}"
+            onclick="location.href='?team=home'">
+      {% if game.home_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[game.home_team] }}" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">{% endif %}{{ game.home_team }}
+    </button>
+    <button class="ag-toggle-btn{% if show_team == 'away' %} active{% endif %}"
+            onclick="location.href='?team=away'">
+      {% if game.away_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[game.away_team] }}" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">{% endif %}{{ game.away_team }}
+    </button>
+  </div>
 
-    <div class="afl-team-col">
-      <div class="afl-team-hdr">
-        <span>{{ game.away_team }}</span>
-        <span>SC</span>
-      </div>
-      <div class="afl-team-list">
-        {% for p in away_players %}
-        <div class="afl-player-row">
-          <span class="afl-player-info">
-            <span class="afl-player-pos">{{ p.position.split('/')[0][:3] }}</span>
-            <span class="afl-player-name">{{ p.name }}</span>
-          </span>
-          <span class="afl-player-sc{% if p.is_live %} live{% endif %}">
-            {{ p.sc_score }}{% if p.is_live %}<i class="bi bi-circle-fill afl-live-dot"></i>{% endif %}
-          </span>
-        </div>
+  {% set players = home_players if show_team == 'home' else away_players %}
+  {% set team_name = game.home_team if show_team == 'home' else game.away_team %}
+
+  <div class="ag-table-wrap">
+    <table class="ag-table">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>SC</th>
+          <th>K</th>
+          <th>HB</th>
+          <th>D</th>
+          <th>M</th>
+          <th>T</th>
+          <th>G</th>
+          <th>B</th>
+          <th>HO</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in players %}
+        <tr>
+          <td><span class="ag-pos">{{ p.position.split('/')[0][:3] }}</span><span class="ag-player-name">{{ p.name }}</span></td>
+          <td class="ag-sc{% if p.is_live %} ag-sc-live{% endif %}">{{ p.sc_score }}{% if p.is_live %}<i class="bi bi-circle-fill ag-live-dot"></i>{% endif %}</td>
+          <td>{{ p.kicks }}</td>
+          <td>{{ p.handballs }}</td>
+          <td>{{ p.disposals }}</td>
+          <td>{{ p.marks }}</td>
+          <td>{{ p.tackles }}</td>
+          <td>{{ p.goals }}</td>
+          <td>{{ p.behinds }}</td>
+          <td>{{ p.hitouts }}</td>
+        </tr>
         {% endfor %}
-        {% if not away_players %}
-          <div class="afl-player-row" style="color:#484f58;">No scores yet</div>
+        {% if not players %}
+        <tr><td colspan="10" style="color:#484f58;text-align:center;padding:1rem;">No scores yet</td></tr>
         {% endif %}
-      </div>
-    </div>
+      </tbody>
+    </table>
   </div>
 </div>
 {% endblock %}

@@ -105,7 +105,7 @@
     </a>
   {% endif %}
   <a class="mob-nav-item{% if active_tab|default('') == 'live' %} active{% endif %}"
-     href="{{ url_for('matchups.gameday', league_id=league.id) }}#afl-pills-bar">
+     href="{{ url_for('matchups.afl_live', league_id=league.id) }}">
     <i class="bi bi-broadcast"></i><span>AFL Live</span>
   </a>
   <button class="mob-nav-item{% if active_tab|default('') == 'players' %} active{% endif %}" type="button"

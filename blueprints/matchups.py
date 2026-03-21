@@ -643,6 +643,45 @@ def api_gameday_fixtures(league_id):
     })
 
 
+@matchups_bp.route("/<int:league_id>/afl-live")
+@login_required
+def afl_live(league_id):
+    """AFL live matchup hub — vertical list of all games for the current round."""
+    league = db.session.get(League, league_id)
+    if not league:
+        flash("League not found.", "warning")
+        return redirect(url_for("leagues.league_list"))
+
+    year = league.season_year
+    afl_round = request.args.get("round", type=int)
+    if afl_round is None:
+        afl_round = _detect_gameday_round(league_id, year)
+    if afl_round is None:
+        afl_round = 1
+
+    afl_games = get_game_statuses(afl_round, year)
+
+    # Round dates
+    afl_games_db = (
+        AflGame.query.filter_by(year=year, afl_round=afl_round)
+        .order_by(AflGame.scheduled_start).all()
+    )
+    starts = [g.scheduled_start for g in afl_games_db if g.scheduled_start]
+    round_dates = None
+    if starts:
+        earliest, latest = min(starts), max(starts)
+        fmt = lambda dt: f"{dt.strftime('%a')} {dt.day} {dt.strftime('%b')}"
+        round_dates = fmt(earliest) if earliest.date() == latest.date() else f"{fmt(earliest)} – {fmt(latest)}"
+
+    return render_template(
+        "matchups/afl_live.html",
+        league=league,
+        afl_round=afl_round,
+        afl_games=afl_games,
+        round_dates=round_dates,
+    )
+
+
 @matchups_bp.route("/<int:league_id>/gameday/afl-game/<int:game_id>")
 @login_required
 def afl_game_view(league_id, game_id):
@@ -663,6 +702,9 @@ def afl_game_view(league_id, game_id):
     home_players = []
     away_players = []
 
+    # Which team to show (default home, toggle via query param)
+    show_team = request.args.get("team", "home")
+
     for team_name, player_list in [(game.home_team, home_players), (game.away_team, away_players)]:
         players = AflPlayer.query.filter_by(afl_team=team_name).all()
         for p in players:
@@ -675,6 +717,14 @@ def afl_game_view(league_id, game_id):
                     "position": p.position or "",
                     "sc_score": stat.supercoach_score,
                     "is_live": stat.is_live if stat else False,
+                    "kicks": stat.kicks or 0,
+                    "handballs": stat.handballs or 0,
+                    "disposals": stat.disposals or 0,
+                    "marks": stat.marks or 0,
+                    "tackles": stat.tackles or 0,
+                    "goals": stat.goals or 0,
+                    "behinds": stat.behinds or 0,
+                    "hitouts": stat.hitouts or 0,
                 })
 
         player_list.sort(key=lambda x: x["sc_score"], reverse=True)
@@ -685,6 +735,7 @@ def afl_game_view(league_id, game_id):
         game=game,
         home_players=home_players,
         away_players=away_players,
+        show_team=show_team,
     )
 
 
