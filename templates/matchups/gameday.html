@@ -31,23 +31,6 @@
   {% endif %}
 </div>
 
-{# ═══════════════════════ MOBILE: Keeper League mini-cards ═══════════════════════ #}
-{% if round_fixtures %}
-<div class="gameday-afl-bar" id="kl-mini-bar" style="margin-bottom:6px;">
-  {% for f in round_fixtures %}
-    {% set h_score = round_scores.get(f.home_team_id, {}).get('total_score', 0) %}
-    {% set a_score = round_scores.get(f.away_team_id, {}).get('total_score', 0) %}
-    {% set is_users = (not is_bye) and (user_team and (f.home_team_id == user_team.id or f.away_team_id == user_team.id)) %}
-    <div class="game-status-pill{% if is_users %} matchup-yours{% endif %}" style="cursor:pointer;{% if is_users %}border-color:var(--kl-accent-blue);{% endif %}" onclick="viewMatchup({{ f.id }})">
-      <span class="game-teams">{{ f.home_team.name[:6] }} v {{ f.away_team.name[:6] }}</span>
-      {% if f.status != 'scheduled' %}
-        <span class="game-afl-score">{{ '%.0f'|format(h_score) }}-{{ '%.0f'|format(a_score) }}</span>
-      {% endif %}
-    </div>
-  {% endfor %}
-</div>
-{% endif %}
-
 {# ═══════════════════════ AFL GAME PILLS (desktop only) ═══════════════════════ #}
 {% if afl_games %}
 <div class="gameday-afl-bar d-none d-lg-flex" id="afl-pills-bar">
@@ -67,6 +50,23 @@
         <span class="game-afl-score">{{ g.home_score }}-{{ g.away_score }}</span>
       {% endif %}
     </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ═══════════════════════ KEEPER LEAGUE MATCHUP CARDS ═══════════════════════ #}
+{% if round_fixtures %}
+<div class="gameday-afl-bar" id="kl-mini-bar" style="margin-bottom:6px;">
+  {% for f in round_fixtures %}
+    {% set h_score = round_scores.get(f.home_team_id, {}).get('total_score', 0) %}
+    {% set a_score = round_scores.get(f.away_team_id, {}).get('total_score', 0) %}
+    {% set is_users = (not is_bye) and (user_team and (f.home_team_id == user_team.id or f.away_team_id == user_team.id)) %}
+    <div class="game-status-pill{% if is_users %} matchup-yours{% endif %}" style="cursor:pointer;{% if is_users %}border-color:var(--kl-accent-blue);{% endif %}" onclick="viewMatchup({{ f.id }})" id="matchup-card-{{ f.id }}" data-fixture-id="{{ f.id }}">
+      <span class="game-teams">{{ f.home_team.name[:6] }} v {{ f.away_team.name[:6] }}</span>
+      {% if f.status != 'scheduled' %}
+        <span class="game-afl-score">{{ '%.0f'|format(h_score) }}-{{ '%.0f'|format(a_score) }}</span>
+      {% endif %}
+    </div>
   {% endfor %}
 </div>
 {% endif %}
@@ -434,7 +434,7 @@
       <span class="matchups-header-dates">{{ round_dates }}</span>
     {% endif %}
   </div>
-  <div class="gameday-matchups-grid d-none d-lg-grid">
+  <div class="gameday-matchups-grid" style="display:none !important;">
     {% for f in round_fixtures %}
       {% set h_score = round_scores.get(f.home_team_id, {}).get('total_score', 0) %}
       {% set a_score = round_scores.get(f.away_team_id, {}).get('total_score', 0) %}
@@ -1265,10 +1265,9 @@ function renderViewedMatchup(fixtureId) {
 }
 
 function updateActiveCard(fixtureId) {
-    document.querySelectorAll('.gameday-matchup-card').forEach(function(card) {
+    document.querySelectorAll('[data-fixture-id]').forEach(function(card) {
         var isActive = parseInt(card.dataset.fixtureId) === fixtureId;
         card.classList.toggle('matchup-active', isActive);
-        // Dim "Your Match" highlight when viewing another matchup
         card.classList.toggle('matchup-yours-dimmed', card.classList.contains('matchup-yours') && !isActive);
     });
 }
