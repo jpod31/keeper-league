@@ -104,10 +104,10 @@
       <i class="bi bi-controller"></i><span>Gameday</span>
     </a>
   {% endif %}
-  <button class="mob-nav-item{% if active_tab|default('') == 'live' %} active{% endif %}" type="button"
-          onclick="toggleLiveSheet()">
-    <i class="bi bi-broadcast"></i><span>Live</span>
-  </button>
+  <a class="mob-nav-item{% if active_tab|default('') == 'live' %} active{% endif %}"
+     href="{{ url_for('matchups.gameday', league_id=league.id) }}#afl-pills-bar">
+    <i class="bi bi-broadcast"></i><span>AFL Live</span>
+  </a>
   <button class="mob-nav-item{% if active_tab|default('') == 'players' %} active{% endif %}" type="button"
           data-section="players" onclick="handleNavTap(this)">
     <i class="bi bi-person-plus"></i><span>Players</span>
@@ -121,25 +121,6 @@
     <i class="bi bi-grid-3x3-gap"></i><span>More</span>
   </button>
 </nav>
-
-{# ═══ Live sheet overlay ═══ #}
-<div class="more-sheet-backdrop" id="liveBackdrop" onclick="toggleLiveSheet()"></div>
-<div class="more-sheet" id="liveSheet" style="max-height:180px;">
-  <div class="more-sheet-handle"></div>
-  <div class="more-sheet-grid">
-    <a class="more-sheet-item" href="{{ url_for('matchups.gameday', league_id=league.id) }}">
-      <i class="bi bi-controller"></i><span>Keeper League</span>
-    </a>
-    {% if nav_user_team|default(none) %}
-    <a class="more-sheet-item" href="{{ url_for('reserve7s.sevens_gameday', league_id=league.id) }}">
-      <i class="bi bi-7-circle"></i><span>7s Live</span>
-    </a>
-    {% endif %}
-    <a class="more-sheet-item" href="{{ url_for('matchups.gameday', league_id=league.id) }}#afl-pills-bar">
-      <i class="bi bi-broadcast"></i><span>AFL Live</span>
-    </a>
-  </div>
-</div>
 
 {# ═══ More sheet overlay ═══ #}
 <div class="more-sheet-backdrop" id="moreBackdrop" onclick="toggleMoreSheet()"></div>
@@ -178,19 +159,6 @@
 </div>
 
 <script>
-function toggleLiveSheet() {
-  var sheet = document.getElementById('liveSheet');
-  var backdrop = document.getElementById('liveBackdrop');
-  var isOpen = sheet.classList.contains('open');
-  if (isOpen) {
-    sheet.classList.remove('open');
-    backdrop.classList.remove('open');
-  } else {
-    sheet.classList.add('open');
-    backdrop.classList.add('open');
-  }
-}
-
 function toggleMoreSheet() {
   var sheet = document.getElementById('moreSheet');
   var backdrop = document.getElementById('moreBackdrop');
