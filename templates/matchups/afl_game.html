@@ -42,6 +42,8 @@
     border-bottom: 1px solid #30363d; position: sticky; top: 0; background: var(--kl-bg-surface);
   }
   .ag-table th:first-child { text-align: left; }
+  .ag-sortable { cursor: pointer; user-select: none; }
+  .ag-sortable:hover { color: #58a6ff !important; }
   .ag-table td { text-align: center; padding: 5px 3px; border-bottom: 1px solid #161b22; color: #c9d1d9; }
   .ag-table td:first-child { text-align: left; }
   .ag-player-name { font-weight: 600; color: #e6edf3; white-space: nowrap; }
@@ -100,20 +102,20 @@
       <thead>
         <tr>
           <th>Player</th>
-          <th>SC</th>
-          <th>K</th>
-          <th>HB</th>
-          <th>D</th>
-          <th>M</th>
-          <th>T</th>
-          <th>G</th>
-          <th>B</th>
-          <th>HO</th>
+          <th class="ag-sortable" data-col="sc" onclick="agSort('sc')">SC <i class="bi bi-chevron-expand" style="font-size:.5rem;"></i></th>
+          <th class="ag-sortable" data-col="k" onclick="agSort('k')">K</th>
+          <th class="ag-sortable" data-col="hb" onclick="agSort('hb')">HB</th>
+          <th class="ag-sortable" data-col="d" onclick="agSort('d')">D</th>
+          <th class="ag-sortable" data-col="m" onclick="agSort('m')">M</th>
+          <th class="ag-sortable" data-col="t" onclick="agSort('t')">T</th>
+          <th class="ag-sortable" data-col="g" onclick="agSort('g')">G</th>
+          <th class="ag-sortable" data-col="b" onclick="agSort('b')">B</th>
+          <th class="ag-sortable" data-col="ho" onclick="agSort('ho')">HO</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="ag-tbody">
         {% for p in players %}
-        <tr>
+        <tr data-sc="{{ p.sc_score }}" data-k="{{ p.kicks }}" data-hb="{{ p.handballs }}" data-d="{{ p.disposals }}" data-m="{{ p.marks }}" data-t="{{ p.tackles }}" data-g="{{ p.goals }}" data-b="{{ p.behinds }}" data-ho="{{ p.hitouts }}">
           <td><span class="ag-pos">{{ p.position.split('/')[0][:3] }}</span><span class="ag-player-name">{{ p.name }}</span></td>
           <td class="ag-sc{% if p.is_live %} ag-sc-live{% endif %}">{{ p.sc_score }}{% if p.is_live %}<i class="bi bi-circle-fill ag-live-dot"></i>{% endif %}</td>
           <td>{{ p.kicks }}</td>
@@ -133,4 +135,31 @@
     </table>
   </div>
 </div>
+
+<script>
+var _agSortCol = 'sc';
+var _agSortDir = -1; // -1 = desc
+
+function agSort(col) {
+  if (_agSortCol === col) {
+    _agSortDir *= -1;
+  } else {
+    _agSortCol = col;
+    _agSortDir = -1;
+  }
+  var tbody = document.getElementById('ag-tbody');
+  var rows = Array.from(tbody.querySelectorAll('tr[data-sc]'));
+  rows.sort(function(a, b) {
+    var av = parseInt(a.dataset[col]) || 0;
+    var bv = parseInt(b.dataset[col]) || 0;
+    return (bv - av) * _agSortDir;
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+
+  // Update header highlights
+  document.querySelectorAll('.ag-sortable').forEach(function(th) {
+    th.style.color = th.dataset.col === col ? '#58a6ff' : '#8b949e';
+  });
+}
+</script>
 {% endblock %}
