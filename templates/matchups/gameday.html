@@ -1232,6 +1232,9 @@ function renderViewedMatchup(fixtureId) {
     if (rightPlayers) renderPlayerList('right-players', rightPlayers, lockedIds);
     else document.getElementById('right-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">No lineup submitted</div>';
 
+    // Mobile view update
+    renderMobileView(leftName, rightName, leftScore, rightScore, leftPlayers, rightPlayers);
+
     // Update active card highlight
     updateActiveCard(fixtureId);
 
@@ -1343,6 +1346,65 @@ function renderPlayerList(containerId, players, lockedIds) {
         emg.forEach(function(p) { html += renderPlayerRow(p, lockedIds); });
     }
     container.innerHTML = html;
+}
+
+function renderMobileView(leftName, rightName, leftScore, rightScore, leftPlayers, rightPlayers) {
+    var mobView = document.getElementById('mob-vs-view');
+    if (!mobView) return;
+
+    var lp = _sortPlayers((leftPlayers || []).filter(function(p) { return (p.lineup_type || 'field') === 'field'; }));
+    var rp = _sortPlayers((rightPlayers || []).filter(function(p) { return (p.lineup_type || 'field') === 'field'; }));
+    var maxLen = Math.max(lp.length, rp.length);
+
+    var html = '<div class="gd-mob-vs-header">';
+    html += '<span class="gd-mob-vs-team">' + leftName + '</span>';
+    html += '<span class="gd-mob-vs-scores">';
+    html += '<span class="gd-mob-vs-sc' + (leftScore > rightScore ? ' gd-mob-sc-win' : '') + '">' + Math.round(leftScore || 0) + '</span>';
+    html += ' – ';
+    html += '<span class="gd-mob-vs-sc' + (rightScore > leftScore ? ' gd-mob-sc-win' : '') + '">' + Math.round(rightScore || 0) + '</span>';
+    html += '</span>';
+    html += '<span class="gd-mob-vs-team" style="text-align:right;">' + rightName + '</span>';
+    html += '</div>';
+
+    for (var i = 0; i < maxLen; i++) {
+        var mp = lp[i];
+        var op = rp[i];
+        html += '<div class="gd-mob-vs-row">';
+        html += '<div class="gd-mob-vs-left">';
+        if (mp) {
+            var mBadge = '';
+            if (mp.is_captain) mBadge = '<b class="gd-mob-c">C</b>';
+            if (mp.is_vice_captain) mBadge = '<b class="gd-mob-vc">VC</b>';
+            var mPos = (mp.position || 'MID').split('/')[0].substring(0,3).toUpperCase();
+            html += '<span class="gd-mob-vs-name">' + mBadge + mp.name + '</span>';
+            html += '<span class="gd-mob-vs-pos pos-badge pos-' + mPos + '">' + mPos + '</span>';
+        }
+        html += '</div><div class="gd-mob-vs-mid">';
+        html += '<span class="gd-mob-sc-l' + (mp && mp.is_live ? ' text-success' : '') + '">';
+        if (mp) {
+            html += (mp.score || 0);
+            if (mp.is_live) html += '<i class="bi bi-circle-fill gameday-live-dot"></i>';
+        } else html += '-';
+        html += '</span>';
+        html += '<span class="gd-mob-sc-r' + (op && op.is_live ? ' text-success' : '') + '">';
+        if (op) {
+            html += (op.score || 0);
+            if (op.is_live) html += '<i class="bi bi-circle-fill gameday-live-dot"></i>';
+        } else html += '-';
+        html += '</span>';
+        html += '</div><div class="gd-mob-vs-right">';
+        if (op) {
+            var oBadge = '';
+            if (op.is_captain) oBadge = '<b class="gd-mob-c">C</b>';
+            if (op.is_vice_captain) oBadge = '<b class="gd-mob-vc">VC</b>';
+            var oPos = (op.position || 'MID').split('/')[0].substring(0,3).toUpperCase();
+            html += '<span class="gd-mob-vs-pos pos-badge pos-' + oPos + '">' + oPos + '</span>';
+            html += '<span class="gd-mob-vs-name">' + oBadge + op.name + '</span>';
+        }
+        html += '</div></div>';
+    }
+
+    mobView.innerHTML = html;
 }
 
 /* ════════════════════════════════════════════════
