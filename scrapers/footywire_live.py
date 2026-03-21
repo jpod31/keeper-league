@@ -449,19 +449,22 @@ def _parse_footyinfo_match_tables(html: str, url: str,
         if len(rows) < 2:
             continue
 
-        # Find SC and Player column indices from headers
+        # Find column indices from headers
         header_cells = rows[0].find_all(["th", "td"])
         headers = [c.get_text(strip=True).upper() for c in header_cells]
 
-        sc_idx = None
-        name_idx = None
+        col_idx = {}
+        stat_header_map = {
+            "SC": "sc_score", "PLAYER": "name",
+            "KI": "kicks", "HB": "handballs", "DI": "disposals",
+            "MA": "marks", "TA": "tackles", "HO": "hitouts",
+            "FF": "frees_for", "FA": "frees_against",
+        }
         for i, h in enumerate(headers):
-            if h == "SC":
-                sc_idx = i
-            if h == "PLAYER":
-                name_idx = i
+            if h in stat_header_map:
+                col_idx[stat_header_map[h]] = i
 
-        if sc_idx is None:
+        if "sc_score" not in col_idx:
             continue
 
         # Assign team based on table order (first = home, second = away)
@@ -470,28 +473,53 @@ def _parse_footyinfo_match_tables(html: str, url: str,
 
         for row in rows[1:]:
             cells = row.find_all("td")
-            if len(cells) <= sc_idx:
+            if len(cells) <= col_idx["sc_score"]:
                 continue
 
-            # Player name (surname only from footyinfo tables)
-            if name_idx is not None and name_idx < len(cells):
-                name = cells[name_idx].get_text(strip=True)
+            # Player name
+            if "name" in col_idx and col_idx["name"] < len(cells):
+                name = cells[col_idx["name"]].get_text(strip=True)
             else:
                 continue
 
             if not name:
                 continue
 
-            sc_text = cells[sc_idx].get_text(strip=True).replace(",", "")
+            sc_text = cells[col_idx["sc_score"]].get_text(strip=True).replace(",", "")
             if not sc_text.lstrip("-").isdigit():
                 continue
 
-            results.append({
+            # Parse goals.behinds from G.B column
+            goals, behinds = 0, 0
+            gb_idx = None
+            for i, h in enumerate(headers):
+                if h == "G.B":
+                    gb_idx = i
+                    break
+            if gb_idx is not None and gb_idx < len(cells):
+                gb_text = cells[gb_idx].get_text(strip=True)
+                gb_parts = gb_text.split(".")
+                if len(gb_parts) == 2 and gb_parts[0].isdigit() and gb_parts[1].isdigit():
+                    goals, behinds = int(gb_parts[0]), int(gb_parts[1])
+
+            entry = {
                 "name": name,
                 "team": team,
                 "sc_score": int(sc_text),
-                "is_surname_only": True,  # Flag for matching logic
-            })
+                "is_surname_only": True,
+                "goals": goals,
+                "behinds": behinds,
+            }
+            # Extract numeric stats
+            for stat_key in ("kicks", "handballs", "disposals", "marks", "tackles", "hitouts"):
+                idx = col_idx.get(stat_key)
+                if idx is not None and idx < len(cells):
+                    val = cells[idx].get_text(strip=True)
+                    entry[stat_key] = int(val) if val.isdigit() else 0
+                else:
+                    entry[stat_key] = 0
+
+            results.append(entry)
 
     logger.info("Parsed %d players from footyinfo tables: %s", len(results), url)
     return results

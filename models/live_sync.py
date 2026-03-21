@@ -237,9 +237,24 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
             player_id=afl_player.id, year=year, round=afl_round
         ).first()
 
+        # Extract detailed stats from scrape entry
+        _detail = {
+            "kicks": entry.get("kicks"),
+            "handballs": entry.get("handballs"),
+            "disposals": entry.get("disposals"),
+            "marks": entry.get("marks"),
+            "tackles": entry.get("tackles"),
+            "goals": entry.get("goals"),
+            "behinds": entry.get("behinds"),
+            "hitouts": entry.get("hitouts"),
+        }
+
         if stat:
             stat.supercoach_score = sc_score
             stat.is_live = is_live
+            for k, v in _detail.items():
+                if v is not None:
+                    setattr(stat, k, v)
         else:
             stat = PlayerStat(
                 player_id=afl_player.id,
@@ -247,6 +262,7 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
                 round=afl_round,
                 supercoach_score=sc_score,
                 is_live=is_live,
+                **{k: v for k, v in _detail.items() if v is not None},
             )
             db.session.add(stat)
 
