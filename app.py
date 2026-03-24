@@ -318,7 +318,7 @@ def create_app():
         def _set_sqlite_pragma(dbapi_conn, connection_record):
             cursor = dbapi_conn.cursor()
             cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA busy_timeout=5000")
+            cursor.execute("PRAGMA busy_timeout=30000")
             cursor.close()
 
     # Sync CSV players into SQLite, then ratings from XLSX
