@@ -78,12 +78,26 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
             em_scores.append((em, em_score))
     em_scores.sort(key=lambda x: x[1], reverse=True)
 
-    # Identify DNP field entries
+    # Identify DNP field entries (only if their game has started)
+    from models.database import AflGame, AflPlayer
+    started_teams = set()
+    for g in AflGame.query.filter_by(year=year, afl_round=afl_round).all():
+        if g.status in ("live", "complete"):
+            started_teams.add(g.home_team)
+            started_teams.add(g.away_team)
+
     dnp_entries = []
     for entry in on_field:
         player_score = _get_player_score(entry.player_id, afl_round, year, league_id, scoring_type, hybrid_base)
         if player_score is None:
-            dnp_entries.append(entry)
+            # Only DNP if the player's game has actually started
+            player = db.session.get(AflPlayer, entry.player_id)
+            player_team = player.afl_team if player else ""
+            if player_team in started_teams:
+                dnp_entries.append(entry)
+            else:
+                # Game hasn't started — score 0 for now, not DNP
+                breakdown[str(entry.player_id)] = 0
         else:
             total += player_score
             breakdown[str(entry.player_id)] = player_score
