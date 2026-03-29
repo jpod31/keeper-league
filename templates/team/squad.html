@@ -335,7 +335,7 @@
                   </div>
                 </div>
                 <div class="mob-pos-sc">
-                  {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+                  {% if p.sc_avg %}<span style="color:#e6edf3;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
                 </div>
               </div>
             {% endif %}
@@ -387,7 +387,7 @@
                   </div>
                 </div>
                 <div class="mob-pos-sc">
-                  {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+                  {% if p.sc_avg %}<span style="color:#e6edf3;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
                 </div>
               </div>
             {% endif %}
@@ -434,7 +434,7 @@
               </div>
             </div>
             <div class="mob-pos-sc">
-              {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+              {% if p.sc_avg %}<span style="color:#e6edf3;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
             </div>
           </div>
         {% endfor %}
@@ -482,7 +482,7 @@
               </div>
             </div>
             <div class="mob-pos-sc">
-              {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+              {% if p.sc_avg %}<span style="color:#e6edf3;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
             </div>
           </div>
         {% endfor %}
@@ -530,7 +530,7 @@
               </div>
             </div>
             <div class="mob-pos-sc">
-              {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;opacity:.7;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+              {% if p.sc_avg %}<span style="color:#e6edf3;font-weight:700;opacity:.7;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
             </div>
           </div>
         {% endfor %}
@@ -578,7 +578,7 @@
               </div>
             </div>
             <div class="mob-pos-sc">
-              {% if p.sc_avg %}<span style="color:{% if p.sc_avg >= 100 %}#3fb950{% elif p.sc_avg >= 80 %}#58a6ff{% elif p.sc_avg >= 60 %}#c9d1d9{% else %}#8b949e{% endif %};font-weight:700;opacity:.7;">{{ '%.0f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
+              {% if p.sc_avg %}<span style="color:#e6edf3;font-weight:700;opacity:.7;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#484f58;">-</span>{% endif %}
             </div>
           </div>
         {% endfor %}
@@ -690,7 +690,7 @@
           </div>
         </div>
         <div class="squad-mob-sc stat-sc-avg-mob">
-          {% if sc_val %}<span class="squad-sc {% if sc_val >= 100 %}squad-sc-elite{% elif sc_val >= 80 %}squad-sc-good{% elif sc_val >= 60 %}squad-sc-avg{% else %}squad-sc-low{% endif %}">{{ sc_val }}</span>{% else %}-{% endif %}
+          {% if sc_val %}<span class="squad-sc">{{ '%.1f'|format(sc_val) }}</span>{% else %}-{% endif %}
         </div>
       </div>
     {% endfor %}
@@ -833,13 +833,9 @@
         }
       });
 
-    function scHeatClass(val) {
+    function fmtAvg(val) {
       const n = parseFloat(val);
-      if (!n || isNaN(n)) return '';
-      if (n >= 100) return 'squad-sc-elite';
-      if (n >= 80) return 'squad-sc-good';
-      if (n >= 60) return 'squad-sc-avg';
-      return 'squad-sc-low';
+      return (!n || isNaN(n)) ? '-' : n.toFixed(1);
     }
 
     function updateCells(data) {
@@ -851,9 +847,9 @@
           if (cell) {
             const val = stats[field];
             if (field === 'sc_avg') {
-              const displayVal = (val !== undefined && val !== null) ? val : '-';
-              if (displayVal !== '-' && parseFloat(displayVal)) {
-                cell.innerHTML = '<span class="squad-sc ' + scHeatClass(displayVal) + '">' + displayVal + '</span>';
+              const formatted = fmtAvg(val);
+              if (formatted !== '-') {
+                cell.innerHTML = '<span class="squad-sc">' + formatted + '</span>';
               } else {
                 cell.textContent = '-';
               }
@@ -869,10 +865,9 @@
         const stats = data[pid] || {};
         const scCell = card.querySelector('.stat-sc-avg-mob');
         if (scCell) {
-          const val = stats.sc_avg;
-          const displayVal = (val !== undefined && val !== null) ? val : '-';
-          if (displayVal !== '-' && parseFloat(displayVal)) {
-            scCell.innerHTML = '<span class="squad-sc ' + scHeatClass(displayVal) + '">' + displayVal + '</span>';
+          const formatted = fmtAvg(stats.sc_avg);
+          if (formatted !== '-') {
+            scCell.innerHTML = '<span class="squad-sc">' + formatted + '</span>';
           } else {
             scCell.textContent = '-';
           }
