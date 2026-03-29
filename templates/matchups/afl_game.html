@@ -39,7 +39,7 @@
   .ag-table { width: 100%; border-collapse: collapse; font-size: .75rem; }
   .ag-table th {
     text-align: center; padding: 8px 6px; color: #8b949e; font-weight: 600;
-    border-bottom: 1px solid #30363d; white-space: nowrap;
+    border-bottom: 1px solid #30363d; white-space: nowrap; background: #0d1117;
   }
   .ag-sortable { cursor: pointer; user-select: none; }
   .ag-sortable:hover { color: #58a6ff !important; }
@@ -56,7 +56,8 @@
   .ag-sc-live { color: #56d364; }
   .ag-live-dot { font-size: .3rem; color: #56d364; margin-left: 2px; animation: agPulse 2s infinite; }
   @keyframes agPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .ag-table-wrap { border: 1px solid #30363d; border-radius: 8px; }
+  .ag-table-wrap { border: 1px solid #30363d; border-radius: 8px; overflow-y: auto; }
+  .ag-table thead th { position: sticky; top: 0; background: #0d1117; z-index: 2; }
 
   @media (max-width: 767.98px) {
     .ag-wrap { padding: .25rem; }
@@ -150,8 +151,19 @@
 </div>
 
 <script>
+// Size the table to fill remaining viewport so it scrolls internally
+function agSizeTable() {
+  var wrap = document.querySelector('.ag-table-wrap');
+  if (!wrap) return;
+  var top = wrap.getBoundingClientRect().top;
+  var h = window.innerHeight - top - 12; // 12px bottom breathing room
+  wrap.style.maxHeight = Math.max(h, 200) + 'px';
+}
+agSizeTable();
+window.addEventListener('resize', agSizeTable);
+
 var _agSortCol = 'sc';
-var _agSortDir = -1; // -1 = desc
+var _agSortDir = -1;
 
 function agSort(col) {
   if (_agSortCol === col) {
