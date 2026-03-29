@@ -118,7 +118,7 @@
         {% for p in players %}
         <tr data-sc="{{ p.sc_score }}" data-k="{{ p.kicks }}" data-hb="{{ p.handballs }}" data-d="{{ p.disposals }}" data-m="{{ p.marks }}" data-t="{{ p.tackles }}" data-g="{{ p.goals }}" data-b="{{ p.behinds }}" data-ho="{{ p.hitouts }}">
           <td style="color:#8b949e;font-weight:700;text-align:center;">{{ p.jumper or '' }}</td>
-          <td><span class="ag-pos">{{ p.position.split('/')[0][:3] }}</span><span class="ag-player-name">{{ p.name }}</span>{% if p.injury %}<i class="bi bi-bandaid-fill" style="color:#f85149;font-size:.6rem;margin-left:4px;" title="{{ p.injury }}"></i>{% endif %}</td>
+          <td><span class="ag-pos">{{ p.position.split('/')[0][:3] }}</span><span class="ag-player-name">{{ p.name }}</span></td>
           <td class="ag-sc{% if p.is_live %} ag-sc-live{% endif %}">{{ p.sc_score }}{% if p.is_live %}<i class="bi bi-circle-fill ag-live-dot"></i>{% endif %}</td>
           <td>{{ p.kicks }}</td>
           <td>{{ p.handballs }}</td>
