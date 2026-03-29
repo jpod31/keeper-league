@@ -712,7 +712,7 @@ def afl_game_view(league_id, game_id):
     jumper_map = {}
     for s in selections:
         # Match by name + team
-        jumper_map[(s.player_name, s.team)] = s.jumper_number
+        jumper_map[(s.player_name, s.afl_team)] = s.jumper_number
 
     for team_name, player_list in [(game.home_team, home_players), (game.away_team, away_players)]:
         players = AflPlayer.query.filter_by(afl_team=team_name).all()
