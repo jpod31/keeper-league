@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block body_class %}has-bottom-nav{% endblock %}
 {% block content %}
-{# ═══ League tab navigation bar (desktop) ═══ #}
-<div class="league-nav">
+{# ═══ League tab navigation bar (desktop only) ═══ #}
+<div class="league-nav d-none d-lg-block">
   <div class="league-nav-inner">
     {# League selector #}
     <div class="dropdown league-selector">
@@ -146,6 +146,22 @@
     {% endif %}
     <a class="more-sheet-item" href="#" id="moreSheetInstall" style="display:none;color:#3fb950;" onclick="event.preventDefault();triggerPwaInstall();">
       <i class="bi bi-download"></i><span>Install App</span>
+    </a>
+  </div>
+  <hr style="border-color:var(--kl-border);margin:.5rem 1rem;">
+  <div class="more-sheet-grid">
+    {% for lg, tm in user_leagues|default([]) %}
+      {% if lg.id != league.id %}
+      <a class="more-sheet-item" href="{{ url_for('leagues.dashboard', league_id=lg.id) }}">
+        <i class="bi bi-trophy"></i><span>{{ lg.name }}</span>
+      </a>
+      {% endif %}
+    {% endfor %}
+    <a class="more-sheet-item" href="{{ url_for('leagues.league_create') }}" style="color:#3fb950;">
+      <i class="bi bi-plus-circle"></i><span>Create League</span>
+    </a>
+    <a class="more-sheet-item" href="#" style="color:#58a6ff;" onclick="event.preventDefault();toggleMoreSheet();var m=new bootstrap.Modal(document.getElementById('joinLeagueModal'));m.show();">
+      <i class="bi bi-box-arrow-in-right"></i><span>Join League</span>
     </a>
   </div>
 </div>
