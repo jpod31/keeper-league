@@ -56,8 +56,7 @@
   .ag-sc-live { color: #56d364; }
   .ag-live-dot { font-size: .3rem; color: #56d364; margin-left: 2px; animation: agPulse 2s infinite; }
   @keyframes agPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .ag-table-wrap { border: 1px solid #30363d; border-radius: 8px; overflow-y: auto; }
-  .ag-table thead th { position: sticky; top: 0; background: #0d1117; z-index: 2; }
+  .ag-table-wrap { border: 1px solid #30363d; border-radius: 8px; }
 
   @media (max-width: 767.98px) {
     .ag-wrap { padding: .25rem; }
@@ -149,17 +148,6 @@
 </div>
 
 <script>
-// Size the table to fill remaining viewport so it scrolls internally
-function agSizeTable() {
-  var wrap = document.querySelector('.ag-table-wrap');
-  if (!wrap) return;
-  var top = wrap.getBoundingClientRect().top;
-  var h = window.innerHeight - top - 12; // 12px bottom breathing room
-  wrap.style.maxHeight = Math.max(h, 200) + 'px';
-}
-agSizeTable();
-window.addEventListener('resize', agSizeTable);
-
 var _agSortCol = 'sc';
 var _agSortDir = -1;
 
