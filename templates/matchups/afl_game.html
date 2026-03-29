@@ -46,7 +46,7 @@
   .ag-table td { text-align: center; padding: 6px 5px; border-bottom: 1px solid #161b22; color: #c9d1d9; white-space: nowrap; }
   .ag-table th:first-child, .ag-table td:first-child { text-align: left; padding-left: 10px; }
   .ag-player-name { font-weight: 600; color: #e6edf3; }
-  .ag-num { color: #8b949e; font-weight: 700; }
+  .ag-jumper { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; font-size: .6rem; font-weight: 700; color: #8b949e; background: #21262d; border: 1px solid #30363d; border-radius: 4px; margin-right: 6px; vertical-align: middle; }
   .ag-pos { font-size: .6rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; display: inline-block; min-width: 30px; text-align: center; }
   .ag-pos-fwd { background: rgba(56,189,248,.15); color: #38bdf8; }
   .ag-pos-mid { background: rgba(251,191,36,.15); color: #fbbf24; }
@@ -110,7 +110,6 @@
       <thead>
         <tr>
           <th>Player</th>
-          <th>#</th>
           <th>Pos</th>
           <th class="ag-sortable" data-col="sc" onclick="agSort('sc')">SC <i class="bi bi-chevron-expand" style="font-size:.5rem;"></i></th>
           <th class="ag-sortable" data-col="k" onclick="agSort('k')">K</th>
@@ -128,8 +127,7 @@
         {% set pos_key = p.position.split('/')[0][:3].upper() %}
         {% set pos_cls = 'fwd' if pos_key == 'FWD' else ('mid' if pos_key == 'MID' else ('def' if pos_key == 'DEF' else ('ruc' if pos_key == 'RUC' else ''))) %}
         <tr data-sc="{{ p.sc_score }}" data-k="{{ p.kicks }}" data-hb="{{ p.handballs }}" data-d="{{ p.disposals }}" data-m="{{ p.marks }}" data-t="{{ p.tackles }}" data-g="{{ p.goals }}" data-b="{{ p.behinds }}" data-ho="{{ p.hitouts }}">
-          <td><span class="ag-player-name">{{ p.name }}</span></td>
-          <td class="ag-num">{{ p.jumper or '' }}</td>
+          <td>{% if p.jumper %}<span class="ag-jumper">{{ p.jumper }}</span>{% endif %}<span class="ag-player-name">{{ p.name }}</span></td>
           <td><span class="ag-pos{% if pos_cls %} ag-pos-{{ pos_cls }}{% endif %}">{{ pos_key }}</span></td>
           <td class="ag-sc{% if p.is_live %} ag-sc-live{% endif %}">{{ p.sc_score }}{% if p.is_live %}<i class="bi bi-circle-fill ag-live-dot"></i>{% endif %}</td>
           <td>{{ p.kicks }}</td>
@@ -143,7 +141,7 @@
         </tr>
         {% endfor %}
         {% if not players %}
-        <tr><td colspan="12" style="color:#484f58;text-align:center;padding:1rem;">No scores yet</td></tr>
+        <tr><td colspan="11" style="color:#484f58;text-align:center;padding:1rem;">No scores yet</td></tr>
         {% endif %}
       </tbody>
     </table>
@@ -177,7 +175,7 @@ function agSort(col) {
   rows.sort(function(a, b) {
     var av = parseInt(a.dataset[col]) || 0;
     var bv = parseInt(b.dataset[col]) || 0;
-    return (bv - av) * _agSortDir;
+    return _agSortDir === -1 ? (bv - av) : (av - bv);
   });
   rows.forEach(function(r) { tbody.appendChild(r); });
 
