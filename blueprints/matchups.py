@@ -709,10 +709,12 @@ def afl_game_view(league_id, game_id):
 
     # Pre-fetch jumper numbers for this round
     selections = AflTeamSelection.query.filter_by(year=game.year, afl_round=game.afl_round).all()
-    jumper_map = {}
+    jumper_map = {}          # (full_name, team) -> number
+    jumper_map_surname = {}  # (surname, team) -> number  (fallback for nickname mismatches)
     for s in selections:
-        # Match by name + team
         jumper_map[(s.player_name, s.afl_team)] = s.jumper_number
+        surname = s.player_name.rsplit(" ", 1)[-1].lower()
+        jumper_map_surname[(surname, s.afl_team)] = s.jumper_number
 
     for team_name, player_list in [(game.home_team, home_players), (game.away_team, away_players)]:
         players = AflPlayer.query.filter_by(afl_team=team_name).all()
@@ -721,7 +723,10 @@ def afl_game_view(league_id, game_id):
                 player_id=p.id, year=game.year, round=game.afl_round
             ).first()
             if stat and stat.supercoach_score is not None:
-                jumper = jumper_map.get((p.name, team_name), "")
+                jumper = jumper_map.get((p.name, team_name))
+                if jumper is None:
+                    surname = p.name.rsplit(" ", 1)[-1].lower()
+                    jumper = jumper_map_surname.get((surname, team_name), "")
                 player_list.append({
                     "name": p.name,
                     "position": p.position or "",

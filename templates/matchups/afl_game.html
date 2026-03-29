@@ -36,22 +36,30 @@
   .ag-toggle-btn.active { background: #21262d; color: #e6edf3; }
   .ag-toggle-btn:hover:not(.active) { color: #c9d1d9; }
 
-  .ag-table { width: 100%; border-collapse: collapse; font-size: .7rem; }
+  .ag-table { width: 100%; border-collapse: collapse; font-size: .7rem; table-layout: fixed; }
   .ag-table th {
     text-align: center; padding: 6px 4px; color: #8b949e; font-weight: 600;
     border-bottom: 1px solid #30363d; position: sticky; top: 0; background: #0d1117; z-index: 2;
+    overflow: hidden; white-space: nowrap;
   }
-  .ag-table th:first-child { text-align: left; }
   .ag-sortable { cursor: pointer; user-select: none; }
   .ag-sortable:hover { color: #58a6ff !important; }
   .ag-table td { text-align: center; padding: 5px 3px; border-bottom: 1px solid #161b22; color: #c9d1d9; }
-  .ag-table td:first-child { text-align: left; }
-  .ag-player-name { font-weight: 600; color: #e6edf3; white-space: nowrap; }
-  .ag-pos { font-size: .55rem; color: #8b949e; background: #21262d; padding: 1px 4px; border-radius: 3px; margin-right: 4px; }
+  .ag-col-name { text-align: left !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ag-player-name { font-weight: 600; color: #e6edf3; }
+  .ag-col-num { width: 32px; }
+  .ag-col-pos { width: 40px; }
+  .ag-pos { font-size: .6rem; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
+  .ag-pos-fwd { background: rgba(56,189,248,.12); color: #38bdf8; }
+  .ag-pos-mid { background: rgba(251,191,36,.12); color: #fbbf24; }
+  .ag-pos-def { background: rgba(52,211,153,.12); color: #34d399; }
+  .ag-pos-ruc { background: rgba(244,114,182,.12); color: #f472b6; }
   .ag-sc { font-weight: 700; color: #e6edf3; }
   .ag-sc-live { color: #56d364; }
   .ag-live-dot { font-size: .3rem; color: #56d364; margin-left: 2px; animation: agPulse 2s infinite; }
   @keyframes agPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .ag-col-stat { width: 30px; }
+  .ag-col-sc { width: 38px; }
   .ag-table-wrap { overflow-y: auto; border: 1px solid #30363d; border-radius: 8px; }
 
   @media (max-width: 767.98px) {
@@ -101,24 +109,28 @@
     <table class="ag-table">
       <thead>
         <tr>
-          <th style="width:30px;">#</th>
-          <th>Player</th>
-          <th class="ag-sortable" data-col="sc" onclick="agSort('sc')">SC <i class="bi bi-chevron-expand" style="font-size:.5rem;"></i></th>
-          <th class="ag-sortable" data-col="k" onclick="agSort('k')">K</th>
-          <th class="ag-sortable" data-col="hb" onclick="agSort('hb')">HB</th>
-          <th class="ag-sortable" data-col="d" onclick="agSort('d')">D</th>
-          <th class="ag-sortable" data-col="m" onclick="agSort('m')">M</th>
-          <th class="ag-sortable" data-col="t" onclick="agSort('t')">T</th>
-          <th class="ag-sortable" data-col="g" onclick="agSort('g')">G</th>
-          <th class="ag-sortable" data-col="b" onclick="agSort('b')">B</th>
-          <th class="ag-sortable" data-col="ho" onclick="agSort('ho')">HO</th>
+          <th class="ag-col-name" style="text-align:left;">Player</th>
+          <th class="ag-col-num">#</th>
+          <th class="ag-col-pos">Pos</th>
+          <th class="ag-col-sc ag-sortable" data-col="sc" onclick="agSort('sc')">SC <i class="bi bi-chevron-expand" style="font-size:.5rem;"></i></th>
+          <th class="ag-col-stat ag-sortable" data-col="k" onclick="agSort('k')">K</th>
+          <th class="ag-col-stat ag-sortable" data-col="hb" onclick="agSort('hb')">HB</th>
+          <th class="ag-col-stat ag-sortable" data-col="d" onclick="agSort('d')">D</th>
+          <th class="ag-col-stat ag-sortable" data-col="m" onclick="agSort('m')">M</th>
+          <th class="ag-col-stat ag-sortable" data-col="t" onclick="agSort('t')">T</th>
+          <th class="ag-col-stat ag-sortable" data-col="g" onclick="agSort('g')">G</th>
+          <th class="ag-col-stat ag-sortable" data-col="b" onclick="agSort('b')">B</th>
+          <th class="ag-col-stat ag-sortable" data-col="ho" onclick="agSort('ho')">HO</th>
         </tr>
       </thead>
       <tbody id="ag-tbody">
         {% for p in players %}
+        {% set pos_key = p.position.split('/')[0][:3].upper() %}
+        {% set pos_cls = 'fwd' if pos_key == 'FWD' else ('mid' if pos_key == 'MID' else ('def' if pos_key == 'DEF' else ('ruc' if pos_key == 'RUC' else ''))) %}
         <tr data-sc="{{ p.sc_score }}" data-k="{{ p.kicks }}" data-hb="{{ p.handballs }}" data-d="{{ p.disposals }}" data-m="{{ p.marks }}" data-t="{{ p.tackles }}" data-g="{{ p.goals }}" data-b="{{ p.behinds }}" data-ho="{{ p.hitouts }}">
-          <td style="color:#8b949e;font-weight:700;text-align:center;">{{ p.jumper or '' }}</td>
-          <td><span class="ag-pos">{{ p.position.split('/')[0][:3] }}</span><span class="ag-player-name">{{ p.name }}</span></td>
+          <td class="ag-col-name"><span class="ag-player-name">{{ p.name }}</span></td>
+          <td style="color:#8b949e;font-weight:700;">{{ p.jumper or '' }}</td>
+          <td><span class="ag-pos{% if pos_cls %} ag-pos-{{ pos_cls }}{% endif %}">{{ pos_key }}</span></td>
           <td class="ag-sc{% if p.is_live %} ag-sc-live{% endif %}">{{ p.sc_score }}{% if p.is_live %}<i class="bi bi-circle-fill ag-live-dot"></i>{% endif %}</td>
           <td>{{ p.kicks }}</td>
           <td>{{ p.handballs }}</td>
@@ -131,7 +143,7 @@
         </tr>
         {% endfor %}
         {% if not players %}
-        <tr><td colspan="11" style="color:#484f58;text-align:center;padding:1rem;">No scores yet</td></tr>
+        <tr><td colspan="12" style="color:#484f58;text-align:center;padding:1rem;">No scores yet</td></tr>
         {% endif %}
       </tbody>
     </table>
