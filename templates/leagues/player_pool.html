@@ -189,10 +189,6 @@
       <span style="font-size:.78rem;color:#8b949e;">Ranked by draft value</span>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <div class="pool-view-toggle d-none d-lg-flex" id="poolViewToggle">
-        <button class="pool-view-btn active" data-view="table" onclick="setPoolView('table')" title="Table view"><i class="bi bi-list-ul"></i></button>
-        <button class="pool-view-btn" data-view="cards" onclick="setPoolView('cards')" title="Card view"><i class="bi bi-grid-fill"></i></button>
-      </div>
       <div class="pool-count">
         <span id="visible-count"><strong>{{ players|length }}</strong> players</span>
       </div>
@@ -270,68 +266,8 @@
       </select>
     </div>
   </div>
-  {# ── Card view (mobile default, toggle on desktop) ── #}
-  <div class="pool-cards-container d-lg-none" id="poolCards" style="display:block;">
-    <div class="pool-cards-grid" id="poolCardsGrid">
-      {% for p in players %}
-        {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
-        {% set owner_team = rostered_map.get(p.id) %}
-        {% set tc = team_colours.get(owner_team, {}) %}
-        <div class="pool-mob-card{% if owner_team %} pool-mob-taken{% endif %}{% if p.injury_severity %} pool-mob-injured{% endif %}"
-             data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
-             data-team="{{ p.afl_team or '' }}" data-age="{{ p.age or 0 }}"
-             data-status="{{ 'taken' if owner_team else 'available' }}"
-             data-owner="{{ owner_team or '' }}"
-             onclick="window.location='{{ url_for('player_detail', name=p.name) }}'"
-             {% if loop.index > 40 %}style="display:none;" data-lazy="1"{% endif %}>
-          <div class="pool-mob-rank">#{{ p._rank }}</div>
-          {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
-            <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pool-mob-logo">
-          {% else %}
-            <div class="pool-mob-logo-placeholder"></div>
-          {% endif %}
-          <div class="pool-mob-body">
-            <div class="pool-mob-top">
-              <span class="pool-mob-name">{{ p.name }}</span>
-              <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}"
-                 onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"
-                 style="font-size:.75rem;color:#484f58;cursor:pointer;flex-shrink:0;"></i>
-            </div>
-            <div class="pool-mob-details">
-              {% for pos in (p.position or 'MID').split('/') %}
-                <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.58rem;">{{ pos }}</span>
-              {% endfor %}
-              {% if p.age %}<span class="pool-mob-age">{{ p.age }}y</span>{% endif %}
-              {% if p.injury_severity %}<span class="pool-mob-inj"><i class="bi bi-bandaid-fill"></i></span>{% endif %}
-            </div>
-          </div>
-          <div class="pool-mob-stats">
-            {% if sc_display %}<div class="pool-mob-sc">{{ '%.0f'|format(sc_display) }}</div>{% else %}<div class="pool-mob-sc pool-mob-sc-none">-</div>{% endif %}
-            <div class="pool-mob-sc-label">SC</div>
-          </div>
-          <div class="pool-mob-right">
-            {% if owner_team %}
-              <span class="pool-mob-owner" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
-            {% elif can_pickup %}
-              <button class="pool-mob-add-btn"
-                      onclick="event.stopPropagation(); showPickupModal({{ p.id }}, '{{ p.name|e }}')">
-                <i class="bi bi-plus-lg"></i>
-              </button>
-            {% else %}
-              <span class="pool-mob-avail">FA</span>
-            {% endif %}
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-    <div class="pool-mob-sentinel" id="poolSentinel">
-      <div class="spinner-border spinner-border-sm text-secondary" role="status" style="width:16px;height:16px;"></div>
-      <span style="color:#6e7681;font-size:.75rem;margin-left:6px;">Loading more...</span>
-    </div>
-  </div>
-
-  {# ── Table view (desktop only) ── #}
-  <div class="card-body p-0 pool-table-wrap d-none d-lg-block" id="poolTable" style="max-height:78vh;overflow:auto;">
+  {# ── Table view ── #}
+  <div class="card-body p-0 pool-table-wrap" id="poolTable" style="max-height:78vh;overflow:auto;">
     <table class="table table-sm mb-0 pool-table">
       <thead class="sticky-top" style="background:#161b22;z-index:2;">
         <tr>
@@ -340,7 +276,7 @@
           <th class="sortable" style="width:80px;" onclick="sortPool('pos',this)">Pos <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-center" style="width:45px;" onclick="sortPool('age',this)">Age <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:65px;" onclick="sortPool('sc_avg',this)">SC <i class="bi bi-chevron-expand sort-icon"></i></th>
-          <th class="sortable text-center" style="width:75px;" onclick="sortPool('trend',this)">Trend <i class="bi bi-chevron-expand sort-icon"></i></th>
+          <th class="sortable text-center" style="width:75px;" onclick="sortPool('trend',this)">L3 <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('rating',this)">Rtg <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-center" style="width:50px;" onclick="sortPool('rtg_move',this)">+/- <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable text-end" style="width:50px;" onclick="sortPool('potential',this)">Pot <i class="bi bi-chevron-expand sort-icon"></i></th>
@@ -357,8 +293,9 @@
           {% set owner_team = rostered_map.get(p.id) %}
           {% set tc = team_colours.get(owner_team, {}) %}
           {# Trend: compare L3 to season avg #}
+          {# Trend: L3 vs season avg — positive means trending up #}
           {% if pr.l3 and sc_display %}
-            {% set trend_val = sc_display - pr.l3 %}
+            {% set trend_val = pr.l3 - sc_display %}
           {% else %}
             {% set trend_val = 0 %}
           {% endif %}
@@ -415,16 +352,16 @@
                 <span style="color:#484f58;">-</span>
               {% endif %}
             </td>
-            {# Trend (L3 vs avg) #}
+            {# L3: last 3 games avg vs season avg #}
             <td class="text-center">
               {% if pr.l3 and sc_display %}
-                {% set diff = sc_display - pr.l3 %}
+                {% set diff = pr.l3 - sc_display %}
                 {% if diff > 5 %}
-                  <span class="trend-pill trend-up"><i class="bi bi-caret-up-fill"></i>+{{ '%.0f'|format(diff) }}</span>
+                  <span class="trend-pill trend-up"><i class="bi bi-caret-up-fill"></i>{{ '%.0f'|format(pr.l3) }}</span>
                 {% elif diff < -5 %}
-                  <span class="trend-pill trend-down"><i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(diff) }}</span>
+                  <span class="trend-pill trend-down"><i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(pr.l3) }}</span>
                 {% else %}
-                  <span class="trend-flat">{{ '%+.0f'|format(diff) }}</span>
+                  <span class="trend-flat">{{ '%.0f'|format(pr.l3) }}</span>
                 {% endif %}
               {% else %}
                 <span style="color:#484f58;">-</span>
@@ -653,16 +590,6 @@ function filterPool() {
     if (show) count++;
   });
 
-  // Filter card items (mobile — show all lazy cards when filtering)
-  var hasFilter = q || pos || team || ageFilter || status || owner;
-  document.querySelectorAll('#poolCardsGrid .pool-mob-card').forEach(function(card) {
-    if (hasFilter) card.removeAttribute('data-lazy');
-    var show = matchRow(card, q, pos, team, ageFilter, status, owner);
-    card.style.display = show ? '' : 'none';
-  });
-  // Hide sentinel when filtering
-  var sentinel = document.getElementById('poolSentinel');
-  if (sentinel) sentinel.style.display = hasFilter ? 'none' : '';
 
   document.getElementById('visible-count').innerHTML = '<strong>' + count + '</strong> players';
 
@@ -709,56 +636,6 @@ function sortPool(key, el) {
   });
   rows.forEach(function(r) { tbody.appendChild(r); });
 }
-
-// View toggle (desktop only — mobile always shows cards)
-function setPoolView(view) {
-  if (window.innerWidth < 992) return;
-  var table = document.getElementById('poolTable');
-  var cards = document.getElementById('poolCards');
-  document.querySelectorAll('.pool-view-btn').forEach(function(btn) {
-    btn.classList.toggle('active', btn.dataset.view === view);
-  });
-  if (view === 'cards') {
-    table.style.display = 'none';
-    cards.style.display = 'block';
-    cards.classList.remove('d-lg-none');
-  } else {
-    table.style.display = '';
-    cards.style.display = '';
-    cards.classList.add('d-lg-none');
-  }
-}
-
-// ── Progressive card loading (mobile) ──
-(function() {
-  var BATCH = 40;
-  var sentinel = document.getElementById('poolSentinel');
-  if (!sentinel) return;
-  var lazyCards = document.querySelectorAll('#poolCardsGrid [data-lazy]');
-  if (!lazyCards.length) { sentinel.style.display = 'none'; return; }
-  var idx = 0;
-  function showNextBatch() {
-    var end = Math.min(idx + BATCH, lazyCards.length);
-    for (var i = idx; i < end; i++) {
-      lazyCards[i].style.display = '';
-      lazyCards[i].removeAttribute('data-lazy');
-    }
-    idx = end;
-    if (idx >= lazyCards.length) { sentinel.style.display = 'none'; }
-  }
-  if ('IntersectionObserver' in window) {
-    var obs = new IntersectionObserver(function(entries) {
-      if (entries[0].isIntersecting && idx < lazyCards.length) {
-        showNextBatch();
-      }
-    }, { rootMargin: '200px' });
-    obs.observe(sentinel);
-  } else {
-    // Fallback: show all
-    showNextBatch();
-    while (idx < lazyCards.length) showNextBatch();
-  }
-})();
 
 // ── Filter Bottom Sheet (mobile) ──
 var _filterSheetInit = false;

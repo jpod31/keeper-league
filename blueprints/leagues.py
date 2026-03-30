@@ -74,10 +74,14 @@ def _compute_rolling_averages():
     all_scores = all_scores.sort_values(["_year", "_rnd"])
 
     result = {}
+    current_year = config.CURRENT_YEAR
     for name, group in all_scores.groupby("Player"):
-        scores = group["SC"].values  # already sorted chronologically
+        # L3: last 3 games in current year only
+        cy_scores = group[group["_year"] == current_year]["SC"].values
+        l3 = float(cy_scores[-3:].mean()) if len(cy_scores) >= 3 else None
+        # L5: last 5 games across all data
+        scores = group["SC"].values
         n = len(scores)
-        l3 = float(scores[-3:].mean()) if n >= 3 else (float(scores.mean()) if n else None)
         l5 = float(scores[-5:].mean()) if n >= 5 else (float(scores.mean()) if n else None)
         result[name] = {"l3": round(l3, 1) if l3 is not None else None,
                         "l5": round(l5, 1) if l5 is not None else None}
