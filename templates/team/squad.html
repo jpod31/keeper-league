@@ -141,11 +141,11 @@
   {# ── Summary Stat Cards (both views) ── #}
   <div class="squad-stat-cards{% if view|default('field') == 'field' %} fv-stats-hide-mob{% endif %}">
     <div class="stat-card">
-      <div class="stat-value" style="color:#3fb950;">{{ '%.0f'|format(ns.total_sc) }}</div>
+      <div class="stat-value" style="color:#3fb950;" id="stat-total-sc">{{ '%.0f'|format(ns.total_sc) }}</div>
       <div class="stat-label">Total SC Value</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" style="color:#58a6ff;">{{ '%.1f'|format(ns.total_sc / ns.sc_count) if ns.sc_count else '-' }}</div>
+      <div class="stat-value" style="color:#58a6ff;" id="stat-avg-sc">{{ '%.1f'|format(ns.total_sc / ns.sc_count) if ns.sc_count else '-' }}</div>
       <div class="stat-label">Avg SC / Player</div>
     </div>
     <div class="stat-card">
@@ -859,6 +859,17 @@
           }
         });
       });
+      // Update summary stat cards
+      var totalSc = 0, scCount = 0;
+      Object.keys(data).forEach(function(pid) {
+        var avg = parseFloat(data[pid].sc_avg);
+        if (avg && !isNaN(avg)) { totalSc += avg; scCount++; }
+      });
+      var totalEl = document.getElementById('stat-total-sc');
+      var avgEl = document.getElementById('stat-avg-sc');
+      if (totalEl) totalEl.textContent = Math.round(totalSc);
+      if (avgEl) avgEl.textContent = scCount ? (totalSc / scCount).toFixed(1) : '-';
+
       // Also update mobile cards SC avg
       document.querySelectorAll('.squad-mob-card[data-pid]').forEach(card => {
         const pid = card.dataset.pid;
