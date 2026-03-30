@@ -363,7 +363,7 @@
               <span class="pm-team">{{ p.afl_team or '' }}</span>
             </div>
             <div class="pm-sc-col">
-              {% if sc_display %}<div class="pm-sc">{{ '%.0f'|format(sc_display) }}</div><div class="pm-sc-label">SC Avg</div>
+              {% if sc_display %}<div class="pm-sc">{{ '%.1f'|format(sc_display) }}</div><div class="pm-sc-label">SC Avg</div>
               {% else %}<div class="pm-sc pm-sc-none">-</div>{% endif %}
             </div>
           </div>
