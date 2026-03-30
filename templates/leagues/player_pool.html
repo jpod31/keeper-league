@@ -47,58 +47,63 @@
 
   /* ── Mobile player cards ── */
   .pm-card {
-    display: grid;
-    grid-template-columns: 16px 28px 1fr 44px 58px;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-bottom: 1px solid #161b22;
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #1c2128;
     cursor: pointer;
-    min-height: 48px;
   }
   .pm-card:active { background: rgba(88,166,255,.06); }
   .pm-taken { opacity: .5; }
 
-  .pm-logo { width: 28px; height: 28px; object-fit: contain; }
-
-  .pm-info { min-width: 0; }
+  /* Row 1: dot + logo + name/team + SC */
+  .pm-top {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pm-logo { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
+  .pm-info { flex: 1; min-width: 0; }
   .pm-name {
-    font-weight: 700; font-size: .78rem; color: #e6edf3;
+    font-weight: 700; font-size: .88rem; color: #e6edf3;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    display: block; line-height: 1.2;
+    display: block; line-height: 1.3;
   }
-  .pm-row2 {
-    display: flex; align-items: center; gap: 3px; margin-top: 2px;
+  .pm-team { font-size: .68rem; color: #8b949e; }
+  .pm-sc-col { text-align: right; flex-shrink: 0; }
+  .pm-sc { font-size: 1.15rem; font-weight: 800; color: #e6edf3; line-height: 1; }
+  .pm-sc-none { color: #30363d; }
+  .pm-sc-label { font-size: .45rem; color: #484f58; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+
+  /* Row 2: pos badges, age, rating, trend, profile, owner */
+  .pm-bottom {
+    display: flex; align-items: center; gap: 6px;
+    padding-left: 40px; /* align under name (dot 16 + gap 8 + logo 32 - some) */
   }
-  .pm-age { font-size: .58rem; color: #6e7681; }
+  .pm-pos-badge { padding: 1px 6px; font-size: .6rem; }
+  .pm-age { font-size: .68rem; color: #8b949e; font-weight: 600; }
   .pm-rtg {
-    font-size: .55rem; font-weight: 800; padding: 1px 4px; border-radius: 3px;
+    font-size: .62rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;
   }
   .pm-rtg-gold { background: rgba(212,175,55,.25); color: #d4af37; }
   .pm-rtg-green { background: rgba(35,134,54,.25); color: #3fb950; }
   .pm-rtg-blue { background: rgba(31,111,235,.2); color: #58a6ff; }
   .pm-rtg-grey { background: rgba(139,148,158,.12); color: #6e7681; }
-
-  /* SC column */
-  .pm-sc-col { text-align: right; }
-  .pm-sc { font-size: .95rem; font-weight: 800; color: #e6edf3; line-height: 1; }
-  .pm-sc-none { color: #30363d; }
-
-  /* Right column: status */
-  .pm-right { text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+  .pm-trend { font-size: .72rem; }
+  .pm-trend-up { color: #3fb950; }
+  .pm-trend-down { color: #f85149; }
+  .pm-trend-flat { color: #484f58; }
+  .pm-spacer { flex: 1; }
   .pm-owner {
-    font-size: .5rem; font-weight: 700; padding: 2px 5px; border-radius: 4px;
-    max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: .58rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+    max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     display: inline-block;
   }
-  .pm-fa { font-size: .55rem; font-weight: 700; color: #3fb950; }
+  .pm-fa { font-size: .62rem; font-weight: 700; color: #3fb950; }
   .pm-add {
     background: rgba(63,185,80,.15); border: none;
-    color: #3fb950; border-radius: 4px; width: 24px; height: 24px;
+    color: #3fb950; border-radius: 5px; width: 26px; height: 24px;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: .7rem; cursor: pointer; padding: 0;
+    font-size: .75rem; cursor: pointer; padding: 0;
   }
-  .pm-wish { font-size: .7rem; color: #21262d; cursor: pointer; }
+  .pm-wish { font-size: .78rem; color: #21262d; cursor: pointer; flex-shrink: 0; }
 
   /* Hide legacy mobile cards */
   .pool-mob-card {
@@ -330,43 +335,66 @@
         {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
         {% set owner_team = rostered_map.get(p.id) %}
         {% set tc = team_colours.get(owner_team, {}) %}
+        {% set pr = rolling.get(p.name, {}) %}
+        {% set _age = p.age or 25 %}
         {% set _rtg = p.rating or 0 %}
+        {% set _pot = p.potential or 0 %}
+        {% set _gap = _pot - _rtg %}
+        {% set _rtg_move = (_rtg - (p.rating_start or _rtg)) %}
         <div class="pm-card{% if owner_team %} pm-taken{% endif %}"
              data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
-             data-team="{{ p.afl_team or '' }}" data-age="{{ p.age or 0 }}"
+             data-team="{{ p.afl_team or '' }}" data-age="{{ _age }}"
              data-sc="{{ sc_display or 0 }}" data-rtg="{{ _rtg }}"
              data-status="{{ 'taken' if owner_team else 'available' }}"
              data-owner="{{ owner_team or '' }}"
              onclick="window.location='{{ url_for('player_detail', name=p.name) }}'">
-          {# Col 1: status dot #}
-          {% if teams_playing and p.afl_team and p.afl_team not in teams_playing %}<span class="status-dot status-dot-bye"></span>
-          {% elif p.id in selected_set %}<span class="status-dot status-dot-taken"></span>
-          {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
-          {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
-          {# Col 2: logo #}
-          {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
-            <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pm-logo">
-          {% else %}<div style="width:28px;"></div>{% endif %}
-          {# Col 3: name + meta #}
-          <div class="pm-info">
-            <span class="pm-name">{{ p.name }}</span>
-            <div class="pm-row2">
-              {% for pos in ['FWD','DEF','RUC','MID'] %}
-                {% if pos in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge badge-{{ pos|lower }}" style="padding:0 4px;font-size:.5rem;">{{ pos }}</span>
-                {% endif %}
-              {% endfor %}
-              <span class="pm-age">{{ p.age or '' }}</span>
-              {% if _rtg %}<span class="pm-rtg {% if _rtg >= 80 %}pm-rtg-gold{% elif _rtg >= 72 %}pm-rtg-green{% elif _rtg >= 62 %}pm-rtg-blue{% else %}pm-rtg-grey{% endif %}">{{ _rtg }}</span>{% endif %}
+          {# Row 1: dot + logo + name/team + SC #}
+          <div class="pm-top">
+            {% if teams_playing and p.afl_team and p.afl_team not in teams_playing %}<span class="status-dot status-dot-bye"></span>
+            {% elif p.id in selected_set %}<span class="status-dot status-dot-taken"></span>
+            {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
+            {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
+            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pm-logo">
+            {% else %}<div style="width:32px;"></div>{% endif %}
+            <div class="pm-info">
+              <span class="pm-name">{{ p.name }}</span>
+              <span class="pm-team">{{ p.afl_team or '' }}</span>
+            </div>
+            <div class="pm-sc-col">
+              {% if sc_display %}<div class="pm-sc">{{ '%.0f'|format(sc_display) }}</div><div class="pm-sc-label">SC Avg</div>
+              {% else %}<div class="pm-sc pm-sc-none">-</div>{% endif %}
             </div>
           </div>
-          {# Col 4: SC #}
-          <div class="pm-sc-col">
-            {% if sc_display %}<div class="pm-sc">{{ '%.0f'|format(sc_display) }}</div>
-            {% else %}<div class="pm-sc pm-sc-none">-</div>{% endif %}
-          </div>
-          {# Col 5: status + wishlist #}
-          <div class="pm-right">
+          {# Row 2: pos, age, rating, trend arrow, profile tag, owner, wishlist #}
+          <div class="pm-bottom">
+            {% for pos in ['FWD','DEF','RUC','MID'] %}
+              {% if pos in (p.position or 'MID').split('/') %}
+                <span class="pos-badge badge-{{ pos|lower }} pm-pos-badge">{{ pos }}</span>
+              {% endif %}
+            {% endfor %}
+            <span class="pm-age">{{ p.age or '-' }}y</span>
+            {% if _rtg %}<span class="pm-rtg {% if _rtg >= 80 %}pm-rtg-gold{% elif _rtg >= 72 %}pm-rtg-green{% elif _rtg >= 62 %}pm-rtg-blue{% else %}pm-rtg-grey{% endif %}">{{ _rtg }}</span>{% endif %}
+            {# Trend arrow #}
+            {% if pr.l3 and sc_display %}
+              {% set diff = pr.l3 - sc_display %}
+              {% if diff > 5 %}<i class="bi bi-caret-up-fill pm-trend pm-trend-up"></i>
+              {% elif diff < -5 %}<i class="bi bi-caret-down-fill pm-trend pm-trend-down"></i>
+              {% else %}<i class="bi bi-dash pm-trend pm-trend-flat"></i>{% endif %}
+            {% endif %}
+            {# Profile tag #}
+            {% if _rtg >= 80 and _age < 27 %}<span class="profile-tag tag-star">Star</span>
+            {% elif _rtg >= 80 and _age >= 27 %}<span class="profile-tag tag-elite-vet">Elite Vet</span>
+            {% elif _age < 22 and _gap >= 12 %}<span class="profile-tag tag-project">Project</span>
+            {% elif _age < 23 and _pot >= 78 and _rtg_move > 2 %}<span class="profile-tag tag-rising">Rising</span>
+            {% elif _age < 25 and _gap >= 8 %}<span class="profile-tag tag-breakout">Breakout</span>
+            {% elif _age < 22 %}<span class="profile-tag tag-developing">Dev</span>
+            {% elif _rtg >= 72 and _age <= 30 %}<span class="profile-tag tag-proven">Proven</span>
+            {% elif _age >= 30 %}<span class="profile-tag tag-veteran">Vet</span>
+            {% elif _rtg >= 65 %}<span class="profile-tag tag-steady">Steady</span>
+            {% elif _age >= 26 %}<span class="profile-tag tag-journeyman">Journey</span>
+            {% else %}<span class="profile-tag tag-developing">Dev</span>{% endif %}
+            <span class="pm-spacer"></span>
             {% if owner_team %}
               <span class="pm-owner" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
             {% elif can_pickup %}
