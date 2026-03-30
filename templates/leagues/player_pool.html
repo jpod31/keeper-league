@@ -68,10 +68,11 @@
     display: block; line-height: 1.3;
   }
   .pm-team { font-size: .7rem; color: #c9d1d9; }
-  .pm-sc-col { text-align: right; flex-shrink: 0; }
+  .pm-right-col { flex-shrink: 0; text-align: right; min-width: 70px; }
+  .pm-right-top { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .pm-right-bottom { margin-top: 2px; }
   .pm-sc { font-size: 1.15rem; font-weight: 800; color: #f0f6fc; line-height: 1; }
   .pm-sc-none { color: #484f58; }
-  .pm-sc-label { font-size: .45rem; color: #8b949e; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
 
   /* Row 2: pos badges, age, rating, trend, profile, owner */
   .pm-bottom {
@@ -82,11 +83,8 @@
   .pm-age { font-size: .7rem; color: #c9d1d9; font-weight: 600; }
   .pm-rtg {
     font-size: .65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;
+    background: rgba(139,148,158,.18); color: #c9d1d9;
   }
-  .pm-rtg-gold { background: rgba(212,175,55,.4); color: #f5d862; }
-  .pm-rtg-green { background: rgba(35,134,54,.4); color: #56d364; }
-  .pm-rtg-blue { background: rgba(31,111,235,.35); color: #79c0ff; }
-  .pm-rtg-grey { background: rgba(139,148,158,.2); color: #8b949e; }
   .pm-trend { font-size: .78rem; }
   .pm-trend-up { color: #56d364; }
   .pm-trend-down { color: #f85149; }
@@ -94,15 +92,15 @@
   .pm-spacer { flex: 1; }
   .pm-owner {
     font-size: .6rem; font-weight: 700; padding: 2px 7px; border-radius: 4px;
-    max-width: 75px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    display: inline-block;
+    white-space: nowrap; display: inline-block;
   }
-  .pm-fa { font-size: .65rem; font-weight: 700; color: #56d364; }
+  .pm-fa { font-size: .6rem; font-weight: 600; color: #56d364; }
   .pm-add {
-    background: rgba(63,185,80,.25); border: none;
-    color: #56d364; border-radius: 5px; width: 28px; height: 26px;
+    background: rgba(63,185,80,.2); border: none;
+    color: #56d364; border-radius: 5px;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: .8rem; cursor: pointer; padding: 0;
+    font-size: .6rem; font-weight: 700; cursor: pointer;
+    padding: 3px 8px;
   }
   .pm-wish { font-size: .82rem; color: #484f58; cursor: pointer; flex-shrink: 0; }
 
@@ -362,12 +360,26 @@
               <span class="pm-name">{{ p.name }}</span>
               <span class="pm-team">{{ p.afl_team or '' }}</span>
             </div>
-            <div class="pm-sc-col">
-              {% if sc_display %}<div class="pm-sc">{{ '%.1f'|format(sc_display) }}</div><div class="pm-sc-label">SC Avg</div>
-              {% else %}<div class="pm-sc pm-sc-none">-</div>{% endif %}
+            {# Right block: SC + owner/status #}
+            <div class="pm-right-col">
+              <div class="pm-right-top">
+                {% if sc_display %}<span class="pm-sc">{{ '%.1f'|format(sc_display) }}</span>
+                {% else %}<span class="pm-sc pm-sc-none">-</span>{% endif %}
+                <i class="bi bi-star wishlist-star pm-wish" data-pid="{{ p.id }}"
+                   onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"></i>
+              </div>
+              <div class="pm-right-bottom">
+                {% if owner_team %}
+                  <span class="pm-owner" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
+                {% elif can_pickup %}
+                  <button class="pm-add" onclick="event.stopPropagation();showPickupModal({{ p.id }},'{{ p.name|e }}')"><i class="bi bi-plus-lg me-1"></i>Add</button>
+                {% else %}
+                  <span class="pm-fa">Free Agent</span>
+                {% endif %}
+              </div>
             </div>
           </div>
-          {# Row 2: pos, age, rating, trend arrow, profile tag, owner, wishlist #}
+          {# Row 2: pos, age, rating, trend, profile #}
           <div class="pm-bottom">
             {% for pos in ['FWD','DEF','RUC','MID'] %}
               {% if pos in (p.position or 'MID').split('/') %}
@@ -375,15 +387,13 @@
               {% endif %}
             {% endfor %}
             <span class="pm-age">{{ p.age or '-' }}y</span>
-            {% if _rtg %}<span class="pm-rtg {% if _rtg >= 80 %}pm-rtg-gold{% elif _rtg >= 72 %}pm-rtg-green{% elif _rtg >= 62 %}pm-rtg-blue{% else %}pm-rtg-grey{% endif %}">{{ _rtg }}</span>{% endif %}
-            {# Trend arrow #}
+            {% if _rtg %}<span class="pm-rtg">{{ _rtg }}</span>{% endif %}
             {% if pr.l3 and sc_display %}
               {% set diff = pr.l3 - sc_display %}
               {% if diff > 5 %}<i class="bi bi-caret-up-fill pm-trend pm-trend-up"></i>
               {% elif diff < -5 %}<i class="bi bi-caret-down-fill pm-trend pm-trend-down"></i>
               {% else %}<i class="bi bi-dash pm-trend pm-trend-flat"></i>{% endif %}
             {% endif %}
-            {# Profile tag #}
             {% if _rtg >= 80 and _age < 27 %}<span class="profile-tag tag-star">Star</span>
             {% elif _rtg >= 80 and _age >= 27 %}<span class="profile-tag tag-elite-vet">Elite Vet</span>
             {% elif _age < 22 and _gap >= 12 %}<span class="profile-tag tag-project">Project</span>
@@ -395,16 +405,6 @@
             {% elif _rtg >= 65 %}<span class="profile-tag tag-steady">Steady</span>
             {% elif _age >= 26 %}<span class="profile-tag tag-journeyman">Journey</span>
             {% else %}<span class="profile-tag tag-developing">Dev</span>{% endif %}
-            <span class="pm-spacer"></span>
-            {% if owner_team %}
-              <span class="pm-owner" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
-            {% elif can_pickup %}
-              <button class="pm-add" onclick="event.stopPropagation();showPickupModal({{ p.id }},'{{ p.name|e }}')"><i class="bi bi-plus-lg"></i></button>
-            {% else %}
-              <span class="pm-fa">FA</span>
-            {% endif %}
-            <i class="bi bi-star wishlist-star pm-wish" data-pid="{{ p.id }}"
-               onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"></i>
           </div>
         </div>
       {% endfor %}
