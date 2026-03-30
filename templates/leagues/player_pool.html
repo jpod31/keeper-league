@@ -45,7 +45,63 @@
   }
   .pool-count strong { color: #c9d1d9; }
 
-  /* ── Mobile player cards ── */
+  /* ── Mobile player cards (new) ── */
+  .pm-card {
+    padding: 6px 10px 4px;
+    border-bottom: 1px solid #161b22;
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .pm-card:active { background: rgba(88,166,255,.06); }
+  .pm-taken { opacity: .55; }
+  .pm-main {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pm-logo { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+  .pm-info { flex: 1; min-width: 0; }
+  .pm-name {
+    font-weight: 700; font-size: .8rem; color: #e6edf3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block;
+  }
+  .pm-meta { display: flex; align-items: center; gap: 3px; margin-top: 1px; }
+  .pm-age { font-size: .55rem; color: #6e7681; font-weight: 600; }
+  .pm-sc-wrap { text-align: center; min-width: 34px; flex-shrink: 0; }
+  .pm-sc { font-size: 1rem; font-weight: 800; color: #e6edf3; line-height: 1; }
+  .pm-sc-sub { font-size: .4rem; color: #484f58; text-transform: uppercase; font-weight: 700; letter-spacing: .5px; }
+
+  .pm-bottom {
+    display: flex; align-items: center; gap: 5px;
+    padding: 2px 0 2px 28px;  /* offset to align under name */
+  }
+  .pm-rtg {
+    font-size: .6rem; font-weight: 800; padding: 1px 5px; border-radius: 3px;
+    line-height: 1.4;
+  }
+  .pm-rtg-gold { background: rgba(212,175,55,.2); color: #d4af37; }
+  .pm-rtg-green { background: rgba(35,134,54,.2); color: #3fb950; }
+  .pm-rtg-blue { background: rgba(31,111,235,.2); color: #58a6ff; }
+  .pm-rtg-grey { background: rgba(139,148,158,.1); color: #6e7681; }
+  .pm-pot { font-size: .58rem; color: #6e7681; font-weight: 600; }
+  .pm-pot small { font-size: .45rem; color: #484f58; margin-left: 1px; }
+  .pm-l3 { font-size: .58rem; font-weight: 700; }
+  .pm-l3-up { color: #3fb950; }
+  .pm-l3-down { color: #f85149; }
+  .pm-l3-flat { color: #6e7681; }
+  .pm-owner {
+    font-size: .5rem; font-weight: 700; padding: 1px 5px; border-radius: 4px;
+    max-width: 55px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pm-fa { font-size: .55rem; font-weight: 700; color: #3fb950; background: rgba(63,185,80,.1); padding: 1px 5px; border-radius: 4px; }
+  .pm-add {
+    background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.3);
+    color: #3fb950; border-radius: 5px; width: 22px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: .65rem; cursor: pointer; padding: 0;
+  }
+  .pm-wish { font-size: .7rem; color: #21262d; cursor: pointer; flex-shrink: 0; }
+
+  /* ── Legacy mobile cards (unused, kept for reference) ── */
   .pool-mob-card {
     display: flex;
     align-items: center;
@@ -266,8 +322,107 @@
       </select>
     </div>
   </div>
-  {# ── Table view ── #}
-  <div class="card-body p-0 pool-table-wrap" id="poolTable" style="max-height:78vh;overflow:auto;">
+  {# ── Mobile card view ── #}
+  <div class="card-body p-0 d-lg-none" id="poolMobWrap" style="max-height:80vh;overflow-y:auto;">
+    <div id="poolMobGrid">
+      {% for p in players %}
+        {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
+        {% set owner_team = rostered_map.get(p.id) %}
+        {% set tc = team_colours.get(owner_team, {}) %}
+        {% set pr = rolling.get(p.name, {}) %}
+        {% set _age = p.age or 25 %}
+        {% set _rtg = p.rating or 0 %}
+        {% set _pot = p.potential or 0 %}
+        {% set _gap = _pot - _rtg %}
+        {% set _rtg_move = (_rtg - (p.rating_start or _rtg)) %}
+        <div class="pm-card{% if owner_team %} pm-taken{% endif %}"
+             data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
+             data-team="{{ p.afl_team or '' }}" data-age="{{ _age }}"
+             data-sc="{{ sc_display or 0 }}" data-rtg="{{ _rtg }}"
+             data-status="{{ 'taken' if owner_team else 'available' }}"
+             data-owner="{{ owner_team or '' }}"
+             onclick="window.location='{{ url_for('player_detail', name=p.name) }}'">
+          {# Row 1: status dot, logo, name, pos badges, SC #}
+          <div class="pm-main">
+            {% if teams_playing and p.afl_team and p.afl_team not in teams_playing %}
+              <span class="status-dot status-dot-bye"></span>
+            {% elif p.id in selected_set %}
+              <span class="status-dot status-dot-taken"></span>
+            {% elif p.injury_severity %}
+              <span class="status-dot status-dot-injured"></span>
+            {% else %}
+              <span class="status-dot status-dot-available"></span>
+            {% endif %}
+            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pm-logo">
+            {% else %}
+              <div class="pm-logo" style="width:24px;"></div>
+            {% endif %}
+            <div class="pm-info">
+              <span class="pm-name">{{ p.name }}</span>
+              <div class="pm-meta">
+                {% for pos in ['FWD','DEF','RUC','MID'] %}
+                  {% if pos in (p.position or 'MID').split('/') %}
+                    <span class="pos-badge badge-{{ pos|lower }}" style="padding:0 4px;font-size:.5rem;">{{ pos }}</span>
+                  {% endif %}
+                {% endfor %}
+                <span class="pm-age">{{ p.age or '' }}y</span>
+                {% if p.injury_severity %}<i class="bi bi-bandaid-fill" style="color:#f85149;font-size:.55rem;"></i>{% endif %}
+              </div>
+            </div>
+            <div class="pm-sc-wrap">
+              {% if sc_display %}
+                <div class="pm-sc">{{ '%.0f'|format(sc_display) }}</div>
+              {% else %}
+                <div class="pm-sc" style="color:#30363d;">-</div>
+              {% endif %}
+              <div class="pm-sc-sub">SC</div>
+            </div>
+          </div>
+          {# Row 2: rating, potential, profile tag, owner/status, wishlist #}
+          <div class="pm-bottom">
+            {% if _rtg %}
+              <span class="pm-rtg {% if _rtg >= 80 %}pm-rtg-gold{% elif _rtg >= 72 %}pm-rtg-green{% elif _rtg >= 62 %}pm-rtg-blue{% else %}pm-rtg-grey{% endif %}">{{ _rtg }}</span>
+            {% endif %}
+            {% if _pot %}<span class="pm-pot">{{ _pot }}<small>pot</small></span>{% endif %}
+            {% if _rtg_move > 0 %}<span style="color:#3fb950;font-size:.6rem;font-weight:700;">+{{ _rtg_move }}</span>
+            {% elif _rtg_move < 0 %}<span style="color:#f85149;font-size:.6rem;font-weight:700;">{{ _rtg_move }}</span>{% endif %}
+            {% if pr.l3 and sc_display %}
+              {% set diff = pr.l3 - sc_display %}
+              <span class="pm-l3 {% if diff > 5 %}pm-l3-up{% elif diff < -5 %}pm-l3-down{% else %}pm-l3-flat{% endif %}">
+                {% if diff > 5 %}<i class="bi bi-caret-up-fill"></i>{% elif diff < -5 %}<i class="bi bi-caret-down-fill"></i>{% endif %}{{ '%.0f'|format(pr.l3) }}
+              </span>
+            {% endif %}
+            <span style="flex:1;"></span>
+            {# Profile tag #}
+            {% if _rtg >= 80 and _age < 27 %}<span class="profile-tag tag-star">Star</span>
+            {% elif _rtg >= 80 and _age >= 27 %}<span class="profile-tag tag-elite-vet">Elite Vet</span>
+            {% elif _age < 22 and _gap >= 12 %}<span class="profile-tag tag-project">Project</span>
+            {% elif _age < 23 and _pot >= 78 and _rtg_move > 2 %}<span class="profile-tag tag-rising">Rising</span>
+            {% elif _age < 25 and _gap >= 8 %}<span class="profile-tag tag-breakout">Breakout</span>
+            {% elif _age < 22 %}<span class="profile-tag tag-developing">Dev</span>
+            {% elif _rtg >= 72 and _age <= 30 %}<span class="profile-tag tag-proven">Proven</span>
+            {% elif _age >= 30 %}<span class="profile-tag tag-veteran">Vet</span>
+            {% elif _rtg >= 65 %}<span class="profile-tag tag-steady">Steady</span>
+            {% elif _age >= 26 %}<span class="profile-tag tag-journeyman">Journey</span>
+            {% else %}<span class="profile-tag tag-developing">Dev</span>{% endif %}
+            {% if owner_team %}
+              <span class="pm-owner" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
+            {% elif can_pickup %}
+              <button class="pm-add" onclick="event.stopPropagation();showPickupModal({{ p.id }},'{{ p.name|e }}')"><i class="bi bi-plus-lg"></i></button>
+            {% else %}
+              <span class="pm-fa">FA</span>
+            {% endif %}
+            <i class="bi bi-star wishlist-star pm-wish" data-pid="{{ p.id }}"
+               onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"></i>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Table view (desktop) ── #}
+  <div class="card-body p-0 pool-table-wrap d-none d-lg-block" id="poolTable" style="max-height:78vh;overflow:auto;">
     <table class="table table-sm mb-0 pool-table">
       <thead class="sticky-top" style="background:#161b22;z-index:2;">
         <tr>
@@ -591,6 +746,15 @@ function filterPool() {
     if (show) count++;
   });
 
+  // Filter mobile cards
+  var mobCount = 0;
+  document.querySelectorAll('#poolMobGrid .pm-card').forEach(function(card) {
+    var show = matchRow(card, q, pos, team, ageFilter, status, owner);
+    card.style.display = show ? '' : 'none';
+    if (show) mobCount++;
+  });
+  // Use mobile count if desktop table is hidden
+  if (count === 0 && mobCount > 0) count = mobCount;
 
   document.getElementById('visible-count').innerHTML = '<strong>' + count + '</strong> players';
 
