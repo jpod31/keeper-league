@@ -279,6 +279,13 @@ def player_pool(league_id):
         .all()
     )
 
+    # Teams playing this round (for bye indicators)
+    from models.database import AflGame
+    teams_playing = set()
+    for g in AflGame.query.filter_by(year=config.CURRENT_YEAR, afl_round=current_afl_round).all():
+        teams_playing.add(g.home_team)
+        teams_playing.add(g.away_team)
+
     return render_template("leagues/player_pool.html",
                            league=league,
                            players=players,
@@ -293,7 +300,8 @@ def player_pool(league_id):
                            ssp_cutoff_round=ssp_cutoff_round,
                            kvi_map=kvi_map,
                            acquired_map=acquired_map,
-                           selected_set=selected_set)
+                           selected_set=selected_set,
+                           teams_playing=teams_playing)
 
 
 @leagues_bp.route("/<int:league_id>/player-pool/pickup", methods=["POST"])

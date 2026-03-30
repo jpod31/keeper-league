@@ -3249,6 +3249,8 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 .status-dot-injured { background: #f85149; box-shadow: 0 0 0 2px rgba(248,81,73,.2); }
 .status-dot-injured::after { content: '+'; font-size: 9px; font-weight: 900; color: #0d1117; line-height: 1; }
 .status-dot-available { border: 2px solid #8b949e; background: transparent; }
+.status-dot-bye { background: #6e7681; }
+.status-dot-bye::after { content: 'B'; font-size: 8px; font-weight: 900; color: #fff; line-height: 1; }
 
 /* ══════════════════════════════════════════════════
    MOBILE BREAKPOINT (<=768px)

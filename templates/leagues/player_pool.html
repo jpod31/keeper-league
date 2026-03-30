@@ -311,9 +311,10 @@
               data-tag="{% set _age = p.age or 25 %}{% set _rtg = p.rating or 0 %}{% set _pot = p.potential or 0 %}{% set _gap = _pot - _rtg %}{% set _rm = (_rtg - (p.rating_start or _rtg)) %}{% if _rtg >= 80 and _age < 27 %}1{% elif _rtg >= 80 and _age >= 27 %}2{% elif _age < 22 and _gap >= 12 %}8{% elif _age < 23 and _pot >= 78 and _rm > 2 %}3{% elif _age < 25 and _gap >= 8 %}4{% elif _age < 22 %}7{% elif _rtg >= 72 and _age <= 30 %}5{% elif _age >= 30 %}9{% elif _rtg >= 65 %}6{% elif _age >= 26 %}10{% else %}7{% endif %}"
               data-status="{{ 'taken' if owner_team else 'available' }}"
               data-owner="{{ owner_team or '' }}">
-            {# Status dot: selected to play > injured > not selected #}
             <td style="padding:0 0 0 .4rem;vertical-align:middle;">
-              {% if p.id in selected_set %}
+              {% if teams_playing and p.afl_team and p.afl_team not in teams_playing %}
+                <span class="status-dot status-dot-bye"></span>
+              {% elif p.id in selected_set %}
                 <span class="status-dot status-dot-taken"></span>
               {% elif p.injury_severity %}
                 <span class="status-dot status-dot-injured"></span>

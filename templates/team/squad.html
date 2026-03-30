@@ -310,7 +310,8 @@
               <div class="mob-pos-row{% if is_locked %} mob-pos-locked{% endif %}{% if fd.cap_id == p.id %} fv-card-captain{% endif %}{% if fd.vc_id == p.id %} fv-card-vc{% endif %}"
                    data-player-id="{{ p.id }}" data-section="field" data-positions="{{ p.position or 'MID' }}" data-field-pos="{{ pos }}" data-locked="{% if is_locked %}1{% endif %}"
                    onclick="fvShowPlayer({{ p.id }})" style="background:{{ colors.row }};cursor:pointer;">
-                {% if is_selected %}<span class="status-dot status-dot-taken"></span>
+                {% if fd.teams_playing and p.afl_team and p.afl_team not in fd.teams_playing %}<span class="status-dot status-dot-bye"></span>
+                {% elif is_selected %}<span class="status-dot status-dot-taken"></span>
                 {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
                 {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
                 {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
@@ -363,7 +364,8 @@
               <div class="mob-pos-row{% if is_locked %} mob-pos-locked{% endif %}{% if fd.cap_id == p.id %} fv-card-captain{% endif %}{% if fd.vc_id == p.id %} fv-card-vc{% endif %}"
                    data-player-id="{{ p.id }}" data-section="flex" data-positions="{{ p.position or 'MID' }}" data-field-pos="" data-locked="{% if is_locked %}1{% endif %}"
                    onclick="fvShowPlayer({{ p.id }})" style="background:{{ colors.row }};cursor:pointer;">
-                {% if is_selected %}<span class="status-dot status-dot-taken"></span>
+                {% if fd.teams_playing and p.afl_team and p.afl_team not in fd.teams_playing %}<span class="status-dot status-dot-bye"></span>
+                {% elif is_selected %}<span class="status-dot status-dot-taken"></span>
                 {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
                 {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
                 {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
@@ -411,7 +413,8 @@
           <div class="mob-pos-row fv-card-emergency{% if is_locked %} mob-pos-locked{% endif %}"
                data-player-id="{{ p.id }}" data-section="reserve" data-positions="{{ p.position or 'MID' }}" data-field-pos="" data-locked="{% if is_locked %}1{% endif %}"
                onclick="fvShowPlayer({{ p.id }})" style="border-left:3px solid rgba(56,166,215,.3);cursor:pointer;">
-            {% if is_selected %}<span class="status-dot status-dot-taken"></span>
+            {% if fd.teams_playing and p.afl_team and p.afl_team not in fd.teams_playing %}<span class="status-dot status-dot-bye"></span>
+            {% elif is_selected %}<span class="status-dot status-dot-taken"></span>
             {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
             {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
             {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
@@ -458,7 +461,8 @@
           <div class="mob-pos-row fv-card-7s{% if is_locked %} mob-pos-locked{% endif %}"
                data-player-id="{{ p.id }}" data-section="reserve" data-positions="{{ p.position or 'MID' }}" data-field-pos="" data-locked="{% if is_locked %}1{% endif %}"
                onclick="fvShowPlayer({{ p.id }})" style="border-left:3px solid rgba(188,140,255,.3);cursor:pointer;">
-            {% if is_selected %}<span class="status-dot status-dot-taken"></span>
+            {% if fd.teams_playing and p.afl_team and p.afl_team not in fd.teams_playing %}<span class="status-dot status-dot-bye"></span>
+            {% elif is_selected %}<span class="status-dot status-dot-taken"></span>
             {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
             {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
             {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
@@ -554,7 +558,8 @@
           <div class="mob-pos-row mob-pos-reserve{% if is_locked %} mob-pos-locked{% endif %}{% if is_emg %} fv-card-emergency{% endif %}{% if is_7s %} fv-card-7s{% endif %}"
                data-player-id="{{ p.id }}" data-section="reserve" data-positions="{{ p.position or 'MID' }}" data-field-pos="" data-locked="{% if is_locked %}1{% endif %}"
                onclick="fvShowPlayer({{ p.id }})" style="border-left:3px solid {{ colors.text }}22;cursor:pointer;">
-            {% if is_selected %}<span class="status-dot status-dot-taken"></span>
+            {% if fd.teams_playing and p.afl_team and p.afl_team not in fd.teams_playing %}<span class="status-dot status-dot-bye"></span>
+            {% elif is_selected %}<span class="status-dot status-dot-taken"></span>
             {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
             {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
             {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
@@ -662,7 +667,9 @@
       {% set primary = (p.position or 'MID').split('/')[0] %}
       {% set sc_val = st.get('sc_avg', 0) or 0 %}
       <div class="squad-mob-card" data-pid="{{ p.id }}">
-        {% if p.id in selected_player_ids %}
+        {% if field_data.teams_playing and p.afl_team and p.afl_team not in field_data.teams_playing %}
+          <span class="status-dot status-dot-bye"></span>
+        {% elif p.id in selected_player_ids %}
           <span class="status-dot status-dot-taken"></span>
         {% elif p.injury_severity %}
           <span class="status-dot status-dot-injured"></span>
@@ -733,7 +740,9 @@
             {% set sc_val = st.get('sc_avg', 0) or 0 %}
             <tr data-pid="{{ p.id }}" class="squad-row-{{ primary_pos }}" data-name="{{ p.name|lower }}">
               <td class="text-center">
-                {% if p.id in selected_player_ids %}
+                {% if field_data.teams_playing and p.afl_team and p.afl_team not in field_data.teams_playing %}
+                  <span class="status-dot status-dot-bye"></span>
+                {% elif p.id in selected_player_ids %}
                   <span class="status-dot status-dot-taken"></span>
                 {% elif p.injury_severity %}
                   <span class="status-dot status-dot-injured"></span>
