@@ -62,10 +62,11 @@
   }
   .pm-logo { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
   .pm-info { flex: 1; min-width: 0; }
+  .pm-name-row { display: flex; align-items: center; gap: 5px; }
   .pm-name {
     font-weight: 700; font-size: .88rem; color: #f0f6fc;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    display: block; line-height: 1.3;
+    line-height: 1.3;
   }
   .pm-team { font-size: .7rem; color: #c9d1d9; }
   .pm-right-col { flex-shrink: 0; text-align: right; min-width: 70px; }
@@ -357,7 +358,14 @@
               <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pm-logo">
             {% else %}<div style="width:32px;"></div>{% endif %}
             <div class="pm-info">
-              <span class="pm-name">{{ p.name }}</span>
+              <div class="pm-name-row">
+                <span class="pm-name">{{ p.name }}</span>
+                {% for pos in ['FWD','DEF','RUC','MID'] %}
+                  {% if pos in (p.position or 'MID').split('/') %}
+                    <span class="pos-badge badge-{{ pos|lower }} pm-pos-badge">{{ pos }}</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
               <span class="pm-team">{{ p.afl_team or '' }}</span>
             </div>
             {# Right block: SC + owner/status #}
@@ -381,11 +389,6 @@
           </div>
           {# Row 2: pos, age, rating, trend, profile #}
           <div class="pm-bottom">
-            {% for pos in ['FWD','DEF','RUC','MID'] %}
-              {% if pos in (p.position or 'MID').split('/') %}
-                <span class="pos-badge badge-{{ pos|lower }} pm-pos-badge">{{ pos }}</span>
-              {% endif %}
-            {% endfor %}
             <span class="pm-age">{{ p.age or '-' }}y</span>
             {% if _rtg %}<span class="pm-rtg">{{ _rtg }}</span>{% endif %}
             {% if pr.l3 and sc_display %}
