@@ -56,16 +56,14 @@
 
 {# ═══════════════════════ KEEPER LEAGUE MATCHUP CARDS ═══════════════════════ #}
 {% if round_fixtures %}
-<div class="gameday-afl-bar" id="kl-mini-bar" style="margin-bottom:6px;">
+<div class="kl-mini-bar" id="kl-mini-bar">
   {% for f in round_fixtures %}
     {% set h_score = round_scores.get(f.home_team_id, {}).get('total_score', 0) %}
     {% set a_score = round_scores.get(f.away_team_id, {}).get('total_score', 0) %}
     {% set is_users = (not is_bye) and (user_team and (f.home_team_id == user_team.id or f.away_team_id == user_team.id)) %}
-    <div class="game-status-pill{% if is_users %} matchup-yours{% endif %}" style="cursor:pointer;{% if is_users %}border-color:var(--kl-accent-blue);{% endif %}" onclick="viewMatchup({{ f.id }})" id="matchup-card-{{ f.id }}" data-fixture-id="{{ f.id }}">
-      <span class="game-teams">{{ f.home_team.name[:6] }} v {{ f.away_team.name[:6] }}</span>
-      {% if f.status != 'scheduled' %}
-        <span class="game-afl-score">{{ '%.0f'|format(h_score) }}-{{ '%.0f'|format(a_score) }}</span>
-      {% endif %}
+    <div class="kl-mini-pill{% if is_users %} kl-mini-yours{% endif %}" onclick="viewMatchup({{ f.id }})" id="kl-mini-{{ f.id }}" data-fixture-id="{{ f.id }}">
+      <span class="kl-mini-teams">{{ f.home_team.name }} v {{ f.away_team.name }}</span>
+      <span class="kl-mini-score">{% if f.status != 'scheduled' %}{{ '%.0f'|format(h_score) }}-{{ '%.0f'|format(a_score) }}{% endif %}</span>
     </div>
   {% endfor %}
 </div>
@@ -582,6 +580,32 @@
   .game-badge-ft { font-size: .6rem; background: #238636; color: #fff; }
   .game-badge-sched { font-size: .6rem; background: var(--kl-bg-elevated); color: var(--kl-text-secondary); }
 
+  /* ── KL Matchup Mini-bar ── */
+  .kl-mini-bar {
+    display: flex; gap: 6px; margin-bottom: 8px;
+    padding: 10px 14px;
+    background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 10px;
+  }
+  .kl-mini-pill {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; padding: 6px 4px;
+    background: var(--kl-bg-body); border: 1px solid var(--kl-border); border-radius: 10px;
+    cursor: pointer; transition: border-color .15s, background .15s;
+    text-align: center;
+  }
+  .kl-mini-pill:hover { background: var(--kl-bg-elevated); border-color: var(--kl-border-light); }
+  .kl-mini-yours { border-color: var(--kl-accent-blue); }
+  .kl-mini-teams {
+    font-weight: 600; font-size: .72rem; color: var(--kl-text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .kl-mini-score {
+    font-size: .68rem; color: var(--kl-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* ════════════════════════════════════════════════
      HERO CARD
      ════════════════════════════════════════════════ */
@@ -939,6 +963,10 @@
     .gameday-round-title { font-size: 1.1rem; }
     .gameday-afl-bar { gap: 4px; padding: 8px 10px; }
     .game-status-pill { font-size: .65rem; padding: 3px 8px; }
+    .kl-mini-bar { gap: 4px; padding: 8px 10px; }
+    .kl-mini-pill { padding: 5px 3px; }
+    .kl-mini-teams { font-size: .62rem; }
+    .kl-mini-score { font-size: .58rem; }
     .gameday-matchups-grid { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
     .gameday-pos-badge { display: none !important; }
   }
@@ -1504,6 +1532,18 @@ function _renderCapBadges(status) {
     return html;
 }
 
+function updateKlMiniPills(data) {
+    if (!data.fixtures) return;
+    data.fixtures.forEach(function(f) {
+        var pill = document.getElementById('kl-mini-' + f.fixture_id);
+        if (!pill) return;
+        var scoreEl = pill.querySelector('.kl-mini-score');
+        if (scoreEl) {
+            scoreEl.textContent = Math.round(f.home_score || 0) + '-' + Math.round(f.away_score || 0);
+        }
+    });
+}
+
 function updateMatchupCards(data) {
     if (!data.fixtures) return;
     var scoringTypes = ['field', 'bench'];
@@ -1578,6 +1618,7 @@ function handleUpdate(data) {
 
     // Always update the matchup mini-cards + AFL pills
     updateMatchupCards(data);
+    updateKlMiniPills(data);
     updateGameStatusPills(data.game_statuses);
 
     // Update projections + win probability
