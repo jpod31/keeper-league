@@ -36,7 +36,7 @@
 <div class="gameday-afl-bar d-none d-lg-flex" id="afl-pills-bar">
   {% for g in afl_games %}
     <a href="{{ url_for('matchups.afl_game_view', league_id=league.id, game_id=g.game_id) }}" class="game-status-pill" id="game-{{ g.game_id }}" style="text-decoration:none;color:inherit;">
-      <span class="game-teams">{{ g.home_team[:3]|upper }} v {{ g.away_team[:3]|upper }}</span>
+      <span class="game-teams">{{ TEAM_ABBR.get(g.home_team, g.home_team[:3]|upper) }} v {{ TEAM_ABBR.get(g.away_team, g.away_team[:3]|upper) }}</span>
       {% if g.status == 'live' %}
         <span class="badge game-badge-live">LIVE</span>
       {% elif g.status == 'complete' %}

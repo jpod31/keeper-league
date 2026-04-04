@@ -358,6 +358,7 @@ def create_app():
         ctx = {
             "TEAM_LOGOS": config.TEAM_LOGOS,
             "TEAM_COLOURS": config.TEAM_COLOURS,
+            "TEAM_ABBR": config.TEAM_ABBR,
             "SCORING_TYPE_LABELS": config.SCORING_TYPE_LABELS,
         }
         if current_user.is_authenticated:

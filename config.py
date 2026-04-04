@@ -72,6 +72,16 @@ AGE_CURVE = {
 _max_slots = max(POSITIONS.values()) if POSITIONS else 1
 POSITIONAL_SCARCITY = {pos: round(count / _max_slots, 2) for pos, count in POSITIONS.items()}
 
+# ---------- Team abbreviations ----------
+TEAM_ABBR = {
+    "Adelaide": "ADE", "Brisbane Lions": "BRI", "Carlton": "CAR",
+    "Collingwood": "COL", "Essendon": "ESS", "Fremantle": "FRE",
+    "Geelong": "GEE", "Gold Coast": "GC", "GWS Giants": "GWS",
+    "Hawthorn": "HAW", "Melbourne": "MEL", "North Melbourne": "NM",
+    "Port Adelaide": "PTA", "Richmond": "RIC", "St Kilda": "STK",
+    "Sydney": "SYD", "West Coast": "WCE", "Western Bulldogs": "WB",
+}
+
 # ---------- Supercoach scraping ----------
 CURRENT_YEAR = 2026
 SC_ROUNDS = 24          # max rounds in a regular season
