@@ -70,9 +70,25 @@
   .pr-move-up { color:#3fb950; }
   .pr-move-down { color:#f85149; }
   .pr-move-same { color:#30363d; }
-  .pr-info { flex:1; }
-  .pr-team { color:#e6edf3; font-weight:600; font-size:.88rem; }
-  .pr-blurb { color:#8b949e; font-size:.72rem; margin-top:1px; font-style:italic; }
+  .pr-info { flex:1; min-width:0; }
+  .pr-team { color:#e6edf3; font-weight:600; font-size:.88rem; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .pr-headline {
+    font-size:.6rem; font-weight:700; letter-spacing:.3px; padding:1px 6px; border-radius:3px;
+    text-transform:uppercase;
+  }
+  .pr-hl-onfire, .pr-hl-dominant { background:rgba(63,185,80,.15); color:#3fb950; }
+  .pr-hl-surging, .pr-hl-strong { background:rgba(88,166,255,.12); color:#58a6ff; }
+  .pr-hl-steady { background:rgba(139,148,158,.1); color:#8b949e; }
+  .pr-hl-underperforming, .pr-hl-struggling { background:rgba(248,81,73,.1); color:#f85149; }
+  .pr-hl-sliding, .pr-hl-infreefall { background:rgba(248,81,73,.15); color:#f85149; }
+  .pr-detail-row {
+    display:flex; align-items:center; gap:6px; margin-top:2px;
+    font-size:.7rem; color:#8b949e;
+  }
+  .pr-detail-item b { color:#c9d1d9; }
+  .pr-detail-sep { width:1px; height:10px; background:#30363d; }
+  .pr-detail-pos { color:#3fb950; }
+  .pr-detail-neg { color:#f85149; }
   .pr-right { display:flex; align-items:center; gap:12px; }
   .pr-score-badge { color:#58a6ff; font-weight:700; font-size:.85rem; }
   .pr-form-dots { display:flex; gap:2px; }
@@ -194,6 +210,7 @@
       </span>
     </div>
     {% for pr in rankings %}
+    {% set d = ranking_details.get(pr.team_id, {}) %}
     <div class="pr-row">
       <span class="pr-rank-num pr-rank-{{ pr.rank if pr.rank <= 3 else 'other' }}">{{ pr.rank }}</span>
       <span class="pr-move {% if pr.movement > 0 %}pr-move-up{% elif pr.movement < 0 %}pr-move-down{% else %}pr-move-same{% endif %}">
@@ -202,10 +219,24 @@
         {% else %}&mdash;{% endif %}
       </span>
       <div class="pr-info">
-        <div class="pr-team">{{ pr.team.name }}</div>
-        {% if ranking_blurbs.get(pr.team_id) %}
-          <div class="pr-blurb">{{ ranking_blurbs[pr.team_id] }}</div>
-        {% endif %}
+        <div class="pr-team">
+          {{ pr.team.name }}
+          <span class="pr-headline pr-hl-{{ d.get('headline','Steady')|lower|replace(' ','') }}">{{ d.get('headline', '') }}</span>
+        </div>
+        <div class="pr-detail-row">
+          <span class="pr-detail-item"><b>{{ d.get('record', '') }}</b></span>
+          <span class="pr-detail-sep"></span>
+          <span class="pr-detail-item">Avg <b>{{ d.get('avg_score', 0) }}</b></span>
+          <span class="pr-detail-sep"></span>
+          <span class="pr-detail-item {% if d.get('pct_above', 0) > 0 %}pr-detail-pos{% elif d.get('pct_above', 0) < 0 %}pr-detail-neg{% endif %}">{{ '%+.1f'|format(d.get('pct_above', 0)) }}% vs avg</span>
+        </div>
+        <div class="pr-detail-row">
+          <span class="pr-detail-item">Best <b>{{ d.get('best_round', 0)|int }}</b></span>
+          <span class="pr-detail-sep"></span>
+          <span class="pr-detail-item">Worst <b>{{ d.get('worst_round', 0)|int }}</b></span>
+          <span class="pr-detail-sep"></span>
+          <span class="pr-detail-item">Form {{ d.get('form_wins', 0) }}W {{ d.get('form_losses', 0) }}L / {{ d.get('form_total', 0) }}</span>
+        </div>
       </div>
       <div class="pr-right">
         <span class="pr-score-badge">{{ '%.1f'|format(pr.score) }}</span>

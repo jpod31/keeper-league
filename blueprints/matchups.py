@@ -208,10 +208,10 @@ def standings(league_id):
                 else:
                     team_form[tid].append("L")
 
-    # Auto-generate fun blurbs for each ranked team
-    ranking_blurbs = {}
+    # Build detailed ranking analysis per team
+    ranking_details = {}
     if rankings:
-        # Get avg scores for blurbs
+        # Avg scores
         avg_rs = {}
         rs_rows = (
             db.session.query(RoundScore.team_id, db.func.avg(RoundScore.total_score))
@@ -222,34 +222,67 @@ def standings(league_id):
             avg_rs[tid] = avg
         league_avg = sum(avg_rs.values()) / len(avg_rs) if avg_rs else 0
 
+        # Best/worst round scores
+        best_worst = {}
+        bw_rows = (
+            db.session.query(
+                RoundScore.team_id,
+                db.func.max(RoundScore.total_score),
+                db.func.min(RoundScore.total_score),
+            )
+            .filter(RoundScore.team_id.in_([r.team_id for r in rankings]), RoundScore.year == year, RoundScore.afl_round > 0)
+            .group_by(RoundScore.team_id).all()
+        )
+        for tid, best, worst in bw_rows:
+            best_worst[tid] = (best, worst)
+
+        # Season record from standings
+        record_map = {}
+        for s in standing_list:
+            record_map[s["team_id"]] = s
+
         for pr in rankings:
             form = team_form.get(pr.team_id, [])
             wins = sum(1 for r in form if r == "W")
             losses = sum(1 for r in form if r == "L")
+            draws = sum(1 for r in form if r == "D")
             avg = avg_rs.get(pr.team_id, 0)
             pct_above = ((avg - league_avg) / league_avg * 100) if league_avg > 0 else 0
+            best, worst = best_worst.get(pr.team_id, (0, 0))
+            rec = record_map.get(pr.team_id, {})
 
+            # Headline blurb
             if wins >= 4 and pct_above > 10:
-                blurb = f"Dominant — {wins} from last {len(form)}, scoring {pct_above:+.0f}% above league average"
-            elif wins >= 3:
-                blurb = f"On fire — {wins} wins from last {len(form)}"
+                headline = "Dominant"
+            elif wins >= 3 and len(form) <= 4:
+                headline = "On fire"
             elif pr.movement >= 3:
-                blurb = f"Surging — up {pr.movement} spots this round"
+                headline = "Surging"
             elif losses >= 4:
-                blurb = f"In freefall — {losses} losses from last {len(form)}"
+                headline = "In freefall"
             elif pr.movement <= -3:
-                blurb = f"Sliding — dropped {abs(pr.movement)} spots"
+                headline = "Sliding"
             elif losses >= 3:
-                blurb = f"Struggling — {losses} losses from last {len(form)}"
+                headline = "Struggling"
             elif pct_above > 5:
-                blurb = f"Solid — scoring {pct_above:+.0f}% above average"
+                headline = "Strong"
             elif pct_above < -5:
-                blurb = f"Underperforming — scoring {pct_above:+.0f}% vs league average"
-            elif wins == losses and len(form) >= 4:
-                blurb = f"Treading water — {wins}W {losses}L from last {len(form)}"
+                headline = "Underperforming"
             else:
-                blurb = f"Steady — holding at #{pr.rank}"
-            ranking_blurbs[pr.team_id] = blurb
+                headline = "Steady"
+
+            ranking_details[pr.team_id] = {
+                "headline": headline,
+                "avg_score": round(avg, 1),
+                "league_avg": round(league_avg, 1),
+                "pct_above": round(pct_above, 1),
+                "best_round": round(best, 0) if best else 0,
+                "worst_round": round(worst, 0) if worst else 0,
+                "record": f"{rec.get('wins', 0)}W {rec.get('losses', 0)}L" + (f" {rec.get('draws', 0)}D" if rec.get('draws') else ""),
+                "form_wins": wins,
+                "form_losses": losses,
+                "form_total": len(form),
+            }
 
     return render_template("matchups/standings.html",
                            league=league,
@@ -258,7 +291,7 @@ def standings(league_id):
                            scoring=scoring,
                            rankings=rankings,
                            team_form=team_form,
-                           ranking_blurbs=ranking_blurbs)
+                           ranking_details=ranking_details)
 
 
 
