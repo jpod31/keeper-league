@@ -47,19 +47,20 @@
   0%, 100% { transform: scale(1); opacity: .88; }
   50% { transform: scale(1.03); opacity: 1; }
 }
-/* Single ambient glow — slow rotating conic gradient */
+/* Ambient glow — breathing pulse */
 .kl-loader-glow {
   position: absolute; top: 50%; left: 50%;
-  width: 380px; height: 380px;
-  margin-top: -190px; margin-left: -190px;
+  width: 360px; height: 360px;
+  margin-top: -180px; margin-left: -180px;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(63,185,80,.2), transparent 40%, rgba(31,111,235,.2), transparent 80%, rgba(63,185,80,.2));
-  animation: glowSpin 5s linear infinite;
-  filter: blur(50px);
+  background: radial-gradient(circle, rgba(52,211,153,.18) 0%, rgba(31,111,235,.12) 40%, transparent 70%);
+  animation: glowPulse 3s ease-in-out infinite;
+  filter: blur(40px);
   z-index: 1;
 }
-@keyframes glowSpin {
-  to { transform: rotate(360deg); }
+@keyframes glowPulse {
+  0%, 100% { transform: scale(.85); opacity: .5; }
+  50% { transform: scale(1.1); opacity: 1; }
 }
 
 /* ── Typography ── */
