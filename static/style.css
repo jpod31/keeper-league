@@ -41,52 +41,25 @@
 .kl-loader-logo {
   width: 280px; height: 280px;
   animation: loaderPulse 2.4s ease-in-out infinite;
-  position: relative; z-index: 3;
+  position: relative; z-index: 2;
 }
 @keyframes loaderPulse {
   0%, 100% { transform: scale(1); opacity: .88; }
   50% { transform: scale(1.03); opacity: 1; }
 }
-/* Outer slow ring — wide diffused glow */
+/* Single ambient glow — slow rotating conic gradient */
 .kl-loader-glow {
   position: absolute; top: 50%; left: 50%;
-  width: 420px; height: 420px;
-  margin-top: -210px; margin-left: -210px;
+  width: 380px; height: 380px;
+  margin-top: -190px; margin-left: -190px;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(63,185,80,.18), transparent 25%, rgba(31,111,235,.18), transparent 50%, rgba(52,211,153,.14), transparent 75%, rgba(63,185,80,.18));
-  animation: glowSpin 4s linear infinite;
+  background: conic-gradient(from 0deg, rgba(63,185,80,.2), transparent 40%, rgba(31,111,235,.2), transparent 80%, rgba(63,185,80,.2));
+  animation: glowSpin 5s linear infinite;
   filter: blur(50px);
   z-index: 1;
 }
-/* Inner fast ring — tighter, brighter accent */
-.kl-loader-glow-inner {
-  position: absolute; top: 50%; left: 50%;
-  width: 310px; height: 310px;
-  margin-top: -155px; margin-left: -155px;
-  border-radius: 50%;
-  background: conic-gradient(from 180deg, rgba(52,211,153,.25), transparent 30%, rgba(31,111,235,.3), transparent 60%, rgba(63,185,80,.2), transparent 90%);
-  animation: glowSpin 2.5s linear infinite reverse;
-  filter: blur(28px);
-  z-index: 2;
-}
 @keyframes glowSpin {
   to { transform: rotate(360deg); }
-}
-/* Shimmer sweep across the logo */
-.kl-loader-shimmer {
-  position: absolute; top: 50%; left: 50%;
-  width: 280px; height: 280px;
-  margin-top: -140px; margin-left: -140px;
-  border-radius: 50%;
-  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.06) 45%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.06) 55%, transparent 60%);
-  background-size: 300% 100%;
-  animation: shimmerSweep 2.8s ease-in-out infinite;
-  z-index: 4;
-  pointer-events: none;
-}
-@keyframes shimmerSweep {
-  0% { background-position: 200% 0; }
-  100% { background-position: -100% 0; }
 }
 
 /* ── Typography ── */
