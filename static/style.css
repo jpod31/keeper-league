@@ -3871,8 +3871,8 @@ img[src*="Carlton.png"] {
   margin-left: 4px;
   vertical-align: middle;
 }
-.mob-badge-cap { background: rgba(255,215,0,.2); color: #FFD700; }
-.mob-badge-vc { background: rgba(192,192,192,.15); color: #C0C0C0; }
+.mob-badge-cap { background: rgba(255,215,0,.35); color: #FFD700; border: 1px solid rgba(255,215,0,.5); }
+.mob-badge-vc { background: rgba(192,192,192,.25); color: #e6edf3; border: 1px solid rgba(192,192,192,.4); }
 .mob-badge-emg { background: rgba(240,136,62,.2); color: #f0883e; border: 1px solid rgba(240,136,62,.3); }
 .mob-badge-7s { background: rgba(188,140,255,.2); color: #bc8cff; border: 1px solid rgba(188,140,255,.3); }
 .squad-mob-injury {
