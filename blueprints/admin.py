@@ -187,6 +187,104 @@ def analytics():
         .all()
     )
 
+    # ── Per-user engagement (last 30 days) ──
+    user_engagement = (
+        db.session.query(
+            PageView.user_id,
+            func.count(PageView.id).label("total_views"),
+            func.count(func.distinct(func.date(PageView.timestamp))).label("active_days"),
+            func.max(PageView.timestamp).label("last_seen"),
+        )
+        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None))
+        .group_by(PageView.user_id)
+        .order_by(func.count(PageView.id).desc())
+        .all()
+    )
+    user_ids_engagement = {r.user_id for r in user_engagement}
+    users_map_all = {}
+    if user_ids_engagement:
+        for u in User.query.filter(User.id.in_(user_ids_engagement)).all():
+            users_map_all[u.id] = u
+
+    user_stats = []
+    for r in user_engagement:
+        u = users_map_all.get(r.user_id)
+        if not u:
+            continue
+        user_stats.append({
+            "username": u.display_name or u.username,
+            "total_views": r.total_views,
+            "active_days": r.active_days,
+            "avg_per_day": round(r.total_views / max(r.active_days, 1), 1),
+            "last_seen": r.last_seen,
+        })
+
+    # ── Day-of-week heatmap (last 30 days) ──
+    dow_rows = (
+        db.session.query(
+            func.strftime("%w", PageView.timestamp).label("dow"),
+            func.count(PageView.id).label("count"),
+        )
+        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None))
+        .group_by(func.strftime("%w", PageView.timestamp))
+        .all()
+    )
+    dow_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    dow_map = {str(i): 0 for i in range(7)}
+    for r in dow_rows:
+        dow_map[r.dow] = r.count
+    dow_labels = dow_names
+    dow_data = [dow_map[str(i)] for i in range(7)]
+
+    # ── Hour-of-day distribution (last 30 days, AEST = UTC+10/11) ──
+    hour_rows = (
+        db.session.query(
+            func.strftime("%H", PageView.timestamp).label("hour"),
+            func.count(PageView.id).label("count"),
+        )
+        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None))
+        .group_by(func.strftime("%H", PageView.timestamp))
+        .all()
+    )
+    # Shift to AEST (+10)
+    hour_map_aest = {h: 0 for h in range(24)}
+    for r in hour_rows:
+        utc_hour = int(r.hour)
+        aest_hour = (utc_hour + 10) % 24
+        hour_map_aest[aest_hour] += r.count
+    hour_labels = [f"{h:02d}" for h in range(24)]
+    hour_data = [hour_map_aest[h] for h in range(24)]
+
+    # ── Device breakdown (mobile vs desktop, last 30 days) ──
+    all_recent_ua = (
+        db.session.query(PageView.user_agent)
+        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None),
+                PageView.user_agent.isnot(None))
+        .all()
+    )
+    mobile_count = sum(1 for (ua,) in all_recent_ua if ua and ("Mobile" in ua or "Android" in ua or "iPhone" in ua))
+    desktop_count = len(all_recent_ua) - mobile_count
+
+    # ── Top features used (categorised paths, last 30 days) ──
+    feature_map = {
+        "Gameday": "/gameday", "My Team": "/team/", "Player Pool": "/player-pool",
+        "Trades": "/trade", "Fixtures": "/standings", "Draft": "/draft",
+        "Player Detail": "/player/", "Settings": "/settings", "Chat": "/chat",
+    }
+    feature_counts = {}
+    all_paths = (
+        db.session.query(PageView.path, func.count(PageView.id).label("count"))
+        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None))
+        .group_by(PageView.path)
+        .all()
+    )
+    for path, count in all_paths:
+        for feature, pattern in feature_map.items():
+            if pattern in path:
+                feature_counts[feature] = feature_counts.get(feature, 0) + count
+                break
+    feature_sorted = sorted(feature_counts.items(), key=lambda x: x[1], reverse=True)
+
     # Recent activity (last 50)
     recent = (
         PageView.query
@@ -217,6 +315,14 @@ def analytics():
                            chart_labels=chart_labels,
                            chart_data=chart_data,
                            top_pages=top_pages,
+                           user_stats=user_stats,
+                           dow_labels=dow_labels,
+                           dow_data=dow_data,
+                           hour_labels=hour_labels,
+                           hour_data=hour_data,
+                           mobile_count=mobile_count,
+                           desktop_count=desktop_count,
+                           feature_sorted=feature_sorted,
                            recent=recent_data)
 
 
