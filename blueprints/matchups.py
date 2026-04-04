@@ -189,6 +189,7 @@ def standings(league_id):
     from models.database import Fixture as Fx
     completed_fx = (
         Fx.query.filter_by(league_id=league_id, status="completed", is_final=False, year=year)
+        .filter(Fx.afl_round > 0)
         .order_by(Fx.afl_round.desc()).all()
     )
     team_form = {}
@@ -214,7 +215,7 @@ def standings(league_id):
         avg_rs = {}
         rs_rows = (
             db.session.query(RoundScore.team_id, db.func.avg(RoundScore.total_score))
-            .filter(RoundScore.team_id.in_([r.team_id for r in rankings]), RoundScore.year == year)
+            .filter(RoundScore.team_id.in_([r.team_id for r in rankings]), RoundScore.year == year, RoundScore.afl_round > 0)
             .group_by(RoundScore.team_id).all()
         )
         for tid, avg in rs_rows:
