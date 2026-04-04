@@ -145,185 +145,171 @@ def leagues():
     return render_template("admin/leagues.html", leagues=league_data)
 
 
-@admin_bp.route("/analytics")
+@admin_bp.route("/analytics/api")
 @admin_required
-def analytics():
+def analytics_api():
+    """JSON API for analytics dashboard with date range and user filters."""
     now = datetime.now(timezone.utc)
+    days = request.args.get("days", 30, type=int)
+    user_filter = request.args.get("user_id", None, type=int)
+    cutoff = now - timedelta(days=days)
 
-    # Active users in 24h / 7d / 30d
-    def unique_users_since(delta):
-        cutoff = now - delta
-        return db.session.query(func.count(func.distinct(PageView.user_id))).filter(
-            PageView.timestamp >= cutoff,
-            PageView.user_id.isnot(None),
-        ).scalar() or 0
+    base_q = PageView.query.filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
+    if user_filter:
+        base_q = base_q.filter(PageView.user_id == user_filter)
 
-    active_24h = unique_users_since(timedelta(hours=24))
-    active_7d = unique_users_since(timedelta(days=7))
-    active_30d = unique_users_since(timedelta(days=30))
+    # Daily views
+    daily = (
+        db.session.query(func.date(PageView.timestamp).label("day"), func.count(PageView.id))
+        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
+    )
+    if user_filter:
+        daily = daily.filter(PageView.user_id == user_filter)
+    daily = daily.group_by(func.date(PageView.timestamp)).order_by(func.date(PageView.timestamp)).all()
 
-    # Daily page views for last 30 days (for Chart.js)
-    thirty_days_ago = now - timedelta(days=30)
-    daily_rows = (
+    # Daily unique users
+    daily_users = (
+        db.session.query(func.date(PageView.timestamp).label("day"), func.count(func.distinct(PageView.user_id)))
+        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
+        .group_by(func.date(PageView.timestamp)).order_by(func.date(PageView.timestamp)).all()
+    )
+
+    # Hour x Day heatmap
+    heatmap_q = (
         db.session.query(
-            func.date(PageView.timestamp).label("day"),
+            func.strftime("%w", PageView.timestamp).label("dow"),
+            func.strftime("%H", PageView.timestamp).label("hour"),
             func.count(PageView.id).label("count"),
         )
-        .filter(PageView.timestamp >= thirty_days_ago)
-        .group_by(func.date(PageView.timestamp))
-        .order_by(func.date(PageView.timestamp))
-        .all()
+        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
     )
-    chart_labels = [str(r.day) for r in daily_rows]
-    chart_data = [r.count for r in daily_rows]
+    if user_filter:
+        heatmap_q = heatmap_q.filter(PageView.user_id == user_filter)
+    heatmap_rows = heatmap_q.group_by("dow", "hour").all()
+    # Build 7x24 matrix (shifted to AEST +10)
+    heatmap = [[0]*24 for _ in range(7)]
+    for dow, hour, count in heatmap_rows:
+        aest_hour = (int(hour) + 10) % 24
+        heatmap[int(dow)][aest_hour] = count
 
-    # Top pages (last 30 days)
-    top_pages = (
-        db.session.query(PageView.path, func.count(PageView.id).label("count"))
-        .filter(PageView.timestamp >= thirty_days_ago)
-        .group_by(PageView.path)
-        .order_by(func.count(PageView.id).desc())
-        .limit(15)
-        .all()
-    )
-
-    # ── Per-user engagement (last 30 days) ──
-    user_engagement = (
+    # Per-user stats
+    user_rows = (
         db.session.query(
             PageView.user_id,
-            func.count(PageView.id).label("total_views"),
+            func.count(PageView.id).label("views"),
             func.count(func.distinct(func.date(PageView.timestamp))).label("active_days"),
             func.max(PageView.timestamp).label("last_seen"),
         )
-        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None))
+        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
         .group_by(PageView.user_id)
         .order_by(func.count(PageView.id).desc())
         .all()
     )
-    user_ids_engagement = {r.user_id for r in user_engagement}
-    users_map_all = {}
-    if user_ids_engagement:
-        for u in User.query.filter(User.id.in_(user_ids_engagement)).all():
-            users_map_all[u.id] = u
+    uid_set = {r.user_id for r in user_rows}
+    umap = {}
+    if uid_set:
+        for u in User.query.filter(User.id.in_(uid_set)).all():
+            umap[u.id] = u.display_name or u.username
 
-    user_stats = []
-    for r in user_engagement:
-        u = users_map_all.get(r.user_id)
-        if not u:
-            continue
-        user_stats.append({
-            "username": u.display_name or u.username,
-            "total_views": r.total_views,
+    users = []
+    for r in user_rows:
+        # Per-user daily sparkline
+        spark = (
+            db.session.query(func.date(PageView.timestamp), func.count(PageView.id))
+            .filter(PageView.timestamp >= cutoff, PageView.user_id == r.user_id)
+            .group_by(func.date(PageView.timestamp))
+            .order_by(func.date(PageView.timestamp))
+            .all()
+        )
+        users.append({
+            "id": r.user_id,
+            "name": umap.get(r.user_id, "?"),
+            "views": r.views,
             "active_days": r.active_days,
-            "avg_per_day": round(r.total_views / max(r.active_days, 1), 1),
-            "last_seen": r.last_seen,
+            "avg_per_day": round(r.views / max(r.active_days, 1), 1),
+            "last_seen": r.last_seen.strftime("%d %b %H:%M") if r.last_seen else "",
+            "sparkline": [c for _, c in spark],
         })
 
-    # ── Day-of-week heatmap (last 30 days) ──
-    dow_rows = (
-        db.session.query(
-            func.strftime("%w", PageView.timestamp).label("dow"),
-            func.count(PageView.id).label("count"),
-        )
-        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None))
-        .group_by(func.strftime("%w", PageView.timestamp))
-        .all()
-    )
-    dow_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-    dow_map = {str(i): 0 for i in range(7)}
-    for r in dow_rows:
-        dow_map[r.dow] = r.count
-    dow_labels = dow_names
-    dow_data = [dow_map[str(i)] for i in range(7)]
-
-    # ── Hour-of-day distribution (last 30 days, AEST = UTC+10/11) ──
-    hour_rows = (
-        db.session.query(
-            func.strftime("%H", PageView.timestamp).label("hour"),
-            func.count(PageView.id).label("count"),
-        )
-        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None))
-        .group_by(func.strftime("%H", PageView.timestamp))
-        .all()
-    )
-    # Shift to AEST (+10)
-    hour_map_aest = {h: 0 for h in range(24)}
-    for r in hour_rows:
-        utc_hour = int(r.hour)
-        aest_hour = (utc_hour + 10) % 24
-        hour_map_aest[aest_hour] += r.count
-    hour_labels = [f"{h:02d}" for h in range(24)]
-    hour_data = [hour_map_aest[h] for h in range(24)]
-
-    # ── Device breakdown (mobile vs desktop, last 30 days) ──
-    all_recent_ua = (
-        db.session.query(PageView.user_agent)
-        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None),
-                PageView.user_agent.isnot(None))
-        .all()
-    )
-    mobile_count = sum(1 for (ua,) in all_recent_ua if ua and ("Mobile" in ua or "Android" in ua or "iPhone" in ua))
-    desktop_count = len(all_recent_ua) - mobile_count
-
-    # ── Top features used (categorised paths, last 30 days) ──
+    # Feature breakdown
     feature_map = {
         "Gameday": "/gameday", "My Team": "/team/", "Player Pool": "/player-pool",
-        "Trades": "/trade", "Fixtures": "/standings", "Draft": "/draft",
+        "Trades": "/trade", "Ladder / Standings": "/standings", "Draft": "/draft",
         "Player Detail": "/player/", "Settings": "/settings", "Chat": "/chat",
+        "Fixtures": "/fixture", "AFL Live": "/afl-live",
     }
-    feature_counts = {}
-    all_paths = (
-        db.session.query(PageView.path, func.count(PageView.id).label("count"))
-        .filter(PageView.timestamp >= thirty_days_ago, PageView.user_id.isnot(None))
-        .group_by(PageView.path)
-        .all()
+    feat_q = (
+        db.session.query(PageView.path, func.count(PageView.id))
+        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
     )
+    if user_filter:
+        feat_q = feat_q.filter(PageView.user_id == user_filter)
+    all_paths = feat_q.group_by(PageView.path).all()
+    features = {}
     for path, count in all_paths:
-        for feature, pattern in feature_map.items():
+        for feat, pattern in feature_map.items():
             if pattern in path:
-                feature_counts[feature] = feature_counts.get(feature, 0) + count
+                features[feat] = features.get(feat, 0) + count
                 break
-    feature_sorted = sorted(feature_counts.items(), key=lambda x: x[1], reverse=True)
+        else:
+            features["Other"] = features.get("Other", 0) + count
+    features = sorted(features.items(), key=lambda x: x[1], reverse=True)
 
-    # Recent activity (last 50)
-    recent = (
-        PageView.query
-        .order_by(PageView.timestamp.desc())
-        .limit(50)
-        .all()
+    # Device split
+    ua_q = db.session.query(PageView.user_agent).filter(
+        PageView.timestamp >= cutoff, PageView.user_id.isnot(None), PageView.user_agent.isnot(None))
+    if user_filter:
+        ua_q = ua_q.filter(PageView.user_id == user_filter)
+    all_ua = ua_q.all()
+    mobile = sum(1 for (ua,) in all_ua if ua and any(k in ua for k in ("Mobile", "Android", "iPhone")))
+    desktop = len(all_ua) - mobile
+
+    # Top pages
+    top_q = (
+        db.session.query(PageView.path, func.count(PageView.id).label("c"))
+        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
     )
-    user_ids = {pv.user_id for pv in recent if pv.user_id}
-    users_map = {}
-    if user_ids:
-        for u in User.query.filter(User.id.in_(user_ids)).all():
-            users_map[u.id] = u.username
+    if user_filter:
+        top_q = top_q.filter(PageView.user_id == user_filter)
+    top_pages = top_q.group_by(PageView.path).order_by(func.count(PageView.id).desc()).limit(20).all()
 
-    recent_data = []
-    for pv in recent:
-        recent_data.append({
-            "user": users_map.get(pv.user_id, "Anonymous"),
-            "path": pv.path,
-            "method": pv.method,
-            "status": pv.status_code,
-            "time": pv.timestamp,
-        })
+    # Summary stats
+    total_views = base_q.count()
+    unique_users = db.session.query(func.count(func.distinct(PageView.user_id))).filter(
+        PageView.timestamp >= cutoff, PageView.user_id.isnot(None)).scalar() or 0
+    avg_daily = round(total_views / max(days, 1), 1)
 
-    return render_template("admin/analytics.html",
-                           active_24h=active_24h,
-                           active_7d=active_7d,
-                           active_30d=active_30d,
-                           chart_labels=chart_labels,
-                           chart_data=chart_data,
-                           top_pages=top_pages,
-                           user_stats=user_stats,
-                           dow_labels=dow_labels,
-                           dow_data=dow_data,
-                           hour_labels=hour_labels,
-                           hour_data=hour_data,
-                           mobile_count=mobile_count,
-                           desktop_count=desktop_count,
-                           feature_sorted=feature_sorted,
-                           recent=recent_data)
+    # This period vs previous period comparison
+    prev_cutoff = cutoff - timedelta(days=days)
+    prev_views = PageView.query.filter(
+        PageView.timestamp >= prev_cutoff, PageView.timestamp < cutoff,
+        PageView.user_id.isnot(None)).count()
+    change_pct = round((total_views - prev_views) / max(prev_views, 1) * 100, 1) if prev_views else 0
+
+    return jsonify({
+        "summary": {
+            "total_views": total_views,
+            "unique_users": unique_users,
+            "avg_daily": avg_daily,
+            "change_pct": change_pct,
+            "prev_views": prev_views,
+        },
+        "daily_views": {"labels": [str(d) for d, _ in daily], "data": [c for _, c in daily]},
+        "daily_users": {"labels": [str(d) for d, _ in daily_users], "data": [c for _, c in daily_users]},
+        "heatmap": heatmap,
+        "users": users,
+        "features": features,
+        "device": {"mobile": mobile, "desktop": desktop},
+        "top_pages": [{"path": p, "views": c} for p, c in top_pages],
+    })
+
+
+@admin_bp.route("/analytics")
+@admin_required
+def analytics():
+    # Just render the shell — all data loaded via analytics_api JS calls
+    users = User.query.order_by(User.username).all()
+    return render_template("admin/analytics.html", all_users=users)
 
 
 @admin_bp.route("/scheduler-health")

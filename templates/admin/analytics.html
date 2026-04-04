@@ -1,297 +1,226 @@
 {% extends "admin/base.html" %}
-{% block title %}Analytics — Admin — Keeper League{% endblock %}
+{% block title %}Analytics — Keeper League{% endblock %}
 {% block admin_content %}
-<div class="section-header mb-3">
-  <h3 class="fw-bold">Analytics</h3>
-  <p style="font-size:.8rem;color:#8b949e;">Last 30 days</p>
+<style>
+  .an-card { background:#161b22; border:1px solid #21262d; border-radius:10px; overflow:hidden; }
+  .an-card-hdr { background:#0d1117; border-bottom:1px solid #21262d; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; }
+  .an-card-hdr h6 { margin:0; font-size:.78rem; font-weight:700; color:#e6edf3; }
+  .an-card-body { padding:16px; }
+  .an-stat { text-align:center; padding:16px 8px; }
+  .an-stat-val { font-size:1.6rem; font-weight:800; line-height:1; }
+  .an-stat-lbl { font-size:.65rem; color:#6e7681; text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+  .an-stat-delta { font-size:.7rem; margin-top:2px; }
+  .an-stat-up { color:#3fb950; }
+  .an-stat-down { color:#f85149; }
+  .an-filter-bar { display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .an-filter-btn { padding:4px 12px; border-radius:6px; border:1px solid #30363d; background:transparent; color:#8b949e; font-size:.75rem; font-weight:600; cursor:pointer; transition:all .12s; }
+  .an-filter-btn:hover { border-color:#484f58; color:#c9d1d9; }
+  .an-filter-btn.active { border-color:#58a6ff; color:#58a6ff; background:rgba(88,166,255,.08); }
+  .an-user-row { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid #161b22; font-size:.8rem; cursor:pointer; transition:background .1s; }
+  .an-user-row:hover { background:rgba(88,166,255,.04); }
+  .an-user-row:last-child { border-bottom:none; }
+  .an-user-name { font-weight:600; color:#e6edf3; flex:1; min-width:0; }
+  .an-user-stat { text-align:right; min-width:55px; }
+  .an-user-stat b { color:#c9d1d9; }
+  .an-user-stat small { display:block; color:#6e7681; font-size:.6rem; }
+  .an-spark { display:inline-block; vertical-align:middle; }
+  .an-heatmap { display:grid; grid-template-columns:40px repeat(24,1fr); gap:2px; font-size:.6rem; }
+  .an-hm-cell { border-radius:2px; aspect-ratio:1; display:flex; align-items:center; justify-content:center; color:transparent; transition:all .15s; }
+  .an-hm-cell:hover { color:#fff; transform:scale(1.5); z-index:1; position:relative; }
+  .an-hm-lbl { color:#6e7681; display:flex; align-items:center; font-weight:600; }
+  .an-top-bar { height:6px; border-radius:3px; background:#21262d; overflow:hidden; margin-top:2px; }
+  .an-top-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,#3fb950,#1f6feb); }
+  .an-loading { text-align:center; padding:40px; color:#484f58; }
+</style>
+
+{# ── Filter bar ── #}
+<div class="an-filter-bar">
+  <span style="font-size:.75rem;color:#6e7681;font-weight:600;">Period:</span>
+  <button class="an-filter-btn" data-days="7" onclick="setDays(7)">7d</button>
+  <button class="an-filter-btn active" data-days="30" onclick="setDays(30)">30d</button>
+  <button class="an-filter-btn" data-days="90" onclick="setDays(90)">90d</button>
+  <button class="an-filter-btn" data-days="365" onclick="setDays(365)">All</button>
+  <span style="width:1px;height:20px;background:#30363d;margin:0 4px;"></span>
+  <select id="userFilter" onchange="setUser(this.value)" style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;font-size:.75rem;padding:4px 8px;">
+    <option value="">All Users</option>
+    {% for u in all_users %}
+    <option value="{{ u.id }}">{{ u.display_name or u.username }}</option>
+    {% endfor %}
+  </select>
 </div>
 
-{# ── Active user stat cards ── #}
-<div class="row g-3 mb-4">
-  <div class="col-4">
-    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-body py-3">
-        <div style="font-size:1.8rem;font-weight:700;color:#58a6ff;">{{ active_24h }}</div>
-        <div style="font-size:.7rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">24h</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-4">
-    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-body py-3">
-        <div style="font-size:1.8rem;font-weight:700;color:#3fb950;">{{ active_7d }}</div>
-        <div style="font-size:.7rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">7 days</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-4">
-    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-body py-3">
-        <div style="font-size:1.8rem;font-weight:700;color:#d2a8ff;">{{ active_30d }}</div>
-        <div style="font-size:.7rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">30 days</div>
-      </div>
-    </div>
-  </div>
+{# ── Summary cards ── #}
+<div class="row g-3 mb-3" id="summary-cards">
+  <div class="col-6 col-md-3"><div class="an-card an-stat"><div class="an-stat-val" style="color:#58a6ff;" id="s-views">-</div><div class="an-stat-lbl">Page Views</div><div class="an-stat-delta" id="s-delta"></div></div></div>
+  <div class="col-6 col-md-3"><div class="an-card an-stat"><div class="an-stat-val" style="color:#3fb950;" id="s-users">-</div><div class="an-stat-lbl">Unique Users</div></div></div>
+  <div class="col-6 col-md-3"><div class="an-card an-stat"><div class="an-stat-val" style="color:#d2a8ff;" id="s-daily">-</div><div class="an-stat-lbl">Avg / Day</div></div></div>
+  <div class="col-6 col-md-3"><div class="an-card an-stat"><div class="an-stat-val" id="s-device">-</div><div class="an-stat-lbl">Mobile %</div></div></div>
 </div>
 
-{# ── Device split + feature usage ── #}
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="card" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
-        <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-phone me-2"></i>Device Split</h6>
-      </div>
-      <div class="card-body text-center">
-        <canvas id="deviceChart" height="160"></canvas>
-        <div class="mt-2" style="font-size:.75rem;color:#8b949e;">
-          <span style="color:#58a6ff;">{{ mobile_count }}</span> mobile &middot;
-          <span style="color:#3fb950;">{{ desktop_count }}</span> desktop
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-8">
-    <div class="card" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
-        <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-grid me-2"></i>Feature Usage</h6>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-sm table-dark mb-0" style="font-size:.8rem;">
-          <tbody>
-            {% for feature, count in feature_sorted %}
-            <tr>
-              <td style="padding:8px 16px;">{{ feature }}</td>
-              <td style="width:50%;padding:8px 16px;">
-                {% set max_feat = feature_sorted[0][1] if feature_sorted else 1 %}
-                <div style="background:#21262d;border-radius:3px;overflow:hidden;height:16px;">
-                  <div style="background:linear-gradient(90deg,#3fb950,#1f6feb);height:100%;width:{{ (count / max_feat * 100)|int }}%;border-radius:3px;"></div>
-                </div>
-              </td>
-              <td class="text-end fw-semibold" style="padding:8px 16px;color:#c9d1d9;">{{ count }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+{# ── Daily views + unique users chart ── #}
+<div class="an-card mb-3">
+  <div class="an-card-hdr"><h6><i class="bi bi-graph-up me-2"></i>Traffic</h6></div>
+  <div class="an-card-body"><canvas id="trafficChart" height="90"></canvas></div>
 </div>
 
-{# ── Page views chart ── #}
-<div class="card mb-4" style="background:#161b22;border:1px solid #30363d;">
-  <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
-    <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-graph-up me-2"></i>Daily Page Views</h6>
-  </div>
-  <div class="card-body">
-    <canvas id="viewsChart" height="80"></canvas>
-  </div>
-</div>
-
-{# ── When are they using it? ── #}
-<div class="row g-3 mb-4">
-  <div class="col-md-6">
-    <div class="card" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
-        <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-calendar-week me-2"></i>Day of Week</h6>
-      </div>
-      <div class="card-body">
-        <canvas id="dowChart" height="120"></canvas>
-      </div>
+{# ── Heatmap + Device + Features ── #}
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="an-card">
+      <div class="an-card-hdr"><h6><i class="bi bi-grid-3x3 me-2"></i>Activity Heatmap (AEST)</h6></div>
+      <div class="an-card-body" style="overflow-x:auto;"><div id="heatmap" class="an-heatmap"></div></div>
     </div>
   </div>
-  <div class="col-md-6">
-    <div class="card" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
-        <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-clock me-2"></i>Hour of Day (AEST)</h6>
-      </div>
-      <div class="card-body">
-        <canvas id="hourChart" height="120"></canvas>
-      </div>
+  <div class="col-lg-4">
+    <div class="an-card mb-3">
+      <div class="an-card-hdr"><h6><i class="bi bi-phone me-2"></i>Devices</h6></div>
+      <div class="an-card-body text-center"><canvas id="deviceChart" height="140"></canvas></div>
+    </div>
+    <div class="an-card">
+      <div class="an-card-hdr"><h6><i class="bi bi-grid me-2"></i>Features</h6></div>
+      <div class="an-card-body p-0" id="feature-list" style="max-height:200px;overflow-y:auto;"></div>
     </div>
   </div>
 </div>
 
-{# ── Per-user breakdown ── #}
-<div class="card mb-4" style="background:#161b22;border:1px solid #30363d;">
-  <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
-    <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-people me-2"></i>User Engagement</h6>
-  </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-sm table-dark mb-0" style="font-size:.8rem;">
-        <thead><tr style="color:#8b949e;">
-          <th style="padding:8px 16px;">User</th>
-          <th class="text-end">Page Views</th>
-          <th class="text-end">Active Days</th>
-          <th class="text-end">Avg/Day</th>
-          <th class="text-end" style="padding-right:16px;">Last Seen</th>
-        </tr></thead>
-        <tbody>
-          {% for u in user_stats %}
-          <tr>
-            <td style="padding:8px 16px;font-weight:600;color:#e6edf3;">{{ u.username }}</td>
-            <td class="text-end" style="color:#58a6ff;font-weight:600;">{{ u.total_views }}</td>
-            <td class="text-end">{{ u.active_days }}</td>
-            <td class="text-end">{{ u.avg_per_day }}</td>
-            <td class="text-end" style="color:#8b949e;padding-right:16px;">
-              {% if u.last_seen %}{{ u.last_seen.strftime('%d %b %H:%M') }}{% else %}-{% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+{# ── User engagement table ── #}
+<div class="an-card mb-3">
+  <div class="an-card-hdr"><h6><i class="bi bi-people me-2"></i>User Engagement</h6></div>
+  <div class="an-card-body p-0" id="user-table" style="max-height:400px;overflow-y:auto;"></div>
 </div>
 
-<div class="row g-3 mb-4">
-  {# Top pages #}
-  <div class="col-md-5">
-    <div class="card" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
-        <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-fire me-2"></i>Top Pages</h6>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive" style="max-height:350px;overflow-y:auto;">
-          <table class="table table-sm table-dark mb-0" style="font-size:.78rem;">
-            <thead><tr style="color:#8b949e;"><th>Path</th><th class="text-end">Views</th></tr></thead>
-            <tbody>
-              {% for page in top_pages %}
-              <tr>
-                <td class="text-truncate" style="max-width:250px;">{{ page[0] }}</td>
-                <td class="text-end fw-semibold">{{ page[1] }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {# Recent requests #}
-  <div class="col-md-7">
-    <div class="card" style="background:#161b22;border:1px solid #30363d;">
-      <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
-        <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-clock-history me-2"></i>Live Feed</h6>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive" style="max-height:350px;overflow-y:auto;">
-          <table class="table table-sm table-dark mb-0" style="font-size:.73rem;">
-            <thead><tr style="color:#8b949e;"><th>User</th><th>Path</th><th>Status</th><th>Time</th></tr></thead>
-            <tbody>
-              {% for r in recent %}
-              <tr>
-                <td style="font-weight:600;color:#c9d1d9;">{{ r.user }}</td>
-                <td class="text-truncate" style="max-width:180px;">{{ r.path }}</td>
-                <td>
-                  {% if r.status == 200 %}<span style="color:#3fb950;">{{ r.status }}</span>
-                  {% elif r.status == 302 %}<span style="color:#8b949e;">{{ r.status }}</span>
-                  {% elif r.status >= 400 %}<span style="color:#f85149;">{{ r.status }}</span>
-                  {% else %}{{ r.status }}{% endif %}
-                </td>
-                <td style="color:#6e7681;">{{ r.time.strftime('%d %b %H:%M:%S') if r.time else '' }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
+{# ── Top pages ── #}
+<div class="an-card mb-3">
+  <div class="an-card-hdr"><h6><i class="bi bi-fire me-2"></i>Top Pages</h6></div>
+  <div class="an-card-body p-0" id="top-pages" style="max-height:350px;overflow-y:auto;"></div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
-// Page views line chart
-new Chart(document.getElementById('viewsChart'), {
-  type: 'line',
-  data: {
-    labels: {{ chart_labels|tojson }},
-    datasets: [{
-      label: 'Page Views',
-      data: {{ chart_data|tojson }},
-      borderColor: '#58a6ff',
-      backgroundColor: 'rgba(88,166,255,.08)',
-      fill: true, tension: 0.3, pointRadius: 2, pointBackgroundColor: '#58a6ff', borderWidth: 2,
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { color: '#6e7681', font: { size: 9 }, maxTicksLimit: 10 }, grid: { color: '#21262d' } },
-      y: { beginAtZero: true, ticks: { color: '#6e7681', font: { size: 9 } }, grid: { color: '#21262d' } }
-    }
-  }
-});
+var _days = 30, _userId = '', _charts = {};
+var API = "{{ url_for('admin.analytics_api') }}";
 
-// Day-of-week bar chart
-new Chart(document.getElementById('dowChart'), {
-  type: 'bar',
-  data: {
-    labels: {{ dow_labels|tojson }},
-    datasets: [{
-      data: {{ dow_data|tojson }},
-      backgroundColor: {{ dow_data|tojson }}.map(function(v, i) {
-        return i >= 4 && i <= 6 ? 'rgba(63,185,80,.5)' : 'rgba(88,166,255,.3)';
-      }),
-      borderRadius: 4,
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { display: false } },
-      y: { beginAtZero: true, ticks: { color: '#6e7681', font: { size: 9 } }, grid: { color: '#21262d' } }
-    }
-  }
-});
+function setDays(d) {
+  _days = d;
+  document.querySelectorAll('.an-filter-btn').forEach(function(b) { b.classList.toggle('active', parseInt(b.dataset.days) === d); });
+  load();
+}
+function setUser(uid) { _userId = uid; load(); }
 
-// Hour-of-day bar chart
-new Chart(document.getElementById('hourChart'), {
-  type: 'bar',
-  data: {
-    labels: {{ hour_labels|tojson }},
-    datasets: [{
-      data: {{ hour_data|tojson }},
-      backgroundColor: {{ hour_data|tojson }}.map(function(v, i) {
-        return i >= 12 && i <= 23 ? 'rgba(63,185,80,.4)' : 'rgba(88,166,255,.2)';
-      }),
-      borderRadius: 2,
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { color: '#6e7681', font: { size: 8 }, maxTicksLimit: 12 }, grid: { display: false } },
-      y: { beginAtZero: true, ticks: { color: '#6e7681', font: { size: 9 } }, grid: { color: '#21262d' } }
-    }
-  }
-});
+function load() {
+  var url = API + '?days=' + _days;
+  if (_userId) url += '&user_id=' + _userId;
+  fetch(url).then(function(r){return r.json()}).then(render);
+}
 
-// Device split doughnut
-new Chart(document.getElementById('deviceChart'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Mobile', 'Desktop'],
-    datasets: [{
-      data: [{{ mobile_count }}, {{ desktop_count }}],
-      backgroundColor: ['#58a6ff', '#3fb950'],
-      borderWidth: 0,
-    }]
-  },
-  options: {
-    responsive: true,
-    cutout: '65%',
-    plugins: {
-      legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 11 }, padding: 12 } }
+function render(d) {
+  // Summary
+  document.getElementById('s-views').textContent = d.summary.total_views.toLocaleString();
+  document.getElementById('s-users').textContent = d.summary.unique_users;
+  document.getElementById('s-daily').textContent = d.summary.avg_daily;
+  var mob = d.device.mobile, desk = d.device.desktop, total = mob + desk || 1;
+  document.getElementById('s-device').textContent = Math.round(mob / total * 100) + '%';
+  document.getElementById('s-device').style.color = mob > desk ? '#58a6ff' : '#3fb950';
+  var delta = d.summary.change_pct;
+  var de = document.getElementById('s-delta');
+  if (delta !== 0) {
+    de.innerHTML = (delta > 0 ? '<i class="bi bi-caret-up-fill"></i> ' : '<i class="bi bi-caret-down-fill"></i> ') + Math.abs(delta) + '% vs prev period';
+    de.className = 'an-stat-delta ' + (delta > 0 ? 'an-stat-up' : 'an-stat-down');
+  } else { de.textContent = ''; }
+
+  // Traffic chart (views + unique users)
+  if (_charts.traffic) _charts.traffic.destroy();
+  _charts.traffic = new Chart(document.getElementById('trafficChart'), {
+    type:'line', data:{
+      labels: d.daily_views.labels,
+      datasets: [
+        { label:'Page Views', data:d.daily_views.data, borderColor:'#58a6ff', backgroundColor:'rgba(88,166,255,.06)', fill:true, tension:.3, pointRadius:1, borderWidth:2 },
+        { label:'Unique Users', data:d.daily_users.data, borderColor:'#3fb950', backgroundColor:'rgba(63,185,80,.04)', fill:true, tension:.3, pointRadius:1, borderWidth:1.5, borderDash:[4,3] }
+      ]
+    },
+    options:{ responsive:true, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{position:'top',labels:{color:'#8b949e',font:{size:10},boxWidth:12,padding:8}} },
+      scales:{
+        x:{ticks:{color:'#484f58',font:{size:8},maxTicksLimit:10},grid:{color:'#161b22'}},
+        y:{beginAtZero:true,ticks:{color:'#484f58',font:{size:9}},grid:{color:'#161b22'}}
+      }
+    }
+  });
+
+  // Heatmap
+  var hm = document.getElementById('heatmap');
+  var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var maxV = 1;
+  d.heatmap.forEach(function(row){row.forEach(function(v){if(v>maxV)maxV=v;})});
+  var html = '<div class="an-hm-lbl"></div>';
+  for(var h=0;h<24;h++) html += '<div class="an-hm-lbl" style="justify-content:center;font-size:.55rem;">'+(h<10?'0':'')+h+'</div>';
+  for(var i=0;i<7;i++){
+    html += '<div class="an-hm-lbl">'+days[i]+'</div>';
+    for(var j=0;j<24;j++){
+      var v = d.heatmap[i][j];
+      var intensity = v/maxV;
+      var bg = intensity < 0.01 ? '#161b22' : 'rgba(63,185,80,'+(.15+intensity*.7)+')';
+      html += '<div class="an-hm-cell" style="background:'+bg+';" title="'+days[i]+' '+j+':00 — '+v+' views">'+v+'</div>';
     }
   }
-});
+  hm.innerHTML = html;
+
+  // Device doughnut
+  if (_charts.device) _charts.device.destroy();
+  _charts.device = new Chart(document.getElementById('deviceChart'), {
+    type:'doughnut', data:{
+      labels:['Mobile','Desktop'],
+      datasets:[{data:[d.device.mobile,d.device.desktop],backgroundColor:['#58a6ff','#3fb950'],borderWidth:0}]
+    },
+    options:{responsive:true,cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:'#8b949e',font:{size:10},padding:8}}}}
+  });
+
+  // Features
+  var fl = document.getElementById('feature-list');
+  var maxF = d.features.length ? d.features[0][1] : 1;
+  fl.innerHTML = d.features.map(function(f){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid #161b22;font-size:.78rem;">'
+      +'<span style="flex:1;color:#c9d1d9;">'+f[0]+'</span>'
+      +'<div style="width:80px;"><div class="an-top-bar"><div class="an-top-fill" style="width:'+(f[1]/maxF*100)+'%"></div></div></div>'
+      +'<span style="min-width:40px;text-align:right;font-weight:600;color:#8b949e;">'+f[1]+'</span></div>';
+  }).join('');
+
+  // User table
+  var ut = document.getElementById('user-table');
+  ut.innerHTML = d.users.map(function(u){
+    // Mini sparkline as inline SVG
+    var spark = '';
+    if (u.sparkline && u.sparkline.length > 1) {
+      var mx = Math.max.apply(null, u.sparkline) || 1;
+      var pts = u.sparkline.map(function(v,i){ return (i/(u.sparkline.length-1)*60)+','+(20-v/mx*18); }).join(' ');
+      spark = '<svg class="an-spark" width="62" height="22" viewBox="0 0 62 22"><polyline points="'+pts+'" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+    }
+    return '<div class="an-user-row" onclick="document.getElementById(\'userFilter\').value=\''+u.id+'\';setUser(\''+u.id+'\')">'
+      +'<span class="an-user-name">'+u.name+'</span>'
+      +spark
+      +'<div class="an-user-stat"><b>'+u.views+'</b><small>views</small></div>'
+      +'<div class="an-user-stat"><b>'+u.active_days+'</b><small>days</small></div>'
+      +'<div class="an-user-stat"><b>'+u.avg_per_day+'</b><small>/day</small></div>'
+      +'<div class="an-user-stat" style="min-width:70px;"><small>'+u.last_seen+'</small></div>'
+      +'</div>';
+  }).join('');
+
+  // Top pages
+  var tp = document.getElementById('top-pages');
+  var maxP = d.top_pages.length ? d.top_pages[0].views : 1;
+  tp.innerHTML = '<table class="table table-sm table-dark mb-0" style="font-size:.78rem;"><tbody>'
+    + d.top_pages.map(function(p){
+      return '<tr><td style="padding:6px 16px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.path+'</td>'
+        +'<td style="width:120px;padding:6px 8px;"><div class="an-top-bar"><div class="an-top-fill" style="width:'+(p.views/maxP*100)+'%"></div></div></td>'
+        +'<td class="text-end fw-semibold" style="padding:6px 16px;">'+p.views+'</td></tr>';
+    }).join('')
+    + '</tbody></table>';
+}
+
+// Initial load
+load();
 </script>
 {% endblock %}
