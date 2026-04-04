@@ -74,7 +74,7 @@ POSITIONAL_SCARCITY = {pos: round(count / _max_slots, 2) for pos, count in POSIT
 
 # ---------- Team abbreviations ----------
 TEAM_ABBR = {
-    "Adelaide": "ADE", "Brisbane Lions": "BRI", "Carlton": "CAR",
+    "Adelaide": "ADE", "Brisbane Lions": "BL", "Carlton": "CAR",
     "Collingwood": "COL", "Essendon": "ESS", "Fremantle": "FRE",
     "Geelong": "GEE", "Gold Coast": "GC", "GWS Giants": "GWS",
     "Hawthorn": "HAW", "Melbourne": "MEL", "North Melbourne": "NM",
