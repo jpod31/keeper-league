@@ -1,8 +1,8 @@
 /* Keeper League Service Worker — Caching + Push Notifications */
 
-var SHELL_CACHE = 'kl-shell-v21';
-var DYNAMIC_CACHE = 'kl-dynamic-v21';
-var CDN_CACHE = 'kl-cdn-v21';
+var SHELL_CACHE = 'kl-shell-v22';
+var DYNAMIC_CACHE = 'kl-dynamic-v22';
+var CDN_CACHE = 'kl-cdn-v22';
 var MAX_DYNAMIC = 50;
 
 var SHELL_ASSETS = [
