@@ -18,59 +18,38 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
-  {# ── PWA Splash / Page Loader ── #}
-  <div id="kl-splash" class="kl-splash">
-    <div class="kl-splash-inner">
-      <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="KL" class="kl-splash-logo">
-      {# Goal post scene below logo #}
-      <div class="kl-splash-goal">
-        <svg viewBox="0 0 120 60" width="120" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {# Goal posts #}
-          <line x1="30" y1="8" x2="30" y2="58" stroke="rgba(255,255,255,.2)" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="90" y1="8" x2="90" y2="58" stroke="rgba(255,255,255,.2)" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="30" y1="8" x2="90" y2="8" stroke="rgba(255,255,255,.12)" stroke-width="1" stroke-dasharray="3 3"/>
-          {# Football dropping through #}
-          <ellipse class="kl-splash-ball" cx="60" cy="-6" rx="6" ry="4" fill="#c45a2c" stroke="#a0471f" stroke-width=".6"/>
-        </svg>
-      </div>
-      <div class="kl-splash-bar"><div class="kl-splash-bar-fill" id="splashBar"></div></div>
+  {# ── Unified loader (startup + between pages) ── #}
+  <div id="kl-loader" class="kl-loader">
+    <div class="kl-loader-inner">
+      <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="KL" class="kl-loader-logo">
+      <div class="kl-loader-bar"><div class="kl-loader-bar-fill"></div></div>
     </div>
-  </div>
-  {# ── Between-page loader (reuses same design, smaller) ── #}
-  <div id="kl-page-loader" class="kl-page-loader" style="display:none;">
-    <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="" class="kl-loader-logo">
-    <div class="kl-loader-bar"><div class="kl-loader-bar-fill"></div></div>
   </div>
   <script>
   (function(){
-    // Splash: only in standalone PWA mode
+    var loader = document.getElementById('kl-loader');
     var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    var splash = document.getElementById('kl-splash');
-    if (!isStandalone) { splash.style.display = 'none'; }
+    // Startup: show for PWA, hide after content ready
+    if (!isStandalone) { loader.style.display = 'none'; }
     else {
-      var bar = document.getElementById('splashBar');
-      requestAnimationFrame(function(){ bar.style.width = '100%'; });
       setTimeout(function(){
-        splash.classList.add('kl-splash-exit');
-        setTimeout(function(){ splash.style.display = 'none'; }, 500);
-      }, 2200);
+        loader.classList.add('kl-loader-exit');
+        setTimeout(function(){ loader.style.display = 'none'; loader.classList.remove('kl-loader-exit'); }, 500);
+      }, 1800);
     }
-    // Between-page loader: show on link clicks
-    var loader = document.getElementById('kl-page-loader');
+    // Between-page: show on internal link clicks
     document.addEventListener('click', function(e) {
       var a = e.target.closest('a[href]');
       if (!a) return;
       var href = a.getAttribute('href');
       if (!href || href.startsWith('#') || href.startsWith('javascript') || a.target === '_blank' || a.hasAttribute('download')) return;
       if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-      // Show loader for internal navigation
       if (href.startsWith('/') || href.startsWith(location.origin)) {
         loader.style.display = 'flex';
       }
     });
-    // Hide loader if page loads from bfcache
     window.addEventListener('pageshow', function(e) {
-      if (e.persisted) loader.style.display = 'none';
+      if (e.persisted) { loader.style.display = 'none'; loader.classList.remove('kl-loader-exit'); }
     });
   })();
   </script>
