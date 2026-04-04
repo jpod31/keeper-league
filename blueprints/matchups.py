@@ -616,6 +616,14 @@ def api_gameday_fixtures(league_id):
     round_fixtures = get_round_fixtures(league_id, year, afl_round)
     locked_ids = get_locked_player_ids(afl_round, year)
 
+    # Teams playing this round (needed for projections)
+    teams_playing = set()
+    for g in AflGame.query.filter_by(year=year, afl_round=afl_round).all():
+        teams_playing.add(g.home_team)
+        teams_playing.add(g.away_team)
+
+    from models.matchup_projections import project_matchup
+
     fixtures_out = []
     for f in round_fixtures:
         home_players = get_player_score_breakdown(f.home_team_id, afl_round, year, league_id)
@@ -624,7 +632,16 @@ def api_gameday_fixtures(league_id):
         home_rs = RoundScore.query.filter_by(team_id=f.home_team_id, afl_round=afl_round, year=year).first()
         away_rs = RoundScore.query.filter_by(team_id=f.away_team_id, afl_round=afl_round, year=year).first()
 
-        fixtures_out.append({
+        # Projections per fixture
+        proj = None
+        try:
+            proj = project_matchup(
+                f.home_team_id, f.away_team_id, afl_round, year, league_id, teams_playing
+            )
+        except Exception:
+            pass
+
+        fx_out = {
             "fixture_id": f.id,
             "home_team_id": f.home_team_id,
             "away_team_id": f.away_team_id,
@@ -635,7 +652,15 @@ def api_gameday_fixtures(league_id):
             "home_players": home_players,
             "away_players": away_players,
             "status": f.status,
-        })
+        }
+        if proj:
+            fx_out["projections"] = {
+                "home_projected": proj["my_projected"],
+                "away_projected": proj["opp_projected"],
+                "home_win_pct": proj["my_win_pct"],
+                "away_win_pct": proj["opp_win_pct"],
+            }
+        fixtures_out.append(fx_out)
 
     return jsonify({
         "fixtures": fixtures_out,

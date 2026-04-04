@@ -513,7 +513,9 @@
           <div class="mob-pos-row{% if is_emg %} fv-card-emergency{% endif %}{% if is_7s %} fv-card-7s{% endif %}"
                data-player-id="{{ p.id }}" data-section="reserve" data-positions="{{ p.position or 'MID' }}" data-field-pos=""
                onclick="fvShowPlayer({{ p.id }})" style="border-left:3px solid rgba(218,54,51,.3);cursor:pointer;">
-            <span class="status-dot status-dot-injured"></span>
+            {% set is_selected = fd.selected_player_ids is defined and p.id in fd.selected_player_ids %}
+            {% if is_selected %}<span class="status-dot status-dot-taken"></span>
+            {% else %}<span class="status-dot status-dot-injured"></span>{% endif %}
             {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
               <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="mob-pos-logo" style="opacity:.7;">
             {% else %}

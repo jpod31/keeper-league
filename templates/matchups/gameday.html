@@ -173,13 +173,11 @@
           {% endif %}
         {% endif %}
       </div>
-      {% if projections is defined and projections and gameday_state != 'completed' %}
-      <div class="hero-proj-row">
-        <span class="hero-proj-item">Proj <b>{{ projections.my_projected|round(0)|int }}</b>&ndash;<b>{{ projections.opp_projected|round(0)|int }}</b></span>
+      <div class="hero-proj-row" id="hero-proj-row"{% if not (projections is defined and projections and gameday_state != 'completed') %} style="display:none;"{% endif %}>
+        <span class="hero-proj-item">Proj <b id="hero-proj-left">{% if projections %}{{ projections.my_projected|round(0)|int }}{% endif %}</b>&ndash;<b id="hero-proj-right">{% if projections %}{{ projections.opp_projected|round(0)|int }}{% endif %}</b></span>
         <span class="hero-proj-sep"></span>
-        <span class="hero-proj-item">Win <b>{{ projections.my_win_pct|round(0)|int }}%</b>&ndash;<b>{{ projections.opp_win_pct|round(0)|int }}%</b></span>
+        <span class="hero-proj-item">Win <b id="hero-win-left">{% if projections %}{{ projections.my_win_pct|round(0)|int }}%{% endif %}</b>&ndash;<b id="hero-win-right">{% if projections %}{{ projections.opp_win_pct|round(0)|int }}%{% endif %}</b></span>
       </div>
-      {% endif %}
     </div>
     {# hidden compat spans #}
     <span id="margin-pct-left" style="display:none;">{% if not is_bye %}{{ my_pct }}%{% endif %}</span>
@@ -1256,6 +1254,34 @@ function renderViewedMatchup(fixtureId) {
         bdLink.href = DETAIL_URL_BASE + '/' + fixtureId;
     } else {
         bdWrap.style.display = 'none';
+    }
+
+    // Projections + win probability
+    var projRow = document.getElementById('hero-proj-row');
+    if (projRow) {
+        var proj = fx.projections;
+        if (proj && GAMEDAY_STATE !== 'completed') {
+            // For own matchup: left=my team; for others: left=home
+            var leftProj, rightProj, leftWin, rightWin;
+            if (isOwn && !IS_BYE) {
+                leftProj = IS_HOME ? proj.home_projected : proj.away_projected;
+                rightProj = IS_HOME ? proj.away_projected : proj.home_projected;
+                leftWin = IS_HOME ? proj.home_win_pct : proj.away_win_pct;
+                rightWin = IS_HOME ? proj.away_win_pct : proj.home_win_pct;
+            } else {
+                leftProj = proj.home_projected;
+                rightProj = proj.away_projected;
+                leftWin = proj.home_win_pct;
+                rightWin = proj.away_win_pct;
+            }
+            document.getElementById('hero-proj-left').textContent = Math.round(leftProj);
+            document.getElementById('hero-proj-right').textContent = Math.round(rightProj);
+            document.getElementById('hero-win-left').textContent = Math.round(leftWin) + '%';
+            document.getElementById('hero-win-right').textContent = Math.round(rightWin) + '%';
+            projRow.style.display = '';
+        } else {
+            projRow.style.display = 'none';
+        }
     }
 
     // Player cards: headers + lists

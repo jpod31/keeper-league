@@ -81,6 +81,7 @@
     padding-left: 40px;
   }
   .pm-pos-badge { padding: 1px 6px; font-size: .6rem; }
+  .pm-gp { font-size: .65rem; color: #8b949e; background: rgba(110,118,129,.15); padding: 1px 5px; border-radius: 4px; }
   .pm-age { font-size: .7rem; color: #c9d1d9; font-weight: 600; }
   .pm-rtg {
     font-size: .65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;
@@ -330,9 +331,20 @@
   </div>
   {# ── Mobile card view ── #}
   <div class="card-body p-0 d-lg-none" id="poolMobWrap" style="max-height:80vh;overflow-y:auto;">
+    {# Mobile sort bar #}
+    <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid #21262d;background:#161b22;">
+      <span style="font-size:.7rem;color:#8b949e;white-space:nowrap;">Sort:</span>
+      <select class="form-select form-select-sm" id="pool-mob-sort" onchange="sortMobilePool()" style="background:#0d1117;border-color:#30363d;font-size:.75rem;padding:3px 8px;height:auto;width:auto;flex:1;">
+        <option value="sc" selected>SC Avg</option>
+        <option value="name_asc">Name A–Z</option>
+        <option value="age">Age</option>
+        <option value="rtg">Rating</option>
+        <option value="gp">Games Played</option>
+      </select>
+    </div>
     <div id="poolMobGrid">
       {% for p in players %}
-        {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
+        {% set sc_display = p.sc_avg %}
         {% set owner_team = rostered_map.get(p.id) %}
         {% set tc = team_colours.get(owner_team, {}) %}
         {% set pr = rolling.get(p.name, {}) %}
@@ -345,6 +357,7 @@
              data-name="{{ p.name|lower }}" data-pos="{{ p.position or '' }}"
              data-team="{{ p.afl_team or '' }}" data-age="{{ _age }}"
              data-sc="{{ sc_display or 0 }}" data-rtg="{{ _rtg }}"
+             data-gp="{{ p.games_played or 0 }}"
              data-status="{{ 'taken' if owner_team else 'available' }}"
              data-owner="{{ owner_team or '' }}"
              onclick="window.location='{{ url_for('player_detail', name=p.name) }}'">
@@ -387,8 +400,9 @@
               </div>
             </div>
           </div>
-          {# Row 2: pos, age, rating, trend, profile #}
+          {# Row 2: games played, age, rating, trend, profile #}
           <div class="pm-bottom">
+            <span class="pm-gp" title="Games played 2026">{{ p.games_played or 0 }}gp</span>
             <span class="pm-age">{{ p.age or '-' }}y</span>
             {% if _rtg %}<span class="pm-rtg">{{ _rtg }}</span>{% endif %}
             {% if pr.l3 and sc_display %}
@@ -436,7 +450,7 @@
       </thead>
       <tbody id="pool-body">
         {% for p in players %}
-          {% set sc_display = p.sc_avg if p.sc_avg else p.sc_avg_prev %}
+          {% set sc_display = p.sc_avg %}
           {% set pr = rolling.get(p.name, {}) %}
           {% set owner_team = rostered_map.get(p.id) %}
           {% set tc = team_colours.get(owner_team, {}) %}
@@ -816,6 +830,26 @@ function closeFilterSheet() {
   document.getElementById('filterSheetBackdrop').classList.remove('open');
   document.getElementById('filterSheet').classList.remove('open');
 }
+function sortMobilePool() {
+  var key = document.getElementById('pool-mob-sort').value;
+  var grid = document.getElementById('poolMobGrid');
+  var cards = Array.from(grid.querySelectorAll('.pm-card'));
+  cards.sort(function(a, b) {
+    if (key === 'name_asc') {
+      return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+    }
+    if (key === 'age') {
+      return (parseFloat(a.dataset.age) || 0) - (parseFloat(b.dataset.age) || 0);
+    }
+    // Numeric descending for sc, rtg, gp
+    var attr = key === 'gp' ? 'gp' : key;
+    var va = parseFloat(a.dataset[attr]) || 0;
+    var vb = parseFloat(b.dataset[attr]) || 0;
+    return vb - va;
+  });
+  cards.forEach(function(c) { grid.appendChild(c); });
+}
+
 function clearPoolFilters() {
   document.getElementById('pool-search').value = '';
   var mob = document.getElementById('pool-search-mobile');
