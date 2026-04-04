@@ -19,7 +19,7 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
   {# ── Unified loader (startup + between pages) ── #}
-  <div id="kl-loader" class="kl-loader">
+  <div id="kl-loader" class="kl-loader" style="display:none;">
     <div class="kl-loader-inner">
       <div class="kl-loader-glow"></div>
       <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="KL" class="kl-loader-logo">
@@ -29,17 +29,15 @@
   (function(){
     var loader = document.getElementById('kl-loader');
     var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (!isStandalone) { loader.style.display = 'none'; }
-    else {
+    // Only show splash on very first launch per session
+    if (isStandalone && !sessionStorage.getItem('kl-launched')) {
+      sessionStorage.setItem('kl-launched', '1');
+      loader.style.display = 'flex';
       setTimeout(function(){
         loader.classList.add('kl-loader-exit');
-        setTimeout(function(){ loader.style.display = 'none'; loader.classList.remove('kl-loader-exit'); }, 500);
+        setTimeout(function(){ loader.style.display = 'none'; }, 500);
       }, 1800);
     }
-    // Hide loader on bfcache restore
-    window.addEventListener('pageshow', function(e) {
-      if (e.persisted) { loader.style.display = 'none'; loader.classList.remove('kl-loader-exit'); }
-    });
   })();
   </script>
   <nav class="navbar navbar-expand-lg border-bottom border-secondary-subtle">
