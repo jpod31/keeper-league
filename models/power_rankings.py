@@ -27,6 +27,7 @@ def compute_power_rankings(league_id, afl_round, year):
     completed = (
         Fixture.query
         .filter_by(league_id=league_id, status="completed", is_final=False, year=year)
+        .filter(Fixture.afl_round > 0)
         .order_by(Fixture.afl_round.desc())
         .all()
     )
@@ -72,7 +73,7 @@ def compute_power_rankings(league_id, afl_round, year):
     # ── 2. Scoring power (avg round score) ──
     round_scores = (
         db.session.query(RoundScore.team_id, db.func.avg(RoundScore.total_score))
-        .filter(RoundScore.team_id.in_(team_ids), RoundScore.year == year)
+        .filter(RoundScore.team_id.in_(team_ids), RoundScore.year == year, RoundScore.afl_round > 0)
         .group_by(RoundScore.team_id)
         .all()
     )
