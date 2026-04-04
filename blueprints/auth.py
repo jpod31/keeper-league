@@ -1,5 +1,7 @@
 """Authentication blueprint: register, login, logout, profile."""
 
+import time
+from collections import defaultdict
 from urllib.parse import urlparse
 
 from datetime import datetime, timezone
@@ -8,6 +10,11 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 
 from models.auth import register_user, authenticate_user
+
+# Simple in-memory rate limiter for login attempts
+_login_attempts = defaultdict(list)  # IP -> [timestamps]
+_MAX_ATTEMPTS = 8
+_WINDOW = 300  # 5 minutes
 
 
 def _safe_redirect(target, fallback):
@@ -67,6 +74,14 @@ def login():
         return redirect(url_for("leagues.league_list"))
 
     if request.method == "POST":
+        # Rate limit by IP
+        ip = request.remote_addr or "unknown"
+        now = time.time()
+        _login_attempts[ip] = [t for t in _login_attempts[ip] if now - t < _WINDOW]
+        if len(_login_attempts[ip]) >= _MAX_ATTEMPTS:
+            flash("Too many login attempts. Please wait a few minutes.", "danger")
+            return render_template("auth/login.html", form={}, errors={})
+
         login_val = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
@@ -80,6 +95,7 @@ def login():
             next_page = request.args.get("next")
             return _safe_redirect(next_page, url_for("leagues.league_list"))
 
+        _login_attempts[ip].append(now)
         errors = {}
         if error_field == "login":
             errors["login"] = "No account found with that username or email."

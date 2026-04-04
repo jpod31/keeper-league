@@ -147,8 +147,14 @@ def _sync_ratings_to_db(app):
                     rating_start = int(val)
             if rating is not None:
                 rating = int(rating)
+                if rating < 0 or rating > 100:
+                    logger.warning("Rating %d out of range for %s — skipping", rating, name)
+                    continue
             if potential is not None:
                 potential = int(potential)
+                if potential < 0 or potential > 100:
+                    logger.warning("Potential %d out of range for %s — skipping", potential, name)
+                    continue
             xlsx_players.append((name.strip(), team.strip(), rating, potential, rating_start))
         wb.close()
 
@@ -338,8 +344,8 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(leagues_bp)
     app.register_blueprint(draft_bp)
-    csrf.exempt(draft_bp)   # draft API endpoints use @login_required + auth checks
-    csrf.exempt(team_bp)    # team API endpoints use @login_required + ownership checks
+    csrf.exempt(draft_bp)   # draft uses SocketIO (own origin check) + @login_required
+    csrf.exempt(team_bp)    # 15+ AJAX API endpoints; all behind @login_required + team ownership
     # Exempt specific JSON API endpoints in leagues blueprint
     csrf.exempt("leagues.commissioner_delist")
     csrf.exempt("leagues.commissioner_force_move")
@@ -676,6 +682,18 @@ def create_app():
         # 8. Ensure DB schema is up to date (idempotent)
         try:
             db.create_all()
+            # Add indexes that create_all can't add to existing tables
+            for idx_sql in [
+                "CREATE INDEX IF NOT EXISTS ix_playerstat_year_round ON player_stat (year, round)",
+                "CREATE INDEX IF NOT EXISTS ix_roster_team_active ON fantasy_roster (team_id, is_active)",
+                "CREATE INDEX IF NOT EXISTS ix_fixture_league_round_year ON fixture (league_id, afl_round, year)",
+                "CREATE INDEX IF NOT EXISTS ix_roundscore_round_year ON round_score (afl_round, year)",
+            ]:
+                try:
+                    db.session.execute(db.text(idx_sql))
+                except Exception:
+                    pass
+            db.session.commit()
             steps.append("Schema migration: OK")
         except Exception as e:
             steps.append(f"Schema migration: {e}")
@@ -750,7 +768,8 @@ app = create_app()
 _allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*")
 if _allowed_origins != "*":
     _allowed_origins = [o.strip() for o in _allowed_origins.split(",")]
-socketio = SocketIO(app, async_mode="threading", cors_allowed_origins=_allowed_origins)
+socketio = SocketIO(app, async_mode="threading", cors_allowed_origins=_allowed_origins,
+                    ping_interval=25, ping_timeout=60)
 
 # Exempt SocketIO from CSRF (it uses its own origin check)
 csrf.exempt("flask_socketio")

@@ -124,6 +124,7 @@ class PlayerStat(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint("player_id", "year", "round", name="uq_stat_player_year_round"),
+        db.Index("ix_playerstat_year_round", "year", "round"),
     )
 
 
@@ -332,6 +333,7 @@ class FantasyRoster(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint("team_id", "player_id", name="uq_roster_team_player"),
+        db.Index("ix_roster_team_active", "team_id", "is_active"),
     )
 
 
@@ -621,6 +623,10 @@ class Fixture(db.Model):
 
     home_team = db.relationship("FantasyTeam", foreign_keys=[home_team_id], lazy="joined")
     away_team = db.relationship("FantasyTeam", foreign_keys=[away_team_id], lazy="joined")
+
+    __table_args__ = (
+        db.Index("ix_fixture_league_round_year", "league_id", "afl_round", "year"),
+    )
 
 
 class SeasonStanding(db.Model):

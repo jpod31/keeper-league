@@ -1626,7 +1626,11 @@ function updateMatchupCards(data) {
     });
 }
 
+var _lastSeq = 0;
 function handleUpdate(data) {
+    // Drop out-of-order updates
+    if (data.seq && data.seq <= _lastSeq) return;
+    if (data.seq) _lastSeq = data.seq;
     // Cache all incoming fixture data
     if (data.fixtures) {
         data.fixtures.forEach(function(f) {
@@ -1675,7 +1679,11 @@ function handleUpdate(data) {
    ════════════════════════════════════════════════ */
 if (GAMEDAY_STATE === 'live') {
     if (LIVE_ENABLED && typeof io !== 'undefined') {
-        var socket = io('/matchups');
+        var socket = io('/matchups', {
+            reconnectionDelay: 2000,
+            reconnectionDelayMax: 30000,
+            randomizationFactor: 0.3
+        });
         socket.on('connect', function() {
             socket.emit('join_live', {league_id: LEAGUE_ID, afl_round: AFL_ROUND});
             socket.emit('request_scores', {league_id: LEAGUE_ID, afl_round: AFL_ROUND});

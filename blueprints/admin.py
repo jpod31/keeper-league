@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
@@ -218,3 +218,10 @@ def analytics():
                            chart_data=chart_data,
                            top_pages=top_pages,
                            recent=recent_data)
+
+
+@admin_bp.route("/scheduler-health")
+@admin_required
+def scheduler_health():
+    from models.scheduler import get_scheduler_health
+    return jsonify(get_scheduler_health())

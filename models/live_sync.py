@@ -249,6 +249,12 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
             "hitouts": entry.get("hitouts"),
         }
 
+        # Validate SC score is within reasonable range
+        if sc_score is not None and (sc_score < -50 or sc_score > 300):
+            logger.warning("Suspicious SC score %s for %s (player_id=%d) — skipping",
+                           sc_score, entry.get("name"), afl_player.id)
+            continue
+
         if stat:
             stat.supercoach_score = sc_score
             stat.is_live = is_live

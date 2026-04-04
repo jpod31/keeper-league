@@ -4,6 +4,8 @@ import os
 import logging
 from datetime import datetime, timezone
 
+logger = logging.getLogger(__name__)
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from flask_login import login_required, current_user
 
@@ -33,7 +35,8 @@ def _refresh_snapshot_if_live(league):
             snapshot_lineups_for_round(afl_round, league.season_year)
             db.session.commit()
     except Exception:
-        pass  # don't block the API response
+        logger.warning("Lineup snapshot refresh failed for league %s", league.id, exc_info=True)
+        db.session.rollback()
 import config
 from config import TEAM_LOGOS
 

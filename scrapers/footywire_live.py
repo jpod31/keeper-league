@@ -34,19 +34,34 @@ _cache: dict[str, tuple[float, BeautifulSoup]] = {}
 _CACHE_TTL = 45  # seconds
 
 
-def _get_cached(url: str) -> BeautifulSoup:
-    """Fetch a URL with 90-second caching to avoid re-fetching during rapid polls."""
+def _get_cached(url: str, retries: int = 3) -> BeautifulSoup:
+    """Fetch a URL with caching and retry logic."""
     now = time.time()
     if url in _cache:
         ts, soup = _cache[url]
         if now - ts < _CACHE_TTL:
             return soup
 
-    resp = requests.get(url, headers=HEADERS, timeout=30)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "lxml")
-    _cache[url] = (now, soup)
-    return soup
+    last_err = None
+    for attempt in range(retries):
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=30)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "lxml")
+            _cache[url] = (time.time(), soup)
+            return soup
+        except (requests.RequestException, Exception) as e:
+            last_err = e
+            if attempt < retries - 1:
+                wait = 2 ** attempt  # 1s, 2s backoff
+                logger.warning("Fetch attempt %d/%d failed for %s: %s — retrying in %ds",
+                               attempt + 1, retries, url, e, wait)
+                time.sleep(wait)
+    # All retries exhausted — return stale cache if available
+    if url in _cache:
+        logger.warning("All retries failed for %s, returning stale cache", url)
+        return _cache[url][1]
+    raise last_err
 
 
 # Footywire team names → our canonical names.

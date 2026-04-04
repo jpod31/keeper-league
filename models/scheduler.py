@@ -8,6 +8,8 @@ Jobs:
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
+from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -18,6 +20,29 @@ scheduler = BackgroundScheduler()
 # These are set by init_scheduler()
 _app = None
 _socketio = None
+_broadcast_seq = 0  # monotonic sequence number for score_update events
+
+# Job health tracking: {job_name: {"successes": int, "failures": int, "last_run": datetime, "last_error": str}}
+_job_health = defaultdict(lambda: {"successes": 0, "failures": 0, "last_run": None, "last_error": None})
+
+
+def get_scheduler_health():
+    """Return scheduler health stats for monitoring."""
+    return dict(_job_health)
+
+
+def _track_success(job_name):
+    _job_health[job_name]["successes"] += 1
+    _job_health[job_name]["last_run"] = datetime.now(timezone.utc)
+
+
+def _track_failure(job_name, error):
+    _job_health[job_name]["failures"] += 1
+    _job_health[job_name]["last_run"] = datetime.now(timezone.utc)
+    _job_health[job_name]["last_error"] = str(error)
+    if _job_health[job_name]["failures"] >= 3:
+        logger.error("Job '%s' has failed %d consecutive times. Last error: %s",
+                     job_name, _job_health[job_name]["failures"], error)
 
 
 def init_scheduler(app, socketio):
@@ -233,9 +258,9 @@ def _auto_finalize_round(year: int, afl_round: int):
                         if r0_active:
                             fantasy_round = 0
 
-                    finalize_round(league_id, fantasy_round, year)
-                    logger.info("Auto-finalize: finalized league %d for %d R%d (fantasy R%d)",
-                                league_id, year, afl_round, fantasy_round)
+                    result = finalize_round(league_id, fantasy_round, year)
+                    logger.info("Auto-finalize: finalized league %d for %d R%d (fantasy R%d), scores=%s",
+                                league_id, year, afl_round, fantasy_round, result)
                 except Exception:
                     logger.exception("Auto-finalize failed for league %d, %d R%d", league_id, year, afl_round)
 
@@ -250,9 +275,11 @@ def _auto_finalize_round(year: int, afl_round: int):
                         {}, game_statuses, locked_ids
                     )
 
+            _track_success("auto_finalize")
             logger.info("Auto-finalize complete for %d R%d", year, afl_round)
 
-        except Exception:
+        except Exception as e:
+            _track_failure("auto_finalize", e)
             logger.exception("Error in auto-finalize for %d R%d", year, afl_round)
 
 
@@ -417,14 +444,16 @@ def _poll_live_scores():
                             league_id, active_round,
                             fixtures_data, game_statuses, locked_ids
                         )
+                _track_success("poll_live_scores")
                 return  # Success — exit retry loop
 
-            except Exception:
+            except Exception as e:
                 if attempt < max_retries:
                     logger.warning("Live score poll attempt %d failed, retrying in 10s...",
                                    attempt + 1, exc_info=True)
                     _time.sleep(10)
                 else:
+                    _track_failure("poll_live_scores", e)
                     logger.exception("Live score poll failed after %d attempts", max_retries + 1)
 
 
@@ -527,7 +556,11 @@ def _broadcast_score_update(league_id, afl_round, fixtures_data, game_statuses, 
             "away_players": away_players,
         })
 
+    global _broadcast_seq
+    _broadcast_seq += 1
+
     payload = {
+        "seq": _broadcast_seq,
         "fixtures": fixture_list,
         "game_statuses": game_statuses,
         "locked_player_ids": locked_ids,
@@ -535,7 +568,7 @@ def _broadcast_score_update(league_id, afl_round, fixtures_data, game_statuses, 
 
     room = f"live_{league_id}_{afl_round}"
     _socketio.emit("score_update", payload, room=room, namespace="/matchups")
-    logger.debug("Broadcast score_update to room %s (%d fixtures)", room, len(fixture_list))
+    logger.debug("Broadcast score_update seq=%d to room %s (%d fixtures)", _broadcast_seq, room, len(fixture_list))
 
 
 def _send_weekly_digest():

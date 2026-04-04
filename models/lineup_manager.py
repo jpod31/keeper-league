@@ -342,9 +342,14 @@ def snapshot_lineups_for_round(afl_round, year):
         count += 1
 
     if count:
-        db.session.commit()
-        if all_games_started:
-            logger.info("Fully locked %d team lineups for R%d %d", count, afl_round, year)
+        try:
+            db.session.commit()
+            if all_games_started:
+                logger.info("Fully locked %d team lineups for R%d %d", count, afl_round, year)
+        except Exception:
+            db.session.rollback()
+            logger.exception("Lineup snapshot commit failed for R%d %d — rolled back", afl_round, year)
+            return 0
 
     return count
 
