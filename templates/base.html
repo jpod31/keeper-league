@@ -20,24 +20,40 @@
 <body class="{% block body_class %}{% endblock %}">
   {# ── PWA Splash Screen ── #}
   <div id="kl-splash" class="kl-splash">
+    {# Ambient glow orbs #}
+    <div class="kl-splash-orb kl-splash-orb-green"></div>
+    <div class="kl-splash-orb kl-splash-orb-blue"></div>
+    {# Football arc #}
+    <div class="kl-splash-football" id="splashFootball">
+      <svg viewBox="0 0 40 26" width="40" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="20" cy="13" rx="18" ry="11" fill="#c45a2c" stroke="#a0471f" stroke-width="1.2"/>
+        <path d="M8 13 Q14 6, 20 6 Q26 6, 32 13" stroke="#e8d4a0" stroke-width="1" fill="none"/>
+        <path d="M8 13 Q14 20, 20 20 Q26 20, 32 13" stroke="#e8d4a0" stroke-width="1" fill="none"/>
+        <line x1="20" y1="5" x2="20" y2="21" stroke="#e8d4a0" stroke-width=".8"/>
+        <line x1="17" y1="8" x2="17" y2="18" stroke="#e8d4a0" stroke-width=".6" stroke-dasharray="1.5 1.5"/>
+        <line x1="23" y1="8" x2="23" y2="18" stroke="#e8d4a0" stroke-width=".6" stroke-dasharray="1.5 1.5"/>
+      </svg>
+    </div>
+    {# Main content #}
     <div class="kl-splash-inner">
       <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="KL" class="kl-splash-logo" id="splashLogo">
+      <div class="kl-splash-text">KEEPER LEAGUE</div>
       <div class="kl-splash-bar"><div class="kl-splash-bar-fill" id="splashBar"></div></div>
     </div>
   </div>
   <script>
   (function(){
-    // Only show splash in standalone PWA mode or on first paint
     var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     var splash = document.getElementById('kl-splash');
     if (!isStandalone) { splash.style.display = 'none'; return; }
-    // Animate progress bar, then fade out
+    // Kick off progress bar
     var bar = document.getElementById('splashBar');
-    bar.style.width = '100%';
+    requestAnimationFrame(function(){ bar.style.width = '100%'; });
+    // Fade out after animations complete
     setTimeout(function(){
       splash.classList.add('kl-splash-exit');
-      setTimeout(function(){ splash.style.display = 'none'; }, 500);
-    }, 1400);
+      setTimeout(function(){ splash.style.display = 'none'; }, 600);
+    }, 2400);
   })();
   </script>
   <nav class="navbar navbar-expand-lg border-bottom border-secondary-subtle">
