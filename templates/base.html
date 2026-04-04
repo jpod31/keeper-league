@@ -21,15 +21,14 @@
   {# ── Unified loader (startup + between pages) ── #}
   <div id="kl-loader" class="kl-loader">
     <div class="kl-loader-inner">
+      <div class="kl-loader-glow"></div>
       <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="KL" class="kl-loader-logo">
-      <div class="kl-loader-bar"><div class="kl-loader-bar-fill"></div></div>
     </div>
   </div>
   <script>
   (function(){
     var loader = document.getElementById('kl-loader');
     var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    // Startup: show for PWA, hide after content ready
     if (!isStandalone) { loader.style.display = 'none'; }
     else {
       setTimeout(function(){
@@ -37,7 +36,6 @@
         setTimeout(function(){ loader.style.display = 'none'; loader.classList.remove('kl-loader-exit'); }, 500);
       }, 1800);
     }
-    // Between-page: show on internal link clicks
     document.addEventListener('click', function(e) {
       var a = e.target.closest('a[href]');
       if (!a) return;
