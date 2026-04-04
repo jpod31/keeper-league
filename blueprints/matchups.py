@@ -239,7 +239,7 @@ def standings(league_id):
         # Season record from standings
         record_map = {}
         for s in standing_list:
-            record_map[s["team_id"]] = s
+            record_map[s.team_id] = s
 
         for pr in rankings:
             form = team_form.get(pr.team_id, [])
@@ -249,7 +249,7 @@ def standings(league_id):
             avg = avg_rs.get(pr.team_id, 0)
             pct_above = ((avg - league_avg) / league_avg * 100) if league_avg > 0 else 0
             best, worst = best_worst.get(pr.team_id, (0, 0))
-            rec = record_map.get(pr.team_id, {})
+            rec = record_map.get(pr.team_id)
 
             # Headline blurb
             if wins >= 4 and pct_above > 10:
@@ -278,7 +278,7 @@ def standings(league_id):
                 "pct_above": round(pct_above, 1),
                 "best_round": round(best, 0) if best else 0,
                 "worst_round": round(worst, 0) if worst else 0,
-                "record": f"{rec.get('wins', 0)}W {rec.get('losses', 0)}L" + (f" {rec.get('draws', 0)}D" if rec.get('draws') else ""),
+                "record": f"{rec.wins if rec else 0}W {rec.losses if rec else 0}L" + (f" {rec.draws}D" if rec and rec.draws else ""),
                 "form_wins": wins,
                 "form_losses": losses,
                 "form_total": len(form),
