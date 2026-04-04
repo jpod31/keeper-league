@@ -69,15 +69,15 @@
   width: 280px; height: 280px;
   bottom: 40px; right: 20px;
   background: rgba(31,111,235,.3);
-  animation: glowBlue 3s ease-in-out 1.5s infinite;
+  animation: glowBlue 3s ease-in-out infinite;
 }
 @keyframes glowGreen {
-  0%, 100% { transform: scale(.7); opacity: .3; }
+  0%, 100% { transform: scale(.85); opacity: .5; }
   50% { transform: scale(1.15); opacity: .9; }
 }
 @keyframes glowBlue {
-  0%, 100% { transform: scale(.7); opacity: .3; }
-  50% { transform: scale(1.15); opacity: .9; }
+  0%, 100% { transform: scale(1.15); opacity: .9; }
+  50% { transform: scale(.85); opacity: .5; }
 }
 
 /* ── Typography ── */
