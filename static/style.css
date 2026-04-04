@@ -47,20 +47,37 @@
   0%, 100% { transform: scale(1); opacity: .88; }
   50% { transform: scale(1.03); opacity: 1; }
 }
-/* Ambient glow — breathing pulse */
+/* Ambient glow — two colour blobs breathing offset */
 .kl-loader-glow {
   position: absolute; top: 50%; left: 50%;
-  width: 360px; height: 360px;
-  margin-top: -180px; margin-left: -180px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(52,211,153,.18) 0%, rgba(31,111,235,.12) 40%, transparent 70%);
-  animation: glowPulse 3s ease-in-out infinite;
-  filter: blur(40px);
-  z-index: 1;
+  width: 500px; height: 500px;
+  margin-top: -250px; margin-left: -250px;
+  z-index: 1; pointer-events: none;
 }
-@keyframes glowPulse {
-  0%, 100% { transform: scale(.85); opacity: .5; }
-  50% { transform: scale(1.1); opacity: 1; }
+.kl-loader-glow::before,
+.kl-loader-glow::after {
+  content: ''; position: absolute; border-radius: 50%;
+  filter: blur(60px);
+}
+.kl-loader-glow::before {
+  width: 280px; height: 280px;
+  top: 40px; left: 20px;
+  background: rgba(63,185,80,.3);
+  animation: glowGreen 3s ease-in-out infinite;
+}
+.kl-loader-glow::after {
+  width: 280px; height: 280px;
+  bottom: 40px; right: 20px;
+  background: rgba(31,111,235,.3);
+  animation: glowBlue 3s ease-in-out 1.5s infinite;
+}
+@keyframes glowGreen {
+  0%, 100% { transform: scale(.7); opacity: .3; }
+  50% { transform: scale(1.15); opacity: .9; }
+}
+@keyframes glowBlue {
+  0%, 100% { transform: scale(.7); opacity: .3; }
+  50% { transform: scale(1.15); opacity: .9; }
 }
 
 /* ── Typography ── */
