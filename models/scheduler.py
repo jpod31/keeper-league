@@ -60,6 +60,8 @@ def init_scheduler(app, socketio):
         id="live_score_poll",
         replace_existing=True,
         max_instances=1,
+        coalesce=True,
+        misfire_grace_time=30,
     )
     # Daily schedule sync at 06:00 UTC
     scheduler.add_job(
@@ -181,8 +183,19 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Weekly database vacuum: Sunday 03:00 UTC
+    scheduler.add_job(
+        _vacuum_database,
+        "cron",
+        day_of_week="sun",
+        hour=3,
+        minute=0,
+        id="weekly_db_vacuum",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
-    logger.info("Scheduler started (live score poll: every 60s, schedule sync: daily 06:00 UTC, position sync: Tue 04:00 UTC, auto-finalize: Tue 00:30 UTC, digest: Mon 08:00 UTC, season check: daily 05:00 UTC, injury sync: daily 08:00 UTC, lineup sync: multi-daily)")
+    logger.info("Scheduler started with %d jobs", len(scheduler.get_jobs()))
 
 
 def schedule_round_finalization(year: int, afl_round: int):
@@ -755,3 +768,18 @@ def _sync_ratings():
             _sync_ratings_to_db(_app)
         except Exception:
             logger.exception("Error in ratings sync")
+
+
+def _vacuum_database():
+    """Weekly job: vacuum SQLite to reclaim space from deleted rows."""
+    if not _app:
+        return
+    with _app.app_context():
+        try:
+            from models.database import db
+            db.session.execute(db.text("VACUUM"))
+            _track_success("vacuum_database")
+            logger.info("Database vacuum completed")
+        except Exception as e:
+            _track_failure("vacuum_database", e)
+            logger.exception("Database vacuum failed")

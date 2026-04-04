@@ -9,7 +9,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
 
 # ---------- Flask / SQLAlchemy ----------
-SECRET_KEY = os.environ.get("SECRET_KEY", "keeper-league-dev-key-CHANGE-ME")
+_default_key = "keeper-league-dev-key-CHANGE-ME"
+SECRET_KEY = os.environ.get("SECRET_KEY", _default_key)
+if SECRET_KEY == _default_key and os.environ.get("FLASK_ENV") == "production":
+    raise RuntimeError("SECRET_KEY must be set in production — do not use the default dev key")
 SQLALCHEMY_DATABASE_URI = os.environ.get(
     "DATABASE_URL",
     "sqlite:///" + os.path.join(DATA_DIR, "keeper_league.db"),
@@ -19,7 +22,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 # ---------- Session security ----------
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = os.environ.get("FLASK_ENV") == "production"
+SESSION_COOKIE_SECURE = not os.environ.get("FLASK_DEBUG")  # True unless explicitly debugging
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload
 
 # ---------- Email (Flask-Mail) ----------

@@ -13,7 +13,9 @@ from models.auth import register_user, authenticate_user
 
 # Simple in-memory rate limiter for login attempts
 _login_attempts = defaultdict(list)  # IP -> [timestamps]
+_account_attempts = defaultdict(list)  # username -> [timestamps]
 _MAX_ATTEMPTS = 8
+_MAX_ACCOUNT_ATTEMPTS = 5
 _WINDOW = 300  # 5 minutes
 
 
@@ -85,8 +87,17 @@ def login():
         login_val = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
+        # Per-account rate limit
+        _account_attempts[login_val.lower()] = [t for t in _account_attempts[login_val.lower()] if now - t < _WINDOW]
+        if len(_account_attempts[login_val.lower()]) >= _MAX_ACCOUNT_ATTEMPTS:
+            flash("This account is temporarily locked. Please wait a few minutes.", "danger")
+            return render_template("auth/login.html", form={"username": login_val}, errors={})
+
         user, error_field = authenticate_user(login_val, password)
         if user:
+            # Regenerate session to prevent session fixation
+            from flask import session
+            session.clear()
             login_user(user, remember=request.form.get("remember") == "on")
             user.last_login = datetime.now(timezone.utc)
             from models.database import db
@@ -96,6 +107,7 @@ def login():
             return _safe_redirect(next_page, url_for("leagues.league_list"))
 
         _login_attempts[ip].append(now)
+        _account_attempts[login_val.lower()].append(now)
         errors = {}
         if error_field == "login":
             errors["login"] = "No account found with that username or email."

@@ -21,11 +21,21 @@ def register_matchup_events(socketio):
         if not current_user.is_authenticated:
             return False  # reject unauthenticated connections
 
+    def _user_in_league(league_id):
+        """Check if current user has a team in this league."""
+        from models.database import FantasyTeam
+        return FantasyTeam.query.filter_by(
+            league_id=league_id, owner_id=current_user.id
+        ).first() is not None
+
     @socketio.on("join_live", namespace="/matchups")
     def handle_join(data):
         league_id = data.get("league_id")
         afl_round = data.get("afl_round")
         if not league_id or not afl_round:
+            return
+        if not _user_in_league(league_id):
+            emit("error", {"message": "Not a member of this league"})
             return
 
         room = f"live_{league_id}_{afl_round}"
@@ -46,6 +56,9 @@ def register_matchup_events(socketio):
             league_id = data.get("league_id")
             afl_round = data.get("afl_round")
             if not league_id or not afl_round:
+                return
+            if not _user_in_league(league_id):
+                emit("error", {"message": "Not a member of this league"})
                 return
 
             from flask import current_app

@@ -358,6 +358,14 @@ def create_app():
     app.register_blueprint(reserve7s_bp)
     csrf.exempt(reserve7s_bp)  # 7s team API uses @login_required + ownership checks
 
+    # Static asset cache buster (hash of style.css mtime)
+    import hashlib
+    _css_path = os.path.join(app.static_folder, "style.css")
+    try:
+        _asset_v = hashlib.md5(str(os.path.getmtime(_css_path)).encode()).hexdigest()[:8]
+    except Exception:
+        _asset_v = "1"
+
     # Context processor — inject globals into all templates
     @app.context_processor
     def inject_globals():
@@ -366,6 +374,7 @@ def create_app():
             "TEAM_COLOURS": config.TEAM_COLOURS,
             "TEAM_ABBR": config.TEAM_ABBR,
             "SCORING_TYPE_LABELS": config.SCORING_TYPE_LABELS,
+            "ASSET_V": _asset_v,
         }
         if current_user.is_authenticated:
             from models.database import FantasyTeam
@@ -407,11 +416,39 @@ def create_app():
         return ctx
 
     # ── Security headers ────────────────────────────────────────────
+    # ── Global POST rate limiter ──────────────────────────────────
+    from collections import defaultdict
+    import time as _time
+    _post_limiter = defaultdict(list)  # IP -> [timestamps]
+    _POST_LIMIT = 30  # max POST requests per window
+    _POST_WINDOW = 60  # seconds
+
+    @app.before_request
+    def rate_limit_posts():
+        if request.method != "POST":
+            return
+        ip = request.remote_addr or "unknown"
+        now = _time.time()
+        _post_limiter[ip] = [t for t in _post_limiter[ip] if now - t < _POST_WINDOW]
+        if len(_post_limiter[ip]) >= _POST_LIMIT:
+            return jsonify({"error": "Rate limit exceeded"}), 429
+        _post_limiter[ip].append(now)
+
     @app.after_request
     def add_security_headers(response):
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
+            "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self' wss: ws:; "
+            "frame-ancestors 'self';"
+        )
         return response
 
     # ── Error handlers ────────────────────────────────────────────────
@@ -717,7 +754,11 @@ def create_app():
         return jsonify({"ok": True})
 
     @app.route("/import/players", methods=["POST"])
+    @login_required
     def trigger_import_players():
+        if not getattr(current_user, "is_admin", False):
+            flash("Admin access required.", "danger")
+            return redirect(url_for("leagues.league_list"))
         f = request.files.get("file")
         if not f or f.filename == "":
             flash("No file uploaded.", "warning")
@@ -738,7 +779,11 @@ def create_app():
         return redirect(url_for("admin.dashboard"))
 
     @app.route("/import/sc_scores", methods=["POST"])
+    @login_required
     def trigger_import_sc():
+        if not getattr(current_user, "is_admin", False):
+            flash("Admin access required.", "danger")
+            return redirect(url_for("leagues.league_list"))
         f = request.files.get("file")
         year = request.form.get("year", type=int) or config.CURRENT_YEAR
         if not f or f.filename == "":
