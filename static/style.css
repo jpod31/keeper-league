@@ -25,6 +25,41 @@
   --kl-space-xl: 2rem;
 }
 
+/* ── PWA Splash Screen ── */
+.kl-splash {
+  position: fixed; inset: 0; z-index: 99999;
+  background: #0a0f14;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .5s ease, visibility .5s ease;
+}
+.kl-splash-exit {
+  opacity: 0; visibility: hidden;
+}
+.kl-splash-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 28px;
+}
+.kl-splash-logo {
+  width: 140px; height: 140px;
+  animation: splashPulse 1.4s ease-in-out;
+  filter: drop-shadow(0 0 30px rgba(52,211,153,.25)) drop-shadow(0 0 60px rgba(31,111,235,.15));
+}
+@keyframes splashPulse {
+  0% { transform: scale(.7); opacity: 0; }
+  40% { transform: scale(1.06); opacity: 1; }
+  60% { transform: scale(.97); }
+  80% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+.kl-splash-bar {
+  width: 120px; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,.08); overflow: hidden;
+}
+.kl-splash-bar-fill {
+  height: 100%; width: 0; border-radius: 2px;
+  background: linear-gradient(90deg, #3fb950, #34d399, #1f6feb);
+  transition: width 1.2s cubic-bezier(.4,0,.2,1);
+}
+
 /* ── Typography ── */
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -38,19 +73,10 @@ body {
   background: var(--kl-bg-card) !important;
   padding: .5rem 0;
 }
-.brand-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.brand-logo {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #0c1018, #141c2c);
-  border: 1px solid rgba(88,166,255,.15);
-  border-radius: 8px;
-  font-weight: 900;
-  font-size: 0.72rem;
-  letter-spacing: -.5px;
-  color: var(--kl-accent-blue);
+  border-radius: 6px;
 }
 .navbar-brand {
   font-size: 1rem;
@@ -349,19 +375,10 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   gap: 12px;
   margin-bottom: 1.5rem;
 }
-.auth-card .auth-logo-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #0c1018, #141c2c);
-  border: 1px solid rgba(88,166,255,.15);
+.auth-card .auth-logo-img {
+  width: 52px;
+  height: 52px;
   border-radius: 12px;
-  font-weight: 900;
-  font-size: 1rem;
-  letter-spacing: -.5px;
-  color: var(--kl-accent-blue);
 }
 .auth-card .auth-logo-wordmark {
   text-align: left;

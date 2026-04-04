@@ -1,15 +1,16 @@
 /* Keeper League Service Worker — Caching + Push Notifications */
 
-var SHELL_CACHE = 'kl-shell-v11';
-var DYNAMIC_CACHE = 'kl-dynamic-v11';
-var CDN_CACHE = 'kl-cdn-v11';
+var SHELL_CACHE = 'kl-shell-v12';
+var DYNAMIC_CACHE = 'kl-dynamic-v12';
+var CDN_CACHE = 'kl-cdn-v12';
 var MAX_DYNAMIC = 50;
 
 var SHELL_ASSETS = [
   '/static/style.css',
   '/static/favicon.svg',
   '/static/icons/icon-192.png',
-  '/static/icons/icon-512.png'
+  '/static/icons/icon-512.png',
+  '/static/icons/kl-logo.png'
 ];
 
 /* CDN origins we want to cache */

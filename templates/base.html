@@ -18,10 +18,32 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
+  {# ── PWA Splash Screen ── #}
+  <div id="kl-splash" class="kl-splash">
+    <div class="kl-splash-inner">
+      <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="KL" class="kl-splash-logo" id="splashLogo">
+      <div class="kl-splash-bar"><div class="kl-splash-bar-fill" id="splashBar"></div></div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    // Only show splash in standalone PWA mode or on first paint
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    var splash = document.getElementById('kl-splash');
+    if (!isStandalone) { splash.style.display = 'none'; return; }
+    // Animate progress bar, then fade out
+    var bar = document.getElementById('splashBar');
+    bar.style.width = '100%';
+    setTimeout(function(){
+      splash.classList.add('kl-splash-exit');
+      setTimeout(function(){ splash.style.display = 'none'; }, 500);
+    }, 1400);
+  })();
+  </script>
   <nav class="navbar navbar-expand-lg border-bottom border-secondary-subtle">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-        <span class="brand-icon">KL</span>
+        <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="KL" class="brand-logo">
         <span class="brand-text d-none d-lg-inline">Keeper League</span>
       </a>
 
