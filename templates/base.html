@@ -36,18 +36,23 @@
         setTimeout(function(){ loader.style.display = 'none'; loader.classList.remove('kl-loader-exit'); }, 500);
       }, 1800);
     }
-    document.addEventListener('click', function(e) {
-      var a = e.target.closest('a[href]');
-      if (!a) return;
-      var href = a.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('javascript') || a.target === '_blank' || a.hasAttribute('download')) return;
-      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-      if (href.startsWith('/') || href.startsWith(location.origin)) {
-        loader.style.display = 'flex';
-      }
-    });
+    // Between-page loader: mobile PWA only, with 800ms delay so fast pages never show it
+    if (isStandalone) {
+      var navTimer = null;
+      document.addEventListener('click', function(e) {
+        var a = e.target.closest('a[href]');
+        if (!a) return;
+        var href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript') || a.target === '_blank' || a.hasAttribute('download')) return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (href.startsWith('/') || href.startsWith(location.origin)) {
+          navTimer = setTimeout(function(){ loader.style.display = 'flex'; }, 800);
+        }
+      });
+    }
     window.addEventListener('pageshow', function(e) {
-      if (e.persisted) { loader.style.display = 'none'; loader.classList.remove('kl-loader-exit'); }
+      if (typeof navTimer !== 'undefined' && navTimer) { clearTimeout(navTimer); navTimer = null; }
+      loader.style.display = 'none'; loader.classList.remove('kl-loader-exit');
     });
   })();
   </script>
