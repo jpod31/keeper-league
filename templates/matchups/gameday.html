@@ -1279,9 +1279,7 @@ function renderViewedMatchup(fixtureId) {
             document.getElementById('hero-win-left').textContent = Math.round(leftWin) + '%';
             document.getElementById('hero-win-right').textContent = Math.round(rightWin) + '%';
             projRow.style.display = '';
-        } else if (!isOwn) {
-            // Only hide if viewing someone else's matchup with no projections
-            // For own matchup, keep the server-rendered values
+        } else {
             projRow.style.display = 'none';
         }
     }

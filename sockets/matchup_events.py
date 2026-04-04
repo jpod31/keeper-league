@@ -65,6 +65,15 @@ def register_matchup_events(socketio):
                     league_id=league_id, year=year, afl_round=afl_round
                 ).all()
 
+                # Teams playing this round (needed for projections)
+                from models.database import AflGame
+                teams_playing = set()
+                for g in AflGame.query.filter_by(year=year, afl_round=afl_round).all():
+                    teams_playing.add(g.home_team)
+                    teams_playing.add(g.away_team)
+
+                from models.matchup_projections import project_matchup
+
                 fixture_list = []
                 for f in fixtures:
                     home_rs = RoundScore.query.filter_by(
@@ -74,7 +83,7 @@ def register_matchup_events(socketio):
                         team_id=f.away_team_id, afl_round=afl_round, year=year
                     ).first()
 
-                    fixture_list.append({
+                    fx_out = {
                         "fixture_id": f.id,
                         "home_score": home_rs.total_score if home_rs else 0,
                         "away_score": away_rs.total_score if away_rs else 0,
@@ -82,7 +91,21 @@ def register_matchup_events(socketio):
                         "away_captain_bonus": away_rs.captain_bonus if away_rs else 0,
                         "home_players": get_player_score_breakdown(f.home_team_id, afl_round, year, league_id),
                         "away_players": get_player_score_breakdown(f.away_team_id, afl_round, year, league_id),
-                    })
+                    }
+                    try:
+                        proj = project_matchup(
+                            f.home_team_id, f.away_team_id, afl_round, year, league_id, teams_playing
+                        )
+                        if proj:
+                            fx_out["projections"] = {
+                                "home_projected": proj["my_projected"],
+                                "away_projected": proj["opp_projected"],
+                                "home_win_pct": proj["my_win_pct"],
+                                "away_win_pct": proj["opp_win_pct"],
+                            }
+                    except Exception:
+                        pass
+                    fixture_list.append(fx_out)
 
                 payload = {
                     "fixtures": fixture_list,
