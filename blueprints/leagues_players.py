@@ -169,6 +169,7 @@ def player_pool(league_id):
         fg, bg = _team_palette[i % len(_team_palette)]
         team_colours[tname] = {"fg": fg, "bg": bg}
 
+    from models.team_ai_summary import get_cached_analytics, cache_analytics
     rolling = get_cached_analytics(0, league.season_year, "rolling_avgs")
     if rolling is None:
         rolling = _compute_rolling_averages()
