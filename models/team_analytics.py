@@ -1508,6 +1508,12 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     # ══════════════════════════════════════════════════════════════════════
     # BACKWARD-COMPAT: ROUND-BY-ROUND PERFORMANCE
     # ══════════════════════════════════════════════════════════════════════
+    # Only include completed rounds (exclude R0 and mid-round partial scores)
+    from models.database import Fixture as _Fx
+    completed_rounds = set(
+        f.afl_round for f in _Fx.query.filter_by(league_id=league_id, year=year, status="completed").all()
+        if f.afl_round > 0
+    )
     round_scores = (
         RoundScore.query
         .filter_by(team_id=team_id, year=year)
@@ -1515,7 +1521,8 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         .order_by(RoundScore.afl_round)
         .all()
     )
-    round_data = [{"round": rs.afl_round, "score": rs.total_score} for rs in round_scores]
+    round_data = [{"round": rs.afl_round, "score": rs.total_score}
+                  for rs in round_scores if rs.afl_round in completed_rounds]
 
     if len(round_data) >= 3:
         form_avg = round(sum(r["score"] for r in round_data[-3:]) / 3, 1)
