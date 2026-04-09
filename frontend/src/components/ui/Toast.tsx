@@ -1,13 +1,9 @@
 import { createContext, useContext, useState, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 
 type ToastType = 'success' | 'error' | 'info'
 interface ToastItem { id: number; message: string; type: ToastType }
 
-interface ToastCtx {
-  toast: (message: string, type?: ToastType) => void
-}
-
+interface ToastCtx { toast: (message: string, type?: ToastType) => void }
 const ToastContext = createContext<ToastCtx>(null!)
 
 let _nextId = 0
@@ -21,27 +17,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500)
   }, [])
 
+  const colorMap = { success: 'var(--kl-accent-green)', error: 'var(--kl-accent-red)', info: 'var(--kl-accent-blue)' }
+
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none">
-        <AnimatePresence>
-          {toasts.map(t => (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, y: 16, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              className={`px-4 py-2 rounded-xl text-sm font-medium shadow-lg border pointer-events-auto ${
-                t.type === 'success' ? 'bg-[#0d1117] border-[#3fb950] text-[#3fb950]' :
-                t.type === 'error' ? 'bg-[#0d1117] border-[#ef4444] text-[#ef4444]' :
-                'bg-[#0d1117] border-[#58a6ff] text-[#58a6ff]'
-              }`}
-            >
-              {t.message}
-            </motion.div>
-          ))}
-        </AnimatePresence>
+      <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {toasts.map(t => (
+          <div key={t.id} style={{
+            padding: '8px 16px', borderRadius: 10, fontSize: '.85rem', fontWeight: 500,
+            background: 'var(--kl-bg-card)', border: `1px solid ${colorMap[t.type]}`,
+            color: colorMap[t.type], boxShadow: '0 4px 12px rgba(0,0,0,.3)',
+          }}>
+            {t.message}
+          </div>
+        ))}
       </div>
     </ToastContext.Provider>
   )

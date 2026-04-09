@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../../contexts/AuthContext'
-import { Trophy } from 'lucide-react'
 
 export function RegisterPage() {
   const { register, user } = useAuth()
@@ -11,9 +10,7 @@ export function RegisterPage() {
   const [loading, setLoading] = useState(false)
 
   if (user) { navigate('/leagues', { replace: true }); return null }
-
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm(prev => ({ ...prev, [k]: e.target.value }))
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(prev => ({ ...prev, [k]: e.target.value }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,40 +25,46 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <Trophy className="w-10 h-10 text-[#58a6ff] mx-auto mb-3" />
-          <h1 className="text-2xl font-extrabold text-[#e6edf3]">Create Account</h1>
+    <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh', background: 'var(--kl-bg-body)' }}>
+      <div style={{ width: '100%', maxWidth: 380, padding: '0 1rem' }}>
+        <div className="text-center mb-4">
+          <i className="bi bi-trophy-fill" style={{ fontSize: '2.5rem', color: 'var(--kl-accent-blue)' }}></i>
+          <h3 className="fw-bold mt-2" style={{ color: 'var(--kl-text-heading)' }}>Create Account</h3>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="text-sm text-[#ef4444] bg-[#ef444410] border border-[#ef444430] rounded-xl px-4 py-2">{error}</div>}
-          <Field label="Username" value={form.username} onChange={set('username')} autoFocus />
-          <Field label="Display Name" value={form.displayName} onChange={set('displayName')} />
-          <Field label="Email" type="email" value={form.email} onChange={set('email')} />
-          <Field label="Password" type="password" value={form.password} onChange={set('password')} />
-          <Field label="Confirm Password" type="password" value={form.confirm} onChange={set('confirm')} />
-          <button type="submit" disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-[#58a6ff] text-sm font-bold text-white hover:bg-[#388bfd] transition disabled:opacity-50">
-            {loading ? 'Creating...' : 'Create Account'}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-[#8b949e] mt-6">
-          Already have an account? <Link to="/auth/login" className="text-[#58a6ff] hover:underline">Sign In</Link>
+        <div className="card">
+          <div className="card-body p-4">
+            <form onSubmit={handleSubmit}>
+              {error && <div className="alert alert-danger py-2" style={{ fontSize: '.85rem' }}>{error}</div>}
+              {['username', 'displayName', 'email'].map(k => (
+                <div className="mb-3" key={k}>
+                  <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>
+                    {k === 'displayName' ? 'Display Name' : k.charAt(0).toUpperCase() + k.slice(1)}
+                  </label>
+                  <input type={k === 'email' ? 'email' : 'text'} className="form-control" value={(form as Record<string, string>)[k]} onChange={set(k)}
+                    style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }}
+                    required={k !== 'displayName'} />
+                </div>
+              ))}
+              <div className="mb-3">
+                <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>Password</label>
+                <input type="password" className="form-control" value={form.password} onChange={set('password')}
+                  style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} required />
+              </div>
+              <div className="mb-3">
+                <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>Confirm Password</label>
+                <input type="password" className="form-control" value={form.confirm} onChange={set('confirm')}
+                  style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} required />
+              </div>
+              <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+                {loading ? 'Creating...' : 'Create Account'}
+              </button>
+            </form>
+          </div>
+        </div>
+        <p className="text-center mt-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-secondary)' }}>
+          Already have an account? <Link to="/auth/login" style={{ color: 'var(--kl-accent-blue)' }}>Sign In</Link>
         </p>
       </div>
-    </div>
-  )
-}
-
-function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-[#8b949e] mb-1.5">{label}</label>
-      <input {...props} required
-        className="w-full px-3 py-2.5 rounded-xl bg-[#0d1117] border border-[#21262d] text-sm text-[#e6edf3] focus:border-[#58a6ff] focus:outline-none transition" />
     </div>
   )
 }

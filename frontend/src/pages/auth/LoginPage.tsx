@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router'
 import { useAuth } from '../../contexts/AuthContext'
-import { Trophy } from 'lucide-react'
 
 export function LoginPage() {
   const { login, user } = useAuth()
@@ -13,7 +12,6 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   if (user) { navigate('/leagues', { replace: true }); return null }
-
   const from = (location.state as { from?: string })?.from || '/leagues'
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,40 +25,39 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <Trophy className="w-10 h-10 text-[#58a6ff] mx-auto mb-3" />
-          <h1 className="text-2xl font-extrabold text-[#e6edf3]">Keeper League</h1>
-          <p className="text-sm text-[#8b949e] mt-1">Sign in to your account</p>
+    <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh', background: 'var(--kl-bg-body)' }}>
+      <div style={{ width: '100%', maxWidth: 380, padding: '0 1rem' }}>
+        <div className="text-center mb-4">
+          <i className="bi bi-trophy-fill" style={{ fontSize: '2.5rem', color: 'var(--kl-accent-blue)' }}></i>
+          <h3 className="fw-bold mt-2" style={{ color: 'var(--kl-text-heading)' }}>Keeper League</h3>
+          <p style={{ color: 'var(--kl-text-secondary)', fontSize: '.85rem' }}>Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="text-sm text-[#ef4444] bg-[#ef444410] border border-[#ef444430] rounded-xl px-4 py-2">
-              {error}
-            </div>
-          )}
-          <div>
-            <label className="block text-xs font-medium text-[#8b949e] mb-1.5">Username</label>
-            <input type="text" value={username} onChange={e => setUsername(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-[#0d1117] border border-[#21262d] text-sm text-[#e6edf3] focus:border-[#58a6ff] focus:outline-none transition"
-              autoFocus required />
+        <div className="card">
+          <div className="card-body p-4">
+            <form onSubmit={handleSubmit}>
+              {error && <div className="alert alert-danger py-2" style={{ fontSize: '.85rem' }}>{error}</div>}
+              <div className="mb-3">
+                <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>Username</label>
+                <input type="text" className="form-control" value={username} onChange={e => setUsername(e.target.value)}
+                  style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }}
+                  autoFocus required />
+              </div>
+              <div className="mb-3">
+                <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>Password</label>
+                <input type="password" className="form-control" value={password} onChange={e => setPassword(e.target.value)}
+                  style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }}
+                  required />
+              </div>
+              <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+                {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Signing in...</> : 'Sign In'}
+              </button>
+            </form>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-[#8b949e] mb-1.5">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-[#0d1117] border border-[#21262d] text-sm text-[#e6edf3] focus:border-[#58a6ff] focus:outline-none transition"
-              required />
-          </div>
-          <button type="submit" disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-[#58a6ff] text-sm font-bold text-white hover:bg-[#388bfd] transition disabled:opacity-50">
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+        </div>
 
-        <p className="text-center text-sm text-[#8b949e] mt-6">
-          Don't have an account? <Link to="/auth/register" className="text-[#58a6ff] hover:underline">Register</Link>
+        <p className="text-center mt-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-secondary)' }}>
+          Don't have an account? <Link to="/auth/register" style={{ color: 'var(--kl-accent-blue)' }}>Register</Link>
         </p>
       </div>
     </div>
