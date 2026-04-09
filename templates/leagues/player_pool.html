@@ -33,6 +33,7 @@
   .tag-declining { background: rgba(248,81,73,.12); color: #f85149; }
   .tag-veteran { background: rgba(139,148,158,.1); color: #8b949e; }
   .tag-fringe { background: rgba(110,118,129,.08); color: #6e7681; }
+  .pm-tag-hl { font-size:.58rem; color:#6e7681; display:block; margin-top:1px; line-height:1.2; }
   .status-chip {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
@@ -414,7 +415,10 @@
               {% else %}<i class="bi bi-dash pm-trend pm-trend-flat"></i>{% endif %}
             {% endif %}
             {% set pt = profile_tags.get(p.id, {}) %}
-            {% if pt %}<span class="profile-tag tag-{{ pt.css }}" title="{{ pt.detail }}">{{ pt.tag }}</span>{% endif %}
+            {% if pt %}
+              <span class="profile-tag tag-{{ pt.css }}">{{ pt.tag }}</span>
+              {% if pt.headline %}<span class="pm-tag-hl">{{ pt.headline }}</span>{% endif %}
+            {% endif %}
           </div>
         </div>
       {% endfor %}
@@ -553,8 +557,11 @@
               {% set _age = p.age or 25 %}
               {% set pt = profile_tags.get(p.id, {}) %}
               {% if pt %}
-                <span class="profile-tag tag-{{ pt.css }}" title="{{ pt.detail }}">{{ pt.tag }}</span>
-                <div style="font-size:.6rem;color:#6e7681;margin-top:1px;max-width:140px;line-height:1.2;">{{ pt.detail }}</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span class="profile-tag tag-{{ pt.css }}">{{ pt.tag }}</span>
+                  <span style="font-size:.62rem;color:#8b949e;">{{ pt.headline }}</span>
+                </div>
+                <div style="font-size:.58rem;color:#6e7681;margin-top:2px;max-width:200px;line-height:1.25;">{{ pt.detail }}</div>
               {% endif %}
             </td>
             {# Acquired by #}

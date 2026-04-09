@@ -1,10 +1,17 @@
-"""Player profile tags — data-driven classification using historical SC performance.
+"""Player profile tags — deep statistical classification using multi-year SC data.
 
-Uses multi-year SuperCoach data to classify players into meaningful tiers
-based on actual scoring output, trajectory, and age context.
+Factors:
+  1. Position-adjusted SC percentile (ruck 90 != mid 90)
+  2. Historical trajectory (linear regression on yearly averages)
+  3. Consistency (coefficient of variation across games)
+  4. Durability (avg games per season)
+  5. Age-curve context (years to/from positional peak)
+  6. Multi-year elite/premium seasons count
+  7. Composite keeper value score
 """
 
 import os
+import math
 import logging
 from collections import defaultdict
 
@@ -14,13 +21,21 @@ import config
 
 logger = logging.getLogger(__name__)
 
+# Positional peak age ranges (start, end) — when SC output typically peaks
+_POS_PEAK = {
+    "MID": (25, 29),
+    "DEF": (26, 30),
+    "FWD": (24, 28),
+    "RUC": (26, 30),
+}
+
 
 def _load_sc_history():
-    """Load all available SC score CSVs into a consolidated dict.
+    """Load per-game SC scores from CSVs into structured history.
 
-    Returns: {player_name: {year: {'avg': float, 'games': int, 'scores': [int]}}}
+    Returns: {player_name: {year: [sc_score, sc_score, ...]}}
     """
-    history = defaultdict(lambda: defaultdict(lambda: {"scores": []}))
+    history = defaultdict(lambda: defaultdict(list))
 
     for year in range(2018, config.CURRENT_YEAR + 1):
         path = os.path.join(config.DATA_DIR, f"player_stats_{year}.csv")
@@ -31,185 +46,281 @@ def _load_sc_history():
             df = df.dropna(subset=["SC"])
             for _, row in df.iterrows():
                 name = str(row["Player"]).strip()
-                sc = int(row["SC"])
-                history[name][year]["scores"].append(sc)
+                history[name][year].append(int(row["SC"]))
         except Exception:
-            logger.debug("Failed to load %s for profile tags", path, exc_info=True)
-
-    # Compute averages
-    for name in history:
-        for year in history[name]:
-            scores = history[name][year]["scores"]
-            history[name][year]["avg"] = sum(scores) / len(scores) if scores else 0
-            history[name][year]["games"] = len(scores)
+            logger.debug("Failed to load %s", path, exc_info=True)
 
     return dict(history)
 
 
-def _compute_percentiles(players):
-    """Compute SC average percentile ranks for the current season.
+def _linear_slope(values):
+    """Simple linear regression slope for a list of values (one per year)."""
+    n = len(values)
+    if n < 2:
+        return 0.0
+    x_mean = (n - 1) / 2
+    y_mean = sum(values) / n
+    num = sum((i - x_mean) * (v - y_mean) for i, v in enumerate(values))
+    den = sum((i - x_mean) ** 2 for i in range(n))
+    return num / den if den else 0.0
 
-    Returns: {player_name: percentile (0-100)}
-    """
-    sc_vals = []
-    for p in players:
-        if p.sc_avg and p.sc_avg > 0:
-            sc_vals.append((p.name, p.sc_avg))
 
-    if not sc_vals:
-        return {}
+def _std_dev(values):
+    if len(values) < 2:
+        return 0.0
+    mean = sum(values) / len(values)
+    return math.sqrt(sum((v - mean) ** 2 for v in values) / len(values))
 
-    sc_vals.sort(key=lambda x: x[1])
-    n = len(sc_vals)
-    return {name: round(i / n * 100, 1) for i, (name, _) in enumerate(sc_vals)}
+
+def _primary_pos(position_str):
+    """Extract primary position from 'DEF/MID' style string."""
+    if not position_str:
+        return "MID"
+    return position_str.split("/")[0]
 
 
 def compute_profile_tags(players):
-    """Compute rich profile tags for a list of AflPlayer objects.
+    """Compute rich, data-driven profile tags for all players.
 
     Returns: {player_id: {
-        'tag': str,          # tag name (e.g. 'Premium', 'Emerging Star')
-        'css': str,          # CSS class suffix
-        'detail': str,       # one-line explanation
-        'tier': int,         # 1=best for sorting
-        'sc_pct': float,     # SC percentile this season
-        'trajectory': str,   # 'rising', 'declining', 'stable', 'peaking'
-        'years_elite': int,  # years with avg > 100
-        'peak_avg': float,   # best season average
-        'peak_year': int,    # year of best season
+        'tag': str, 'css': str, 'tier': int,
+        'headline': str,       # short context line
+        'detail': str,         # longer explanation
+        'composite': float,    # 0-100 keeper value score
+        'pos_pct': float,      # positional percentile
+        'trajectory': float,   # yearly SC slope
+        'consistency': float,  # 0-1 (1 = perfectly consistent)
+        'durability': float,   # avg games per season
+        'peak_avg': float,
+        'peak_year': int,
+        'years_elite': int,
+        'years_premium': int,
     }}
     """
     history = _load_sc_history()
-    percentiles = _compute_percentiles(players)
 
+    # ── Step 1: Build positional percentile ranks ──
+    pos_groups = defaultdict(list)  # pos -> [(player, sc_avg)]
+    for p in players:
+        if p.sc_avg and p.sc_avg > 0:
+            pos = _primary_pos(p.position)
+            pos_groups[pos].append((p, p.sc_avg))
+
+    pos_percentiles = {}  # player_id -> percentile within position
+    for pos, group in pos_groups.items():
+        group.sort(key=lambda x: x[1])
+        n = len(group)
+        for i, (p, _) in enumerate(group):
+            pos_percentiles[p.id] = round(i / max(n - 1, 1) * 100, 1)
+
+    # ── Global percentile for all-positions comparison ──
+    all_sc = [(p, p.sc_avg) for p in players if p.sc_avg and p.sc_avg > 0]
+    all_sc.sort(key=lambda x: x[1])
+    global_pct = {}
+    n_all = len(all_sc)
+    for i, (p, _) in enumerate(all_sc):
+        global_pct[p.id] = round(i / max(n_all - 1, 1) * 100, 1)
+
+    # ── Step 2: Per-player deep analysis ──
     tags = {}
     for p in players:
         age = p.age or 25
         sc = p.sc_avg or 0
         sc_prev = p.sc_avg_prev or 0
         games = p.games_played or 0
-        pct = percentiles.get(p.name, 50)
+        pos = _primary_pos(p.position)
+        pct = global_pct.get(p.id, 50)
+        pos_pct = pos_percentiles.get(p.id, 50)
 
-        # Historical analysis
+        # Historical data
         ph = history.get(p.name, {})
-        yearly_avgs = [(y, d["avg"]) for y, d in sorted(ph.items()) if d["games"] >= 3]
-        years_elite = sum(1 for _, avg in yearly_avgs if avg >= 100)
-        years_premium = sum(1 for _, avg in yearly_avgs if avg >= 90)
-        peak_avg = max((avg for _, avg in yearly_avgs), default=0)
-        peak_year = next((y for y, avg in yearly_avgs if avg == peak_avg), 0) if peak_avg else 0
+        yearly_data = []  # [(year, avg, games, std)]
+        all_scores = []
+        for y in sorted(ph.keys()):
+            scores = ph[y]
+            if len(scores) >= 3:
+                avg = sum(scores) / len(scores)
+                std = _std_dev(scores)
+                yearly_data.append((y, avg, len(scores), std))
+                all_scores.extend(scores)
 
-        # Trajectory: compare last 2-3 years (use current sc_avg if fresher)
-        recent_avgs = [avg for _, avg in yearly_avgs[-3:]]
-        # If current sc_avg differs significantly from latest CSV year, prefer it
-        if sc > 0 and recent_avgs and abs(sc - recent_avgs[-1]) > 5:
-            recent_avgs[-1] = sc
-        if len(recent_avgs) >= 2:
-            trend = recent_avgs[-1] - recent_avgs[0]
-            if trend > 8:
-                trajectory = "rising"
-            elif trend < -8:
-                trajectory = "declining"
-            elif recent_avgs[-1] >= peak_avg * 0.95 and peak_avg >= 90:
-                trajectory = "peaking"
-            else:
-                trajectory = "stable"
-        elif sc > sc_prev + 8 and sc_prev > 0:
-            trajectory = "rising"
-        elif sc < sc_prev - 8 and sc_prev > 0:
-            trajectory = "declining"
+        # Use current season data too
+        if sc > 0 and games >= 3:
+            # Check if current year already in yearly_data
+            cur_year = config.CURRENT_YEAR
+            if not any(y == cur_year for y, _, _, _ in yearly_data):
+                yearly_data.append((cur_year, sc, games, 0))
+
+        yearly_avgs = [avg for _, avg, _, _ in yearly_data]
+        years_elite = sum(1 for avg in yearly_avgs if avg >= 105)
+        years_premium = sum(1 for avg in yearly_avgs if avg >= 90)
+        total_seasons = len(yearly_data)
+
+        peak_avg = max(yearly_avgs, default=0)
+        peak_year = 0
+        if peak_avg > 0:
+            for y, avg, _, _ in yearly_data:
+                if avg == peak_avg:
+                    peak_year = y
+                    break
+
+        # Trajectory: slope of yearly averages (points per year)
+        trajectory = _linear_slope(yearly_avgs) if len(yearly_avgs) >= 2 else 0.0
+
+        # Consistency: 1 - (CV of all game scores). Higher = more consistent.
+        if all_scores and len(all_scores) >= 5:
+            mean_sc = sum(all_scores) / len(all_scores)
+            cv = _std_dev(all_scores) / mean_sc if mean_sc > 0 else 1.0
+            consistency = round(max(0, 1 - cv), 2)
+        elif sc > 0:
+            consistency = 0.5  # unknown
         else:
-            trajectory = "stable"
+            consistency = 0.0
 
-        # ── Classification (order matters — first match wins) ──
+        # Durability: average games per season (max ~22-23)
+        if yearly_data:
+            durability = round(sum(g for _, _, g, _ in yearly_data) / len(yearly_data), 1)
+        else:
+            durability = games or 0
 
-        # ELITE TIER: Genuine gun — top 5% AND proven over multiple years
-        if pct >= 95 and years_elite >= 2 and age < 30:
+        # Age curve: years to/from peak for this position
+        peak_start, peak_end = _POS_PEAK.get(pos, (25, 29))
+        if age < peak_start:
+            peak_phase = "pre-peak"
+            years_to_peak = peak_start - age
+        elif age <= peak_end:
+            peak_phase = "peak"
+            years_to_peak = 0
+        else:
+            peak_phase = "post-peak"
+            years_to_peak = -(age - peak_end)
+
+        # ── Composite keeper value (0-100) ──
+        # Weighted: SC output (35%) + trajectory (15%) + consistency (15%) +
+        #           durability (10%) + age value (15%) + history (10%)
+        sc_score = min(pct, 100) * 0.35
+
+        traj_norm = max(min(trajectory / 10, 1), -1)  # normalise -1 to +1
+        traj_score = (traj_norm + 1) / 2 * 100 * 0.15  # 0-15
+
+        cons_score = consistency * 100 * 0.15  # 0-15
+
+        dur_norm = min(durability / 22, 1)
+        dur_score = dur_norm * 100 * 0.10  # 0-10
+
+        # Age value: pre-peak > peak > post-peak, weighted by how much SC they produce
+        if peak_phase == "pre-peak" and sc >= 60:
+            age_val = min(90 + years_to_peak * 3, 100)
+        elif peak_phase == "peak":
+            age_val = 80
+        elif peak_phase == "post-peak":
+            age_val = max(60 + years_to_peak * 5, 10)  # years_to_peak is negative
+        else:
+            age_val = 50
+        age_score = age_val * 0.15  # 0-15
+
+        hist_val = min(years_premium * 15, 100)
+        hist_score = hist_val * 0.10  # 0-10
+
+        composite = round(sc_score + traj_score + traj_score + cons_score + dur_score + age_score + hist_score, 1)
+        composite = min(composite, 100)
+
+        # ── Classification ──
+        # Elite: top 5% positionally AND multi-year production
+        if pos_pct >= 95 and years_elite >= 2 and age < 31:
             tag, css, tier = "Elite", "elite", 1
-            detail = f"Top {100-pct:.0f}% scorer, {years_elite}yr elite — generational"
+            headline = f"Top {100-pos_pct:.0f}% {pos} — {years_elite}yr elite"
+            detail = f"Averaging {sc:.0f} (top {100-pct:.0f}% overall). {years_premium} seasons at 90+. Peak {peak_avg:.0f} ({peak_year}). {peak_phase.replace('-', ' ').title()} for {pos}."
 
-        elif pct >= 95 and age >= 30:
+        elif pos_pct >= 95 and age >= 31:
             tag, css, tier = "Elite Veteran", "elite-vet", 2
-            detail = f"Top {100-pct:.0f}% at {age} — still dominant"
+            headline = f"Top {100-pos_pct:.0f}% {pos} at {age}"
+            detail = f"Still averaging {sc:.0f} at {age}. Peak was {peak_avg:.0f} ({peak_year}). {years_premium} premium seasons. Post-peak but still producing."
 
-        # PREMIUM TIER: Top 10% OR averaging 100+ this season
-        elif pct >= 90 or (sc >= 100 and games >= 3):
+        elif pos_pct >= 90 or (sc >= 100 and games >= 3):
             tag, css, tier = "Premium", "premium", 3
-            if trajectory == "rising":
-                detail = f"Top {100-pct:.0f}% and trending up — {sc:.0f} avg"
-            elif trajectory == "peaking":
-                detail = f"Career-best form — {sc:.0f} avg, peak is {peak_avg:.0f}"
+            if trajectory > 3:
+                headline = f"Top {100-pos_pct:.0f}% {pos} — trending up"
+            elif peak_phase == "pre-peak":
+                headline = f"Top {100-pos_pct:.0f}% {pos} — hasn't peaked yet"
             else:
-                detail = f"Top {100-pct:.0f}% scorer — averaging {sc:.0f}"
+                headline = f"Top {100-pos_pct:.0f}% {pos} — {sc:.0f} avg"
+            detail = f"Averaging {sc:.0f} ({100-pct:.0f}th percentile overall). Consistency {consistency:.0%}. {durability:.0f} games/season avg."
+            if years_premium >= 2:
+                detail += f" {years_premium} years at 90+."
 
-        # EMERGING: Young + clearly improving + showing real SC output
-        elif age <= 23 and trajectory == "rising" and sc >= 70:
+        elif age <= 23 and trajectory > 5 and sc >= 70:
             tag, css, tier = "Emerging Star", "rising", 4
-            detail = f"Avg up to {sc:.0f} at {age} — on the rise"
+            headline = f"Avg up {trajectory:+.0f}/yr — {sc:.0f} at {age}"
+            detail = f"SC trending up {trajectory:+.1f} per year. Averaging {sc:.0f} as a {age}yo {pos}. {years_to_peak} years to typical {pos} peak."
 
         elif age <= 22 and sc >= 60 and games >= 3:
             tag, css, tier = "Breakout", "breakout", 5
-            detail = f"Averaging {sc:.0f} at {age} — {games} games this year"
+            headline = f"{sc:.0f} avg at {age} — {games} games"
+            detail = f"Young {pos} averaging {sc:.0f} from {games} games. {years_to_peak} years before peak window. Consistency {consistency:.0%}."
 
-        # PROVEN: Reliable mid-tier, scoring above average
-        elif pct >= 70 and age <= 30:
+        elif pos_pct >= 65 and age <= 30:
             tag, css, tier = "Proven", "proven", 6
-            if years_premium >= 2:
-                detail = f"Consistent — {years_premium} years averaging 90+"
-            else:
-                detail = f"Top {100-pct:.0f}% — solid {sc:.0f} avg"
+            headline = f"Top {100-pos_pct:.0f}% {pos} — reliable"
+            detail = f"Averaging {sc:.0f} (top {100-pct:.0f}% overall). {years_premium} seasons at 90+. Durability: {durability:.0f} games/yr."
+            if trajectory < -3:
+                detail += f" Trending down {trajectory:+.1f}/yr."
 
-        # DECLINING: Was good, now clearly below peak
         elif peak_avg >= 90 and sc < peak_avg - 15 and age >= 27:
             tag, css, tier = "Declining", "declining", 10
-            detail = f"Down from {peak_avg:.0f} peak ({peak_year}) to {sc:.0f}"
+            headline = f"Down from {peak_avg:.0f} ({peak_year})"
+            detail = f"Was averaging {peak_avg:.0f} in {peak_year}, now {sc:.0f}. Trajectory {trajectory:+.1f}/yr. {age}yo {pos}, {abs(years_to_peak)} years post-peak."
 
-        # DEVELOPING: Young, hasn't done enough yet
         elif age <= 22 and sc < 60:
             tag, css, tier = "Developing", "developing", 8
-            if sc > 0:
-                detail = f"Averaging {sc:.0f} at {age} — still raw"
-            else:
-                detail = f"Age {age} — yet to establish"
+            headline = f"Age {age} {pos} — early days"
+            detail = f"Averaging {sc:.0f} from {games} games. {years_to_peak} years to {pos} peak window."
 
-        # VETERAN: Older, middling output
-        elif age >= 30 and pct < 70:
+        elif age >= 30 and pos_pct < 65:
             tag, css, tier = "Veteran", "veteran", 11
+            headline = f"{age}yo — {sc:.0f} avg"
             if peak_avg >= 90:
-                detail = f"Past peak ({peak_avg:.0f} in {peak_year}) — now {sc:.0f}"
+                detail = f"Past peak ({peak_avg:.0f} in {peak_year}). Now {sc:.0f}. {years_premium} premium seasons in career."
             else:
-                detail = f"Age {age}, averaging {sc:.0f}"
+                detail = f"Career journeyman averaging {sc:.0f}. Durability: {durability:.0f} games/yr."
 
-        # STEADY: Mid-range, nothing special
-        elif pct >= 50 and age <= 30:
+        elif pos_pct >= 40 and age <= 30:
             tag, css, tier = "Steady", "steady", 7
-            detail = f"Middle of the pack — {sc:.0f} avg"
+            headline = f"Mid-tier {pos} — {sc:.0f} avg"
+            detail = f"Positional rank: top {100-pos_pct:.0f}% of {pos}s. Overall: top {100-pct:.0f}%. Consistency {consistency:.0%}."
 
-        # FRINGE: Below average SC, not young enough to develop
-        elif age >= 25 and pct < 50:
+        elif age >= 25 and pos_pct < 40:
             tag, css, tier = "Fringe", "fringe", 12
-            detail = f"Below average — {sc:.0f} avg at {age}"
+            headline = f"Bottom half {pos} — {sc:.0f} avg"
+            detail = f"Below average for {pos} (bottom {pos_pct:.0f}%). {age}yo. Durability: {durability:.0f} games/yr."
 
-        # PROJECT: Young but no real SC output yet
         elif age <= 23 and sc < 60:
             tag, css, tier = "Project", "project", 9
-            detail = f"Age {age} — potential upside, limited output"
+            headline = f"Age {age} — limited output"
+            detail = f"Averaging {sc:.0f}. Young enough to develop — {years_to_peak} years to {pos} peak."
 
-        # FALLBACK
         else:
             tag, css, tier = "Unclassified", "fringe", 13
-            detail = f"{sc:.0f} avg, age {age}"
+            headline = f"{sc:.0f} avg, {age}yo {pos}"
+            detail = f"Position rank: {pos_pct:.0f}th percentile. Overall: {pct:.0f}th percentile."
 
         tags[p.id] = {
             "tag": tag,
             "css": css,
-            "detail": detail,
             "tier": tier,
-            "sc_pct": pct,
-            "trajectory": trajectory,
-            "years_elite": years_elite,
-            "years_premium": years_premium,
+            "headline": headline,
+            "detail": detail,
+            "composite": composite,
+            "pos_pct": pos_pct,
+            "global_pct": pct,
+            "trajectory": round(trajectory, 1),
+            "consistency": consistency,
+            "durability": durability,
             "peak_avg": round(peak_avg, 1),
             "peak_year": peak_year,
+            "years_elite": years_elite,
+            "years_premium": years_premium,
+            "peak_phase": peak_phase,
         }
 
     return tags
