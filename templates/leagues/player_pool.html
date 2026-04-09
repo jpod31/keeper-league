@@ -68,10 +68,12 @@
   .pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #6e7681; }
   .pm-row2 b { color: #c9d1d9; font-weight: 700; }
   .pm-sep { width: 1px; height: 9px; background: #21262d; flex-shrink: 0; }
-  .pm-l3 { font-weight: 700; }
-  .pm-l3-up { color: #3fb950; }
-  .pm-l3-down { color: #f85149; }
-  .pm-l3-flat { color: #8b949e; }
+  .pm-l3 { color: #c9d1d9; }
+  .pm-l3 b { font-weight: 700; }
+  .pm-l3-delta { font-size: .58rem; font-weight: 700; margin-left: 2px; }
+  .pm-l3-delta-up { color: #3fb950; }
+  .pm-l3-delta-down { color: #f85149; }
+  .pm-l3-delta-flat { color: #484f58; }
   .pm-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
   .pm-sc { font-size: 1.05rem; font-weight: 800; color: #e6edf3; line-height: 1; }
   .pm-sc-none { color: #484f58; font-size: .85rem; }
@@ -368,9 +370,12 @@
               <span>{{ p.games_played or 0 }}gp</span>
               {% if pr.l3 %}
                 <span class="pm-sep"></span>
-                {% set l3_diff = pr.l3 - (sc_display or 0) %}
-                <span class="pm-l3 {% if l3_diff > 3 %}pm-l3-up{% elif l3_diff < -3 %}pm-l3-down{% else %}pm-l3-flat{% endif %}">
-                  L3 <b>{{ '%.0f'|format(pr.l3) }}</b>{% if l3_diff > 3 %}<i class="bi bi-caret-up-fill" style="font-size:.55rem;"></i>{% elif l3_diff < -3 %}<i class="bi bi-caret-down-fill" style="font-size:.55rem;"></i>{% endif %}
+                {% set l3_diff = pr.l3 - (sc_display or pr.l3) %}
+                {% set l3_pct = (l3_diff / (sc_display or pr.l3) * 100) if (sc_display or pr.l3) else 0 %}
+                <span class="pm-l3">L3 <b>{{ '%.0f'|format(pr.l3) }}</b>
+                  {% if l3_pct > 2 %}<span class="pm-l3-delta pm-l3-delta-up">+{{ '%.0f'|format(l3_pct) }}%</span>
+                  {% elif l3_pct < -2 %}<span class="pm-l3-delta pm-l3-delta-down">{{ '%.0f'|format(l3_pct) }}%</span>
+                  {% else %}<span class="pm-l3-delta pm-l3-delta-flat">-</span>{% endif %}
                 </span>
               {% endif %}
               {% if owner_team %}
