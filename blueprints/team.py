@@ -1814,6 +1814,19 @@ def team_analytics(league_id, team_id):
                              daemon=True)
         t.start()
 
+    # Generate AI summary synchronously if not cached (only ~3s for GPT call)
+    if not ai_summary and analytics:
+        try:
+            ai_summary = generate_team_summary(team_id, team.name, year, analytics, team_comparison or {})
+            if ai_summary:
+                cache_analytics(team_id, year, "ai_summary", ai_summary)
+        except Exception:
+            logger.debug("AI summary sync generation failed", exc_info=True)
+
+    # Ensure ai_summary is a string
+    if isinstance(ai_summary, dict):
+        ai_summary = ai_summary.get("text", "")
+
     return render_template("team/analytics.html",
                            league=league, team=team,
                            projection=projection,
@@ -1822,7 +1835,7 @@ def team_analytics(league_id, team_id):
                            form_data=form_data,
                            a=analytics,
                            lc=team_comparison,
-                           ai_summary=ai_summary if not isinstance(ai_summary, dict) else ai_summary.get("text", ""))
+                           ai_summary=ai_summary)
 
 
 # ── Team logo generation & serving ──────────────────────────────────

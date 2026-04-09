@@ -56,6 +56,7 @@
   <h2>Team Analytics</h2>
 </div>
 
+{% set role_labels = {'small_fwd':'Small Fwd','mid_fwd':'Med Fwd','key_fwd':'Key Fwd','small_mid':'Small Mid','tall_mid':'Tall Mid','small_def':'Small Def','key_def':'Key Def','ruck':'Ruck'} %}
 {% if a %}
 <div class="an">
 
@@ -92,8 +93,9 @@
   </div>
   <div class="col-lg-9">
     <div class="an-stats" style="height:100%;">
-      <div class="an-stat"><div class="an-val" style="color:#e6edf3;">{{ a.mc_p50|default(0)|int }}</div><div class="an-lbl">Projected</div><div class="an-sub an-fl">{{ a.mc_p10|default(0)|int }}–{{ a.mc_p90|default(0)|int }}</div></div>
-      <div class="an-stat"><div class="an-val" style="color:#58a6ff;">{{ a.avg_sc|default(0) }}</div><div class="an-lbl">Avg SC</div>{% if a.league_context %}<div class="an-sub"><span class="an-rank">{{ a.league_context.avg_sc_rank }}/{{ a.league_context.n_teams }}</span></div>{% endif %}</div>
+      <div class="an-stat"><div class="an-val" style="color:#e6edf3;">{{ (a.mc_p50 or a.total_sc or 0)|int }}</div><div class="an-lbl">Projected</div><div class="an-sub an-fl">{{ (a.mc_p10 or 0)|int }}–{{ (a.mc_p90 or 0)|int }}</div></div>
+      {% set lc_sc = a.league_context.avg_sc_rank if a.league_context is defined and a.league_context is mapping else {} %}
+      <div class="an-stat"><div class="an-val" style="color:#58a6ff;">{{ a.avg_sc|default(0) }}</div><div class="an-lbl">Avg SC</div>{% if lc_sc %}<div class="an-sub"><span class="an-rank">{{ lc_sc.rank|default('?') }}/{{ lc_sc.of|default('?') }}</span></div>{% endif %}</div>
       <div class="an-stat"><div class="an-val" style="color:{% if a.form_vs_season|default(0) > 0 %}#3fb950{% elif a.form_vs_season|default(0) < 0 %}#ef4444{% else %}#8b949e{% endif %};">{{ '%+.0f'|format(a.form_vs_season|default(0)) }}</div><div class="an-lbl">Form</div></div>
       <div class="an-stat"><div class="an-window an-window-{{ a.window|default('balanced')|lower|replace(' ', '') }}">{{ a.window|default('?') }}</div><div class="an-lbl" style="margin-top:6px;">Window</div></div>
       <div class="an-stat"><div class="an-val" style="color:#e6edf3;">{{ a.avg_age|default(0) }}</div><div class="an-lbl">Avg Age</div><div class="an-sub {% if a.age_vs_league|default(0) < 0 %}an-up{% elif a.age_vs_league|default(0) > 0 %}an-dn{% else %}an-fl{% endif %}">{{ '%+.1f'|format(a.age_vs_league|default(0)) }} vs lg</div></div>
@@ -194,8 +196,8 @@
   <div class="an-body" style="padding:0;overflow-x:auto;">
     <table class="table table-sm table-dark mb-0 an-tbl">
       <thead><tr>
-        <th style="padding-left:12px;">Player</th><th class="text-center">Role</th><th class="text-center">Age</th>
-        <th class="text-end">Raw</th><th class="text-end">True Talent</th><th class="text-end">vs Curve</th>
+        <th style="padding-left:12px;">Player</th><th class="text-center">Type</th><th class="text-center">Age</th>
+        <th class="text-end">Avg</th><th class="text-end">Est. Avg</th><th class="text-end">vs Curve</th>
         <th class="text-end">Ceiling</th><th class="text-end">Floor</th><th class="text-center">Profile</th><th>Form</th>
       </tr></thead>
       <tbody>
@@ -204,7 +206,7 @@
         {% for p in (field_pb if field_pb else pb)[:23] %}
         <tr>
           <td style="padding-left:12px;font-weight:600;color:#e6edf3;">{{ p.name }}</td>
-          <td class="text-center" style="font-size:.6rem;color:#8b949e;">{{ p.get('role_bucket', p.get('position','')) }}</td>
+          <td class="text-center" style="font-size:.6rem;color:#8b949e;">{{ role_labels.get(p.get('role_bucket',''), p.get('position','')) }}</td>
           <td class="text-center" style="color:#8b949e;">{{ p.age }}</td>
           <td class="text-end">{{ p.get('raw_avg', p.get('sc',0))|int }}</td>
           <td class="text-end" style="font-weight:700;color:#e6edf3;">{{ p.get('true_talent', p.get('sc',0))|int }}</td>
@@ -256,7 +258,9 @@ document.addEventListener('DOMContentLoaded', function() {
       var cy = pad.t + (1-(sc-minSC)/(maxSC-minSC))*pH;
       var r = Math.max(3, Math.min(7, (p.games||1)/3));
       var color = tagColors[p.tag]||'#484f58';
-      svg+='<circle class="scatter-dot" cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r+'" fill="'+color+'" opacity=".8"><title>'+p.name+' ('+p.age+', '+(sc).toFixed(0)+' SC, '+p.role_bucket+')</title></circle>';
+      var roleLabels = {'small_fwd':'Small Fwd','mid_fwd':'Med Fwd','key_fwd':'Key Fwd','small_mid':'Small Mid','tall_mid':'Tall Mid','small_def':'Small Def','key_def':'Key Def','ruck':'Ruck'};
+      var rl = roleLabels[p.role_bucket]||p.position||'';
+      svg+='<circle class="scatter-dot" cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r+'" fill="'+color+'" opacity=".8"><title>'+p.name+' ('+p.age+'yo, '+(sc).toFixed(0)+' SC, '+rl+')</title></circle>';
     });
     svg+='</svg>';
     wrap.innerHTML = svg;
