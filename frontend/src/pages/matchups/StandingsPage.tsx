@@ -23,7 +23,7 @@ export function StandingsPage() {
   const { league } = useLeague()
   const { data, loading } = useFetch<Standing[]>(`/api/leagues/${leagueId}/standings`)
   const [view, setView] = useState<'ladder' | 'rankings'>('ladder')
-  const finalsTeams = 4
+  const finalsTeams = 0 // no finals highlight unless API says otherwise
 
   if (loading) return <Spinner text="Loading standings..." />
   if (!data) return <p className="text-danger">Failed to load standings</p>
