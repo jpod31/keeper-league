@@ -29,6 +29,16 @@ _POS_PEAK = {
     "RUC": (26, 30),
 }
 
+# Positional scarcity: multiplier for composite score.
+# Higher = harder to find good scorers at this position.
+# Derived from % of players at 80+ SC: FWD(20%) > DEF(27%) > MID/RUC(44%)
+_POS_SCARCITY = {
+    "FWD": 1.20,   # hardest to find premium scorers
+    "DEF": 1.10,   # moderately scarce
+    "MID": 1.00,   # baseline — most supply
+    "RUC": 1.15,   # tiny pool makes each one more valuable
+}
+
 
 def _load_sc_history():
     """Load per-game SC scores from CSVs into structured history.
@@ -222,22 +232,29 @@ def compute_profile_tags(players):
         hist_val = min(years_premium * 15, 100)
         hist_score = hist_val * 0.10  # 0-10
 
-        composite = round(sc_score + traj_score + traj_score + cons_score + dur_score + age_score + hist_score, 1)
-        composite = min(composite, 100)
+        raw_composite = sc_score + traj_score + cons_score + dur_score + age_score + hist_score
+
+        # Apply positional scarcity multiplier
+        scarcity = _POS_SCARCITY.get(pos, 1.0)
+        composite = round(min(raw_composite * scarcity, 100), 1)
+
+        # Scarcity-adjusted effective percentile for classification
+        # A FWD at 75th percentile is effectively as scarce as a MID at 90th
+        eff_pos_pct = min(pos_pct * scarcity, 100)
 
         # ── Classification ──
-        # Elite: top 5% positionally AND multi-year production
-        if pos_pct >= 95 and years_elite >= 2 and age < 31:
+        # Elite: top 5% positionally (scarcity-adjusted) AND multi-year production
+        if eff_pos_pct >= 95 and years_elite >= 2 and age < 31:
             tag, css, tier = "Elite", "elite", 1
             headline = f"Top {100-pos_pct:.0f}% {pos} — {years_elite}yr elite"
             detail = f"Averaging {sc:.0f} (top {100-pct:.0f}% overall). {years_premium} seasons at 90+. Peak {peak_avg:.0f} ({peak_year}). {peak_phase.replace('-', ' ').title()} for {pos}."
 
-        elif pos_pct >= 95 and age >= 31:
+        elif eff_pos_pct >= 95 and age >= 31:
             tag, css, tier = "Elite Veteran", "elite-vet", 2
             headline = f"Top {100-pos_pct:.0f}% {pos} at {age}"
             detail = f"Still averaging {sc:.0f} at {age}. Peak was {peak_avg:.0f} ({peak_year}). {years_premium} premium seasons. Post-peak but still producing."
 
-        elif pos_pct >= 90 or (sc >= 100 and games >= 3):
+        elif eff_pos_pct >= 90 or (sc >= 100 and games >= 3):
             tag, css, tier = "Premium", "premium", 3
             if trajectory > 3:
                 headline = f"Top {100-pos_pct:.0f}% {pos} — trending up"
@@ -259,7 +276,7 @@ def compute_profile_tags(players):
             headline = f"{sc:.0f} avg at {age} — {games} games"
             detail = f"Young {pos} averaging {sc:.0f} from {games} games. {years_to_peak} years before peak window. Consistency {consistency:.0%}."
 
-        elif pos_pct >= 65 and age <= 30:
+        elif eff_pos_pct >= 65 and age <= 30:
             tag, css, tier = "Proven", "proven", 6
             headline = f"Top {100-pos_pct:.0f}% {pos} — reliable"
             detail = f"Averaging {sc:.0f} (top {100-pct:.0f}% overall). {years_premium} seasons at 90+. Durability: {durability:.0f} games/yr."
@@ -276,7 +293,7 @@ def compute_profile_tags(players):
             headline = f"Age {age} {pos} — early days"
             detail = f"Averaging {sc:.0f} from {games} games. {years_to_peak} years to {pos} peak window."
 
-        elif age >= 30 and pos_pct < 65:
+        elif age >= 30 and eff_pos_pct < 65:
             tag, css, tier = "Veteran", "veteran", 11
             headline = f"{age}yo — {sc:.0f} avg"
             if peak_avg >= 90:
@@ -284,12 +301,12 @@ def compute_profile_tags(players):
             else:
                 detail = f"Career journeyman averaging {sc:.0f}. Durability: {durability:.0f} games/yr."
 
-        elif pos_pct >= 40 and age <= 30:
+        elif eff_pos_pct >= 40 and age <= 30:
             tag, css, tier = "Steady", "steady", 7
             headline = f"Mid-tier {pos} — {sc:.0f} avg"
             detail = f"Positional rank: top {100-pos_pct:.0f}% of {pos}s. Overall: top {100-pct:.0f}%. Consistency {consistency:.0%}."
 
-        elif age >= 25 and pos_pct < 40:
+        elif age >= 25 and eff_pos_pct < 40:
             tag, css, tier = "Fringe", "fringe", 12
             headline = f"Bottom half {pos} — {sc:.0f} avg"
             detail = f"Below average for {pos} (bottom {pos_pct:.0f}%). {age}yo. Durability: {durability:.0f} games/yr."
@@ -311,7 +328,9 @@ def compute_profile_tags(players):
             "headline": headline,
             "detail": detail,
             "composite": composite,
+            "scarcity": scarcity,
             "pos_pct": pos_pct,
+            "eff_pos_pct": round(eff_pos_pct, 1),
             "global_pct": pct,
             "trajectory": round(trajectory, 1),
             "consistency": consistency,
