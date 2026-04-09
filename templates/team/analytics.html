@@ -106,13 +106,14 @@
   </div>
 </div>
 
-{# ═══════════════ CONTENTION TIMELINE (ECharts) ═══════════════ #}
-{% if contention and contention.years %}
+{# ═══════════════ DYNASTY PROJECTION (ECharts — all teams) ═══════════════ #}
+{% if dynasty %}
 <div class="wr-section">
-  <div class="wr-stitle"><i class="bi bi-calendar-range"></i>Contention Window</div>
+  <div class="wr-stitle"><i class="bi bi-calendar-range"></i>5-Year Dynasty Projection — All Teams</div>
   <div class="wr-card">
     <div class="wr-body" style="padding:8px 12px;">
-      <div id="contentionChart" class="wr-chart" style="height:220px;"></div>
+      <div id="dynastyChart" class="wr-chart" style="height:300px;"></div>
+      <div style="font-size:.62rem;color:#6e7681;margin-top:6px;text-align:center;">Projected best-23 score by year, auto-selecting optimal lineup from full roster. Kids develop and displace aging veterans over time.</div>
     </div>
   </div>
 </div>
@@ -330,42 +331,62 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   var a = {{ a|tojson }};
-  var contention = {{ contention|tojson if contention else '{}' }};
+  var dynasty = {{ dynasty|tojson if dynasty else '{}' }};
+  var myTeamId = {{ team.id }};
 
-  // ═══ CONTENTION TIMELINE (ECharts area) ═══
-  var ctEl = document.getElementById('contentionChart');
-  if (ctEl && contention.years) {
-    var ct = echarts.init(ctEl, null, {renderer: 'canvas'});
-    var years = contention.years;
-    var labels = years.map(function(y){return y.label});
-    var values = years.map(function(y){return y.total});
-    var colors = years.map(function(y){return y.status === 'strong' ? '#3fb950' : y.status === 'moderate' ? '#fbbf24' : '#ef4444'});
+  // ═══ DYNASTY PROJECTION (ECharts — all teams overlaid) ═══
+  var dynEl = document.getElementById('dynastyChart');
+  if (dynEl && Object.keys(dynasty).length) {
+    var dyn = echarts.init(dynEl, null, {renderer: 'canvas'});
+    var teamColors = {'{{ team.id }}': '#58a6ff'};
+    var greyIdx = 0;
+    var greys = ['#4b5563','#6b7280','#9ca3af','#d1d5db','#374151'];
 
-    ct.setOption({
+    var series = [];
+    var xLabels = null;
+
+    Object.keys(dynasty).forEach(function(tid) {
+      var t = dynasty[tid];
+      var isYou = parseInt(tid) === myTeamId;
+      if (!xLabels) xLabels = t.years.map(function(y){return y.year});
+      var data = t.years.map(function(y){return y.total});
+
+      series.push({
+        name: t.name,
+        type: 'line', data: data, smooth: true,
+        lineStyle: {width: isYou ? 3.5 : 1.5, color: isYou ? '#58a6ff' : greys[greyIdx % greys.length]},
+        itemStyle: {color: isYou ? '#58a6ff' : greys[greyIdx % greys.length], borderColor: '#0d1117', borderWidth: isYou ? 2 : 1},
+        symbol: isYou ? 'circle' : 'none',
+        symbolSize: isYou ? 8 : 0,
+        areaStyle: isYou ? {color: {type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: 'rgba(88,166,255,.12)'}, {offset: 1, color: 'rgba(88,166,255,.01)'}]}} : null,
+        z: isYou ? 10 : 1,
+        label: isYou ? {show: true, position: 'top', color: '#e6edf3', fontSize: 12, fontWeight: 700, formatter: function(p){return p.value.toLocaleString()}} : {show: false},
+      });
+      if (!isYou) greyIdx++;
+    });
+
+    dyn.setOption({
       tooltip: {
-        trigger: 'axis',
-        backgroundColor: '#0d1117', borderColor: '#30363d', textStyle: {color: '#c9d1d9', fontSize: 12},
+        trigger: 'axis', backgroundColor: '#0d1117', borderColor: '#30363d', textStyle: {color: '#c9d1d9', fontSize: 11},
         formatter: function(params) {
-          var idx = params[0].dataIndex;
-          var yr = years[idx];
-          var html = '<b>' + yr.label + '</b>: ' + yr.total.toLocaleString() + ' SC';
-          (yr.events || []).forEach(function(ev) { html += '<br><span style="color:#8b949e;font-size:11px;">' + ev + '</span>'; });
+          params.sort(function(a,b){return b.value - a.value});
+          var html = '<b>' + params[0].axisValue + '</b><br>';
+          params.forEach(function(p) {
+            var isYou = p.seriesName === dynasty[myTeamId].name;
+            html += '<span style="color:' + p.color + ';">●</span> ' +
+              (isYou ? '<b>' : '') + p.seriesName + ': ' + p.value.toLocaleString() +
+              (isYou ? '</b>' : '') + '<br>';
+          });
           return html;
         }
       },
-      grid: {top: 30, right: 20, bottom: 30, left: 50},
-      xAxis: {type: 'category', data: labels, axisLine: {lineStyle: {color: '#21262d'}}, axisLabel: {color: '#8b949e', fontSize: 12, fontWeight: 600}},
-      yAxis: {type: 'value', min: function(v){return Math.floor(v.min * 0.95)}, axisLine: {show: false}, splitLine: {lineStyle: {color: '#161b22'}}, axisLabel: {color: '#6e7681', fontSize: 10}},
-      series: [{
-        type: 'line', data: values, smooth: true,
-        lineStyle: {width: 3, color: '#58a6ff'},
-        areaStyle: {color: {type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: 'rgba(88,166,255,.2)'}, {offset: 1, color: 'rgba(88,166,255,.02)'}]}},
-        symbol: 'circle', symbolSize: 10,
-        itemStyle: {color: function(params) { return colors[params.dataIndex]; }, borderColor: '#0d1117', borderWidth: 2},
-        label: {show: true, position: 'top', color: '#e6edf3', fontSize: 13, fontWeight: 700, formatter: function(p){return p.value.toLocaleString()}}
-      }]
+      legend: {show: true, bottom: 0, textStyle: {color: '#8b949e', fontSize: 10}, itemWidth: 12, itemHeight: 2},
+      grid: {top: 20, right: 20, bottom: 40, left: 55},
+      xAxis: {type: 'category', data: xLabels, axisLine: {lineStyle: {color: '#21262d'}}, axisLabel: {color: '#8b949e', fontSize: 11, fontWeight: 600}},
+      yAxis: {type: 'value', min: function(v){return Math.floor(v.min * 0.9)}, axisLine: {show: false}, splitLine: {lineStyle: {color: '#161b22'}}, axisLabel: {color: '#6e7681', fontSize: 10}},
+      series: series,
     });
-    window.addEventListener('resize', function(){ct.resize()});
+    window.addEventListener('resize', function(){dyn.resize()});
   }
 
   // ═══ ROSTER MAP (ECharts scatter) ═══

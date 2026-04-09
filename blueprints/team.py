@@ -1752,6 +1752,7 @@ def team_analytics(league_id, team_id):
         compute_trade_table, compute_contention_timeline,
         compute_squad_depth, compute_league_landscape,
     )
+    from models.dynasty_sim import simulate_dynasty
 
     year = league.season_year
 
@@ -1863,8 +1864,14 @@ def team_analytics(league_id, team_id):
 
             landscape = compute_league_landscape(league_id, year, profile_tags)
             cache_analytics(team_id, year, "landscape", landscape)
+
+            # Dynasty simulation (5 years, all teams)
+            dynasty = simulate_dynasty(league_id, year, profile_tags, years_ahead=5)
+            cache_analytics(0, year, "dynasty_sim", dynasty)
         except Exception:
             logger.debug("War room computation failed", exc_info=True)
+
+    dynasty = get_cached_analytics(0, year, "dynasty_sim")
 
     # Generate AI summary synchronously if not cached (only ~3s for GPT call)
     if not ai_summary and analytics:
@@ -1903,7 +1910,8 @@ def team_analytics(league_id, team_id):
                            trade_table=trade_table,
                            contention=contention,
                            squad_depth=squad_depth_data,
-                           landscape=landscape)
+                           landscape=landscape,
+                           dynasty=dynasty)
 
 
 # ── Team logo generation & serving ──────────────────────────────────
