@@ -1744,6 +1744,7 @@ def team_analytics(league_id, team_id):
     )
     from models.profile_tags import compute_profile_tags
     from models.team_analytics import compute_deep_analytics
+    from models.team_ai_summary import generate_team_summary, compute_league_comparison
 
     year = league.season_year
 
@@ -1753,10 +1754,30 @@ def team_analytics(league_id, team_id):
     bye_clashes = detect_bye_clashes(team_id, year)
     form_data = get_team_form(team_id, year)
 
-    # Deep analytics
+    # Deep analytics for ALL teams (needed for league comparison)
     all_players = AflPlayer.query.all()
     profile_tags = compute_profile_tags(all_players)
-    analytics = compute_deep_analytics(team_id, league_id, year, profile_tags)
+
+    league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    all_team_analytics = {}
+    for lt in league_teams:
+        try:
+            all_team_analytics[lt.id] = compute_deep_analytics(lt.id, league_id, year, profile_tags)
+        except Exception:
+            logger.debug("Analytics failed for team %d", lt.id, exc_info=True)
+
+    analytics = all_team_analytics.get(team_id, {})
+
+    # League comparison rankings
+    league_comp = compute_league_comparison(league_id, year, all_team_analytics)
+    team_comparison = league_comp.get(team_id, {})
+
+    # AI summary (cached)
+    ai_summary = None
+    try:
+        ai_summary = generate_team_summary(team_id, team.name, year, analytics, team_comparison)
+    except Exception:
+        logger.debug("AI summary failed for team %d", team_id, exc_info=True)
 
     return render_template("team/analytics.html",
                            league=league, team=team,
@@ -1764,7 +1785,10 @@ def team_analytics(league_id, team_id):
                            captain_recs=captain_recs,
                            bye_clashes=bye_clashes,
                            form_data=form_data,
-                           a=analytics)
+                           a=analytics,
+                           lc=team_comparison,
+                           ai_summary=ai_summary,
+                           all_team_analytics=all_team_analytics)
 
 
 # ── Team logo generation & serving ──────────────────────────────────

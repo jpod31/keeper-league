@@ -2,31 +2,42 @@
 {% set active_tab = 'team' %}
 {% block league_content %}
 <style>
-  .ta-card { background:#161b22; border:1px solid #21262d; border-radius:10px; overflow:hidden; margin-bottom:12px; }
-  .ta-hdr { background:#0d1117; border-bottom:1px solid #21262d; padding:10px 16px; font-size:.78rem; font-weight:700; color:#e6edf3; display:flex; align-items:center; gap:6px; }
-  .ta-body { padding:14px 16px; }
-  .ta-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); gap:8px; }
-  .ta-stat { text-align:center; padding:12px 6px; background:#0d1117; border-radius:8px; }
-  .ta-val { font-size:1.3rem; font-weight:800; line-height:1; }
-  .ta-lbl { font-size:.58rem; color:#6e7681; text-transform:uppercase; letter-spacing:.5px; margin-top:3px; }
-  .ta-sub { font-size:.62rem; margin-top:2px; }
+  .ta-card { background:#161b22; border:1px solid #21262d; border-radius:12px; overflow:hidden; margin-bottom:14px; }
+  .ta-hdr { background:#0d1117; border-bottom:1px solid #21262d; padding:12px 18px; font-size:.8rem; font-weight:700; color:#e6edf3; }
+  .ta-body { padding:16px 18px; }
+  .ta-summary { font-size:.88rem; color:#c9d1d9; line-height:1.7; }
+  .ta-summary p { margin-bottom:12px; }
+  .ta-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; }
+  .ta-stat { text-align:center; padding:14px 8px; background:#0d1117; border-radius:10px; border:1px solid #21262d; }
+  .ta-val { font-size:1.5rem; font-weight:800; line-height:1; }
+  .ta-lbl { font-size:.6rem; color:#8b949e; text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+  .ta-sub { font-size:.65rem; margin-top:3px; }
   .ta-up { color:#3fb950; } .ta-down { color:#ef4444; } .ta-flat { color:#6e7681; }
-  .ta-badge { display:inline-block; padding:3px 10px; border-radius:10px; font-size:.7rem; font-weight:700; }
+  .ta-rank { font-size:.6rem; font-weight:700; padding:1px 6px; border-radius:8px; }
+  .ta-rank-1 { background:rgba(251,191,36,.2); color:#fbbf24; }
+  .ta-rank-2 { background:rgba(192,192,192,.15); color:#c0c0c0; }
+  .ta-rank-3 { background:rgba(205,127,50,.15); color:#cd7f32; }
+  .ta-rank-other { background:rgba(139,148,158,.1); color:#8b949e; }
+  .ta-badge { display:inline-block; padding:4px 12px; border-radius:10px; font-size:.72rem; font-weight:700; }
   .ta-badge-winnow { background:rgba(251,191,36,.15); color:#fbbf24; }
   .ta-badge-building { background:rgba(59,130,246,.15); color:#60a5fa; }
   .ta-badge-declining { background:rgba(239,68,68,.15); color:#ef4444; }
   .ta-badge-balanced { background:rgba(139,148,158,.12); color:#94a3b8; }
-  .ta-bar { height:6px; border-radius:3px; background:#21262d; overflow:hidden; margin-top:2px; }
-  .ta-bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,#3fb950,#1f6feb); }
-  .ta-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid #161b22; font-size:.76rem; }
-  .ta-row:last-child { border-bottom:none; }
-  .ta-name { flex:1; color:#e6edf3; font-weight:600; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ta-sep { width:1px; height:10px; background:#21262d; }
-  .ta-pos { font-size:.6rem; font-weight:700; padding:1px 5px; border-radius:3px; min-width:26px; text-align:center; }
-  .ta-rec { padding:10px 14px; background:#0d1117; border-radius:8px; margin-bottom:8px; font-size:.78rem; }
-  .ta-rec-title { font-weight:700; color:#e6edf3; margin-bottom:2px; }
-  .ta-rec-detail { color:#8b949e; font-size:.7rem; }
-  @media(max-width:768px) { .ta-grid { grid-template-columns:repeat(2,1fr); } .ta-val { font-size:1.1rem; } }
+  .ta-compare-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #161b22; font-size:.78rem; }
+  .ta-compare-row:last-child { border-bottom:none; }
+  .ta-compare-name { flex:1; font-weight:600; color:#e6edf3; }
+  .ta-compare-val { min-width:45px; text-align:right; font-weight:600; }
+  .ta-bar { height:6px; border-radius:3px; background:#21262d; overflow:hidden; }
+  .ta-bar-fill { height:100%; border-radius:3px; }
+  .ta-rec { padding:12px 16px; background:#0d1117; border-radius:10px; margin-bottom:8px; border-left:3px solid #30363d; }
+  .ta-player-tbl { font-size:.74rem; }
+  .ta-player-tbl th { color:#6e7681; font-weight:600; padding:8px; }
+  .ta-player-tbl td { padding:8px; border-bottom:1px solid #161b22; }
+  @media(max-width:768px) {
+    .ta-grid { grid-template-columns:repeat(2,1fr); }
+    .ta-val { font-size:1.2rem; }
+    .ta-summary { font-size:.82rem; }
+  }
 </style>
 
 <div class="page-header">
@@ -37,185 +48,226 @@
 </div>
 
 {% if a %}
-{# ════════ HEADLINE METRICS ════════ #}
-<div class="ta-grid" style="grid-template-columns:repeat(auto-fit, minmax(140px,1fr));margin-bottom:14px;">
+
+{# ════════ AI SUMMARY — THE HERO ════════ #}
+{% if ai_summary %}
+<div class="ta-card" style="border-color:rgba(88,166,255,.2);">
+  <div class="ta-hdr" style="background:linear-gradient(135deg,rgba(88,166,255,.06),rgba(63,185,80,.04));">
+    <i class="bi bi-stars me-2" style="color:#58a6ff;"></i>Team Intelligence Report
+  </div>
+  <div class="ta-body ta-summary">{{ ai_summary }}</div>
+</div>
+{% endif %}
+
+{# ════════ KEY METRICS WITH LEAGUE RANK ════════ #}
+<div class="ta-grid" style="margin-bottom:16px;">
   <div class="ta-stat">
-    <div class="ta-val" style="color:#e6edf3;">{{ a.mc_p50|int }}</div>
-    <div class="ta-lbl">Projected Score</div>
-    <div class="ta-sub" style="color:#6e7681;">{{ a.mc_p10|int }}–{{ a.mc_p90|int }} range</div>
+    <div class="ta-val" style="color:#e6edf3;">{{ a.mc_p50|default(0)|int }}</div>
+    <div class="ta-lbl">Weekly Projection</div>
+    <div class="ta-sub ta-flat">{{ a.mc_p10|default(0)|int }}–{{ a.mc_p90|default(0)|int }} range</div>
   </div>
   <div class="ta-stat">
-    <div class="ta-val" style="color:#58a6ff;">{{ a.avg_sc }}</div>
+    <div class="ta-val" style="color:#58a6ff;">{{ a.avg_sc|default(0) }}</div>
     <div class="ta-lbl">Avg SC / Player</div>
-    <div class="ta-sub {% if a.sc_vs_league > 0 %}ta-up{% elif a.sc_vs_league < 0 %}ta-down{% else %}ta-flat{% endif %}">{{ '%+.1f'|format(a.sc_vs_league) }} vs league</div>
+    {% if lc %}<div class="ta-sub"><span class="ta-rank ta-rank-{{ lc.sc_rank if lc.sc_rank <= 3 else 'other' }}">{{ lc.sc_rank }}/{{ lc.total_teams }}</span></div>{% endif %}
   </div>
   <div class="ta-stat">
-    <div class="ta-val" style="color:#d2a8ff;">{{ a.quality_pct }}%</div>
+    <div class="ta-val" style="color:#d2a8ff;">{{ a.quality_pct|default(0) }}%</div>
     <div class="ta-lbl">Roster Quality</div>
+    {% if lc %}<div class="ta-sub"><span class="ta-rank ta-rank-{{ lc.quality_rank if lc.quality_rank <= 3 else 'other' }}">{{ lc.quality_rank }}/{{ lc.total_teams }}</span></div>{% endif %}
   </div>
   <div class="ta-stat">
-    <div class="ta-val" style="color:{% if a.form_vs_season > 0 %}#3fb950{% elif a.form_vs_season < 0 %}#ef4444{% else %}#8b949e{% endif %};">{{ '%+.0f'|format(a.form_vs_season) }}</div>
+    <div class="ta-val" style="color:{% if a.form_vs_season|default(0) > 0 %}#3fb950{% elif a.form_vs_season|default(0) < 0 %}#ef4444{% else %}#8b949e{% endif %};">{{ '%+.0f'|format(a.form_vs_season|default(0)) }}</div>
     <div class="ta-lbl">Form vs Season</div>
-    <div class="ta-sub ta-flat">L3 avg {{ a.form_avg|int }}</div>
+    {% if lc %}<div class="ta-sub"><span class="ta-rank ta-rank-{{ lc.form_rank if lc.form_rank <= 3 else 'other' }}">{{ lc.form_rank }}/{{ lc.total_teams }} form</span></div>{% endif %}
   </div>
   <div class="ta-stat">
-    <div class="ta-badge ta-badge-{{ a.window|lower|replace(' ', '') }}">{{ a.window }}</div>
-    <div class="ta-lbl" style="margin-top:6px;">Window</div>
-    <div class="ta-sub ta-flat">{{ a.window_detail }}</div>
+    <div class="ta-badge ta-badge-{{ a.window|default('balanced')|lower|replace(' ', '') }}">{{ a.window|default('?') }}</div>
+    <div class="ta-lbl" style="margin-top:8px;">Window</div>
   </div>
   <div class="ta-stat">
-    <div class="ta-val" style="color:#fb923c;">{{ a.total_vorp }}</div>
-    <div class="ta-lbl">Total VORP</div>
+    <div class="ta-val" style="color:#e6edf3;">{{ a.avg_age|default(0) }}</div>
+    <div class="ta-lbl">Avg Age</div>
+    <div class="ta-sub {% if a.age_vs_league|default(0) < 0 %}ta-up{% elif a.age_vs_league|default(0) > 0 %}ta-down{% else %}ta-flat{% endif %}">{{ '%+.1f'|format(a.age_vs_league|default(0)) }} vs league</div>
   </div>
 </div>
 
 <div class="row g-3">
-  {# ════════ LEFT: Charts ════════ #}
+  {# ════════ LEFT: Charts + Comparisons ════════ #}
   <div class="col-lg-7">
 
-    {# Monte Carlo Distribution #}
+    {# Score Distribution #}
     <div class="ta-card">
-      <div class="ta-hdr"><i class="bi bi-distribute-vertical me-1"></i>Score Distribution (Monte Carlo, 1000 sims)</div>
+      <div class="ta-hdr"><i class="bi bi-distribute-vertical me-2"></i>Weekly Score Range</div>
       <div class="ta-body">
-        <canvas id="mcChart" height="120"></canvas>
-        <div style="display:flex;justify-content:space-between;font-size:.65rem;color:#6e7681;margin-top:6px;">
-          <span>Floor (p10): <b style="color:#ef4444;">{{ a.mc_p10|int }}</b></span>
-          <span>Median: <b style="color:#e6edf3;">{{ a.mc_p50|int }}</b></span>
-          <span>Ceiling (p90): <b style="color:#3fb950;">{{ a.mc_p90|int }}</b></span>
+        <canvas id="mcChart" height="110"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:.68rem;color:#8b949e;margin-top:8px;">
+          <span>Worst case: <b style="color:#ef4444;">{{ a.mc_p10|default(0)|int }}</b></span>
+          <span>Most likely: <b style="color:#e6edf3;">{{ a.mc_p50|default(0)|int }}</b></span>
+          <span>Best case: <b style="color:#3fb950;">{{ a.mc_p90|default(0)|int }}</b></span>
         </div>
       </div>
     </div>
 
-    {# Performance vs Expectation #}
+    {# Round Performance #}
     <div class="ta-card">
-      <div class="ta-hdr"><i class="bi bi-graph-up me-1"></i>Actual vs Expected</div>
-      <div class="ta-body"><canvas id="perfChart" height="110"></canvas></div>
+      <div class="ta-hdr"><i class="bi bi-graph-up me-2"></i>Performance Trend</div>
+      <div class="ta-body"><canvas id="perfChart" height="100"></canvas></div>
     </div>
 
-    {# Multi-Year Projection #}
-    {% if a.multi_year is defined %}
+    {# League Comparison #}
+    {% if lc and lc.other_teams is defined %}
     <div class="ta-card">
-      <div class="ta-hdr"><i class="bi bi-calendar3 me-1"></i>Multi-Year Outlook</div>
+      <div class="ta-hdr"><i class="bi bi-trophy me-2"></i>League Comparison</div>
       <div class="ta-body">
-        <div style="display:flex;gap:12px;margin-bottom:12px;">
-          <div style="flex:1;text-align:center;">
-            <div style="font-size:.65rem;color:#6e7681;">NOW</div>
-            <div style="font-size:1.2rem;font-weight:800;color:#e6edf3;">{{ a.current_total|int }}</div>
+        {% set all_teams_sorted = [{"name": team.name, "avg_sc": a.avg_sc, "is_you": true}] %}
+        {% for ot in lc.other_teams %}
+          {% if all_teams_sorted.append({"name": ot.name, "avg_sc": ot.avg_sc, "quality_pct": ot.quality_pct, "window": ot.window, "is_you": false}) %}{% endif %}
+        {% endfor %}
+        {% set max_sc = all_teams_sorted|map(attribute='avg_sc')|max %}
+        {% for t in all_teams_sorted|sort(attribute='avg_sc', reverse=true) %}
+        <div class="ta-compare-row">
+          <span style="width:18px;font-size:.7rem;color:#484f58;font-weight:700;">{{ loop.index }}</span>
+          <span class="ta-compare-name" style="{% if t.is_you %}color:#58a6ff;{% endif %}">{{ t.name }}{% if t.is_you %} <span style="font-size:.6rem;">(you)</span>{% endif %}</span>
+          <div style="width:100px;">
+            <div class="ta-bar"><div class="ta-bar-fill" style="width:{{ (t.avg_sc / max_sc * 100)|int }}%;background:{% if t.is_you %}#58a6ff{% else %}#30363d{% endif %};"></div></div>
           </div>
-          {% if a.projected_next_year is defined %}
-          <div style="flex:1;text-align:center;">
-            <div style="font-size:.65rem;color:#6e7681;">+1 YR</div>
-            <div style="font-size:1.2rem;font-weight:800;color:{% if a.projected_change_pct > 0 %}#3fb950{% else %}#ef4444{% endif %};">{{ a.projected_next_year|int }}</div>
-            <div style="font-size:.6rem;color:#6e7681;">{{ '%+.1f'|format(a.projected_change_pct) }}%</div>
+          <span class="ta-compare-val" style="{% if t.is_you %}color:#58a6ff;{% else %}color:#8b949e;{% endif %}">{{ t.avg_sc }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# Future Outlook #}
+    {% if a.projected_next_year is defined %}
+    <div class="ta-card">
+      <div class="ta-hdr"><i class="bi bi-calendar3 me-2"></i>Next Season Outlook</div>
+      <div class="ta-body">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+          <div style="text-align:center;">
+            <div style="font-size:.6rem;color:#6e7681;">THIS YEAR</div>
+            <div style="font-size:1.4rem;font-weight:800;color:#e6edf3;">{{ a.current_total|default(0)|int }}</div>
+          </div>
+          <div style="font-size:1.2rem;color:#484f58;"><i class="bi bi-arrow-right"></i></div>
+          <div style="text-align:center;">
+            <div style="font-size:.6rem;color:#6e7681;">PROJECTED</div>
+            <div style="font-size:1.4rem;font-weight:800;color:{% if a.projected_change_pct|default(0) >= 0 %}#3fb950{% else %}#ef4444{% endif %};">{{ a.projected_next_year|default(0)|int }}</div>
+            <div style="font-size:.65rem;color:#6e7681;">{{ '%+.1f'|format(a.projected_change_pct|default(0)) }}%</div>
+          </div>
+        </div>
+        <div class="row g-3">
+          {% if a.aging_in %}
+          <div class="col-6">
+            <div style="font-size:.7rem;font-weight:700;color:#3fb950;margin-bottom:6px;">Expected to Improve</div>
+            {% for p in a.aging_in[:5] %}
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:3px 0;">
+              <span style="color:#c9d1d9;">{{ p.name }}</span>
+              <span class="ta-up" style="font-weight:700;">{{ '%+.0f'|format(p.change) }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if a.aging_out %}
+          <div class="col-6">
+            <div style="font-size:.7rem;font-weight:700;color:#ef4444;margin-bottom:6px;">Expected to Decline</div>
+            {% for p in a.aging_out[:5] %}
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:3px 0;">
+              <span style="color:#c9d1d9;">{{ p.name }}</span>
+              <span class="ta-down" style="font-weight:700;">{{ '%+.0f'|format(p.change) }}</span>
+            </div>
+            {% endfor %}
           </div>
           {% endif %}
         </div>
-        {% if a.aging_in %}
-        <div style="font-size:.68rem;font-weight:700;color:#3fb950;margin-bottom:4px;">Aging In (biggest projected gains)</div>
-        {% for p in a.aging_in[:5] %}
-        <div class="ta-row">
-          <span class="ta-name">{{ p.name }}</span>
-          <span style="color:#6e7681;">{{ p.age }}→{{ p.age + 1 }}</span>
-          <span class="ta-up" style="font-weight:700;">{{ '%+.0f'|format(p.change) }}</span>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% if a.aging_out %}
-        <div style="font-size:.68rem;font-weight:700;color:#ef4444;margin-top:8px;margin-bottom:4px;">Aging Out (biggest projected declines)</div>
-        {% for p in a.aging_out[:5] %}
-        <div class="ta-row">
-          <span class="ta-name">{{ p.name }}</span>
-          <span style="color:#6e7681;">{{ p.age }}→{{ p.age + 1 }}</span>
-          <span class="ta-down" style="font-weight:700;">{{ '%+.0f'|format(p.change) }}</span>
-        </div>
-        {% endfor %}
-        {% endif %}
       </div>
     </div>
     {% endif %}
   </div>
 
-  {# ════════ RIGHT: Composition + Analysis ════════ #}
+  {# ════════ RIGHT: Position + Recommendations ════════ #}
   <div class="col-lg-5">
 
-    {# Composition Charts #}
+    {# Positional Strength vs League #}
     <div class="ta-card">
-      <div class="ta-hdr"><i class="bi bi-pie-chart me-1"></i>Composition</div>
-      <div class="ta-body">
-        <div class="row g-2">
-          <div class="col-6"><canvas id="tierChart" height="140"></canvas></div>
-          <div class="col-6"><canvas id="ageChart" height="140"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    {# Positional Strength #}
-    <div class="ta-card">
-      <div class="ta-hdr"><i class="bi bi-grid-3x3 me-1"></i>Positional Strength</div>
+      <div class="ta-hdr"><i class="bi bi-grid-3x3 me-2"></i>Position Strength vs League</div>
       <div class="ta-body">
         {% for pos in ['DEF','MID','RUC','FWD'] %}
           {% set pd = a.pos_breakdown.get(pos, {}) %}
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <span class="ta-pos pos-badge pos-{{ pos }}">{{ pos }}</span>
-            <div style="flex:1;">
-              <div style="display:flex;justify-content:space-between;font-size:.65rem;color:#6e7681;">
-                <span>{{ pd.get('count', 0) }} players</span>
-                <span>{{ pd.get('avg_sc', 0) }} avg</span>
-              </div>
-              <div class="ta-bar"><div class="ta-bar-fill" style="width:{{ (pd.get('avg_sc', 0) / 120 * 100)|int }}%;"></div></div>
+          {% set lg = lc.pos_league_avg.get(pos, 0) if lc and lc.pos_league_avg is defined else 0 %}
+          {% set diff = pd.get('avg_sc', 0) - lg %}
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+              <span style="font-size:.75rem;font-weight:700;color:#e6edf3;">{{ pos }} <span style="color:#6e7681;font-weight:500;">({{ pd.get('count', 0) }} players)</span></span>
+              <span style="font-size:.72rem;font-weight:700;{% if diff > 3 %}color:#3fb950{% elif diff < -3 %}color:#ef4444{% else %}color:#8b949e{% endif %};">{{ pd.get('avg_sc', 0) }} avg <span style="font-size:.6rem;">({{ '%+.0f'|format(diff) }} vs lg)</span></span>
+            </div>
+            <div class="ta-bar" style="height:8px;position:relative;">
+              <div class="ta-bar-fill" style="width:{{ (pd.get('avg_sc', 0) / 120 * 100)|int }}%;background:{% if diff > 3 %}linear-gradient(90deg,#3fb950,#1f6feb){% elif diff < -3 %}#ef4444{% else %}#484f58{% endif %};"></div>
+              {% if lg > 0 %}<div style="position:absolute;left:{{ (lg / 120 * 100)|int }}%;top:0;bottom:0;width:2px;background:#fbbf24;"></div>{% endif %}
             </div>
           </div>
         {% endfor %}
+        <div style="font-size:.6rem;color:#6e7681;margin-top:4px;"><span style="display:inline-block;width:8px;height:2px;background:#fbbf24;vertical-align:middle;margin-right:4px;"></span> League average</div>
       </div>
     </div>
 
     {# Reliability #}
     <div class="ta-card">
-      <div class="ta-hdr"><i class="bi bi-shield-check me-1"></i>Reliability</div>
+      <div class="ta-hdr"><i class="bi bi-shield-check me-2"></i>Reliability</div>
       <div class="ta-body">
-        <div class="ta-grid" style="grid-template-columns:repeat(3,1fr);">
-          <div class="ta-stat"><div class="ta-val" style="font-size:1rem;color:#e6edf3;">{{ (a.avg_consistency * 100)|int }}%</div><div class="ta-lbl">Consistency</div></div>
-          <div class="ta-stat"><div class="ta-val" style="font-size:1rem;color:#e6edf3;">{{ a.avg_durability|int }}g</div><div class="ta-lbl">Durability</div></div>
-          <div class="ta-stat"><div class="ta-val" style="font-size:1rem;color:#e6edf3;">{{ a.top5_pct }}%</div><div class="ta-lbl">Top 5 Dep.</div></div>
+        <div class="ta-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;">
+          <div class="ta-stat" style="padding:10px 4px;">
+            <div class="ta-val" style="font-size:1rem;">{{ (a.avg_consistency|default(0.5) * 100)|int }}%</div>
+            <div class="ta-lbl">Consistency</div>
+          </div>
+          <div class="ta-stat" style="padding:10px 4px;">
+            <div class="ta-val" style="font-size:1rem;">{{ a.avg_durability|default(0)|int }}g</div>
+            <div class="ta-lbl">Games/Yr</div>
+          </div>
+          <div class="ta-stat" style="padding:10px 4px;">
+            <div class="ta-val" style="font-size:1rem;">{{ a.top5_pct|default(0) }}%</div>
+            <div class="ta-lbl">Top 5 Dep.</div>
+          </div>
         </div>
       </div>
     </div>
 
-    {# AFL Exposure #}
-    {% if a.max_exposure.count >= 3 %}
+    {# Composition #}
     <div class="ta-card">
-      <div class="ta-hdr"><i class="bi bi-exclamation-triangle me-1" style="color:#fbbf24;"></i>Exposure Risk</div>
-      <div class="ta-body" style="font-size:.78rem;">
-        <span style="font-weight:700;color:#fbbf24;">{{ a.max_exposure.count }} players</span> from <b>{{ a.max_exposure.team }}</b> — bye week risk
+      <div class="ta-hdr"><i class="bi bi-pie-chart me-2"></i>Roster Makeup</div>
+      <div class="ta-body">
+        <div class="row g-2">
+          <div class="col-6"><canvas id="tierChart" height="130"></canvas></div>
+          <div class="col-6"><canvas id="ageChart" height="130"></canvas></div>
+        </div>
       </div>
     </div>
-    {% endif %}
 
     {# Recommendations #}
     {% if a.recommendations is defined %}
     <div class="ta-card">
-      <div class="ta-hdr"><i class="bi bi-lightbulb me-1"></i>Recommendations</div>
+      <div class="ta-hdr"><i class="bi bi-lightbulb me-2"></i>What to Do Next</div>
       <div class="ta-body">
         {% if a.recommendations.roster_flags %}
           {% for flag in a.recommendations.roster_flags %}
-          <div class="ta-rec" style="border-left:3px solid #f85149;">
-            <div class="ta-rec-detail">{{ flag }}</div>
+          <div class="ta-rec" style="border-left-color:#f85149;">
+            <div style="font-size:.78rem;color:#c9d1d9;">{{ flag }}</div>
           </div>
           {% endfor %}
         {% endif %}
         {% if a.recommendations.draft_targets %}
           {% for dt in a.recommendations.draft_targets %}
-          <div class="ta-rec" style="border-left:3px solid #3fb950;">
-            <div class="ta-rec-title">Draft Target: {{ dt.position }}</div>
-            <div class="ta-rec-detail">{{ dt.reason }} — target age {{ dt.ideal_age }}, SC {{ dt.ideal_sc }}</div>
+          <div class="ta-rec" style="border-left-color:#3fb950;">
+            <div style="font-size:.72rem;font-weight:700;color:#3fb950;">Draft target: {{ dt.position }}</div>
+            <div style="font-size:.72rem;color:#8b949e;">{{ dt.reason }}</div>
           </div>
           {% endfor %}
         {% endif %}
         {% if a.recommendations.trade_sells %}
           {% for ts in a.recommendations.trade_sells %}
-          <div class="ta-rec" style="border-left:3px solid #fb923c;">
-            <div class="ta-rec-title">Consider Trading: {{ ts.name }}</div>
-            <div class="ta-rec-detail">{{ ts.reason }}</div>
+          <div class="ta-rec" style="border-left-color:#fb923c;">
+            <div style="font-size:.72rem;font-weight:700;color:#fb923c;">Consider trading: {{ ts.name }}</div>
+            <div style="font-size:.72rem;color:#8b949e;">{{ ts.reason }}</div>
           </div>
           {% endfor %}
         {% endif %}
@@ -227,68 +279,46 @@
 
 {# ════════ PLAYER TABLE ════════ #}
 <div class="ta-card">
-  <div class="ta-hdr"><i class="bi bi-people me-1"></i>Deep Player Analysis</div>
+  <div class="ta-hdr"><i class="bi bi-people me-2"></i>Player Breakdown</div>
   <div class="ta-body" style="padding:0;overflow-x:auto;">
-    <table class="table table-sm table-dark mb-0" style="font-size:.75rem;">
-      <thead><tr style="color:#6e7681;">
-        <th style="padding:8px 12px;">Player</th>
+    <table class="table table-sm table-dark mb-0 ta-player-tbl">
+      <thead><tr>
+        <th style="padding-left:12px;">Player</th>
         <th class="text-center">Pos</th>
         <th class="text-center">Age</th>
-        <th class="text-end">SC</th>
-        <th class="text-end">Base</th>
-        <th class="text-end">Diff</th>
-        <th class="text-end">vs Curve</th>
-        <th class="text-end">VORP</th>
-        <th class="text-center">Tag</th>
-        <th class="text-center">Z</th>
-        <th class="text-end">Ceil</th>
+        <th class="text-end">SC Avg</th>
+        <th class="text-end">vs Baseline</th>
+        <th class="text-end">vs Age Curve</th>
+        <th class="text-end">Ceiling</th>
         <th class="text-end">Floor</th>
+        <th class="text-center">Profile</th>
         <th class="text-end">Next Yr</th>
         <th>Form</th>
       </tr></thead>
       <tbody>
-        {% for p in a.player_deep %}
+        {% for p in a.player_deep|default([]) %}
         <tr>
-          <td style="padding:8px 12px;font-weight:600;color:#e6edf3;">{{ p.name }}</td>
-          <td class="text-center"><span class="ta-pos pos-badge pos-{{ p.position }}">{{ p.position }}</span></td>
-          <td class="text-center">{{ p.age }}</td>
+          <td style="padding-left:12px;font-weight:600;color:#e6edf3;">{{ p.name }}</td>
+          <td class="text-center"><span class="pos-badge pos-{{ p.position }}" style="font-size:.6rem;padding:1px 5px;">{{ p.position }}</span></td>
+          <td class="text-center" style="color:#8b949e;">{{ p.age }}</td>
           <td class="text-end" style="font-weight:700;">{{ p.sc|int }}</td>
-          <td class="text-end" style="color:#6e7681;">{{ p.baseline|int }}</td>
-          <td class="text-end {% if p.diff > 0 %}ta-up{% elif p.diff < 0 %}ta-down{% else %}ta-flat{% endif %}" style="font-weight:700;">{{ '%+.0f'|format(p.diff) }}</td>
+          <td class="text-end {% if p.diff > 0 %}ta-up{% elif p.diff < 0 %}ta-down{% else %}ta-flat{% endif %}" style="font-weight:600;">{{ '%+.0f'|format(p.diff) }}</td>
           <td class="text-end {% if p.vs_curve > 0 %}ta-up{% elif p.vs_curve < 0 %}ta-down{% else %}ta-flat{% endif %}">{{ '%+.0f'|format(p.vs_curve) }}</td>
-          <td class="text-end" style="font-weight:600;">{{ p.vorp }}</td>
-          <td class="text-center"><span class="profile-tag tag-{{ p.tag_css }}">{{ p.tag }}</span></td>
-          <td class="text-center {% if p.z_score > 0.5 %}ta-up{% elif p.z_score < -0.5 %}ta-down{% else %}ta-flat{% endif %}">{{ p.z_score }}</td>
           <td class="text-end" style="color:#3fb950;">{{ p.ceiling|int }}</td>
           <td class="text-end" style="color:#ef4444;">{{ p.floor|int }}</td>
+          <td class="text-center"><span class="profile-tag tag-{{ p.tag_css }}">{{ p.tag }}</span></td>
           <td class="text-end">{{ p.projected_next_yr|int }}</td>
-          <td>
-            {% if p.round_scores %}
-            <svg width="65" height="18" viewBox="0 0 65 18">
-              {% set mx = p.round_scores|max if p.round_scores else 1 %}
-              {% set mn = p.round_scores|min if p.round_scores else 0 %}
-              {% set rng = mx - mn if mx != mn else 1 %}
-              {% set pts = [] %}
-              {% for s in p.round_scores %}
-                {% set x = loop.index0 / (p.round_scores|length - 1) * 61 + 2 if p.round_scores|length > 1 else 32 %}
-                {% set y = 16 - (s - mn) / rng * 14 %}
-                {% if pts.append(x|string + ',' + y|string) %}{% endif %}
-              {% endfor %}
-              <polyline points="{{ pts|join(' ') }}" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linejoin="round"/>
-            </svg>
-            {% endif %}
-          </td>
+          <td>{% if p.round_scores %}<svg width="60" height="16" viewBox="0 0 60 16">{% set mx = p.round_scores|max if p.round_scores else 1 %}{% set mn = p.round_scores|min if p.round_scores else 0 %}{% set rng = mx - mn if mx != mn else 1 %}{% set pts = [] %}{% for s in p.round_scores %}{% set x = loop.index0 / (p.round_scores|length - 1) * 56 + 2 if p.round_scores|length > 1 else 30 %}{% set y = 14 - (s - mn) / rng * 12 %}{% if pts.append(x|string + ',' + y|string) %}{% endif %}{% endfor %}<polyline points="{{ pts|join(' ') }}" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linejoin="round"/></svg>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
-
-{# ════════ VORP TABLE ════════ #}
-<div class="ta-card">
-  <div class="ta-hdr"><i class="bi bi-bar-chart-steps me-1"></i>Value Over Replacement (VORP)</div>
-  <div class="ta-body"><canvas id="vorpChart" height="200"></canvas></div>
+{% else %}
+<div style="text-align:center;padding:60px 20px;color:#484f58;">
+  <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
+  <p>No analytics data available yet.</p>
 </div>
 {% endif %}
 {% endblock %}
@@ -300,72 +330,46 @@
 document.addEventListener('DOMContentLoaded', function() {
   var a = {{ a|tojson }};
 
-  // Monte Carlo histogram
+  // Score distribution histogram
   if (a.mc_distribution) {
     new Chart(document.getElementById('mcChart'), {
-      type: 'bar',
-      data: { labels: a.mc_labels, datasets: [{
-        data: a.mc_distribution,
-        backgroundColor: a.mc_labels.map(function(l) {
-          var v = parseFloat(l);
-          if (v < a.mc_p25) return 'rgba(239,68,68,.4)';
-          if (v > a.mc_p75) return 'rgba(63,185,80,.4)';
-          return 'rgba(88,166,255,.4)';
-        }),
-        borderRadius: 2,
-      }]},
-      options: { responsive: true, plugins: { legend: { display: false } },
-        scales: { x: { ticks: { color: '#484f58', font: { size: 8 }, maxTicksLimit: 8 }, grid: { display: false } },
-                  y: { ticks: { color: '#484f58', font: { size: 8 } }, grid: { color: '#161b22' } } } }
+      type:'bar', data:{labels:a.mc_labels, datasets:[{data:a.mc_distribution,
+        backgroundColor:a.mc_labels.map(function(l){var v=parseFloat(l);return v<a.mc_p25?'rgba(239,68,68,.35)':v>a.mc_p75?'rgba(63,185,80,.35)':'rgba(88,166,255,.35)'}),borderRadius:3}]},
+      options:{responsive:true,plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:'#484f58',font:{size:8},maxTicksLimit:8},grid:{display:false}},y:{ticks:{color:'#484f58',font:{size:8}},grid:{color:'#161b22'}}}}
     });
   }
 
-  // Perf vs expectation
+  // Performance trend
   if (a.vs_expectation && a.vs_expectation.length) {
     new Chart(document.getElementById('perfChart'), {
-      type: 'line',
-      data: { labels: a.vs_expectation.map(function(r){return 'R'+r.round}),
-        datasets: [
-          { label: 'Actual', data: a.vs_expectation.map(function(r){return r.actual}), borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,.06)', fill: true, tension: .3, pointRadius: 3, borderWidth: 2 },
-          { label: 'Expected', data: a.vs_expectation.map(function(r){return r.expected}), borderColor: '#484f58', borderDash: [4,3], borderWidth: 1.5, pointRadius: 0, fill: false }
-        ]},
-      options: { responsive: true, plugins: { legend: { position: 'top', labels: { color: '#8b949e', font: { size: 9 } } } },
-        scales: { x: { ticks: { color: '#6e7681', font: { size: 9 } }, grid: { color: '#161b22' } },
-                  y: { ticks: { color: '#6e7681', font: { size: 9 } }, grid: { color: '#161b22' } } } }
+      type:'line', data:{labels:a.vs_expectation.map(function(r){return 'R'+r.round}),datasets:[
+        {label:'Actual',data:a.vs_expectation.map(function(r){return r.actual}),borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,.06)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#58a6ff',borderWidth:2},
+        {label:'Expected',data:a.vs_expectation.map(function(r){return r.expected}),borderColor:'#484f58',borderDash:[5,3],borderWidth:1.5,pointRadius:0,fill:false}
+      ]},
+      options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'#8b949e',font:{size:10}}}},
+        scales:{x:{ticks:{color:'#6e7681',font:{size:9}},grid:{color:'#161b22'}},y:{ticks:{color:'#6e7681',font:{size:9}},grid:{color:'#161b22'}}}}
     });
   }
 
-  // Tier doughnut
-  var tierColors = { 'Elite': '#ffd700', 'Elite Veteran': '#c084fc', 'Premium': '#fb923c', 'Emerging Star': '#10b981', 'Breakout': '#06b6d4', 'Proven': '#3b82f6', 'Steady': '#94a3b8', 'Developing': '#4ade80', 'Project': '#eab308', 'Declining': '#ef4444', 'Veteran': '#a8a29e', 'Fringe': '#71717a', 'Unclassified': '#52525b' };
-  var tierLabels = Object.keys(a.tier_counts);
-  new Chart(document.getElementById('tierChart'), {
-    type: 'doughnut',
-    data: { labels: tierLabels, datasets: [{ data: tierLabels.map(function(l){return a.tier_counts[l]}), backgroundColor: tierLabels.map(function(l){return tierColors[l]||'#484f58'}), borderWidth: 0 }] },
-    options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 8 }, padding: 4, boxWidth: 8 } } } }
+  // Tier doughnut — merge small categories
+  var tc = a.tier_counts || {};
+  var tierColors = {'Elite':'#ffd700','Elite Veteran':'#c084fc','Premium':'#fb923c','Emerging Star':'#10b981','Breakout':'#06b6d4','Proven':'#3b82f6','Steady':'#94a3b8','Developing':'#4ade80','Project':'#eab308','Declining':'#ef4444','Veteran':'#a8a29e','Fringe':'#71717a'};
+  // Merge tiers with count < 2 into "Other"
+  var tierLabels=[], tierData=[], tierBg=[], otherCount=0;
+  Object.keys(tc).forEach(function(k){if(tc[k]>=2){tierLabels.push(k);tierData.push(tc[k]);tierBg.push(tierColors[k]||'#484f58')}else{otherCount+=tc[k]}});
+  if(otherCount>0){tierLabels.push('Other');tierData.push(otherCount);tierBg.push('#52525b')}
+  new Chart(document.getElementById('tierChart'),{
+    type:'doughnut',data:{labels:tierLabels,datasets:[{data:tierData,backgroundColor:tierBg,borderWidth:0}]},
+    options:{responsive:true,cutout:'55%',plugins:{legend:{position:'bottom',labels:{color:'#8b949e',font:{size:8},padding:4,boxWidth:8}}}}
   });
 
   // Age doughnut
-  new Chart(document.getElementById('ageChart'), {
-    type: 'doughnut',
-    data: { labels: Object.keys(a.age_buckets), datasets: [{ data: Object.values(a.age_buckets), backgroundColor: ['#4ade80','#3b82f6','#fb923c','#ef4444'], borderWidth: 0 }] },
-    options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 8 }, padding: 4, boxWidth: 8 } } } }
+  var ab = a.age_buckets || {};
+  new Chart(document.getElementById('ageChart'),{
+    type:'doughnut',data:{labels:Object.keys(ab),datasets:[{data:Object.values(ab),backgroundColor:['#4ade80','#3b82f6','#fb923c','#ef4444'],borderWidth:0}]},
+    options:{responsive:true,cutout:'55%',plugins:{legend:{position:'bottom',labels:{color:'#8b949e',font:{size:8},padding:4,boxWidth:8}}}}
   });
-
-  // VORP horizontal bar
-  if (a.player_vorp) {
-    var vorp = a.player_vorp.slice(0, 18);
-    new Chart(document.getElementById('vorpChart'), {
-      type: 'bar',
-      data: { labels: vorp.map(function(p){return p.name}),
-        datasets: [{ data: vorp.map(function(p){return p.vorp}),
-          backgroundColor: vorp.map(function(p){return p.vorp >= 0 ? 'rgba(63,185,80,.5)' : 'rgba(239,68,68,.5)'}),
-          borderRadius: 3,
-        }]},
-      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
-        scales: { x: { ticks: { color: '#6e7681', font: { size: 9 } }, grid: { color: '#161b22' } },
-                  y: { ticks: { color: '#c9d1d9', font: { size: 9 } }, grid: { display: false } } } }
-    });
-  }
 });
 </script>
 {% endif %}
