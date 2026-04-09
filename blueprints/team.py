@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, current_app
 from flask_login import login_required, current_user
 
 from sqlalchemy import func as sa_func
@@ -2007,6 +2007,19 @@ def team_analytics(league_id, team_id):
             elif section:
                 ai_sections.append({"title": "", "body": section})
 
+    # Serve the React analytics SPA
+    react_html = os.path.join(current_app.static_folder, "analytics", "index.html")
+    if os.path.exists(react_html):
+        with open(react_html, "r") as f:
+            html = f.read()
+        # Inject API URL and team ID so React can fetch its own data
+        inject = (
+            f'<script>window.__ANALYTICS_API__="/leagues/{league_id}/team/{team_id}/analytics/api";'
+            f'window.__TEAM_ID__={team_id};</script>'
+        )
+        html = html.replace("</head>", inject + "</head>")
+        return html
+    # Fallback to old template if React build missing
     return render_template("team/analytics.html",
                            league=league, team=team,
                            projection=projection,
