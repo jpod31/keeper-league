@@ -1,8 +1,4 @@
-"""JSON API endpoints for the React SPA.
-
-These endpoints provide data that was previously embedded in Jinja2 templates.
-Each returns JSON for client-side rendering.
-"""
+"""JSON API endpoints for the React SPA."""
 
 import logging
 from flask import Blueprint, jsonify, request
@@ -11,8 +7,8 @@ from flask_login import login_required, current_user
 from models.database import (
     db, League, FantasyTeam, Fixture, SeasonStanding, DraftSession, SeasonConfig,
     AflPlayer, FantasyRoster, Trade, TradeAsset, TradeComment,
-    LeagueChatMessage, Notification, ActivityFeedEntry, WeeklyLineup, LineupSlot,
-    RoundScore,
+    LeagueChatMessage, LeagueChat, Notification, ActivityFeedEntry,
+    WeeklyLineup, LineupSlot, RoundScore,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,7 +21,6 @@ spa_api = Blueprint("spa_api", __name__, url_prefix="/api")
 @spa_api.route("/leagues/<int:league_id>/context")
 @login_required
 def league_context(league_id):
-    """Provides the league shell context: name, teams, user team, nav state."""
     league = db.session.get(League, league_id)
     if not league:
         return jsonify({"error": "Not found"}), 404
@@ -47,7 +42,7 @@ def league_context(league_id):
         "teams": [{"id": t.id, "name": t.name, "owner": t.owner.display_name if t.owner else "?"} for t in teams],
         "is_commissioner": league.commissioner_id == current_user.id,
         "active_draft": active_draft,
-        "season_phase": league.season_phase if hasattr(league, "season_phase") else "regular",
+        "season_phase": league.status or "setup",
     })
 
 
@@ -56,7 +51,6 @@ def league_context(league_id):
 @spa_api.route("/leagues")
 @login_required
 def league_list():
-    """List all leagues the user belongs to."""
     teams = FantasyTeam.query.filter_by(owner_id=current_user.id).all()
     result = []
     for t in teams:
@@ -79,72 +73,56 @@ def league_list():
 @spa_api.route("/leagues/<int:league_id>/dashboard")
 @login_required
 def dashboard(league_id):
-    """Dashboard data: standings, recent results, user team summary."""
     league = db.session.get(League, league_id)
     if not league:
         return jsonify({"error": "Not found"}), 404
 
-    # Standings
     standings = SeasonStanding.query.filter_by(
         league_id=league_id, year=league.season_year
     ).order_by(SeasonStanding.ladder_points.desc(), SeasonStanding.percentage.desc()).all()
 
-    standings_data = []
-    for s in standings:
-        team = db.session.get(FantasyTeam, s.team_id)
-        standings_data.append({
-            "team_id": s.team_id,
-            "name": team.name if team else "?",
-            "wins": s.wins,
-            "losses": s.losses,
-            "draws": s.draws,
-            "points": s.ladder_points,
-            "pct": s.percentage or 0,
-            "for": s.points_for or 0,
-        })
+    standings_data = [{
+        "team_id": s.team_id,
+        "name": s.team.name if s.team else "?",
+        "wins": s.wins, "losses": s.losses, "draws": s.draws,
+        "points": s.ladder_points, "pct": s.percentage or 0,
+        "for": s.points_for or 0,
+    } for s in standings]
 
-    # Recent results (latest completed round)
+    # Latest completed round
     from sqlalchemy import func
-    latest_completed = db.session.query(func.max(Fixture.afl_round)).filter(
+    latest = db.session.query(func.max(Fixture.afl_round)).filter(
         Fixture.league_id == league_id,
         Fixture.year == league.season_year,
-        Fixture.completed == True,
+        Fixture.status == "completed",
     ).scalar() or 0
 
     recent = []
-    if latest_completed > 0:
-        fixtures = Fixture.query.filter_by(
-            league_id=league_id, year=league.season_year, afl_round=latest_completed
-        ).all()
-        for f in fixtures:
-            ht = db.session.get(FantasyTeam, f.home_team_id)
-            at = db.session.get(FantasyTeam, f.away_team_id)
+    if latest > 0:
+        for f in Fixture.query.filter_by(league_id=league_id, year=league.season_year, afl_round=latest).all():
             recent.append({
                 "fixture_id": f.id,
-                "home": ht.name if ht else "?",
-                "away": at.name if at else "?",
+                "home": f.home_team.name if f.home_team else "?",
+                "away": f.away_team.name if f.away_team else "?",
                 "home_score": f.home_score or 0,
                 "away_score": f.away_score or 0,
             })
 
-    # User team summary
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
     user_summary = None
     if user_team:
-        user_standing = SeasonStanding.query.filter_by(
-            league_id=league_id, year=league.season_year, team_id=user_team.id
-        ).first()
+        us = SeasonStanding.query.filter_by(league_id=league_id, year=league.season_year, team_id=user_team.id).first()
         rank = next((i + 1 for i, s in enumerate(standings_data) if s["team_id"] == user_team.id), 0)
         user_summary = {
             "name": user_team.name,
-            "record": f"{user_standing.wins}-{user_standing.losses}" if user_standing else "0-0",
+            "record": f"{us.wins}-{us.losses}" if us else "0-0",
             "rank": rank,
             "next_opponent": "",
         }
 
     return jsonify({
         "standings": standings_data,
-        "current_round": latest_completed,
+        "current_round": latest,
         "recent_results": recent,
         "recent_trades": [],
         "user_team_summary": user_summary,
@@ -164,23 +142,14 @@ def standings(league_id):
         league_id=league_id, year=league.season_year
     ).order_by(SeasonStanding.ladder_points.desc(), SeasonStanding.percentage.desc()).all()
 
-    result = []
-    for i, s in enumerate(rows):
-        team = db.session.get(FantasyTeam, s.team_id)
-        result.append({
-            "rank": i + 1,
-            "team_id": s.team_id,
-            "name": team.name if team else "?",
-            "wins": s.wins,
-            "losses": s.losses,
-            "draws": s.draws,
-            "points": s.ladder_points,
-            "pct": s.percentage or 0,
-            "for": s.points_for or 0,
-            "against": s.points_against or 0,
-            "streak": "",
-        })
-    return jsonify(result)
+    return jsonify([{
+        "rank": i + 1, "team_id": s.team_id,
+        "name": s.team.name if s.team else "?",
+        "wins": s.wins, "losses": s.losses, "draws": s.draws,
+        "points": s.ladder_points, "pct": s.percentage or 0,
+        "for": s.points_for or 0, "against": s.points_against or 0,
+        "streak": "",
+    } for i, s in enumerate(rows)])
 
 
 # ── Fixture ───────────────────────────────────────────────────────────
@@ -201,15 +170,13 @@ def fixture_list(league_id):
         rd = f.afl_round
         if rd not in rounds:
             rounds[rd] = {"round": rd, "matches": []}
-        ht = db.session.get(FantasyTeam, f.home_team_id)
-        at = db.session.get(FantasyTeam, f.away_team_id)
         rounds[rd]["matches"].append({
             "fixture_id": f.id,
-            "home": ht.name if ht else "?",
-            "away": at.name if at else "?",
+            "home": f.home_team.name if f.home_team else "?",
+            "away": f.away_team.name if f.away_team else "?",
             "home_score": f.home_score or 0,
             "away_score": f.away_score or 0,
-            "completed": f.completed or False,
+            "completed": f.status == "completed",
         })
 
     return jsonify(sorted(rounds.values(), key=lambda r: r["round"]))
@@ -228,19 +195,14 @@ def round_detail(league_id, round_num):
         league_id=league_id, year=league.season_year, afl_round=round_num
     ).all()
 
-    result = []
-    for f in fixtures:
-        ht = db.session.get(FantasyTeam, f.home_team_id)
-        at = db.session.get(FantasyTeam, f.away_team_id)
-        result.append({
-            "fixture_id": f.id,
-            "home_team": {"id": f.home_team_id, "name": ht.name if ht else "?"},
-            "away_team": {"id": f.away_team_id, "name": at.name if at else "?"},
-            "home_score": f.home_score or 0,
-            "away_score": f.away_score or 0,
-            "completed": f.completed or False,
-        })
-    return jsonify(result)
+    return jsonify([{
+        "fixture_id": f.id,
+        "home_team": {"id": f.home_team_id, "name": f.home_team.name if f.home_team else "?"},
+        "away_team": {"id": f.away_team_id, "name": f.away_team.name if f.away_team else "?"},
+        "home_score": f.home_score or 0,
+        "away_score": f.away_score or 0,
+        "completed": f.status == "completed",
+    } for f in fixtures])
 
 
 # ── Matchup detail ────────────────────────────────────────────────────
@@ -252,38 +214,38 @@ def matchup_detail(league_id, fixture_id):
     if not f or f.league_id != league_id:
         return jsonify({"error": "Not found"}), 404
 
-    ht = db.session.get(FantasyTeam, f.home_team_id)
-    at = db.session.get(FantasyTeam, f.away_team_id)
-
     def get_players(team_id):
-        """Get player breakdown from round scores."""
-        scores = RoundScore.query.filter_by(
-            team_id=team_id, afl_round=f.afl_round
-        ).all()
+        """Extract player breakdown from RoundScore JSON."""
+        rs = RoundScore.query.filter_by(
+            team_id=team_id, afl_round=f.afl_round, year=f.year
+        ).first()
+        if not rs or not rs.breakdown:
+            return []
+        # breakdown is a JSON list of player dicts
+        bd = rs.breakdown if isinstance(rs.breakdown, list) else []
         result = []
-        for s in scores:
-            p = db.session.get(AflPlayer, s.player_id) if hasattr(s, 'player_id') else None
+        for entry in bd:
             result.append({
-                "name": p.name if p else (s.player_name if hasattr(s, 'player_name') else "?"),
-                "position": p.position if p else "",
-                "score": s.score or 0,
-                "is_captain": getattr(s, 'is_captain', False),
-                "is_vc": getattr(s, 'is_vice_captain', False),
-                "is_emergency": False,
-                "dnp": (s.score or 0) == 0,
+                "name": entry.get("name", "?"),
+                "position": entry.get("position", ""),
+                "score": entry.get("final_score", 0) or entry.get("score", 0) or 0,
+                "is_captain": entry.get("is_captain", False),
+                "is_vc": entry.get("is_vice_captain", False),
+                "is_emergency": entry.get("is_emergency", False),
+                "dnp": entry.get("is_dnp", False),
             })
         return sorted(result, key=lambda x: -x["score"])
 
     return jsonify({
         "fixture_id": f.id,
         "round": f.afl_round,
-        "home_team": {"id": f.home_team_id, "name": ht.name if ht else "?"},
-        "away_team": {"id": f.away_team_id, "name": at.name if at else "?"},
+        "home_team": {"id": f.home_team_id, "name": f.home_team.name if f.home_team else "?"},
+        "away_team": {"id": f.away_team_id, "name": f.away_team.name if f.away_team else "?"},
         "home_score": f.home_score or 0,
         "away_score": f.away_score or 0,
         "home_players": get_players(f.home_team_id),
         "away_players": get_players(f.away_team_id),
-        "completed": f.completed or False,
+        "completed": f.status == "completed",
     })
 
 
@@ -303,25 +265,19 @@ def gameday(league_id):
         league_id=league_id, year=league.season_year, afl_round=current_round
     ).all()
 
-    results = []
-    for f in fixtures:
-        ht = db.session.get(FantasyTeam, f.home_team_id)
-        at = db.session.get(FantasyTeam, f.away_team_id)
-        results.append({
+    return jsonify({
+        "round": current_round,
+        "fixtures": [{
             "fixture_id": f.id,
-            "home_team": {"id": f.home_team_id, "name": ht.name if ht else "?"},
-            "away_team": {"id": f.away_team_id, "name": at.name if at else "?"},
+            "home_team": {"id": f.home_team_id, "name": f.home_team.name if f.home_team else "?"},
+            "away_team": {"id": f.away_team_id, "name": f.away_team.name if f.away_team else "?"},
             "home_score": f.home_score or 0,
             "away_score": f.away_score or 0,
             "home_projected": 0,
             "away_projected": 0,
-            "status": "completed" if f.completed else "scheduled",
-        })
-
-    return jsonify({
-        "round": current_round,
-        "fixtures": results,
-        "live": False,
+            "status": f.status or "scheduled",
+        } for f in fixtures],
+        "live": any(f.status == "live" for f in fixtures),
     })
 
 
@@ -330,27 +286,30 @@ def gameday(league_id):
 @spa_api.route("/leagues/<int:league_id>/team/<int:team_id>/squad")
 @login_required
 def team_squad(league_id, team_id):
-    from models.profile_tags import compute_profile_tags
-
     team = db.session.get(FantasyTeam, team_id)
     if not team or team.league_id != league_id:
         return jsonify({"error": "Not found"}), 404
 
-    roster = FantasyRoster.query.filter_by(team_id=team_id).all()
+    roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
     league = db.session.get(League, league_id)
 
-    # Get profile tags
     try:
+        from models.profile_tags import compute_profile_tags
         tags = compute_profile_tags(league_id, league.season_year)
     except Exception:
         tags = {}
 
     players = []
     for rs in roster:
-        p = db.session.get(AflPlayer, rs.player_id)
+        p = rs.player
         if not p:
             continue
         tag_info = tags.get(p.name, {})
+        injury = None
+        if p.injury_type:
+            injury = p.injury_type
+            if p.injury_return:
+                injury += f" ({p.injury_return})"
         players.append({
             "id": p.id,
             "name": p.name,
@@ -359,16 +318,16 @@ def team_squad(league_id, team_id):
             "age": p.age or 0,
             "sc_avg": p.sc_avg or 0,
             "games": p.games_played or 0,
-            "is_captain": False,
-            "is_vc": False,
+            "is_captain": rs.is_captain,
+            "is_vc": rs.is_vice_captain,
             "tag": tag_info.get("tag", ""),
             "tag_css": tag_info.get("css", ""),
-            "injury": p.injury_status if hasattr(p, "injury_status") and p.injury_status else None,
+            "injury": injury,
         })
 
     return jsonify({
         "team": {"id": team.id, "name": team.name, "owner": team.owner.display_name if team.owner else "?"},
-        "players": sorted(players, key=lambda x: (-x["sc_avg"],)),
+        "players": sorted(players, key=lambda x: -x["sc_avg"]),
         "salary_cap": 0,
         "roster_size": len(players),
     })
@@ -379,34 +338,46 @@ def team_squad(league_id, team_id):
 @spa_api.route("/leagues/<int:league_id>/team/<int:team_id>/stats")
 @login_required
 def team_stats(league_id, team_id):
-
     team = db.session.get(FantasyTeam, team_id)
     if not team or team.league_id != league_id:
         return jsonify({"error": "Not found"}), 404
 
-    roster = FantasyRoster.query.filter_by(team_id=team_id).all()
-    player_ids = [rs.player_id for rs in roster]
+    roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    league = db.session.get(League, league_id)
 
+    # Get all round breakdowns for this team
+    round_scores = RoundScore.query.filter_by(team_id=team_id, year=league.season_year).all()
+
+    # Build per-player stats from breakdown JSON
+    player_stats: dict = {}
+    for rs in round_scores:
+        if not rs.breakdown:
+            continue
+        bd = rs.breakdown if isinstance(rs.breakdown, list) else []
+        for entry in bd:
+            name = entry.get("name", "?")
+            score = entry.get("final_score", 0) or entry.get("score", 0) or 0
+            if score <= 0:
+                continue
+            if name not in player_stats:
+                player_stats[name] = {"scores": [], "position": entry.get("position", "")}
+            player_stats[name]["scores"].append(score)
+
+    # Merge with roster
     players = []
     team_total = 0
-    for pid in player_ids:
-        p = db.session.get(AflPlayer, pid)
+    for rs in roster:
+        p = rs.player
         if not p:
             continue
-        # Get round scores
-        round_scores = RoundScore.query.filter_by(team_id=team_id, player_id=pid).all() if hasattr(RoundScore, 'player_id') else []
-        scores = [rs.score for rs in round_scores if rs.score and rs.score > 0]
-
+        ps = player_stats.get(p.name, {"scores": [], "position": p.position or ""})
+        scores = ps["scores"]
         avg = sum(scores) / len(scores) if scores else (p.sc_avg or 0)
         total = sum(scores)
         team_total += total
-
         players.append({
-            "name": p.name,
-            "position": p.position or "",
-            "games": len(scores),
-            "sc_avg": avg,
-            "sc_total": total,
+            "name": p.name, "position": p.position or "",
+            "games": len(scores), "sc_avg": avg, "sc_total": total,
             "best": max(scores) if scores else 0,
             "worst": min(scores) if scores else 0,
             "consistency": 0,
@@ -416,7 +387,7 @@ def team_stats(league_id, team_id):
 
     return jsonify({
         "team": {"id": team.id, "name": team.name},
-        "players": players,
+        "players": sorted(players, key=lambda x: -x["sc_avg"]),
         "team_avg": team_avg,
         "team_total": team_total,
     })
@@ -434,35 +405,36 @@ def lineup(league_id, team_id, round_num):
     league = db.session.get(League, league_id)
     roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
 
-    # Get weekly lineup for this round
-    wl = WeeklyLineup.query.filter_by(team_id=team_id, afl_round=round_num).first()
+    wl = WeeklyLineup.query.filter_by(team_id=team_id, afl_round=round_num, year=league.season_year).first()
     slot_map = {}
     if wl:
-        for slot in LineupSlot.query.filter_by(lineup_id=wl.id).all():
+        for slot in wl.slots:
             slot_map[slot.player_id] = slot
 
     sc = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
-    max_round = sc.total_rounds if sc else 24
+    max_round = sc.num_regular_rounds if sc else 23
 
     players = []
     for rs in roster:
-        p = db.session.get(AflPlayer, rs.player_id)
+        p = rs.player
         if not p:
             continue
         slot = slot_map.get(p.id)
-        is_playing = slot.is_playing if slot and hasattr(slot, 'is_playing') else True
+        # If player is in a lineup slot, they're playing; otherwise use FantasyRoster.is_benched
+        is_playing = slot is not None if wl else not rs.is_benched
+        injury = f"{p.injury_type} ({p.injury_return})" if p.injury_type else None
         players.append({
             "id": p.id,
             "name": p.name,
-            "position": p.position or "",
+            "position": slot.position_code if slot else (p.position or ""),
             "afl_team": p.afl_team or "",
             "sc_avg": p.sc_avg or 0,
-            "is_captain": getattr(slot, 'is_captain', False) if slot else False,
-            "is_vc": getattr(slot, 'is_vice_captain', False) if slot else False,
-            "is_emergency": getattr(slot, 'emergency_slot', 0) if slot else 0,
+            "is_captain": slot.is_captain if slot else False,
+            "is_vc": slot.is_vice_captain if slot else False,
+            "is_emergency": 1 if (slot and slot.is_emergency) else 0,
             "playing": is_playing,
             "bench": not is_playing,
-            "injury": p.injury_status if hasattr(p, "injury_status") and p.injury_status else None,
+            "injury": injury,
         })
 
     return jsonify({
@@ -470,7 +442,7 @@ def lineup(league_id, team_id, round_num):
         "round": round_num,
         "max_round": max_round,
         "players": players,
-        "locked": False,
+        "locked": wl.is_locked if wl else False,
     })
 
 
@@ -479,7 +451,6 @@ def lineup(league_id, team_id, round_num):
 @spa_api.route("/leagues/<int:league_id>/player-pool")
 @login_required
 def player_pool(league_id):
-
     league = db.session.get(League, league_id)
     if not league:
         return jsonify({"error": "Not found"}), 404
@@ -493,34 +464,25 @@ def player_pool(league_id):
     per_page = 50
 
     # Build owner map
-    roster_spots = FantasyRoster.query.join(FantasyTeam).filter(FantasyTeam.league_id == league_id).all()
     owner_map = {}
-    for rs in roster_spots:
-        p = db.session.get(AflPlayer, rs.player_id)
-        t = db.session.get(FantasyTeam, rs.team_id)
-        if p and t:
-            owner_map[p.id] = t.name
+    for rs in FantasyRoster.query.join(FantasyTeam).filter(
+        FantasyTeam.league_id == league_id, FantasyRoster.is_active == True
+    ).all():
+        owner_map[rs.player_id] = rs.team.name if rs.team else "?"
 
     query = AflPlayer.query
     if search:
         query = query.filter(AflPlayer.name.ilike(f"%{search}%"))
     if position:
-        query = query.filter(AflPlayer.position == position)
+        query = query.filter(AflPlayer.position.contains(position))
 
-    # Sort
     sort_map = {
-        "sc_avg": AflPlayer.sc_avg,
-        "age": AflPlayer.age,
-        "name": AflPlayer.name,
-        "games": AflPlayer.games_played,
+        "sc_avg": AflPlayer.sc_avg, "age": AflPlayer.age,
+        "name": AflPlayer.name, "games": AflPlayer.games_played,
     }
     col = sort_map.get(sort_col, AflPlayer.sc_avg)
-    if sort_dir == "asc":
-        query = query.order_by(col.asc())
-    else:
-        query = query.order_by(col.desc())
+    query = query.order_by(col.asc() if sort_dir == "asc" else col.desc())
 
-    # Filter status
     all_players = query.all()
     if status == "available":
         all_players = [p for p in all_players if p.id not in owner_map]
@@ -532,19 +494,12 @@ def player_pool(league_id):
 
     return jsonify({
         "players": [{
-            "id": p.id,
-            "name": p.name,
-            "position": p.position or "",
-            "afl_team": p.afl_team or "",
-            "age": p.age or 0,
-            "sc_avg": p.sc_avg or 0,
-            "games": p.games_played or 0,
-            "owner": owner_map.get(p.id),
-            "tag": "",
+            "id": p.id, "name": p.name, "position": p.position or "",
+            "afl_team": p.afl_team or "", "age": p.age or 0,
+            "sc_avg": p.sc_avg or 0, "games": p.games_played or 0,
+            "owner": owner_map.get(p.id), "tag": "",
         } for p in paged],
-        "total": total,
-        "page": page,
-        "per_page": per_page,
+        "total": total, "page": page, "per_page": per_page,
     })
 
 
@@ -553,54 +508,40 @@ def player_pool(league_id):
 @spa_api.route("/leagues/<int:league_id>/trades")
 @login_required
 def trade_list(league_id):
-    from models.database import Trade, TradePlayer, TradeComment
-
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
     if not user_team:
         return jsonify({"incoming": [], "outgoing": [], "completed": []})
 
     all_trades = Trade.query.filter_by(league_id=league_id).order_by(Trade.proposed_at.desc()).all()
 
-    def format_trade(t):
-        proposer = db.session.get(FantasyTeam, t.proposer_team_id)
-        recipient = db.session.get(FantasyTeam, t.recipient_team_id)
-        players = TradeAsset.query.filter_by(trade_id=t.id).all()
+    def fmt(t):
         return {
             "id": t.id,
-            "proposer": proposer.name if proposer else "?",
-            "recipient": recipient.name if recipient else "?",
+            "proposer": t.proposer_team.name if t.proposer_team else "?",
+            "recipient": t.recipient_team.name if t.recipient_team else "?",
             "status": t.status,
             "created": t.proposed_at.strftime("%b %d") if t.proposed_at else "",
-            "players_out": [tp.player.name if tp.player else "Pick" for tp in players if tp.from_team_id == t.proposer_team_id],
-            "players_in": [tp.player.name if tp.player else "Pick" for tp in players if tp.from_team_id == t.recipient_team_id],
+            "players_out": [a.player.name if a.player else "Pick" for a in t.assets if a.from_team_id == t.proposer_team_id],
+            "players_in": [a.player.name if a.player else "Pick" for a in t.assets if a.from_team_id == t.recipient_team_id],
         }
 
-    incoming = [format_trade(t) for t in all_trades if t.recipient_team_id == user_team.id and t.status == "pending"]
-    outgoing = [format_trade(t) for t in all_trades if t.proposer_team_id == user_team.id and t.status == "pending"]
-    completed = [format_trade(t) for t in all_trades if t.status != "pending"][:20]
+    return jsonify({
+        "incoming": [fmt(t) for t in all_trades if t.recipient_team_id == user_team.id and t.status == "pending"],
+        "outgoing": [fmt(t) for t in all_trades if t.proposer_team_id == user_team.id and t.status == "pending"],
+        "completed": [fmt(t) for t in all_trades if t.status != "pending"][:20],
+    })
 
-    return jsonify({"incoming": incoming, "outgoing": outgoing, "completed": completed})
 
-
-# ── Trades roster (for propose page) ─────────────────────────────────
+# ── Trades roster ─────────────────────────────────────────────────────
 
 @spa_api.route("/leagues/<int:league_id>/trades/roster/<int:team_id>")
 @login_required
 def trade_roster(league_id, team_id):
-    from models.database import Player, RosterSpot
-    roster = FantasyRoster.query.filter_by(team_id=team_id).all()
-    result = []
-    for rs in roster:
-        p = db.session.get(AflPlayer, rs.player_id)
-        if not p:
-            continue
-        result.append({
-            "id": p.id,
-            "name": p.name,
-            "position": p.position or "",
-            "sc_avg": p.sc_avg or 0,
-        })
-    return jsonify(sorted(result, key=lambda x: -x["sc_avg"]))
+    roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    return jsonify(sorted([{
+        "id": rs.player.id, "name": rs.player.name,
+        "position": rs.player.position or "", "sc_avg": rs.player.sc_avg or 0,
+    } for rs in roster if rs.player], key=lambda x: -x["sc_avg"]))
 
 
 # ── Chat ──────────────────────────────────────────────────────────────
@@ -608,16 +549,20 @@ def trade_roster(league_id, team_id):
 @spa_api.route("/leagues/<int:league_id>/chat")
 @login_required
 def chat_messages(league_id):
-    from models.database import LeagueChatMessage, User
-    msgs = LeagueChatMessage.query.filter_by(league_id=league_id).order_by(
+    # Find or create the league chat
+    chat = LeagueChat.query.filter_by(league_id=league_id).first()
+    if not chat:
+        return jsonify([])
+
+    msgs = LeagueChatMessage.query.filter_by(league_chat_id=chat.id).order_by(
         LeagueChatMessage.created_at.asc()
     ).limit(200).all()
 
     return jsonify([{
         "id": m.id,
-        "author": m.author.display_name if m.author else "?",
-        "author_id": m.user_id,
-        "text": m.message,
+        "author": m.sender.display_name if m.sender else "?",
+        "author_id": m.sender_user_id,
+        "text": m.body,
         "created": m.created_at.strftime("%H:%M") if m.created_at else "",
     } for m in msgs])
 
@@ -625,16 +570,21 @@ def chat_messages(league_id):
 @spa_api.route("/leagues/<int:league_id>/chat/send", methods=["POST"])
 @login_required
 def chat_send(league_id):
-    from models.database import LeagueChatMessage
     data = request.get_json(silent=True) or {}
     text = data.get("text", "").strip()
     if not text:
         return jsonify({"error": "Empty"}), 400
 
+    chat = LeagueChat.query.filter_by(league_id=league_id).first()
+    if not chat:
+        chat = LeagueChat(league_id=league_id)
+        db.session.add(chat)
+        db.session.flush()
+
     msg = LeagueChatMessage(
-        league_id=league_id,
-        user_id=current_user.id,
-        message=text[:500],
+        league_chat_id=chat.id,
+        sender_user_id=current_user.id,
+        body=text[:500],
     )
     db.session.add(msg)
     db.session.commit()
@@ -646,20 +596,35 @@ def chat_send(league_id):
 @spa_api.route("/leagues/<int:league_id>/notifications")
 @login_required
 def notifications(league_id):
-    from models.database import Notification
     notifs = Notification.query.filter_by(
         user_id=current_user.id
     ).order_by(Notification.created_at.desc()).limit(50).all()
 
     return jsonify([{
-        "id": n.id,
-        "type": n.type or "",
-        "title": n.title or "",
-        "body": n.body or "",
+        "id": n.id, "type": n.type or "",
+        "title": n.title or "", "body": n.body or "",
         "read": n.is_read or False,
         "created": n.created_at.strftime("%b %d, %H:%M") if n.created_at else "",
         "link": n.link,
     } for n in notifs])
+
+
+@spa_api.route("/leagues/<int:league_id>/notifications/read/<int:notif_id>", methods=["POST"])
+@login_required
+def notification_read(league_id, notif_id):
+    n = db.session.get(Notification, notif_id)
+    if n and n.user_id == current_user.id:
+        n.is_read = True
+        db.session.commit()
+    return jsonify({"ok": True})
+
+
+@spa_api.route("/leagues/<int:league_id>/notifications/read-all", methods=["POST"])
+@login_required
+def notifications_read_all(league_id):
+    Notification.query.filter_by(user_id=current_user.id, is_read=False).update({"is_read": True})
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 # ── Activity feed ─────────────────────────────────────────────────────
@@ -667,14 +632,12 @@ def notifications(league_id):
 @spa_api.route("/leagues/<int:league_id>/activity")
 @login_required
 def activity_feed(league_id):
-    from models.database import ActivityLog
     activities = ActivityFeedEntry.query.filter_by(league_id=league_id).order_by(
         ActivityFeedEntry.created_at.desc()
     ).limit(50).all()
 
     return jsonify([{
-        "id": a.id,
-        "type": a.type or "",
+        "id": a.id, "type": a.type or "",
         "text": a.title or "",
         "actor": a.actor.display_name if a.actor else "",
         "created": a.created_at.strftime("%b %d, %H:%M") if a.created_at else "",
@@ -690,27 +653,56 @@ def league_settings(league_id):
     if not league:
         return jsonify({"error": "Not found"}), 404
 
+    sc = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
+
     if request.method == "POST":
         data = request.get_json(silent=True) or {}
         if league.commissioner_id != current_user.id:
             return jsonify({"error": "Not commissioner"}), 403
         if data.get("name"):
             league.name = data["name"]
-        sc = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
-        if sc:
-            if "max_roster_size" in data:
-                sc.max_roster_size = data["max_roster_size"]
-            if "trade_review_hours" in data:
-                sc.trade_review_hours = data["trade_review_hours"]
         db.session.commit()
         return jsonify({"ok": True})
 
-    sc = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
     return jsonify({
         "name": league.name,
         "season_year": league.season_year,
         "invite_code": league.invite_code or "",
-        "max_roster_size": sc.max_roster_size if sc else 30,
-        "trade_review_hours": sc.trade_review_hours if sc else 24,
+        "max_roster_size": league.squad_size or 38,
+        "trade_review_hours": 24,
         "lineup_lock": "",
+    })
+
+
+# ── Trade detail ──────────────────────────────────────────────────────
+
+@spa_api.route("/leagues/<int:league_id>/trades/<int:trade_id>")
+@login_required
+def trade_detail(league_id, trade_id):
+    t = db.session.get(Trade, trade_id)
+    if not t or t.league_id != league_id:
+        return jsonify({"error": "Not found"}), 404
+
+    user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
+
+    return jsonify({
+        "id": t.id,
+        "proposer": {
+            "team_id": t.proposer_team_id,
+            "team_name": t.proposer_team.name if t.proposer_team else "?",
+            "owner": t.proposer_team.owner.display_name if t.proposer_team and t.proposer_team.owner else "?",
+        },
+        "recipient": {
+            "team_id": t.recipient_team_id,
+            "team_name": t.recipient_team.name if t.recipient_team else "?",
+            "owner": t.recipient_team.owner.display_name if t.recipient_team and t.recipient_team.owner else "?",
+        },
+        "status": t.status,
+        "created": t.proposed_at.strftime("%b %d, %Y") if t.proposed_at else "",
+        "message": t.notes or "",
+        "players_out": [{"name": a.player.name if a.player else "Pick", "position": a.player.position if a.player else "", "sc_avg": a.player.sc_avg or 0 if a.player else 0} for a in t.assets if a.from_team_id == t.proposer_team_id],
+        "players_in": [{"name": a.player.name if a.player else "Pick", "position": a.player.position if a.player else "", "sc_avg": a.player.sc_avg or 0 if a.player else 0} for a in t.assets if a.from_team_id == t.recipient_team_id],
+        "comments": [{"author": c.user.display_name if c.user else "?", "text": c.comment, "created": c.created_at.strftime("%b %d, %H:%M") if c.created_at else ""} for c in t.comments],
+        "can_respond": user_team and user_team.id == t.recipient_team_id and t.status == "pending",
+        "can_veto": league.commissioner_id == current_user.id and t.status == "pending",
     })
