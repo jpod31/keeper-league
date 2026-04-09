@@ -878,16 +878,23 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         pos = _primary_pos(p.position)
         age = p.age or 25
         current_sc = p.sc_avg or 0
-        personal_peak = profile_tags.get(p.id, {}).get("peak_avg", current_sc)
+        pt = profile_tags.get(p.id, {})
+        peak_phase = pt.get("peak_phase", "peak")
+        traj = pt.get("trajectory", 0)
+        personal_peak = pt.get("peak_avg", current_sc)
         if personal_peak <= 0:
             personal_peak = current_sc
 
-        # Project at age + 1
-        projected = _expected_sc_for_player(age_curves, pos, age + 1, personal_peak)
-        if projected is None:
-            # No curve data: use trajectory from profile tags as fallback
-            traj = profile_tags.get(p.id, {}).get("trajectory", 0)
-            projected = max(0, current_sc + traj)
+        # For pre-peak players: project using trajectory (they're still improving)
+        # Using age curves for young players underestimates because the curve
+        # reflects average players at that age, not already-elite ones.
+        if peak_phase == "pre-peak" and traj > 0 and current_sc > 0:
+            projected = round(current_sc + traj, 1)
+        else:
+            # At/past peak: use age curve projection
+            projected = _expected_sc_for_player(age_curves, pos, age + 1, personal_peak)
+            if projected is None:
+                projected = max(0, current_sc + traj)
 
         projected = round(projected, 1)
         player_projections[p.id] = projected
