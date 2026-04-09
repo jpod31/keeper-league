@@ -165,8 +165,11 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
     player_name_lookup: dict[str, list[AflPlayer]] = {}
     # Surname + team lookup for footyinfo (returns surname-only names)
     surname_team_lookup: dict[tuple[str, str], list[AflPlayer]] = {}
+    # Case-insensitive lookup for name matching (MacDonald vs Macdonald etc.)
+    player_lookup_ci: dict[tuple[str, str], AflPlayer] = {}
     for p in all_players:
         player_lookup[(p.name, p.afl_team)] = p
+        player_lookup_ci[(p.name.lower(), p.afl_team)] = p
         player_name_lookup.setdefault(p.name, []).append(p)
         # Extract surname (last word of name)
         words = p.name.split() if p.name else []
@@ -199,6 +202,9 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
 
         # Match by (name, team) first
         afl_player = player_lookup.get((name, team))
+        if not afl_player:
+            # Case-insensitive fallback (MacDonald vs Macdonald etc.)
+            afl_player = player_lookup_ci.get((name.lower(), team))
         if not afl_player:
             # Fallback: match by name only (if unambiguous)
             candidates = player_name_lookup.get(name, [])
