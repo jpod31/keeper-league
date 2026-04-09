@@ -1084,12 +1084,16 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
         })
 
     # 10. Top-heavy warning
-    if top5_pct > 35:
+    # Compute top-5 dependency locally
+    field_sc_sorted = sorted([p.sc_avg or 0 for p in field_players], reverse=True)
+    _top5 = sum(field_sc_sorted[:5])
+    _top5_pct = round(_top5 / max(team_total, 1) * 100, 1) if len(field_sc_sorted) >= 5 else 100
+    if _top5_pct > 35:
         insights.append({
             "type": "warning",
-            "title": f"Top-heavy roster — top 5 account for {top5_pct:.0f}% of scoring",
+            "title": f"Top-heavy roster — top 5 account for {_top5_pct:.0f}% of scoring",
             "detail": "If your best players miss games, your score drops significantly. Build depth.",
-            "impact": round(top5_pct - 30, 1),
+            "impact": round(_top5_pct - 30, 1),
         })
 
     # Sort by impact descending
