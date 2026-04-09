@@ -982,11 +982,15 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
 
     post_peak_players.sort(key=lambda x: -x[1])
     for p, drop in post_peak_players[:3]:
+        sc_now = p.sc_avg or 0
+        proj = projections_by_player.get(p.id, {})
+        yr1 = proj.get("yr1", sc_now)
+        detail = f"Currently averaging {sc_now:.0f}, projected to drop to {yr1:.0f} next year ({drop:+.0f})."
+        detail += f" Trade value is at its highest right now."
         insights.append({
             "type": "opportunity",
-            "title": f"Consider trading {p.name} (post-peak)",
-            "detail": (f"Projected to drop {drop:.0f} SC next year. "
-                       f"Current Bayesian estimate: {bayesian_map.get(p.id, {}).get('true_talent', 0):.0f}."),
+            "title": f"Trade window: {p.name}",
+            "detail": detail,
             "impact": round(drop, 1),
         })
 
@@ -1046,6 +1050,20 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
                     "title": f"{gap:.0f} SC behind the league leader",
                     "detail": f"Your total ({team_total:.0f}) is {gap:.0f} below the leader ({leader_total:.0f}). Target roster upgrades.",
                     "impact": round(gap / total_field, 1),
+                })
+
+    # 8. Positional gap (below league average)
+    for pos in ["DEF", "MID", "RUC", "FWD"]:
+        my_avg = pos_breakdown.get(pos, {}).get("avg_sc", 0)
+        # Estimate league average at this position from league_team_totals context
+        if my_avg > 0 and replacement_levels.get(pos, 0) > 0:
+            repl = replacement_levels[pos]
+            if my_avg < repl:
+                insights.append({
+                    "type": "warning",
+                    "title": f"Your {pos} line is below replacement level",
+                    "detail": f"Averaging {my_avg:.0f} per player vs replacement level of {repl:.0f}. Priority upgrade position.",
+                    "impact": round((repl - my_avg) * pos_breakdown.get(pos, {}).get("count", 1), 1),
                 })
 
     # Sort by impact descending
@@ -1415,9 +1433,15 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     else:
         now_pct = future_pct = 0
 
+    # Window considers both age profile AND current scoring
+    is_top_scorer = avg_sc_field >= league_avg_sc if league_avg_sc > 0 else True
+
     if peak_count >= total_field * 0.5:
         window = "Win Now"
         window_detail = f"{peak_count}/{total_field} field players in their peak window"
+    elif pre_peak_count >= total_field * 0.4 and is_top_scorer:
+        window = "Dominant & Improving"
+        window_detail = f"Top scorer with {pre_peak_count}/{total_field} field players still to peak"
     elif pre_peak_count >= total_field * 0.4:
         window = "Building"
         window_detail = f"{pre_peak_count}/{total_field} field players haven't peaked yet"

@@ -177,19 +177,24 @@ def compute_trade_table(team_id, league_id, year, profile_tags):
     trade_targets = trade_targets[:15]
 
     # Surplus players (own bench with decent SC who could be traded)
+    # EXCLUDE players at positions where we have a gap — trading them would hurt
     surplus = []
     for p in bench_players_own:
         if not p.sc_avg or p.sc_avg < 50:
             continue
+        pos = (p.position or "MID").split("/")[0]
+        # Don't suggest trading players at a position we're weak at
+        if pos in gap_positions:
+            continue
         pt = profile_tags.get(p.id, {})
         surplus.append({
             "name": p.name,
-            "position": (p.position or "MID").split("/")[0],
+            "position": pos,
             "age": p.age or 0,
             "sc_avg": round(p.sc_avg, 1),
             "tag": pt.get("tag", ""),
             "tag_css": pt.get("css", ""),
-            "reason": "Bench depth — tradeable for positional upgrade",
+            "reason": f"Bench depth at {pos} — tradeable for positional upgrade",
         })
     surplus.sort(key=lambda x: -x["sc_avg"])
     surplus = surplus[:10]
