@@ -275,7 +275,7 @@
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
               <div class="wr-ls-col{% if t.team_id == team.id %} wr-ls-you{% endif %}" style="width:100%;height:{{ (t.total_sc / max_total * 200)|int }}px;background:{% if t.team_id == team.id %}linear-gradient(180deg,#1f6feb,#3fb950){% else %}#21262d{% endif %};border-radius:6px 6px 0 0;">
               </div>
-              <div class="wr-ls-label" style="{% if t.team_id == team.id %}color:#58a6ff;{% else %}color:#8b949e;{% endif %}">{{ t.name[:8] }}</div>
+              <div class="wr-ls-label" style="{% if t.team_id == team.id %}color:#58a6ff;{% else %}color:#8b949e;{% endif %}">{{ t.name[:12] }}</div>
               <div class="wr-ls-total">{{ t.total_sc|int }}</div>
             </div>
             {% endfor %}

@@ -1040,15 +1040,13 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
         leader_total = max(league_team_totals.values())
         if team_total < leader_total:
             gap = leader_total - team_total
-            # Find who leads
-            leader_id = max(league_team_totals, key=league_team_totals.get)
-            insights.append({
-                "type": "opportunity" if gap > 30 else "strength",
-                "title": f"{gap:.0f} SC behind the league leader" if gap > 5 else "Competitive with the leader",
-                "detail": (f"Your projected total ({team_total:.0f}) is {gap:.0f} "
-                           f"below the leader ({leader_total:.0f}). Look for roster upgrades to close the gap."),
-                "impact": round(gap / total_field, 1),
-            })
+            if gap > 50:
+                insights.append({
+                    "type": "opportunity",
+                    "title": f"{gap:.0f} SC behind the league leader",
+                    "detail": f"Your total ({team_total:.0f}) is {gap:.0f} below the leader ({leader_total:.0f}). Target roster upgrades.",
+                    "impact": round(gap / total_field, 1),
+                })
 
     # Sort by impact descending
     insights.sort(key=lambda x: -x["impact"])
@@ -1251,7 +1249,8 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
 
     for p in field_players:
         est = bayesian_map.get(p.id, {})
-        tt = est.get("true_talent", p.sc_avg or 0)
+        # Use ACTUAL sc_avg as the base for projections (not Bayesian)
+        base_sc = p.sc_avg or p.sc_avg_prev or est.get("true_talent", 0)
         bucket = est.get("role_bucket", "small_mid")
         pos = _primary_pos(p.position)
         age = p.age or 25
@@ -1259,13 +1258,13 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         peak_phase = t.get("peak_phase", "peak")
         traj = t.get("trajectory", 0)
 
-        yr1, yr2, yr3 = _project_player_multi_year(tt, age, bucket, pos, curves_dict,
+        yr1, yr2, yr3 = _project_player_multi_year(base_sc, age, bucket, pos, curves_dict,
                                                      peak_phase, traj)
         projections_by_player[p.id] = {"yr1": yr1, "yr2": yr2, "yr3": yr3}
 
-        change_1 = round(yr1 - tt, 1)
-        change_2 = round(yr2 - tt, 1)
-        change_3 = round(yr3 - tt, 1)
+        change_1 = round(yr1 - base_sc, 1)
+        change_2 = round(yr2 - base_sc, 1)
+        change_3 = round(yr3 - base_sc, 1)
 
         entry_base = {
             "name": p.name,

@@ -1826,8 +1826,14 @@ def team_analytics(league_id, team_id):
 
     if not trade_table and analytics:
         try:
-            all_players = all_players if 'all_players' in dir() else AflPlayer.query.all()
-            profile_tags = profile_tags if 'profile_tags' in dir() else compute_profile_tags(all_players)
+            try:
+                all_players
+            except NameError:
+                all_players = AflPlayer.query.all()
+            try:
+                profile_tags
+            except NameError:
+                profile_tags = compute_profile_tags(all_players)
 
             # Roster data for squad depth
             roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
@@ -1836,10 +1842,15 @@ def team_analytics(league_id, team_id):
             field_p = [p for p in field_p if p]
             bench_p = [p for p in bench_p if p]
 
-            # League position averages for squad depth comparison
-            league_pos_avgs = {}
-            if team_comparison and isinstance(team_comparison, dict):
-                league_pos_avgs = team_comparison.get("pos_league_avg", {})
+            # League position averages — compute directly, don't rely on cached comparison
+            from collections import defaultdict as _ddict
+            _lp = _ddict(list)
+            for _lt in FantasyTeam.query.filter_by(league_id=league_id).all():
+                for _r in FantasyRoster.query.filter_by(team_id=_lt.id, is_active=True, is_benched=False).all():
+                    _p = db.session.get(AflPlayer, _r.player_id)
+                    if _p and _p.sc_avg:
+                        _lp[(_p.position or "MID").split("/")[0]].append(_p.sc_avg)
+            league_pos_avgs = {pos: sum(v)/len(v) for pos, v in _lp.items() if v}
 
             trade_table = compute_trade_table(team_id, league_id, year, profile_tags)
             cache_analytics(team_id, year, "trade_table", trade_table)
