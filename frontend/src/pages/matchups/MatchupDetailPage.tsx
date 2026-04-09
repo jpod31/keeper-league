@@ -29,60 +29,87 @@ export function MatchupDetailPage() {
   const { data, loading } = useFetch<MatchupData>(`/api/leagues/${leagueId}/matchup/${fixtureId}`)
 
   if (loading) return <Spinner />
-  if (!data) return <p className="text-sm text-[#ef4444]">Failed to load matchup</p>
+  if (!data) return <p className="text-danger">Failed to load matchup</p>
+
+  const homeWon = data.home_score > data.away_score
+  const awayWon = data.away_score > data.home_score
+  const margin = Math.abs(data.home_score - data.away_score)
 
   return (
     <div>
-      <p className="text-[10px] font-extrabold uppercase tracking-[2px] text-[#484f58] mb-1">Round {data.round}</p>
+      {/* Breadcrumb */}
+      <div className="page-breadcrumb">
+        <Link to={`/leagues/${leagueId}/fixture`}>Fixture</Link>
+        <span className="mx-1">/</span>
+        <Link to={`/leagues/${leagueId}/fixture/${data.round}`}>Round {data.round}</Link>
+      </div>
 
-      {/* Scoreboard */}
-      <div className="flex items-center justify-center gap-6 py-6 mb-6 rounded-2xl bg-[#0d1117] border border-[#21262d]">
-        <div className="text-center">
-          <Link to={`/leagues/${leagueId}/team/${data.home_team.id}`}
-            className="text-sm font-bold text-[#e6edf3] hover:text-[#58a6ff] no-underline">{data.home_team.name}</Link>
-          <p className={`text-3xl font-black mt-1 ${data.home_score > data.away_score ? 'text-[#3fb950]' : 'text-[#e6edf3]'}`}>
-            {data.home_score}
-          </p>
-        </div>
-        <span className="text-lg text-[#484f58] font-bold">vs</span>
-        <div className="text-center">
-          <Link to={`/leagues/${leagueId}/team/${data.away_team.id}`}
-            className="text-sm font-bold text-[#e6edf3] hover:text-[#58a6ff] no-underline">{data.away_team.name}</Link>
-          <p className={`text-3xl font-black mt-1 ${data.away_score > data.home_score ? 'text-[#3fb950]' : 'text-[#e6edf3]'}`}>
-            {data.away_score}
-          </p>
+      {/* Hero - matches detail.html mu-hero */}
+      <div className="mu-hero">
+        <div className="mu-hero-grid">
+          <div className="mu-hero-team">
+            <div className="mu-tname">
+              <Link to={`/leagues/${leagueId}/team/${data.home_team.id}`} className="text-decoration-none" style={{ color: 'inherit' }}>
+                {data.home_team.name}
+              </Link>
+            </div>
+            <div className={`mu-tscore${homeWon ? ' won' : awayWon ? ' lost' : ''}`}>
+              {data.home_score || 0}
+            </div>
+          </div>
+          <div className="mu-centre">
+            <div className={`mu-status${data.completed ? ' mu-final' : ' mu-sched'}`}>
+              {data.completed ? 'FINAL' : 'SCHEDULED'}
+            </div>
+            {data.completed && margin > 0 && (
+              <div className="mu-margin">
+                {homeWon ? data.home_team.name : data.away_team.name} +{margin}
+              </div>
+            )}
+          </div>
+          <div className="mu-hero-team">
+            <div className="mu-tname">
+              <Link to={`/leagues/${leagueId}/team/${data.away_team.id}`} className="text-decoration-none" style={{ color: 'inherit' }}>
+                {data.away_team.name}
+              </Link>
+            </div>
+            <div className={`mu-tscore${awayWon ? ' won' : homeWon ? ' lost' : ''}`}>
+              {data.away_score || 0}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Player breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TeamBreakdown name={data.home_team.name} players={data.home_players} />
-        <TeamBreakdown name={data.away_team.name} players={data.away_players} />
+      {/* Player breakdown - matches pb-grid */}
+      <div className="pb-grid mt-4">
+        <PlayerSide name={data.home_team.name} players={data.home_players} won={homeWon} />
+        <PlayerSide name={data.away_team.name} players={data.away_players} won={awayWon} />
       </div>
     </div>
   )
 }
 
-function TeamBreakdown({ name, players }: { name: string; players: PlayerScore[] }) {
+function PlayerSide({ name, players, won }: { name: string; players: PlayerScore[]; won: boolean }) {
   const sorted = [...players].sort((a, b) => b.score - a.score)
+  const total = sorted.reduce((s, p) => s + (p.dnp ? 0 : p.score), 0)
+
   return (
-    <div>
-      <h3 className="text-sm font-bold text-[#e6edf3] mb-3">{name}</h3>
-      <div className="rounded-xl border border-[#21262d] bg-[#0d1117] overflow-hidden">
-        {sorted.map((p, i) => (
-          <div key={i} className={`flex items-center px-4 py-2 text-xs ${i > 0 ? 'border-t border-[#21262d]' : ''} ${p.dnp ? 'opacity-40' : ''}`}>
-            <span className="text-[10px] text-[#484f58] w-8">{p.position}</span>
-            <span className="flex-1 font-medium text-[#e6edf3]">
-              {p.name}
-              {p.is_captain && <span className="ml-1 text-[#fbbf24] font-bold">C</span>}
-              {p.is_vc && <span className="ml-1 text-[#8b949e] font-bold">VC</span>}
-              {p.is_emergency && <span className="ml-1 text-[#a371f7] text-[10px]">EMG</span>}
-            </span>
-            <span className={`font-black tabular-nums ${p.dnp ? 'text-[#484f58]' : 'text-[#e6edf3]'}`}>
-              {p.dnp ? 'DNP' : p.score}
-            </span>
-          </div>
-        ))}
+    <div className="pb-side">
+      <div className="pb-side-hdr">{name}</div>
+      {sorted.map((p, i) => (
+        <div key={i} className={`pb-player${p.dnp ? ' opacity-50' : ''}`}>
+          <span className="pb-player-name">
+            {p.position && <span className={`pos-badge pos-${p.position.split('/')[0]}`} style={{ fontSize: '.55rem', padding: '0 4px', marginRight: 6 }}>{p.position}</span>}
+            {p.name}
+            {p.is_captain && <span className="badge ms-1" style={{ background: '#d29922', fontSize: '.5rem' }}>C</span>}
+            {p.is_vc && <span className="badge ms-1" style={{ background: '#484f58', fontSize: '.5rem' }}>VC</span>}
+          </span>
+          <span className="pb-player-score">{p.dnp ? 'DNP' : p.score}</span>
+        </div>
+      ))}
+      <div className={`pb-total${won ? ' pb-won' : ''}`}>
+        <span className="pb-total-label">Total</span>
+        <span className="pb-total-val">{total}</span>
       </div>
     </div>
   )

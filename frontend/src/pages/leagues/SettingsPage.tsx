@@ -42,41 +42,56 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="max-w-lg">
-      <h1 className="text-xl font-extrabold text-[#e6edf3] mb-6">League Settings</h1>
+    <div>
+      <h4 className="fw-bold mb-4" style={{ color: 'var(--kl-text-heading)' }}>League Settings</h4>
 
-      <form onSubmit={handleSave} className="space-y-4">
-        <Field label="League Name" value={data.name} onChange={v => setData({ ...data, name: v })} />
-        <Field label="Season Year" value={String(data.season_year)} onChange={v => setData({ ...data, season_year: Number(v) })} type="number" />
-        <div>
-          <label className="block text-xs font-medium text-[#8b949e] mb-1.5">Invite Code</label>
-          <div className="flex gap-2">
-            <input value={data.invite_code} readOnly
-              className="flex-1 px-3 py-2.5 rounded-xl bg-[#161b22] border border-[#21262d] text-sm text-[#e6edf3]" />
-            <button type="button" onClick={() => { navigator.clipboard.writeText(data.invite_code); toast('Copied!', 'success') }}
-              className="px-3 py-2 rounded-xl bg-[#21262d] text-xs font-bold text-[#8b949e] hover:text-[#e6edf3] transition">
-              Copy
-            </button>
+      <div className="row g-4">
+        <div className="col-lg-8">
+          <div className="card">
+            <div className="card-header">
+              <span className="fw-bold" style={{ fontSize: '.85rem' }}>General</span>
+            </div>
+            <div className="card-body">
+              <form onSubmit={handleSave}>
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <label className="form-label">League Name</label>
+                    <input className="form-control" value={data.name} onChange={e => setData({ ...data, name: e.target.value })}
+                      style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} />
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label">Season</label>
+                    <input className="form-control" value={data.season_year} disabled
+                      style={{ background: 'var(--kl-bg-elevated)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-secondary)' }} />
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label">Squad Size</label>
+                    <input className="form-control" value={data.max_roster_size} disabled
+                      style={{ background: 'var(--kl-bg-elevated)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-secondary)' }} />
+                  </div>
+                </div>
+                <button type="submit" className="btn btn-primary btn-sm mt-3" disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-        <Field label="Max Roster Size" value={String(data.max_roster_size)} onChange={v => setData({ ...data, max_roster_size: Number(v) })} type="number" />
-        <Field label="Trade Review Hours" value={String(data.trade_review_hours)} onChange={v => setData({ ...data, trade_review_hours: Number(v) })} type="number" />
 
-        <button type="submit" disabled={saving}
-          className="px-6 py-2.5 rounded-xl bg-[#58a6ff] text-sm font-bold text-white hover:bg-[#388bfd] transition disabled:opacity-50">
-          {saving ? 'Saving...' : 'Save Changes'}
-        </button>
-      </form>
-    </div>
-  )
-}
-
-function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-[#8b949e] mb-1.5">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 rounded-xl bg-[#0d1117] border border-[#21262d] text-sm text-[#e6edf3] focus:border-[#58a6ff] focus:outline-none transition" />
+        <div className="col-lg-4">
+          <div className="card">
+            <div className="card-header">
+              <span className="fw-bold" style={{ fontSize: '.85rem' }}>Invite</span>
+            </div>
+            <div className="card-body">
+              <div className="info-row">
+                <span className="info-label">Code</span>
+                <span className="info-value">{data.invite_code}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

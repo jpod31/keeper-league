@@ -1,8 +1,7 @@
-import { useParams } from 'react-router'
-import { Spinner } from '../../components/ui/Spinner'
+import { useParams, Link } from 'react-router'
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
-import { Link } from 'react-router'
+import { Spinner } from '../../components/ui/Spinner'
 
 interface GamedayFixture {
   fixture_id: number
@@ -29,74 +28,102 @@ export function GamedayPage() {
   const fetchData = () => {
     api<GamedayData>(`/api/leagues/${leagueId}/gameday`)
       .then(setData)
+      .catch(() => {})
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 60000) // poll every 60s
+    const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [leagueId])
 
   if (loading) return <Spinner text="Loading gameday..." />
-  if (!data) return <p className="text-sm text-[#ef4444]">Failed to load gameday</p>
+  if (!data) return <p className="text-danger">Failed to load gameday</p>
+
+  const isLive = data.live
+  const isCompleted = data.fixtures.every(f => f.status === 'completed')
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      {/* Round header - matches gameday.html */}
+      <div className="gameday-round-header">
+        <h2 className="gameday-round-title">ROUND {data.round}</h2>
         <div>
-          <h1 className="text-xl font-extrabold text-[#e6edf3]">Gameday</h1>
-          <p className="text-xs text-[#8b949e]">Round {data.round}</p>
+          {isLive && (
+            <span className="gameday-state-badge badge-live">
+              <i className="bi bi-broadcast"></i>
+              <span className="live-pulse-dot"></span>
+              LIVE
+            </span>
+          )}
+          {isCompleted && !isLive && (
+            <span className="gameday-state-badge badge-final">
+              <i className="bi bi-check-circle-fill"></i> FINAL
+            </span>
+          )}
+          {!isLive && !isCompleted && (
+            <span className="gameday-state-badge badge-upcoming">
+              <i className="bi bi-calendar-event"></i> UPCOMING
+            </span>
+          )}
+          <button className="btn btn-sm ms-2" onClick={fetchData} style={{ color: 'var(--kl-text-secondary)' }}>
+            <i className="bi bi-arrow-clockwise"></i>
+          </button>
         </div>
-        {data.live && (
-          <span className="text-xs font-bold text-[#3fb950] flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#3fb950] animate-pulse" /> LIVE
-          </span>
-        )}
       </div>
 
-      <div className="space-y-3">
-        {data.fixtures.map(f => (
-          <Link key={f.fixture_id} to={`/leagues/${leagueId}/matchup/${f.fixture_id}`}
-            className="block rounded-2xl border border-[#21262d] bg-[#0d1117] hover:border-[#58a6ff]/30 hover:bg-[#161b22] transition no-underline overflow-hidden">
-            <div className="flex items-center px-5 py-4">
-              {/* Home */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-[#e6edf3] truncate">{f.home_team.name}</p>
-                {f.home_projected > 0 && (
-                  <p className="text-[10px] text-[#484f58] mt-0.5">Proj: {f.home_projected}</p>
+      {/* Matchup cards - matches gameday-matchups-grid */}
+      <div className="gameday-all-matchups mt-3">
+        <div className="gameday-matchups-grid">
+          {data.fixtures.map(f => {
+            const homeWon = f.home_score > f.away_score
+            const awayWon = f.away_score > f.home_score
+            const completed = f.status === 'completed'
+            const total = (f.home_score || 0) + (f.away_score || 0)
+            const homePct = total > 0 ? (f.home_score / total) * 100 : 50
+
+            return (
+              <Link key={f.fixture_id} to={`/leagues/${leagueId}/matchup/${f.fixture_id}`}
+                className="gameday-matchup-card text-decoration-none">
+                <div className="matchup-team-row">
+                  <span className={`matchup-team-name${homeWon && completed ? ' matchup-winner' : ''}`}>{f.home_team.name}</span>
+                  <span className="matchup-team-score">
+                    {f.home_score || 0}
+                    {homeWon && completed && <i className="bi bi-check-lg ms-1"></i>}
+                  </span>
+                </div>
+                <div className="matchup-team-row">
+                  <span className={`matchup-team-name${awayWon && completed ? ' matchup-winner' : ''}`}>{f.away_team.name}</span>
+                  <span className="matchup-team-score">
+                    {f.away_score || 0}
+                    {awayWon && completed && <i className="bi bi-check-lg ms-1"></i>}
+                  </span>
+                </div>
+                {completed && (
+                  <div className="matchup-mini-bar">
+                    <div className="matchup-mini-fill" style={{ width: `${homePct}%` }}></div>
+                  </div>
                 )}
-              </div>
-
-              {/* Score */}
-              <div className="flex items-center gap-3 mx-4">
-                <span className={`text-xl font-black tabular-nums ${f.home_score > f.away_score ? 'text-[#3fb950]' : 'text-[#e6edf3]'}`}>
-                  {f.home_score}
-                </span>
-                <span className="text-xs text-[#484f58]">vs</span>
-                <span className={`text-xl font-black tabular-nums ${f.away_score > f.home_score ? 'text-[#3fb950]' : 'text-[#e6edf3]'}`}>
-                  {f.away_score}
-                </span>
-              </div>
-
-              {/* Away */}
-              <div className="flex-1 min-w-0 text-right">
-                <p className="text-sm font-bold text-[#e6edf3] truncate">{f.away_team.name}</p>
-                {f.away_projected > 0 && (
-                  <p className="text-[10px] text-[#484f58] mt-0.5">Proj: {f.away_projected}</p>
+                {completed && (
+                  <div className="matchup-margin">
+                    {homeWon ? f.home_team.name : f.away_team.name} +{Math.abs(f.home_score - f.away_score)}
+                  </div>
                 )}
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            {f.status === 'live' && (
-              <div className="h-0.5 bg-[#21262d]">
-                <div className="h-full bg-[#3fb950] animate-pulse" style={{ width: '60%' }} />
-              </div>
-            )}
-          </Link>
-        ))}
+              </Link>
+            )
+          })}
+        </div>
       </div>
+
+      {data.fixtures.length === 0 && (
+        <div className="card">
+          <div className="card-body text-center py-5">
+            <i className="bi bi-calendar-x" style={{ fontSize: '2rem', color: '#484f58' }}></i>
+            <p className="mt-2 mb-0" style={{ color: '#8b949e', fontSize: '.9rem' }}>No fixtures this round</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

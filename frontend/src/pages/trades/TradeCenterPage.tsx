@@ -1,7 +1,6 @@
 import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
-import { Plus } from 'lucide-react'
 
 interface Trade {
   id: number
@@ -19,59 +18,66 @@ interface TradesData {
   completed: Trade[]
 }
 
-const statusColors: Record<string, string> = {
-  pending: '#fbbf24', accepted: '#3fb950', rejected: '#ef4444',
-  vetoed: '#ef4444', expired: '#484f58',
-}
-
 export function TradeCenterPage() {
   const { leagueId } = useParams()
   const { data, loading } = useFetch<TradesData>(`/api/leagues/${leagueId}/trades`)
 
   if (loading) return <Spinner />
-  if (!data) return <p className="text-sm text-[#ef4444]">Failed to load trades</p>
+  if (!data) return <p className="text-danger">Failed to load trades</p>
+
+  const hasTrades = data.incoming.length > 0 || data.outgoing.length > 0 || data.completed.length > 0
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-extrabold text-[#e6edf3]">Trade Center</h1>
-        <Link to={`/leagues/${leagueId}/trades/propose`}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#58a6ff]/10 text-[#58a6ff] text-xs font-bold border border-[#58a6ff]/20 hover:bg-[#58a6ff]/20 transition no-underline">
-          <Plus className="w-4 h-4" /> Propose Trade
+      <div className="d-flex justify-content-between align-items-start mb-4">
+        <h4 className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>Trade Center</h4>
+        <Link to={`/leagues/${leagueId}/trades/propose`} className="btn btn-primary btn-sm">
+          <i className="bi bi-plus-lg me-1"></i>Propose Trade
         </Link>
       </div>
 
-      {data.incoming.length > 0 && <TradeSection title="Incoming" trades={data.incoming} leagueId={leagueId!} />}
-      {data.outgoing.length > 0 && <TradeSection title="Outgoing" trades={data.outgoing} leagueId={leagueId!} />}
-      {data.completed.length > 0 && <TradeSection title="History" trades={data.completed} leagueId={leagueId!} />}
-      {!data.incoming.length && !data.outgoing.length && !data.completed.length && (
-        <p className="text-sm text-[#484f58] text-center py-12">No trades yet</p>
+      {!hasTrades && (
+        <div className="empty-state" style={{ padding: '4rem 2rem' }}>
+          <div className="empty-icon" style={{ width: 64, height: 64 }}>
+            <i className="bi bi-arrow-left-right" style={{ fontSize: '1.5rem' }}></i>
+          </div>
+          <h4>No trades yet</h4>
+          <p>Propose a trade to get started.</p>
+        </div>
       )}
+
+      {data.incoming.length > 0 && <TradeSection title="Incoming Proposals" icon="bi-inbox" trades={data.incoming} leagueId={leagueId!} />}
+      {data.outgoing.length > 0 && <TradeSection title="Outgoing Proposals" icon="bi-send" trades={data.outgoing} leagueId={leagueId!} />}
+      {data.completed.length > 0 && <TradeSection title="Trade History" icon="bi-clock-history" trades={data.completed} leagueId={leagueId!} />}
     </div>
   )
 }
 
-function TradeSection({ title, trades, leagueId }: { title: string; trades: Trade[]; leagueId: string }) {
+function TradeSection({ title, icon, trades, leagueId }: { title: string; icon: string; trades: Trade[]; leagueId: string }) {
   return (
-    <div className="mb-8">
-      <h2 className="text-sm font-bold text-[#8b949e] mb-3">{title}</h2>
-      <div className="space-y-2">
+    <div className="card mb-3">
+      <div className="card-header d-flex align-items-center gap-2">
+        <i className={`bi ${icon}`} style={{ color: 'var(--kl-accent-blue)' }}></i>
+        <span className="fw-bold" style={{ fontSize: '.85rem' }}>{title}</span>
+        <span className="badge" style={{ background: 'var(--kl-bg-elevated)', color: 'var(--kl-text-secondary)', fontSize: '.65rem' }}>{trades.length}</span>
+      </div>
+      <div className="card-body p-0">
         {trades.map(t => (
           <Link key={t.id} to={`/leagues/${leagueId}/trades/${t.id}`}
-            className="flex items-center gap-4 px-4 py-3 rounded-xl bg-[#0d1117] border border-[#21262d] hover:bg-[#161b22] transition no-underline">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-bold text-[#e6edf3]">{t.proposer} → {t.recipient}</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border"
-                  style={{ color: statusColors[t.status] || '#8b949e', borderColor: (statusColors[t.status] || '#8b949e') + '40' }}>
-                  {t.status}
-                </span>
+            className="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none"
+            style={{ borderBottom: '1px solid var(--kl-border)' }}>
+            <div>
+              <div style={{ fontSize: '.85rem' }}>
+                <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>{t.proposer}</span>
+                <span style={{ color: 'var(--kl-text-faint)' }}> → </span>
+                <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>{t.recipient}</span>
+                <span className={`status-pill status-${t.status} ms-2`} style={{ fontSize: '.6rem' }}>{t.status}</span>
               </div>
-              <p className="text-xs text-[#484f58] truncate">
-                Out: {t.players_out.join(', ')} | In: {t.players_in.join(', ')}
-              </p>
+              <div style={{ fontSize: '.75rem', color: 'var(--kl-text-secondary)' }}>
+                {t.players_out.join(', ')} ↔ {t.players_in.join(', ')}
+              </div>
             </div>
-            <span className="text-[10px] text-[#484f58] shrink-0">{t.created}</span>
+            <span style={{ fontSize: '.7rem', color: 'var(--kl-text-faint)' }}>{t.created}</span>
           </Link>
         ))}
       </div>

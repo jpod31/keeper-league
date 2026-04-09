@@ -2,7 +2,6 @@ import { useParams } from 'react-router'
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
-import { Search } from 'lucide-react'
 
 interface PoolPlayer {
   id: number
@@ -23,29 +22,20 @@ interface PoolData {
   per_page: number
 }
 
-const tagColors: Record<string, string> = {
-  Elite: '#3fb950', Premium: '#58a6ff', 'Emerging Star': '#a371f7',
-  Breakout: '#a371f7', Proven: '#8b949e', Steady: '#8b949e',
-  Developing: '#fbbf24', Declining: '#ef4444', Fringe: '#484f58',
-}
-
 export function PlayerPoolPage() {
   const { leagueId } = useParams()
   const [data, setData] = useState<PoolData | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'rostered'>('all')
-  const [sortCol, setSortCol] = useState<'sc_avg' | 'age' | 'name' | 'games'>('sc_avg')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sortCol, setSortCol] = useState('sc_avg')
+  const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(1)
 
   const fetchPlayers = useCallback(() => {
     setLoading(true)
-    const params = new URLSearchParams({
-      page: String(page), search, position: posFilter, status: statusFilter,
-      sort: sortCol, dir: sortDir,
-    })
+    const params = new URLSearchParams({ page: String(page), search, position: posFilter, status: statusFilter, sort: sortCol, dir: sortDir })
     api<PoolData>(`/api/leagues/${leagueId}/player-pool?${params}`)
       .then(setData)
       .finally(() => setLoading(false))
@@ -53,92 +43,108 @@ export function PlayerPoolPage() {
 
   useEffect(() => { fetchPlayers() }, [fetchPlayers])
 
-  const toggleSort = (col: typeof sortCol) => {
+  const toggleSort = (col: string) => {
     if (sortCol === col) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
     else { setSortCol(col); setSortDir('desc') }
     setPage(1)
   }
 
-  const SortHeader = ({ col, label, className }: { col: typeof sortCol; label: string; className?: string }) => (
-    <th onClick={() => toggleSort(col)}
-      className={`px-3 py-2.5 text-[#484f58] font-medium cursor-pointer hover:text-[#8b949e] select-none ${className || ''}`}>
-      {label} {sortCol === col && (sortDir === 'desc' ? '\u2193' : '\u2191')}
-    </th>
-  )
-
   return (
     <div>
-      <h1 className="text-xl font-extrabold text-[#e6edf3] mb-4">Player Pool</h1>
+      <h4 className="fw-bold mb-3" style={{ color: 'var(--kl-text-heading)' }}>Player Pool</h4>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#484f58]" />
-          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Search players..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#0d1117] border border-[#21262d] text-sm text-[#e6edf3] focus:border-[#58a6ff] focus:outline-none transition" />
-        </div>
-        <select value={posFilter} onChange={e => { setPosFilter(e.target.value); setPage(1) }}
-          className="px-3 py-2 rounded-xl bg-[#0d1117] border border-[#21262d] text-xs text-[#8b949e] focus:outline-none">
+      {/* Filter bar */}
+      <div className="filter-bar d-flex flex-wrap gap-2 mb-3">
+        <input className="form-control form-control-sm" placeholder="Search players..."
+          value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
+          style={{ maxWidth: 250, background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} />
+        <select className="form-select form-select-sm" value={posFilter} onChange={e => { setPosFilter(e.target.value); setPage(1) }}
+          style={{ width: 'auto', background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-secondary)' }}>
           <option value="">All Positions</option>
           <option value="DEF">DEF</option><option value="MID">MID</option>
           <option value="RUC">RUC</option><option value="FWD">FWD</option>
         </select>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1) }}
-          className="px-3 py-2 rounded-xl bg-[#0d1117] border border-[#21262d] text-xs text-[#8b949e] focus:outline-none">
-          <option value="all">All</option><option value="available">Available</option><option value="rostered">Rostered</option>
+        <select className="form-select form-select-sm" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
+          style={{ width: 'auto', background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-secondary)' }}>
+          <option value="all">All Players</option><option value="available">Available</option><option value="rostered">Rostered</option>
         </select>
+        {data && <span className="pool-count align-self-center" style={{ fontSize: '.75rem', color: 'var(--kl-text-faint)' }}>{data.total} players</span>}
       </div>
 
       {loading && !data ? <Spinner /> : data && (
         <>
-          <div className="rounded-xl border border-[#21262d] bg-[#0d1117] overflow-hidden overflow-x-auto">
-            <table className="w-full text-xs min-w-[600px]">
-              <thead>
-                <tr className="border-b border-[#21262d] bg-[#161b22]">
-                  <th className="text-left px-4 py-2.5 text-[#484f58] font-medium">Player</th>
-                  <th className="text-left px-3 py-2.5 text-[#484f58] font-medium">Pos</th>
-                  <th className="text-left px-3 py-2.5 text-[#484f58] font-medium">Team</th>
-                  <SortHeader col="sc_avg" label="SC Avg" className="text-right" />
-                  <SortHeader col="age" label="Age" className="text-right" />
-                  <SortHeader col="games" label="Games" className="text-right" />
-                  <th className="text-left px-3 py-2.5 text-[#484f58] font-medium">Owner</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.players.map(p => (
-                  <tr key={p.id} className="border-b border-[#21262d] hover:bg-[#161b22] transition">
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-[#e6edf3]">{p.name}</span>
-                        {p.tag && <span className="text-[10px] font-bold" style={{ color: tagColors[p.tag] || '#8b949e' }}>{p.tag}</span>}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-[#8b949e]">{p.position}</td>
-                    <td className="px-3 py-2.5 text-[#8b949e]">{p.afl_team}</td>
-                    <td className="text-right px-3 py-2.5 font-black text-[#e6edf3]">{p.sc_avg.toFixed(0)}</td>
-                    <td className="text-right px-3 py-2.5 text-[#8b949e]">{p.age}</td>
-                    <td className="text-right px-3 py-2.5 text-[#8b949e]">{p.games}</td>
-                    <td className="px-3 py-2.5 text-[#484f58]">{p.owner || <span className="text-[#3fb950]">Free</span>}</td>
+          {/* Desktop table */}
+          <div className="card d-none d-lg-block">
+            <div className="card-body p-0">
+              <table className="table table-hover mb-0 pool-table">
+                <thead>
+                  <tr>
+                    <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('name')}>
+                      Player {sortCol === 'name' && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
+                    </th>
+                    <th>Pos</th>
+                    <th>Team</th>
+                    <th className="text-end" style={{ cursor: 'pointer' }} onClick={() => toggleSort('sc_avg')}>
+                      SC Avg {sortCol === 'sc_avg' && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
+                    </th>
+                    <th className="text-center" style={{ cursor: 'pointer' }} onClick={() => toggleSort('age')}>
+                      Age {sortCol === 'age' && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
+                    </th>
+                    <th className="text-center" style={{ cursor: 'pointer' }} onClick={() => toggleSort('games')}>
+                      Games {sortCol === 'games' && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
+                    </th>
+                    <th>Owner</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.players.map(p => (
+                    <tr key={p.id}>
+                      <td><span className="fw-bold" style={{ color: '#c9d1d9' }}>{p.name}</span></td>
+                      <td><span className={`pos-badge pos-${p.position?.split('/')[0]}`} style={{ fontSize: '.65rem', padding: '1px 5px' }}>{p.position}</span></td>
+                      <td style={{ color: '#8b949e', fontSize: '.78rem' }}>{p.afl_team}</td>
+                      <td className="text-end fw-bold">{p.sc_avg?.toFixed(0) || '—'}</td>
+                      <td className="text-center" style={{ color: '#8b949e' }}>{p.age}</td>
+                      <td className="text-center" style={{ color: '#8b949e' }}>{p.games}</td>
+                      <td>
+                        {p.owner ? (
+                          <span style={{ fontSize: '.75rem', color: '#8b949e' }}>{p.owner}</span>
+                        ) : (
+                          <span style={{ fontSize: '.75rem', color: '#3fb950' }}>Available</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="d-lg-none">
+            {data.players.map(p => (
+              <div key={p.id} className="d-flex align-items-center px-3 py-2" style={{ borderBottom: '1px solid var(--kl-border)' }}>
+                <div style={{ flex: 1 }}>
+                  <div className="fw-bold" style={{ fontSize: '.85rem', color: '#c9d1d9' }}>{p.name}</div>
+                  <div style={{ fontSize: '.72rem', color: '#8b949e' }}>
+                    <span className={`pos-badge pos-${p.position?.split('/')[0]}`} style={{ fontSize: '.55rem', padding: '0 4px', marginRight: 4 }}>{p.position}</span>
+                    {p.afl_team} &middot; Age {p.age}
+                    {p.owner && <span> &middot; {p.owner}</span>}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="fw-bold" style={{ color: '#e6edf3' }}>{p.sc_avg?.toFixed(0) || '—'}</div>
+                  {!p.owner && <div style={{ fontSize: '.65rem', color: '#3fb950' }}>FA</div>}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <p className="text-xs text-[#484f58]">{data.total} players</p>
-            <div className="flex gap-1">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#21262d] text-[#8b949e] hover:bg-[#30363d] disabled:opacity-30 transition">
-                Prev
-              </button>
-              <span className="px-3 py-1.5 text-xs text-[#8b949e]">Page {page}</span>
-              <button onClick={() => setPage(p => p + 1)} disabled={data.players.length < data.per_page}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#21262d] text-[#8b949e] hover:bg-[#30363d] disabled:opacity-30 transition">
-                Next
-              </button>
+          <div className="d-flex align-items-center justify-content-between mt-3">
+            <span style={{ fontSize: '.75rem', color: 'var(--kl-text-faint)' }}>Page {page}</span>
+            <div className="d-flex gap-1">
+              <button className="btn btn-outline-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
+              <button className="btn btn-outline-secondary btn-sm" onClick={() => setPage(p => p + 1)} disabled={data.players.length < data.per_page}>Next</button>
             </div>
           </div>
         </>

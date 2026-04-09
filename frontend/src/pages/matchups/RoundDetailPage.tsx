@@ -16,30 +16,46 @@ export function RoundDetailPage() {
   const { data, loading } = useFetch<RoundMatch[]>(`/api/leagues/${leagueId}/fixture/${round}`)
 
   if (loading) return <Spinner />
-  if (!data) return <p className="text-sm text-[#ef4444]">Failed to load round</p>
+  if (!data) return <p className="text-danger">Failed to load round</p>
 
   return (
     <div>
-      <h1 className="text-xl font-extrabold text-[#e6edf3] mb-6">Round {round}</h1>
-      <div className="space-y-3">
-        {data.map(m => (
-          <Link key={m.fixture_id} to={`/leagues/${leagueId}/matchup/${m.fixture_id}`}
-            className="flex items-center justify-between px-5 py-4 rounded-2xl bg-[#0d1117] border border-[#21262d] hover:border-[#58a6ff]/30 transition no-underline">
-            <span className="text-sm font-bold text-[#e6edf3] flex-1">{m.home_team.name}</span>
-            <div className="flex items-center gap-3 mx-4">
-              {m.completed ? (
-                <>
-                  <span className={`text-lg font-black ${m.home_score > m.away_score ? 'text-[#3fb950]' : 'text-[#8b949e]'}`}>{m.home_score}</span>
-                  <span className="text-xs text-[#484f58]">-</span>
-                  <span className={`text-lg font-black ${m.away_score > m.home_score ? 'text-[#3fb950]' : 'text-[#8b949e]'}`}>{m.away_score}</span>
-                </>
-              ) : (
-                <span className="text-xs text-[#484f58]">vs</span>
-              )}
-            </div>
-            <span className="text-sm font-bold text-[#e6edf3] flex-1 text-right">{m.away_team.name}</span>
-          </Link>
-        ))}
+      <div className="page-breadcrumb mb-2">
+        <Link to={`/leagues/${leagueId}/fixture`}>Fixture</Link>
+        <span className="mx-1">/</span>
+        <span>Round {round}</span>
+      </div>
+
+      <div className="rd-hdr mb-3">
+        <div className="rd-hdr-left">
+          <h4 className="fw-bold mb-0" style={{ color: 'var(--kl-text-heading)' }}>Round {round}</h4>
+        </div>
+      </div>
+
+      <div className="mx-list">
+        {data.map(m => {
+          const homeWon = m.completed && m.home_score > m.away_score
+          const awayWon = m.completed && m.away_score > m.home_score
+          return (
+            <Link key={m.fixture_id} to={`/leagues/${leagueId}/matchup/${m.fixture_id}`}
+              className="mx-row text-decoration-none">
+              <span className={`mx-team mx-team-home${homeWon ? ' won' : ''}`}>{m.home_team.name}</span>
+              <div className="mx-centre">
+                {m.completed ? (
+                  <>
+                    <span className={`mx-sc${homeWon ? ' won' : awayWon ? ' lost' : ''}`}>{m.home_score}</span>
+                    <span className="mx-sep">&ndash;</span>
+                    <span className={`mx-sc${awayWon ? ' won' : homeWon ? ' lost' : ''}`}>{m.away_score}</span>
+                  </>
+                ) : (
+                  <span className="mx-vs">vs</span>
+                )}
+              </div>
+              <span className={`mx-team mx-team-away${awayWon ? ' won' : ''}`}>{m.away_team.name}</span>
+              <i className="bi bi-chevron-right mx-arrow"></i>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )

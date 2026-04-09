@@ -2,7 +2,6 @@ import { useParams } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
 import { api, post } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
-import { Send } from 'lucide-react'
 
 interface ChatMsg {
   id: number
@@ -21,7 +20,7 @@ export function LeagueChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const fetchMessages = () => {
-    api<ChatMsg[]>(`/api/leagues/${leagueId}/chat`).then(setMessages)
+    api<ChatMsg[]>(`/api/leagues/${leagueId}/chat`).then(setMessages).catch(() => {})
   }
 
   useEffect(() => {
@@ -46,38 +45,47 @@ export function LeagueChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)]">
-      <h1 className="text-xl font-extrabold text-[#e6edf3] mb-4">League Chat</h1>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-2 mb-4 pr-1">
-        {messages.map(m => {
-          const isMe = m.author_id === user?.id
-          return (
-            <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                isMe ? 'bg-[#58a6ff]/15 border border-[#58a6ff]/20' : 'bg-[#0d1117] border border-[#21262d]'
-              }`}>
-                {!isMe && <p className="text-[10px] font-bold text-[#58a6ff] mb-0.5">{m.author}</p>}
-                <p className="text-sm text-[#e6edf3]">{m.text}</p>
-                <p className="text-[10px] text-[#484f58] mt-0.5 text-right">{m.created}</p>
-              </div>
-            </div>
-          )
-        })}
-        <div ref={bottomRef} />
+    <div>
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h4 className="fw-bold mb-0" style={{ color: 'var(--kl-text-heading)' }}>League Chat</h4>
       </div>
 
-      {/* Input */}
-      <div className="flex gap-2">
-        <input value={text} onChange={e => setText(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSend()}
-          placeholder="Type a message..."
-          className="flex-1 px-4 py-2.5 rounded-xl bg-[#0d1117] border border-[#21262d] text-sm text-[#e6edf3] focus:border-[#58a6ff] focus:outline-none transition" />
-        <button onClick={handleSend} disabled={sending || !text.trim()}
-          className="px-4 py-2.5 rounded-xl bg-[#58a6ff] text-white hover:bg-[#388bfd] transition disabled:opacity-50">
-          <Send className="w-4 h-4" />
-        </button>
+      <div className="card">
+        <div className="card-body" style={{ height: 'calc(100vh - 300px)', overflowY: 'auto' }}>
+          {messages.length === 0 && (
+            <div className="text-center py-5" style={{ color: 'var(--kl-text-faint)' }}>
+              <i className="bi bi-chat-dots" style={{ fontSize: '2rem' }}></i>
+              <p className="mt-2 mb-0" style={{ fontSize: '.85rem' }}>No messages yet. Start the conversation!</p>
+            </div>
+          )}
+          {messages.map(m => {
+            const isMe = m.author_id === user?.id
+            return (
+              <div key={m.id} className={`d-flex mb-2${isMe ? ' justify-content-end' : ''}`}>
+                <div style={{
+                  maxWidth: '75%', padding: '8px 12px', borderRadius: 12,
+                  background: isMe ? 'rgba(88,166,255,.1)' : 'var(--kl-bg-elevated)',
+                  border: isMe ? '1px solid rgba(88,166,255,.2)' : '1px solid var(--kl-border)',
+                }}>
+                  {!isMe && <div style={{ fontSize: '.7rem', fontWeight: 700, color: 'var(--kl-accent-blue)', marginBottom: 2 }}>{m.author}</div>}
+                  <div style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>{m.text}</div>
+                  <div style={{ fontSize: '.6rem', color: 'var(--kl-text-faint)', textAlign: 'right', marginTop: 2 }}>{m.created}</div>
+                </div>
+              </div>
+            )
+          })}
+          <div ref={bottomRef} />
+        </div>
+        <div className="card-footer d-flex gap-2">
+          <input className="form-control form-control-sm" value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
+            placeholder="Type a message..."
+            style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} />
+          <button className="btn btn-primary btn-sm" onClick={handleSend} disabled={sending || !text.trim()}>
+            <i className="bi bi-send"></i>
+          </button>
+        </div>
       </div>
     </div>
   )

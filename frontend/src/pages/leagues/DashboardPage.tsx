@@ -28,11 +28,6 @@ export function DashboardPage() {
 
   const lid = league.id
   const t = league.user_team
-  const statusColors: Record<string, string> = {
-    setup: 'var(--kl-accent-yellow)', active: 'var(--kl-accent-green)',
-    drafting: 'var(--kl-accent-orange)', finals: 'var(--kl-accent-purple)',
-    offseason: 'var(--kl-text-secondary)',
-  }
 
   return (
     <div>
@@ -41,7 +36,7 @@ export function DashboardPage() {
         <div>
           <h4 className="fw-bold mb-1" style={{ color: 'var(--kl-text-heading)' }}>{league.name}</h4>
           <div className="d-flex align-items-center gap-2">
-            <span className="badge" style={{ background: statusColors[league.season_phase] || 'var(--kl-text-secondary)', fontSize: '.68rem' }}>
+            <span className={`status-pill status-${league.season_phase}`} style={{ fontSize: '.68rem' }}>
               {league.season_phase}
             </span>
             <span style={{ fontSize: '.78rem', color: 'var(--kl-text-secondary)' }}>{league.season_year} Season</span>
@@ -50,7 +45,7 @@ export function DashboardPage() {
       </div>
 
       <div className="row g-4">
-        {/* Left column - Teams */}
+        {/* Teams card */}
         <div className="col-lg-8">
           <div className="card">
             <div className="card-header d-flex justify-content-between align-items-center">
@@ -71,15 +66,16 @@ export function DashboardPage() {
                   {data.standings.map((s, i) => {
                     const isUser = t?.id === s.team_id
                     return (
-                      <tr key={s.team_id} style={{ cursor: 'pointer' }}
-                        onClick={() => window.location.href = `/spa/leagues/${lid}/team/${s.team_id}`}>
+                      <tr key={s.team_id}>
                         <td style={{ color: 'var(--kl-text-faint)' }}>{i + 1}</td>
                         <td>
-                          <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>{s.name}</span>
+                          <Link to={`/leagues/${lid}/team/${s.team_id}`} className="text-decoration-none fw-bold" style={{ color: 'var(--kl-text-heading)' }}>
+                            {s.name}
+                          </Link>
                           {isUser && <span className="badge ms-2" style={{ background: 'var(--kl-accent-blue)', fontSize: '.6rem' }}>You</span>}
                         </td>
                         <td style={{ color: 'var(--kl-text-secondary)' }}>
-                          {league.teams.find(t => t.id === s.team_id)?.owner || ''}
+                          {league.teams.find(tm => tm.id === s.team_id)?.owner || ''}
                         </td>
                         <td className="text-end">
                           <span style={{ color: 'var(--kl-text-heading)', fontWeight: 600 }}>{s.wins}-{s.losses}</span>
@@ -95,22 +91,23 @@ export function DashboardPage() {
 
           {/* Recent results */}
           {data.recent_results.length > 0 && (
-            <div className="card mt-4">
-              <div className="card-header">
-                <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>Round {data.current_round} Results</span>
+            <div className="card mt-3">
+              <div className="card-header d-flex align-items-center gap-2">
+                <i className="bi bi-trophy" style={{ color: '#3fb950' }}></i>
+                <span className="fw-bold" style={{ fontSize: '.85rem' }}>Round {data.current_round} Results</span>
               </div>
               <div className="card-body p-0">
                 {data.recent_results.map(r => (
                   <Link key={r.fixture_id} to={`/leagues/${lid}/matchup/${r.fixture_id}`}
                     className="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none"
-                    style={{ borderBottom: '1px solid var(--kl-border)' }}>
-                    <span style={{ fontWeight: 500, color: r.home_score > r.away_score ? 'var(--kl-text-heading)' : 'var(--kl-text-secondary)', flex: 1 }}>{r.home}</span>
+                    style={{ borderBottom: '1px solid #21262d' }}>
+                    <span style={{ fontSize: '.85rem', fontWeight: 500, color: r.home_score > r.away_score ? '#e6edf3' : '#8b949e', flex: 1 }}>{r.home}</span>
                     <div className="d-flex align-items-center gap-2 mx-3">
-                      <span style={{ fontWeight: 700, color: r.home_score > r.away_score ? 'var(--kl-accent-green)' : 'var(--kl-text-secondary)' }}>{r.home_score}</span>
-                      <span style={{ color: 'var(--kl-text-faint)', fontSize: '.75rem' }}>-</span>
-                      <span style={{ fontWeight: 700, color: r.away_score > r.home_score ? 'var(--kl-accent-green)' : 'var(--kl-text-secondary)' }}>{r.away_score}</span>
+                      <span className="fw-bold" style={{ color: r.home_score > r.away_score ? '#3fb950' : '#8b949e' }}>{r.home_score}</span>
+                      <span style={{ color: '#484f58', fontSize: '.75rem' }}>-</span>
+                      <span className="fw-bold" style={{ color: r.away_score > r.home_score ? '#3fb950' : '#8b949e' }}>{r.away_score}</span>
                     </div>
-                    <span style={{ fontWeight: 500, color: r.away_score > r.home_score ? 'var(--kl-text-heading)' : 'var(--kl-text-secondary)', flex: 1, textAlign: 'right' }}>{r.away}</span>
+                    <span style={{ fontSize: '.85rem', fontWeight: 500, color: r.away_score > r.home_score ? '#e6edf3' : '#8b949e', flex: 1, textAlign: 'right' }}>{r.away}</span>
                   </Link>
                 ))}
               </div>
@@ -118,22 +115,20 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* Right sidebar */}
+        {/* Sidebar */}
         <div className="col-lg-4">
-          {/* Invite link */}
+          {/* Invite */}
           {league.invite_code && (
             <div className="card mb-3">
-              <div className="card-header">
-                <i className="bi bi-link-45deg me-2" style={{ color: 'var(--kl-accent-yellow)' }}></i>
-                <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>Invite Link</span>
+              <div className="card-header d-flex align-items-center gap-2">
+                <i className="bi bi-link-45deg" style={{ color: '#d29922' }}></i>
+                <span className="fw-bold" style={{ fontSize: '.85rem' }}>Invite Link</span>
               </div>
               <div className="card-body">
                 <div className="input-group input-group-sm">
                   <input className="form-control" readOnly value={`keeperlg.com/invite/${league.invite_code}`}
                     style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)', fontSize: '.78rem' }} />
-                  <button className="btn btn-outline-secondary" onClick={() => {
-                    navigator.clipboard.writeText(`https://keeperlg.com/invite/${league.invite_code}`)
-                  }}>
+                  <button className="btn btn-outline-secondary" onClick={() => navigator.clipboard.writeText(`https://keeperlg.com/invite/${league.invite_code}`)}>
                     <i className="bi bi-clipboard"></i>
                   </button>
                 </div>
@@ -149,13 +144,9 @@ export function DashboardPage() {
           {/* League details */}
           <div className="card">
             <div className="card-header">
-              <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>League Details</span>
+              <span className="fw-bold" style={{ fontSize: '.85rem' }}>League Details</span>
             </div>
             <div className="card-body">
-              <div className="info-row">
-                <span className="info-label">Commissioner</span>
-                <span className="info-value">{league.teams.find(t => t.owner === league.teams[0]?.owner)?.owner || '—'}</span>
-              </div>
               <div className="info-row">
                 <span className="info-label">Teams</span>
                 <span className="info-value">{league.teams.length}</span>
@@ -163,6 +154,10 @@ export function DashboardPage() {
               <div className="info-row">
                 <span className="info-label">Season</span>
                 <span className="info-value">{league.season_year}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Status</span>
+                <span className="info-value text-capitalize">{league.season_phase}</span>
               </div>
             </div>
           </div>

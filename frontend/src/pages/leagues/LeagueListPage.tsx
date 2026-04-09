@@ -23,6 +23,12 @@ export function LeagueListPage() {
 
   if (loading) return <Spinner text="Loading..." />
 
+  // If user has exactly one league, go straight to it
+  if (leagues.length === 1) {
+    window.location.replace(`/spa/leagues/${leagues[0].id}`)
+    return <Spinner text="Loading league..." />
+  }
+
   if (leagues.length === 0) {
     return (
       <div className="container">
@@ -52,33 +58,29 @@ export function LeagueListPage() {
       </div>
 
       <div className="row g-4">
-        {/* Main content */}
         <div className="col-lg-8">
-          {/* Empty activity for now - will add upcoming fixtures, results etc. */}
           <div className="card">
             <div className="card-body text-center py-5">
               <i className="bi bi-lightning" style={{ fontSize: '2rem', color: '#484f58' }}></i>
               <p className="mt-2 mb-0" style={{ color: '#8b949e', fontSize: '.9rem' }}>
-                Select a league to get started.
+                Select a league from the sidebar to get started.
               </p>
             </div>
           </div>
         </div>
 
-        {/* My Leagues Sidebar */}
         <div className="col-lg-4">
           <h6 className="fw-bold mb-3" style={{ fontSize: '.8rem', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px' }}>
             My Leagues
           </h6>
-
           {leagues.map(lg => (
             <Link key={lg.id} to={`/leagues/${lg.id}`} className="text-decoration-none">
               <div className="card mb-2" style={{ transition: 'border-color .15s', cursor: 'pointer' }}>
                 <div className="card-body p-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <div className="d-flex align-items-center gap-2">
-                      <div className="d-inline-flex align-items-center justify-content-center rounded"
-                        style={{ width: 32, height: 32, background: 'linear-gradient(135deg,#238636,#1f6feb)', fontWeight: 700, color: '#fff', borderRadius: '8px', fontSize: '.75rem' }}>
+                      <div className="d-inline-flex align-items-center justify-content-center"
+                        style={{ width: 32, height: 32, background: 'linear-gradient(135deg,#238636,#1f6feb)', fontWeight: 700, color: '#fff', borderRadius: 8, fontSize: '.75rem' }}>
                         {lg.name[0].toUpperCase()}
                       </div>
                       <div>
@@ -98,7 +100,6 @@ export function LeagueListPage() {
               </div>
             </Link>
           ))}
-
           <div className="d-flex gap-2 mt-3">
             <Link to="/leagues/create" className="btn btn-primary btn-sm flex-fill">
               <i className="bi bi-plus-lg me-1"></i>Create League
