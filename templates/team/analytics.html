@@ -1,187 +1,308 @@
 {% extends "league_base.html" %}
 {% set active_tab = 'team' %}
 {% block league_content %}
+<style>
+  .ta-card { background:#161b22; border:1px solid #21262d; border-radius:10px; overflow:hidden; margin-bottom:12px; }
+  .ta-card-hdr { background:#0d1117; border-bottom:1px solid #21262d; padding:10px 16px; font-size:.78rem; font-weight:700; color:#e6edf3; display:flex; align-items:center; gap:6px; }
+  .ta-card-body { padding:14px 16px; }
+  .ta-stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; }
+  .ta-stat { text-align:center; padding:12px 8px; background:#0d1117; border-radius:8px; }
+  .ta-stat-val { font-size:1.4rem; font-weight:800; line-height:1; }
+  .ta-stat-lbl { font-size:.6rem; color:#6e7681; text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+  .ta-stat-sub { font-size:.65rem; margin-top:2px; }
+  .ta-badge { display:inline-block; padding:3px 10px; border-radius:10px; font-size:.7rem; font-weight:700; }
+  .ta-badge-now { background:rgba(251,191,36,.15); color:#fbbf24; }
+  .ta-badge-build { background:rgba(59,130,246,.15); color:#60a5fa; }
+  .ta-badge-decline { background:rgba(239,68,68,.15); color:#ef4444; }
+  .ta-badge-balanced { background:rgba(139,148,158,.12); color:#94a3b8; }
+  .ta-bar { height:6px; border-radius:3px; background:#21262d; overflow:hidden; }
+  .ta-bar-fill { height:100%; border-radius:3px; }
+  .ta-player-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #161b22; font-size:.78rem; }
+  .ta-player-row:last-child { border-bottom:none; }
+  .ta-player-name { flex:1; color:#e6edf3; font-weight:600; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ta-player-val { min-width:40px; text-align:right; font-weight:600; }
+  .ta-pos-pill { font-size:.6rem; font-weight:700; padding:1px 5px; border-radius:3px; min-width:28px; text-align:center; }
+  .ta-diff-up { color:#3fb950; }
+  .ta-diff-down { color:#ef4444; }
+  .ta-diff-flat { color:#6e7681; }
+  .ta-spark { vertical-align:middle; }
+  .ta-section { margin-bottom:16px; }
+  .ta-section-title { font-size:.72rem; font-weight:700; color:#8b949e; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+  @media(max-width:768px) {
+    .ta-stat-grid { grid-template-columns:repeat(2,1fr); }
+    .ta-stat-val { font-size:1.2rem; }
+  }
+</style>
+
 <div class="page-header">
   <div class="page-breadcrumb">
     <a href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">{{ team.name }}</a> / Analytics
   </div>
   <h2>Team Analytics</h2>
 </div>
-{# ── Mobile: clean horizontal tab bar ── #}
-<div class="mob-subnav d-lg-none">
-  <a class="mob-subnav-item" href="{{ url_for('team.squad', league_id=league.id, team_id=team.id) }}">
-    <i class="bi bi-diagram-3"></i><span>Field</span>
-  </a>
-  <a class="mob-subnav-item" href="{{ url_for('team.squad', league_id=league.id, team_id=team.id, view='table') }}">
-    <i class="bi bi-table"></i><span>List</span>
-  </a>
-  <a class="mob-subnav-item" href="{{ url_for('team.team_stats', league_id=league.id, team_id=team.id) }}">
-    <i class="bi bi-graph-up"></i><span>Stats</span>
-  </a>
-  <a class="mob-subnav-item active" href="{{ url_for('team.team_analytics', league_id=league.id, team_id=team.id) }}">
-    <i class="bi bi-bar-chart-line"></i><span>Analytics</span>
-  </a>
-  <a class="mob-subnav-item" href="{{ url_for('trades.trade_center', league_id=league.id) }}">
-    <i class="bi bi-arrow-left-right"></i><span>Trades</span>
-  </a>
-</div>
 
-{# ── Stat Cards Row ── #}
-<div class="row g-3 mb-4">
-  <div class="col-md-3">
-    <div class="stat-card">
-      <div class="stat-value" style="color:var(--kl-accent-blue);">{{ projection.total }}</div>
-      <div class="stat-label">Projected Score</div>
-    </div>
+{% if a %}
+{# ── HEADLINE METRICS ── #}
+<div class="ta-stat-grid" style="margin-bottom:16px;">
+  <div class="ta-stat">
+    <div class="ta-stat-val" style="color:#e6edf3;">{{ a.total_sc|int }}</div>
+    <div class="ta-stat-lbl">Projected Total</div>
   </div>
-  <div class="col-md-3">
-    <div class="stat-card">
-      <div class="stat-value">{{ projection.players|length }}</div>
-      <div class="stat-label">Active Starters</div>
-    </div>
+  <div class="ta-stat">
+    <div class="ta-stat-val" style="color:#58a6ff;">{{ a.avg_sc }}</div>
+    <div class="ta-stat-lbl">Avg SC / Player</div>
+    <div class="ta-stat-sub {% if a.sc_vs_league > 0 %}ta-diff-up{% elif a.sc_vs_league < 0 %}ta-diff-down{% else %}ta-diff-flat{% endif %}">{{ '%+.1f'|format(a.sc_vs_league) }} vs league</div>
   </div>
-  <div class="col-md-3">
-    <div class="stat-card">
-      <div class="stat-value" style="color:var(--kl-accent-orange);">{{ bye_clashes|length }}</div>
-      <div class="stat-label">Bye Clash Rounds</div>
-    </div>
+  <div class="ta-stat">
+    <div class="ta-stat-val" style="color:#d2a8ff;">{{ a.quality_pct }}%</div>
+    <div class="ta-stat-lbl">Roster Quality</div>
   </div>
-  <div class="col-md-3">
-    <div class="stat-card">
-      <div class="stat-value" style="color:var(--kl-accent-green);">{{ form_data|length }}</div>
-      <div class="stat-label">Rounds Scored</div>
+  <div class="ta-stat">
+    <div class="ta-stat-val" style="color:{% if a.form_vs_season > 0 %}#3fb950{% elif a.form_vs_season < 0 %}#ef4444{% else %}#8b949e{% endif %};">{{ '%+.0f'|format(a.form_vs_season) }}</div>
+    <div class="ta-stat-lbl">Form vs Season</div>
+    <div class="ta-stat-sub" style="color:#6e7681;">L3 avg {{ a.form_avg|int }}</div>
+  </div>
+  <div class="ta-stat">
+    <div class="ta-stat-val" style="color:#fbbf24;">
+      <span class="ta-badge ta-badge-{{ a.window|lower|replace(' ', '') }}">{{ a.window }}</span>
     </div>
+    <div class="ta-stat-lbl">Competitive Window</div>
+    <div class="ta-stat-sub" style="color:#6e7681;">{{ a.window_detail }}</div>
+  </div>
+  <div class="ta-stat">
+    <div class="ta-stat-val" style="color:#e6edf3;">{{ a.avg_age }}</div>
+    <div class="ta-stat-lbl">Avg Age</div>
+    <div class="ta-stat-sub {% if a.age_vs_league < 0 %}ta-diff-up{% elif a.age_vs_league > 0 %}ta-diff-down{% else %}ta-diff-flat{% endif %}">{{ '%+.1f'|format(a.age_vs_league) }} vs league</div>
   </div>
 </div>
 
 <div class="row g-3">
-  {# ── Form Chart ── #}
-  <div class="col-lg-8">
-    <div class="chart-card">
-      <h6 class="fw-bold mb-3"><i class="bi bi-graph-up me-2" style="color:var(--kl-accent-blue);"></i>Team Form</h6>
-      <canvas id="formChart" height="200"></canvas>
-    </div>
-  </div>
-
-  {# ── Captain Recommendations ── #}
-  <div class="col-lg-4">
-    <div class="card">
-      <div class="card-header">
-        <h6 class="fw-bold mb-0"><i class="bi bi-star me-2" style="color:var(--kl-accent-yellow);"></i>Captain Picks</h6>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th class="text-end">Avg</th>
-              <th class="text-end">Form</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for rec in captain_recs %}
-            <tr>
-              <td>
-                {{ rec.player.name }}
-                {% if rec.is_captain %}<span class="squad-badge squad-badge-cap">C</span>{% endif %}
-                {% if rec.is_vc %}<span class="squad-badge squad-badge-vc">VC</span>{% endif %}
-              </td>
-              <td class="text-end fw-bold">{{ rec.avg }}</td>
-              <td class="text-end" style="color:{% if rec.form_avg > rec.avg %}var(--kl-accent-green){% elif rec.form_avg < rec.avg %}var(--kl-accent-red){% else %}var(--kl-text-primary){% endif %};">
-                {{ rec.form_avg }}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+  {# ── LEFT COL: Charts ── #}
+  <div class="col-lg-7">
+    {# Round performance vs expectation #}
+    <div class="ta-card">
+      <div class="ta-card-hdr"><i class="bi bi-graph-up me-1"></i>Performance vs Expectation</div>
+      <div class="ta-card-body">
+        <canvas id="perfChart" height="140"></canvas>
       </div>
     </div>
-  </div>
-</div>
 
-{# ── Bye Clashes ── #}
-{% if bye_clashes %}
-<div class="card mt-3">
-  <div class="card-header">
-    <h6 class="fw-bold mb-0"><i class="bi bi-exclamation-triangle me-2" style="color:var(--kl-accent-orange);"></i>Bye Clash Rounds (3+ starters out)</h6>
-  </div>
-  <div class="card-body">
-    <div class="row g-2">
-      {% for clash in bye_clashes %}
-      <div class="col-md-4">
-        <div class="stat-card" style="border-left:3px solid var(--kl-accent-orange);">
-          <div class="stat-value" style="color:var(--kl-accent-orange);">R{{ clash.round }}</div>
-          <div class="stat-label">{{ clash.count }} starters on bye</div>
+    {# Tier composition #}
+    <div class="ta-card">
+      <div class="ta-card-hdr"><i class="bi bi-pie-chart me-1"></i>Roster Composition</div>
+      <div class="ta-card-body">
+        <div class="row g-3">
+          <div class="col-6"><canvas id="tierChart" height="160"></canvas></div>
+          <div class="col-6"><canvas id="ageChart" height="160"></canvas></div>
         </div>
       </div>
-      {% endfor %}
+    </div>
+
+    {# Positional balance #}
+    <div class="ta-card">
+      <div class="ta-card-hdr"><i class="bi bi-grid-3x3 me-1"></i>Positional Strength</div>
+      <div class="ta-card-body">
+        {% for pos in ['DEF','MID','RUC','FWD'] %}
+          {% set pd = a.pos_breakdown.get(pos, {}) %}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span class="ta-pos-pill pos-badge pos-{{ pos }}">{{ pos }}</span>
+            <div style="flex:1;">
+              <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#8b949e;margin-bottom:2px;">
+                <span>{{ pd.get('count', 0) }} players</span>
+                <span>Avg {{ pd.get('avg_sc', 0) }}</span>
+              </div>
+              <div class="ta-bar">
+                {% set max_avg = 120 %}
+                <div class="ta-bar-fill" style="width:{{ (pd.get('avg_sc', 0)/max_avg*100)|int }}%;background:linear-gradient(90deg,#3fb950,#1f6feb);"></div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        {% if a.pos_notes %}
+          <div style="font-size:.68rem;color:#f85149;margin-top:6px;">
+            {% for note in a.pos_notes %}<span>{{ note }}</span>{% if not loop.last %} &middot; {% endif %}{% endfor %}
+          </div>
+        {% endif %}
+      </div>
     </div>
   </div>
+
+  {# ── RIGHT COL: Tables ── #}
+  <div class="col-lg-5">
+    {# Reliability #}
+    <div class="ta-card">
+      <div class="ta-card-hdr"><i class="bi bi-shield-check me-1"></i>Reliability</div>
+      <div class="ta-card-body">
+        <div class="ta-stat-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="ta-stat">
+            <div class="ta-stat-val" style="font-size:1.1rem;color:#e6edf3;">{{ (a.avg_consistency * 100)|int }}%</div>
+            <div class="ta-stat-lbl">Consistency</div>
+          </div>
+          <div class="ta-stat">
+            <div class="ta-stat-val" style="font-size:1.1rem;color:#e6edf3;">{{ a.avg_durability|int }}g</div>
+            <div class="ta-stat-lbl">Durability</div>
+          </div>
+          <div class="ta-stat">
+            <div class="ta-stat-val" style="font-size:1.1rem;color:#e6edf3;">{{ a.top5_pct }}%</div>
+            <div class="ta-stat-lbl">Top 5 Reliance</div>
+          </div>
+        </div>
+        {% if a.injury_risk %}
+        <div style="margin-top:10px;">
+          <div class="ta-section-title" style="color:#f85149;">Injury Risk</div>
+          {% for ir in a.injury_risk %}
+          <div class="ta-player-row">
+            <span class="ta-player-name">{{ ir.name }}</span>
+            <span style="font-size:.65rem;color:#8b949e;">{{ ir.reason }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Trajectory #}
+    <div class="ta-card">
+      <div class="ta-card-hdr"><i class="bi bi-arrow-up-right me-1"></i>Trajectory</div>
+      <div class="ta-card-body">
+        <div style="display:flex;gap:12px;margin-bottom:10px;">
+          <div style="text-align:center;flex:1;">
+            <div style="font-size:1.2rem;font-weight:800;color:{% if a.avg_trajectory > 0 %}#3fb950{% elif a.avg_trajectory < 0 %}#ef4444{% else %}#8b949e{% endif %};">{{ '%+.1f'|format(a.avg_trajectory) }}</div>
+            <div style="font-size:.6rem;color:#6e7681;">AVG TRAJECTORY /YR</div>
+          </div>
+          <div style="text-align:center;flex:1;">
+            <div style="font-size:1.2rem;font-weight:800;color:#3fb950;">{{ a.rising_count }}</div>
+            <div style="font-size:.6rem;color:#6e7681;">RISING</div>
+          </div>
+          <div style="text-align:center;flex:1;">
+            <div style="font-size:1.2rem;font-weight:800;color:#ef4444;">{{ a.declining_count }}</div>
+            <div style="font-size:.6rem;color:#6e7681;">DECLINING</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Captain recs #}
+    {% if captain_recs %}
+    <div class="ta-card">
+      <div class="ta-card-hdr"><i class="bi bi-star me-1"></i>Captain Recommendations</div>
+      <div class="ta-card-body" style="padding:8px 16px;">
+        {% for cr in captain_recs[:5] %}
+        <div class="ta-player-row">
+          <span style="font-size:.7rem;color:#484f58;width:16px;">{{ loop.index }}</span>
+          <span class="ta-player-name">{{ cr.name }}</span>
+          <span class="ta-player-val">{{ cr.avg|int }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── PLAYER PERFORMANCE TABLE ── #}
+<div class="ta-card">
+  <div class="ta-card-hdr"><i class="bi bi-people me-1"></i>Player Performance vs Baseline</div>
+  <div class="ta-card-body" style="padding:0;overflow-x:auto;">
+    <table class="table table-sm table-dark mb-0" style="font-size:.78rem;">
+      <thead><tr style="color:#6e7681;">
+        <th style="padding:8px 12px;">Player</th>
+        <th class="text-center" style="width:50px;">Pos</th>
+        <th class="text-center" style="width:40px;">Age</th>
+        <th class="text-end" style="width:55px;">SC Avg</th>
+        <th class="text-end" style="width:65px;">Baseline</th>
+        <th class="text-end" style="width:55px;">Diff</th>
+        <th class="text-center" style="width:80px;">Profile</th>
+        <th class="text-center" style="width:50px;">Traj</th>
+        <th class="text-center" style="width:50px;">Cons</th>
+        <th style="width:80px;">Form</th>
+      </tr></thead>
+      <tbody>
+        {% for p in a.player_vs_baseline %}
+        <tr>
+          <td style="padding:8px 12px;font-weight:600;color:#e6edf3;">{{ p.name }}</td>
+          <td class="text-center"><span class="ta-pos-pill pos-badge pos-{{ p.position }}">{{ p.position }}</span></td>
+          <td class="text-center">{{ p.age }}</td>
+          <td class="text-end" style="font-weight:700;">{{ p.current_sc|int }}</td>
+          <td class="text-end" style="color:#6e7681;">{{ p.baseline_sc|int }}</td>
+          <td class="text-end {% if p.diff > 0 %}ta-diff-up{% elif p.diff < 0 %}ta-diff-down{% else %}ta-diff-flat{% endif %}" style="font-weight:700;">
+            {{ '%+.0f'|format(p.diff) }}
+            <span style="font-size:.6rem;">({{ '%+.0f'|format(p.diff_pct) }}%)</span>
+          </td>
+          <td class="text-center"><span class="profile-tag tag-{{ p.tag_css }}">{{ p.tag }}</span></td>
+          <td class="text-center {% if p.trajectory > 3 %}ta-diff-up{% elif p.trajectory < -3 %}ta-diff-down{% else %}ta-diff-flat{% endif %}">{{ '%+.1f'|format(p.trajectory) }}</td>
+          <td class="text-center">{{ (p.consistency * 100)|int }}%</td>
+          <td>
+            {% if p.round_scores %}
+            <svg class="ta-spark" width="70" height="20" viewBox="0 0 70 20">
+              {% set max_s = p.round_scores|max if p.round_scores else 1 %}
+              {% set min_s = p.round_scores|min if p.round_scores else 0 %}
+              {% set range_s = max_s - min_s if max_s != min_s else 1 %}
+              {% set pts = [] %}
+              {% for s in p.round_scores %}
+                {% set x = loop.index0 / (p.round_scores|length - 1) * 66 + 2 if p.round_scores|length > 1 else 35 %}
+                {% set y = 18 - (s - min_s) / range_s * 16 %}
+                {% if pts.append(x|string + ',' + y|string) %}{% endif %}
+              {% endfor %}
+              <polyline points="{{ pts|join(' ') }}" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            {% else %}<span style="color:#484f58;">-</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div style="text-align:center;padding:60px 20px;color:#484f58;">
+  <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
+  <p style="font-size:.85rem;">No analytics data available yet.</p>
 </div>
 {% endif %}
-
-{# ── Projected Score Breakdown ── #}
-<div class="card mt-3">
-  <div class="card-header">
-    <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart me-2" style="color:var(--kl-accent-blue);"></i>Projected Score Breakdown</h6>
-  </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-sm mb-0">
-        <thead>
-          <tr>
-            <th>Player</th>
-            <th class="text-end">Avg L5</th>
-            <th class="text-end">Games</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in projection.players %}
-          <tr>
-            <td>{{ p.player.name }} <span class="text-secondary" style="font-size:.7rem;">{{ p.player.afl_team }}</span></td>
-            <td class="text-end fw-bold">{{ p.avg_last5 }}</td>
-            <td class="text-end text-secondary">{{ p.games_scored }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
 {% endblock %}
 
 {% block scripts %}
+{% if a %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
 <script>
-(function() {
-  if (typeof Chart === 'undefined') return;
-  var formData = {{ form_data|tojson }};
-  if (!formData.length) return;
-  var ctx = document.getElementById('formChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: formData.map(function(d) { return 'R' + d.round; }),
-      datasets: [{
-        label: 'Team Score',
-        data: formData.map(function(d) { return d.score; }),
-        borderColor: '#58a6ff',
-        backgroundColor: 'rgba(88,166,255,.1)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 4,
-        pointBackgroundColor: '#58a6ff',
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: false, grid: { color: 'rgba(48,54,61,.5)' } },
-        x: { grid: { display: false } }
-      }
-    }
+document.addEventListener('DOMContentLoaded', function() {
+  // Performance vs Expectation line chart
+  var vsExp = {{ a.vs_expectation|tojson }};
+  if (vsExp.length > 0) {
+    new Chart(document.getElementById('perfChart'), {
+      type: 'line',
+      data: {
+        labels: vsExp.map(function(r) { return 'R' + r.round; }),
+        datasets: [
+          { label: 'Actual', data: vsExp.map(function(r) { return r.actual; }), borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,.06)', fill: true, tension: .3, pointRadius: 3, borderWidth: 2 },
+          { label: 'Expected', data: vsExp.map(function(r) { return r.expected; }), borderColor: '#484f58', borderDash: [4,3], borderWidth: 1.5, pointRadius: 0, fill: false }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top', labels: { color: '#8b949e', font: { size: 10 } } } },
+        scales: { x: { ticks: { color: '#6e7681', font: { size: 9 } }, grid: { color: '#161b22' } }, y: { ticks: { color: '#6e7681', font: { size: 9 } }, grid: { color: '#161b22' } } } }
+    });
+  }
+
+  // Tier doughnut
+  var tierCounts = {{ a.tier_counts|tojson }};
+  var tierLabels = Object.keys(tierCounts);
+  var tierData = Object.values(tierCounts);
+  var tierColors = { 'Elite': '#ffd700', 'Elite Veteran': '#c084fc', 'Premium': '#fb923c', 'Emerging Star': '#10b981', 'Breakout': '#06b6d4', 'Proven': '#3b82f6', 'Steady': '#94a3b8', 'Developing': '#4ade80', 'Project': '#eab308', 'Declining': '#ef4444', 'Veteran': '#a8a29e', 'Fringe': '#71717a', 'Unclassified': '#52525b' };
+  new Chart(document.getElementById('tierChart'), {
+    type: 'doughnut',
+    data: { labels: tierLabels, datasets: [{ data: tierData, backgroundColor: tierLabels.map(function(l) { return tierColors[l] || '#484f58'; }), borderWidth: 0 }] },
+    options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 9 }, padding: 6, boxWidth: 10 } } } }
   });
-})();
+
+  // Age doughnut
+  var ageBuckets = {{ a.age_buckets|tojson }};
+  new Chart(document.getElementById('ageChart'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(ageBuckets), datasets: [{ data: Object.values(ageBuckets), backgroundColor: ['#4ade80', '#3b82f6', '#fb923c', '#ef4444'], borderWidth: 0 }] },
+    options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 9 }, padding: 6, boxWidth: 10 } } } }
+  });
+});
 </script>
+{% endif %}
 {% endblock %}

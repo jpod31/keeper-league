@@ -1731,7 +1731,7 @@ def api_ssp_available(league_id, team_id):
 @team_bp.route("/<int:league_id>/team/<int:team_id>/analytics")
 @login_required
 def team_analytics(league_id, team_id):
-    """Team analytics: projected score, captain recs, bye clashes, form."""
+    """Team analytics: deep roster analysis, composition, trajectory, performance."""
     league = db.session.get(League, league_id)
     team = db.session.get(FantasyTeam, team_id)
     if not league or not team or team.league_id != league_id:
@@ -1742,19 +1742,29 @@ def team_analytics(league_id, team_id):
         compute_projected_score, captain_recommendations,
         detect_bye_clashes, get_team_form,
     )
+    from models.profile_tags import compute_profile_tags
+    from models.team_analytics import compute_team_analytics
 
     year = league.season_year
+
+    # Old analytics (keep for captain recs + bye clashes)
     projection = compute_projected_score(team_id, year, league_id)
     captain_recs = captain_recommendations(team_id, year)
     bye_clashes = detect_bye_clashes(team_id, year)
     form_data = get_team_form(team_id, year)
+
+    # New deep analytics
+    all_players = AflPlayer.query.all()
+    profile_tags = compute_profile_tags(all_players)
+    analytics = compute_team_analytics(team_id, league_id, year, profile_tags)
 
     return render_template("team/analytics.html",
                            league=league, team=team,
                            projection=projection,
                            captain_recs=captain_recs,
                            bye_clashes=bye_clashes,
-                           form_data=form_data)
+                           form_data=form_data,
+                           a=analytics)
 
 
 # ── Team logo generation & serving ──────────────────────────────────
