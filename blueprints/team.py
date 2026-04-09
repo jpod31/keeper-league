@@ -618,6 +618,87 @@ def squad(league_id, team_id):
                 })
             wishlist_players.sort(key=lambda x: x["sc_avg"] or 0, reverse=True)
 
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _serialize_player(p):
+            return {
+                "id": p.id, "name": p.name, "position": p.position or "",
+                "afl_team": p.afl_team or "", "age": p.age or 0,
+                "sc_avg": p.sc_avg or 0, "games_played": p.games_played or 0,
+                "career_games": p.career_games or 0, "rating": p.rating,
+                "injury_type": p.injury_type, "injury_return": p.injury_return,
+                "injury_severity": p.injury_severity,
+            }
+
+        def _serialize_roster(r):
+            return {
+                "player_id": r.player_id, "is_captain": r.is_captain,
+                "is_vice_captain": r.is_vice_captain, "is_emergency": r.is_emergency,
+                "is_benched": r.is_benched, "position_code": r.position_code,
+                "acquired_via": r.acquired_via,
+            }
+
+        def _serialize_field_data(fd):
+            if not fd:
+                return None
+            zones_json = {}
+            for code, plist in fd.get("zones", {}).items():
+                zones_json[code] = [_serialize_player(p) if p else None for p in plist]
+            flex_json = []
+            for slot in fd.get("flex_data", []):
+                p = slot.get("player")
+                flex_json.append({"player": _serialize_player(p) if p else None})
+            return {
+                "zones": zones_json,
+                "flex_data": flex_json,
+                "flex_count": fd.get("flex_count", 0),
+                "cap_id": fd.get("cap_id"),
+                "vc_id": fd.get("vc_id"),
+                "reserves": [_serialize_player(p) for p in fd.get("reserves", [])],
+                "emergency_players": [_serialize_player(p) for p in fd.get("emergency_players", [])],
+                "emergency_ids": list(fd.get("emergency_ids", [])),
+                "sevens_players": [_serialize_player(p) for p in fd.get("sevens_players", [])],
+                "sevens_ids": list(fd.get("sevens_ids", [])),
+                "sevens_captain_id": fd.get("sevens_captain_id"),
+                "sevens_captain_enabled": fd.get("sevens_captain_enabled", False),
+                "has_7s_fixture": fd.get("has_7s_fixture", False),
+                "injury_list": [_serialize_player(p) for p in fd.get("injury_list", [])],
+                "ltil_entries": [{"player_id": lt.player_id, "player_name": lt.player.name if lt.player else "?"} for lt in fd.get("ltil_entries", [])],
+                "locked_teams": list(fd.get("locked_teams", set())),
+                "teams_playing": list(fd.get("teams_playing", set())),
+                "selected_player_ids": list(fd.get("selected_player_ids", set())),
+                "next_lockout_time": fd.get("next_lockout_time"),
+                "slot_counts": fd.get("slot_counts", {}),
+                "zone_layouts": fd.get("zone_layouts", {}),
+            }
+
+        return jsonify({
+            "league": {"id": league.id, "name": league.name, "season_year": league.season_year},
+            "team": {"id": team.id, "name": team.name, "logo_url": team.logo_url,
+                     "owner": team.owner.display_name if team.owner else "?"},
+            "players": [_serialize_player(p) for p in players],
+            "roster": [_serialize_roster(r) for r in roster],
+            "is_owner": is_owner,
+            "view": view,
+            "field_data": _serialize_field_data(field_data) if field_data else None,
+            "alltime_stats": {str(k): v for k, v in alltime_stats.items()},
+            "team_logos": TEAM_LOGOS,
+            "delist_is_open": delist_is_open,
+            "delist_period": {"closes_at": delist_period.closes_at.isoformat() if delist_period and delist_period.closes_at else None} if delist_period else None,
+            "team_delist_count": team_delist_count,
+            "min_delists": min_delists,
+            "delisted_player_ids": list(delisted_player_ids),
+            "pending_incoming": pending_incoming,
+            "trade_is_open": trade_is_open,
+            "trade_close_date": trade_close_date.isoformat() if trade_close_date else None,
+            "has_active_draft": has_active_draft,
+            "active_draft_round": active_draft_round,
+            "next_delist_info": next_delist_info,
+            "selected_player_ids": list(selected_player_ids),
+            "emergency_ids_all": emergency_ids_all,
+            "sevens_ids_all": sevens_ids_all,
+        })
+
     return render_template("team/squad.html",
                            league=league,
                            team=team,
