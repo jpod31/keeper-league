@@ -169,7 +169,10 @@ def player_pool(league_id):
         fg, bg = _team_palette[i % len(_team_palette)]
         team_colours[tname] = {"fg": fg, "bg": bg}
 
-    rolling = _compute_rolling_averages()
+    rolling = get_cached_analytics(0, league.season_year, "rolling_avgs")
+    if rolling is None:
+        rolling = _compute_rolling_averages()
+        cache_analytics(0, league.season_year, "rolling_avgs", rolling)
 
     # SSP pickup: check if user's team is below squad_size AND within SSP window
     from models.database import SeasonConfig, AflGame, LongTermInjury
@@ -286,9 +289,13 @@ def player_pool(league_id):
         teams_playing.add(g.home_team)
         teams_playing.add(g.away_team)
 
-    # Compute rich profile tags with historical data
+    # Compute rich profile tags with historical data (cached)
     from models.profile_tags import compute_profile_tags
-    profile_tags = compute_profile_tags(players)
+    from models.team_ai_summary import get_cached_analytics, cache_analytics
+    profile_tags = get_cached_analytics(0, league.season_year, "profile_tags_all")
+    if profile_tags is None:
+        profile_tags = compute_profile_tags(players)
+        cache_analytics(0, league.season_year, "profile_tags_all", profile_tags)
 
     return render_template("leagues/player_pool.html",
                            league=league,
