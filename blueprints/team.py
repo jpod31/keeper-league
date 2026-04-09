@@ -1743,7 +1743,7 @@ def team_analytics(league_id, team_id):
         detect_bye_clashes, get_team_form,
     )
     from models.profile_tags import compute_profile_tags
-    from models.team_analytics import compute_team_analytics
+    from models.team_analytics import compute_deep_analytics
 
     year = league.season_year
 
@@ -1753,10 +1753,10 @@ def team_analytics(league_id, team_id):
     bye_clashes = detect_bye_clashes(team_id, year)
     form_data = get_team_form(team_id, year)
 
-    # New deep analytics
+    # Deep analytics
     all_players = AflPlayer.query.all()
     profile_tags = compute_profile_tags(all_players)
-    analytics = compute_team_analytics(team_id, league_id, year, profile_tags)
+    analytics = compute_deep_analytics(team_id, league_id, year, profile_tags)
 
     return render_template("team/analytics.html",
                            league=league, team=team,
