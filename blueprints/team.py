@@ -1763,35 +1763,56 @@ def team_analytics(league_id, team_id):
     ai_summary = get_cached_analytics(team_id, year, "ai_summary")
 
     if analytics is None:
-        # Cache miss — compute everything (slow, but only happens once per week)
+        # Cache miss — compute just THIS team (not all 6), much faster
+        import threading
         all_players = AflPlayer.query.all()
         profile_tags = compute_profile_tags(all_players)
 
-        league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
-        all_team_analytics = {}
-        for lt in league_teams:
-            try:
-                lt_analytics = compute_deep_analytics(lt.id, league_id, year, profile_tags)
-                all_team_analytics[lt.id] = lt_analytics
-                cache_analytics(lt.id, year, "deep", lt_analytics)
-            except Exception:
-                logger.debug("Analytics failed for team %d", lt.id, exc_info=True)
-
-        analytics = all_team_analytics.get(team_id, {})
-
-        # League comparison
-        league_comp = compute_league_comparison(league_id, year, all_team_analytics)
-        for tid, comp in league_comp.items():
-            cache_analytics(tid, year, "league_comp", comp)
-        team_comparison = league_comp.get(team_id, {})
-
-        # AI summary
         try:
-            ai_summary = generate_team_summary(team_id, team.name, year, analytics, team_comparison)
-            if ai_summary:
-                cache_analytics(team_id, year, "ai_summary", ai_summary)
+            analytics = compute_deep_analytics(team_id, league_id, year, profile_tags)
+            cache_analytics(team_id, year, "deep", analytics)
         except Exception:
-            logger.debug("AI summary failed for team %d", team_id, exc_info=True)
+            logger.exception("Analytics failed for team %d", team_id)
+            analytics = {}
+
+        # Compute other teams + AI summary in background thread (non-blocking)
+        def _background_compute(app, league_id, team_id, team_name, year, profile_tags):
+            with app.app_context():
+                try:
+                    league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+                    all_team_analytics = {}
+                    for lt in league_teams:
+                        cached = get_cached_analytics(lt.id, year, "deep")
+                        if cached:
+                            all_team_analytics[lt.id] = cached
+                        else:
+                            try:
+                                lt_a = compute_deep_analytics(lt.id, league_id, year, profile_tags)
+                                all_team_analytics[lt.id] = lt_a
+                                cache_analytics(lt.id, year, "deep", lt_a)
+                            except Exception:
+                                pass
+
+                    league_comp = compute_league_comparison(league_id, year, all_team_analytics)
+                    for tid, comp in league_comp.items():
+                        cache_analytics(tid, year, "league_comp", comp)
+
+                    a = all_team_analytics.get(team_id, {})
+                    tc = league_comp.get(team_id, {})
+                    try:
+                        summary = generate_team_summary(team_id, team_name, year, a, tc)
+                        if summary:
+                            cache_analytics(team_id, year, "ai_summary", summary)
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+
+        from flask import current_app
+        t = threading.Thread(target=_background_compute,
+                             args=(current_app._get_current_object(), league_id, team_id, team.name, year, profile_tags),
+                             daemon=True)
+        t.start()
 
     return render_template("team/analytics.html",
                            league=league, team=team,
