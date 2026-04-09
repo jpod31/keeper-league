@@ -233,7 +233,7 @@ def _auto_finalize_round(year: int, afl_round: int):
     with _app.app_context():
         try:
             from models.database import db, AflGame, Fixture, League
-            from models.live_sync import sync_live_scores
+            from models.live_sync import sync_live_scores, reconcile_missing_scores
             from models.scoring_engine import finalize_round
 
             # Verify all AFL games are still complete
@@ -247,6 +247,11 @@ def _auto_finalize_round(year: int, afl_round: int):
             # Final score refresh
             logger.info("Auto-finalize: running final score sync for %d R%d", year, afl_round)
             sync_live_scores(year, afl_round)
+
+            # Reconcile any missing PlayerStats from ScScore data
+            backfilled, flagged = reconcile_missing_scores(year, afl_round)
+            if backfilled or flagged:
+                logger.info("Auto-finalize reconciliation: %d backfilled, %d flagged", backfilled, flagged)
 
             # Find all leagues with fixtures for this round (or round 0 when AFL R1)
             rounds_to_check = [afl_round]
@@ -365,6 +370,13 @@ def _tuesday_auto_finalize():
                     sync_live_scores(year, afl_round)
                 except Exception:
                     logger.warning("Tuesday auto-finalize: score sync failed for R%d", afl_round, exc_info=True)
+
+                # Reconcile missing scores from ScScore data
+                try:
+                    from models.live_sync import reconcile_missing_scores
+                    reconcile_missing_scores(year, afl_round)
+                except Exception:
+                    logger.warning("Tuesday reconciliation failed for R%d", afl_round, exc_info=True)
 
                 # Finalize each league
                 for league_id in pending_league_ids:

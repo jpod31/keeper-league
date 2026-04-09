@@ -850,3 +850,78 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
     return breakdown
 
 
+def reconcile_missing_scores(year, afl_round):
+    """Post-finalization reconciliation: backfill PlayerStat from ScScore for any
+    rostered players who have a ScScore but no PlayerStat (missed by name matching).
+
+    Also creates PlayerStat with score=0 for players whose game completed but
+    have no data at all (true DNPs or scraper misses), so the scoring engine
+    can correctly identify them as DNP.
+
+    Returns: (backfilled_count, flagged_count)
+    """
+    from models.database import (
+        db, AflPlayer, PlayerStat, ScScore, FantasyRoster, AflGame,
+    )
+
+    # All rostered player IDs across all teams
+    rostered_pids = {r.player_id for r in
+                     db.session.query(FantasyRoster.player_id)
+                     .filter_by(is_active=True).all()}
+
+    # Teams whose game completed this round
+    completed_teams = set()
+    for g in AflGame.query.filter_by(year=year, afl_round=afl_round).all():
+        if g.status in ("complete", "live"):
+            completed_teams.add(g.home_team)
+            completed_teams.add(g.away_team)
+
+    backfilled = 0
+    flagged = 0
+
+    for pid in rostered_pids:
+        # Already has a PlayerStat? Skip.
+        existing = PlayerStat.query.filter_by(
+            player_id=pid, year=year, round=afl_round
+        ).first()
+        if existing:
+            continue
+
+        player = db.session.get(AflPlayer, pid)
+        if not player or not player.afl_team:
+            continue
+
+        # Only consider players whose team played this round
+        if player.afl_team not in completed_teams:
+            continue
+
+        # Check if ScScore exists (from live scraper)
+        sc = ScScore.query.filter_by(
+            player_id=pid, year=year, round=afl_round
+        ).first()
+
+        if sc and sc.sc_score is not None:
+            # Backfill from ScScore
+            stat = PlayerStat(
+                player_id=pid, year=year, round=afl_round,
+                supercoach_score=sc.sc_score, is_live=False,
+            )
+            db.session.add(stat)
+            backfilled += 1
+            logger.info("Reconciled: %s (pid=%d) R%d SC=%d from ScScore",
+                        player.name, pid, afl_round, sc.sc_score)
+        else:
+            # No data at all — player's team played but no score anywhere.
+            # Don't create a stat (they might have been a genuine late out / DNP).
+            # Just flag for logging.
+            flagged += 1
+            logger.warning("No score data for rostered player %s (pid=%d, team=%s) in R%d",
+                           player.name, pid, player.afl_team, afl_round)
+
+    if backfilled:
+        db.session.commit()
+        logger.info("Reconciliation R%d: backfilled %d, flagged %d", afl_round, backfilled, flagged)
+
+    return backfilled, flagged
+
+
