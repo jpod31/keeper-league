@@ -217,6 +217,34 @@ function render() {
     h += '</div></div></div>';
   }
 
+  // ═══ CHAPTER 6.5: TEAM HEALTH + LEAGUE ═══
+  h += '<div class="chapter"><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
+  // Radar
+  var hc = a.health_components || {};
+  if (Object.keys(hc).length) {
+    h += '<div><div class="ch-label">Team Health</div>';
+    h += '<div class="ch-card"><div class="ch-card-body" style="padding:4px;">';
+    h += '<div id="radarChart" style="width:100%;height:250px;"></div>';
+    h += '</div></div></div>';
+  }
+  // League table
+  var ls = D.landscape || [];
+  if (ls.length) {
+    var maxSc = Math.max.apply(null, ls.map(function(t){return t.total_sc}));
+    h += '<div><div class="ch-label">League</div>';
+    h += '<div class="ch-card"><div class="ch-card-body" style="padding:10px 16px;">';
+    ls.forEach(function(t, i) {
+      var you = t.team_id === TID;
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #161b22;">';
+      h += '<span style="width:16px;font-size:.72rem;font-weight:700;color:#484f58;">' + (i+1) + '</span>';
+      h += '<span style="flex:1;font-size:.78rem;font-weight:' + (you?'700':'500') + ';color:' + (you?'#58a6ff':'#c9d1d9') + ';">' + t.name + (you?' <span style="font-size:.58rem;color:#6e7681;">(you)</span>':'') + '</span>';
+      h += '<div style="width:70px;"><div style="height:5px;border-radius:3px;background:#21262d;overflow:hidden;"><div style="height:100%;border-radius:3px;width:' + Math.round(t.total_sc/maxSc*100) + '%;background:' + (you?'linear-gradient(90deg,#3fb950,#1f6feb)':'#30363d') + ';"></div></div></div>';
+      h += '<span style="min-width:35px;text-align:right;font-size:.76rem;font-weight:700;color:' + (you?'#58a6ff':'#8b949e') + ';">' + t.avg_sc + '</span></div>';
+    });
+    h += '</div></div></div>';
+  }
+  h += '</div></div>';
+
   // ═══ CHAPTER 7: SCOUTING REPORT ═══
   var secs = D.ai_sections||[];
   if (secs.length > 1) {
@@ -239,6 +267,7 @@ function render() {
   setTimeout(function(){
     renderDynasty();
     renderDepth('all');
+    renderRadar();
   }, 50);
 }
 
@@ -278,6 +307,31 @@ function renderDynasty() {
 }
 
 // ═══ DEPTH BOARD ═══
+function renderRadar() {
+  var el = document.getElementById('radarChart');
+  if (!el || !D.analytics.health_components) return;
+  var r = echarts.init(el);
+  var hc = D.analytics.health_components;
+  r.setOption({
+    radar: {
+      indicator:[{name:'Scoring',max:100},{name:'Depth',max:100},{name:'Balance',max:100},{name:'Youth',max:100},{name:'Trajectory',max:100},{name:'Durability',max:100}],
+      axisName:{color:'#8b949e',fontSize:11,fontWeight:600},
+      splitArea:{areaStyle:{color:['rgba(13,17,23,.8)']}},
+      axisLine:{lineStyle:{color:'#21262d'}},
+      splitLine:{lineStyle:{color:'#21262d'}},
+    },
+    tooltip:{backgroundColor:'#0d1117',borderColor:'#30363d',textStyle:{color:'#c9d1d9'}},
+    series:[{type:'radar',data:[{
+      value:[hc.power||0,hc.depth||0,hc.balance||0,hc.youth||0,hc.trajectory||0,hc.durability||0],
+      areaStyle:{color:'rgba(88,166,255,.15)'},
+      lineStyle:{color:'#58a6ff',width:2},
+      itemStyle:{color:'#58a6ff',borderColor:'#0d1117',borderWidth:2},
+      symbol:'circle',symbolSize:6,
+    }]}]
+  });
+  window.addEventListener('resize',()=>r.resize());
+}
+
 function renderDepth(posFilter) {
   var b=document.getElementById('depthBoard');if(!b||!D.squad_depth)return;
   var sd=D.squad_depth;var h='';
