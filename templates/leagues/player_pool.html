@@ -50,64 +50,42 @@
 
   /* ── Mobile player cards ── */
   .pm-card {
-    display: flex; flex-direction: column; gap: 4px;
+    display: flex; align-items: center; gap: 10px;
     padding: 10px 12px;
-    border-bottom: 1px solid #30363d;
-    cursor: pointer;
-    background: #0d1117;
+    border-bottom: 1px solid #1c2128;
+    cursor: pointer; background: #0d1117;
   }
   .pm-card:active { background: #161b22; }
-  .pm-taken { opacity: .65; }
-
-  /* Row 1: dot + logo + name/team + SC */
-  .pm-top {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .pm-logo { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
-  .pm-info { flex: 1; min-width: 0; }
-  .pm-name-row { display: flex; align-items: center; gap: 5px; }
+  .pm-taken { opacity: .5; }
+  .pm-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; border-radius: 4px; }
+  .pm-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .pm-row1 { display: flex; align-items: center; gap: 5px; }
   .pm-name {
-    font-weight: 700; font-size: .88rem; color: #f0f6fc;
+    font-weight: 700; font-size: .84rem; color: #e6edf3;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    line-height: 1.3;
   }
-  .pm-team { font-size: .7rem; color: #c9d1d9; }
-  .pm-right-col { flex-shrink: 0; text-align: right; min-width: 70px; }
-  .pm-right-top { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  .pm-right-bottom { margin-top: 2px; }
-  .pm-sc { font-size: 1.15rem; font-weight: 800; color: #f0f6fc; line-height: 1; }
-  .pm-sc-none { color: #484f58; }
-
-  /* Row 2: pos badges, age, rating, trend, profile, owner */
-  .pm-bottom {
-    display: flex; align-items: center; gap: 6px;
-    padding-left: 40px;
-  }
-  .pm-pos-badge { padding: 1px 6px; font-size: .6rem; }
-  .pm-gp { font-size: .65rem; color: #8b949e; background: rgba(110,118,129,.15); padding: 1px 5px; border-radius: 4px; }
-  .pm-age { font-size: .7rem; color: #c9d1d9; font-weight: 600; }
-  .pm-rtg {
-    font-size: .65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;
-    background: rgba(139,148,158,.18); color: #c9d1d9;
-  }
-  .pm-trend { font-size: .78rem; }
-  .pm-trend-up { color: #56d364; }
-  .pm-trend-down { color: #f85149; }
-  .pm-trend-flat { color: #8b949e; }
-  .pm-spacer { flex: 1; }
+  .pm-pos-badge { padding: 1px 5px; font-size: .55rem; }
+  .pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #6e7681; }
+  .pm-row2 b { color: #c9d1d9; font-weight: 700; }
+  .pm-sep { width: 1px; height: 9px; background: #21262d; flex-shrink: 0; }
+  .pm-l3 { font-weight: 700; }
+  .pm-l3-up { color: #3fb950; }
+  .pm-l3-down { color: #f85149; }
+  .pm-l3-flat { color: #8b949e; }
+  .pm-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .pm-sc { font-size: 1.05rem; font-weight: 800; color: #e6edf3; line-height: 1; }
+  .pm-sc-none { color: #484f58; font-size: .85rem; }
   .pm-owner {
-    font-size: .6rem; font-weight: 700; padding: 2px 7px; border-radius: 4px;
-    white-space: nowrap; display: inline-block;
+    font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 3px;
+    white-space: nowrap;
   }
-  .pm-fa { font-size: .6rem; font-weight: 600; color: #56d364; }
+  .pm-fa { font-size: .58rem; font-weight: 600; color: #3fb950; }
   .pm-add {
-    background: rgba(63,185,80,.2); border: none;
-    color: #56d364; border-radius: 5px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: .6rem; font-weight: 700; cursor: pointer;
-    padding: 3px 8px;
+    background: rgba(63,185,80,.12); border: none;
+    color: #3fb950; border-radius: 4px;
+    font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px;
   }
-  .pm-wish { font-size: .82rem; color: #484f58; cursor: pointer; flex-shrink: 0; }
+  .pm-wish { font-size: .72rem; color: #30363d; cursor: pointer; flex-shrink: 0; }
 
   /* Hide legacy mobile cards */
   .pool-mob-card {
@@ -364,60 +342,50 @@
              data-status="{{ 'taken' if owner_team else 'available' }}"
              data-owner="{{ owner_team or '' }}"
              onclick="window.location='{{ url_for('player_detail', name=p.name) }}'">
-          {# Row 1: dot + logo + name/team + SC #}
-          <div class="pm-top">
-            {% if teams_playing and p.afl_team and p.afl_team not in teams_playing %}<span class="status-dot status-dot-bye"></span>
-            {% elif p.id in selected_set %}<span class="status-dot status-dot-taken"></span>
-            {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
-            {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
-            {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
-              <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pm-logo">
-            {% else %}<div style="width:32px;"></div>{% endif %}
-            <div class="pm-info">
-              <div class="pm-name-row">
-                <span class="pm-name">{{ p.name }}</span>
-                {% for pos in ['FWD','DEF','RUC','MID'] %}
-                  {% if pos in (p.position or 'MID').split('/') %}
-                    <span class="pos-badge badge-{{ pos|lower }} pm-pos-badge">{{ pos }}</span>
-                  {% endif %}
-                {% endfor %}
-              </div>
-              <span class="pm-team">{{ p.afl_team or '' }}</span>
-            </div>
-            {# Right block: SC + owner/status #}
-            <div class="pm-right-col">
-              <div class="pm-right-top">
-                {% if sc_display %}<span class="pm-sc">{{ '%.1f'|format(sc_display) }}</span>
-                {% else %}<span class="pm-sc pm-sc-none">-</span>{% endif %}
-                <i class="bi bi-star wishlist-star pm-wish" data-pid="{{ p.id }}"
-                   onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"></i>
-              </div>
-              <div class="pm-right-bottom">
-                {% if owner_team %}
-                  <span class="pm-owner" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
-                {% elif can_pickup %}
-                  <button class="pm-add" onclick="event.stopPropagation();showPickupModal({{ p.id }},'{{ p.name|e }}')"><i class="bi bi-plus-lg me-1"></i>Add</button>
-                {% else %}
-                  <span class="pm-fa">Free Agent</span>
+          {% if teams_playing and p.afl_team and p.afl_team not in teams_playing %}<span class="status-dot status-dot-bye"></span>
+          {% elif p.id in selected_set %}<span class="status-dot status-dot-taken"></span>
+          {% elif p.injury_severity %}<span class="status-dot status-dot-injured"></span>
+          {% else %}<span class="status-dot status-dot-available"></span>{% endif %}
+          {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
+            <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="pm-logo">
+          {% endif %}
+          <div class="pm-body">
+            <div class="pm-row1">
+              <span class="pm-name">{{ p.name }}</span>
+              {% for pos in ['FWD','DEF','RUC','MID'] %}
+                {% if pos in (p.position or 'MID').split('/') %}
+                  <span class="pos-badge badge-{{ pos|lower }} pm-pos-badge">{{ pos }}</span>
                 {% endif %}
-              </div>
+              {% endfor %}
+              {% set pt = profile_tags.get(p.id, {}) %}
+              {% if pt %}<span class="profile-tag tag-{{ pt.css }}">{{ pt.tag }}</span>{% endif %}
+            </div>
+            <div class="pm-row2">
+              <span>{{ p.afl_team or '' }}</span>
+              <span class="pm-sep"></span>
+              <span>{{ _age }}y</span>
+              <span class="pm-sep"></span>
+              <span>{{ p.games_played or 0 }}gp</span>
+              {% if pr.l3 %}
+                <span class="pm-sep"></span>
+                {% set l3_diff = pr.l3 - (sc_display or 0) %}
+                <span class="pm-l3 {% if l3_diff > 3 %}pm-l3-up{% elif l3_diff < -3 %}pm-l3-down{% else %}pm-l3-flat{% endif %}">
+                  L3 <b>{{ '%.0f'|format(pr.l3) }}</b>{% if l3_diff > 3 %}<i class="bi bi-caret-up-fill" style="font-size:.55rem;"></i>{% elif l3_diff < -3 %}<i class="bi bi-caret-down-fill" style="font-size:.55rem;"></i>{% endif %}
+                </span>
+              {% endif %}
+              {% if owner_team %}
+                <span class="pm-sep"></span>
+                <span class="pm-owner" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
+              {% endif %}
             </div>
           </div>
-          {# Row 2: games played, age, rating, trend, profile #}
-          <div class="pm-bottom">
-            <span class="pm-gp" title="Games played 2026">{{ p.games_played or 0 }}gp</span>
-            <span class="pm-age">{{ p.age or '-' }}y</span>
-            {% if _rtg %}<span class="pm-rtg">{{ _rtg }}</span>{% endif %}
-            {% if pr.l3 and sc_display %}
-              {% set diff = pr.l3 - sc_display %}
-              {% if diff > 5 %}<i class="bi bi-caret-up-fill pm-trend pm-trend-up"></i>
-              {% elif diff < -5 %}<i class="bi bi-caret-down-fill pm-trend pm-trend-down"></i>
-              {% else %}<i class="bi bi-dash pm-trend pm-trend-flat"></i>{% endif %}
-            {% endif %}
-            {% set pt = profile_tags.get(p.id, {}) %}
-            {% if pt %}
-              <span class="profile-tag tag-{{ pt.css }}">{{ pt.tag }}</span>
-              {% if pt.headline %}<span class="pm-tag-hl">{{ pt.headline }}</span>{% endif %}
+          <div class="pm-right">
+            {% if sc_display %}<span class="pm-sc">{{ '%.0f'|format(sc_display) }}</span>
+            {% else %}<span class="pm-sc pm-sc-none">-</span>{% endif %}
+            {% if not owner_team and can_pickup %}
+              <button class="pm-add" onclick="event.stopPropagation();showPickupModal({{ p.id }},'{{ p.name|e }}')"><i class="bi bi-plus-lg"></i></button>
+            {% elif not owner_team %}
+              <span class="pm-fa">FA</span>
             {% endif %}
           </div>
         </div>
@@ -557,11 +525,7 @@
               {% set _age = p.age or 25 %}
               {% set pt = profile_tags.get(p.id, {}) %}
               {% if pt %}
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span class="profile-tag tag-{{ pt.css }}">{{ pt.tag }}</span>
-                  <span style="font-size:.62rem;color:#8b949e;">{{ pt.headline }}</span>
-                </div>
-                <div style="font-size:.58rem;color:#6e7681;margin-top:2px;max-width:200px;line-height:1.25;">{{ pt.detail }}</div>
+                <span class="profile-tag tag-{{ pt.css }}">{{ pt.tag }}</span>
               {% endif %}
             </td>
             {# Acquired by #}

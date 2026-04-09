@@ -44,6 +44,7 @@ def _compute_rolling_averages():
 
     frames = []
     for year in (prev_year, current_year):
+        # CSV data (historical fitzRoy exports)
         path = os.path.join(config.DATA_DIR, f"player_stats_{year}.csv")
         if os.path.exists(path):
             df = pd.read_csv(path, usecols=["Player", "Round", "SC", "Season"])
@@ -51,26 +52,28 @@ def _compute_rolling_averages():
             df["_year"] = year
             df["_rnd"] = df["Round"].apply(_round_sort_key)
             frames.append(df)
-        else:
-            # No CSV for this year — pull from DB
-            from models.database import PlayerStat, AflPlayer
-            rows = (
-                db.session.query(AflPlayer.name, PlayerStat.round, PlayerStat.supercoach_score)
-                .join(AflPlayer, AflPlayer.id == PlayerStat.player_id)
-                .filter(PlayerStat.year == year, PlayerStat.supercoach_score.isnot(None))
-                .all()
-            )
-            if rows:
-                df = pd.DataFrame(rows, columns=["Player", "Round", "SC"])
-                df["Season"] = year
-                df["_year"] = year
-                df["_rnd"] = df["Round"]
-                frames.append(df)
+
+        # Always also check DB (live-scraped data may be fresher than CSV)
+        from models.database import PlayerStat, AflPlayer
+        rows = (
+            db.session.query(AflPlayer.name, PlayerStat.round, PlayerStat.supercoach_score)
+            .join(AflPlayer, AflPlayer.id == PlayerStat.player_id)
+            .filter(PlayerStat.year == year, PlayerStat.supercoach_score.isnot(None))
+            .all()
+        )
+        if rows:
+            df = pd.DataFrame(rows, columns=["Player", "Round", "SC"])
+            df["Season"] = year
+            df["_year"] = year
+            df["_rnd"] = df["Round"]
+            frames.append(df)
 
     if not frames:
         return {}
 
     all_scores = pd.concat(frames, ignore_index=True)
+    # Deduplicate: keep DB data (last) over CSV if both exist for same player/year/round
+    all_scores = all_scores.drop_duplicates(subset=["Player", "_year", "_rnd"], keep="last")
     all_scores = all_scores.sort_values(["_year", "_rnd"])
 
     result = {}
