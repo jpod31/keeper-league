@@ -92,14 +92,13 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
     dnp_entries = []
     for entry in on_field:
         player_score = _get_player_score(entry.player_id, afl_round, year, league_id, scoring_type, hybrid_base)
-        if player_score is None:
-            player = db.session.get(AflPlayer, entry.player_id)
-            player_team = player.afl_team if player else ""
-            if player_team in started_teams:
-                # Game started but player didn't play — DNP
-                dnp_entries.append(entry)
-            elif player_team not in all_round_teams:
-                # Team on a bye — player definitely not playing
+        player = db.session.get(AflPlayer, entry.player_id)
+        player_team = player.afl_team if player else ""
+
+        if player_score is None or (player_score == 0 and player_team in started_teams):
+            # DNP: no score at all, OR scored exactly 0 from a completed/live game
+            # (SC score of 0 means the player was a late out / did not play)
+            if player_team in started_teams or player_team not in all_round_teams:
                 dnp_entries.append(entry)
             else:
                 # Game hasn't started yet — score 0 for now, not DNP
