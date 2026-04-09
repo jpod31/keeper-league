@@ -139,8 +139,30 @@ def compute_profile_tags(players):
         sc_prev = p.sc_avg_prev or 0
         games = p.games_played or 0
         pos = _primary_pos(p.position)
+
+        # If no current season avg, use previous year or best recent historical avg
+        # so players who are injured/missed early rounds aren't penalised
+        if sc == 0 and sc_prev > 0:
+            sc = sc_prev
+        if sc == 0:
+            ph = history.get(p.name, {})
+            recent_avgs = [(y, sum(s)/len(s)) for y, s in sorted(ph.items(), reverse=True) if len(s) >= 3]
+            if recent_avgs:
+                sc = recent_avgs[0][1]  # most recent year with 3+ games
+
         pct = global_pct.get(p.id, 50)
         pos_pct = pos_percentiles.get(p.id, 50)
+
+        # If player has no current sc_avg but we derived one from history,
+        # estimate their percentile from the distribution
+        if p.sc_avg is None or p.sc_avg == 0:
+            # Find where they'd rank in the global distribution
+            below = sum(1 for _, v in all_sc if v < sc)
+            pct = round(below / max(n_all, 1) * 100, 1) if sc > 0 else 50
+            # Same for positional
+            pos_group = pos_groups.get(pos, [])
+            pos_below = sum(1 for _, v in pos_group if v < sc)
+            pos_pct = round(pos_below / max(len(pos_group) - 1, 1) * 100, 1) if sc > 0 else 50
 
         # Historical data
         ph = history.get(p.name, {})
