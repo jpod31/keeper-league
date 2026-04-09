@@ -1747,11 +1747,13 @@ def team_analytics_api(league_id, team_id):
 
     year = league.season_year
 
+    # Always compute profile tags (needed for narrative)
+    all_players = AflPlayer.query.all()
+    profile_tags = compute_profile_tags(all_players)
+
     # Try cache first
     analytics = get_cached_analytics(team_id, year, "deep")
     if not analytics:
-        all_players = AflPlayer.query.all()
-        profile_tags = compute_profile_tags(all_players)
         analytics = compute_deep_analytics(team_id, league_id, year, profile_tags)
         cache_analytics(team_id, year, "deep", analytics)
 
@@ -1923,7 +1925,6 @@ def team_analytics(league_id, team_id):
                 except Exception:
                     pass
 
-        from flask import current_app
         t = threading.Thread(target=_background_compute,
                              args=(current_app._get_current_object(), league_id, team_id, team.name, year, profile_tags),
                              daemon=True)
