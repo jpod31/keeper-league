@@ -277,6 +277,12 @@ def _auto_finalize_round(year: int, afl_round: int):
                             fantasy_round = 0
 
                     result = finalize_round(league_id, fantasy_round, year)
+                    # Invalidate analytics cache so it recomputes with new data
+                    try:
+                        from models.team_ai_summary import invalidate_analytics_cache
+                        invalidate_analytics_cache()
+                    except Exception:
+                        pass
                     logger.info("Auto-finalize: finalized league %d for %d R%d (fantasy R%d), scores=%s",
                                 league_id, year, afl_round, fantasy_round, result)
                 except Exception:

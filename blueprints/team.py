@@ -1744,7 +1744,10 @@ def team_analytics(league_id, team_id):
     )
     from models.profile_tags import compute_profile_tags
     from models.team_analytics import compute_deep_analytics
-    from models.team_ai_summary import generate_team_summary, compute_league_comparison
+    from models.team_ai_summary import (
+        generate_team_summary, compute_league_comparison,
+        get_cached_analytics, cache_analytics,
+    )
 
     year = league.season_year
 
@@ -1754,30 +1757,41 @@ def team_analytics(league_id, team_id):
     bye_clashes = detect_bye_clashes(team_id, year)
     form_data = get_team_form(team_id, year)
 
-    # Deep analytics for ALL teams (needed for league comparison)
-    all_players = AflPlayer.query.all()
-    profile_tags = compute_profile_tags(all_players)
+    # Try loading cached analytics first (recomputed weekly)
+    analytics = get_cached_analytics(team_id, year, "deep")
+    team_comparison = get_cached_analytics(team_id, year, "league_comp") or {}
+    ai_summary = get_cached_analytics(team_id, year, "ai_summary")
 
-    league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
-    all_team_analytics = {}
-    for lt in league_teams:
+    if analytics is None:
+        # Cache miss — compute everything (slow, but only happens once per week)
+        all_players = AflPlayer.query.all()
+        profile_tags = compute_profile_tags(all_players)
+
+        league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+        all_team_analytics = {}
+        for lt in league_teams:
+            try:
+                lt_analytics = compute_deep_analytics(lt.id, league_id, year, profile_tags)
+                all_team_analytics[lt.id] = lt_analytics
+                cache_analytics(lt.id, year, "deep", lt_analytics)
+            except Exception:
+                logger.debug("Analytics failed for team %d", lt.id, exc_info=True)
+
+        analytics = all_team_analytics.get(team_id, {})
+
+        # League comparison
+        league_comp = compute_league_comparison(league_id, year, all_team_analytics)
+        for tid, comp in league_comp.items():
+            cache_analytics(tid, year, "league_comp", comp)
+        team_comparison = league_comp.get(team_id, {})
+
+        # AI summary
         try:
-            all_team_analytics[lt.id] = compute_deep_analytics(lt.id, league_id, year, profile_tags)
+            ai_summary = generate_team_summary(team_id, team.name, year, analytics, team_comparison)
+            if ai_summary:
+                cache_analytics(team_id, year, "ai_summary", ai_summary)
         except Exception:
-            logger.debug("Analytics failed for team %d", lt.id, exc_info=True)
-
-    analytics = all_team_analytics.get(team_id, {})
-
-    # League comparison rankings
-    league_comp = compute_league_comparison(league_id, year, all_team_analytics)
-    team_comparison = league_comp.get(team_id, {})
-
-    # AI summary (cached)
-    ai_summary = None
-    try:
-        ai_summary = generate_team_summary(team_id, team.name, year, analytics, team_comparison)
-    except Exception:
-        logger.debug("AI summary failed for team %d", team_id, exc_info=True)
+            logger.debug("AI summary failed for team %d", team_id, exc_info=True)
 
     return render_template("team/analytics.html",
                            league=league, team=team,
@@ -1787,8 +1801,7 @@ def team_analytics(league_id, team_id):
                            form_data=form_data,
                            a=analytics,
                            lc=team_comparison,
-                           ai_summary=ai_summary,
-                           all_team_analytics=all_team_analytics)
+                           ai_summary=ai_summary if not isinstance(ai_summary, dict) else ai_summary.get("text", ""))
 
 
 # ── Team logo generation & serving ──────────────────────────────────

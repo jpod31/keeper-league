@@ -16,14 +16,48 @@ from models.database import db, FantasyTeam
 
 logger = logging.getLogger(__name__)
 
-# Cache table — stores generated summaries
+# ════════════════════════════════════════════════════════════════════
+# GENERIC ANALYTICS CACHE — stores any computed analytics as JSON
+# ════════════════════════════════════════════════════════════════════
+
+# In-memory cache: {(team_id, year, cache_type): {"data": ..., "ts": float}}
+_mem_cache = {}
+_CACHE_TTL = 7 * 24 * 3600  # 1 week
+
+
+def get_cached_analytics(team_id, year, cache_type):
+    """Retrieve cached analytics from memory. Returns None on miss."""
+    import time
+    key = (team_id, year, cache_type)
+    entry = _mem_cache.get(key)
+    if entry and (time.time() - entry["ts"]) < _CACHE_TTL:
+        return entry["data"]
+    return None
+
+
+def cache_analytics(team_id, year, cache_type, data):
+    """Store analytics in memory cache."""
+    import time
+    _mem_cache[(team_id, year, cache_type)] = {"data": data, "ts": time.time()}
+
+
+def invalidate_analytics_cache(team_id=None, year=None):
+    """Clear analytics cache. If team_id given, clear just that team. Otherwise clear all."""
+    if team_id and year:
+        for ct in ["deep", "league_comp", "ai_summary"]:
+            _mem_cache.pop((team_id, year, ct), None)
+    else:
+        _mem_cache.clear()
+
+
+# Cache table — stores generated AI summaries (persistent across restarts)
 class TeamAnalysisCache(db.Model):
     __tablename__ = "team_analysis_cache"
 
     id = db.Column(db.Integer, primary_key=True)
     team_id = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
-    data_hash = db.Column(db.String(32), nullable=False)  # hash of input data to detect staleness
+    data_hash = db.Column(db.String(32), nullable=False)
     summary = db.Column(db.Text)
     generated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
