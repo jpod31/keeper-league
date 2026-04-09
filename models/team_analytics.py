@@ -1270,7 +1270,7 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
             "name": p.name,
             "age": age,
             "position": pos,
-            "current": round(tt, 1),
+            "current": round(base_sc, 1),
         }
         proj_1yr_players.append({**entry_base, "projected": yr1, "change": change_1})
         proj_2yr_players.append({**entry_base, "projected": yr2, "change": change_2})
