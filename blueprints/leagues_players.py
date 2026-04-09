@@ -286,6 +286,10 @@ def player_pool(league_id):
         teams_playing.add(g.home_team)
         teams_playing.add(g.away_team)
 
+    # Compute rich profile tags with historical data
+    from models.profile_tags import compute_profile_tags
+    profile_tags = compute_profile_tags(players)
+
     return render_template("leagues/player_pool.html",
                            league=league,
                            players=players,
@@ -301,7 +305,8 @@ def player_pool(league_id):
                            kvi_map=kvi_map,
                            acquired_map=acquired_map,
                            selected_set=selected_set,
-                           teams_playing=teams_playing)
+                           teams_playing=teams_playing,
+                           profile_tags=profile_tags)
 
 
 @leagues_bp.route("/<int:league_id>/player-pool/pickup", methods=["POST"])
