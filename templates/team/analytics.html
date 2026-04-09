@@ -2,199 +2,166 @@
 {% set active_tab = 'team' %}
 {% block league_content %}
 <style>
-  .wr { font-family:'Inter',system-ui,sans-serif; }
+  .wr { --green:#3fb950; --red:#ef4444; --blue:#58a6ff; --purple:#d2a8ff; --orange:#fb923c; --cyan:#06b6d4; --gold:#fbbf24; --grey:#8b949e; }
 
   /* Hero */
-  .wr-hero { display:flex; align-items:center; gap:20px; padding:24px; background:linear-gradient(135deg,#0d1117,#161b22); border:1px solid #21262d; border-radius:14px; margin-bottom:16px; }
-  .wr-ring { position:relative; width:80px; height:80px; flex-shrink:0; }
+  .wr-hero { display:flex; align-items:center; gap:20px; padding:24px; background:linear-gradient(135deg,#0d1117 0%,#161b22 100%); border:1px solid #21262d; border-radius:14px; margin-bottom:16px; }
+  .wr-ring { position:relative; width:84px; height:84px; flex-shrink:0; }
   .wr-ring svg { transform:rotate(-90deg); }
-  .wr-ring-val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.2rem; font-weight:900; color:#e6edf3; }
-  .wr-hero-text { flex:1; }
-  .wr-hero-title { font-size:1.1rem; font-weight:800; color:#e6edf3; }
-  .wr-hero-verdict { font-size:.85rem; color:#8b949e; margin-top:4px; line-height:1.5; }
-  .wr-hero-stats { display:flex; gap:20px; margin-top:10px; font-size:.75rem; }
-  .wr-hero-stat b { color:#e6edf3; }
+  .wr-ring-val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:900; color:#e6edf3; }
+  .wr-hero-info { flex:1; }
+  .wr-hero-name { font-size:1.1rem; font-weight:800; color:#e6edf3; margin-bottom:4px; }
+  .wr-hero-verdict { font-size:.84rem; color:#c9d1d9; line-height:1.6; }
+  .wr-hero-chips { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .wr-chip { font-size:.72rem; padding:4px 12px; border-radius:8px; font-weight:600; background:#0d1117; border:1px solid #21262d; }
+  .wr-chip b { color:#e6edf3; }
 
-  /* Section */
-  .wr-section { margin-bottom:20px; }
-  .wr-section-title { font-size:.72rem; font-weight:800; color:#6e7681; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  /* Cards */
   .wr-card { background:#161b22; border:1px solid #21262d; border-radius:12px; overflow:hidden; margin-bottom:14px; }
-  .wr-card-body { padding:16px 18px; }
+  .wr-hdr { background:#0d1117; border-bottom:1px solid #21262d; padding:12px 18px; font-size:.78rem; font-weight:700; color:#e6edf3; display:flex; align-items:center; gap:8px; }
+  .wr-body { padding:16px 18px; }
+
+  /* Section labels */
+  .wr-section { margin-bottom:20px; }
+  .wr-stitle { font-size:.7rem; font-weight:800; color:#6e7681; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
 
   /* Scouting report */
-  .wr-scout { display:grid; grid-template-columns:1fr; gap:12px; }
-  .wr-scout-section { padding:16px 18px; background:#0d1117; border-radius:10px; border-left:3px solid #30363d; }
-  .wr-scout-title { font-size:.72rem; font-weight:800; color:#58a6ff; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
-  .wr-scout-body { font-size:.84rem; color:#c9d1d9; line-height:1.6; }
-  .wr-scout-verdict { border-left-color:#3fb950; }
-  .wr-scout-engine { border-left-color:#58a6ff; }
-  .wr-scout-risk { border-left-color:#ef4444; }
-  .wr-scout-outlook { border-left-color:#d2a8ff; }
-  .wr-scout-playbook { border-left-color:#fb923c; }
+  .wr-scout { padding:16px 18px; background:#0d1117; border-radius:10px; margin-bottom:10px; border-left:3px solid #30363d; }
+  .wr-scout-title { font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+  .wr-scout-body { font-size:.84rem; color:#c9d1d9; line-height:1.65; }
 
-  /* Contention timeline */
-  .wr-timeline { display:flex; gap:0; align-items:stretch; border-radius:10px; overflow:hidden; }
-  .wr-tl-year { flex:1; padding:14px 12px; text-align:center; border-right:1px solid #21262d; position:relative; }
-  .wr-tl-year:last-child { border-right:none; }
-  .wr-tl-label { font-size:.65rem; font-weight:700; color:#8b949e; text-transform:uppercase; letter-spacing:.5px; }
-  .wr-tl-score { font-size:1.1rem; font-weight:800; margin-top:4px; }
-  .wr-tl-events { font-size:.62rem; color:#6e7681; margin-top:6px; line-height:1.4; }
-  .wr-tl-strong { background:rgba(63,185,80,.06); }
-  .wr-tl-strong .wr-tl-score { color:#3fb950; }
-  .wr-tl-moderate { background:rgba(251,191,36,.06); }
-  .wr-tl-moderate .wr-tl-score { color:#fbbf24; }
-  .wr-tl-weak { background:rgba(239,68,68,.06); }
-  .wr-tl-weak .wr-tl-score { color:#ef4444; }
-
-  /* Squad depth board */
+  /* Depth cards */
   .wr-depth-row { margin-bottom:14px; }
   .wr-depth-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-  .wr-depth-pos { font-size:.8rem; font-weight:800; }
-  .wr-depth-meta { font-size:.65rem; color:#8b949e; }
   .wr-depth-cards { display:flex; gap:6px; flex-wrap:wrap; }
-  .wr-player-card { padding:8px 10px; background:#0d1117; border:1px solid #21262d; border-radius:8px; min-width:110px; flex:0 0 auto; cursor:default; transition:border-color .15s; }
-  .wr-player-card:hover { border-color:#30363d; }
-  .wr-pc-name { font-size:.75rem; font-weight:700; color:#e6edf3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
-  .wr-pc-sc { font-size:.95rem; font-weight:800; margin-top:2px; }
-  .wr-pc-meta { font-size:.6rem; color:#6e7681; margin-top:2px; }
-  .wr-pc-rising { border-left:3px solid #3fb950; }
-  .wr-pc-declining { border-left:3px solid #ef4444; }
+  .wr-pc { padding:10px 12px; background:#0d1117; border:1px solid #21262d; border-radius:8px; min-width:115px; cursor:pointer; transition:all .2s; position:relative; }
+  .wr-pc:hover { border-color:#30363d; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.3); }
+  .wr-pc-name { font-size:.74rem; font-weight:700; color:#e6edf3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px; }
+  .wr-pc-sc { font-size:1rem; font-weight:800; margin-top:2px; }
+  .wr-pc-meta { font-size:.58rem; color:#6e7681; margin-top:3px; display:flex; gap:4px; align-items:center; }
+  .wr-pc-rising { border-left:3px solid var(--green); }
+  .wr-pc-declining { border-left:3px solid var(--red); }
   .wr-pc-stable { border-left:3px solid #30363d; }
-  .wr-depth-bar { height:4px; border-radius:2px; background:#21262d; margin-top:6px; position:relative; overflow:visible; }
-  .wr-depth-fill { height:100%; border-radius:2px; }
-  .wr-depth-marker { position:absolute; top:-4px; width:2px; height:12px; background:#fbbf24; border-radius:1px; }
+  .wr-pc-tooltip { display:none; position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:10px 14px; width:200px; z-index:10; box-shadow:0 8px 24px rgba(0,0,0,.5); font-size:.72rem; }
+  .wr-pc:hover .wr-pc-tooltip { display:block; }
+  .wr-pc-tt-row { display:flex; justify-content:space-between; padding:2px 0; }
+  .wr-pc-tt-lbl { color:#8b949e; }
+  .wr-pc-tt-val { color:#e6edf3; font-weight:600; }
 
-  /* Trade table */
+  /* Trade */
   .wr-trade-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .wr-trade-panel { background:#0d1117; border-radius:10px; padding:14px 16px; }
-  .wr-trade-title { font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+  .wr-trade-title { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
   .wr-trade-row { display:flex; align-items:center; gap:6px; padding:5px 0; border-bottom:1px solid #161b22; font-size:.74rem; }
   .wr-trade-row:last-child { border-bottom:none; }
-  .wr-trade-name { flex:1; color:#e6edf3; font-weight:600; }
-  .wr-trade-sc { font-weight:700; min-width:35px; text-align:right; }
-  .wr-trade-tag { font-size:.55rem; }
-  .wr-gap-badge { font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; background:rgba(63,185,80,.1); color:#3fb950; }
+  .wr-gap-badge { font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; background:rgba(63,185,80,.12); color:var(--green); }
 
-  /* League landscape */
-  .wr-landscape { display:flex; gap:8px; align-items:flex-end; height:250px; }
-  .wr-ls-col { flex:1; display:flex; flex-direction:column-reverse; gap:1px; border-radius:6px 6px 0 0; overflow:hidden; position:relative; }
-  .wr-ls-block { min-height:3px; transition:opacity .15s; }
-  .wr-ls-block:hover { opacity:.8; }
-  .wr-ls-label { text-align:center; font-size:.65rem; font-weight:700; padding-top:6px; }
-  .wr-ls-total { text-align:center; font-size:.6rem; color:#6e7681; }
-  .wr-ls-you { outline:2px solid #58a6ff; outline-offset:1px; border-radius:6px; }
+  /* League table */
+  .wr-league-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #161b22; }
+  .wr-league-row:last-child { border-bottom:none; }
 
-  /* Recommendations */
-  .wr-rec { padding:14px 18px; background:#0d1117; border-radius:10px; border-left:4px solid #30363d; margin-bottom:8px; }
-  .wr-rec-title { font-size:.82rem; font-weight:700; color:#e6edf3; margin-bottom:4px; }
-  .wr-rec-body { font-size:.76rem; color:#8b949e; line-height:1.5; }
-  .wr-rec-impact { font-size:.62rem; font-weight:700; padding:2px 8px; border-radius:6px; float:right; }
+  /* Insights */
+  .wr-insight { padding:14px 18px; border-radius:10px; margin-bottom:8px; border-left:4px solid #30363d; background:#0d1117; }
+  .wr-insight-title { font-size:.82rem; font-weight:700; color:#e6edf3; }
+  .wr-insight-body { font-size:.76rem; color:#8b949e; line-height:1.5; margin-top:3px; }
+
+  /* Chart containers */
+  .wr-chart { width:100%; border-radius:8px; overflow:hidden; }
 
   @media(max-width:768px) {
     .wr-hero { flex-direction:column; text-align:center; }
-    .wr-hero-stats { justify-content:center; flex-wrap:wrap; }
+    .wr-hero-chips { justify-content:center; }
     .wr-trade-grid { grid-template-columns:1fr; }
-    .wr-landscape { height:180px; }
-    .wr-scout { grid-template-columns:1fr; }
+    .wr-depth-cards { overflow-x:auto; flex-wrap:nowrap; }
+    .wr-pc { min-width:130px; flex-shrink:0; }
   }
 </style>
 
 <div class="wr">
 {% if a %}
+{% set role_labels = {'small_fwd':'Small Fwd','mid_fwd':'Med Fwd','key_fwd':'Key Fwd','small_mid':'Small Mid','tall_mid':'Tall Mid','small_def':'Small Def','key_def':'Key Def','ruck':'Ruck'} %}
 
-{# ════════ HERO BANNER ════════ #}
+{# ═══════════════ HERO ═══════════════ #}
 {% set hs = a.health_score|default(50) %}
 {% set lc_sc = (a.league_context.avg_sc_rank if a.league_context is defined and a.league_context is mapping else {}) %}
 <div class="wr-hero">
   <div class="wr-ring">
-    <svg width="80" height="80" viewBox="0 0 80 80">
-      <circle cx="40" cy="40" r="34" fill="none" stroke="#21262d" stroke-width="6"/>
-      <circle cx="40" cy="40" r="34" fill="none" stroke="{% if hs >= 70 %}#3fb950{% elif hs >= 45 %}#fbbf24{% else %}#ef4444{% endif %}" stroke-width="6" stroke-linecap="round" stroke-dasharray="{{ (hs/100*214)|int }} 214"/>
+    <svg width="84" height="84" viewBox="0 0 84 84">
+      <circle cx="42" cy="42" r="36" fill="none" stroke="#21262d" stroke-width="6"/>
+      <circle cx="42" cy="42" r="36" fill="none" stroke="{% if hs >= 70 %}var(--green){% elif hs >= 45 %}var(--gold){% else %}var(--red){% endif %}" stroke-width="6" stroke-linecap="round" stroke-dasharray="{{ (hs/100*226)|int }} 226"/>
     </svg>
     <div class="wr-ring-val">{{ hs|int }}</div>
   </div>
-  <div class="wr-hero-text">
-    <div class="wr-hero-title">{{ team.name }}</div>
+  <div class="wr-hero-info">
+    <div class="wr-hero-name">{{ team.name }}</div>
     {% if ai_sections and ai_sections[0] %}
     <div class="wr-hero-verdict">{{ ai_sections[0].body }}</div>
     {% endif %}
-    <div class="wr-hero-stats">
-      <span><b>{{ a.season_avg|default(0)|int }}</b> avg/round</span>
-      <span><b>{{ lc_sc.rank|default('?') }}/{{ lc_sc.of|default('?') }}</b> in league</span>
-      <span><b>{{ a.avg_age|default(0) }}</b> avg age</span>
-      <span style="color:{% if a.window == 'Building' %}#60a5fa{% elif a.window == 'Win Now' %}#fbbf24{% elif a.window == 'Declining' %}#ef4444{% else %}#8b949e{% endif %};font-weight:700;">{{ a.window|default('?') }}</span>
+    <div class="wr-hero-chips">
+      <span class="wr-chip"><b>{{ a.season_avg|default(0)|int }}</b> avg/round</span>
+      <span class="wr-chip"><b>{{ lc_sc.rank|default('?') }}/{{ lc_sc.of|default('?') }}</b> in league</span>
+      <span class="wr-chip"><b>{{ a.avg_age|default(0) }}</b> avg age</span>
+      <span class="wr-chip" style="border-color:{% if a.window == 'Building' %}var(--blue){% elif a.window == 'Win Now' %}var(--gold){% elif a.window == 'Declining' %}var(--red){% else %}#30363d{% endif %};color:{% if a.window == 'Building' %}var(--blue){% elif a.window == 'Win Now' %}var(--gold){% elif a.window == 'Declining' %}var(--red){% else %}var(--grey){% endif %};">{{ a.window|default('?') }}</span>
     </div>
   </div>
 </div>
 
-{# ════════ CONTENTION TIMELINE ════════ #}
+{# ═══════════════ CONTENTION TIMELINE (ECharts) ═══════════════ #}
 {% if contention and contention.years %}
 <div class="wr-section">
-  <div class="wr-section-title"><i class="bi bi-calendar-range"></i>Contention Window</div>
+  <div class="wr-stitle"><i class="bi bi-calendar-range"></i>Contention Window</div>
   <div class="wr-card">
-    <div class="wr-card-body" style="padding:0;">
-      <div class="wr-timeline">
-        {% for yr in contention.years %}
-        <div class="wr-tl-year wr-tl-{{ yr.status }}">
-          <div class="wr-tl-label">{{ yr.label }}</div>
-          <div class="wr-tl-score">{{ yr.total|int }}</div>
-          {% for ev in yr.events[:2] %}
-          <div class="wr-tl-events">{{ ev }}</div>
-          {% endfor %}
-        </div>
-        {% endfor %}
-      </div>
+    <div class="wr-body" style="padding:8px 12px;">
+      <div id="contentionChart" class="wr-chart" style="height:220px;"></div>
     </div>
   </div>
 </div>
 {% endif %}
 
-{# ════════ SCOUTING REPORT ════════ #}
+{# ═══════════════ SCOUTING REPORT ═══════════════ #}
 {% if ai_sections and ai_sections|length > 1 %}
 <div class="wr-section">
-  <div class="wr-section-title"><i class="bi bi-clipboard2-data"></i>Scouting Report</div>
-  <div class="wr-scout">
-    {% set section_styles = ['wr-scout-engine', 'wr-scout-risk', 'wr-scout-outlook', 'wr-scout-playbook'] %}
-    {% for sec in ai_sections[1:] %}
-    <div class="wr-scout-section {{ section_styles[loop.index0] if loop.index0 < section_styles|length else '' }}">
-      {% if sec.title %}<div class="wr-scout-title">{{ sec.title }}</div>{% endif %}
-      <div class="wr-scout-body">{{ sec.body }}</div>
-    </div>
-    {% endfor %}
+  <div class="wr-stitle"><i class="bi bi-clipboard2-data"></i>Scouting Report</div>
+  {% set scout_colors = ['var(--blue)', 'var(--red)', 'var(--purple)', 'var(--orange)'] %}
+  {% for sec in ai_sections[1:] %}
+  <div class="wr-scout" style="border-left-color:{{ scout_colors[loop.index0] if loop.index0 < scout_colors|length else '#30363d' }};">
+    {% if sec.title %}<div class="wr-scout-title" style="color:{{ scout_colors[loop.index0] if loop.index0 < scout_colors|length else 'var(--grey)' }};">{{ sec.title }}</div>{% endif %}
+    <div class="wr-scout-body">{{ sec.body }}</div>
   </div>
+  {% endfor %}
 </div>
 {% endif %}
 
-{# ════════ SQUAD DEPTH BOARD ════════ #}
+{# ═══════════════ SQUAD DEPTH ═══════════════ #}
 {% if squad_depth %}
 <div class="wr-section">
-  <div class="wr-section-title"><i class="bi bi-grid-3x3-gap"></i>Squad Depth</div>
+  <div class="wr-stitle"><i class="bi bi-grid-3x3-gap"></i>Squad Depth</div>
   <div class="wr-card">
-    <div class="wr-card-body">
+    <div class="wr-body">
       {% for pos in ['DEF','MID','RUC','FWD'] %}
       {% set pd = squad_depth.get(pos, {}) %}
       <div class="wr-depth-row">
         <div class="wr-depth-hdr">
-          <span class="wr-depth-pos"><span class="pos-badge pos-{{ pos }}" style="font-size:.65rem;padding:2px 6px;">{{ pos }}</span> <span style="color:#8b949e;font-weight:500;">{{ pd.count|default(0) }} players</span></span>
-          <span class="wr-depth-meta">
-            Avg <b style="color:#e6edf3;">{{ pd.avg_sc|default(0) }}</b>
-            <span style="color:{% if pd.diff|default(0) > 0 %}#3fb950{% elif pd.diff|default(0) < 0 %}#ef4444{% else %}#6e7681{% endif %};">
-              ({{ '%+.0f'|format(pd.diff|default(0)) }} vs league)
-            </span>
-          </span>
+          <span><span class="pos-badge pos-{{ pos }}" style="font-size:.65rem;padding:2px 6px;">{{ pos }}</span> <span style="font-size:.72rem;color:#8b949e;">{{ pd.count|default(0) }} players &middot; avg <b style="color:#e6edf3;">{{ pd.avg_sc|default(0) }}</b></span></span>
+          <span style="font-size:.68rem;{% if pd.diff|default(0) > 3 %}color:var(--green){% elif pd.diff|default(0) < -3 %}color:var(--red){% else %}color:var(--grey){% endif %};font-weight:600;">{{ '%+.0f'|format(pd.diff|default(0)) }} vs league</span>
         </div>
         <div class="wr-depth-cards">
           {% for p in pd.get('players', [])[:8] %}
-          <div class="wr-player-card wr-pc-{{ p.trajectory }}" title="{{ p.name }} — {{ p.tag }}">
+          <div class="wr-pc wr-pc-{{ p.trajectory }}" onclick="window.location='{{ url_for('player_detail', name=p.name) }}'">
+            <div class="wr-pc-tooltip">
+              <div class="wr-pc-tt-row"><span class="wr-pc-tt-lbl">SC Average</span><span class="wr-pc-tt-val">{{ p.sc|int }}</span></div>
+              <div class="wr-pc-tt-row"><span class="wr-pc-tt-lbl">Age</span><span class="wr-pc-tt-val">{{ p.age }}</span></div>
+              <div class="wr-pc-tt-row"><span class="wr-pc-tt-lbl">Phase</span><span class="wr-pc-tt-val">{{ p.peak_phase|replace('-',' ')|title }}</span></div>
+              <div class="wr-pc-tt-row"><span class="wr-pc-tt-lbl">Trend</span><span class="wr-pc-tt-val" style="color:{% if p.trajectory == 'rising' %}var(--green){% elif p.trajectory == 'declining' %}var(--red){% else %}var(--grey){% endif %};">{{ p.trajectory|title }}</span></div>
+            </div>
             <div class="wr-pc-name">{{ p.name }}</div>
-            <div class="wr-pc-sc" style="color:#e6edf3;">{{ p.sc|int }}</div>
-            <div class="wr-pc-meta">{{ p.age }}y &middot; <span class="profile-tag tag-{{ p.tag_css }}" style="font-size:.5rem;padding:1px 4px;">{{ p.tag }}</span></div>
+            <div class="wr-pc-sc" style="color:{% if p.sc >= 100 %}var(--green){% elif p.sc >= 80 %}#e6edf3{% else %}var(--grey){% endif %};">{{ p.sc|int }}</div>
+            <div class="wr-pc-meta">
+              {{ p.age }}y
+              <span class="profile-tag tag-{{ p.tag_css }}" style="font-size:.48rem;padding:0px 4px;">{{ p.tag }}</span>
+            </div>
           </div>
           {% endfor %}
-        </div>
-        <div class="wr-depth-bar">
-          <div class="wr-depth-fill" style="width:{{ (pd.avg_sc|default(0)/120*100)|int }}%;background:linear-gradient(90deg,#3fb950,#1f6feb);"></div>
-          {% if pd.league_avg|default(0) > 0 %}<div class="wr-depth-marker" style="left:{{ (pd.league_avg/120*100)|int }}%;" title="League avg: {{ pd.league_avg }}"></div>{% endif %}
         </div>
       </div>
       {% endfor %}
@@ -204,53 +171,63 @@
 {% endif %}
 
 <div class="row g-3">
-  {# ════════ TRADE TABLE ════════ #}
-  {% if trade_table %}
+  {# ═══════════════ PLAYER AGE/SC CHART (ECharts) ═══════════════ #}
   <div class="col-lg-7">
     <div class="wr-section">
-      <div class="wr-section-title"><i class="bi bi-arrow-left-right"></i>The Trade Table</div>
+      <div class="wr-stitle"><i class="bi bi-people"></i>Roster Map</div>
       <div class="wr-card">
-        <div class="wr-card-body">
+        <div class="wr-body" style="padding:8px;">
+          <div id="rosterMapChart" class="wr-chart" style="height:320px;"></div>
+        </div>
+      </div>
+    </div>
+
+    {# Trade table #}
+    {% if trade_table %}
+    <div class="wr-section">
+      <div class="wr-stitle"><i class="bi bi-arrow-left-right"></i>The Trade Table</div>
+      <div class="wr-card">
+        <div class="wr-body">
           {% if trade_table.gaps %}
           <div style="margin-bottom:12px;">
             {% for g in trade_table.gaps %}
-            <div style="font-size:.75rem;color:#ef4444;margin-bottom:4px;"><b>{{ g.position }}</b> gap: your avg {{ g.avg_sc }} vs league {{ g.league_avg }} ({{ g.gap }} behind). Weakest: {{ g.weakest_player }} ({{ g.weakest_sc|int }})</div>
+            <div style="font-size:.76rem;color:var(--red);margin-bottom:4px;"><b>{{ g.position }}</b> — your avg {{ g.avg_sc }} vs league {{ g.league_avg }} &middot; weakest: {{ g.weakest_player }} ({{ g.weakest_sc|int }})</div>
             {% endfor %}
           </div>
           {% endif %}
           <div class="wr-trade-grid">
             <div class="wr-trade-panel">
-              <div class="wr-trade-title" style="color:#3fb950;">Free Agents</div>
+              <div class="wr-trade-title" style="color:var(--green);">Free Agents</div>
               {% for fa in trade_table.free_agents[:8] %}
               <div class="wr-trade-row">
                 <span class="pos-badge pos-{{ fa.position }}" style="font-size:.5rem;padding:1px 4px;">{{ fa.position }}</span>
-                <span class="wr-trade-name">{{ fa.name }} <span style="color:#6e7681;font-size:.6rem;">{{ fa.age }}y</span></span>
+                <span style="flex:1;color:#e6edf3;font-weight:600;">{{ fa.name }} <span style="color:#6e7681;font-size:.6rem;">{{ fa.age }}y</span></span>
                 {% if fa.fills_gap %}<span class="wr-gap-badge">fills gap</span>{% endif %}
-                <span class="wr-trade-sc" style="color:#3fb950;">{{ fa.sc_avg|int }}</span>
+                <span style="font-weight:700;color:var(--green);min-width:30px;text-align:right;">{{ fa.sc_avg|int }}</span>
               </div>
               {% endfor %}
             </div>
             <div class="wr-trade-panel">
-              <div class="wr-trade-title" style="color:#58a6ff;">On Other Benches</div>
+              <div class="wr-trade-title" style="color:var(--blue);">Trade Targets (Other Benches)</div>
               {% for bt in trade_table.bench_targets[:8] %}
               <div class="wr-trade-row">
                 <span class="pos-badge pos-{{ bt.position }}" style="font-size:.5rem;padding:1px 4px;">{{ bt.position }}</span>
-                <span class="wr-trade-name">{{ bt.name }} <span style="color:#6e7681;font-size:.6rem;">{{ bt.owner }}</span></span>
+                <span style="flex:1;color:#e6edf3;font-weight:600;">{{ bt.name }} <span style="color:#6e7681;font-size:.6rem;">{{ bt.owner }}</span></span>
                 {% if bt.fills_gap %}<span class="wr-gap-badge">fills gap</span>{% endif %}
-                <span class="wr-trade-sc" style="color:#58a6ff;">{{ bt.sc_avg|int }}</span>
+                <span style="font-weight:700;color:var(--blue);min-width:30px;text-align:right;">{{ bt.sc_avg|int }}</span>
               </div>
               {% endfor %}
             </div>
           </div>
           {% if trade_table.surplus %}
-          <div style="margin-top:12px;">
-            <div style="font-size:.68rem;font-weight:700;color:#fb923c;margin-bottom:6px;">YOUR TRADEABLE ASSETS</div>
+          <div style="margin-top:14px;">
+            <div style="font-size:.68rem;font-weight:800;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Your Tradeable Assets</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              {% for s in trade_table.surplus[:6] %}
-              <div style="background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:6px 10px;font-size:.72rem;">
+              {% for s in trade_table.surplus[:8] %}
+              <div style="background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:8px 12px;font-size:.74rem;display:flex;align-items:center;gap:6px;">
+                <span class="pos-badge pos-{{ s.position }}" style="font-size:.48rem;padding:1px 4px;">{{ s.position }}</span>
                 <span style="color:#e6edf3;font-weight:600;">{{ s.name }}</span>
-                <span style="color:#8b949e;">{{ s.position }} {{ s.age }}y</span>
-                <span style="color:#fb923c;font-weight:700;">{{ s.sc_avg|int }}</span>
+                <span style="color:var(--orange);font-weight:700;">{{ s.sc_avg|int }}</span>
               </div>
               {% endfor %}
             </div>
@@ -259,45 +236,80 @@
         </div>
       </div>
     </div>
+    {% endif %}
   </div>
-  {% endif %}
 
-  {# ════════ LEAGUE AT A GLANCE ════════ #}
-  {% if landscape %}
+  {# ═══════════════ RIGHT COLUMN ═══════════════ #}
   <div class="col-lg-5">
+    {# Team Health Radar (ECharts) #}
     <div class="wr-section">
-      <div class="wr-section-title"><i class="bi bi-trophy"></i>League At a Glance</div>
+      <div class="wr-stitle"><i class="bi bi-hexagon"></i>Team Profile</div>
       <div class="wr-card">
-        <div class="wr-card-body" style="padding:10px 16px;">
+        <div class="wr-body" style="padding:4px;">
+          <div id="radarChart" class="wr-chart" style="height:260px;"></div>
+        </div>
+      </div>
+    </div>
+
+    {# League Comparison #}
+    {% if landscape %}
+    <div class="wr-section">
+      <div class="wr-stitle"><i class="bi bi-trophy"></i>League Standings</div>
+      <div class="wr-card">
+        <div class="wr-body" style="padding:10px 16px;">
           {% set max_sc = landscape|map(attribute='total_sc')|max %}
           {% for t in landscape %}
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;{% if not loop.last %}border-bottom:1px solid #161b22;{% endif %}">
+          <div class="wr-league-row">
             <span style="width:16px;font-size:.7rem;font-weight:700;color:#484f58;">{{ loop.index }}</span>
-            <span style="flex:1;font-size:.8rem;font-weight:{% if t.team_id == team.id %}700{% else %}500{% endif %};color:{% if t.team_id == team.id %}#58a6ff{% else %}#c9d1d9{% endif %};">{{ t.name }}{% if t.team_id == team.id %} <span style="font-size:.6rem;color:#6e7681;">(you)</span>{% endif %}</span>
-            <div style="width:90px;">
-              <div style="height:5px;border-radius:3px;background:#21262d;overflow:hidden;">
-                <div style="height:100%;border-radius:3px;width:{{ (t.total_sc/max_sc*100)|int }}%;background:{% if t.team_id == team.id %}linear-gradient(90deg,#3fb950,#1f6feb){% else %}#30363d{% endif %};"></div>
-              </div>
-            </div>
-            <span style="min-width:40px;text-align:right;font-size:.78rem;font-weight:700;color:{% if t.team_id == team.id %}#58a6ff{% else %}#8b949e{% endif %};">{{ t.avg_sc }}</span>
+            <span style="flex:1;font-size:.78rem;font-weight:{% if t.team_id == team.id %}700{% else %}500{% endif %};color:{% if t.team_id == team.id %}var(--blue){% else %}#c9d1d9{% endif %};">{{ t.name }}{% if t.team_id == team.id %} <span style="font-size:.58rem;color:#6e7681;">(you)</span>{% endif %}</span>
+            <div style="width:80px;"><div style="height:5px;border-radius:3px;background:#21262d;overflow:hidden;"><div style="height:100%;border-radius:3px;width:{{ (t.total_sc/max_sc*100)|int }}%;background:{% if t.team_id == team.id %}linear-gradient(90deg,var(--green),var(--blue)){% else %}#30363d{% endif %};"></div></div></div>
+            <span style="min-width:35px;text-align:right;font-size:.76rem;font-weight:700;color:{% if t.team_id == team.id %}var(--blue){% else %}var(--grey){% endif %};">{{ t.avg_sc }}</span>
           </div>
           {% endfor %}
         </div>
       </div>
     </div>
+    {% endif %}
+
+    {# Next Year Movers #}
+    {% if a.aging_in or a.aging_out %}
+    <div class="wr-section">
+      <div class="wr-stitle"><i class="bi bi-arrow-up-right"></i>Next Year Outlook</div>
+      <div class="wr-card">
+        <div class="wr-body">
+          {% if a.aging_in %}
+          <div style="font-size:.68rem;font-weight:800;color:var(--green);margin-bottom:6px;">EXPECTED TO IMPROVE</div>
+          {% for p in a.aging_in[:5] %}
+          <div style="display:flex;justify-content:space-between;font-size:.74rem;padding:4px 0;border-bottom:1px solid #161b22;">
+            <span style="color:#e6edf3;">{{ p.name }} <span style="color:#6e7681;font-size:.6rem;">{{ p.age }}yo → {{ p.age + 1 }}</span></span>
+            <span style="color:var(--green);font-weight:700;">{{ '%+.0f'|format(p.change) }}</span>
+          </div>
+          {% endfor %}
+          {% endif %}
+          {% if a.aging_out %}
+          <div style="font-size:.68rem;font-weight:800;color:var(--red);margin-top:12px;margin-bottom:6px;">EXPECTED TO DECLINE</div>
+          {% for p in a.aging_out[:5] %}
+          <div style="display:flex;justify-content:space-between;font-size:.74rem;padding:4px 0;border-bottom:1px solid #161b22;">
+            <span style="color:#e6edf3;">{{ p.name }} <span style="color:#6e7681;font-size:.6rem;">{{ p.age }}yo → {{ p.age + 1 }}</span></span>
+            <span style="color:var(--red);font-weight:700;">{{ '%+.0f'|format(p.change) }}</span>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
 </div>
 
-{# ════════ RECOMMENDATIONS ════════ #}
+{# ═══════════════ INSIGHTS ═══════════════ #}
 {% if a.insights %}
 <div class="wr-section">
-  <div class="wr-section-title"><i class="bi bi-lightbulb"></i>Your Moves</div>
+  <div class="wr-stitle"><i class="bi bi-lightbulb"></i>Recommended Actions</div>
   {% for ins in a.insights[:4] %}
-  <div class="wr-rec" style="border-left-color:{% if ins.type == 'warning' %}#ef4444{% elif ins.type == 'opportunity' %}#3fb950{% else %}#58a6ff{% endif %};">
-    {% if ins.impact %}<span class="wr-rec-impact" style="background:{% if ins.type == 'warning' %}rgba(239,68,68,.1);color:#ef4444{% elif ins.type == 'opportunity' %}rgba(63,185,80,.1);color:#3fb950{% else %}rgba(88,166,255,.1);color:#58a6ff{% endif %};">{{ '%+.0f'|format(ins.impact) }} pts</span>{% endif %}
-    <div class="wr-rec-title">{{ ins.title }}</div>
-    <div class="wr-rec-body">{{ ins.detail }}</div>
+  <div class="wr-insight" style="border-left-color:{% if ins.type == 'warning' %}var(--red){% elif ins.type == 'opportunity' %}var(--green){% else %}var(--blue){% endif %};">
+    <div class="wr-insight-title">{{ ins.title }}</div>
+    <div class="wr-insight-body">{{ ins.detail }}</div>
   </div>
   {% endfor %}
 </div>
@@ -311,4 +323,127 @@
 {% endif %}
 </div>
 {% endblock %}
-{% block scripts %}{% endblock %}
+
+{% block scripts %}
+{% if a %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var a = {{ a|tojson }};
+  var contention = {{ contention|tojson if contention else '{}' }};
+
+  // ═══ CONTENTION TIMELINE (ECharts area) ═══
+  var ctEl = document.getElementById('contentionChart');
+  if (ctEl && contention.years) {
+    var ct = echarts.init(ctEl, null, {renderer: 'canvas'});
+    var years = contention.years;
+    var labels = years.map(function(y){return y.label});
+    var values = years.map(function(y){return y.total});
+    var colors = years.map(function(y){return y.status === 'strong' ? '#3fb950' : y.status === 'moderate' ? '#fbbf24' : '#ef4444'});
+
+    ct.setOption({
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: '#0d1117', borderColor: '#30363d', textStyle: {color: '#c9d1d9', fontSize: 12},
+        formatter: function(params) {
+          var idx = params[0].dataIndex;
+          var yr = years[idx];
+          var html = '<b>' + yr.label + '</b>: ' + yr.total.toLocaleString() + ' SC';
+          (yr.events || []).forEach(function(ev) { html += '<br><span style="color:#8b949e;font-size:11px;">' + ev + '</span>'; });
+          return html;
+        }
+      },
+      grid: {top: 30, right: 20, bottom: 30, left: 50},
+      xAxis: {type: 'category', data: labels, axisLine: {lineStyle: {color: '#21262d'}}, axisLabel: {color: '#8b949e', fontSize: 12, fontWeight: 600}},
+      yAxis: {type: 'value', min: function(v){return Math.floor(v.min * 0.95)}, axisLine: {show: false}, splitLine: {lineStyle: {color: '#161b22'}}, axisLabel: {color: '#6e7681', fontSize: 10}},
+      series: [{
+        type: 'line', data: values, smooth: true,
+        lineStyle: {width: 3, color: '#58a6ff'},
+        areaStyle: {color: {type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: 'rgba(88,166,255,.2)'}, {offset: 1, color: 'rgba(88,166,255,.02)'}]}},
+        symbol: 'circle', symbolSize: 10,
+        itemStyle: {color: function(params) { return colors[params.dataIndex]; }, borderColor: '#0d1117', borderWidth: 2},
+        label: {show: true, position: 'top', color: '#e6edf3', fontSize: 13, fontWeight: 700, formatter: function(p){return p.value.toLocaleString()}}
+      }]
+    });
+    window.addEventListener('resize', function(){ct.resize()});
+  }
+
+  // ═══ ROSTER MAP (ECharts scatter) ═══
+  var rmEl = document.getElementById('rosterMapChart');
+  if (rmEl && a.player_bayesian) {
+    var rm = echarts.init(rmEl, null, {renderer: 'canvas'});
+    var tagColors = {'Elite':'#ffd700','Elite Veteran':'#c084fc','Premium':'#fb923c','Emerging Star':'#10b981','Breakout':'#06b6d4','Proven':'#3b82f6','Steady':'#94a3b8','Developing':'#4ade80','Project':'#eab308','Declining':'#ef4444','Veteran':'#a8a29e','Fringe':'#71717a'};
+    var roleLabels = {'small_fwd':'Small Fwd','mid_fwd':'Med Fwd','key_fwd':'Key Fwd','small_mid':'Small Mid','tall_mid':'Tall Mid','small_def':'Small Def','key_def':'Key Def','ruck':'Ruck'};
+
+    var points = (a.player_bayesian || []).filter(function(p){return p.is_field !== false && (p.raw_avg || p.true_talent || 0) > 0}).map(function(p){
+      return {
+        value: [p.age || 25, p.raw_avg || p.true_talent || 0],
+        name: p.name,
+        symbolSize: Math.max(8, Math.min(18, (p.games || 1) / 1.5)),
+        itemStyle: {color: tagColors[p.tag] || '#484f58', borderColor: '#0d1117', borderWidth: 1.5},
+        tag: p.tag || '', role: roleLabels[p.role_bucket] || p.position || '',
+        ceiling: p.ceiling || 0, floor: p.floor || 0,
+      };
+    });
+
+    rm.setOption({
+      tooltip: {
+        trigger: 'item', backgroundColor: '#0d1117', borderColor: '#30363d', textStyle: {color: '#c9d1d9'},
+        formatter: function(p) {
+          var d = p.data;
+          return '<b style="color:#e6edf3;font-size:13px;">' + d.name + '</b><br>' +
+            '<span style="color:#8b949e;">Age ' + d.value[0] + ' · ' + d.role + '</span><br>' +
+            '<span style="color:#e6edf3;">SC Avg: <b>' + d.value[1].toFixed(0) + '</b></span><br>' +
+            '<span style="color:#3fb950;">Ceiling: ' + d.ceiling.toFixed(0) + '</span> · <span style="color:#ef4444;">Floor: ' + d.floor.toFixed(0) + '</span><br>' +
+            '<span style="color:' + (tagColors[d.tag]||'#8b949e') + ';">' + d.tag + '</span>';
+        }
+      },
+      grid: {top: 20, right: 30, bottom: 40, left: 50},
+      xAxis: {name: 'Age', nameLocation: 'center', nameGap: 28, nameTextStyle: {color: '#6e7681', fontSize: 11},
+        type: 'value', min: 18, max: 35,
+        axisLine: {lineStyle: {color: '#21262d'}}, splitLine: {lineStyle: {color: '#161b22'}},
+        axisLabel: {color: '#6e7681', fontSize: 10}},
+      yAxis: {name: 'SC Average', nameLocation: 'center', nameGap: 36, nameTextStyle: {color: '#6e7681', fontSize: 11},
+        type: 'value',
+        axisLine: {show: false}, splitLine: {lineStyle: {color: '#161b22'}},
+        axisLabel: {color: '#6e7681', fontSize: 10}},
+      series: [{type: 'scatter', data: points}]
+    });
+    window.addEventListener('resize', function(){rm.resize()});
+  }
+
+  // ═══ TEAM PROFILE RADAR (ECharts) ═══
+  var radarEl = document.getElementById('radarChart');
+  if (radarEl && a.health_components) {
+    var radar = echarts.init(radarEl, null, {renderer: 'canvas'});
+    var hc = a.health_components;
+    radar.setOption({
+      radar: {
+        indicator: [
+          {name: 'Scoring', max: 100}, {name: 'Depth', max: 100}, {name: 'Balance', max: 100},
+          {name: 'Youth', max: 100}, {name: 'Trajectory', max: 100}, {name: 'Durability', max: 100}
+        ],
+        axisName: {color: '#8b949e', fontSize: 11, fontWeight: 600},
+        splitArea: {areaStyle: {color: ['#0d1117','#0d1117','#0d1117','#0d1117','#0d1117']}},
+        axisLine: {lineStyle: {color: '#21262d'}},
+        splitLine: {lineStyle: {color: '#21262d'}},
+      },
+      tooltip: {backgroundColor: '#0d1117', borderColor: '#30363d', textStyle: {color: '#c9d1d9'}},
+      series: [{
+        type: 'radar',
+        data: [{
+          value: [hc.power||0, hc.depth||0, hc.balance||0, hc.youth||0, hc.trajectory||0, hc.durability||0],
+          name: 'Team Health',
+          areaStyle: {color: 'rgba(88,166,255,.15)'},
+          lineStyle: {color: '#58a6ff', width: 2},
+          itemStyle: {color: '#58a6ff', borderColor: '#0d1117', borderWidth: 2},
+          symbol: 'circle', symbolSize: 6,
+        }]
+      }]
+    });
+    window.addEventListener('resize', function(){radar.resize()});
+  }
+});
+</script>
+{% endif %}
+{% endblock %}
