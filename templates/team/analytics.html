@@ -262,24 +262,26 @@
   </div>
   {% endif %}
 
-  {# ════════ LEAGUE LANDSCAPE ════════ #}
+  {# ════════ LEAGUE AT A GLANCE ════════ #}
   {% if landscape %}
   <div class="col-lg-5">
     <div class="wr-section">
-      <div class="wr-section-title"><i class="bi bi-trophy"></i>League Landscape</div>
+      <div class="wr-section-title"><i class="bi bi-trophy"></i>League At a Glance</div>
       <div class="wr-card">
-        <div class="wr-card-body" style="padding:12px;">
-          <div class="wr-landscape">
-            {% set max_total = landscape|map(attribute='total_sc')|max %}
-            {% for t in landscape %}
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
-              <div class="wr-ls-col{% if t.team_id == team.id %} wr-ls-you{% endif %}" style="width:100%;height:{{ (t.total_sc / max_total * 200)|int }}px;background:{% if t.team_id == team.id %}linear-gradient(180deg,#1f6feb,#3fb950){% else %}#21262d{% endif %};border-radius:6px 6px 0 0;">
+        <div class="wr-card-body" style="padding:10px 16px;">
+          {% set max_sc = landscape|map(attribute='total_sc')|max %}
+          {% for t in landscape %}
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;{% if not loop.last %}border-bottom:1px solid #161b22;{% endif %}">
+            <span style="width:16px;font-size:.7rem;font-weight:700;color:#484f58;">{{ loop.index }}</span>
+            <span style="flex:1;font-size:.8rem;font-weight:{% if t.team_id == team.id %}700{% else %}500{% endif %};color:{% if t.team_id == team.id %}#58a6ff{% else %}#c9d1d9{% endif %};">{{ t.name }}{% if t.team_id == team.id %} <span style="font-size:.6rem;color:#6e7681;">(you)</span>{% endif %}</span>
+            <div style="width:90px;">
+              <div style="height:5px;border-radius:3px;background:#21262d;overflow:hidden;">
+                <div style="height:100%;border-radius:3px;width:{{ (t.total_sc/max_sc*100)|int }}%;background:{% if t.team_id == team.id %}linear-gradient(90deg,#3fb950,#1f6feb){% else %}#30363d{% endif %};"></div>
               </div>
-              <div class="wr-ls-label" style="{% if t.team_id == team.id %}color:#58a6ff;{% else %}color:#8b949e;{% endif %}">{{ t.name[:12] }}</div>
-              <div class="wr-ls-total">{{ t.total_sc|int }}</div>
             </div>
-            {% endfor %}
+            <span style="min-width:40px;text-align:right;font-size:.78rem;font-weight:700;color:{% if t.team_id == team.id %}#58a6ff{% else %}#8b949e{% endif %};">{{ t.avg_sc }}</span>
           </div>
+          {% endfor %}
         </div>
       </div>
     </div>
