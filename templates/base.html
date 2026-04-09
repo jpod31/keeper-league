@@ -444,5 +444,86 @@
   }
   </script>
   {% block scripts %}{% endblock %}
+
+  {# ── What's New popup ── #}
+  {% if current_user.is_authenticated %}
+  <style>
+    .wn-overlay { position:fixed; inset:0; z-index:99990; background:rgba(0,0,0,.6); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .3s; }
+    .wn-overlay.open { opacity:1; }
+    .wn-card { background:#161b22; border:1px solid #30363d; border-radius:14px; max-width:420px; width:90%; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; transform:translateY(20px); transition:transform .3s; }
+    .wn-overlay.open .wn-card { transform:translateY(0); }
+    .wn-hdr { padding:18px 22px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #21262d; }
+    .wn-hdr h3 { margin:0; font-size:1rem; font-weight:800; color:#e6edf3; }
+    .wn-ver { font-size:.65rem; color:#8b949e; background:#0d1117; padding:2px 8px; border-radius:6px; }
+    .wn-close { background:none; border:none; color:#6e7681; font-size:1.2rem; cursor:pointer; padding:4px; }
+    .wn-close:hover { color:#e6edf3; }
+    .wn-body { padding:16px 22px; overflow-y:auto; flex:1; }
+    .wn-section { margin-bottom:16px; }
+    .wn-section:last-child { margin-bottom:0; }
+    .wn-section-title { font-size:.78rem; font-weight:700; color:#e6edf3; margin-bottom:6px; }
+    .wn-section-date { font-size:.6rem; color:#6e7681; margin-left:6px; }
+    .wn-item { display:flex; gap:8px; padding:4px 0; font-size:.76rem; color:#c9d1d9; line-height:1.4; }
+    .wn-item::before { content:''; width:5px; height:5px; border-radius:50%; background:linear-gradient(135deg,#3fb950,#1f6feb); flex-shrink:0; margin-top:6px; }
+    .wn-footer { padding:12px 22px; border-top:1px solid #21262d; text-align:center; }
+    .wn-btn { background:linear-gradient(135deg,#3fb950,#1f6feb); color:#fff; border:none; border-radius:8px; padding:8px 28px; font-size:.8rem; font-weight:700; cursor:pointer; }
+    .wn-btn:hover { opacity:.9; }
+  </style>
+  <div id="wnOverlay" class="wn-overlay" style="display:none;" onclick="if(event.target===this)closeWhatsNew()">
+    <div class="wn-card">
+      <div class="wn-hdr">
+        <h3>What's New</h3>
+        <span class="wn-ver" id="wnVer"></span>
+        <button class="wn-close" onclick="closeWhatsNew()"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="wn-body" id="wnBody"></div>
+      <div class="wn-footer">
+        <button class="wn-btn" onclick="closeWhatsNew()">Got it</button>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    fetch('/static/changelog.json?_=' + Date.now())
+      .then(function(r){return r.json()})
+      .then(function(data){
+        var lastSeen = localStorage.getItem('kl-changelog-version') || '';
+        if (lastSeen === data.version) return;
+
+        var body = document.getElementById('wnBody');
+        var html = '';
+        // Show entries newer than lastSeen (or all if first visit, limit to 2)
+        var entries = data.entries || [];
+        var shown = 0;
+        for (var i = 0; i < entries.length && shown < 2; i++) {
+          var e = entries[i];
+          if (lastSeen && e.version <= lastSeen) break;
+          html += '<div class="wn-section">';
+          html += '<div class="wn-section-title">' + e.title + '<span class="wn-section-date">' + e.date + '</span></div>';
+          for (var j = 0; j < e.items.length; j++) {
+            html += '<div class="wn-item">' + e.items[j] + '</div>';
+          }
+          html += '</div>';
+          shown++;
+        }
+        if (!html) return;
+
+        body.innerHTML = html;
+        document.getElementById('wnVer').textContent = 'v' + data.version;
+        var overlay = document.getElementById('wnOverlay');
+        overlay.style.display = 'flex';
+        requestAnimationFrame(function(){ overlay.classList.add('open'); });
+      })
+      .catch(function(){});
+  })();
+  function closeWhatsNew(){
+    var overlay = document.getElementById('wnOverlay');
+    overlay.classList.remove('open');
+    setTimeout(function(){ overlay.style.display='none'; }, 300);
+    fetch('/static/changelog.json').then(function(r){return r.json()}).then(function(d){
+      localStorage.setItem('kl-changelog-version', d.version);
+    });
+  }
+  </script>
+  {% endif %}
 </body>
 </html>

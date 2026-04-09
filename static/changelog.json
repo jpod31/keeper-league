@@ -1,0 +1,65 @@
+{
+  "version": "2.4.0",
+  "date": "9 Apr 2026",
+  "entries": [
+    {
+      "version": "2.4.0",
+      "date": "9 Apr 2026",
+      "title": "Deep Team Analytics",
+      "items": [
+        "AI-powered team intelligence reports — personalised analysis for each squad",
+        "Bayesian player projections that account for sample size (no more misleading 4-game averages)",
+        "Monte Carlo score simulations with weekly floor/ceiling confidence intervals",
+        "Team Health Score (0-100) with component breakdown",
+        "3-year roster outlook with aging-in and aging-out projections",
+        "What-if scenario analysis (captain down, key injuries)",
+        "Actionable insights ranked by point impact"
+      ]
+    },
+    {
+      "version": "2.3.0",
+      "date": "4 Apr 2026",
+      "title": "New Branding & Player Profiles",
+      "items": [
+        "New KL logo with football accent throughout the app",
+        "Data-driven player profile tags (Elite, Premium, Emerging Star etc) using 8 years of historical data",
+        "Positional scarcity factored into player valuations — a good forward is worth more than a good mid",
+        "Animated PWA splash screen on app launch",
+        "Team abbreviation fixes (WCE, WB, NM, BL)"
+      ]
+    },
+    {
+      "version": "2.2.0",
+      "date": "4 Apr 2026",
+      "title": "Scoring & Emergency Fixes",
+      "items": [
+        "Fixed emergency substitutions — players scoring 0 (late outs) now correctly trigger emergency subs",
+        "Fixed player name matching for live scores (MacDonald, O'Brien etc no longer missed)",
+        "All rounds rescored to correct historical results",
+        "DNP players now shown in a separate section with emergency subs clearly labelled"
+      ]
+    },
+    {
+      "version": "2.1.0",
+      "date": "4 Apr 2026",
+      "title": "Gameday Improvements",
+      "items": [
+        "Predicted scores and win probability now update when switching between games",
+        "Lock icon takes priority over injury status on player cards",
+        "Mobile gameday now shows all 23 players (was cutting off the last one)",
+        "Captain and Vice Captain badges more visible on mobile"
+      ]
+    },
+    {
+      "version": "2.0.0",
+      "date": "2 Apr 2026",
+      "title": "Security & Performance",
+      "items": [
+        "Significant backend security hardening (rate limiting, session protection, input validation)",
+        "Faster page loads with intelligent caching",
+        "Player pool mobile sort options and games played display",
+        "Power rankings now exclude Round 0 and include detailed breakdowns"
+      ]
+    }
+  ]
+}
