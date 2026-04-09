@@ -157,7 +157,19 @@ Write a concise but insightful team analysis report (250-350 words). Structure i
 
 Write in a confident, analytical tone — like a sports journalist, not a robot. Use the actual player names and numbers. Don't repeat the raw data — interpret it. Be direct and opinionated.
 
-Do NOT use markdown headers or bullet points. Write in flowing paragraphs. Keep it punchy."""
+IMPORTANT FORMAT: Output EXACTLY 5 sections separated by "---" on its own line. Each section starts with a title in caps followed by a colon, then the paragraph. Like:
+
+THE VERDICT: This team is...
+---
+THE ENGINE ROOM: The midfield is...
+---
+RISK REGISTER: The biggest concern is...
+---
+THE OUTLOOK: Looking ahead...
+---
+THE PLAYBOOK: The coach should...
+
+Keep each section 2-4 sentences. Punchy. No bullet points."""
 
     return prompt
 

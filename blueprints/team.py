@@ -1746,7 +1746,11 @@ def team_analytics(league_id, team_id):
     from models.team_analytics import compute_deep_analytics
     from models.team_ai_summary import (
         generate_team_summary, compute_league_comparison,
-        get_cached_analytics, cache_analytics,
+        get_cached_analytics, cache_analytics, invalidate_analytics_cache,
+    )
+    from models.war_room import (
+        compute_trade_table, compute_contention_timeline,
+        compute_squad_depth, compute_league_landscape,
     )
 
     year = league.season_year
@@ -1814,6 +1818,43 @@ def team_analytics(league_id, team_id):
                              daemon=True)
         t.start()
 
+    # War room data (cached with analytics)
+    trade_table = get_cached_analytics(team_id, year, "trade_table")
+    contention = get_cached_analytics(team_id, year, "contention")
+    squad_depth_data = get_cached_analytics(team_id, year, "squad_depth")
+    landscape = get_cached_analytics(team_id, year, "landscape")
+
+    if not trade_table and analytics:
+        try:
+            all_players = all_players if 'all_players' in dir() else AflPlayer.query.all()
+            profile_tags = profile_tags if 'profile_tags' in dir() else compute_profile_tags(all_players)
+
+            # Roster data for squad depth
+            roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+            field_p = [db.session.get(AflPlayer, r.player_id) for r in roster if not r.is_benched]
+            bench_p = [db.session.get(AflPlayer, r.player_id) for r in roster if r.is_benched]
+            field_p = [p for p in field_p if p]
+            bench_p = [p for p in bench_p if p]
+
+            # League position averages for squad depth comparison
+            league_pos_avgs = {}
+            if team_comparison and isinstance(team_comparison, dict):
+                league_pos_avgs = team_comparison.get("pos_league_avg", {})
+
+            trade_table = compute_trade_table(team_id, league_id, year, profile_tags)
+            cache_analytics(team_id, year, "trade_table", trade_table)
+
+            contention = compute_contention_timeline(field_p, profile_tags, analytics.get("projections", {}))
+            cache_analytics(team_id, year, "contention", contention)
+
+            squad_depth_data = compute_squad_depth(field_p, bench_p, profile_tags, league_pos_avgs)
+            cache_analytics(team_id, year, "squad_depth", squad_depth_data)
+
+            landscape = compute_league_landscape(league_id, year, profile_tags)
+            cache_analytics(team_id, year, "landscape", landscape)
+        except Exception:
+            logger.debug("War room computation failed", exc_info=True)
+
     # Generate AI summary synchronously if not cached (only ~3s for GPT call)
     if not ai_summary and analytics:
         try:
@@ -1827,6 +1868,17 @@ def team_analytics(league_id, team_id):
     if isinstance(ai_summary, dict):
         ai_summary = ai_summary.get("text", "")
 
+    # Parse AI summary into sections
+    ai_sections = []
+    if ai_summary:
+        for section in str(ai_summary).split("---"):
+            section = section.strip()
+            if ":" in section:
+                title, body = section.split(":", 1)
+                ai_sections.append({"title": title.strip(), "body": body.strip()})
+            elif section:
+                ai_sections.append({"title": "", "body": section})
+
     return render_template("team/analytics.html",
                            league=league, team=team,
                            projection=projection,
@@ -1835,7 +1887,12 @@ def team_analytics(league_id, team_id):
                            form_data=form_data,
                            a=analytics,
                            lc=team_comparison,
-                           ai_summary=ai_summary)
+                           ai_summary=ai_summary,
+                           ai_sections=ai_sections,
+                           trade_table=trade_table,
+                           contention=contention,
+                           squad_depth=squad_depth_data,
+                           landscape=landscape)
 
 
 # ── Team logo generation & serving ──────────────────────────────────
