@@ -203,17 +203,20 @@
   {# ── Player row macro ── #}
   {% macro player_row(p, locked_ids, gameday_state) %}
   {% set yet_to_play = (not p.get('game_started', True)) and gameday_state == 'live' %}
-  {% set is_emg_standby = p.is_emergency and not p.get('subbed_on') %}
-  <div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_ids else '' }}{{ ' player-dnp' if p.get('is_dnp') else '' }}{{ ' player-subbed-on' if p.get('subbed_on') else '' }}{{ ' player-reserve' if p.get('lineup_type') == 'reserve' else '' }}{{ ' player-emergency-standby' if is_emg_standby else '' }}{{ ' player-yet-to-play' if yet_to_play else '' }}">
+  {% set is_subbed_on = p.get('subbed_on', false) %}
+  {% set is_emg_standby = p.get('is_emergency') and not is_subbed_on %}
+  {% set is_dnp = p.get('is_dnp', false) %}
+  <div class="gameday-player-row {{ 'player-locked' if p.player_id in locked_ids else '' }}{{ ' player-dnp' if is_dnp else '' }}{{ ' player-subbed-on' if is_subbed_on else '' }}{{ ' player-reserve' if p.get('lineup_type') == 'reserve' else '' }}{{ ' player-emergency-standby' if is_emg_standby else '' }}{{ ' player-yet-to-play' if yet_to_play else '' }}">
     <span class="gameday-player-info">
       {% if p.position %}
         <span class="pos-badge pos-{{ p.position.split('/')[0]|upper }} gameday-pos-badge">{{ p.position|upper }}</span>
       {% endif %}
       {% if p.is_captain %}<span class="gameday-badge-c">C</span> {% endif %}
       {% if p.is_vice_captain %}<span class="gameday-badge-vc">VC</span> {% endif %}
-      {% if p.get('is_dnp') %}<span class="gameday-badge-dnp">DNP</span> {% endif %}
-      {% if p.get('subbed_on') %}<span class="gameday-badge-emg-active">EMG</span> {% endif %}
-      {% if p.is_emergency and not p.get('subbed_on') %}<span class="gameday-badge-emg">EMG</span> {% endif %}
+      {% if is_subbed_on %}<span class="gameday-badge-emg-active">EMG</span>
+      {% elif is_dnp %}<span class="gameday-badge-dnp">DNP</span>
+      {% elif is_emg_standby %}<span class="gameday-badge-emg">EMG</span>
+      {% endif %}
       {% if p.player_id in locked_ids %}<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.6rem;"></i> {% endif %}
       <span class="gameday-player-name">{{ p.name }}</span>
       <span class="gameday-player-meta">
@@ -241,9 +244,13 @@
       </span>
       <span class="gd-mob-vs-team" style="text-align:right;">{{ opp_team.name }}</span>
     </div>
-    {# Build field players side by side #}
-    {% set my_field = my_players|selectattr('lineup_type','equalto','field')|list %}
-    {% set opp_field = opp_players|selectattr('lineup_type','equalto','field')|list %}
+    {# Build field players side by side (exclude DNPs, include subbed-on EMGs) #}
+    {% set my_field = [] %}
+    {% for p in my_players if p.lineup_type == 'field' and not p.get('is_dnp') %}{% if my_field.append(p) %}{% endif %}{% endfor %}
+    {% for p in my_players if p.lineup_type == 'emergency' and p.get('subbed_on') %}{% if my_field.append(p) %}{% endif %}{% endfor %}
+    {% set opp_field = [] %}
+    {% for p in opp_players if p.lineup_type == 'field' and not p.get('is_dnp') %}{% if opp_field.append(p) %}{% endif %}{% endfor %}
+    {% for p in opp_players if p.lineup_type == 'emergency' and p.get('subbed_on') %}{% if opp_field.append(p) %}{% endif %}{% endfor %}
     {% set max_field = [my_field|length, opp_field|length]|max %}
     <div class="gd-mob-section-hdr"><i class="bi bi-people-fill me-1"></i>Field</div>
     {% for i in range(max_field) %}
@@ -252,7 +259,7 @@
       <div class="gd-mob-vs-row">
         <div class="gd-mob-vs-left">
           {% if mp %}
-            <span class="gd-mob-vs-name">{% if mp.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if mp.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{{ mp.name }}</span>
+            <span class="gd-mob-vs-name">{% if mp.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if mp.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{% if mp.get('subbed_on') %}<span class="gameday-badge-emg-active" style="font-size:.5rem;padding:0 3px;">EMG</span> {% endif %}{{ mp.name }}</span>
             <span class="gd-mob-vs-pos pos-badge pos-{{ mp.position.split('/')[0]|upper }}">{{ mp.position.split('/')[0][:3] }}</span>
           {% endif %}
         </div>
@@ -263,7 +270,7 @@
         <div class="gd-mob-vs-right">
           {% if op %}
             <span class="gd-mob-vs-pos pos-badge pos-{{ op.position.split('/')[0]|upper }}">{{ op.position.split('/')[0][:3] }}</span>
-            <span class="gd-mob-vs-name">{% if op.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if op.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{{ op.name }}</span>
+            <span class="gd-mob-vs-name">{% if op.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if op.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{% if op.get('subbed_on') %}<span class="gameday-badge-emg-active" style="font-size:.5rem;padding:0 3px;">EMG</span> {% endif %}{{ op.name }}</span>
           {% endif %}
         </div>
       </div>
@@ -310,6 +317,31 @@
         </div>
         <div class="gd-mob-vs-right">
           {% if op %}<span class="gd-mob-vs-name">{{ op.name }}</span>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    {% endif %}
+    {# Did Not Play #}
+    {% set my_dnp = [] %}
+    {% for p in my_players if p.get('is_dnp') %}{% if my_dnp.append(p) %}{% endif %}{% endfor %}
+    {% set opp_dnp = [] %}
+    {% for p in opp_players if p.get('is_dnp') %}{% if opp_dnp.append(p) %}{% endif %}{% endfor %}
+    {% set max_dnp = [my_dnp|length, opp_dnp|length]|max %}
+    {% if max_dnp > 0 %}
+    <div class="gd-mob-section-hdr" style="color:#f85149;"><i class="bi bi-x-circle me-1"></i>Did Not Play</div>
+    {% for i in range(max_dnp) %}
+      {% set mp = my_dnp[i] if i < my_dnp|length else None %}
+      {% set op = opp_dnp[i] if i < opp_dnp|length else None %}
+      <div class="gd-mob-vs-row" style="opacity:.75;">
+        <div class="gd-mob-vs-left">
+          {% if mp %}<span class="gd-mob-vs-name" style="color:#8b949e;">{{ mp.name }}</span>{% endif %}
+        </div>
+        <div class="gd-mob-vs-mid">
+          <span class="gd-mob-sc-l" style="color:#6e7681;">0</span>
+          <span class="gd-mob-sc-r" style="color:#6e7681;">0</span>
+        </div>
+        <div class="gd-mob-vs-right">
+          {% if op %}<span class="gd-mob-vs-name" style="color:#8b949e;">{{ op.name }}</span>{% endif %}
         </div>
       </div>
     {% endfor %}
@@ -850,16 +882,17 @@
   .gameday-sub-note { color: var(--kl-accent-green); font-size: .65rem; font-style: italic; }
 
   /* ── Player states ── */
-  .player-dnp { opacity: 0.4; }
-  .player-dnp .gameday-player-name { color: var(--kl-text-faint); }
-  .score-dnp { color: var(--kl-text-faint) !important; }
+  .player-dnp { opacity: 0.75; }
+  .player-dnp .gameday-player-name { color: #8b949e; }
+  .score-dnp { color: #6e7681 !important; }
   .gameday-badge-emg-active {
-    background: rgba(59,130,246,.15); color: #3b82f6; border: 1px solid rgba(59,130,246,.25);
+    background: rgba(59,130,246,.18); color: #60a5fa; border: 1px solid rgba(59,130,246,.3);
     font-size: .55rem; font-weight: 800; padding: 1px 5px; border-radius: 3px;
     letter-spacing: .3px; margin-right: 3px; vertical-align: middle;
   }
-  .gameday-sub-note { font-size: .6rem; color: #6e7681; font-style: italic; }
+  .gameday-sub-note { font-size: .62rem; color: #8b949e; font-style: italic; }
   .section-dnp { color: #f85149; font-size: .7rem; }
+  .player-emergency-standby { opacity: 0.7; }
   .player-subbed-on { background: rgba(35,134,54,.08); }
   .player-reserve { opacity: 0.5; }
   .player-reserve .gameday-player-name { color: var(--kl-text-faint); }
@@ -1400,9 +1433,10 @@ function renderPlayerRow(p, lockedIds) {
     var badges = '';
     if (p.is_captain) badges += '<span class="gameday-badge-c">C</span> ';
     if (p.is_vice_captain) badges += '<span class="gameday-badge-vc">VC</span> ';
-    if (isDnp) badges += '<span class="gameday-badge-dnp">DNP</span> ';
+    // Only one status badge: subbed-on EMG > DNP > standby EMG
     if (isSubOn) badges += '<span class="gameday-badge-emg-active">EMG</span> ';
-    if (isEmgStandby) badges += '<span class="gameday-badge-emg">EMG</span> ';
+    else if (isDnp) badges += '<span class="gameday-badge-dnp">DNP</span> ';
+    else if (isEmgStandby) badges += '<span class="gameday-badge-emg">EMG</span> ';
     if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.6rem;"></i> ';
 
     var liveDot = (p.is_live && !yetToPlay && !isEmgStandby) ? ' <i class="bi bi-circle-fill gameday-live-dot"></i>' : '';
