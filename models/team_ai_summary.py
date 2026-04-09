@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 import requests
 
-from models.database import db
+from models.database import db, FantasyTeam
 
 logger = logging.getLogger(__name__)
 
