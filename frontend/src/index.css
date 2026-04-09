@@ -1,13 +1,1 @@
-@import "bootstrap/dist/css/bootstrap.min.css";
-@import "bootstrap-icons/font/bootstrap-icons.min.css";
-
-/*
- * Import the existing site's style.css verbatim.
- * This is a symlink/copy approach — the real style.css lives at /static/style.css.
- * We load it from the server at runtime instead.
- */
-
-body {
-  margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
+/* No bundled CSS - everything loaded via HTML <link> tags to match existing site exactly */
