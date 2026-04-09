@@ -1066,6 +1066,32 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
                     "impact": round((repl - my_avg) * pos_breakdown.get(pos, {}).get("count", 1), 1),
                 })
 
+    # 9. Durability warning
+    avg_dur = sum(
+        profile_tags.get(p.id, {}).get("durability", 15) for p in field_players
+    ) / max(total_field, 1)
+    if avg_dur < 17:
+        low_dur = [(p, profile_tags.get(p.id, {}).get("durability", 15))
+                   for p in field_players if profile_tags.get(p.id, {}).get("durability", 15) < 14]
+        low_dur.sort(key=lambda x: x[1])
+        names = ", ".join(p.name for p, _ in low_dur[:3])
+        insights.append({
+            "type": "warning",
+            "title": f"Durability risk — avg {avg_dur:.0f} games/season",
+            "detail": f"Your players average {avg_dur:.0f} games per year (ideal: 20+). "
+                      f"Most injury-prone: {names}." if names else f"Several players have low durability.",
+            "impact": round((20 - avg_dur) * 2, 1),
+        })
+
+    # 10. Top-heavy warning
+    if top5_pct > 35:
+        insights.append({
+            "type": "warning",
+            "title": f"Top-heavy roster — top 5 account for {top5_pct:.0f}% of scoring",
+            "detail": "If your best players miss games, your score drops significantly. Build depth.",
+            "impact": round(top5_pct - 30, 1),
+        })
+
     # Sort by impact descending
     insights.sort(key=lambda x: -x["impact"])
     return insights

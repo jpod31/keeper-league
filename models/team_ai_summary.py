@@ -80,13 +80,16 @@ def _hash_analytics(analytics):
     return hashlib.md5(key_data.encode()).hexdigest()[:16]
 
 
-def _build_prompt(team_name, analytics, league_comparison):
+def _build_prompt(team_name, analytics, league_comparison, narrative=None):
     """Build the GPT prompt with structured team data."""
 
     a = analytics
     lc = league_comparison
+    n = narrative or {}
 
     prompt = f"""You are an expert fantasy AFL analyst writing a team report for "{team_name}" in a SuperCoach keeper league.
+
+IMPORTANT CONTEXT: This team's trajectory is "{n.get('trajectory', 'unknown')}". {n.get('verdict', '')}
 
 ## Team Data
 
@@ -140,6 +143,18 @@ def _build_prompt(team_name, analytics, league_comparison):
         for t in lc['other_teams']:
             prompt += f"- {t['name']}: avg SC {t['avg_sc']:.0f}, quality {t['quality_pct']}%, window: {t['window']}\n"
 
+    if n.get('kid_timeline'):
+        prompt += "\n**Youth Breakthrough Timeline:**\n"
+        for k in n['kid_timeline'][:5]:
+            if k.get('replaces'):
+                prompt += f"- {k['year']}: {k['enters']} (projected SC {k['enters_sc']:.0f}) replaces {k['replaces']}\n"
+
+    if n.get('biggest_gap'):
+        g = n['biggest_gap']
+        prompt += f"\n**Biggest Gap:** {g['position']} — your avg {g['your_avg']} vs league {g['league_avg']}."
+        if g.get('best_fill_name'):
+            prompt += f" Best available fill: {g['best_fill_name']} ({g['best_fill_sc']}).\n"
+
     prompt += """
 ## Instructions
 
@@ -174,7 +189,7 @@ Keep each section 2-4 sentences. Punchy. No bullet points."""
     return prompt
 
 
-def generate_team_summary(team_id, team_name, year, analytics, league_comparison):
+def generate_team_summary(team_id, team_name, year, analytics, league_comparison, narrative=None):
     """Generate or retrieve cached AI summary for a team.
 
     Returns: str (the summary text) or None on failure.
@@ -198,7 +213,7 @@ def generate_team_summary(team_id, team_name, year, analytics, league_comparison
         logger.warning("OPENAI_API_KEY not set — cannot generate team summary")
         return None
 
-    prompt = _build_prompt(team_name, analytics, league_comparison)
+    prompt = _build_prompt(team_name, analytics, league_comparison, narrative)
 
     try:
         resp = requests.post(

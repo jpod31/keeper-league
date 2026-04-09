@@ -114,14 +114,19 @@ function render() {
   h += '<div class="ch-body">' + (n.verdict||'Analytics loading...') + '</div>';
   h += '</div>';
 
-  // ═══ CHAPTER 2: YOUR DYNASTY ═══
+  // ═══ CHAPTER 2: DYNASTY RACE ═══
   if (D.dynasty && Object.keys(D.dynasty).length) {
     h += '<div class="chapter">';
     h += '<div class="ch-label">Your Dynasty</div>';
-    h += '<div class="ch-title">5-Year Competitive Outlook</div>';
-    h += '<div class="ch-card"><div class="ch-card-body" style="padding:8px 12px;">';
-    h += '<div id="dynastyChart" style="width:100%;height:300px;"></div>';
-    h += '<div style="font-size:.6rem;color:#6e7681;text-align:center;margin-top:4px;">Best 23 (6-9-1-6) auto-selected each year. Kids develop and displace veterans.</div>';
+    h += '<div class="ch-title">5-Year Franchise Race</div>';
+    h += '<div class="ch-card"><div class="ch-card-body" style="padding:12px;">';
+    h += '<div id="raceChart" style="width:100%;height:340px;"></div>';
+    h += '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;justify-content:center;">';
+    h += '<button class="fbtn" id="racePlayBtn" onclick="toggleRacePlay()" style="padding:4px 16px;"><i class="bi bi-play-fill"></i> Play</button>';
+    h += '<input type="range" id="raceSlider" min="0" max="5" value="0" style="flex:1;max-width:300px;accent-color:#58a6ff;" oninput="updateRace(parseInt(this.value))">';
+    h += '<span id="raceYear" style="font-size:.8rem;font-weight:700;color:#e6edf3;min-width:40px;"></span>';
+    h += '</div>';
+    h += '<div style="font-size:.58rem;color:#6e7681;text-align:center;margin-top:4px;">Best 23 (6-9-1-6) auto-selected. Kids develop and displace veterans over time.</div>';
     h += '</div></div>';
     h += '</div>';
   }
@@ -261,47 +266,88 @@ function render() {
     h += '</div>';
   }
 
+  // ═══ ROUND-BY-ROUND PERFORMANCE ═══
+  var rd = a.round_data || [];
+  if (rd.length > 1) {
+    h += '<div class="chapter">';
+    h += '<div class="ch-label">Season So Far</div>';
+    h += '<div class="ch-title">Round-by-Round</div>';
+    h += '<div class="ch-card"><div class="ch-card-body" style="padding:8px 12px;">';
+    h += '<div id="roundChart" style="width:100%;height:200px;"></div>';
+    h += '</div></div></div>';
+  }
+
   h += '</div>'; // close story
   app.innerHTML = h;
 
   setTimeout(function(){
-    renderDynasty();
+    renderRace();
     renderDepth('all');
     renderRadar();
+    renderRoundChart();
   }, 50);
 }
 
 // ═══ DYNASTY CHART ═══
-function renderDynasty() {
-  var el = document.getElementById('dynastyChart');
+// ═══ DYNASTY RACE (animated horizontal bar race) ═══
+var raceChart=null, raceData=null, raceInterval=null, raceYear=0;
+
+function renderRace() {
+  var el = document.getElementById('raceChart');
   if (!el || !D.dynasty) return;
-  var ch = echarts.init(el);
-  var greys=['#4b5563','#6b7280','#9ca3af','#d1d5db','#374151'];var gi=0;
-  var series=[], xl=null;
-  Object.keys(D.dynasty).forEach(function(tid){
-    var t=D.dynasty[tid]; var you=parseInt(tid)===TID;
-    if(!xl) xl=t.years.map(y=>y.year);
-    series.push({
-      name:t.name,type:'line',data:t.years.map(y=>y.total),smooth:true,
-      lineStyle:{width:you?4:1.5,color:you?'#58a6ff':greys[gi%greys.length]},
-      itemStyle:{color:you?'#58a6ff':greys[gi%greys.length],borderColor:'#0d1117',borderWidth:you?2:1},
-      symbol:you?'circle':'none',symbolSize:you?10:0,
-      areaStyle:you?{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(88,166,255,.15)'},{offset:1,color:'rgba(88,166,255,.01)'}]}}:null,
-      z:you?10:1,
-      label:you?{show:true,position:'top',color:'#e6edf3',fontSize:12,fontWeight:700,formatter:p=>p.value.toLocaleString()}:{show:false},
-      emphasis:{lineStyle:{width:3},focus:'series'},
-    });
-    if(!you)gi++;
+  raceChart = echarts.init(el);
+  var palette=['#58a6ff','#fb923c','#d2a8ff','#3fb950','#06b6d4','#ef4444','#fbbf24'];
+  var teamColors={};var tids=Object.keys(D.dynasty);
+  tids.forEach(function(tid,i){teamColors[tid]=parseInt(tid)===TID?'#58a6ff':palette[(i+1)%palette.length]});
+
+  raceData=[];
+  var yrs=D.dynasty[tids[0]].years;
+  for(var yi=0;yi<yrs.length;yi++){
+    var frame=[];
+    tids.forEach(function(tid){var t=D.dynasty[tid];frame.push({name:t.name,value:t.years[yi].total,color:teamColors[tid],isYou:parseInt(tid)===TID,year:t.years[yi].year})});
+    frame.sort(function(a,b){return a.value-b.value});
+    raceData.push(frame);
+  }
+  updateRace(0);
+  window.addEventListener('resize',function(){if(raceChart)raceChart.resize()});
+}
+
+function updateRace(yi){
+  if(!raceChart||!raceData||yi>=raceData.length)return;
+  raceYear=yi;var f=raceData[yi];
+  var sl=document.getElementById('raceSlider'),lb=document.getElementById('raceYear');
+  if(sl)sl.value=yi;if(lb)lb.textContent=f[0].year;
+  var mx=Math.max.apply(null,f.map(x=>x.value));
+  raceChart.setOption({
+    grid:{top:10,right:80,bottom:10,left:10,containLabel:true},
+    xAxis:{type:'value',max:Math.ceil(mx*1.08),axisLine:{show:false},axisTick:{show:false},axisLabel:{show:false},splitLine:{show:false}},
+    yAxis:{type:'category',data:f.map(x=>x.name),axisLine:{show:false},axisTick:{show:false},
+      axisLabel:{color:function(v,i){return f[i]&&f[i].isYou?'#58a6ff':'#8b949e'},fontSize:12,fontWeight:function(v,i){return f[i]&&f[i].isYou?700:500}}},
+    series:[{type:'bar',data:f.map(x=>({value:x.value,
+      itemStyle:{color:x.isYou?{type:'linear',x:0,y:0,x2:1,y2:0,colorStops:[{offset:0,color:'#3fb950'},{offset:1,color:'#1f6feb'}]}:x.color,borderRadius:[0,6,6,0],shadowColor:x.isYou?'rgba(88,166,255,.3)':'transparent',shadowBlur:x.isYou?8:0},
+      label:{show:true,position:'right',color:x.isYou?'#e6edf3':'#8b949e',fontSize:12,fontWeight:700,formatter:function(p){return p.value.toLocaleString()}},
+    })),barWidth:'55%',animationDuration:700,animationEasing:'cubicOut'}],
+    animationDuration:700,animationEasing:'cubicOut',
   });
+}
+
+function toggleRacePlay(){
+  var btn=document.getElementById('racePlayBtn');
+  if(raceInterval){clearInterval(raceInterval);raceInterval=null;btn.innerHTML='<i class="bi bi-play-fill"></i> Play';return;}
+  if(raceYear>=raceData.length-1)raceYear=-1;
+  btn.innerHTML='<i class="bi bi-pause-fill"></i> Pause';
+  raceInterval=setInterval(function(){raceYear++;if(raceYear>=raceData.length){clearInterval(raceInterval);raceInterval=null;btn.innerHTML='<i class="bi bi-play-fill"></i> Play';return;}updateRace(raceYear)},1200);
+}
+
+function renderRoundChart(){
+  var el=document.getElementById('roundChart');if(!el||!D.analytics.round_data)return;
+  var ch=echarts.init(el);var rd=D.analytics.round_data;
   ch.setOption({
-    tooltip:{trigger:'axis',backgroundColor:'#0d1117',borderColor:'#30363d',textStyle:{color:'#c9d1d9',fontSize:11},
-      formatter:function(ps){ps.sort((a,b)=>b.value-a.value);var h='<b>'+ps[0].axisValue+'</b><br>';ps.forEach(p=>{var y=p.seriesName===D.dynasty[TID].name;h+='<span style="color:'+p.color+';">●</span> '+(y?'<b>':'')+p.seriesName+': '+p.value.toLocaleString()+(y?'</b>':'')+'<br>';});return h;}},
-    legend:{show:true,bottom:0,textStyle:{color:'#8b949e',fontSize:10},itemWidth:14,itemHeight:2},
-    grid:{top:25,right:20,bottom:45,left:55},
-    dataZoom:[{type:'inside'},{type:'slider',height:16,bottom:22,borderColor:'#21262d',fillerColor:'rgba(88,166,255,.1)',handleStyle:{color:'#58a6ff'},textStyle:{color:'#8b949e',fontSize:9}}],
-    xAxis:{type:'category',data:xl,axisLine:{lineStyle:{color:'#21262d'}},axisLabel:{color:'#8b949e',fontSize:11,fontWeight:600}},
-    yAxis:{type:'value',min:v=>Math.floor(v.min*.92),axisLine:{show:false},splitLine:{lineStyle:{color:'#161b22'}},axisLabel:{color:'#6e7681',fontSize:10}},
-    series:series,
+    tooltip:{trigger:'axis',backgroundColor:'#0d1117',borderColor:'#30363d',textStyle:{color:'#c9d1d9'}},
+    grid:{top:20,right:20,bottom:30,left:50},
+    xAxis:{type:'category',data:rd.map(r=>'R'+r.round),axisLine:{lineStyle:{color:'#21262d'}},axisLabel:{color:'#8b949e',fontSize:11,fontWeight:600}},
+    yAxis:{type:'value',min:function(v){return Math.floor(v.min*.9)},axisLine:{show:false},splitLine:{lineStyle:{color:'#161b22'}},axisLabel:{color:'#6e7681',fontSize:10}},
+    series:[{type:'bar',data:rd.map(r=>({value:r.score,itemStyle:{color:r.score>=2100?'#3fb950':r.score>=1900?'#58a6ff':'#ef4444',borderRadius:[4,4,0,0]}})),barWidth:'50%',label:{show:true,position:'top',color:'#e6edf3',fontSize:11,fontWeight:700}}]
   });
   window.addEventListener('resize',()=>ch.resize());
 }

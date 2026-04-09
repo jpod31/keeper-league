@@ -1798,7 +1798,8 @@ def team_analytics_api(league_id, team_id):
     ai_summary = get_cached_analytics(team_id, year, "ai_summary")
     if not ai_summary and analytics:
         try:
-            ai_summary = generate_team_summary(team_id, team.name, year, analytics, {})
+            narr = _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags if 'profile_tags' in dir() else {})
+            ai_summary = generate_team_summary(team_id, team.name, year, analytics, {}, narrative=narr)
             if ai_summary:
                 cache_analytics(team_id, year, "ai_summary", ai_summary)
         except Exception:
