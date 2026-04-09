@@ -1823,7 +1823,18 @@ def team_analytics_api(league_id, team_id):
         "dynasty": dynasty,
         "landscape": landscape,
         "ai_sections": ai_sections,
+        "narrative": _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags),
     })
+
+
+def _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags):
+    try:
+        from models.narrative import build_narrative
+        if not dynasty or not analytics:
+            return {}
+        return build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags or {})
+    except Exception:
+        return {}
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/analytics")
