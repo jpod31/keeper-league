@@ -673,22 +673,18 @@ def _compute_scenarios(field_players, bayesian_map, roster_map, all_players_on_t
 
     Returns: scenarios dict
     """
-    # Get Bayesian estimates for all roster players
+    # Use ACTUAL sc_avg for scenarios (not Bayesian — users see real numbers)
     all_estimates = []
     for p in all_players_on_team:
-        est = bayesian_map.get(p.id, {})
-        tt = est.get("true_talent", p.sc_avg or 0)
-        all_estimates.append((p, tt))
+        sc = p.sc_avg or p.sc_avg_prev or 0
+        all_estimates.append((p, sc))
 
-    # Sort by true talent descending
+    # Sort by SC descending
     all_estimates.sort(key=lambda x: -x[1])
 
-    # Current team total (field players only, using Bayesian estimates)
+    # Current team total (field players only, using actual averages)
     field_ids = {p.id for p in field_players}
-    current_total = sum(
-        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
-        for p in field_players
-    )
+    current_total = sum(p.sc_avg or 0 for p in field_players)
 
     # --- Best 18 ---
     best_18 = all_estimates[:18]
@@ -802,11 +798,8 @@ def _compute_health_score(field_players, bench_players, bayesian_map, profile_ta
     total_field = len(field_players)
     all_on_roster = list(field_players) + list(bench_players)
 
-    # --- Power (30%) ---
-    team_total = sum(
-        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
-        for p in field_players
-    )
+    # --- Power (30%) --- use actual SC averages, not Bayesian
+    team_total = sum(p.sc_avg or 0 for p in field_players)
     if league_team_totals:
         league_avg_total = sum(league_team_totals.values()) / len(league_team_totals)
         league_max_total = max(league_team_totals.values())
@@ -1302,16 +1295,16 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     # ══════════════════════════════════════════════════════════════════════
     mc_distributions = []
     for p in field_players:
+        # Use actual SC avg for MC simulation (matches what user sees)
+        sc = p.sc_avg or p.sc_avg_prev or 0
         est = bayesian_map.get(p.id, {})
-        tt = est.get("true_talent", 0)
-        obs_std = est.get("observed_std", tt * _DEFAULT_CV)
-        # Use observed std if we have enough games, otherwise prior std
+        obs_std = est.get("observed_std", sc * _DEFAULT_CV if sc > 0 else 20)
         if est.get("games", 0) >= 5:
             std = obs_std
         else:
             prior_std = bucket_priors.get(est.get("role_bucket", "small_mid"), {}).get("std", 20)
-            std = prior_std
-        mc_distributions.append((tt, std))
+            std = max(obs_std, prior_std)  # use wider uncertainty for small samples
+        mc_distributions.append((max(sc, 0), max(std, 5)))
 
     mc_results = _run_monte_carlo(mc_distributions)
 
@@ -1341,11 +1334,8 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
                     lt_field.append(lp)
 
         if lt_field:
-            # Use raw SC avg for other teams (we only have Bayesian for our team)
-            if lt.id == team_id:
-                lt_total = sum(bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0) for p in lt_field)
-            else:
-                lt_total = sum(p.sc_avg or 0 for p in lt_field)
+            # Use actual SC averages for all teams (consistent comparison)
+            lt_total = sum(p.sc_avg or 0 for p in lt_field)
             lt_avg_sc = lt_total / len(lt_field)
             lt_avg_age = sum(p.age or 25 for p in lt_field) / len(lt_field)
 
