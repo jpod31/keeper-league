@@ -1,34 +1,34 @@
-"""Team Analytics — deep statistical modelling of roster composition and outlook.
+"""Team Analytics — Bayesian projection model with Monte Carlo simulation.
 
-Provides:
-  1. Age-curve regression model (historical SC by position + age)
-  2. Monte Carlo score simulation with confidence intervals
-  3. Value Over Replacement Player (VORP) per position
-  4. Draft capital / roster efficiency metrics
-  5. AFL team exposure and bye-week risk
-  6. 1-2 year future projection using age curves
-  7. Enhanced per-player deep analysis
+Statistical engine for fantasy AFL keeper league roster analysis:
+  1. Bayesian true-talent estimation (prior + evidence + regression to mean)
+  2. Role-aware age curves (position x height bucket, built from 8 years of data)
+  3. Multi-year projections (3-year horizon using Bayesian base + age curve)
+  4. Monte Carlo score simulation with credible intervals
+  5. Scenario analysis (best-18, captain-down, key-injury, position-collapse)
+  6. Team Health Score (0-100 composite of power, depth, balance, youth, trajectory, durability)
+  7. Actionable insights engine (ranked by point impact)
+  8. Full league context on every metric
 
-All heavy lifting is in `compute_deep_analytics()` which returns a single
-comprehensive dict suitable for rendering charts and tables.
+Entry point: compute_deep_analytics(team_id, league_id, year, profile_tags)
+Backward-compatible alias: compute_team_analytics(...)
 """
 
 import os
 import math
 import logging
 from collections import defaultdict
-from functools import lru_cache
 
 import config
 from models.database import (
     db, FantasyRoster, AflPlayer, PlayerStat, RoundScore,
-    FantasyTeam, Fixture,
+    FantasyTeam, Fixture, SeasonStanding,
 )
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Try numpy for fast Monte Carlo; fall back to stdlib random
+# Optional fast-path libraries
 # ---------------------------------------------------------------------------
 try:
     import numpy as np
@@ -51,19 +51,17 @@ except ImportError:
 # Constants
 # ---------------------------------------------------------------------------
 _IDEAL_FIELD = {"DEF": 5, "MID": 7, "FWD": 5, "RUC": 1}
-
-# Positional peak age ranges (inclusive)
-_POS_PEAK = {
-    "MID": (25, 29),
-    "DEF": (26, 30),
-    "FWD": (24, 28),
-    "RUC": (26, 30),
-}
-
-_MC_SIMULATIONS = 1000
+_MC_SIMULATIONS = 2000
 _MC_HISTOGRAM_BUCKETS = 20
 
-# Tier weights for roster quality scoring
+# Regression-to-the-mean constant: games needed to trust observed avg 50/50.
+# With 8 games you get ~50% weight on evidence, ~50% on prior.
+_REGRESSION_K = 8
+
+# Minimum useful std-dev when we have no games (fraction of mean)
+_DEFAULT_CV = 0.28
+
+# Tier weights for roster quality scoring (kept for backward compat)
 _TIER_WEIGHTS = {
     "Elite": 10, "Elite Veteran": 9, "Premium": 8,
     "Emerging Star": 7, "Breakout": 6, "Proven": 5,
@@ -71,7 +69,12 @@ _TIER_WEIGHTS = {
     "Veteran": 2, "Declining": 1, "Fringe": 0, "Unclassified": 0,
 }
 
-# CSV column mapping (fitzRoy column names -> friendly names)
+# Position peak age ranges (inclusive)
+_POS_PEAK = {
+    "MID": (25, 29), "DEF": (26, 30), "FWD": (24, 28), "RUC": (26, 30),
+}
+
+# CSV column mapping
 _CSV_SC_COL = "SC"
 _CSV_PLAYER_COL = "Player"
 _CSV_TEAM_COL = "Team"
@@ -80,7 +83,54 @@ _CSV_SEASON_COL = "Season"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# HELPERS
+# ROLE BUCKETS — position x height classification
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _role_bucket(position_str, height_cm):
+    """Classify a player into one of 8 role buckets based on position and height.
+
+    Buckets:
+      small_fwd  (<188cm FWD), mid_fwd (188-194cm FWD), key_fwd (>=195cm FWD)
+      small_mid  (<185cm MID), tall_mid (>=185cm MID)
+      small_def  (<190cm DEF), key_def (>=190cm DEF)
+      ruck       (RUC regardless of height)
+    """
+    pos = _primary_pos(position_str)
+    h = height_cm or 185  # fallback
+
+    if pos == "RUC":
+        return "ruck"
+    elif pos == "FWD":
+        if h < 188:
+            return "small_fwd"
+        elif h < 195:
+            return "mid_fwd"
+        else:
+            return "key_fwd"
+    elif pos == "MID":
+        if h < 185:
+            return "small_mid"
+        else:
+            return "tall_mid"
+    elif pos == "DEF":
+        if h < 190:
+            return "small_def"
+        else:
+            return "key_def"
+    return "small_mid"  # fallback
+
+
+# Peak age range per bucket (empirically reasonable for AFL)
+_BUCKET_PEAK = {
+    "small_fwd": (24, 28), "mid_fwd": (25, 29), "key_fwd": (26, 30),
+    "small_mid": (25, 29), "tall_mid": (25, 29),
+    "small_def": (26, 30), "key_def": (27, 31),
+    "ruck": (27, 31),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PURE HELPERS (no DB access)
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _primary_pos(position_str):
@@ -126,20 +176,36 @@ def _percentile(sorted_values, pct):
     return sorted_values[lo] + frac * (sorted_values[hi] - sorted_values[lo])
 
 
+def _clamp(val, lo, hi):
+    return max(lo, min(hi, val))
+
+
+def _pearson(x, y):
+    """Pearson correlation coefficient for two lists of equal length."""
+    n = len(x)
+    if n < 3:
+        return None
+    mx = sum(x) / n
+    my = sum(y) / n
+    num = sum((a - mx) * (b - my) for a, b in zip(x, y))
+    den_x = math.sqrt(sum((a - mx) ** 2 for a in x))
+    den_y = math.sqrt(sum((b - my) ** 2 for b in y))
+    if den_x == 0 or den_y == 0:
+        return None
+    return num / (den_x * den_y)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
-# AGE CURVE — loads CSV history and builds position-age SC curves
+# ROLE-AWARE AGE CURVES (cached at module level)
 # ═══════════════════════════════════════════════════════════════════════════
 
-# Module-level cache so we only build the age curve once per process
 _age_curve_cache = {}
 
 
 def _load_historical_sc():
     """Load per-game SC from CSVs (2018-2025).
 
-    Returns:
-        list of dicts: [{"player": str, "team": str, "year": int,
-                         "round": str/int, "sc": int}, ...]
+    Returns list of dicts with player, team, year, round, sc keys.
     """
     if not _HAS_PANDAS:
         return []
@@ -179,102 +245,255 @@ def _build_player_yearly_avgs(records):
         result[name] = {
             y: sum(scores) / len(scores)
             for y, scores in years.items()
-            if len(scores) >= 3  # need 3+ games for a meaningful avg
+            if len(scores) >= 3
         }
     return result
 
 
-def _build_age_curves(records, all_players_db):
-    """Build empirical age curves: avg SC at each age for each position.
+def _build_role_aware_age_curves(records, all_players_db):
+    """Build empirical age curves per role bucket (not just position).
 
-    We need age data from the DB (AflPlayer.age, AflPlayer.dob) combined with
-    historical SC from CSVs.  Since CSVs don't have age, we compute it from
-    the player's current age and the year difference.
-
-    Returns: {pos: {age: avg_sc}}
+    Uses all CSVs 2018-2025, matching to AflPlayer for height.
+    Returns: {bucket: {age: avg_sc}} where bucket is one of the 8 role buckets,
+    plus a legacy {pos: {age: avg_sc}} keyed by primary position.
     """
-    cache_key = "age_curves"
+    cache_key = "role_age_curves"
     if cache_key in _age_curve_cache:
         return _age_curve_cache[cache_key]
 
-    # Build lookup: player_name -> (current_age, primary_position)
+    # Build lookup: player_name -> (role_bucket, primary_pos, current_age, height)
     player_info = {}
     for p in all_players_db:
         if p.age and p.age > 0:
-            player_info[p.name] = (_primary_pos(p.position), p.age)
+            bucket = _role_bucket(p.position, p.height_cm)
+            player_info[p.name] = (bucket, _primary_pos(p.position), p.age, p.height_cm or 185)
 
     current_year = config.CURRENT_YEAR
-
-    # Accumulate SC by (position, age)
-    pos_age_sc = defaultdict(lambda: defaultdict(list))
-
     player_yearly = _build_player_yearly_avgs(records)
+
+    # Accumulate SC by (bucket, age) AND (pos, age)
+    bucket_age_sc = defaultdict(lambda: defaultdict(list))
+    pos_age_sc = defaultdict(lambda: defaultdict(list))
 
     for name, yearly in player_yearly.items():
         info = player_info.get(name)
         if not info:
             continue
-        pos, cur_age = info
+        bucket, pos, cur_age, _ = info
         for year, avg_sc in yearly.items():
-            # Estimate their age in that year
             age_in_year = cur_age - (current_year - year)
             if 18 <= age_in_year <= 38 and avg_sc > 0:
+                bucket_age_sc[bucket][age_in_year].append(avg_sc)
                 pos_age_sc[pos][age_in_year].append(avg_sc)
 
-    # Compute averages
-    curves = {}
-    for pos in ("DEF", "MID", "FWD", "RUC"):
-        age_data = pos_age_sc.get(pos, {})
-        curves[pos] = {}
+    def _build_curve(age_data, min_sample=5):
+        """Convert {age: [scores]} to {age: avg_sc} with interpolation."""
+        curve = {}
         for age in range(18, 39):
             scores = age_data.get(age, [])
-            if len(scores) >= 5:  # need decent sample
-                curves[pos][age] = round(sum(scores) / len(scores), 1)
+            if len(scores) >= min_sample:
+                curve[age] = round(sum(scores) / len(scores), 1)
 
-    # Smooth gaps: if an age is missing but neighbours exist, interpolate
-    for pos in curves:
-        ages_present = sorted(curves[pos].keys())
-        if len(ages_present) < 2:
-            continue
-        for age in range(min(ages_present), max(ages_present) + 1):
-            if age not in curves[pos]:
-                # Find nearest neighbours
-                below = [a for a in ages_present if a < age]
-                above = [a for a in ages_present if a > age]
-                if below and above:
-                    a_lo, a_hi = below[-1], above[0]
-                    frac = (age - a_lo) / (a_hi - a_lo)
-                    curves[pos][age] = round(
-                        curves[pos][a_lo] + frac * (curves[pos][a_hi] - curves[pos][a_lo]), 1
-                    )
+        # Interpolate gaps
+        ages_present = sorted(curve.keys())
+        if len(ages_present) >= 2:
+            for age in range(min(ages_present), max(ages_present) + 1):
+                if age not in curve:
+                    below = [a for a in ages_present if a < age]
+                    above = [a for a in ages_present if a > age]
+                    if below and above:
+                        a_lo, a_hi = below[-1], above[0]
+                        frac = (age - a_lo) / (a_hi - a_lo)
+                        curve[age] = round(
+                            curve[a_lo] + frac * (curve[a_hi] - curve[a_lo]), 1
+                        )
+        return curve
 
-    _age_curve_cache[cache_key] = curves
-    return curves
+    # Build curves per bucket
+    bucket_curves = {}
+    for bucket in ("small_fwd", "mid_fwd", "key_fwd", "small_mid", "tall_mid",
+                    "small_def", "key_def", "ruck"):
+        bucket_curves[bucket] = _build_curve(bucket_age_sc.get(bucket, {}), min_sample=3)
+
+    # Build legacy position-level curves (larger samples, more robust)
+    pos_curves = {}
+    for pos in ("DEF", "MID", "FWD", "RUC"):
+        pos_curves[pos] = _build_curve(pos_age_sc.get(pos, {}), min_sample=5)
+
+    result = {"buckets": bucket_curves, "positions": pos_curves}
+    _age_curve_cache[cache_key] = result
+    return result
 
 
-def _expected_sc_for_player(curves, pos, age, personal_peak_sc):
-    """Project a player's expected SC at their current age using the curve.
+def _get_age_curve_value(curves_dict, bucket, pos, age):
+    """Get the age curve SC value, preferring bucket curve, falling back to position curve."""
+    bucket_curves = curves_dict.get("buckets", {})
+    pos_curves = curves_dict.get("positions", {})
 
-    We scale the generic curve to the player's personal peak so a 110-avg
-    Elite mid isn't compared to the 75-avg position mean.
+    # Try bucket-specific curve first
+    bc = bucket_curves.get(bucket, {})
+    if age in bc:
+        return bc[age]
 
-    Returns: expected SC (float), or None if no curve data.
+    # Fall back to position curve
+    pc = pos_curves.get(pos, {})
+    if age in pc:
+        return pc[age]
+
+    return None
+
+
+def _curve_peak_sc(curves_dict, bucket, pos):
+    """Get the peak SC on the curve for a given bucket/pos."""
+    bc = curves_dict.get("buckets", {}).get(bucket, {})
+    pc = curves_dict.get("positions", {}).get(pos, {})
+
+    # Prefer bucket curve if it has data
+    curve = bc if bc else pc
+    if not curve:
+        return None
+    return max(curve.values())
+
+
+def _curve_peak_age(curves_dict, bucket, pos):
+    """Get the peak age on the curve for a given bucket/pos."""
+    bc = curves_dict.get("buckets", {}).get(bucket, {})
+    pc = curves_dict.get("positions", {}).get(pos, {})
+    curve = bc if bc else pc
+    if not curve:
+        return None
+    return max(curve, key=curve.get)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# BAYESIAN TRUE-TALENT ESTIMATION
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _compute_bucket_priors(all_players_db):
+    """Compute prior mean SC for each role bucket.
+
+    Groups all AflPlayers with sc_avg > 0 into buckets and computes
+    the mean SC for each bucket. This is the "prior" in the Bayesian model.
+
+    Returns: {bucket: {"mean": float, "std": float, "n": int}}
     """
-    curve = curves.get(pos, {})
-    if not curve or age not in curve:
-        return None
+    bucket_scores = defaultdict(list)
+    for p in all_players_db:
+        if p.sc_avg and p.sc_avg > 0:
+            bucket = _role_bucket(p.position, p.height_cm)
+            bucket_scores[bucket].append(p.sc_avg)
 
-    # Find the peak of the generic curve for this position
-    curve_peak_age = max(curve, key=curve.get)
-    curve_peak_sc = curve[curve_peak_age]
+    priors = {}
+    for bucket in ("small_fwd", "mid_fwd", "key_fwd", "small_mid", "tall_mid",
+                    "small_def", "key_def", "ruck"):
+        scores = bucket_scores.get(bucket, [])
+        if scores:
+            mean = sum(scores) / len(scores)
+            std = _std_dev(scores) if len(scores) >= 2 else mean * _DEFAULT_CV
+            priors[bucket] = {"mean": round(mean, 1), "std": round(std, 1), "n": len(scores)}
+        else:
+            priors[bucket] = {"mean": 65.0, "std": 20.0, "n": 0}
+    return priors
 
-    if curve_peak_sc <= 0:
-        return None
 
-    # Scale factor: player's personal peak vs curve peak
-    scale = personal_peak_sc / curve_peak_sc if personal_peak_sc > 0 else 1.0
+def _bayesian_estimate(prior_mean, prior_std, observed_scores, sc_avg_prev=None):
+    """Compute Bayesian true-talent estimate for a single player.
 
-    return round(curve[age] * scale, 1)
+    Model:
+      posterior_mean = (n / (n + k)) * observed_mean + (k / (n + k)) * prior_mean
+      where k = _REGRESSION_K
+
+    For players with 0 current-year games, we use sc_avg_prev with heavier regression.
+
+    Returns: dict with true_talent, regression_pct, observed_mean, prior_used, ceiling, floor
+    """
+    n = len(observed_scores)
+
+    if n > 0:
+        obs_mean = sum(observed_scores) / n
+        obs_std = _std_dev(observed_scores) if n >= 2 else prior_std
+        weight_evidence = n / (n + _REGRESSION_K)
+        weight_prior = _REGRESSION_K / (n + _REGRESSION_K)
+        true_talent = weight_evidence * obs_mean + weight_prior * prior_mean
+    elif sc_avg_prev and sc_avg_prev > 0:
+        # No current-year games — use last year with heavy regression
+        obs_mean = sc_avg_prev
+        obs_std = prior_std
+        # Treat prev-year avg as equivalent to ~4 games of evidence (half weight of real games)
+        equiv_games = 4
+        weight_evidence = equiv_games / (equiv_games + _REGRESSION_K)
+        weight_prior = _REGRESSION_K / (equiv_games + _REGRESSION_K)
+        true_talent = weight_evidence * obs_mean + weight_prior * prior_mean
+        n = 0
+    else:
+        # No data at all — pure prior
+        obs_mean = 0.0
+        obs_std = prior_std
+        true_talent = prior_mean
+        weight_prior = 1.0
+
+    regression_pct = round(weight_prior * 100 if 'weight_prior' in dir() else 100, 1)
+
+    # Ceiling/floor: use the posterior distribution
+    # Effective std shrinks as we get more games
+    effective_std = obs_std if n >= 5 else prior_std
+    ceiling = round(true_talent + 1.28 * effective_std, 1)  # ~90th percentile
+    floor = round(max(0, true_talent - 1.28 * effective_std), 1)  # ~10th percentile
+
+    return {
+        "true_talent": round(true_talent, 1),
+        "regression_pct": regression_pct,
+        "observed_mean": round(obs_mean, 1),
+        "observed_std": round(obs_std, 1),
+        "prior_used": round(prior_mean, 1),
+        "ceiling": ceiling,
+        "floor": floor,
+        "games": n,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MULTI-YEAR PROJECTION
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _project_player_multi_year(true_talent, age, bucket, pos, curves_dict, peak_phase, trajectory):
+    """Project a player's SC for years +1, +2, +3 using Bayesian base + age curve.
+
+    Logic:
+      - Find the curve's rate of change from current age to future age
+      - Apply that rate to the player's personal true_talent estimate
+      - Pre-peak players with positive trajectory get additional uplift
+      - Post-peak players follow the curve decline
+
+    Returns: [yr1_sc, yr2_sc, yr3_sc]
+    """
+    projections = []
+    current_curve_val = _get_age_curve_value(curves_dict, bucket, pos, age)
+    base_sc = true_talent
+
+    for delta in (1, 2, 3):
+        future_age = age + delta
+        future_curve_val = _get_age_curve_value(curves_dict, bucket, pos, future_age)
+
+        if current_curve_val and current_curve_val > 0 and future_curve_val and future_curve_val > 0:
+            # Use the curve's ratio to project: player keeps their relative level
+            ratio = future_curve_val / current_curve_val
+            projected = base_sc * ratio
+        elif peak_phase == "pre-peak" and trajectory > 0:
+            # No curve data but player is improving — extrapolate trajectory with decay
+            decay = 0.7 ** (delta - 1)  # trajectory effect diminishes
+            projected = base_sc + trajectory * delta * decay
+        elif peak_phase == "post-peak":
+            # No curve data, post-peak — assume 3% decline per year
+            projected = base_sc * (0.97 ** delta)
+        else:
+            # At peak or unknown — mild decline
+            projected = base_sc * (0.99 ** delta)
+
+        projected = max(0, round(projected, 1))
+        projections.append(projected)
+
+    return projections
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -314,7 +533,8 @@ def _run_monte_carlo(player_distributions, n_sims=_MC_SIMULATIONS):
     """Run Monte Carlo simulation of team totals.
 
     Args:
-        player_distributions: list of (mean, std_dev) tuples for each field player
+        player_distributions: list of (mean, std_dev) tuples for each field player.
+                              Uses Bayesian true-talent as mean.
         n_sims: number of simulations
 
     Returns:
@@ -327,18 +547,15 @@ def _run_monte_carlo(player_distributions, n_sims=_MC_SIMULATIONS):
         }
 
     if _HAS_NUMPY:
-        # Fast vectorised approach
         rng = np.random.default_rng(seed=42)
         totals = np.zeros(n_sims)
         for mean, std in player_distributions:
             if std > 0:
                 scores = rng.normal(mean, std, n_sims)
-                # Floor individual scores at 0
                 scores = np.maximum(scores, 0)
             else:
                 scores = np.full(n_sims, mean)
             totals += scores
-        totals_sorted = np.sort(totals)
         p10 = float(np.percentile(totals, 10))
         p25 = float(np.percentile(totals, 25))
         p50 = float(np.percentile(totals, 50))
@@ -346,7 +563,6 @@ def _run_monte_carlo(player_distributions, n_sims=_MC_SIMULATIONS):
         p90 = float(np.percentile(totals, 90))
         totals_list = totals.tolist()
     else:
-        # Stdlib fallback
         _random.seed(42)
         totals_list = []
         for _ in range(n_sims):
@@ -396,16 +612,11 @@ def _run_monte_carlo(player_distributions, n_sims=_MC_SIMULATIONS):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# VORP (Value Over Replacement Player)
+# REPLACEMENT LEVELS (VORP)
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _compute_replacement_levels():
-    """Compute replacement-level SC per position (25th percentile).
-
-    Uses ALL active AflPlayers in the DB with sc_avg > 0.
-
-    Returns: {pos: replacement_sc}
-    """
+    """Compute replacement-level SC per position (25th percentile of players with sc_avg > 0)."""
     all_players = AflPlayer.query.filter(AflPlayer.sc_avg > 0).all()
     pos_scores = defaultdict(list)
     for p in all_players:
@@ -415,10 +626,7 @@ def _compute_replacement_levels():
     levels = {}
     for pos in ("DEF", "MID", "FWD", "RUC"):
         scores = sorted(pos_scores.get(pos, []))
-        if scores:
-            levels[pos] = round(_percentile(scores, 25), 1)
-        else:
-            levels[pos] = 0.0
+        levels[pos] = round(_percentile(scores, 25), 1) if scores else 0.0
     return levels
 
 
@@ -427,23 +635,18 @@ def _compute_replacement_levels():
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _compute_team_exposure(field_players, total_field):
-    """Count field players per AFL team and flag over-exposure.
-
-    Returns: (exposure_dict, max_exposure_dict)
-    """
+    """Count field players per AFL team and flag over-exposure."""
     team_counts = defaultdict(lambda: {"count": 0, "players": []})
     for p in field_players:
         team_name = p.afl_team or "Unknown"
         team_counts[team_name]["count"] += 1
         team_counts[team_name]["players"].append(p.name)
 
-    # Add percentage
     for team in team_counts:
         team_counts[team]["pct"] = round(
             team_counts[team]["count"] / max(total_field, 1) * 100, 1
         )
 
-    # Find max exposure
     if team_counts:
         max_team = max(team_counts, key=lambda t: team_counts[t]["count"])
         max_exposure = {"team": max_team, "count": team_counts[max_team]["count"]}
@@ -454,18 +657,465 @@ def _compute_team_exposure(field_players, total_field):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# INTRA-TEAM CORRELATION (players from same AFL game)
+# SCENARIO ANALYSIS
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _compute_scenarios(field_players, bayesian_map, roster_map, all_players_on_team,
+                       replacement_levels):
+    """Compute scenario analysis: best-18, captain-down, key-injury, position-collapse.
+
+    Args:
+        field_players: list of AflPlayer on field
+        bayesian_map: {player_id: bayesian_estimate_dict}
+        roster_map: {player_id: FantasyRoster}
+        all_players_on_team: list of all AflPlayer (field + bench)
+        replacement_levels: {pos: replacement_sc}
+
+    Returns: scenarios dict
+    """
+    # Get Bayesian estimates for all roster players
+    all_estimates = []
+    for p in all_players_on_team:
+        est = bayesian_map.get(p.id, {})
+        tt = est.get("true_talent", p.sc_avg or 0)
+        all_estimates.append((p, tt))
+
+    # Sort by true talent descending
+    all_estimates.sort(key=lambda x: -x[1])
+
+    # Current team total (field players only, using Bayesian estimates)
+    field_ids = {p.id for p in field_players}
+    current_total = sum(
+        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
+        for p in field_players
+    )
+
+    # --- Best 18 ---
+    best_18 = all_estimates[:18]
+    best_18_total = round(sum(tt for _, tt in best_18), 1)
+
+    # --- Captain down ---
+    # Find the captain
+    captain = None
+    captain_sc = 0
+    for p in field_players:
+        r = roster_map.get(p.id)
+        if r and r.is_captain:
+            captain = p
+            captain_sc = bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
+            break
+
+    if captain is None and field_players:
+        # No captain set — use highest scorer
+        best_field = max(field_players,
+                         key=lambda p: bayesian_map.get(p.id, {}).get("true_talent", 0))
+        captain = best_field
+        captain_sc = bayesian_map.get(best_field.id, {}).get("true_talent", 0)
+
+    # Captain bonus is typically 2x score, so losing captain = losing their score once
+    # (they still play, just not as captain). The "captain down" scenario means
+    # what if your captain scores 0 (injured) — team loses their full contribution
+    # plus the captain bonus (their score again).
+    if captain:
+        # Score without captain at all + best bench player subbing in
+        bench_subs = [(p, bayesian_map.get(p.id, {}).get("true_talent", 0))
+                      for p in all_players_on_team if p.id not in field_ids]
+        bench_subs.sort(key=lambda x: -x[1])
+        sub_sc = bench_subs[0][1] if bench_subs else 0
+        captain_down_score = round(current_total - captain_sc + sub_sc, 1)
+        captain_down_drop = round(current_total - captain_down_score, 1)
+    else:
+        captain_down_score = round(current_total, 1)
+        captain_down_drop = 0.0
+
+    # --- Key injuries (top 3 players) ---
+    field_by_sc = sorted(field_players,
+                         key=lambda p: bayesian_map.get(p.id, {}).get("true_talent", 0),
+                         reverse=True)
+    key_injuries = []
+    bench_sorted = sorted(
+        [p for p in all_players_on_team if p.id not in field_ids],
+        key=lambda p: bayesian_map.get(p.id, {}).get("true_talent", 0),
+        reverse=True
+    )
+
+    for i, p in enumerate(field_by_sc[:3]):
+        p_sc = bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
+        # Best available bench player (not already used as sub in previous scenario)
+        sub_sc = 0
+        if i < len(bench_sorted):
+            sub_sc = bayesian_map.get(bench_sorted[i].id, {}).get("true_talent", 0)
+        score_without = round(current_total - p_sc + sub_sc, 1)
+        key_injuries.append({
+            "name": p.name,
+            "team_score_without": score_without,
+            "drop": round(current_total - score_without, 1),
+        })
+
+    # --- Position collapse (each position group drops 15%) ---
+    pos_totals = defaultdict(float)
+    for p in field_players:
+        ppos = _primary_pos(p.position)
+        pos_totals[ppos] += bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
+
+    position_collapse = {}
+    for pos in ("DEF", "MID", "FWD", "RUC"):
+        pos_sc = pos_totals.get(pos, 0)
+        drop = round(pos_sc * 0.15, 1)
+        position_collapse[pos] = {
+            "score": round(current_total - drop, 1),
+            "drop": drop,
+        }
+
+    return {
+        "best_18": best_18_total,
+        "best_18_delta": round(best_18_total - current_total, 1),
+        "captain_down": {
+            "score": captain_down_score,
+            "drop": captain_down_drop,
+            "captain": captain.name if captain else "None",
+        },
+        "key_injuries": key_injuries,
+        "position_collapse": position_collapse,
+        "current_total": round(current_total, 1),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TEAM HEALTH SCORE
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _compute_health_score(field_players, bench_players, bayesian_map, profile_tags,
+                          league_team_totals, replacement_levels):
+    """Compute a single 0-100 Team Health Score and its 6 components.
+
+    Components (weights):
+      - Scoring power (30%): Bayesian team total vs league average
+      - Depth (20%): scoring drop from best 18 to actual lineup
+      - Balance (15%): positional coverage
+      - Youth (15%): proportion of pre-peak players
+      - Trajectory (10%): average trajectory of field players
+      - Durability (10%): average games/season
+
+    Each component is scored 0-100, then weighted.
+    """
+    total_field = len(field_players)
+    all_on_roster = list(field_players) + list(bench_players)
+
+    # --- Power (30%) ---
+    team_total = sum(
+        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
+        for p in field_players
+    )
+    if league_team_totals:
+        league_avg_total = sum(league_team_totals.values()) / len(league_team_totals)
+        league_max_total = max(league_team_totals.values())
+        league_min_total = min(league_team_totals.values())
+        spread = league_max_total - league_min_total if league_max_total > league_min_total else 1
+        # Score: 50 at league average, 100 at league max, 0 at league min
+        power_raw = (team_total - league_min_total) / spread * 100
+    else:
+        power_raw = 50.0
+    power = _clamp(power_raw, 0, 100)
+
+    # --- Depth (20%) ---
+    # Best 18 from full roster vs actual field
+    all_estimates = sorted(
+        [(p, bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)) for p in all_on_roster],
+        key=lambda x: -x[1]
+    )
+    best_18_total = sum(tt for _, tt in all_estimates[:18])
+    if best_18_total > 0:
+        depth_ratio = team_total / best_18_total
+        # If actual == best18, depth = 100. If actual is 80% of best18, depth ~ 0
+        depth = _clamp((depth_ratio - 0.80) / 0.20 * 100, 0, 100)
+    else:
+        depth = 50.0
+
+    # --- Balance (15%) ---
+    pos_counts = defaultdict(int)
+    for p in field_players:
+        pos_counts[_primary_pos(p.position)] += 1
+
+    balance_score = 0
+    for pos, ideal in _IDEAL_FIELD.items():
+        actual = pos_counts.get(pos, 0)
+        if actual >= ideal:
+            balance_score += 25  # each position worth 25 points
+        elif actual > 0:
+            balance_score += 25 * (actual / ideal)
+    balance = _clamp(balance_score, 0, 100)
+
+    # --- Youth (15%) ---
+    pre_peak_count = 0
+    for p in field_players:
+        t = profile_tags.get(p.id, {})
+        if t.get("peak_phase") == "pre-peak":
+            pre_peak_count += 1
+    # Ideal: 25-40% pre-peak. Below 15% is bad, above 50% means too raw.
+    if total_field > 0:
+        youth_pct = pre_peak_count / total_field
+        if youth_pct < 0.15:
+            youth = youth_pct / 0.15 * 60  # aging roster
+        elif youth_pct <= 0.45:
+            youth = 60 + (youth_pct - 0.15) / 0.30 * 40  # sweet spot
+        else:
+            youth = max(40, 100 - (youth_pct - 0.45) / 0.25 * 60)  # too raw
+    else:
+        youth = 50.0
+    youth = _clamp(youth, 0, 100)
+
+    # --- Trajectory (10%) ---
+    trajectories = [profile_tags.get(p.id, {}).get("trajectory", 0) for p in field_players]
+    if trajectories:
+        avg_traj = sum(trajectories) / len(trajectories)
+        # Range roughly -10 to +10. 0 is neutral (50), +5 is great (100), -5 is bad (0)
+        traj_score = 50 + avg_traj * 10
+    else:
+        traj_score = 50.0
+    traj_score = _clamp(traj_score, 0, 100)
+
+    # --- Durability (10%) ---
+    durabilities = [profile_tags.get(p.id, {}).get("durability", 18) for p in field_players]
+    if durabilities:
+        avg_dur = sum(durabilities) / len(durabilities)
+        # 22 games/yr is perfect (100), 15 is mediocre (50), 10 is terrible (0)
+        dur_score = (avg_dur - 10) / 12 * 100
+    else:
+        dur_score = 50.0
+    dur_score = _clamp(dur_score, 0, 100)
+
+    # --- Composite ---
+    health = (
+        power * 0.30 +
+        depth * 0.20 +
+        balance * 0.15 +
+        youth * 0.15 +
+        traj_score * 0.10 +
+        dur_score * 0.10
+    )
+
+    return {
+        "health_score": round(health, 1),
+        "health_components": {
+            "power": round(power, 1),
+            "depth": round(depth, 1),
+            "balance": round(balance, 1),
+            "youth": round(youth, 1),
+            "trajectory": round(traj_score, 1),
+            "durability": round(dur_score, 1),
+        },
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# INSIGHTS ENGINE
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
+                       replacement_levels, scenarios, projections_by_player,
+                       pos_breakdown, league_team_totals, team_id):
+    """Generate specific, ranked recommendations sorted by point impact.
+
+    Insight types:
+      - "warning": something is hurting the team
+      - "opportunity": an action that could improve the team
+      - "strength": something the team does well
+
+    Each insight has a numeric 'impact' (estimated weekly SC points affected).
+    """
+    insights = []
+    total_field = len(field_players)
+    if total_field == 0:
+        return insights
+
+    team_total = sum(
+        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
+        for p in field_players
+    )
+
+    # 1. Weakest link analysis
+    field_by_sc = sorted(
+        field_players,
+        key=lambda p: bayesian_map.get(p.id, {}).get("true_talent", 0)
+    )
+    for p in field_by_sc[:3]:
+        pos = _primary_pos(p.position)
+        tt = bayesian_map.get(p.id, {}).get("true_talent", 0)
+        repl = replacement_levels.get(pos, 0)
+        gap = tt - repl
+        if gap < 10:
+            # Find ideal draft target age range
+            peak_lo, peak_hi = _POS_PEAK.get(pos, (25, 29))
+            target_age_lo = peak_lo - 3
+            target_age_hi = peak_lo
+            insights.append({
+                "type": "warning",
+                "title": f"{p.name} is your weakest link at {pos}",
+                "detail": (f"Bayesian estimate {tt:.0f} SC is only {gap:+.0f} above replacement level "
+                           f"({repl:.0f}). Target a {pos} aged {target_age_lo}-{target_age_hi} in the draft."),
+                "impact": round(abs(gap), 1),
+            })
+
+    # 2. Top-heavy dependency
+    if total_field >= 5:
+        top3_sc = sum(
+            bayesian_map.get(p.id, {}).get("true_talent", 0)
+            for p in sorted(field_players,
+                            key=lambda p: bayesian_map.get(p.id, {}).get("true_talent", 0),
+                            reverse=True)[:3]
+        )
+        dependency_pct = round(top3_sc / team_total * 100, 1) if team_total > 0 else 0
+        if dependency_pct > 25:
+            captain = scenarios.get("captain_down", {})
+            cap_name = captain.get("captain", "your captain")
+            cap_drop = captain.get("drop", 0)
+            insights.append({
+                "type": "warning",
+                "title": f"Top-3 dependency: {dependency_pct}% of scoring",
+                "detail": (f"Your team is heavily reliant on your top 3 scorers. "
+                           f"If {cap_name} misses, you drop {cap_drop:.0f} points."),
+                "impact": round(cap_drop * 0.1, 1),  # weight by probability
+            })
+
+    # 3. Aging roster warnings
+    post_peak_players = []
+    for p in field_players:
+        t = profile_tags.get(p.id, {})
+        if t.get("peak_phase") == "post-peak":
+            proj = projections_by_player.get(p.id, {})
+            yr1 = proj.get("yr1", bayesian_map.get(p.id, {}).get("true_talent", 0))
+            current = bayesian_map.get(p.id, {}).get("true_talent", 0)
+            drop = current - yr1
+            if drop > 2:
+                post_peak_players.append((p, drop))
+
+    post_peak_players.sort(key=lambda x: -x[1])
+    for p, drop in post_peak_players[:3]:
+        insights.append({
+            "type": "opportunity",
+            "title": f"Consider trading {p.name} (post-peak)",
+            "detail": (f"Projected to drop {drop:.0f} SC next year. "
+                       f"Current Bayesian estimate: {bayesian_map.get(p.id, {}).get('true_talent', 0):.0f}."),
+            "impact": round(drop, 1),
+        })
+
+    # 4. Underperforming players (actual << Bayesian estimate, might bounce back)
+    for p in field_players:
+        est = bayesian_map.get(p.id, {})
+        tt = est.get("true_talent", 0)
+        raw = p.sc_avg or 0
+        if raw > 0 and tt > raw + 8 and est.get("games", 0) <= 6:
+            insights.append({
+                "type": "strength",
+                "title": f"{p.name} is better than their current average",
+                "detail": (f"Raw avg {raw:.0f} but Bayesian estimate {tt:.0f} "
+                           f"(only {est.get('games', 0)} games — small sample regressed to prior). "
+                           f"Expect improvement toward {tt:.0f}."),
+                "impact": round(tt - raw, 1),
+            })
+
+    # 5. Depth advantage or weakness
+    best_18_delta = scenarios.get("best_18_delta", 0)
+    if best_18_delta > 20:
+        insights.append({
+            "type": "warning",
+            "title": f"Lineup not optimised ({best_18_delta:.0f} below best 18)",
+            "detail": "Your best possible 18 outscores your current lineup significantly. Check bench.",
+            "impact": round(best_18_delta, 1),
+        })
+    elif best_18_delta < 5 and total_field >= 18:
+        insights.append({
+            "type": "strength",
+            "title": "Lineup is well-optimised",
+            "detail": f"Only {best_18_delta:.0f} SC separates your lineup from your theoretical best 18.",
+            "impact": 0,
+        })
+
+    # 6. Position weakness
+    for pos, ideal in _IDEAL_FIELD.items():
+        pd_entry = pos_breakdown.get(pos, {})
+        actual = pd_entry.get("count", 0)
+        if actual < ideal:
+            avg_pos_sc = pd_entry.get("avg_sc", 0)
+            insights.append({
+                "type": "warning",
+                "title": f"{pos} is under-staffed ({actual}/{ideal})",
+                "detail": f"Only {actual} {pos}s on field (ideal: {ideal}). Average SC: {avg_pos_sc:.0f}.",
+                "impact": round((ideal - actual) * replacement_levels.get(pos, 50), 1),
+            })
+
+    # 7. League context
+    if league_team_totals:
+        leader_total = max(league_team_totals.values())
+        if team_total < leader_total:
+            gap = leader_total - team_total
+            # Find who leads
+            leader_id = max(league_team_totals, key=league_team_totals.get)
+            insights.append({
+                "type": "opportunity" if gap > 30 else "strength",
+                "title": f"{gap:.0f} SC behind the league leader" if gap > 5 else "Competitive with the leader",
+                "detail": (f"Your Bayesian team total ({team_total:.0f}) is {gap:.0f} "
+                           f"below the leader ({leader_total:.0f})."),
+                "impact": round(gap / total_field, 1),
+            })
+
+    # Sort by impact descending
+    insights.sort(key=lambda x: -x["impact"])
+    return insights
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# LEAGUE CONTEXT HELPERS
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _compute_league_context(team_id, league_id, year, team_total, avg_sc, avg_age,
+                            all_league_data):
+    """For each key metric, show rank and distance from 1st/average.
+
+    Args:
+        all_league_data: {team_id: {"total": float, "avg_sc": float, "avg_age": float}}
+
+    Returns: dict with rank info
+    """
+    if not all_league_data:
+        return {}
+
+    n_teams = len(all_league_data)
+    totals = {tid: d["total"] for tid, d in all_league_data.items()}
+    avg_scs = {tid: d["avg_sc"] for tid, d in all_league_data.items()}
+    avg_ages = {tid: d["avg_age"] for tid, d in all_league_data.items()}
+
+    def _rank_and_gap(metric_dict, tid, higher_is_better=True):
+        sorted_items = sorted(metric_dict.items(), key=lambda x: -x[1] if higher_is_better else x[1])
+        rank = next((i + 1 for i, (t, _) in enumerate(sorted_items) if t == tid), n_teams)
+        values = list(metric_dict.values())
+        avg_val = sum(values) / len(values) if values else 0
+        best_val = sorted_items[0][1] if sorted_items else 0
+        my_val = metric_dict.get(tid, 0)
+        return {
+            "rank": rank,
+            "of": n_teams,
+            "value": round(my_val, 1),
+            "league_avg": round(avg_val, 1),
+            "leader": round(best_val, 1),
+            "gap_to_leader": round(best_val - my_val, 1) if higher_is_better else round(my_val - best_val, 1),
+            "gap_to_avg": round(my_val - avg_val, 1),
+        }
+
+    return {
+        "total_sc_rank": _rank_and_gap(totals, team_id, higher_is_better=True),
+        "avg_sc_rank": _rank_and_gap(avg_scs, team_id, higher_is_better=True),
+        "avg_age_rank": _rank_and_gap(avg_ages, team_id, higher_is_better=False),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# EXPOSURE CORRELATION
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _compute_exposure_correlation(field_players, year):
-    """Check if players from the same AFL team tend to score together.
-
-    For each pair of field players on the same AFL team, compute the
-    Pearson correlation of their per-round SC scores.
-
-    Returns: list of {"player_a", "player_b", "afl_team", "correlation", "games"}
-    """
-    # Group field players by AFL team
+    """Check if players from the same AFL team tend to score together."""
     team_groups = defaultdict(list)
     for p in field_players:
         team_groups[p.afl_team or "Unknown"].append(p)
@@ -475,7 +1125,6 @@ def _compute_exposure_correlation(field_players, year):
         if len(players) < 2:
             continue
 
-        # Load round scores for each player
         player_round_scores = {}
         for p in players:
             stats = (
@@ -486,13 +1135,11 @@ def _compute_exposure_correlation(field_players, year):
             )
             player_round_scores[p.id] = {s.round: s.supercoach_score for s in stats}
 
-        # Compute pairwise correlations
         for i in range(len(players)):
             for j in range(i + 1, len(players)):
                 pa, pb = players[i], players[j]
                 scores_a = player_round_scores.get(pa.id, {})
                 scores_b = player_round_scores.get(pb.id, {})
-                # Find common rounds
                 common_rounds = set(scores_a.keys()) & set(scores_b.keys())
                 if len(common_rounds) < 3:
                     continue
@@ -511,21 +1158,6 @@ def _compute_exposure_correlation(field_players, year):
     return correlations
 
 
-def _pearson(x, y):
-    """Pearson correlation coefficient for two lists of equal length."""
-    n = len(x)
-    if n < 3:
-        return None
-    mx = sum(x) / n
-    my = sum(y) / n
-    num = sum((a - mx) * (b - my) for a, b in zip(x, y))
-    den_x = math.sqrt(sum((a - mx) ** 2 for a in x))
-    den_y = math.sqrt(sum((b - my) ** 2 for b in y))
-    if den_x == 0 or den_y == 0:
-        return None
-    return num / (den_x * den_y)
-
-
 # ═══════════════════════════════════════════════════════════════════════════
 # MAIN ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════════
@@ -533,9 +1165,8 @@ def _pearson(x, y):
 def compute_deep_analytics(team_id, league_id, year, profile_tags):
     """Compute comprehensive deep analytics for a fantasy team.
 
-    This is the single entry point — it runs all models and returns a flat
-    dict with every metric the template needs, including all the fields
-    that the original compute_team_analytics returned.
+    This is the single entry point — it runs all models and returns a dict
+    with every metric the template needs.
 
     Args:
         team_id: FantasyTeam.id
@@ -544,8 +1175,7 @@ def compute_deep_analytics(team_id, league_id, year, profile_tags):
         profile_tags: dict from compute_profile_tags() — {player_id: {...}}
 
     Returns:
-        dict with all analytics sections (see module docstring).
-        Returns empty dict if team has no players.
+        dict with all analytics sections. Returns empty dict if team has no players.
     """
     try:
         return _compute_deep_analytics_inner(team_id, league_id, year, profile_tags)
@@ -570,8 +1200,188 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     bench_players = [p for p in players if roster_map[p.id].is_benched]
     total_field = len(field_players)
 
+    # ── Load shared resources ────────────────────────────────────────────
+    all_db_players = AflPlayer.query.all()
+    historical_records = _load_historical_sc()
+    curves_dict = _build_role_aware_age_curves(historical_records, all_db_players)
+    bucket_priors = _compute_bucket_priors(all_db_players)
+    replacement_levels = _compute_replacement_levels()
+
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 1: ROSTER COMPOSITION (preserved from original)
+    # BAYESIAN TRUE-TALENT ESTIMATION (for every player on roster)
+    # ══════════════════════════════════════════════════════════════════════
+    bayesian_map = {}  # player_id -> bayesian estimate dict
+    player_game_scores = {}  # player_id -> [scores]
+
+    for p in players:
+        bucket = _role_bucket(p.position, p.height_cm)
+        prior = bucket_priors.get(bucket, {"mean": 65.0, "std": 20.0})
+
+        # Get this season's game scores
+        scores = _get_player_game_scores(p.id, year)
+        if len(scores) < 3:
+            csv_scores = _get_player_csv_scores(p.name, year - 1)
+            if len(csv_scores) >= 3:
+                scores = csv_scores
+
+        player_game_scores[p.id] = scores
+        est = _bayesian_estimate(prior["mean"], prior["std"], scores, p.sc_avg_prev)
+        est["role_bucket"] = bucket
+        bayesian_map[p.id] = est
+
+    # Build player_bayesian list for the return
+    player_bayesian = []
+    for p in players:
+        est = bayesian_map[p.id]
+        player_bayesian.append({
+            "name": p.name,
+            "position": _primary_pos(p.position),
+            "full_position": p.position or "MID",
+            "role_bucket": est["role_bucket"],
+            "age": p.age or 0,
+            "height": p.height_cm or 0,
+            "raw_avg": round(p.sc_avg or 0, 1),
+            "true_talent": est["true_talent"],
+            "regression_pct": est["regression_pct"],
+            "games": est["games"],
+            "prior_avg": est["prior_used"],
+            "ceiling": est["ceiling"],
+            "floor": est["floor"],
+            "is_field": not roster_map[p.id].is_benched,
+        })
+    player_bayesian.sort(key=lambda x: -x["true_talent"])
+
+    # ══════════════════════════════════════════════════════════════════════
+    # MULTI-YEAR PROJECTIONS (3 years)
+    # ══════════════════════════════════════════════════════════════════════
+    projections_by_player = {}  # player_id -> {"yr1", "yr2", "yr3"}
+    proj_1yr_players = []
+    proj_2yr_players = []
+    proj_3yr_players = []
+
+    for p in field_players:
+        est = bayesian_map.get(p.id, {})
+        tt = est.get("true_talent", p.sc_avg or 0)
+        bucket = est.get("role_bucket", "small_mid")
+        pos = _primary_pos(p.position)
+        age = p.age or 25
+        t = profile_tags.get(p.id, {})
+        peak_phase = t.get("peak_phase", "peak")
+        traj = t.get("trajectory", 0)
+
+        yr1, yr2, yr3 = _project_player_multi_year(tt, age, bucket, pos, curves_dict,
+                                                     peak_phase, traj)
+        projections_by_player[p.id] = {"yr1": yr1, "yr2": yr2, "yr3": yr3}
+
+        change_1 = round(yr1 - tt, 1)
+        change_2 = round(yr2 - tt, 1)
+        change_3 = round(yr3 - tt, 1)
+
+        entry_base = {
+            "name": p.name,
+            "age": age,
+            "position": pos,
+            "current": round(tt, 1),
+        }
+        proj_1yr_players.append({**entry_base, "projected": yr1, "change": change_1})
+        proj_2yr_players.append({**entry_base, "projected": yr2, "change": change_2})
+        proj_3yr_players.append({**entry_base, "projected": yr3, "change": change_3})
+
+    proj_1yr_total = round(sum(d["yr1"] for d in projections_by_player.values()), 1)
+    proj_2yr_total = round(sum(d["yr2"] for d in projections_by_player.values()), 1)
+    proj_3yr_total = round(sum(d["yr3"] for d in projections_by_player.values()), 1)
+
+    projections = {
+        "1yr": {"total": proj_1yr_total, "players": sorted(proj_1yr_players, key=lambda x: -x["change"])},
+        "2yr": {"total": proj_2yr_total, "players": sorted(proj_2yr_players, key=lambda x: -x["change"])},
+        "3yr": {"total": proj_3yr_total, "players": sorted(proj_3yr_players, key=lambda x: -x["change"])},
+    }
+
+    # ══════════════════════════════════════════════════════════════════════
+    # MONTE CARLO (using Bayesian true-talent as mean)
+    # ══════════════════════════════════════════════════════════════════════
+    mc_distributions = []
+    for p in field_players:
+        est = bayesian_map.get(p.id, {})
+        tt = est.get("true_talent", 0)
+        obs_std = est.get("observed_std", tt * _DEFAULT_CV)
+        # Use observed std if we have enough games, otherwise prior std
+        if est.get("games", 0) >= 5:
+            std = obs_std
+        else:
+            prior_std = bucket_priors.get(est.get("role_bucket", "small_mid"), {}).get("std", 20)
+            std = prior_std
+        mc_distributions.append((tt, std))
+
+    mc_results = _run_monte_carlo(mc_distributions)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SCENARIO ANALYSIS
+    # ══════════════════════════════════════════════════════════════════════
+    scenarios = _compute_scenarios(field_players, bayesian_map, roster_map,
+                                    players, replacement_levels)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # LEAGUE COMPARISON — compute for all teams
+    # ══════════════════════════════════════════════════════════════════════
+    league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    league_team_totals = {}  # tid -> bayesian team total
+    all_league_data = {}  # tid -> {total, avg_sc, avg_age}
+    league_avg_sc_accum = 0.0
+    league_avg_age_accum = 0.0
+    team_count = 0
+
+    for lt in league_teams:
+        lt_roster = FantasyRoster.query.filter_by(team_id=lt.id, is_active=True).all()
+        lt_field = []
+        for r in lt_roster:
+            if not r.is_benched:
+                lp = db.session.get(AflPlayer, r.player_id)
+                if lp:
+                    lt_field.append(lp)
+
+        if lt_field:
+            # Use raw SC avg for other teams (we only have Bayesian for our team)
+            if lt.id == team_id:
+                lt_total = sum(bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0) for p in lt_field)
+            else:
+                lt_total = sum(p.sc_avg or 0 for p in lt_field)
+            lt_avg_sc = lt_total / len(lt_field)
+            lt_avg_age = sum(p.age or 25 for p in lt_field) / len(lt_field)
+
+            league_team_totals[lt.id] = lt_total
+            all_league_data[lt.id] = {
+                "total": lt_total,
+                "avg_sc": lt_avg_sc,
+                "avg_age": lt_avg_age,
+            }
+            league_avg_sc_accum += lt_avg_sc
+            league_avg_age_accum += lt_avg_age
+            team_count += 1
+
+    if team_count:
+        league_avg_sc = round(league_avg_sc_accum / team_count, 1)
+        league_avg_age = round(league_avg_age_accum / team_count, 1)
+    else:
+        league_avg_sc = 0.0
+        league_avg_age = 0.0
+
+    league_context = _compute_league_context(
+        team_id, league_id, year,
+        league_team_totals.get(team_id, 0),
+        all_league_data.get(team_id, {}).get("avg_sc", 0),
+        all_league_data.get(team_id, {}).get("avg_age", 0),
+        all_league_data,
+    )
+
+    # ══════════════════════════════════════════════════════════════════════
+    # TEAM HEALTH SCORE
+    # ══════════════════════════════════════════════════════════════════════
+    health = _compute_health_score(field_players, bench_players, bayesian_map,
+                                    profile_tags, league_team_totals, replacement_levels)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # BACKWARD-COMPAT: ROSTER COMPOSITION
     # ══════════════════════════════════════════════════════════════════════
     tier_counts = defaultdict(int)
     tier_players = defaultdict(list)
@@ -589,7 +1399,7 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     quality_pct = round(_safe_div(roster_quality, max_quality) * 100, 1)
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 2: AGE PROFILE (preserved from original)
+    # BACKWARD-COMPAT: AGE PROFILE
     # ══════════════════════════════════════════════════════════════════════
     ages = [p.age for p in players if p.age]
     avg_age = round(_safe_div(sum(ages), len(ages)), 1) if ages else 0
@@ -634,12 +1444,12 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
                          f"post-peak ({post_peak_count})")
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 3: SCORING ANALYSIS (preserved from original)
+    # BACKWARD-COMPAT: SCORING ANALYSIS
     # ══════════════════════════════════════════════════════════════════════
     sc_values = [(p, p.sc_avg or 0) for p in field_players]
     sc_values.sort(key=lambda x: x[1], reverse=True)
     total_sc = sum(v for _, v in sc_values)
-    avg_sc = round(_safe_div(total_sc, len(sc_values)), 1)
+    avg_sc_field = round(_safe_div(total_sc, len(sc_values)), 1)
 
     if len(sc_values) >= 5:
         top5_sc = sum(v for _, v in sc_values[:5])
@@ -654,7 +1464,7 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         sc_std = 0
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 4: POSITIONAL BALANCE (preserved from original)
+    # BACKWARD-COMPAT: POSITIONAL BALANCE
     # ══════════════════════════════════════════════════════════════════════
     pos_breakdown = defaultdict(lambda: {"count": 0, "total_sc": 0, "avg_sc": 0, "players": []})
     for p in field_players:
@@ -679,7 +1489,7 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
             pos_notes.append(f"{pos} short ({actual}/{ideal})")
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 5: TRAJECTORY / OUTLOOK (preserved from original)
+    # BACKWARD-COMPAT: TRAJECTORY / OUTLOOK
     # ══════════════════════════════════════════════════════════════════════
     trajectories = []
     for p in field_players:
@@ -692,7 +1502,7 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     declining_count = sum(1 for t in trajectories if t < -3)
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 6: CONSISTENCY & DURABILITY (preserved from original)
+    # BACKWARD-COMPAT: CONSISTENCY & DURABILITY
     # ══════════════════════════════════════════════════════════════════════
     consistencies = [profile_tags.get(p.id, {}).get("consistency", 0.5) for p in field_players]
     durabilities = [profile_tags.get(p.id, {}).get("durability", 15) for p in field_players]
@@ -710,7 +1520,7 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
             })
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 7: ROUND-BY-ROUND PERFORMANCE (preserved from original)
+    # BACKWARD-COMPAT: ROUND-BY-ROUND PERFORMANCE
     # ══════════════════════════════════════════════════════════════════════
     round_scores = (
         RoundScore.query
@@ -733,114 +1543,37 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     ) if round_data else 0
     form_vs_season = round(form_avg - season_avg, 1) if season_avg else 0
 
-    # VS expectation
-    baseline_total = sum(p.sc_avg or 0 for p in field_players)
+    # VS expectation (using Bayesian total as baseline)
+    bayesian_total = sum(
+        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
+        for p in field_players
+    )
     vs_expectation = []
     for rs in round_scores:
-        diff = rs.total_score - baseline_total
+        diff = rs.total_score - bayesian_total
         vs_expectation.append({
             "round": rs.afl_round,
             "actual": rs.total_score,
-            "expected": round(baseline_total, 0),
+            "expected": round(bayesian_total, 0),
             "diff": round(diff, 0),
-            "pct": round(_safe_div(diff, baseline_total) * 100, 1),
+            "pct": round(_safe_div(diff, bayesian_total) * 100, 1),
         })
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 8: LEAGUE COMPARISON (preserved from original)
+    # VORP
     # ══════════════════════════════════════════════════════════════════════
-    league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
-    league_avg_sc = 0
-    league_avg_age = 0
-    team_count = 0
-    for lt in league_teams:
-        lt_roster = FantasyRoster.query.filter_by(team_id=lt.id, is_active=True).all()
-        lt_players = [db.session.get(AflPlayer, r.player_id) for r in lt_roster if not r.is_benched]
-        lt_players = [p for p in lt_players if p]
-        if lt_players:
-            league_avg_sc += sum(p.sc_avg or 0 for p in lt_players) / len(lt_players)
-            league_avg_age += sum(p.age or 25 for p in lt_players) / len(lt_players)
-            team_count += 1
-    if team_count:
-        league_avg_sc = round(league_avg_sc / team_count, 1)
-        league_avg_age = round(league_avg_age / team_count, 1)
-
-    # ══════════════════════════════════════════════════════════════════════
-    # NEW SECTION A: AGE-CURVE REGRESSION MODEL
-    # ══════════════════════════════════════════════════════════════════════
-    all_db_players = AflPlayer.query.all()
-    historical_records = _load_historical_sc()
-    age_curves = _build_age_curves(historical_records, all_db_players)
-
-    player_vs_curve = []
-    for p in field_players:
-        pos = _primary_pos(p.position)
-        age = p.age or 25
-        actual_sc = p.sc_avg or 0
-        # Personal peak from profile tags or historical best
-        personal_peak = profile_tags.get(p.id, {}).get("peak_avg", actual_sc)
-        if personal_peak <= 0:
-            personal_peak = actual_sc
-
-        expected = _expected_sc_for_player(age_curves, pos, age, personal_peak)
-        if expected is not None and expected > 0:
-            diff_pct = round((actual_sc - expected) / expected * 100, 1)
-        else:
-            expected = actual_sc  # no curve data — assume on track
-            diff_pct = 0.0
-
-        player_vs_curve.append({
-            "name": p.name,
-            "age": age,
-            "position": pos,
-            "actual_sc": round(actual_sc, 1),
-            "expected_sc": round(expected, 1),
-            "diff_pct": diff_pct,
-        })
-    player_vs_curve.sort(key=lambda x: -abs(x["diff_pct"]))
-
-    # ══════════════════════════════════════════════════════════════════════
-    # NEW SECTION B: MONTE CARLO SCORE SIMULATION
-    # ══════════════════════════════════════════════════════════════════════
-    player_distributions = []
-    for p in field_players:
-        scores = _get_player_game_scores(p.id, year)
-        # Fall back to previous year CSV if < 3 games in current year
-        if len(scores) < 3:
-            csv_scores = _get_player_csv_scores(p.name, year - 1)
-            if len(csv_scores) >= 3:
-                scores = csv_scores
-
-        if len(scores) >= 2:
-            mean = sum(scores) / len(scores)
-            std = _std_dev(scores)
-        elif scores:
-            mean = scores[0]
-            std = mean * 0.25  # assume 25% CV for single-game players
-        else:
-            mean = p.sc_avg or 0
-            std = mean * 0.25 if mean > 0 else 0
-
-        player_distributions.append((mean, std))
-
-    mc_results = _run_monte_carlo(player_distributions)
-
-    # ══════════════════════════════════════════════════════════════════════
-    # NEW SECTION C: VORP (Value Over Replacement Player)
-    # ══════════════════════════════════════════════════════════════════════
-    replacement_levels = _compute_replacement_levels()
     player_vorp = []
     total_vorp = 0.0
     for p in field_players:
         pos = _primary_pos(p.position)
-        sc = p.sc_avg or 0
+        tt = bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
         repl = replacement_levels.get(pos, 0)
-        vorp = round(sc - repl, 1)
+        vorp = round(tt - repl, 1)
         total_vorp += vorp
         player_vorp.append({
             "name": p.name,
             "position": pos,
-            "sc": round(sc, 1),
+            "sc": round(tt, 1),
             "replacement": repl,
             "vorp": vorp,
         })
@@ -848,7 +1581,7 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     total_vorp = round(total_vorp, 1)
 
     # ══════════════════════════════════════════════════════════════════════
-    # NEW SECTION D: DRAFT CAPITAL EFFICIENCY
+    # EFFICIENCY
     # ══════════════════════════════════════════════════════════════════════
     squad_size = len(players)
     field_sc_total = sum(p.sc_avg or 0 for p in field_players)
@@ -859,53 +1592,65 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     dead_weight_count = sum(1 for sc in bench_scs if sc < 40)
 
     # ══════════════════════════════════════════════════════════════════════
-    # NEW SECTION E: AFL TEAM EXPOSURE
+    # AFL TEAM EXPOSURE
     # ══════════════════════════════════════════════════════════════════════
     team_exposure, max_exposure = _compute_team_exposure(field_players, total_field)
-
-    # Compute pairwise correlations for same-team players
     exposure_correlations = _compute_exposure_correlation(field_players, year)
 
     # ══════════════════════════════════════════════════════════════════════
-    # NEW SECTION F: FUTURE PROJECTION (1-2 year outlook)
+    # BACKWARD-COMPAT: AGE CURVE MODEL (player vs curve)
     # ══════════════════════════════════════════════════════════════════════
-    projected_next_year = 0.0
-    aging_out = []  # biggest decliners
-    aging_in = []   # biggest improvers
-    player_projections = {}  # player_id -> projected_sc
-
+    player_vs_curve = []
     for p in field_players:
         pos = _primary_pos(p.position)
+        bucket = _role_bucket(p.position, p.height_cm)
         age = p.age or 25
-        current_sc = p.sc_avg or 0
-        pt = profile_tags.get(p.id, {})
-        peak_phase = pt.get("peak_phase", "peak")
-        traj = pt.get("trajectory", 0)
-        personal_peak = pt.get("peak_avg", current_sc)
+        actual_sc = p.sc_avg or 0
+        personal_peak = profile_tags.get(p.id, {}).get("peak_avg", actual_sc)
         if personal_peak <= 0:
-            personal_peak = current_sc
+            personal_peak = actual_sc
 
-        # For pre-peak players: project using trajectory (they're still improving)
-        # Using age curves for young players underestimates because the curve
-        # reflects average players at that age, not already-elite ones.
-        if peak_phase == "pre-peak" and traj > 0 and current_sc > 0:
-            projected = round(current_sc + traj, 1)
+        curve_val = _get_age_curve_value(curves_dict, bucket, pos, age)
+        curve_peak = _curve_peak_sc(curves_dict, bucket, pos)
+
+        if curve_val and curve_val > 0 and curve_peak and curve_peak > 0:
+            # Scale curve to player's personal peak
+            scale = personal_peak / curve_peak if personal_peak > 0 else 1.0
+            expected = curve_val * scale
+            diff_pct = round((actual_sc - expected) / expected * 100, 1) if expected > 0 else 0
         else:
-            # At/past peak: use age curve projection
-            projected = _expected_sc_for_player(age_curves, pos, age + 1, personal_peak)
-            if projected is None:
-                projected = max(0, current_sc + traj)
+            expected = actual_sc
+            diff_pct = 0.0
 
-        projected = round(projected, 1)
-        player_projections[p.id] = projected
-        projected_next_year += projected
-
-        change = round(projected - current_sc, 1)
-        entry = {
+        player_vs_curve.append({
             "name": p.name,
             "age": age,
-            "current_sc": round(current_sc, 1),
-            "projected_sc": projected,
+            "position": pos,
+            "role_bucket": bucket,
+            "actual_sc": round(actual_sc, 1),
+            "expected_sc": round(expected, 1),
+            "diff_pct": diff_pct,
+        })
+    player_vs_curve.sort(key=lambda x: -abs(x["diff_pct"]))
+
+    # Legacy position-level curves for template
+    age_curves = curves_dict.get("positions", {})
+
+    # ══════════════════════════════════════════════════════════════════════
+    # BACKWARD-COMPAT: FUTURE PROJECTION (1-year, using new model)
+    # ══════════════════════════════════════════════════════════════════════
+    aging_out = []
+    aging_in = []
+    for p in field_players:
+        proj = projections_by_player.get(p.id, {})
+        yr1 = proj.get("yr1", 0)
+        tt = bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
+        change = round(yr1 - tt, 1)
+        entry = {
+            "name": p.name,
+            "age": p.age or 0,
+            "current_sc": round(tt, 1),
+            "projected_sc": yr1,
             "change": change,
         }
         if change < -2:
@@ -913,15 +1658,19 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         elif change > 2:
             aging_in.append(entry)
 
-    projected_next_year = round(projected_next_year, 1)
+    aging_out.sort(key=lambda x: x["change"])
+    aging_in.sort(key=lambda x: -x["change"])
+
+    projected_next_year = proj_1yr_total
+    current_total_field = round(sum(
+        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0) for p in field_players
+    ), 1)
     projected_change_pct = round(
-        _safe_div(projected_next_year - field_sc_total, field_sc_total) * 100, 1
+        _safe_div(projected_next_year - current_total_field, current_total_field) * 100, 1
     )
-    aging_out.sort(key=lambda x: x["change"])        # most decline first
-    aging_in.sort(key=lambda x: -x["change"])         # most improvement first
 
     # ══════════════════════════════════════════════════════════════════════
-    # NEW SECTION G: ENHANCED PER-PLAYER ANALYSIS
+    # BACKWARD-COMPAT: ENHANCED PER-PLAYER ANALYSIS (player_deep)
     # ══════════════════════════════════════════════════════════════════════
     player_deep = []
     for p in field_players:
@@ -930,8 +1679,9 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         age = p.age or 0
         sc = p.sc_avg or 0
         baseline_sc = p.sc_avg_prev or t.get("peak_avg", 0) or 0
+        est = bayesian_map.get(p.id, {})
+        tt = est.get("true_talent", sc)
 
-        # Diff vs baseline
         if baseline_sc > 0:
             diff = sc - baseline_sc
             diff_pct = round(diff / baseline_sc * 100, 1)
@@ -939,29 +1689,25 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
             diff = 0
             diff_pct = 0
 
-        # Per-round scores this season
-        stats = (
-            PlayerStat.query
-            .filter_by(player_id=p.id, year=year)
-            .filter(PlayerStat.round > 0, PlayerStat.supercoach_score.isnot(None))
-            .order_by(PlayerStat.round)
-            .all()
-        )
-        round_scores_player = [s.supercoach_score for s in stats]
+        round_scores_player = player_game_scores.get(p.id, [])
 
-        # ── vs age curve ──
+        # vs age curve
         personal_peak = t.get("peak_avg", sc)
         if personal_peak <= 0:
             personal_peak = sc
-        expected_curve = _expected_sc_for_player(age_curves, pos, age, personal_peak)
-        if expected_curve and expected_curve > 0:
+        bucket = _role_bucket(p.position, p.height_cm)
+        curve_val = _get_age_curve_value(curves_dict, bucket, pos, age)
+        cpeak = _curve_peak_sc(curves_dict, bucket, pos)
+        if curve_val and curve_val > 0 and cpeak and cpeak > 0:
+            scale = personal_peak / cpeak
+            expected_curve = curve_val * scale
             vs_curve = round(sc - expected_curve, 1)
             vs_curve_pct = round(_safe_div(vs_curve, expected_curve) * 100, 1)
         else:
             vs_curve = 0
             vs_curve_pct = 0
 
-        # ── z-score (within their own game-by-game distribution) ──
+        # z-score
         if len(round_scores_player) >= 3:
             p_mean = sum(round_scores_player) / len(round_scores_player)
             p_std = _std_dev(round_scores_player)
@@ -969,18 +1715,16 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         else:
             z_score = 0
 
-        # ── last 3 trend ──
+        # last 3 trend
         if len(round_scores_player) >= 3:
             last3 = round_scores_player[-3:]
             l3_avg = sum(last3) / 3
             season_p_avg = sum(round_scores_player) / len(round_scores_player)
             l3_trend = round(l3_avg - season_p_avg, 1)
-        elif len(round_scores_player) >= 1:
-            l3_trend = 0.0
         else:
             l3_trend = 0.0
 
-        # ── ceiling (p90) and floor (p10) ──
+        # ceiling / floor from game scores
         if len(round_scores_player) >= 3:
             sorted_scores = sorted(round_scores_player)
             ceiling = round(_percentile(sorted_scores, 90), 1)
@@ -989,21 +1733,23 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
             ceiling = max(round_scores_player)
             floor = min(round_scores_player)
         else:
-            ceiling = sc
-            floor = sc
+            ceiling = est.get("ceiling", sc)
+            floor = est.get("floor", sc)
 
-        # ── VORP ──
+        # VORP
         repl = replacement_levels.get(pos, 0)
-        p_vorp = round(sc - repl, 1)
+        p_vorp = round(tt - repl, 1)
 
-        # ── Projected next year ──
-        projected_next = player_projections.get(p.id, sc)
+        # Projected
+        proj = projections_by_player.get(p.id, {})
+        projected_next = proj.get("yr1", tt)
 
         player_deep.append({
             "name": p.name,
             "position": pos,
             "age": age,
             "sc": round(sc, 1),
+            "true_talent": round(tt, 1),
             "baseline": round(baseline_sc, 1),
             "diff": round(diff, 1),
             "diff_pct": diff_pct,
@@ -1022,14 +1768,59 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
             "trajectory": t.get("trajectory", 0),
             "consistency": t.get("consistency", 0.5),
             "games": p.games_played or 0,
+            "role_bucket": bucket,
+            "regression_pct": est.get("regression_pct", 100),
         })
     player_deep.sort(key=lambda x: -x["sc"])
+
+    # ══════════════════════════════════════════════════════════════════════
+    # INSIGHTS ENGINE
+    # ══════════════════════════════════════════════════════════════════════
+    pos_breakdown_dict = {k: dict(v) for k, v in pos_breakdown.items()}
+
+    insights = _generate_insights(
+        field_players, bench_players, bayesian_map, profile_tags,
+        replacement_levels, scenarios, projections_by_player,
+        pos_breakdown_dict, league_team_totals, team_id,
+    )
 
     # ══════════════════════════════════════════════════════════════════════
     # ASSEMBLE FINAL RESULT
     # ══════════════════════════════════════════════════════════════════════
     return {
-        # ── Composition (original) ──
+        # ── Team Health Score ──
+        "health_score": health["health_score"],
+        "health_components": health["health_components"],
+
+        # ── Bayesian estimates ──
+        "player_bayesian": player_bayesian,
+
+        # ── Multi-year projections ──
+        "projections": projections,
+
+        # ── Scenarios ──
+        "scenarios": scenarios,
+
+        # ── Insights (sorted by impact) ──
+        "insights": insights,
+
+        # ── League context (detailed) ──
+        "league_context": league_context,
+
+        # ── Monte Carlo (using Bayesian estimates) ──
+        "mc_p10": mc_results["mc_p10"],
+        "mc_p25": mc_results["mc_p25"],
+        "mc_p50": mc_results["mc_p50"],
+        "mc_p75": mc_results["mc_p75"],
+        "mc_p90": mc_results["mc_p90"],
+        "mc_distribution": mc_results["mc_distribution"],
+        "mc_labels": mc_results["mc_labels"],
+
+        # ══════════════════════════════════════════════════════════════════
+        # BACKWARD-COMPATIBLE FIELDS (preserved for existing template)
+        # ══════════════════════════════════════════════════════════════════
+
+        # ── Composition ──
         "squad_size": squad_size,
         "field_count": total_field,
         "bench_count": len(bench_players),
@@ -1037,7 +1828,7 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         "tier_players": dict(tier_players),
         "quality_pct": quality_pct,
 
-        # ── Age (original) ──
+        # ── Age ──
         "avg_age": avg_age,
         "age_buckets": age_buckets,
         "peak_phases": dict(peak_phases),
@@ -1046,58 +1837,46 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         "now_pct": now_pct,
         "future_pct": future_pct,
 
-        # ── Scoring (original) ──
+        # ── Scoring ──
         "total_sc": round(total_sc, 0),
-        "avg_sc": avg_sc,
+        "avg_sc": avg_sc_field,
         "top5_pct": top5_pct,
         "sc_std": sc_std,
         "season_avg": season_avg,
         "form_avg": form_avg,
         "form_vs_season": form_vs_season,
+        "current_total": current_total_field,
 
-        # ── Position (original) ──
-        "pos_breakdown": {k: dict(v) for k, v in pos_breakdown.items()},
+        # ── Position ──
+        "pos_breakdown": pos_breakdown_dict,
         "pos_balance_score": pos_balance_score,
         "pos_notes": pos_notes,
 
-        # ── Trajectory (original) ──
+        # ── Trajectory ──
         "avg_trajectory": avg_trajectory,
         "rising_count": rising_count,
         "declining_count": declining_count,
 
-        # ── Reliability (original) ──
+        # ── Reliability ──
         "avg_consistency": avg_consistency,
         "avg_durability": avg_durability,
         "injury_risk": injury_risk,
 
-        # ── Performance (original) ──
+        # ── Performance ──
         "round_data": round_data,
         "vs_expectation": vs_expectation,
-        # Keep player_vs_baseline for backward compatibility
         "player_vs_baseline": player_deep,
 
-        # ── League context (original) ──
+        # ── League context (simple) ──
         "league_avg_sc": league_avg_sc,
         "league_avg_age": league_avg_age,
-        "sc_vs_league": round(avg_sc - league_avg_sc, 1),
+        "sc_vs_league": round(avg_sc_field - league_avg_sc, 1),
         "age_vs_league": round(avg_age - league_avg_age, 1),
-
-        # ══════════════════════════════════════════════════════════════════
-        # NEW FIELDS
-        # ══════════════════════════════════════════════════════════════════
 
         # ── Age curve model ──
         "age_curves": age_curves,
+        "role_curves": curves_dict.get("buckets", {}),
         "player_vs_curve": player_vs_curve,
-
-        # ── Monte Carlo ──
-        "mc_p10": mc_results["mc_p10"],
-        "mc_p25": mc_results["mc_p25"],
-        "mc_p50": mc_results["mc_p50"],
-        "mc_p75": mc_results["mc_p75"],
-        "mc_p90": mc_results["mc_p90"],
-        "mc_distribution": mc_results["mc_distribution"],
-        "mc_labels": mc_results["mc_labels"],
 
         # ── VORP ──
         "replacement_levels": replacement_levels,
@@ -1114,11 +1893,11 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         "max_exposure": max_exposure,
         "exposure_correlations": exposure_correlations,
 
-        # ── Future projection ──
+        # ── Future projection (backward compat) ──
         "projected_next_year": projected_next_year,
         "projected_change_pct": projected_change_pct,
-        "aging_out": aging_out[:10],    # top 10 decliners
-        "aging_in": aging_in[:10],      # top 10 improvers
+        "aging_out": aging_out[:10],
+        "aging_in": aging_in[:10],
 
         # ── Enhanced per-player ──
         "player_deep": player_deep,
