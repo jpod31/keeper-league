@@ -25,44 +25,60 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh', background: 'var(--kl-bg-body)' }}>
-      <div style={{ width: '100%', maxWidth: 380, padding: '0 1rem' }}>
-        <div className="text-center mb-4">
-          <i className="bi bi-trophy-fill" style={{ fontSize: '2.5rem', color: 'var(--kl-accent-blue)' }}></i>
-          <h3 className="fw-bold mt-2" style={{ color: 'var(--kl-text-heading)' }}>Create Account</h3>
-        </div>
-        <div className="card">
-          <div className="card-body p-4">
-            <form onSubmit={handleSubmit}>
-              {error && <div className="alert alert-danger py-2" style={{ fontSize: '.85rem' }}>{error}</div>}
-              {['username', 'displayName', 'email'].map(k => (
-                <div className="mb-3" key={k}>
-                  <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>
-                    {k === 'displayName' ? 'Display Name' : k.charAt(0).toUpperCase() + k.slice(1)}
-                  </label>
-                  <input type={k === 'email' ? 'email' : 'text'} className="form-control" value={(form as Record<string, string>)[k]} onChange={set(k)}
-                    style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }}
-                    required={k !== 'displayName'} />
-                </div>
-              ))}
-              <div className="mb-3">
-                <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>Password</label>
-                <input type="password" className="form-control" value={form.password} onChange={set('password')}
-                  style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} required />
-              </div>
-              <div className="mb-3">
-                <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>Confirm Password</label>
-                <input type="password" className="form-control" value={form.confirm} onChange={set('confirm')}
-                  style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} required />
-              </div>
-              <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-                {loading ? 'Creating...' : 'Create Account'}
-              </button>
-            </form>
+    <div className="auth-wrapper">
+      <div className="auth-card text-center">
+        <div className="auth-logo">
+          <img src="/static/icons/kl-logo.png" alt="KL" className="auth-logo-img" />
+          <div className="auth-logo-wordmark">
+            <div className="auth-logo-text">Keeper League</div>
+            <div className="auth-logo-sub">Fantasy AFL</div>
           </div>
         </div>
-        <p className="text-center mt-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-secondary)' }}>
-          Already have an account? <Link to="/auth/login" style={{ color: 'var(--kl-accent-blue)' }}>Sign In</Link>
+        <h3 className="fw-bold mb-1">Create your account</h3>
+        <p className="text-secondary mb-4" style={{ fontSize: '.9rem' }}>Join a league or create your own</p>
+        <form onSubmit={handleSubmit} className="text-start">
+          {error && <div className="alert alert-danger py-2" style={{ fontSize: '.85rem' }}>{error}</div>}
+          <div className="mb-3">
+            <label htmlFor="username" className="form-label">Username</label>
+            <input type="text" className="form-control" id="username"
+              value={form.username} onChange={set('username')}
+              placeholder="Choose a username" minLength={3} maxLength={80}
+              autoFocus required />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label">Email</label>
+            <input type="email" className="form-control" id="email"
+              value={form.email} onChange={set('email')}
+              placeholder="you@example.com" required />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="display_name" className="form-label">
+              Display Name <span className="text-secondary" style={{ fontSize: '.75rem' }}>(optional)</span>
+            </label>
+            <input type="text" className="form-control" id="display_name"
+              value={form.displayName} onChange={set('displayName')}
+              placeholder="What others see" maxLength={80} />
+          </div>
+          <div className="row g-3 mb-4">
+            <div className="col-6">
+              <label htmlFor="password" className="form-label">Password</label>
+              <input type="password" className="form-control" id="password"
+                value={form.password} onChange={set('password')}
+                placeholder="Min 6 characters" minLength={6} required />
+            </div>
+            <div className="col-6">
+              <label htmlFor="confirm" className="form-label">Confirm</label>
+              <input type="password" className="form-control" id="confirm"
+                value={form.confirm} onChange={set('confirm')}
+                placeholder="Re-enter" minLength={6} required />
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+            {loading ? 'Creating...' : 'Create Account'}
+          </button>
+        </form>
+        <p className="text-center mt-4 mb-0" style={{ fontSize: '.85rem', color: '#8b949e' }}>
+          Already have an account? <Link to="/auth/login" style={{ color: '#58a6ff', textDecoration: 'none' }}>Sign in</Link>
         </p>
       </div>
     </div>

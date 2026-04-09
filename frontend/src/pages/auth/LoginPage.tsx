@@ -25,39 +25,45 @@ export function LoginPage() {
   }
 
   return (
-    <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh', background: 'var(--kl-bg-body)' }}>
-      <div style={{ width: '100%', maxWidth: 380, padding: '0 1rem' }}>
-        <div className="text-center mb-4">
-          <i className="bi bi-trophy-fill" style={{ fontSize: '2.5rem', color: 'var(--kl-accent-blue)' }}></i>
-          <h3 className="fw-bold mt-2" style={{ color: 'var(--kl-text-heading)' }}>Keeper League</h3>
-          <p style={{ color: 'var(--kl-text-secondary)', fontSize: '.85rem' }}>Sign in to your account</p>
-        </div>
-
-        <div className="card">
-          <div className="card-body p-4">
-            <form onSubmit={handleSubmit}>
-              {error && <div className="alert alert-danger py-2" style={{ fontSize: '.85rem' }}>{error}</div>}
-              <div className="mb-3">
-                <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>Username</label>
-                <input type="text" className="form-control" value={username} onChange={e => setUsername(e.target.value)}
-                  style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }}
-                  autoFocus required />
-              </div>
-              <div className="mb-3">
-                <label className="form-label" style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>Password</label>
-                <input type="password" className="form-control" value={password} onChange={e => setPassword(e.target.value)}
-                  style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }}
-                  required />
-              </div>
-              <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-                {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Signing in...</> : 'Sign In'}
-              </button>
-            </form>
+    <div className="auth-wrapper">
+      <div className="auth-card text-center">
+        <div className="auth-logo">
+          <img src="/static/icons/kl-logo.png" alt="KL" className="auth-logo-img" />
+          <div className="auth-logo-wordmark">
+            <div className="auth-logo-text">Keeper League</div>
+            <div className="auth-logo-sub">Fantasy AFL</div>
           </div>
         </div>
-
-        <p className="text-center mt-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-secondary)' }}>
-          Don't have an account? <Link to="/auth/register" style={{ color: 'var(--kl-accent-blue)' }}>Register</Link>
+        <h3 className="fw-bold mb-1">Welcome back</h3>
+        <p className="text-secondary mb-4" style={{ fontSize: '.9rem' }}>Sign in to your Keeper League account</p>
+        <form onSubmit={handleSubmit} className="text-start">
+          {error && (
+            <div className="alert alert-danger py-2" style={{ fontSize: '.85rem' }}>{error}</div>
+          )}
+          <div className="mb-3">
+            <label htmlFor="username" className="form-label">Username or Email</label>
+            <input type="text" className="form-control" id="username"
+              value={username} onChange={e => setUsername(e.target.value)}
+              placeholder="Enter your username or email"
+              autoFocus required />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="password" className="form-label">Password</label>
+            <input type="password" className="form-control" id="password"
+              value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required />
+          </div>
+          <div className="form-check mb-4">
+            <input type="checkbox" className="form-check-input" id="remember" />
+            <label className="form-check-label" htmlFor="remember" style={{ fontSize: '.8rem', color: '#8b949e' }}>Remember me</label>
+          </div>
+          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+            {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Signing in...</> : 'Sign In'}
+          </button>
+        </form>
+        <p className="text-center mt-4 mb-0" style={{ fontSize: '.85rem', color: '#8b949e' }}>
+          Don't have an account? <Link to="/auth/register" style={{ color: '#58a6ff', textDecoration: 'none' }}>Create one</Link>
         </p>
       </div>
     </div>
