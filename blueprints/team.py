@@ -1728,6 +1728,104 @@ def api_ssp_available(league_id, team_id):
     ])
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/analytics/api")
+@login_required
+def team_analytics_api(league_id, team_id):
+    """JSON API — serves all analytics data for client-side rendering."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+
+    from models.profile_tags import compute_profile_tags
+    from models.team_analytics import compute_deep_analytics
+    from models.team_ai_summary import (
+        generate_team_summary, get_cached_analytics, cache_analytics,
+    )
+    from models.war_room import compute_trade_table, compute_squad_depth, compute_league_landscape
+    from models.dynasty_sim import simulate_dynasty
+
+    year = league.season_year
+
+    # Try cache first
+    analytics = get_cached_analytics(team_id, year, "deep")
+    if not analytics:
+        all_players = AflPlayer.query.all()
+        profile_tags = compute_profile_tags(all_players)
+        analytics = compute_deep_analytics(team_id, league_id, year, profile_tags)
+        cache_analytics(team_id, year, "deep", analytics)
+
+    trade_table = get_cached_analytics(team_id, year, "trade_table")
+    squad_depth_data = get_cached_analytics(team_id, year, "squad_depth")
+    dynasty = get_cached_analytics(0, year, "dynasty_sim")
+    landscape = get_cached_analytics(team_id, year, "landscape")
+
+    if not trade_table:
+        try:
+            all_players = AflPlayer.query.all()
+            profile_tags = compute_profile_tags(all_players)
+
+            roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+            field_p = [db.session.get(AflPlayer, r.player_id) for r in roster if not r.is_benched]
+            bench_p = [db.session.get(AflPlayer, r.player_id) for r in roster if r.is_benched]
+            field_p = [p for p in field_p if p]
+            bench_p = [p for p in bench_p if p]
+
+            from collections import defaultdict as _ddict
+            _lp = _ddict(list)
+            for _lt in FantasyTeam.query.filter_by(league_id=league_id).all():
+                for _r in FantasyRoster.query.filter_by(team_id=_lt.id, is_active=True, is_benched=False).all():
+                    _p = db.session.get(AflPlayer, _r.player_id)
+                    if _p and _p.sc_avg:
+                        _lp[(_p.position or "MID").split("/")[0]].append(_p.sc_avg)
+            league_pos_avgs = {pos: sum(v)/len(v) for pos, v in _lp.items() if v}
+
+            trade_table = compute_trade_table(team_id, league_id, year, profile_tags)
+            cache_analytics(team_id, year, "trade_table", trade_table)
+
+            squad_depth_data = compute_squad_depth(field_p, bench_p, profile_tags, league_pos_avgs)
+            cache_analytics(team_id, year, "squad_depth", squad_depth_data)
+
+            landscape = compute_league_landscape(league_id, year, profile_tags)
+            cache_analytics(team_id, year, "landscape", landscape)
+
+            dynasty = simulate_dynasty(league_id, year, profile_tags, years_ahead=5)
+            cache_analytics(0, year, "dynasty_sim", dynasty)
+        except Exception:
+            pass
+
+    # AI summary
+    ai_summary = get_cached_analytics(team_id, year, "ai_summary")
+    if not ai_summary and analytics:
+        try:
+            ai_summary = generate_team_summary(team_id, team.name, year, analytics, {})
+            if ai_summary:
+                cache_analytics(team_id, year, "ai_summary", ai_summary)
+        except Exception:
+            pass
+
+    # Parse AI into sections
+    ai_sections = []
+    if ai_summary:
+        for section in str(ai_summary).split("---"):
+            section = section.strip()
+            if ":" in section:
+                title, body = section.split(":", 1)
+                ai_sections.append({"title": title.strip(), "body": body.strip()})
+            elif section:
+                ai_sections.append({"title": "", "body": section})
+
+    return jsonify({
+        "team": {"id": team.id, "name": team.name},
+        "analytics": analytics,
+        "trade_table": trade_table,
+        "squad_depth": squad_depth_data,
+        "dynasty": dynasty,
+        "landscape": landscape,
+        "ai_sections": ai_sections,
+    })
+
+
 @team_bp.route("/<int:league_id>/team/<int:team_id>/analytics")
 @login_required
 def team_analytics(league_id, team_id):

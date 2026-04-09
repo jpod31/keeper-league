@@ -2,469 +2,488 @@
 {% set active_tab = 'team' %}
 {% block league_content %}
 <style>
-  .wr { --green:#3fb950; --red:#ef4444; --blue:#58a6ff; --purple:#d2a8ff; --orange:#fb923c; --cyan:#06b6d4; --gold:#fbbf24; --grey:#8b949e; }
+  :root { --wr-green:#3fb950; --wr-red:#ef4444; --wr-blue:#58a6ff; --wr-purple:#d2a8ff; --wr-orange:#fb923c; --wr-cyan:#06b6d4; --wr-gold:#fbbf24; --wr-grey:#8b949e; }
+
+  .wr-loading { text-align:center; padding:60px 20px; color:#484f58; }
+  .wr-loading .spinner { width:32px; height:32px; border:3px solid #21262d; border-top-color:var(--wr-blue); border-radius:50%; animation:spin .8s linear infinite; display:inline-block; margin-bottom:12px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Filter bar */
+  .wr-filters { display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .wr-filter-btn { padding:5px 14px; border-radius:8px; border:1px solid #30363d; background:transparent; color:var(--wr-grey); font-size:.72rem; font-weight:600; cursor:pointer; transition:all .15s; }
+  .wr-filter-btn:hover { border-color:#484f58; color:#c9d1d9; }
+  .wr-filter-btn.active { border-color:var(--wr-blue); color:var(--wr-blue); background:rgba(88,166,255,.08); }
+  .wr-filter-select { background:#0d1117; border:1px solid #30363d; color:#c9d1d9; border-radius:8px; font-size:.72rem; padding:5px 10px; }
 
   /* Hero */
-  .wr-hero { display:flex; align-items:center; gap:20px; padding:24px; background:linear-gradient(135deg,#0d1117 0%,#161b22 100%); border:1px solid #21262d; border-radius:14px; margin-bottom:16px; }
+  .wr-hero { display:flex; align-items:center; gap:20px; padding:24px; background:linear-gradient(135deg,#0d1117,#161b22); border:1px solid #21262d; border-radius:14px; margin-bottom:16px; }
   .wr-ring { position:relative; width:84px; height:84px; flex-shrink:0; }
   .wr-ring svg { transform:rotate(-90deg); }
   .wr-ring-val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:900; color:#e6edf3; }
   .wr-hero-info { flex:1; }
-  .wr-hero-name { font-size:1.1rem; font-weight:800; color:#e6edf3; margin-bottom:4px; }
-  .wr-hero-verdict { font-size:.84rem; color:#c9d1d9; line-height:1.6; }
-  .wr-hero-chips { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-  .wr-chip { font-size:.72rem; padding:4px 12px; border-radius:8px; font-weight:600; background:#0d1117; border:1px solid #21262d; }
+  .wr-hero-name { font-size:1.1rem; font-weight:800; color:#e6edf3; }
+  .wr-hero-verdict { font-size:.84rem; color:#c9d1d9; line-height:1.6; margin-top:4px; }
+  .wr-chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .wr-chip { font-size:.72rem; padding:4px 12px; border-radius:8px; font-weight:600; background:#0d1117; border:1px solid #21262d; color:var(--wr-grey); }
   .wr-chip b { color:#e6edf3; }
 
   /* Cards */
   .wr-card { background:#161b22; border:1px solid #21262d; border-radius:12px; overflow:hidden; margin-bottom:14px; }
-  .wr-hdr { background:#0d1117; border-bottom:1px solid #21262d; padding:12px 18px; font-size:.78rem; font-weight:700; color:#e6edf3; display:flex; align-items:center; gap:8px; }
+  .wr-hdr { background:#0d1117; border-bottom:1px solid #21262d; padding:12px 18px; font-size:.78rem; font-weight:700; color:#e6edf3; display:flex; align-items:center; justify-content:space-between; }
   .wr-body { padding:16px 18px; }
+  .wr-stitle { font-size:.7rem; font-weight:800; color:#6e7681; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
 
-  /* Section labels */
-  .wr-section { margin-bottom:20px; }
-  .wr-stitle { font-size:.7rem; font-weight:800; color:#6e7681; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
-
-  /* Scouting report */
-  .wr-scout { padding:16px 18px; background:#0d1117; border-radius:10px; margin-bottom:10px; border-left:3px solid #30363d; }
-  .wr-scout-title { font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+  /* Scout sections */
+  .wr-scout { padding:14px 18px; background:#0d1117; border-radius:10px; margin-bottom:8px; border-left:3px solid #30363d; }
+  .wr-scout-title { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
   .wr-scout-body { font-size:.84rem; color:#c9d1d9; line-height:1.65; }
 
-  /* Depth cards */
-  .wr-depth-row { margin-bottom:14px; }
-  .wr-depth-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-  .wr-depth-cards { display:flex; gap:6px; flex-wrap:wrap; }
-  .wr-pc { padding:10px 12px; background:#0d1117; border:1px solid #21262d; border-radius:8px; min-width:115px; cursor:pointer; transition:all .2s; position:relative; }
-  .wr-pc:hover { border-color:#30363d; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.3); }
-  .wr-pc-name { font-size:.74rem; font-weight:700; color:#e6edf3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px; }
+  /* Player cards */
+  .wr-pc { padding:10px 12px; background:#0d1117; border:1px solid #21262d; border-radius:8px; min-width:120px; cursor:pointer; transition:all .2s; position:relative; }
+  .wr-pc:hover { border-color:#484f58; transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.4); z-index:5; }
+  .wr-pc.wr-pc-selected { border-color:var(--wr-blue); box-shadow:0 0 0 1px var(--wr-blue); }
+  .wr-pc-name { font-size:.74rem; font-weight:700; color:#e6edf3; }
   .wr-pc-sc { font-size:1rem; font-weight:800; margin-top:2px; }
-  .wr-pc-meta { font-size:.58rem; color:#6e7681; margin-top:3px; display:flex; gap:4px; align-items:center; }
-  .wr-pc-rising { border-left:3px solid var(--green); }
-  .wr-pc-declining { border-left:3px solid var(--red); }
+  .wr-pc-meta { font-size:.58rem; color:#6e7681; margin-top:3px; }
+  .wr-pc-rising { border-left:3px solid var(--wr-green); }
+  .wr-pc-declining { border-left:3px solid var(--wr-red); }
   .wr-pc-stable { border-left:3px solid #30363d; }
-  .wr-pc-tooltip { display:none; position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:10px 14px; width:200px; z-index:10; box-shadow:0 8px 24px rgba(0,0,0,.5); font-size:.72rem; }
-  .wr-pc:hover .wr-pc-tooltip { display:block; }
-  .wr-pc-tt-row { display:flex; justify-content:space-between; padding:2px 0; }
-  .wr-pc-tt-lbl { color:#8b949e; }
-  .wr-pc-tt-val { color:#e6edf3; font-weight:600; }
+
+  /* Detail panel (shown when player clicked) */
+  .wr-detail-panel { display:none; background:#0d1117; border:1px solid #30363d; border-radius:12px; padding:18px; margin-bottom:14px; animation:slideDown .2s ease; }
+  .wr-detail-panel.open { display:block; }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+  .wr-detail-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:8px; }
+  .wr-detail-stat { text-align:center; padding:8px; background:#161b22; border-radius:8px; }
+  .wr-detail-val { font-size:1.1rem; font-weight:800; color:#e6edf3; }
+  .wr-detail-lbl { font-size:.58rem; color:#6e7681; text-transform:uppercase; margin-top:2px; }
 
   /* Trade */
   .wr-trade-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .wr-trade-panel { background:#0d1117; border-radius:10px; padding:14px 16px; }
   .wr-trade-title { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
-  .wr-trade-row { display:flex; align-items:center; gap:6px; padding:5px 0; border-bottom:1px solid #161b22; font-size:.74rem; }
+  .wr-trade-row { display:flex; align-items:center; gap:6px; padding:5px 0; border-bottom:1px solid #161b22; font-size:.74rem; cursor:pointer; transition:background .1s; }
+  .wr-trade-row:hover { background:rgba(88,166,255,.04); }
   .wr-trade-row:last-child { border-bottom:none; }
-  .wr-gap-badge { font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; background:rgba(63,185,80,.12); color:var(--green); }
+  .wr-gap-badge { font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; background:rgba(63,185,80,.12); color:var(--wr-green); }
 
-  /* League table */
-  .wr-league-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #161b22; }
-  .wr-league-row:last-child { border-bottom:none; }
-
-  /* Insights */
-  .wr-insight { padding:14px 18px; border-radius:10px; margin-bottom:8px; border-left:4px solid #30363d; background:#0d1117; }
+  /* Insight */
+  .wr-insight { padding:14px 18px; border-radius:10px; margin-bottom:8px; border-left:4px solid #30363d; background:#0d1117; transition:transform .15s; }
+  .wr-insight:hover { transform:translateX(4px); }
   .wr-insight-title { font-size:.82rem; font-weight:700; color:#e6edf3; }
-  .wr-insight-body { font-size:.76rem; color:#8b949e; line-height:1.5; margin-top:3px; }
+  .wr-insight-body { font-size:.76rem; color:var(--wr-grey); line-height:1.5; margin-top:3px; }
 
   /* Chart containers */
-  .wr-chart { width:100%; border-radius:8px; overflow:hidden; }
+  .wr-chart { width:100%; }
 
   @media(max-width:768px) {
     .wr-hero { flex-direction:column; text-align:center; }
-    .wr-hero-chips { justify-content:center; }
+    .wr-chips { justify-content:center; }
     .wr-trade-grid { grid-template-columns:1fr; }
-    .wr-depth-cards { overflow-x:auto; flex-wrap:nowrap; }
-    .wr-pc { min-width:130px; flex-shrink:0; }
   }
 </style>
 
-<div class="wr">
-{% if a %}
-{% set role_labels = {'small_fwd':'Small Fwd','mid_fwd':'Med Fwd','key_fwd':'Key Fwd','small_mid':'Small Mid','tall_mid':'Tall Mid','small_def':'Small Def','key_def':'Key Def','ruck':'Ruck'} %}
-
-{# ═══════════════ HERO ═══════════════ #}
-{% set hs = a.health_score|default(50) %}
-{% set lc_sc = (a.league_context.avg_sc_rank if a.league_context is defined and a.league_context is mapping else {}) %}
-<div class="wr-hero">
-  <div class="wr-ring">
-    <svg width="84" height="84" viewBox="0 0 84 84">
-      <circle cx="42" cy="42" r="36" fill="none" stroke="#21262d" stroke-width="6"/>
-      <circle cx="42" cy="42" r="36" fill="none" stroke="{% if hs >= 70 %}var(--green){% elif hs >= 45 %}var(--gold){% else %}var(--red){% endif %}" stroke-width="6" stroke-linecap="round" stroke-dasharray="{{ (hs/100*226)|int }} 226"/>
-    </svg>
-    <div class="wr-ring-val">{{ hs|int }}</div>
+<div id="analyticsApp">
+  <div class="wr-loading" id="loadingState">
+    <div class="spinner"></div>
+    <p style="font-size:.85rem;">Building analytics...</p>
   </div>
-  <div class="wr-hero-info">
-    <div class="wr-hero-name">{{ team.name }}</div>
-    {% if ai_sections and ai_sections[0] %}
-    <div class="wr-hero-verdict">{{ ai_sections[0].body }}</div>
-    {% endif %}
-    <div class="wr-hero-chips">
-      <span class="wr-chip"><b>{{ a.season_avg|default(0)|int }}</b> avg/round</span>
-      <span class="wr-chip"><b>{{ lc_sc.rank|default('?') }}/{{ lc_sc.of|default('?') }}</b> in league</span>
-      <span class="wr-chip"><b>{{ a.avg_age|default(0) }}</b> avg age</span>
-      <span class="wr-chip" style="border-color:{% if a.window == 'Building' %}var(--blue){% elif a.window == 'Win Now' %}var(--gold){% elif a.window == 'Declining' %}var(--red){% else %}#30363d{% endif %};color:{% if a.window == 'Building' %}var(--blue){% elif a.window == 'Win Now' %}var(--gold){% elif a.window == 'Declining' %}var(--red){% else %}var(--grey){% endif %};">{{ a.window|default('?') }}</span>
-    </div>
-  </div>
-</div>
-
-{# ═══════════════ DYNASTY PROJECTION (ECharts — all teams) ═══════════════ #}
-{% if dynasty %}
-<div class="wr-section">
-  <div class="wr-stitle"><i class="bi bi-calendar-range"></i>5-Year Dynasty Projection — All Teams</div>
-  <div class="wr-card">
-    <div class="wr-body" style="padding:8px 12px;">
-      <div id="dynastyChart" class="wr-chart" style="height:300px;"></div>
-      <div style="font-size:.62rem;color:#6e7681;margin-top:6px;text-align:center;">Projected best-23 score by year, auto-selecting optimal lineup from full roster. Kids develop and displace aging veterans over time.</div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{# ═══════════════ SCOUTING REPORT ═══════════════ #}
-{% if ai_sections and ai_sections|length > 1 %}
-<div class="wr-section">
-  <div class="wr-stitle"><i class="bi bi-clipboard2-data"></i>Scouting Report</div>
-  {% set scout_colors = ['var(--blue)', 'var(--red)', 'var(--purple)', 'var(--orange)'] %}
-  {% for sec in ai_sections[1:] %}
-  <div class="wr-scout" style="border-left-color:{{ scout_colors[loop.index0] if loop.index0 < scout_colors|length else '#30363d' }};">
-    {% if sec.title %}<div class="wr-scout-title" style="color:{{ scout_colors[loop.index0] if loop.index0 < scout_colors|length else 'var(--grey)' }};">{{ sec.title }}</div>{% endif %}
-    <div class="wr-scout-body">{{ sec.body }}</div>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-{# ═══════════════ SQUAD DEPTH ═══════════════ #}
-{% if squad_depth %}
-<div class="wr-section">
-  <div class="wr-stitle"><i class="bi bi-grid-3x3-gap"></i>Squad Depth</div>
-  <div class="wr-card">
-    <div class="wr-body">
-      {% for pos in ['DEF','MID','RUC','FWD'] %}
-      {% set pd = squad_depth.get(pos, {}) %}
-      <div class="wr-depth-row">
-        <div class="wr-depth-hdr">
-          <span><span class="pos-badge pos-{{ pos }}" style="font-size:.65rem;padding:2px 6px;">{{ pos }}</span> <span style="font-size:.72rem;color:#8b949e;">{{ pd.count|default(0) }} players &middot; avg <b style="color:#e6edf3;">{{ pd.avg_sc|default(0) }}</b></span></span>
-          <span style="font-size:.68rem;{% if pd.diff|default(0) > 3 %}color:var(--green){% elif pd.diff|default(0) < -3 %}color:var(--red){% else %}color:var(--grey){% endif %};font-weight:600;">{{ '%+.0f'|format(pd.diff|default(0)) }} vs league</span>
-        </div>
-        <div class="wr-depth-cards">
-          {% for p in pd.get('players', [])[:8] %}
-          <div class="wr-pc wr-pc-{{ p.trajectory }}" onclick="window.location='{{ url_for('player_detail', name=p.name) }}'">
-            <div class="wr-pc-tooltip">
-              <div class="wr-pc-tt-row"><span class="wr-pc-tt-lbl">SC Average</span><span class="wr-pc-tt-val">{{ p.sc|int }}</span></div>
-              <div class="wr-pc-tt-row"><span class="wr-pc-tt-lbl">Age</span><span class="wr-pc-tt-val">{{ p.age }}</span></div>
-              <div class="wr-pc-tt-row"><span class="wr-pc-tt-lbl">Phase</span><span class="wr-pc-tt-val">{{ p.peak_phase|replace('-',' ')|title }}</span></div>
-              <div class="wr-pc-tt-row"><span class="wr-pc-tt-lbl">Trend</span><span class="wr-pc-tt-val" style="color:{% if p.trajectory == 'rising' %}var(--green){% elif p.trajectory == 'declining' %}var(--red){% else %}var(--grey){% endif %};">{{ p.trajectory|title }}</span></div>
-            </div>
-            <div class="wr-pc-name">{{ p.name }}</div>
-            <div class="wr-pc-sc" style="color:{% if p.sc >= 100 %}var(--green){% elif p.sc >= 80 %}#e6edf3{% else %}var(--grey){% endif %};">{{ p.sc|int }}</div>
-            <div class="wr-pc-meta">
-              {{ p.age }}y
-              <span class="profile-tag tag-{{ p.tag_css }}" style="font-size:.48rem;padding:0px 4px;">{{ p.tag }}</span>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<div class="row g-3">
-  {# ═══════════════ PLAYER AGE/SC CHART (ECharts) ═══════════════ #}
-  <div class="col-lg-7">
-    <div class="wr-section">
-      <div class="wr-stitle"><i class="bi bi-people"></i>Roster Map</div>
-      <div class="wr-card">
-        <div class="wr-body" style="padding:8px;">
-          <div id="rosterMapChart" class="wr-chart" style="height:320px;"></div>
-        </div>
-      </div>
-    </div>
-
-    {# Trade table #}
-    {% if trade_table %}
-    <div class="wr-section">
-      <div class="wr-stitle"><i class="bi bi-arrow-left-right"></i>The Trade Table</div>
-      <div class="wr-card">
-        <div class="wr-body">
-          {% if trade_table.gaps %}
-          <div style="margin-bottom:12px;">
-            {% for g in trade_table.gaps %}
-            <div style="font-size:.76rem;color:var(--red);margin-bottom:4px;"><b>{{ g.position }}</b> — your avg {{ g.avg_sc }} vs league {{ g.league_avg }} &middot; weakest: {{ g.weakest_player }} ({{ g.weakest_sc|int }})</div>
-            {% endfor %}
-          </div>
-          {% endif %}
-          <div class="wr-trade-grid">
-            <div class="wr-trade-panel">
-              <div class="wr-trade-title" style="color:var(--green);">Free Agents</div>
-              {% for fa in trade_table.free_agents[:8] %}
-              <div class="wr-trade-row">
-                <span class="pos-badge pos-{{ fa.position }}" style="font-size:.5rem;padding:1px 4px;">{{ fa.position }}</span>
-                <span style="flex:1;color:#e6edf3;font-weight:600;">{{ fa.name }} <span style="color:#6e7681;font-size:.6rem;">{{ fa.age }}y</span></span>
-                {% if fa.fills_gap %}<span class="wr-gap-badge">fills gap</span>{% endif %}
-                <span style="font-weight:700;color:var(--green);min-width:30px;text-align:right;">{{ fa.sc_avg|int }}</span>
-              </div>
-              {% endfor %}
-            </div>
-            <div class="wr-trade-panel">
-              <div class="wr-trade-title" style="color:var(--blue);">Trade Targets (Other Benches)</div>
-              {% for bt in trade_table.bench_targets[:8] %}
-              <div class="wr-trade-row">
-                <span class="pos-badge pos-{{ bt.position }}" style="font-size:.5rem;padding:1px 4px;">{{ bt.position }}</span>
-                <span style="flex:1;color:#e6edf3;font-weight:600;">{{ bt.name }} <span style="color:#6e7681;font-size:.6rem;">{{ bt.owner }}</span></span>
-                {% if bt.fills_gap %}<span class="wr-gap-badge">fills gap</span>{% endif %}
-                <span style="font-weight:700;color:var(--blue);min-width:30px;text-align:right;">{{ bt.sc_avg|int }}</span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% if trade_table.surplus %}
-          <div style="margin-top:14px;">
-            <div style="font-size:.68rem;font-weight:800;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Your Tradeable Assets</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              {% for s in trade_table.surplus[:8] %}
-              <div style="background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:8px 12px;font-size:.74rem;display:flex;align-items:center;gap:6px;">
-                <span class="pos-badge pos-{{ s.position }}" style="font-size:.48rem;padding:1px 4px;">{{ s.position }}</span>
-                <span style="color:#e6edf3;font-weight:600;">{{ s.name }}</span>
-                <span style="color:var(--orange);font-weight:700;">{{ s.sc_avg|int }}</span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-
-  {# ═══════════════ RIGHT COLUMN ═══════════════ #}
-  <div class="col-lg-5">
-    {# Team Health Radar (ECharts) #}
-    <div class="wr-section">
-      <div class="wr-stitle"><i class="bi bi-hexagon"></i>Team Profile</div>
-      <div class="wr-card">
-        <div class="wr-body" style="padding:4px;">
-          <div id="radarChart" class="wr-chart" style="height:260px;"></div>
-        </div>
-      </div>
-    </div>
-
-    {# League Comparison #}
-    {% if landscape %}
-    <div class="wr-section">
-      <div class="wr-stitle"><i class="bi bi-trophy"></i>League Standings</div>
-      <div class="wr-card">
-        <div class="wr-body" style="padding:10px 16px;">
-          {% set max_sc = landscape|map(attribute='total_sc')|max %}
-          {% for t in landscape %}
-          <div class="wr-league-row">
-            <span style="width:16px;font-size:.7rem;font-weight:700;color:#484f58;">{{ loop.index }}</span>
-            <span style="flex:1;font-size:.78rem;font-weight:{% if t.team_id == team.id %}700{% else %}500{% endif %};color:{% if t.team_id == team.id %}var(--blue){% else %}#c9d1d9{% endif %};">{{ t.name }}{% if t.team_id == team.id %} <span style="font-size:.58rem;color:#6e7681;">(you)</span>{% endif %}</span>
-            <div style="width:80px;"><div style="height:5px;border-radius:3px;background:#21262d;overflow:hidden;"><div style="height:100%;border-radius:3px;width:{{ (t.total_sc/max_sc*100)|int }}%;background:{% if t.team_id == team.id %}linear-gradient(90deg,var(--green),var(--blue)){% else %}#30363d{% endif %};"></div></div></div>
-            <span style="min-width:35px;text-align:right;font-size:.76rem;font-weight:700;color:{% if t.team_id == team.id %}var(--blue){% else %}var(--grey){% endif %};">{{ t.avg_sc }}</span>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {# Next Year Movers #}
-    {% if a.aging_in or a.aging_out %}
-    <div class="wr-section">
-      <div class="wr-stitle"><i class="bi bi-arrow-up-right"></i>Next Year Outlook</div>
-      <div class="wr-card">
-        <div class="wr-body">
-          {% if a.aging_in %}
-          <div style="font-size:.68rem;font-weight:800;color:var(--green);margin-bottom:6px;">EXPECTED TO IMPROVE</div>
-          {% for p in a.aging_in[:5] %}
-          <div style="display:flex;justify-content:space-between;font-size:.74rem;padding:4px 0;border-bottom:1px solid #161b22;">
-            <span style="color:#e6edf3;">{{ p.name }} <span style="color:#6e7681;font-size:.6rem;">{{ p.age }}yo → {{ p.age + 1 }}</span></span>
-            <span style="color:var(--green);font-weight:700;">{{ '%+.0f'|format(p.change) }}</span>
-          </div>
-          {% endfor %}
-          {% endif %}
-          {% if a.aging_out %}
-          <div style="font-size:.68rem;font-weight:800;color:var(--red);margin-top:12px;margin-bottom:6px;">EXPECTED TO DECLINE</div>
-          {% for p in a.aging_out[:5] %}
-          <div style="display:flex;justify-content:space-between;font-size:.74rem;padding:4px 0;border-bottom:1px solid #161b22;">
-            <span style="color:#e6edf3;">{{ p.name }} <span style="color:#6e7681;font-size:.6rem;">{{ p.age }}yo → {{ p.age + 1 }}</span></span>
-            <span style="color:var(--red);font-weight:700;">{{ '%+.0f'|format(p.change) }}</span>
-          </div>
-          {% endfor %}
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-</div>
-
-{# ═══════════════ INSIGHTS ═══════════════ #}
-{% if a.insights %}
-<div class="wr-section">
-  <div class="wr-stitle"><i class="bi bi-lightbulb"></i>Recommended Actions</div>
-  {% for ins in a.insights[:4] %}
-  <div class="wr-insight" style="border-left-color:{% if ins.type == 'warning' %}var(--red){% elif ins.type == 'opportunity' %}var(--green){% else %}var(--blue){% endif %};">
-    <div class="wr-insight-title">{{ ins.title }}</div>
-    <div class="wr-insight-body">{{ ins.detail }}</div>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-{% else %}
-<div style="text-align:center;padding:60px 20px;color:#484f58;">
-  <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
-  <p>Loading analytics — this may take a moment on first visit.</p>
-</div>
-{% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
-{% if a %}
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  var a = {{ a|tojson }};
-  var dynasty = {{ dynasty|tojson if dynasty else '{}' }};
-  var myTeamId = {{ team.id }};
+var API_URL = "{{ url_for('team.team_analytics_api', league_id=league.id, team_id=team.id) }}";
+var MY_TEAM_ID = {{ team.id }};
+var PLAYER_DETAIL_BASE = "{{ url_for('player_detail', name='__NAME__') }}".replace('__NAME__', '');
 
-  // ═══ DYNASTY PROJECTION (ECharts — all teams overlaid) ═══
-  var dynEl = document.getElementById('dynastyChart');
-  if (dynEl && Object.keys(dynasty).length) {
-    var dyn = echarts.init(dynEl, null, {renderer: 'canvas'});
-    var teamColors = {'{{ team.id }}': '#58a6ff'};
-    var greyIdx = 0;
-    var greys = ['#4b5563','#6b7280','#9ca3af','#d1d5db','#374151'];
+var tagColors = {'Elite':'#ffd700','Elite Veteran':'#c084fc','Premium':'#fb923c','Emerging Star':'#10b981','Breakout':'#06b6d4','Proven':'#3b82f6','Steady':'#94a3b8','Developing':'#4ade80','Project':'#eab308','Declining':'#ef4444','Veteran':'#a8a29e','Fringe':'#71717a'};
+var roleLabels = {'small_fwd':'Small Fwd','mid_fwd':'Med Fwd','key_fwd':'Key Fwd','small_mid':'Small Mid','tall_mid':'Tall Mid','small_def':'Small Def','key_def':'Key Def','ruck':'Ruck'};
+var scoutColors = ['#58a6ff','#ef4444','#d2a8ff','#fb923c','#06b6d4'];
+var posColors = {'DEF':'#79c0ff','MID':'#d2a8ff','RUC':'#7ee787','FWD':'#ffa657'};
 
-    var series = [];
-    var xLabels = null;
+var data = null;
+var selectedPlayer = null;
+var charts = {};
 
-    Object.keys(dynasty).forEach(function(tid) {
-      var t = dynasty[tid];
-      var isYou = parseInt(tid) === myTeamId;
-      if (!xLabels) xLabels = t.years.map(function(y){return y.year});
-      var data = t.years.map(function(y){return y.total});
+// ════════════════════════════════════════════
+// FETCH & RENDER
+// ════════════════════════════════════════════
+fetch(API_URL)
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    data = d;
+    document.getElementById('loadingState').style.display = 'none';
+    renderAll();
+  })
+  .catch(function(err) {
+    document.getElementById('loadingState').innerHTML = '<p style="color:#ef4444;">Failed to load analytics. Try refreshing.</p>';
+  });
 
-      series.push({
-        name: t.name,
-        type: 'line', data: data, smooth: true,
-        lineStyle: {width: isYou ? 3.5 : 1.5, color: isYou ? '#58a6ff' : greys[greyIdx % greys.length]},
-        itemStyle: {color: isYou ? '#58a6ff' : greys[greyIdx % greys.length], borderColor: '#0d1117', borderWidth: isYou ? 2 : 1},
-        symbol: isYou ? 'circle' : 'none',
-        symbolSize: isYou ? 8 : 0,
-        areaStyle: isYou ? {color: {type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: 'rgba(88,166,255,.12)'}, {offset: 1, color: 'rgba(88,166,255,.01)'}]}} : null,
-        z: isYou ? 10 : 1,
-        label: isYou ? {show: true, position: 'top', color: '#e6edf3', fontSize: 12, fontWeight: 700, formatter: function(p){return p.value.toLocaleString()}} : {show: false},
+function renderAll() {
+  var app = document.getElementById('analyticsApp');
+  var a = data.analytics || {};
+  var html = '';
+
+  // HERO
+  var hs = a.health_score || 50;
+  var lc = (a.league_context || {}).avg_sc_rank || {};
+  var verdict = (data.ai_sections && data.ai_sections[0]) ? data.ai_sections[0].body : '';
+  html += '<div class="wr-hero">';
+  html += '<div class="wr-ring"><svg width="84" height="84" viewBox="0 0 84 84"><circle cx="42" cy="42" r="36" fill="none" stroke="#21262d" stroke-width="6"/><circle cx="42" cy="42" r="36" fill="none" stroke="' + (hs >= 70 ? '#3fb950' : hs >= 45 ? '#fbbf24' : '#ef4444') + '" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + Math.round(hs/100*226) + ' 226"/></svg><div class="wr-ring-val">' + Math.round(hs) + '</div></div>';
+  html += '<div class="wr-hero-info"><div class="wr-hero-name">' + data.team.name + '</div>';
+  if (verdict) html += '<div class="wr-hero-verdict">' + verdict + '</div>';
+  html += '<div class="wr-chips">';
+  html += '<span class="wr-chip"><b>' + Math.round(a.season_avg || 0) + '</b> avg/round</span>';
+  html += '<span class="wr-chip"><b>' + (lc.rank || '?') + '/' + (lc.of || '?') + '</b> in league</span>';
+  html += '<span class="wr-chip"><b>' + (a.avg_age || 0) + '</b> avg age</span>';
+  var wc = {'Building':'#58a6ff','Win Now':'#fbbf24','Declining':'#ef4444','Balanced':'#8b949e'};
+  html += '<span class="wr-chip" style="color:' + (wc[a.window]||'#8b949e') + ';border-color:' + (wc[a.window]||'#30363d') + ';">' + (a.window || '?') + '</span>';
+  html += '</div></div></div>';
+
+  // DYNASTY CHART
+  if (data.dynasty && Object.keys(data.dynasty).length) {
+    html += '<div class="wr-stitle"><i class="bi bi-calendar-range" style="margin-right:4px;"></i>5-Year Dynasty Projection</div>';
+    html += '<div class="wr-card"><div class="wr-body" style="padding:8px 12px;"><div id="dynastyChart" class="wr-chart" style="height:320px;"></div>';
+    html += '<div style="font-size:.6rem;color:#6e7681;text-align:center;margin-top:6px;">Auto-selects best 23 (6-9-1-6) from full roster each year. Kids develop and displace veterans over time.</div>';
+    html += '</div></div>';
+  }
+
+  // SCOUTING REPORT
+  var sections = data.ai_sections || [];
+  if (sections.length > 1) {
+    html += '<div class="wr-stitle"><i class="bi bi-clipboard2-data" style="margin-right:4px;"></i>Scouting Report</div>';
+    for (var i = 1; i < sections.length; i++) {
+      var sc = scoutColors[(i-1) % scoutColors.length];
+      html += '<div class="wr-scout" style="border-left-color:' + sc + ';">';
+      if (sections[i].title) html += '<div class="wr-scout-title" style="color:' + sc + ';">' + sections[i].title + '</div>';
+      html += '<div class="wr-scout-body">' + sections[i].body + '</div></div>';
+    }
+  }
+
+  // PLAYER DETAIL PANEL (hidden, populated on click)
+  html += '<div class="wr-detail-panel" id="playerDetail"></div>';
+
+  // SQUAD DEPTH with filter
+  var sd = data.squad_depth || {};
+  if (Object.keys(sd).length) {
+    html += '<div class="wr-stitle"><i class="bi bi-grid-3x3-gap" style="margin-right:4px;"></i>Squad Depth</div>';
+    html += '<div class="wr-filters"><span style="font-size:.68rem;color:#6e7681;">Filter:</span>';
+    html += '<button class="wr-filter-btn active" onclick="filterDepth(\'all\',this)">All</button>';
+    ['DEF','MID','RUC','FWD'].forEach(function(pos) {
+      html += '<button class="wr-filter-btn" onclick="filterDepth(\'' + pos + '\',this)">' + pos + '</button>';
+    });
+    html += '<select class="wr-filter-select" onchange="filterDepthTrend(this.value)"><option value="all">All Trends</option><option value="rising">Rising</option><option value="stable">Stable</option><option value="declining">Declining</option></select>';
+    html += '</div>';
+    html += '<div class="wr-card"><div class="wr-body" id="depthBoard"></div></div>';
+  }
+
+  // TWO COLUMN: Roster Map + League/Insights
+  html += '<div class="row g-3">';
+
+  // LEFT: Roster Map + Trade
+  html += '<div class="col-lg-7">';
+  html += '<div class="wr-stitle"><i class="bi bi-people" style="margin-right:4px;"></i>Roster Map</div>';
+  html += '<div class="wr-card"><div class="wr-body" style="padding:8px;"><div id="rosterMap" class="wr-chart" style="height:340px;"></div></div></div>';
+
+  // Trade table
+  var tt = data.trade_table || {};
+  if (tt.gaps || tt.free_agents) {
+    html += '<div class="wr-stitle"><i class="bi bi-arrow-left-right" style="margin-right:4px;"></i>The Trade Table</div>';
+    html += '<div class="wr-card"><div class="wr-body">';
+    if (tt.gaps && tt.gaps.length) {
+      tt.gaps.forEach(function(g) {
+        html += '<div style="font-size:.76rem;color:#ef4444;margin-bottom:4px;"><b>' + g.position + '</b> — avg ' + g.avg_sc + ' vs league ' + g.league_avg + ' · weakest: ' + g.weakest_player + ' (' + Math.round(g.weakest_sc) + ')</div>';
       });
-      if (!isYou) greyIdx++;
+    }
+    html += '<div class="wr-trade-grid">';
+    // Free agents
+    html += '<div class="wr-trade-panel"><div class="wr-trade-title" style="color:#3fb950;">Free Agents</div>';
+    (tt.free_agents || []).slice(0,8).forEach(function(fa) {
+      html += '<div class="wr-trade-row" onclick="window.location=\'' + PLAYER_DETAIL_BASE + encodeURIComponent(fa.name) + '\'">';
+      html += '<span class="pos-badge pos-' + fa.position + '" style="font-size:.5rem;padding:1px 4px;">' + fa.position + '</span>';
+      html += '<span style="flex:1;color:#e6edf3;font-weight:600;">' + fa.name + ' <span style="color:#6e7681;font-size:.6rem;">' + fa.age + 'y</span></span>';
+      if (fa.fills_gap) html += '<span class="wr-gap-badge">fills gap</span>';
+      html += '<span style="font-weight:700;color:#3fb950;min-width:30px;text-align:right;">' + Math.round(fa.sc_avg) + '</span></div>';
     });
+    html += '</div>';
+    // Bench targets
+    html += '<div class="wr-trade-panel"><div class="wr-trade-title" style="color:#58a6ff;">Trade Targets</div>';
+    (tt.bench_targets || []).slice(0,8).forEach(function(bt) {
+      html += '<div class="wr-trade-row"><span class="pos-badge pos-' + bt.position + '" style="font-size:.5rem;padding:1px 4px;">' + bt.position + '</span>';
+      html += '<span style="flex:1;color:#e6edf3;font-weight:600;">' + bt.name + ' <span style="color:#6e7681;font-size:.6rem;">' + bt.owner + '</span></span>';
+      if (bt.fills_gap) html += '<span class="wr-gap-badge">fills gap</span>';
+      html += '<span style="font-weight:700;color:#58a6ff;min-width:30px;text-align:right;">' + Math.round(bt.sc_avg) + '</span></div>';
+    });
+    html += '</div></div>';
+    // Surplus
+    if (tt.surplus && tt.surplus.length) {
+      html += '<div style="margin-top:14px;"><div style="font-size:.68rem;font-weight:800;color:#fb923c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Your Tradeable Assets</div>';
+      html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+      tt.surplus.slice(0,8).forEach(function(s) {
+        html += '<div style="background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:8px 12px;font-size:.74rem;display:flex;align-items:center;gap:6px;cursor:pointer;" onclick="window.location=\'' + PLAYER_DETAIL_BASE + encodeURIComponent(s.name) + '\'">';
+        html += '<span class="pos-badge pos-' + s.position + '" style="font-size:.48rem;padding:1px 4px;">' + s.position + '</span>';
+        html += '<span style="color:#e6edf3;font-weight:600;">' + s.name + '</span>';
+        html += '<span style="color:#fb923c;font-weight:700;">' + Math.round(s.sc_avg) + '</span></div>';
+      });
+      html += '</div></div>';
+    }
+    html += '</div></div>';
+  }
+  html += '</div>';
 
-    dyn.setOption({
-      tooltip: {
-        trigger: 'axis', backgroundColor: '#0d1117', borderColor: '#30363d', textStyle: {color: '#c9d1d9', fontSize: 11},
-        formatter: function(params) {
-          params.sort(function(a,b){return b.value - a.value});
-          var html = '<b>' + params[0].axisValue + '</b><br>';
-          params.forEach(function(p) {
-            var isYou = p.seriesName === dynasty[myTeamId].name;
-            html += '<span style="color:' + p.color + ';">●</span> ' +
-              (isYou ? '<b>' : '') + p.seriesName + ': ' + p.value.toLocaleString() +
-              (isYou ? '</b>' : '') + '<br>';
-          });
-          return html;
-        }
-      },
-      legend: {show: true, bottom: 0, textStyle: {color: '#8b949e', fontSize: 10}, itemWidth: 12, itemHeight: 2},
-      grid: {top: 20, right: 20, bottom: 40, left: 55},
-      xAxis: {type: 'category', data: xLabels, axisLine: {lineStyle: {color: '#21262d'}}, axisLabel: {color: '#8b949e', fontSize: 11, fontWeight: 600}},
-      yAxis: {type: 'value', min: function(v){return Math.floor(v.min * 0.9)}, axisLine: {show: false}, splitLine: {lineStyle: {color: '#161b22'}}, axisLabel: {color: '#6e7681', fontSize: 10}},
-      series: series,
+  // RIGHT: Radar + League + Insights
+  html += '<div class="col-lg-5">';
+  // Radar
+  html += '<div class="wr-stitle"><i class="bi bi-hexagon" style="margin-right:4px;"></i>Team Profile</div>';
+  html += '<div class="wr-card"><div class="wr-body" style="padding:4px;"><div id="radarChart" class="wr-chart" style="height:260px;"></div></div></div>';
+
+  // League
+  var ls = data.landscape || [];
+  if (ls.length) {
+    var maxSc = Math.max.apply(null, ls.map(function(t){return t.total_sc}));
+    html += '<div class="wr-stitle"><i class="bi bi-trophy" style="margin-right:4px;"></i>League</div><div class="wr-card"><div class="wr-body" style="padding:10px 16px;">';
+    ls.forEach(function(t, i) {
+      var isYou = t.team_id === MY_TEAM_ID;
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #161b22;">';
+      html += '<span style="width:16px;font-size:.7rem;font-weight:700;color:#484f58;">' + (i+1) + '</span>';
+      html += '<span style="flex:1;font-size:.78rem;font-weight:' + (isYou?'700':'500') + ';color:' + (isYou?'#58a6ff':'#c9d1d9') + ';">' + t.name + (isYou?' <span style="font-size:.58rem;color:#6e7681;">(you)</span>':'') + '</span>';
+      html += '<div style="width:80px;"><div style="height:5px;border-radius:3px;background:#21262d;overflow:hidden;"><div style="height:100%;border-radius:3px;width:' + Math.round(t.total_sc/maxSc*100) + '%;background:' + (isYou?'linear-gradient(90deg,#3fb950,#1f6feb)':'#30363d') + ';"></div></div></div>';
+      html += '<span style="min-width:35px;text-align:right;font-size:.76rem;font-weight:700;color:' + (isYou?'#58a6ff':'#8b949e') + ';">' + t.avg_sc + '</span></div>';
     });
-    window.addEventListener('resize', function(){dyn.resize()});
+    html += '</div></div>';
   }
 
-  // ═══ ROSTER MAP (ECharts scatter) ═══
-  var rmEl = document.getElementById('rosterMapChart');
-  if (rmEl && a.player_bayesian) {
-    var rm = echarts.init(rmEl, null, {renderer: 'canvas'});
-    var tagColors = {'Elite':'#ffd700','Elite Veteran':'#c084fc','Premium':'#fb923c','Emerging Star':'#10b981','Breakout':'#06b6d4','Proven':'#3b82f6','Steady':'#94a3b8','Developing':'#4ade80','Project':'#eab308','Declining':'#ef4444','Veteran':'#a8a29e','Fringe':'#71717a'};
-    var roleLabels = {'small_fwd':'Small Fwd','mid_fwd':'Med Fwd','key_fwd':'Key Fwd','small_mid':'Small Mid','tall_mid':'Tall Mid','small_def':'Small Def','key_def':'Key Def','ruck':'Ruck'};
+  // Insights
+  var ins = (a.insights || []).slice(0, 4);
+  if (ins.length) {
+    html += '<div class="wr-stitle"><i class="bi bi-lightbulb" style="margin-right:4px;"></i>Recommended Actions</div>';
+    ins.forEach(function(i) {
+      var bc = i.type === 'warning' ? '#ef4444' : i.type === 'opportunity' ? '#3fb950' : '#58a6ff';
+      html += '<div class="wr-insight" style="border-left-color:' + bc + ';"><div class="wr-insight-title">' + i.title + '</div><div class="wr-insight-body">' + i.detail + '</div></div>';
+    });
+  }
+  html += '</div></div>';
 
-    var points = (a.player_bayesian || []).filter(function(p){return p.is_field !== false && (p.raw_avg || p.true_talent || 0) > 0}).map(function(p){
-      return {
-        value: [p.age || 25, p.raw_avg || p.true_talent || 0],
-        name: p.name,
-        symbolSize: Math.max(8, Math.min(18, (p.games || 1) / 1.5)),
-        itemStyle: {color: tagColors[p.tag] || '#484f58', borderColor: '#0d1117', borderWidth: 1.5},
-        tag: p.tag || '', role: roleLabels[p.role_bucket] || p.position || '',
-        ceiling: p.ceiling || 0, floor: p.floor || 0,
-      };
+  app.innerHTML = html;
+
+  // Render charts after DOM is ready
+  setTimeout(function() {
+    renderDynastyChart();
+    renderRosterMap();
+    renderRadar();
+    renderDepthBoard('all', 'all');
+  }, 50);
+}
+
+// ════════════════════════════════════════════
+// DYNASTY CHART
+// ════════════════════════════════════════════
+function renderDynastyChart() {
+  var el = document.getElementById('dynastyChart');
+  if (!el || !data.dynasty) return;
+  var dyn = echarts.init(el);
+  charts.dynasty = dyn;
+  var greys = ['#4b5563','#6b7280','#9ca3af','#d1d5db','#374151'];
+  var gi = 0;
+  var series = [];
+  var xLabels = null;
+
+  Object.keys(data.dynasty).forEach(function(tid) {
+    var t = data.dynasty[tid];
+    var isYou = parseInt(tid) === MY_TEAM_ID;
+    if (!xLabels) xLabels = t.years.map(function(y){return y.year});
+
+    series.push({
+      name: t.name, type: 'line', data: t.years.map(function(y){return y.total}), smooth: true,
+      lineStyle: {width: isYou ? 3.5 : 1.5, color: isYou ? '#58a6ff' : greys[gi%greys.length]},
+      itemStyle: {color: isYou ? '#58a6ff' : greys[gi%greys.length], borderColor: '#0d1117', borderWidth: isYou ? 2 : 1},
+      symbol: isYou ? 'circle' : 'none', symbolSize: isYou ? 10 : 0,
+      areaStyle: isYou ? {color: {type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(88,166,255,.15)'},{offset:1,color:'rgba(88,166,255,.01)'}]}} : null,
+      z: isYou ? 10 : 1,
+      label: isYou ? {show:true,position:'top',color:'#e6edf3',fontSize:12,fontWeight:700,formatter:function(p){return p.value.toLocaleString()}} : {show:false},
+      emphasis: {lineStyle: {width: 3}, focus: 'series'},
+    });
+    if (!isYou) gi++;
+  });
+
+  dyn.setOption({
+    tooltip: {trigger:'axis',backgroundColor:'#0d1117',borderColor:'#30363d',textStyle:{color:'#c9d1d9',fontSize:11},
+      formatter: function(params) {
+        params.sort(function(a,b){return b.value-a.value});
+        var h = '<b style="color:#e6edf3;">' + params[0].axisValue + '</b><br>';
+        params.forEach(function(p){var y=p.seriesName===data.dynasty[MY_TEAM_ID].name;h+='<span style="color:'+p.color+';">●</span> '+(y?'<b>':'')+p.seriesName+': '+p.value.toLocaleString()+(y?'</b>':'')+'<br>';});
+        return h;
+      }},
+    legend: {show:true,bottom:0,textStyle:{color:'#8b949e',fontSize:10},itemWidth:14,itemHeight:2},
+    grid: {top:25,right:20,bottom:45,left:55},
+    dataZoom: [{type:'inside',xAxisIndex:0},{type:'slider',xAxisIndex:0,height:16,bottom:22,borderColor:'#21262d',fillerColor:'rgba(88,166,255,.1)',handleStyle:{color:'#58a6ff'},textStyle:{color:'#8b949e',fontSize:9}}],
+    xAxis: {type:'category',data:xLabels,axisLine:{lineStyle:{color:'#21262d'}},axisLabel:{color:'#8b949e',fontSize:11,fontWeight:600}},
+    yAxis: {type:'value',min:function(v){return Math.floor(v.min*0.92)},axisLine:{show:false},splitLine:{lineStyle:{color:'#161b22'}},axisLabel:{color:'#6e7681',fontSize:10}},
+    series: series,
+  });
+  window.addEventListener('resize', function(){dyn.resize()});
+}
+
+// ════════════════════════════════════════════
+// ROSTER MAP (scatter, linked to detail)
+// ════════════════════════════════════════════
+function renderRosterMap() {
+  var el = document.getElementById('rosterMap');
+  if (!el || !data.analytics.player_bayesian) return;
+  var rm = echarts.init(el);
+  charts.rosterMap = rm;
+
+  var points = (data.analytics.player_bayesian || []).filter(function(p){return p.is_field!==false&&(p.raw_avg||p.true_talent||0)>0}).map(function(p){
+    return {value:[p.age||25,p.raw_avg||p.true_talent||0],name:p.name,
+      symbolSize:Math.max(10,Math.min(20,(p.games||1)/1.2)),
+      itemStyle:{color:tagColors[p.tag]||'#484f58',borderColor:'#0d1117',borderWidth:2},
+      tag:p.tag||'',role:roleLabels[p.role_bucket]||p.position||'',
+      ceiling:p.ceiling||0,floor:p.floor||0,games:p.games||0,
+    };
+  });
+
+  rm.setOption({
+    tooltip: {trigger:'item',backgroundColor:'#0d1117',borderColor:'#30363d',textStyle:{color:'#c9d1d9'},
+      formatter: function(p) {
+        var d=p.data; return '<b style="color:#e6edf3;font-size:13px;">'+d.name+'</b><br><span style="color:#8b949e;">'+d.role+' · Age '+d.value[0]+' · '+d.games+' games</span><br><span style="color:#e6edf3;">SC: <b>'+d.value[1].toFixed(0)+'</b></span><br><span style="color:#3fb950;">Ceiling: '+d.ceiling.toFixed(0)+'</span> · <span style="color:#ef4444;">Floor: '+d.floor.toFixed(0)+'</span><br><span style="color:'+(tagColors[d.tag]||'#8b949e')+';">'+d.tag+'</span>';
+      }},
+    grid: {top:20,right:30,bottom:40,left:50},
+    xAxis: {name:'Age',nameLocation:'center',nameGap:28,nameTextStyle:{color:'#6e7681',fontSize:11},type:'value',min:17,max:36,axisLine:{lineStyle:{color:'#21262d'}},splitLine:{lineStyle:{color:'#161b22'}},axisLabel:{color:'#6e7681',fontSize:10}},
+    yAxis: {name:'SC Average',nameLocation:'center',nameGap:36,nameTextStyle:{color:'#6e7681',fontSize:11},type:'value',axisLine:{show:false},splitLine:{lineStyle:{color:'#161b22'}},axisLabel:{color:'#6e7681',fontSize:10}},
+    series: [{type:'scatter',data:points}],
+  });
+
+  // Click to show player detail
+  rm.on('click', function(params) {
+    if (params.data && params.data.name) showPlayerDetail(params.data.name);
+  });
+  window.addEventListener('resize', function(){rm.resize()});
+}
+
+// ════════════════════════════════════════════
+// RADAR
+// ════════════════════════════════════════════
+function renderRadar() {
+  var el = document.getElementById('radarChart');
+  if (!el || !data.analytics.health_components) return;
+  var r = echarts.init(el);
+  charts.radar = r;
+  var hc = data.analytics.health_components;
+  r.setOption({
+    radar: {indicator:[{name:'Scoring',max:100},{name:'Depth',max:100},{name:'Balance',max:100},{name:'Youth',max:100},{name:'Trajectory',max:100},{name:'Durability',max:100}],
+      axisName:{color:'#8b949e',fontSize:11,fontWeight:600},splitArea:{areaStyle:{color:['#0d1117']}},axisLine:{lineStyle:{color:'#21262d'}},splitLine:{lineStyle:{color:'#21262d'}}},
+    tooltip:{backgroundColor:'#0d1117',borderColor:'#30363d',textStyle:{color:'#c9d1d9'}},
+    series:[{type:'radar',data:[{value:[hc.power||0,hc.depth||0,hc.balance||0,hc.youth||0,hc.trajectory||0,hc.durability||0],areaStyle:{color:'rgba(88,166,255,.15)'},lineStyle:{color:'#58a6ff',width:2},itemStyle:{color:'#58a6ff',borderColor:'#0d1117',borderWidth:2},symbol:'circle',symbolSize:6}]}]
+  });
+  window.addEventListener('resize', function(){r.resize()});
+}
+
+// ════════════════════════════════════════════
+// DEPTH BOARD (filterable)
+// ════════════════════════════════════════════
+function renderDepthBoard(posFilter, trendFilter) {
+  var board = document.getElementById('depthBoard');
+  if (!board || !data.squad_depth) return;
+  var sd = data.squad_depth;
+  var html = '';
+
+  ['DEF','MID','RUC','FWD'].forEach(function(pos) {
+    if (posFilter !== 'all' && posFilter !== pos) return;
+    var pd = sd[pos] || {};
+    var players = (pd.players || []).filter(function(p) {
+      return trendFilter === 'all' || p.trajectory === trendFilter;
     });
 
-    rm.setOption({
-      tooltip: {
-        trigger: 'item', backgroundColor: '#0d1117', borderColor: '#30363d', textStyle: {color: '#c9d1d9'},
-        formatter: function(p) {
-          var d = p.data;
-          return '<b style="color:#e6edf3;font-size:13px;">' + d.name + '</b><br>' +
-            '<span style="color:#8b949e;">Age ' + d.value[0] + ' · ' + d.role + '</span><br>' +
-            '<span style="color:#e6edf3;">SC Avg: <b>' + d.value[1].toFixed(0) + '</b></span><br>' +
-            '<span style="color:#3fb950;">Ceiling: ' + d.ceiling.toFixed(0) + '</span> · <span style="color:#ef4444;">Floor: ' + d.floor.toFixed(0) + '</span><br>' +
-            '<span style="color:' + (tagColors[d.tag]||'#8b949e') + ';">' + d.tag + '</span>';
-        }
-      },
-      grid: {top: 20, right: 30, bottom: 40, left: 50},
-      xAxis: {name: 'Age', nameLocation: 'center', nameGap: 28, nameTextStyle: {color: '#6e7681', fontSize: 11},
-        type: 'value', min: 18, max: 35,
-        axisLine: {lineStyle: {color: '#21262d'}}, splitLine: {lineStyle: {color: '#161b22'}},
-        axisLabel: {color: '#6e7681', fontSize: 10}},
-      yAxis: {name: 'SC Average', nameLocation: 'center', nameGap: 36, nameTextStyle: {color: '#6e7681', fontSize: 11},
-        type: 'value',
-        axisLine: {show: false}, splitLine: {lineStyle: {color: '#161b22'}},
-        axisLabel: {color: '#6e7681', fontSize: 10}},
-      series: [{type: 'scatter', data: points}]
+    html += '<div style="margin-bottom:14px;" data-pos="' + pos + '">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+    html += '<span><span class="pos-badge pos-' + pos + '" style="font-size:.65rem;padding:2px 6px;">' + pos + '</span> <span style="font-size:.72rem;color:#8b949e;">' + pd.count + ' players · avg <b style="color:#e6edf3;">' + pd.avg_sc + '</b></span></span>';
+    var diffColor = (pd.diff||0) > 3 ? '#3fb950' : (pd.diff||0) < -3 ? '#ef4444' : '#6e7681';
+    html += '<span style="font-size:.68rem;color:' + diffColor + ';font-weight:600;">' + (pd.diff > 0 ? '+' : '') + Math.round(pd.diff||0) + ' vs league</span></div>';
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+    players.forEach(function(p) {
+      var borderClass = 'wr-pc-' + p.trajectory;
+      var scColor = p.sc >= 100 ? '#3fb950' : p.sc >= 80 ? '#e6edf3' : '#8b949e';
+      html += '<div class="wr-pc ' + borderClass + '" onclick="showPlayerDetail(\'' + p.name.replace(/'/g,"\\'") + '\')">';
+      html += '<div class="wr-pc-name">' + p.name + '</div>';
+      html += '<div class="wr-pc-sc" style="color:' + scColor + ';">' + Math.round(p.sc) + '</div>';
+      html += '<div class="wr-pc-meta">' + p.age + 'y · <span class="profile-tag tag-' + p.tag_css + '" style="font-size:.48rem;padding:0 4px;">' + p.tag + '</span></div>';
+      html += '</div>';
     });
-    window.addEventListener('resize', function(){rm.resize()});
+    html += '</div></div>';
+  });
+  board.innerHTML = html;
+}
+
+function filterDepth(pos, btn) {
+  document.querySelectorAll('.wr-filter-btn').forEach(function(b){b.classList.remove('active')});
+  btn.classList.add('active');
+  var trend = document.querySelector('.wr-filter-select');
+  renderDepthBoard(pos, trend ? trend.value : 'all');
+}
+function filterDepthTrend(trend) {
+  var activePos = document.querySelector('.wr-filter-btn.active');
+  var pos = activePos ? activePos.textContent.trim() : 'all';
+  if (pos === 'All') pos = 'all';
+  renderDepthBoard(pos, trend);
+}
+
+// ════════════════════════════════════════════
+// PLAYER DETAIL PANEL
+// ════════════════════════════════════════════
+function showPlayerDetail(name) {
+  var panel = document.getElementById('playerDetail');
+  if (!panel) return;
+
+  // Find player in bayesian data
+  var p = null;
+  (data.analytics.player_bayesian || []).forEach(function(pl) {
+    if (pl.name === name) p = pl;
+  });
+  if (!p) { panel.classList.remove('open'); return; }
+
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+  html += '<div><span style="font-size:1rem;font-weight:800;color:#e6edf3;">' + p.name + '</span> <span style="font-size:.75rem;color:#8b949e;">' + (roleLabels[p.role_bucket]||p.position||'') + ' · ' + p.age + 'yo' + (p.height ? ' · ' + p.height + 'cm' : '') + '</span>';
+  if (p.tag) html += ' <span class="profile-tag tag-' + (p.tag_css||'') + '">' + p.tag + '</span>';
+  html += '</div>';
+  html += '<button onclick="document.getElementById(\'playerDetail\').classList.remove(\'open\')" style="background:none;border:none;color:#6e7681;cursor:pointer;font-size:1.1rem;"><i class="bi bi-x-lg"></i></button></div>';
+
+  html += '<div class="wr-detail-grid">';
+  html += '<div class="wr-detail-stat"><div class="wr-detail-val">' + Math.round(p.raw_avg||0) + '</div><div class="wr-detail-lbl">SC Average</div></div>';
+  html += '<div class="wr-detail-stat"><div class="wr-detail-val">' + Math.round(p.true_talent||0) + '</div><div class="wr-detail-lbl">Estimated</div></div>';
+  html += '<div class="wr-detail-stat"><div class="wr-detail-val" style="color:#3fb950;">' + Math.round(p.ceiling||0) + '</div><div class="wr-detail-lbl">Ceiling</div></div>';
+  html += '<div class="wr-detail-stat"><div class="wr-detail-val" style="color:#ef4444;">' + Math.round(p.floor||0) + '</div><div class="wr-detail-lbl">Floor</div></div>';
+  html += '<div class="wr-detail-stat"><div class="wr-detail-val">' + (p.games||0) + '</div><div class="wr-detail-lbl">Games</div></div>';
+  html += '<div class="wr-detail-stat"><div class="wr-detail-val">' + Math.round((p.regression_pct||0)) + '%</div><div class="wr-detail-lbl">Regression</div></div>';
+  html += '</div>';
+
+  // Sparkline for round scores
+  if (p.round_scores && p.round_scores.length > 1) {
+    html += '<div style="margin-top:12px;"><div id="playerSparkline" style="height:80px;"></div></div>';
   }
 
-  // ═══ TEAM PROFILE RADAR (ECharts) ═══
-  var radarEl = document.getElementById('radarChart');
-  if (radarEl && a.health_components) {
-    var radar = echarts.init(radarEl, null, {renderer: 'canvas'});
-    var hc = a.health_components;
-    radar.setOption({
-      radar: {
-        indicator: [
-          {name: 'Scoring', max: 100}, {name: 'Depth', max: 100}, {name: 'Balance', max: 100},
-          {name: 'Youth', max: 100}, {name: 'Trajectory', max: 100}, {name: 'Durability', max: 100}
-        ],
-        axisName: {color: '#8b949e', fontSize: 11, fontWeight: 600},
-        splitArea: {areaStyle: {color: ['#0d1117','#0d1117','#0d1117','#0d1117','#0d1117']}},
-        axisLine: {lineStyle: {color: '#21262d'}},
-        splitLine: {lineStyle: {color: '#21262d'}},
-      },
-      tooltip: {backgroundColor: '#0d1117', borderColor: '#30363d', textStyle: {color: '#c9d1d9'}},
-      series: [{
-        type: 'radar',
-        data: [{
-          value: [hc.power||0, hc.depth||0, hc.balance||0, hc.youth||0, hc.trajectory||0, hc.durability||0],
-          name: 'Team Health',
-          areaStyle: {color: 'rgba(88,166,255,.15)'},
-          lineStyle: {color: '#58a6ff', width: 2},
-          itemStyle: {color: '#58a6ff', borderColor: '#0d1117', borderWidth: 2},
-          symbol: 'circle', symbolSize: 6,
-        }]
-      }]
-    });
-    window.addEventListener('resize', function(){radar.resize()});
+  html += '<div style="margin-top:8px;text-align:right;"><a href="' + PLAYER_DETAIL_BASE + encodeURIComponent(p.name) + '" style="font-size:.72rem;color:#58a6ff;text-decoration:none;">View full profile →</a></div>';
+
+  panel.innerHTML = html;
+  panel.classList.add('open');
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  // Render sparkline
+  if (p.round_scores && p.round_scores.length > 1) {
+    setTimeout(function() {
+      var spEl = document.getElementById('playerSparkline');
+      if (!spEl) return;
+      var sp = echarts.init(spEl);
+      sp.setOption({
+        grid:{top:5,right:5,bottom:20,left:30},
+        xAxis:{type:'category',data:p.round_scores.map(function(_,i){return 'R'+(i+1)}),axisLabel:{color:'#6e7681',fontSize:9},axisLine:{lineStyle:{color:'#21262d'}}},
+        yAxis:{type:'value',axisLabel:{color:'#6e7681',fontSize:9},splitLine:{lineStyle:{color:'#161b22'}},axisLine:{show:false}},
+        series:[{type:'bar',data:p.round_scores,itemStyle:{color:function(params){return params.value>=100?'#3fb950':params.value>=70?'#58a6ff':'#6e7681'},borderRadius:[3,3,0,0]},barWidth:'60%'}],
+        tooltip:{trigger:'axis',backgroundColor:'#0d1117',borderColor:'#30363d',textStyle:{color:'#c9d1d9'}}
+      });
+    }, 100);
   }
-});
+}
 </script>
-{% endif %}
 {% endblock %}
