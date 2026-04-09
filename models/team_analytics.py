@@ -922,15 +922,12 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
     if total_field == 0:
         return insights
 
-    team_total = sum(
-        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
-        for p in field_players
-    )
+    team_total = sum(p.sc_avg or 0 for p in field_players)
 
     # 1. Weakest link analysis
     field_by_sc = sorted(
         field_players,
-        key=lambda p: bayesian_map.get(p.id, {}).get("true_talent", 0)
+        key=lambda p: p.sc_avg or 0
     )
     for p in field_by_sc[:3]:
         pos = _primary_pos(p.position)
@@ -1048,8 +1045,8 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
             insights.append({
                 "type": "opportunity" if gap > 30 else "strength",
                 "title": f"{gap:.0f} SC behind the league leader" if gap > 5 else "Competitive with the leader",
-                "detail": (f"Your Bayesian team total ({team_total:.0f}) is {gap:.0f} "
-                           f"below the leader ({leader_total:.0f})."),
+                "detail": (f"Your projected total ({team_total:.0f}) is {gap:.0f} "
+                           f"below the leader ({leader_total:.0f}). Look for roster upgrades to close the gap."),
                 "impact": round(gap / total_field, 1),
             })
 
