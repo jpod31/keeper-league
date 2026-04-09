@@ -681,24 +681,67 @@ def compute_player_breakdown(fixture, league_id):
         # UF breakdown has different format — skip player parsing for it
         if "stat_totals" in rs.breakdown:
             return []
+
+        # Build emergency→field mapping from breakdown keys
+        emg_pids = set()
+        field_dnp_pids = set()  # field players with score 0 who were replaced
+        for pid_str in rs.breakdown:
+            if pid_str.startswith("emergency_"):
+                emg_pids.add(int(pid_str.replace("emergency_", "")))
+
+        # Field players with score 0 who have a corresponding emergency = DNP + replaced
+        # Field players with score 0 who have NO emergency = DNP + not replaced
+        for pid_str, score in rs.breakdown.items():
+            if not pid_str.startswith("emergency_") and score == 0:
+                field_dnp_pids.add(int(pid_str))
+
+        # Map: which emergency replaced which DNP (by matching breakdown order)
+        emg_replaces = {}
+        for emg_pid in emg_pids:
+            # The emergency's score is stored; find the field DNP it replaced
+            # (the field entry with score 0 that appeared before this emergency)
+            for pid_str in rs.breakdown:
+                if pid_str.startswith("emergency_"):
+                    continue
+                try:
+                    fid = int(pid_str)
+                except (ValueError, TypeError):
+                    continue
+                if rs.breakdown[pid_str] == 0 and fid not in emg_replaces.values():
+                    emg_replaces[emg_pid] = fid
+                    break
+
         players = []
         for pid_str, score in rs.breakdown.items():
             if pid_str.startswith("emergency_"):
                 pid = int(pid_str.replace("emergency_", ""))
-                is_emergency = True
+                player = db.session.get(AflPlayer, pid)
+                replaced_pid = emg_replaces.get(pid)
+                replaced_player = db.session.get(AflPlayer, replaced_pid) if replaced_pid else None
+                players.append({
+                    "name": player.name if player else f"Player {pid}",
+                    "score": score,
+                    "is_emergency": True,
+                    "subbed_on": True,
+                    "is_dnp": False,
+                    "replaces": replaced_player.name if replaced_player else "",
+                })
             else:
                 try:
                     pid = int(pid_str)
                 except (ValueError, TypeError):
                     continue
-                is_emergency = False
-            player = db.session.get(AflPlayer, pid)
-            players.append({
-                "name": player.name if player else f"Player {pid}",
-                "score": score,
-                "is_emergency": is_emergency,
-            })
-        return sorted(players, key=lambda p: p["score"], reverse=True)
+                player = db.session.get(AflPlayer, pid)
+                is_dnp = pid in field_dnp_pids
+                players.append({
+                    "name": player.name if player else f"Player {pid}",
+                    "score": score,
+                    "is_emergency": False,
+                    "subbed_on": False,
+                    "is_dnp": is_dnp,
+                    "replaces": "",
+                })
+        return sorted(players, key=lambda p: (-1 if p["is_dnp"] else 0, -p["score"]))
 
     return {
         "home": parse_breakdown(home_rs),

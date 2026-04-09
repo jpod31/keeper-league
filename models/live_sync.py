@@ -776,17 +776,20 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             em_scored.append((em, em_score))
     em_scored.sort(key=lambda x: x[1], reverse=True)
 
-    # Collect DNP field entries
+    # Collect DNP field entries (no stat OR SC=0 from a started game = DNP)
     dnp_field_entries = []
     for entry in on_field:
         stat = stats_map.get(entry.player_id)
-        if stat is not None:
-            continue  # played — no sub needed
         player = entry.player
         player_team = player.afl_team if player else ""
-        if player_team not in started_teams:
-            continue  # game hasn't started — not DNP yet
-        dnp_field_entries.append(entry)
+        game_started = player_team in started_teams
+
+        if stat is None and game_started:
+            dnp_field_entries.append(entry)
+        elif stat is not None and stat.supercoach_score == 0 and game_started:
+            # SC=0 from a completed/live game = late out / DNP
+            dnp_field_entries.append(entry)
+        # else: player scored > 0, or game hasn't started — not DNP
 
     # Assign highest-scoring emergencies to DNP slots
     for entry in dnp_field_entries:
@@ -808,7 +811,7 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
         player = entry.player
         player_team = player.afl_team if player else ""
         game_started = player_team in started_teams
-        is_dnp = stat is None and game_started
+        is_dnp = (stat is None and game_started) or (stat is not None and stat.supercoach_score == 0 and game_started)
         replaced_by_id = dnp_replaced_by.get(entry.player_id)
 
         score = _compute_player_score(stat, league_id, scoring_type, hybrid_base) if stat else 0
