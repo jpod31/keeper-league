@@ -1,114 +1,134 @@
-import { useAnalytics } from './hooks/useAnalytics'
-import { Hero } from './components/Hero'
-import { DynastyRace } from './components/DynastyRace'
-import { KidTimeline } from './components/KidTimeline'
-import { GapAnalysis } from './components/GapAnalysis'
-import { SquadDepth } from './components/SquadDepth'
-import { TradeMarket } from './components/TradeMarket'
-import { ScoutingReport } from './components/ScoutingReport'
-import { RoundPerformance } from './components/RoundPerformance'
-import { Insights } from './components/Insights'
-import { motion } from 'framer-motion'
+import { Routes, Route, Navigate } from 'react-router'
+import { AppShell } from './components/layout/AppShell'
+import { LeagueShell } from './components/layout/LeagueShell'
+import { AuthGuard } from './components/layout/AuthGuard'
 
-declare global {
-  interface Window { __ANALYTICS_API__: string; __TEAM_ID__: number }
-}
+// Auth pages
+import { LoginPage } from './pages/auth/LoginPage'
+import { RegisterPage } from './pages/auth/RegisterPage'
+import { ProfilePage } from './pages/auth/ProfilePage'
+
+// League pages
+import { LeagueListPage } from './pages/leagues/LeagueListPage'
+import { DashboardPage } from './pages/leagues/DashboardPage'
+import { CreateLeaguePage } from './pages/leagues/CreateLeaguePage'
+import { SettingsPage } from './pages/leagues/SettingsPage'
+
+// Team pages
+import { SquadPage } from './pages/team/SquadPage'
+import { LineupPage } from './pages/team/LineupPage'
+import { TeamStatsPage } from './pages/team/TeamStatsPage'
+import { AnalyticsPage } from './pages/team/AnalyticsPage'
+
+// Matchup pages
+import { StandingsPage } from './pages/matchups/StandingsPage'
+import { GamedayPage } from './pages/matchups/GamedayPage'
+import { FixturePage } from './pages/matchups/FixturePage'
+import { RoundDetailPage } from './pages/matchups/RoundDetailPage'
+import { MatchupDetailPage } from './pages/matchups/MatchupDetailPage'
+
+// Trade pages
+import { TradeCenterPage } from './pages/trades/TradeCenterPage'
+import { TradeProposePage } from './pages/trades/TradeProposePage'
+import { TradeDetailPage } from './pages/trades/TradeDetailPage'
+
+// Comms pages
+import { LeagueChatPage } from './pages/comms/LeagueChatPage'
+import { NotificationsPage } from './pages/comms/NotificationsPage'
+import { ActivityFeedPage } from './pages/comms/ActivityFeedPage'
+
+// Player pages
+import { PlayerPoolPage } from './pages/players/PlayerPoolPage'
+
+// Draft pages
+import { DraftRoomPage } from './pages/draft/DraftRoomPage'
+
+// Placeholder for pages not yet migrated
+import { PlaceholderPage } from './pages/PlaceholderPage'
 
 export default function App() {
-  const apiUrl = window.__ANALYTICS_API__ || '/leagues/3/team/4/analytics/api'
-  const teamId = window.__TEAM_ID__ || 4
-  const { data, loading, error } = useAnalytics(apiUrl)
-
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <div className="w-10 h-10 border-3 border-[#21262d] border-t-[#58a6ff] rounded-full animate-spin" />
-      <p className="text-sm text-[#6e7681]">Building your analytics...</p>
-    </div>
-  )
-  if (error) return <div className="flex items-center justify-center min-h-[60vh]"><p className="text-sm text-red-500">Failed to load. Try refreshing.</p></div>
-  if (!data) return null
-
-  const a = data.analytics
-  const n = data.narrative
-  const fade = (delay: number) => ({ initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.35 } })
-
   return (
-    <div className="max-w-[920px] mx-auto px-4 pb-24 pt-6">
-      <motion.div {...fade(0)}>
-        <Hero data={data} />
-      </motion.div>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/register" element={<RegisterPage />} />
 
-      {data.dynasty && Object.keys(data.dynasty).length > 0 && (
-        <motion.div {...fade(0.08)}>
-          <Sec label="Your Dynasty" title="5-Year Franchise Race">
-            <DynastyRace dynasty={data.dynasty} teamId={teamId} />
-          </Sec>
-        </motion.div>
-      )}
+      {/* Authenticated routes */}
+      <Route element={<AuthGuard><AppShell /></AuthGuard>}>
+        <Route path="/" element={<Navigate to="/leagues" replace />} />
+        <Route path="/auth/profile" element={<ProfilePage />} />
+        <Route path="/leagues" element={<LeagueListPage />} />
+        <Route path="/leagues/create" element={<CreateLeaguePage />} />
 
-      {n?.kid_timeline?.filter(k => k.replaces).length > 0 && (
-        <motion.div {...fade(0.14)}>
-          <Sec label="The Next Generation" title="When your kids take over">
-            <KidTimeline kids={n.kid_timeline.filter(k => k.replaces)} />
-          </Sec>
-        </motion.div>
-      )}
+        {/* League-scoped routes */}
+        <Route path="/leagues/:leagueId" element={<LeagueShell />}>
+          <Route index element={<DashboardPage />} />
 
-      {n?.biggest_gap && (
-        <motion.div {...fade(0.18)}>
-          <GapAnalysis gap={n.biggest_gap} />
-        </motion.div>
-      )}
+          {/* Team */}
+          <Route path="team/:teamId" element={<SquadPage />} />
+          <Route path="team/:teamId/lineup/:round" element={<LineupPage />} />
+          <Route path="team/:teamId/stats" element={<TeamStatsPage />} />
+          <Route path="team/:teamId/analytics" element={<AnalyticsPage />} />
 
-      {data.squad_depth && Object.keys(data.squad_depth).length > 0 && (
-        <motion.div {...fade(0.22)}>
-          <Sec label="Your Roster" title="Squad Depth">
-            <SquadDepth depth={data.squad_depth} />
-          </Sec>
-        </motion.div>
-      )}
+          {/* Matchups */}
+          <Route path="standings" element={<StandingsPage />} />
+          <Route path="gameday" element={<GamedayPage />} />
+          <Route path="fixture" element={<FixturePage />} />
+          <Route path="fixture/:round" element={<RoundDetailPage />} />
+          <Route path="matchup/:fixtureId" element={<MatchupDetailPage />} />
+          <Route path="history" element={<PlaceholderPage title="History" />} />
+          <Route path="history/:year" element={<PlaceholderPage title="Season Archive" />} />
+          <Route path="finals" element={<PlaceholderPage title="Finals" />} />
+          <Route path="afl-live" element={<PlaceholderPage title="AFL Live" />} />
 
-      {data.trade_table && (
-        <motion.div {...fade(0.26)}>
-          <Sec label="The Market" title="Available Upgrades">
-            <TradeMarket table={data.trade_table} />
-          </Sec>
-        </motion.div>
-      )}
+          {/* Draft */}
+          <Route path="draft" element={<DraftRoomPage />} />
+          <Route path="draft/setup" element={<PlaceholderPage title="Draft Setup" />} />
+          <Route path="draft/mock" element={<PlaceholderPage title="Mock Draft" />} />
+          <Route path="draft/recap" element={<PlaceholderPage title="Draft Recap" />} />
 
-      {a?.round_data?.length > 1 && (
-        <motion.div {...fade(0.3)}>
-          <Sec label="Season So Far" title="Round-by-Round">
-            <RoundPerformance rounds={a.round_data} />
-          </Sec>
-        </motion.div>
-      )}
+          {/* Trades */}
+          <Route path="trades" element={<TradeCenterPage />} />
+          <Route path="trades/propose" element={<TradeProposePage />} />
+          <Route path="trades/:tradeId" element={<TradeDetailPage />} />
 
-      {data.ai_sections?.length > 1 && (
-        <motion.div {...fade(0.34)}>
-          <Sec label="Deep Dive" title="AI Scouting Report">
-            <ScoutingReport sections={data.ai_sections.slice(1)} />
-          </Sec>
-        </motion.div>
-      )}
+          {/* Comms */}
+          <Route path="chat" element={<LeagueChatPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="activity" element={<ActivityFeedPage />} />
+          <Route path="messages" element={<PlaceholderPage title="Messages" />} />
 
-      {a?.insights?.length > 0 && (
-        <motion.div {...fade(0.38)}>
-          <Sec label="Actions" title="What To Do Next">
-            <Insights insights={a.insights.slice(0, 5)} />
-          </Sec>
-        </motion.div>
-      )}
-    </div>
-  )
-}
+          {/* Players */}
+          <Route path="player-pool" element={<PlayerPoolPage />} />
+          <Route path="players/compare" element={<PlaceholderPage title="Player Compare" />} />
+          <Route path="player-ratings" element={<PlaceholderPage title="Player Ratings" />} />
+          <Route path="injuries" element={<PlaceholderPage title="Injuries" />} />
+          <Route path="keepers" element={<PlaceholderPage title="Keeper Values" />} />
+          <Route path="list-changes" element={<PlaceholderPage title="List Changes" />} />
+          <Route path="stats" element={<PlaceholderPage title="Advanced Stats" />} />
 
-function Sec({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-10">
-      <p className="text-[10px] font-extrabold uppercase tracking-[2px] text-[#484f58] mb-1">{label}</p>
-      <h2 className="text-lg font-extrabold text-[#e6edf3] mb-4">{title}</h2>
-      {children}
-    </div>
+          {/* Settings & Admin */}
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="scoring" element={<PlaceholderPage title="Scoring" />} />
+          <Route path="commissioner" element={<PlaceholderPage title="Commissioner Hub" />} />
+
+          {/* Reserve 7s */}
+          <Route path="reserve7s/team" element={<PlaceholderPage title="Reserve 7s" />} />
+          <Route path="reserve7s/gameday" element={<PlaceholderPage title="7s Gameday" />} />
+          <Route path="reserve7s/standings" element={<PlaceholderPage title="7s Standings" />} />
+          <Route path="reserve7s/fixture" element={<PlaceholderPage title="7s Fixture" />} />
+        </Route>
+      </Route>
+
+      {/* 404 */}
+      <Route path="*" element={
+        <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-4xl font-black text-[#21262d]">404</p>
+            <p className="text-sm text-[#484f58] mt-2">Page not found</p>
+          </div>
+        </div>
+      } />
+    </Routes>
   )
 }

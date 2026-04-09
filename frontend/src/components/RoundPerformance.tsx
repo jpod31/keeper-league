@@ -40,7 +40,7 @@ export function RoundPerformance({ rounds }: { rounds: Round[] }) {
             <Tooltip
               contentStyle={{ background: '#161b22', border: '1px solid #21262d', borderRadius: 8, fontSize: 12 }}
               labelFormatter={v => `Round ${v}`}
-              formatter={(v: number) => [v.toLocaleString(), 'Score']}
+              formatter={(v) => [String(v), 'Score']}
               cursor={{ fill: '#21262d40' }}
             />
             <ReferenceLine y={avg} stroke="#58a6ff" strokeDasharray="4 4" strokeOpacity={0.5} />

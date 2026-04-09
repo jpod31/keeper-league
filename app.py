@@ -5,7 +5,7 @@ import json
 import logging
 import subprocess
 
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from flask_login import current_user, login_required
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
@@ -358,6 +358,21 @@ def create_app():
     app.register_blueprint(reserve7s_bp)
     csrf.exempt(reserve7s_bp)  # 7s team API uses @login_required + ownership checks
 
+    # SPA API blueprint (JSON endpoints for React frontend)
+    from blueprints.spa_api import spa_api
+    app.register_blueprint(spa_api)
+    csrf.exempt(spa_api)  # all JSON API; behind @login_required
+    csrf.exempt(auth_bp)  # auth API endpoints need CSRF exemption for JSON login
+
+    # SPA directory for React frontend
+    _spa_dir = os.path.join(app.static_folder, "spa")
+
+    @app.route("/spa/", defaults={"path": ""})
+    @app.route("/spa/<path:path>")
+    def spa_catchall(path=""):
+        """Serve the React SPA for all /spa/* routes."""
+        return send_from_directory(_spa_dir, "index.html")
+
     # Static asset cache buster (hash of style.css mtime)
     import hashlib
     _css_path = os.path.join(app.static_folder, "style.css")
@@ -445,9 +460,10 @@ def create_app():
             "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com; "
             "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
             "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net; "
-            "img-src 'self' data: https:; "
+            "img-src 'self' data: https: blob:; "
             "connect-src 'self' wss: ws:; "
-            "frame-ancestors 'self';"
+            "frame-ancestors 'self'; "
+            "worker-src 'self' blob:;"
         )
         return response
 

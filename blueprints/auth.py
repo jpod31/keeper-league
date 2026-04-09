@@ -219,3 +219,109 @@ def onboarding_complete():
     current_user.has_completed_onboarding = True
     db.session.commit()
     return jsonify({"ok": True})
+
+
+# ── JSON API endpoints for React SPA ─────────────────────────────────
+
+@auth_bp.route("/api/me")
+def api_me():
+    """Return current user info for the React SPA."""
+    if not current_user.is_authenticated:
+        return jsonify(None), 401
+    return jsonify({
+        "id": current_user.id,
+        "username": current_user.username,
+        "display_name": current_user.display_name,
+        "email": current_user.email,
+        "is_admin": current_user.is_admin,
+    })
+
+
+@auth_bp.route("/api/login", methods=["POST"])
+def api_login():
+    """JSON login for React SPA."""
+    data = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"error": "Username and password required."}), 400
+
+    ip = request.remote_addr or "unknown"
+    now = time.time()
+    _login_attempts[ip] = [t for t in _login_attempts[ip] if now - t < _WINDOW]
+    if len(_login_attempts[ip]) >= _MAX_ATTEMPTS:
+        return jsonify({"error": "Too many attempts. Wait a few minutes."}), 429
+
+    user, error_field = authenticate_user(username, password)
+    if user:
+        from flask import session
+        session.clear()
+        login_user(user, remember=True)
+        user.last_login = datetime.now(timezone.utc)
+        from models.database import db
+        db.session.commit()
+        return jsonify({
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "display_name": user.display_name,
+                "email": user.email,
+                "is_admin": user.is_admin,
+            }
+        })
+
+    _login_attempts[ip].append(now)
+    msg = "No account found." if error_field == "login" else "Incorrect password."
+    return jsonify({"error": msg}), 401
+
+
+@auth_bp.route("/api/register", methods=["POST"])
+def api_register():
+    """JSON registration for React SPA."""
+    data = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+    email = data.get("email", "").strip()
+    password = data.get("password", "")
+    display_name = data.get("display_name", "").strip()
+
+    if not username or not email or not password:
+        return jsonify({"error": "All fields required."}), 400
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters."}), 400
+
+    user, error = register_user(username, email, password, display_name or None)
+    if error:
+        return jsonify({"error": error}), 400
+
+    login_user(user)
+    return jsonify({
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "display_name": user.display_name,
+            "email": user.email,
+            "is_admin": user.is_admin,
+        }
+    })
+
+
+@auth_bp.route("/api/logout", methods=["POST"])
+def api_logout():
+    """JSON logout for React SPA."""
+    logout_user()
+    return jsonify({"ok": True})
+
+
+@auth_bp.route("/api/profile", methods=["POST"])
+@login_required
+def api_profile():
+    """Update profile via JSON."""
+    from models.database import db
+    data = request.get_json(silent=True) or {}
+    if data.get("display_name"):
+        current_user.display_name = data["display_name"].strip()
+    if data.get("email"):
+        current_user.email = data["email"].strip()
+    db.session.commit()
+    return jsonify({"ok": True})
