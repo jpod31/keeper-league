@@ -177,6 +177,7 @@ def fixture_list(league_id):
             "home_score": f.home_score or 0,
             "away_score": f.away_score or 0,
             "completed": f.status == "completed",
+            "status": f.status or "scheduled",
         })
 
     return jsonify(sorted(rounds.values(), key=lambda r: r["round"]))

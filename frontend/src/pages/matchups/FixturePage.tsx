@@ -4,9 +4,12 @@ import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 import { useEffect, useRef } from 'react'
 
+interface FixtureMatch {
+  fixture_id: number; home: string; away: string; home_score: number; away_score: number; completed: boolean; status: string
+}
 interface FixtureRound {
   round: number
-  matches: { fixture_id: number; home: string; away: string; home_score: number; away_score: number; completed: boolean }[]
+  matches: FixtureMatch[]
 }
 
 export function FixturePage() {
@@ -35,8 +38,9 @@ export function FixturePage() {
   if (!data) return <p className="text-danger">Failed to load fixture</p>
 
   const currentRound = data.find(r => r.round === selectedRound) || data[0]
-  const allCompleted = currentRound?.matches.every(m => m.completed)
-  const hasLive = false // would need API support
+  const allCompleted = currentRound?.matches.every(m => m.completed) && (currentRound?.matches.length || 0) > 0
+  const roundHasLive = currentRound?.matches.some(m => m.status === 'live')
+  const roundPartial = !allCompleted && currentRound?.matches.some(m => m.completed)
 
   return (
     <div>
@@ -55,12 +59,19 @@ export function FixturePage() {
         .rnd-item.rnd-done .rnd-num { color:#8b949e; }
         .rnd-dot { width:5px; height:5px; border-radius:50%; margin-top:4px; }
         .rnd-dot-done { background:#484f58; }
+        .rnd-dot-live { background:#3fb950; animation:livePulse 1.8s ease-in-out infinite; }
+        .rnd-dot-part { background:#9e6a03; }
         .rnd-dot-none { background:transparent; }
+        @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(1.4);} }
+        .rnd-item.rnd-live .rnd-num { color:#3fb950; }
+        .mx-live-tag { font-size:.55rem; font-weight:700; color:#3fb950; letter-spacing:.5px; background:rgba(63,185,80,.08); padding:2px 6px; border-radius:3px; }
         .round-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #21262d; }
         .round-hdr-left { display:flex; align-items:baseline; gap:10px; }
         .round-hdr h3 { font-size:1.05rem; font-weight:700; color:#e6edf3; margin:0; letter-spacing:-.01em; }
         .rh-badge { font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px; letter-spacing:.3px; text-transform:uppercase; }
         .rh-complete { background:rgba(46,160,67,.1); color:#2ea043; }
+        .rh-live { background:rgba(63,185,80,.12); color:#3fb950; }
+        .rh-progress { background:rgba(158,106,3,.1); color:#d29922; }
         .mx-list { background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden; }
         .mx-row { display:grid; grid-template-columns:1fr auto 1fr auto; align-items:center; padding:14px 20px; gap:0; border-bottom:1px solid #161b22; transition:background .1s; text-decoration:none; color:inherit; cursor:pointer; }
         .mx-row:last-child { border-bottom:none; }
@@ -95,13 +106,17 @@ export function FixturePage() {
           {/* Round strip */}
           <div className="rnd-strip" ref={stripRef}>
             {data.map(r => {
-              const isDone = r.matches.every(m => m.completed) && r.matches.length > 0
+              const hasLive = r.matches.some(m => m.status === 'live')
+              const allDone = r.matches.every(m => m.completed) && r.matches.length > 0
+              const partial = !allDone && r.matches.some(m => m.completed)
+              const dotClass = hasLive ? 'rnd-dot-live' : allDone ? 'rnd-dot-done' : partial ? 'rnd-dot-part' : 'rnd-dot-none'
+              const itemClass = hasLive ? ' rnd-live' : allDone ? ' rnd-done' : ''
               return (
                 <Link key={r.round}
                   to={`/leagues/${leagueId}/fixture?round=${r.round}`}
-                  className={`rnd-item${r.round === selectedRound ? ' active' : ''}${isDone ? ' rnd-done' : ''}`}>
+                  className={`rnd-item${r.round === selectedRound ? ' active' : ''}${itemClass}`}>
                   <span className="rnd-num">{r.round === 0 ? 'PS' : r.round}</span>
-                  <span className={`rnd-dot ${isDone ? 'rnd-dot-done' : 'rnd-dot-none'}`}></span>
+                  <span className={`rnd-dot ${dotClass}`}></span>
                 </Link>
               )
             })}
@@ -113,8 +128,14 @@ export function FixturePage() {
               <div className="round-hdr">
                 <div className="round-hdr-left">
                   <h3>{selectedRound === 0 ? 'Pre-Season' : `Round ${selectedRound}`}</h3>
-                  {allCompleted && currentRound.matches.length > 0 && (
+                  {allCompleted && (
                     <span className="rh-badge rh-complete">Complete</span>
+                  )}
+                  {roundHasLive && (
+                    <span className="rh-badge rh-live"><i className="bi bi-broadcast me-1" style={{ fontSize: '.5rem' }}></i>Live</span>
+                  )}
+                  {roundPartial && !roundHasLive && (
+                    <span className="rh-badge rh-progress">In Progress</span>
                   )}
                 </div>
               </div>
@@ -135,6 +156,8 @@ export function FixturePage() {
                             <span className="mx-sep">&ndash;</span>
                             <span className={`mx-sc${awayWon ? ' won' : homeWon ? ' lost' : ' draw'}`}>{Math.round(m.away_score)}</span>
                           </>
+                        ) : m.status === 'live' ? (
+                          <span className="mx-live-tag"><i className="bi bi-broadcast me-1"></i>LIVE</span>
                         ) : (
                           <span className="mx-vs">vs</span>
                         )}
