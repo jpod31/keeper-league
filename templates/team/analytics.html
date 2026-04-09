@@ -180,7 +180,7 @@ function render() {
 
   // ═══ CHAPTER 6: THE TRADE TABLE ═══
   var tt = D.trade_table||{};
-  if (tt.free_agents || tt.bench_targets) {
+  if (tt.free_agents || tt.trade_targets) {
     h += '<div class="chapter">';
     h += '<div class="ch-label">The Market</div>';
     h += '<div class="ch-title">Available Upgrades</div>';
@@ -195,8 +195,8 @@ function render() {
       h += '<span style="font-weight:700;color:#3fb950;min-width:30px;text-align:right;">'+Math.round(fa.sc_avg)+'</span></div>';
     });
     h += '</div>';
-    h += '<div class="trade-panel"><div class="trade-title" style="color:#58a6ff;">Trade Targets</div>';
-    (tt.bench_targets||[]).slice(0,8).forEach(function(bt){
+    h += '<div class="trade-panel"><div class="trade-title" style="color:#58a6ff;">Surplus on Other Teams</div>';
+    (tt.trade_targets||[]).slice(0,8).forEach(function(bt){
       h += '<div class="trade-row"><span class="pos-badge pos-'+bt.position+'" style="font-size:.5rem;padding:1px 4px;">'+bt.position+'</span>';
       h += '<span style="flex:1;color:#e6edf3;font-weight:600;">'+bt.name+' <span style="color:#6e7681;font-size:.6rem;">'+bt.owner+'</span></span>';
       if (bt.fills_gap) h += '<span style="font-size:.55rem;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(63,185,80,.12);color:#3fb950;">fills gap</span>';

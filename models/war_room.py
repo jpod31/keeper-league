@@ -121,34 +121,60 @@ def compute_trade_table(team_id, league_id, year, profile_tags):
     free_agents.sort(key=lambda x: (-int(x["fills_gap"]), -x["sc_avg"]))
     free_agents = free_agents[:15]
 
-    # Bench targets on other teams
-    bench_targets = []
-    other_bench = FantasyRoster.query.filter(
-        FantasyRoster.is_active == True,
-        FantasyRoster.is_benched == True,
-        FantasyRoster.team_id != team_id,
+    # Trade targets: players who are SURPLUS to other teams' needs
+    # A player is surplus if the other team has enough depth at that position
+    # to afford trading them (they wouldn't make the other team's best 23)
+    trade_targets = []
+
+    # Position requirements
+    pos_req = {"DEF": 6, "MID": 9, "RUC": 1, "FWD": 6}
+
+    other_teams = FantasyTeam.query.filter(
+        FantasyTeam.league_id == league_id,
+        FantasyTeam.id != team_id,
     ).all()
 
-    for r in other_bench:
-        p = db.session.get(AflPlayer, r.player_id)
-        if not p or not p.sc_avg or p.sc_avg < 60:
-            continue
-        t = db.session.get(FantasyTeam, r.team_id)
-        pos = (p.position or "MID").split("/")[0]
-        pt = profile_tags.get(p.id, {})
-        fills = pos in gap_positions
-        bench_targets.append({
-            "name": p.name,
-            "position": pos,
-            "age": p.age or 0,
-            "sc_avg": round(p.sc_avg, 1),
-            "tag": pt.get("tag", ""),
-            "tag_css": pt.get("css", ""),
-            "owner": t.name if t else "",
-            "fills_gap": fills,
-        })
-    bench_targets.sort(key=lambda x: (-int(x["fills_gap"]), -x["sc_avg"]))
-    bench_targets = bench_targets[:15]
+    for ot in other_teams:
+        ot_roster = FantasyRoster.query.filter_by(team_id=ot.id, is_active=True).all()
+        # Group all their players by primary position, sorted by SC
+        ot_by_pos = defaultdict(list)
+        for r in ot_roster:
+            p = db.session.get(AflPlayer, r.player_id)
+            if not p:
+                continue
+            pos = (p.position or "MID").split("/")[0]
+            sc = p.sc_avg or p.sc_avg_prev or 0
+            ot_by_pos[pos].append((p, sc))
+
+        for pos in ot_by_pos:
+            ot_by_pos[pos].sort(key=lambda x: -x[1])
+
+        # Players beyond the required count at each position are surplus
+        for pos, req in pos_req.items():
+            players_at_pos = ot_by_pos.get(pos, [])
+            if len(players_at_pos) <= req:
+                continue
+            # Players beyond the top 'req' are surplus to this team
+            surplus_players = players_at_pos[req:]
+            for p, sc in surplus_players:
+                if sc < 50:
+                    continue
+                pt = profile_tags.get(p.id, {})
+                fills = pos in gap_positions
+                trade_targets.append({
+                    "name": p.name,
+                    "position": pos,
+                    "age": p.age or 0,
+                    "sc_avg": round(sc, 1),
+                    "tag": pt.get("tag", ""),
+                    "tag_css": pt.get("css", ""),
+                    "owner": ot.name,
+                    "fills_gap": fills,
+                    "reason": f"Surplus {pos} on {ot.name} ({len(players_at_pos)} deep, needs {req})",
+                })
+
+    trade_targets.sort(key=lambda x: (-int(x["fills_gap"]), -x["sc_avg"]))
+    trade_targets = trade_targets[:15]
 
     # Surplus players (own bench with decent SC who could be traded)
     surplus = []
@@ -171,7 +197,7 @@ def compute_trade_table(team_id, league_id, year, profile_tags):
     return {
         "gaps": gaps,
         "free_agents": free_agents,
-        "bench_targets": bench_targets,
+        "trade_targets": trade_targets,
         "surplus": surplus,
     }
 
