@@ -1434,7 +1434,9 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         now_pct = future_pct = 0
 
     # Window considers both age profile AND current scoring
-    is_top_scorer = avg_sc_field >= league_avg_sc if league_avg_sc > 0 else True
+    # Quick avg for window calc (full avg_sc_field computed later)
+    _quick_avg = sum(p.sc_avg or 0 for p in field_players) / max(len(field_players), 1)
+    is_top_scorer = _quick_avg >= league_avg_sc if league_avg_sc > 0 else True
 
     if peak_count >= total_field * 0.5:
         window = "Win Now"
