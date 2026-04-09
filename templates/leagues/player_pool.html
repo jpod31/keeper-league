@@ -485,17 +485,16 @@
                 <span style="color:#484f58;">-</span>
               {% endif %}
             </td>
-            {# L3: last 3 games avg vs season avg #}
+            {# L3: last 3 games avg + % change vs season avg #}
             <td class="text-center">
-              {% if pr.l3 and sc_display %}
-                {% set diff = pr.l3 - sc_display %}
-                {% if diff > 5 %}
-                  <span class="trend-pill trend-up"><i class="bi bi-caret-up-fill"></i>{{ '%.0f'|format(pr.l3) }}</span>
-                {% elif diff < -5 %}
-                  <span class="trend-pill trend-down"><i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(pr.l3) }}</span>
-                {% else %}
-                  <span class="trend-flat">{{ '%.0f'|format(pr.l3) }}</span>
-                {% endif %}
+              {% if pr.l3 %}
+                {% set l3_base = sc_display or pr.l3 %}
+                {% set l3_diff = pr.l3 - l3_base %}
+                {% set l3_pct = (l3_diff / l3_base * 100) if l3_base else 0 %}
+                <span style="font-weight:600;color:#c9d1d9;">{{ '%.0f'|format(pr.l3) }}</span>
+                {% if l3_pct > 2 %}<span style="font-size:.65rem;font-weight:700;color:#3fb950;margin-left:2px;">+{{ '%.0f'|format(l3_pct) }}%</span>
+                {% elif l3_pct < -2 %}<span style="font-size:.65rem;font-weight:700;color:#f85149;margin-left:2px;">{{ '%.0f'|format(l3_pct) }}%</span>
+                {% else %}<span style="font-size:.65rem;color:#484f58;margin-left:2px;">-</span>{% endif %}
               {% else %}
                 <span style="color:#484f58;">-</span>
               {% endif %}
