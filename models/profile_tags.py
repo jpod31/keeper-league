@@ -92,14 +92,17 @@ def compute_profile_tags(players):
 
         # Historical analysis
         ph = history.get(p.name, {})
-        yearly_avgs = [(y, d["avg"]) for y, d in sorted(ph.items()) if d["games"] >= 5]
+        yearly_avgs = [(y, d["avg"]) for y, d in sorted(ph.items()) if d["games"] >= 3]
         years_elite = sum(1 for _, avg in yearly_avgs if avg >= 100)
         years_premium = sum(1 for _, avg in yearly_avgs if avg >= 90)
         peak_avg = max((avg for _, avg in yearly_avgs), default=0)
         peak_year = next((y for y, avg in yearly_avgs if avg == peak_avg), 0) if peak_avg else 0
 
-        # Trajectory: compare last 2-3 years
+        # Trajectory: compare last 2-3 years (use current sc_avg if fresher)
         recent_avgs = [avg for _, avg in yearly_avgs[-3:]]
+        # If current sc_avg differs significantly from latest CSV year, prefer it
+        if sc > 0 and recent_avgs and abs(sc - recent_avgs[-1]) > 5:
+            recent_avgs[-1] = sc
         if len(recent_avgs) >= 2:
             trend = recent_avgs[-1] - recent_avgs[0]
             if trend > 8:
@@ -128,8 +131,8 @@ def compute_profile_tags(players):
             tag, css, tier = "Elite Veteran", "elite-vet", 2
             detail = f"Top {100-pct:.0f}% at {age} — still dominant"
 
-        # PREMIUM TIER: Top 10%, genuinely valuable
-        elif pct >= 90 and years_premium >= 1:
+        # PREMIUM TIER: Top 10% OR averaging 100+ this season
+        elif pct >= 90 or (sc >= 100 and games >= 3):
             tag, css, tier = "Premium", "premium", 3
             if trajectory == "rising":
                 detail = f"Top {100-pct:.0f}% and trending up — {sc:.0f} avg"
@@ -155,8 +158,8 @@ def compute_profile_tags(players):
             else:
                 detail = f"Top {100-pct:.0f}% — solid {sc:.0f} avg"
 
-        # DECLINING: Was good, trending down
-        elif trajectory == "declining" and peak_avg >= 90 and age >= 27:
+        # DECLINING: Was good, now clearly below peak
+        elif peak_avg >= 90 and sc < peak_avg - 15 and age >= 27:
             tag, css, tier = "Declining", "declining", 10
             detail = f"Down from {peak_avg:.0f} peak ({peak_year}) to {sc:.0f}"
 
@@ -186,8 +189,8 @@ def compute_profile_tags(players):
             tag, css, tier = "Fringe", "fringe", 12
             detail = f"Below average — {sc:.0f} avg at {age}"
 
-        # PROJECT: Young but no real output yet
-        elif age <= 24:
+        # PROJECT: Young but no real SC output yet
+        elif age <= 23 and sc < 60:
             tag, css, tier = "Project", "project", 9
             detail = f"Age {age} — potential upside, limited output"
 
