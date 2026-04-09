@@ -1,9 +1,6 @@
 import { Outlet, Link, useNavigate } from 'react-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { useState, useRef, useEffect } from 'react'
-import {
-  Trophy, User, LogOut, Settings, BarChart3, Bell,
-} from 'lucide-react'
 
 export function AppShell() {
   const { user, logout } = useAuth()
@@ -25,58 +22,49 @@ export function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117]">
-      {/* Top nav */}
-      <nav className="sticky top-0 z-40 border-b border-[#21262d] bg-[#0d1117]/95 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/leagues" className="flex items-center gap-2 no-underline">
-            <Trophy className="w-5 h-5 text-[#58a6ff]" />
-            <span className="text-sm font-extrabold text-[#e6edf3] hidden sm:inline">Keeper League</span>
+    <div className="has-bottom-nav">
+      {/* Navbar - matches base.html */}
+      <nav className="navbar navbar-expand-lg border-bottom border-secondary-subtle">
+        <div className="container">
+          <Link className="navbar-brand d-flex align-items-center gap-2" to="/leagues">
+            <i className="bi bi-trophy-fill" style={{ color: 'var(--kl-accent-blue)', fontSize: '1.2rem' }}></i>
+            <span className="brand-text d-none d-lg-inline">Keeper League</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <Link to="/leagues" className="text-xs text-[#8b949e] hover:text-[#e6edf3] px-2 py-1 rounded transition">
-              Leagues
-            </Link>
+          <div className="d-flex align-items-center gap-1">
             {user?.is_admin && (
-              <Link to="/admin" className="text-xs text-[#d29922] hover:text-[#fbbf24] px-2 py-1 rounded transition">
-                <BarChart3 className="w-4 h-4" />
+              <Link className="nav-link" to="/admin" style={{ padding: '.4rem .55rem' }}>
+                <i className="bi bi-bar-chart-line" style={{ fontSize: '1.05rem' }}></i>
               </Link>
             )}
-
-            {/* Notifications placeholder */}
-            <button className="relative p-1.5 text-[#8b949e] hover:text-[#e6edf3] transition">
-              <Bell className="w-4 h-4" />
-            </button>
-
-            {/* User menu */}
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="w-8 h-8 rounded-full bg-[#21262d] flex items-center justify-center text-xs font-bold text-[#e6edf3] hover:bg-[#30363d] transition"
-              >
-                {(user?.display_name || user?.username || '?')[0].toUpperCase()}
-              </button>
-
+            <div className="dropdown">
+              <a className="nav-link position-relative" href="#" role="button" style={{ padding: '.4rem .55rem' }}>
+                <i className="bi bi-chat-dots" style={{ fontSize: '1.05rem' }}></i>
+              </a>
+            </div>
+            <div className="dropdown" ref={menuRef}>
+              <a className="nav-link dropdown-toggle p-1" href="#" role="button" onClick={() => setMenuOpen(!menuOpen)}>
+                <span className="d-inline-flex align-items-center justify-content-center rounded-circle"
+                  style={{ width: 28, height: 28, background: 'var(--kl-bg-elevated)', fontSize: '.75rem', fontWeight: 600 }}>
+                  {(user?.display_name || user?.username || '?')[0].toUpperCase()}
+                </span>
+              </a>
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-xl bg-[#161b22] border border-[#21262d] shadow-xl py-1 z-50">
-                  <div className="px-3 py-2 border-b border-[#21262d]">
-                    <p className="text-sm font-bold text-[#e6edf3]">{user?.display_name}</p>
-                    <p className="text-xs text-[#484f58]">@{user?.username}</p>
-                  </div>
-                  <Link to="/auth/profile" onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-[#8b949e] hover:bg-[#21262d] hover:text-[#e6edf3] transition no-underline">
-                    <User className="w-4 h-4" /> Profile
-                  </Link>
-                  <Link to="/leagues" onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-[#8b949e] hover:bg-[#21262d] hover:text-[#e6edf3] transition no-underline">
-                    <Settings className="w-4 h-4" /> My Leagues
-                  </Link>
-                  <button onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#ef4444] hover:bg-[#21262d] transition">
-                    <LogOut className="w-4 h-4" /> Sign Out
-                  </button>
-                </div>
+                <ul className="dropdown-menu dropdown-menu-end show"
+                  style={{ background: 'var(--kl-bg-card)', borderColor: 'var(--kl-border)' }}>
+                  <li><span className="dropdown-item-text fw-bold" style={{ fontSize: '.85rem' }}>{user?.display_name}</span></li>
+                  <li><hr className="dropdown-divider" style={{ borderColor: 'var(--kl-border)' }} /></li>
+                  <li><Link className="dropdown-item" to="/auth/profile" onClick={() => setMenuOpen(false)}>
+                    <i className="bi bi-person me-2"></i>Profile
+                  </Link></li>
+                  <li><Link className="dropdown-item" to="/leagues" onClick={() => setMenuOpen(false)}>
+                    <i className="bi bi-trophy me-2"></i>My Leagues
+                  </Link></li>
+                  <li><hr className="dropdown-divider" style={{ borderColor: 'var(--kl-border)' }} /></li>
+                  <li><button className="dropdown-item" onClick={handleLogout} style={{ color: 'var(--kl-accent-red)' }}>
+                    <i className="bi bi-box-arrow-right me-2"></i>Sign Out
+                  </button></li>
+                </ul>
               )}
             </div>
           </div>

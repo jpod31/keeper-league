@@ -3,18 +3,12 @@ import { Link } from 'react-router'
 import { useLeague } from '../../contexts/LeagueContext'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
-import { motion } from 'framer-motion'
-import {
-  Trophy, Users, CalendarDays, ArrowLeftRight,
-  Gamepad2, BarChart3,
-} from 'lucide-react'
 
 interface DashboardData {
   standings: { team_id: number; name: string; wins: number; losses: number; draws: number; points: number; pct: number; for: number }[]
   current_round: number
   recent_results: { fixture_id: number; home: string; away: string; home_score: number; away_score: number }[]
-  recent_trades: { id: number; summary: string; status: string }[]
-  user_team_summary: { name: string; record: string; rank: number; next_opponent: string } | null
+  user_team_summary: { name: string; record: string; rank: number } | null
 }
 
 export function DashboardPage() {
@@ -29,100 +23,151 @@ export function DashboardPage() {
       .finally(() => setLoading(false))
   }, [league?.id])
 
-  if (loading || !league) return <Spinner />
-  if (!data) return <p className="text-sm text-[#ef4444]">Failed to load dashboard</p>
+  if (loading || !league) return <Spinner text="Loading..." />
+  if (!data) return <p className="text-danger">Failed to load dashboard</p>
 
   const lid = league.id
   const t = league.user_team
+  const statusColors: Record<string, string> = {
+    setup: 'var(--kl-accent-yellow)', active: 'var(--kl-accent-green)',
+    drafting: 'var(--kl-accent-orange)', finals: 'var(--kl-accent-purple)',
+    offseason: 'var(--kl-text-secondary)',
+  }
 
   return (
     <div>
-      <h1 className="text-xl font-extrabold text-[#e6edf3] mb-6">{league.name}</h1>
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        {t && <QuickAction to={`/leagues/${lid}/team/${t.id}`} icon={<Users className="w-5 h-5" />} label="My Team" color="#58a6ff" />}
-        <QuickAction to={`/leagues/${lid}/gameday`} icon={<Gamepad2 className="w-5 h-5" />} label="Gameday" color="#3fb950" />
-        <QuickAction to={`/leagues/${lid}/standings`} icon={<BarChart3 className="w-5 h-5" />} label="Standings" color="#fbbf24" />
-        <QuickAction to={`/leagues/${lid}/trades`} icon={<ArrowLeftRight className="w-5 h-5" />} label="Trades" color="#a371f7" />
+      {/* Page header - matches dashboard.html */}
+      <div className="d-flex justify-content-between align-items-start mb-4">
+        <div>
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--kl-text-heading)' }}>{league.name}</h4>
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge" style={{ background: statusColors[league.season_phase] || 'var(--kl-text-secondary)', fontSize: '.68rem' }}>
+              {league.season_phase}
+            </span>
+            <span style={{ fontSize: '.78rem', color: 'var(--kl-text-secondary)' }}>{league.season_year} Season</span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ladder */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          <SectionHeader icon={<Trophy className="w-4 h-4" />} title="Ladder" to={`/leagues/${lid}/standings`} />
-          <div className="rounded-xl border border-[#21262d] bg-[#0d1117] overflow-hidden">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-[#21262d] bg-[#161b22]">
-                  <th className="text-left px-3 py-2 text-[#484f58] font-medium">#</th>
-                  <th className="text-left px-3 py-2 text-[#484f58] font-medium">Team</th>
-                  <th className="text-center px-3 py-2 text-[#484f58] font-medium">W</th>
-                  <th className="text-center px-3 py-2 text-[#484f58] font-medium">L</th>
-                  <th className="text-right px-3 py-2 text-[#484f58] font-medium">Pts</th>
-                  <th className="text-right px-3 py-2 text-[#484f58] font-medium">%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.standings.slice(0, 8).map((s, i) => (
-                  <tr key={s.team_id} className={`border-b border-[#21262d] ${t && s.team_id === t.id ? 'bg-[#58a6ff08]' : ''}`}>
-                    <td className="px-3 py-2 text-[#484f58]">{i + 1}</td>
-                    <td className="px-3 py-2 font-medium text-[#e6edf3]">
-                      <Link to={`/leagues/${lid}/team/${s.team_id}`} className="hover:text-[#58a6ff] no-underline text-inherit">{s.name}</Link>
-                    </td>
-                    <td className="text-center px-3 py-2 text-[#8b949e]">{s.wins}</td>
-                    <td className="text-center px-3 py-2 text-[#8b949e]">{s.losses}</td>
-                    <td className="text-right px-3 py-2 font-bold text-[#e6edf3]">{s.points}</td>
-                    <td className="text-right px-3 py-2 text-[#8b949e]">{s.pct.toFixed(1)}</td>
+      <div className="row g-4">
+        {/* Left column - Teams */}
+        <div className="col-lg-8">
+          <div className="card">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>Teams</span>
+              <span style={{ fontSize: '.75rem', color: 'var(--kl-text-secondary)' }}>{league.teams.length} teams</span>
+            </div>
+            <div className="card-body p-0">
+              <table className="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}>#</th>
+                    <th>Team</th>
+                    <th>Owner</th>
+                    <th className="text-end">Record</th>
                   </tr>
+                </thead>
+                <tbody>
+                  {data.standings.map((s, i) => {
+                    const isUser = t?.id === s.team_id
+                    return (
+                      <tr key={s.team_id} style={{ cursor: 'pointer' }}
+                        onClick={() => window.location.href = `/spa/leagues/${lid}/team/${s.team_id}`}>
+                        <td style={{ color: 'var(--kl-text-faint)' }}>{i + 1}</td>
+                        <td>
+                          <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>{s.name}</span>
+                          {isUser && <span className="badge ms-2" style={{ background: 'var(--kl-accent-blue)', fontSize: '.6rem' }}>You</span>}
+                        </td>
+                        <td style={{ color: 'var(--kl-text-secondary)' }}>
+                          {league.teams.find(t => t.id === s.team_id)?.owner || ''}
+                        </td>
+                        <td className="text-end">
+                          <span style={{ color: 'var(--kl-text-heading)', fontWeight: 600 }}>{s.wins}-{s.losses}</span>
+                          {s.draws > 0 && <span style={{ color: 'var(--kl-text-secondary)' }}>-{s.draws}</span>}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent results */}
+          {data.recent_results.length > 0 && (
+            <div className="card mt-4">
+              <div className="card-header">
+                <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>Round {data.current_round} Results</span>
+              </div>
+              <div className="card-body p-0">
+                {data.recent_results.map(r => (
+                  <Link key={r.fixture_id} to={`/leagues/${lid}/matchup/${r.fixture_id}`}
+                    className="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none"
+                    style={{ borderBottom: '1px solid var(--kl-border)' }}>
+                    <span style={{ fontWeight: 500, color: r.home_score > r.away_score ? 'var(--kl-text-heading)' : 'var(--kl-text-secondary)', flex: 1 }}>{r.home}</span>
+                    <div className="d-flex align-items-center gap-2 mx-3">
+                      <span style={{ fontWeight: 700, color: r.home_score > r.away_score ? 'var(--kl-accent-green)' : 'var(--kl-text-secondary)' }}>{r.home_score}</span>
+                      <span style={{ color: 'var(--kl-text-faint)', fontSize: '.75rem' }}>-</span>
+                      <span style={{ fontWeight: 700, color: r.away_score > r.home_score ? 'var(--kl-accent-green)' : 'var(--kl-text-secondary)' }}>{r.away_score}</span>
+                    </div>
+                    <span style={{ fontWeight: 500, color: r.away_score > r.home_score ? 'var(--kl-text-heading)' : 'var(--kl-text-secondary)', flex: 1, textAlign: 'right' }}>{r.away}</span>
+                  </Link>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+              </div>
+            </div>
+          )}
+        </div>
 
-        {/* Recent results */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <SectionHeader icon={<CalendarDays className="w-4 h-4" />} title={`Round ${data.current_round} Results`} to={`/leagues/${lid}/fixture/${data.current_round}`} />
-          <div className="space-y-2">
-            {data.recent_results.map(r => (
-              <Link key={r.fixture_id} to={`/leagues/${lid}/matchup/${r.fixture_id}`}
-                className="flex items-center justify-between px-4 py-3 rounded-xl bg-[#0d1117] border border-[#21262d] hover:border-[#58a6ff]/30 transition no-underline">
-                <span className="text-sm font-medium text-[#e6edf3]">{r.home}</span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-bold ${r.home_score > r.away_score ? 'text-[#3fb950]' : 'text-[#8b949e]'}`}>{r.home_score}</span>
-                  <span className="text-xs text-[#484f58]">-</span>
-                  <span className={`text-sm font-bold ${r.away_score > r.home_score ? 'text-[#3fb950]' : 'text-[#8b949e]'}`}>{r.away_score}</span>
+        {/* Right sidebar */}
+        <div className="col-lg-4">
+          {/* Invite link */}
+          {league.invite_code && (
+            <div className="card mb-3">
+              <div className="card-header">
+                <i className="bi bi-link-45deg me-2" style={{ color: 'var(--kl-accent-yellow)' }}></i>
+                <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>Invite Link</span>
+              </div>
+              <div className="card-body">
+                <div className="input-group input-group-sm">
+                  <input className="form-control" readOnly value={`keeperlg.com/invite/${league.invite_code}`}
+                    style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)', fontSize: '.78rem' }} />
+                  <button className="btn btn-outline-secondary" onClick={() => {
+                    navigator.clipboard.writeText(`https://keeperlg.com/invite/${league.invite_code}`)
+                  }}>
+                    <i className="bi bi-clipboard"></i>
+                  </button>
                 </div>
-                <span className="text-sm font-medium text-[#e6edf3] text-right">{r.away}</span>
-              </Link>
-            ))}
-            {data.recent_results.length === 0 && <p className="text-xs text-[#484f58] py-4 text-center">No results yet</p>}
+                <div className="mt-2">
+                  <span className="badge" style={{ background: 'var(--kl-bg-elevated)', color: 'var(--kl-text-secondary)', fontSize: '.7rem' }}>
+                    Code: {league.invite_code}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* League details */}
+          <div className="card">
+            <div className="card-header">
+              <span className="fw-bold" style={{ color: 'var(--kl-text-heading)' }}>League Details</span>
+            </div>
+            <div className="card-body">
+              <div className="info-row">
+                <span className="info-label">Commissioner</span>
+                <span className="info-value">{league.teams.find(t => t.owner === league.teams[0]?.owner)?.owner || '—'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Teams</span>
+                <span className="info-value">{league.teams.length}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Season</span>
+                <span className="info-value">{league.season_year}</span>
+              </div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </div>
-  )
-}
-
-function QuickAction({ to, icon, label, color }: { to: string; icon: React.ReactNode; label: string; color: string }) {
-  return (
-    <Link to={to}
-      className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-[#21262d] bg-[#0d1117] hover:bg-[#161b22] hover:border-[#30363d] transition no-underline">
-      <span style={{ color }}>{icon}</span>
-      <span className="text-xs font-semibold text-[#8b949e]">{label}</span>
-    </Link>
-  )
-}
-
-function SectionHeader({ icon, title, to }: { icon: React.ReactNode; title: string; to: string }) {
-  return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2 text-[#8b949e]">
-        {icon}
-        <span className="text-sm font-bold text-[#e6edf3]">{title}</span>
-      </div>
-      <Link to={to} className="text-[10px] text-[#58a6ff] hover:underline no-underline">View All</Link>
     </div>
   )
 }
