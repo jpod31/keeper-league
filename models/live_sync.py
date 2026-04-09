@@ -159,27 +159,50 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
         logger.info("No SC scores scraped for %d R%d", year, afl_round)
         return {}
 
-    # 4. Build player name→AflPlayer lookup
+    # 4. Build player name→AflPlayer lookup with bulletproof normalisation
     all_players = AflPlayer.query.all()
-    player_lookup: dict[tuple[str, str], AflPlayer] = {}
-    player_name_lookup: dict[str, list[AflPlayer]] = {}
-    # Surname + team lookup for footyinfo (returns surname-only names)
+
+    # Normalise a name to a canonical form that strips all variation:
+    # lowercase, remove apostrophes/hyphens/periods/accents/unicode arrows,
+    # collapse whitespace, strip leading/trailing spaces
+    import unicodedata, re as _re
+    def _normalise(name: str) -> str:
+        if not name:
+            return ""
+        # Strip fitzRoy unicode arrows (↗ ↙ etc.) and other non-ASCII markers
+        s = "".join(c for c in name if unicodedata.category(c)[0] != "S")
+        # Decompose accents (é → e, ü → u)
+        s = unicodedata.normalize("NFKD", s)
+        s = "".join(c for c in s if not unicodedata.combining(c))
+        # Remove apostrophes, hyphens, periods
+        s = s.replace("'", "").replace("'", "").replace("-", " ").replace(".", "")
+        # Collapse whitespace and lowercase
+        s = " ".join(s.lower().split())
+        return s
+
+    player_lookup: dict[tuple[str, str], AflPlayer] = {}        # exact
+    player_lookup_norm: dict[tuple[str, str], AflPlayer] = {}   # normalised name + team
+    player_name_lookup: dict[str, list[AflPlayer]] = {}          # name only (for unambiguous)
+    player_name_norm_lookup: dict[str, list[AflPlayer]] = {}     # normalised name only
     surname_team_lookup: dict[tuple[str, str], list[AflPlayer]] = {}
-    # Case-insensitive lookup for name matching (MacDonald vs Macdonald etc.)
-    player_lookup_ci: dict[tuple[str, str], AflPlayer] = {}
+
     for p in all_players:
         player_lookup[(p.name, p.afl_team)] = p
-        player_lookup_ci[(p.name.lower(), p.afl_team)] = p
+        norm = _normalise(p.name)
+        player_lookup_norm[(norm, p.afl_team)] = p
         player_name_lookup.setdefault(p.name, []).append(p)
+        player_name_norm_lookup.setdefault(norm, []).append(p)
         # Extract surname (last word of name)
         words = p.name.split() if p.name else []
         surname = words[-1] if words else ""
         if surname:
             surname_team_lookup.setdefault((surname, p.afl_team), []).append(p)
+            surname_team_lookup.setdefault((_normalise(surname), p.afl_team), []).append(p)
         # Multi-word surnames (De Koning, De Goey, Van Rooyen, etc.)
         if len(words) >= 3:
             two_word_surname = " ".join(words[-2:])
             surname_team_lookup.setdefault((two_word_surname, p.afl_team), []).append(p)
+            surname_team_lookup.setdefault((_normalise(two_word_surname), p.afl_team), []).append(p)
 
     # Build set of teams in active games
     active_teams = set()
@@ -200,33 +223,45 @@ def sync_live_scores(year: int, afl_round: int) -> dict:
         sc_score = entry["sc_score"]
         is_surname_only = entry.get("is_surname_only", False)
 
-        # Match by (name, team) first
+        # ── Player matching chain (most specific → most fuzzy) ──
+        norm_name = _normalise(name)
+
+        # 1. Exact match: (name, team)
         afl_player = player_lookup.get((name, team))
+
+        # 2. Normalised match: strips case, accents, apostrophes, hyphens, arrows
         if not afl_player:
-            # Case-insensitive fallback (MacDonald vs Macdonald etc.)
-            afl_player = player_lookup_ci.get((name.lower(), team))
+            afl_player = player_lookup_norm.get((norm_name, team))
+
+        # 3. Normalised name only (if unambiguous across all teams)
         if not afl_player:
-            # Fallback: match by name only (if unambiguous)
-            candidates = player_name_lookup.get(name, [])
+            candidates = player_name_norm_lookup.get(norm_name, [])
             if len(candidates) == 1:
                 afl_player = candidates[0]
 
-        # Surname-only matching (footyinfo fallback)
+        # 4. Surname-only matching (footyinfo returns surname-only names)
         if not afl_player and is_surname_only and team:
-            # Name might be "Gulden" (pure surname) or "O Hollands" (initial + surname)
-            parts = name.split(None, 1)
+            norm_surname = norm_name
+            parts = norm_name.split(None, 1)
             if len(parts) == 2 and len(parts[0]) <= 2:
-                # Initial + surname: "O Hollands" → match initial against first name
+                # Initial + surname: "o hollands" → match initial against first name
                 initial, surname = parts[0], parts[1]
                 surname_candidates = surname_team_lookup.get((surname, team), [])
-                matched = [p for p in surname_candidates if p.name.startswith(initial)]
+                matched = [p for p in surname_candidates if _normalise(p.name).startswith(initial)]
                 if len(matched) == 1:
                     afl_player = matched[0]
-            # Direct surname/multi-word surname match (De Koning, De Goey, etc.)
+                norm_surname = surname
+            # Direct surname/multi-word surname match
             if not afl_player:
-                surname_candidates = surname_team_lookup.get((name, team), [])
+                surname_candidates = surname_team_lookup.get((norm_surname, team), [])
                 if len(surname_candidates) == 1:
                     afl_player = surname_candidates[0]
+
+        # 5. Last resort: try original (un-normalised) name lookups
+        if not afl_player:
+            candidates = player_name_lookup.get(name, [])
+            if len(candidates) == 1:
+                afl_player = candidates[0]
 
         if not afl_player:
             unmatched_count += 1
