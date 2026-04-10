@@ -355,6 +355,7 @@ export function SquadPage() {
           set7sCaptain: fieldActions.set7sCaptain,
           addToLTIL: fieldActions.addToLTIL,
           showPlayer: fieldActions.showPlayer,
+          cancelAllModes: fieldActions.cancelAllModes,
           swapSource: fieldActions.swapSource,
           actionMode: fieldActions.actionMode,
         }} />

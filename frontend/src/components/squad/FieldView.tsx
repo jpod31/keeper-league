@@ -36,6 +36,7 @@ interface Actions {
   set7sCaptain: (pid: number) => void
   addToLTIL: (pid: number) => void
   showPlayer: (pid: number) => void
+  cancelAllModes: () => void
   swapSource: SwapSourceInfo | null
   actionMode: ActionMode
 }
@@ -116,11 +117,19 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
         data-player-id={p.id} data-section={isReserve ? 'reserve' : isFlex ? 'flex' : 'field'}
         data-positions={p.position || 'MID'} data-field-pos={!isFlex && !isReserve ? posClass.toUpperCase() : ''}
         data-locked={isLocked ? '1' : ''} data-emg={isEmg ? '1' : ''} data-sevens={is7s ? '1' : ''} data-age={String(p.age || '')}
-        onClick={() => {
+        onClick={(e) => {
+          // Don't handle if click came from action buttons
+          if ((e.target as HTMLElement).closest('.fv-actions')) return
           if (actions?.swapSource) {
-            const handled = actions.handlePlayerClick(p.id, section, posParts, fieldPosUpper, isLocked, isEmg, is7s)
-            if (!handled && actions.swapSource.pid === p.id) actions.showPlayer(p.id)
-          } else if (actions) { actions.showPlayer(p.id) }
+            if (actions.swapSource.pid === p.id) {
+              // Clicked the source card — cancel swap mode
+              actions.cancelAllModes()
+              return
+            }
+            actions.handlePlayerClick(p.id, section, posParts, fieldPosUpper, isLocked, isEmg, is7s)
+          } else if (actions) {
+            actions.showPlayer(p.id)
+          }
         }}>
         {/* Ribbon */}
         {isCap && <div className="fv-ribbon fv-ribbon-cap"><span>C</span></div>}
