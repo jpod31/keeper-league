@@ -1,6 +1,6 @@
-import { useParams } from 'react-router'
-import { useState, useEffect, useCallback } from 'react'
-import { api } from '../../lib/api'
+import { useParams, Link } from 'react-router'
+import { useState, useMemo } from 'react'
+import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 
 interface PoolPlayer {
@@ -8,147 +8,450 @@ interface PoolPlayer {
   name: string
   position: string
   afl_team: string
-  age: number
+  age: number | null
   sc_avg: number
-  games: number
-  owner: string | null
-  tag: string
+  games_played: number
+  career_games: number
+  rating: number | null
+  rating_start: number | null
+  potential: number | null
+  injury_severity: string | null
+  l3: number | null
+  l5: number | null
+  owner_team: string | null
+  profile_tag: string | null
+  profile_css: string | null
+  profile_tier: number
+  is_selected: boolean
+  is_bye: boolean
 }
 
+interface TeamColour { fg: string; bg: string }
+
 interface PoolData {
+  league: { id: number; name: string; squad_size: number }
   players: PoolPlayer[]
-  total: number
-  page: number
-  per_page: number
+  team_colours: Record<string, TeamColour>
+  user_team_id: number | null
+  roster_count: number
+  effective_roster_count: number
+  ltil_count: number
+  can_pickup: boolean
+  ssp_cutoff_round: number
+}
+
+// CSS from templates/leagues/player_pool.html <style> block (trimmed to essentials)
+const POOL_CSS = `
+.pool-table th { padding: .5rem .6rem; font-size: .7rem; border-bottom: 2px solid #30363d; position: relative; cursor: pointer; user-select: none; }
+.pool-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
+.pool-table th.sort-active .sort-icon { opacity: 1; color: #58a6ff; }
+.pool-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
+.pool-table tbody tr { transition: background .1s; }
+.pool-table tbody tr:hover { background: rgba(88,166,255,.04) !important; }
+.profile-tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: .6rem; font-weight: 700; white-space: nowrap; letter-spacing: .3px; }
+.tag-elite { background: linear-gradient(135deg, rgba(255,215,0,.3), rgba(255,170,0,.25)); color: #ffd700; border: 1px solid rgba(255,215,0,.4); }
+.tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(139,92,246,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
+.tag-premium { background: linear-gradient(135deg, rgba(251,146,60,.2), rgba(245,158,11,.15)); color: #fb923c; }
+.tag-rising { background: rgba(16,185,129,.18); color: #10b981; }
+.tag-breakout { background: rgba(6,182,212,.18); color: #06b6d4; }
+.tag-proven { background: rgba(59,130,246,.15); color: #3b82f6; }
+.tag-steady { background: rgba(148,163,184,.12); color: #94a3b8; }
+.tag-developing { background: rgba(74,222,128,.1); color: #4ade80; }
+.tag-project { background: rgba(234,179,8,.12); color: #eab308; }
+.tag-declining { background: rgba(239,68,68,.15); color: #ef4444; }
+.tag-veteran { background: rgba(120,113,108,.12); color: #a8a29e; }
+.tag-fringe { background: rgba(82,82,91,.1); color: #71717a; }
+.filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.filter-bar .form-control-sm, .filter-bar .form-select-sm { background: #0d1117; border-color: #30363d; font-size: .78rem; }
+.pool-count { font-size: .75rem; color: #8b949e; white-space: nowrap; display: flex; align-items: center; gap: .35rem; }
+.pool-count strong { color: #c9d1d9; }
+.pm-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #1c2128; cursor: pointer; background: #0d1117; }
+.pm-card:active { background: #161b22; }
+.pm-taken { opacity: .5; }
+.pm-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; border-radius: 4px; }
+.pm-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pm-row1 { display: flex; align-items: center; gap: 5px; }
+.pm-name { font-weight: 700; font-size: .84rem; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-pos-badge { padding: 1px 5px; font-size: .55rem; }
+.pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #6e7681; }
+.pm-row2 b { color: #c9d1d9; font-weight: 700; }
+.pm-sep { width: 1px; height: 9px; background: #21262d; flex-shrink: 0; }
+.pm-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.pm-sc { font-size: 1.05rem; font-weight: 800; color: #e6edf3; line-height: 1; }
+.pm-sc-none { color: #484f58; font-size: .85rem; }
+.pm-owner { font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.pm-fa { font-size: .58rem; font-weight: 600; color: #3fb950; }
+.pm-add { background: rgba(63,185,80,.12); border: none; color: #3fb950; border-radius: 4px; font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px; }
+`
+
+type SortKey = 'name' | 'pos' | 'age' | 'sc_avg' | 'trend' | 'rating' | 'rtg_move' | 'potential' | 'tag'
+
+function sortValue(p: PoolPlayer, key: SortKey): number | string {
+  switch (key) {
+    case 'name': return p.name.toLowerCase()
+    case 'pos': return p.position
+    case 'age': return p.age || 0
+    case 'sc_avg': return p.sc_avg || 0
+    case 'trend': return (p.l3 || 0) - (p.sc_avg || 0)
+    case 'rating': return p.rating || 0
+    case 'rtg_move': return (p.rating || 0) - (p.rating_start || p.rating || 0)
+    case 'potential': return p.potential || 0
+    case 'tag': return p.profile_tier || 13
+  }
 }
 
 export function PlayerPoolPage() {
   const { leagueId } = useParams()
-  const [data, setData] = useState<PoolData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data, loading, refetch } = useFetch<PoolData>(`/leagues/${leagueId}/player-pool?format=json`)
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [sortCol, setSortCol] = useState('sc_avg')
-  const [sortDir, setSortDir] = useState('desc')
-  const [page, setPage] = useState(1)
+  const [teamFilter, setTeamFilter] = useState('')
+  const [ageFilter, setAgeFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [ownerFilter, setOwnerFilter] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('sc_avg')
+  const [sortDir, setSortDir] = useState<1 | -1>(-1)
+  const [pickingUp, setPickingUp] = useState<number | null>(null)
 
-  const fetchPlayers = useCallback(() => {
-    setLoading(true)
-    const params = new URLSearchParams({ page: String(page), search, position: posFilter, status: statusFilter, sort: sortCol, dir: sortDir })
-    api<PoolData>(`/api/leagues/${leagueId}/player-pool?${params}`)
-      .then(setData)
-      .finally(() => setLoading(false))
-  }, [leagueId, page, search, posFilter, statusFilter, sortCol, sortDir])
+  const filtered = useMemo(() => {
+    if (!data) return []
+    const needle = search.toLowerCase().trim()
+    return data.players.filter(p => {
+      if (needle && !p.name.toLowerCase().includes(needle)) return false
+      if (posFilter) {
+        const parts = (p.position || 'MID').split('/')
+        if (!parts.includes(posFilter)) return false
+      }
+      if (teamFilter && p.afl_team !== teamFilter) return false
+      if (ageFilter) {
+        const age = p.age || 0
+        if (ageFilter === '21' && age > 21) return false
+        if (ageFilter === '23' && age > 23) return false
+        if (ageFilter === '25' && age > 25) return false
+        if (ageFilter === '25-30' && (age < 25 || age > 30)) return false
+        if (ageFilter === '30+' && age < 30) return false
+      }
+      if (statusFilter === 'available' && p.owner_team) return false
+      if (statusFilter === 'taken' && !p.owner_team) return false
+      if (ownerFilter && p.owner_team !== ownerFilter) return false
+      return true
+    })
+  }, [data, search, posFilter, teamFilter, ageFilter, statusFilter, ownerFilter])
 
-  useEffect(() => { fetchPlayers() }, [fetchPlayers])
+  const sorted = useMemo(() => {
+    const out = [...filtered]
+    out.sort((a, b) => {
+      const av = sortValue(a, sortKey)
+      const bv = sortValue(b, sortKey)
+      if (av < bv) return -sortDir
+      if (av > bv) return sortDir
+      return 0
+    })
+    return out
+  }, [filtered, sortKey, sortDir])
 
-  const toggleSort = (col: string) => {
-    if (sortCol === col) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
-    else { setSortCol(col); setSortDir('desc') }
-    setPage(1)
+  const teamOptions = useMemo(() => {
+    if (!data) return []
+    const s = new Set<string>()
+    data.players.forEach(p => { if (p.afl_team) s.add(p.afl_team) })
+    return [...s].sort()
+  }, [data])
+
+  const ownerOptions = useMemo(() => {
+    if (!data) return []
+    const s = new Set<string>()
+    data.players.forEach(p => { if (p.owner_team) s.add(p.owner_team) })
+    return [...s].sort()
+  }, [data])
+
+  async function pickup(playerId: number) {
+    if (!confirm('Pick this player up?')) return
+    setPickingUp(playerId)
+    try {
+      const res = await fetch(`/leagues/${leagueId}/player-pool/pickup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId }),
+        credentials: 'include',
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(d.error || 'Failed to pick up player')
+      } else {
+        refetch()
+      }
+    } finally {
+      setPickingUp(null)
+    }
+  }
+
+  if (loading) return <Spinner text="Loading player pool..." />
+  if (!data) return <p className="text-danger">Failed to load player pool</p>
+
+  const { league, team_colours, can_pickup, effective_roster_count, ltil_count, ssp_cutoff_round } = data
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => (d === 1 ? -1 : 1))
+    else { setSortKey(key); setSortDir(-1) }
+  }
+
+  function sortIcon(key: SortKey): string {
+    if (sortKey !== key) return 'bi-chevron-expand'
+    return sortDir === -1 ? 'bi-chevron-down' : 'bi-chevron-up'
   }
 
   return (
     <div>
-      <h4 className="fw-bold mb-3" style={{ color: 'var(--kl-text-heading)' }}>Player Pool</h4>
+      <style>{POOL_CSS}</style>
 
-      {/* Filter bar */}
-      <div className="filter-bar d-flex flex-wrap gap-2 mb-3">
-        <input className="form-control form-control-sm" placeholder="Search players..."
-          value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-          style={{ maxWidth: 250, background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} />
-        <select className="form-select form-select-sm" value={posFilter} onChange={e => { setPosFilter(e.target.value); setPage(1) }}
-          style={{ width: 'auto', background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-secondary)' }}>
-          <option value="">All Positions</option>
-          <option value="DEF">DEF</option><option value="MID">MID</option>
-          <option value="RUC">RUC</option><option value="FWD">FWD</option>
-        </select>
-        <select className="form-select form-select-sm" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-          style={{ width: 'auto', background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-secondary)' }}>
-          <option value="all">All Players</option><option value="available">Available</option><option value="rostered">Rostered</option>
-        </select>
-        {data && <span className="pool-count align-self-center" style={{ fontSize: '.75rem', color: 'var(--kl-text-faint)' }}>{data.total} players</span>}
+      <div className="page-header">
+        <div className="page-breadcrumb">
+          <Link to={`/leagues/${leagueId}`}>{league.name}</Link> / Players
+        </div>
+        <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
+          <div>
+            <h2 className="mb-0">Player Pool</h2>
+            <span style={{ fontSize: '.78rem', color: '#8b949e' }}>Ranked by draft value</span>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <div className="pool-count">
+              <strong>{sorted.length}</strong> players
+            </div>
+          </div>
+        </div>
       </div>
 
-      {loading && !data ? <Spinner /> : data && (
-        <>
-          {/* Desktop table */}
-          <div className="card d-none d-lg-block">
-            <div className="card-body p-0">
-              <table className="table table-hover mb-0 pool-table">
-                <thead>
-                  <tr>
-                    <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('name')}>
-                      Player {sortCol === 'name' && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
-                    </th>
-                    <th>Pos</th>
-                    <th>Team</th>
-                    <th className="text-end" style={{ cursor: 'pointer' }} onClick={() => toggleSort('sc_avg')}>
-                      SC Avg {sortCol === 'sc_avg' && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
-                    </th>
-                    <th className="text-center" style={{ cursor: 'pointer' }} onClick={() => toggleSort('age')}>
-                      Age {sortCol === 'age' && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
-                    </th>
-                    <th className="text-center" style={{ cursor: 'pointer' }} onClick={() => toggleSort('games')}>
-                      Games {sortCol === 'games' && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
-                    </th>
-                    <th>Owner</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.players.map(p => (
-                    <tr key={p.id}>
-                      <td><span className="fw-bold" style={{ color: '#c9d1d9' }}>{p.name}</span></td>
-                      <td><span className={`pos-badge pos-${p.position?.split('/')[0]}`} style={{ fontSize: '.65rem', padding: '1px 5px' }}>{p.position}</span></td>
-                      <td style={{ color: '#8b949e', fontSize: '.78rem' }}>{p.afl_team}</td>
-                      <td className="text-end fw-bold">{p.sc_avg?.toFixed(0) || '—'}</td>
-                      <td className="text-center" style={{ color: '#8b949e' }}>{p.age}</td>
-                      <td className="text-center" style={{ color: '#8b949e' }}>{p.games}</td>
-                      <td>
-                        {p.owner ? (
-                          <span style={{ fontSize: '.75rem', color: '#8b949e' }}>{p.owner}</span>
-                        ) : (
-                          <span style={{ fontSize: '.75rem', color: '#3fb950' }}>Available</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      {can_pickup && (
+        <div
+          className="d-flex align-items-center gap-2 mb-3 px-3 py-2"
+          style={{ background: 'rgba(63,185,80,.08)', border: '1px solid rgba(63,185,80,.2)', borderRadius: 8, fontSize: '.82rem' }}
+        >
+          <i className="bi bi-person-plus-fill" style={{ color: '#3fb950' }}></i>
+          <span style={{ color: '#c9d1d9' }}>
+            SSP pickups open — <strong>{effective_roster_count}/{league.squad_size}</strong> roster spots filled
+            {ltil_count ? ` (${ltil_count} on LTIL)` : ''}. Closes at Round {ssp_cutoff_round}.
+          </span>
+        </div>
+      )}
 
-          {/* Mobile cards */}
-          <div className="d-lg-none">
-            {data.players.map(p => (
-              <div key={p.id} className="d-flex align-items-center px-3 py-2" style={{ borderBottom: '1px solid var(--kl-border)' }}>
-                <div style={{ flex: 1 }}>
-                  <div className="fw-bold" style={{ fontSize: '.85rem', color: '#c9d1d9' }}>{p.name}</div>
-                  <div style={{ fontSize: '.72rem', color: '#8b949e' }}>
-                    <span className={`pos-badge pos-${p.position?.split('/')[0]}`} style={{ fontSize: '.55rem', padding: '0 4px', marginRight: 4 }}>{p.position}</span>
-                    {p.afl_team} &middot; Age {p.age}
-                    {p.owner && <span> &middot; {p.owner}</span>}
+      <div className="card">
+        <div className="card-header py-2">
+          <div className="filter-bar">
+            <div style={{ flex: '1 1 200px', maxWidth: 280 }}>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Search by name..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <select className="form-select form-select-sm" value={posFilter} onChange={e => setPosFilter(e.target.value)} style={{ width: 'auto' }}>
+              <option value="">All Pos</option>
+              <option value="DEF">DEF</option>
+              <option value="MID">MID</option>
+              <option value="FWD">FWD</option>
+              <option value="RUC">RUC</option>
+            </select>
+            <select className="form-select form-select-sm" value={teamFilter} onChange={e => setTeamFilter(e.target.value)} style={{ width: 'auto' }}>
+              <option value="">All Teams</option>
+              {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <select className="form-select form-select-sm" value={ageFilter} onChange={e => setAgeFilter(e.target.value)} style={{ width: 'auto' }}>
+              <option value="">All Ages</option>
+              <option value="21">U21</option>
+              <option value="23">U23</option>
+              <option value="25">U25</option>
+              <option value="25-30">25-30</option>
+              <option value="30+">30+</option>
+            </select>
+            <select className="form-select form-select-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: 'auto' }}>
+              <option value="">All Status</option>
+              <option value="available">Available</option>
+              <option value="taken">Rostered</option>
+            </select>
+            <select className="form-select form-select-sm" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} style={{ width: 'auto' }}>
+              <option value="">All Coaches</option>
+              {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Desktop table */}
+        <div className="card-body p-0 d-none d-lg-block" style={{ maxHeight: '78vh', overflow: 'auto' }}>
+          <table className="table table-sm mb-0 pool-table">
+            <thead className="sticky-top" style={{ background: '#161b22', zIndex: 2 }}>
+              <tr>
+                <th style={{ width: 18 }}></th>
+                <th className={sortKey === 'name' ? 'sort-active' : ''} onClick={() => toggleSort('name')}>
+                  Player <i className={`bi ${sortIcon('name')} sort-icon`}></i>
+                </th>
+                <th className={sortKey === 'pos' ? 'sort-active' : ''} style={{ width: 80 }} onClick={() => toggleSort('pos')}>
+                  Pos <i className={`bi ${sortIcon('pos')} sort-icon`}></i>
+                </th>
+                <th className={`${sortKey === 'age' ? 'sort-active ' : ''}text-center`} style={{ width: 45 }} onClick={() => toggleSort('age')}>
+                  Age <i className={`bi ${sortIcon('age')} sort-icon`}></i>
+                </th>
+                <th className={`${sortKey === 'sc_avg' ? 'sort-active ' : ''}text-end`} style={{ width: 65 }} onClick={() => toggleSort('sc_avg')}>
+                  SC <i className={`bi ${sortIcon('sc_avg')} sort-icon`}></i>
+                </th>
+                <th className={`${sortKey === 'trend' ? 'sort-active ' : ''}text-center`} style={{ width: 75 }} onClick={() => toggleSort('trend')}>
+                  L3 <i className={`bi ${sortIcon('trend')} sort-icon`}></i>
+                </th>
+                <th className={`${sortKey === 'rating' ? 'sort-active ' : ''}text-end`} style={{ width: 50 }} onClick={() => toggleSort('rating')}>
+                  Rtg <i className={`bi ${sortIcon('rating')} sort-icon`}></i>
+                </th>
+                <th className={`${sortKey === 'rtg_move' ? 'sort-active ' : ''}text-center`} style={{ width: 50 }} onClick={() => toggleSort('rtg_move')}>
+                  +/- <i className={`bi ${sortIcon('rtg_move')} sort-icon`}></i>
+                </th>
+                <th className={`${sortKey === 'potential' ? 'sort-active ' : ''}text-end`} style={{ width: 50 }} onClick={() => toggleSort('potential')}>
+                  Pot <i className={`bi ${sortIcon('potential')} sort-icon`}></i>
+                </th>
+                <th className={sortKey === 'tag' ? 'sort-active' : ''} style={{ width: 120 }} onClick={() => toggleSort('tag')}>
+                  Profile <i className={`bi ${sortIcon('tag')} sort-icon`}></i>
+                </th>
+                <th className="text-center" style={{ width: 110 }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map(p => {
+                const positions = (p.position || 'MID').split('/')
+                const tc = p.owner_team ? team_colours[p.owner_team] : null
+                const l3Base = p.sc_avg || p.l3 || 0
+                const l3Diff = (p.l3 || 0) - l3Base
+                const l3Pct = l3Base ? (l3Diff / l3Base) * 100 : 0
+                const rtgMove = p.rating && p.rating_start ? p.rating - p.rating_start : 0
+                return (
+                  <tr key={p.id}>
+                    <td style={{ padding: '0 0 0 .4rem', verticalAlign: 'middle' }}>
+                      {p.is_bye ? <span className="status-dot status-dot-bye"></span>
+                        : p.is_selected ? <span className="status-dot status-dot-taken"></span>
+                        : p.injury_severity ? <span className="status-dot status-dot-injured"></span>
+                        : <span className="status-dot status-dot-available"></span>}
+                    </td>
+                    <td>
+                      <a href={`/player/${encodeURIComponent(p.name)}`} className="player-link">
+                        <span className="p-name">{p.name}</span>
+                        <span style={{ color: '#c9d1d9', fontSize: '.72rem', marginLeft: 'auto' }}>{p.afl_team}</span>
+                      </a>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 3, flexWrap: 'nowrap' }}>
+                        {['FWD', 'DEF', 'RUC', 'MID'].filter(pos => positions.includes(pos)).map(pos => (
+                          <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}`} style={{ padding: '2px 5px', fontSize: '.65rem' }}>{pos}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="text-center" style={{ color: '#8b949e' }}>{p.age || '-'}</td>
+                    <td className="text-end">
+                      {p.sc_avg ? <span style={{ fontWeight: 600 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#484f58' }}>-</span>}
+                    </td>
+                    <td className="text-center">
+                      {p.l3 ? (
+                        <>
+                          <span style={{ fontWeight: 600, color: '#c9d1d9' }}>{Math.round(p.l3)}</span>
+                          {l3Pct > 2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#3fb950', marginLeft: 2 }}>+{Math.round(l3Pct)}%</span>
+                            : l3Pct < -2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#f85149', marginLeft: 2 }}>{Math.round(l3Pct)}%</span>
+                            : <span style={{ fontSize: '.65rem', color: '#484f58', marginLeft: 2 }}>-</span>}
+                        </>
+                      ) : <span style={{ color: '#484f58' }}>-</span>}
+                    </td>
+                    <td className="text-end">
+                      {p.rating ? <span style={{ color: '#c9d1d9', fontWeight: 600 }}>{p.rating}</span> : <span style={{ color: '#484f58' }}>-</span>}
+                    </td>
+                    <td className="text-center">
+                      {p.rating && p.rating_start ? (
+                        rtgMove > 0 ? <span style={{ color: '#3fb950', fontWeight: 600, fontSize: '.78rem' }}>+{rtgMove}</span>
+                          : rtgMove < 0 ? <span style={{ color: '#f85149', fontWeight: 600, fontSize: '.78rem' }}>{rtgMove}</span>
+                          : <span style={{ color: '#484f58', fontSize: '.78rem' }}>-</span>
+                      ) : <span style={{ color: '#484f58' }}>-</span>}
+                    </td>
+                    <td className="text-end">
+                      {p.potential ? <span style={{ color: '#c9d1d9', fontWeight: 600 }}>{p.potential}</span> : <span style={{ color: '#484f58' }}>-</span>}
+                    </td>
+                    <td>
+                      {p.profile_tag && p.profile_css && (
+                        <span className={`profile-tag tag-${p.profile_css}`}>{p.profile_tag}</span>
+                      )}
+                    </td>
+                    <td className="text-center">
+                      {p.owner_team ? (
+                        <span
+                          className="pm-owner"
+                          style={{ background: tc?.bg, color: tc?.fg }}
+                        >
+                          {p.owner_team}
+                        </span>
+                      ) : can_pickup ? (
+                        <button
+                          className="pm-add"
+                          onClick={() => pickup(p.id)}
+                          disabled={pickingUp === p.id}
+                        >
+                          {pickingUp === p.id ? '...' : <><i className="bi bi-plus-lg"></i> Add</>}
+                        </button>
+                      ) : (
+                        <span className="pm-fa">FA</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile card list */}
+        <div className="card-body p-0 d-lg-none" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+          {sorted.map(p => {
+            const positions = (p.position || 'MID').split('/')
+            const tc = p.owner_team ? team_colours[p.owner_team] : null
+            return (
+              <div key={p.id} className={`pm-card${p.owner_team ? ' pm-taken' : ''}`}
+                onClick={() => { window.location.href = `/player/${encodeURIComponent(p.name)}` }}>
+                {p.is_bye ? <span className="status-dot status-dot-bye"></span>
+                  : p.is_selected ? <span className="status-dot status-dot-taken"></span>
+                  : p.injury_severity ? <span className="status-dot status-dot-injured"></span>
+                  : <span className="status-dot status-dot-available"></span>}
+                <div className="pm-body">
+                  <div className="pm-row1">
+                    <span className="pm-name">{p.name}</span>
+                    {['FWD', 'DEF', 'RUC', 'MID'].filter(pos => positions.includes(pos)).map(pos => (
+                      <span key={pos} className={`pos-badge badge-${pos.toLowerCase()} pm-pos-badge`}>{pos}</span>
+                    ))}
+                    {p.profile_tag && p.profile_css && (
+                      <span className={`profile-tag tag-${p.profile_css}`}>{p.profile_tag}</span>
+                    )}
+                  </div>
+                  <div className="pm-row2">
+                    <span>{p.afl_team}</span>
+                    <span className="pm-sep"></span>
+                    <span>{p.age || 0}y</span>
+                    <span className="pm-sep"></span>
+                    <span>{p.games_played}gp</span>
+                    {p.owner_team && (
+                      <>
+                        <span className="pm-sep"></span>
+                        <span className="pm-owner" style={{ background: tc?.bg, color: tc?.fg }}>{p.owner_team}</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div className="fw-bold" style={{ color: '#e6edf3' }}>{p.sc_avg?.toFixed(0) || '—'}</div>
-                  {!p.owner && <div style={{ fontSize: '.65rem', color: '#3fb950' }}>FA</div>}
+                <div className="pm-right">
+                  {p.sc_avg ? <span className="pm-sc">{Math.round(p.sc_avg)}</span>
+                    : <span className="pm-sc pm-sc-none">-</span>}
+                  {!p.owner_team && can_pickup && (
+                    <button className="pm-add" onClick={e => { e.stopPropagation(); pickup(p.id) }}>
+                      <i className="bi bi-plus-lg"></i>
+                    </button>
+                  )}
+                  {!p.owner_team && !can_pickup && <span className="pm-fa">FA</span>}
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          <div className="d-flex align-items-center justify-content-between mt-3">
-            <span style={{ fontSize: '.75rem', color: 'var(--kl-text-faint)' }}>Page {page}</span>
-            <div className="d-flex gap-1">
-              <button className="btn btn-outline-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
-              <button className="btn btn-outline-secondary btn-sm" onClick={() => setPage(p => p + 1)} disabled={data.players.length < data.per_page}>Next</button>
-            </div>
-          </div>
-        </>
-      )}
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }

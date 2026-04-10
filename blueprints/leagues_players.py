@@ -298,6 +298,46 @@ def player_pool(league_id):
         profile_tags = compute_profile_tags(players)
         cache_analytics(0, league.season_year, "profile_tags_all", profile_tags)
 
+    if request.args.get("format") == "json":
+        def _ser_player(p):
+            pr = rolling.get(p.name, {}) if isinstance(rolling, dict) else {}
+            owner = rostered_map.get(p.id)
+            tag = profile_tags.get(p.id, {}) if isinstance(profile_tags, dict) else {}
+            return {
+                "id": p.id,
+                "name": p.name,
+                "position": p.position or "",
+                "afl_team": p.afl_team or "",
+                "age": p.age or None,
+                "sc_avg": p.sc_avg or 0,
+                "games_played": getattr(p, "games_played", 0) or 0,
+                "career_games": getattr(p, "career_games", 0) or 0,
+                "rating": p.rating or None,
+                "rating_start": p.rating_start or None,
+                "potential": p.potential or None,
+                "injury_severity": p.injury_severity or None,
+                "l3": pr.get("l3") or None,
+                "l5": pr.get("l5") or None,
+                "owner_team": owner,
+                "profile_tag": tag.get("tag") if isinstance(tag, dict) else None,
+                "profile_css": tag.get("css") if isinstance(tag, dict) else None,
+                "profile_tier": tag.get("tier", 13) if isinstance(tag, dict) else 13,
+                "is_selected": p.id in selected_set,
+                "is_bye": bool(teams_playing and p.afl_team and p.afl_team not in teams_playing),
+            }
+
+        return jsonify({
+            "league": {"id": league.id, "name": league.name, "squad_size": league.squad_size},
+            "players": [_ser_player(p) for p in players],
+            "team_colours": team_colours,
+            "user_team_id": user_team.id if user_team else None,
+            "roster_count": roster_count,
+            "effective_roster_count": roster_count - ltil_count,
+            "ltil_count": ltil_count,
+            "can_pickup": bool(can_pickup),
+            "ssp_cutoff_round": ssp_cutoff_round,
+        })
+
     return render_template("leagues/player_pool.html",
                            league=league,
                            players=players,

@@ -2,39 +2,104 @@ import { useParams } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 
-interface Activity {
+interface Entry {
   id: number
   type: string
-  text: string
-  actor: string
-  created: string
+  title: string
+  body: string | null
+  link: string | null
+  created_at: string | null
 }
 
-const typeIcons: Record<string, string> = {
-  trade: '\u21C4', draft: '\u2611', lineup: '\u270E', score: '\u26BD', join: '\u2795',
+interface ActivityData {
+  league: { id: number; name: string }
+  entries: Entry[]
+}
+
+const TYPE_ICONS: Record<string, string> = {
+  trade_received: 'bi-arrow-left-right',
+  trade_accepted: 'bi-check-circle',
+  trade_rejected: 'bi-x-circle',
+  trade_vetoed: 'bi-shield-exclamation',
+  player_delisted: 'bi-person-dash',
+  message_received: 'bi-chat-dots',
+  list_change: 'bi-clock-history',
+}
+
+const TYPE_COLORS: Record<string, string> = {
+  trade_received: 'var(--kl-accent-yellow)',
+  trade_accepted: 'var(--kl-accent-green)',
+  trade_rejected: 'var(--kl-accent-red)',
+  trade_vetoed: 'var(--kl-text-secondary)',
+  player_delisted: 'var(--kl-accent-red)',
+  message_received: 'var(--kl-accent-blue)',
+  list_change: 'var(--kl-accent-blue)',
 }
 
 export function ActivityFeedPage() {
   const { leagueId } = useParams()
-  const { data, loading } = useFetch<Activity[]>(`/api/leagues/${leagueId}/activity`)
+  const { data, loading } = useFetch<ActivityData>(`/leagues/${leagueId}/activity?format=json`)
 
-  if (loading) return <Spinner />
-  if (!data) return <p className="text-sm text-[#ef4444]">Failed to load activity</p>
+  if (loading) return <Spinner text="Loading activity..." />
+  if (!data) return <p className="text-danger">Failed to load activity feed</p>
+
+  const { entries } = data
 
   return (
     <div>
-      <h1 className="text-xl font-extrabold text-[#e6edf3] mb-6">Activity Feed</h1>
-      <div className="space-y-2">
-        {data.map(a => (
-          <div key={a.id} className="flex gap-3 px-4 py-3 rounded-xl bg-[#0d1117] border border-[#21262d]">
-            <span className="text-base mt-0.5">{typeIcons[a.type] || '\u2022'}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-[#c9d1d9]">{a.text}</p>
-              <p className="text-[10px] text-[#484f58] mt-0.5">{a.actor} &middot; {a.created}</p>
+      <div className="page-header">
+        <div className="d-flex align-items-center justify-content-between">
+          <h2>
+            <i className="bi bi-activity me-2" style={{ color: 'var(--kl-accent-green)' }}></i>
+            Activity Feed
+          </h2>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-body p-0">
+          {entries.length > 0 ? (
+            entries.map(entry => (
+              <a
+                key={entry.id}
+                href={entry.link || '#'}
+                className="d-flex align-items-start gap-3 px-3 py-3 text-decoration-none"
+                style={{ borderBottom: '1px solid var(--kl-border)', color: 'var(--kl-text-primary)', transition: 'background .15s' }}
+              >
+                <div
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: 'var(--kl-bg-elevated)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <i
+                    className={`bi ${TYPE_ICONS[entry.type] || 'bi-bell'}`}
+                    style={{ color: TYPE_COLORS[entry.type] || 'var(--kl-text-secondary)', fontSize: '.9rem' }}
+                  ></i>
+                </div>
+                <div className="flex-grow-1">
+                  <div style={{ fontSize: '.85rem', fontWeight: 500 }}>{entry.title}</div>
+                  {entry.body && (
+                    <div style={{ fontSize: '.75rem', color: 'var(--kl-text-secondary)', marginTop: 2 }}>
+                      {entry.body.substring(0, 120)}
+                    </div>
+                  )}
+                  <div style={{ fontSize: '.65rem', color: 'var(--kl-text-muted)', marginTop: 3 }}>
+                    {entry.created_at}
+                  </div>
+                </div>
+              </a>
+            ))
+          ) : (
+            <div className="empty-state">
+              <div className="empty-icon"><i className="bi bi-activity" style={{ fontSize: '1.5rem' }}></i></div>
+              <h4>No activity yet</h4>
+              <p>League activity (trades, SSP signings, delists) will appear here.</p>
             </div>
-          </div>
-        ))}
-        {!data.length && <p className="text-sm text-[#484f58] text-center py-8">No activity yet</p>}
+          )}
+        </div>
       </div>
     </div>
   )

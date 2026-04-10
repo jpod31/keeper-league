@@ -30,6 +30,21 @@ def notifications(league_id):
         flash("You don't have access to this league.", "warning")
         return redirect(url_for("leagues.league_list"))
     notifs = get_recent_notifications(current_user.id, limit=50, league_id=league_id)
+
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "notifs": [{
+                "id": n.id,
+                "type": n.type,
+                "title": n.title,
+                "body": n.body,
+                "link": n.link,
+                "is_read": bool(n.is_read),
+                "created_at": n.created_at.strftime("%d %b %H:%M") if n.created_at else None,
+            } for n in notifs],
+        })
+
     return render_template("comms/notifications.html",
                            league=league, user_team=user_team, notifs=notifs)
 
@@ -252,6 +267,19 @@ def league_chat(league_id):
         .all()
     )
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "current_user_id": current_user.id,
+            "messages": [{
+                "id": m.id,
+                "sender_user_id": m.sender_user_id,
+                "sender_name": m.sender.display_name or m.sender.username if m.sender else "?",
+                "body": m.body,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            } for m in messages],
+        })
+
     return render_template("comms/league_chat.html",
                            league=league, user_team=user_team,
                            chat=chat, messages=messages,
@@ -328,6 +356,19 @@ def activity_feed(league_id):
             entries.append(n)
         if len(entries) >= 100:
             break
+
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "entries": [{
+                "id": n.id,
+                "type": n.type,
+                "title": n.title,
+                "body": n.body,
+                "link": n.link,
+                "created_at": n.created_at.strftime("%d %b %Y, %H:%M") if n.created_at else None,
+            } for n in entries],
+        })
 
     return render_template("comms/activity_feed.html",
                            league=league, user_team=user_team,

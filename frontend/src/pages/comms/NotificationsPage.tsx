@@ -1,70 +1,111 @@
-import { useParams } from 'react-router'
+import { useParams, Link } from 'react-router'
+import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { post } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
-import { useToast } from '../../components/ui/Toast'
 
 interface Notification {
   id: number
   type: string
   title: string
-  body: string
-  read: boolean
-  created: string
+  body: string | null
   link: string | null
+  is_read: boolean
+  created_at: string | null
+}
+
+interface NotifData {
+  league: { id: number; name: string }
+  notifs: Notification[]
+}
+
+function iconForType(type: string): string {
+  switch (type) {
+    case 'trade_received': return 'bi-arrow-left-right'
+    case 'trade_accepted': return 'bi-check-circle'
+    case 'trade_rejected': return 'bi-x-circle'
+    case 'trade_vetoed': return 'bi-shield-exclamation'
+    case 'player_delisted': return 'bi-person-dash'
+    case 'message_received': return 'bi-chat-dots'
+    default: return 'bi-bell'
+  }
 }
 
 export function NotificationsPage() {
   const { leagueId } = useParams()
-  const { data, loading, refetch } = useFetch<Notification[]>(`/api/leagues/${leagueId}/notifications`)
-  const { toast } = useToast()
+  const { data, loading, refetch } = useFetch<NotifData>(`/leagues/${leagueId}/notifications?format=json`)
+  const [busy, setBusy] = useState(false)
 
-  const markAllRead = async () => {
-    await post(`/api/leagues/${leagueId}/notifications/read-all`)
-    toast('All marked as read', 'success')
-    refetch()
+  if (loading) return <Spinner text="Loading notifications..." />
+  if (!data) return <p className="text-danger">Failed to load notifications</p>
+
+  const { league, notifs } = data
+
+  async function markAllRead() {
+    setBusy(true)
+    try {
+      await fetch(`/leagues/${leagueId}/notifications/read-all`, { method: 'POST', credentials: 'include' })
+      refetch()
+    } finally {
+      setBusy(false)
+    }
   }
 
-  if (loading) return <Spinner />
-  if (!data) return <p className="text-danger">Failed to load</p>
-
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4 className="fw-bold mb-0" style={{ color: 'var(--kl-text-heading)' }}>Notifications</h4>
-        {data.some(n => !n.read) && (
-          <button className="btn btn-outline-secondary btn-sm" onClick={markAllRead}>
-            <i className="bi bi-check-all me-1"></i>Mark all read
-          </button>
-        )}
-      </div>
-
-      {data.length === 0 ? (
-        <div className="empty-state" style={{ padding: '4rem 2rem' }}>
-          <div className="empty-icon" style={{ width: 64, height: 64 }}>
-            <i className="bi bi-bell" style={{ fontSize: '1.5rem' }}></i>
+    <div className="row justify-content-center">
+      <div className="col-md-8">
+        <div className="page-header">
+          <div className="page-breadcrumb">
+            <Link to={`/leagues/${leagueId}`}>{league.name}</Link> / Notifications
           </div>
-          <h4>No notifications</h4>
-          <p>You're all caught up.</p>
+          <div className="d-flex justify-content-between align-items-center">
+            <h2>Notifications</h2>
+            {notifs.length > 0 && (
+              <button className="btn btn-sm btn-outline-secondary" onClick={markAllRead} disabled={busy}>
+                <i className="bi bi-check-all me-1"></i>Mark all read
+              </button>
+            )}
+          </div>
         </div>
-      ) : (
-        <div className="card">
-          <div className="card-body p-0">
-            {data.map(n => (
-              <div key={n.id}
-                className={`d-flex align-items-start gap-3 px-3 py-2${!n.read ? ' notif-unread' : ''}`}
-                style={{ borderBottom: '1px solid var(--kl-border)', background: !n.read ? 'rgba(31,111,235,.06)' : undefined }}>
-                {!n.read && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--kl-accent-blue)', marginTop: 6, flexShrink: 0 }}></span>}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '.82rem', fontWeight: 500, color: 'var(--kl-text-heading)' }}>{n.title}</div>
-                  {n.body && <div style={{ fontSize: '.75rem', color: 'var(--kl-text-secondary)', marginTop: 1 }}>{n.body}</div>}
-                  <div style={{ fontSize: '.65rem', color: 'var(--kl-text-faint)', marginTop: 2 }}>{n.created}</div>
+
+        {notifs.length === 0 ? (
+          <div className="card">
+            <div className="card-body text-center py-5">
+              <i className="bi bi-chat-dots" style={{ fontSize: '2.5rem', color: '#30363d' }}></i>
+              <p className="text-secondary mt-2 mb-0">No notifications yet</p>
+            </div>
+          </div>
+        ) : (
+          <div className="card" style={{ overflow: 'hidden' }}>
+            {notifs.map(n => (
+              <a
+                key={n.id}
+                href={n.link || '#'}
+                className="d-flex align-items-start gap-3 px-3 py-3"
+                style={{
+                  borderBottom: '1px solid #21262d',
+                  textDecoration: 'none',
+                  color: n.is_read ? '#8b949e' : '#c9d1d9',
+                  background: n.is_read ? undefined : 'rgba(31,111,235,.05)',
+                }}
+              >
+                <i className={`bi ${iconForType(n.type)}`}
+                  style={{ fontSize: '1.1rem', color: '#58a6ff', marginTop: 2 }}></i>
+                <div className="flex-grow-1">
+                  <div style={{ fontSize: '.85rem', fontWeight: n.is_read ? 400 : 600 }}>{n.title}</div>
+                  {n.body && (
+                    <div style={{ fontSize: '.75rem', color: '#8b949e', marginTop: 2 }}>
+                      {n.body.substring(0, 120)}
+                    </div>
+                  )}
                 </div>
-              </div>
+                <span style={{ fontSize: '.7rem', color: '#484f58', whiteSpace: 'nowrap' }}>
+                  {n.created_at}
+                </span>
+              </a>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

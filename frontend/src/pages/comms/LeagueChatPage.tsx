@@ -1,90 +1,161 @@
 import { useParams } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
-import { api, post } from '../../lib/api'
-import { useAuth } from '../../contexts/AuthContext'
+import { io, type Socket } from 'socket.io-client'
+import { api } from '../../lib/api'
+import { Spinner } from '../../components/ui/Spinner'
 
-interface ChatMsg {
+interface ChatMessage {
   id: number
-  author: string
-  author_id: number
-  text: string
-  created: string
+  sender_user_id: number
+  sender_name: string
+  body: string
+  created_at: string | null
+}
+
+interface ChatData {
+  league: { id: number; name: string }
+  current_user_id: number
+  messages: ChatMessage[]
+}
+
+function fmtTime(ts: string | null): string {
+  if (!ts) return ''
+  try {
+    const d = new Date(ts.includes('Z') ? ts : ts + 'Z')
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  } catch {
+    return ''
+  }
 }
 
 export function LeagueChatPage() {
   const { leagueId } = useParams()
-  const { user } = useAuth()
-  const [messages, setMessages] = useState<ChatMsg[]>([])
-  const [text, setText] = useState('')
-  const [sending, setSending] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-
-  const fetchMessages = () => {
-    api<ChatMsg[]>(`/api/leagues/${leagueId}/chat`).then(setMessages).catch(() => {})
-  }
+  const [data, setData] = useState<ChatData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
-    fetchMessages()
-    const interval = setInterval(fetchMessages, 5000)
-    return () => clearInterval(interval)
+    api<ChatData>(`/leagues/${leagueId}/chat?format=json`)
+      .then(d => { setData(d); setMessages(d.messages) })
+      .finally(() => setLoading(false))
   }, [leagueId])
 
+  // Auto-scroll to bottom whenever messages change
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length])
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages])
 
-  const handleSend = async () => {
-    if (!text.trim() || sending) return
-    setSending(true)
+  // SocketIO live updates
+  useEffect(() => {
+    if (!data) return
+    const socket = io('/notifications', { transports: ['websocket', 'polling'] })
+    socketRef.current = socket
+    socket.emit('join_league_chat', { league_id: Number(leagueId) })
+    socket.on('chat_message', (msg: ChatMessage) => {
+      // Skip own messages (already added optimistically)
+      if (msg.sender_user_id === data.current_user_id) return
+      setMessages(prev => [...prev, msg])
+    })
+    return () => { socket.disconnect() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.current_user_id, leagueId])
+
+  if (loading) return <Spinner text="Loading chat..." />
+  if (!data) return <p className="text-danger">Failed to load chat</p>
+
+  const { current_user_id } = data
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault()
+    const body = input.trim()
+    if (!body) return
+    setInput('')
+
+    // Optimistic append
+    const optimistic: ChatMessage = {
+      id: Date.now(),
+      sender_user_id: current_user_id,
+      sender_name: 'You',
+      body,
+      created_at: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev, optimistic])
+
     try {
-      await post(`/api/leagues/${leagueId}/chat/send`, { text: text.trim() })
-      setText('')
-      fetchMessages()
-    } catch {}
-    setSending(false)
+      await fetch(`/leagues/${leagueId}/chat/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body }),
+        credentials: 'include',
+      })
+    } catch (err) {
+      console.error('Failed to send:', err)
+    }
   }
 
   return (
     <div>
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h4 className="fw-bold mb-0" style={{ color: 'var(--kl-text-heading)' }}>League Chat</h4>
+      <div className="page-header">
+        <div className="d-flex align-items-center justify-content-between">
+          <h2><i className="bi bi-chat-dots me-2" style={{ color: 'var(--kl-accent-blue)' }}></i>League Chat</h2>
+        </div>
       </div>
 
-      <div className="card">
-        <div className="card-body" style={{ height: 'calc(100vh - 300px)', overflowY: 'auto' }}>
+      <div className="card chat-wrapper" style={{ height: 'calc(100dvh - 260px)', display: 'flex', flexDirection: 'column' }}>
+        <div ref={scrollRef} className="card-body" style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
           {messages.length === 0 && (
-            <div className="text-center py-5" style={{ color: 'var(--kl-text-faint)' }}>
-              <i className="bi bi-chat-dots" style={{ fontSize: '2rem' }}></i>
-              <p className="mt-2 mb-0" style={{ fontSize: '.85rem' }}>No messages yet. Start the conversation!</p>
+            <div className="text-center text-secondary py-4" style={{ fontSize: '.85rem' }}>
+              <i className="bi bi-chat-dots" style={{ fontSize: '2rem', display: 'block', marginBottom: '.5rem', color: 'var(--kl-border-light)' }}></i>
+              No messages yet. Start the conversation!
             </div>
           )}
           {messages.map(m => {
-            const isMe = m.author_id === user?.id
+            const isMine = m.sender_user_id === current_user_id
             return (
-              <div key={m.id} className={`d-flex mb-2${isMe ? ' justify-content-end' : ''}`}>
-                <div style={{
-                  maxWidth: '75%', padding: '8px 12px', borderRadius: 12,
-                  background: isMe ? 'rgba(88,166,255,.1)' : 'var(--kl-bg-elevated)',
-                  border: isMe ? '1px solid rgba(88,166,255,.2)' : '1px solid var(--kl-border)',
-                }}>
-                  {!isMe && <div style={{ fontSize: '.7rem', fontWeight: 700, color: 'var(--kl-accent-blue)', marginBottom: 2 }}>{m.author}</div>}
-                  <div style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>{m.text}</div>
-                  <div style={{ fontSize: '.6rem', color: 'var(--kl-text-faint)', textAlign: 'right', marginTop: 2 }}>{m.created}</div>
+              <div key={m.id} className={`d-flex mb-2 ${isMine ? 'justify-content-end' : ''}`}>
+                <div
+                  style={{
+                    maxWidth: '70%',
+                    padding: '.5rem .75rem',
+                    borderRadius: 10,
+                    background: isMine ? 'rgba(88,166,255,.15)' : 'var(--kl-bg-elevated)',
+                  }}
+                >
+                  {!isMine && (
+                    <div style={{ fontSize: '.7rem', fontWeight: 600, color: 'var(--kl-accent-blue)', marginBottom: 2 }}>
+                      {m.sender_name}
+                    </div>
+                  )}
+                  <div style={{ fontSize: '.85rem' }}>{m.body}</div>
+                  <div style={{ fontSize: '.6rem', color: 'var(--kl-text-muted)', marginTop: 2 }}>
+                    {fmtTime(m.created_at)}
+                  </div>
                 </div>
               </div>
             )
           })}
-          <div ref={bottomRef} />
         </div>
-        <div className="card-footer d-flex gap-2">
-          <input className="form-control form-control-sm" value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder="Type a message..."
-            style={{ background: 'var(--kl-bg-body)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }} />
-          <button className="btn btn-primary btn-sm" onClick={handleSend} disabled={sending || !text.trim()}>
-            <i className="bi bi-send"></i>
-          </button>
+
+        <div className="card-footer" style={{ borderTop: '1px solid var(--kl-border)', padding: '.75rem' }}>
+          <form className="d-flex gap-2" onSubmit={send}>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Type a message..."
+              autoComplete="off"
+              maxLength={500}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+            />
+            <button type="submit" className="btn btn-primary btn-sm px-3">
+              <i className="bi bi-send"></i>
+            </button>
+          </form>
         </div>
       </div>
     </div>
