@@ -627,16 +627,7 @@ def gameday(league_id):
                 "home_team": _ser_team(f.home_team), "away_team": _ser_team(f.away_team),
             }
 
-        def _ser_afl_game(g):
-            return {
-                "game_id": g.get("game_id") if isinstance(g, dict) else g.id,
-                "home_team": g.get("home_team") if isinstance(g, dict) else g.home_team,
-                "away_team": g.get("away_team") if isinstance(g, dict) else g.away_team,
-                "status": g.get("status") if isinstance(g, dict) else g.status,
-                "home_score": g.get("home_score") if isinstance(g, dict) else g.home_score,
-                "away_score": g.get("away_score") if isinstance(g, dict) else g.away_score,
-                "scheduled_display": g.get("scheduled_display") if isinstance(g, dict) else None,
-            }
+        # afl_games is already a list of dicts from get_game_statuses()
 
         _rs_data = {}
         for f in round_fixtures:
@@ -664,14 +655,14 @@ def gameday(league_id):
             "opp_played": opp_played,
             "opp_eligible": opp_eligible,
             "projections": {
-                "my_projected": projections.my_projected,
-                "opp_projected": projections.opp_projected,
-                "my_win_pct": projections.my_win_pct,
-                "opp_win_pct": projections.opp_win_pct,
+                "my_projected": projections.get("my_projected", 0) if isinstance(projections, dict) else getattr(projections, "my_projected", 0),
+                "opp_projected": projections.get("opp_projected", 0) if isinstance(projections, dict) else getattr(projections, "opp_projected", 0),
+                "my_win_pct": projections.get("my_win_pct", 50) if isinstance(projections, dict) else getattr(projections, "my_win_pct", 50),
+                "opp_win_pct": projections.get("opp_win_pct", 50) if isinstance(projections, dict) else getattr(projections, "opp_win_pct", 50),
             } if projections else None,
             "round_fixtures": [_ser_fixture(f) for f in round_fixtures],
             "round_scores": {str(k): v if isinstance(v, dict) else {"total_score": v.total_score if hasattr(v, "total_score") else 0} for k, v in round_scores.items()},
-            "afl_games": [_ser_afl_game(g) for g in (afl_games or [])],
+            "afl_games": afl_games or [],
             "locked_player_ids": list(locked_ids),
             "teams_playing": list(teams_playing),
             "afl_matchup_info": afl_matchup_info,
