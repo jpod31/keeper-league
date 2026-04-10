@@ -7,6 +7,7 @@ import { FieldView, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
 import { useFieldActions } from '../../hooks/useFieldActions'
+import { SSPModal } from '../../components/squad/SSPModal'
 import { api } from '../../lib/api'
 
 interface Player {
@@ -52,6 +53,7 @@ export function SquadPage() {
   const { data, loading, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
   const fieldActions = useFieldActions(leagueId!, teamId!, refetch)
   const [mobileActionPlayer, setMobileActionPlayer] = useState<Player | null>(null)
+  const [sspLtilId, setSspLtilId] = useState<number | null>(null)
   const [statsMode, setStatsMode] = useState<'myclub' | 'season' | 'career'>('myclub')
   const [seasonStats, setSeasonStats] = useState<Record<string, Record<string, number>> | null>(null)
   const [sortCol, setSortCol] = useState<string>('sc_avg')
@@ -315,6 +317,7 @@ export function SquadPage() {
             startSwap: fieldActions.startSwap, handlePlayerClick: fieldActions.handlePlayerClick,
             toggleEmergency: fieldActions.toggleEmergency, toggle7s: fieldActions.toggle7s,
             set7sCaptain: fieldActions.set7sCaptain, addToLTIL: fieldActions.addToLTIL,
+            removeFromLTIL: fieldActions.removeFromLTIL, onOpenSSP: (ltilId: number) => setSspLtilId(ltilId),
             showPlayer: fieldActions.showPlayer, cancelAllModes: fieldActions.cancelAllModes,
             swapSource: fieldActions.swapSource, actionMode: fieldActions.actionMode,
           }} />
@@ -534,6 +537,9 @@ export function SquadPage() {
 
       {/* ── Player modal ── */}
       {fieldActions.playerModal && <PlayerModal player={fieldActions.playerModal} teamLogos={data.team_logos} onClose={fieldActions.closePlayerModal} />}
+
+      {/* ── SSP Modal ── */}
+      {sspLtilId && <SSPModal leagueId={leagueId!} teamId={teamId!} ltilId={sspLtilId} onClose={() => setSspLtilId(null)} onSuccess={() => { setSspLtilId(null); refetch() }} />}
 
       {/* ── Mobile action sheet ── */}
       {mobileActionPlayer && is_owner && fd && (

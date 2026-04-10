@@ -42,6 +42,8 @@ interface Actions {
   toggle7s: (pid: number, sevensIds: number[], playerAge: number, lockedPids: Set<number>) => void
   set7sCaptain: (pid: number) => void
   addToLTIL: (pid: number) => void
+  removeFromLTIL: (pid: number) => void
+  onOpenSSP: (ltilId: number) => void
   showPlayer: (pid: number) => void
   cancelAllModes: () => void
   swapSource: SwapSourceInfo | null
@@ -328,8 +330,17 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
                       <div className="fv-ltil-sidebar-name">{lt.player_name}</div>
                       <div className="fv-ltil-sidebar-meta">{lt.player_position || '-'} &bull; {lt.player_sc_avg ? Math.round(lt.player_sc_avg) : '-'}</div>
                     </div>
-                    {lt.replacement_name && (
+                    {lt.replacement_name ? (
                       <div className="fv-ltil-sidebar-ssp">SSP: {lt.replacement_name}</div>
+                    ) : isOwner && fd.ssp_window_active && actions ? (
+                      <button className="fv-ltil-ssp-btn-sm" onClick={() => actions.onOpenSSP(lt.id)}>
+                        <i className="bi bi-plus-circle"></i>
+                      </button>
+                    ) : null}
+                    {isOwner && fd.can_remove_ltil && actions && (
+                      <button className="fv-ltil-remove-btn-sm" onClick={() => actions.removeFromLTIL(lt.player_id)} title="Remove">
+                        <i className="bi bi-x-lg"></i>
+                      </button>
                     )}
                   </div>
                 ))}

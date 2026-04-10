@@ -681,6 +681,7 @@ def squad(league_id, team_id):
                 "ssp_window_active": fd.get("ssp_window_active", False),
                 "can_remove_ltil": fd.get("can_remove_ltil", False),
                 "ltil_full": [{
+                    "id": lt.id,
                     "player_id": lt.player_id,
                     "player_name": lt.player.name if lt.player else "?",
                     "player_position": lt.player.position if lt.player else "",

@@ -86,6 +86,12 @@ export function useFieldActions(
     if (!data.error) { toast('Added to LTIL', 'success'); onRefresh() }
   }, [fvApi, toast, onRefresh])
 
+  const removeFromLTIL = useCallback(async (pid: number) => {
+    if (!confirm('Remove this player from the LTIL? (Only available during off-season)')) return
+    const data = await fvApi('/remove-from-ltil', { player_id: pid })
+    if (!data.error) { toast('Player removed from LTIL', 'success'); onRefresh() }
+  }, [fvApi, toast, onRefresh])
+
   const cancelAllModes = useCallback(() => {
     setSwapSource(null)
     setActionMode(null)
@@ -256,7 +262,7 @@ export function useFieldActions(
   return {
     toastMsg, swapSource, actionMode, playerModal,
     setCaptain, setVC, startSwap, completeSwap, cancelAllModes,
-    toggleEmergency, toggle7s, set7sCaptain, addToLTIL,
+    toggleEmergency, toggle7s, set7sCaptain, addToLTIL, removeFromLTIL,
     completeEmgReplace, complete7sReplace, handlePlayerClick,
     showPlayer, closePlayerModal, toast,
   }
