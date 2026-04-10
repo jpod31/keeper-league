@@ -191,6 +191,8 @@ export function GamedayPage() {
   const [viewedFixtureId, setViewedFixtureId] = useState<number | null>(null)
   const [cachedFixtures, setCachedFixtures] = useState<Record<number, FixtureDetail>>({})
   const [refreshing, setRefreshing] = useState(false)
+  const [scoreFlash, setScoreFlash] = useState(false)
+  const prevScores = useRef<{ left: number; right: number }>({ left: 0, right: 0 })
 
   const fetchData = useCallback(() => {
     api<GamedayData>(`/leagues/${leagueId}/gameday?format=json`)
@@ -291,8 +293,50 @@ export function GamedayPage() {
     }
   }, [leagueId, fetchData])
 
+  // 5min poll when upcoming — check if games went live
+  useEffect(() => {
+    if (data?.gameday_state !== 'upcoming') return
+    const timer = setInterval(() => {
+      api<{ game_statuses?: { status: string }[] }>(`/leagues/${leagueId}/gameday/api/fixtures?round=${data.afl_round}`)
+        .then(d => {
+          if (d.game_statuses?.some(g => g.status === 'live')) window.location.reload()
+        }).catch(() => {})
+    }, 300000)
+    return () => clearInterval(timer)
+  }, [data?.gameday_state, data?.afl_round, leagueId])
+
   if (loading) return <Spinner text="Loading gameday..." />
   if (!data) return <p className="text-danger">Failed to load gameday</p>
+
+  // Helper: count players played/eligible from player array
+  function countPlayed(players: GDPlayer[]): { played: number; total: number } {
+    const eligible = players.filter(p => p.lineup_type === 'field')
+    const played = eligible.filter(p => p.game_started && (p.score > 0 || p.is_dnp)).length
+    return { played, total: eligible.length }
+  }
+
+  // Helper: get C/VC badge status from player array
+  function capVcStatus(players: GDPlayer[]): { hasCap: boolean; capPlayed: boolean; hasVc: boolean; vcPlayed: boolean } {
+    let hasCap = false, capPlayed = false, hasVc = false, vcPlayed = false
+    players.forEach(p => {
+      if (p.is_captain) { hasCap = true; capPlayed = p.game_started && (p.score > 0 || p.is_dnp) }
+      if (p.is_vice_captain) { hasVc = true; vcPlayed = p.game_started && (p.score > 0 || p.is_dnp) }
+    })
+    return { hasCap, capPlayed, hasVc, vcPlayed }
+  }
+
+  function CapBadges({ players }: { players: GDPlayer[] }) {
+    const s = capVcStatus(players)
+    const active = 'background:rgba(63,185,80,.2);color:#3fb950;'
+    const pending = 'background:rgba(139,148,158,.15);color:#6e7681;'
+    const base = 'padding:1px 3px;border-radius:3px;font-weight:700;font-size:.5rem;'
+    return (
+      <span className="hero-cap-badges">
+        {s.hasCap && <span className={`hero-role-badge${s.capPlayed ? ' role-active' : ''}`}>C</span>}
+        {s.hasVc && <span className={`hero-role-badge${s.vcPlayed ? ' role-active' : ''}`}>VC</span>}
+      </span>
+    )
+  }
 
   const d = data
   const gs = d.gameday_state
@@ -334,6 +378,15 @@ export function GamedayPage() {
   }
 
   const diff = Math.abs(Math.round(heroLeftScore - heroRightScore))
+
+  // Score flash: detect when scores change
+  if (heroLeftScore !== prevScores.current.left || heroRightScore !== prevScores.current.right) {
+    if (prevScores.current.left !== 0 || prevScores.current.right !== 0) {
+      // Not first render — trigger flash
+      setTimeout(() => { setScoreFlash(true); setTimeout(() => setScoreFlash(false), 1500) }, 0)
+    }
+    prevScores.current = { left: heroLeftScore, right: heroRightScore }
+  }
 
   function PlayerRow({ p }: { p: GDPlayer }) {
     const ytp = !p.game_started && gs === 'live'
@@ -493,7 +546,8 @@ export function GamedayPage() {
                 <div className="hero-team-detail">
                   <div className="hero-team-name">{heroLeftName}</div>
                   <div className="hero-team-meta">
-                    <span className="hero-players-count">{isViewingOwn ? `${d.my_played}/${d.my_eligible} played` : ''}</span>
+                    {(() => { const c = countPlayed(heroLeftPlayers); return c.total > 0 ? <span className="hero-players-count">{c.played}/{c.total} played</span> : null })()}
+                    <CapBadges players={heroLeftPlayers} />
                   </div>
                 </div>
               </div>
@@ -502,7 +556,8 @@ export function GamedayPage() {
                 <div className="hero-team-detail" style={{ textAlign: 'right' }}>
                   <div className="hero-team-name">{heroRightName}</div>
                   <div className="hero-team-meta" style={{ justifyContent: 'flex-end' }}>
-                    <span className="hero-players-count">{isViewingOwn ? `${d.opp_played}/${d.opp_eligible} played` : ''}</span>
+                    <CapBadges players={heroRightPlayers} />
+                    {(() => { const c = countPlayed(heroRightPlayers); return c.total > 0 ? <span className="hero-players-count">{c.played}/{c.total} played</span> : null })()}
                   </div>
                 </div>
                 {heroRightLogo ? <img src={heroRightLogo} alt="" className="hero-crest-img" />
@@ -512,12 +567,12 @@ export function GamedayPage() {
 
             <div className="hero-scores-area">
               <div className="hero-score-col">
-                <span className={`hero-big-score${heroLeftScore > heroRightScore ? ' score-winning' : ''}`}>{Math.round(heroLeftScore)}</span>
+                <span className={`hero-big-score${heroLeftScore > heroRightScore ? ' score-winning' : ''}${scoreFlash ? ' score-flash' : ''}`}>{Math.round(heroLeftScore)}</span>
                 {heroLeftCapBonus > 0 && <span className="captain-bonus">+{Math.round(heroLeftCapBonus)} C</span>}
               </div>
               <span className="hero-score-dash">&ndash;</span>
               <div className="hero-score-col">
-                <span className={`hero-big-score${heroRightScore > heroLeftScore ? ' score-winning' : ''}`}>{Math.round(heroRightScore)}</span>
+                <span className={`hero-big-score${heroRightScore > heroLeftScore ? ' score-winning' : ''}${scoreFlash ? ' score-flash' : ''}`}>{Math.round(heroRightScore)}</span>
                 {heroRightCapBonus > 0 && <span className="captain-bonus">+{Math.round(heroRightCapBonus)} C</span>}
               </div>
             </div>
@@ -669,6 +724,17 @@ export function GamedayPage() {
                 {f.status !== 'scheduled' && (
                   <div className="matchup-mini-bar">
                     <div className="matchup-mini-fill" style={{ width: `${(hs / total) * 100}%` }}></div>
+                  </div>
+                )}
+                {/* Player counts + C/VC badges from cached data */}
+                {cachedFixtures[f.id] && (
+                  <div className="d-flex justify-content-between align-items-center" style={{ marginTop: 6 }}>
+                    {(() => { const hc = countPlayed(cachedFixtures[f.id].home_players || []); return hc.total > 0 ? <span className="matchup-players-count" style={{ fontSize: '.6rem', color: 'var(--kl-text-faint)' }}>{hc.played}/{hc.total}</span> : <span></span> })()}
+                    <div className="d-flex gap-1">
+                      <CapBadges players={cachedFixtures[f.id].home_players || []} />
+                      <CapBadges players={cachedFixtures[f.id].away_players || []} />
+                    </div>
+                    {(() => { const ac = countPlayed(cachedFixtures[f.id].away_players || []); return ac.total > 0 ? <span className="matchup-players-count" style={{ fontSize: '.6rem', color: 'var(--kl-text-faint)' }}>{ac.played}/{ac.total}</span> : <span></span> })()}
                   </div>
                 )}
                 {f.status !== 'scheduled' && (hs !== as_) && (
