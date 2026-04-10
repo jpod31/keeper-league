@@ -20,6 +20,7 @@ from models.live_sync import (
 )
 from blueprints import check_league_access
 import config
+from config import TEAM_LOGOS
 
 logger = logging.getLogger(__name__)
 
@@ -541,6 +542,10 @@ def gameday(league_id):
     ).first()
 
     if not fixture:
+        if request.args.get("format") == "json":
+            return jsonify({"is_bye": True, "afl_round": afl_round, "round_dates": round_dates,
+                "gameday_state": gameday_state, "round_fixtures": [], "round_scores": {},
+                "afl_games": [], "teams_playing": list(teams_playing), "team_logos": TEAM_LOGOS, "team_abbr": config.TEAM_ABBR})
         return render_template(
             "matchups/gameday.html", is_bye=True, **shared,
         )
@@ -609,6 +614,70 @@ def gameday(league_id):
         )
     except Exception:
         logger.debug("Projection calc failed", exc_info=True)
+
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
+
+        def _ser_fixture(f):
+            return {
+                "id": f.id, "home_team_id": f.home_team_id, "away_team_id": f.away_team_id,
+                "home_score": f.home_score, "away_score": f.away_score, "status": f.status,
+                "home_team": _ser_team(f.home_team), "away_team": _ser_team(f.away_team),
+            }
+
+        def _ser_afl_game(g):
+            return {
+                "game_id": g.get("game_id") if isinstance(g, dict) else g.id,
+                "home_team": g.get("home_team") if isinstance(g, dict) else g.home_team,
+                "away_team": g.get("away_team") if isinstance(g, dict) else g.away_team,
+                "status": g.get("status") if isinstance(g, dict) else g.status,
+                "home_score": g.get("home_score") if isinstance(g, dict) else g.home_score,
+                "away_score": g.get("away_score") if isinstance(g, dict) else g.away_score,
+                "scheduled_display": g.get("scheduled_display") if isinstance(g, dict) else None,
+            }
+
+        _rs_data = {}
+        for f in round_fixtures:
+            for tid in (f.home_team_id, f.away_team_id):
+                rs = round_scores.get(tid, {})
+                _rs_data[tid] = rs if isinstance(rs, dict) else {"total_score": rs.total_score if hasattr(rs, "total_score") else 0}
+
+        return jsonify({
+            "is_bye": False,
+            "afl_round": afl_round,
+            "round_dates": round_dates,
+            "first_bounce": first_bounce,
+            "gameday_state": gameday_state,
+            "fixture": _ser_fixture(fixture),
+            "my_team": _ser_team(my_team),
+            "opp_team": _ser_team(opp_team),
+            "my_players": my_players,
+            "opp_players": opp_players,
+            "my_score": my_score,
+            "opp_score": opp_score,
+            "my_captain_bonus": my_captain_bonus,
+            "opp_captain_bonus": opp_captain_bonus,
+            "my_played": my_played,
+            "my_eligible": my_eligible,
+            "opp_played": opp_played,
+            "opp_eligible": opp_eligible,
+            "projections": {
+                "my_projected": projections.my_projected,
+                "opp_projected": projections.opp_projected,
+                "my_win_pct": projections.my_win_pct,
+                "opp_win_pct": projections.opp_win_pct,
+            } if projections else None,
+            "round_fixtures": [_ser_fixture(f) for f in round_fixtures],
+            "round_scores": {str(k): v if isinstance(v, dict) else {"total_score": v.total_score if hasattr(v, "total_score") else 0} for k, v in round_scores.items()},
+            "afl_games": [_ser_afl_game(g) for g in (afl_games or [])],
+            "locked_player_ids": list(locked_ids),
+            "teams_playing": list(teams_playing),
+            "afl_matchup_info": afl_matchup_info,
+            "team_logos": TEAM_LOGOS,
+            "team_abbr": config.TEAM_ABBR,
+        })
 
     return render_template(
         "matchups/gameday.html",
