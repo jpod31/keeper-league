@@ -14,6 +14,15 @@ interface GDPlayer {
 }
 interface AflGame { game_id: number; home_team: string; away_team: string; status: string; home_score: number | null; away_score: number | null; scheduled_display: string | null }
 interface Projections { my_projected: number; opp_projected: number; my_win_pct: number; opp_win_pct: number }
+interface RoundScoreEntry {
+  total_score?: number
+  players_played?: number
+  players_total?: number
+  has_captain?: boolean
+  captain_played?: boolean
+  has_vc?: boolean
+  vc_played?: boolean
+}
 interface GamedayData {
   is_bye: boolean; afl_round: number; round_dates: string | null; first_bounce: string | null
   gameday_state: string; live_enabled: boolean; is_home: boolean
@@ -22,7 +31,7 @@ interface GamedayData {
   my_score: number; opp_score: number; my_captain_bonus: number; opp_captain_bonus: number
   my_played: number; my_eligible: number; opp_played: number; opp_eligible: number
   projections: Projections | null
-  round_fixtures: GDFixture[]; round_scores: Record<string, { total_score?: number }>
+  round_fixtures: GDFixture[]; round_scores: Record<string, RoundScoreEntry>
   afl_games: AflGame[]; locked_player_ids: number[]
   teams_playing: string[]; afl_matchup_info: Record<string, string>
   team_logos: Record<string, string>; team_abbr: Record<string, string>
@@ -133,7 +142,7 @@ const GAMEDAY_CSS = `
 .player-yet-to-play .gameday-player-score { color: var(--kl-text-muted); }
 .score-ytp { color: var(--kl-text-muted) !important; }
 @keyframes ytpPulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
-.hero-live .player-yet-to-play .gameday-player-score { animation: ytpPulse 2s ease-in-out infinite; }
+.player-yet-to-play .gameday-player-score { animation: ytpPulse 2s ease-in-out infinite; }
 .gameday-section-hdr { padding: 6px 14px; font-size: .65rem; font-weight: 700; color: var(--kl-text-secondary); text-transform: uppercase; letter-spacing: .5px; background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-bg-elevated); border-left: 3px solid transparent; }
 .section-field { border-left-color: var(--kl-accent-green); background: rgba(63,185,80,.04); }
 .section-bench { border-left-color: var(--kl-accent-blue); }
@@ -323,7 +332,7 @@ export function GamedayPage() {
 
   // Helper: count players played/eligible from player array
   // Eligible = field players whose AFL team has a game this round
-  // Played = game_started and not DNP (matching original logic)
+  // Played = game_started and not DNP (matches backend my_played/opp_played calc)
   const teamsPlayingSet = new Set(data.teams_playing || [])
   function countPlayed(players: GDPlayer[]): { played: number; total: number } {
     const eligible = players.filter(p => p.lineup_type === 'field' && (teamsPlayingSet.size === 0 || teamsPlayingSet.has(p.afl_team)))
@@ -331,21 +340,24 @@ export function GamedayPage() {
     return { played, total: eligible.length }
   }
 
-  // Helper: get C/VC badge status from player array (matches original)
+  // Helper: derive C/VC badge status — matches backend get_live_scores played_set
+  // (a captain is "played" if they have a stat row this round, i.e. game_started || is_dnp)
   function capVcStatus(players: GDPlayer[]): { hasCap: boolean; capPlayed: boolean; hasVc: boolean; vcPlayed: boolean } {
     let hasCap = false, capPlayed = false, hasVc = false, vcPlayed = false
     players.forEach(p => {
-      if (p.is_captain) { hasCap = true; capPlayed = p.game_started && !p.is_dnp }
-      if (p.is_vice_captain) { hasVc = true; vcPlayed = p.game_started && !p.is_dnp }
+      const playedThisRound = p.game_started || p.is_dnp
+      if (p.is_captain) { hasCap = true; capPlayed = playedThisRound }
+      if (p.is_vice_captain) { hasVc = true; vcPlayed = playedThisRound }
     })
     return { hasCap, capPlayed, hasVc, vcPlayed }
   }
 
-  function CapBadges({ players }: { players: GDPlayer[] }) {
-    const s = capVcStatus(players)
-    const active = 'background:rgba(63,185,80,.2);color:#3fb950;'
-    const pending = 'background:rgba(139,148,158,.15);color:#6e7681;'
-    const base = 'padding:1px 3px;border-radius:3px;font-weight:700;font-size:.5rem;'
+  // CapBadges: prefer authoritative round_scores entry (from backend played_set) when supplied,
+  // otherwise fall back to scanning the player array (used when viewing other matchups via cached fixture data).
+  function CapBadges({ players, rs }: { players: GDPlayer[]; rs?: RoundScoreEntry }) {
+    const s = rs && rs.has_captain !== undefined
+      ? { hasCap: !!rs.has_captain, capPlayed: !!rs.captain_played, hasVc: !!rs.has_vc, vcPlayed: !!rs.vc_played }
+      : capVcStatus(players)
     return (
       <span className="hero-cap-badges">
         {s.hasCap && <span className={`hero-role-badge${s.capPlayed ? ' role-active' : ''}`}>C</span>}
@@ -364,6 +376,8 @@ export function GamedayPage() {
   let heroLeftCapBonus: number, heroRightCapBonus: number
   let heroLeftPlayers: GDPlayer[], heroRightPlayers: GDPlayer[]
   let heroLeftLogo: string | null, heroRightLogo: string | null
+  let heroLeftRs: RoundScoreEntry | undefined, heroRightRs: RoundScoreEntry | undefined
+  let heroLeftTeamId: number | undefined, heroRightTeamId: number | undefined
 
   if (isViewingOwn || !cachedFixtures[viewedFixtureId!]) {
     // Viewing own matchup (default)
@@ -377,6 +391,8 @@ export function GamedayPage() {
     heroRightPlayers = d.opp_players || []
     heroLeftLogo = d.my_team?.logo_url
     heroRightLogo = d.opp_team?.logo_url
+    heroLeftTeamId = d.my_team?.id
+    heroRightTeamId = d.opp_team?.id
   } else {
     // Viewing another matchup
     const fx = cachedFixtures[viewedFixtureId!]
@@ -391,7 +407,13 @@ export function GamedayPage() {
     heroRightPlayers = fx.away_players || []
     heroLeftLogo = meta?.home_team?.logo_url || null
     heroRightLogo = meta?.away_team?.logo_url || null
+    heroLeftTeamId = meta?.home_team_id
+    heroRightTeamId = meta?.away_team_id
   }
+
+  // Authoritative round_scores entries (matches Jinja's round_scores.get(team.id))
+  if (heroLeftTeamId != null) heroLeftRs = d.round_scores?.[String(heroLeftTeamId)]
+  if (heroRightTeamId != null) heroRightRs = d.round_scores?.[String(heroRightTeamId)]
 
   const diff = Math.abs(Math.round(heroLeftScore - heroRightScore))
 
@@ -455,11 +477,18 @@ export function GamedayPage() {
     // Has a game this round?
     const hasGame = (p: GDPlayer) => teamsPlayingSet.size === 0 || teamsPlayingSet.has(p.afl_team)
 
-    const field = players.filter(p => p.lineup_type === 'field' && !p.is_dnp && hasGame(p))
+    // Field section: field players (not DNP) PLUS subbed-on emergencies — both must have a game
+    const fieldStarters = players.filter(p => p.lineup_type === 'field' && !p.is_dnp && hasGame(p))
+    const subbedOnEmgs = players.filter(p => p.lineup_type === 'emergency' && p.subbed_on && hasGame(p))
+    const field = [...fieldStarters, ...subbedOnEmgs]
+    // Bench: lineup_type 'reserve' (backend uses 'reserve', original Jinja used 'bench' which was a Jinja bug)
     const bench = players.filter(p => p.lineup_type === 'reserve' && hasGame(p))
-    const emergencies = players.filter(p => p.is_emergency && hasGame(p))
-    const dnps = players.filter(p => p.is_dnp && p.lineup_type === 'field' && hasGame(p))
-    const noGame = players.filter(p => p.lineup_type === 'field' && !hasGame(p))
+    // Emergency standby: emergency players that are NOT subbed on
+    const emgStandby = players.filter(p => p.lineup_type === 'emergency' && !p.subbed_on && hasGame(p))
+    // DNPs
+    const dnps = players.filter(p => p.is_dnp && hasGame(p))
+    // No game this round (any lineup type whose AFL team has no game)
+    const noGame = players.filter(p => !hasGame(p))
 
     return (
       <div className={`gameday-player-card card-${side}-team`}>
@@ -474,17 +503,17 @@ export function GamedayPage() {
             <div className="gameday-section-hdr section-bench"><i className="bi bi-arrow-left-right me-1"></i>Bench</div>
             {bench.map((p, i) => <PlayerRow key={`b${i}`} p={p} />)}
           </>}
-          {emergencies.length > 0 && <>
+          {emgStandby.length > 0 && <>
             <div className="gameday-section-hdr section-emergency"><i className="bi bi-shield-exclamation me-1"></i>Emergency</div>
-            {emergencies.map((p, i) => <PlayerRow key={`e${i}`} p={p} />)}
+            {emgStandby.map((p, i) => <PlayerRow key={`e${i}`} p={p} />)}
           </>}
           {dnps.length > 0 && <>
             <div className="gameday-section-hdr section-dnp"><i className="bi bi-x-circle me-1"></i>Did Not Play</div>
             {dnps.map((p, i) => <PlayerRow key={`d${i}`} p={p} />)}
           </>}
           {noGame.length > 0 && <>
-            <div className="gameday-section-hdr" style={{ borderLeftColor: 'var(--kl-text-faint)', color: 'var(--kl-text-faint)' }}>
-              <i className="bi bi-dash-circle me-1"></i>No Game This Round
+            <div className="gameday-section-hdr" style={{ color: 'var(--kl-text-secondary)' }}>
+              <i className="bi bi-calendar-x me-1"></i>No Game This Round
             </div>
             {noGame.map((p, i) => <PlayerRow key={`ng${i}`} p={p} />)}
           </>}
@@ -572,8 +601,13 @@ export function GamedayPage() {
                 <div className="hero-team-detail">
                   <div className="hero-team-name">{heroLeftName}</div>
                   <div className="hero-team-meta">
-                    {(() => { const c = countPlayed(heroLeftPlayers); return c.total > 0 ? <span className="hero-players-count">{c.played}/{c.total} played</span> : null })()}
-                    <CapBadges players={heroLeftPlayers} />
+                    {(() => {
+                      const rs = heroLeftRs
+                      const total = rs?.players_total ?? countPlayed(heroLeftPlayers).total
+                      const played = rs?.players_played ?? countPlayed(heroLeftPlayers).played
+                      return total > 0 ? <span className="hero-players-count">{played}/{total} played</span> : null
+                    })()}
+                    <CapBadges players={heroLeftPlayers} rs={heroLeftRs} />
                   </div>
                 </div>
               </div>
@@ -582,8 +616,13 @@ export function GamedayPage() {
                 <div className="hero-team-detail" style={{ textAlign: 'right' }}>
                   <div className="hero-team-name">{heroRightName}</div>
                   <div className="hero-team-meta" style={{ justifyContent: 'flex-end' }}>
-                    <CapBadges players={heroRightPlayers} />
-                    {(() => { const c = countPlayed(heroRightPlayers); return c.total > 0 ? <span className="hero-players-count">{c.played}/{c.total} played</span> : null })()}
+                    <CapBadges players={heroRightPlayers} rs={heroRightRs} />
+                    {(() => {
+                      const rs = heroRightRs
+                      const total = rs?.players_total ?? countPlayed(heroRightPlayers).total
+                      const played = rs?.players_played ?? countPlayed(heroRightPlayers).played
+                      return total > 0 ? <span className="hero-players-count">{played}/{total} played</span> : null
+                    })()}
                   </div>
                 </div>
                 {heroRightLogo ? <img src={heroRightLogo} alt="" className="hero-crest-img" />
@@ -651,8 +690,13 @@ export function GamedayPage() {
             </div>
             <div className="gd-mob-section-hdr"><i className="bi bi-people-fill me-1"></i>Field</div>
             {(() => {
-              const lp = heroLeftPlayers.filter(p => p.lineup_type === 'field' && !p.is_dnp)
-              const rp = heroRightPlayers.filter(p => p.lineup_type === 'field' && !p.is_dnp)
+              // Field = field starters (not DNP) + subbed-on emergencies (matches Jinja lines 247-253)
+              const buildField = (players: GDPlayer[]) => [
+                ...players.filter(p => p.lineup_type === 'field' && !p.is_dnp),
+                ...players.filter(p => p.lineup_type === 'emergency' && p.subbed_on),
+              ]
+              const lp = buildField(heroLeftPlayers)
+              const rp = buildField(heroRightPlayers)
               const maxLen = Math.max(lp.length, rp.length)
               return Array.from({ length: maxLen }).map((_, i) => {
                 const mp = lp[i]
@@ -664,7 +708,7 @@ export function GamedayPage() {
                         <span className="gd-mob-vs-name">
                           {mp.is_captain && <b className="gd-mob-c">C</b>}
                           {mp.is_vice_captain && <b className="gd-mob-vc">VC</b>}
-                          {mp.subbed_on && <b style={{ color: '#60a5fa', fontSize: '.6rem', marginRight: 2 }}>EMG</b>}
+                          {mp.subbed_on && <span className="gameday-badge-emg-active" style={{ fontSize: '.5rem', padding: '0 3px' }}>EMG</span>}
                           {mp.name}
                         </span>
                         <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || 'MID').split('/')[0]}`}>{(mp.position || 'MID').split('/')[0]}</span>
@@ -686,7 +730,7 @@ export function GamedayPage() {
                         <span className="gd-mob-vs-name">
                           {op.is_captain && <b className="gd-mob-c">C</b>}
                           {op.is_vice_captain && <b className="gd-mob-vc">VC</b>}
-                          {op.subbed_on && <b style={{ color: '#60a5fa', fontSize: '.6rem', marginRight: 2 }}>EMG</b>}
+                          {op.subbed_on && <span className="gameday-badge-emg-active" style={{ fontSize: '.5rem', padding: '0 3px' }}>EMG</span>}
                           {op.name}
                         </span>
                       </>}
