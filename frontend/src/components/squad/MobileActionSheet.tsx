@@ -23,13 +23,14 @@ interface Props {
   onSet7sCaptain: () => void
   onAddLTIL: () => void
   onViewPlayer: () => void
+  ltilSlotsAvailable?: boolean
 }
 
 export function MobileActionSheet({
   player: p, teamLogos, isCaptain, isVC, isEmergency, is7s, is7sCaptain,
   isReserve, has7sFixture, sevens_captain_enabled,
   onClose, onSetCaptain, onSetVC, onSwap, onToggleEmg, onToggle7s,
-  onSet7sCaptain, onAddLTIL, onViewPlayer,
+  onSet7sCaptain, onAddLTIL, onViewPlayer, ltilSlotsAvailable,
 }: Props) {
   const logoUrl = p.afl_team ? teamLogos[p.afl_team] : null
 
@@ -105,7 +106,7 @@ export function MobileActionSheet({
           )}
 
           {/* LTIL */}
-          {(isReserve) && (
+          {isReserve && ltilSlotsAvailable && (
             <button className="fv-action-sheet-btn fv-as-ltil"
               onClick={() => { onAddLTIL(); onClose() }}>
               <i className="bi bi-bandaid"></i>

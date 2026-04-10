@@ -27,6 +27,7 @@ interface FieldData {
   sevens_players: Player[]; sevens_ids: number[]; sevens_captain_id: number | null
   sevens_captain_enabled: boolean; has_7s_fixture: boolean
   injury_list: Player[]; ltil_entries: { player_id: number; player_name: string }[]
+  pending_ltil_count: number; ssp_slots: number; ssp_enabled: boolean
   locked_teams: string[]; teams_playing: string[]
   selected_player_ids: number[]; next_lockout_time: string | null
   slot_counts: Record<string, number>; zone_layouts: Record<string, number[]>
@@ -469,6 +470,7 @@ export function SquadPage() {
           onToggle7s={() => fieldActions.toggle7s(mobileActionPlayer.id, fd!.sevens_ids, mobileActionPlayer.age, new Set())}
           onSet7sCaptain={() => fieldActions.set7sCaptain(mobileActionPlayer.id)}
           onAddLTIL={() => fieldActions.addToLTIL(mobileActionPlayer.id)}
+          ltilSlotsAvailable={fd!.ssp_enabled && (fd!.ltil_entries.length + fd!.pending_ltil_count) < fd!.ssp_slots}
           onViewPlayer={() => fieldActions.showPlayer(mobileActionPlayer.id)}
         />
       )}
