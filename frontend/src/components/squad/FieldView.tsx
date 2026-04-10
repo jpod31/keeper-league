@@ -22,7 +22,7 @@ export interface FieldData {
   sevens_captain_enabled: boolean; has_7s_fixture: boolean
   injury_list: Player[]
   ltil_entries: { player_id: number; player_name: string }[]
-  ltil_full: { player_id: number; player_name: string; player_position: string; player_sc_avg: number; replacement_name: string | null }[]
+  ltil_full: { id: number; player_id: number; player_name: string; player_position: string; player_sc_avg: number; replacement_name: string | null }[]
   pending_ltil: { player_id: number; player_name: string }[]
   pending_ltil_count: number; ssp_slots: number; ssp_enabled: boolean
   ssp_window_active: boolean; can_remove_ltil: boolean
@@ -57,12 +57,27 @@ interface Props {
   actions?: Actions
 }
 
-export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
-  const lockedSet = new Set(fd.locked_teams)
-  const selectedSet = new Set(fd.selected_player_ids)
-  const emgSet = new Set(fd.emergency_ids)
-  const sevensSet = new Set(fd.sevens_ids)
-  const playingSet = new Set(fd.teams_playing)
+export function FieldView({ fd: rawFd, teamLogos, isOwner, actions }: Props) {
+  // Defensive defaults for fields that may not exist in older API responses
+  const fd = {
+    ...rawFd,
+    ltil_full: rawFd.ltil_full || [],
+    pending_ltil: rawFd.pending_ltil || [],
+    pending_ltil_count: rawFd.pending_ltil_count || 0,
+    player_form: rawFd.player_form || {},
+    reserves_by_pos: rawFd.reserves_by_pos || {},
+    cap_locked: rawFd.cap_locked || false,
+    vc_locked: rawFd.vc_locked || false,
+    ssp_window_active: rawFd.ssp_window_active || false,
+    can_remove_ltil: rawFd.can_remove_ltil || false,
+    ssp_enabled: rawFd.ssp_enabled ?? false,
+    ssp_slots: rawFd.ssp_slots || 1,
+  }
+  const lockedSet = new Set(fd.locked_teams || [])
+  const selectedSet = new Set(fd.selected_player_ids || [])
+  const emgSet = new Set(fd.emergency_ids || [])
+  const sevensSet = new Set(fd.sevens_ids || [])
+  const playingSet = new Set(fd.teams_playing || [])
   const inMode = !!(actions?.swapSource)
 
   // Auto-refresh every 5 minutes during lockout
