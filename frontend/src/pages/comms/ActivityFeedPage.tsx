@@ -1,6 +1,7 @@
 import { useParams } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { CommsSubnav } from '../../components/nav/CommsSubnav'
 
 interface Entry {
   id: number
@@ -47,6 +48,7 @@ export function ActivityFeedPage() {
 
   return (
     <div>
+      <CommsSubnav active="activity" leagueId={leagueId!} />
       <div className="page-header">
         <div className="d-flex align-items-center justify-content-between">
           <h2>

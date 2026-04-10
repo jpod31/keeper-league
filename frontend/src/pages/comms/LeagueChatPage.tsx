@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
+import { CommsSubnav } from '../../components/nav/CommsSubnav'
 
 interface ChatMessage {
   id: number
@@ -100,6 +101,7 @@ export function LeagueChatPage() {
 
   return (
     <div>
+      <CommsSubnav active="chat" leagueId={leagueId!} />
       <div className="page-header">
         <div className="d-flex align-items-center justify-content-between">
           <h2><i className="bi bi-chat-dots me-2" style={{ color: 'var(--kl-accent-blue)' }}></i>League Chat</h2>

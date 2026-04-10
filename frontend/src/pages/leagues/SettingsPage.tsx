@@ -298,14 +298,14 @@ export function SettingsPage() {
               </h5>
             </div>
             <div className="card-body">
-              <div className="row g-3">
-                <div className="col-md-6">
+              <div className="row g-3 align-items-end">
+                <div className="col-md-4">
                   <label className="form-label">Regular Season Rounds</label>
                   <input type="number" className="form-control form-control-sm" min={1} max={24}
                     value={form.num_fixture_rounds}
                     onChange={e => setForm({ ...form, num_fixture_rounds: Number(e.target.value) })} />
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <label className="form-label">Finals Format</label>
                   <select className="form-select form-select-sm"
                     value={form.finals_teams}
@@ -316,6 +316,31 @@ export function SettingsPage() {
                     <option value={8}>Top 8 (4 wks)</option>
                   </select>
                 </div>
+                {is_commissioner && (
+                  <div className="col-md-4">
+                    <button
+                      type="button"
+                      className="btn btn-outline-warning btn-sm w-100"
+                      onClick={async () => {
+                        if (!confirm('Regenerate fixtures? This replaces the existing season schedule.')) return
+                        try {
+                          const res = await fetch(`/leagues/${leagueId}/regenerate-fixtures`, {
+                            method: 'POST', credentials: 'include', redirect: 'manual',
+                          })
+                          if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
+                          setMsg({ kind: 'success', text: 'Fixtures regenerated.' })
+                        } catch (e) {
+                          setMsg({ kind: 'error', text: (e as Error).message })
+                        }
+                      }}
+                    >
+                      <i className="bi bi-arrow-repeat me-1"></i>Generate Fixtures
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="form-text mt-2" style={{ color: '#484f58', fontSize: '.7rem' }}>
+                AFL season has 24 rounds. Regular season + finals weeks must not exceed this.
               </div>
             </div>
           </div>

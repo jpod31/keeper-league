@@ -147,7 +147,11 @@ export function TradeDetailPage() {
         <tbody>
           {players.map(a => (
             <tr key={`p-${a.player_id}`}>
-              <td>{a.name}</td>
+              <td>
+                <a href={`/player/${encodeURIComponent(a.name)}`} className="text-decoration-none">
+                  {a.name}
+                </a>
+              </td>
               <td><span className={`pos-badge pos-${posCode(a.position)}`}>{a.position}</span></td>
               <td className="text-end text-secondary">
                 {a.sc_avg ? Math.round(a.sc_avg) : '-'}

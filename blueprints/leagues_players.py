@@ -303,6 +303,7 @@ def player_pool(league_id):
             pr = rolling.get(p.name, {}) if isinstance(rolling, dict) else {}
             owner = rostered_map.get(p.id)
             tag = profile_tags.get(p.id, {}) if isinstance(profile_tags, dict) else {}
+            acq = acquired_map.get(p.id, {}) if isinstance(acquired_map, dict) else {}
             return {
                 "id": p.id,
                 "name": p.name,
@@ -324,12 +325,21 @@ def player_pool(league_id):
                 "profile_tier": tag.get("tier", 13) if isinstance(tag, dict) else 13,
                 "is_selected": p.id in selected_set,
                 "is_bye": bool(teams_playing and p.afl_team and p.afl_team not in teams_playing),
+                "acquired": {
+                    "coach": acq.get("coach"),
+                    "method": acq.get("method"),
+                    "pick_number": acq.get("pick_number"),
+                    "draft_year": acq.get("draft_year"),
+                    "draft_type": acq.get("draft_type"),
+                } if acq else None,
             }
 
+        from config import TEAM_LOGOS
         return jsonify({
             "league": {"id": league.id, "name": league.name, "squad_size": league.squad_size},
             "players": [_ser_player(p) for p in players],
             "team_colours": team_colours,
+            "team_logos": TEAM_LOGOS,
             "user_team_id": user_team.id if user_team else None,
             "roster_count": roster_count,
             "effective_roster_count": roster_count - ltil_count,

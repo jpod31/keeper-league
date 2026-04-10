@@ -3,6 +3,14 @@ import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 
+interface Acquired {
+  coach: string | null
+  method: string | null
+  pick_number: number | null
+  draft_year: number | null
+  draft_type: string | null
+}
+
 interface PoolPlayer {
   id: number
   name: string
@@ -24,6 +32,7 @@ interface PoolPlayer {
   profile_tier: number
   is_selected: boolean
   is_bye: boolean
+  acquired: Acquired | null
 }
 
 interface TeamColour { fg: string; bg: string }
@@ -32,6 +41,7 @@ interface PoolData {
   league: { id: number; name: string; squad_size: number }
   players: PoolPlayer[]
   team_colours: Record<string, TeamColour>
+  team_logos: Record<string, string>
   user_team_id: number | null
   roster_count: number
   effective_roster_count: number
@@ -82,6 +92,12 @@ const POOL_CSS = `
 .pm-owner { font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
 .pm-fa { font-size: .58rem; font-weight: 600; color: #3fb950; }
 .pm-add { background: rgba(63,185,80,.12); border: none; color: #3fb950; border-radius: 4px; font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px; }
+.pm-l3 { color: #c9d1d9; }
+.pm-l3 b { font-weight: 700; }
+.pm-l3-delta { font-size: .58rem; font-weight: 700; margin-left: 2px; }
+.pm-l3-delta-up { color: #3fb950; }
+.pm-l3-delta-down { color: #f85149; }
+.pm-l3-delta-flat { color: #484f58; }
 `
 
 type SortKey = 'name' | 'pos' | 'age' | 'sc_avg' | 'trend' | 'rating' | 'rtg_move' | 'potential' | 'tag'
@@ -100,6 +116,8 @@ function sortValue(p: PoolPlayer, key: SortKey): number | string {
   }
 }
 
+type MobileSortKey = 'sc' | 'name_asc' | 'age' | 'rtg' | 'gp'
+
 export function PlayerPoolPage() {
   const { leagueId } = useParams()
   const { data, loading, refetch } = useFetch<PoolData>(`/leagues/${leagueId}/player-pool?format=json`)
@@ -111,6 +129,7 @@ export function PlayerPoolPage() {
   const [ownerFilter, setOwnerFilter] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('sc_avg')
   const [sortDir, setSortDir] = useState<1 | -1>(-1)
+  const [mobSort, setMobSort] = useState<MobileSortKey>('sc')
   const [pickingUp, setPickingUp] = useState<number | null>(null)
 
   const filtered = useMemo(() => {
@@ -149,6 +168,21 @@ export function PlayerPoolPage() {
     })
     return out
   }, [filtered, sortKey, sortDir])
+
+  const mobileSorted = useMemo(() => {
+    const out = [...filtered]
+    out.sort((a, b) => {
+      switch (mobSort) {
+        case 'sc': return (b.sc_avg || 0) - (a.sc_avg || 0)
+        case 'name_asc': return a.name.localeCompare(b.name)
+        case 'age': return (a.age || 99) - (b.age || 99)
+        case 'rtg': return (b.rating || 0) - (a.rating || 0)
+        case 'gp': return (b.games_played || 0) - (a.games_played || 0)
+        default: return 0
+      }
+    })
+    return out
+  }, [filtered, mobSort])
 
   const teamOptions = useMemo(() => {
     if (!data) return []
@@ -310,6 +344,7 @@ export function PlayerPoolPage() {
                 <th className={sortKey === 'tag' ? 'sort-active' : ''} style={{ width: 120 }} onClick={() => toggleSort('tag')}>
                   Profile <i className={`bi ${sortIcon('tag')} sort-icon`}></i>
                 </th>
+                <th style={{ width: 130 }}>Acquired</th>
                 <th className="text-center" style={{ width: 110 }}>Status</th>
               </tr>
             </thead>
@@ -331,6 +366,14 @@ export function PlayerPoolPage() {
                     </td>
                     <td>
                       <a href={`/player/${encodeURIComponent(p.name)}`} className="player-link">
+                        {p.afl_team && data.team_logos[p.afl_team] && (
+                          <img
+                            src={data.team_logos[p.afl_team]}
+                            alt=""
+                            className="team-icon"
+                            style={{ width: 16, height: 16, marginRight: 4, verticalAlign: 'middle' }}
+                          />
+                        )}
                         <span className="p-name">{p.name}</span>
                         <span style={{ color: '#c9d1d9', fontSize: '.72rem', marginLeft: 'auto' }}>{p.afl_team}</span>
                       </a>
@@ -374,6 +417,22 @@ export function PlayerPoolPage() {
                         <span className={`profile-tag tag-${p.profile_css}`}>{p.profile_tag}</span>
                       )}
                     </td>
+                    <td style={{ fontSize: '.7rem', color: '#8b949e' }}>
+                      {p.acquired ? (
+                        <>
+                          {p.acquired.coach && <div style={{ color: '#c9d1d9' }}>{p.acquired.coach}</div>}
+                          <div style={{ fontSize: '.65rem' }}>
+                            {p.acquired.method === 'draft' && p.acquired.pick_number
+                              ? `Pick #${p.acquired.pick_number}${p.acquired.draft_year ? ` (${p.acquired.draft_year})` : ''}`
+                              : p.acquired.method === 'supplemental' && p.acquired.pick_number
+                              ? `Supp #${p.acquired.pick_number}${p.acquired.draft_year ? ` (${p.acquired.draft_year})` : ''}`
+                              : p.acquired.method === 'trade' ? 'Trade'
+                              : p.acquired.method === 'ssp' ? 'SSP'
+                              : p.acquired.method || '-'}
+                          </div>
+                        </>
+                      ) : <span style={{ color: '#484f58' }}>-</span>}
+                    </td>
                     <td className="text-center">
                       {p.owner_team ? (
                         <span
@@ -403,9 +462,28 @@ export function PlayerPoolPage() {
 
         {/* Mobile card list */}
         <div className="card-body p-0 d-lg-none" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-          {sorted.map(p => {
+          {/* Mobile sort bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderBottom: '1px solid #21262d', background: '#161b22' }}>
+            <span style={{ fontSize: '.7rem', color: '#8b949e', whiteSpace: 'nowrap' }}>Sort:</span>
+            <select
+              className="form-select form-select-sm"
+              value={mobSort}
+              onChange={e => setMobSort(e.target.value as MobileSortKey)}
+              style={{ background: '#0d1117', borderColor: '#30363d', fontSize: '.75rem', padding: '3px 8px', height: 'auto', width: 'auto', flex: 1 }}
+            >
+              <option value="sc">SC Avg</option>
+              <option value="name_asc">Name A–Z</option>
+              <option value="age">Age</option>
+              <option value="rtg">Rating</option>
+              <option value="gp">Games Played</option>
+            </select>
+          </div>
+          {mobileSorted.map(p => {
             const positions = (p.position || 'MID').split('/')
             const tc = p.owner_team ? team_colours[p.owner_team] : null
+            const l3Base = p.sc_avg || p.l3 || 0
+            const l3Diff = (p.l3 || 0) - l3Base
+            const l3Pct = l3Base ? (l3Diff / l3Base) * 100 : 0
             return (
               <div key={p.id} className={`pm-card${p.owner_team ? ' pm-taken' : ''}`}
                 onClick={() => { window.location.href = `/player/${encodeURIComponent(p.name)}` }}>
@@ -413,6 +491,9 @@ export function PlayerPoolPage() {
                   : p.is_selected ? <span className="status-dot status-dot-taken"></span>
                   : p.injury_severity ? <span className="status-dot status-dot-injured"></span>
                   : <span className="status-dot status-dot-available"></span>}
+                {p.afl_team && data.team_logos[p.afl_team] && (
+                  <img src={data.team_logos[p.afl_team]} alt="" className="pm-logo" />
+                )}
                 <div className="pm-body">
                   <div className="pm-row1">
                     <span className="pm-name">{p.name}</span>
@@ -429,6 +510,16 @@ export function PlayerPoolPage() {
                     <span>{p.age || 0}y</span>
                     <span className="pm-sep"></span>
                     <span>{p.games_played}gp</span>
+                    {p.l3 && (
+                      <>
+                        <span className="pm-sep"></span>
+                        <span className="pm-l3">L3 <b>{Math.round(p.l3)}</b>
+                          {l3Pct > 2 ? <span className="pm-l3-delta pm-l3-delta-up">+{Math.round(l3Pct)}%</span>
+                            : l3Pct < -2 ? <span className="pm-l3-delta pm-l3-delta-down">{Math.round(l3Pct)}%</span>
+                            : <span className="pm-l3-delta pm-l3-delta-flat">-</span>}
+                        </span>
+                      </>
+                    )}
                     {p.owner_team && (
                       <>
                         <span className="pm-sep"></span>

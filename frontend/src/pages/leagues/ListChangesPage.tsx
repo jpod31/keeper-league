@@ -54,7 +54,16 @@ const LC_CSS = `
 .lc-empty i { font-size:2rem; display:block; margin-bottom:10px; }
 `
 
-const FILTERS = ['all', 'draft', 'supplemental', 'trade', 'delist', 'ssp', 'commissioner']
+// (filter key, display label) — labels match the Jinja buttons exactly
+const FILTERS: [string, string][] = [
+  ['all', 'All'],
+  ['draft', 'Draft'],
+  ['supplemental', 'Supplemental'],
+  ['trade', 'Trades'],
+  ['delist', 'Delists'],
+  ['ssp', 'SSP'],
+  ['commissioner', 'Commissioner'],
+]
 
 export function ListChangesPage() {
   const { leagueId } = useParams()
@@ -101,13 +110,13 @@ export function ListChangesPage() {
           {data.list_changes.length > 0 ? (
             <>
               <div className="lc-filter-bar">
-                {FILTERS.map(f => (
+                {FILTERS.map(([key, label]) => (
                   <button
-                    key={f}
-                    className={`lc-filter-btn${filter === f ? ' active' : ''}`}
-                    onClick={() => setFilter(f)}
+                    key={key}
+                    className={`lc-filter-btn${filter === key ? ' active' : ''}`}
+                    onClick={() => setFilter(key)}
                   >
-                    {f[0].toUpperCase() + f.slice(1)}
+                    {label}
                   </button>
                 ))}
               </div>

@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams } from 'react-router'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
@@ -84,8 +84,25 @@ export function Reserve7sFixturePage() {
   const [searchParams] = useSearchParams()
   const urlRound = searchParams.get('round')
   const url = `/leagues/${leagueId}/reserve7s/fixture?format=json${urlRound ? `&round=${urlRound}` : ''}`
-  const { data, loading } = useFetch<FixtureData>(url)
+  const { data, loading, refetch } = useFetch<FixtureData>(url)
   const stripRef = useRef<HTMLDivElement>(null)
+  const [generating, setGenerating] = useState(false)
+
+  async function generateFixture() {
+    setGenerating(true)
+    try {
+      await fetch(`/leagues/${leagueId}/reserve7s/generate-fixture`, {
+        method: 'POST',
+        credentials: 'include',
+        redirect: 'manual',
+      })
+      refetch()
+    } catch (e) {
+      alert((e as Error).message)
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   useEffect(() => {
     if (stripRef.current) {
@@ -100,7 +117,7 @@ export function Reserve7sFixturePage() {
   if (loading) return <Spinner text="Loading 7s fixture..." />
   if (!data) return <p className="text-danger">Failed to load 7s fixture</p>
 
-  const { round_meta, selected_round, current_fixtures, scoring } = data
+  const { round_meta, selected_round, current_fixtures, scoring, is_commissioner } = data
   const sortedRounds = Object.keys(round_meta).map(Number).sort((a, b) => a - b)
   const rs = round_meta[String(selected_round)] || 'scheduled'
   const hasFixtures = sortedRounds.length > 0
@@ -184,6 +201,25 @@ export function Reserve7sFixturePage() {
           <i className="bi bi-calendar-week"></i>
           <h4>No Reserve 7s fixture yet</h4>
           <p style={{ fontSize: '.8rem' }}>The 7s fixture auto-generates when the main season fixture is created.</p>
+          {is_commissioner && (
+            <>
+              <p style={{ fontSize: '.75rem', color: '#484f58', marginTop: 8 }}>Or generate manually:</p>
+              <button
+                type="button"
+                className="s7f-generate-btn"
+                onClick={generateFixture}
+                disabled={generating}
+                style={{
+                  display: 'inline-block', marginTop: 12, padding: '8px 20px', borderRadius: 8,
+                  fontSize: '.8rem', fontWeight: 600, color: '#bc8cff',
+                  background: 'rgba(188,140,255,.08)', border: '1px solid rgba(188,140,255,.2)',
+                  cursor: 'pointer',
+                }}
+              >
+                <i className="bi bi-plus-circle me-1"></i>{generating ? 'Generating...' : 'Generate 7s Fixture'}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

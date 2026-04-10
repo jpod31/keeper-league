@@ -126,7 +126,25 @@ export function TeamStatsPage() {
                 <i className="bi bi-star me-2" style={{ color: '#d29922' }}></i>Top 10 by SC Avg
               </h5>
             </div>
-            <div className="card-body p-0">
+            {/* Mobile compact list */}
+            <div className="d-lg-none squad-cards-mobile">
+              {top10.map((p, i) => {
+                const primary = posCode(p.position)
+                const rankColor = i < 3 ? '#FFD700' : '#484f58'
+                return (
+                  <a key={p.id} href={`/player/${encodeURIComponent(p.name)}`} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <span style={{ fontWeight: 800, fontSize: '.8rem', color: rankColor, minWidth: 20 }}>{i + 1}</span>
+                    <div className="squad-mob-info">
+                      <div className="squad-mob-name">{p.name}</div>
+                      <div className="squad-mob-meta"><span className={`pos-badge pos-${primary}`} style={{ fontSize: '.55rem' }}>{primary}</span></div>
+                    </div>
+                    <div className="squad-mob-sc" style={{ color: '#3fb950' }}>{p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</div>
+                  </a>
+                )
+              })}
+            </div>
+            {/* Desktop table */}
+            <div className="card-body p-0 d-none d-lg-block">
               <table className="table table-sm mb-0">
                 <thead>
                   <tr>
@@ -156,14 +174,40 @@ export function TeamStatsPage() {
         </div>
       </div>
 
-      {/* All players table */}
+      {/* All players */}
       <div className="card">
         <div className="card-header">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
             <i className="bi bi-list-ul me-2" style={{ color: '#8b949e' }}></i>All Players
           </h5>
         </div>
-        <div className="card-body p-0">
+        {/* Mobile cards */}
+        <div className="d-lg-none squad-cards-mobile">
+          {players.map(p => {
+            const primary = posCode(p.position)
+            const scColor = p.sc_avg && p.sc_avg >= 80 ? '#3fb950'
+              : p.sc_avg && p.sc_avg >= 60 ? '#58a6ff'
+              : '#8b949e'
+            return (
+              <a key={p.id} href={`/player/${encodeURIComponent(p.name)}`} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <span className={`pos-badge pos-${primary}`} style={{ minWidth: 32, textAlign: 'center', fontSize: '.65rem' }}>{primary}</span>
+                <div className="squad-mob-info">
+                  <div className="squad-mob-name">{p.name}</div>
+                  <div className="squad-mob-meta">
+                    <span>{p.afl_team}</span>
+                    <span>Age {p.age || '?'}</span>
+                    {p.career_games > 0 && <span>{p.career_games} gms</span>}
+                  </div>
+                </div>
+                <div className="squad-mob-sc" style={{ color: scColor }}>
+                  {p.sc_avg ? Math.round(p.sc_avg) : '-'}
+                </div>
+              </a>
+            )
+          })}
+        </div>
+        {/* Desktop table */}
+        <div className="card-body p-0 d-none d-lg-block">
           <table className="table table-hover table-sm mb-0">
             <thead>
               <tr>

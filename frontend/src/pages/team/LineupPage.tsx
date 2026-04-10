@@ -121,13 +121,21 @@ export function LineupPage() {
       const form = new FormData()
       form.set('action', action)
       if (action === 'save') {
+        // Field slots: each gets a (player_id, position_code) pair in the flat arrays
         slots.forEach(s => {
-          form.append('player_id', String(s.player_id || ''))
-          form.append('position_code', s.position_code)
+          if (s.player_id != null) {
+            form.append('player_id', String(s.player_id))
+            form.append('position_code', s.position_code)
+          }
+        })
+        // Bench players: additional slot entries with position_code=BENCH so they
+        // round-trip through set_lineup which stores LineupSlot rows per player
+        benchIds.forEach(id => {
+          form.append('player_id', String(id))
+          form.append('position_code', 'BENCH')
         })
         if (captainId) form.set('captain_id', String(captainId))
         if (vcId) form.set('vc_id', String(vcId))
-        benchIds.forEach(id => form.append('bench_id', String(id)))
       }
       const res = await fetch(`/leagues/${leagueId}/team/${teamId}/lineup/${afl_round}`, {
         method: 'POST',

@@ -21,7 +21,7 @@ interface FinalsData {
   finals: Final[]
 }
 
-function FinalCard({ f, highlight }: { f: Final; highlight?: boolean }) {
+function FinalCard({ f, highlight, hideStatusPill, label }: { f: Final; highlight?: boolean; hideStatusPill?: boolean; label?: string }) {
   const homeWon = f.status === 'completed' && (f.home_score || 0) > (f.away_score || 0)
   const awayWon = f.status === 'completed' && (f.away_score || 0) > (f.home_score || 0)
   return (
@@ -34,8 +34,8 @@ function FinalCard({ f, highlight }: { f: Final; highlight?: boolean }) {
           className="d-flex justify-content-between align-items-center"
           style={{ fontSize: '.7rem', color: highlight ? '#FFD700' : '#484f58', marginBottom: '.5rem' }}
         >
-          <span>{f.final_type === 'GF' ? 'Grand Final' : f.final_type}</span>
-          {f.status === 'completed' && (
+          <span>{label || (f.final_type === 'GF' ? 'Grand Final' : f.final_type)}</span>
+          {!hideStatusPill && f.status === 'completed' && (
             <span className="status-pill status-completed" style={{ fontSize: '.6rem' }}>Final</span>
           )}
         </div>
@@ -114,7 +114,7 @@ export function FinalsPage() {
             <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px' }}>
               Preliminary Final
             </h5>
-            {pfs.map(f => <FinalCard key={f.id} f={f} />)}
+            {pfs.map(f => <FinalCard key={f.id} f={f} hideStatusPill label="Loser QF1 vs Winner QF2" />)}
           </div>
           <div className="col-md-4">
             <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#FFD700', textTransform: 'uppercase', letterSpacing: '.5px' }}>
