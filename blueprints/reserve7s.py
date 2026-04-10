@@ -231,6 +231,29 @@ def sevens_team(league_id):
 
     scoring = get_scoring_context(league)
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "team": {"id": user_team.id, "name": user_team.name, "logo_url": user_team.logo_url},
+            "afl_round": afl_round,
+            "year": year,
+            "age_cutoff": AGE_CUTOFF,
+            "scoring": scoring,
+            "selected_ids": list(selected_ids),
+            "captain_id": captain_id,
+            "locked_ids": list(locked_ids),
+            "teams_playing": list(teams_playing),
+            "players": [{
+                "id": p.id,
+                "name": p.name,
+                "position": p.position or "",
+                "afl_team": p.afl_team or "",
+                "age": p.age or None,
+                "sc_avg": p.sc_avg or 0,
+                "injury_severity": p.injury_severity or None,
+            } for p in players],
+        })
+
     return render_template("reserve7s/team.html",
                            league=league,
                            team=user_team,
@@ -696,6 +719,25 @@ def sevens_standings(league_id):
     config_obj = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
     finals_teams = config_obj.finals_teams if config_obj else 4
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "scoring": scoring,
+            "finals_teams": finals_teams,
+            "user_team_id": user_team.id if user_team else None,
+            "standings": [{
+                "team_id": s.team_id,
+                "team": {"id": s.team.id, "name": s.team.name, "logo_url": s.team.logo_url} if s.team else None,
+                "wins": s.wins,
+                "losses": s.losses,
+                "draws": s.draws,
+                "ladder_points": s.ladder_points,
+                "points_for": s.points_for,
+                "points_against": s.points_against,
+                "percentage": s.percentage,
+            } for s in standing_list],
+        })
+
     return render_template("reserve7s/standings.html",
                            league=league,
                            standings=standing_list,
@@ -748,6 +790,31 @@ def sevens_fixture(league_id):
 
     current_fixtures = rounds.get(selected_round, [])
     scoring = get_scoring_context(league)
+
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
+
+        def _ser_fix(f):
+            return {
+                "id": f.id,
+                "home_team_id": f.home_team_id,
+                "away_team_id": f.away_team_id,
+                "home_team": _ser_team(f.home_team),
+                "away_team": _ser_team(f.away_team),
+                "home_score": f.home_score,
+                "away_score": f.away_score,
+                "status": f.status,
+            }
+
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "round_meta": {str(k): v for k, v in round_meta.items()},
+            "selected_round": selected_round,
+            "current_fixtures": [_ser_fix(f) for f in current_fixtures],
+            "is_commissioner": is_commissioner,
+            "scoring": scoring,
+        })
 
     return render_template("reserve7s/fixture.html",
                            league=league,

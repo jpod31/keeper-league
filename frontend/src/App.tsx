@@ -20,6 +20,9 @@ import { SettingsPage } from './pages/leagues/SettingsPage'
 const SquadPage = lazy(() => import('./pages/team/SquadPage').then(m => ({ default: m.SquadPage })))
 const GamedayPage = lazy(() => import('./pages/matchups/GamedayPage').then(m => ({ default: m.GamedayPage })))
 const Reserve7sGamedayPage = lazy(() => import('./pages/reserve7s/GamedayPage').then(m => ({ default: m.Reserve7sGamedayPage })))
+const Reserve7sStandingsPage = lazy(() => import('./pages/reserve7s/StandingsPage').then(m => ({ default: m.Reserve7sStandingsPage })))
+const Reserve7sFixturePage = lazy(() => import('./pages/reserve7s/FixturePage').then(m => ({ default: m.Reserve7sFixturePage })))
+const Reserve7sTeamPage = lazy(() => import('./pages/reserve7s/TeamPage').then(m => ({ default: m.Reserve7sTeamPage })))
 const AnalyticsPage = lazy(() => import('./pages/team/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
 const DraftRoomPage = lazy(() => import('./pages/draft/DraftRoomPage').then(m => ({ default: m.DraftRoomPage })))
 const L = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<Spinner />}>{children}</Suspense>
@@ -124,10 +127,10 @@ export default function App() {
           <Route path="commissioner" element={<PlaceholderPage title="Commissioner Hub" />} />
 
           {/* Reserve 7s */}
-          <Route path="reserve7s/team" element={<PlaceholderPage title="Reserve 7s" />} />
+          <Route path="reserve7s/team" element={<L><Reserve7sTeamPage /></L>} />
           <Route path="reserve7s/gameday" element={<L><Reserve7sGamedayPage /></L>} />
-          <Route path="reserve7s/standings" element={<PlaceholderPage title="7s Standings" />} />
-          <Route path="reserve7s/fixture" element={<PlaceholderPage title="7s Fixture" />} />
+          <Route path="reserve7s/standings" element={<L><Reserve7sStandingsPage /></L>} />
+          <Route path="reserve7s/fixture" element={<L><Reserve7sFixturePage /></L>} />
         </Route>
       </Route>
 

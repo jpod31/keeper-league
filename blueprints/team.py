@@ -903,6 +903,29 @@ def team_stats(league_id, team_id):
         for pos in (p.position or "MID").split("/"):
             position_counts[pos] = position_counts.get(pos, 0) + 1
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "team": {"id": team.id, "name": team.name, "logo_url": team.logo_url},
+            "players": [
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "position": p.position or "",
+                    "afl_team": p.afl_team or "",
+                    "age": p.age or None,
+                    "sc_avg": p.sc_avg or 0,
+                    "career_games": p.career_games or 0,
+                    "games_played": p.games_played or 0,
+                    "draft_score": getattr(p, "draft_score", None),
+                }
+                for p in players
+            ],
+            "total_sc": round(total_sc, 1),
+            "avg_age": round(avg_age, 1),
+            "position_counts": position_counts,
+        })
+
     return render_template("team/stats.html",
                            league=league,
                            team=team,

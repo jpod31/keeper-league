@@ -197,6 +197,43 @@ def league_settings(league_id):
     has_preseason = Fixture.query.filter_by(
         league_id=league_id, year=league.season_year, afl_round=0, is_final=False
     ).first() is not None
+    if request.args.get("format") == "json":
+        on_field_slots = {}
+        flex_count = 0
+        for slot in (league.position_slots or []):
+            if slot.is_bench and slot.position_code == "FLEX":
+                flex_count = slot.count
+            elif not slot.is_bench:
+                on_field_slots[slot.position_code] = slot.count
+        return jsonify({
+            "league": {
+                "id": league.id,
+                "name": league.name,
+                "season_year": league.season_year,
+                "num_teams": league.num_teams,
+                "squad_size": league.squad_size,
+                "on_field_count": league.on_field_count,
+                "draft_type": league.draft_type,
+                "pick_timer_secs": league.pick_timer_secs,
+                "delist_minimum": league.delist_minimum,
+                "scoring_type": league.scoring_type,
+                "trade_window_open": bool(league.trade_window_open),
+                "on_field_slots": on_field_slots,
+                "flex_count": flex_count,
+            },
+            "season_config": {
+                "num_regular_rounds": season_config.num_regular_rounds if season_config else 18,
+                "finals_teams": season_config.finals_teams if season_config else 4,
+                "ssp_enabled": (season_config.ssp_enabled is not False) if season_config else True,
+                "ssp_cutoff_round": season_config.ssp_cutoff_round if season_config else 4,
+                "ssp_slots": season_config.ssp_slots if season_config else 1,
+                "mid_season_draft_enabled": bool(season_config and season_config.mid_season_draft_enabled),
+            } if True else None,
+            "is_commissioner": is_commissioner,
+            "has_active_draft": has_active_draft,
+            "has_preseason": has_preseason,
+        })
+
     return render_template("leagues/settings.html", league=league, live_config=live_config,
                            season_config=season_config, is_commissioner=is_commissioner,
                            has_active_draft=has_active_draft, teams=teams,

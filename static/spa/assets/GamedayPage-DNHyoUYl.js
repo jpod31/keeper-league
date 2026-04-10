@@ -1,4 +1,4 @@
-import{d as e,m as t,r as n,t as r,y as i}from"./jsx-runtime-mCRDCYrZ.js";import{t as a}from"./api-DZyRO_lF.js";import{t as o}from"./Spinner-EE11lljr.js";import{t as s}from"./esm-B0NQQNon.js";var c=i(t(),1),l=r(),u=`
+import{d as e,m as t,r as n,t as r,y as i}from"./jsx-runtime-mCRDCYrZ.js";import{t as a}from"./api-DZyRO_lF.js";import{t as o}from"./Spinner-EE11lljr.js";import{t as s}from"./esm-gIYu1qRL.js";var c=i(t(),1),l=r(),u=`
 .gameday-round-header { margin-bottom: 10px; }
 .gameday-round-title { font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; color: var(--kl-text-heading); }
 .gameday-round-dates { color: var(--kl-text-secondary); font-size: .8rem; }
