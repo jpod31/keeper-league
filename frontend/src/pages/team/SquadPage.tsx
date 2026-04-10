@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams } from 'react-router'
-import { useState, useCallback, useMemo, Component, type ErrorInfo, type ReactNode } from 'react'
+import { useState, useCallback, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
@@ -119,24 +119,20 @@ function SquadPageInner() {
     if (sortCol === col) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
     else { setSortCol(col); setSortDir('desc') }
   }
-  const sortedPlayers = useMemo(() => {
-    const sorted = [...players]
-    sorted.sort((a, b) => {
-      const stA = activeStats[String(a.id)] || {}
-      const stB = activeStats[String(b.id)] || {}
-      let va: number | string = 0, vb: number | string = 0
-      if (sortCol === 'name') { va = a.name; vb = b.name }
-      else if (sortCol === 'sc_avg') { va = (stA.sc_avg as number) || a.sc_avg || 0; vb = (stB.sc_avg as number) || b.sc_avg || 0 }
-      else if (sortCol === 'games') { va = (stA.games as number) || 0; vb = (stB.games as number) || 0 }
-      else if (sortCol === 'disposals') { va = (stA.disposals as number) || 0; vb = (stB.disposals as number) || 0 }
-      else if (sortCol === 'goals') { va = (stA.goals as number) || 0; vb = (stB.goals as number) || 0 }
-      else if (sortCol === 'marks') { va = (stA.marks as number) || 0; vb = (stB.marks as number) || 0 }
-      else if (sortCol === 'tackles') { va = (stA.tackles as number) || 0; vb = (stB.tackles as number) || 0 }
-      if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb as string) : (vb as string).localeCompare(va)
-      return sortDir === 'asc' ? (va as number) - (vb as number) : (vb as number) - (va as number)
-    })
-    return sorted
-  }, [players, activeStats, sortCol, sortDir])
+  const sortedPlayers = [...players].sort((a, b) => {
+    const stA = activeStats[String(a.id)] || {}
+    const stB = activeStats[String(b.id)] || {}
+    let va: number | string = 0, vb: number | string = 0
+    if (sortCol === 'name') { va = a.name; vb = b.name }
+    else if (sortCol === 'sc_avg') { va = (stA.sc_avg as number) || a.sc_avg || 0; vb = (stB.sc_avg as number) || b.sc_avg || 0 }
+    else if (sortCol === 'games') { va = (stA.games as number) || 0; vb = (stB.games as number) || 0 }
+    else if (sortCol === 'disposals') { va = (stA.disposals as number) || 0; vb = (stB.disposals as number) || 0 }
+    else if (sortCol === 'goals') { va = (stA.goals as number) || 0; vb = (stB.goals as number) || 0 }
+    else if (sortCol === 'marks') { va = (stA.marks as number) || 0; vb = (stB.marks as number) || 0 }
+    else if (sortCol === 'tackles') { va = (stA.tackles as number) || 0; vb = (stB.tackles as number) || 0 }
+    if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb as string) : (vb as string).localeCompare(va)
+    return sortDir === 'asc' ? (va as number) - (vb as number) : (vb as number) - (va as number)
+  })
 
   function StatusDot({ player }: { player: Player }) {
     const teamsPlaying = fd ? new Set(fd.teams_playing) : new Set<string>()
