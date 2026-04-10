@@ -378,9 +378,12 @@ export function GamedayPage() {
   let heroLeftLogo: string | null, heroRightLogo: string | null
   let heroLeftRs: RoundScoreEntry | undefined, heroRightRs: RoundScoreEntry | undefined
   let heroLeftTeamId: number | undefined, heroRightTeamId: number | undefined
+  // Projection in left/right orientation — must follow the viewed matchup, not d.projections.
+  let heroProjLeft: number | null = null, heroProjRight: number | null = null
+  let heroWinLeft: number | null = null, heroWinRight: number | null = null
 
   if (isViewingOwn || !cachedFixtures[viewedFixtureId!]) {
-    // Viewing own matchup (default)
+    // Viewing own matchup (default), or cache for the selected matchup hasn't loaded yet
     heroLeftName = d.my_team?.name || ''
     heroRightName = d.opp_team?.name || ''
     heroLeftScore = d.my_score
@@ -393,6 +396,15 @@ export function GamedayPage() {
     heroRightLogo = d.opp_team?.logo_url
     heroLeftTeamId = d.my_team?.id
     heroRightTeamId = d.opp_team?.id
+    // Only show own projection if the user is actually viewing their own matchup.
+    // If the cache for a different matchup is still loading, show no projection
+    // rather than wrongly displaying the user's own numbers.
+    if (isViewingOwn && d.projections) {
+      heroProjLeft = d.projections.my_projected
+      heroProjRight = d.projections.opp_projected
+      heroWinLeft = d.projections.my_win_pct
+      heroWinRight = d.projections.opp_win_pct
+    }
   } else {
     // Viewing another matchup
     const fx = cachedFixtures[viewedFixtureId!]
@@ -409,6 +421,13 @@ export function GamedayPage() {
     heroRightLogo = meta?.away_team?.logo_url || null
     heroLeftTeamId = meta?.home_team_id
     heroRightTeamId = meta?.away_team_id
+    // fx.projections has home_/away_ semantics
+    if (fx.projections) {
+      heroProjLeft = fx.projections.home_projected
+      heroProjRight = fx.projections.away_projected
+      heroWinLeft = fx.projections.home_win_pct
+      heroWinRight = fx.projections.away_win_pct
+    }
   }
 
   // Authoritative round_scores entries (matches Jinja's round_scores.get(team.id))
@@ -655,11 +674,11 @@ export function GamedayPage() {
                   heroRightScore > heroLeftScore ? <>{heroRightName} BY {diff}</> : 'DRAW'
                 )}
               </div>
-              {d.projections && gs !== 'completed' && (
+              {heroProjLeft != null && heroProjRight != null && gs !== 'completed' && (
                 <div className="hero-proj-row">
-                  <span className="hero-proj-item">Proj <b>{Math.round(d.projections.my_projected)}</b>&ndash;<b>{Math.round(d.projections.opp_projected)}</b></span>
+                  <span className="hero-proj-item">Proj <b>{Math.round(heroProjLeft)}</b>&ndash;<b>{Math.round(heroProjRight)}</b></span>
                   <span className="hero-proj-sep"></span>
-                  <span className="hero-proj-item">Win <b>{Math.round(d.projections.my_win_pct)}%</b>&ndash;<b>{Math.round(d.projections.opp_win_pct)}%</b></span>
+                  <span className="hero-proj-item">Win <b>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b>{Math.round(heroWinRight || 0)}%</b></span>
                 </div>
               )}
             </div>
