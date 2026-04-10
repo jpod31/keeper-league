@@ -641,6 +641,8 @@ def gameday(league_id):
             "round_dates": round_dates,
             "first_bounce": first_bounce,
             "gameday_state": gameday_state,
+            "live_enabled": live_enabled,
+            "is_home": is_home,
             "fixture": _ser_fixture(fixture),
             "my_team": _ser_team(my_team),
             "opp_team": _ser_team(opp_team),
@@ -756,9 +758,18 @@ def api_gameday_fixtures(league_id):
             }
         fixtures_out.append(fx_out)
 
+    # Include team metadata so React can render hero with logos when switching matchups
+    teams_meta = {}
+    for f in round_fixtures:
+        for t in (f.home_team, f.away_team):
+            if t and t.id not in teams_meta:
+                teams_meta[t.id] = {"id": t.id, "name": t.name, "logo_url": t.logo_url}
+
     return jsonify({
         "fixtures": fixtures_out,
         "locked_player_ids": list(locked_ids),
+        "teams_playing": list(teams_playing),
+        "teams_meta": teams_meta,
     })
 
 

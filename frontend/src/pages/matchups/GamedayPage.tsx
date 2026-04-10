@@ -16,7 +16,8 @@ interface AflGame { game_id: number; home_team: string; away_team: string; statu
 interface Projections { my_projected: number; opp_projected: number; my_win_pct: number; opp_win_pct: number }
 interface GamedayData {
   is_bye: boolean; afl_round: number; round_dates: string | null; first_bounce: string | null
-  gameday_state: string; fixture: GDFixture; my_team: Team; opp_team: Team
+  gameday_state: string; live_enabled: boolean; is_home: boolean
+  fixture: GDFixture; my_team: Team; opp_team: Team
   my_players: GDPlayer[]; opp_players: GDPlayer[]
   my_score: number; opp_score: number; my_captain_bonus: number; opp_captain_bonus: number
   my_played: number; my_eligible: number; opp_played: number; opp_eligible: number
@@ -131,6 +132,8 @@ const GAMEDAY_CSS = `
 .score-reserve { color: var(--kl-border) !important; }
 .player-yet-to-play .gameday-player-score { color: var(--kl-text-muted); }
 .score-ytp { color: var(--kl-text-muted) !important; }
+@keyframes ytpPulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+.hero-live .player-yet-to-play .gameday-player-score { animation: ytpPulse 2s ease-in-out infinite; }
 .gameday-section-hdr { padding: 6px 14px; font-size: .65rem; font-weight: 700; color: var(--kl-text-secondary); text-transform: uppercase; letter-spacing: .5px; background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-bg-elevated); border-left: 3px solid transparent; }
 .section-field { border-left-color: var(--kl-accent-green); background: rgba(63,185,80,.04); }
 .section-bench { border-left-color: var(--kl-accent-blue); }
@@ -235,12 +238,15 @@ export function GamedayPage() {
   const socketRef = useRef<Socket | null>(null)
   const wsRound = useRef(data?.afl_round)
   const wsState = useRef(data?.gameday_state)
+  const wsLiveEnabled = useRef(data?.live_enabled)
+  const lastSeq = useRef(0)
   wsRound.current = data?.afl_round
   wsState.current = data?.gameday_state
+  wsLiveEnabled.current = data?.live_enabled
 
   useEffect(() => {
-    // Only connect once when live, don't re-run on data changes
-    if (wsState.current !== 'live') return
+    // Only connect when live AND live scoring is enabled
+    if (wsState.current !== 'live' || !wsLiveEnabled.current) return
 
     const socket = io('/matchups', {
       withCredentials: true,
@@ -254,7 +260,15 @@ export function GamedayPage() {
       socket.emit('request_scores', { league_id: Number(leagueId), afl_round: wsRound.current })
     })
 
-    socket.on('score_update', (update: { fixtures?: FixtureDetail[] }) => {
+    socket.on('joined', (info: { room: string }) => {
+      console.log('Joined live room:', info.room)
+    })
+
+    socket.on('score_update', (update: { fixtures?: FixtureDetail[]; seq?: number }) => {
+      // Drop out-of-order updates
+      if (update.seq && update.seq <= lastSeq.current) return
+      if (update.seq) lastSeq.current = update.seq
+
       if (update.fixtures) {
         setCachedFixtures(prev => {
           const next = { ...prev }
@@ -262,13 +276,12 @@ export function GamedayPage() {
           return next
         })
       }
-      // Don't call fetchData here — it causes a re-render loop.
-      // The 60s polling interval handles full data refresh.
+      // Don't call fetchData — would cause re-render loop. 60s poll handles full refresh.
     })
 
     return () => { socket.disconnect() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leagueId]) // Only depend on leagueId — connect once
+  }, [leagueId])
 
   // Pre-fetch all fixture breakdowns once data is loaded
   const hasFetched = useRef(false)
@@ -309,18 +322,21 @@ export function GamedayPage() {
   if (!data) return <p className="text-danger">Failed to load gameday</p>
 
   // Helper: count players played/eligible from player array
+  // Eligible = field players whose AFL team has a game this round
+  // Played = game_started and not DNP (matching original logic)
+  const teamsPlayingSet = new Set(data.teams_playing || [])
   function countPlayed(players: GDPlayer[]): { played: number; total: number } {
-    const eligible = players.filter(p => p.lineup_type === 'field')
-    const played = eligible.filter(p => p.game_started && (p.score > 0 || p.is_dnp)).length
+    const eligible = players.filter(p => p.lineup_type === 'field' && (teamsPlayingSet.size === 0 || teamsPlayingSet.has(p.afl_team)))
+    const played = eligible.filter(p => p.game_started && !p.is_dnp).length
     return { played, total: eligible.length }
   }
 
-  // Helper: get C/VC badge status from player array
+  // Helper: get C/VC badge status from player array (matches original)
   function capVcStatus(players: GDPlayer[]): { hasCap: boolean; capPlayed: boolean; hasVc: boolean; vcPlayed: boolean } {
     let hasCap = false, capPlayed = false, hasVc = false, vcPlayed = false
     players.forEach(p => {
-      if (p.is_captain) { hasCap = true; capPlayed = p.game_started && (p.score > 0 || p.is_dnp) }
-      if (p.is_vice_captain) { hasVc = true; vcPlayed = p.game_started && (p.score > 0 || p.is_dnp) }
+      if (p.is_captain) { hasCap = true; capPlayed = p.game_started && !p.is_dnp }
+      if (p.is_vice_captain) { hasVc = true; vcPlayed = p.game_started && !p.is_dnp }
     })
     return { hasCap, capPlayed, hasVc, vcPlayed }
   }
@@ -436,10 +452,14 @@ export function GamedayPage() {
   }
 
   function PlayerCard({ players, teamName, score, side }: { players: GDPlayer[]; teamName: string; score: number; side: 'left' | 'right' }) {
-    const field = players.filter(p => p.lineup_type === 'field' && !p.is_dnp)
-    const bench = players.filter(p => p.lineup_type === 'reserve')
-    const emergencies = players.filter(p => p.is_emergency)
-    const dnps = players.filter(p => p.is_dnp && p.lineup_type === 'field')
+    // Has a game this round?
+    const hasGame = (p: GDPlayer) => teamsPlayingSet.size === 0 || teamsPlayingSet.has(p.afl_team)
+
+    const field = players.filter(p => p.lineup_type === 'field' && !p.is_dnp && hasGame(p))
+    const bench = players.filter(p => p.lineup_type === 'reserve' && hasGame(p))
+    const emergencies = players.filter(p => p.is_emergency && hasGame(p))
+    const dnps = players.filter(p => p.is_dnp && p.lineup_type === 'field' && hasGame(p))
+    const noGame = players.filter(p => p.lineup_type === 'field' && !hasGame(p))
 
     return (
       <div className={`gameday-player-card card-${side}-team`}>
@@ -461,6 +481,12 @@ export function GamedayPage() {
           {dnps.length > 0 && <>
             <div className="gameday-section-hdr section-dnp"><i className="bi bi-x-circle me-1"></i>Did Not Play</div>
             {dnps.map((p, i) => <PlayerRow key={`d${i}`} p={p} />)}
+          </>}
+          {noGame.length > 0 && <>
+            <div className="gameday-section-hdr" style={{ borderLeftColor: 'var(--kl-text-faint)', color: 'var(--kl-text-faint)' }}>
+              <i className="bi bi-dash-circle me-1"></i>No Game This Round
+            </div>
+            {noGame.map((p, i) => <PlayerRow key={`ng${i}`} p={p} />)}
           </>}
         </div>
       </div>
@@ -519,7 +545,7 @@ export function GamedayPage() {
             return (
               <div key={f.id} className={`kl-mini-pill${isYours ? ' kl-mini-yours' : ''}`}
                 onClick={() => viewMatchup(f.id)}
-                style={{ cursor: 'pointer', ...(viewedFixtureId === f.id ? { borderColor: 'var(--kl-accent-blue)', background: 'rgba(88,166,255,.08)', boxShadow: '0 0 0 1px var(--kl-accent-blue)' } : {}) }}>
+                style={{ cursor: 'pointer', ...(viewedFixtureId === f.id ? { borderColor: 'var(--kl-accent-blue)', boxShadow: '0 0 0 1px var(--kl-accent-blue)' } : {}) }}>
                 <span className="kl-mini-teams">{f.home_team?.name} v {f.away_team?.name}</span>
                 {f.status !== 'scheduled' && <span className="kl-mini-score">{Math.round(hs)}-{Math.round(as_)}</span>}
               </div>
@@ -638,6 +664,7 @@ export function GamedayPage() {
                         <span className="gd-mob-vs-name">
                           {mp.is_captain && <b className="gd-mob-c">C</b>}
                           {mp.is_vice_captain && <b className="gd-mob-vc">VC</b>}
+                          {mp.subbed_on && <b style={{ color: '#60a5fa', fontSize: '.6rem', marginRight: 2 }}>EMG</b>}
                           {mp.name}
                         </span>
                         <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || 'MID').split('/')[0]}`}>{(mp.position || 'MID').split('/')[0]}</span>
@@ -659,6 +686,7 @@ export function GamedayPage() {
                         <span className="gd-mob-vs-name">
                           {op.is_captain && <b className="gd-mob-c">C</b>}
                           {op.is_vice_captain && <b className="gd-mob-vc">VC</b>}
+                          {op.subbed_on && <b style={{ color: '#60a5fa', fontSize: '.6rem', marginRight: 2 }}>EMG</b>}
                           {op.name}
                         </span>
                       </>}
