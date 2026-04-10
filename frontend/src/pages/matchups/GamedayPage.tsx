@@ -226,10 +226,16 @@ export function GamedayPage() {
     }
   }, [data?.gameday_state])
 
-  // WebSocket live scoring
+  // WebSocket live scoring — use refs to avoid re-triggering the effect
   const socketRef = useRef<Socket | null>(null)
+  const wsRound = useRef(data?.afl_round)
+  const wsState = useRef(data?.gameday_state)
+  wsRound.current = data?.afl_round
+  wsState.current = data?.gameday_state
+
   useEffect(() => {
-    if (data?.gameday_state !== 'live') return
+    // Only connect once when live, don't re-run on data changes
+    if (wsState.current !== 'live') return
 
     const socket = io('/matchups', {
       withCredentials: true,
@@ -239,12 +245,11 @@ export function GamedayPage() {
     socketRef.current = socket
 
     socket.on('connect', () => {
-      socket.emit('join_live', { league_id: Number(leagueId), afl_round: data.afl_round })
-      socket.emit('request_scores', { league_id: Number(leagueId), afl_round: data.afl_round })
+      socket.emit('join_live', { league_id: Number(leagueId), afl_round: wsRound.current })
+      socket.emit('request_scores', { league_id: Number(leagueId), afl_round: wsRound.current })
     })
 
     socket.on('score_update', (update: { fixtures?: FixtureDetail[] }) => {
-      // Cache all incoming fixture data
       if (update.fixtures) {
         setCachedFixtures(prev => {
           const next = { ...prev }
@@ -252,12 +257,13 @@ export function GamedayPage() {
           return next
         })
       }
-      // Re-fetch main data to update hero scores
-      fetchData()
+      // Don't call fetchData here — it causes a re-render loop.
+      // The 60s polling interval handles full data refresh.
     })
 
     return () => { socket.disconnect() }
-  }, [data?.gameday_state, data?.afl_round, leagueId, fetchData])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leagueId]) // Only depend on leagueId — connect once
 
   const viewMatchup = useCallback((fixtureId: number) => {
     setViewedFixtureId(fixtureId)
