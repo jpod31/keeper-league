@@ -12,7 +12,7 @@ interface GDPlayer {
   is_emergency: boolean; is_dnp: boolean; is_live: boolean
   lineup_type: string; game_started: boolean; subbed_on: boolean; replaces: string | null
 }
-interface AflGame { game_id: number; home_team: string; away_team: string; status: string; home_score: number | null; away_score: number | null; scheduled_display: string | null }
+interface AflGame { game_id: number; home_team: string; away_team: string; status: string; home_score: number | null; away_score: number | null; scheduled_display: string | null; scheduled_start: string | null }
 interface Projections { my_projected: number; opp_projected: number; my_win_pct: number; opp_win_pct: number }
 interface RoundScoreEntry {
   total_score?: number
@@ -472,18 +472,22 @@ export function GamedayPage() {
       p.is_live && !ytp && !isEmgStandby && 'text-success',
     ].filter(Boolean).join(' ')
 
+    const isLocked = !!(p.player_id && d.locked_player_ids?.includes(p.player_id))
     return (
       <div className={rowClass}>
         <span className="gameday-player-info">
-          {p.position && <span className={`pos-badge pos-${p.position.split('/')[0]} gameday-pos-badge`}>{p.position.toUpperCase()}</span>}
+          {p.position && <span className={`pos-badge pos-${p.position.split('/')[0].toUpperCase()} gameday-pos-badge`}>{p.position.toUpperCase()}</span>}
           {p.is_captain && <span className="gameday-badge-c">C</span>}
           {p.is_vice_captain && <span className="gameday-badge-vc">VC</span>}
           {isSubbedOn && <span className="gameday-badge-emg-active">EMG</span>}
           {p.is_dnp && !isSubbedOn && <span className="gameday-badge-dnp">DNP</span>}
           {isEmgStandby && <span className="gameday-badge-emg">EMG</span>}
+          {isLocked && <i className="bi bi-lock-fill" style={{ color: 'var(--kl-accent-red)', fontSize: '.6rem' }}></i>}
           <span className="gameday-player-name">{p.name}</span>
           <span className="gameday-player-meta">
-            {p.afl_team && d.team_logos[p.afl_team] && <img src={d.team_logos[p.afl_team]} alt="" className="gameday-team-logo" />}
+            {p.afl_team && d.team_logos[p.afl_team]
+              ? <img src={d.team_logos[p.afl_team]} alt={p.afl_team} title={p.afl_team} className="gameday-team-logo" />
+              : p.afl_team}
             {d.afl_matchup_info[p.afl_team] && <span style={{ color: 'var(--kl-text-faint)', fontSize: '.65rem', marginLeft: 2 }}>{d.afl_matchup_info[p.afl_team]}</span>}
             {p.replaces && <span className="gameday-sub-note">&rarr; replacing {p.replaces}</span>}
           </span>
@@ -517,7 +521,7 @@ export function GamedayPage() {
       <div className={`gameday-player-card card-${side}-team`}>
         <div className="gameday-player-card-header">
           <span>{teamName}</span>
-          <span className="gameday-card-score">{Math.round(score)}</span>
+          <span className="gameday-card-score">{gs !== 'upcoming' ? Math.round(score) : ''}</span>
         </div>
         <div className="gameday-player-list">
           <div className="gameday-section-hdr section-field"><i className="bi bi-people-fill me-1"></i>Field</div>
@@ -580,7 +584,11 @@ export function GamedayPage() {
               <span className="game-teams">{d.team_abbr[g.home_team] || g.home_team.substring(0, 3).toUpperCase()} v {d.team_abbr[g.away_team] || g.away_team.substring(0, 3).toUpperCase()}</span>
               {g.status === 'live' && <span className="badge game-badge-live">LIVE</span>}
               {g.status === 'complete' && <span className="badge game-badge-ft">FT</span>}
-              {g.status !== 'live' && g.status !== 'complete' && <span className="badge game-badge-sched">{g.scheduled_display || 'TBC'}</span>}
+              {g.status !== 'live' && g.status !== 'complete' && (
+                <span className="badge game-badge-sched">
+                  {g.scheduled_display || (g.scheduled_start ? g.scheduled_start.substring(11, 16) : 'TBC')}
+                </span>
+              )}
               {g.home_score != null && <span className="game-afl-score">{g.home_score}-{g.away_score}</span>}
             </Link>
           ))}
@@ -591,8 +599,11 @@ export function GamedayPage() {
       {d.round_fixtures && d.round_fixtures.length > 0 && (
         <div className="kl-mini-bar">
           {d.round_fixtures.map(f => {
-            const hs = d.round_scores[String(f.home_team_id)]?.total_score || 0
-            const as_ = d.round_scores[String(f.away_team_id)]?.total_score || 0
+            // Prefer live-updated fixture detail (WebSocket score_update writes here),
+            // fall back to round_scores from the initial gameday payload.
+            const cached = cachedFixtures[f.id]
+            const hs = cached?.home_score ?? d.round_scores[String(f.home_team_id)]?.total_score ?? 0
+            const as_ = cached?.away_score ?? d.round_scores[String(f.away_team_id)]?.total_score ?? 0
             const isYours = d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id)
             return (
               <div key={f.id} className={`kl-mini-pill${isYours ? ' kl-mini-yours' : ''}`}
@@ -734,7 +745,7 @@ export function GamedayPage() {
                           {mp.subbed_on && <span className="gameday-badge-emg-active" style={{ fontSize: '.5rem', padding: '0 3px' }}>EMG</span>}
                           {mp.name}
                         </span>
-                        <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || 'MID').split('/')[0]}`}>{(mp.position || 'MID').split('/')[0]}</span>
+                        <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || 'MID').split('/')[0].toUpperCase()}`}>{(mp.position || 'MID').split('/')[0].substring(0, 3).toUpperCase()}</span>
                       </>}
                     </div>
                     <div className="gd-mob-vs-mid">
@@ -749,7 +760,7 @@ export function GamedayPage() {
                     </div>
                     <div className="gd-mob-vs-right">
                       {op && <>
-                        <span className={`gd-mob-vs-pos pos-badge pos-${(op.position || 'MID').split('/')[0]}`}>{(op.position || 'MID').split('/')[0]}</span>
+                        <span className={`gd-mob-vs-pos pos-badge pos-${(op.position || 'MID').split('/')[0].toUpperCase()}`}>{(op.position || 'MID').split('/')[0].substring(0, 3).toUpperCase()}</span>
                         <span className="gd-mob-vs-name">
                           {op.is_captain && <b className="gd-mob-c">C</b>}
                           {op.is_vice_captain && <b className="gd-mob-vc">VC</b>}

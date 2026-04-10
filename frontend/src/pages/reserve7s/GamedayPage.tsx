@@ -330,7 +330,7 @@ export function Reserve7sGamedayPage() {
     const isLocked = p.player_id && d.locked_player_ids?.includes(p.player_id)
     const rowClass = ['s7gd-player-row', isLocked && 'p-locked', ytp && 'p-ytp'].filter(Boolean).join(' ')
     const scoreClass = ['s7gd-player-score', ytp && 'score-ytp', p.is_live && !ytp && 'text-success'].filter(Boolean).join(' ')
-    const posCode = (p.position || '').substring(0, 3).toUpperCase()
+    const posCode = (p.position || '').split('/')[0].substring(0, 3).toUpperCase()
     return (
       <div className={rowClass}>
         <span className="s7gd-player-info">
@@ -426,8 +426,10 @@ export function Reserve7sGamedayPage() {
       {d.round_fixtures && d.round_fixtures.length > 0 && (
         <div className="s7-mini-bar">
           {d.round_fixtures.map(f => {
-            const hs = d.sevens_scores[String(f.home_team_id)]?.total_score || 0
-            const as_ = d.sevens_scores[String(f.away_team_id)]?.total_score || 0
+            // Prefer live-updated fixture detail from polling, fall back to initial sevens_scores.
+            const cached = cachedFixtures[f.id]
+            const hs = cached?.home_score ?? d.sevens_scores[String(f.home_team_id)]?.total_score ?? 0
+            const as_ = cached?.away_score ?? d.sevens_scores[String(f.away_team_id)]?.total_score ?? 0
             const isYours = !d.is_bye && d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id)
             const isActive = viewedFixtureId === f.id
             return (
@@ -548,7 +550,7 @@ export function Reserve7sGamedayPage() {
                           {mp.is_captain && <b className="gd-mob-c" style={{ color: '#a855f7' }}>C</b>}
                           {mp.name}
                         </span>
-                        <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || '').substring(0, 3).toUpperCase()}`}>{(mp.position || '').substring(0, 3)}</span>
+                        <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || '').split('/')[0].substring(0, 3).toUpperCase()}`}>{(mp.position || '').split('/')[0].substring(0, 3).toUpperCase()}</span>
                       </>}
                     </div>
                     <div className="gd-mob-vs-mid">
@@ -567,7 +569,7 @@ export function Reserve7sGamedayPage() {
                     </div>
                     <div className="gd-mob-vs-right">
                       {op && <>
-                        <span className={`gd-mob-vs-pos pos-badge pos-${(op.position || '').substring(0, 3).toUpperCase()}`}>{(op.position || '').substring(0, 3)}</span>
+                        <span className={`gd-mob-vs-pos pos-badge pos-${(op.position || '').split('/')[0].substring(0, 3).toUpperCase()}`}>{(op.position || '').split('/')[0].substring(0, 3).toUpperCase()}</span>
                         <span className="gd-mob-vs-name">
                           {op.is_captain && <b className="gd-mob-c" style={{ color: '#a855f7' }}>C</b>}
                           {op.name}
