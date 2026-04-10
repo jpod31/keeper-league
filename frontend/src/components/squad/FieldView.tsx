@@ -100,6 +100,7 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
       <div className={`${cardClasses}${isSwapActive ? ' fv-swap-active' : ''}${isSwapEligible ? ' fv-swap-eligible' : ''}`}
         data-player-id={p.id} data-section={isReserve ? 'reserve' : isFlex ? 'flex' : 'field'}
         data-positions={p.position || 'MID'} data-field-pos={!isFlex && !isReserve ? posClass.toUpperCase() : ''}
+        data-locked={isLocked ? '1' : ''} data-emg={isEmg ? '1' : ''} data-sevens={is7s ? '1' : ''} data-age={String(p.age || '')}
         onClick={() => {
           if (actions?.swapSource) { actions.completeSwap(p.id) }
           else if (actions) { actions.showPlayer(p.id) }

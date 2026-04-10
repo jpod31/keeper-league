@@ -108,6 +108,7 @@ export function SquadPage() {
     return (
       <div className={`mob-pos-row${isLocked ? ' mob-pos-locked' : ''}${fd?.cap_id === player.id ? ' fv-card-captain' : ''}${fd?.vc_id === player.id ? ' fv-card-vc' : ''}`}
         data-player-id={player.id} data-section={section} data-positions={player.position || 'MID'} data-field-pos={posCode || ''}
+        data-locked={isLocked ? '1' : ''} data-emg={showEmg ? '1' : ''} data-sevens={show7s ? '1' : ''} data-age={String(player.age || '')}
         onClick={() => {
           if (fieldActions.swapSource) { fieldActions.completeSwap(player.id) }
           else if (is_owner) { setMobileActionPlayer(player) }
