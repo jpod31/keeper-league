@@ -68,7 +68,7 @@ const S7_CSS = `
 .s7gd-game-teams { color: #e6edf3; font-weight: 600; }
 .s7gd-game-score { color: #8b949e; font-size: .7rem; font-variant-numeric: tabular-nums; }
 .s7gd-gbadge-live { font-size: .6rem; background: #a78bfa; color: #fff; animation: s7gdPulse 2s infinite; }
-.s7gd-gbadge-ft { font-size: .6rem; background: #238636; color: #fff; }
+.s7gd-gbadge-ft { font-size: .6rem; background: #a855f7; color: #fff; }
 .s7gd-gbadge-sched { font-size: .6rem; background: #161b22; color: #8b949e; }
 .s7-mini-bar { display: flex; gap: 6px; margin-bottom: 8px; padding: 10px 14px; background: #161b22; border: 1px solid #21262d; border-radius: 10px; }
 .s7-mini-pill { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; background: #0d1117; border: 1px solid #21262d; border-radius: 10px; cursor: pointer; transition: border-color .15s, background .15s; text-align: center; }
