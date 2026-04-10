@@ -3,6 +3,7 @@
  * Renders the football oval with player cards positioned in zones.
  * Desktop only (d-none d-lg-block) — mobile uses mob-squad-list.
  */
+import { LockoutBanner } from './LockoutBanner'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
@@ -242,12 +243,9 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
 
   return (
     <div className="fv-outer d-none d-lg-block">
-      {/* Lockout banner */}
+      {/* Lockout countdown banner */}
       {fd.next_lockout_time && (
-        <div className="fv-lockout-banner">
-          <i className="bi bi-clock"></i>
-          <span>Lockout countdown active</span>
-        </div>
+        <LockoutBanner lockoutTime={fd.next_lockout_time} />
       )}
 
       <div className="fv-wrapper">

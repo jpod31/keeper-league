@@ -1,9 +1,12 @@
 import { useParams, Link, useSearchParams } from 'react-router'
+import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
 import { FieldView } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
+import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
+import { LockoutBanner } from '../../components/squad/LockoutBanner'
 import { useFieldActions } from '../../hooks/useFieldActions'
 
 interface Player {
@@ -58,6 +61,7 @@ export function SquadPage() {
   // Use the existing Flask route with ?format=json to get identical data
   const { data, loading, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
   const fieldActions = useFieldActions(leagueId!, teamId!, refetch)
+  const [mobileActionPlayer, setMobileActionPlayer] = useState<Player | null>(null)
 
   if (loading) return <Spinner />
   if (!data) return <p className="text-danger">Failed to load squad</p>
@@ -103,6 +107,12 @@ export function SquadPage() {
     const isLocked = lockedTeams.has(player.afl_team || '')
     return (
       <div className={`mob-pos-row${isLocked ? ' mob-pos-locked' : ''}${fd?.cap_id === player.id ? ' fv-card-captain' : ''}${fd?.vc_id === player.id ? ' fv-card-vc' : ''}`}
+        data-player-id={player.id} data-section={section} data-positions={player.position || 'MID'} data-field-pos={posCode || ''}
+        onClick={() => {
+          if (fieldActions.swapSource) { fieldActions.completeSwap(player.id) }
+          else if (is_owner) { setMobileActionPlayer(player) }
+          else { fieldActions.showPlayer(player.id) }
+        }}
         style={{ cursor: 'pointer', ...style }}>
         <StatusDot player={player} />
         <TeamLogo team={player.afl_team} />
@@ -423,6 +433,31 @@ export function SquadPage() {
           player={fieldActions.playerModal}
           teamLogos={data.team_logos}
           onClose={fieldActions.closePlayerModal}
+        />
+      )}
+
+      {/* Mobile action sheet */}
+      {mobileActionPlayer && is_owner && fd && (
+        <MobileActionSheet
+          player={mobileActionPlayer}
+          teamLogos={data.team_logos}
+          isCaptain={fd.cap_id === mobileActionPlayer.id}
+          isVC={fd.vc_id === mobileActionPlayer.id}
+          isEmergency={fd.emergency_ids.includes(mobileActionPlayer.id)}
+          is7s={fd.sevens_ids.includes(mobileActionPlayer.id)}
+          is7sCaptain={fd.sevens_captain_id === mobileActionPlayer.id}
+          isReserve={!Object.values(fd.zones).flat().some(p => p?.id === mobileActionPlayer.id) && !fd.flex_data.some(s => s.player?.id === mobileActionPlayer.id)}
+          has7sFixture={fd.has_7s_fixture}
+          sevens_captain_enabled={fd.sevens_captain_enabled}
+          onClose={() => setMobileActionPlayer(null)}
+          onSetCaptain={() => fieldActions.setCaptain(mobileActionPlayer.id)}
+          onSetVC={() => fieldActions.setVC(mobileActionPlayer.id)}
+          onSwap={() => fieldActions.startSwap(mobileActionPlayer.id)}
+          onToggleEmg={() => fieldActions.toggleEmergency(mobileActionPlayer.id)}
+          onToggle7s={() => fieldActions.toggle7s(mobileActionPlayer.id)}
+          onSet7sCaptain={() => fieldActions.set7sCaptain(mobileActionPlayer.id)}
+          onAddLTIL={() => fieldActions.addToLTIL(mobileActionPlayer.id)}
+          onViewPlayer={() => fieldActions.showPlayer(mobileActionPlayer.id)}
         />
       )}
     </div>
