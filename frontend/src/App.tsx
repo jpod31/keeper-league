@@ -34,6 +34,7 @@ import { StandingsPage } from './pages/matchups/StandingsPage'
 import { FixturePage } from './pages/matchups/FixturePage'
 import { RoundDetailPage } from './pages/matchups/RoundDetailPage'
 import { MatchupDetailPage } from './pages/matchups/MatchupDetailPage'
+import { AflGamePage } from './pages/matchups/AflGamePage'
 
 // Trade pages
 import { TradeCenterPage } from './pages/trades/TradeCenterPage'
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="history/:year" element={<PlaceholderPage title="Season Archive" />} />
           <Route path="finals" element={<PlaceholderPage title="Finals" />} />
           <Route path="afl-live" element={<PlaceholderPage title="AFL Live" />} />
+          <Route path="gameday/afl-game/:gameId" element={<AflGamePage />} />
 
           {/* Draft */}
           <Route path="draft" element={<L><DraftRoomPage /></L>} />

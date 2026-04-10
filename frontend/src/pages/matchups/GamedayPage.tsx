@@ -689,8 +689,8 @@ export function GamedayPage() {
         </>
       )}
 
-      {/* All matchups grid */}
-      <div className="gameday-all-matchups mt-4">
+      {/* All matchups grid — hidden (matching original template display:none) */}
+      <div className="gameday-all-matchups mt-4" style={{ display: 'none' }}>
         <div className="gameday-matchups-header">
           <span><i className="bi bi-grid-3x2-gap me-2"></i>ROUND {d.afl_round} MATCHUPS</span>
           {d.round_dates && <span className="matchups-header-dates">{d.round_dates}</span>}

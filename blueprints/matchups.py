@@ -903,12 +903,22 @@ def api_afl_game(league_id, game_id):
                 result[key].append({
                     "name": p.name,
                     "position": p.position or "",
+                    "jumper": None,
                     "sc_score": stat.supercoach_score,
+                    "kicks": stat.kicks or 0,
+                    "handballs": stat.handballs or 0,
+                    "disposals": stat.disposals or 0,
+                    "marks": stat.marks or 0,
+                    "tackles": stat.tackles or 0,
+                    "goals": stat.goals or 0,
+                    "behinds": stat.behinds or 0,
+                    "hitouts": stat.hitouts or 0,
                     "is_live": stat.is_live if stat else False,
                 })
 
         result[key].sort(key=lambda x: x["sc_score"], reverse=True)
 
+    result["team_logos"] = TEAM_LOGOS
     return jsonify(result)
 
 
