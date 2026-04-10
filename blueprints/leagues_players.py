@@ -710,6 +710,17 @@ def list_changes_page(league_id):
 
     list_changes = compute_list_changes(league_id)
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "list_changes": [{
+                "type": e.get("type"),
+                "description": e.get("description"),
+                "year": e.get("year"),
+                "date": e["date"].strftime("%d %b %Y") if e.get("date") else None,
+            } for e in (list_changes or [])],
+        })
+
     return render_template("leagues/list_changes.html",
                            league=league,
                            list_changes=list_changes)

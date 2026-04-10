@@ -39,6 +39,9 @@ import { FixturePage } from './pages/matchups/FixturePage'
 import { RoundDetailPage } from './pages/matchups/RoundDetailPage'
 import { MatchupDetailPage } from './pages/matchups/MatchupDetailPage'
 import { AflGamePage } from './pages/matchups/AflGamePage'
+import { FinalsPage } from './pages/matchups/FinalsPage'
+import { ListChangesPage } from './pages/leagues/ListChangesPage'
+import { LegacyPage } from './pages/LegacyPage'
 
 // Trade pages
 import { TradeCenterPage } from './pages/trades/TradeCenterPage'
@@ -56,8 +59,6 @@ import { PlayerPoolPage } from './pages/players/PlayerPoolPage'
 // Draft pages
 // DraftRoomPage lazy loaded above
 
-// Placeholder for pages not yet migrated
-import { PlaceholderPage } from './pages/PlaceholderPage'
 
 export default function App() {
   return (
@@ -89,17 +90,17 @@ export default function App() {
           <Route path="fixture" element={<FixturePage />} />
           <Route path="fixture/:round" element={<RoundDetailPage />} />
           <Route path="matchup/:fixtureId" element={<MatchupDetailPage />} />
-          <Route path="history" element={<PlaceholderPage title="History" />} />
-          <Route path="history/:year" element={<PlaceholderPage title="Season Archive" />} />
-          <Route path="finals" element={<PlaceholderPage title="Finals" />} />
-          <Route path="afl-live" element={<PlaceholderPage title="AFL Live" />} />
+          <Route path="history" element={<LegacyPage title="League Records" description="All-time champions, records, and head-to-head history." path="/leagues/:leagueId/records" icon="bi-trophy" />} />
+          <Route path="history/:year" element={<LegacyPage title="Season Archive" description="Historical season standings and results." path="/leagues/:leagueId/records" icon="bi-archive" />} />
+          <Route path="finals" element={<FinalsPage />} />
+          <Route path="afl-live" element={<LegacyPage title="AFL Live" description="Live AFL games for the current round." path="/leagues/:leagueId/afl-live" icon="bi-broadcast" />} />
           <Route path="gameday/afl-game/:gameId" element={<AflGamePage />} />
 
           {/* Draft */}
           <Route path="draft" element={<L><DraftRoomPage /></L>} />
-          <Route path="draft/setup" element={<PlaceholderPage title="Draft Setup" />} />
-          <Route path="draft/mock" element={<PlaceholderPage title="Mock Draft" />} />
-          <Route path="draft/recap" element={<PlaceholderPage title="Draft Recap" />} />
+          <Route path="draft/setup" element={<LegacyPage title="Draft Setup" description="Configure draft order, timing, and settings before going live." path="/leagues/:leagueId/draft/setup" icon="bi-gear" />} />
+          <Route path="draft/mock" element={<LegacyPage title="Mock Draft" description="Practice draft against simulated opponents." path="/leagues/:leagueId/draft/mock" icon="bi-play-circle" />} />
+          <Route path="draft/recap" element={<LegacyPage title="Draft Recap" description="Pick-by-pick review of your completed draft." path="/leagues/:leagueId/draft/recap" icon="bi-list-check" />} />
 
           {/* Trades */}
           <Route path="trades" element={<TradeCenterPage />} />
@@ -110,21 +111,21 @@ export default function App() {
           <Route path="chat" element={<LeagueChatPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="activity" element={<ActivityFeedPage />} />
-          <Route path="messages" element={<PlaceholderPage title="Messages" />} />
+          <Route path="messages" element={<LegacyPage title="Messages" description="Direct messages with other managers in the league." path="/leagues/:leagueId/messages" icon="bi-envelope" />} />
 
           {/* Players */}
           <Route path="player-pool" element={<PlayerPoolPage />} />
-          <Route path="players/compare" element={<PlaceholderPage title="Player Compare" />} />
-          <Route path="player-ratings" element={<PlaceholderPage title="Player Ratings" />} />
-          <Route path="injuries" element={<PlaceholderPage title="Injuries" />} />
-          <Route path="keepers" element={<PlaceholderPage title="Keeper Values" />} />
-          <Route path="list-changes" element={<PlaceholderPage title="List Changes" />} />
-          <Route path="stats" element={<PlaceholderPage title="Advanced Stats" />} />
+          <Route path="players/compare" element={<LegacyPage title="Player Compare" description="Side-by-side comparison of player stats and form." path="/leagues/:leagueId/players/compare" icon="bi-people-fill" />} />
+          <Route path="player-ratings" element={<LegacyPage title="Player Ratings" description="Player rating dashboard with trends and potential." path="/leagues/:leagueId/player-ratings" icon="bi-star" />} />
+          <Route path="injuries" element={<LegacyPage title="Injuries" description="Current injury list across the league." path="/leagues/:leagueId/injuries" icon="bi-bandaid" />} />
+          <Route path="keepers" element={<LegacyPage title="Keeper Values" description="Keeper value index for your squad." path="/leagues/:leagueId/keepers" icon="bi-shield-check" />} />
+          <Route path="list-changes" element={<ListChangesPage />} />
+          <Route path="stats" element={<LegacyPage title="Advanced Stats" description="Advanced per-stat breakdowns across the league." path="/leagues/:leagueId/stats" icon="bi-graph-up" />} />
 
           {/* Settings & Admin */}
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="scoring" element={<PlaceholderPage title="Scoring" />} />
-          <Route path="commissioner" element={<PlaceholderPage title="Commissioner Hub" />} />
+          <Route path="scoring" element={<LegacyPage title="Scoring Configuration" description="Configure custom scoring rules and stat weights." path="/leagues/:leagueId/scoring" icon="bi-calculator" />} />
+          <Route path="commissioner" element={<LegacyPage title="Commissioner Hub" description="Commissioner admin tools, LTIL approvals, and league management." path="/leagues/:leagueId/commissioner" icon="bi-shield-lock" />} />
 
           {/* Reserve 7s */}
           <Route path="reserve7s/team" element={<L><Reserve7sTeamPage /></L>} />

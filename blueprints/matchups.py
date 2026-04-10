@@ -1179,6 +1179,25 @@ def finals_view(league_id):
 
     scoring = get_scoring_context(league)
 
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {"id": t.id, "name": t.name} if t else None
+
+        return jsonify({
+            "league": {"id": league.id, "name": league.name, "season_year": league.season_year},
+            "is_commissioner": is_commissioner,
+            "scoring": scoring,
+            "finals": [{
+                "id": f.id,
+                "final_type": f.final_type,
+                "status": f.status,
+                "home_team": _ser_team(f.home_team),
+                "away_team": _ser_team(f.away_team),
+                "home_score": f.home_score,
+                "away_score": f.away_score,
+            } for f in (finals or [])],
+        })
+
     return render_template("matchups/finals.html",
                            league=league,
                            finals=finals,
