@@ -24,17 +24,20 @@ interface FieldData {
   slot_counts: Record<string, number>; zone_layouts: Record<string, number[]>
 }
 
+import { checkSwapEligible, type SwapSourceInfo, type ActionMode } from '../../hooks/useFieldActions'
+
 interface Actions {
   setCaptain: (pid: number) => void
   setVC: (pid: number) => void
-  startSwap: (pid: number) => void
-  completeSwap: (pid: number) => void
-  toggleEmergency: (pid: number) => void
-  toggle7s: (pid: number) => void
+  startSwap: (pid: number, section: string, positions: string[], fieldPos: string) => void
+  handlePlayerClick: (pid: number, section: string, positions: string[], fieldPos: string, isLocked: boolean, isEmg: boolean, is7s: boolean) => boolean
+  toggleEmergency: (pid: number, emgIds: number[], lockedPids: Set<number>) => void
+  toggle7s: (pid: number, sevensIds: number[], playerAge: number, lockedPids: Set<number>) => void
   set7sCaptain: (pid: number) => void
   addToLTIL: (pid: number) => void
   showPlayer: (pid: number) => void
-  swapSource: number | null
+  swapSource: SwapSourceInfo | null
+  actionMode: ActionMode
 }
 
 interface Props {
@@ -88,13 +91,25 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
       isLocked && 'fv-card-locked',
     ].filter(Boolean).join(' ')
 
+    const section = isReserve ? 'reserve' : isFlex ? 'flex' : 'field'
+    const fieldPosUpper = !isFlex && !isReserve ? posClass.toUpperCase() : ''
     const posParts = (p.position || 'MID').split('/')
     const fname = p.name.split(' ')[0]
     const sname = p.name.split(' ').slice(1).join(' ')
     const rtgClass = p.rating ? (p.rating >= 80 ? 'fv-rtg-elite' : p.rating >= 70 ? 'fv-rtg-good' : p.rating >= 60 ? 'fv-rtg-avg' : 'fv-rtg-low') : 'fv-rtg-none'
 
-    const isSwapActive = actions?.swapSource === p.id
-    const isSwapEligible = actions?.swapSource && actions.swapSource !== p.id && !isLocked
+    const isSwapActive = actions?.swapSource?.pid === p.id
+    // Compute eligibility based on action mode
+    let isSwapEligible = false
+    if (actions?.swapSource && actions.swapSource.pid !== p.id && !isLocked) {
+      if (actions.actionMode === 'swap') {
+        isSwapEligible = checkSwapEligible(actions.swapSource, section, posParts, fieldPosUpper)
+      } else if (actions.actionMode === 'emg_replace') {
+        isSwapEligible = isEmg // Only current emergencies are eligible
+      } else if (actions.actionMode === '7s_replace') {
+        isSwapEligible = is7s // Only current 7s players are eligible
+      }
+    }
 
     return (
       <div className={`${cardClasses}${isSwapActive ? ' fv-swap-active' : ''}${isSwapEligible ? ' fv-swap-eligible' : ''}`}
@@ -102,8 +117,10 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
         data-positions={p.position || 'MID'} data-field-pos={!isFlex && !isReserve ? posClass.toUpperCase() : ''}
         data-locked={isLocked ? '1' : ''} data-emg={isEmg ? '1' : ''} data-sevens={is7s ? '1' : ''} data-age={String(p.age || '')}
         onClick={() => {
-          if (actions?.swapSource) { actions.completeSwap(p.id) }
-          else if (actions) { actions.showPlayer(p.id) }
+          if (actions?.swapSource) {
+            const handled = actions.handlePlayerClick(p.id, section, posParts, fieldPosUpper, isLocked, isEmg, is7s)
+            if (!handled && actions.swapSource.pid === p.id) actions.showPlayer(p.id)
+          } else if (actions) { actions.showPlayer(p.id) }
         }}>
         {/* Ribbon */}
         {isCap && <div className="fv-ribbon fv-ribbon-cap"><span>C</span></div>}
@@ -133,17 +150,17 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
               </>
             )}
             <button className="fv-action-btn fv-act-sub"
-              title="Swap Player" onClick={e => { e.stopPropagation(); actions.startSwap(p.id) }}>
+              title="Swap Player" onClick={e => { e.stopPropagation(); actions.startSwap(p.id, section, posParts, fieldPosUpper) }}>
               <i className="bi bi-arrow-left-right"></i>
             </button>
             {isReserve && !is7s && (
               <button className={`fv-action-btn fv-act-emg${isEmg ? ' active' : ''}`}
-                title="Toggle Emergency" onClick={e => { e.stopPropagation(); actions.toggleEmergency(p.id) }}>E</button>
+                title="Toggle Emergency" onClick={e => { e.stopPropagation(); actions.toggleEmergency(p.id, fd.emergency_ids, new Set(fd.locked_teams.flatMap(t => []))) }}>E</button>
             )}
             {isReserve && fd.has_7s_fixture && !isEmg && (
               <>
                 <button className={`fv-action-btn fv-act-7s${is7s ? ' active' : ''}`}
-                  title="Toggle 7s" onClick={e => { e.stopPropagation(); actions.toggle7s(p.id) }}>7</button>
+                  title="Toggle 7s" onClick={e => { e.stopPropagation(); actions.toggle7s(p.id, fd.sevens_ids, p.age, new Set()) }}>7</button>
                 {is7s && fd.sevens_captain_enabled && (
                   <button className={`fv-action-btn fv-act-7c${is7c ? ' active' : ''}`}
                     title="Set 7s Captain" onClick={e => { e.stopPropagation(); actions.set7sCaptain(p.id) }}>7C</button>

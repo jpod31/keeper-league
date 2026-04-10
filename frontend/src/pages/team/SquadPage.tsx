@@ -110,8 +110,13 @@ export function SquadPage() {
         data-player-id={player.id} data-section={section} data-positions={player.position || 'MID'} data-field-pos={posCode || ''}
         data-locked={isLocked ? '1' : ''} data-emg={showEmg ? '1' : ''} data-sevens={show7s ? '1' : ''} data-age={String(player.age || '')}
         onClick={() => {
-          if (fieldActions.swapSource) { fieldActions.completeSwap(player.id) }
-          else if (is_owner) { setMobileActionPlayer(player) }
+          if (fieldActions.swapSource) {
+            const lockedTeams = fd ? new Set(fd.locked_teams) : new Set<string>()
+            const isLkd = lockedTeams.has(player.afl_team || '')
+            const isEmgP = fd ? fd.emergency_ids.includes(player.id) : false
+            const is7sP = fd ? fd.sevens_ids.includes(player.id) : false
+            fieldActions.handlePlayerClick(player.id, section, (player.position || 'MID').split('/'), posCode || '', isLkd, isEmgP, is7sP)
+          } else if (is_owner) { setMobileActionPlayer(player) }
           else { fieldActions.showPlayer(player.id) }
         }}
         style={{ cursor: 'pointer', ...style }}>
@@ -344,13 +349,14 @@ export function SquadPage() {
           setCaptain: fieldActions.setCaptain,
           setVC: fieldActions.setVC,
           startSwap: fieldActions.startSwap,
-          completeSwap: fieldActions.completeSwap,
+          handlePlayerClick: fieldActions.handlePlayerClick,
           toggleEmergency: fieldActions.toggleEmergency,
           toggle7s: fieldActions.toggle7s,
           set7sCaptain: fieldActions.set7sCaptain,
           addToLTIL: fieldActions.addToLTIL,
           showPlayer: fieldActions.showPlayer,
           swapSource: fieldActions.swapSource,
+          actionMode: fieldActions.actionMode,
         }} />
       )}
 
@@ -453,9 +459,13 @@ export function SquadPage() {
           onClose={() => setMobileActionPlayer(null)}
           onSetCaptain={() => fieldActions.setCaptain(mobileActionPlayer.id)}
           onSetVC={() => fieldActions.setVC(mobileActionPlayer.id)}
-          onSwap={() => fieldActions.startSwap(mobileActionPlayer.id)}
-          onToggleEmg={() => fieldActions.toggleEmergency(mobileActionPlayer.id)}
-          onToggle7s={() => fieldActions.toggle7s(mobileActionPlayer.id)}
+          onSwap={() => {
+            const isRes = !Object.values(fd!.zones).flat().some(p => p?.id === mobileActionPlayer.id) && !fd!.flex_data.some(s => s.player?.id === mobileActionPlayer.id)
+            const sec = isRes ? 'reserve' : fd!.flex_data.some(s => s.player?.id === mobileActionPlayer.id) ? 'flex' : 'field'
+            fieldActions.startSwap(mobileActionPlayer.id, sec, (mobileActionPlayer.position || 'MID').split('/'), '')
+          }}
+          onToggleEmg={() => fieldActions.toggleEmergency(mobileActionPlayer.id, fd!.emergency_ids, new Set())}
+          onToggle7s={() => fieldActions.toggle7s(mobileActionPlayer.id, fd!.sevens_ids, mobileActionPlayer.age, new Set())}
           onSet7sCaptain={() => fieldActions.set7sCaptain(mobileActionPlayer.id)}
           onAddLTIL={() => fieldActions.addToLTIL(mobileActionPlayer.id)}
           onViewPlayer={() => fieldActions.showPlayer(mobileActionPlayer.id)}

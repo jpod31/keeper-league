@@ -12,34 +12,27 @@ interface PlayerDetail {
   season_games: number
 }
 
-/** Check if two players can swap positions (matching original _checkSwapEligible logic) */
-function checkSwapEligible(
-  srcPositions: string[], srcSection: string, srcFieldPos: string,
-  tgtPositions: string[], tgtSection: string, tgtFieldPos: string,
+export type ActionMode = 'swap' | 'emg_replace' | '7s_replace' | null
+
+export interface SwapSourceInfo {
+  pid: number
+  section: string      // 'field' | 'flex' | 'reserve'
+  positions: string[]  // ['DEF'] or ['MID','FWD']
+  fieldPos: string     // 'DEF' | 'MID' | etc. or '' for flex/reserve
+}
+
+/** Check if two players can swap positions */
+export function checkSwapEligible(
+  src: SwapSourceInfo,
+  tgtSection: string, tgtPositions: string[], tgtFieldPos: string,
 ): boolean {
   function canFillSlot(playerPositions: string[], slotSection: string, slotFieldPos: string) {
-    // Flex and reserve slots accept any player
     if (slotSection === 'flex' || slotSection === 'reserve') return true
-    // Field slot requires the player to have that position
     return playerPositions.includes(slotFieldPos)
   }
-  // Both players must be able to fill each other's slot
-  return canFillSlot(srcPositions, tgtSection, tgtFieldPos)
-      && canFillSlot(tgtPositions, srcSection, srcFieldPos)
+  return canFillSlot(src.positions, tgtSection, tgtFieldPos)
+      && canFillSlot(tgtPositions, src.section, src.fieldPos)
 }
-
-/** Get section/positions/fieldPos for a player from the DOM, matching original */
-function getPlayerSlotInfo(pid: number): { section: string; positions: string[]; fieldPos: string } | null {
-  const el = document.querySelector(`[data-player-id="${pid}"]`) as HTMLElement
-  if (!el) return null
-  return {
-    section: el.dataset.section || '',
-    positions: (el.dataset.positions || 'MID').split('/'),
-    fieldPos: el.dataset.fieldPos || '',
-  }
-}
-
-export type ActionMode = 'swap' | 'emg_replace' | '7s_replace' | null
 
 export function useFieldActions(
   leagueId: string, teamId: string, onRefresh: () => void,
@@ -47,7 +40,7 @@ export function useFieldActions(
 ) {
   const API = `/leagues/${leagueId}/team/${teamId}/api`
   const [toastMsg, setToastMsg] = useState<{ text: string; type: string } | null>(null)
-  const [swapSource, setSwapSource] = useState<number | null>(null)
+  const [swapSource, setSwapSource] = useState<SwapSourceInfo | null>(null)
   const [actionMode, setActionMode] = useState<ActionMode>(null)
   const [playerModal, setPlayerModal] = useState<PlayerDetail | null>(null)
 
@@ -67,7 +60,6 @@ export function useFieldActions(
     }
   }, [API, toast])
 
-  // ── Simple actions ──
   const setCaptain = useCallback(async (pid: number) => {
     const data = await fvApi('/set-captain', { player_id: pid })
     if (!data.error) { toast('Captain updated', 'success'); onRefresh() }
@@ -88,238 +80,165 @@ export function useFieldActions(
     if (!data.error) { toast('Added to LTIL', 'success'); onRefresh() }
   }, [fvApi, toast, onRefresh])
 
-  // ── Cancel all modes ──
   const cancelAllModes = useCallback(() => {
     setSwapSource(null)
     setActionMode(null)
   }, [])
 
-  // ── Swap: start with position eligibility checking ──
-  const startSwap = useCallback((pid: number) => {
-    // Cancel if tapping same player
-    if (swapSource === pid) { cancelAllModes(); return }
-    // Cancel other modes
-    cancelAllModes()
-
-    setSwapSource(pid)
+  // ── Swap: start ──
+  const startSwap = useCallback((pid: number, section: string, positions: string[], fieldPos: string) => {
+    if (swapSource?.pid === pid) { cancelAllModes(); return }
+    setSwapSource({ pid, section, positions, fieldPos })
     setActionMode('swap')
-
-    // Mark eligible targets in the DOM (for CSS highlighting)
-    const srcInfo = getPlayerSlotInfo(pid)
-    if (!srcInfo) return
-
-    document.querySelectorAll('[data-player-id]').forEach(el => {
-      const htmlEl = el as HTMLElement
-      htmlEl.classList.remove('fv-swap-active', 'fv-swap-eligible')
-      const tid = parseInt(htmlEl.dataset.playerId || '0')
-      if (tid === pid) { htmlEl.classList.add('fv-swap-active'); return }
-      if (htmlEl.dataset.locked === '1') return
-      if (!htmlEl.dataset.section) return
-
-      const tgtInfo = {
-        section: htmlEl.dataset.section || '',
-        positions: (htmlEl.dataset.positions || 'MID').split('/'),
-        fieldPos: htmlEl.dataset.fieldPos || '',
-      }
-
-      if (checkSwapEligible(
-        srcInfo.positions, srcInfo.section, srcInfo.fieldPos,
-        tgtInfo.positions, tgtInfo.section, tgtInfo.fieldPos,
-      )) {
-        htmlEl.classList.add('fv-swap-eligible')
-      }
-    })
   }, [swapSource, cancelAllModes])
 
   // ── Swap: complete with animation ──
   const completeSwap = useCallback((targetPid: number) => {
-    if (!swapSource || swapSource === targetPid) return
-
-    // Check the target is actually eligible
-    const targetEl = document.querySelector(`[data-player-id="${targetPid}"]`) as HTMLElement
-    if (targetEl && !targetEl.classList.contains('fv-swap-eligible')) {
-      // Not eligible — handle emg/7s replacement modes
-      if (actionMode === 'emg_replace' && targetEl.dataset.emg === '1') {
-        // Replace this emergency with the source
-        const sourcePid = swapSource
-        cancelAllModes()
-        fvApi('/set-emergency', { player_id: targetPid }).then(d1 => {
-          if (d1.error) return
-          fvApi('/set-emergency', { player_id: sourcePid }).then(() => onRefresh())
-        })
-        return
-      }
-      if (actionMode === '7s_replace' && targetEl.dataset.sevens === '1') {
-        // Replace this 7s player with the source
-        const sourcePid = swapSource
-        cancelAllModes()
-        fvApi('/toggle-7s', { player_id: targetPid }).then(d1 => {
-          if (d1.error) return
-          fvApi('/toggle-7s', { player_id: sourcePid }).then(() => onRefresh())
-        })
-        return
-      }
-      return // Not eligible, ignore
-    }
-
-    const savedSource = swapSource
+    if (!swapSource || swapSource.pid === targetPid) return
+    const savedSource = swapSource.pid
     cancelAllModes()
 
-    // Clear CSS classes
-    document.querySelectorAll('[data-player-id]').forEach(el => {
-      (el as HTMLElement).classList.remove('fv-swap-active', 'fv-swap-eligible')
-    })
+    const sourceEl = document.querySelector(`.fv-card[data-player-id="${savedSource}"], .mob-pos-row[data-player-id="${savedSource}"]`) as HTMLElement
+    const targetEl = document.querySelector(`.fv-card[data-player-id="${targetPid}"], .mob-pos-row[data-player-id="${targetPid}"]`) as HTMLElement
 
-    // Find DOM elements for animation
-    const sourceEl = document.querySelector(`[data-player-id="${savedSource}"]`) as HTMLElement
-    const tgtEl = document.querySelector(`[data-player-id="${targetPid}"]`) as HTMLElement
-
-    if (!sourceEl || !tgtEl) {
+    if (!sourceEl || !targetEl) {
       fvApi('/swap', { player_id_1: savedSource, player_id_2: targetPid }).then(data => {
         if (!data.error) { toast('Players swapped', 'success'); onRefresh() }
       })
       return
     }
 
-    // Animated swap
     const srcRect = sourceEl.getBoundingClientRect()
-    const tgtRect = tgtEl.getBoundingClientRect()
+    const tgtRect = targetEl.getBoundingClientRect()
     const dx = tgtRect.left - srcRect.left
     const dy = tgtRect.top - srcRect.top
 
     sourceEl.style.zIndex = '10'
-    tgtEl.style.zIndex = '10'
+    targetEl.style.zIndex = '10'
     sourceEl.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)'
-    tgtEl.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)'
+    targetEl.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)'
     sourceEl.style.transform = `translate(${dx}px, ${dy}px)`
-    tgtEl.style.transform = `translate(${-dx}px, ${-dy}px)`
+    targetEl.style.transform = `translate(${-dx}px, ${-dy}px)`
 
     const apiPromise = fvApi('/swap', { player_id_1: savedSource, player_id_2: targetPid })
     const animDone = new Promise<void>(r => setTimeout(r, 370))
 
     Promise.all([apiPromise, animDone]).then(([data]) => {
-      ;[sourceEl, tgtEl].forEach(el => {
+      ;[sourceEl, targetEl].forEach(el => {
         el.style.transform = ''
         el.style.transition = ''
         el.style.zIndex = ''
       })
-      if (data && !data.error) {
-        toast('Players swapped', 'success')
-        onRefresh()
-      }
+      if (data && !data.error) { toast('Players swapped', 'success'); onRefresh() }
     })
-  }, [swapSource, actionMode, fvApi, toast, onRefresh, cancelAllModes])
+  }, [swapSource, fvApi, toast, onRefresh, cancelAllModes])
 
-  // ── Emergency: with replacement mode when full ──
-  const toggleEmergency = useCallback((pid: number) => {
-    // If already in emg replace mode for this player, cancel
-    if (swapSource === pid && actionMode === 'emg_replace') { cancelAllModes(); return }
+  // ── Emergency: with replacement mode ──
+  const toggleEmergency = useCallback((pid: number, emgIds: number[], lockedPids: Set<number>) => {
+    if (swapSource?.pid === pid && actionMode === 'emg_replace') { cancelAllModes(); return }
     cancelAllModes()
 
-    const card = document.querySelector(`[data-player-id="${pid}"]`) as HTMLElement
-    if (!card || card.dataset.locked === '1') return
-    const isEmg = card.dataset.emg === '1'
-
+    const isEmg = emgIds.includes(pid)
     if (isEmg) {
-      // Already emergency — toggle off
-      fvApi('/set-emergency', { player_id: pid }).then(data => {
-        if (!data.error) onRefresh()
-      })
+      fvApi('/set-emergency', { player_id: pid }).then(d => { if (!d.error) onRefresh() })
+    } else if (emgIds.filter(id => !lockedPids.has(id)).length < 4) {
+      // Room available (counting only unlocked slots)
+      fvApi('/set-emergency', { player_id: pid }).then(d => { if (!d.error) onRefresh() })
     } else {
-      // Check if room
-      const currentEmgCount = document.querySelectorAll('[data-emg="1"]').length
-      if (currentEmgCount < 4) {
-        // Room available — add directly
-        fvApi('/set-emergency', { player_id: pid }).then(data => {
-          if (!data.error) onRefresh()
-        })
-      } else {
-        // Full — enter replacement mode
-        setSwapSource(pid)
-        setActionMode('emg_replace')
-
-        document.querySelectorAll('[data-player-id]').forEach(el => {
-          const htmlEl = el as HTMLElement
-          htmlEl.classList.remove('fv-swap-active', 'fv-swap-eligible')
-          const cid = parseInt(htmlEl.dataset.playerId || '0')
-          if (cid === pid) { htmlEl.classList.add('fv-swap-active'); return }
-          if (htmlEl.dataset.locked === '1') return
-          // Eligible: current unlocked emergencies
-          if (htmlEl.dataset.emg === '1') {
-            htmlEl.classList.add('fv-swap-eligible')
-          }
-        })
-        toast('Emergency slots full — select one to replace', 'info')
-      }
+      // Full — enter replacement mode
+      setSwapSource({ pid, section: 'reserve', positions: [], fieldPos: '' })
+      setActionMode('emg_replace')
+      toast('Emergency slots full — select one to replace', 'info')
     }
   }, [swapSource, actionMode, fvApi, onRefresh, toast, cancelAllModes])
 
-  // ── 7s: with replacement mode when full + age cutoff ──
-  const toggle7s = useCallback((pid: number) => {
-    // If already in 7s replace mode for this player, cancel
-    if (swapSource === pid && actionMode === '7s_replace') { cancelAllModes(); return }
+  // ── Emergency: complete replacement ──
+  const completeEmgReplace = useCallback((targetPid: number) => {
+    if (!swapSource) return
+    const sourcePid = swapSource.pid
+    cancelAllModes()
+    fvApi('/set-emergency', { player_id: targetPid }).then(d1 => {
+      if (d1.error) return
+      fvApi('/set-emergency', { player_id: sourcePid }).then(() => onRefresh())
+    })
+  }, [swapSource, fvApi, onRefresh, cancelAllModes])
+
+  // ── 7s: with replacement mode + age cutoff ──
+  const toggle7s = useCallback((pid: number, sevensIds: number[], playerAge: number, lockedPids: Set<number>) => {
+    if (swapSource?.pid === pid && actionMode === '7s_replace') { cancelAllModes(); return }
     cancelAllModes()
 
-    const card = document.querySelector(`[data-player-id="${pid}"]`) as HTMLElement
-    if (!card || card.dataset.locked === '1') return
-    const is7s = card.dataset.sevens === '1'
+    const is7s = sevensIds.includes(pid)
+    if (is7s) {
+      fvApi('/toggle-7s', { player_id: pid }).then(d => { if (!d.error) onRefresh() })
+      return
+    }
 
-    // Count current seniors in 7s
-    const current7sCards = document.querySelectorAll('[data-sevens="1"]')
+    // Count seniors currently in 7s
+    // We need ages from DOM data attributes
     let seniorCount = 0
-    current7sCards.forEach(c => {
-      const age = parseInt((c as HTMLElement).dataset.age || '0')
-      if (age >= ageCutoff) seniorCount++
+    sevensIds.forEach(sid => {
+      const el = document.querySelector(`[data-player-id="${sid}"]`) as HTMLElement
+      if (el) {
+        const age = parseInt(el.dataset.age || '0')
+        if (age >= ageCutoff) seniorCount++
+      }
     })
 
-    if (is7s) {
-      // Already in 7s — toggle off
-      fvApi('/toggle-7s', { player_id: pid }).then(data => {
-        if (!data.error) onRefresh()
-      })
-    } else {
-      if (current7sCards.length < 7) {
-        // Check age eligibility
-        const playerAge = parseInt(card.dataset.age || '0')
-        if (playerAge >= ageCutoff && seniorCount >= maxSenior7s) {
-          toast(`Max ${maxSenior7s} senior (${ageCutoff}+) players in 7s`, 'error')
-          return
-        }
-        // Room available — add directly
-        fvApi('/toggle-7s', { player_id: pid }).then(data => {
-          if (!data.error) onRefresh()
-        })
-      } else {
-        // Full — enter replacement mode
-        setSwapSource(pid)
-        setActionMode('7s_replace')
+    const playerIsSenior = playerAge >= ageCutoff
 
-        const srcAge = parseInt(card.dataset.age || '0')
-        const srcIsSenior = srcAge >= ageCutoff
-
-        document.querySelectorAll('[data-player-id]').forEach(el => {
-          const htmlEl = el as HTMLElement
-          htmlEl.classList.remove('fv-swap-active', 'fv-swap-eligible')
-          const cid = parseInt(htmlEl.dataset.playerId || '0')
-          if (cid === pid) { htmlEl.classList.add('fv-swap-active'); return }
-          if (htmlEl.dataset.locked === '1') return
-          if (htmlEl.dataset.sevens !== '1') return
-          // If source is senior, can only replace another senior (unless under limit)
-          if (srcIsSenior) {
-            const tgtAge = parseInt(htmlEl.dataset.age || '0')
-            const tgtIsSenior = tgtAge >= ageCutoff
-            if (!tgtIsSenior && seniorCount >= maxSenior7s) return
-          }
-          htmlEl.classList.add('fv-swap-eligible')
-        })
-        toast('7s squad full — select one to replace', 'info')
+    if (sevensIds.length < 7) {
+      if (playerIsSenior && seniorCount >= maxSenior7s) {
+        toast(`Max ${maxSenior7s} senior (${ageCutoff}+) players in 7s`, 'error')
+        return
       }
+      fvApi('/toggle-7s', { player_id: pid }).then(d => { if (!d.error) onRefresh() })
+    } else {
+      // Full — enter replacement mode
+      setSwapSource({ pid, section: 'reserve', positions: [], fieldPos: '' })
+      setActionMode('7s_replace')
+      toast('7s squad full — select one to replace', 'info')
     }
   }, [swapSource, actionMode, fvApi, onRefresh, toast, cancelAllModes, ageCutoff, maxSenior7s])
 
-  // ── Player scouting report ──
+  // ── 7s: complete replacement ──
+  const complete7sReplace = useCallback((targetPid: number) => {
+    if (!swapSource) return
+    const sourcePid = swapSource.pid
+    cancelAllModes()
+    fvApi('/toggle-7s', { player_id: targetPid }).then(d1 => {
+      if (d1.error) return
+      fvApi('/toggle-7s', { player_id: sourcePid }).then(() => onRefresh())
+    })
+  }, [swapSource, fvApi, onRefresh, cancelAllModes])
+
+  // ── Handle click on any player during a mode ──
+  const handlePlayerClick = useCallback((pid: number, section: string, positions: string[], fieldPos: string, isLocked: boolean, isEmg: boolean, is7s: boolean) => {
+    if (!swapSource) return false // No mode active
+    if (swapSource.pid === pid) return false // Clicked source, ignore (cancel handled elsewhere)
+    if (isLocked) return false
+
+    if (actionMode === 'swap') {
+      // Check eligibility
+      if (checkSwapEligible(swapSource, section, positions, fieldPos)) {
+        completeSwap(pid)
+        return true
+      }
+      return false
+    }
+    if (actionMode === 'emg_replace' && isEmg) {
+      completeEmgReplace(pid)
+      return true
+    }
+    if (actionMode === '7s_replace' && is7s) {
+      complete7sReplace(pid)
+      return true
+    }
+    return false
+  }, [swapSource, actionMode, completeSwap, completeEmgReplace, complete7sReplace])
+
   const showPlayer = useCallback(async (pid: number) => {
-    if (swapSource) return // Don't open modal during swap/replace modes
+    if (swapSource) return
     try {
       const data = await api<PlayerDetail>(`${API}/player/${pid}`)
       setPlayerModal(data)
@@ -332,6 +251,7 @@ export function useFieldActions(
     toastMsg, swapSource, actionMode, playerModal,
     setCaptain, setVC, startSwap, completeSwap, cancelAllModes,
     toggleEmergency, toggle7s, set7sCaptain, addToLTIL,
+    completeEmgReplace, complete7sReplace, handlePlayerClick,
     showPlayer, closePlayerModal, toast,
   }
 }
