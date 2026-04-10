@@ -26,6 +26,9 @@ export function checkSwapEligible(
   src: SwapSourceInfo,
   tgtSection: string, tgtPositions: string[], tgtFieldPos: string,
 ): boolean {
+  // Don't offer to swap two on-field players in the same zone — pointless, both already playing
+  if (src.section === 'field' && tgtSection === 'field' && src.fieldPos === tgtFieldPos) return false
+
   function canFillSlot(playerPositions: string[], slotSection: string, slotFieldPos: string) {
     if (slotSection === 'flex' || slotSection === 'reserve') return true
     return playerPositions.includes(slotFieldPos)
@@ -61,13 +64,16 @@ export function useFieldActions(
   }, [API, toast])
 
   const setCaptain = useCallback(async (pid: number) => {
-    const data = await fvApi('/set-captain', { player_id: pid })
-    if (!data.error) { toast('Captain updated', 'success'); onRefresh() }
+    // Fire API, then silently refresh in background — no flash
+    fvApi('/set-captain', { player_id: pid }).then(data => {
+      if (!data.error) { toast('Captain updated', 'success'); onRefresh() }
+    })
   }, [fvApi, toast, onRefresh])
 
   const setVC = useCallback(async (pid: number) => {
-    const data = await fvApi('/set-vc', { player_id: pid })
-    if (!data.error) { toast('Vice Captain updated', 'success'); onRefresh() }
+    fvApi('/set-vc', { player_id: pid }).then(data => {
+      if (!data.error) { toast('Vice Captain updated', 'success'); onRefresh() }
+    })
   }, [fvApi, toast, onRefresh])
 
   const set7sCaptain = useCallback(async (pid: number) => {
