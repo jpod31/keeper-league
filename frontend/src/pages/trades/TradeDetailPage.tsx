@@ -1,122 +1,348 @@
-import { useParams } from 'react-router'
-import { useFetch } from '../../hooks/useFetch'
-import { post } from '../../lib/api'
-import { Spinner } from '../../components/ui/Spinner'
-import { useToast } from '../../components/ui/Toast'
+import { useParams, Link, useNavigate } from 'react-router'
 import { useState } from 'react'
+import { useFetch } from '../../hooks/useFetch'
+import { Spinner } from '../../components/ui/Spinner'
 
-interface TradeDetail {
+interface Team { id: number; name: string }
+
+interface PlayerAsset {
+  player_id: number | null
+  name: string
+  position: string
+  sc_avg: number
+}
+
+interface PickAsset {
+  id: number | null
+  year: number | null
+  round_number: number | null
+  original_team_id: number | null
+  original_team: string | null
+  from_team_id: number
+  is_own: boolean
+}
+
+interface Comment {
+  user_name: string
+  user_initial: string
+  comment: string
+  created_at: string | null
+}
+
+interface Trade {
   id: number
-  proposer: { team_id: number; team_name: string; owner: string }
-  recipient: { team_id: number; team_name: string; owner: string }
   status: string
-  created: string
-  message: string
-  players_out: { name: string; position: string; sc_avg: number }[]
-  players_in: { name: string; position: string; sc_avg: number }[]
-  comments: { author: string; text: string; created: string }[]
-  can_respond: boolean
-  can_veto: boolean
+  proposer_team: Team | null
+  recipient_team: Team | null
+  proposed_at: string | null
+  review_deadline: string | null
+  responded_at: string | null
+  intended_period: string | null
+  notes: string | null
+  veto_reason: string | null
+}
+
+interface TradeDetailData {
+  league: { id: number; name: string }
+  trade: Trade
+  giving: PlayerAsset[]
+  receiving: PlayerAsset[]
+  giving_picks: PickAsset[]
+  receiving_picks: PickAsset[]
+  comments: Comment[]
+  is_commissioner: boolean
+  is_recipient: boolean
+  is_proposer: boolean
+}
+
+function posCode(pos: string): string {
+  return (pos || 'MID').split('/')[0].toUpperCase()
 }
 
 export function TradeDetailPage() {
   const { leagueId, tradeId } = useParams()
-  const { data, loading, refetch } = useFetch<TradeDetail>(`/api/leagues/${leagueId}/trades/${tradeId}`)
-  const { toast } = useToast()
+  const navigate = useNavigate()
+  const { data, loading, refetch } = useFetch<TradeDetailData>(`/leagues/${leagueId}/trades/${tradeId}?format=json`)
   const [comment, setComment] = useState('')
+  const [vetoReason, setVetoReason] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  if (loading) return <Spinner />
-  if (!data) return <p className="text-sm text-[#ef4444]">Failed to load trade</p>
+  if (loading) return <Spinner text="Loading trade..." />
+  if (!data) return <p className="text-danger">Failed to load trade</p>
 
-  const respond = async (action: string) => {
+  const { league, trade, giving, receiving, giving_picks, receiving_picks, comments, is_commissioner, is_recipient, is_proposer } = data
+
+  async function respondAction(action: 'accept' | 'reject' | 'cancel') {
+    if (action === 'accept' && !confirm('Accept this trade?')) return
+    setBusy(true)
     try {
-      await post(`/api/leagues/${leagueId}/trades/${tradeId}/respond`, { action })
-      toast(`Trade ${action}`, 'success')
-      refetch()
-    } catch { toast('Action failed', 'error') }
+      const form = new FormData()
+      form.set('action', action)
+      const res = await fetch(`/leagues/${leagueId}/trades/${tradeId}/respond`, {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        redirect: 'manual',
+      })
+      if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
+      if (action === 'cancel') {
+        navigate(`/leagues/${leagueId}/trades`)
+      } else {
+        refetch()
+      }
+    } catch (e) {
+      alert((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
   }
 
-  const addComment = async () => {
-    if (!comment.trim()) return
+  async function vetoAction() {
+    if (!confirm('Veto this trade?')) return
+    setBusy(true)
     try {
-      await post(`/api/leagues/${leagueId}/trades/${tradeId}/comment`, { text: comment })
+      const form = new FormData()
+      form.set('reason', vetoReason)
+      const res = await fetch(`/leagues/${leagueId}/trades/${tradeId}/veto`, {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        redirect: 'manual',
+      })
+      if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
+      refetch()
+    } catch (e) {
+      alert((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function submitComment(e: React.FormEvent) {
+    e.preventDefault()
+    if (!comment.trim()) return
+    setBusy(true)
+    try {
+      const form = new FormData()
+      form.set('comment', comment)
+      const res = await fetch(`/leagues/${leagueId}/trades/${tradeId}/comment`, {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        redirect: 'manual',
+      })
+      if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
       setComment('')
       refetch()
-    } catch { toast('Failed to add comment', 'error') }
+    } catch (err) {
+      alert((err as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function renderAssetTable(players: PlayerAsset[], picks: PickAsset[]) {
+    return (
+      <table className="table table-sm mb-0">
+        <tbody>
+          {players.map(a => (
+            <tr key={`p-${a.player_id}`}>
+              <td>{a.name}</td>
+              <td><span className={`pos-badge pos-${posCode(a.position)}`}>{a.position}</span></td>
+              <td className="text-end text-secondary">
+                {a.sc_avg ? Math.round(a.sc_avg) : '-'}
+              </td>
+            </tr>
+          ))}
+          {picks.map(a => (
+            <tr key={`pk-${a.id}`}>
+              <td colSpan={2}>
+                <i className="bi bi-ticket-perforated me-1" style={{ color: '#58a6ff' }}></i>
+                {a.year} Round {a.round_number} Pick
+                {!a.is_own && a.original_team && (
+                  <span className="text-secondary" style={{ fontSize: '.75rem' }}>
+                    {' '}(originally {a.original_team}'s)
+                  </span>
+                )}
+              </td>
+              <td className="text-end">
+                <span className="badge" style={{ background: 'rgba(88,166,255,.15)', color: '#58a6ff', fontSize: '.65rem' }}>PICK</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <p className="text-[10px] font-extrabold uppercase tracking-[2px] text-[#484f58] mb-1">Trade #{data.id}</p>
-      <h1 className="text-xl font-extrabold text-[#e6edf3] mb-6">{data.proposer.team_name} → {data.recipient.team_name}</h1>
-
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <TradeColumn title={`${data.proposer.team_name} sends`} players={data.players_out} />
-        <TradeColumn title={`${data.recipient.team_name} sends`} players={data.players_in} />
-      </div>
-
-      {data.message && (
-        <div className="rounded-xl p-4 bg-[#0d1117] border border-[#21262d] mb-6">
-          <p className="text-xs text-[#484f58] mb-1">Message</p>
-          <p className="text-sm text-[#c9d1d9]">{data.message}</p>
-        </div>
-      )}
-
-      {/* Actions */}
-      {data.can_respond && data.status === 'pending' && (
-        <div className="flex gap-2 mb-6">
-          <button onClick={() => respond('accept')}
-            className="px-4 py-2 rounded-xl bg-[#3fb950]/10 text-[#3fb950] text-sm font-bold border border-[#3fb950]/20 hover:bg-[#3fb950]/20 transition">
-            Accept
-          </button>
-          <button onClick={() => respond('reject')}
-            className="px-4 py-2 rounded-xl bg-[#ef4444]/10 text-[#ef4444] text-sm font-bold border border-[#ef4444]/20 hover:bg-[#ef4444]/20 transition">
-            Reject
-          </button>
-        </div>
-      )}
-
-      {/* Comments */}
-      <div>
-        <h3 className="text-sm font-bold text-[#e6edf3] mb-3">Comments</h3>
-        <div className="space-y-2 mb-4">
-          {data.comments.map((c, i) => (
-            <div key={i} className="px-4 py-2 rounded-xl bg-[#0d1117] border border-[#21262d]">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-xs font-bold text-[#e6edf3]">{c.author}</span>
-                <span className="text-[10px] text-[#484f58]">{c.created}</span>
-              </div>
-              <p className="text-xs text-[#c9d1d9]">{c.text}</p>
-            </div>
-          ))}
-          {!data.comments.length && <p className="text-xs text-[#484f58]">No comments yet</p>}
-        </div>
-        <div className="flex gap-2">
-          <input value={comment} onChange={e => setComment(e.target.value)} placeholder="Add a comment..."
-            className="flex-1 px-3 py-2 rounded-xl bg-[#0d1117] border border-[#21262d] text-sm text-[#e6edf3] focus:border-[#58a6ff] focus:outline-none transition"
-            onKeyDown={e => e.key === 'Enter' && addComment()} />
-          <button onClick={addComment}
-            className="px-4 py-2 rounded-xl bg-[#21262d] text-sm font-bold text-[#8b949e] hover:text-[#e6edf3] transition">
-            Send
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TradeColumn({ title, players }: { title: string; players: { name: string; position: string; sc_avg: number }[] }) {
-  return (
     <div>
-      <p className="text-xs font-bold text-[#8b949e] mb-2">{title}</p>
-      <div className="rounded-xl border border-[#21262d] bg-[#0d1117] overflow-hidden">
-        {players.map((p, i) => (
-          <div key={i} className={`flex items-center px-4 py-2.5 text-xs ${i > 0 ? 'border-t border-[#21262d]' : ''}`}>
-            <span className="text-[10px] text-[#484f58] w-8">{p.position}</span>
-            <span className="flex-1 font-medium text-[#e6edf3]">{p.name}</span>
-            <span className="font-black text-[#e6edf3]">{p.sc_avg.toFixed(0)}</span>
+      <div className="page-header">
+        <div className="page-breadcrumb">
+          <Link to={`/leagues/${leagueId}`}>{league.name}</Link>
+          {' / '}<Link to={`/leagues/${leagueId}/trades`}>Trades</Link>
+          {' / '}#{trade.id}
+        </div>
+        <div className="d-flex justify-content-between align-items-start">
+          <div className="d-flex align-items-center gap-3">
+            <Link to={`/leagues/${leagueId}/trades`} className="btn btn-sm btn-outline-secondary" style={{ padding: '4px 10px' }}>
+              <i className="bi bi-arrow-left"></i>
+            </Link>
+            <h2 className="mb-0">Trade Details</h2>
           </div>
-        ))}
+          <span className={`status-pill status-${trade.status}`} style={{ fontSize: '.85rem' }}>{trade.status}</span>
+        </div>
+      </div>
+
+      {trade.status === 'agreed' && (
+        <div className="alert" style={{ background: 'rgba(88,166,255,.08)', border: '1px solid rgba(88,166,255,.25)', color: '#c9d1d9', marginBottom: '1.5rem' }}>
+          <i className="bi bi-info-circle me-1" style={{ color: '#58a6ff' }}></i>
+          Both teams have agreed to this trade. It will auto-execute when the trade window opens.
+        </div>
+      )}
+
+      <div className="row g-4 mb-4">
+        <div className="col-md-5">
+          <div className="card">
+            <div className="card-header">
+              <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+                <span style={{ color: '#f85149' }}><i className="bi bi-arrow-up-right me-1"></i></span>
+                {trade.proposer_team?.name} sends
+              </h5>
+            </div>
+            <div className="card-body p-0">
+              {renderAssetTable(giving, giving_picks)}
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-2 d-flex align-items-center justify-content-center py-2 py-md-0">
+          <i className="bi bi-arrow-down-up d-md-none" style={{ fontSize: '1.5rem', color: '#30363d' }}></i>
+          <i className="bi bi-arrow-left-right d-none d-md-inline" style={{ fontSize: '2rem', color: '#30363d' }}></i>
+        </div>
+
+        <div className="col-md-5">
+          <div className="card">
+            <div className="card-header">
+              <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+                <span style={{ color: '#3fb950' }}><i className="bi bi-arrow-down-left me-1"></i></span>
+                {trade.recipient_team?.name} sends
+              </h5>
+            </div>
+            <div className="card-body p-0">
+              {renderAssetTable(receiving, receiving_picks)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="d-flex flex-wrap gap-4" style={{ fontSize: '.8rem', color: '#8b949e' }}>
+            <span><i className="bi bi-clock me-1"></i>Proposed {trade.proposed_at}</span>
+            {trade.review_deadline && trade.status === 'pending' && (
+              <span><i className="bi bi-hourglass-split me-1"></i>Deadline {trade.review_deadline}</span>
+            )}
+            {trade.responded_at && (
+              <span><i className="bi bi-check-circle me-1"></i>Responded {trade.responded_at}</span>
+            )}
+            {trade.intended_period && (
+              <span>
+                <i className="bi bi-calendar-event me-1"></i>
+                {trade.intended_period === 'midseason' ? 'Mid-Season' : 'End of Season'}
+              </span>
+            )}
+          </div>
+          {trade.notes && (
+            <div className="mt-3 p-3" style={{ background: '#21262d', borderRadius: 8, fontSize: '.85rem' }}>
+              <i className="bi bi-chat-quote me-1" style={{ color: '#8b949e' }}></i> "{trade.notes}"
+            </div>
+          )}
+          {trade.veto_reason && (
+            <div className="mt-3 p-3" style={{ background: 'rgba(248,81,73,.1)', borderRadius: 8, border: '1px solid rgba(248,81,73,.2)', fontSize: '.85rem', color: '#f85149' }}>
+              <i className="bi bi-exclamation-triangle me-1"></i> Veto: {trade.veto_reason}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {trade.status === 'pending' && (
+        <div className="d-flex flex-wrap gap-2 mb-4">
+          {is_recipient && (
+            <>
+              <button className="btn btn-primary" onClick={() => respondAction('accept')} disabled={busy}>
+                <i className="bi bi-check-lg me-1"></i>Accept
+              </button>
+              <button className="btn btn-outline-secondary" style={{ borderColor: '#f85149', color: '#f85149' }} onClick={() => respondAction('reject')} disabled={busy}>
+                <i className="bi bi-x-lg me-1"></i>Reject
+              </button>
+            </>
+          )}
+          {is_proposer && (
+            <button className="btn btn-outline-secondary" onClick={() => respondAction('cancel')} disabled={busy}>
+              Cancel Trade
+            </button>
+          )}
+          {is_commissioner && (
+            <div className="d-flex gap-2">
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Veto reason (optional)"
+                style={{ minWidth: 150, flex: 1 }}
+                value={vetoReason}
+                onChange={e => setVetoReason(e.target.value)}
+              />
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                style={{ borderColor: '#f85149', color: '#f85149' }}
+                onClick={vetoAction}
+                disabled={busy}
+              >
+                Veto
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="card">
+        <div className="card-header">
+          <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+            <i className="bi bi-chat-dots me-2" style={{ color: '#8b949e' }}></i>Comments
+          </h5>
+        </div>
+        <div className="card-body">
+          {comments.length > 0 ? comments.map((c, i) => (
+            <div key={i} className="mb-3 pb-3" style={{ borderBottom: '1px solid #21262d' }}>
+              <div className="d-flex align-items-center gap-2 mb-1">
+                <span
+                  className="d-inline-flex align-items-center justify-content-center rounded-circle"
+                  style={{ width: 24, height: 24, background: '#21262d', fontSize: '.65rem', fontWeight: 600 }}
+                >{c.user_initial}</span>
+                <strong style={{ fontSize: '.85rem' }}>{c.user_name}</strong>
+                <small style={{ color: '#484f58' }}>{c.created_at}</small>
+              </div>
+              <p className="mb-0 ms-4" style={{ fontSize: '.85rem' }}>{c.comment}</p>
+            </div>
+          )) : (
+            <p className="text-secondary mb-3" style={{ fontSize: '.85rem' }}>No comments yet.</p>
+          )}
+
+          <form className="d-flex gap-2" onSubmit={submitComment}>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Add a comment..."
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              required
+            />
+            <button type="submit" className="btn btn-outline-primary btn-sm" style={{ whiteSpace: 'nowrap' }} disabled={busy}>
+              Send
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

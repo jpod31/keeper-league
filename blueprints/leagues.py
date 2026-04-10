@@ -14,6 +14,7 @@ from models.league_manager import (
     set_custom_scoring, get_custom_scoring,
 )
 import config
+from config import SCORING_TYPE_LABELS
 
 
 def _round_sort_key(round_str):
@@ -312,14 +313,56 @@ def dashboard(league_id):
         flash("League not found.", "warning")
         return redirect(url_for("leagues.league_list"))
 
-    # Default to My Team view if user has a team
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
-    if user_team and not request.args.get("overview"):
-        return redirect(url_for("team.squad", league_id=league_id, team_id=user_team.id))
 
     teams = get_league_teams(league_id)
     is_commissioner = league.commissioner_id == current_user.id
     scoring_rules = get_custom_scoring(league_id) if league.scoring_type in ("custom", "hybrid", "ultimate_footy") else {}
+
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {
+                "id": t.id,
+                "name": t.name,
+                "owner_id": t.owner_id,
+                "owner": t.owner.display_name if t.owner else "?",
+                "draft_order": t.draft_order,
+                "is_mine": t.owner_id == current_user.id,
+                "roster_count": sum(1 for r in t.roster if r.is_active) if t.roster else 0,
+                "logo_url": t.logo_url,
+            }
+
+        return jsonify({
+            "league": {
+                "id": league.id,
+                "name": league.name,
+                "status": league.status,
+                "season_year": league.season_year,
+                "scoring_type": league.scoring_type,
+                "scoring_label": SCORING_TYPE_LABELS.get(league.scoring_type, league.scoring_type),
+                "num_teams": league.num_teams,
+                "squad_size": league.squad_size,
+                "on_field_count": league.on_field_count,
+                "draft_type": league.draft_type,
+                "pick_timer_secs": league.pick_timer_secs,
+                "trade_window_open": bool(league.trade_window_open),
+                "commissioner_name": league.commissioner.display_name if league.commissioner else "?",
+                "invite_code": league.invite_code,
+                "position_slots": [
+                    {"position_code": ps.position_code, "count": ps.count, "is_bench": bool(getattr(ps, "is_bench", False))}
+                    for ps in (league.position_slots or [])
+                ],
+            },
+            "user_team": _ser_team(user_team) if user_team else None,
+            "teams": [_ser_team(t) for t in teams],
+            "is_commissioner": is_commissioner,
+            "scoring_rules": scoring_rules,
+        })
+
+    # Default to My Team view if user has a team (HTML mode only)
+    if user_team and not request.args.get("overview"):
+        return redirect(url_for("team.squad", league_id=league_id, team_id=user_team.id))
 
     return render_template("leagues/dashboard.html",
                            league=league,

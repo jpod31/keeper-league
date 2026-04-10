@@ -40,6 +40,30 @@ def trade_center(league_id):
     all_trades = get_league_trades(league_id)
     history = [t for t in all_trades if t.status != "pending"]
 
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {"id": t.id, "name": t.name} if t else None
+
+        def _ser_trade(t):
+            return {
+                "id": t.id,
+                "status": t.status,
+                "proposer_team": _ser_team(t.proposer_team),
+                "recipient_team": _ser_team(t.recipient_team),
+                "asset_count": len(t.assets) if t.assets else 0,
+                "proposed_at": t.proposed_at.strftime("%d %b %Y %H:%M") if t.proposed_at else None,
+            }
+
+        return jsonify({
+            "league": {"id": league.id, "name": league.name, "trade_window_open": bool(league.trade_window_open)},
+            "user_team": _ser_team(user_team),
+            "is_commissioner": is_commissioner,
+            "tab": tab,
+            "incoming": [_ser_trade(t) for t in incoming],
+            "outgoing": [_ser_trade(t) for t in outgoing],
+            "history": [_ser_trade(t) for t in history],
+        })
+
     return render_template("trades/center.html",
                            league=league,
                            user_team=user_team,
@@ -118,6 +142,32 @@ def trade_propose(league_id):
         FutureDraftPick.year <= max_pick_year,
     ).order_by(FutureDraftPick.year, FutureDraftPick.round_number).all()
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "user_team": {"id": user_team.id, "name": user_team.name},
+            "trade_window_open": bool(league.trade_window_open),
+            "other_teams": [
+                {"id": t.id, "name": t.name, "owner": t.owner.display_name if t.owner else "?"}
+                for t in other_teams
+            ],
+            "my_players": [
+                {"id": p.id, "name": p.name, "position": p.position or "", "sc_avg": p.sc_avg or 0}
+                for p in my_players
+            ],
+            "my_picks": [
+                {
+                    "id": pk.id,
+                    "year": pk.year,
+                    "round_number": pk.round_number,
+                    "original_team_id": pk.original_team_id,
+                    "original_team": pk.original_team.name if pk.original_team else "?",
+                    "is_own": pk.original_team_id == user_team.id,
+                }
+                for pk in my_picks
+            ],
+        })
+
     return render_template("trades/propose.html",
                            league=league,
                            user_team=user_team,
@@ -148,6 +198,60 @@ def trade_detail(league_id, trade_id):
     receiving_players = [a for a in trade.assets if a.from_team_id == trade.recipient_team_id and a.player_id]
     giving_picks = [a for a in trade.assets if a.from_team_id == trade.proposer_team_id and a.future_pick_id]
     receiving_picks = [a for a in trade.assets if a.from_team_id == trade.recipient_team_id and a.future_pick_id]
+
+    if request.args.get("format") == "json":
+        def _ser_player_asset(a):
+            p = a.player
+            return {
+                "player_id": p.id if p else None,
+                "name": p.name if p else "?",
+                "position": p.position if p else "",
+                "sc_avg": p.sc_avg if p else 0,
+            }
+
+        def _ser_pick_asset(a):
+            fp = a.future_pick
+            return {
+                "id": fp.id if fp else None,
+                "year": fp.year if fp else None,
+                "round_number": fp.round_number if fp else None,
+                "original_team_id": fp.original_team_id if fp else None,
+                "original_team": fp.original_team.name if fp and fp.original_team else None,
+                "from_team_id": a.from_team_id,
+                "is_own": fp.original_team_id == a.from_team_id if fp else True,
+            }
+
+        def _ser_comment(c):
+            return {
+                "user_name": c.user.display_name if c.user else "?",
+                "user_initial": (c.user.display_name[0].upper() if c.user and c.user.display_name else "?"),
+                "comment": c.comment,
+                "created_at": c.created_at.strftime("%d %b %H:%M") if c.created_at else None,
+            }
+
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "trade": {
+                "id": trade.id,
+                "status": trade.status,
+                "proposer_team": {"id": trade.proposer_team.id, "name": trade.proposer_team.name} if trade.proposer_team else None,
+                "recipient_team": {"id": trade.recipient_team.id, "name": trade.recipient_team.name} if trade.recipient_team else None,
+                "proposed_at": trade.proposed_at.strftime("%d %b %Y %H:%M") if trade.proposed_at else None,
+                "review_deadline": trade.review_deadline.strftime("%d %b %Y %H:%M") if trade.review_deadline else None,
+                "responded_at": trade.responded_at.strftime("%d %b %Y %H:%M") if trade.responded_at else None,
+                "intended_period": trade.intended_period,
+                "notes": trade.notes,
+                "veto_reason": trade.veto_reason,
+            },
+            "giving": [_ser_player_asset(a) for a in giving_players],
+            "receiving": [_ser_player_asset(a) for a in receiving_players],
+            "giving_picks": [_ser_pick_asset(a) for a in giving_picks],
+            "receiving_picks": [_ser_pick_asset(a) for a in receiving_picks],
+            "comments": [_ser_comment(c) for c in (trade.comments or [])],
+            "is_commissioner": is_commissioner,
+            "is_recipient": bool(is_recipient),
+            "is_proposer": bool(is_proposer),
+        })
 
     return render_template("trades/detail.html",
                            league=league,

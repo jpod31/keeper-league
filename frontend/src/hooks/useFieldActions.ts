@@ -176,7 +176,7 @@ export function useFieldActions(
   }, [swapSource, fvApi, onRefresh, cancelAllModes])
 
   // ── 7s: with replacement mode + age cutoff ──
-  const toggle7s = useCallback((pid: number, sevensIds: number[], playerAge: number, lockedPids: Set<number>) => {
+  const toggle7s = useCallback((pid: number, sevensIds: number[], playerAge: number, _lockedPids: Set<number>) => {
     if (swapSource?.pid === pid && actionMode === '7s_replace') { cancelAllModes(); return }
     cancelAllModes()
 

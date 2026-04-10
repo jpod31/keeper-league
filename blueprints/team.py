@@ -832,6 +832,42 @@ def lineup(league_id, team_id, afl_round):
             elif game.get("scheduled_start"):
                 player_lock_times[p.id] = f"Locks at {game['scheduled_start'][11:16]}"
 
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _ser_slot(s):
+            return {
+                "player_id": s.player_id,
+                "player_name": getattr(s, "player_name", None) or (s.player.name if s.player else None),
+                "position_code": s.position_code,
+                "is_captain": bool(getattr(s, "is_captain", False)),
+                "is_vice_captain": bool(getattr(s, "is_vice_captain", False)),
+            }
+
+        def _ser_player(p):
+            return {
+                "id": p.id,
+                "name": p.name,
+                "position": p.position or "",
+                "sc_avg": p.sc_avg or 0,
+                "afl_team": p.afl_team or "",
+            }
+
+        return jsonify({
+            "team": {"id": team.id, "name": team.name, "logo_url": team.logo_url},
+            "afl_round": afl_round,
+            "max_round": config.SC_ROUNDS,
+            "is_owner": is_owner,
+            "lineup": {
+                "is_locked": bool(lineup_data.is_locked),
+                "slots": [_ser_slot(s) for s in (lineup_data.slots or [])],
+            },
+            "bye_players": [{"name": p.name, "afl_team": p.afl_team or ""} for p in (bye_players or [])],
+            "all_players": [_ser_player(p) for p in all_players],
+            "position_slots": [{"position_code": ps.position_code, "count": ps.count, "is_bench": bool(getattr(ps, "is_bench", False))} for ps in position_slots],
+            "locked_player_ids": list(locked_player_ids),
+            "player_lock_times": {str(k): v for k, v in player_lock_times.items()},
+        })
+
     return render_template("team/lineup.html",
                            league=league,
                            team=team,

@@ -29,8 +29,9 @@ export function AflGamePage() {
   const g = data.game
   const players = showTeam === 'home' ? data.home : data.away
   const sorted = [...players].sort((a, b) => {
-    const av = (a as Record<string, number>)[sortCol === 'sc' ? 'sc_score' : sortCol] || 0
-    const bv = (b as Record<string, number>)[sortCol === 'sc' ? 'sc_score' : sortCol] || 0
+    const key = sortCol === 'sc' ? 'sc_score' : sortCol
+    const av = Number((a as unknown as Record<string, unknown>)[key] ?? 0)
+    const bv = Number((b as unknown as Record<string, unknown>)[key] ?? 0)
     return sortDir === -1 ? bv - av : av - bv
   })
 

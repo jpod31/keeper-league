@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
-  sc_avg: number; rating: number | null
+  sc_avg: number; games_played: number; career_games: number; rating: number | null
   injury_type: string | null; injury_return: string | null; injury_severity: string | null
 }
 
