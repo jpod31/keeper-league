@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams } from 'react-router'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
@@ -38,6 +38,27 @@ interface SquadData {
   wishlist_players: WishlistPlayer[]
 }
 
+// Error boundary to catch and display crashes instead of black screen
+class SquadErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error('Squad page crash:', error, info) }
+  render() {
+    if (this.state.error) return (
+      <div className="card mt-4"><div className="card-body">
+        <h5 style={{ color: '#f85149' }}>Something went wrong</h5>
+        <pre style={{ fontSize: '.75rem', color: '#8b949e', whiteSpace: 'pre-wrap' }}>{this.state.error.message}{'\n'}{this.state.error.stack}</pre>
+        <button className="btn btn-sm btn-outline-primary mt-2" onClick={() => window.location.reload()}>Reload</button>
+      </div></div>
+    )
+    return this.props.children
+  }
+}
+
+export function SquadPageWrapper() {
+  return <SquadErrorBoundary><SquadPageInner /></SquadErrorBoundary>
+}
+
 const POS_COLORS: Record<string, { bg: string; text: string; row: string }> = {
   DEF: { bg: 'rgba(26,63,102,.35)', text: '#79c0ff', row: 'rgba(26,63,102,.08)' },
   MID: { bg: 'rgba(53,29,74,.35)', text: '#d2a8ff', row: 'rgba(53,29,74,.08)' },
@@ -45,7 +66,9 @@ const POS_COLORS: Record<string, { bg: string; text: string; row: string }> = {
   FWD: { bg: 'rgba(70,41,10,.35)', text: '#ffb471', row: 'rgba(70,41,10,.08)' },
 }
 
-export function SquadPage() {
+export { SquadPageWrapper as SquadPage }
+
+function SquadPageInner() {
   const { leagueId, teamId } = useParams()
   const { league } = useLeague()
   const [searchParams] = useSearchParams()
