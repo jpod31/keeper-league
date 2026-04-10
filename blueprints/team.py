@@ -674,6 +674,19 @@ def squad(league_id, team_id):
                 "next_lockout_time": fd.get("next_lockout_time"),
                 "slot_counts": fd.get("slot_counts", {}),
                 "zone_layouts": fd.get("zone_layouts", {}),
+                "player_form": fd.get("player_form", {}),
+                "cap_locked": fd.get("cap_locked", False),
+                "vc_locked": fd.get("vc_locked", False),
+                "pending_ltil": [{"player_id": lt.player_id, "player_name": lt.player.name if lt.player else "?"} for lt in fd.get("pending_ltil", [])],
+                "ssp_window_active": fd.get("ssp_window_active", False),
+                "can_remove_ltil": fd.get("can_remove_ltil", False),
+                "ltil_full": [{
+                    "player_id": lt.player_id,
+                    "player_name": lt.player.name if lt.player else "?",
+                    "player_position": lt.player.position if lt.player else "",
+                    "player_sc_avg": lt.player.sc_avg if lt.player else 0,
+                    "replacement_name": lt.replacement_player.name if lt.replacement_player else None,
+                } for lt in fd.get("ltil_entries", [])],
             }
 
         return jsonify({
@@ -701,6 +714,7 @@ def squad(league_id, team_id):
             "selected_player_ids": list(selected_player_ids),
             "emergency_ids_all": emergency_ids_all,
             "sevens_ids_all": sevens_ids_all,
+            "wishlist_players": wishlist_players if view == "wishlist" else [],
         })
 
     return render_template("team/squad.html",
