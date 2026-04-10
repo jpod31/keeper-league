@@ -3,6 +3,8 @@ import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
 import { FieldView } from '../../components/squad/FieldView'
+import { PlayerModal } from '../../components/squad/PlayerModal'
+import { useFieldActions } from '../../hooks/useFieldActions'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
@@ -54,7 +56,8 @@ export function SquadPage() {
   const [searchParams] = useSearchParams()
   const view = searchParams.get('view') || 'field'
   // Use the existing Flask route with ?format=json to get identical data
-  const { data, loading } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
+  const { data, loading, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
+  const fieldActions = useFieldActions(leagueId!, teamId!, refetch)
 
   if (loading) return <Spinner />
   if (!data) return <p className="text-danger">Failed to load squad</p>
@@ -326,7 +329,18 @@ export function SquadPage() {
 
       {/* ── Desktop Field View ── */}
       {view === 'field' && fd && (
-        <FieldView fd={fd} teamLogos={data.team_logos} />
+        <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner} actions={{
+          setCaptain: fieldActions.setCaptain,
+          setVC: fieldActions.setVC,
+          startSwap: fieldActions.startSwap,
+          completeSwap: fieldActions.completeSwap,
+          toggleEmergency: fieldActions.toggleEmergency,
+          toggle7s: fieldActions.toggle7s,
+          set7sCaptain: fieldActions.set7sCaptain,
+          addToLTIL: fieldActions.addToLTIL,
+          showPlayer: fieldActions.showPlayer,
+          swapSource: fieldActions.swapSource,
+        }} />
       )}
 
       {/* ── Desktop List View Table ── */}
@@ -395,6 +409,22 @@ export function SquadPage() {
           </table>
         </div>
       </div>}
+
+      {/* Toast notification */}
+      {fieldActions.toastMsg && (
+        <div className={`fv-toast fv-toast-${fieldActions.toastMsg.type} fv-toast-show`}>
+          {fieldActions.toastMsg.text}
+        </div>
+      )}
+
+      {/* Player scouting report modal */}
+      {fieldActions.playerModal && (
+        <PlayerModal
+          player={fieldActions.playerModal}
+          teamLogos={data.team_logos}
+          onClose={fieldActions.closePlayerModal}
+        />
+      )}
     </div>
   )
 }

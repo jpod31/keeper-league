@@ -23,12 +23,27 @@ interface FieldData {
   slot_counts: Record<string, number>; zone_layouts: Record<string, number[]>
 }
 
+interface Actions {
+  setCaptain: (pid: number) => void
+  setVC: (pid: number) => void
+  startSwap: (pid: number) => void
+  completeSwap: (pid: number) => void
+  toggleEmergency: (pid: number) => void
+  toggle7s: (pid: number) => void
+  set7sCaptain: (pid: number) => void
+  addToLTIL: (pid: number) => void
+  showPlayer: (pid: number) => void
+  swapSource: number | null
+}
+
 interface Props {
   fd: FieldData
   teamLogos: Record<string, string>
+  isOwner: boolean
+  actions?: Actions
 }
 
-export function FieldView({ fd, teamLogos }: Props) {
+export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
   const lockedSet = new Set(fd.locked_teams)
   const selectedSet = new Set(fd.selected_player_ids)
   const emgSet = new Set(fd.emergency_ids)
@@ -77,8 +92,17 @@ export function FieldView({ fd, teamLogos }: Props) {
     const sname = p.name.split(' ').slice(1).join(' ')
     const rtgClass = p.rating ? (p.rating >= 80 ? 'fv-rtg-elite' : p.rating >= 70 ? 'fv-rtg-good' : p.rating >= 60 ? 'fv-rtg-avg' : 'fv-rtg-low') : 'fv-rtg-none'
 
+    const isSwapActive = actions?.swapSource === p.id
+    const isSwapEligible = actions?.swapSource && actions.swapSource !== p.id && !isLocked
+
     return (
-      <div className={cardClasses}>
+      <div className={`${cardClasses}${isSwapActive ? ' fv-swap-active' : ''}${isSwapEligible ? ' fv-swap-eligible' : ''}`}
+        data-player-id={p.id} data-section={isReserve ? 'reserve' : isFlex ? 'flex' : 'field'}
+        data-positions={p.position || 'MID'} data-field-pos={!isFlex && !isReserve ? posClass.toUpperCase() : ''}
+        onClick={() => {
+          if (actions?.swapSource) { actions.completeSwap(p.id) }
+          else if (actions) { actions.showPlayer(p.id) }
+        }}>
         {/* Ribbon */}
         {isCap && <div className="fv-ribbon fv-ribbon-cap"><span>C</span></div>}
         {isVC && !isCap && <div className="fv-ribbon fv-ribbon-vc"><span>VC</span></div>}
@@ -94,6 +118,44 @@ export function FieldView({ fd, teamLogos }: Props) {
 
         {/* BYE badge */}
         {hasBye && <div className={`fv-bye-badge${isSelected || p.injury_severity ? ' fv-bye-shifted' : ''}`} title="No game this round">BYE</div>}
+
+        {/* Hover action buttons (owner only, not locked) */}
+        {isOwner && !isLocked && actions && (
+          <div className="fv-actions" onClick={e => e.stopPropagation()}>
+            {!isReserve && (
+              <>
+                <button className={`fv-action-btn fv-act-cap${isCap ? ' active' : ''}`}
+                  title="Set Captain" onClick={e => { e.stopPropagation(); actions.setCaptain(p.id) }}>C</button>
+                <button className={`fv-action-btn fv-act-vc${isVC ? ' active' : ''}`}
+                  title="Set Vice Captain" onClick={e => { e.stopPropagation(); actions.setVC(p.id) }}>VC</button>
+              </>
+            )}
+            <button className="fv-action-btn fv-act-sub"
+              title="Swap Player" onClick={e => { e.stopPropagation(); actions.startSwap(p.id) }}>
+              <i className="bi bi-arrow-left-right"></i>
+            </button>
+            {isReserve && !is7s && (
+              <button className={`fv-action-btn fv-act-emg${isEmg ? ' active' : ''}`}
+                title="Toggle Emergency" onClick={e => { e.stopPropagation(); actions.toggleEmergency(p.id) }}>E</button>
+            )}
+            {isReserve && fd.has_7s_fixture && !isEmg && (
+              <>
+                <button className={`fv-action-btn fv-act-7s${is7s ? ' active' : ''}`}
+                  title="Toggle 7s" onClick={e => { e.stopPropagation(); actions.toggle7s(p.id) }}>7</button>
+                {is7s && fd.sevens_captain_enabled && (
+                  <button className={`fv-action-btn fv-act-7c${is7c ? ' active' : ''}`}
+                    title="Set 7s Captain" onClick={e => { e.stopPropagation(); actions.set7sCaptain(p.id) }}>7C</button>
+                )}
+              </>
+            )}
+            {(isFlex || isReserve) && (
+              <button className="fv-action-btn fv-act-ltil"
+                title="Add to LTIL" onClick={e => { e.stopPropagation(); actions.addToLTIL(p.id) }}>
+                <i className="bi bi-bandaid"></i>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Top row: logo + position */}
         <div className="fv-card-top">
