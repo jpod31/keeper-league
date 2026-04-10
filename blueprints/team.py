@@ -834,13 +834,19 @@ def lineup(league_id, team_id, afl_round):
 
     # ── JSON API mode for React SPA ──
     if request.args.get("format") == "json":
+        def _get(obj, key, default=None):
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return getattr(obj, key, default)
+
         def _ser_slot(s):
+            pid = _get(s, "player_id")
             return {
-                "player_id": s.player_id,
-                "player_name": getattr(s, "player_name", None) or (s.player.name if s.player else None),
-                "position_code": s.position_code,
-                "is_captain": bool(getattr(s, "is_captain", False)),
-                "is_vice_captain": bool(getattr(s, "is_vice_captain", False)),
+                "player_id": pid,
+                "player_name": _get(s, "player_name") or (_get(s, "player").name if _get(s, "player") else None),
+                "position_code": _get(s, "position_code"),
+                "is_captain": bool(_get(s, "is_captain", False)),
+                "is_vice_captain": bool(_get(s, "is_vice_captain", False)),
             }
 
         def _ser_player(p):
@@ -858,8 +864,8 @@ def lineup(league_id, team_id, afl_round):
             "max_round": config.SC_ROUNDS,
             "is_owner": is_owner,
             "lineup": {
-                "is_locked": bool(lineup_data.is_locked),
-                "slots": [_ser_slot(s) for s in (lineup_data.slots or [])],
+                "is_locked": bool(_get(lineup_data, "is_locked", False)),
+                "slots": [_ser_slot(s) for s in (_get(lineup_data, "slots", []) or [])],
             },
             "bye_players": [{"name": p.name, "afl_team": p.afl_team or ""} for p in (bye_players or [])],
             "all_players": [_ser_player(p) for p in all_players],
