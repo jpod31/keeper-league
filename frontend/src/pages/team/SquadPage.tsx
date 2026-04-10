@@ -1,7 +1,8 @@
-import { useParams, Link } from 'react-router'
+import { useParams, Link, useSearchParams } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
+import { FieldView } from '../../components/squad/FieldView'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
@@ -50,8 +51,10 @@ const POS_COLORS: Record<string, { bg: string; border: string; text: string; row
 export function SquadPage() {
   const { leagueId, teamId } = useParams()
   const { league } = useLeague()
+  const [searchParams] = useSearchParams()
+  const view = searchParams.get('view') || 'field'
   // Use the existing Flask route with ?format=json to get identical data
-  const { data, loading } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json`)
+  const { data, loading } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
 
   if (loading) return <Spinner />
   if (!data) return <p className="text-danger">Failed to load squad</p>
@@ -154,14 +157,16 @@ export function SquadPage() {
             <Link to={`/leagues/${leagueId}/team/${teamId}/stats`} className="squad-pill squad-pill-stats text-decoration-none"><i className="bi bi-graph-up"></i>Stats</Link>
             <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-bar-chart-line"></i>Analytics</Link>
             {is_owner && <Link to={`/leagues/${leagueId}/reserve7s/team`} className="squad-pill squad-pill-manage text-decoration-none" style={{ color: '#bc8cff', borderColor: 'rgba(188,140,255,.3)' }}><i className="bi bi-7-circle"></i>7s</Link>}
-            <span className="squad-pill squad-pill-list active"><i className="bi bi-table"></i>List</span>
+            <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`squad-pill squad-pill-field text-decoration-none${view === 'field' ? ' active' : ''}`}><i className="bi bi-diagram-3"></i>Field</Link>
+            <Link to={`/leagues/${leagueId}/team/${teamId}?view=table`} className={`squad-pill squad-pill-list text-decoration-none${view === 'table' ? ' active' : ''}`}><i className="bi bi-table"></i>List</Link>
           </div>
         </div>
       </div>
 
       {/* ── Mobile subnav ── */}
       <div className="mob-subnav d-lg-none">
-        <span className="mob-subnav-item active"><i className="bi bi-table"></i><span>List</span></span>
+        <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`mob-subnav-item text-decoration-none${view === 'field' ? ' active' : ''}`}><i className="bi bi-diagram-3"></i><span>Field</span></Link>
+        <Link to={`/leagues/${leagueId}/team/${teamId}?view=table`} className={`mob-subnav-item text-decoration-none${view === 'table' ? ' active' : ''}`}><i className="bi bi-table"></i><span>List</span></Link>
         <Link to={`/leagues/${leagueId}/team/${teamId}/stats`} className="mob-subnav-item text-decoration-none"><i className="bi bi-graph-up"></i><span>Stats</span></Link>
         <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="mob-subnav-item text-decoration-none"><i className="bi bi-bar-chart-line"></i><span>Analytics</span></Link>
         {is_owner && <Link to={`/leagues/${leagueId}/reserve7s/team`} className="mob-subnav-item text-decoration-none" style={{ color: '#bc8cff' }}><i className="bi bi-7-circle"></i><span>7s</span></Link>}
@@ -319,8 +324,13 @@ export function SquadPage() {
         )}
       </div>
 
+      {/* ── Desktop Field View ── */}
+      {view === 'field' && fd && (
+        <FieldView fd={fd} teamLogos={data.team_logos} />
+      )}
+
       {/* ── Desktop List View Table ── */}
-      <div className="card d-none d-lg-block">
+      {view === 'table' && <div className="card d-none d-lg-block">
         <div className="card-header d-flex justify-content-between align-items-center">
           <span className="fw-bold" style={{ fontSize: '.9rem' }}>Squad Roster</span>
         </div>
@@ -384,7 +394,7 @@ export function SquadPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
     </div>
   )
 }
