@@ -79,6 +79,32 @@ def fixture_view(league_id):
 
     scoring = get_scoring_context(league)
 
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
+
+        def _ser_fixture(f):
+            return {
+                "id": f.id,
+                "home_team_id": f.home_team_id,
+                "away_team_id": f.away_team_id,
+                "home_team": _ser_team(f.home_team),
+                "away_team": _ser_team(f.away_team),
+                "home_score": f.home_score,
+                "away_score": f.away_score,
+                "status": f.status,
+            }
+
+        return jsonify({
+            "round_meta": {str(k): v for k, v in round_meta.items()},
+            "selected_round": selected_round,
+            "current_fixtures": [_ser_fixture(f) for f in current_fixtures],
+            "max_round": max_round,
+            "scoring": scoring,
+            "is_commissioner": is_commissioner,
+        })
+
     return render_template("matchups/fixture.html",
                            league=league,
                            rounds=rounds,
@@ -103,6 +129,31 @@ def round_view(league_id, afl_round):
     is_commissioner = league.commissioner_id == current_user.id
 
     scoring = get_scoring_context(league)
+
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
+
+        def _ser_fixture(f):
+            return {
+                "id": f.id,
+                "home_team_id": f.home_team_id,
+                "away_team_id": f.away_team_id,
+                "home_team": _ser_team(f.home_team),
+                "away_team": _ser_team(f.away_team),
+                "home_score": f.home_score,
+                "away_score": f.away_score,
+                "status": f.status,
+            }
+
+        return jsonify({
+            "afl_round": afl_round,
+            "fixtures": [_ser_fixture(f) for f in fixtures],
+            "is_commissioner": is_commissioner,
+            "max_round": config.SC_ROUNDS,
+            "scoring": scoring,
+        })
 
     return render_template("matchups/round.html",
                            league=league,
@@ -141,6 +192,33 @@ def matchup_detail(league_id, fixture_id):
         else:
             # supercoach / afl_fantasy — show per-player scores
             player_breakdown = compute_player_breakdown(fixture, league_id)
+
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
+
+        fixture_out = {
+            "id": fixture.id,
+            "afl_round": fixture.afl_round,
+            "home_team_id": fixture.home_team_id,
+            "away_team_id": fixture.away_team_id,
+            "home_team": _ser_team(fixture.home_team),
+            "away_team": _ser_team(fixture.away_team),
+            "home_score": fixture.home_score,
+            "away_score": fixture.away_score,
+            "status": fixture.status,
+            "is_final": bool(fixture.is_final),
+            "final_type": fixture.final_type,
+        }
+
+        return jsonify({
+            "fixture": fixture_out,
+            "scoring": scoring,
+            "uf_breakdown": uf_breakdown,
+            "custom_breakdown": custom_breakdown,
+            "player_breakdown": player_breakdown,
+        })
 
     return render_template("matchups/detail.html",
                            league=league,
@@ -284,6 +362,43 @@ def standings(league_id):
                 "form_losses": losses,
                 "form_total": len(form),
             }
+
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _ser_standing(s):
+            t = s.team
+            return {
+                "team_id": s.team_id,
+                "team": {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None,
+                "wins": s.wins,
+                "losses": s.losses,
+                "draws": s.draws,
+                "ladder_points": s.ladder_points,
+                "points_for": s.points_for,
+                "points_against": s.points_against,
+                "percentage": s.percentage,
+            }
+
+        def _ser_ranking(pr):
+            t = pr.team
+            return {
+                "rank": pr.rank,
+                "movement": pr.movement,
+                "team_id": pr.team_id,
+                "team": {"id": t.id, "name": t.name} if t else None,
+                "score": pr.score,
+                "afl_round": pr.afl_round,
+            }
+
+        return jsonify({
+            "standings": [_ser_standing(s) for s in standing_list],
+            "finals_teams": finals_teams,
+            "scoring": scoring,
+            "rankings": [_ser_ranking(r) for r in (rankings or [])],
+            "ranking_details": {str(k): v for k, v in ranking_details.items()},
+            "team_form": {str(k): v for k, v in team_form.items()},
+            "user_team_id": user_team.id if user_team else None,
+        })
 
     return render_template("matchups/standings.html",
                            league=league,
