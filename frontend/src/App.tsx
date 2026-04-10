@@ -1,7 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router'
+import { lazy, Suspense } from 'react'
 import { AppShell } from './components/layout/AppShell'
 import { LeagueShell } from './components/layout/LeagueShell'
 import { AuthGuard } from './components/layout/AuthGuard'
+import { Spinner } from './components/ui/Spinner'
 
 // Auth pages
 import { LoginPage } from './pages/auth/LoginPage'
@@ -14,15 +16,21 @@ import { DashboardPage } from './pages/leagues/DashboardPage'
 import { CreateLeaguePage } from './pages/leagues/CreateLeaguePage'
 import { SettingsPage } from './pages/leagues/SettingsPage'
 
-// Team pages
-import { SquadPage } from './pages/team/SquadPage'
+// Lazy-loaded heavy pages (code splitting)
+const SquadPage = lazy(() => import('./pages/team/SquadPage').then(m => ({ default: m.SquadPage })))
+const GamedayPage = lazy(() => import('./pages/matchups/GamedayPage').then(m => ({ default: m.GamedayPage })))
+const AnalyticsPage = lazy(() => import('./pages/team/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
+const DraftRoomPage = lazy(() => import('./pages/draft/DraftRoomPage').then(m => ({ default: m.DraftRoomPage })))
+const L = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<Spinner />}>{children}</Suspense>
+
+// Direct imports for lighter pages
 import { LineupPage } from './pages/team/LineupPage'
 import { TeamStatsPage } from './pages/team/TeamStatsPage'
-import { AnalyticsPage } from './pages/team/AnalyticsPage'
+// AnalyticsPage lazy loaded above
 
 // Matchup pages
 import { StandingsPage } from './pages/matchups/StandingsPage'
-import { GamedayPage } from './pages/matchups/GamedayPage'
+// GamedayPage lazy loaded above
 import { FixturePage } from './pages/matchups/FixturePage'
 import { RoundDetailPage } from './pages/matchups/RoundDetailPage'
 import { MatchupDetailPage } from './pages/matchups/MatchupDetailPage'
@@ -41,7 +49,7 @@ import { ActivityFeedPage } from './pages/comms/ActivityFeedPage'
 import { PlayerPoolPage } from './pages/players/PlayerPoolPage'
 
 // Draft pages
-import { DraftRoomPage } from './pages/draft/DraftRoomPage'
+// DraftRoomPage lazy loaded above
 
 // Placeholder for pages not yet migrated
 import { PlaceholderPage } from './pages/PlaceholderPage'
@@ -65,14 +73,14 @@ export default function App() {
           <Route index element={<DashboardPage />} />
 
           {/* Team */}
-          <Route path="team/:teamId" element={<SquadPage />} />
+          <Route path="team/:teamId" element={<L><SquadPage /></L>} />
           <Route path="team/:teamId/lineup/:round" element={<LineupPage />} />
           <Route path="team/:teamId/stats" element={<TeamStatsPage />} />
-          <Route path="team/:teamId/analytics" element={<AnalyticsPage />} />
+          <Route path="team/:teamId/analytics" element={<L><AnalyticsPage /></L>} />
 
           {/* Matchups */}
           <Route path="standings" element={<StandingsPage />} />
-          <Route path="gameday" element={<GamedayPage />} />
+          <Route path="gameday" element={<L><GamedayPage /></L>} />
           <Route path="fixture" element={<FixturePage />} />
           <Route path="fixture/:round" element={<RoundDetailPage />} />
           <Route path="matchup/:fixtureId" element={<MatchupDetailPage />} />
@@ -82,7 +90,7 @@ export default function App() {
           <Route path="afl-live" element={<PlaceholderPage title="AFL Live" />} />
 
           {/* Draft */}
-          <Route path="draft" element={<DraftRoomPage />} />
+          <Route path="draft" element={<L><DraftRoomPage /></L>} />
           <Route path="draft/setup" element={<PlaceholderPage title="Draft Setup" />} />
           <Route path="draft/mock" element={<PlaceholderPage title="Mock Draft" />} />
           <Route path="draft/recap" element={<PlaceholderPage title="Draft Recap" />} />

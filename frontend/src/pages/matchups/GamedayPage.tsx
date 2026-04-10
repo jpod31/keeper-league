@@ -268,11 +268,18 @@ export function GamedayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId]) // Only depend on leagueId — connect once
 
+  // Pre-fetch all fixture breakdowns once data is loaded
+  const hasFetched = useRef(false)
+  useEffect(() => {
+    if (data && !hasFetched.current) {
+      hasFetched.current = true
+      fetchAllFixtures()
+    }
+  }, [data, fetchAllFixtures])
+
   const viewMatchup = useCallback((fixtureId: number) => {
     setViewedFixtureId(fixtureId)
-    // Fetch all fixture data if not cached
-    if (!cachedFixtures[fixtureId]) fetchAllFixtures()
-  }, [cachedFixtures, fetchAllFixtures])
+  }, [])
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -457,8 +464,9 @@ export function GamedayPage() {
             const as_ = d.round_scores[String(f.away_team_id)]?.total_score || 0
             const isYours = d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id)
             return (
-              <div key={f.id} className={`kl-mini-pill${isYours ? ' kl-mini-yours' : ''}${viewedFixtureId === f.id ? ' matchup-active' : ''}`}
-                onClick={() => viewMatchup(f.id)} style={{ cursor: 'pointer' }}>
+              <div key={f.id} className={`kl-mini-pill${isYours ? ' kl-mini-yours' : ''}`}
+                onClick={() => viewMatchup(f.id)}
+                style={{ cursor: 'pointer', ...(viewedFixtureId === f.id ? { borderColor: 'var(--kl-accent-blue)', background: 'rgba(88,166,255,.08)', boxShadow: '0 0 0 1px var(--kl-accent-blue)' } : {}) }}>
                 <span className="kl-mini-teams">{f.home_team?.name} v {f.away_team?.name}</span>
                 {f.status !== 'scheduled' && <span className="kl-mini-score">{Math.round(hs)}-{Math.round(as_)}</span>}
               </div>
