@@ -330,22 +330,26 @@ export function GamedayPage() {
   if (loading) return <Spinner text="Loading gameday..." />
   if (!data) return <p className="text-danger">Failed to load gameday</p>
 
-  // Helper: count players played/eligible from player array
-  // Eligible = field players whose AFL team has a game this round
-  // Played = game_started and not DNP (matches backend my_played/opp_played calc)
+  // Helper: count players played/eligible from player array.
+  // Mirrors the Jinja client-side _countPlayers (which counts field + bench scoring
+  // types and uses game_started && (score > 0 || is_dnp) as the "played" test).
+  // Only used when we have to derive counts ourselves (switched matchups with no
+  // round_scores entry) — for own matchup we prefer the authoritative my_played/my_eligible.
   const teamsPlayingSet = new Set(data.teams_playing || [])
   function countPlayed(players: GDPlayer[]): { played: number; total: number } {
-    const eligible = players.filter(p => p.lineup_type === 'field' && (teamsPlayingSet.size === 0 || teamsPlayingSet.has(p.afl_team)))
-    const played = eligible.filter(p => p.game_started && !p.is_dnp).length
+    const scoringTypes = new Set(['field', 'reserve'])
+    const eligible = players.filter(p => scoringTypes.has(p.lineup_type) && (teamsPlayingSet.size === 0 || teamsPlayingSet.has(p.afl_team)))
+    const played = eligible.filter(p => p.game_started && ((p.score || 0) > 0 || p.is_dnp)).length
     return { played, total: eligible.length }
   }
 
-  // Helper: derive C/VC badge status — matches backend get_live_scores played_set
-  // (a captain is "played" if they have a stat row this round, i.e. game_started || is_dnp)
+  // Helper: derive C/VC badge status from player array when no round_scores entry is available
+  // (matches the Jinja client-side JS _capVcStatus: game_started && (score > 0 || is_dnp)).
+  // When round_scores IS available, CapBadges prefers the authoritative played_set-derived value.
   function capVcStatus(players: GDPlayer[]): { hasCap: boolean; capPlayed: boolean; hasVc: boolean; vcPlayed: boolean } {
     let hasCap = false, capPlayed = false, hasVc = false, vcPlayed = false
     players.forEach(p => {
-      const playedThisRound = p.game_started || p.is_dnp
+      const playedThisRound = p.game_started && ((p.score || 0) > 0 || p.is_dnp)
       if (p.is_captain) { hasCap = true; capPlayed = playedThisRound }
       if (p.is_vice_captain) { hasVc = true; vcPlayed = playedThisRound }
     })

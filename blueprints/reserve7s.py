@@ -475,6 +475,48 @@ def sevens_gameday(league_id):
         my_played, my_eligible = _count_7s_played(my_players)
         opp_played, opp_eligible = _count_7s_played(opp_players)
 
+    # ── JSON API mode for React SPA ──
+    if request.args.get("format") == "json":
+        def _ser_team(t):
+            return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
+
+        def _ser_fixture(f):
+            return {
+                "id": f.id, "home_team_id": f.home_team_id, "away_team_id": f.away_team_id,
+                "home_score": f.home_score, "away_score": f.away_score, "status": f.status,
+                "home_team": _ser_team(f.home_team), "away_team": _ser_team(f.away_team),
+            }
+
+        return jsonify({
+            "is_bye": is_bye,
+            "afl_round": afl_round,
+            "round_dates": round_dates,
+            "first_bounce": first_bounce,
+            "gameday_state": gameday_state,
+            "live_enabled": live_enabled,
+            "is_home": is_home,
+            "fixture": _ser_fixture(fixture) if fixture else None,
+            "my_team": _ser_team(my_team),
+            "opp_team": _ser_team(opp_team),
+            "my_players": my_players,
+            "opp_players": opp_players,
+            "my_score": my_score,
+            "opp_score": opp_score,
+            "my_captain_bonus": my_captain_bonus,
+            "opp_captain_bonus": opp_captain_bonus,
+            "my_played": my_played,
+            "my_eligible": my_eligible,
+            "opp_played": opp_played,
+            "opp_eligible": opp_eligible,
+            "round_fixtures": [_ser_fixture(f) for f in round_fixtures],
+            "sevens_scores": {str(k): v for k, v in sevens_scores.items()},
+            "afl_games": afl_games or [],
+            "locked_player_ids": list(locked_ids),
+            "teams_playing": list(teams_playing),
+            "team_logos": config.TEAM_LOGOS,
+            "team_abbr": config.TEAM_ABBR,
+        })
+
     return render_template("reserve7s/gameday.html",
                            league=league,
                            afl_round=afl_round,
@@ -781,8 +823,16 @@ def api_7s_live(league_id, afl_round):
             "away_players": away_players,
         })
 
+    # Include team metadata so React can render hero with logos when switching matchups
+    teams_meta = {}
+    for f in fixtures:
+        for t in (f.home_team, f.away_team):
+            if t and t.id not in teams_meta:
+                teams_meta[t.id] = {"id": t.id, "name": t.name, "logo_url": t.logo_url}
+
     return jsonify({
         "fixtures": fixture_list,
         "game_statuses": game_statuses,
         "locked_player_ids": locked_ids,
+        "teams_meta": teams_meta,
     })

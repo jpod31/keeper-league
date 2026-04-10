@@ -19,6 +19,7 @@ import { SettingsPage } from './pages/leagues/SettingsPage'
 // Lazy-loaded heavy pages (code splitting)
 const SquadPage = lazy(() => import('./pages/team/SquadPage').then(m => ({ default: m.SquadPage })))
 const GamedayPage = lazy(() => import('./pages/matchups/GamedayPage').then(m => ({ default: m.GamedayPage })))
+const Reserve7sGamedayPage = lazy(() => import('./pages/reserve7s/GamedayPage').then(m => ({ default: m.Reserve7sGamedayPage })))
 const AnalyticsPage = lazy(() => import('./pages/team/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })))
 const DraftRoomPage = lazy(() => import('./pages/draft/DraftRoomPage').then(m => ({ default: m.DraftRoomPage })))
 const L = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<Spinner />}>{children}</Suspense>
@@ -124,7 +125,7 @@ export default function App() {
 
           {/* Reserve 7s */}
           <Route path="reserve7s/team" element={<PlaceholderPage title="Reserve 7s" />} />
-          <Route path="reserve7s/gameday" element={<PlaceholderPage title="7s Gameday" />} />
+          <Route path="reserve7s/gameday" element={<L><Reserve7sGamedayPage /></L>} />
           <Route path="reserve7s/standings" element={<PlaceholderPage title="7s Standings" />} />
           <Route path="reserve7s/fixture" element={<PlaceholderPage title="7s Fixture" />} />
         </Route>
