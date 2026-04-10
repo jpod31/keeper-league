@@ -151,7 +151,10 @@ const GAMEDAY_CSS = `
 .matchup-mini-bar { height: 4px; background: var(--kl-accent-red); border-radius: 2px; overflow: hidden; margin-top: 8px; opacity: 0.6; }
 .matchup-mini-fill { height: 100%; background: var(--kl-accent-green); border-radius: 2px; transition: width .6s ease; }
 .matchup-margin { font-size: .65rem; color: var(--kl-text-muted); text-align: center; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.score-flash { animation: scorePopIn 1.5s ease-out; }
+@keyframes scorePopIn { 0% { transform: scale(1.15); color: var(--kl-accent-blue); text-shadow: 0 0 8px rgba(88,166,255,.5); } 40% { transform: scale(.97); } 100% { transform: scale(1); color: inherit; text-shadow: none; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.gd-mob-section-hdr { padding: 6px 10px; font-size: .68rem; font-weight: 700; color: #58a6ff; text-transform: uppercase; letter-spacing: .5px; background: rgba(88,166,255,.05); border-bottom: 1px solid rgba(48,54,61,.3); }
 @media (max-width: 767.98px) {
   .hero-teams-row { padding: 14px 12px 0; }
   .hero-big-score { font-size: 2.4rem; min-width: 50px; }
@@ -557,9 +560,10 @@ export function GamedayPage() {
               </span>
               <span className="gd-mob-vs-team" style={{ textAlign: 'right' }}>{heroRightName}</span>
             </div>
+            <div className="gd-mob-section-hdr"><i className="bi bi-people-fill me-1"></i>Field</div>
             {(() => {
-              const lp = heroLeftPlayers.filter(p => p.lineup_type === 'field')
-              const rp = heroRightPlayers.filter(p => p.lineup_type === 'field')
+              const lp = heroLeftPlayers.filter(p => p.lineup_type === 'field' && !p.is_dnp)
+              const rp = heroRightPlayers.filter(p => p.lineup_type === 'field' && !p.is_dnp)
               const maxLen = Math.max(lp.length, rp.length)
               return Array.from({ length: maxLen }).map((_, i) => {
                 const mp = lp[i]
