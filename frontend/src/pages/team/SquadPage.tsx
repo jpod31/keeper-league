@@ -247,7 +247,7 @@ export function SquadPage() {
       </div>
 
       {/* ── Mobile: Position-grouped list (field view) ── */}
-      <div className="d-lg-none mob-squad-list">
+      <div className={`d-lg-none mob-squad-list${fieldActions.swapSource ? ' fv-swap-mode' : ''}`}>
         {fd && ['DEF', 'MID', 'RUC', 'FWD'].map(pos => {
           const zonePlayers = (fd.zones[pos] || []).filter(Boolean) as Player[]
           if (!zonePlayers.length) return null

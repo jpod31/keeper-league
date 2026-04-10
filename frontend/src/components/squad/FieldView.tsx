@@ -259,8 +259,10 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
   const flexFilled = fd.flex_data.filter(s => s.player).length
   const POS_LABELS: Record<string, string> = { DEF: 'Defenders', MID: 'Midfielders', RUC: 'Rucks', FWD: 'Forwards' }
 
+  const inMode = !!(actions?.swapSource)
+
   return (
-    <div className="fv-outer d-none d-lg-block">
+    <div className={`fv-outer d-none d-lg-block${inMode ? ' fv-swap-mode' : ''}`} id="fvWrapper">
       {/* Lockout countdown banner */}
       {fd.next_lockout_time && (
         <LockoutBanner lockoutTime={fd.next_lockout_time} />
