@@ -358,6 +358,7 @@ def dashboard(league_id):
             "teams": [_ser_team(t) for t in teams],
             "is_commissioner": is_commissioner,
             "scoring_rules": scoring_rules,
+            "has_completed_onboarding": bool(getattr(current_user, "has_completed_onboarding", True)),
         })
 
     # Default to My Team view if user has a team (HTML mode only)

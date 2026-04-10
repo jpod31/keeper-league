@@ -201,6 +201,34 @@ export function SettingsPage() {
                   />
                 </div>
                 <div className="col-md-4">
+                  <label className="form-label">Positions Allocated</label>
+                  <div
+                    className="form-control"
+                    style={{ background: '#21262d', fontWeight: 600, fontSize: '.85rem' }}
+                  >
+                    {(() => {
+                      const total = form.def_count + form.mid_count + form.fwd_count + form.ruc_count + form.flex_count
+                      const ok = total <= form.squad_size
+                      return <span style={{ color: ok ? '#3fb950' : '#f85149' }}>{total} / {form.squad_size}</span>
+                    })()}
+                  </div>
+                  <div className="form-text" style={{ color: '#484f58', fontSize: '.7rem' }}>
+                    On-field + flex must fit within squad size
+                  </div>
+                  {(() => {
+                    const total = form.def_count + form.mid_count + form.fwd_count + form.ruc_count + form.flex_count
+                    if (total > form.squad_size) {
+                      return (
+                        <div style={{ marginTop: 6, padding: '6px 10px', background: 'rgba(248,81,73,.12)', border: '1px solid rgba(248,81,73,.4)', borderRadius: 6, color: '#f85149', fontSize: '.75rem', fontWeight: 600 }}>
+                          <i className="bi bi-exclamation-triangle me-1"></i>
+                          Total positions exceed squad size by {total - form.squad_size}
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
+                <div className="col-md-4">
                   <label className="form-label">
                     Draft Type {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.7rem' }}></i>}
                   </label>
@@ -213,6 +241,19 @@ export function SettingsPage() {
                     <option value="snake">Snake</option>
                     <option value="linear">Linear</option>
                   </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label">Trade Window</label>
+                  <div className="mt-1">
+                    {league.scoring_type ? (
+                      <span className="badge" style={{ background: data.league.trade_window_open ? '#238636' : '#484f58' }}>
+                        {data.league.trade_window_open ? 'Open' : 'Closed'}
+                      </span>
+                    ) : null}
+                    <span className="text-secondary" style={{ fontSize: '.7rem', display: 'block', marginTop: 4 }}>
+                      Configured below in Mid-Season &amp; Off-Season
+                    </span>
+                  </div>
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Pick Timer (s)</label>

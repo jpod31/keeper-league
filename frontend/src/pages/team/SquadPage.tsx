@@ -81,6 +81,44 @@ function SquadPageInner() {
   const [seasonStats, setSeasonStats] = useState<Record<string, Record<string, number>> | null>(null)
   const [sortCol, setSortCol] = useState<string>('sc_avg')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [delistTarget, setDelistTarget] = useState<{ id: number; name: string } | null>(null)
+  const [delisting, setDelisting] = useState(false)
+
+  async function removeFromWishlist(playerId: number) {
+    try {
+      await fetch(`/leagues/${leagueId}/wishlist/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId }),
+        credentials: 'include',
+      })
+      refetch()
+    } catch (err) {
+      console.error('Failed to remove from wishlist:', err)
+    }
+  }
+
+  async function confirmDelist() {
+    if (!delistTarget) return
+    setDelisting(true)
+    try {
+      const form = new FormData()
+      form.set('player_id', String(delistTarget.id))
+      const res = await fetch(`/leagues/${leagueId}/season/delist`, {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        redirect: 'manual',
+      })
+      if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
+      setDelistTarget(null)
+      refetch()
+    } catch (err) {
+      alert((err as Error).message)
+    } finally {
+      setDelisting(false)
+    }
+  }
 
   // Fetch season stats on demand
   const loadSeasonStats = useCallback(async () => {
@@ -218,6 +256,7 @@ function SquadPageInner() {
             <Link to={`/leagues/${leagueId}/trades`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-arrow-left-right"></i>Trades</Link>
             <Link to={`/leagues/${leagueId}/team/${teamId}/stats`} className="squad-pill squad-pill-stats text-decoration-none"><i className="bi bi-graph-up"></i>Stats</Link>
             <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-bar-chart-line"></i>Analytics</Link>
+            {is_owner && <a href={`/leagues/${leagueId}/draft-weights`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-sliders"></i>Draft</a>}
             {is_owner && <Link to={`/leagues/${leagueId}/reserve7s/team`} className="squad-pill squad-pill-manage text-decoration-none" style={{ color: '#bc8cff', borderColor: 'rgba(188,140,255,.3)' }}><i className="bi bi-7-circle"></i>7s</Link>}
             <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`squad-pill squad-pill-field text-decoration-none${view === 'field' ? ' active' : ''}`}><i className="bi bi-diagram-3"></i>Field</Link>
             <Link to={`/leagues/${leagueId}/team/${teamId}?view=table`} className={`squad-pill squad-pill-list text-decoration-none${view === 'table' ? ' active' : ''}`}><i className="bi bi-table"></i>List</Link>
@@ -295,9 +334,18 @@ function SquadPageInner() {
                     return (
                       <tr key={p.id}>
                         <td className="text-center" style={{ padding: 0, verticalAlign: 'middle' }}>
-                          <i className="bi bi-star-fill" style={{ cursor: 'pointer', fontSize: '.85rem', color: '#d29922' }} title="Remove from wishlist"></i>
+                          <i
+                            className="bi bi-star-fill"
+                            style={{ cursor: 'pointer', fontSize: '.85rem', color: '#d29922' }}
+                            title="Remove from wishlist"
+                            onClick={() => removeFromWishlist(p.id)}
+                          ></i>
                         </td>
-                        <td><span className="fw-bold" style={{ color: '#c9d1d9' }}>{p.name}</span></td>
+                        <td>
+                          <a href={`/player/${encodeURIComponent(p.name)}`} className="fw-bold text-decoration-none" style={{ color: '#c9d1d9' }}>
+                            {p.name}
+                          </a>
+                        </td>
                         <td>{(p.position || 'MID').split('/').map(pos => <span key={pos} className={`pos-badge pos-${pos}`} style={{ fontSize: '.65rem', padding: '1px 5px' }}>{pos}</span>)}</td>
                         <td style={{ color: '#8b949e', fontSize: '.78rem' }}>{p.afl_team || '-'}</td>
                         <td className="text-center" style={{ color: '#8b949e' }}>{p.age || '-'}</td>
@@ -497,7 +545,11 @@ function SquadPageInner() {
                         <td><span className={`squad-acq squad-acq-${acq}`}>{acq.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</span></td>
                         {is_owner && <td className="text-center">
                           {isDelisted ? <span className="badge" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149', fontSize: '.7rem' }}>Delisted</span>
-                            : data.delist_is_open ? <button className="btn btn-sm btn-outline-danger" style={{ fontSize: '.7rem', padding: '2px 8px', borderRadius: 4 }}><i className="bi bi-x-circle me-1"></i>Delist</button>
+                            : data.delist_is_open ? <button
+                                className="btn btn-sm btn-outline-danger"
+                                style={{ fontSize: '.7rem', padding: '2px 8px', borderRadius: 4 }}
+                                onClick={() => setDelistTarget({ id: p.id, name: p.name })}
+                              ><i className="bi bi-x-circle me-1"></i>Delist</button>
                             : <button className="btn btn-sm btn-outline-secondary" disabled style={{ fontSize: '.7rem', padding: '2px 8px', borderRadius: 4, opacity: .4 }}><i className="bi bi-x-circle me-1"></i>Delist</button>}
                         </td>}
                       </tr>
@@ -559,6 +611,59 @@ function SquadPageInner() {
 
       {/* ── SSP Modal ── */}
       {sspLtilId && <SSPModal leagueId={leagueId!} teamId={teamId!} ltilId={sspLtilId} onClose={() => setSspLtilId(null)} onSuccess={() => { setSspLtilId(null); refetch() }} />}
+
+      {/* ── Delist confirmation modal ── */}
+      {delistTarget && (
+        <div
+          className="modal show d-block"
+          style={{ background: 'rgba(0,0,0,.7)', zIndex: 1055 }}
+          onClick={() => !delisting && setDelistTarget(null)}
+        >
+          <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
+            <div className="modal-content" style={{ background: '#161b22', border: '1px solid #30363d' }}>
+              <div className="modal-header" style={{ borderBottom: '1px solid #30363d' }}>
+                <h5 className="modal-title" style={{ color: '#e6edf3', fontSize: '1rem' }}>
+                  <i className="bi bi-x-circle me-2" style={{ color: '#f85149' }}></i>
+                  Delist Player
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => !delisting && setDelistTarget(null)}
+                  disabled={delisting}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p style={{ color: '#c9d1d9', fontSize: '.9rem' }}>
+                  Are you sure you want to delist <strong>{delistTarget.name}</strong>?
+                </p>
+                <p style={{ color: '#8b949e', fontSize: '.8rem' }}>
+                  Once delisted, this player will be removed from your roster at the end of the delist period.
+                </p>
+              </div>
+              <div className="modal-footer" style={{ borderTop: '1px solid #30363d' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setDelistTarget(null)}
+                  disabled={delisting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={confirmDelist}
+                  disabled={delisting}
+                >
+                  <i className="bi bi-x-circle me-1"></i>
+                  {delisting ? 'Delisting...' : 'Delist Player'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Mobile action sheet ── */}
       {mobileActionPlayer && is_owner && fd && (

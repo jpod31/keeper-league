@@ -394,9 +394,27 @@ export function Reserve7sGamedayPage() {
             <i className="bi bi-7-circle me-1" style={{ color: '#a855f7' }}></i>
             RESERVE 7s — {d.afl_round === 0 ? 'PRE-SEASON' : `ROUND ${d.afl_round}`}
           </h2>
-          {gs === 'live' && <span className="s7gd-state-badge s7gd-badge-live"><i className="bi bi-broadcast me-1"></i><span className="s7gd-pulse-dot"></span> LIVE</span>}
-          {gs === 'completed' && <span className="s7gd-state-badge s7gd-badge-final"><i className="bi bi-check-circle-fill me-1"></i>FINAL</span>}
-          {gs === 'upcoming' && <span className="s7gd-state-badge s7gd-badge-upcoming"><i className="bi bi-calendar-event me-1"></i>UPCOMING</span>}
+          <div className="d-flex align-items-center gap-2">
+            {gs === 'live' && <span className="s7gd-state-badge s7gd-badge-live"><i className="bi bi-broadcast me-1"></i><span className="s7gd-pulse-dot"></span> LIVE</span>}
+            {gs === 'completed' && <span className="s7gd-state-badge s7gd-badge-final"><i className="bi bi-check-circle-fill me-1"></i>FINAL</span>}
+            {gs === 'upcoming' && <span className="s7gd-state-badge s7gd-badge-upcoming"><i className="bi bi-calendar-event me-1"></i>UPCOMING</span>}
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => fetchData()}
+              style={{
+                background: 'rgba(188,140,255,.1)',
+                color: '#a855f7',
+                border: '1px solid rgba(188,140,255,.25)',
+                fontSize: '.7rem',
+                padding: '3px 10px',
+                borderRadius: 6,
+              }}
+              title="Refresh scores"
+            >
+              <i className="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
         </div>
         {d.round_dates && <div className="s7gd-round-dates mt-1">{d.round_dates}</div>}
       </div>

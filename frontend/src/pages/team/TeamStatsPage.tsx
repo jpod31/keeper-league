@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 
 interface Player {
   id: number
@@ -41,6 +42,7 @@ export function TeamStatsPage() {
 
   return (
     <div>
+      <TeamMobSubnav active="stats" leagueId={leagueId!} teamId={teamId!} />
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{league.name}</Link>

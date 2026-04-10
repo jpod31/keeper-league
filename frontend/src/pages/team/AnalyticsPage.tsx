@@ -1,5 +1,6 @@
 import { useParams } from 'react-router'
 import { useAnalytics } from '../../hooks/useAnalytics'
+import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 import { Hero } from '../../components/Hero'
 import { DynastyRace } from '../../components/DynastyRace'
 import { KidTimeline } from '../../components/KidTimeline'
@@ -27,6 +28,7 @@ export function AnalyticsPage() {
 
   return (
     <div className="max-w-[920px] mx-auto pb-24">
+      <TeamMobSubnav active="analytics" leagueId={leagueId!} teamId={teamId!} />
       <motion.div {...fade(0)}><Hero data={data} /></motion.div>
 
       {data.dynasty && Object.keys(data.dynasty).length > 0 && (

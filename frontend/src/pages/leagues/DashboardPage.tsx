@@ -38,6 +38,7 @@ interface DashboardData {
   teams: Team[]
   is_commissioner: boolean
   scoring_rules: Record<string, number | string>
+  has_completed_onboarding: boolean
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -58,7 +59,7 @@ export function DashboardPage() {
   if (loading) return <Spinner text="Loading dashboard..." />
   if (!data) return <p className="text-danger">Failed to load dashboard</p>
 
-  const { league, user_team, teams, scoring_rules } = data
+  const { league, user_team, teams, scoring_rules, has_completed_onboarding } = data
 
   // Default to My Team view if user has a team (mirrors Jinja's redirect)
   if (user_team && typeof window !== 'undefined' && !new URLSearchParams(window.location.search).has('overview')) {
@@ -194,6 +195,42 @@ export function DashboardPage() {
               </div>
             </div>
           )}
+
+          {/* Getting Started checklist */}
+          {!has_completed_onboarding && (() => {
+            const hasTeam = user_team != null
+            const hasDraft = league.status !== 'setup'
+            const renderItem = (done: boolean, label: string) => (
+              <div className="d-flex align-items-center gap-2 py-1">
+                <i
+                  className={`bi ${done ? 'bi-check-circle-fill' : 'bi-circle'}`}
+                  style={{ color: done ? 'var(--kl-accent-green)' : 'var(--kl-border-light)' }}
+                ></i>
+                <span style={done ? { textDecoration: 'line-through', color: 'var(--kl-text-secondary)' } : undefined}>
+                  {label}
+                </span>
+              </div>
+            )
+            return (
+              <div className="card mb-3">
+                <div className="card-header">
+                  <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+                    <i className="bi bi-check2-square me-2" style={{ color: 'var(--kl-accent-green)' }}></i>
+                    Getting Started
+                  </h5>
+                </div>
+                <div className="card-body p-0">
+                  <div className="px-3 py-2" style={{ fontSize: '.82rem' }}>
+                    {renderItem(hasTeam, 'Join or create a league')}
+                    {renderItem(hasDraft, 'Complete the draft')}
+                    {renderItem(false, 'Set your lineup')}
+                    {renderItem(false, 'Check gameday scores')}
+                    {renderItem(false, 'Propose a trade')}
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Invite Link */}
           {league.invite_code && (

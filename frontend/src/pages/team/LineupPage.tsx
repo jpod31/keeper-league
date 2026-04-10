@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 import { useLeague } from '../../contexts/LeagueContext'
+import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -155,6 +156,7 @@ export function LineupPage() {
 
   return (
     <div>
+      <TeamMobSubnav active="field" leagueId={leagueId!} teamId={teamId!} />
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{league?.name}</Link>
