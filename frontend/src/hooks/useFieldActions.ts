@@ -46,11 +46,6 @@ export function useFieldActions(leagueId: string, teamId: string, onRefresh: () 
     if (!data.error) { toast('Vice Captain updated', 'success'); onRefresh() }
   }, [fvApi, toast, onRefresh])
 
-  const swap = useCallback(async (pid1: number, pid2: number) => {
-    const data = await fvApi('/swap', { player_id_1: pid1, player_id_2: pid2 })
-    if (!data.error) { toast('Players swapped', 'success'); onRefresh() }
-  }, [fvApi, toast, onRefresh])
-
   const toggleEmergency = useCallback(async (pid: number) => {
     const data = await fvApi('/set-emergency', { player_id: pid })
     if (!data.error) { onRefresh() }
@@ -77,12 +72,53 @@ export function useFieldActions(leagueId: string, teamId: string, onRefresh: () 
   }, [])
 
   const completeSwap = useCallback((targetPid: number) => {
-    if (swapSource && swapSource !== targetPid) {
-      const src = swapSource
-      setSwapSource(null)
-      swap(src, targetPid)
+    if (!swapSource || swapSource === targetPid) return
+
+    const savedSource = swapSource
+    setSwapSource(null)
+
+    // Find DOM elements — works for both desktop cards and mobile rows
+    const sourceEl = document.querySelector(`[data-player-id="${savedSource}"]`) as HTMLElement
+    const targetEl = document.querySelector(`[data-player-id="${targetPid}"]`) as HTMLElement
+
+    if (!sourceEl || !targetEl) {
+      // Fallback: no animation, just swap
+      swap(savedSource, targetPid)
+      return
     }
-  }, [swapSource, swap])
+
+    // Calculate positions for animation
+    const srcRect = sourceEl.getBoundingClientRect()
+    const tgtRect = targetEl.getBoundingClientRect()
+    const dx = tgtRect.left - srcRect.left
+    const dy = tgtRect.top - srcRect.top
+
+    // Apply animation
+    sourceEl.style.zIndex = '10'
+    targetEl.style.zIndex = '10'
+    sourceEl.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)'
+    targetEl.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)'
+    sourceEl.style.transform = `translate(${dx}px, ${dy}px)`
+    targetEl.style.transform = `translate(${-dx}px, ${-dy}px)`
+
+    // Fire API in parallel with animation
+    const apiPromise = fvApi('/swap', { player_id_1: savedSource, player_id_2: targetPid })
+    const animDone = new Promise<void>(r => setTimeout(r, 370))
+
+    Promise.all([apiPromise, animDone]).then(([data]) => {
+      // Reset animation styles
+      ;[sourceEl, targetEl].forEach(el => {
+        el.style.transform = ''
+        el.style.transition = ''
+        el.style.zIndex = ''
+      })
+
+      if (data && !data.error) {
+        toast('Players swapped', 'success')
+        onRefresh()
+      }
+    })
+  }, [swapSource, fvApi, toast, onRefresh])
 
   const cancelAllModes = useCallback(() => {
     setSwapSource(null); setEmgSource(null); setSevensSource(null)
