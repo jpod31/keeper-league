@@ -145,7 +145,7 @@ def profile():
         return redirect(url_for("auth.profile"))
 
     # Build notification preferences map for the template
-    from models.database import NotificationPreference
+    from models.database import NotificationPreference, FantasyTeam
     prefs = NotificationPreference.query.filter_by(user_id=current_user.id).all()
     notif_prefs = {}
     for p in prefs:
@@ -154,6 +154,30 @@ def profile():
             "push": p.channel_push,
             "email": p.channel_email,
         }
+
+    if request.args.get("format") == "json":
+        teams = FantasyTeam.query.filter_by(owner_id=current_user.id).all()
+        return jsonify({
+            "user": {
+                "id": current_user.id,
+                "username": current_user.username,
+                "display_name": current_user.display_name,
+                "email": current_user.email,
+                "created_at": current_user.created_at.strftime("%b %Y") if current_user.created_at else None,
+                "email_digest_enabled": bool(getattr(current_user, "email_digest_enabled", False)),
+                "push_subscription": bool(getattr(current_user, "push_subscription", None)),
+            },
+            "notif_prefs": notif_prefs,
+            "teams": [{
+                "id": t.id,
+                "league_id": t.league_id,
+                "name": t.name,
+                "logo_url": t.logo_url,
+                "logo_prompt": getattr(t, "logo_prompt", None),
+                "league_name": t.league.name if t.league else "?",
+                "league_year": t.league.season_year if t.league else None,
+            } for t in teams],
+        })
 
     return render_template("auth/profile.html", notif_prefs=notif_prefs)
 

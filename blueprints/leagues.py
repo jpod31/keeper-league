@@ -297,6 +297,22 @@ def league_create():
         flash(f"League '{league.name}' created!", "success")
         return redirect(url_for("leagues.dashboard", league_id=league.id))
 
+    if request.args.get("format") == "json":
+        # Serialise scoring presets so React can render preset buttons + load rules
+        ser_presets = {}
+        for key, preset in config.SCORING_PRESETS.items():
+            ser_presets[key] = {
+                "label": preset.get("label", key),
+                "rules": preset.get("rules", {}),
+            }
+        return jsonify({
+            "available_stats": list(config.AVAILABLE_STATS),
+            "default_scoring": dict(config.DEFAULT_CUSTOM_SCORING),
+            "stat_categories": {k: list(v) for k, v in config.STAT_CATEGORIES.items()},
+            "scoring_presets": ser_presets,
+            "default_uf_categories": list(config.DEFAULT_UF_CATEGORIES),
+        })
+
     return render_template("leagues/create.html", form={},
                            available_stats=config.AVAILABLE_STATS,
                            default_scoring=config.DEFAULT_CUSTOM_SCORING,
