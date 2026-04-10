@@ -171,31 +171,119 @@ const GAMEDAY_CSS = `
 }
 `
 
+// Fixture data from the API (for matchup switching)
+interface FixtureDetail {
+  fixture_id: number
+  home_score: number; away_score: number
+  home_captain_bonus: number; away_captain_bonus: number
+  home_players: GDPlayer[]; away_players: GDPlayer[]
+  projections: { home_projected: number; away_projected: number; home_win_pct: number; away_win_pct: number } | null
+}
+
 export function GamedayPage() {
   const { leagueId } = useParams()
   const [data, setData] = useState<GamedayData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [viewedFixtureId, setViewedFixtureId] = useState<number | null>(null)
+  const [cachedFixtures, setCachedFixtures] = useState<Record<number, FixtureDetail>>({})
+  const [refreshing, setRefreshing] = useState(false)
 
   const fetchData = useCallback(() => {
     api<GamedayData>(`/leagues/${leagueId}/gameday?format=json`)
-      .then(setData)
+      .then(d => {
+        setData(d)
+        // Set initial viewed fixture to user's own
+        if (!viewedFixtureId && d.fixture) setViewedFixtureId(d.fixture.id)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [leagueId])
 
+  // Fetch all fixture breakdowns (for switching between matchups)
+  const fetchAllFixtures = useCallback(() => {
+    if (!data) return
+    api<{ fixtures: FixtureDetail[]; locked_player_ids: number[] }>(
+      `/leagues/${leagueId}/gameday/api/fixtures?round=${data.afl_round}`
+    ).then(d => {
+      const cache: Record<number, FixtureDetail> = {}
+      d.fixtures?.forEach(f => { cache[f.fixture_id] = f })
+      setCachedFixtures(cache)
+    }).catch(() => {})
+  }, [leagueId, data?.afl_round])
+
   useEffect(() => {
     fetchData()
-    // Poll every 60s if live
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [fetchData])
+
+  // Auto-reload every 5min when live
+  useEffect(() => {
+    if (data?.gameday_state === 'live') {
+      const timer = setInterval(() => window.location.reload(), 300000)
+      return () => clearInterval(timer)
+    }
+  }, [data?.gameday_state])
+
+  const viewMatchup = useCallback((fixtureId: number) => {
+    setViewedFixtureId(fixtureId)
+    // Fetch all fixture data if not cached
+    if (!cachedFixtures[fixtureId]) fetchAllFixtures()
+  }, [cachedFixtures, fetchAllFixtures])
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await api(`/leagues/${leagueId}/gameday/sync-scores`, { method: 'POST' }).catch(() => {})
+      fetchData()
+    } finally {
+      setTimeout(() => setRefreshing(false), 1000)
+    }
+  }, [leagueId, fetchData])
 
   if (loading) return <Spinner text="Loading gameday..." />
   if (!data) return <p className="text-danger">Failed to load gameday</p>
 
   const d = data
   const gs = d.gameday_state
-  const diff = Math.abs(Math.round(d.my_score - d.opp_score))
+  const isViewingOwn = !viewedFixtureId || viewedFixtureId === d.fixture?.id
+
+  // Determine what data to show in the hero/player cards
+  let heroLeftName: string, heroRightName: string
+  let heroLeftScore: number, heroRightScore: number
+  let heroLeftCapBonus: number, heroRightCapBonus: number
+  let heroLeftPlayers: GDPlayer[], heroRightPlayers: GDPlayer[]
+  let heroLeftLogo: string | null, heroRightLogo: string | null
+
+  if (isViewingOwn || !cachedFixtures[viewedFixtureId!]) {
+    // Viewing own matchup (default)
+    heroLeftName = d.my_team?.name || ''
+    heroRightName = d.opp_team?.name || ''
+    heroLeftScore = d.my_score
+    heroRightScore = d.opp_score
+    heroLeftCapBonus = d.my_captain_bonus
+    heroRightCapBonus = d.opp_captain_bonus
+    heroLeftPlayers = d.my_players || []
+    heroRightPlayers = d.opp_players || []
+    heroLeftLogo = d.my_team?.logo_url
+    heroRightLogo = d.opp_team?.logo_url
+  } else {
+    // Viewing another matchup
+    const fx = cachedFixtures[viewedFixtureId!]
+    const meta = d.round_fixtures.find(f => f.id === viewedFixtureId)
+    heroLeftName = meta?.home_team?.name || ''
+    heroRightName = meta?.away_team?.name || ''
+    heroLeftScore = fx.home_score || 0
+    heroRightScore = fx.away_score || 0
+    heroLeftCapBonus = fx.home_captain_bonus || 0
+    heroRightCapBonus = fx.away_captain_bonus || 0
+    heroLeftPlayers = fx.home_players || []
+    heroRightPlayers = fx.away_players || []
+    heroLeftLogo = meta?.home_team?.logo_url || null
+    heroRightLogo = meta?.away_team?.logo_url || null
+  }
+
+  const diff = Math.abs(Math.round(heroLeftScore - heroRightScore))
 
   function PlayerRow({ p }: { p: GDPlayer }) {
     const ytp = !p.game_started && gs === 'live'
@@ -280,6 +368,12 @@ export function GamedayPage() {
     <div>
       <style>{GAMEDAY_CSS}</style>
 
+      {/* Competition toggle */}
+      <div className="comp-toggle">
+        <span className="comp-toggle-btn" style={{ borderColor: 'rgba(88,166,255,.3)', color: '#58a6ff', background: 'rgba(88,166,255,.08)', borderRadius: '8px 0 0 8px' }}>Main</span>
+        <Link to={`/leagues/${leagueId}/reserve7s/gameday`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
+      </div>
+
       {/* Round header */}
       <div className="gameday-round-header">
         <div className="d-flex justify-content-between align-items-center">
@@ -288,8 +382,9 @@ export function GamedayPage() {
             {gs === 'live' && <span className="gameday-state-badge badge-live"><i className="bi bi-broadcast me-1"></i><span className="live-pulse-dot"></span> LIVE</span>}
             {gs === 'completed' && <span className="gameday-state-badge badge-final"><i className="bi bi-check-circle-fill me-1"></i>FINAL</span>}
             {gs === 'upcoming' && <span className="gameday-state-badge badge-upcoming"><i className="bi bi-calendar-event me-1"></i>UPCOMING</span>}
-            <button className="btn btn-sm" onClick={fetchData} style={{ background: 'rgba(88,166,255,.1)', color: '#58a6ff', border: '1px solid rgba(88,166,255,.25)', fontSize: '.7rem', padding: '3px 10px', borderRadius: 6 }}>
-              <i className="bi bi-arrow-clockwise"></i>
+            <button className="btn btn-sm" onClick={handleRefresh} disabled={refreshing}
+              style={{ background: 'rgba(88,166,255,.1)', color: '#58a6ff', border: '1px solid rgba(88,166,255,.25)', fontSize: '.7rem', padding: '3px 10px', borderRadius: 6 }}>
+              {refreshing ? <span className="spinner-border spinner-border-sm" style={{ width: 12, height: 12 }}></span> : <i className="bi bi-arrow-clockwise"></i>}
             </button>
           </div>
         </div>
@@ -319,7 +414,8 @@ export function GamedayPage() {
             const as_ = d.round_scores[String(f.away_team_id)]?.total_score || 0
             const isYours = d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id)
             return (
-              <div key={f.id} className={`kl-mini-pill${isYours ? ' kl-mini-yours' : ''}`}>
+              <div key={f.id} className={`kl-mini-pill${isYours ? ' kl-mini-yours' : ''}${viewedFixtureId === f.id ? ' matchup-active' : ''}`}
+                onClick={() => viewMatchup(f.id)} style={{ cursor: 'pointer' }}>
                 <span className="kl-mini-teams">{f.home_team?.name} v {f.away_team?.name}</span>
                 {f.status !== 'scheduled' && <span className="kl-mini-score">{Math.round(hs)}-{Math.round(as_)}</span>}
               </div>
@@ -341,48 +437,51 @@ export function GamedayPage() {
           <div className={`gameday-hero hero-${gs}`}>
             <div className="hero-teams-row">
               <div className="hero-team-block hero-team-left">
-                {d.my_team?.logo_url ? <img src={d.my_team.logo_url} alt="" className="hero-crest-img" />
-                  : <span className="hero-crest left-initial">{d.my_team?.name?.substring(0, 2).toUpperCase()}</span>}
+                {heroLeftLogo ? <img src={heroLeftLogo} alt="" className="hero-crest-img" />
+                  : <span className="hero-crest left-initial">{heroLeftName.substring(0, 2).toUpperCase()}</span>}
                 <div className="hero-team-detail">
-                  <div className="hero-team-name">{d.my_team?.name}</div>
+                  <div className="hero-team-name">{heroLeftName}</div>
                   <div className="hero-team-meta">
-                    <span className="hero-players-count">{d.my_played}/{d.my_eligible} played</span>
+                    <span className="hero-players-count">{isViewingOwn ? `${d.my_played}/${d.my_eligible} played` : ''}</span>
                   </div>
                 </div>
               </div>
               <span className="hero-vs">VS</span>
               <div className="hero-team-block hero-team-right">
                 <div className="hero-team-detail" style={{ textAlign: 'right' }}>
-                  <div className="hero-team-name">{d.opp_team?.name}</div>
+                  <div className="hero-team-name">{heroRightName}</div>
                   <div className="hero-team-meta" style={{ justifyContent: 'flex-end' }}>
-                    <span className="hero-players-count">{d.opp_played}/{d.opp_eligible} played</span>
+                    <span className="hero-players-count">{isViewingOwn ? `${d.opp_played}/${d.opp_eligible} played` : ''}</span>
                   </div>
                 </div>
-                {d.opp_team?.logo_url ? <img src={d.opp_team.logo_url} alt="" className="hero-crest-img" />
-                  : <span className="hero-crest right-initial">{d.opp_team?.name?.substring(0, 2).toUpperCase()}</span>}
+                {heroRightLogo ? <img src={heroRightLogo} alt="" className="hero-crest-img" />
+                  : <span className="hero-crest right-initial">{heroRightName.substring(0, 2).toUpperCase()}</span>}
               </div>
             </div>
 
             <div className="hero-scores-area">
               <div className="hero-score-col">
-                <span className={`hero-big-score${d.my_score > d.opp_score ? ' score-winning' : ''}`}>{Math.round(d.my_score)}</span>
-                {d.my_captain_bonus > 0 && <span className="captain-bonus">+{Math.round(d.my_captain_bonus)} C</span>}
+                <span className={`hero-big-score${heroLeftScore > heroRightScore ? ' score-winning' : ''}`}>{Math.round(heroLeftScore)}</span>
+                {heroLeftCapBonus > 0 && <span className="captain-bonus">+{Math.round(heroLeftCapBonus)} C</span>}
               </div>
               <span className="hero-score-dash">&ndash;</span>
               <div className="hero-score-col">
-                <span className={`hero-big-score${d.opp_score > d.my_score ? ' score-winning' : ''}`}>{Math.round(d.opp_score)}</span>
-                {d.opp_captain_bonus > 0 && <span className="captain-bonus">+{Math.round(d.opp_captain_bonus)} C</span>}
+                <span className={`hero-big-score${heroRightScore > heroLeftScore ? ' score-winning' : ''}`}>{Math.round(heroRightScore)}</span>
+                {heroRightCapBonus > 0 && <span className="captain-bonus">+{Math.round(heroRightCapBonus)} C</span>}
               </div>
             </div>
 
             <div className="hero-footer">
               <div className="hero-margin-chip">
-                {gs === 'completed' ? (
-                  d.my_score > d.opp_score ? <><i className="bi bi-trophy-fill"></i> WON BY {diff}</> :
-                  d.opp_score > d.my_score ? <>LOST BY {diff}</> : 'DRAW'
+                {isViewingOwn && gs === 'completed' ? (
+                  heroLeftScore > heroRightScore ? <><i className="bi bi-trophy-fill"></i> WON BY {diff}</> :
+                  heroRightScore > heroLeftScore ? <>LOST BY {diff}</> : 'DRAW'
+                ) : isViewingOwn ? (
+                  heroLeftScore > heroRightScore ? <><i className="bi bi-caret-up-fill"></i> UP {diff}</> :
+                  heroRightScore > heroLeftScore ? <><i className="bi bi-caret-down-fill"></i> DOWN {diff}</> : 'TIED'
                 ) : (
-                  d.my_score > d.opp_score ? <><i className="bi bi-caret-up-fill"></i> UP {diff}</> :
-                  d.opp_score > d.my_score ? <><i className="bi bi-caret-down-fill"></i> DOWN {diff}</> : 'TIED'
+                  heroLeftScore > heroRightScore ? <>{heroLeftName} BY {diff}</> :
+                  heroRightScore > heroLeftScore ? <>{heroRightName} BY {diff}</> : 'DRAW'
                 )}
               </div>
               {d.projections && gs !== 'completed' && (
@@ -410,18 +509,18 @@ export function GamedayPage() {
           {/* Player cards - desktop */}
           <div className="row g-3 mt-2 d-none d-lg-flex">
             <div className="col-md-6">
-              <PlayerCard players={d.my_players || []} teamName={d.my_team?.name || ''} score={d.my_score} side="left" />
+              <PlayerCard players={heroLeftPlayers} teamName={heroLeftName} score={heroLeftScore} side="left" />
             </div>
             <div className="col-md-6">
-              <PlayerCard players={d.opp_players || []} teamName={d.opp_team?.name || ''} score={d.opp_score} side="right" />
+              <PlayerCard players={heroRightPlayers} teamName={heroRightName} score={heroRightScore} side="right" />
             </div>
           </div>
 
           {/* Mobile player list */}
           <div className="d-lg-none mt-3">
-            <PlayerCard players={d.my_players || []} teamName={d.my_team?.name || ''} score={d.my_score} side="left" />
+            <PlayerCard players={heroLeftPlayers} teamName={heroLeftName} score={heroLeftScore} side="left" />
             <div className="mt-2">
-              <PlayerCard players={d.opp_players || []} teamName={d.opp_team?.name || ''} score={d.opp_score} side="right" />
+              <PlayerCard players={heroRightPlayers} teamName={heroRightName} score={heroRightScore} side="right" />
             </div>
           </div>
         </>
@@ -442,7 +541,8 @@ export function GamedayPage() {
             const awayWon = as_ > hs && f.status !== 'scheduled'
             const total = hs + as_ || 1
             return (
-              <div key={f.id} className={`gameday-matchup-card${isYours ? ' matchup-yours' : ''}`}>
+              <div key={f.id} className={`gameday-matchup-card${isYours ? ' matchup-yours' : ''}${viewedFixtureId === f.id ? ' matchup-active' : ''}${isYours && viewedFixtureId !== f.id ? ' matchup-yours-dimmed' : ''}`}
+                onClick={() => viewMatchup(f.id)} style={{ cursor: 'pointer' }}>
                 {isYours && <span className="matchup-your-tag">Your Match</span>}
                 <div className="matchup-team-row">
                   <span className={`matchup-team-name${homeWon ? ' matchup-winner' : ''}`}>{f.home_team?.name}</span>
