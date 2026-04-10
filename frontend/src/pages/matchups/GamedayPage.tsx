@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 
@@ -225,6 +226,39 @@ export function GamedayPage() {
     }
   }, [data?.gameday_state])
 
+  // WebSocket live scoring
+  const socketRef = useRef<Socket | null>(null)
+  useEffect(() => {
+    if (data?.gameday_state !== 'live') return
+
+    const socket = io('/matchups', {
+      withCredentials: true,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 30000,
+    })
+    socketRef.current = socket
+
+    socket.on('connect', () => {
+      socket.emit('join_live', { league_id: Number(leagueId), afl_round: data.afl_round })
+      socket.emit('request_scores', { league_id: Number(leagueId), afl_round: data.afl_round })
+    })
+
+    socket.on('score_update', (update: { fixtures?: FixtureDetail[] }) => {
+      // Cache all incoming fixture data
+      if (update.fixtures) {
+        setCachedFixtures(prev => {
+          const next = { ...prev }
+          update.fixtures!.forEach(f => { next[f.fixture_id] = f })
+          return next
+        })
+      }
+      // Re-fetch main data to update hero scores
+      fetchData()
+    })
+
+    return () => { socket.disconnect() }
+  }, [data?.gameday_state, data?.afl_round, leagueId, fetchData])
+
   const viewMatchup = useCallback((fixtureId: number) => {
     setViewedFixtureId(fixtureId)
     // Fetch all fixture data if not cached
@@ -395,13 +429,13 @@ export function GamedayPage() {
       {d.afl_games && d.afl_games.length > 0 && (
         <div className="gameday-afl-bar d-none d-lg-flex">
           {d.afl_games.map(g => (
-            <span key={g.game_id} className="game-status-pill">
+            <Link key={g.game_id} to={`/leagues/${leagueId}/gameday/afl-game/${g.game_id}`} className="game-status-pill">
               <span className="game-teams">{d.team_abbr[g.home_team] || g.home_team.substring(0, 3).toUpperCase()} v {d.team_abbr[g.away_team] || g.away_team.substring(0, 3).toUpperCase()}</span>
               {g.status === 'live' && <span className="badge game-badge-live">LIVE</span>}
               {g.status === 'complete' && <span className="badge game-badge-ft">FT</span>}
               {g.status !== 'live' && g.status !== 'complete' && <span className="badge game-badge-sched">{g.scheduled_display || 'TBC'}</span>}
               {g.home_score != null && <span className="game-afl-score">{g.home_score}-{g.away_score}</span>}
-            </span>
+            </Link>
           ))}
         </div>
       )}
@@ -504,6 +538,62 @@ export function GamedayPage() {
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Mobile side-by-side view */}
+          <div className="d-lg-none mt-3 gd-mob-vs">
+            <div className="gd-mob-vs-header">
+              <span className="gd-mob-vs-team">{heroLeftName}</span>
+              <span className="gd-mob-vs-scores">
+                <span className={`gd-mob-vs-sc${heroLeftScore > heroRightScore ? ' gd-mob-sc-win' : ''}`}>{Math.round(heroLeftScore)}</span>
+                <span style={{ color: '#484f58', fontSize: '.7rem' }}>v</span>
+                <span className={`gd-mob-vs-sc${heroRightScore > heroLeftScore ? ' gd-mob-sc-win' : ''}`}>{Math.round(heroRightScore)}</span>
+              </span>
+              <span className="gd-mob-vs-team" style={{ textAlign: 'right' }}>{heroRightName}</span>
+            </div>
+            {(() => {
+              const lp = heroLeftPlayers.filter(p => p.lineup_type === 'field')
+              const rp = heroRightPlayers.filter(p => p.lineup_type === 'field')
+              const maxLen = Math.max(lp.length, rp.length)
+              return Array.from({ length: maxLen }).map((_, i) => {
+                const mp = lp[i]
+                const op = rp[i]
+                return (
+                  <div key={i} className="gd-mob-vs-row">
+                    <div className="gd-mob-vs-left">
+                      {mp && <>
+                        <span className="gd-mob-vs-name">
+                          {mp.is_captain && <b className="gd-mob-c">C</b>}
+                          {mp.is_vice_captain && <b className="gd-mob-vc">VC</b>}
+                          {mp.name}
+                        </span>
+                        <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || 'MID').split('/')[0]}`}>{(mp.position || 'MID').split('/')[0]}</span>
+                      </>}
+                    </div>
+                    <div className="gd-mob-vs-mid">
+                      <span className={`gd-mob-sc-l${mp?.is_live ? ' text-success' : ''}`}>
+                        {mp ? (mp.score || 0) : '-'}
+                        {mp?.is_live && <i className="bi bi-circle-fill gameday-live-dot"></i>}
+                      </span>
+                      <span className={`gd-mob-sc-r${op?.is_live ? ' text-success' : ''}`}>
+                        {op ? (op.score || 0) : '-'}
+                        {op?.is_live && <i className="bi bi-circle-fill gameday-live-dot"></i>}
+                      </span>
+                    </div>
+                    <div className="gd-mob-vs-right">
+                      {op && <>
+                        <span className={`gd-mob-vs-pos pos-badge pos-${(op.position || 'MID').split('/')[0]}`}>{(op.position || 'MID').split('/')[0]}</span>
+                        <span className="gd-mob-vs-name">
+                          {op.is_captain && <b className="gd-mob-c">C</b>}
+                          {op.is_vice_captain && <b className="gd-mob-vc">VC</b>}
+                          {op.name}
+                        </span>
+                      </>}
+                    </div>
+                  </div>
+                )
+              })
+            })()}
           </div>
 
           {/* Player cards - desktop */}
