@@ -20,6 +20,7 @@ interface FieldData {
   sevens_captain_enabled: boolean; has_7s_fixture: boolean
   injury_list: Player[]; ltil_entries: { player_id: number; player_name: string }[]
   pending_ltil_count: number; ssp_slots: number; ssp_enabled: boolean
+  reserves_by_pos: Record<string, Player[]>
   locked_teams: string[]; teams_playing: string[]
   selected_player_ids: number[]; next_lockout_time: string | null
   slot_counts: Record<string, number>; zone_layouts: Record<string, number[]>
@@ -386,18 +387,32 @@ export function FieldView({ fd, teamLogos, isOwner, actions }: Props) {
         </div>
       )}
 
-      {/* Reserves */}
+      {/* Reserves — grouped by position like original */}
       {fd.reserves.length > 0 && (
         <div className="fv-reserves-section">
           <div className="fv-reserves-hdr">
             <i className="bi bi-people me-1"></i>Reserves
             <span className="fv-zone-tally ms-2">{fd.reserves.length} players</span>
           </div>
-          <div className="fv-reserves-grid">
-            {fd.reserves.map(p => (
-              <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />
-            ))}
-          </div>
+          {['DEF', 'MID', 'RUC', 'FWD'].map(posCode => {
+            const posPlayers = fd.reserves_by_pos?.[posCode] || []
+            if (!posPlayers.length) return null
+            const posLabels: Record<string, string> = { DEF: 'Defenders', MID: 'Midfielders', RUC: 'Rucks', FWD: 'Forwards' }
+            return (
+              <div className="fv-reserves-group" key={posCode}>
+                <div className="fv-reserves-group-hdr">
+                  <span className={`fv-zone-pill fv-zp-${posCode.toLowerCase()}`}>{posCode}</span>
+                  <span className="fv-reserves-group-label">{posLabels[posCode]}</span>
+                  <span className="fv-zone-tally ms-1">{posPlayers.length}</span>
+                </div>
+                <div className="fv-reserves-grid">
+                  {posPlayers.map(p => (
+                    <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

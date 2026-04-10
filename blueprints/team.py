@@ -655,6 +655,7 @@ def squad(league_id, team_id):
                 "cap_id": fd.get("cap_id"),
                 "vc_id": fd.get("vc_id"),
                 "reserves": [_serialize_player(p) for p in fd.get("reserves", [])],
+                "reserves_by_pos": {pos: [_serialize_player(p) for p in plist] for pos, plist in fd.get("reserves_by_pos", {}).items()},
                 "emergency_players": [_serialize_player(p) for p in fd.get("emergency_players", [])],
                 "emergency_ids": list(fd.get("emergency_ids", [])),
                 "sevens_players": [_serialize_player(p) for p in fd.get("sevens_players", [])],

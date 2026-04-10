@@ -28,6 +28,7 @@ interface FieldData {
   sevens_captain_enabled: boolean; has_7s_fixture: boolean
   injury_list: Player[]; ltil_entries: { player_id: number; player_name: string }[]
   pending_ltil_count: number; ssp_slots: number; ssp_enabled: boolean
+  reserves_by_pos: Record<string, Player[]>
   locked_teams: string[]; teams_playing: string[]
   selected_player_ids: number[]; next_lockout_time: string | null
   slot_counts: Record<string, number>; zone_layouts: Record<string, number[]>
