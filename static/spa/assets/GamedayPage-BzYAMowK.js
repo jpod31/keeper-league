@@ -100,8 +100,6 @@ import{d as e,m as t,r as n,t as r,y as i}from"./jsx-runtime-mCRDCYrZ.js";import
 .s7gd-mini-fill { height: 100%; background: #3fb950; border-radius: 2px; transition: width .6s ease; }
 .s7gd-mx-margin { font-size: .65rem; color: #6e7681; text-align: center; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .s7gd-mx-status { font-size: .65rem; color: #484f58; text-align: center; margin-top: 8px; }
-.comp-toggle { display: flex; gap: 0; margin-bottom: 10px; }
-.comp-toggle-btn { flex: 1; padding: 6px 12px; text-align: center; font-size: .75rem; font-weight: 700; border: 1px solid; letter-spacing: .5px; text-transform: uppercase; text-decoration: none; transition: all .15s; cursor: pointer; background: transparent; }
 @media (max-width: 767.98px) {
   .s7-teams-row { padding: 14px 12px 0; }
   .s7-big-score { font-size: 2.4rem; min-width: 50px; }
