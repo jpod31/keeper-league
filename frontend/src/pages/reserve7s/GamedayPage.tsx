@@ -70,6 +70,12 @@ const S7_CSS = `
 .s7gd-gbadge-live { font-size: .6rem; background: #a78bfa; color: #fff; animation: s7gdPulse 2s infinite; }
 .s7gd-gbadge-ft { font-size: .6rem; background: #238636; color: #fff; }
 .s7gd-gbadge-sched { font-size: .6rem; background: #161b22; color: #8b949e; }
+.s7-mini-bar { display: flex; gap: 6px; margin-bottom: 8px; padding: 10px 14px; background: #161b22; border: 1px solid #21262d; border-radius: 10px; }
+.s7-mini-pill { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; background: #0d1117; border: 1px solid #21262d; border-radius: 10px; cursor: pointer; transition: border-color .15s, background .15s; text-align: center; }
+.s7-mini-pill:hover { background: #161b22; border-color: #30363d; }
+.s7-mini-yours { border-color: #a855f7; }
+.s7-mini-teams { font-weight: 600; font-size: .72rem; color: #c9d1d9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.s7-mini-score { font-size: .68rem; color: #8b949e; font-variant-numeric: tabular-nums; }
 .s7gd-hero { background: radial-gradient(ellipse at 50% 0%, rgba(22,27,34,.95) 0%, var(--kl-bg-card, #161b22) 70%); border: 1px solid var(--kl-border, #21262d); border-radius: 16px; padding: 0; margin-bottom: 4px; position: relative; overflow: hidden; }
 .s7gd-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 2; }
 .s7gd-hero-live { border-color: rgba(35,134,54,.35); animation: s7gdGlow 4s ease-in-out infinite; }
@@ -375,12 +381,12 @@ export function Reserve7sGamedayPage() {
     <div>
       <style>{S7_CSS}</style>
 
-      {/* Competition toggle */}
+      {/* Competition toggle — matches main gameday (active side uses blue accent) */}
       <div className="comp-toggle">
         <Link to={`/leagues/${leagueId}/gameday`} className="comp-toggle-btn text-decoration-none"
           style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '8px 0 0 8px' }}>Main</Link>
         <span className="comp-toggle-btn"
-          style={{ borderColor: 'rgba(188,140,255,.3)', color: '#a855f7', background: 'rgba(188,140,255,.08)', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
+          style={{ borderColor: 'rgba(88,166,255,.3)', color: '#58a6ff', background: 'rgba(88,166,255,.08)', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
       </div>
 
       {/* Round header */}
@@ -413,6 +419,27 @@ export function Reserve7sGamedayPage() {
               {g.home_score != null && <span className="s7gd-game-score">{g.home_score}-{g.away_score}</span>}
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Mini bar — horizontal matchup switcher at top (matches main gameday layout) */}
+      {d.round_fixtures && d.round_fixtures.length > 0 && (
+        <div className="s7-mini-bar">
+          {d.round_fixtures.map(f => {
+            const hs = d.sevens_scores[String(f.home_team_id)]?.total_score || 0
+            const as_ = d.sevens_scores[String(f.away_team_id)]?.total_score || 0
+            const isYours = !d.is_bye && d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id)
+            const isActive = viewedFixtureId === f.id
+            return (
+              <div key={f.id}
+                className={`s7-mini-pill${isYours ? ' s7-mini-yours' : ''}`}
+                onClick={() => setViewedFixtureId(f.id)}
+                style={isActive ? { borderColor: '#a855f7', boxShadow: '0 0 0 1px #a855f7' } : undefined}>
+                <span className="s7-mini-teams">{f.home_team?.name} v {f.away_team?.name}</span>
+                {f.status !== 'scheduled' && <span className="s7-mini-score">{Math.round(hs)}-{Math.round(as_)}</span>}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -594,67 +621,6 @@ export function Reserve7sGamedayPage() {
             </div>
           </div>
         </>
-      )}
-
-      {/* All matchups grid */}
-      {d.round_fixtures && d.round_fixtures.length > 0 && (
-        <div className="s7gd-all-matchups mt-4">
-          <div className="s7gd-matchups-header">
-            <span><i className="bi bi-7-circle me-2"></i>{d.afl_round === 0 ? 'PRE-SEASON' : `ROUND ${d.afl_round}`} — 7s MATCHUPS</span>
-            {d.round_dates && <span className="s7gd-matchups-dates">{d.round_dates}</span>}
-          </div>
-          <div className="s7gd-matchups-grid">
-            {d.round_fixtures.map(f => {
-              const hs = d.sevens_scores[String(f.home_team_id)] || {}
-              const as_ = d.sevens_scores[String(f.away_team_id)] || {}
-              const hSc = hs.total_score || 0
-              const aSc = as_.total_score || 0
-              const isYours = !d.is_bye && d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id)
-              const fTotal = (hSc + aSc) || 1
-              const hPct = Math.round(hSc / fTotal * 100)
-              const margin = Math.abs(Math.round(hSc - aSc))
-              const isActive = viewedFixtureId === f.id
-              return (
-                <div key={f.id}
-                  className={`s7gd-matchup-card${isYours ? ' s7gd-matchup-yours' : ''}${isActive ? ' s7gd-matchup-active' : ''}`}
-                  onClick={() => setViewedFixtureId(f.id)}>
-                  {isYours && <span className="s7gd-your-tag">Your Match</span>}
-                  <div className="s7gd-mx-team-row">
-                    <span className={`s7gd-mx-name${hSc > aSc && f.status !== 'scheduled' ? ' s7gd-mx-winner' : ''}`}>{f.home_team?.name}</span>
-                    <span className="s7gd-mx-score">
-                      {f.status !== 'scheduled' && Math.round(hSc)}
-                      {hSc > aSc && f.status !== 'scheduled' && <i className="bi bi-check-lg" style={{ color: '#3fb950', fontSize: '.7rem' }}></i>}
-                    </span>
-                  </div>
-                  <div className="s7gd-mx-team-row">
-                    <span className={`s7gd-mx-name${aSc > hSc && f.status !== 'scheduled' ? ' s7gd-mx-winner' : ''}`}>{f.away_team?.name}</span>
-                    <span className="s7gd-mx-score">
-                      {f.status !== 'scheduled' && Math.round(aSc)}
-                      {aSc > hSc && f.status !== 'scheduled' && <i className="bi bi-check-lg" style={{ color: '#3fb950', fontSize: '.7rem' }}></i>}
-                    </span>
-                  </div>
-                  {f.status !== 'scheduled' ? <>
-                    <div className="s7gd-mini-bar"><div className="s7gd-mini-fill" style={{ width: `${hPct}%` }}></div></div>
-                    <div className="d-flex justify-content-between align-items-center" style={{ marginTop: 2 }}>
-                      <span style={{ fontSize: '.6rem', color: '#484f58' }}>
-                        {hs.players_total ? `${hs.players_played || 0}/${hs.players_total} played` : ''}
-                      </span>
-                      <span style={{ fontSize: '.6rem', color: '#484f58' }}>
-                        {as_.players_total ? `${as_.players_played || 0}/${as_.players_total} played` : ''}
-                      </span>
-                    </div>
-                    <div className="s7gd-mx-margin">
-                      {hSc > aSc ? `${(f.home_team?.name || '').substring(0, 10)} +${margin}` :
-                       aSc > hSc ? `${(f.away_team?.name || '').substring(0, 10)} +${margin}` : 'Draw'}
-                    </div>
-                  </> : (
-                    <div className="s7gd-mx-status"><i className="bi bi-calendar-event" style={{ fontSize: '.6rem' }}></i> Upcoming</div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
       )}
 
       {/* Footer */}
