@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 import { useSocket } from '../../hooks/useSocket'
-import { ConnectionBanner } from '../../components/ui/ConnectionBanner'
 
 interface Message {
   id: number
@@ -52,7 +51,7 @@ export function ConversationPage() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages])
 
-  const { state: conn } = useSocket({
+  useSocket({
     namespace: '/notifications',
     onConnect: s => s.emit('join_conversation', { conversation_id: Number(convoId) }),
     events: {
@@ -101,7 +100,6 @@ export function ConversationPage() {
 
   return (
     <div>
-      <ConnectionBanner state={conn} />
       <div className="page-header">
         <div className="d-flex align-items-center gap-3">
           <Link to={`/leagues/${leagueId}/messages`} className="text-secondary">

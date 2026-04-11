@@ -4,7 +4,6 @@ import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 import { CommsSubnav } from '../../components/nav/CommsSubnav'
 import { useSocket } from '../../hooks/useSocket'
-import { ConnectionBanner } from '../../components/ui/ConnectionBanner'
 
 interface ChatMessage {
   id: number
@@ -56,7 +55,7 @@ export function LeagueChatPage() {
     }
   }, [messages])
 
-  const { state: conn } = useSocket({
+  useSocket({
     namespace: '/notifications',
     onConnect: s => s.emit('join_league_chat', { league_id: Number(leagueId) }),
     events: {
@@ -103,7 +102,6 @@ export function LeagueChatPage() {
 
   return (
     <div>
-      <ConnectionBanner state={conn} />
       <CommsSubnav active="chat" leagueId={leagueId!} />
       <div className="page-header">
         <div className="d-flex align-items-center justify-content-between">

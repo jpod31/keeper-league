@@ -3,7 +3,7 @@ import { lazy, Suspense } from 'react'
 import { AppShell } from './components/layout/AppShell'
 import { LeagueShell } from './components/layout/LeagueShell'
 import { AuthGuard } from './components/layout/AuthGuard'
-import { Spinner } from './components/ui/Spinner'
+import { KLLoaderInline } from './components/ui/KLLoader'
 
 // Auth pages
 import { LoginPage } from './pages/auth/LoginPage'
@@ -37,7 +37,7 @@ const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage')
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })))
 const AdminLeaguesPage = lazy(() => import('./pages/admin/AdminLeaguesPage').then(m => ({ default: m.AdminLeaguesPage })))
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage').then(m => ({ default: m.AdminAnalyticsPage })))
-const L = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<Spinner />}>{children}</Suspense>
+const L = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<KLLoaderInline />}>{children}</Suspense>
 
 // Direct imports for lighter pages
 import { LineupPage } from './pages/team/LineupPage'

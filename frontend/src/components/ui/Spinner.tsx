@@ -1,10 +1,11 @@
-export function Spinner({ text }: { text?: string }) {
-  return (
-    <div className="d-flex flex-column align-items-center justify-content-center gap-3" style={{ minHeight: '60vh' }}>
-      <div className="spinner-border text-primary" role="status">
-        <span className="visually-hidden">Loading...</span>
-      </div>
-      {text && <p style={{ fontSize: '.85rem', color: 'var(--kl-text-muted)' }}>{text}</p>}
-    </div>
-  )
+import { KLLoaderInline } from './KLLoader'
+
+/**
+ * Loading placeholder. All existing call sites pass only `text` which we drop
+ * in favour of the Keeper League logo animation from static/style.css — it
+ * matches the Jinja-side loader and looks considerably less 2002.
+ */
+export function Spinner(_props: { text?: string } = {}) {
+  void _props
+  return <KLLoaderInline />
 }

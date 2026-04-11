@@ -21,16 +21,47 @@ spa_api = Blueprint("spa_api", __name__, url_prefix="/api")
 @spa_api.route("/leagues/<int:league_id>/context")
 @login_required
 def league_context(league_id):
+    from models.database import LongTermInjury, SeasonConfig
+
     league = db.session.get(League, league_id)
     if not league:
         return jsonify({"error": "Not found"}), 404
 
     teams = FantasyTeam.query.filter_by(league_id=league_id).all()
     user_team = next((t for t in teams if t.owner_id == current_user.id), None)
+    is_commissioner = league.commissioner_id == current_user.id
 
     active_draft = DraftSession.query.filter_by(
         league_id=league_id, is_mock=False
     ).filter(DraftSession.status.in_(["scheduled", "in_progress", "paused"])).first() is not None
+
+    pending_ltil_count = 0
+    if is_commissioner:
+        pending_ltil_count = LongTermInjury.query.filter_by(
+            league_id=league_id, removed_at=None, status="pending"
+        ).count()
+
+    # User's other leagues (for the selector dropdown)
+    user_league_rows = (
+        db.session.query(League, FantasyTeam)
+        .join(FantasyTeam, FantasyTeam.league_id == League.id)
+        .filter(FantasyTeam.owner_id == current_user.id)
+        .all()
+    )
+    user_leagues = [{
+        "id": lg.id,
+        "name": lg.name,
+        "season_year": lg.season_year,
+        "invite_code": lg.invite_code or "",
+        "is_commissioner": lg.commissioner_id == current_user.id,
+        "team_id": tm.id,
+        "team_name": tm.name,
+    } for lg, tm in user_league_rows]
+
+    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
+    finals_teams = 0
+    if season_cfg and getattr(season_cfg, "finals_format", None):
+        finals_teams = {"top_4": 4, "top_6": 6, "top_8": 8}.get(season_cfg.finals_format, 0)
 
     return jsonify({
         "id": league.id,
@@ -40,9 +71,13 @@ def league_context(league_id):
         "commissioner_id": league.commissioner_id,
         "user_team": {"id": user_team.id, "name": user_team.name} if user_team else None,
         "teams": [{"id": t.id, "name": t.name, "owner": t.owner.display_name if t.owner else "?"} for t in teams],
-        "is_commissioner": league.commissioner_id == current_user.id,
+        "is_commissioner": is_commissioner,
+        "is_owner": user_team is not None,
         "active_draft": active_draft,
         "season_phase": league.status or "setup",
+        "pending_ltil_count": pending_ltil_count,
+        "finals_teams": finals_teams,
+        "user_leagues": user_leagues,
     })
 
 

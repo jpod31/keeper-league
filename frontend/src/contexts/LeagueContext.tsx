@@ -11,8 +11,20 @@ export interface LeagueInfo {
   user_team: { id: number; name: string } | null
   teams: { id: number; name: string; owner: string }[]
   is_commissioner: boolean
+  is_owner: boolean
   active_draft: boolean
   season_phase: string
+  pending_ltil_count: number
+  finals_teams: number
+  user_leagues: {
+    id: number
+    name: string
+    season_year: number
+    invite_code: string
+    is_commissioner: boolean
+    team_id: number
+    team_name: string
+  }[]
 }
 
 interface LeagueCtx {

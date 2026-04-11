@@ -186,7 +186,7 @@ export function FixturePage() {
               const awayWon = f.status === 'completed' && (f.away_score || 0) > (f.home_score || 0)
               return (
                 <Link key={f.id}
-                  to={`/leagues/${leagueId}/gameday?round=${selected_round}`}
+                  to={`/leagues/${leagueId}/matchup/${f.id}`}
                   className="mx-row"
                   style={{ position: 'relative' }}>
                   <span className={`mx-team mx-team-home${homeWon ? ' won' : ''}`}>

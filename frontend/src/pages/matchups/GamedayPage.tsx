@@ -3,8 +3,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
-import { ConnectionBanner } from '../../components/ui/ConnectionBanner'
-import type { ConnectionState } from '../../hooks/useSocket'
 
 interface Team { id: number; name: string; logo_url: string | null }
 interface GDFixture { id: number; home_team_id: number; away_team_id: number; home_score: number; away_score: number; status: string; home_team: Team; away_team: Team }
@@ -245,9 +243,9 @@ export function GamedayPage() {
     }
   }, [data?.gameday_state])
 
-  // WebSocket live scoring
+  // WebSocket live scoring — silent (no banner). Socket.IO handles reconnect
+  // internally; we just sit quietly and keep cachedFixtures up to date.
   const socketRef = useRef<Socket | null>(null)
-  const [wsState_, setWsState_] = useState<ConnectionState>('connected')
   const lastSeq = useRef(0)
   const shouldConnect = data?.gameday_state === 'live' && !!data?.live_enabled
   const afl_round = data?.afl_round
@@ -255,7 +253,6 @@ export function GamedayPage() {
   useEffect(() => {
     if (!shouldConnect) return
 
-    setWsState_('connecting')
     const socket = io('/matchups', {
       withCredentials: true,
       reconnection: true,
@@ -266,16 +263,8 @@ export function GamedayPage() {
     socketRef.current = socket
 
     socket.on('connect', () => {
-      setWsState_('connected')
       socket.emit('join_live', { league_id: Number(leagueId), afl_round })
       socket.emit('request_scores', { league_id: Number(leagueId), afl_round })
-    })
-    socket.on('disconnect', () => setWsState_('disconnected'))
-    socket.on('connect_error', () => setWsState_('error'))
-    socket.io.on('reconnect_attempt', () => setWsState_('connecting'))
-
-    socket.on('joined', (info: { room: string }) => {
-      console.log('Joined live room:', info.room)
     })
 
     socket.on('score_update', (update: { fixtures?: FixtureDetail[]; seq?: number }) => {
@@ -554,7 +543,6 @@ export function GamedayPage() {
   return (
     <div>
       <style>{GAMEDAY_CSS}</style>
-      {data?.gameday_state === 'live' && data?.live_enabled && <ConnectionBanner state={wsState_} />}
 
       {/* Competition toggle */}
       <div className="comp-toggle">

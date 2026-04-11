@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { api } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useSocket } from '../../hooks/useSocket'
-import { ConnectionBanner } from '../../components/ui/ConnectionBanner'
 import { Search, Clock, Send } from 'lucide-react'
 
 interface DraftState {
@@ -44,7 +43,7 @@ export function DraftRoomPage() {
 
   useEffect(() => { fetchAvailable() }, [fetchAvailable])
 
-  const { socket, state: conn } = useSocket({
+  const { socket } = useSocket({
     namespace: '/draft',
     onConnect: s => s.emit('join_draft', { league_id: Number(leagueId) }),
     events: {
@@ -89,8 +88,6 @@ export function DraftRoomPage() {
   const isMyTurn = state.current_team?.name === user?.display_name
 
   return (
-    <>
-    <ConnectionBanner state={conn} />
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-12rem)]">
       {/* Pick history */}
       <div className="lg:col-span-1 rounded-xl border border-[#21262d] bg-[#0d1117] overflow-hidden flex flex-col">
@@ -165,6 +162,5 @@ export function DraftRoomPage() {
         </div>
       </div>
     </div>
-    </>
   )
 }
