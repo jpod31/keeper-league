@@ -13,8 +13,8 @@ interface Props {
  * rather than iframing — avoids double-chrome while keeping SPA navigation.
  */
 export function LegacyPage({ title, description, path, icon = 'bi-clock-history' }: Props) {
-  const { leagueId } = useParams()
-  const href = path.replace(':leagueId', leagueId || '')
+  const params = useParams()
+  const href = path.replace(/:([a-zA-Z]+)/g, (_, key) => params[key] ?? '')
 
   return (
     <div className="row justify-content-center">

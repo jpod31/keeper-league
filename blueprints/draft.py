@@ -300,6 +300,41 @@ def draft_setup(league_id):
         league_id=league_id, status="completed"
     ).first()
 
+    if request.args.get("format") == "json":
+        def _sess(s):
+            if not s:
+                return None
+            return {
+                "id": s.id,
+                "status": s.status,
+                "draft_round_type": s.draft_round_type,
+                "is_mock": bool(s.is_mock),
+                "scheduled_start": s.scheduled_start.isoformat() if s.scheduled_start else None,
+                "current_pick": s.current_pick,
+                "total_rounds": s.total_rounds,
+            }
+        return jsonify({
+            "league": {
+                "id": league.id, "name": league.name,
+                "draft_type": league.draft_type,
+                "pick_timer_secs": league.pick_timer_secs,
+                "squad_size": league.squad_size,
+                "draft_scheduled_date": league.draft_scheduled_date.isoformat() if league.draft_scheduled_date else None,
+                "is_commissioner": league.commissioner_id == current_user.id,
+            },
+            "teams": [{
+                "id": t.id, "name": t.name,
+                "owner": t.owner.display_name if t.owner else "?",
+                "draft_order": t.draft_order,
+            } for t in teams],
+            "session": _sess(session),
+            "initial_session": _sess(initial_session),
+            "initial_completed": bool(initial_completed),
+            "supp_session": _sess(supp_session),
+            "mock_session": _sess(mock_session),
+            "can_restart": bool(can_restart),
+        })
+
     return render_template("draft/setup.html",
                            league=league,
                            teams=teams,
@@ -620,6 +655,20 @@ def mock_draft_room(league_id):
     user_weights = uw.to_dict() if uw else (lw.to_dict() if lw else DRAFT_WEIGHTS.copy())
     has_custom_weights = uw is not None
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "session": {
+                "id": session.id, "status": session.status,
+                "current_pick": session.current_pick,
+                "total_rounds": session.total_rounds,
+            },
+            "user_team": {"id": user_team.id, "name": user_team.name} if user_team else None,
+            "state": state,
+            "user_weights": user_weights,
+            "has_custom_weights": has_custom_weights,
+        })
+
     return render_template("draft/mock_room.html",
                            league=league,
                            session=session,
@@ -927,6 +976,19 @@ def draft_recap(league_id, session_id=None):
 
     # Sort grades by ratio descending (best drafter first)
     grades.sort(key=lambda g: g["ratio"], reverse=True)
+
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name, "season_year": league.season_year},
+            "session": {
+                "id": session.id,
+                "status": session.status,
+                "draft_round_type": session.draft_round_type,
+                "completed_at": session.completed_at.isoformat() if session.completed_at else None,
+            },
+            "picks": pick_data,
+            "grades": grades,
+        })
 
     return render_template(
         "draft/recap.html",

@@ -1,4 +1,4 @@
-import { useParams, Navigate } from 'react-router'
+import { useParams, useNavigate } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
@@ -52,6 +52,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function DashboardPage() {
   const { leagueId } = useParams()
+  const navigate = useNavigate()
   const { data, loading } = useFetch<DashboardData>(`/leagues/${leagueId}?format=json`)
   const [copied, setCopied] = useState(false)
   const [joinName, setJoinName] = useState('')
@@ -61,13 +62,8 @@ export function DashboardPage() {
 
   const { league, user_team, teams, scoring_rules, has_completed_onboarding } = data
 
-  // Default to My Team view if user has a team (mirrors Jinja's redirect)
-  if (user_team && typeof window !== 'undefined' && !new URLSearchParams(window.location.search).has('overview')) {
-    return <Navigate to={`/leagues/${leagueId}/team/${user_team.id}`} replace />
-  }
-
   const inviteUrl = league.invite_code
-    ? `${window.location.origin}/leagues/join/${league.invite_code}`
+    ? `${window.location.origin}/spa/leagues/invite/${league.invite_code}`
     : ''
 
   function copyInvite() {
@@ -83,6 +79,10 @@ export function DashboardPage() {
     form.set('team_name', joinName)
     const res = await fetch(`/leagues/${leagueId}/join`, { method: 'POST', body: form, credentials: 'include', redirect: 'manual' })
     if (res.status < 500) window.location.reload()
+  }
+
+  function openTeam(teamId: number) {
+    navigate(`/leagues/${leagueId}/team/${teamId}`)
   }
 
   return (
@@ -127,7 +127,7 @@ export function DashboardPage() {
                   <tbody>
                     {teams.map((t, i) => (
                       <tr key={t.id} style={{ cursor: 'pointer' }}
-                        onClick={() => { window.location.href = `/leagues/${leagueId}/team/${t.id}` }}>
+                        onClick={() => openTeam(t.id)}>
                         <td>
                           <span
                             className="d-inline-flex align-items-center justify-content-center rounded"

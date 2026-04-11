@@ -53,6 +53,23 @@ def player_injuries(league_id):
         [t.name for t in FantasyTeam.query.filter_by(league_id=league_id).all()]
     )
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "current_round": current_round,
+            "fantasy_teams": fantasy_teams,
+            "players": [{
+                "id": p.id,
+                "name": p.name,
+                "position": p.position or "",
+                "afl_team": p.afl_team or "",
+                "injury_severity": p.injury_severity or "",
+                "injury_type": p.injury_type or "",
+                "injury_return": p._return_display or "",
+                "rostered_by": rostered_map.get(p.id),
+            } for p in players],
+        })
+
     return render_template(
         "leagues/player_injuries.html",
         league=league,
@@ -107,6 +124,31 @@ def player_ratings(league_id):
         .all()
     )
     season_movers.sort(key=lambda p: abs(p.rating - p.rating_start), reverse=True)
+
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "last_update_date": last_update_date.isoformat() if last_update_date else None,
+            "last_update": [{
+                "player_id": row[0].player_id,
+                "player_name": row[1],
+                "afl_team": row[2],
+                "position": row[3],
+                "old_rating": row[0].old_rating,
+                "new_rating": row[0].new_rating,
+                "delta": (row[0].new_rating or 0) - (row[0].old_rating or 0),
+                "changed_at": row[0].changed_at.isoformat() if row[0].changed_at else None,
+            } for row in last_update],
+            "season_movers": [{
+                "id": p.id,
+                "name": p.name,
+                "afl_team": p.afl_team,
+                "position": p.position,
+                "rating": p.rating,
+                "rating_start": p.rating_start,
+                "delta": (p.rating or 0) - (p.rating_start or 0),
+            } for p in season_movers],
+        })
 
     return render_template(
         "leagues/player_ratings.html",
@@ -492,6 +534,17 @@ def player_compare(league_id):
         .all()
     )
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "selected_ids": player_ids,
+            "players": players_data,
+            "all_players": [{
+                "id": p.id, "name": p.name, "position": p.position,
+                "afl_team": p.afl_team, "sc_avg": p.sc_avg,
+            } for p in all_players],
+        })
+
     return render_template("leagues/player_compare.html",
                            league=league,
                            players_data=players_data,
@@ -692,6 +745,39 @@ def keeper_values(league_id):
 
     # ── Projected keeper rankings (all players, sorted by projected KV) ──
     projected_rankings = sorted(all_keepers, key=lambda x: x["projected_kv"], reverse=True)
+
+    if request.args.get("format") == "json":
+        def _e(e):
+            p = e["player"]
+            return {
+                "player_id": p.id,
+                "player_name": p.name,
+                "afl_team": p.afl_team,
+                "position": p.position,
+                "age": p.age,
+                "team_id": e["team_id"],
+                "team_name": e["team_name"],
+                "cost_label": e["cost_label"],
+                "effective_round": e["effective_round"],
+                "draft_score": e["draft_score"],
+                "keeper_value": e["keeper_value"],
+                "recommendation": e["recommendation"],
+                "trend_val": e["trend_val"],
+                "trend_pct": e["trend_pct"],
+                "projected_score": e["projected_score"],
+                "projected_kv": e["projected_kv"],
+            }
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "total_rounds": total_rounds,
+            "best_draft_score": best_draft_score,
+            "teams": [{
+                "team_id": td["team"].id,
+                "team_name": td["team"].name,
+                "players": [_e(e) for e in td["players"]],
+            } for td in teams_data],
+            "projected_rankings": [_e(e) for e in projected_rankings[:50]],
+        })
 
     return render_template(
         "leagues/keepers.html",
@@ -1216,6 +1302,29 @@ def league_history(league_id):
                 if a["wins"] >= milestone - 3 and a["wins"] < milestone:
                     milestones.append(f"{a['team_name']} is {milestone - a['wins']} wins away from {milestone} all-time wins")
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "champions": champions,
+            "alltime_standings": alltime_sorted,
+            "top_scores": top_scores,
+            "lowest_scores": lowest_scores,
+            "top_season_pf": top_season_pf_list,
+            "blowouts": blowouts,
+            "close_matches": close_matches,
+            "highest_combined": highest_combined,
+            "lowest_combined": lowest_combined,
+            "win_streaks": win_streaks,
+            "loss_streaks": loss_streaks,
+            "top_player_scores": top_player_scores,
+            "hundred_plus": hundred_plus,
+            "best_averages": best_averages,
+            "rivalry_facts": rivalry_facts,
+            "closest_rivalry": closest_rivalry,
+            "milestones": milestones,
+            "teams": [{"id": t.id, "name": t.name} for t in teams],
+        })
+
     return render_template("leagues/history.html",
                            league=league,
                            champions=champions,
@@ -1448,6 +1557,15 @@ def advanced_stats(league_id):
         }
 
     team_analysis_json = json.dumps(team_analysis)
+
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "leaders": leaders,
+            "teams": [{"id": t.id, "name": t.name} for t in teams],
+            "team_analysis": team_analysis,
+            "all_players": json.loads(all_players_json) if all_players_json else [],
+        })
 
     return render_template("leagues/stats.html",
                            league=league,

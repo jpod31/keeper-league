@@ -1,9 +1,10 @@
 import { useParams } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
-import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 import { CommsSubnav } from '../../components/nav/CommsSubnav'
+import { useSocket } from '../../hooks/useSocket'
+import { ConnectionBanner } from '../../components/ui/ConnectionBanner'
 
 interface ChatMessage {
   id: number
@@ -36,11 +37,15 @@ export function LeagueChatPage() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
-  const socketRef = useRef<Socket | null>(null)
+  const currentUserIdRef = useRef<number | null>(null)
 
   useEffect(() => {
     api<ChatData>(`/leagues/${leagueId}/chat?format=json`)
-      .then(d => { setData(d); setMessages(d.messages) })
+      .then(d => {
+        setData(d)
+        setMessages(d.messages)
+        currentUserIdRef.current = d.current_user_id
+      })
       .finally(() => setLoading(false))
   }, [leagueId])
 
@@ -51,20 +56,17 @@ export function LeagueChatPage() {
     }
   }, [messages])
 
-  // SocketIO live updates
-  useEffect(() => {
-    if (!data) return
-    const socket = io('/notifications', { transports: ['websocket', 'polling'] })
-    socketRef.current = socket
-    socket.emit('join_league_chat', { league_id: Number(leagueId) })
-    socket.on('chat_message', (msg: ChatMessage) => {
-      // Skip own messages (already added optimistically)
-      if (msg.sender_user_id === data.current_user_id) return
-      setMessages(prev => [...prev, msg])
-    })
-    return () => { socket.disconnect() }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.current_user_id, leagueId])
+  const { state: conn } = useSocket({
+    namespace: '/notifications',
+    onConnect: s => s.emit('join_league_chat', { league_id: Number(leagueId) }),
+    events: {
+      chat_message: p => {
+        const msg = p as ChatMessage
+        if (msg.sender_user_id === currentUserIdRef.current) return
+        setMessages(prev => [...prev, msg])
+      },
+    },
+  })
 
   if (loading) return <Spinner text="Loading chat..." />
   if (!data) return <p className="text-danger">Failed to load chat</p>
@@ -101,6 +103,7 @@ export function LeagueChatPage() {
 
   return (
     <div>
+      <ConnectionBanner state={conn} />
       <CommsSubnav active="chat" leagueId={leagueId!} />
       <div className="page-header">
         <div className="d-flex align-items-center justify-content-between">

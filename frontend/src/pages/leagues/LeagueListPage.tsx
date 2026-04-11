@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 
@@ -14,6 +14,7 @@ interface LeagueSummary {
 }
 
 export function LeagueListPage() {
+  const navigate = useNavigate()
   const [leagues, setLeagues] = useState<LeagueSummary[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -21,13 +22,14 @@ export function LeagueListPage() {
     api<LeagueSummary[]>('/api/leagues').then(setLeagues).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <Spinner text="Loading..." />
+  useEffect(() => {
+    if (!loading && leagues.length === 1) {
+      navigate(`/leagues/${leagues[0].id}`, { replace: true })
+    }
+  }, [loading, leagues, navigate])
 
-  // If user has exactly one league, go straight to it
-  if (leagues.length === 1) {
-    window.location.replace(`/spa/leagues/${leagues[0].id}`)
-    return <Spinner text="Loading league..." />
-  }
+  if (loading) return <Spinner text="Loading..." />
+  if (leagues.length === 1) return <Spinner text="Loading league..." />
 
   if (leagues.length === 0) {
     return (

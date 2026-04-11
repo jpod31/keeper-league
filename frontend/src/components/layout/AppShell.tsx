@@ -1,5 +1,6 @@
 import { Outlet, Link, useNavigate } from 'react-router'
 import { useAuth } from '../../contexts/AuthContext'
+import { NotificationBell } from '../NotificationBell'
 import { useState, useRef, useEffect } from 'react'
 
 export function AppShell() {
@@ -37,11 +38,7 @@ export function AppShell() {
                 <i className="bi bi-bar-chart-line" style={{ fontSize: '1.05rem' }}></i>
               </Link>
             )}
-            <div className="dropdown">
-              <a className="nav-link position-relative" href="#" role="button" style={{ padding: '.4rem .55rem' }}>
-                <i className="bi bi-chat-dots" style={{ fontSize: '1.05rem' }}></i>
-              </a>
-            </div>
+            <NotificationBell />
             <div className="dropdown" ref={menuRef}>
               <a className="nav-link dropdown-toggle p-1" href="#" role="button" onClick={() => setMenuOpen(!menuOpen)}>
                 <span className="d-inline-flex align-items-center justify-content-center rounded-circle"

@@ -707,3 +707,49 @@ def trade_detail(league_id, trade_id):
         "can_respond": user_team and user_team.id == t.recipient_team_id and t.status == "pending",
         "can_veto": league.commissioner_id == current_user.id and t.status == "pending",
     })
+
+
+# ── Global (cross-league) notifications ───────────────────────────────
+
+@spa_api.route("/notifications/unread-count")
+@login_required
+def notifications_unread_count():
+    count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    return jsonify({"count": count})
+
+
+@spa_api.route("/notifications/recent")
+@login_required
+def notifications_recent():
+    """Recent notifications across all leagues for the header bell."""
+    notifs = Notification.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Notification.created_at.desc()).limit(15).all()
+    return jsonify({"items": [{
+        "id": n.id,
+        "type": n.type or "",
+        "title": n.title or "",
+        "body": n.body or "",
+        "url": n.link,
+        "is_read": bool(n.is_read),
+        "created_at": n.created_at.isoformat() if n.created_at else "",
+    } for n in notifs]})
+
+
+@spa_api.route("/notifications/read-all", methods=["POST"])
+@login_required
+def notifications_read_all_global():
+    Notification.query.filter_by(user_id=current_user.id, is_read=False).update({"is_read": True})
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@spa_api.route("/notifications/read/<int:notif_id>", methods=["POST"])
+@login_required
+def notification_read_global(notif_id):
+    n = db.session.get(Notification, notif_id)
+    if n and n.user_id == current_user.id:
+        n.is_read = True
+        db.session.commit()
+    return jsonify({"ok": True})
+

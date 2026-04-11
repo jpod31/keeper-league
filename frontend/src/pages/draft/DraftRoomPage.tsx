@@ -1,8 +1,9 @@
 import { useParams } from 'react-router'
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { io, Socket } from 'socket.io-client'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSocket } from '../../hooks/useSocket'
+import { ConnectionBanner } from '../../components/ui/ConnectionBanner'
 import { Search, Clock, Send } from 'lucide-react'
 
 interface DraftState {
@@ -30,31 +31,11 @@ interface ChatMsg { author: string; text: string; time: string }
 export function DraftRoomPage() {
   const { leagueId } = useParams()
   const { user } = useAuth()
-  const socketRef = useRef<Socket | null>(null)
   const [state, setState] = useState<DraftState | null>(null)
   const [available, setAvailable] = useState<AvailablePlayer[]>([])
   const [search, setSearch] = useState('')
   const [chat, setChat] = useState<ChatMsg[]>([])
   const [chatInput, setChatInput] = useState('')
-
-  useEffect(() => {
-    const socket = io('/draft', { withCredentials: true })
-    socketRef.current = socket
-
-    socket.on('connect', () => socket.emit('join_draft', { league_id: Number(leagueId) }))
-    socket.on('draft_state', setState)
-    socket.on('pick_made', () => {
-      fetchAvailable()
-      socket.emit('join_draft', { league_id: Number(leagueId) }) // refresh state
-    })
-    socket.on('timer_tick', ({ remaining }: { remaining: number }) => {
-      setState(prev => prev ? { ...prev, timer_remaining: remaining } : prev)
-    })
-    socket.on('draft_chat_msg', (msg: ChatMsg) => setChat(prev => [...prev, msg]))
-    socket.on('draft_completed', setState)
-
-    return () => { socket.disconnect() }
-  }, [leagueId])
 
   const fetchAvailable = useCallback(() => {
     const params = new URLSearchParams({ search })
@@ -63,13 +44,31 @@ export function DraftRoomPage() {
 
   useEffect(() => { fetchAvailable() }, [fetchAvailable])
 
+  const { socket, state: conn } = useSocket({
+    namespace: '/draft',
+    onConnect: s => s.emit('join_draft', { league_id: Number(leagueId) }),
+    events: {
+      draft_state: p => setState(p as DraftState),
+      pick_made: () => {
+        fetchAvailable()
+        socket?.emit('join_draft', { league_id: Number(leagueId) })
+      },
+      timer_tick: p => {
+        const { remaining } = p as { remaining: number }
+        setState(prev => prev ? { ...prev, timer_remaining: remaining } : prev)
+      },
+      draft_chat_msg: p => setChat(prev => [...prev, p as ChatMsg]),
+      draft_completed: p => setState(p as DraftState),
+    },
+  })
+
   const makePick = (playerId: number) => {
-    socketRef.current?.emit('make_pick', { league_id: Number(leagueId), player_id: playerId })
+    socket?.emit('make_pick', { league_id: Number(leagueId), player_id: playerId })
   }
 
   const sendChat = () => {
     if (!chatInput.trim()) return
-    socketRef.current?.emit('draft_chat', { league_id: Number(leagueId), message: chatInput.trim() })
+    socket?.emit('draft_chat', { league_id: Number(leagueId), message: chatInput.trim() })
     setChatInput('')
   }
 
@@ -90,6 +89,8 @@ export function DraftRoomPage() {
   const isMyTurn = state.current_team?.name === user?.display_name
 
   return (
+    <>
+    <ConnectionBanner state={conn} />
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-12rem)]">
       {/* Pick history */}
       <div className="lg:col-span-1 rounded-xl border border-[#21262d] bg-[#0d1117] overflow-hidden flex flex-col">
@@ -164,5 +165,6 @@ export function DraftRoomPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }

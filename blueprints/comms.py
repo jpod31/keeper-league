@@ -135,6 +135,22 @@ def inbox(league_id):
         FantasyTeam.id != user_team.id,
     ).all()
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "user_team": {"id": user_team.id, "name": user_team.name},
+            "conversations": [{
+                "id": cd["convo"].id,
+                "other_team_id": cd["other_team"].id if cd["other_team"] else None,
+                "other_team_name": cd["other_team"].name if cd["other_team"] else "?",
+                "other_team_owner": cd["other_team"].owner.display_name if cd["other_team"] and cd["other_team"].owner else "?",
+                "unread": cd["unread"],
+                "last_message_body": cd["last_msg"].body if cd["last_msg"] else None,
+                "last_message_at": cd["convo"].last_message_at.isoformat() if cd["convo"].last_message_at else None,
+            } for cd in convo_data],
+            "all_teams": [{"id": t.id, "name": t.name, "owner": t.owner.display_name if t.owner else "?"} for t in all_teams],
+        })
+
     return render_template("comms/inbox.html",
                            league=league, user_team=user_team,
                            convo_data=convo_data, all_teams=all_teams)
@@ -168,6 +184,27 @@ def conversation(league_id, convo_id):
     messages = Message.query.filter_by(conversation_id=convo_id).order_by(
         Message.created_at.asc()
     ).all()
+
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "user_team": {"id": user_team.id, "name": user_team.name},
+            "current_user_id": current_user.id,
+            "convo": {"id": convo.id},
+            "other_team": {
+                "id": other_team.id,
+                "name": other_team.name,
+                "owner": other_team.owner.display_name if other_team.owner else "?",
+            },
+            "messages": [{
+                "id": m.id,
+                "sender_user_id": m.sender_user_id,
+                "sender_name": m.sender.display_name if m.sender else "?",
+                "body": m.body,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+                "is_read": m.is_read,
+            } for m in messages],
+        })
 
     return render_template("comms/conversation.html",
                            league=league, user_team=user_team,

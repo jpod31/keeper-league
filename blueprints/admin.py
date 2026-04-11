@@ -60,6 +60,21 @@ def dashboard():
             "time": pv.timestamp,
         })
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "total_users": total_users,
+            "total_leagues": total_leagues,
+            "total_teams": total_teams,
+            "views_today": views_today,
+            "activity": [{
+                "user": a["user"],
+                "path": a["path"],
+                "method": a["method"],
+                "status": a["status"],
+                "time": a["time"].isoformat() if a["time"] else None,
+            } for a in activity],
+        })
+
     return render_template("admin/dashboard.html",
                            total_users=total_users,
                            total_leagues=total_leagues,
@@ -120,6 +135,18 @@ def users():
             "leagues": leagues,
         })
 
+    if request.args.get("format") == "json":
+        return jsonify({"users": [{
+            "id": u["id"],
+            "username": u["username"],
+            "email": u["email"],
+            "display_name": u["display_name"],
+            "created_at": u["created_at"].isoformat() if u["created_at"] else None,
+            "is_admin": u["is_admin"],
+            "team_count": u["team_count"],
+            "leagues": [{"id": lg.id, "name": lg.name} for lg in u["leagues"]],
+        } for u in user_data]})
+
     return render_template("admin/users.html", users=user_data)
 
 
@@ -141,6 +168,18 @@ def leagues():
             "max_teams": lg.num_teams,
             "created_at": lg.created_at,
         })
+
+    if request.args.get("format") == "json":
+        return jsonify({"leagues": [{
+            "id": lg["id"],
+            "name": lg["name"],
+            "commissioner": lg["commissioner"],
+            "season_year": lg["season_year"],
+            "status": lg["status"],
+            "num_teams": lg["num_teams"],
+            "max_teams": lg["max_teams"],
+            "created_at": lg["created_at"].isoformat() if lg["created_at"] else None,
+        } for lg in league_data]})
 
     return render_template("admin/leagues.html", leagues=league_data)
 

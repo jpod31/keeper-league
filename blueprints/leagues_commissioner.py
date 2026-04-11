@@ -197,6 +197,71 @@ def commissioner_hub(league_id):
 
     teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.name).all()
 
+    if request.args.get("format") == "json":
+        def _ltil(l):
+            return {
+                "id": l.id,
+                "team_id": l.team_id,
+                "team_name": l.team.name if l.team else "",
+                "player_id": l.player_id,
+                "player_name": l.player.name if l.player else "",
+                "player_position": l.player.position if l.player else "",
+                "reason": l.reason or "",
+                "status": l.status,
+                "added_at": l.added_at.isoformat() if l.added_at else None,
+                "reviewed_at": l.reviewed_at.isoformat() if l.reviewed_at else None,
+                "removed_at": l.removed_at.isoformat() if l.removed_at else None,
+            }
+
+        return jsonify({
+            "league": {
+                "id": league.id,
+                "name": league.name,
+                "status": league.status,
+                "season_year": league.season_year,
+                "trade_window_open": bool(league.trade_window_open),
+                "is_commissioner": league.commissioner_id == current_user.id,
+            },
+            "current_phase": current_phase,
+            "season_cfg": {
+                "season_phase": season_cfg.season_phase if season_cfg else None,
+                "mid_season_draft_enabled": bool(season_cfg.mid_season_draft_enabled) if season_cfg else False,
+                "mid_season_delist_required": season_cfg.mid_season_delist_required if season_cfg else None,
+                "offseason_delist_min": season_cfg.offseason_delist_min if season_cfg else None,
+                "ssp_enabled": bool(season_cfg.ssp_enabled) if season_cfg else False,
+            },
+            "midseason": {
+                "trade_status": mid_trade_status,
+                "delist_status": mid_delist_status,
+                "draft_status": mid_draft_status,
+                "lock_status": mid_lock_status,
+            },
+            "offseason": {
+                "delist_status": off_delist_status,
+                "ssp_status": off_ssp_status,
+                "draft_status": off_draft_status,
+                "trade_status": off_trade_status,
+            },
+            "delist": {
+                "is_open": bool(delist_is_open),
+                "min_delists": min_delists,
+                "teams": all_teams_progress,
+                "period_id": delist_period.id if delist_period else None,
+                "period_status": delist_period.status if delist_period else None,
+            },
+            "trade_window": {
+                "mid_open": trade_window_dates["mid_open"].isoformat() if trade_window_dates["mid_open"] else None,
+                "mid_close": trade_window_dates["mid_close"].isoformat() if trade_window_dates["mid_close"] else None,
+                "off_open": trade_window_dates["off_open"].isoformat() if trade_window_dates["off_open"] else None,
+                "off_close": trade_window_dates["off_close"].isoformat() if trade_window_dates["off_close"] else None,
+            },
+            "pending_ltil": [_ltil(l) for l in pending_ltil],
+            "active_ltil": [_ltil(l) for l in active_ltil],
+            "recent_history": [_ltil(l) for l in recent_history],
+            "pending_trades_count": pending_trades_count,
+            "teams": [{"id": t.id, "name": t.name, "owner": t.owner.display_name if t.owner else "?"} for t in teams],
+        })
+
     return render_template(
         "leagues/commissioner_hub.html",
         league=league,

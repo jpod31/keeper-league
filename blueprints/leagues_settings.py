@@ -287,6 +287,26 @@ def league_scoring(league_id):
 
     scoring_rules = get_custom_scoring(league_id)
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {
+                "id": league.id,
+                "name": league.name,
+                "scoring_type": league.scoring_type,
+                "hybrid_base": getattr(league, "hybrid_base", None),
+                "hybrid_base_weight": getattr(league, "hybrid_base_weight", None),
+                "hybrid_custom_mode": getattr(league, "hybrid_custom_mode", None),
+                "is_commissioner": league.commissioner_id == current_user.id,
+            },
+            "scoring_rules": scoring_rules,
+            "available_stats": list(config.AVAILABLE_STATS),
+            "default_scoring": dict(config.DEFAULT_CUSTOM_SCORING),
+            "stat_categories": dict(config.STAT_CATEGORIES),
+            "scoring_presets": {k: dict(v) for k, v in config.SCORING_PRESETS.items()},
+            "scoring_type_labels": dict(config.SCORING_TYPE_LABELS),
+            "default_uf_categories": list(config.DEFAULT_UF_CATEGORIES),
+        })
+
     return render_template("leagues/scoring.html",
                            league=league,
                            scoring_rules=scoring_rules,

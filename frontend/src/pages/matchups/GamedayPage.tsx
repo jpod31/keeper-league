@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
+import { ConnectionBanner } from '../../components/ui/ConnectionBanner'
+import type { ConnectionState } from '../../hooks/useSocket'
 
 interface Team { id: number; name: string; logo_url: string | null }
 interface GDFixture { id: number; home_team_id: number; away_team_id: number; home_score: number; away_score: number; status: string; home_team: Team; away_team: Team }
@@ -245,6 +247,7 @@ export function GamedayPage() {
 
   // WebSocket live scoring — use refs to avoid re-triggering the effect
   const socketRef = useRef<Socket | null>(null)
+  const [wsState_, setWsState_] = useState<ConnectionState>('connecting')
   const wsRound = useRef(data?.afl_round)
   const wsState = useRef(data?.gameday_state)
   const wsLiveEnabled = useRef(data?.live_enabled)
@@ -259,15 +262,21 @@ export function GamedayPage() {
 
     const socket = io('/matchups', {
       withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,
       reconnectionDelayMax: 30000,
     })
     socketRef.current = socket
 
     socket.on('connect', () => {
+      setWsState_('connected')
       socket.emit('join_live', { league_id: Number(leagueId), afl_round: wsRound.current })
       socket.emit('request_scores', { league_id: Number(leagueId), afl_round: wsRound.current })
     })
+    socket.on('disconnect', () => setWsState_('disconnected'))
+    socket.on('connect_error', () => setWsState_('error'))
+    socket.io.on('reconnect_attempt', () => setWsState_('connecting'))
 
     socket.on('joined', (info: { room: string }) => {
       console.log('Joined live room:', info.room)
@@ -552,6 +561,7 @@ export function GamedayPage() {
   return (
     <div>
       <style>{GAMEDAY_CSS}</style>
+      {data?.gameday_state === 'live' && data?.live_enabled && <ConnectionBanner state={wsState_} />}
 
       {/* Competition toggle */}
       <div className="comp-toggle">

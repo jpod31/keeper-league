@@ -513,6 +513,24 @@ def league_invite(code):
         flash(f"Joined '{league.name}' with team '{team.name}'!", "success")
         return redirect(url_for("leagues.dashboard", league_id=league.id))
 
+    if request.args.get("format") == "json":
+        team_count = FantasyTeam.query.filter_by(league_id=league.id).count()
+        return jsonify({
+            "league": {
+                "id": league.id,
+                "name": league.name,
+                "season_year": league.season_year,
+                "scoring_type": league.scoring_type,
+                "num_teams": league.num_teams,
+                "squad_size": league.squad_size,
+                "commissioner": league.commissioner.display_name if league.commissioner else "?",
+                "team_count": team_count,
+            },
+            "code": code,
+            "is_full": team_count >= (league.num_teams or 10),
+            "user_authenticated": True,
+        })
+
     return render_template("leagues/invite.html", league=league, code=code)
 
 

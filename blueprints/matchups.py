@@ -918,6 +918,34 @@ def afl_live(league_id):
         fmt = lambda dt: f"{dt.strftime('%a')} {dt.day} {dt.strftime('%b')}"
         round_dates = fmt(earliest) if earliest.date() == latest.date() else f"{fmt(earliest)} – {fmt(latest)}"
 
+    if request.args.get("format") == "json":
+        def _game(g):
+            return {
+                "game_id": g.get("game_id"),
+                "home_team": g.get("home_team"),
+                "away_team": g.get("away_team"),
+                "home_score": g.get("home_score"),
+                "away_score": g.get("away_score"),
+                "home_goals": g.get("home_goals"),
+                "home_behinds": g.get("home_behinds"),
+                "away_goals": g.get("away_goals"),
+                "away_behinds": g.get("away_behinds"),
+                "status": g.get("status"),
+                "quarter": g.get("quarter"),
+                "time_remaining": g.get("time_remaining"),
+                "is_live": g.get("is_live", False),
+                "is_complete": g.get("is_complete", False),
+                "scheduled_display": g.get("scheduled_display"),
+                "scheduled_start": g.get("scheduled_start").isoformat() if g.get("scheduled_start") else None,
+                "venue": g.get("venue"),
+            }
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "afl_round": afl_round,
+            "round_dates": round_dates,
+            "games": [_game(g) for g in afl_games],
+        })
+
     return render_template(
         "matchups/afl_live.html",
         league=league,

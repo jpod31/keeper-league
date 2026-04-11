@@ -72,6 +72,22 @@ def draft_values(league_id):
     ranked = rank_players_for_user(league_id, current_user.id)
     top_players = ranked[:20]
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {"id": league.id, "name": league.name},
+            "weights": active_weights,
+            "has_custom": has_custom,
+            "top_players": [{
+                "id": ap.id,
+                "name": ap.name,
+                "afl_team": ap.afl_team,
+                "position": ap.position,
+                "sc_avg": ap.sc_avg,
+                "age": ap.age,
+                "draft_score": score,
+            } for ap, score in top_players],
+        })
+
     return render_template("leagues/draft_values.html",
                            league=league,
                            weights=active_weights,
