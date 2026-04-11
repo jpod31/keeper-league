@@ -245,21 +245,17 @@ export function GamedayPage() {
     }
   }, [data?.gameday_state])
 
-  // WebSocket live scoring — use refs to avoid re-triggering the effect
+  // WebSocket live scoring
   const socketRef = useRef<Socket | null>(null)
-  const [wsState_, setWsState_] = useState<ConnectionState>('connecting')
-  const wsRound = useRef(data?.afl_round)
-  const wsState = useRef(data?.gameday_state)
-  const wsLiveEnabled = useRef(data?.live_enabled)
+  const [wsState_, setWsState_] = useState<ConnectionState>('connected')
   const lastSeq = useRef(0)
-  wsRound.current = data?.afl_round
-  wsState.current = data?.gameday_state
-  wsLiveEnabled.current = data?.live_enabled
+  const shouldConnect = data?.gameday_state === 'live' && !!data?.live_enabled
+  const afl_round = data?.afl_round
 
   useEffect(() => {
-    // Only connect when live AND live scoring is enabled
-    if (wsState.current !== 'live' || !wsLiveEnabled.current) return
+    if (!shouldConnect) return
 
+    setWsState_('connecting')
     const socket = io('/matchups', {
       withCredentials: true,
       reconnection: true,
@@ -271,8 +267,8 @@ export function GamedayPage() {
 
     socket.on('connect', () => {
       setWsState_('connected')
-      socket.emit('join_live', { league_id: Number(leagueId), afl_round: wsRound.current })
-      socket.emit('request_scores', { league_id: Number(leagueId), afl_round: wsRound.current })
+      socket.emit('join_live', { league_id: Number(leagueId), afl_round })
+      socket.emit('request_scores', { league_id: Number(leagueId), afl_round })
     })
     socket.on('disconnect', () => setWsState_('disconnected'))
     socket.on('connect_error', () => setWsState_('error'))
@@ -283,7 +279,6 @@ export function GamedayPage() {
     })
 
     socket.on('score_update', (update: { fixtures?: FixtureDetail[]; seq?: number }) => {
-      // Drop out-of-order updates
       if (update.seq && update.seq <= lastSeq.current) return
       if (update.seq) lastSeq.current = update.seq
 
@@ -294,12 +289,10 @@ export function GamedayPage() {
           return next
         })
       }
-      // Don't call fetchData — would cause re-render loop. 60s poll handles full refresh.
     })
 
-    return () => { socket.disconnect() }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leagueId])
+    return () => { socket.disconnect(); socketRef.current = null }
+  }, [leagueId, shouldConnect, afl_round])
 
   // Pre-fetch all fixture breakdowns once data is loaded
   const hasFetched = useRef(false)
