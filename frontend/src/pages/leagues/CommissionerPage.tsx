@@ -1,8 +1,9 @@
-import { useParams, Link } from 'react-router'
+import { useParams, Link, useNavigate } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { post } from '../../lib/api'
+import { AdminSubnav } from '../../components/nav/AdminSubnav'
 
 interface LtilEntry {
   id: number
@@ -56,6 +57,7 @@ function StepBadge({ status }: { status: string }) {
 
 export function CommissionerPage() {
   const { leagueId } = useParams()
+  const navigate = useNavigate()
   const { data, loading, refetch } = useFetch<CommissionerData>(`/leagues/${leagueId}/commissioner?format=json`)
   const [busy, setBusy] = useState<string | null>(null)
   const [selectedTeam, setSelectedTeam] = useState<number | null>(null)
@@ -134,7 +136,7 @@ export function CommissionerPage() {
     const fd = new FormData()
     try {
       await fetch(`/leagues/${leagueId}/commissioner/delete-league`, { method: 'POST', body: fd, credentials: 'same-origin' })
-      window.location.href = '/spa/leagues'
+      navigate('/leagues')
     } catch (e) {
       alert((e as Error).message)
     }
@@ -144,7 +146,11 @@ export function CommissionerPage() {
 
   return (
     <div>
+      <AdminSubnav active="commissioner" leagueId={leagueId!} />
       <div className="page-header">
+        <div className="page-breadcrumb">
+          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Admin / Commissioner
+        </div>
         <h2><i className="bi bi-shield-lock me-2" style={{ color: '#d29922' }}></i>Commissioner Hub</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
           Current phase: <span className="badge" style={{ background: '#21262d', color: '#c9d1d9' }}>{current_phase.replace('_', ' ')}</span>

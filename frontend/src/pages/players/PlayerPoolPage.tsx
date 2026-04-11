@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
 interface Acquired {
   coach: string | null
@@ -237,10 +238,11 @@ export function PlayerPoolPage() {
   return (
     <div>
       <style>{POOL_CSS}</style>
+      <PlayersSubnav active="pool" leagueId={leagueId!} />
 
       <div className="page-header">
         <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}`}>{league.name}</Link> / Players
+          <Link to={`/leagues/${leagueId}`}>{league.name}</Link> / Players / Pool
         </div>
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>

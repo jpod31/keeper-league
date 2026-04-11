@@ -1,7 +1,8 @@
-import { useParams } from 'react-router'
+import { useParams, Link } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
 interface Leader {
   player_id: number
@@ -38,7 +39,11 @@ export function StatsPage() {
 
   return (
     <div>
+      <PlayersSubnav active="stats" leagueId={leagueId!} />
       <div className="page-header">
+        <div className="page-breadcrumb">
+          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Stats
+        </div>
         <h2><i className="bi bi-graph-up me-2" style={{ color: '#58a6ff' }}></i>Advanced Stats</h2>
       </div>
 

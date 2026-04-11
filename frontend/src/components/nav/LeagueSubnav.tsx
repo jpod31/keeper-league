@@ -1,14 +1,19 @@
 import { Link } from 'react-router'
+import { useLeague } from '../../contexts/LeagueContext'
 
 interface Props {
-  active: string
+  active: 'ladder' | 'fixture' | 'finals' | 'records' | 'keepers' | 'changes' | '7s'
   leagueId: string
 }
 
 export function LeagueSubnav({ active, leagueId }: Props) {
+  const { league } = useLeague()
+  const showFinals = !!league && league.finals_teams > 0
+
   const tabs = [
     { key: 'ladder', icon: 'bi-bar-chart', label: 'Ladder', to: `/leagues/${leagueId}/standings` },
     { key: 'fixture', icon: 'bi-calendar-week', label: 'Fixtures', to: `/leagues/${leagueId}/fixture` },
+    ...(showFinals ? [{ key: 'finals', icon: 'bi-trophy', label: 'Finals', to: `/leagues/${leagueId}/finals` }] : []),
     { key: 'records', icon: 'bi-trophy', label: 'Records', to: `/leagues/${leagueId}/history` },
     { key: 'keepers', icon: 'bi-shield-check', label: 'Keepers', to: `/leagues/${leagueId}/keepers` },
     { key: 'changes', icon: 'bi-clock-history', label: 'Changes', to: `/leagues/${leagueId}/list-changes` },
@@ -17,7 +22,6 @@ export function LeagueSubnav({ active, leagueId }: Props) {
 
   return (
     <>
-      {/* Desktop subnav */}
       <div className="league-subnav d-none d-lg-flex">
         {tabs.map(t => (
           <Link key={t.key}
@@ -28,8 +32,6 @@ export function LeagueSubnav({ active, leagueId }: Props) {
           </Link>
         ))}
       </div>
-
-      {/* Mobile subnav */}
       <div className="mob-subnav d-lg-none">
         {tabs.map(t => (
           <Link key={t.key}

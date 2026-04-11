@@ -1,6 +1,7 @@
-import { useParams } from 'react-router'
+import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
 interface RatingChange {
   player_id: number
@@ -45,7 +46,11 @@ export function PlayerRatingsPage() {
 
   return (
     <div>
+      <PlayersSubnav active="ratings" leagueId={leagueId!} />
       <div className="page-header">
+        <div className="page-breadcrumb">
+          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Ratings
+        </div>
         <h2><i className="bi bi-star me-2" style={{ color: '#d29922' }}></i>Player Ratings</h2>
         {data.last_update_date && (
           <div className="text-secondary" style={{ fontSize: '.85rem' }}>

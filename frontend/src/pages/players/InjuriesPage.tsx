@@ -1,7 +1,8 @@
-import { useParams } from 'react-router'
+import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
 interface InjuredPlayer {
   id: number
@@ -52,7 +53,11 @@ export function InjuriesPage() {
 
   return (
     <div>
+      <PlayersSubnav active="injuries" leagueId={leagueId!} />
       <div className="page-header">
+        <div className="page-breadcrumb">
+          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Injuries
+        </div>
         <h2><i className="bi bi-bandaid me-2" style={{ color: '#f85149' }}></i>Injuries</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
           {filtered.length} players · Round {data.current_round ?? '—'}

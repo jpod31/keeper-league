@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
+import { AdminSubnav } from '../../components/nav/AdminSubnav'
 
 interface OnFieldSlots { DEF?: number; MID?: number; FWD?: number; RUC?: number }
 
@@ -112,6 +113,8 @@ export function SettingsPage() {
   const disabled = !is_commissioner
 
   return (
+    <>
+    <AdminSubnav active="settings" leagueId={leagueId!} />
     <div className="row justify-content-center">
       <div className="col-md-7">
         <div className="page-header">
@@ -456,5 +459,6 @@ export function SettingsPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
