@@ -275,7 +275,7 @@ export function SettingsPage() {
     const ok = confirm(`Generate pre-season fixtures?${data?.has_preseason ? ' This will replace existing pre-season matches.' : ''}`)
     if (!ok) return
     try {
-      await fetch(`/leagues/${leagueId}/generate-preseason`, { method: 'POST', credentials: 'include' })
+      await fetch(`/leagues/${leagueId}/fixture/generate-preseason`, { method: 'POST', credentials: 'include' })
       setMsg({ kind: 'success', text: 'Pre-season fixtures generated.' })
     } catch (e) {
       setMsg({ kind: 'error', text: (e as Error).message })

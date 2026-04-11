@@ -1,1 +1,10 @@
-/* No bundled CSS - everything loaded via HTML <link> tags to match existing site exactly */
+/*
+  Tailwind CSS — utilities + theme only, no preflight.
+  Bootstrap 5 (loaded via index.html <link>) provides the reset,
+  so we skip Tailwind's preflight to avoid double-reset conflicts.
+  Utilities are for Tailwind-styled analytics dashboards, draft room,
+  and component library that predate the Bootstrap parity pass.
+*/
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);

@@ -1323,6 +1323,7 @@ def league_history(league_id):
             "closest_rivalry": closest_rivalry,
             "milestones": milestones,
             "teams": [{"id": t.id, "name": t.name} for t in teams],
+            "h2h_data": h2h_data,
         })
 
     return render_template("leagues/history.html",
