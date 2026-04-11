@@ -248,6 +248,7 @@ def commissioner_hub(league_id):
                 "teams": all_teams_progress,
                 "period_id": delist_period.id if delist_period else None,
                 "period_status": delist_period.status if delist_period else None,
+                "closes_at": delist_period.closes_at.isoformat() if delist_period and delist_period.closes_at else None,
             },
             "trade_window": {
                 "mid_open": trade_window_dates["mid_open"].isoformat() if trade_window_dates["mid_open"] else None,

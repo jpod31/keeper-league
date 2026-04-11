@@ -205,6 +205,10 @@ def league_settings(league_id):
                 flex_count = slot.count
             elif not slot.is_bench:
                 on_field_slots[slot.position_code] = slot.count
+        sc = season_config
+        supp_date = None
+        if sc and sc.supplemental_draft_date:
+            supp_date = sc.supplemental_draft_date.strftime("%Y-%m-%d")
         return jsonify({
             "league": {
                 "id": league.id,
@@ -222,13 +226,28 @@ def league_settings(league_id):
                 "flex_count": flex_count,
             },
             "season_config": {
-                "num_regular_rounds": season_config.num_regular_rounds if season_config else 18,
-                "finals_teams": season_config.finals_teams if season_config else 4,
-                "ssp_enabled": (season_config.ssp_enabled is not False) if season_config else True,
-                "ssp_cutoff_round": season_config.ssp_cutoff_round if season_config else 4,
-                "ssp_slots": season_config.ssp_slots if season_config else 1,
-                "mid_season_draft_enabled": bool(season_config and season_config.mid_season_draft_enabled),
-            } if True else None,
+                "num_regular_rounds": sc.num_regular_rounds if sc else 18,
+                "finals_teams": sc.finals_teams if sc else 4,
+                "ssp_enabled": (sc.ssp_enabled is not False) if sc else True,
+                "ssp_cutoff_round": sc.ssp_cutoff_round if sc else 4,
+                "ssp_slots": sc.ssp_slots if sc else 1,
+                "mid_season_draft_enabled": bool(sc and sc.mid_season_draft_enabled),
+                "mid_season_draft_after_round": (sc.mid_season_draft_after_round if sc else None) or 12,
+                "mid_season_trade_mode": (sc.mid_season_trade_mode if sc else None) or "window",
+                "mid_season_trade_until_round": (sc.mid_season_trade_until_round if sc else None) or 18,
+                "mid_season_delist_required": (sc.mid_season_delist_required if sc else None) or 1,
+                "mid_delist_duration_days": (sc.mid_delist_duration_days if sc else None) or 2,
+                "off_delist_duration_days": (sc.off_delist_duration_days if sc else None) or 14,
+                "off_trade_duration_days": (sc.off_trade_duration_days if sc else None) or 14,
+                "offseason_delist_min": (sc.offseason_delist_min if sc else None) or 3,
+                "supplemental_draft_date": supp_date,
+                "captain_scoring_enabled": bool(sc.captain_scoring_enabled) if sc and sc.captain_scoring_enabled is not None else True,
+                "sevens_captain_enabled": bool(sc and sc.sevens_captain_enabled),
+            },
+            "live_config": {
+                "enabled": bool(live_config and live_config.enabled),
+                "lockout_type": (live_config.lockout_type if live_config else "game_start"),
+            },
             "is_commissioner": is_commissioner,
             "has_active_draft": has_active_draft,
             "has_preseason": has_preseason,
