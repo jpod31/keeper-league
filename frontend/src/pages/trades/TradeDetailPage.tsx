@@ -148,9 +148,9 @@ export function TradeDetailPage() {
           {players.map(a => (
             <tr key={`p-${a.player_id}`}>
               <td>
-                <a href={`/player/${encodeURIComponent(a.name)}`} className="text-decoration-none">
+                <span className="text-decoration-none">
                   {a.name}
-                </a>
+                </span>
               </td>
               <td><span className={`pos-badge pos-${posCode(a.position)}`}>{a.position}</span></td>
               <td className="text-end text-secondary">

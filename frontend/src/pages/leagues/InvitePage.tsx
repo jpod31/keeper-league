@@ -28,7 +28,7 @@ export function InvitePage() {
 
   if (loading) return <Spinner text="Loading league..." />
   if (!data) return (
-    <div className="container py-5 text-center">
+    <div className="py-5 text-center">
       <i className="bi bi-exclamation-triangle" style={{ fontSize: '2rem', color: '#d29922' }}></i>
       <p className="mt-2">Invalid or expired invite link.</p>
     </div>
@@ -58,7 +58,7 @@ export function InvitePage() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: 600, paddingTop: '4rem' }}>
+    <div style={{ maxWidth: 600, paddingTop: "4rem", margin: "0 auto" }}>
       <div className="card">
         <div className="card-body p-5 text-center">
           <div

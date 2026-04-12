@@ -342,9 +342,9 @@ function SquadPageInner() {
                           ></i>
                         </td>
                         <td>
-                          <a href={`/player/${encodeURIComponent(p.name)}`} className="fw-bold text-decoration-none" style={{ color: '#c9d1d9' }}>
+                          <span className="fw-bold" style={{color:"#c9d1d9"}}>
                             {p.name}
-                          </a>
+                          </span>
                         </td>
                         <td>{(p.position || 'MID').split('/').map(pos => <span key={pos} className={`pos-badge pos-${pos}`} style={{ fontSize: '.65rem', padding: '1px 5px' }}>{pos}</span>)}</td>
                         <td style={{ color: '#8b949e', fontSize: '.78rem' }}>{p.afl_team || '-'}</td>

@@ -20,7 +20,7 @@ export function AdminLeaguesPage() {
   if (!data) return <p className="text-danger">Failed to load leagues</p>
 
   return (
-    <div className="container py-4">
+    <div>
       <div className="page-header">
         <h2><i className="bi bi-trophy me-2"></i>Leagues</h2>
         <Link to="/admin" className="btn btn-sm btn-outline-secondary">

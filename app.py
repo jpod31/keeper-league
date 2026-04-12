@@ -416,18 +416,13 @@ def create_app():
 
             return send_from_directory(_spa_dir, "index.html")
 
-        # Return 401 JSON (not 302 redirect) when @login_required fails on
-        # API calls, so the SPA can handle auth state client-side.
+        # Return 401 JSON (not 302 redirect) when @login_required fails.
+        # In SPA mode, ALL requests are either page navigations (already
+        # intercepted above) or API/fetch calls. So any request reaching
+        # this handler is an API call and should get 401 JSON.
         @login_manager.unauthorized_handler
         def _api_unauthorized():
-            if (request.args.get("format") == "json"
-                    or request.path.startswith("/api/")
-                    or "/api/" in request.path
-                    or request.headers.get("X-Requested-With") == "XMLHttpRequest"
-                    or "application/json" in (request.accept_mimetypes or "")):
-                return jsonify({"error": "Authentication required"}), 401
-            # Fallback: serve SPA shell (React AuthGuard handles redirect)
-            return send_from_directory(_spa_dir, "index.html")
+            return jsonify({"error": "Authentication required"}), 401
 
     # Legacy /spa/ path — redirect to root so old bookmarks work
     @app.route("/spa/", defaults={"path": ""})

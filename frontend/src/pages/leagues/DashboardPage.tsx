@@ -53,7 +53,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 export function DashboardPage() {
   const { leagueId } = useParams()
   const navigate = useNavigate()
-  const { data, loading } = useFetch<DashboardData>(`/leagues/${leagueId}?format=json`)
+  const { data, loading, refetch } = useFetch<DashboardData>(`/leagues/${leagueId}?format=json`)
   const [copied, setCopied] = useState(false)
   const [joinName, setJoinName] = useState('')
 
@@ -78,7 +78,7 @@ export function DashboardPage() {
     const form = new FormData()
     form.set('team_name', joinName)
     const res = await fetch(`/leagues/${leagueId}/join`, { method: 'POST', body: form, credentials: 'include', redirect: 'manual' })
-    if (res.status < 500) window.location.reload()
+    if (res.status < 500) refetch()
   }
 
   function openTeam(teamId: number) {

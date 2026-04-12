@@ -250,8 +250,8 @@ export function GamedayPage() {
   // Auto-reload every 5min when live
   useEffect(() => {
     if (data?.gameday_state === 'live') {
-      const timer = setInterval(() => window.location.reload(), 300000)
-      return () => clearInterval(timer)
+      // removed: 5min auto-reload was destroying SPA state. fetchData() already runs every 60s.
+      return undefined
     }
   }, [data?.gameday_state])
 
@@ -323,8 +323,8 @@ export function GamedayPage() {
     if (data?.gameday_state !== 'upcoming') return
     const timer = setInterval(() => {
       api<{ game_statuses?: { status: string }[] }>(`/leagues/${leagueId}/gameday/api/fixtures?round=${data.afl_round}`)
-        .then(d => {
-          if (d.game_statuses?.some(g => g.status === 'live')) window.location.reload()
+        .then(_d => {
+          // Live score updates handled by fetchData() interval
         }).catch(() => {})
     }, 300000)
     return () => clearInterval(timer)

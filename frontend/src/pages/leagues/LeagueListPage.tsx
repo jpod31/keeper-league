@@ -33,7 +33,7 @@ export function LeagueListPage() {
 
   if (leagues.length === 0) {
     return (
-      <div className="container">
+      <div>
         <div className="empty-state" style={{ padding: '6rem 2rem' }}>
           <div className="empty-icon" style={{ width: 80, height: 80 }}>
             <i className="bi bi-trophy" style={{ fontSize: '2rem' }}></i>
@@ -51,7 +51,7 @@ export function LeagueListPage() {
   }
 
   return (
-    <div className="container py-4">
+    <div>
       <div className="section-header">
         <div>
           <h3>Home</h3>

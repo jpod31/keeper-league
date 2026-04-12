@@ -134,14 +134,14 @@ export function TeamStatsPage() {
                 const primary = posCode(p.position)
                 const rankColor = i < 3 ? '#FFD700' : '#484f58'
                 return (
-                  <a key={p.id} href={`/player/${encodeURIComponent(p.name)}`} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <span key={p.id} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <span style={{ fontWeight: 800, fontSize: '.8rem', color: rankColor, minWidth: 20 }}>{i + 1}</span>
                     <div className="squad-mob-info">
                       <div className="squad-mob-name">{p.name}</div>
                       <div className="squad-mob-meta"><span className={`pos-badge pos-${primary}`} style={{ fontSize: '.55rem' }}>{primary}</span></div>
                     </div>
                     <div className="squad-mob-sc" style={{ color: '#3fb950' }}>{p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</div>
-                  </a>
+                  </span>
                 )
               })}
             </div>
@@ -161,9 +161,9 @@ export function TeamStatsPage() {
                     <tr key={p.id}>
                       <td style={{ color: '#484f58' }}>{i + 1}</td>
                       <td>
-                        <a href={`/player/${encodeURIComponent(p.name)}`} className="text-decoration-none" style={{ color: '#c9d1d9' }}>
+                        <span className="text-decoration-none" style={{ color: '#c9d1d9' }}>
                           {p.name}
-                        </a>
+                        </span>
                       </td>
                       <td><span className={`pos-badge pos-${posCode(p.position)}`}>{p.position}</span></td>
                       <td className="text-end fw-bold">{p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
@@ -191,7 +191,7 @@ export function TeamStatsPage() {
               : p.sc_avg && p.sc_avg >= 60 ? '#58a6ff'
               : '#8b949e'
             return (
-              <a key={p.id} href={`/player/${encodeURIComponent(p.name)}`} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <span key={p.id} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <span className={`pos-badge pos-${primary}`} style={{ minWidth: 32, textAlign: 'center', fontSize: '.65rem' }}>{primary}</span>
                 <div className="squad-mob-info">
                   <div className="squad-mob-name">{p.name}</div>
@@ -204,7 +204,7 @@ export function TeamStatsPage() {
                 <div className="squad-mob-sc" style={{ color: scColor }}>
                   {p.sc_avg ? Math.round(p.sc_avg) : '-'}
                 </div>
-              </a>
+              </span>
             )
           })}
         </div>
@@ -226,9 +226,9 @@ export function TeamStatsPage() {
               {players.map(p => (
                 <tr key={p.id}>
                   <td>
-                    <a href={`/player/${encodeURIComponent(p.name)}`} className="text-decoration-none" style={{ color: '#c9d1d9' }}>
+                    <span className="text-decoration-none" style={{ color: '#c9d1d9' }}>
                       {p.name}
-                    </a>
+                    </span>
                   </td>
                   <td>
                     {(p.position || 'MID').split('/').map(pos => (

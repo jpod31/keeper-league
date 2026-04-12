@@ -236,8 +236,8 @@ export function Reserve7sGamedayPage() {
     if (data?.gameday_state !== 'upcoming') return
     const t = setInterval(() => {
       api<{ game_statuses?: { status: string }[] }>(`/leagues/${leagueId}/reserve7s/api/live/${data.afl_round}`)
-        .then(r => {
-          if (r.game_statuses?.some(g => g.status === 'live')) window.location.reload()
+        .then(_r => {
+          // handled by interval
         }).catch(() => {})
     }, 5 * 60 * 1000)
     return () => clearInterval(t)

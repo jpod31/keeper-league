@@ -41,7 +41,7 @@ export function AdminAnalyticsPage() {
     : 0
 
   return (
-    <div className="container py-4">
+    <div>
       <div className="page-header">
         <h2><i className="bi bi-graph-up me-2"></i>Analytics</h2>
         <div className="d-flex gap-2 align-items-center">

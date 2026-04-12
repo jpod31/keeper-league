@@ -20,7 +20,7 @@ export function AdminUsersPage() {
   if (!data) return <p className="text-danger">Failed to load users</p>
 
   return (
-    <div className="container py-4">
+    <div>
       <div className="page-header">
         <h2><i className="bi bi-people me-2"></i>Users</h2>
         <Link to="/admin" className="btn btn-sm btn-outline-secondary">

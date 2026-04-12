@@ -84,7 +84,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions }: Props) {
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
     if (isOwner && fd.locked_teams.length > 0) {
-      refreshTimer.current = setInterval(() => { window.location.reload() }, 300000)
+      // removed: auto-reload was destroying SPA state
     }
     return () => { if (refreshTimer.current) clearInterval(refreshTimer.current) }
   }, [isOwner, fd.locked_teams.length])

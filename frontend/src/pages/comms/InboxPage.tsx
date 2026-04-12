@@ -35,7 +35,7 @@ function relTime(iso: string | null): string {
 export function InboxPage() {
   const { leagueId } = useParams()
   const navigate = useNavigate()
-  const { data, loading } = useFetch<InboxData>(`/leagues/${leagueId}/messages?format=json`)
+  const { data, loading, refetch } = useFetch<InboxData>(`/leagues/${leagueId}/messages?format=json`)
   const [newRecipient, setNewRecipient] = useState<number | null>(null)
   const [newBody, setNewBody] = useState('')
   const [sending, setSending] = useState(false)
@@ -56,7 +56,7 @@ export function InboxPage() {
       if (res.status < 500) {
         setNewBody('')
         setNewRecipient(null)
-        window.location.reload()
+        refetch()
       }
     } finally { setSending(false) }
   }

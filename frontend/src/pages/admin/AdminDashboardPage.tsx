@@ -66,7 +66,7 @@ export function AdminDashboardPage() {
   if (!data) return <p className="text-danger">Failed to load admin dashboard</p>
 
   return (
-    <div className="container py-4">
+    <div>
       <div className="page-header">
         <h2><i className="bi bi-bar-chart-line me-2" style={{ color: '#d29922' }}></i>Admin Dashboard</h2>
         <div className="d-flex gap-2">

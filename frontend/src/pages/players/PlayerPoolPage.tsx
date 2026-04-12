@@ -367,7 +367,7 @@ export function PlayerPoolPage() {
                         : <span className="status-dot status-dot-available"></span>}
                     </td>
                     <td>
-                      <a href={`/player/${encodeURIComponent(p.name)}`} className="player-link">
+                      <span className="player-link" style={{cursor:"default"}}>
                         {p.afl_team && data.team_logos[p.afl_team] && (
                           <img
                             src={data.team_logos[p.afl_team]}
@@ -378,7 +378,7 @@ export function PlayerPoolPage() {
                         )}
                         <span className="p-name">{p.name}</span>
                         <span style={{ color: '#c9d1d9', fontSize: '.72rem', marginLeft: 'auto' }}>{p.afl_team}</span>
-                      </a>
+                      </span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 3, flexWrap: 'nowrap' }}>

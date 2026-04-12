@@ -85,7 +85,7 @@ export function DraftValuesPage() {
     const fd = new FormData()
     fd.set('action', 'reset')
     await fetch(`/leagues/${leagueId}/draft-values`, { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'manual' })
-    window.location.reload()
+    window.location.href = window.location.href
   }
 
   const displayPlayers = preview ?? data.top_players
