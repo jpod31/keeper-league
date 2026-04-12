@@ -920,6 +920,10 @@ def afl_live(league_id):
 
     if request.args.get("format") == "json":
         def _game(g):
+            ss = g.get("scheduled_start")
+            if ss and hasattr(ss, "isoformat"):
+                ss = ss.isoformat()
+            status = g.get("status", "scheduled")
             return {
                 "game_id": g.get("game_id"),
                 "home_team": g.get("home_team"),
@@ -930,13 +934,13 @@ def afl_live(league_id):
                 "home_behinds": g.get("home_behinds"),
                 "away_goals": g.get("away_goals"),
                 "away_behinds": g.get("away_behinds"),
-                "status": g.get("status"),
+                "status": status,
                 "quarter": g.get("quarter"),
                 "time_remaining": g.get("time_remaining"),
-                "is_live": g.get("is_live", False),
-                "is_complete": g.get("is_complete", False),
+                "is_live": g.get("is_live", status == "live"),
+                "is_complete": g.get("is_complete", status == "complete"),
                 "scheduled_display": g.get("scheduled_display"),
-                "scheduled_start": g.get("scheduled_start").isoformat() if g.get("scheduled_start") else None,
+                "scheduled_start": ss,
                 "venue": g.get("venue"),
             }
         return jsonify({
