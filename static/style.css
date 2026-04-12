@@ -31,7 +31,6 @@
   background: #0d1117;
   display: flex; align-items: center; justify-content: center;
   transition: opacity .5s ease, visibility .5s ease;
-  overflow: hidden;
 }
 .kl-loader-exit { opacity: 0; visibility: hidden; }
 .kl-loader-inner {
