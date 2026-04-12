@@ -63,12 +63,26 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
         prev_names = set(p["name"] for p in my_years[i-1]["squad"])
         entered = curr_names - prev_names
         left = prev_names - curr_names
+
+        # Build position-aware lookup for departed players
+        prev_by_name = {p["name"]: p for p in my_years[i-1]["squad"]}
         left_list = list(left)
 
         for name in entered:
-            # Find the player's projected SC and age
             entry = next((p for p in my_years[i]["squad"] if p["name"] == name), None)
-            replaces = left_list.pop(0) if left_list else None
+            entry_pos = (entry["position"] if entry else "MID").split("/")[0]
+
+            # Find a departed player in the same positional line first
+            replaces = None
+            for j, dep_name in enumerate(left_list):
+                dep = prev_by_name.get(dep_name, {})
+                dep_pos = dep.get("position", "MID").split("/")[0]
+                if dep_pos == entry_pos:
+                    replaces = left_list.pop(j)
+                    break
+            if replaces is None and left_list:
+                replaces = left_list.pop(0)
+
             kid_timeline.append({
                 "year": my_years[i]["year"],
                 "enters": name,

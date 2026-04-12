@@ -247,8 +247,14 @@ def simulate_dynasty(league_id, year, profile_tags, years_ahead=5):
                 pt = profile_tags.get(p.id, {})
 
                 if offset == 0:
-                    # Current year: use actual SC
-                    sc = p.sc_avg or p.sc_avg_prev or 0
+                    # Current year: use actual SC. For injured players who
+                    # haven't played (sc_avg=0), fall back to last year's
+                    # average so they aren't dropped from the best-23.
+                    sc = p.sc_avg or 0
+                    if sc == 0:
+                        sc = p.sc_avg_prev or 0
+                    if sc == 0 and p.rating:
+                        sc = p.rating * 1.0
                 else:
                     sc = _project_player_at_age(p, target_age, pt, {})
 

@@ -176,9 +176,9 @@ def compute_profile_tags(players):
                 yearly_data.append((y, avg, len(scores), std))
                 all_scores.extend(scores)
 
-        # Use current season data too
-        if sc > 0 and games >= 3:
-            # Check if current year already in yearly_data
+        # Use current season data — require meaningful sample (8+ games)
+        # to prevent small-sample inflation driving tag decisions.
+        if sc > 0 and games >= 8:
             cur_year = config.CURRENT_YEAR
             if not any(y == cur_year for y, _, _, _ in yearly_data):
                 yearly_data.append((cur_year, sc, games, 0))
@@ -228,9 +228,15 @@ def compute_profile_tags(players):
             years_to_peak = -(age - peak_end)
 
         # ── Composite keeper value (0-100) ──
-        # Weighted: SC output (35%) + trajectory (15%) + consistency (15%) +
-        #           durability (10%) + age value (15%) + history (10%)
-        sc_score = min(pct, 100) * 0.35
+        # Weighted: SC output (30%) + trajectory (15%) + consistency (15%) +
+        #           durability (10%) + age value (15%) + history (15%)
+        # Small-sample credibility: dampen current SC toward league median
+        # when games < 12 (about half a season). Full trust at 12+.
+        credibility = min(games / 12, 1.0) if games else 0
+        league_median_sc = 65  # rough median for rostered AFL players
+        sc_effective = sc * credibility + league_median_sc * (1 - credibility) if sc > 0 else 0
+        pct_effective = _percentile(sc_effective, all_scs)
+        sc_score = min(pct_effective, 100) * 0.30
 
         traj_norm = max(min(trajectory / 10, 1), -1)  # normalise -1 to +1
         traj_score = (traj_norm + 1) / 2 * 100 * 0.15  # 0-15
@@ -252,7 +258,7 @@ def compute_profile_tags(players):
         age_score = age_val * 0.15  # 0-15
 
         hist_val = min(years_premium * 15, 100)
-        hist_score = hist_val * 0.10  # 0-10
+        hist_score = hist_val * 0.15  # 0-15
 
         raw_composite = sc_score + traj_score + cons_score + dur_score + age_score + hist_score
 
@@ -276,7 +282,7 @@ def compute_profile_tags(players):
             headline = f"Top {100-pos_pct:.0f}% {pos} at {age}"
             detail = f"Still averaging {sc:.0f} at {age}. Peak was {peak_avg:.0f} ({peak_year}). {years_premium} premium seasons. Post-peak but still producing."
 
-        elif eff_pos_pct >= 90 or (sc >= 100 and games >= 3):
+        elif eff_pos_pct >= 90 or (sc >= 100 and games >= 10) or (sc >= 100 and years_premium >= 1):
             tag, css, tier = "Premium", "premium", 3
             if trajectory > 3:
                 headline = f"Top {100-pos_pct:.0f}% {pos} — trending up"
