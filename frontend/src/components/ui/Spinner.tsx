@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react'
-import { KLLoader } from './KLLoader'
-
 /**
- * Smart loading indicator:
- *  - 0–400ms:   render nothing (most loads finish here — zero visual disruption)
- *  - 400ms+:    full-screen KL loader (for genuinely slow loads)
- *
- * This eliminates the dark-screen flash on fast page transitions while still
- * giving feedback when something actually takes a while.
+ * Lightweight inline loading indicator — a small centered spinner.
+ * Shows immediately (no delay). Does NOT block the screen with a
+ * full-screen overlay. The page layout stays visible behind it.
  */
-export function Spinner(_props: { text?: string } = {}) {
-  void _props
-  const [phase, setPhase] = useState<'hidden' | 'full'>('hidden')
-
-  useEffect(() => {
-    const t = setTimeout(() => setPhase('full'), 400)
-    return () => clearTimeout(t)
-  }, [])
-
-  if (phase === 'hidden') return null
-  return <KLLoader />
+export function Spinner({ text }: { text?: string } = {}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: 12 }}>
+      <div
+        style={{
+          width: 32, height: 32,
+          border: '3px solid #21262d',
+          borderTopColor: '#58a6ff',
+          borderRadius: '50%',
+          animation: 'spin .7s linear infinite',
+        }}
+      />
+      {text && <p style={{ fontSize: '.82rem', color: '#6e7681', margin: 0 }}>{text}</p>}
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  )
 }
