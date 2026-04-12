@@ -110,6 +110,32 @@ def draft_room(league_id):
         league_id=league_id, status="completed"
     ).first()
 
+    if request.args.get("format") == "json":
+        return jsonify({
+            "league": {
+                "id": league.id,
+                "name": league.name,
+                "draft_type": league.draft_type,
+                "pick_timer_secs": league.pick_timer_secs,
+            },
+            "session": {
+                "id": session.id,
+                "status": session.status,
+                "draft_round_type": session.draft_round_type,
+                "pick_timer_secs": session.pick_timer_secs,
+                "scheduled_start": session.scheduled_start.isoformat() if session.scheduled_start else None,
+            },
+            "user_team": {
+                "id": user_team.id,
+                "name": user_team.name,
+            } if user_team else None,
+            "is_commissioner": is_commissioner,
+            "can_restart": can_restart,
+            "user_weights": user_weights,
+            "has_custom_weights": has_custom_weights,
+            "state": state,
+        })
+
     resp = make_response(render_template("draft/room.html",
                            league=league,
                            session=session,
@@ -304,6 +330,11 @@ def draft_setup(league_id):
         def _sess(s):
             if not s:
                 return None
+            # Derive current_round from current pick number and num teams
+            current_round = None
+            if s.current_pick:
+                num_t = len(teams) or league.num_teams or 1
+                current_round = ((s.current_pick - 1) // num_t) + 1
             return {
                 "id": s.id,
                 "status": s.status,
@@ -311,6 +342,7 @@ def draft_setup(league_id):
                 "is_mock": bool(s.is_mock),
                 "scheduled_start": s.scheduled_start.isoformat() if s.scheduled_start else None,
                 "current_pick": s.current_pick,
+                "current_round": current_round,
                 "total_rounds": s.total_rounds,
             }
         return jsonify({
@@ -332,6 +364,9 @@ def draft_setup(league_id):
             "initial_completed": bool(initial_completed),
             "supp_session": _sess(supp_session),
             "mock_session": _sess(mock_session),
+            "season_config": {
+                "mid_season_draft_enabled": bool(season_config and season_config.mid_season_draft_enabled),
+            },
             "can_restart": bool(can_restart),
         })
 
