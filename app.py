@@ -368,16 +368,22 @@ def create_app():
     _spa_dir = os.path.join(app.static_folder, "spa")
     _spa_mode = os.environ.get("SPA_MODE", "0") == "1"
 
-    # ── SPA-mode: intercept all page navigations and serve the React shell ──
-    # API calls (?format=json, /api/*, POST) pass through to Flask as normal.
+    # ── SPA-mode: intercept browser navigations and serve the React shell ──
+    # Only catches real page navigations (user clicking link / typing URL).
+    # Fetch/XHR API calls pass through to Flask as normal.
     if _spa_mode:
         @app.before_request
         def _spa_intercept():
             if request.method != "GET":
                 return None
+
             path = request.path
+
+            # Never intercept static files
             if path.startswith("/static/"):
                 return None
+
+            # Never intercept any API-like path
             if path.startswith("/api/") or "/api/" in path:
                 return None
             if request.args.get("format") == "json":
@@ -386,9 +392,28 @@ def create_app():
                 return None
             if path.startswith("/push/"):
                 return None
-            # Only intercept browser navigations (Accept: text/html), not fetch/XHR
-            if not request.accept_mimetypes.accept_html:
+
+            # ── Key check: only intercept BROWSER NAVIGATIONS ──
+            # Browsers send Sec-Fetch-Mode: navigate for page loads.
+            # fetch() sends cors/same-origin/no-cors. This is the
+            # reliable way to distinguish page nav from JS API calls
+            # (Accept: */* matches html so we can't rely on that).
+            sfm = request.headers.get("Sec-Fetch-Mode", "")
+            if sfm and sfm != "navigate":
                 return None
+
+            # Fallback for older browsers that don't send Sec-Fetch-Mode:
+            # Check if Accept explicitly prefers html over json.
+            if not sfm:
+                accept = request.headers.get("Accept", "")
+                # fetch() default is */* — don't intercept that
+                if "*/*" in accept and "text/html" not in accept:
+                    return None
+                if "application/json" in accept:
+                    return None
+                if "text/html" not in accept:
+                    return None
+
             return send_from_directory(_spa_dir, "index.html")
 
         # Return 401 JSON (not 302 redirect) when @login_required fails on

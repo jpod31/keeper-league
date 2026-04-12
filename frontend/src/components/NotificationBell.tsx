@@ -50,7 +50,7 @@ export function NotificationBell() {
   }
 
   return (
-    <div className="dropdown" ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref} style={{ position: 'relative' }}>
       <a
         className="nav-link position-relative"
         href="#"
@@ -63,60 +63,110 @@ export function NotificationBell() {
         {unreadCount > 0 && <span className="notif-dot"></span>}
       </a>
       {open && (
-        <div
-          className="dropdown-menu dropdown-menu-end p-0 notif-panel show"
-          style={{
-            position: 'absolute',
-            right: 0,
-            left: 'auto',
-            top: '100%',
-            marginTop: '.125rem',
-            display: 'block',
-          }}
-        >
-          <div className="d-flex justify-content-between align-items-center px-3 py-2 notif-panel-header">
-            <span className="fw-bold" style={{ fontSize: '.85rem' }}>Notifications</span>
-            <a
-              href="#"
-              onClick={onMarkAllRead}
-              style={{ fontSize: '.72rem', color: '#58a6ff', textDecoration: 'none' }}
+        <>
+          {/* Mobile: full-width fixed panel from the top */}
+          <div
+            className="d-lg-none"
+            style={{
+              position: 'fixed',
+              top: 0, left: 0, right: 0, bottom: 0,
+              zIndex: 1050,
+            }}
+          >
+            {/* Backdrop */}
+            <div
+              onClick={() => setOpen(false)}
+              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)' }}
+            />
+            {/* Panel */}
+            <div
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0,
+                maxHeight: '70vh',
+                background: 'var(--kl-bg-card)',
+                borderBottom: '1px solid var(--kl-border)',
+                borderRadius: '0 0 14px 14px',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 12px 40px rgba(0,0,0,.6)',
+              }}
             >
-              Mark all read
-            </a>
-          </div>
-          <div style={{ fontSize: '.82rem' }}>
-            {notifications.length === 0 ? (
-              <div className="text-center text-secondary py-3" style={{ fontSize: '.8rem' }}>
-                No notifications yet
+              <div className="d-flex justify-content-between align-items-center px-4 py-3" style={{ borderBottom: '1px solid var(--kl-border)' }}>
+                <span className="fw-bold" style={{ fontSize: '.95rem' }}>Notifications</span>
+                <div className="d-flex align-items-center gap-3">
+                  <a href="#" onClick={onMarkAllRead} style={{ fontSize: '.75rem', color: '#58a6ff', textDecoration: 'none' }}>
+                    Mark all read
+                  </a>
+                  <button type="button" onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#8b949e', fontSize: '1.1rem', cursor: 'pointer', padding: 0 }}>
+                    <i className="bi bi-x-lg"></i>
+                  </button>
+                </div>
               </div>
-            ) : (
-              notifications.map(n => {
-                const icon = ICONS[n.type] || ICONS.default
-                const cls = n.is_read ? 'notif-item' : 'notif-item notif-unread'
-                const body = (
-                  <>
-                    <i className={`bi ${icon} notif-type-icon`}></i>
-                    <div className="flex-grow-1">
-                      <div className="notif-title">{n.title}</div>
-                      {n.body && <div className="notif-body">{n.body}</div>}
-                    </div>
-                    <span className="notif-time">{relTime(n.created_at)}</span>
-                  </>
-                )
-                return n.url ? (
-                  <Link key={n.id} to={n.url} className={cls} onClick={() => setOpen(false)}>
-                    {body}
-                  </Link>
-                ) : (
-                  <div key={n.id} className={cls}>
-                    {body}
-                  </div>
-                )
-              })
-            )}
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {renderNotificationList(notifications, () => setOpen(false))}
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Desktop: positioned dropdown */}
+          <div
+            className="d-none d-lg-block notif-panel"
+            style={{
+              position: 'absolute',
+              right: 0,
+              left: 'auto',
+              top: '100%',
+              marginTop: '.125rem',
+              zIndex: 1050,
+            }}
+          >
+            <div className="d-flex justify-content-between align-items-center px-3 py-2 notif-panel-header">
+              <span className="fw-bold" style={{ fontSize: '.85rem' }}>Notifications</span>
+              <a href="#" onClick={onMarkAllRead} style={{ fontSize: '.72rem', color: '#58a6ff', textDecoration: 'none' }}>
+                Mark all read
+              </a>
+            </div>
+            <div style={{ fontSize: '.82rem' }}>
+              {renderNotificationList(notifications, () => setOpen(false))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
+}
+
+function renderNotificationList(notifications: { id: number; type: string; title: string; body?: string; url?: string | null; is_read: boolean; created_at: string }[], onClose: () => void) {
+  if (notifications.length === 0) {
+    return (
+      <div className="text-center text-secondary py-4" style={{ fontSize: '.82rem' }}>
+        <i className="bi bi-bell-slash" style={{ fontSize: '1.2rem', display: 'block', marginBottom: '.4rem' }}></i>
+        No notifications yet
+      </div>
+    )
+  }
+  return notifications.map(n => {
+    const icon = ICONS[n.type] || ICONS.default
+    const cls = n.is_read ? 'notif-item' : 'notif-item notif-unread'
+    const body = (
+      <>
+        <i className={`bi ${icon} notif-type-icon`}></i>
+        <div className="flex-grow-1">
+          <div className="notif-title">{n.title}</div>
+          {n.body && <div className="notif-body">{n.body}</div>}
+        </div>
+        <span className="notif-time">{relTime(n.created_at)}</span>
+      </>
+    )
+    return n.url ? (
+      <Link key={n.id} to={n.url} className={cls} onClick={onClose}>
+        {body}
+      </Link>
+    ) : (
+      <div key={n.id} className={cls}>
+        {body}
+      </div>
+    )
+  })
 }
