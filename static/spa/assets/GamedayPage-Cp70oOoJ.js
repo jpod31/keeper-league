@@ -1,4 +1,4 @@
-import{_ as e,b as t,i as n,m as r,o as i,t as a}from"./Spinner-COuZug-I.js";import{t as o}from"./api-DZyRO_lF.js";var s=t(e(),1),c=n(),l=`
+import{_ as e,b as t,i as n,m as r,o as i,t as a}from"./Spinner-CoWm3d6Q.js";import{t as o}from"./api-DZyRO_lF.js";var s=t(e(),1),c=n(),l=`
 .s7gd-round-header { margin-bottom: 10px; }
 .s7gd-round-title { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; color: #e6edf3; }
 .s7gd-round-dates { color: #8b949e; font-size: .8rem; }
