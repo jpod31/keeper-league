@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router'
+import { useParams, Link, useSearchParams } from 'react-router'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
@@ -198,24 +198,31 @@ interface FixtureDetail {
 
 export function GamedayPage() {
   const { leagueId } = useParams()
+  const [searchParams] = useSearchParams()
+  const urlFixtureId = searchParams.get('fixture')
+  const urlRound = searchParams.get('round')
   const [data, setData] = useState<GamedayData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [viewedFixtureId, setViewedFixtureId] = useState<number | null>(null)
+  const [viewedFixtureId, setViewedFixtureId] = useState<number | null>(
+    urlFixtureId ? Number(urlFixtureId) : null
+  )
   const [cachedFixtures, setCachedFixtures] = useState<Record<number, FixtureDetail>>({})
   const [refreshing, setRefreshing] = useState(false)
   const [scoreFlash, setScoreFlash] = useState(false)
   const prevScores = useRef<{ left: number; right: number }>({ left: 0, right: 0 })
 
   const fetchData = useCallback(() => {
-    api<GamedayData>(`/leagues/${leagueId}/gameday?format=json`)
+    const qs = urlRound ? `&round=${urlRound}` : ''
+    api<GamedayData>(`/leagues/${leagueId}/gameday?format=json${qs}`)
       .then(d => {
         setData(d)
-        // Set initial viewed fixture to user's own
+        // Set initial viewed fixture: URL param takes precedence, otherwise user's own
         if (!viewedFixtureId && d.fixture) setViewedFixtureId(d.fixture.id)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [leagueId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leagueId, urlRound])
 
   // Fetch all fixture breakdowns (for switching between matchups)
   const fetchAllFixtures = useCallback(() => {
@@ -234,6 +241,11 @@ export function GamedayPage() {
     const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [fetchData])
+
+  // Respond to URL fixture query param (e.g. user clicks a fixture row from FixturePage)
+  useEffect(() => {
+    if (urlFixtureId) setViewedFixtureId(Number(urlFixtureId))
+  }, [urlFixtureId])
 
   // Auto-reload every 5min when live
   useEffect(() => {
@@ -785,6 +797,22 @@ export function GamedayPage() {
           </div>
         </>
       )}
+
+      {/* Footer — live status + fixture link */}
+      <div className="mt-3 d-flex align-items-center justify-content-between" style={{ fontSize: '.75rem', color: 'var(--kl-text-faint)' }}>
+        <span>
+          {gs === 'live' ? (
+            <><i className="bi bi-broadcast me-1" style={{ color: 'var(--kl-accent-green)' }}></i>Live updates via WebSocket</>
+          ) : gs === 'completed' ? (
+            'Final results'
+          ) : (
+            <>&nbsp;</>
+          )}
+        </span>
+        <Link to={`/leagues/${leagueId}/fixture`} style={{ color: 'var(--kl-text-secondary)', textDecoration: 'none', fontSize: '.7rem' }}>
+          Season Fixture &rarr;
+        </Link>
+      </div>
 
       {/* All matchups grid — hidden (matching original template display:none) */}
       <div className="gameday-all-matchups mt-4" style={{ display: 'none' }}>

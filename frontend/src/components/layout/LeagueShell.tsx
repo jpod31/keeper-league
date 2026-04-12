@@ -239,10 +239,8 @@ function LeagueShellInner() {
         </div>
       </div>
 
-      {/* Page content */}
-      <div className="container py-4">
-        <Outlet />
-      </div>
+      {/* Page content (AppShell already wraps in .container py-4) */}
+      <Outlet />
 
       {/* ═══ Mobile bottom nav ═══ */}
       <nav className="mobile-bottom-nav d-lg-none">

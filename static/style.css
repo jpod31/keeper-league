@@ -36,10 +36,14 @@
 .kl-loader-exit { opacity: 0; visibility: hidden; }
 .kl-loader-inner {
   display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
   position: relative;
+  width: min(80vw, 360px);
+  height: min(80vw, 360px);
 }
 .kl-loader-logo {
-  width: 280px; height: 280px;
+  width: min(60vw, 240px);
+  height: min(60vw, 240px);
   animation: loaderPulse 2.4s ease-in-out infinite;
   position: relative; z-index: 2;
 }
@@ -47,28 +51,28 @@
   0%, 100% { transform: scale(1); opacity: .88; }
   50% { transform: scale(1.03); opacity: 1; }
 }
-/* Ambient glow — two colour blobs breathing offset */
+/* Ambient glow — two colour blobs breathing offset, centered on the logo */
 .kl-loader-glow {
   position: absolute; top: 50%; left: 50%;
-  width: 500px; height: 500px;
-  margin-top: -250px; margin-left: -250px;
+  width: min(80vw, 360px);
+  height: min(80vw, 360px);
+  transform: translate(-50%, -50%);
   z-index: 1; pointer-events: none;
 }
 .kl-loader-glow::before,
 .kl-loader-glow::after {
   content: ''; position: absolute; border-radius: 50%;
-  filter: blur(60px);
+  filter: blur(50px);
+  width: 60%; height: 60%;
 }
 .kl-loader-glow::before {
-  width: 280px; height: 280px;
-  top: 40px; left: 20px;
-  background: rgba(63,185,80,.3);
+  top: 10%; left: 5%;
+  background: rgba(63,185,80,.32);
   animation: glowGreen 3s ease-in-out infinite;
 }
 .kl-loader-glow::after {
-  width: 280px; height: 280px;
-  bottom: 40px; right: 20px;
-  background: rgba(31,111,235,.3);
+  bottom: 10%; right: 5%;
+  background: rgba(31,111,235,.32);
   animation: glowBlue 3s ease-in-out infinite;
 }
 @keyframes glowGreen {

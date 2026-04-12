@@ -179,14 +179,19 @@ export function FixturePage() {
             </div>
           </div>
 
-          {/* Matchup list */}
+          {/* Matchup list — live/current round rows go to gameday (live scores),
+              completed rounds go to the matchup detail breakdown. */}
           <div className="mx-list">
             {current_fixtures.map(f => {
               const homeWon = f.status === 'completed' && (f.home_score || 0) > (f.away_score || 0)
               const awayWon = f.status === 'completed' && (f.away_score || 0) > (f.home_score || 0)
+              const isLiveRound = rs === 'live' || rs === 'partial'
+              const to = isLiveRound
+                ? `/leagues/${leagueId}/gameday?round=${selected_round}&fixture=${f.id}`
+                : `/leagues/${leagueId}/matchup/${f.id}`
               return (
                 <Link key={f.id}
-                  to={`/leagues/${leagueId}/matchup/${f.id}`}
+                  to={to}
                   className="mx-row"
                   style={{ position: 'relative' }}>
                   <span className={`mx-team mx-team-home${homeWon ? ' won' : ''}`}>

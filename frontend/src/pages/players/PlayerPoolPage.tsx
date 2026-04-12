@@ -487,8 +487,7 @@ export function PlayerPoolPage() {
             const l3Diff = (p.l3 || 0) - l3Base
             const l3Pct = l3Base ? (l3Diff / l3Base) * 100 : 0
             return (
-              <div key={p.id} className={`pm-card${p.owner_team ? ' pm-taken' : ''}`}
-                onClick={() => { window.location.href = `/player/${encodeURIComponent(p.name)}` }}>
+              <div key={p.id} className={`pm-card${p.owner_team ? ' pm-taken' : ''}`}>
                 {p.is_bye ? <span className="status-dot status-dot-bye"></span>
                   : p.is_selected ? <span className="status-dot status-dot-taken"></span>
                   : p.injury_severity ? <span className="status-dot status-dot-injured"></span>

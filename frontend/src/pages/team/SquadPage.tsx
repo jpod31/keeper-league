@@ -256,7 +256,7 @@ function SquadPageInner() {
             <Link to={`/leagues/${leagueId}/trades`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-arrow-left-right"></i>Trades</Link>
             <Link to={`/leagues/${leagueId}/team/${teamId}/stats`} className="squad-pill squad-pill-stats text-decoration-none"><i className="bi bi-graph-up"></i>Stats</Link>
             <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-bar-chart-line"></i>Analytics</Link>
-            {is_owner && <a href={`/leagues/${leagueId}/draft-weights`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-sliders"></i>Draft</a>}
+            {is_owner && <Link to={`/leagues/${leagueId}/team/${teamId}/draft-weights`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-sliders"></i>Draft</Link>}
             {is_owner && <Link to={`/leagues/${leagueId}/reserve7s/team`} className="squad-pill squad-pill-manage text-decoration-none" style={{ color: '#bc8cff', borderColor: 'rgba(188,140,255,.3)' }}><i className="bi bi-7-circle"></i>7s</Link>}
             <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`squad-pill squad-pill-field text-decoration-none${view === 'field' ? ' active' : ''}`}><i className="bi bi-diagram-3"></i>Field</Link>
             <Link to={`/leagues/${leagueId}/team/${teamId}?view=table`} className={`squad-pill squad-pill-list text-decoration-none${view === 'table' ? ' active' : ''}`}><i className="bi bi-table"></i>List</Link>

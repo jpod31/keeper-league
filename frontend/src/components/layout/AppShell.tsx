@@ -3,21 +3,21 @@ import { useAuth } from '../../contexts/AuthContext'
 import { NotificationBell } from '../NotificationBell'
 import { useState, useRef, useEffect } from 'react'
 
+/**
+ * Top-level app shell: brand, home, notifications, user menu, admin icon.
+ * Plain flex — no Bootstrap collapse/navbar-collapse, no JS-gated popper classes.
+ */
 export function AppShell() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [joinOpen, setJoinOpen] = useState(false)
   const [joinCode, setJoinCode] = useState('')
-  const menuRef = useRef<HTMLLIElement>(null)
-  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      const t = e.target as Node
-      if (menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false)
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(t)) setMobileMenuOpen(false)
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -25,14 +25,12 @@ export function AppShell() {
 
   const handleLogout = async () => {
     setMenuOpen(false)
-    setMobileMenuOpen(false)
     await logout()
     navigate('/auth/login')
   }
 
   const openJoin = () => {
     setMenuOpen(false)
-    setMobileMenuOpen(false)
     setJoinOpen(true)
   }
 
@@ -49,114 +47,76 @@ export function AppShell() {
   const initial = (user?.display_name || user?.username || '?')[0].toUpperCase()
   const displayName = user?.display_name || user?.username || ''
 
-  // Style helpers for dropdowns — force right-alignment without Bootstrap JS/Popper.
-  // Bootstrap 5 CSS gates .dropdown-menu-end rules behind [data-bs-popper]; since we
-  // don't load bootstrap.bundle.js, we inline the positioning so the menu stays on-screen.
-  const rightAlignedMenu: React.CSSProperties = {
-    background: 'var(--kl-bg-card)',
-    borderColor: 'var(--kl-border)',
-    position: 'absolute',
-    right: 0,
-    left: 'auto',
-    top: '100%',
-    marginTop: '.125rem',
-  }
-
   return (
     <div className="has-bottom-nav">
-      <nav className="navbar navbar-expand-lg border-bottom border-secondary-subtle">
-        <div className="container">
-          <Link className="navbar-brand d-flex align-items-center gap-2" to="/leagues">
-            <img src="/static/icons/kl-logo.png" alt="KL" className="brand-logo" />
-            <span className="brand-text d-none d-lg-inline">Keeper League</span>
+      <style>{`
+        .kl-topbar { position: sticky; top: 0; z-index: 1030; background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-border); }
+        .kl-topbar-inner { display: flex; align-items: center; gap: .75rem; padding: .6rem 1rem; max-width: 1320px; margin: 0 auto; }
+        .kl-topbar-brand { display: flex; align-items: center; gap: .5rem; text-decoration: none; color: inherit; flex-shrink: 0; }
+        .kl-topbar-brand img { width: 32px; height: 32px; border-radius: 6px; }
+        .kl-topbar-brand .brand-text { font-weight: 800; font-size: .92rem; letter-spacing: -.2px; color: #e6edf3; }
+        .kl-topbar-home { display: inline-flex; align-items: center; gap: .35rem; color: var(--kl-text-secondary); text-decoration: none; font-size: .8rem; font-weight: 500; padding: .4rem .6rem; border-radius: 6px; transition: color .15s, background .15s; }
+        .kl-topbar-home:hover { color: var(--kl-text-primary); background: rgba(255,255,255,.03); }
+        .kl-topbar-spacer { flex: 1 1 auto; }
+        .kl-topbar-right { display: flex; align-items: center; gap: .25rem; flex-shrink: 0; }
+        .kl-topbar-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--kl-text-secondary); background: none; border: none; padding: .4rem .55rem; border-radius: 6px; font-size: 1.05rem; cursor: pointer; text-decoration: none; transition: color .15s, background .15s; }
+        .kl-topbar-icon:hover { color: var(--kl-text-primary); background: rgba(255,255,255,.04); }
+        .kl-user-btn { display: flex; align-items: center; gap: .5rem; background: none; border: none; color: inherit; padding: .3rem .5rem; border-radius: 6px; cursor: pointer; }
+        .kl-user-btn:hover { background: rgba(255,255,255,.04); }
+        .kl-user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--kl-bg-elevated); font-size: .75rem; font-weight: 700; color: var(--kl-text-primary); flex-shrink: 0; }
+        .kl-user-name { font-size: .82rem; font-weight: 500; color: var(--kl-text-secondary); }
+        @media (max-width: 767.98px) { .kl-user-name, .kl-brand-text-lg, .kl-topbar-home span { display: none; } }
+        .kl-user-menu { position: absolute; right: 0; top: 100%; margin-top: .25rem; min-width: 200px; background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.4); padding: .25rem 0; z-index: 1040; }
+        .kl-user-menu a, .kl-user-menu button { display: flex; align-items: center; gap: .5rem; width: 100%; padding: .5rem .85rem; color: var(--kl-text-primary); text-decoration: none; font-size: .82rem; background: none; border: none; text-align: left; cursor: pointer; }
+        .kl-user-menu a:hover, .kl-user-menu button:hover { background: rgba(255,255,255,.05); }
+        .kl-user-menu hr { margin: .25rem 0; border: none; border-top: 1px solid var(--kl-border); }
+      `}</style>
+
+      <header className="kl-topbar">
+        <div className="kl-topbar-inner">
+          <Link className="kl-topbar-brand" to="/leagues">
+            <img src="/static/icons/kl-logo.png" alt="KL" />
+            <span className="brand-text kl-brand-text-lg">Keeper League</span>
           </Link>
 
           {user && (
-            <>
-              {/* Mobile: notif bell + user avatar inline */}
-              <div className="d-flex align-items-center gap-1 d-lg-none">
-                {user.is_admin && (
-                  <Link className="nav-link" to="/admin/analytics" title="Admin Analytics" style={{ padding: '.4rem .55rem' }}>
-                    <i className="bi bi-bar-chart-line" style={{ fontSize: '1.05rem' }}></i>
-                  </Link>
-                )}
-                <NotificationBell />
-                <div className="dropdown" ref={mobileMenuRef} style={{ position: 'relative' }}>
-                  <a
-                    className="nav-link dropdown-toggle p-1"
-                    href="#"
-                    role="button"
-                    onClick={e => { e.preventDefault(); setMobileMenuOpen(!mobileMenuOpen) }}
-                  >
-                    <span
-                      className="d-inline-flex align-items-center justify-content-center rounded-circle"
-                      style={{ width: 28, height: 28, background: 'var(--kl-bg-elevated)', fontSize: '.75rem', fontWeight: 600 }}
-                    >
-                      {initial}
-                    </span>
-                  </a>
-                  {mobileMenuOpen && (
-                    <ul className="dropdown-menu dropdown-menu-end show" style={rightAlignedMenu}>
-                      <li><Link className="dropdown-item" to="/leagues" onClick={() => setMobileMenuOpen(false)}><i className="bi bi-house me-2"></i>Home</Link></li>
-                      <li><Link className="dropdown-item" to="/leagues/create" onClick={() => setMobileMenuOpen(false)}><i className="bi bi-plus-circle me-2"></i>Create League</Link></li>
-                      <li><button type="button" className="dropdown-item" onClick={openJoin}><i className="bi bi-box-arrow-in-right me-2"></i>Join League</button></li>
-                      <li><hr className="dropdown-divider" style={{ borderColor: 'var(--kl-border)' }} /></li>
-                      <li><Link className="dropdown-item" to="/auth/profile" onClick={() => setMobileMenuOpen(false)}><i className="bi bi-person me-2"></i>Profile</Link></li>
-                      <li><hr className="dropdown-divider" style={{ borderColor: 'var(--kl-border)' }} /></li>
-                      <li><button type="button" className="dropdown-item" onClick={handleLogout}><i className="bi bi-box-arrow-right me-2"></i>Log Out</button></li>
-                    </ul>
-                  )}
-                </div>
-              </div>
+            <Link className="kl-topbar-home" to="/leagues" title="My Leagues">
+              <i className="bi bi-house"></i><span>Home</span>
+            </Link>
+          )}
 
-              {/* Desktop: collapsible navbar */}
-              <div className="collapse navbar-collapse d-none d-lg-flex" id="nav">
-                <ul className="navbar-nav me-auto">
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/leagues"><i className="bi bi-house me-1"></i>Home</Link>
-                  </li>
-                </ul>
-                <ul className="navbar-nav d-flex align-items-center">
-                  {user.is_admin && (
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/admin/analytics" title="Admin Analytics"><i className="bi bi-bar-chart-line"></i></Link>
-                    </li>
-                  )}
-                  <li className="nav-item">
-                    <NotificationBell />
-                  </li>
-                  <li className="nav-item dropdown" ref={menuRef} style={{ position: 'relative' }}>
-                    <a
-                      className="nav-link dropdown-toggle d-flex align-items-center gap-2"
-                      href="#"
-                      role="button"
-                      onClick={e => { e.preventDefault(); setMenuOpen(!menuOpen) }}
-                    >
-                      <span
-                        className="d-inline-flex align-items-center justify-content-center rounded-circle"
-                        style={{ width: 28, height: 28, background: 'var(--kl-bg-elevated)', fontSize: '.75rem', fontWeight: 600 }}
-                      >
-                        {initial}
-                      </span>
-                      <span>{displayName}</span>
-                    </a>
-                    {menuOpen && (
-                      <ul className="dropdown-menu dropdown-menu-end show" style={rightAlignedMenu}>
-                        <li><Link className="dropdown-item" to="/leagues/create" onClick={() => setMenuOpen(false)}><i className="bi bi-plus-circle me-2"></i>Create League</Link></li>
-                        <li><button type="button" className="dropdown-item" onClick={openJoin}><i className="bi bi-box-arrow-in-right me-2"></i>Join League</button></li>
-                        <li><hr className="dropdown-divider" style={{ borderColor: 'var(--kl-border)' }} /></li>
-                        <li><Link className="dropdown-item" to="/auth/profile" onClick={() => setMenuOpen(false)}><i className="bi bi-person me-2"></i>Profile</Link></li>
-                        <li><hr className="dropdown-divider" style={{ borderColor: 'var(--kl-border)' }} /></li>
-                        <li><button type="button" className="dropdown-item" onClick={handleLogout}><i className="bi bi-box-arrow-right me-2"></i>Log Out</button></li>
-                      </ul>
-                    )}
-                  </li>
-                </ul>
+          <div className="kl-topbar-spacer" />
+
+          {user && (
+            <div className="kl-topbar-right">
+              {user.is_admin && (
+                <Link className="kl-topbar-icon" to="/admin/analytics" title="Admin Analytics">
+                  <i className="bi bi-bar-chart-line"></i>
+                </Link>
+              )}
+              <NotificationBell />
+              <div ref={menuRef} style={{ position: 'relative' }}>
+                <button type="button" className="kl-user-btn" onClick={() => setMenuOpen(o => !o)} aria-label="User menu">
+                  <span className="kl-user-avatar">{initial}</span>
+                  <span className="kl-user-name">{displayName}</span>
+                  <i className="bi bi-chevron-down" style={{ fontSize: '.65rem', color: 'var(--kl-text-faint)' }}></i>
+                </button>
+                {menuOpen && (
+                  <div className="kl-user-menu">
+                    <Link to="/leagues" onClick={() => setMenuOpen(false)}><i className="bi bi-house"></i>My Leagues</Link>
+                    <Link to="/leagues/create" onClick={() => setMenuOpen(false)}><i className="bi bi-plus-circle"></i>Create League</Link>
+                    <button type="button" onClick={openJoin}><i className="bi bi-box-arrow-in-right"></i>Join League</button>
+                    <hr />
+                    <Link to="/auth/profile" onClick={() => setMenuOpen(false)}><i className="bi bi-person"></i>Profile</Link>
+                    <hr />
+                    <button type="button" onClick={handleLogout}><i className="bi bi-box-arrow-right"></i>Log Out</button>
+                  </div>
+                )}
               </div>
-            </>
+            </div>
           )}
         </div>
-      </nav>
+      </header>
 
       <main className="container py-4">
         <Outlet />
@@ -173,16 +133,9 @@ export function AppShell() {
             role="dialog"
             aria-modal="true"
             style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%,-50%)',
-              zIndex: 1060,
-              width: '90%',
-              maxWidth: 360,
-              background: 'var(--kl-bg-card)',
-              border: '1px solid var(--kl-border)',
-              borderRadius: 12,
+              position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+              zIndex: 1060, width: '90%', maxWidth: 360,
+              background: 'var(--kl-bg-card)', border: '1px solid var(--kl-border)', borderRadius: 12,
             }}
           >
             <div style={{ borderBottom: '1px solid var(--kl-border)', padding: '.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -193,14 +146,9 @@ export function AppShell() {
               <div className="mb-3">
                 <label className="form-label" style={{ fontSize: '.8rem' }}>League Invite Code</label>
                 <input
-                  type="text"
-                  className="form-control"
-                  placeholder="e.g. A3K9MZ2P"
-                  maxLength={12}
-                  required
-                  autoFocus
-                  value={joinCode}
-                  onChange={e => setJoinCode(e.target.value)}
+                  type="text" className="form-control" placeholder="e.g. A3K9MZ2P"
+                  maxLength={12} required autoFocus
+                  value={joinCode} onChange={e => setJoinCode(e.target.value)}
                   style={{ textTransform: 'uppercase', letterSpacing: 2, textAlign: 'center', fontWeight: 600 }}
                 />
               </div>
