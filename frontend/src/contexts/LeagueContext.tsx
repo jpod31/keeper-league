@@ -44,14 +44,21 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 
   const fetch_ = () => {
     if (!leagueId) return
-    setLoading(true)
+    // Only show loading spinner on first load (no cached data yet).
+    // Subsequent refreshes update silently so there's no flash.
+    if (!league) setLoading(true)
     api<LeagueInfo>(`/api/leagues/${leagueId}/context`)
       .then(d => { setLeague(d); setError(null) })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetch_() }, [leagueId])
+  useEffect(() => {
+    // Reset when switching leagues so the spinner shows for the new league
+    setLeague(null)
+    setLoading(true)
+    fetch_()
+  }, [leagueId])
 
   return (
     <LeagueContext.Provider value={{ league, loading, error, refresh: fetch_ }}>

@@ -1,4 +1,4 @@
-import{_ as e,b as t,i as n,m as r,o as i,p as a,t as o}from"./Spinner-CoWm3d6Q.js";import{t as s}from"./api-DZyRO_lF.js";var c=t(e(),1),l=n(),ee=`
+import{_ as e,b as t,i as n,m as r,o as i,p as a,t as o}from"./Spinner-jh9MFtBN.js";import{t as s}from"./api-DZyRO_lF.js";var c=t(e(),1),l=n(),ee=`
 .draft-order-list { display:flex; flex-direction:column; }
 .draft-order-row { display:flex; align-items:center; gap:.75rem; padding:.65rem 1rem; border-bottom:1px solid var(--kl-border); background:var(--kl-bg-card); transition:background .12s, transform .12s, box-shadow .12s; user-select:none; }
 .draft-order-row:last-child { border-bottom:none; }

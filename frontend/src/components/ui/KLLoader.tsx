@@ -1,12 +1,21 @@
-/**
- * Full-screen Keeper League loading animation — matches templates/base.html.
- * Uses the existing .kl-loader CSS in static/style.css so visuals stay in sync
- * with the Jinja side.
- */
+import { useState, useEffect } from 'react'
+
 export function KLLoader({ fixed = true }: { fixed?: boolean }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    // Tiny delay so the browser paints the DOM first, then fade in
+    const raf = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
   const wrapperStyle: React.CSSProperties = fixed
-    ? {}
-    : { position: 'relative', minHeight: '60vh', inset: 'auto', background: 'transparent' }
+    ? { opacity: visible ? 1 : 0, transition: 'opacity .15s ease' }
+    : {
+        position: 'relative', minHeight: '60vh', inset: 'auto',
+        background: 'transparent',
+        opacity: visible ? 1 : 0, transition: 'opacity .15s ease',
+      }
 
   return (
     <div className="kl-loader" style={wrapperStyle}>
@@ -18,7 +27,6 @@ export function KLLoader({ fixed = true }: { fixed?: boolean }) {
   )
 }
 
-/** In-page version used inside routes/suspense boundaries. */
 export function KLLoaderInline() {
   return <KLLoader fixed={false} />
 }
