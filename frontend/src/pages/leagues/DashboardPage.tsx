@@ -63,7 +63,7 @@ export function DashboardPage() {
   const { league, user_team, teams, scoring_rules, has_completed_onboarding } = data
 
   const inviteUrl = league.invite_code
-    ? `${window.location.origin}/spa/leagues/invite/${league.invite_code}`
+    ? `${window.location.origin}/leagues/invite/${league.invite_code}`
     : ''
 
   function copyInvite() {

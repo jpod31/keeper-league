@@ -9,7 +9,7 @@ import { ToastProvider } from './components/ui/Toast'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename="/spa">
+    <BrowserRouter>
       <AuthProvider>
         <RealtimeProvider>
           <ToastProvider>

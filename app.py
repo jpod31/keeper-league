@@ -366,11 +366,55 @@ def create_app():
 
     # SPA directory for React frontend
     _spa_dir = os.path.join(app.static_folder, "spa")
+    _spa_mode = os.environ.get("SPA_MODE", "0") == "1"
 
+    # ── SPA-mode: intercept all page navigations and serve the React shell ──
+    # API calls (?format=json, /api/*, POST) pass through to Flask as normal.
+    if _spa_mode:
+        @app.before_request
+        def _spa_intercept():
+            if request.method != "GET":
+                return None
+            path = request.path
+            if path.startswith("/static/"):
+                return None
+            if path.startswith("/api/") or "/api/" in path:
+                return None
+            if request.args.get("format") == "json":
+                return None
+            if path.startswith("/auth/api/"):
+                return None
+            if path.startswith("/push/"):
+                return None
+            # Only intercept browser navigations (Accept: text/html), not fetch/XHR
+            if not request.accept_mimetypes.accept_html:
+                return None
+            return send_from_directory(_spa_dir, "index.html")
+
+        # Return 401 JSON (not 302 redirect) when @login_required fails on
+        # API calls, so the SPA can handle auth state client-side.
+        @login_manager.unauthorized_handler
+        def _api_unauthorized():
+            if (request.args.get("format") == "json"
+                    or request.path.startswith("/api/")
+                    or "/api/" in request.path
+                    or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                    or "application/json" in (request.accept_mimetypes or "")):
+                return jsonify({"error": "Authentication required"}), 401
+            # Fallback: serve SPA shell (React AuthGuard handles redirect)
+            return send_from_directory(_spa_dir, "index.html")
+
+    # Legacy /spa/ path — redirect to root so old bookmarks work
     @app.route("/spa/", defaults={"path": ""})
     @app.route("/spa/<path:path>")
     def spa_catchall(path=""):
-        """Serve the React SPA for all /spa/* routes."""
+        """Redirect legacy /spa/* URLs to their root equivalents."""
+        if _spa_mode:
+            target = f"/{path}" if path else "/"
+            qs = request.query_string.decode()
+            if qs:
+                target += f"?{qs}"
+            return redirect(target, 301)
         return send_from_directory(_spa_dir, "index.html")
 
     # Static asset cache buster (hash of style.css mtime)
@@ -470,6 +514,8 @@ def create_app():
     # ── Error handlers ────────────────────────────────────────────────
     @app.errorhandler(404)
     def page_not_found(e):
+        if _spa_mode and request.accept_mimetypes.accept_html:
+            return send_from_directory(_spa_dir, "index.html"), 200
         return render_template("errors/404.html"), 404
 
     @app.errorhandler(500)
@@ -479,6 +525,8 @@ def create_app():
 
     @app.errorhandler(403)
     def forbidden(e):
+        if _spa_mode and request.accept_mimetypes.accept_html:
+            return send_from_directory(_spa_dir, "index.html"), 200
         return render_template("errors/403.html"), 403
 
     # ── Request logging (analytics) ──────────────────────────────────
