@@ -2727,6 +2727,12 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
    MOBILE BOTTOM NAVIGATION
    ══════════════════════════════════════════════════ */
 
+/* Bottom-nav visible below lg (992px). Add content padding so the last
+   item isn't hidden behind the fixed 64px bar + safe-area inset. */
+@media (max-width: 991.98px) {
+  body.has-bottom-nav main.container { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+}
+
 .mobile-bottom-nav {
   position: fixed;
   bottom: 0;

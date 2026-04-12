@@ -44,11 +44,18 @@ export function AppShell() {
     }
   }
 
+  // Put has-bottom-nav on <body> so global CSS like
+  // `body.has-bottom-nav main.container { padding-bottom: 80px }` works
+  useEffect(() => {
+    document.body.classList.add('has-bottom-nav')
+    return () => document.body.classList.remove('has-bottom-nav')
+  }, [])
+
   const initial = (user?.display_name || user?.username || '?')[0].toUpperCase()
   const displayName = user?.display_name || user?.username || ''
 
   return (
-    <div className="has-bottom-nav">
+    <div>
       <style>{`
         .kl-topbar { position: sticky; top: 0; z-index: 1030; background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-border); }
         .kl-topbar-inner { display: flex; align-items: center; gap: .75rem; padding: .6rem 1rem; max-width: 1320px; margin: 0 auto; }
