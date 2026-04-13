@@ -235,7 +235,9 @@ def compute_profile_tags(players):
         credibility = min(games / 12, 1.0) if games else 0
         league_median_sc = 65  # rough median for rostered AFL players
         sc_effective = sc * credibility + league_median_sc * (1 - credibility) if sc > 0 else 0
-        pct_effective = _percentile(sc_effective, all_scs)
+        # Compute percentile of sc_effective in the global SC distribution
+        below = sum(1 for _, s in all_sc if s < sc_effective)
+        pct_effective = round(below / max(n_all, 1) * 100, 1) if sc_effective > 0 else 50
         sc_score = min(pct_effective, 100) * 0.30
 
         traj_norm = max(min(trajectory / 10, 1), -1)  # normalise -1 to +1

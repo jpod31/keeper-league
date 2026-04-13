@@ -206,7 +206,7 @@ def commissioner_hub(league_id):
                 "player_id": l.player_id,
                 "player_name": l.player.name if l.player else "",
                 "player_position": l.player.position if l.player else "",
-                "reason": l.reason or "",
+                "reason": getattr(l, "reason", "") or "",
                 "status": l.status,
                 "added_at": l.added_at.isoformat() if l.added_at else None,
                 "reviewed_at": l.reviewed_at.isoformat() if l.reviewed_at else None,
