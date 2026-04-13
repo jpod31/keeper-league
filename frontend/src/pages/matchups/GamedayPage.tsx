@@ -168,22 +168,33 @@ const GAMEDAY_CSS = `
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 .gd-mob-section-hdr { padding: 6px 10px; font-size: .68rem; font-weight: 700; color: #58a6ff; text-transform: uppercase; letter-spacing: .5px; background: rgba(88,166,255,.05); border-bottom: 1px solid rgba(48,54,61,.3); }
 @media (max-width: 767.98px) {
-  .hero-teams-row { padding: 14px 12px 0; }
-  .hero-big-score { font-size: 2.4rem; min-width: 50px; }
-  .hero-score-dash { font-size: 1.6rem; padding-top: 5px; }
-  .hero-scores-area { padding: 14px 12px 12px; }
-  .hero-team-name { font-size: .78rem; }
-  .hero-crest { width: 40px; height: 40px; font-size: .85rem; border-radius: 11px; }
-  .hero-crest-img { width: 40px; height: 40px; border-radius: 11px; }
-  .hero-team-block { gap: 8px; }
-  .hero-vs { padding: 0 8px; font-size: .55rem; }
-  .hero-footer { padding: 10px 12px 14px; gap: 6px; }
-  .hero-margin-chip { font-size: .65rem; padding: 4px 12px; }
-  .gameday-player-row { padding: 6px 10px; font-size: .75rem; }
+  .gameday-hero { border-radius: 16px; margin: 0 -4px 8px; }
+  .hero-teams-row { padding: 16px 14px 0; }
+  .hero-big-score { font-size: 2.8rem; min-width: 55px; letter-spacing: -.04em; }
+  .hero-score-dash { font-size: 1.4rem; padding-top: 8px; opacity: .3; }
+  .hero-scores-area { padding: 16px 14px 14px; }
+  .hero-team-name { font-size: .82rem; font-weight: 800; }
+  .hero-crest { width: 44px; height: 44px; font-size: .9rem; border-radius: 12px; }
+  .hero-crest-img { width: 44px; height: 44px; border-radius: 12px; }
+  .hero-team-block { gap: 10px; }
+  .hero-vs { padding: 0 6px; font-size: .5rem; opacity: .4; }
+  .hero-footer { padding: 10px 14px 14px; gap: 6px; }
+  .hero-margin-chip { font-size: .68rem; padding: 5px 14px; border-radius: 10px; }
+  .gameday-player-row { padding: 8px 12px; font-size: .78rem; border-bottom: 1px solid rgba(48,54,61,.2); }
+  .gameday-player-row:last-child { border-bottom: none; }
   .gameday-player-meta { display: none; }
-  .gameday-round-title { font-size: 1.1rem; }
+  .gameday-player-name { font-weight: 700; color: #e6edf3; }
+  .gameday-player-score { font-weight: 800; font-size: .88rem; font-variant-numeric: tabular-nums; }
+  .gameday-round-title { font-size: 1rem; font-weight: 800; letter-spacing: -.01em; }
   .gameday-matchups-grid { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
   .gameday-pos-badge { display: none !important; }
+  .gameday-section-hdr { font-size: .6rem; padding: 5px 12px; letter-spacing: .8px; }
+  .gameday-player-card-header { padding: 8px 12px; font-size: .82rem; font-weight: 800; }
+  .kl-mini-bar { gap: 4px; padding: 8px 10px; border-radius: 12px; margin-bottom: 8px; }
+  .kl-mini-pill { font-size: .68rem; padding: 6px 10px; border-radius: 8px; }
+  .kl-mini-yours { border-color: rgba(88,166,255,.3); box-shadow: 0 0 0 1px rgba(88,166,255,.15) inset; }
+  .comp-toggle { margin-bottom: 8px; }
+  .comp-toggle-btn { font-size: .72rem; padding: 6px 16px; }
 }
 `
 
