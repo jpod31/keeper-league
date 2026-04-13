@@ -799,13 +799,8 @@ export function GamedayPage() {
             </div>
           </div>
 
-          {/* Mobile player list */}
-          <div className="d-lg-none mt-3">
-            <PlayerCard players={heroLeftPlayers} teamName={heroLeftName} score={heroLeftScore} side="left" />
-            <div className="mt-2">
-              <PlayerCard players={heroRightPlayers} teamName={heroRightName} score={heroRightScore} side="right" />
-            </div>
-          </div>
+          {/* Mobile: side-by-side view above already shows all players —
+               individual team cards only needed on desktop */}
         </>
       )}
 

@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router'
 import { LeagueProvider, useLeague } from '../../contexts/LeagueContext'
-import { KLLoader } from '../ui/KLLoader'
+import { Spinner } from '../ui/Spinner'
 import { useState, useEffect, useMemo } from 'react'
 
 type SectionKey = 'team' | 'players' | 'league' | 'settings'
@@ -61,7 +61,7 @@ function LeagueShellInner() {
     setSelectorOpen(false)
   }, [pathname])
 
-  if (loading) return <KLLoader />
+  if (loading) return <Spinner text="Loading league..." />
   if (error || !league) return (
     <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
       <p className="text-danger">Failed to load league.</p>
