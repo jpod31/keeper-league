@@ -82,7 +82,7 @@ export function PlayerComparePage() {
 
   return (
     <div>
-      <PlayersSubnav active="compare" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><PlayersSubnav active="compare" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Compare

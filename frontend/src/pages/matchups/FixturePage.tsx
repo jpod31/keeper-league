@@ -133,7 +133,7 @@ export function FixturePage() {
   return (
     <div>
       <style>{FX_CSS}</style>
-      <LeagueSubnav active="fixture" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><LeagueSubnav active="fixture" leagueId={leagueId!} /></div>
 
       {hasFixtures ? (
         <>

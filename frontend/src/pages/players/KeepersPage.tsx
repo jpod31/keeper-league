@@ -216,14 +216,14 @@ export function KeepersPage() {
                   <tr>
                     <th style={{ width: 35 }}>#</th>
                     <th>Player</th>
-                    <th style={{ width: 90 }}>Pos</th>
-                    <th className="text-center" style={{ width: 55 }}>AFL</th>
-                    <th className="text-center" style={{ width: 80 }}>Cost</th>
+                    <th className="mob-hide" style={{ width: 90 }}>Pos</th>
+                    <th className="mob-hide text-center" style={{ width: 55 }}>AFL</th>
+                    <th className="mob-hide text-center" style={{ width: 80 }}>Cost</th>
                     <th className="text-end" style={{ width: 75 }}>Score</th>
-                    <th className="text-center" style={{ width: 80 }}>Trend</th>
-                    <th className="text-end" style={{ width: 140 }}>Keeper Value</th>
-                    <th className="text-center" style={{ width: 70 }}>Rec.</th>
-                    <th className="text-end" style={{ width: 95 }}>Proj. Next Yr</th>
+                    <th className="mob-hide text-center" style={{ width: 80 }}>Trend</th>
+                    <th className="text-end" style={{ width: 100 }}>KV</th>
+                    <th className="text-center" style={{ width: 55 }}>Rec.</th>
+                    <th className="mob-hide text-end" style={{ width: 95 }}>Proj.</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -231,9 +231,9 @@ export function KeepersPage() {
                     <tr key={p.player_id}>
                       <td className="kp-projected-rank">{i + 1}</td>
                       <td style={{ color: '#e6edf3', fontWeight: 600 }}>{p.player_name}</td>
-                      <td>{posBadges(p.position)}</td>
-                      <td className="text-center" style={{ color: '#8b949e', fontSize: '.75rem' }}>{p.afl_team || '—'}</td>
-                      <td className="text-center"><span className={costClass(p.cost_label)}>{p.cost_label}</span></td>
+                      <td className="mob-hide">{posBadges(p.position)}</td>
+                      <td className="mob-hide text-center" style={{ color: '#8b949e', fontSize: '.75rem' }}>{p.afl_team || '—'}</td>
+                      <td className="mob-hide text-center"><span className={costClass(p.cost_label)}>{p.cost_label}</span></td>
                       <td className="text-end">
                         {p.draft_score ? (
                           <span style={{ color: '#58a6ff', fontWeight: 700 }}>{p.draft_score.toFixed(0)}</span>
@@ -241,10 +241,10 @@ export function KeepersPage() {
                           <span style={{ color: '#484f58' }}>—</span>
                         )}
                       </td>
-                      <td className="text-center">{trendPill(p.trend_val)}</td>
+                      <td className="mob-hide text-center">{trendPill(p.trend_val)}</td>
                       <td className="text-end"><KeeperValueCell kv={p.keeper_value} /></td>
                       <td className="text-center">{recBadge(p.recommendation)}</td>
-                      <td className="text-end">
+                      <td className="mob-hide text-end">
                         {p.projected_score ? (
                           <span style={{ color: '#c9d1d9', fontWeight: 600, fontSize: '.8rem' }}>
                             {p.projected_score.toFixed(0)}

@@ -160,7 +160,7 @@ export function StandingsPage() {
   return (
     <div>
       <style>{LDR_CSS}</style>
-      <LeagueSubnav active="ladder" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><LeagueSubnav active="ladder" leagueId={leagueId!} /></div>
 
       {hasRankings && (
         <div className="ldr-toggle">

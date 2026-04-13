@@ -121,7 +121,7 @@ export function HistoryPage() {
   return (
     <div>
       <style>{STYLE}</style>
-      <LeagueSubnav active="records" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><LeagueSubnav active="records" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Records

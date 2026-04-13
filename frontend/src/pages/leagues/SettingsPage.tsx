@@ -301,7 +301,7 @@ export function SettingsPage() {
   return (
     <>
       <style>{STYLE}</style>
-      <AdminSubnav active="settings" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><AdminSubnav active="settings" leagueId={leagueId!} /></div>
       <div className="row justify-content-center">
         <div className="col-md-7">
           <div className="page-header">

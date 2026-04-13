@@ -243,7 +243,7 @@ export function CommissionerPage() {
   return (
     <div>
       <style>{SUMMARY_CSS}</style>
-      <AdminSubnav active="commissioner" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><AdminSubnav active="commissioner" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Admin / Commissioner

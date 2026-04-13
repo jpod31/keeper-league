@@ -123,7 +123,7 @@ export function StatsPage() {
   return (
     <div>
       <style>{STYLE}</style>
-      <PlayersSubnav active="stats" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><PlayersSubnav active="stats" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Stats

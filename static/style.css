@@ -4277,3 +4277,38 @@ img[src*="Carlton.png"] {
 .team-icon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
 th.sortable { cursor: pointer; user-select: none; }
 th.sortable:hover { color: #58a6ff; }
+
+/* ══════════════════════════════════════════════════
+   MOBILE UX SWEEP — responsive table columns + spacing
+   ══════════════════════════════════════════════════ */
+@media (max-width: 767.98px) {
+  /* Hide non-essential table columns on mobile */
+  .mob-hide { display: none !important; }
+
+  /* Compress page headers on mobile */
+  .page-header { margin-bottom: .5rem; }
+  .page-header h2 { font-size: 1.1rem; }
+  .page-breadcrumb { display: none; }
+
+  /* Fixture: shrink center column */
+  .mx-centre { min-width: 70px; }
+
+  /* Gameday: hide AFL pills bar on mobile (use KL mini bar instead) */
+  .gameday-afl-bar { display: none !important; }
+
+  /* Gameday hero: compress */
+  .gameday-hero { margin-bottom: 8px; }
+
+  /* Stats: shrink trend chart */
+  .trend-svg { height: 160px; }
+
+  /* Chat: ensure input above bottom nav */
+  .chat-input-wrap { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Standings: tighter toggle spacing */
+  .ldr-toggle { margin-bottom: .5rem; }
+
+  /* Subnav: tighter on mobile */
+  .league-subnav { margin-bottom: .5rem; }
+  .mob-subnav { margin-bottom: .25rem; }
+}

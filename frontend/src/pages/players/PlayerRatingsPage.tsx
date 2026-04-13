@@ -46,7 +46,7 @@ export function PlayerRatingsPage() {
 
   return (
     <div>
-      <PlayersSubnav active="ratings" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><PlayersSubnav active="ratings" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Ratings

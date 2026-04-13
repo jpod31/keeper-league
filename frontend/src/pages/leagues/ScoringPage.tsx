@@ -98,7 +98,7 @@ export function ScoringPage() {
 
   return (
     <div>
-      <AdminSubnav active="scoring" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><AdminSubnav active="scoring" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Admin / Scoring

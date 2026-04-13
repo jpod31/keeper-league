@@ -86,7 +86,7 @@ export function FinalsPage() {
 
   return (
     <div>
-      <LeagueSubnav active="fixture" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><LeagueSubnav active="fixture" leagueId={leagueId!} /></div>
 
       <div className="page-header" style={{ marginTop: 0 }}>
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">

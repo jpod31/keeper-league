@@ -53,7 +53,7 @@ export function InjuriesPage() {
 
   return (
     <div>
-      <PlayersSubnav active="injuries" leagueId={leagueId!} />
+      <div className="d-none d-lg-block"><PlayersSubnav active="injuries" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Injuries
@@ -88,11 +88,11 @@ export function InjuriesPage() {
             <thead>
               <tr>
                 <th>Player</th>
-                <th>Team</th>
+                <th className="mob-hide">Team</th>
                 <th>Pos</th>
                 <th>Severity</th>
-                <th>Type</th>
-                <th>Return</th>
+                <th className="mob-hide">Type</th>
+                <th className="mob-hide">Return</th>
                 <th>Rostered</th>
               </tr>
             </thead>
@@ -100,15 +100,15 @@ export function InjuriesPage() {
               {filtered.map(p => (
                 <tr key={p.id}>
                   <td><strong>{p.name}</strong></td>
-                  <td><span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.afl_team}</span></td>
+                  <td className="mob-hide"><span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.afl_team}</span></td>
                   <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
                   <td>
                     <span className="badge" style={{ background: (SEV_COLOR[p.injury_severity] || '#6e7681') + '20', color: SEV_COLOR[p.injury_severity] || '#8b949e', fontSize: '.7rem' }}>
                       {p.injury_severity.toUpperCase()}
                     </span>
                   </td>
-                  <td className="text-secondary" style={{ fontSize: '.75rem' }}>{p.injury_type}</td>
-                  <td className="text-secondary" style={{ fontSize: '.75rem' }}>{p.injury_return || '—'}</td>
+                  <td className="mob-hide text-secondary" style={{ fontSize: '.75rem' }}>{p.injury_type}</td>
+                  <td className="mob-hide text-secondary" style={{ fontSize: '.75rem' }}>{p.injury_return || '—'}</td>
                   <td>
                     {p.rostered_by ? (
                       <span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.rostered_by}</span>
