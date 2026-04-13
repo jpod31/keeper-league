@@ -120,7 +120,7 @@ export function DashboardPage() {
                     <tr>
                       <th style={{ width: 40 }}>#</th>
                       <th>Team</th>
-                      <th>Owner</th>
+                      <th className="mob-hide">Owner</th>
                       <th className="text-end">Roster</th>
                     </tr>
                   </thead>
@@ -147,7 +147,7 @@ export function DashboardPage() {
                             </span>
                           )}
                         </td>
-                        <td style={{ color: '#8b949e' }}>{t.owner}</td>
+                        <td className="mob-hide" style={{ color: '#8b949e' }}>{t.owner}</td>
                         <td className="text-end">
                           <span className="badge" style={{ background: '#21262d', color: '#8b949e' }}>
                             {t.roster_count}

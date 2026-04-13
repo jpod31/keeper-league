@@ -4511,3 +4511,124 @@ th.sortable:hover { color: #58a6ff; }
   /* ── General spacing refinement ── */
   .container { padding-left: 12px; padding-right: 12px; }
 }
+
+/* ══════════════════════════════════════════════════
+   PREMIUM OVERHAUL PART 2 — page-level mobile fixes
+   ══════════════════════════════════════════════════ */
+@media (max-width: 767.98px) {
+  /* ── Dashboard: tighter table, hide Owner col ── */
+  .dashboard-teams-table td,
+  .dashboard-teams-table th { padding: .45rem .4rem; font-size: .78rem; }
+
+  /* ── Fixture: tighter rows, readable teams ── */
+  .mx-row { padding: 12px 12px; }
+  .mx-team { font-size: .8rem; }
+  .mx-sc { font-size: .88rem; }
+  .mx-arrow { display: none; }
+  .round-hdr { margin-bottom: 10px; padding-bottom: 8px; }
+  .round-hdr h3 { font-size: .95rem; }
+
+  /* ── Matchup detail hero ── */
+  .mu-hero { padding: 18px 14px; border-radius: 14px; }
+  .mu-hero-grid { gap: 8px; }
+  .mu-tname { font-size: .85rem; }
+  .mu-tscore { font-size: 1.8rem; }
+  .mu-vs { font-size: .5rem; }
+
+  /* ── Trade center ── */
+  .trade-card,
+  .card.trade-item { padding: .7rem !important; }
+  .trade-card .d-flex { flex-wrap: wrap; gap: 4px; }
+
+  /* ── Chat: fit above bottom nav ── */
+  .chat-messages-scroll {
+    max-height: calc(100dvh - 280px) !important;
+    min-height: 200px;
+  }
+
+  /* ── Squad: tighter mob-subnav ── */
+  .mob-subnav-item {
+    min-width: 48px;
+    padding: 6px 8px;
+    font-size: .62rem;
+  }
+  .mob-subnav-item i { font-size: .95rem; }
+
+  /* ── League list: full-width cards ── */
+  .league-card {
+    padding: 1rem;
+    border-radius: 14px;
+    min-height: 56px;
+  }
+
+  /* ── Comp toggle (gameday) ── */
+  .comp-toggle-btn {
+    padding: 5px 14px;
+    font-size: .72rem;
+    border-radius: 6px;
+  }
+
+  /* ── Power ranking rows ── */
+  .pr-row { padding: 10px 12px; }
+  .pr-row .fw-bold { font-size: .85rem; }
+
+  /* ── Typography cleanup ── */
+  h2 { font-size: 1.15rem; letter-spacing: -.02em; }
+  h3 { font-size: 1rem; }
+  h5 { font-size: .88rem; }
+  h6 { font-size: .82rem; }
+
+  /* ── Card headers — compact ── */
+  .card-header {
+    padding: .65rem .85rem;
+  }
+  .card-header h5,
+  .card-header h6 { font-size: .82rem; }
+
+  /* ── Info rows (dashboard, settings) ── */
+  .info-row { font-size: .82rem; padding: .4rem 0; }
+
+  /* ── Buttons — touch size ── */
+  .btn-sm {
+    min-height: 36px;
+    font-size: .78rem;
+    padding: .35rem .65rem;
+  }
+
+  /* ── Alert banners — compact ── */
+  .alert { font-size: .8rem; padding: .65rem .85rem; border-radius: 10px; }
+
+  /* ── Status pills — slightly larger for mobile ── */
+  .status-pill { font-size: .68rem; padding: 3px 10px; }
+
+  /* ── Gameday state badge ── */
+  .gameday-state-badge { font-size: .65rem; }
+
+  /* ── Round strip items ── */
+  .rnd-item { padding: 10px 2px 8px; }
+  .rnd-num { font-size: .72rem; }
+
+  /* ── General whitespace tightening ── */
+  .mb-4 { margin-bottom: .85rem !important; }
+  .mb-3 { margin-bottom: .65rem !important; }
+  .mt-4 { margin-top: .85rem !important; }
+  .mt-3 { margin-top: .65rem !important; }
+  .py-4 { padding-top: .85rem !important; padding-bottom: .85rem !important; }
+  .g-4 { gap: .65rem !important; }
+  .g-3 { gap: .5rem !important; }
+}
+
+/* ── Small phones (SE, Galaxy A) ── */
+@media (max-width: 379px) {
+  .mx-team { font-size: .72rem; }
+  .mx-sc { font-size: .78rem; }
+  .mx-centre { min-width: 60px; }
+  .ldr-mob-name { font-size: .82rem; }
+  .ldr-mob-pts { font-size: .85rem; min-width: 38px; }
+  .kl-player-card-name { font-size: .82rem; }
+  .kl-player-card-sc { font-size: 1rem; }
+  .hero-big-score { font-size: 2.2rem !important; }
+  .hero-team-name { font-size: .72rem !important; }
+  .hero-crest, .hero-crest-img { width: 36px !important; height: 36px !important; }
+  .container { padding-left: 8px; padding-right: 8px; }
+}
