@@ -242,9 +242,11 @@ export function PlayerPoolPage() {
   return (
     <div>
       <style>{POOL_CSS}</style>
-      <PlayersSubnav active="pool" leagueId={leagueId!} />
+      <div className="d-none d-lg-block">
+        <PlayersSubnav active="pool" leagueId={leagueId!} />
+      </div>
 
-      <div className="page-header">
+      <div className="page-header d-none d-lg-block">
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{league.name}</Link> / Players / Pool
         </div>
@@ -263,7 +265,7 @@ export function PlayerPoolPage() {
 
       {can_pickup && (
         <div
-          className="d-flex align-items-center gap-2 mb-3 px-3 py-2"
+          className="d-flex align-items-center gap-2 mb-3 px-3 py-2 d-none d-lg-flex"
           style={{ background: 'rgba(63,185,80,.08)', border: '1px solid rgba(63,185,80,.2)', borderRadius: 8, fontSize: '.82rem' }}
         >
           <i className="bi bi-person-plus-fill" style={{ color: '#3fb950' }}></i>
@@ -274,8 +276,8 @@ export function PlayerPoolPage() {
         </div>
       )}
 
-      <div className="card">
-        <div className="card-header py-2 d-none d-lg-block">
+      <div className="card d-none d-lg-block">
+        <div className="card-header py-2">
           <div className="filter-bar">
             <div style={{ flex: '1 1 200px', maxWidth: 280 }}>
               <input
@@ -465,8 +467,9 @@ export function PlayerPoolPage() {
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* ═══ MOBILE: redesigned player pool ═══ */}
+      {/* ═══ MOBILE: redesigned player pool ═══ */}
         <div className="d-lg-none" style={{ display: 'flex', flexDirection: 'column' }}>
           {/* Sticky search + filter button */}
           <div className="kl-sticky-search">
@@ -582,7 +585,6 @@ export function PlayerPoolPage() {
             )}
           </div>
         </div>
-      </div>
 
       {/* ═══ Filter Bottom Sheet (mobile only) ═══ */}
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)} title="Filters">
