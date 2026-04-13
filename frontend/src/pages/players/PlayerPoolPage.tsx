@@ -533,7 +533,7 @@ export function PlayerPoolPage() {
               const trendUp = l3Pct > 5
               const trendDown = l3Pct < -5
               return (
-                <div key={p.id} className="kl-player-card" style={p.owner_team ? { opacity: 0.6 } : undefined}>
+                <div key={p.id} className="kl-player-card">
                   {p.afl_team && data.team_logos[p.afl_team] ? (
                     <img src={data.team_logos[p.afl_team]} alt="" className="kl-player-card-logo" />
                   ) : (
