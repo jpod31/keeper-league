@@ -346,10 +346,7 @@ def create_app():
     app.register_blueprint(draft_bp)
     csrf.exempt(draft_bp)   # draft uses SocketIO (own origin check) + @login_required
     csrf.exempt(team_bp)    # 15+ AJAX API endpoints; all behind @login_required + team ownership
-    # Exempt specific JSON API endpoints in leagues blueprint
-    csrf.exempt("leagues.commissioner_delist")
-    csrf.exempt("leagues.commissioner_force_move")
-    csrf.exempt("leagues.player_pickup")
+    csrf.exempt(leagues_bp) # SPA sends JSON, not form tokens; all behind @login_required
     app.register_blueprint(team_bp)
     app.register_blueprint(trades_bp)
     app.register_blueprint(matchups_bp)

@@ -329,6 +329,12 @@ function LeagueShellInner() {
             </div>
             <hr style={{ borderColor: 'var(--kl-border)', margin: '.5rem 1rem' }} />
             <div className="more-sheet-grid">
+              <div className="more-sheet-item" onClick={() => navigate(`/leagues/${lid}/notifications`)}>
+                <i className="bi bi-bell"></i><span>Notifications</span>
+              </div>
+              <div className="more-sheet-item" onClick={() => navigate('/auth/profile')}>
+                <i className="bi bi-person"></i><span>Profile</span>
+              </div>
               {league.user_leagues.filter(lg => lg.id !== lid).map(lg => (
                 <div key={lg.id} className="more-sheet-item" onClick={() => navigate(`/leagues/${lg.id}`)}>
                   <i className="bi bi-trophy"></i><span>{lg.name}</span>

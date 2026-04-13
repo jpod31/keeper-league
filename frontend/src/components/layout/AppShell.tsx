@@ -79,7 +79,7 @@ export function AppShell() {
         .kl-user-menu hr { margin: .25rem 0; border: none; border-top: 1px solid var(--kl-border); }
       `}</style>
 
-      <header className="kl-topbar">
+      <header className="kl-topbar d-none d-lg-block">
         <div className="kl-topbar-inner">
           <Link className="kl-topbar-brand" to="/leagues">
             <img src="/static/icons/kl-logo.png" alt="KL" />
