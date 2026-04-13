@@ -7,8 +7,8 @@
   --kl-bg-hover: #1c2128;
   --kl-border: #30363d;
   --kl-border-light: #484f58;
-  --kl-text-primary: #c9d1d9;
-  --kl-text-heading: #e6edf3;
+  --kl-text-primary: #d1d5db;
+  --kl-text-heading: #f0f3f6;
   --kl-text-secondary: #8b949e;
   --kl-text-muted: #6e7681;
   --kl-text-faint: #484f58;
@@ -4311,4 +4311,168 @@ th.sortable:hover { color: #58a6ff; }
   /* Subnav: tighter on mobile */
   .league-subnav { margin-bottom: .5rem; }
   .mob-subnav { margin-bottom: .25rem; }
+}
+
+/* ══════════════════════════════════════════════════
+   PREMIUM MOBILE VISUAL OVERHAUL
+   ══════════════════════════════════════════════════ */
+@media (max-width: 991.98px) {
+  /* ── Elevated body for mobile — slightly lighter bg ── */
+  body { background: #0f1419; }
+
+  /* ── Cards get subtle depth ── */
+  .card {
+    background: linear-gradient(165deg, #181e26 0%, #141a22 100%);
+    border: 1px solid rgba(56,63,71,.5);
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+
+  /* ── Better table row contrast ── */
+  .table { --bs-table-bg: transparent; }
+  .table > tbody > tr {
+    border-bottom: 1px solid rgba(48,54,61,.35);
+  }
+  .table > tbody > tr:last-child { border-bottom: none; }
+  .table > thead > tr > th {
+    background: rgba(13,17,23,.6);
+    backdrop-filter: blur(8px);
+    font-size: .68rem;
+    padding: .6rem .5rem;
+  }
+
+  /* ── Mobile bottom nav — more premium feel ── */
+  .mobile-bottom-nav {
+    background: linear-gradient(180deg, #131920 0%, #0d1117 100%);
+    border-top: 1px solid rgba(48,54,61,.4);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.4);
+    backdrop-filter: blur(12px);
+  }
+  .mob-nav-item {
+    color: #6e7681;
+    transition: color .15s, transform .1s;
+  }
+  .mob-nav-item.active {
+    color: var(--kl-accent-blue);
+  }
+  .mob-nav-item:active {
+    transform: scale(.92);
+  }
+
+  /* ── More sheet — frosted glass ── */
+  .more-sheet, .subtab-sheet {
+    background: linear-gradient(180deg, #1a2029 0%, #141a22 100%);
+    border-top: 1px solid rgba(88,166,255,.1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,.6);
+  }
+
+  /* ── League nav tabs — cleaner on mobile tablets ── */
+  .league-nav {
+    background: rgba(13,17,23,.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(48,54,61,.3);
+  }
+
+  /* ── Position badges — slightly brighter for visibility ── */
+  .pos-badge { font-weight: 700; letter-spacing: .3px; }
+  .pos-DEF, .pos-badge.badge-def { background: rgba(26,63,102,.6); color: #8cc8ff; }
+  .pos-MID, .pos-badge.badge-mid { background: rgba(53,29,74,.6); color: #dbb8ff; }
+  .pos-FWD, .pos-badge.badge-fwd { background: rgba(70,41,10,.6); color: #ffc58a; }
+  .pos-RUC, .pos-badge.badge-ruc { background: rgba(29,61,46,.6); color: #90edb0; }
+
+  /* ── Profile tags — pop more ── */
+  .profile-tag { font-weight: 700; letter-spacing: .2px; }
+
+  /* ── Player card refinement ── */
+  .kl-player-card {
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(48,54,61,.3);
+  }
+  .kl-player-card-name { color: #f0f3f6; font-weight: 700; }
+  .kl-player-card-sc { color: #f0f3f6; }
+
+  /* ── KL mini bar — more contrast ── */
+  .kl-mini-bar {
+    background: linear-gradient(135deg, #161b22 0%, #131920 100%);
+    border: 1px solid rgba(48,54,61,.4);
+  }
+  .kl-mini-pill { transition: transform .1s, box-shadow .15s; }
+  .kl-mini-pill:active { transform: scale(.97); }
+
+  /* ── Gameday hero — premium glow ── */
+  .gameday-hero {
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .hero-big-score { letter-spacing: -.04em; }
+  .hero-team-name { font-weight: 800; }
+
+  /* ── Fixture rows — touch friendly ── */
+  .mx-row {
+    padding: 16px;
+    border-radius: 0;
+    transition: background .1s;
+  }
+  .mx-row:active { background: rgba(88,166,255,.04); }
+
+  /* ── Ladder cards — more refined ── */
+  .ldr-mob-card {
+    border-radius: 10px;
+    margin-bottom: 6px;
+    transition: transform .1s;
+  }
+  .ldr-mob-card:active { transform: scale(.98); }
+
+  /* ── Squad cards — better spacing ── */
+  .mob-pos-row {
+    border-bottom: 1px solid rgba(48,54,61,.25);
+    transition: background .1s;
+  }
+
+  /* ── Smooth page transitions ── */
+  main.container {
+    animation: klPageIn .2s ease;
+  }
+  @keyframes klPageIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Round strip — premium scrollbar ── */
+  .rnd-strip {
+    border-radius: 12px;
+    background: linear-gradient(135deg, #131920 0%, #0f1419 100%);
+  }
+
+  /* ── Sticky search — glass effect ── */
+  .kl-sticky-search {
+    background: rgba(15,20,25,.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(48,54,61,.3);
+  }
+
+  /* ── Filter sheet pills — larger touch targets ── */
+  .kl-filter-pill {
+    padding: 10px 18px;
+    font-size: .82rem;
+    border-radius: 12px;
+  }
+
+  /* ── Bottom sheet — frosted ── */
+  .kl-bs {
+    background: linear-gradient(180deg, #1a2029 0%, #141a22 100%);
+    border-top: 1px solid rgba(88,166,255,.08);
+  }
+
+  /* ── Stat cards ── */
+  .stat-card {
+    background: linear-gradient(165deg, #181e26, #131920);
+    border: 1px solid rgba(48,54,61,.4);
+    border-radius: 12px;
+  }
+  .squad-stat-cards { gap: 8px; }
+
+  /* ── General spacing refinement ── */
+  .container { padding-left: 12px; padding-right: 12px; }
 }
