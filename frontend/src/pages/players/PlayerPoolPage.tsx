@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { BottomSheet } from '../../components/ui/BottomSheet'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
 interface Acquired {
@@ -132,6 +133,7 @@ export function PlayerPoolPage() {
   const [sortDir, setSortDir] = useState<1 | -1>(-1)
   const [mobSort, setMobSort] = useState<MobileSortKey>('sc')
   const [pickingUp, setPickingUp] = useState<number | null>(null)
+  const [filterOpen, setFilterOpen] = useState(false)
 
   const filtered = useMemo(() => {
     if (!data) return []
@@ -198,6 +200,8 @@ export function PlayerPoolPage() {
     data.players.forEach(p => { if (p.owner_team) s.add(p.owner_team) })
     return [...s].sort()
   }, [data])
+
+  const activeFilterCount = [posFilter, teamFilter, ageFilter, statusFilter, ownerFilter].filter(Boolean).length
 
   async function pickup(playerId: number) {
     if (!confirm('Pick this player up?')) return
@@ -271,7 +275,7 @@ export function PlayerPoolPage() {
       )}
 
       <div className="card">
-        <div className="card-header py-2">
+        <div className="card-header py-2 d-none d-lg-block">
           <div className="filter-bar">
             <div style={{ flex: '1 1 200px', maxWidth: 280 }}>
               <input
@@ -462,88 +466,180 @@ export function PlayerPoolPage() {
           </table>
         </div>
 
-        {/* Mobile card list */}
-        <div className="card-body p-0 d-lg-none" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-          {/* Mobile sort bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderBottom: '1px solid #21262d', background: '#161b22' }}>
-            <span style={{ fontSize: '.7rem', color: '#8b949e', whiteSpace: 'nowrap' }}>Sort:</span>
+        {/* ═══ MOBILE: redesigned player pool ═══ */}
+        <div className="d-lg-none" style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Sticky search + filter button */}
+          <div className="kl-sticky-search">
+            <div style={{ position: 'relative', flex: 1 }}>
+              <i className="bi bi-search kl-sticky-search-icon"></i>
+              <input
+                type="text"
+                placeholder="Search players..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className={`kl-sticky-search-filter${activeFilterCount > 0 ? ' has-filters' : ''}`}
+              onClick={() => setFilterOpen(true)}
+            >
+              <i className="bi bi-sliders2"></i>
+              {activeFilterCount > 0 && (
+                <span className="kl-sticky-search-badge">{activeFilterCount}</span>
+              )}
+            </button>
+          </div>
+
+          {/* Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div style={{ display: 'flex', gap: 6, padding: '8px 16px', overflowX: 'auto', flexShrink: 0 }}>
+              {posFilter && <span className="kl-chip" onClick={() => setPosFilter('')}>{posFilter} <i className="bi bi-x kl-chip-remove"></i></span>}
+              {ageFilter && <span className="kl-chip" onClick={() => setAgeFilter('')}>{ageFilter === '30+' ? '30+' : `U${ageFilter}`} <i className="bi bi-x kl-chip-remove"></i></span>}
+              {statusFilter && <span className="kl-chip" onClick={() => setStatusFilter('')}>{statusFilter === 'available' ? 'Available' : 'Rostered'} <i className="bi bi-x kl-chip-remove"></i></span>}
+              {teamFilter && <span className="kl-chip" onClick={() => setTeamFilter('')}>{teamFilter} <i className="bi bi-x kl-chip-remove"></i></span>}
+              {ownerFilter && <span className="kl-chip" onClick={() => setOwnerFilter('')}>{ownerFilter} <i className="bi bi-x kl-chip-remove"></i></span>}
+            </div>
+          )}
+
+          {/* Sort + count row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px', borderBottom: '1px solid rgba(48,54,61,.4)' }}>
+            <span style={{ fontSize: '.72rem', color: '#6e7681' }}><b style={{ color: '#8b949e' }}>{mobileSorted.length}</b> players</span>
             <select
               className="form-select form-select-sm"
               value={mobSort}
               onChange={e => setMobSort(e.target.value as MobileSortKey)}
-              style={{ background: '#0d1117', borderColor: '#30363d', fontSize: '.75rem', padding: '3px 8px', height: 'auto', width: 'auto', flex: 1 }}
+              style={{ background: 'transparent', border: 'none', color: '#58a6ff', fontSize: '.72rem', fontWeight: 600, width: 'auto', padding: '2px 24px 2px 4px' }}
             >
-              <option value="sc">SC Avg</option>
+              <option value="sc">SC Avg ↓</option>
               <option value="name_asc">Name A–Z</option>
-              <option value="age">Age</option>
-              <option value="rtg">Rating</option>
-              <option value="gp">Games Played</option>
+              <option value="age">Youngest</option>
+              <option value="rtg">Rating ↓</option>
+              <option value="gp">Games ↓</option>
             </select>
           </div>
-          {mobileSorted.map(p => {
-            const positions = (p.position || 'MID').split('/')
-            const tc = p.owner_team ? team_colours[p.owner_team] : null
-            const l3Base = p.sc_avg || p.l3 || 0
-            const l3Diff = (p.l3 || 0) - l3Base
-            const l3Pct = l3Base ? (l3Diff / l3Base) * 100 : 0
-            return (
-              <div key={p.id} className={`pm-card${p.owner_team ? ' pm-taken' : ''}`}>
-                {p.is_bye ? <span className="status-dot status-dot-bye"></span>
-                  : p.is_selected ? <span className="status-dot status-dot-taken"></span>
-                  : p.injury_severity ? <span className="status-dot status-dot-injured"></span>
-                  : <span className="status-dot status-dot-available"></span>}
-                {p.afl_team && data.team_logos[p.afl_team] && (
-                  <img src={data.team_logos[p.afl_team]} alt="" className="pm-logo" />
-                )}
-                <div className="pm-body">
-                  <div className="pm-row1">
-                    <span className="pm-name">{p.name}</span>
-                    {['FWD', 'DEF', 'RUC', 'MID'].filter(pos => positions.includes(pos)).map(pos => (
-                      <span key={pos} className={`pos-badge badge-${pos.toLowerCase()} pm-pos-badge`}>{pos}</span>
-                    ))}
-                    {p.profile_tag && p.profile_css && (
-                      <span className={`profile-tag tag-${p.profile_css}`}>{p.profile_tag}</span>
-                    )}
-                  </div>
-                  <div className="pm-row2">
-                    <span>{p.afl_team}</span>
-                    <span className="pm-sep"></span>
-                    <span>{p.age || 0}y</span>
-                    <span className="pm-sep"></span>
-                    <span>{p.games_played}gp</span>
-                    {p.l3 && (
-                      <>
-                        <span className="pm-sep"></span>
-                        <span className="pm-l3">L3 <b>{Math.round(p.l3)}</b>
-                          {l3Pct > 2 ? <span className="pm-l3-delta pm-l3-delta-up">+{Math.round(l3Pct)}%</span>
-                            : l3Pct < -2 ? <span className="pm-l3-delta pm-l3-delta-down">{Math.round(l3Pct)}%</span>
-                            : <span className="pm-l3-delta pm-l3-delta-flat">-</span>}
-                        </span>
-                      </>
-                    )}
-                    {p.owner_team && (
-                      <>
-                        <span className="pm-sep"></span>
-                        <span className="pm-owner" style={{ background: tc?.bg, color: tc?.fg }}>{p.owner_team}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="pm-right">
-                  {p.sc_avg ? <span className="pm-sc">{Math.round(p.sc_avg)}</span>
-                    : <span className="pm-sc pm-sc-none">-</span>}
-                  {!p.owner_team && can_pickup && (
-                    <button className="pm-add" onClick={e => { e.stopPropagation(); pickup(p.id) }}>
-                      <i className="bi bi-plus-lg"></i>
-                    </button>
+
+          {/* Player list — new card design */}
+          <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            {mobileSorted.map(p => {
+              const positions = (p.position || 'MID').split('/')
+              const tc = p.owner_team ? team_colours[p.owner_team] : null
+              const l3Base = p.sc_avg || p.l3 || 0
+              const l3Diff = (p.l3 || 0) - l3Base
+              const l3Pct = l3Base ? (l3Diff / l3Base) * 100 : 0
+              const trendUp = l3Pct > 5
+              const trendDown = l3Pct < -5
+              return (
+                <div key={p.id} className="kl-player-card" style={p.owner_team ? { opacity: 0.6 } : undefined}>
+                  {p.afl_team && data.team_logos[p.afl_team] ? (
+                    <img src={data.team_logos[p.afl_team]} alt="" className="kl-player-card-logo" />
+                  ) : (
+                    <div className="kl-player-card-logo-placeholder">
+                      <i className="bi bi-shield-fill"></i>
+                    </div>
                   )}
-                  {!p.owner_team && !can_pickup && <span className="pm-fa">FA</span>}
+                  <div className="kl-player-card-body">
+                    <div className="kl-player-card-name">
+                      {p.name}
+                      {p.injury_severity && <i className="bi bi-bandaid-fill" style={{ color: '#f85149', fontSize: '.65rem', marginLeft: 4 }}></i>}
+                    </div>
+                    <div className="kl-player-card-meta">
+                      {positions.map(pos => (
+                        <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}`} style={{ fontSize: '.55rem', padding: '1px 5px', lineHeight: 1.3 }}>{pos}</span>
+                      ))}
+                      <span>{p.age}y</span>
+                      <span>·</span>
+                      <span>{p.games_played}gp</span>
+                      {p.profile_tag && <span className={`profile-tag tag-${p.profile_css}`} style={{ fontSize: '.5rem', padding: '0 5px' }}>{p.profile_tag}</span>}
+                    </div>
+                  </div>
+                  <div className="kl-player-card-right">
+                    {p.sc_avg ? (
+                      <span className="kl-player-card-sc">{Math.round(p.sc_avg)}</span>
+                    ) : (
+                      <span className="kl-player-card-sc kl-player-card-sc-none">—</span>
+                    )}
+                    {trendUp && <span className="kl-player-card-trend kl-player-card-trend-up">▲ {Math.round(l3Pct)}%</span>}
+                    {trendDown && <span className="kl-player-card-trend kl-player-card-trend-down">▼ {Math.round(Math.abs(l3Pct))}%</span>}
+                    {p.owner_team ? (
+                      <span className="kl-player-card-owner" style={{ background: tc?.bg, color: tc?.fg }}>{p.owner_team}</span>
+                    ) : can_pickup ? (
+                      <button className="kl-player-card-add" onClick={e => { e.stopPropagation(); pickup(p.id) }} disabled={pickingUp === p.id}>
+                        <i className="bi bi-plus"></i>
+                      </button>
+                    ) : (
+                      <span className="kl-player-card-fa">FA</span>
+                    )}
+                  </div>
                 </div>
+              )
+            })}
+            {mobileSorted.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#484f58' }}>
+                <i className="bi bi-search" style={{ fontSize: '1.5rem', display: 'block', marginBottom: 8 }}></i>
+                <p style={{ fontSize: '.82rem', margin: 0 }}>No players match your filters</p>
               </div>
-            )
-          })}
+            )}
+          </div>
         </div>
       </div>
+
+      {/* ═══ Filter Bottom Sheet (mobile only) ═══ */}
+      <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)} title="Filters">
+        <div className="kl-filter-section">
+          <div className="kl-filter-label">Position</div>
+          <div className="kl-filter-options">
+            {['', 'DEF', 'MID', 'FWD', 'RUC'].map(v => (
+              <button key={v} type="button" className={`kl-filter-pill${posFilter === v ? ' active' : ''}`} onClick={() => setPosFilter(v)}>
+                {v || 'All'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="kl-filter-section">
+          <div className="kl-filter-label">Age</div>
+          <div className="kl-filter-options">
+            {[['', 'All'], ['21', 'U21'], ['23', 'U23'], ['25', 'U25'], ['25-30', '25-30'], ['30+', '30+']].map(([v, label]) => (
+              <button key={v} type="button" className={`kl-filter-pill${ageFilter === v ? ' active' : ''}`} onClick={() => setAgeFilter(v)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="kl-filter-section">
+          <div className="kl-filter-label">Status</div>
+          <div className="kl-filter-options">
+            {[['', 'All'], ['available', 'Available'], ['taken', 'Rostered']].map(([v, label]) => (
+              <button key={v} type="button" className={`kl-filter-pill${statusFilter === v ? ' active' : ''}`} onClick={() => setStatusFilter(v)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="kl-filter-section">
+          <div className="kl-filter-label">AFL Team</div>
+          <select className="form-select form-select-sm" value={teamFilter} onChange={e => setTeamFilter(e.target.value)} style={{ background: 'var(--kl-bg-elevated)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }}>
+            <option value="">All Teams</option>
+            {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+
+        <div className="kl-filter-section">
+          <div className="kl-filter-label">Coach</div>
+          <select className="form-select form-select-sm" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} style={{ background: 'var(--kl-bg-elevated)', borderColor: 'var(--kl-border)', color: 'var(--kl-text-primary)' }}>
+            <option value="">All Coaches</option>
+            {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+
+        <div className="kl-filter-actions">
+          <button type="button" className="kl-filter-btn-clear" onClick={() => { setPosFilter(''); setAgeFilter(''); setStatusFilter(''); setTeamFilter(''); setOwnerFilter('') }}>Clear All</button>
+          <button type="button" className="kl-filter-btn-apply" onClick={() => setFilterOpen(false)}>Show {mobileSorted.length} Players</button>
+        </div>
+      </BottomSheet>
     </div>
   )
 }
