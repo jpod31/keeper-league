@@ -34,7 +34,7 @@ interface CareerSeason {
   sc_avg?: number | null; contested_marks: number; score_involvements: number
 }
 
-interface PageData { players: SLPlayer[]; total: number; page: number; pages: number }
+interface PageData { players: SLPlayer[]; total: number; page: number; pages: number; sl_logos: Record<string, string>; team_logos: Record<string, string> }
 
 const STAT_COLS: [keyof SLPlayer, string, number][] = [
   ['disposals', 'DIS', 0], ['kicks', 'KCK', 0], ['marks', 'MRK', 0],
@@ -87,7 +87,11 @@ const CSS = `
 .scout-tbl tr:last-child td:first-child { border-radius: 0 0 0 12px; }
 .scout-tbl tr:last-child td:last-child { border-radius: 0 0 12px 0; }
 
-.scout-player-info { display: flex; flex-direction: column; gap: 2px; }
+.scout-player-info { display: flex; align-items: center; gap: 10px; }
+.scout-player-info .scout-text { display: flex; flex-direction: column; gap: 2px; }
+.scout-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; border-radius: 4px; }
+.scout-logo-placeholder { width: 28px; height: 28px; flex-shrink: 0; border-radius: 4px;
+  background: #21262d; display: flex; align-items: center; justify-content: center; color: #484f58; font-size: .6rem; }
 .scout-name { font-weight: 700; color: #f0f3f6; font-size: .82rem; }
 .scout-meta { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 .scout-afl-badge { font-size: .62rem; color: #58a6ff; font-weight: 600; }
@@ -162,7 +166,7 @@ function DetailTooltip({ active, payload, label }: { active?: boolean; payload?:
   )
 }
 
-function PlayerDetail({ player, leagueId, onClose }: { player: SLPlayer; leagueId: string; onClose: () => void }) {
+function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; leagueId: string; onClose: () => void; logos: Record<string, string> }) {
   const [career, setCareer] = useState<CareerSeason[] | null>(null)
 
   useEffect(() => {
@@ -188,13 +192,22 @@ function PlayerDetail({ player, leagueId, onClose }: { player: SLPlayer; leagueI
       <div className="scout-detail" role="dialog">
         <div className="scout-detail-inner">
           <div className="scout-detail-header">
-            <div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              {logos[player.team] ? (
+                <img src={logos[player.team]} alt="" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8, flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: 40, height: 40, borderRadius: 8, background: '#21262d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58', flexShrink: 0 }}>
+                  <i className="bi bi-shield-fill"></i>
+                </div>
+              )}
+              <div>
               <div className="scout-detail-name">{player.player_name}</div>
               <div className="scout-detail-sub">
                 {player.position && <span className={`pos-pill ${(player.position.split('/')[0] || '').toLowerCase()}`}>{player.position}</span>}
                 {player.afl_team && <span>{player.afl_team}</span>}
                 <span>{player.team} ({player.competition.toUpperCase()})</span>
                 {player.age && <span>{player.age}yo</span>}
+              </div>
               </div>
             </div>
             <button className="scout-detail-close" onClick={onClose}><i className="bi bi-x-lg"></i></button>
@@ -441,13 +454,19 @@ export function ScoutingPage() {
                     <tr key={p.id} onClick={() => setSelected(p)} className={selected?.id === p.id ? 'selected' : ''}>
                       <td>
                         <div className="scout-player-info">
-                          <span className="scout-name">{p.player_name}</span>
-                          <div className="scout-meta">
-                            {p.position && <span className={`pos-pill ${(p.position.split('/')[0] || '').toLowerCase()}`}>{p.position}</span>}
-                            {p.is_afl_listed && p.afl_team && <span className="scout-afl-badge">{p.afl_team}</span>}
-                            {!p.is_afl_listed && <span className="unlisted-badge">Unlisted</span>}
-                            <span className="scout-comp-badge">{p.team} · {p.competition.toUpperCase()}</span>
-                            {p.age && <span style={{ fontSize: '.65rem', color: '#6e7681' }}>{p.age}yo</span>}
+                          {(() => {
+                            const logo = data.sl_logos[p.team]
+                            return logo ? <img src={logo} alt="" className="scout-logo" /> : <div className="scout-logo-placeholder"><i className="bi bi-shield-fill"></i></div>
+                          })()}
+                          <div className="scout-text">
+                            <span className="scout-name">{p.player_name}</span>
+                            <div className="scout-meta">
+                              {p.position && <span className={`pos-pill ${(p.position.split('/')[0] || '').toLowerCase()}`}>{p.position}</span>}
+                              {p.is_afl_listed && p.afl_team && <span className="scout-afl-badge">{p.afl_team}</span>}
+                              {!p.is_afl_listed && <span className="unlisted-badge">Unlisted</span>}
+                              <span className="scout-comp-badge">{p.team} · {p.competition.toUpperCase()}</span>
+                              {p.age && <span style={{ fontSize: '.65rem', color: '#6e7681' }}>{p.age}yo</span>}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -482,7 +501,7 @@ export function ScoutingPage() {
       </div>
 
       {selected && (
-        <PlayerDetail player={selected} leagueId={leagueId!} onClose={() => setSelected(null)} />
+        <PlayerDetail player={selected} leagueId={leagueId!} onClose={() => setSelected(null)} logos={data?.sl_logos ?? {}} />
       )}
     </>
   )

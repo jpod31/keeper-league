@@ -852,7 +852,9 @@ def state_league_stats(league_id):
             "score_involvement_pct": r.score_involvement_pct,
         })
 
-    return jsonify({"players": data, "total": total, "page": page, "pages": (total + per_page - 1) // per_page})
+    from config import STATE_LEAGUE_LOGOS, TEAM_LOGOS
+    return jsonify({"players": data, "total": total, "page": page, "pages": (total + per_page - 1) // per_page,
+                    "sl_logos": STATE_LEAGUE_LOGOS, "team_logos": TEAM_LOGOS})
 
 
 @spa_api.route("/leagues/<int:league_id>/state-league-stats/player/<int:player_id>")

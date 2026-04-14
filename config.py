@@ -142,6 +142,59 @@ TEAM_LOGOS = {
     "Western Bulldogs": f"{_LOGO_BASE}Bulldogs.png",
 }
 
+_SL_LOGO = "/static/logos/state-league/"
+STATE_LEAGUE_LOGOS = {
+    # VFL — AFL affiliates
+    "Brisbane": f"{_LOGO_BASE}Brisbane.png",
+    "Carlton": f"{_LOGO_BASE}Carlton.png",
+    "Collingwood": f"{_LOGO_BASE}Collingwood.png",
+    "Essendon": f"{_LOGO_BASE}Essendon.png",
+    "Geelong": f"{_LOGO_BASE}Geelong.png",
+    "Gold Coast": f"{_LOGO_BASE}GoldCoast.png",
+    "Greater Western Sydney": f"{_LOGO_BASE}Giants.png",
+    "North Melbourne": f"{_LOGO_BASE}NorthMelbourne.png",
+    "Richmond": f"{_LOGO_BASE}Richmond.png",
+    "St Kilda": f"{_LOGO_BASE}StKilda.png",
+    "Sydney": f"{_LOGO_BASE}Sydney.png",
+    "Footscray": f"{_LOGO_BASE}Bulldogs.png",
+    # VFL — standalone with AFL affiliate logos
+    "Box Hill": f"{_LOGO_BASE}Hawthorn.png",
+    "Casey": f"{_LOGO_BASE}Melbourne.png",
+    "Sandringham": f"{_LOGO_BASE}StKilda.png",
+    "Southport": f"{_LOGO_BASE}GoldCoast.png",
+    "Tasmania": f"{_LOGO_BASE}NorthMelbourne.png",
+    # VFL — standalone with own logos
+    "Coburg": f"{_SL_LOGO}coburg.png",
+    "Williamstown": f"{_SL_LOGO}williamstown.png",
+    "Werribee": f"{_SL_LOGO}werribee.png",
+    "Frankston": f"{_SL_LOGO}frankston.png",
+    "Port Melbourne": f"{_SL_LOGO}port-melbourne.png",
+    # SANFL — AFL affiliates
+    "Adelaide": f"{_LOGO_BASE}Adelaide.png",
+    "Port Adelaide": f"{_LOGO_BASE}PortAdelaide.png",
+    # SANFL — standalone with own logos
+    "Central District": f"{_SL_LOGO}central-district.png",
+    "Glenelg": f"{_SL_LOGO}glenelg.png",
+    "North Adelaide": f"{_SL_LOGO}north-adelaide.png",
+    "Norwood": f"{_SL_LOGO}norwood.png",
+    "South Adelaide": f"{_SL_LOGO}south-adelaide.png",
+    "Sturt": f"{_SL_LOGO}sturt.png",
+    "West Adelaide": f"{_SL_LOGO}west-adelaide.png",
+    "Woodville-West Torrens": f"{_SL_LOGO}woodville-west-torrens.png",
+    # WAFL — AFL affiliates
+    "West Coast": f"{_LOGO_BASE}WestCoast.png",
+    "Peel Thunder": f"{_LOGO_BASE}Fremantle.png",
+    # WAFL — standalone
+    "Claremont": f"{_SL_LOGO}claremont.png",
+    "East Fremantle": f"{_SL_LOGO}east-fremantle.png",
+    "East Perth": f"{_SL_LOGO}east-perth.png",
+    "Perth": f"{_SL_LOGO}perth.png",
+    "South Fremantle": f"{_SL_LOGO}south-fremantle.png",
+    "Subiaco": f"{_SL_LOGO}subiaco.png",
+    "Swan Districts": f"{_SL_LOGO}swan-districts.png",
+    "West Perth": f"{_SL_LOGO}west-perth.png",
+}
+
 TEAM_COLOURS = {
     "Adelaide":         ("#05173f", "#ffd600"),
     "Brisbane Lions":   ("#9b0033", "#feba35"),
