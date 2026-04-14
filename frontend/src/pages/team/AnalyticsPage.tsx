@@ -445,7 +445,7 @@ function DepthBoard({
 }
 
 /* ═══ Player Detail Modal ═══ */
-function PlayerDetailModal({ player, onClose, leagueId }: { player: PlayerBayesian | null; onClose: () => void; leagueId: string }) {
+function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null; onClose: () => void }) {
   if (!player) return null
 
   const scores = player.round_scores || []
@@ -600,10 +600,9 @@ function PlayerDetailModal({ player, onClose, leagueId }: { player: PlayerBayesi
             </div>
           </div>
 
-          {/* Link to full profile */}
-          <Link
-            to={`/leagues/${leagueId}/player-pool`}
-            onClick={onClose}
+          {/* Full player profile (Jinja2 page) */}
+          <a
+            href={`/player/${encodeURIComponent(player.name)}`}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '12px', borderRadius: 12,
@@ -613,8 +612,8 @@ function PlayerDetailModal({ player, onClose, leagueId }: { player: PlayerBayesi
             }}
           >
             <i className="bi bi-person-lines-fill"></i>
-            View in Player Pool
-          </Link>
+            Full Player Profile
+          </a>
         </div>
       </div>
     </>
@@ -935,7 +934,7 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      <PlayerDetailModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} leagueId={leagueId!} />
+      <PlayerDetailModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </>
   )
 }

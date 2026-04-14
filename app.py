@@ -393,6 +393,9 @@ def create_app():
                 return None
             if path.startswith("/push/"):
                 return None
+            # Player profile page is still Jinja2 — let it through
+            if path.startswith("/player/"):
+                return None
 
             # ── Key check: only intercept BROWSER NAVIGATIONS ──
             # Browsers send Sec-Fetch-Mode: navigate for page loads.

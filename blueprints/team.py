@@ -1527,17 +1527,17 @@ def api_player_detail(league_id, team_id, player_id):
     if not player:
         return jsonify({"error": "Player not found"}), 404
 
-    # Recent round scores (last 5)
-    recent_scores = (
+    # All scores this season (for bar chart)
+    current_year = league.season_year
+    all_scores = (
         ScScore.query
-        .filter_by(player_id=player_id)
-        .order_by(ScScore.year.desc(), ScScore.round.desc())
-        .limit(5)
+        .filter_by(player_id=player_id, year=current_year)
+        .order_by(ScScore.round)
         .all()
     )
-    scores_list = [
-        {"year": s.year, "round": s.round, "score": s.sc_score}
-        for s in reversed(recent_scores)
+    round_scores = [
+        {"round": s.round, "sc": s.sc_score or 0}
+        for s in all_scores if s.sc_score is not None
     ]
 
     # Last game detailed stats
@@ -1621,10 +1621,10 @@ def api_player_detail(league_id, team_id, player_id):
         "injury_return": player.injury_return,
         "injury_severity": player.injury_severity,
         "injury_return_display": _injury_return_display(player),
-        "recent_scores": scores_list,
+        "round_scores": round_scores,
         "last_game": last_game,
         "season_avg": season_avg,
-        "form": form,
+        "season_games": (season_avg or {}).get("games", 0),
     })
 
 

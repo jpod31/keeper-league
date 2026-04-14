@@ -1,4 +1,3 @@
-import { Link } from 'react-router'
 import {
   Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ComposedChart,
@@ -42,7 +41,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   )
 }
 
-export function PlayerModal({ player: p, teamLogos, onClose, leagueId }: Props) {
+export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId }: Props) {
   const logoUrl = p.afl_team ? teamLogos[p.afl_team] : null
 
   const scores = p.round_scores || []
@@ -192,23 +191,20 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId }: Props) 
             </div>
           )}
 
-          {/* Profile link — go to player pool filtered to this player */}
-          {leagueId && (
-            <Link
-              to={`/leagues/${leagueId}/player-pool`}
-              onClick={onClose}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '12px', borderRadius: 12,
-                background: 'rgba(88,166,255,.08)', border: '1px solid rgba(88,166,255,.2)',
-                color: '#58a6ff', fontSize: '.82rem', fontWeight: 700,
-                textDecoration: 'none',
-              }}
-            >
-              <i className="bi bi-person-lines-fill"></i>
-              View in Player Pool
-            </Link>
-          )}
+          {/* Full player profile */}
+          <a
+            href={`/player/${encodeURIComponent(p.name)}`}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '12px', borderRadius: 12,
+              background: 'rgba(88,166,255,.08)', border: '1px solid rgba(88,166,255,.2)',
+              color: '#58a6ff', fontSize: '.82rem', fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            <i className="bi bi-person-lines-fill"></i>
+            Full Player Profile
+          </a>
         </div>
       </div>
     </>
