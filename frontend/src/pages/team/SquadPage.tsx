@@ -607,7 +607,7 @@ function SquadPageInner() {
       {fieldActions.toastMsg && <div className={`fv-toast fv-toast-${fieldActions.toastMsg.type} fv-toast-show`}>{fieldActions.toastMsg.text}</div>}
 
       {/* ── Player modal ── */}
-      {fieldActions.playerModal && <PlayerModal player={fieldActions.playerModal} teamLogos={data.team_logos} onClose={fieldActions.closePlayerModal} />}
+      {fieldActions.playerModal && <PlayerModal player={fieldActions.playerModal} teamLogos={data.team_logos} onClose={fieldActions.closePlayerModal} leagueId={leagueId} />}
 
       {/* ── SSP Modal ── */}
       {sspLtilId && <SSPModal leagueId={leagueId!} teamId={teamId!} ltilId={sspLtilId} onClose={() => setSspLtilId(null)} onSuccess={() => { setSspLtilId(null); refetch() }} />}

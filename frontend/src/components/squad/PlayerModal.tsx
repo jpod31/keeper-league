@@ -1,3 +1,9 @@
+import { Link } from 'react-router'
+import {
+  Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ComposedChart,
+} from 'recharts'
+
 interface PlayerDetail {
   id: number; name: string; position: string; afl_team: string
   age: number; height_cm: number; career_games: number
@@ -13,161 +19,201 @@ interface Props {
   player: PlayerDetail
   teamLogos: Record<string, string>
   onClose: () => void
+  leagueId?: string
 }
 
-export function PlayerModal({ player: p, teamLogos, onClose }: Props) {
-  const circumference = 2 * Math.PI * 24 // r=24
-  const ratingOffset = circumference - (circumference * (p.rating || 0) / 100)
-  const potentialOffset = circumference - (circumference * (p.potential || 0) / 100)
+const STAT_KEYS: [string, string][] = [
+  ['disposals', 'DIS'], ['kicks', 'KCK'], ['handballs', 'HBL'], ['marks', 'MRK'],
+  ['goals', 'GLS'], ['behinds', 'BHD'], ['tackles', 'TKL'], ['hitouts', 'HO'],
+  ['clearances', 'CLR'], ['inside_fifties', 'I50'], ['contested_possessions', 'CP'],
+  ['pressure_acts', 'PA'],
+]
+
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) {
+  if (!active || !payload?.length) return null
+  const score = payload.find(p => p.name === 'sc')?.value ?? 0
+  const ma = payload.find(p => p.name === 'ma')?.value ?? 0
+  return (
+    <div style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 10, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
+      <div style={{ fontSize: '.72rem', color: '#8b949e', marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f0f3f6' }}>{score}</div>
+      {ma > 0 && <div style={{ fontSize: '.65rem', color: '#6e7681', marginTop: 2 }}>3-game avg: {ma}</div>}
+    </div>
+  )
+}
+
+export function PlayerModal({ player: p, teamLogos, onClose, leagueId }: Props) {
   const logoUrl = p.afl_team ? teamLogos[p.afl_team] : null
 
-  // Sparkline
-  const scores = (p.round_scores || []).slice(-5)
+  const scores = p.round_scores || []
   const vals = scores.map(s => s.sc)
-  const min = vals.length ? Math.min(...vals) - 5 : 0
-  const max = vals.length ? Math.max(...vals) + 5 : 100
-  const range = max - min || 1
-  const points = vals.map((v, i) => {
-    const x = vals.length === 1 ? 60 : (i / (vals.length - 1)) * 120
-    const y = 36 - ((v - min) / range) * 32 - 2
-    return `${x},${y}`
-  }).join(' ')
+  const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
 
-  const STAT_KEYS: [string, string][] = [
-    ['disposals', 'DIS'], ['kicks', 'KCK'], ['handballs', 'HBL'], ['marks', 'MRK'],
-    ['goals', 'GLS'], ['behinds', 'BHD'], ['tackles', 'TKL'], ['hitouts', 'HO'],
-    ['clearances', 'CLR'], ['inside_fifties', 'I50'], ['contested_possessions', 'CP'],
-    ['pressure_acts', 'PA'],
-  ]
+  // Chart data with 3-game moving average
+  const chartData = scores.map((s, i) => {
+    const window = vals.slice(Math.max(0, i - 2), i + 1)
+    const ma = Math.round(window.reduce((a, b) => a + b, 0) / window.length * 10) / 10
+    return { label: `R${s.round}`, sc: s.sc, ma }
+  })
+
+  const l3 = vals.length >= 3 ? Math.round(vals.slice(-3).reduce((a, b) => a + b, 0) / 3) : null
+  const l5 = vals.length >= 5 ? Math.round(vals.slice(-5).reduce((a, b) => a + b, 0) / 5) : null
 
   return (
     <>
-      <div className="modal-backdrop fade show" onClick={onClose}></div>
-      <div className="modal fade show d-block" tabIndex={-1} onClick={onClose}>
-        <div className="modal-dialog modal-dialog-centered modal-lg" onClick={e => e.stopPropagation()}>
-          <div className="modal-content" style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: 12 }}>
-            <div className="modal-header" style={{ borderBottom: '1px solid #30363d', padding: '.75rem 1rem' }}>
-              <h6 className="modal-title fw-bold" style={{ fontSize: '.95rem' }}>{p.name}</h6>
-              <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
-            </div>
-            <div className="modal-body" style={{ padding: '1rem' }}>
-              {/* Hero row */}
-              <div className="pm-hero" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ width: 40, height: 40, flexShrink: 0 }}>
-                  {logoUrl ? (
-                    <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  ) : (
-                    <span className="fv-logo-fallback" style={{ width: 40, height: 40 }}><i className="bi bi-shield-fill"></i></span>
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, color: '#e6edf3', fontSize: '.95rem' }}>{p.name}</div>
-                  <div style={{ fontSize: '.78rem', color: '#8b949e' }}>{p.afl_team} &bull; {p.position}</div>
-                  <div style={{ fontSize: '.78rem', color: '#8b949e' }}>
-                    <strong>{p.age}</strong> age &nbsp; <strong>{p.height_cm || '-'}</strong> cm &nbsp; <strong>{p.career_games || '-'}</strong> career games
-                  </div>
-                  {p.injury_severity && (
-                    <div style={{ marginTop: 4, fontSize: '.7rem', color: '#f85149' }}>
-                      <i className="bi bi-bandaid me-1"></i>{p.injury_type || 'Injured'} — {p.injury_return || ''}
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  {/* Rating ring */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div className="draft-ring" style={{ width: 56, height: 56 }}>
-                      <svg width="56" height="56" viewBox="0 0 56 56">
-                        <circle cx="28" cy="28" r="24" fill="none" stroke="#21262d" strokeWidth="4" />
-                        <circle cx="28" cy="28" r="24" fill="none" stroke="#3fb950" strokeWidth="4"
-                          strokeDasharray={circumference} strokeDashoffset={ratingOffset} strokeLinecap="round"
-                          style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                      </svg>
-                      <div className="ring-value" style={{ fontSize: '.9rem' }}>{p.rating || '-'}</div>
-                    </div>
-                    <div style={{ fontSize: '.45rem', color: '#6e7681', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 2 }}>Rating</div>
-                  </div>
-                  {/* Potential ring */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div className="draft-ring" style={{ width: 56, height: 56 }}>
-                      <svg width="56" height="56" viewBox="0 0 56 56">
-                        <circle cx="28" cy="28" r="24" fill="none" stroke="#21262d" strokeWidth="4" />
-                        <circle cx="28" cy="28" r="24" fill="none" stroke="#bc8cff" strokeWidth="4"
-                          strokeDasharray={circumference} strokeDashoffset={potentialOffset} strokeLinecap="round"
-                          style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
-                      </svg>
-                      <div className="ring-value" style={{ fontSize: '.9rem' }}>{p.potential || '-'}</div>
-                    </div>
-                    <div style={{ fontSize: '.45rem', color: '#6e7681', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 2 }}>Potential</div>
-                  </div>
-                </div>
-              </div>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', zIndex: 1055 }} />
+      <div role="dialog" aria-modal="true" style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1060,
+        maxHeight: '90vh',
+        background: 'linear-gradient(180deg, #1c2330 0%, #141a22 100%)',
+        borderRadius: '20px 20px 0 0',
+        boxShadow: '0 -16px 60px rgba(0,0,0,.7)',
+        overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+        animation: 'klBsSlideUp .25s cubic-bezier(.32,.72,.24,1)',
+      }}>
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(139,148,158,.35)' }} />
+        </div>
 
-              {/* SC row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', padding: '12px', background: '#0d1117', borderRadius: 8, border: '1px solid #21262d' }}>
-                <div>
-                  <div style={{ fontSize: '.6rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.5px' }}>SC Average</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#58a6ff' }}>{p.sc_avg ? Math.round(p.sc_avg) : '-'}</div>
-                </div>
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: '.6rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.5px' }}>Form (last 5)</div>
-                  {vals.length > 0 && (
-                    <svg width="120" height="36" style={{ marginTop: 4 }}>
-                      <polyline points={points} fill="none" stroke="#58a6ff" strokeWidth="2" />
-                      {vals.map((v, i) => {
-                        const x = vals.length === 1 ? 60 : (i / (vals.length - 1)) * 120
-                        const y = 36 - ((v - min) / range) * 32 - 2
-                        return <circle key={i} cx={x} cy={y} r="2.5" fill="#58a6ff" />
-                      })}
-                    </svg>
-                  )}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '.6rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.5px' }}>Prev Avg</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#8b949e' }}>{p.sc_avg_prev ? Math.round(p.sc_avg_prev) : '-'}</div>
-                </div>
-              </div>
-
-              {/* Last game stats */}
-              {p.last_game && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <div style={{ fontSize: '.7rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Last Game</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 4 }}>
-                    {STAT_KEYS.map(([key, label]) => {
-                      const val = p.last_game?.[key]
-                      if (val == null) return null
-                      return (
-                        <div key={key} style={{ textAlign: 'center', padding: '4px', background: '#0d1117', borderRadius: 4, border: '1px solid #21262d' }}>
-                          <div style={{ fontSize: '.75rem', fontWeight: 700, color: '#c9d1d9' }}>{val}</div>
-                          <div style={{ fontSize: '.45rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Season averages */}
-              {p.season_avg && (
-                <div>
-                  <div style={{ fontSize: '.7rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>
-                    Season Averages ({p.season_games} games)
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 4 }}>
-                    {STAT_KEYS.map(([key, label]) => {
-                      const val = p.season_avg?.[key]
-                      if (val == null) return null
-                      return (
-                        <div key={key} style={{ textAlign: 'center', padding: '4px', background: '#0d1117', borderRadius: 4, border: '1px solid #21262d' }}>
-                          <div style={{ fontSize: '.75rem', fontWeight: 700, color: '#c9d1d9' }}>{typeof val === 'number' ? val.toFixed(1) : val}</div>
-                          <div style={{ fontSize: '.45rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
+        <div style={{ padding: '8px 20px 28px' }}>
+          {/* Header row */}
+          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
+            <div style={{ width: 44, height: 44, flexShrink: 0 }}>
+              {logoUrl ? (
+                <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }} />
+              ) : (
+                <div style={{ width: 44, height: 44, borderRadius: 8, background: '#21262d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58' }}>
+                  <i className="bi bi-shield-fill"></i>
                 </div>
               )}
             </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#f0f3f6', letterSpacing: '-.02em', lineHeight: 1.2 }}>{p.name}</div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, fontSize: '.78rem', color: '#8b949e', flexWrap: 'wrap' }}>
+                <span className={`pos-badge badge-${(p.position || 'MID').split('/')[0].toLowerCase()}`} style={{ fontSize: '.6rem', padding: '2px 6px' }}>{p.position}</span>
+                <span>{p.afl_team}</span>
+                <span>·</span>
+                <span>{p.age}yo</span>
+                <span>·</span>
+                <span>{p.career_games || 0} career</span>
+              </div>
+              {p.injury_severity && (
+                <div style={{ marginTop: 5, fontSize: '.72rem', color: '#f85149', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="bi bi-bandaid-fill" style={{ fontSize: '.65rem' }}></i>
+                  {p.injury_type || 'Injured'} — {p.injury_return || 'TBC'}
+                </div>
+              )}
+            </div>
+            <button type="button" onClick={onClose}
+              style={{ background: 'rgba(255,255,255,.05)', border: 'none', color: '#8b949e', fontSize: '1rem', cursor: 'pointer', padding: '6px 8px', borderRadius: 8, flexShrink: 0 }}>
+              <i className="bi bi-x-lg"></i>
+            </button>
           </div>
+
+          {/* Key numbers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 18 }}>
+            {[
+              { val: p.sc_avg ? Math.round(p.sc_avg) : '—', label: 'SC Avg', color: '#58a6ff' },
+              { val: p.sc_avg_prev ? Math.round(p.sc_avg_prev) : '—', label: 'Prev Yr', color: '#8b949e' },
+              { val: p.rating || '—', label: 'Rating', color: '#3fb950' },
+              { val: p.potential || '—', label: 'Potential', color: '#bc8cff' },
+            ].map((s, i) => (
+              <div key={i} style={{ textAlign: 'center', padding: '10px 4px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(48,54,61,.3)', borderRadius: 10 }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.val}</div>
+                <div style={{ fontSize: '.55rem', color: '#6e7681', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Season form chart */}
+          {chartData.length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>
+                Season Form
+              </div>
+              <div style={{ height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
+                    <XAxis dataKey="label" stroke="#484f58" fontSize={10} tickLine={false} axisLine={{ stroke: '#21262d' }} />
+                    <YAxis stroke="#484f58" fontSize={10} tickLine={false} axisLine={false}
+                      domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin * 0.8)), 'auto']} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(88,166,255,.04)' }} />
+                    <Bar dataKey="sc" fill="#58a6ff" radius={[4, 4, 0, 0]} maxBarSize={28} fillOpacity={0.85} />
+                    <Line type="monotone" dataKey="ma" stroke="#d29922" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.72rem', color: '#6e7681' }}>
+                <span>Avg: <b style={{ color: '#c9d1d9' }}>{Math.round(avg)}</b></span>
+                {l3 != null && <span>L3: <b style={{ color: l3 >= avg ? '#3fb950' : '#f85149' }}>{l3}</b></span>}
+                {l5 != null && <span>L5: <b style={{ color: l5 >= avg ? '#3fb950' : '#f85149' }}>{l5}</b></span>}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 12, height: 2, background: '#d29922', display: 'inline-block' }}></span>
+                  <span style={{ fontSize: '.62rem' }}>3-game avg</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Last game stats */}
+          {p.last_game && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>Last Game</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(55px, 1fr))', gap: 5 }}>
+                {STAT_KEYS.map(([key, label]) => {
+                  const val = p.last_game?.[key]
+                  if (val == null) return null
+                  return (
+                    <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(48,54,61,.25)' }}>
+                      <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#d1d5db' }}>{val}</div>
+                      <div style={{ fontSize: '.48rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Season averages */}
+          {p.season_avg && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>
+                Season Averages · {p.season_games} games
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(55px, 1fr))', gap: 5 }}>
+                {STAT_KEYS.map(([key, label]) => {
+                  const val = p.season_avg?.[key]
+                  if (val == null) return null
+                  return (
+                    <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(48,54,61,.25)' }}>
+                      <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#d1d5db' }}>{typeof val === 'number' ? val.toFixed(1) : val}</div>
+                      <div style={{ fontSize: '.48rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Profile link */}
+          {leagueId && (
+            <Link
+              to={`/leagues/${leagueId}/players/compare?p=${p.id}`}
+              onClick={onClose}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '12px', borderRadius: 12,
+                background: 'rgba(88,166,255,.08)', border: '1px solid rgba(88,166,255,.2)',
+                color: '#58a6ff', fontSize: '.82rem', fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              <i className="bi bi-person-lines-fill"></i>
+              View Full Player Profile
+            </Link>
+          )}
         </div>
       </div>
     </>
