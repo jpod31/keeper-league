@@ -72,6 +72,7 @@ import { PlayerRatingsPage } from './pages/players/PlayerRatingsPage'
 import { PlayerComparePage } from './pages/players/PlayerComparePage'
 import { KeepersPage } from './pages/players/KeepersPage'
 import { StatsPage } from './pages/players/StatsPage'
+import { ScoutingPage } from './pages/players/ScoutingPage'
 
 
 export default function App() {
@@ -145,6 +146,7 @@ export default function App() {
           <Route path="keepers" element={<KeepersPage />} />
           <Route path="list-changes" element={<ListChangesPage />} />
           <Route path="stats" element={<StatsPage />} />
+          <Route path="scouting" element={<ScoutingPage />} />
 
           {/* Settings & Admin */}
           <Route path="settings" element={<SettingsPage />} />

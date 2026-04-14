@@ -8,7 +8,7 @@ from models.database import (
     db, League, FantasyTeam, Fixture, SeasonStanding, DraftSession, SeasonConfig,
     AflPlayer, FantasyRoster, Trade, TradeAsset, TradeComment,
     LeagueChatMessage, LeagueChat, Notification, ActivityFeedEntry,
-    WeeklyLineup, LineupSlot, RoundScore,
+    WeeklyLineup, LineupSlot, RoundScore, StateLeagueStat,
 )
 
 logger = logging.getLogger(__name__)
@@ -787,4 +787,99 @@ def notification_read_global(notif_id):
         n.is_read = True
         db.session.commit()
     return jsonify({"ok": True})
+
+
+# ── State league scouting ────────────────────────────────────────────
+
+
+@spa_api.route("/leagues/<int:league_id>/state-league-stats")
+@login_required
+def state_league_stats(league_id):
+    comp = request.args.get("comp", "")
+    season = request.args.get("season", type=int)
+    afl_only = request.args.get("afl_only", "true").lower() == "true"
+    search = request.args.get("search", "").strip()
+    sort = request.args.get("sort", "disposals")
+    direction = request.args.get("dir", "desc")
+    page = request.args.get("page", 1, type=int)
+    per_page = 50
+
+    q = StateLeagueStat.query
+    if comp:
+        q = q.filter(StateLeagueStat.competition == comp)
+    if season:
+        q = q.filter(StateLeagueStat.season == season)
+    if afl_only:
+        q = q.filter(StateLeagueStat.is_afl_listed == True)
+    if search:
+        q = q.filter(StateLeagueStat.player_name.ilike(f"%{search}%"))
+
+    col = getattr(StateLeagueStat, sort, StateLeagueStat.disposals)
+    q = q.order_by(col.desc() if direction == "desc" else col.asc())
+
+    total = q.count()
+    rows = q.offset((page - 1) * per_page).limit(per_page).all()
+
+    player_ids = [r.player_id for r in rows if r.player_id]
+    afl_map = {}
+    if player_ids:
+        for p in AflPlayer.query.filter(AflPlayer.id.in_(player_ids)).all():
+            afl_map[p.id] = {"afl_team": p.afl_team, "position": p.position,
+                             "sc_avg": p.sc_avg, "rating": p.rating, "name": p.name}
+
+    data = []
+    for r in rows:
+        afl = afl_map.get(r.player_id, {})
+        data.append({
+            "id": r.id, "player_name": r.player_name, "competition": r.competition,
+            "season": r.season, "team": r.team, "age": r.age, "matches": r.matches,
+            "is_afl_listed": r.is_afl_listed, "player_id": r.player_id,
+            "afl_team": afl.get("afl_team"), "position": afl.get("position"),
+            "sc_avg": afl.get("sc_avg"), "rating": afl.get("rating"),
+            "kicks": r.kicks, "handballs": r.handballs, "disposals": r.disposals,
+            "marks": r.marks, "goals": r.goals, "goals_avg": r.goals_avg,
+            "behinds": r.behinds, "tackles": r.tackles, "hitouts": r.hitouts,
+            "contested_possessions": r.contested_possessions,
+            "uncontested_possessions": r.uncontested_possessions,
+            "clearances": r.clearances, "inside_fifties": r.inside_fifties,
+            "rebounds": r.rebounds, "disposal_efficiency": r.disposal_efficiency,
+            "intercepts": r.intercepts, "score_involvements": r.score_involvements,
+            "frees_for": r.frees_for, "frees_against": r.frees_against,
+            "contested_marks": r.contested_marks, "tackles_inside_50": r.tackles_inside_50,
+            "dreamteam_avg": r.dreamteam_avg, "total_possessions": r.total_possessions,
+            "kick_percentage": r.kick_percentage,
+            "contested_possession_rate": r.contested_possession_rate,
+            "score_involvement_pct": r.score_involvement_pct,
+        })
+
+    return jsonify({"players": data, "total": total, "page": page, "pages": (total + per_page - 1) // per_page})
+
+
+@spa_api.route("/leagues/<int:league_id>/state-league-stats/player/<int:player_id>")
+@login_required
+def state_league_player(league_id, player_id):
+    rows = StateLeagueStat.query.filter_by(player_id=player_id)\
+        .order_by(StateLeagueStat.season.desc()).all()
+    return jsonify([{
+        "competition": r.competition, "season": r.season, "team": r.team,
+        "age": r.age, "matches": r.matches,
+        "kicks": r.kicks, "handballs": r.handballs, "disposals": r.disposals,
+        "marks": r.marks, "goals": r.goals, "tackles": r.tackles, "hitouts": r.hitouts,
+        "contested_possessions": r.contested_possessions, "clearances": r.clearances,
+        "inside_fifties": r.inside_fifties, "intercepts": r.intercepts,
+        "disposal_efficiency": r.disposal_efficiency, "dreamteam_avg": r.dreamteam_avg,
+        "contested_marks": r.contested_marks, "score_involvements": r.score_involvements,
+    } for r in rows])
+
+
+@spa_api.route("/leagues/<int:league_id>/state-league-stats/comps")
+@login_required
+def state_league_comps(league_id):
+    rows = db.session.query(
+        StateLeagueStat.competition,
+        StateLeagueStat.season,
+        db.func.count(StateLeagueStat.id)
+    ).group_by(StateLeagueStat.competition, StateLeagueStat.season)\
+     .order_by(StateLeagueStat.competition, StateLeagueStat.season.desc()).all()
+    return jsonify([{"comp": r[0], "season": r[1], "count": r[2]} for r in rows])
 

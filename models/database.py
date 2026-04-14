@@ -128,6 +128,59 @@ class PlayerStat(db.Model):
     )
 
 
+# ── State league stats (VFL / SANFL / WAFL) ─────────────────────────
+
+
+class StateLeagueStat(db.Model):
+    __tablename__ = "state_league_stat"
+
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=True, index=True)
+    player_name = db.Column(db.String(120), nullable=False)
+    competition = db.Column(db.String(10), nullable=False)
+    season = db.Column(db.Integer, nullable=False)
+    team = db.Column(db.String(80))
+    age = db.Column(db.Integer)
+    matches = db.Column(db.Integer)
+    is_afl_listed = db.Column(db.Boolean, default=False)
+
+    kicks = db.Column(db.Float)
+    handballs = db.Column(db.Float)
+    disposals = db.Column(db.Float)
+    marks = db.Column(db.Float)
+    goals = db.Column(db.Float)
+    behinds = db.Column(db.Float)
+    tackles = db.Column(db.Float)
+    hitouts = db.Column(db.Float)
+    contested_possessions = db.Column(db.Float)
+    uncontested_possessions = db.Column(db.Float)
+    clearances = db.Column(db.Float)
+    inside_fifties = db.Column(db.Float)
+    rebounds = db.Column(db.Float)
+    disposal_efficiency = db.Column(db.Float)
+    intercepts = db.Column(db.Float)
+    score_involvements = db.Column(db.Float)
+    frees_for = db.Column(db.Float)
+    frees_against = db.Column(db.Float)
+    contested_marks = db.Column(db.Float)
+    tackles_inside_50 = db.Column(db.Float)
+    dreamteam_avg = db.Column(db.Float)
+    total_possessions = db.Column(db.Float)
+    kick_percentage = db.Column(db.Float)
+    contested_possession_rate = db.Column(db.Float)
+    score_involvement_pct = db.Column(db.Float)
+    goals_avg = db.Column(db.Float)
+
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    sl_player = db.relationship("AflPlayer", backref="state_league_stats")
+
+    __table_args__ = (
+        db.UniqueConstraint("player_name", "competition", "season", "team",
+                            name="uq_state_league_player_comp_season_team"),
+    )
+
+
 # ── AFL game schedule (for live scoring + lockouts) ──────────────────
 
 
