@@ -26,28 +26,86 @@ _CACHE_TTL = 7 * 24 * 3600  # 1 week
 
 
 def get_cached_analytics(team_id, year, cache_type):
-    """Retrieve cached analytics from memory. Returns None on miss."""
+    """Retrieve cached analytics. Checks memory first, then DB."""
     import time
     key = (team_id, year, cache_type)
+    # Memory cache (fast path)
     entry = _mem_cache.get(key)
     if entry and (time.time() - entry["ts"]) < _CACHE_TTL:
         return entry["data"]
+    # DB cache (survives restarts)
+    try:
+        row = AnalyticsJsonCache.query.filter_by(
+            team_id=team_id, year=year, cache_type=cache_type
+        ).first()
+        if row and row.data and (datetime.now(timezone.utc) - row.generated_at).total_seconds() < _CACHE_TTL:
+            data = json.loads(row.data)
+            _mem_cache[key] = {"data": data, "ts": time.time()}
+            return data
+    except Exception:
+        pass
     return None
 
 
 def cache_analytics(team_id, year, cache_type, data):
-    """Store analytics in memory cache."""
+    """Store analytics in memory + DB cache."""
     import time
     _mem_cache[(team_id, year, cache_type)] = {"data": data, "ts": time.time()}
+    # Persist to DB so it survives restarts
+    try:
+        row = AnalyticsJsonCache.query.filter_by(
+            team_id=team_id, year=year, cache_type=cache_type
+        ).first()
+        serialized = json.dumps(data, default=str)
+        if row:
+            row.data = serialized
+            row.generated_at = datetime.now(timezone.utc)
+        else:
+            row = AnalyticsJsonCache(
+                team_id=team_id, year=year, cache_type=cache_type,
+                data=serialized
+            )
+            db.session.add(row)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def invalidate_analytics_cache(team_id=None, year=None):
-    """Clear analytics cache. If team_id given, clear just that team. Otherwise clear all."""
-    if team_id and year:
-        for ct in ["deep", "league_comp", "ai_summary"]:
-            _mem_cache.pop((team_id, year, ct), None)
+    """Clear analytics cache (memory + DB). If team_id given, clear just that team."""
+    if team_id is not None and year:
+        # Clear all cache types for this team
+        keys_to_pop = [k for k in _mem_cache if k[0] == team_id and k[1] == year]
+        for k in keys_to_pop:
+            _mem_cache.pop(k, None)
+        try:
+            AnalyticsJsonCache.query.filter_by(team_id=team_id, year=year).delete()
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     else:
         _mem_cache.clear()
+        try:
+            AnalyticsJsonCache.query.delete()
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+
+# Generic JSON analytics cache (persistent across restarts)
+class AnalyticsJsonCache(db.Model):
+    __tablename__ = "analytics_json_cache"
+
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    cache_type = db.Column(db.String(40), nullable=False)
+    data = db.Column(db.Text)
+    generated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.UniqueConstraint("team_id", "year", "cache_type", name="uq_ajc_team_year_type"),
+    )
 
 
 # Cache table — stores generated AI summaries (persistent across restarts)

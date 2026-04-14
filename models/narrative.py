@@ -57,6 +57,13 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
                 })
 
     # ── KID BREAKTHROUGH TIMELINE ──
+    # Only report genuine youth breakthroughs, not positional churn.
+    # Quality gates:
+    #   - Entering player must be under 24 (actually a "kid")
+    #   - Entering player must project at least 65 SC (not a fringe player)
+    #   - Departing player must be 27+ (actually declining/aging out)
+    #   - Departing player's projected SC must be LOWER than the entrant
+    #   - Position must match
     kid_timeline = []
     for i in range(1, len(my_years)):
         curr_names = set(p["name"] for p in my_years[i]["squad"])
@@ -64,31 +71,41 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
         entered = curr_names - prev_names
         left = prev_names - curr_names
 
-        # Build position-aware lookup for departed players
         prev_by_name = {p["name"]: p for p in my_years[i-1]["squad"]}
+        curr_by_name = {p["name"]: p for p in my_years[i]["squad"]}
         left_list = list(left)
 
         for name in entered:
-            entry = next((p for p in my_years[i]["squad"] if p["name"] == name), None)
-            entry_pos = (entry["position"] if entry else "MID").split("/")[0]
+            entry = curr_by_name.get(name)
+            if not entry:
+                continue
+            entry_age = entry.get("age", 0)
+            entry_sc = entry.get("sc", 0)
 
-            # Find a departed player in the same positional line first
+            # Gate: must be a genuine kid, not just a squad rotation
+            if entry_age > 23 or entry_sc < 65:
+                continue
+
+            entry_pos = (entry.get("position", "MID")).split("/")[0]
+
+            # Find a position-matched departed player who is actually aging out
             replaces = None
             for j, dep_name in enumerate(left_list):
                 dep = prev_by_name.get(dep_name, {})
                 dep_pos = dep.get("position", "MID").split("/")[0]
-                if dep_pos == entry_pos:
+                dep_age = dep.get("age", 0)
+                dep_sc = dep.get("sc", 0)
+                # Must be same position, 27+, and the kid must project higher
+                if dep_pos == entry_pos and dep_age >= 27 and entry_sc >= dep_sc:
                     replaces = left_list.pop(j)
                     break
-            if replaces is None and left_list:
-                replaces = left_list.pop(0)
 
             kid_timeline.append({
                 "year": my_years[i]["year"],
                 "enters": name,
                 "replaces": replaces,
-                "enters_age": (entry["age"] if entry else 0),
-                "enters_sc": round(entry["sc"] if entry else 0, 0),
+                "enters_age": entry_age,
+                "enters_sc": round(entry_sc, 0),
             })
 
     # ── BIGGEST GAP ──

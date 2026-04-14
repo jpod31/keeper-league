@@ -656,11 +656,17 @@ function RoundChart({ rounds }: { rounds: { round: number; score: number }[] }) 
 /* ═══ MAIN ═══ */
 export function AnalyticsPage() {
   const { leagueId, teamId } = useParams()
-  const apiUrl = `/leagues/${leagueId}/team/${teamId}/analytics/api`
+  const [rebuild, setRebuild] = useState(false)
+  const apiUrl = `/leagues/${leagueId}/team/${teamId}/analytics/api${rebuild ? '?rebuild=1' : ''}`
   const { data, loading, error } = useAnalytics(apiUrl)
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerBayesian | null>(null)
 
-  if (loading) return <Spinner text="Building your story..." />
+  function handleRebuild() {
+    setRebuild(true)
+    window.location.href = `/leagues/${leagueId}/team/${teamId}/analytics`
+  }
+
+  if (loading) return <Spinner text={rebuild ? "Rebuilding analytics..." : "Loading analytics..."} />
   if (error || !data) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px' }}>
@@ -793,6 +799,13 @@ export function AnalyticsPage() {
           <Link to={`/leagues/${leagueId}/team/${teamId}`} style={{ color: '#6e7681', fontSize: '.78rem', textDecoration: 'none' }}>
             <i className="bi bi-arrow-left me-1"></i>Back to squad
           </Link>
+          <button
+            type="button"
+            onClick={handleRebuild}
+            style={{ background: 'none', border: '1px solid var(--kl-border)', color: '#8b949e', fontSize: '.72rem', padding: '4px 12px', borderRadius: 6, cursor: 'pointer', marginLeft: 12 }}
+          >
+            <i className="bi bi-arrow-clockwise me-1"></i>Rebuild
+          </button>
         </div>
       </div>
 

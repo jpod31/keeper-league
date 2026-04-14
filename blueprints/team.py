@@ -1912,6 +1912,13 @@ def team_analytics_api(league_id, team_id):
 
     year = league.season_year
 
+    # Manual rebuild: ?rebuild=1 clears all caches for this team
+    if request.args.get("rebuild") == "1":
+        from models.team_ai_summary import invalidate_analytics_cache
+        invalidate_analytics_cache(team_id, year)
+        # Also clear dynasty sim (team_id=0)
+        invalidate_analytics_cache(0, year)
+
     # Always compute profile tags (needed for narrative)
     all_players = AflPlayer.query.all()
     profile_tags = compute_profile_tags(all_players)
