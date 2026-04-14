@@ -135,8 +135,11 @@ def sync_state_league_stats(comp: str | None = None, season: int | None = None) 
                     "contested_possession_rate",
                 ]:
                     val = row.get(field)
-                    if val is not None:
-                        setattr(obj, field, val)
+                    if val is not None and val != "NA" and val != "":
+                        try:
+                            setattr(obj, field, float(val))
+                        except (ValueError, TypeError):
+                            pass
                 total += 1
             db.session.commit()
     logger.info("Synced %d state league stat rows total", total)
