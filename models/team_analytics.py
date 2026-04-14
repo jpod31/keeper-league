@@ -439,6 +439,9 @@ def _bayesian_estimate(prior_mean, prior_std, observed_scores, sc_avg_prev=None)
     effective_std = obs_std if n >= 5 else prior_std
     ceiling = round(true_talent + 1.28 * effective_std, 1)  # ~90th percentile
     floor = round(max(0, true_talent - 1.28 * effective_std), 1)  # ~10th percentile
+    # Ceiling should never be below observed average — that looks absurd
+    if n > 0 and ceiling < obs_mean:
+        ceiling = round(obs_mean + 0.5 * effective_std, 1)
 
     return {
         "true_talent": round(true_talent, 1),

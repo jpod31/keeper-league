@@ -349,9 +349,13 @@ def create_app():
     csrf.exempt(leagues_bp) # SPA sends JSON, not form tokens; all behind @login_required
     app.register_blueprint(team_bp)
     app.register_blueprint(trades_bp)
+    csrf.exempt(trades_bp)  # SPA sends JSON; all behind @login_required
     app.register_blueprint(matchups_bp)
+    csrf.exempt(matchups_bp)  # SPA sends JSON; sync-scores etc behind @login_required
     app.register_blueprint(admin_bp)
+    csrf.exempt(admin_bp)   # SPA sends JSON; all behind @login_required + is_admin
     app.register_blueprint(comms_bp)
+    csrf.exempt(comms_bp)   # SPA sends JSON; all behind @login_required
     app.register_blueprint(reserve7s_bp)
     csrf.exempt(reserve7s_bp)  # 7s team API uses @login_required + ownership checks
 

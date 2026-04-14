@@ -63,20 +63,15 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId }: Props) 
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', zIndex: 1055 }} />
       <div role="dialog" aria-modal="true" style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1060,
-        maxHeight: '90vh',
-        background: 'linear-gradient(180deg, #1c2330 0%, #141a22 100%)',
-        borderRadius: '20px 20px 0 0',
-        boxShadow: '0 -16px 60px rgba(0,0,0,.7)',
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        zIndex: 1060,
+        width: '94%', maxWidth: 520, maxHeight: '90vh',
+        background: 'linear-gradient(165deg, #1c2330 0%, #141a22 100%)',
+        borderRadius: 16, border: '1px solid rgba(48,54,61,.4)',
+        boxShadow: '0 24px 80px rgba(0,0,0,.7)',
         overflowY: 'auto', WebkitOverflowScrolling: 'touch',
-        animation: 'klBsSlideUp .25s cubic-bezier(.32,.72,.24,1)',
       }}>
-        {/* Handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}>
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(139,148,158,.35)' }} />
-        </div>
-
-        <div style={{ padding: '8px 20px 28px' }}>
+        <div style={{ padding: '18px 20px 24px' }}>
           {/* Header row */}
           <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
             <div style={{ width: 44, height: 44, flexShrink: 0 }}>
@@ -197,10 +192,10 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId }: Props) 
             </div>
           )}
 
-          {/* Profile link */}
+          {/* Profile link — go to player pool filtered to this player */}
           {leagueId && (
             <Link
-              to={`/leagues/${leagueId}/players/compare?p=${p.id}`}
+              to={`/leagues/${leagueId}/player-pool`}
               onClick={onClose}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -211,7 +206,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId }: Props) 
               }}
             >
               <i className="bi bi-person-lines-fill"></i>
-              View Full Player Profile
+              View in Player Pool
             </Link>
           )}
         </div>

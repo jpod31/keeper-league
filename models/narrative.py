@@ -82,8 +82,8 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
             entry_age = entry.get("age", 0)
             entry_sc = entry.get("sc", 0)
 
-            # Gate: must be a genuine kid, not just a squad rotation
-            if entry_age > 23 or entry_sc < 65:
+            # Gate: must be a young entrant (under 25), not a 30yo rotation
+            if entry_age > 25:
                 continue
 
             entry_pos = (entry.get("position", "MID")).split("/")[0]
@@ -96,7 +96,7 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
                 dep_age = dep.get("age", 0)
                 dep_sc = dep.get("sc", 0)
                 # Must be same position, 27+, and the kid must project higher
-                if dep_pos == entry_pos and dep_age >= 27 and entry_sc >= dep_sc:
+                if dep_pos == entry_pos and dep_age >= 26 and entry_sc >= dep_sc * 0.85:
                     replaces = left_list.pop(j)
                     break
 

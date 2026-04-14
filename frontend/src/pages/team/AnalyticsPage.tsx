@@ -602,7 +602,7 @@ function PlayerDetailModal({ player, onClose, leagueId }: { player: PlayerBayesi
 
           {/* Link to full profile */}
           <Link
-            to={`/leagues/${leagueId}/players/compare?p=${encodeURIComponent(player.name)}`}
+            to={`/leagues/${leagueId}/player-pool`}
             onClick={onClose}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -613,7 +613,7 @@ function PlayerDetailModal({ player, onClose, leagueId }: { player: PlayerBayesi
             }}
           >
             <i className="bi bi-person-lines-fill"></i>
-            View Full Player Profile
+            View in Player Pool
           </Link>
         </div>
       </div>
@@ -802,6 +802,22 @@ export function AnalyticsPage() {
       <TeamMobSubnav active="analytics" leagueId={leagueId!} teamId={teamId!} />
 
       <div className="wr-wrap">
+        {/* Rebuild button at top */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={handleRebuild}
+            style={{
+              background: 'rgba(255,255,255,.04)', border: '1px solid rgba(48,54,61,.4)',
+              color: '#8b949e', fontSize: '.72rem', fontWeight: 600,
+              padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <i className="bi bi-arrow-clockwise"></i>Rebuild
+          </button>
+        </div>
+
         {/* 1. Hero / Verdict */}
         <Hero data={data} />
 

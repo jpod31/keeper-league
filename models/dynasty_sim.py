@@ -30,7 +30,9 @@ def _get_position_requirements(league_id):
     for s in slots:
         if s.position_code in ("DEF", "MID", "FWD", "RUC"):
             reqs[s.position_code] = s.count
-    return reqs if reqs else dict(_DEFAULT_POS)
+    result = reqs if reqs else dict(_DEFAULT_POS)
+    result["_league_id"] = league_id  # pass through for flex lookup
+    return result
 
 
 def _estimate_kid_projection(player, age_at_year, profile_tag):
@@ -166,7 +168,18 @@ def _select_best_23(players_with_projections, pos_requirements):
                 filled += 1
 
     # Second pass: fill remaining spots with FLEX (any position, best available)
-    total_needed = sum(pos_requirements.values())
+    # Include FLEX slots — check league config for bench/flex count
+    flex_count = 1  # default
+    try:
+        flex_slots = LeaguePositionSlot.query.filter_by(
+            league_id=pos_requirements.get("_league_id", 0),
+            is_bench=True, position_code="FLEX"
+        ).first()
+        if flex_slots:
+            flex_count = flex_slots.count
+    except Exception:
+        pass
+    total_needed = sum(v for k, v in pos_requirements.items() if k != "_league_id") + flex_count
     all_remaining = []
     for pos_list in by_pos.values():
         for p, sc, positions in pos_list:
