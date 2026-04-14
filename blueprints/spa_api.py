@@ -827,6 +827,21 @@ def state_league_stats(league_id):
             afl_map[p.id] = {"afl_team": p.afl_team, "position": p.position,
                              "sc_avg": p.sc_avg, "rating": p.rating, "name": p.name}
 
+    mode = request.args.get("mode", "avg")
+    _TOTAL_FIELDS = {"kicks", "handballs", "disposals", "marks", "goals", "behinds",
+                     "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
+                     "clearances", "inside_fifties", "rebounds", "intercepts",
+                     "score_involvements", "frees_for", "frees_against", "contested_marks",
+                     "tackles_inside_50", "total_possessions"}
+
+    def _val(r, field):
+        v = getattr(r, field)
+        if v is None:
+            return None
+        if mode == "total" and field in _TOTAL_FIELDS and r.matches:
+            return round(v * r.matches, 1)
+        return v
+
     data = []
     for r in rows:
         afl = afl_map.get(r.player_id, {})
@@ -836,17 +851,21 @@ def state_league_stats(league_id):
             "is_afl_listed": r.is_afl_listed, "player_id": r.player_id,
             "afl_team": afl.get("afl_team"), "position": afl.get("position"),
             "sc_avg": afl.get("sc_avg"), "rating": afl.get("rating"),
-            "kicks": r.kicks, "handballs": r.handballs, "disposals": r.disposals,
-            "marks": r.marks, "goals": r.goals, "goals_avg": r.goals_avg,
-            "behinds": r.behinds, "tackles": r.tackles, "hitouts": r.hitouts,
-            "contested_possessions": r.contested_possessions,
-            "uncontested_possessions": r.uncontested_possessions,
-            "clearances": r.clearances, "inside_fifties": r.inside_fifties,
-            "rebounds": r.rebounds, "disposal_efficiency": r.disposal_efficiency,
-            "intercepts": r.intercepts, "score_involvements": r.score_involvements,
-            "frees_for": r.frees_for, "frees_against": r.frees_against,
-            "contested_marks": r.contested_marks, "tackles_inside_50": r.tackles_inside_50,
-            "dreamteam_avg": r.dreamteam_avg, "total_possessions": r.total_possessions,
+            "kicks": _val(r, "kicks"), "handballs": _val(r, "handballs"),
+            "disposals": _val(r, "disposals"), "marks": _val(r, "marks"),
+            "goals": _val(r, "goals"), "goals_avg": r.goals_avg,
+            "behinds": _val(r, "behinds"), "tackles": _val(r, "tackles"),
+            "hitouts": _val(r, "hitouts"),
+            "contested_possessions": _val(r, "contested_possessions"),
+            "uncontested_possessions": _val(r, "uncontested_possessions"),
+            "clearances": _val(r, "clearances"), "inside_fifties": _val(r, "inside_fifties"),
+            "rebounds": _val(r, "rebounds"), "disposal_efficiency": r.disposal_efficiency,
+            "intercepts": _val(r, "intercepts"),
+            "score_involvements": _val(r, "score_involvements"),
+            "frees_for": _val(r, "frees_for"), "frees_against": _val(r, "frees_against"),
+            "contested_marks": _val(r, "contested_marks"),
+            "tackles_inside_50": _val(r, "tackles_inside_50"),
+            "dreamteam_avg": r.dreamteam_avg, "total_possessions": _val(r, "total_possessions"),
             "kick_percentage": r.kick_percentage,
             "contested_possession_rate": r.contested_possession_rate,
             "score_involvement_pct": r.score_involvement_pct,

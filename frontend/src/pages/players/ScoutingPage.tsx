@@ -358,6 +358,7 @@ export function ScoutingPage() {
   const [data, setData] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<SLPlayer | null>(null)
+  const [mode, setMode] = useState<'avg' | 'total'>('avg')
 
   useEffect(() => {
     fetch(`/api/leagues/${leagueId}/state-league-stats/comps`)
@@ -381,10 +382,11 @@ export function ScoutingPage() {
     params.set('sort', sort)
     params.set('dir', dir)
     params.set('page', String(page))
+    params.set('mode', mode)
     fetch(`/api/leagues/${leagueId}/state-league-stats?${params}`)
       .then(r => r.json()).then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [leagueId, comp, season, aflOnly, search, sort, dir, page])
+  }, [leagueId, comp, season, aflOnly, search, sort, dir, page, mode])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -425,6 +427,19 @@ export function ScoutingPage() {
             <input type="checkbox" checked={aflOnly} onChange={e => { setAflOnly(e.target.checked); setPage(1) }} />
             AFL-listed only
           </label>
+          <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #30363d', overflow: 'hidden', marginLeft: 'auto' }}>
+            <button onClick={() => setMode('avg')}
+              style={{ padding: '6px 12px', fontSize: '.75rem', fontWeight: 600, border: 'none', cursor: 'pointer',
+                background: mode === 'avg' ? '#58a6ff' : '#0d1117', color: mode === 'avg' ? '#0d1117' : '#8b949e' }}>
+              AVG
+            </button>
+            <button onClick={() => setMode('total')}
+              style={{ padding: '6px 12px', fontSize: '.75rem', fontWeight: 600, border: 'none', cursor: 'pointer',
+                borderLeft: '1px solid #30363d',
+                background: mode === 'total' ? '#58a6ff' : '#0d1117', color: mode === 'total' ? '#0d1117' : '#8b949e' }}>
+              TOT
+            </button>
+          </div>
         </div>
 
         {loading ? <Spinner text="Loading state league stats..." /> : !data?.players.length ? (
