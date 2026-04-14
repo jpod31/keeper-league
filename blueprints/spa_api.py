@@ -858,10 +858,13 @@ def state_league_stats(league_id):
 @spa_api.route("/leagues/<int:league_id>/state-league-stats/player/<int:player_id>")
 @login_required
 def state_league_player(league_id, player_id):
-    rows = StateLeagueStat.query.filter_by(player_id=player_id)\
+    from models.database import PlayerStat, ScScore
+    from sqlalchemy import func
+
+    sl_rows = StateLeagueStat.query.filter_by(player_id=player_id)\
         .order_by(StateLeagueStat.season.desc()).all()
-    return jsonify([{
-        "competition": r.competition, "season": r.season, "team": r.team,
+    state_league = [{
+        "level": r.competition.upper(), "season": r.season, "team": r.team,
         "age": r.age, "matches": r.matches,
         "kicks": r.kicks, "handballs": r.handballs, "disposals": r.disposals,
         "marks": r.marks, "goals": r.goals, "tackles": r.tackles, "hitouts": r.hitouts,
@@ -869,7 +872,52 @@ def state_league_player(league_id, player_id):
         "inside_fifties": r.inside_fifties, "intercepts": r.intercepts,
         "disposal_efficiency": r.disposal_efficiency, "dreamteam_avg": r.dreamteam_avg,
         "contested_marks": r.contested_marks, "score_involvements": r.score_involvements,
-    } for r in rows])
+    } for r in sl_rows]
+
+    afl_seasons = db.session.query(
+        PlayerStat.year,
+        func.count(PlayerStat.id).label("matches"),
+        func.avg(PlayerStat.kicks).label("kicks"),
+        func.avg(PlayerStat.handballs).label("handballs"),
+        func.avg(PlayerStat.disposals).label("disposals"),
+        func.avg(PlayerStat.marks).label("marks"),
+        func.avg(PlayerStat.goals).label("goals"),
+        func.avg(PlayerStat.tackles).label("tackles"),
+        func.avg(PlayerStat.hitouts).label("hitouts"),
+        func.avg(PlayerStat.contested_possessions).label("contested_possessions"),
+        func.avg(PlayerStat.clearances).label("clearances"),
+        func.avg(PlayerStat.inside_fifties).label("inside_fifties"),
+        func.avg(PlayerStat.intercepts).label("intercepts"),
+        func.avg(PlayerStat.disposal_efficiency).label("disposal_efficiency"),
+        func.avg(PlayerStat.supercoach_score).label("sc_avg"),
+        func.avg(PlayerStat.contested_marks).label("contested_marks"),
+        func.avg(PlayerStat.score_involvements).label("score_involvements"),
+    ).filter_by(player_id=player_id).group_by(PlayerStat.year)\
+     .order_by(PlayerStat.year.desc()).all()
+
+    p = db.session.get(AflPlayer, player_id)
+    afl = [{
+        "level": "AFL", "season": r.year, "team": p.afl_team if p else None,
+        "age": None, "matches": r.matches,
+        "kicks": round(r.kicks, 1) if r.kicks else None,
+        "handballs": round(r.handballs, 1) if r.handballs else None,
+        "disposals": round(r.disposals, 1) if r.disposals else None,
+        "marks": round(r.marks, 1) if r.marks else None,
+        "goals": round(r.goals, 1) if r.goals else None,
+        "tackles": round(r.tackles, 1) if r.tackles else None,
+        "hitouts": round(r.hitouts, 1) if r.hitouts else None,
+        "contested_possessions": round(r.contested_possessions, 1) if r.contested_possessions else None,
+        "clearances": round(r.clearances, 1) if r.clearances else None,
+        "inside_fifties": round(r.inside_fifties, 1) if r.inside_fifties else None,
+        "intercepts": round(r.intercepts, 1) if r.intercepts else None,
+        "disposal_efficiency": round(r.disposal_efficiency, 1) if r.disposal_efficiency else None,
+        "dreamteam_avg": None, "sc_avg": round(r.sc_avg, 1) if r.sc_avg else None,
+        "contested_marks": round(r.contested_marks, 1) if r.contested_marks else None,
+        "score_involvements": round(r.score_involvements, 1) if r.score_involvements else None,
+    } for r in afl_seasons]
+
+    combined = sorted(state_league + afl, key=lambda x: x["season"])
+    return jsonify(combined)
 
 
 @spa_api.route("/leagues/<int:league_id>/state-league-stats/comps")
