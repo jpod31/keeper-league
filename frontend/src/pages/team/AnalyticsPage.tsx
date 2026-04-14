@@ -445,67 +445,177 @@ function DepthBoard({
 }
 
 /* ═══ Player Detail Modal ═══ */
-function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null; onClose: () => void }) {
+function PlayerDetailModal({ player, onClose, leagueId }: { player: PlayerBayesian | null; onClose: () => void; leagueId: string }) {
   if (!player) return null
+
+  const scores = player.round_scores || []
+  const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0
+
+  // Build chart data with 3-game moving average
+  const chartData = scores.map((score, i) => {
+    const window = scores.slice(Math.max(0, i - 2), i + 1)
+    const ma = window.reduce((a, b) => a + b, 0) / window.length
+    return { round: `R${i + 1}`, score, ma: Math.round(ma * 10) / 10 }
+  })
+
+  const roleLabels: Record<string, string> = {
+    small_fwd: 'Small Fwd', mid_fwd: 'Med Fwd', key_fwd: 'Key Fwd',
+    small_mid: 'Small Mid', tall_mid: 'Tall Mid',
+    small_def: 'Small Def', key_def: 'Key Def', ruck: 'Ruck',
+  }
+
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) => {
+    if (!active || !payload?.length) return null
+    const score = payload.find(p => p.name === 'score')?.value ?? 0
+    const ma = payload.find(p => p.name === 'ma')?.value ?? 0
+    return (
+      <div style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 10, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
+        <div style={{ fontSize: '.72rem', color: '#8b949e', marginBottom: 4 }}>{label}</div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: score >= 100 ? '#3fb950' : score >= 70 ? '#58a6ff' : '#8b949e' }}>
+          {score}
+        </div>
+        <div style={{ fontSize: '.65rem', color: '#6e7681', marginTop: 2 }}>3-game avg: {ma}</div>
+      </div>
+    )
+  }
+
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)', zIndex: 1055 }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', zIndex: 1055 }} />
       <div role="dialog" aria-modal="true" style={{
-        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1060,
-        width: '92%', maxWidth: 520,
-        background: 'linear-gradient(165deg, #161b22, #0d1117)',
-        border: '1px solid #30363d', borderRadius: 14,
-        padding: '22px 24px',
-        boxShadow: '0 30px 90px rgba(0,0,0,.7)',
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1060,
+        maxHeight: '88vh',
+        background: 'linear-gradient(180deg, #1c2330 0%, #141a22 100%)',
+        borderRadius: '20px 20px 0 0',
+        padding: '0',
+        boxShadow: '0 -16px 60px rgba(0,0,0,.7)',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        animation: 'klBsSlideUp .25s cubic-bezier(.32,.72,.24,1)',
       }}>
-        <button type="button" onClick={onClose}
-          style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', color: '#6e7681', fontSize: '1.1rem', cursor: 'pointer', padding: 4 }}>
-          <i className="bi bi-x-lg"></i>
-        </button>
-        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#e6edf3', letterSpacing: '-.01em' }}>{player.name}</div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4, fontSize: '.78rem', color: '#8b949e' }}>
-          <span>{player.position} · {player.age}yo · {player.games} games</span>
-          {player.tag && <span className="wr-tag" style={tagStyle(player.tag)}>{player.tag}</span>}
+        {/* Handle bar */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(139,148,158,.35)' }} />
         </div>
-        <div className="wr-pmodal">
-          <div className="wr-pmodal-stat">
-            <div className="wr-pmodal-val">{Math.round(player.raw_avg || 0)}</div>
-            <div className="wr-pmodal-lbl">SC Avg</div>
+
+        <div style={{ padding: '8px 22px 28px' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#f0f3f6', letterSpacing: '-.02em', lineHeight: 1.2 }}>{player.name}</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 5, fontSize: '.78rem', color: '#8b949e', flexWrap: 'wrap' }}>
+                <span className={`pos-badge badge-${player.position.split('/')[0].toLowerCase()}`} style={{ fontSize: '.6rem', padding: '2px 6px' }}>{player.position}</span>
+                <span>{roleLabels[player.role_bucket] || player.position}</span>
+                <span>·</span>
+                <span>{player.age}yo</span>
+                <span>·</span>
+                <span>{player.games} games</span>
+                {player.tag && <span className="wr-tag" style={tagStyle(player.tag)}>{player.tag}</span>}
+              </div>
+            </div>
+            <button type="button" onClick={onClose}
+              style={{ background: 'rgba(255,255,255,.05)', border: 'none', color: '#8b949e', fontSize: '1rem', cursor: 'pointer', padding: '6px 8px', borderRadius: 8, flexShrink: 0 }}>
+              <i className="bi bi-x-lg"></i>
+            </button>
           </div>
-          <div className="wr-pmodal-stat">
-            <div className="wr-pmodal-val">{Math.round(player.true_talent || 0)}</div>
-            <div className="wr-pmodal-lbl">True Talent</div>
+
+          {/* Stat tiles */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 20 }}>
+            <div className="wr-pmodal-stat">
+              <div className="wr-pmodal-val" style={{ color: '#58a6ff' }}>{Math.round(player.raw_avg || 0)}</div>
+              <div className="wr-pmodal-lbl">SC Avg</div>
+            </div>
+            <div className="wr-pmodal-stat">
+              <div className="wr-pmodal-val">{Math.round(player.true_talent || 0)}</div>
+              <div className="wr-pmodal-lbl">True Talent</div>
+            </div>
+            <div className="wr-pmodal-stat">
+              <div className="wr-pmodal-val" style={{ color: '#3fb950' }}>{Math.round(player.ceiling || 0)}</div>
+              <div className="wr-pmodal-lbl">Ceiling</div>
+            </div>
+            <div className="wr-pmodal-stat">
+              <div className="wr-pmodal-val" style={{ color: '#ef4444' }}>{Math.round(player.floor || 0)}</div>
+              <div className="wr-pmodal-lbl">Floor</div>
+            </div>
           </div>
-          <div className="wr-pmodal-stat">
-            <div className="wr-pmodal-val" style={{ color: '#3fb950' }}>{Math.round(player.ceiling || 0)}</div>
-            <div className="wr-pmodal-lbl">Ceiling</div>
+
+          {/* Season form chart — bar + moving average line */}
+          {chartData.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>
+                {new Date().getFullYear()} Season Form
+              </div>
+              <div style={{ height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
+                    <XAxis dataKey="round" stroke="#484f58" fontSize={10} tickLine={false} axisLine={{ stroke: '#21262d' }} />
+                    <YAxis stroke="#484f58" fontSize={10} tickLine={false} axisLine={false}
+                      domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin * 0.8)), 'auto']} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(88,166,255,.04)' }} />
+                    <Bar dataKey="score" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                      {chartData.map((d, i) => (
+                        <Cell key={i} fill={d.score >= 120 ? '#3fb950' : d.score >= 100 ? '#2ea043' : d.score >= 80 ? '#58a6ff' : d.score >= 60 ? '#484f58' : '#30363d'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Moving average summary */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.72rem', color: '#6e7681' }}>
+                <span>Season avg: <b style={{ color: '#c9d1d9' }}>{Math.round(avg)}</b></span>
+                {scores.length >= 3 && (
+                  <span>Last 3: <b style={{ color: chartData[chartData.length - 1]?.ma >= avg ? '#3fb950' : '#f85149' }}>
+                    {chartData[chartData.length - 1]?.ma}
+                  </b></span>
+                )}
+                {scores.length >= 5 && (() => {
+                  const l5 = scores.slice(-5)
+                  const l5avg = Math.round(l5.reduce((a, b) => a + b, 0) / l5.length)
+                  return <span>Last 5: <b style={{ color: l5avg >= avg ? '#3fb950' : '#f85149' }}>{l5avg}</b></span>
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Additional insights */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+            <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(48,54,61,.3)', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ fontSize: '.62rem', color: '#6e7681', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>Consistency</div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#c9d1d9' }}>
+                {scores.length >= 3 ? (() => {
+                  const std = Math.sqrt(scores.reduce((sum, s) => sum + (s - avg) ** 2, 0) / scores.length)
+                  const cv = avg > 0 ? Math.round((1 - std / avg) * 100) : 0
+                  return <><span style={{ color: cv >= 70 ? '#3fb950' : cv >= 50 ? '#d29922' : '#f85149' }}>{cv}%</span></>
+                })() : '—'}
+              </div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(48,54,61,.3)', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ fontSize: '.62rem', color: '#6e7681', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>100+ Rate</div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#c9d1d9' }}>
+                {scores.length > 0 ? (
+                  <span style={{ color: '#3fb950' }}>{Math.round(scores.filter(s => s >= 100).length / scores.length * 100)}%</span>
+                ) : '—'}
+              </div>
+            </div>
           </div>
-          <div className="wr-pmodal-stat">
-            <div className="wr-pmodal-val" style={{ color: '#ef4444' }}>{Math.round(player.floor || 0)}</div>
-            <div className="wr-pmodal-lbl">Floor</div>
-          </div>
-          <div className="wr-pmodal-stat">
-            <div className="wr-pmodal-val">{Math.round((player.regression_pct ?? 0) * 100)}%</div>
-            <div className="wr-pmodal-lbl">Regression</div>
-          </div>
+
+          {/* Link to full profile */}
+          <Link
+            to={`/leagues/${leagueId}/players/compare?p=${encodeURIComponent(player.name)}`}
+            onClick={onClose}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '12px', borderRadius: 12,
+              background: 'rgba(88,166,255,.08)', border: '1px solid rgba(88,166,255,.2)',
+              color: '#58a6ff', fontSize: '.82rem', fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            <i className="bi bi-person-lines-fill"></i>
+            View Full Player Profile
+          </Link>
         </div>
-        {player.round_scores && player.round_scores.length > 1 && (
-          <div style={{ height: 110, marginTop: 6 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={player.round_scores.map((score, i) => ({ round: `R${i + 1}`, score }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
-                <XAxis dataKey="round" stroke="#6e7681" fontSize={10} />
-                <YAxis stroke="#6e7681" fontSize={10} />
-                <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, fontSize: '.78rem' }} cursor={{ fill: 'rgba(88,166,255,.06)' }} />
-                <Bar dataKey="score" radius={[3, 3, 0, 0]}>
-                  {player.round_scores.map((s, i) => (
-                    <Cell key={i} fill={s >= 100 ? '#3fb950' : s >= 70 ? '#58a6ff' : '#6e7681'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
       </div>
     </>
   )
@@ -809,7 +919,7 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      <PlayerDetailModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+      <PlayerDetailModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} leagueId={leagueId!} />
     </>
   )
 }
