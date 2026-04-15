@@ -301,16 +301,18 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
               else { merged[h.season].sl_fan = h.dreamteam_avg ?? undefined; merged[h.season].sl_gm = h.matches; merged[h.season].sl_level = h.level; merged[h.season].sl_team = h.team ?? undefined }
             }
             const chartData = Object.values(merged).sort((a, b) => a.season - b.season)
+            const barSize = chartData.length <= 2 ? 28 : chartData.length <= 4 ? 22 : 18
+            const chartWidth = chartData.length <= 3 ? Math.max(chartData.length * 80, 180) : undefined
             return (
               <>
                 <div style={{ fontSize: '.68rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase',
                   letterSpacing: '.5px', marginBottom: 6 }}>Career</div>
-                <div style={{ height: 150 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                <div style={{ height: 150, display: 'flex', justifyContent: chartWidth ? 'center' : undefined }}>
+                  <ResponsiveContainer width={chartWidth ?? '100%'} height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }} barGap={2} barCategoryGap="30%">
                       <XAxis dataKey="season" stroke="#484f58" fontSize={10} tickLine={false} axisLine={{ stroke: '#21262d' }} />
                       <YAxis stroke="#484f58" fontSize={9} tickLine={false} axisLine={false} />
-                      <Tooltip content={({ active, payload }) => {
+                      <Tooltip cursor={{ fill: 'rgba(88,166,255,.08)', radius: 4 }} content={({ active, payload }) => {
                         if (!active || !payload?.length) return null
                         const d = payload[0]?.payload
                         if (!d) return null
@@ -322,8 +324,8 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                           </div>
                         )
                       }} />
-                      <Bar dataKey="sl_fan" fill="#58a6ff" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={20} name="SL Fantasy" />
-                      <Bar dataKey="afl_fan" fill="#bc8cff" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={20} name="AFL Fantasy" />
+                      <Bar dataKey="sl_fan" fill="#58a6ff" fillOpacity={0.7} radius={[3, 3, 0, 0]} barSize={barSize} name="SL Fantasy" />
+                      <Bar dataKey="afl_fan" fill="#bc8cff" fillOpacity={0.7} radius={[3, 3, 0, 0]} barSize={barSize} name="AFL Fantasy" />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
