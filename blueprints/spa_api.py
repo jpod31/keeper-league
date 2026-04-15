@@ -961,3 +961,32 @@ def state_league_comps(league_id):
      .order_by(StateLeagueStat.competition, StateLeagueStat.season.desc()).all()
     return jsonify([{"comp": r[0], "season": r[1], "count": r[2]} for r in rows])
 
+
+@spa_api.route("/leagues/<int:league_id>/scouting/predictions")
+@login_required
+def scouting_predictions(league_id):
+    from models.scouting_model import bulk_predict
+    season = request.args.get("season", type=int)
+    comp = request.args.get("comp", "")
+    afl_only = request.args.get("afl_only", "false").lower() == "true"
+    min_matches = request.args.get("min_matches", 3, type=int)
+
+    results = bulk_predict(
+        season=season, competition=comp or None,
+        min_matches=min_matches, afl_listed_only=afl_only,
+    )
+    return jsonify(results)
+
+
+@spa_api.route("/leagues/<int:league_id>/scouting/predict/<int:sl_id>")
+@login_required
+def scouting_predict_single(league_id, sl_id):
+    from models.scouting_model import predict_afl_output
+    sl = db.session.get(StateLeagueStat, sl_id)
+    if not sl:
+        return jsonify({"error": "Not found"}), 404
+    result = predict_afl_output(sl_row=sl)
+    if not result:
+        return jsonify({"error": "No model or insufficient data"}), 400
+    return jsonify(result)
+
