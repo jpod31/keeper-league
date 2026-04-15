@@ -38,7 +38,7 @@ interface PageData { players: SLPlayer[]; total: number; page: number; pages: nu
 
 const STAT_COLS: [keyof SLPlayer, string, number][] = [
   ['disposals', 'DIS', 0], ['kicks', 'KCK', 0], ['marks', 'MRK', 0],
-  ['goals', 'GLS', 1], ['tackles', 'TKL', 0], ['hitouts', 'HO', 0],
+  ['goals', 'GLS', 0], ['tackles', 'TKL', 0], ['hitouts', 'HO', 0],
   ['contested_possessions', 'CP', 0], ['clearances', 'CLR', 0],
   ['inside_fifties', 'I50', 0], ['disposal_efficiency', 'DE%', 1],
   ['dreamteam_avg', 'FAN', 0],

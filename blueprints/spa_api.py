@@ -828,18 +828,27 @@ def state_league_stats(league_id):
                              "sc_avg": p.sc_avg, "rating": p.rating, "name": p.name}
 
     mode = request.args.get("mode", "avg")
-    _TOTAL_FIELDS = {"kicks", "handballs", "disposals", "marks", "goals", "behinds",
-                     "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
-                     "clearances", "inside_fifties", "rebounds", "intercepts",
-                     "score_involvements", "frees_for", "frees_against", "contested_marks",
-                     "tackles_inside_50", "total_possessions"}
+    # Most fields from wheeloratings are per-game averages.
+    # Goals_Total and Behinds are already season totals.
+    _AVG_FIELDS = {"kicks", "handballs", "disposals", "marks", "behinds",
+                   "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
+                   "clearances", "inside_fifties", "rebounds", "intercepts",
+                   "score_involvements", "frees_for", "frees_against", "contested_marks",
+                   "tackles_inside_50", "total_possessions"}
+    _TOTAL_FIELDS = {"goals"}
 
     def _val(r, field):
         v = getattr(r, field)
         if v is None:
             return None
-        if mode == "total" and field in _TOTAL_FIELDS and r.matches:
-            return round(v * r.matches, 1)
+        if field in _TOTAL_FIELDS:
+            if mode == "avg" and r.matches:
+                return round(v / r.matches, 1)
+            return v
+        if field in _AVG_FIELDS:
+            if mode == "total" and r.matches:
+                return round(v * r.matches, 1)
+            return v
         return v
 
     data = []
