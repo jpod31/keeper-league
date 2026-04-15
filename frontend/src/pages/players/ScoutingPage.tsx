@@ -20,6 +20,7 @@ interface SLPlayer {
   tackles_inside_50: number; dreamteam_avg: number
   total_possessions: number; kick_percentage: number
   contested_possession_rate: number; score_involvement_pct: number
+  fantasy_team: string | null; coach: string | null
 }
 
 interface CareerSeason {
@@ -181,13 +182,12 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
   const [prediction, setPrediction] = useState<Prediction | null>(null)
 
   useEffect(() => {
-    if (player.player_id) {
-      fetch(`/api/leagues/${leagueId}/state-league-stats/player/${player.player_id}`)
-        .then(r => r.json()).then(setCareer).catch(() => {})
-    }
+    // Career by name — works for ALL players, not just AFL-linked ones
+    fetch(`/api/leagues/${leagueId}/state-league-stats/career-by-name?name=${encodeURIComponent(player.player_name)}`)
+      .then(r => r.json()).then(setCareer).catch(() => {})
     fetch(`/api/leagues/${leagueId}/scouting/predict/${player.id}`)
       .then(r => r.ok ? r.json() : null).then(setPrediction).catch(() => {})
-  }, [player.player_id, player.id, leagueId])
+  }, [player.player_name, player.id, leagueId])
 
   const fmt = (v: number | null | undefined) => v == null ? '—' : typeof v === 'number' ? (v % 1 ? v.toFixed(1) : String(Math.round(v))) : '—'
   const tagCol = prediction ? (TAG_COLORS[prediction.tag_css] || TAG_COLORS['tag-depth']) : ['', '']
@@ -223,6 +223,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                   {player.afl_team && <span style={{ color: '#58a6ff' }}>{player.afl_team}</span>}
                   {player.age && <span>{player.age}yo</span>}
                   <span>{player.matches}gm</span>
+                  {player.coach && <span style={{ color: '#d29922', fontWeight: 600 }}>Owned: {player.coach}</span>}
                 </div>
               </div>
             </div>
@@ -293,7 +294,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
           </div>
 
           {/* Career chart */}
-          {career && career.length > 1 && (() => {
+          {career && career.length >= 1 && (() => {
             const merged: Record<number, { season: number; afl_fan?: number; sl_fan?: number; afl_sc?: number; afl_gm?: number; sl_gm?: number; sl_level?: string; afl_team?: string; sl_team?: string }> = {}
             for (const h of career) {
               if (!merged[h.season]) merged[h.season] = { season: h.season }
@@ -364,6 +365,7 @@ export function ScoutingPage() {
   const [season, setSeason] = useState<number | ''>('')
   const [aflOnly, setAflOnly] = useState(true)
   const [search, setSearch] = useState('')
+  const [teamFilter, setTeamFilter] = useState('')
   const [sort, setSort] = useState('disposals')
   const [dir, setDir] = useState<'desc' | 'asc'>('desc')
   const [page, setPage] = useState(1)
@@ -393,6 +395,7 @@ export function ScoutingPage() {
     if (season) params.set('season', String(season))
     params.set('afl_only', String(aflOnly))
     if (search) params.set('search', search)
+    if (teamFilter) params.set('team', teamFilter)
     params.set('sort', sort)
     params.set('dir', dir)
     params.set('page', String(page))
@@ -400,7 +403,7 @@ export function ScoutingPage() {
     fetch(`/api/leagues/${leagueId}/state-league-stats?${params}`)
       .then(r => r.json()).then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [leagueId, comp, season, aflOnly, search, sort, dir, page, mode])
+  }, [leagueId, comp, season, aflOnly, search, teamFilter, sort, dir, page, mode])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -444,7 +447,13 @@ export function ScoutingPage() {
           </select>
           <input placeholder="Search player..." value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
-            style={{ minWidth: 160 }} />
+            style={{ minWidth: 140 }} />
+          <select value={teamFilter} onChange={e => { setTeamFilter(e.target.value); setPage(1) }}>
+            <option value="">All Teams</option>
+            {data && [...new Set(data.players.map(p => p.team))].filter(Boolean).sort().map(t =>
+              <option key={t} value={t}>{t}</option>
+            )}
+          </select>
           <label className="scout-toggle">
             <input type="checkbox" checked={aflOnly} onChange={e => { setAflOnly(e.target.checked); setPage(1) }} />
             AFL-listed only
@@ -503,6 +512,8 @@ export function ScoutingPage() {
                               {!p.is_afl_listed && <span className="unlisted-badge">Unlisted</span>}
                               <span className="scout-comp-badge">{p.team} · {p.competition.toUpperCase()}</span>
                               {p.age && <span style={{ fontSize: '.65rem', color: '#6e7681' }}>{p.age}yo</span>}
+                              {p.coach && <span style={{ fontSize: '.58rem', padding: '1px 5px', borderRadius: 4, fontWeight: 600,
+                                background: 'rgba(210,153,34,.1)', color: '#d29922' }}>{p.coach}</span>}
                             </div>
                           </div>
                         </div>

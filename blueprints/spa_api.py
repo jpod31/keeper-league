@@ -805,9 +805,8 @@ def state_league_stats(league_id):
     per_page = 50
 
     mode = request.args.get("mode", "avg")
+    team_filter = request.args.get("team", "").strip()
 
-    # When a specific season is selected, return individual rows.
-    # When "All Seasons" (no season), aggregate per player across seasons.
     _AVG_FIELDS = {"kicks", "handballs", "disposals", "marks", "behinds",
                    "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
                    "clearances", "inside_fifties", "rebounds", "intercepts",
@@ -815,48 +814,43 @@ def state_league_stats(league_id):
                    "tackles_inside_50", "total_possessions", "dreamteam_avg"}
     _TOTAL_FIELDS = {"goals"}
 
-    def _val_from_row(r, field):
-        v = getattr(r, field)
-        if v is None:
+    def _apply_mode(val, field, matches):
+        if val is None:
             return None
         if field in _TOTAL_FIELDS:
-            if mode == "avg" and r.matches:
-                return round(v / r.matches, 1)
-            return v
+            return round(val / matches, 1) if mode == "avg" and matches else val
         if field in _AVG_FIELDS:
-            if mode == "total" and r.matches:
-                return round(v * r.matches, 1)
-            return v
-        return v
+            return round(val * matches, 1) if mode == "total" and matches else val
+        return val
 
-    def _val_from_dict(d, field, matches):
-        v = d.get(field)
-        if v is None:
-            return None
-        if field in _TOTAL_FIELDS:
-            if mode == "avg" and matches:
-                return round(v / matches, 1)
-            return v
-        if field in _AVG_FIELDS:
-            if mode == "total" and matches:
-                return round(v * matches, 1)
-            return v
-        return v
+    # Build base filter
+    q = StateLeagueStat.query
+    if comp:
+        q = q.filter(StateLeagueStat.competition == comp)
+    if season:
+        q = q.filter(StateLeagueStat.season == season)
+    if afl_only:
+        q = q.filter(StateLeagueStat.is_afl_listed == True)
+    if search:
+        q = q.filter(StateLeagueStat.player_name.ilike(f"%{search}%"))
+    if team_filter:
+        q = q.filter(StateLeagueStat.team == team_filter)
+
+    # Build fantasy ownership lookup for this league
+    from models.database import FantasyRoster, FantasyTeam, User
+    ownership = {}
+    roster_rows = db.session.query(
+        FantasyRoster.player_id, FantasyTeam.name, User.display_name
+    ).join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)\
+     .join(User, FantasyTeam.owner_id == User.id)\
+     .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True).all()
+    for pid, tname, coach in roster_rows:
+        ownership[pid] = {"fantasy_team": tname, "coach": coach}
 
     if season:
-        # Single-season: simple query
-        q = StateLeagueStat.query
-        if comp:
-            q = q.filter(StateLeagueStat.competition == comp)
-        q = q.filter(StateLeagueStat.season == season)
-        if afl_only:
-            q = q.filter(StateLeagueStat.is_afl_listed == True)
-        if search:
-            q = q.filter(StateLeagueStat.player_name.ilike(f"%{search}%"))
-
+        # ── Single season: direct query ──
         col = getattr(StateLeagueStat, sort, StateLeagueStat.disposals)
         q = q.order_by(col.desc() if direction == "desc" else col.asc())
-
         total = q.count()
         rows = q.offset((page - 1) * per_page).limit(per_page).all()
 
@@ -865,152 +859,159 @@ def state_league_stats(league_id):
         if player_ids:
             for p in AflPlayer.query.filter(AflPlayer.id.in_(player_ids)).all():
                 afl_map[p.id] = {"afl_team": p.afl_team, "position": p.position,
-                                 "sc_avg": p.sc_avg, "rating": p.rating, "name": p.name}
+                                 "sc_avg": p.sc_avg, "rating": p.rating}
+
+        _STAT_FIELDS = ["kicks", "handballs", "disposals", "marks", "goals",
+                        "behinds", "tackles", "hitouts", "contested_possessions",
+                        "uncontested_possessions", "clearances", "inside_fifties",
+                        "rebounds", "intercepts", "score_involvements", "frees_for",
+                        "frees_against", "contested_marks", "tackles_inside_50",
+                        "dreamteam_avg", "total_possessions"]
 
         data = []
         for r in rows:
             afl = afl_map.get(r.player_id, {})
-            data.append({
+            own = ownership.get(r.player_id, {})
+            d = {
                 "id": r.id, "player_name": r.player_name, "competition": r.competition,
                 "season": r.season, "team": r.team, "age": r.age, "matches": r.matches,
                 "is_afl_listed": r.is_afl_listed, "player_id": r.player_id,
                 "afl_team": afl.get("afl_team"), "position": afl.get("position"),
                 "sc_avg": afl.get("sc_avg"), "rating": afl.get("rating"),
-                "kicks": _val_from_row(r, "kicks"), "handballs": _val_from_row(r, "handballs"),
-                "disposals": _val_from_row(r, "disposals"), "marks": _val_from_row(r, "marks"),
-                "goals": _val_from_row(r, "goals"), "goals_avg": r.goals_avg,
-                "behinds": _val_from_row(r, "behinds"), "tackles": _val_from_row(r, "tackles"),
-                "hitouts": _val_from_row(r, "hitouts"),
-                "contested_possessions": _val_from_row(r, "contested_possessions"),
-                "uncontested_possessions": _val_from_row(r, "uncontested_possessions"),
-                "clearances": _val_from_row(r, "clearances"), "inside_fifties": _val_from_row(r, "inside_fifties"),
-                "rebounds": _val_from_row(r, "rebounds"), "disposal_efficiency": r.disposal_efficiency,
-                "intercepts": _val_from_row(r, "intercepts"),
-                "score_involvements": _val_from_row(r, "score_involvements"),
-                "frees_for": _val_from_row(r, "frees_for"), "frees_against": _val_from_row(r, "frees_against"),
-                "contested_marks": _val_from_row(r, "contested_marks"),
-                "tackles_inside_50": _val_from_row(r, "tackles_inside_50"),
-                "dreamteam_avg": _val_from_row(r, "dreamteam_avg"), "total_possessions": _val_from_row(r, "total_possessions"),
+                "fantasy_team": own.get("fantasy_team"), "coach": own.get("coach"),
+                "goals_avg": r.goals_avg,
+                "disposal_efficiency": r.disposal_efficiency,
                 "kick_percentage": r.kick_percentage,
                 "contested_possession_rate": r.contested_possession_rate,
                 "score_involvement_pct": r.score_involvement_pct,
-            })
-    else:
-        # All-time: aggregate per player across seasons using weighted averages.
-        # Stats are per-game averages, so we weight by matches when combining seasons.
-        q = StateLeagueStat.query
-        if comp:
-            q = q.filter(StateLeagueStat.competition == comp)
-        if afl_only:
-            q = q.filter(StateLeagueStat.is_afl_listed == True)
-        if search:
-            q = q.filter(StateLeagueStat.player_name.ilike(f"%{search}%"))
-
-        all_rows = q.all()
-
-        # Group by player_name (and optionally player_id for linked players)
-        from collections import defaultdict
-        grouped = defaultdict(list)
-        for r in all_rows:
-            grouped[r.player_name].append(r)
-
-        _WAVG_FIELDS = ["kicks", "handballs", "disposals", "marks", "behinds",
-                        "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
-                        "clearances", "inside_fifties", "rebounds", "intercepts",
-                        "score_involvements", "frees_for", "frees_against", "contested_marks",
-                        "tackles_inside_50", "total_possessions", "dreamteam_avg",
-                        "disposal_efficiency", "kick_percentage",
-                        "contested_possession_rate", "score_involvement_pct"]
-
-        aggregated = []
-        for pname, season_rows in grouped.items():
-            total_matches = sum(r.matches or 0 for r in season_rows)
-            if total_matches == 0:
-                continue
-            # Use the most recent season row for metadata
-            latest = max(season_rows, key=lambda r: r.season)
-            # Total goals across all seasons (goals is already season total in DB)
-            total_goals = sum((r.goals or 0) for r in season_rows)
-
-            agg = {
-                "id": latest.id,
-                "player_name": pname,
-                "competition": latest.competition,
-                "season": latest.season,
-                "team": latest.team,
-                "age": latest.age,
-                "matches": total_matches,
-                "is_afl_listed": latest.is_afl_listed,
-                "player_id": latest.player_id,
-                "goals": total_goals,
-                "goals_avg": round(total_goals / total_matches, 1) if total_matches else None,
             }
-            # Weighted average for per-game stats
-            for field in _WAVG_FIELDS:
-                weighted_sum = 0
-                weight_total = 0
-                for r in season_rows:
-                    v = getattr(r, field)
-                    m = r.matches or 0
-                    if v is not None and m > 0:
-                        weighted_sum += v * m
-                        weight_total += m
-                agg[field] = round(weighted_sum / weight_total, 1) if weight_total > 0 else None
+            for f in _STAT_FIELDS:
+                d[f] = _apply_mode(getattr(r, f), f, r.matches)
+            data.append(d)
+    else:
+        # ── All Seasons: SQL aggregation (fast) ──
+        from sqlalchemy import func, case, literal_column
 
-            aggregated.append(agg)
+        S = StateLeagueStat
+        # Weighted average: SUM(stat * matches) / SUM(matches)
+        # We use case() to get the latest season's metadata via MAX
+        _wavg = lambda col: func.round(
+            func.sum(col * S.matches) / func.nullif(func.sum(
+                case((col.isnot(None), S.matches), else_=0)
+            ), 0), 1
+        )
+
+        agg_q = db.session.query(
+            S.player_name,
+            func.sum(S.matches).label("matches"),
+            func.max(S.id).label("id"),
+            func.max(S.season).label("season"),
+            func.max(S.player_id).label("player_id"),
+            func.sum(S.goals).label("goals"),
+            _wavg(S.kicks).label("kicks"),
+            _wavg(S.handballs).label("handballs"),
+            _wavg(S.disposals).label("disposals"),
+            _wavg(S.marks).label("marks"),
+            _wavg(S.behinds).label("behinds"),
+            _wavg(S.tackles).label("tackles"),
+            _wavg(S.hitouts).label("hitouts"),
+            _wavg(S.contested_possessions).label("contested_possessions"),
+            _wavg(S.uncontested_possessions).label("uncontested_possessions"),
+            _wavg(S.clearances).label("clearances"),
+            _wavg(S.inside_fifties).label("inside_fifties"),
+            _wavg(S.rebounds).label("rebounds"),
+            _wavg(S.intercepts).label("intercepts"),
+            _wavg(S.score_involvements).label("score_involvements"),
+            _wavg(S.frees_for).label("frees_for"),
+            _wavg(S.frees_against).label("frees_against"),
+            _wavg(S.contested_marks).label("contested_marks"),
+            _wavg(S.tackles_inside_50).label("tackles_inside_50"),
+            _wavg(S.dreamteam_avg).label("dreamteam_avg"),
+            _wavg(S.total_possessions).label("total_possessions"),
+            _wavg(S.disposal_efficiency).label("disposal_efficiency"),
+            _wavg(S.kick_percentage).label("kick_percentage"),
+            _wavg(S.contested_possession_rate).label("contested_possession_rate"),
+            _wavg(S.score_involvement_pct).label("score_involvement_pct"),
+        )
+        if comp:
+            agg_q = agg_q.filter(S.competition == comp)
+        if afl_only:
+            agg_q = agg_q.filter(S.is_afl_listed == True)
+        if search:
+            agg_q = agg_q.filter(S.player_name.ilike(f"%{search}%"))
+        if team_filter:
+            agg_q = agg_q.filter(S.team == team_filter)
+
+        agg_q = agg_q.group_by(S.player_name)
 
         # Sort
-        sort_key = sort if sort in _WAVG_FIELDS or sort == "matches" or sort == "goals" else "disposals"
-        reverse = direction == "desc"
-        aggregated.sort(key=lambda x: x.get(sort_key) or 0, reverse=reverse)
+        sort_col = sort if sort in ("matches", "goals", "kicks", "handballs", "disposals",
+            "marks", "tackles", "hitouts", "contested_possessions", "clearances",
+            "inside_fifties", "rebounds", "intercepts", "dreamteam_avg", "frees_for",
+            "frees_against", "contested_marks", "tackles_inside_50", "total_possessions",
+            "score_involvements", "disposal_efficiency") else "disposals"
+        sort_label = literal_column(sort_col)
+        agg_q = agg_q.order_by(sort_label.desc() if direction == "desc" else sort_label.asc())
 
-        total = len(aggregated)
-        page_rows = aggregated[(page - 1) * per_page: page * per_page]
+        # Count total before pagination
+        count_q = db.session.query(func.count()).select_from(
+            agg_q.subquery()
+        )
+        total = count_q.scalar()
+        rows = agg_q.offset((page - 1) * per_page).limit(per_page).all()
 
-        player_ids = [r["player_id"] for r in page_rows if r.get("player_id")]
+        # Get metadata for the latest season row of each player
+        latest_ids = [r.id for r in rows if r.id]
+        meta_map = {}
+        if latest_ids:
+            for sl in StateLeagueStat.query.filter(StateLeagueStat.id.in_(latest_ids)).all():
+                meta_map[sl.player_name] = {
+                    "team": sl.team, "age": sl.age, "competition": sl.competition,
+                    "is_afl_listed": sl.is_afl_listed,
+                }
+
+        player_ids = [r.player_id for r in rows if r.player_id]
         afl_map = {}
         if player_ids:
             for p in AflPlayer.query.filter(AflPlayer.id.in_(player_ids)).all():
                 afl_map[p.id] = {"afl_team": p.afl_team, "position": p.position,
-                                 "sc_avg": p.sc_avg, "rating": p.rating, "name": p.name}
+                                 "sc_avg": p.sc_avg, "rating": p.rating}
+
+        _STAT_FIELDS_AGG = ["kicks", "handballs", "disposals", "marks",
+                            "behinds", "tackles", "hitouts", "contested_possessions",
+                            "uncontested_possessions", "clearances", "inside_fifties",
+                            "rebounds", "intercepts", "score_involvements", "frees_for",
+                            "frees_against", "contested_marks", "tackles_inside_50",
+                            "dreamteam_avg", "total_possessions"]
 
         data = []
-        for r in page_rows:
-            afl = afl_map.get(r.get("player_id"), {})
-            matches = r["matches"]
-            data.append({
-                "id": r["id"], "player_name": r["player_name"], "competition": r["competition"],
-                "season": r["season"], "team": r["team"], "age": r["age"], "matches": matches,
-                "is_afl_listed": r["is_afl_listed"], "player_id": r.get("player_id"),
+        for r in rows:
+            meta = meta_map.get(r.player_name, {})
+            afl = afl_map.get(r.player_id, {})
+            own = ownership.get(r.player_id, {})
+            matches = r.matches or 0
+            goals = r.goals or 0
+            d = {
+                "id": r.id, "player_name": r.player_name,
+                "competition": meta.get("competition", ""),
+                "season": r.season, "team": meta.get("team", ""),
+                "age": meta.get("age"), "matches": matches,
+                "is_afl_listed": meta.get("is_afl_listed", False),
+                "player_id": r.player_id,
                 "afl_team": afl.get("afl_team"), "position": afl.get("position"),
                 "sc_avg": afl.get("sc_avg"), "rating": afl.get("rating"),
-                "kicks": _val_from_dict(r, "kicks", matches),
-                "handballs": _val_from_dict(r, "handballs", matches),
-                "disposals": _val_from_dict(r, "disposals", matches),
-                "marks": _val_from_dict(r, "marks", matches),
-                "goals": _val_from_dict(r, "goals", matches),
-                "goals_avg": r.get("goals_avg"),
-                "behinds": _val_from_dict(r, "behinds", matches),
-                "tackles": _val_from_dict(r, "tackles", matches),
-                "hitouts": _val_from_dict(r, "hitouts", matches),
-                "contested_possessions": _val_from_dict(r, "contested_possessions", matches),
-                "uncontested_possessions": _val_from_dict(r, "uncontested_possessions", matches),
-                "clearances": _val_from_dict(r, "clearances", matches),
-                "inside_fifties": _val_from_dict(r, "inside_fifties", matches),
-                "rebounds": _val_from_dict(r, "rebounds", matches),
-                "disposal_efficiency": r.get("disposal_efficiency"),
-                "intercepts": _val_from_dict(r, "intercepts", matches),
-                "score_involvements": _val_from_dict(r, "score_involvements", matches),
-                "frees_for": _val_from_dict(r, "frees_for", matches),
-                "frees_against": _val_from_dict(r, "frees_against", matches),
-                "contested_marks": _val_from_dict(r, "contested_marks", matches),
-                "tackles_inside_50": _val_from_dict(r, "tackles_inside_50", matches),
-                "dreamteam_avg": _val_from_dict(r, "dreamteam_avg", matches),
-                "total_possessions": _val_from_dict(r, "total_possessions", matches),
-                "kick_percentage": r.get("kick_percentage"),
-                "contested_possession_rate": r.get("contested_possession_rate"),
-                "score_involvement_pct": r.get("score_involvement_pct"),
-            })
+                "fantasy_team": own.get("fantasy_team"), "coach": own.get("coach"),
+                "goals": _apply_mode(goals, "goals", matches),
+                "goals_avg": round(goals / matches, 1) if matches else None,
+                "disposal_efficiency": getattr(r, "disposal_efficiency", None),
+                "kick_percentage": getattr(r, "kick_percentage", None),
+                "contested_possession_rate": getattr(r, "contested_possession_rate", None),
+                "score_involvement_pct": getattr(r, "score_involvement_pct", None),
+            }
+            for f in _STAT_FIELDS_AGG:
+                val = getattr(r, f, None)
+                d[f] = _apply_mode(val, f, matches)
+            data.append(d)
 
     from config import STATE_LEAGUE_LOGOS, TEAM_LOGOS
     return jsonify({"players": data, "total": total, "page": page, "pages": (total + per_page - 1) // per_page,
@@ -1077,6 +1078,67 @@ def state_league_player(league_id, player_id):
         "contested_marks": round(r.contested_marks, 1) if r.contested_marks else None,
         "score_involvements": round(r.score_involvements, 1) if r.score_involvements else None,
     } for r in afl_seasons]
+
+    combined = sorted(state_league + afl, key=lambda x: x["season"])
+    return jsonify(combined)
+
+
+@spa_api.route("/leagues/<int:league_id>/state-league-stats/career-by-name")
+@login_required
+def state_league_career_by_name(league_id):
+    """Career data for any state league player, looked up by name.
+    Works for ALL players — no AFL player link required."""
+    from models.database import PlayerStat
+    from sqlalchemy import func
+
+    name = request.args.get("name", "").strip()
+    if not name:
+        return jsonify([])
+
+    sl_rows = StateLeagueStat.query.filter_by(player_name=name)\
+        .order_by(StateLeagueStat.season).all()
+    state_league = [{
+        "level": r.competition.upper(), "season": r.season, "team": r.team,
+        "age": r.age, "matches": r.matches,
+        "kicks": r.kicks, "handballs": r.handballs, "disposals": r.disposals,
+        "marks": r.marks, "goals": r.goals, "tackles": r.tackles, "hitouts": r.hitouts,
+        "contested_possessions": r.contested_possessions, "clearances": r.clearances,
+        "inside_fifties": r.inside_fifties, "intercepts": r.intercepts,
+        "disposal_efficiency": r.disposal_efficiency, "dreamteam_avg": r.dreamteam_avg,
+        "sc_avg": r.dreamteam_avg,
+        "contested_marks": r.contested_marks, "score_involvements": r.score_involvements,
+    } for r in sl_rows]
+
+    # Also try to find AFL stats if any row has a player_id link
+    player_ids = list({r.player_id for r in sl_rows if r.player_id})
+    afl = []
+    for pid in player_ids:
+        afl_seasons = db.session.query(
+            PlayerStat.year,
+            func.count(PlayerStat.id).label("matches"),
+            func.avg(PlayerStat.disposals).label("disposals"),
+            func.avg(PlayerStat.marks).label("marks"),
+            func.avg(PlayerStat.goals).label("goals"),
+            func.avg(PlayerStat.tackles).label("tackles"),
+            func.avg(PlayerStat.hitouts).label("hitouts"),
+            func.avg(PlayerStat.contested_possessions).label("contested_possessions"),
+            func.avg(PlayerStat.clearances).label("clearances"),
+            func.avg(PlayerStat.supercoach_score).label("sc_avg"),
+        ).filter_by(player_id=pid).group_by(PlayerStat.year).all()
+        p = db.session.get(AflPlayer, pid)
+        for r in afl_seasons:
+            afl.append({
+                "level": "AFL", "season": r.year, "team": p.afl_team if p else None,
+                "age": None, "matches": r.matches,
+                "disposals": round(r.disposals, 1) if r.disposals else None,
+                "marks": round(r.marks, 1) if r.marks else None,
+                "goals": round(r.goals, 1) if r.goals else None,
+                "tackles": round(r.tackles, 1) if r.tackles else None,
+                "hitouts": round(r.hitouts, 1) if r.hitouts else None,
+                "contested_possessions": round(r.contested_possessions, 1) if r.contested_possessions else None,
+                "clearances": round(r.clearances, 1) if r.clearances else None,
+                "dreamteam_avg": None, "sc_avg": round(r.sc_avg, 1) if r.sc_avg else None,
+            })
 
     combined = sorted(state_league + afl, key=lambda x: x["season"])
     return jsonify(combined)
