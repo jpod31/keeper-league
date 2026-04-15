@@ -26,6 +26,34 @@ COMPETITIONS = {
     "NAB":   {"code": "nab",   "seasons": [2019] + list(range(2021, 2027))},
 }
 
+# Abbreviation → full team name mappings
+_SANFL_TEAMS = {
+    "ADL": "Adelaide", "PORT": "Port Adelaide", "CNTRL": "Central District",
+    "TIGERS": "Glenelg", "NORTH": "North Adelaide", "NWD": "Norwood",
+    "SOUTH": "South Adelaide", "STURT": "Sturt", "WEST": "West Adelaide",
+    "EAGLES": "Woodville-West Torrens",
+}
+
+_NAB_TEAMS = {
+    "BPFC": "Bendigo Pioneers", "CCFC": "Calder Cannons",
+    "DSFC": "Dandenong Stingrays", "ERFC": "Eastern Ranges",
+    "GFFC": "Geelong Falcons", "GPFC": "Gippsland Power",
+    "GWVRFC": "GWV Rebels", "MBFC": "Murray Bushrangers",
+    "NKFC": "Northern Knights", "OCFC": "Oakleigh Chargers",
+    "SDFC": "Sandringham Dragons", "WJFC": "Western Jets",
+    "NTFC": "NT Thunder", "TDFC": "Tasmania Devils",
+    # AFL academy teams
+    "BLFC": "Brisbane Lions Academy", "GCFC": "Gold Coast Academy",
+    "GWSFC": "GWS Giants Academy", "SSFC": "Sydney Swans Academy",
+}
+
+_TEAM_MAP = {**_SANFL_TEAMS, **_NAB_TEAMS}
+
+
+def _resolve_team(abbr: str) -> str:
+    """Convert team abbreviation to full name."""
+    return _TEAM_MAP.get(abbr, abbr)
+
 
 def _post(data: dict, retries: int = 3) -> dict:
     """POST to admin-ajax with retries."""
@@ -165,7 +193,7 @@ def sync_dfsaustralia(league: str | None = None, season: int | None = None,
                 if not pname:
                     continue
 
-                team = p.get("teamAbbr", "")
+                team = _resolve_team(p.get("teamAbbr", ""))
                 afl_team = p.get("aflTeam")
                 pid, is_listed = _match_player(pname, afl_team, name_idx)
                 matches = int(p.get("gms") or 0)
