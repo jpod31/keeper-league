@@ -896,16 +896,13 @@ def _compute_health_score(field_players, bench_players, bayesian_map, profile_ta
         youth = 50.0
     youth = _clamp(youth, 0, 100)
 
-    # --- Trajectory (10%) --- uses TEAM-LEVEL projected change, not individual slopes
-    # Individual trajectories can all be positive while team total declines (age curves)
-    # So we use the projected change % which accounts for composition
-    proj_change = sum(
-        (projections_by_player.get(p.id, {}).get("yr1", p.sc_avg or 0) - (p.sc_avg or 0))
-        for p in field_players
-    )
-    proj_pct = proj_change / max(sum(p.sc_avg or 0 for p in field_players), 1) * 100
-    # +5% = 100, 0% = 50, -5% = 0
-    traj_score = _clamp(50 + proj_pct * 10, 0, 100)
+    # --- Trajectory (10%) --- blends individual trajectory with age-based outlook
+    trajectories = [profile_tags.get(p.id, {}).get("trajectory", 0) for p in field_players]
+    avg_traj = sum(trajectories) / max(len(trajectories), 1) if trajectories else 0
+    # Penalize if many players are 30+ (age cliff risk regardless of current trajectory)
+    old_count = sum(1 for p in field_players if (p.age or 25) >= 30)
+    old_penalty = min(old_count * 5, 30)  # max 30 point penalty for old roster
+    traj_score = _clamp(50 + avg_traj * 8 - old_penalty, 0, 100)
     traj_score = _clamp(traj_score, 0, 100)
 
     # --- Durability (10%) ---
