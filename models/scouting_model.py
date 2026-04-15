@@ -309,12 +309,18 @@ def _calc_breakout_score(predicted: dict, age: int, sl: StateLeagueStat, positio
     elif disp >= 15:
         score += 10
 
-    if age <= 22:
-        score += 20
-    elif age <= 24:
-        score += 12
-    elif age <= 26:
-        score += 5
+    if age <= 21:
+        score += 25
+    elif age <= 23:
+        score += 18
+    elif age <= 25:
+        score += 10
+    elif age <= 27:
+        score += 0
+    elif age <= 29:
+        score -= 15
+    else:
+        score -= 30
 
     if sl.matches and sl.matches >= 10:
         score += 10
