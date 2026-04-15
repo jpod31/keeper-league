@@ -135,17 +135,19 @@ def _select_best_23(players_with_projections, pos_requirements):
     """Select the optimal 23 players given positional constraints.
 
     Args:
-        players_with_projections: [(AflPlayer, projected_sc)]
+        players_with_projections: [(AflPlayer, projected_sc, projected_age)]
         pos_requirements: {"DEF": 6, "MID": 9, "RUC": 1, "FWD": 6}
 
-    Returns: (total_sc, selected_players_list)
+    Returns: (total_sc, selected_players_list, emergencies_list)
     """
     # Group players by primary position
     by_pos = defaultdict(list)
-    for p, sc in players_with_projections:
+    for entry in players_with_projections:
+        p, sc = entry[0], entry[1]
+        proj_age = entry[2] if len(entry) > 2 else (p.age or 0)
         positions = (p.position or "MID").split("/")
         primary = positions[0]
-        by_pos[primary].append((p, sc, positions))
+        by_pos[primary].append((p, sc, positions, proj_age))
 
     # Sort each position group by projected SC descending
     for pos in by_pos:
@@ -159,11 +161,11 @@ def _select_best_23(players_with_projections, pos_requirements):
     for pos, count in pos_requirements.items():
         candidates = by_pos.get(pos, [])
         filled = 0
-        for p, sc, positions in candidates:
+        for p, sc, positions, proj_age in candidates:
             if filled >= count:
                 break
             if p.id not in used_ids:
-                selected.append({"name": p.name, "position": pos, "sc": sc, "age": p.age or 0})
+                selected.append({"name": p.name, "position": pos, "sc": sc, "age": proj_age})
                 used_ids.add(p.id)
                 filled += 1
 
@@ -182,28 +184,26 @@ def _select_best_23(players_with_projections, pos_requirements):
     total_needed = sum(v for k, v in pos_requirements.items() if k != "_league_id") + flex_count
     all_remaining = []
     for pos_list in by_pos.values():
-        for p, sc, positions in pos_list:
+        for p, sc, positions, proj_age in pos_list:
             if p.id not in used_ids:
-                all_remaining.append((p, sc, positions))
+                all_remaining.append((p, sc, positions, proj_age))
     all_remaining.sort(key=lambda x: -x[1])
 
     while len(selected) < total_needed and all_remaining:
-        p, sc, positions = all_remaining.pop(0)
+        p, sc, positions, proj_age = all_remaining.pop(0)
         if p.id not in used_ids:
-            selected.append({"name": p.name, "position": positions[0], "sc": sc, "age": p.age or 0})
+            selected.append({"name": p.name, "position": positions[0], "sc": sc, "age": proj_age})
             used_ids.add(p.id)
 
     # Also try to improve: check if any dual-position player not selected
     # could replace a weaker player at an alternative position
-    # (This is a simple greedy approach, not globally optimal, but good enough)
-    unselected = [(p, sc, pos) for p, sc, pos in
-                  [(p, sc, pos) for plist in by_pos.values() for p, sc, pos in plist]
+    unselected = [(p, sc, pos, pa) for p, sc, pos, pa in
+                  [(p, sc, pos, pa) for plist in by_pos.values() for p, sc, pos, pa in plist]
                   if p.id not in used_ids]
     unselected.sort(key=lambda x: -x[1])
 
-    for p, sc, positions in unselected[:10]:  # check top 10 unselected
+    for p, sc, positions, proj_age in unselected[:10]:
         for alt_pos in positions:
-            # Find the weakest selected player at this position
             weakest = None
             weakest_idx = -1
             for i, sel in enumerate(selected):
@@ -212,8 +212,7 @@ def _select_best_23(players_with_projections, pos_requirements):
                         weakest = sel
                         weakest_idx = i
             if weakest and sc - weakest["sc"] > 5:
-                # Swap
-                selected[weakest_idx] = {"name": p.name, "position": alt_pos, "sc": sc, "age": p.age or 0}
+                selected[weakest_idx] = {"name": p.name, "position": alt_pos, "sc": sc, "age": proj_age}
                 used_ids.add(p.id)
                 break
 
@@ -221,10 +220,10 @@ def _select_best_23(players_with_projections, pos_requirements):
 
     # Emergency selections: best 4 players not in the 23
     emergencies = []
-    for p, sc, positions in all_remaining:
+    for p, sc, positions, proj_age in all_remaining:
         if p.id not in used_ids and len(emergencies) < 4:
             emergencies.append({"name": p.name, "position": positions[0], "sc": sc,
-                                "age": p.age or 0, "is_emergency": True})
+                                "age": proj_age, "is_emergency": True})
     # Mark selected players
     for s in selected:
         s["is_emergency"] = False
@@ -282,7 +281,7 @@ def simulate_dynasty(league_id, year, profile_tags, years_ahead=5):
                 else:
                     sc = _project_player_at_age(p, target_age, pt, {})
 
-                projections.append((p, sc))
+                projections.append((p, sc, target_age))
 
             # Select best 23 + 4 emergencies
             total, squad, emg = _select_best_23(projections, pos_reqs)

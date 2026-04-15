@@ -2003,11 +2003,20 @@ def team_analytics_api(league_id, team_id):
     # Parse AI into sections
     ai_sections = []
     if ai_summary:
+        import re as _re
         for section in str(ai_summary).split("---"):
             section = section.strip()
+            if not section:
+                continue
+            # Strip markdown headers (##, ###, **) from title line
+            section = _re.sub(r'^#{1,4}\s*', '', section)
+            section = _re.sub(r'^\*{1,2}', '', section)
             if ":" in section:
                 title, body = section.split(":", 1)
-                ai_sections.append({"title": title.strip(), "body": body.strip()})
+                title = _re.sub(r'\*{1,2}$', '', title).strip()
+                body = body.strip()
+                if body:
+                    ai_sections.append({"title": title, "body": body})
             elif section:
                 ai_sections.append({"title": "", "body": section})
 
@@ -2195,11 +2204,20 @@ def team_analytics(league_id, team_id):
     # Parse AI summary into sections
     ai_sections = []
     if ai_summary:
+        import re as _re
         for section in str(ai_summary).split("---"):
             section = section.strip()
+            if not section:
+                continue
+            # Strip markdown headers (##, ###, **) from title line
+            section = _re.sub(r'^#{1,4}\s*', '', section)
+            section = _re.sub(r'^\*{1,2}', '', section)
             if ":" in section:
                 title, body = section.split(":", 1)
-                ai_sections.append({"title": title.strip(), "body": body.strip()})
+                title = _re.sub(r'\*{1,2}$', '', title).strip()
+                body = body.strip()
+                if body:
+                    ai_sections.append({"title": title, "body": body})
             elif section:
                 ai_sections.append({"title": "", "body": section})
 

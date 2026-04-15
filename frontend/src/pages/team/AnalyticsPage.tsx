@@ -550,9 +550,8 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
   )
 }
 
-/* ═══ Best 23 Timeline ═══ */
-const POS_COLORS: Record<string, string> = { DEF: '#58a6ff', MID: '#d2a8ff', RUC: '#3fb950', FWD: '#fb923c' }
-const POS_BG: Record<string, string> = { DEF: 'rgba(88,166,255,.08)', MID: 'rgba(210,168,255,.08)', RUC: 'rgba(63,185,80,.08)', FWD: 'rgba(251,146,60,.08)' }
+/* ═══ Best 23 Field View ═══ */
+const POS_COLORS: Record<string, string> = { DEF: '#58a6ff', MID: '#d2a8ff', RUC: '#3fb950', FWD: '#fb923c', FLEX: '#fbbf24', EMG: '#6e7681' }
 
 function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>; teamId: number }) {
   const myDynasty = dynasty[String(teamId)]
@@ -572,28 +571,45 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
   const prevTotal = prevYr ? prevYr.squad.filter(p => !p.is_emergency).reduce((s, p) => s + p.sc, 0) : null
   const delta = prevTotal != null ? totalSc - prevTotal : null
 
-  const groups: [string, typeof starters][] = []
-  for (const pos of ['DEF', 'MID', 'RUC', 'FWD']) {
-    groups.push([pos, starters.filter(p => p.position === pos)])
+  const defs = starters.filter(p => p.position === 'DEF').sort((a, b) => b.sc - a.sc)
+  const mids = starters.filter(p => p.position === 'MID').sort((a, b) => b.sc - a.sc)
+  const rucs = starters.filter(p => p.position === 'RUC').sort((a, b) => b.sc - a.sc)
+  const fwds = starters.filter(p => p.position === 'FWD').sort((a, b) => b.sc - a.sc)
+  const mainNames = new Set([...defs, ...mids, ...rucs, ...fwds].map(p => p.name))
+  const flex = starters.filter(p => !mainNames.has(p.name))
+
+  const scColor = (sc: number) => sc >= 110 ? '#3fb950' : sc >= 90 ? '#e6edf3' : sc >= 70 ? '#c9d1d9' : '#8b949e'
+
+  const Chip = ({ p, posColor }: { p: { name: string; sc: number; age: number; position?: string }; posColor: string }) => {
+    const isNew = prevNames.size > 0 && !prevNames.has(p.name)
+    const surname = p.name.split(' ').slice(-1)[0]
+    const initial = p.name.charAt(0)
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+        padding: '5px 6px', borderRadius: 8, minWidth: 54, maxWidth: 72,
+        background: isNew ? 'rgba(63,185,80,.1)' : 'rgba(255,255,255,.03)',
+        border: `1px solid ${isNew ? 'rgba(63,185,80,.3)' : 'rgba(48,54,61,.3)'}`,
+      }}>
+        <div style={{ fontSize: '.6rem', fontWeight: 700, color: '#e6edf3', textAlign: 'center',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+          {initial}. {surname}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: '.72rem', fontWeight: 900, color: scColor(p.sc), fontVariantNumeric: 'tabular-nums' }}>{Math.round(p.sc)}</span>
+          <span style={{ fontSize: '.55rem', color: posColor, fontWeight: 600 }}>{p.age}</span>
+        </div>
+      </div>
+    )
   }
-  // FLEX: anyone not in the 4 main positions
-  const mainPosNames = new Set(groups.flatMap(([, ps]) => ps.map(p => p.name)))
-  const flex = starters.filter(p => !mainPosNames.has(p.name))
-  if (flex.length) groups.push(['FLEX', flex])
 
-  const scColor = (sc: number) => sc >= 110 ? '#3fb950' : sc >= 90 ? '#e6edf3' : sc >= 70 ? '#8b949e' : '#6e7681'
-
-  const renderRow = (p: { name: string; position: string; sc: number; age: number; is_emergency?: boolean }, isNew: boolean, isDeparted: boolean) => (
-    <div key={p.name} style={{
-      display: 'grid', gridTemplateColumns: '1fr 50px 36px', gap: 8, padding: '4px 10px',
-      borderLeft: isNew ? '3px solid #3fb950' : isDeparted ? '3px solid #ef4444' : '3px solid transparent',
-      background: isNew ? 'rgba(63,185,80,.04)' : 'transparent',
-      borderBottom: '1px solid rgba(48,54,61,.15)',
-      fontSize: '.78rem',
-    }}>
-      <span style={{ color: '#e6edf3', fontWeight: 600 }}>{p.name}</span>
-      <span style={{ textAlign: 'right', fontWeight: 800, color: scColor(p.sc), fontVariantNumeric: 'tabular-nums' }}>{Math.round(p.sc)}</span>
-      <span style={{ textAlign: 'right', color: '#8b949e', fontVariantNumeric: 'tabular-nums' }}>{p.age}</span>
+  const PosRow = ({ label, players, color }: { label: string; players: typeof starters; color: string }) => (
+    <div style={{ marginBottom: 6 }}>
+      <div style={{ textAlign: 'center', fontSize: '.5rem', fontWeight: 800, color, textTransform: 'uppercase',
+        letterSpacing: '1px', marginBottom: 4 }}>{label}</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 4 }}>
+        {players.map(p => <Chip key={p.name} p={p} posColor={color} />)}
+      </div>
     </div>
   )
 
@@ -619,7 +635,7 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
 
       {/* Summary bar */}
       <div style={{ display: 'flex', gap: 16, padding: '10px 12px', background: 'rgba(88,166,255,.04)',
-        borderRadius: 8, marginBottom: 12, fontSize: '.78rem' }}>
+        borderRadius: 8, marginBottom: 14, fontSize: '.78rem', justifyContent: 'center' }}>
         <div><span style={{ color: '#8b949e' }}>Total SC</span> <b style={{ color: '#e6edf3', marginLeft: 4 }}>{Math.round(totalSc)}</b></div>
         <div><span style={{ color: '#8b949e' }}>Avg Age</span> <b style={{ color: '#e6edf3', marginLeft: 4 }}>{avgAge.toFixed(1)}</b></div>
         {delta != null && (
@@ -627,44 +643,35 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
             <b style={{ color: delta >= 0 ? '#3fb950' : '#ef4444', marginLeft: 4 }}>{delta >= 0 ? '+' : ''}{Math.round(delta)}</b>
           </div>
         )}
-        <div><span style={{ color: '#8b949e' }}>Players</span> <b style={{ color: '#e6edf3', marginLeft: 4 }}>{starters.length}</b></div>
       </div>
 
-      {/* Position groups */}
-      {groups.map(([pos, players]) => (
-        <div key={pos} style={{ marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
-            background: POS_BG[pos] || 'rgba(139,148,158,.05)', borderRadius: '6px 6px 0 0' }}>
-            <span style={{ fontSize: '.6rem', fontWeight: 800, color: POS_COLORS[pos] || '#8b949e',
-              textTransform: 'uppercase', letterSpacing: '.5px' }}>{pos}</span>
-            <span style={{ fontSize: '.65rem', color: '#6e7681' }}>{players.length} players · avg {players.length ? Math.round(players.reduce((s, p) => s + p.sc, 0) / players.length) : 0}</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 50px 36px', gap: 8, padding: '2px 10px',
-            fontSize: '.55rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.3px' }}>
-            <span>Player</span><span style={{ textAlign: 'right' }}>SC</span><span style={{ textAlign: 'right' }}>Age</span>
-          </div>
-          {players.sort((a, b) => b.sc - a.sc).map(p => {
-            const isNew = prevNames.size > 0 && !prevNames.has(p.name)
-            return renderRow(p, isNew, false)
-          })}
-        </div>
-      ))}
+      {/* Field view */}
+      <div style={{ background: 'linear-gradient(180deg, #0c1a0c 0%, #0f1f0f 30%, #0c1a0c 60%, #0f1f0f 100%)',
+        borderRadius: 12, padding: '16px 8px', position: 'relative', overflow: 'hidden' }}>
+        {/* Field lines */}
+        <div style={{ position: 'absolute', inset: 0, opacity: .06,
+          background: 'repeating-linear-gradient(0deg, transparent, transparent 24%, #3fb950 24%, #3fb950 24.5%)' }} />
 
-      {/* Emergencies */}
+        <PosRow label="Defenders" players={defs} color={POS_COLORS.DEF} />
+        <PosRow label="Midfielders" players={mids} color={POS_COLORS.MID} />
+        {rucs.length > 0 && <PosRow label="Ruck" players={rucs} color={POS_COLORS.RUC} />}
+        <PosRow label="Forwards" players={fwds} color={POS_COLORS.FWD} />
+        {flex.length > 0 && <PosRow label="Flex" players={flex} color={POS_COLORS.FLEX} />}
+      </div>
+
+      {/* Emergency bench */}
       {emergencies.length > 0 && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
-            background: 'rgba(139,148,158,.05)', borderRadius: '6px 6px 0 0' }}>
-            <span style={{ fontSize: '.6rem', fontWeight: 800, color: '#6e7681',
-              textTransform: 'uppercase', letterSpacing: '.5px' }}>EMG</span>
-            <span style={{ fontSize: '.65rem', color: '#6e7681' }}>4 emergencies (any position)</span>
+        <div style={{ marginTop: 8, padding: '8px 0' }}>
+          <div style={{ textAlign: 'center', fontSize: '.5rem', fontWeight: 800, color: '#484f58',
+            textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Emergencies</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
+            {emergencies.sort((a, b) => b.sc - a.sc).map(p => <Chip key={p.name} p={p} posColor={POS_COLORS[p.position] || '#6e7681'} />)}
           </div>
-          {emergencies.sort((a, b) => b.sc - a.sc).map(p => renderRow(p, false, false))}
         </div>
       )}
 
-      <div style={{ fontSize: '.58rem', color: '#484f58', textAlign: 'center', marginTop: 10 }}>
-        Optimal 23 auto-selected per year · green border = new to best 23
+      <div style={{ fontSize: '.55rem', color: '#484f58', textAlign: 'center', marginTop: 8 }}>
+        Optimal 23 auto-selected · green border = new to best 23 · ages projected per year
       </div>
     </div>
   )
