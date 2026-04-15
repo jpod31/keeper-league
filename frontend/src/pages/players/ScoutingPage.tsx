@@ -1,6 +1,6 @@
 import { useParams } from 'react-router'
 import { useState, useEffect, useCallback } from 'react'
-import { Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ComposedChart, Line } from 'recharts'
+import { Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
@@ -294,11 +294,11 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
 
           {/* Career chart */}
           {career && career.length > 1 && (() => {
-            const merged: Record<number, { season: number; afl_dis?: number; sl_dis?: number; afl_sc?: number; afl_gm?: number; sl_gm?: number; sl_level?: string; afl_team?: string; sl_team?: string }> = {}
+            const merged: Record<number, { season: number; afl_fan?: number; sl_fan?: number; afl_sc?: number; afl_gm?: number; sl_gm?: number; sl_level?: string; afl_team?: string; sl_team?: string }> = {}
             for (const h of career) {
               if (!merged[h.season]) merged[h.season] = { season: h.season }
-              if (h.level === 'AFL') { merged[h.season].afl_dis = h.disposals; merged[h.season].afl_sc = h.sc_avg ?? undefined; merged[h.season].afl_gm = h.matches; merged[h.season].afl_team = h.team ?? undefined }
-              else { merged[h.season].sl_dis = h.disposals; merged[h.season].sl_gm = h.matches; merged[h.season].sl_level = h.level; merged[h.season].sl_team = h.team ?? undefined }
+              if (h.level === 'AFL') { merged[h.season].afl_fan = h.sc_avg ?? undefined; merged[h.season].afl_sc = h.sc_avg ?? undefined; merged[h.season].afl_gm = h.matches; merged[h.season].afl_team = h.team ?? undefined }
+              else { merged[h.season].sl_fan = h.dreamteam_avg ?? undefined; merged[h.season].sl_gm = h.matches; merged[h.season].sl_level = h.level; merged[h.season].sl_team = h.team ?? undefined }
             }
             const chartData = Object.values(merged).sort((a, b) => a.season - b.season)
             return (
@@ -317,29 +317,22 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                         return (
                           <div style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '8px 12px', fontSize: '.72rem' }}>
                             <div style={{ fontWeight: 800, color: '#f0f3f6', marginBottom: 4 }}>{d.season}</div>
-                            {d.afl_dis != null && <div style={{ color: '#bc8cff' }}>AFL: {d.afl_dis.toFixed(1)} dis · {d.afl_gm}gm{d.afl_sc ? ` · SC ${Math.round(d.afl_sc)}` : ''}</div>}
-                            {d.sl_dis != null && <div style={{ color: '#58a6ff' }}>{d.sl_level || 'VFL'}: {d.sl_dis.toFixed(1)} dis · {d.sl_gm}gm</div>}
+                            {d.afl_fan != null && <div style={{ color: '#bc8cff' }}>AFL: {Math.round(d.afl_fan)} fantasy · {d.afl_gm}gm</div>}
+                            {d.sl_fan != null && <div style={{ color: '#58a6ff' }}>{d.sl_level || 'VFL'}: {Math.round(d.sl_fan)} fantasy · {d.sl_gm}gm</div>}
                           </div>
                         )
                       }} />
-                      <Bar dataKey="sl_dis" fill="#58a6ff" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={20} name="SL Disposals" />
-                      <Bar dataKey="afl_dis" fill="#bc8cff" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={20} name="AFL Disposals" />
-                      {chartData.some(d => d.afl_sc) && (
-                        <Line type="monotone" dataKey="afl_sc" stroke="#3fb950" strokeWidth={2} dot={{ r: 3, fill: '#3fb950' }}
-                          connectNulls name="AFL SC" yAxisId={0} />
-                      )}
+                      <Bar dataKey="sl_fan" fill="#58a6ff" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={20} name="SL Fantasy" />
+                      <Bar dataKey="afl_fan" fill="#bc8cff" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={20} name="AFL Fantasy" />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 4, fontSize: '.6rem', color: '#6e7681' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#58a6ff', opacity: .7 }}></span> SL Dis
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#58a6ff', opacity: .7 }}></span> State League
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#bc8cff', opacity: .7 }}></span> AFL Dis
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 8, height: 2, background: '#3fb950' }}></span> AFL SC
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#bc8cff', opacity: .7 }}></span> AFL
                   </span>
                 </div>
               </>
