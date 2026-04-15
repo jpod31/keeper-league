@@ -859,7 +859,7 @@ def state_league_stats(league_id):
         if player_ids:
             for p in AflPlayer.query.filter(AflPlayer.id.in_(player_ids)).all():
                 afl_map[p.id] = {"afl_team": p.afl_team, "position": p.position,
-                                 "sc_avg": p.sc_avg, "rating": p.rating}
+                                 "sc_avg": p.sc_avg, "rating": p.rating, "potential": p.potential}
 
         _STAT_FIELDS = ["kicks", "handballs", "disposals", "marks", "goals",
                         "behinds", "tackles", "hitouts", "contested_possessions",
@@ -877,7 +877,7 @@ def state_league_stats(league_id):
                 "season": r.season, "team": r.team, "age": r.age, "matches": r.matches,
                 "is_afl_listed": r.is_afl_listed, "player_id": r.player_id,
                 "afl_team": afl.get("afl_team"), "position": afl.get("position"),
-                "sc_avg": afl.get("sc_avg"), "rating": afl.get("rating"),
+                "sc_avg": afl.get("sc_avg"), "rating": afl.get("rating"), "potential": afl.get("potential"),
                 "fantasy_team": own.get("fantasy_team"), "coach": own.get("coach"),
                 "goals_avg": r.goals_avg,
                 "disposal_efficiency": r.disposal_efficiency,
@@ -975,7 +975,7 @@ def state_league_stats(league_id):
         if player_ids:
             for p in AflPlayer.query.filter(AflPlayer.id.in_(player_ids)).all():
                 afl_map[p.id] = {"afl_team": p.afl_team, "position": p.position,
-                                 "sc_avg": p.sc_avg, "rating": p.rating}
+                                 "sc_avg": p.sc_avg, "rating": p.rating, "potential": p.potential}
 
         _STAT_FIELDS_AGG = ["kicks", "handballs", "disposals", "marks",
                             "behinds", "tackles", "hitouts", "contested_possessions",
@@ -999,7 +999,7 @@ def state_league_stats(league_id):
                 "is_afl_listed": meta.get("is_afl_listed", False),
                 "player_id": r.player_id,
                 "afl_team": afl.get("afl_team"), "position": afl.get("position"),
-                "sc_avg": afl.get("sc_avg"), "rating": afl.get("rating"),
+                "sc_avg": afl.get("sc_avg"), "rating": afl.get("rating"), "potential": afl.get("potential"),
                 "fantasy_team": own.get("fantasy_team"), "coach": own.get("coach"),
                 "goals": _apply_mode(goals, "goals", matches),
                 "goals_avg": round(goals / matches, 1) if matches else None,
@@ -1013,9 +1013,10 @@ def state_league_stats(league_id):
                 d[f] = _apply_mode(val, f, matches)
             data.append(d)
 
-    from config import STATE_LEAGUE_LOGOS, TEAM_LOGOS
+    from config import STATE_LEAGUE_LOGOS, TEAM_LOGOS, TEAM_COLOURS
+    team_colours = {name: {"bg": bg, "fg": fg} for name, (bg, fg) in TEAM_COLOURS.items()}
     return jsonify({"players": data, "total": total, "page": page, "pages": (total + per_page - 1) // per_page,
-                    "sl_logos": STATE_LEAGUE_LOGOS, "team_logos": TEAM_LOGOS})
+                    "sl_logos": STATE_LEAGUE_LOGOS, "team_logos": TEAM_LOGOS, "team_colours": team_colours})
 
 
 @spa_api.route("/leagues/<int:league_id>/state-league-stats/player/<int:player_id>")

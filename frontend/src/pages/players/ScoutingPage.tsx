@@ -21,6 +21,7 @@ interface SLPlayer {
   total_possessions: number; kick_percentage: number
   contested_possession_rate: number; score_involvement_pct: number
   fantasy_team: string | null; coach: string | null
+  potential: number | null
 }
 
 interface CareerSeason {
@@ -32,7 +33,8 @@ interface CareerSeason {
   sc_avg?: number | null; contested_marks: number; score_involvements: number
 }
 
-interface PageData { players: SLPlayer[]; total: number; page: number; pages: number; sl_logos: Record<string, string>; team_logos: Record<string, string> }
+interface TeamColour { bg: string; fg: string }
+interface PageData { players: SLPlayer[]; total: number; page: number; pages: number; sl_logos: Record<string, string>; team_logos: Record<string, string>; team_colours: Record<string, TeamColour> }
 
 const STAT_COLS: [keyof SLPlayer, string, number][] = [
   ['disposals', 'DIS', 0], ['kicks', 'KCK', 0], ['marks', 'MRK', 0],
@@ -523,20 +525,24 @@ export function ScoutingPage() {
                     <th className={sort === 'player_name' ? 'sorted' : ''} onClick={() => toggleSort('player_name')}>
                       Player {sort === 'player_name' && <span className="sort-arrow">{dir === 'asc' ? '▲' : '▼'}</span>}
                     </th>
+                    <th className="scout-hide-mob" style={{ textAlign: 'right', width: 36 }}>Rtg</th>
+                    <th className="scout-hide-mob" style={{ textAlign: 'right', width: 36 }}>Pot</th>
                     <th className={sort === 'matches' ? 'sorted' : ''} onClick={() => toggleSort('matches')} style={{ textAlign: 'center' }}>
                       GP {sort === 'matches' && <span className="sort-arrow">{dir === 'asc' ? '▲' : '▼'}</span>}
                     </th>
-                    <th className="scout-hide-mob" style={{ textAlign: 'left', minWidth: 60 }}>Owner</th>
                     {STAT_COLS.map(([key, label]) => (
                       <th key={key as string} className={`${sort === key ? 'sorted' : ''} scout-hide-mob`}
                         onClick={() => toggleSort(key as string)}>
                         {label} {sort === key && <span className="sort-arrow">{dir === 'asc' ? '▲' : '▼'}</span>}
                       </th>
                     ))}
+                    <th className="scout-hide-mob" style={{ textAlign: 'center', minWidth: 70 }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.players.map(p => (
+                  {data.players.map(p => {
+                    const tc = p.fantasy_team ? data.team_colours?.[p.fantasy_team] : null
+                    return (
                     <tr key={p.id} onClick={() => setSelected(p)} className={selected?.id === p.id ? 'selected' : ''}>
                       <td>
                         <div className="scout-player-info">
@@ -556,19 +562,28 @@ export function ScoutingPage() {
                           </div>
                         </div>
                       </td>
-                      <td><span className="scout-gp">{p.matches ?? '—'}</span></td>
-                      <td className="scout-hide-mob" style={{ textAlign: 'left', fontSize: '.7rem' }}>
-                        {p.coach ? (
-                          <span style={{ color: '#d29922', fontWeight: 600 }}>{p.coach}</span>
-                        ) : (
-                          <span style={{ color: '#30363d', fontSize: '.65rem' }}>FA</span>
-                        )}
+                      <td className="scout-hide-mob" style={{ textAlign: 'right' }}>
+                        {p.rating ? <span style={{ color: '#c9d1d9', fontWeight: 600 }}>{p.rating}</span> : <span style={{ color: '#484f58' }}>-</span>}
                       </td>
+                      <td className="scout-hide-mob" style={{ textAlign: 'right' }}>
+                        {p.potential ? <span style={{ color: '#c9d1d9', fontWeight: 600 }}>{p.potential}</span> : <span style={{ color: '#484f58' }}>-</span>}
+                      </td>
+                      <td><span className="scout-gp">{p.matches ?? '—'}</span></td>
                       {STAT_COLS.map(([key, , dec]) => (
                         <td key={key as string} className="scout-hide-mob">{fmt(p[key] as number, dec)}</td>
                       ))}
+                      <td className="scout-hide-mob" style={{ textAlign: 'center' }}>
+                        {p.fantasy_team ? (
+                          <span style={{ fontSize: '.58rem', fontWeight: 700, padding: '1px 6px', borderRadius: 3,
+                            whiteSpace: 'nowrap', background: tc?.bg || '#21262d', color: tc?.fg || '#c9d1d9' }}>
+                            {p.fantasy_team}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '.58rem', fontWeight: 600, color: '#3fb950' }}>FA</span>
+                        )}
+                      </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
