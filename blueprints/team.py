@@ -2013,29 +2013,18 @@ def team_analytics_api(league_id, team_id):
         except Exception:
             pass
 
-    # AI summary — generate in BACKGROUND THREAD if not cached.
-    # Return the page immediately, frontend polls /ai-status for the report.
+    # AI summary — generate synchronously (required for full response cache).
+    # Performance note: GPT call is ~8-10s but only happens on cold rebuild.
+    # Weekly precompute job ensures this path is rarely hit by real users.
     if not ai_summary and analytics:
-        import threading
-        _team_name = team.name
-        _analytics = analytics
-        _narr = narr
-        _comp = comp_insights
-
-        def _gen_ai():
-            try:
-                with db.session.begin_nested() if hasattr(db.session, 'begin_nested') else nullcontext():
-                    result = generate_team_summary(
-                        team_id, _team_name, year, _analytics, {},
-                        narrative=_narr, comparative_insights=_comp)
-                    if result:
-                        cache_analytics(team_id, year, "ai_summary", result)
-            except Exception:
-                logger.exception("Background GPT generation failed for team %d", team_id)
-
-        from contextlib import nullcontext
-        t = threading.Thread(target=_gen_ai, daemon=True)
-        t.start()
+        try:
+            ai_summary = generate_team_summary(
+                team_id, team.name, year, analytics, {},
+                narrative=narr, comparative_insights=comp_insights)
+            if ai_summary:
+                cache_analytics(team_id, year, "ai_summary", ai_summary)
+        except Exception:
+            logger.exception("GPT generation failed for team %d", team_id)
 
     # Parse AI into sections (will be empty if GPT is still generating)
     ai_sections = []

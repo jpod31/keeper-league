@@ -1969,6 +1969,17 @@ def compute_team_analytics(team_id, league_id, year, profile_tags):
 # COMPARATIVE INSIGHTS ENGINE
 # ═══════════════════════════════════════════════════════════════════════════
 
+def _dynasty_key(team_id, dynasty):
+    """Find the dynasty key for a team (handles int vs str keys)."""
+    if not dynasty:
+        return None
+    if team_id in dynasty:
+        return team_id
+    if str(team_id) in dynasty:
+        return str(team_id)
+    return None
+
+
 def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
                                   trade_table, narrative):
     """Pre-compute league-relative comparative insights as structured sentences.
@@ -2064,8 +2075,8 @@ def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
                     f"would be a top-2 {pos} on {teams_would_start_on} other teams")
 
     # ── WIN WINDOW (from dynasty sim) ──
-    if dynasty and str(team_id) in dynasty:
-        my_dynasty = dynasty[str(team_id)]
+    if dynasty and _dynasty_key(team_id, dynasty) is not None:
+        my_dynasty = dynasty[_dynasty_key(team_id, dynasty)]
         all_tids = list(dynasty.keys())
 
         for yr_data in my_dynasty.get("years", []):
@@ -2126,8 +2137,8 @@ def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
                 f"with no replacement under 25 developing")
 
     # ── DEPTH LONGEVITY (from dynasty sim) ──
-    if dynasty and str(team_id) in dynasty:
-        my_years = dynasty[str(team_id)].get("years", [])
+    if dynasty and _dynasty_key(team_id, dynasty) is not None:
+        my_years = dynasty[_dynasty_key(team_id, dynasty)].get("years", [])
         for pos in ["DEF", "MID", "RUC", "FWD"]:
             years_above_avg = 0
             for yr_data in my_years:
