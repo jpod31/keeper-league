@@ -391,7 +391,7 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
         StateLeagueStat.is_afl_listed == True,
         StateLeagueStat.matches >= 2,
         StateLeagueStat.competition.in_(["vfl", "sanfl", "wafl"]),
-    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(200).all()
+    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(60).all()
 
     pickup_targets = []
     for sl in sl_current:
@@ -462,7 +462,7 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
         StateLeagueStat.season == year,
         StateLeagueStat.competition == "nab",
         StateLeagueStat.matches >= 2,
-    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(100).all()
+    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(30).all()
 
     draft_watch = []
     for sl in nab_current:

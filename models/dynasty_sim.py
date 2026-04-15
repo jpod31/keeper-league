@@ -62,43 +62,70 @@ def _get_age_multiplier(age):
     return 0.5
 
 
-def _compute_true_level(player):
-    """Compute a player's true SC level from multi-year weighted history.
+_true_level_cache: dict[int, float] = {}
+_ceiling_cache: dict[int, float] = {}
 
-    Current season (small sample) is regressed toward previous years.
-    More games = more weight. This prevents 5-game hot streaks from
-    distorting projections.
-    """
+
+def _precompute_true_levels(player_ids: list[int]):
+    """Batch-compute true levels for all players in one query."""
     from models.database import PlayerStat
     from sqlalchemy import func
 
-    # Get season-by-season averages
-    seasons = db.session.query(
+    if not player_ids:
+        return
+
+    # Single query: get all season averages for all players
+    rows = db.session.query(
+        PlayerStat.player_id,
         PlayerStat.year,
         func.avg(PlayerStat.supercoach_score).label("avg"),
         func.count().label("gm"),
-    ).filter_by(player_id=player.id).filter(
-        PlayerStat.supercoach_score > 0
-    ).group_by(PlayerStat.year).order_by(PlayerStat.year.desc()).limit(4).all()
+    ).filter(
+        PlayerStat.player_id.in_(player_ids),
+        PlayerStat.supercoach_score > 0,
+    ).group_by(PlayerStat.player_id, PlayerStat.year).all()
 
-    if not seasons:
-        return player.sc_avg or player.sc_avg_prev or (player.rating or 60) * 0.8
+    # Group by player
+    by_player: dict[int, list] = {}
+    for pid, yr, avg, gm in rows:
+        by_player.setdefault(pid, []).append((yr, float(avg), gm))
 
-    # Weight: recent years matter more, but also weight by games played
-    # This naturally regresses small samples toward historical average
-    weighted_sum = 0
-    weight_total = 0
-    for i, (yr, avg, gm) in enumerate(seasons):
-        recency = 1.0 - i * 0.2  # 1.0, 0.8, 0.6, 0.4
-        sample_weight = min(gm / 20.0, 1.0)  # 5 games = 0.25, 20+ games = 1.0
-        w = recency * sample_weight * gm
-        weighted_sum += float(avg) * w
-        weight_total += w
+    for pid in player_ids:
+        seasons = sorted(by_player.get(pid, []), key=lambda x: -x[0])[:4]
+        if not seasons:
+            p = db.session.get(AflPlayer, pid)
+            _true_level_cache[pid] = (p.sc_avg or p.sc_avg_prev or (p.rating or 60) * 0.8) if p else 60
+            continue
 
-    return round(weighted_sum / weight_total, 1) if weight_total > 0 else 60
+        weighted_sum = 0.0
+        weight_total = 0.0
+        for i, (yr, avg, gm) in enumerate(seasons):
+            recency = 1.0 - i * 0.2
+            sample_weight = min(gm / 20.0, 1.0)
+            w = recency * sample_weight * gm
+            weighted_sum += avg * w
+            weight_total += w
+        _true_level_cache[pid] = round(weighted_sum / weight_total, 1) if weight_total > 0 else 60
+
+
+def _compute_true_level(player):
+    """Get cached true level, or compute on the fly."""
+    if player.id in _true_level_cache:
+        return _true_level_cache[player.id]
+    _precompute_true_levels([player.id])
+    return _true_level_cache.get(player.id, player.sc_avg or 60)
 
 
 def _get_ceiling(player):
+    """Get the realistic SC ceiling for a player (cached)."""
+    if player.id in _ceiling_cache:
+        return _ceiling_cache[player.id]
+    val = _get_ceiling_inner(player)
+    _ceiling_cache[player.id] = val
+    return val
+
+
+def _get_ceiling_inner(player):
     """Get the realistic SC ceiling for a player.
 
     Uses multiple signals weighted by reliability:
@@ -120,23 +147,19 @@ def _get_ceiling(player):
 
     # ── State league signal (for young/developing players) ──
     sl_signal = 0
-    model_signal = 0
     if age <= 27 and career < 80:
         try:
             sl = StateLeagueStat.query.filter_by(player_id=player.id)\
                 .filter(StateLeagueStat.competition.in_(["vfl", "sanfl", "wafl"]))\
                 .order_by(StateLeagueStat.season.desc()).first()
             if sl and sl.dreamteam_avg:
-                sl_signal = sl.dreamteam_avg * 0.65  # VFL→AFL translation ~65%
+                sl_signal = sl.dreamteam_avg * 0.65
         except Exception:
             pass
-        try:
-            from models.scouting_model import predict_afl_output
-            pred = predict_afl_output(player_id=player.id)
-            if pred:
-                model_signal = pred["predicted_afl"].get("afl_sc_avg", 0)
-        except Exception:
-            pass
+    # Note: scouting model prediction skipped here for performance.
+    # It's too slow for batch dynasty sim (200+ players × 6 teams).
+    # State league signal + rating/potential is sufficient for ceiling estimation.
+    model_signal = 0
 
     # ── Ceiling estimation ──
     # The ceiling is how good this player COULD be at their peak.
@@ -353,12 +376,24 @@ def simulate_dynasty(league_id, year, profile_tags, years_ahead=5):
     records = _load_historical_sc()
     all_players_db = AflPlayer.query.all()
 
-    results = {}
-
+    # Precompute true levels for ALL rostered players in one batch query
+    all_player_ids = set()
+    team_players_map = {}
     for team in teams:
         roster = FantasyRoster.query.filter_by(team_id=team.id, is_active=True).all()
         players = [db.session.get(AflPlayer, r.player_id) for r in roster]
         players = [p for p in players if p]
+        team_players_map[team.id] = players
+        all_player_ids.update(p.id for p in players)
+
+    _true_level_cache.clear()
+    _ceiling_cache.clear()
+    _precompute_true_levels(list(all_player_ids))
+
+    results = {}
+
+    for team in teams:
+        players = team_players_map.get(team.id, [])
 
         team_years = []
 
