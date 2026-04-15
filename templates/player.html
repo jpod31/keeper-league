@@ -456,18 +456,18 @@
 
 {% if state_league_data %}
 <div class="tab-pane fade" id="stateleague" role="tabpanel">
+
+  {# ── Macro for career table + rankings ── #}
+  {% macro sl_section(section, title, badge_class) %}
   <div class="card bg-dark border-secondary mb-4">
     <div class="card-body">
-      <h6 class="fw-semibold text-uppercase text-muted small mb-3">
-        State League Career
-      </h6>
+      <h6 class="fw-semibold text-uppercase text-muted small mb-3">{{ title }}</h6>
 
-      {# Rankings badges #}
-      {% if state_league_data.rankings %}
+      {% if section.rankings %}
       <div class="d-flex flex-wrap gap-2 mb-3">
-        {% for key, r in state_league_data.rankings.items() %}
+        {% for key, r in section.rankings.items() %}
         <span class="badge {% if r.rank <= 3 %}bg-success{% elif r.rank <= 10 %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size:.78rem; padding:5px 10px;">
-          {% if key == 'comp' %}#{{ r.rank }}/{{ r.of }} Fantasy Avg ({{ state_league_data.latest_comp }} {{ state_league_data.latest_season }})
+          {% if key == 'comp' %}#{{ r.rank }}/{{ r.of }} Fantasy Avg ({{ section.latest_comp }} {{ section.latest_season }})
           {% elif key == 'team' %}#{{ r.rank }}/{{ r.of }} in Team
           {% elif key == 'comp_disposals' %}#{{ r.rank }}/{{ r.of }} Disposals
           {% elif key == 'comp_tackles' %}#{{ r.rank }}/{{ r.of }} Tackles
@@ -477,7 +477,6 @@
       </div>
       {% endif %}
 
-      {# Career table #}
       <div class="table-responsive">
         <table class="table table-dark table-sm table-hover align-middle" style="font-size:.82rem;">
           <thead>
@@ -490,10 +489,10 @@
             </tr>
           </thead>
           <tbody>
-            {% for s in state_league_data.career %}
+            {% for s in section.career %}
             <tr>
               <td class="fw-bold">{{ s.season }}</td>
-              <td><span class="badge {% if s.competition == 'VFL' %}bg-primary{% elif s.competition == 'SANFL' %}bg-info{% elif s.competition == 'NAB' %}bg-warning text-dark{% else %}bg-secondary{% endif %}" style="font-size:.7rem;">{{ s.competition }}</span></td>
+              <td><span class="badge {{ badge_class }}" style="font-size:.7rem;">{{ s.competition }}</span></td>
               <td>{{ s.team }}</td>
               <td class="text-center fw-bold">{{ s.matches or '—' }}</td>
               <td class="text-center">{{ s.age or '—' }}</td>
@@ -513,6 +512,35 @@
       </div>
     </div>
   </div>
+  {% endmacro %}
+
+  {# AFL Team History #}
+  {% if afl_team_history and afl_team_history|length > 0 %}
+  <div class="card bg-dark border-secondary mb-4">
+    <div class="card-body">
+      <h6 class="fw-semibold text-uppercase text-muted small mb-3">AFL Career</h6>
+      <div class="d-flex flex-wrap gap-2">
+        {% for th in afl_team_history %}
+        <div class="text-center" style="min-width:48px;">
+          {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }}">{% endif %}
+          <div style="font-size:.65rem;color:#8b949e;">{{ th.year }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# State League (VFL/SANFL/WAFL) #}
+  {% if state_league_data.career %}
+    {{ sl_section(state_league_data, "State League Career (VFL / SANFL / WAFL)", "bg-primary") }}
+  {% endif %}
+
+  {# U18 / Coates Talent League #}
+  {% if state_league_data.u18 %}
+    {{ sl_section(state_league_data.u18, "Coates Talent League (U18s)", "bg-warning text-dark") }}
+  {% endif %}
+
 </div>
 {% endif %}
 

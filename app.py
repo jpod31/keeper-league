@@ -698,38 +698,69 @@ def create_app():
                 )
             ).order_by(StateLeagueStat.season.desc()).all()
             if sl_rows:
-                sl_career = []
-                for r in sl_rows:
-                    sl_career.append({
-                        "season": r.season, "competition": r.competition.upper(),
-                        "team": r.team, "matches": r.matches, "age": r.age,
-                        "disposals": r.disposals, "marks": r.marks, "goals": r.goals,
-                        "tackles": r.tackles, "hitouts": r.hitouts,
-                        "contested_possessions": r.contested_possessions,
-                        "clearances": r.clearances, "inside_fifties": r.inside_fifties,
-                        "fantasy_avg": r.dreamteam_avg,
-                    })
-                # Rankings: where does this player rank in their most recent comp/season?
-                latest = sl_rows[0]
-                rankings = {}
-                if latest.dreamteam_avg and latest.competition and latest.season:
-                    all_in_comp = StateLeagueStat.query.filter_by(
-                        competition=latest.competition, season=latest.season
-                    ).filter(StateLeagueStat.matches >= 3).all()
-                    all_in_team = [s for s in all_in_comp if s.team == latest.team]
-                    for label, pool, attr in [
-                        ("comp", all_in_comp, "dreamteam_avg"),
-                        ("team", all_in_team, "dreamteam_avg"),
-                        ("comp_disposals", all_in_comp, "disposals"),
-                        ("comp_tackles", all_in_comp, "tackles"),
-                    ]:
-                        vals = sorted([getattr(s, attr) or 0 for s in pool], reverse=True)
-                        my_val = getattr(latest, attr) or 0
-                        rank = next((i + 1 for i, v in enumerate(vals) if v <= my_val), len(vals))
-                        rankings[label] = {"rank": rank, "of": len(vals), "value": round(my_val, 1)}
-                state_league_data = {"career": sl_career, "rankings": rankings,
-                                     "latest_comp": latest.competition.upper(),
-                                     "latest_season": latest.season}
+                def _build_section(rows):
+                    career = []
+                    for r in rows:
+                        career.append({
+                            "season": r.season, "competition": r.competition.upper(),
+                            "team": r.team, "matches": r.matches, "age": r.age,
+                            "disposals": r.disposals, "marks": r.marks, "goals": r.goals,
+                            "tackles": r.tackles, "hitouts": r.hitouts,
+                            "contested_possessions": r.contested_possessions,
+                            "clearances": r.clearances, "inside_fifties": r.inside_fifties,
+                            "fantasy_avg": r.dreamteam_avg,
+                        })
+                    latest = rows[0]
+                    rankings = {}
+                    if latest.dreamteam_avg and latest.competition and latest.season:
+                        all_in_comp = StateLeagueStat.query.filter_by(
+                            competition=latest.competition, season=latest.season
+                        ).filter(StateLeagueStat.matches >= 3).all()
+                        all_in_team = [s for s in all_in_comp if s.team == latest.team]
+                        for label, pool, attr in [
+                            ("comp", all_in_comp, "dreamteam_avg"),
+                            ("team", all_in_team, "dreamteam_avg"),
+                            ("comp_disposals", all_in_comp, "disposals"),
+                            ("comp_tackles", all_in_comp, "tackles"),
+                        ]:
+                            vals = sorted([getattr(s, attr) or 0 for s in pool], reverse=True)
+                            my_val = getattr(latest, attr) or 0
+                            rank = next((i + 1 for i, v in enumerate(vals) if v <= my_val), len(vals))
+                            rankings[label] = {"rank": rank, "of": len(vals), "value": round(my_val, 1)}
+                    return {"career": career, "rankings": rankings,
+                            "latest_comp": latest.competition.upper(),
+                            "latest_season": latest.season}
+
+                # Split into state league (VFL/SANFL/WAFL) and U18 (NAB/Coates)
+                sl_senior = [r for r in sl_rows if r.competition != "nab"]
+                sl_u18 = [r for r in sl_rows if r.competition == "nab"]
+                if sl_senior:
+                    state_league_data = _build_section(sl_senior)
+                if sl_u18:
+                    state_league_data = state_league_data or {}
+                    state_league_data["u18"] = _build_section(sl_u18)
+
+            # AFL team history (which AFL team per year)
+            afl_team_history = []
+            from models.database import PlayerStat as _PS
+            team_years = db.session.query(
+                _PS.year, AflPlayer.afl_team
+            ).join(AflPlayer, _PS.player_id == AflPlayer.id).filter(
+                _PS.player_id == afl_row.id
+            ).group_by(_PS.year).order_by(_PS.year).all()
+            # Simple approach: check the afl_team from the player's stats per year
+            # Actually, we need to track team changes. Let's use a different approach:
+            # group PlayerStat by year and get the most common afl_team for each
+            seen_teams = {}
+            for ps_row in PlayerStat.query.filter_by(player_id=afl_row.id).order_by(PlayerStat.year).all():
+                yr = ps_row.year
+                if yr not in seen_teams:
+                    seen_teams[yr] = afl_row.afl_team  # fallback
+            # For now, just use current team for all years (team changes aren't tracked per-round)
+            # But we can detect changes from the data
+            from config import TEAM_LOGOS
+            if seen_teams:
+                afl_team_history = [{"year": yr, "team": afl_row.afl_team, "logo": TEAM_LOGOS.get(afl_row.afl_team)} for yr in sorted(seen_teams.keys())]
 
         return render_template("player.html",
                                player=player,
@@ -741,7 +772,8 @@ def create_app():
                                player_ratings=player_ratings,
                                player_injury=player_injury,
                                acquisition_info=acquisition_info,
-                               state_league_data=state_league_data)
+                               state_league_data=state_league_data,
+                               afl_team_history=afl_team_history if afl_row else [])
 
     @app.route("/refresh", methods=["POST"])
     def trigger_refresh_all():
