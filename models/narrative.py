@@ -64,10 +64,15 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
     #   - Departing player must be 27+ (actually declining/aging out)
     #   - Departing player's projected SC must be LOWER than the entrant
     #   - Position must match
+    # All rostered player names (year 0 full squad including emergencies)
+    # Used to avoid reporting "enters" for players already on the roster
+    all_rostered = set(p["name"] for p in my_years[0]["squad"]) if my_years else set()
+
     kid_timeline = []
     for i in range(1, len(my_years)):
-        curr_names = set(p["name"] for p in my_years[i]["squad"])
-        prev_names = set(p["name"] for p in my_years[i-1]["squad"])
+        # Compare best 23 (non-emergency) between years
+        curr_names = set(p["name"] for p in my_years[i]["squad"] if not p.get("is_emergency"))
+        prev_names = set(p["name"] for p in my_years[i-1]["squad"] if not p.get("is_emergency"))
         entered = curr_names - prev_names
         left = prev_names - curr_names
 
@@ -84,6 +89,11 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
 
             # Gate: must be a young entrant (under 25), not a 30yo rotation
             if entry_age > 25:
+                continue
+
+            # Skip players already on the roster (e.g. moving from EMG to best 23)
+            # This is a promotion, not a breakthrough
+            if name in all_rostered and i == 1:
                 continue
 
             entry_pos = (entry.get("position", "MID")).split("/")[0]

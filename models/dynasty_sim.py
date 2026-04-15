@@ -270,13 +270,23 @@ def simulate_dynasty(league_id, year, profile_tags, years_ahead=5):
                 pt = profile_tags.get(p.id, {})
 
                 if offset == 0:
-                    # Current year: use actual SC. For injured players who
-                    # haven't played (sc_avg=0), fall back to last year's
-                    # average so they aren't dropped from the best-23.
+                    # Current year: use best estimate of true ability, NOT
+                    # current season avg (which is volatile due to byes,
+                    # injuries, small sample). Blend current + prev + rating.
                     sc = p.sc_avg or 0
-                    if sc == 0:
-                        sc = p.sc_avg_prev or 0
-                    if sc == 0 and p.rating:
+                    prev = p.sc_avg_prev or 0
+                    games = p.games_played or 0
+                    if sc > 0 and prev > 0 and games >= 5:
+                        # Enough data: lean on current avg
+                        sc = sc
+                    elif sc > 0 and prev > 0:
+                        # Small sample: blend with last year
+                        weight = min(games / 10, 0.7)
+                        sc = sc * weight + prev * (1 - weight)
+                    elif sc == 0 and prev > 0:
+                        # Hasn't played yet this year (injured/rested): use last year
+                        sc = prev
+                    elif sc == 0 and p.rating:
                         sc = p.rating * 1.0
                 else:
                     sc = _project_player_at_age(p, target_age, pt, {})

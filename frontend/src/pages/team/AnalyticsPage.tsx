@@ -562,7 +562,8 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
 
   const yr = years[yearIdx]
   const prevYr = yearIdx > 0 ? years[yearIdx - 1] : null
-  const prevNames = new Set(prevYr ? prevYr.squad.filter(p => !p.is_emergency).map(p => p.name) : [])
+  // Include ALL squad members (starters + EMG) so promoting from EMG doesn't show as "new"
+  const prevNames = new Set(prevYr ? prevYr.squad.map(p => p.name) : [])
 
   const starters = yr.squad.filter(p => !p.is_emergency)
   const emergencies = yr.squad.filter(p => p.is_emergency)
