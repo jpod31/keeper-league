@@ -293,7 +293,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
             })}
           </div>
 
-          {/* Career chart */}
+          {/* Career */}
           {career && career.length >= 1 && (() => {
             const merged: Record<number, { season: number; afl_fan?: number; sl_fan?: number; afl_sc?: number; afl_gm?: number; sl_gm?: number; sl_level?: string; afl_team?: string; sl_team?: string }> = {}
             for (const h of career) {
@@ -308,35 +308,74 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
               <>
                 <div style={{ fontSize: '.68rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase',
                   letterSpacing: '.5px', marginBottom: 6 }}>Career</div>
-                <div style={{ height: 150, display: 'flex', justifyContent: chartWidth ? 'center' : undefined }}>
-                  <ResponsiveContainer width={chartWidth ?? '100%'} height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }} barGap={2} barCategoryGap="30%">
-                      <XAxis dataKey="season" stroke="#484f58" fontSize={10} tickLine={false} axisLine={{ stroke: '#21262d' }} />
-                      <YAxis stroke="#484f58" fontSize={9} tickLine={false} axisLine={false} />
-                      <Tooltip cursor={{ fill: 'rgba(88,166,255,.08)', radius: 4 }} content={({ active, payload }) => {
-                        if (!active || !payload?.length) return null
-                        const d = payload[0]?.payload
-                        if (!d) return null
-                        return (
-                          <div style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '8px 12px', fontSize: '.72rem' }}>
-                            <div style={{ fontWeight: 800, color: '#f0f3f6', marginBottom: 4 }}>{d.season}</div>
-                            {d.afl_fan != null && <div style={{ color: '#bc8cff' }}>AFL: {Math.round(d.afl_fan)} fantasy · {d.afl_gm}gm</div>}
-                            {d.sl_fan != null && <div style={{ color: '#58a6ff' }}>{d.sl_level || 'VFL'}: {Math.round(d.sl_fan)} fantasy · {d.sl_gm}gm</div>}
-                          </div>
-                        )
-                      }} />
-                      <Bar dataKey="sl_fan" fill="#58a6ff" fillOpacity={0.7} radius={[3, 3, 0, 0]} barSize={barSize} name="SL Fantasy" />
-                      <Bar dataKey="afl_fan" fill="#bc8cff" fillOpacity={0.7} radius={[3, 3, 0, 0]} barSize={barSize} name="AFL Fantasy" />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 4, fontSize: '.6rem', color: '#6e7681' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#58a6ff', opacity: .7 }}></span> State League
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#bc8cff', opacity: .7 }}></span> AFL
-                  </span>
+                {chartData.length > 1 && (
+                  <>
+                    <div style={{ height: 150, display: 'flex', justifyContent: chartWidth ? 'center' : undefined }}>
+                      <ResponsiveContainer width={chartWidth ?? '100%'} height="100%">
+                        <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }} barGap={2} barCategoryGap="30%">
+                          <XAxis dataKey="season" stroke="#484f58" fontSize={10} tickLine={false} axisLine={{ stroke: '#21262d' }} />
+                          <YAxis stroke="#484f58" fontSize={9} tickLine={false} axisLine={false} />
+                          <Tooltip cursor={{ fill: 'rgba(88,166,255,.08)', radius: 4 }} content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null
+                            const d = payload[0]?.payload
+                            if (!d) return null
+                            return (
+                              <div style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '8px 12px', fontSize: '.72rem' }}>
+                                <div style={{ fontWeight: 800, color: '#f0f3f6', marginBottom: 4 }}>{d.season}</div>
+                                {d.afl_fan != null && <div style={{ color: '#bc8cff' }}>AFL: {Math.round(d.afl_fan)} fantasy · {d.afl_gm}gm</div>}
+                                {d.sl_fan != null && <div style={{ color: '#58a6ff' }}>{d.sl_level || 'VFL'}: {Math.round(d.sl_fan)} fantasy · {d.sl_gm}gm</div>}
+                              </div>
+                            )
+                          }} />
+                          <Bar dataKey="sl_fan" fill="#58a6ff" fillOpacity={0.7} radius={[3, 3, 0, 0]} barSize={barSize} name="SL Fantasy" />
+                          <Bar dataKey="afl_fan" fill="#bc8cff" fillOpacity={0.7} radius={[3, 3, 0, 0]} barSize={barSize} name="AFL Fantasy" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 4, marginBottom: 10, fontSize: '.6rem', color: '#6e7681' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: 2, background: '#58a6ff', opacity: .7 }}></span> State League
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: 2, background: '#bc8cff', opacity: .7 }}></span> AFL
+                      </span>
+                    </div>
+                  </>
+                )}
+                {/* Season-by-season breakdown */}
+                <div style={{ fontSize: '.7rem', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(48,54,61,.3)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '62px 1fr 32px 38px 32px 32px 32px 32px 38px', gap: 0,
+                    padding: '5px 8px', background: '#161b22', color: '#6e7681', fontSize: '.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.3px' }}>
+                    <span>Year</span><span>Team</span><span style={{ textAlign: 'right' }}>GM</span>
+                    <span style={{ textAlign: 'right' }}>DIS</span><span style={{ textAlign: 'right' }}>MRK</span>
+                    <span style={{ textAlign: 'right' }}>TKL</span><span style={{ textAlign: 'right' }}>GLS</span>
+                    <span style={{ textAlign: 'right' }}>HO</span><span style={{ textAlign: 'right' }}>FAN</span>
+                  </div>
+                  {career.map((s, i) => {
+                    const isAfl = s.level === 'AFL'
+                    const fan = s.sc_avg ?? s.dreamteam_avg
+                    return (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '62px 1fr 32px 38px 32px 32px 32px 32px 38px', gap: 0,
+                        padding: '4px 8px', borderTop: '1px solid rgba(48,54,61,.15)',
+                        background: isAfl ? 'rgba(188,140,255,.04)' : 'transparent' }}>
+                        <span style={{ fontWeight: 700, color: isAfl ? '#bc8cff' : '#58a6ff', fontSize: '.65rem' }}>
+                          {s.level} {s.season}
+                        </span>
+                        <span style={{ color: '#8b949e', fontSize: '.65rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {s.team}
+                        </span>
+                        <span style={{ textAlign: 'right', color: '#c9d1d9', fontWeight: 600 }}>{s.matches}</span>
+                        <span style={{ textAlign: 'right', color: '#c9d1d9' }}>{s.disposals != null ? (typeof s.disposals === 'number' && s.disposals % 1 ? s.disposals.toFixed(1) : s.disposals) : '—'}</span>
+                        <span style={{ textAlign: 'right', color: '#c9d1d9' }}>{s.marks != null ? (typeof s.marks === 'number' && s.marks % 1 ? s.marks.toFixed(1) : s.marks) : '—'}</span>
+                        <span style={{ textAlign: 'right', color: '#c9d1d9' }}>{s.tackles != null ? (typeof s.tackles === 'number' && s.tackles % 1 ? s.tackles.toFixed(1) : s.tackles) : '—'}</span>
+                        <span style={{ textAlign: 'right', color: '#c9d1d9' }}>{s.goals != null ? (typeof s.goals === 'number' && s.goals % 1 ? s.goals.toFixed(1) : s.goals) : '—'}</span>
+                        <span style={{ textAlign: 'right', color: '#c9d1d9' }}>{s.hitouts != null && s.hitouts > 0 ? (typeof s.hitouts === 'number' && s.hitouts % 1 ? s.hitouts.toFixed(1) : s.hitouts) : '—'}</span>
+                        <span style={{ textAlign: 'right', fontWeight: 800, color: isAfl ? '#bc8cff' : '#58a6ff' }}>
+                          {fan != null ? Math.round(fan as number) : '—'}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               </>
             )
@@ -487,6 +526,7 @@ export function ScoutingPage() {
                     <th className={sort === 'matches' ? 'sorted' : ''} onClick={() => toggleSort('matches')} style={{ textAlign: 'center' }}>
                       GP {sort === 'matches' && <span className="sort-arrow">{dir === 'asc' ? '▲' : '▼'}</span>}
                     </th>
+                    <th className="scout-hide-mob" style={{ textAlign: 'left', minWidth: 60 }}>Owner</th>
                     {STAT_COLS.map(([key, label]) => (
                       <th key={key as string} className={`${sort === key ? 'sorted' : ''} scout-hide-mob`}
                         onClick={() => toggleSort(key as string)}>
@@ -512,13 +552,18 @@ export function ScoutingPage() {
                               {!p.is_afl_listed && <span className="unlisted-badge">Unlisted</span>}
                               <span className="scout-comp-badge">{p.team} · {p.competition.toUpperCase()}</span>
                               {p.age && <span style={{ fontSize: '.65rem', color: '#6e7681' }}>{p.age}yo</span>}
-                              {p.coach && <span style={{ fontSize: '.58rem', padding: '1px 5px', borderRadius: 4, fontWeight: 600,
-                                background: 'rgba(210,153,34,.1)', color: '#d29922' }}>{p.coach}</span>}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td><span className="scout-gp">{p.matches ?? '—'}</span></td>
+                      <td className="scout-hide-mob" style={{ textAlign: 'left', fontSize: '.7rem' }}>
+                        {p.coach ? (
+                          <span style={{ color: '#d29922', fontWeight: 600 }}>{p.coach}</span>
+                        ) : (
+                          <span style={{ color: '#30363d', fontSize: '.65rem' }}>FA</span>
+                        )}
+                      </td>
                       {STAT_COLS.map(([key, , dec]) => (
                         <td key={key as string} className="scout-hide-mob">{fmt(p[key] as number, dec)}</td>
                       ))}
