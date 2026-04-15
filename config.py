@@ -193,6 +193,37 @@ STATE_LEAGUE_LOGOS = {
     "Subiaco": f"{_SL_LOGO}subiaco.png",
     "Swan Districts": f"{_SL_LOGO}swan-districts.png",
     "West Perth": f"{_SL_LOGO}west-perth.png",
+    # SANFL — DFS Australia abbreviations (2026+ data)
+    "ADL": f"{_LOGO_BASE}Adelaide.png",
+    "PORT": f"{_LOGO_BASE}PortAdelaide.png",
+    "CNTRL": f"{_SL_LOGO}central-district.png",
+    "TIGERS": f"{_SL_LOGO}glenelg.png",
+    "NORTH": f"{_SL_LOGO}north-adelaide.png",
+    "NWD": f"{_SL_LOGO}norwood.png",
+    "SOUTH": f"{_SL_LOGO}south-adelaide.png",
+    "STURT": f"{_SL_LOGO}sturt.png",
+    "WEST": f"{_SL_LOGO}west-adelaide.png",
+    "EAGLES": f"{_SL_LOGO}woodville-west-torrens.png",
+    # NAB / Coates Talent League (U18s)
+    "BPFC": f"{_SL_LOGO}bendigo-pioneers.png",
+    "CCFC": f"{_SL_LOGO}calder-cannons.png",
+    "DSFC": f"{_SL_LOGO}dandenong-stingrays.png",
+    "ERFC": f"{_SL_LOGO}eastern-ranges.png",
+    "GFFC": f"{_SL_LOGO}geelong-falcons.png",
+    "GPFC": f"{_SL_LOGO}gippsland-power.png",
+    "GWVRFC": f"{_SL_LOGO}gwv-rebels.png",
+    "MBFC": f"{_SL_LOGO}murray-bushrangers.png",
+    "NKFC": f"{_SL_LOGO}northern-knights.png",
+    "OCFC": f"{_SL_LOGO}oakleigh-chargers.png",
+    "SDFC": f"{_SL_LOGO}sandringham-dragons.png",
+    "WJFC": f"{_SL_LOGO}western-jets.png",
+    "NTFC": f"{_SL_LOGO}nt-thunder.png",
+    "TDFC": f"{_SL_LOGO}tasmania-devils.png",
+    # NAB — AFL academy teams (use parent club logo)
+    "BLFC": f"{_LOGO_BASE}Brisbane.png",
+    "GCFC": f"{_LOGO_BASE}GoldCoast.png",
+    "GWSFC": f"{_LOGO_BASE}Giants.png",
+    "SSFC": f"{_LOGO_BASE}Sydney.png",
 }
 
 TEAM_COLOURS = {
