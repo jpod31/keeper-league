@@ -550,8 +550,8 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
   )
 }
 
-/* ═══ Best 23 Field View ═══ */
-const POS_COLORS: Record<string, string> = { DEF: '#58a6ff', MID: '#d2a8ff', RUC: '#3fb950', FWD: '#fb923c', FLEX: '#fbbf24', EMG: '#6e7681' }
+/* ═══ Best 23 Oval Field ═══ */
+const PC: Record<string, string> = { DEF: '#58a6ff', MID: '#d2a8ff', RUC: '#3fb950', FWD: '#fb923c', FLEX: '#fbbf24' }
 
 function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>; teamId: number }) {
   const myDynasty = dynasty[String(teamId)]
@@ -562,8 +562,7 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
 
   const yr = years[yearIdx]
   const prevYr = yearIdx > 0 ? years[yearIdx - 1] : null
-  // Include ALL squad members (starters + EMG) so promoting from EMG doesn't show as "new"
-  const prevNames = new Set(prevYr ? prevYr.squad.map(p => p.name) : [])
+  const prevAll = new Set(prevYr ? prevYr.squad.map(p => p.name) : [])
 
   const starters = yr.squad.filter(p => !p.is_emergency)
   const emergencies = yr.squad.filter(p => p.is_emergency)
@@ -576,104 +575,114 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
   const mids = starters.filter(p => p.position === 'MID').sort((a, b) => b.sc - a.sc)
   const rucs = starters.filter(p => p.position === 'RUC').sort((a, b) => b.sc - a.sc)
   const fwds = starters.filter(p => p.position === 'FWD').sort((a, b) => b.sc - a.sc)
-  const mainNames = new Set([...defs, ...mids, ...rucs, ...fwds].map(p => p.name))
-  const flex = starters.filter(p => !mainNames.has(p.name))
+  const mainN = new Set([...defs, ...mids, ...rucs, ...fwds].map(p => p.name))
+  const flex = starters.filter(p => !mainN.has(p.name))
 
-  const scColor = (sc: number) => sc >= 110 ? '#3fb950' : sc >= 90 ? '#e6edf3' : sc >= 70 ? '#c9d1d9' : '#8b949e'
+  const scC = (sc: number) => sc >= 110 ? '#3fb950' : sc >= 90 ? '#e6edf3' : sc >= 70 ? '#c9d1d9' : '#8b949e'
 
-  const Chip = ({ p, posColor }: { p: { name: string; sc: number; age: number; position?: string }; posColor: string }) => {
-    const isNew = prevNames.size > 0 && !prevNames.has(p.name)
-    const surname = p.name.split(' ').slice(-1)[0]
-    const initial = p.name.charAt(0)
+  type SP = { name: string; sc: number; age: number; position?: string; is_emergency?: boolean }
+  const Dot = ({ p, c }: { p: SP; c: string }) => {
+    const isNew = prevAll.size > 0 && !prevAll.has(p.name)
+    const parts = p.name.split(' ')
+    const label = parts.length > 1 ? `${parts[0][0]}. ${parts[parts.length - 1]}` : p.name
     return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-        padding: '5px 6px', borderRadius: 8, minWidth: 54, maxWidth: 72,
-        background: isNew ? 'rgba(63,185,80,.1)' : 'rgba(255,255,255,.03)',
-        border: `1px solid ${isNew ? 'rgba(63,185,80,.3)' : 'rgba(48,54,61,.3)'}`,
-      }}>
-        <div style={{ fontSize: '.6rem', fontWeight: 700, color: '#e6edf3', textAlign: 'center',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
-          {initial}. {surname}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 56, transition: 'all .3s' }}>
+        <div style={{
+          width: 38, height: 38, borderRadius: '50%', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: isNew ? 'rgba(63,185,80,.2)' : `${c}18`,
+          border: `2px solid ${isNew ? '#3fb950' : c}`,
+          boxShadow: isNew ? '0 0 8px rgba(63,185,80,.3)' : 'none',
+        }}>
+          <span style={{ fontSize: '.75rem', fontWeight: 900, color: scC(p.sc), lineHeight: 1 }}>{Math.round(p.sc)}</span>
+          <span style={{ fontSize: '.48rem', fontWeight: 600, color: c, lineHeight: 1 }}>{p.age}</span>
         </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ fontSize: '.72rem', fontWeight: 900, color: scColor(p.sc), fontVariantNumeric: 'tabular-nums' }}>{Math.round(p.sc)}</span>
-          <span style={{ fontSize: '.55rem', color: posColor, fontWeight: 600 }}>{p.age}</span>
-        </div>
+        <span style={{ fontSize: '.5rem', fontWeight: 600, color: '#c9d1d9', marginTop: 2,
+          textAlign: 'center', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap', maxWidth: 56 }}>{label}</span>
       </div>
     )
   }
 
-  const PosRow = ({ label, players, color }: { label: string; players: typeof starters; color: string }) => (
-    <div style={{ marginBottom: 6 }}>
-      <div style={{ textAlign: 'center', fontSize: '.5rem', fontWeight: 800, color, textTransform: 'uppercase',
-        letterSpacing: '1px', marginBottom: 4 }}>{label}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 4 }}>
-        {players.map(p => <Chip key={p.name} p={p} posColor={color} />)}
-      </div>
+  const Row = ({ ps, c, y }: { ps: SP[]; c: string; y: number }) => (
+    <div style={{ position: 'absolute', top: `${y}%`, left: '50%', transform: 'translate(-50%, -50%)',
+      display: 'flex', gap: ps.length > 7 ? 2 : 6, justifyContent: 'center' }}>
+      {ps.map(p => <Dot key={p.name} p={p} c={c} />)}
     </div>
   )
+
+  // Split mids into two rows for better layout
+  const midsTop = mids.slice(0, Math.ceil(mids.length / 2))
+  const midsBot = mids.slice(Math.ceil(mids.length / 2))
 
   return (
     <div className="wr-card wr-card-tight">
       {/* Year selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#e6edf3', fontVariantNumeric: 'tabular-nums' }}>{yr.year}</div>
-        <input type="range" min={0} max={Math.max(0, years.length - 1)} value={yearIdx}
-          onChange={e => setYearIdx(Number(e.target.value))}
-          style={{ flex: 1, accentColor: '#58a6ff', height: 4 }} />
-        <div style={{ display: 'flex', gap: 4 }}>
-          {years.map((y, i) => (
-            <button key={y.year} onClick={() => setYearIdx(i)}
-              style={{ padding: '3px 8px', fontSize: '.65rem', fontWeight: i === yearIdx ? 800 : 500,
-                background: i === yearIdx ? '#58a6ff' : '#161b22', color: i === yearIdx ? '#0d1117' : '#8b949e',
-                border: '1px solid ' + (i === yearIdx ? '#58a6ff' : '#30363d'), borderRadius: 6, cursor: 'pointer' }}>
-              {y.year}
-            </button>
-          ))}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        {years.map((y, i) => (
+          <button key={y.year} onClick={() => setYearIdx(i)}
+            style={{ flex: 1, padding: '6px 0', fontSize: '.72rem', fontWeight: i === yearIdx ? 900 : 500,
+              background: i === yearIdx ? 'rgba(88,166,255,.15)' : 'transparent',
+              color: i === yearIdx ? '#58a6ff' : '#6e7681',
+              border: `1px solid ${i === yearIdx ? '#58a6ff' : '#21262d'}`, borderRadius: 8, cursor: 'pointer',
+              transition: 'all .2s' }}>
+            {y.year}
+          </button>
+        ))}
       </div>
 
-      {/* Summary bar */}
-      <div style={{ display: 'flex', gap: 16, padding: '10px 12px', background: 'rgba(88,166,255,.04)',
-        borderRadius: 8, marginBottom: 14, fontSize: '.78rem', justifyContent: 'center' }}>
-        <div><span style={{ color: '#8b949e' }}>Total SC</span> <b style={{ color: '#e6edf3', marginLeft: 4 }}>{Math.round(totalSc)}</b></div>
-        <div><span style={{ color: '#8b949e' }}>Avg Age</span> <b style={{ color: '#e6edf3', marginLeft: 4 }}>{avgAge.toFixed(1)}</b></div>
+      {/* Summary chips */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, justifyContent: 'center', fontSize: '.72rem' }}>
+        <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(88,166,255,.08)', color: '#58a6ff', fontWeight: 700 }}>
+          {Math.round(totalSc)} SC
+        </span>
+        <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(139,148,158,.08)', color: '#c9d1d9', fontWeight: 600 }}>
+          {avgAge.toFixed(1)} avg age
+        </span>
         {delta != null && (
-          <div><span style={{ color: '#8b949e' }}>vs Prev</span>
-            <b style={{ color: delta >= 0 ? '#3fb950' : '#ef4444', marginLeft: 4 }}>{delta >= 0 ? '+' : ''}{Math.round(delta)}</b>
-          </div>
+          <span style={{ padding: '4px 10px', borderRadius: 6,
+            background: delta >= 0 ? 'rgba(63,185,80,.08)' : 'rgba(239,68,68,.08)',
+            color: delta >= 0 ? '#3fb950' : '#ef4444', fontWeight: 700 }}>
+            {delta >= 0 ? '+' : ''}{Math.round(delta)} vs {years[yearIdx - 1]?.year}
+          </span>
         )}
       </div>
 
-      {/* Field view */}
-      <div style={{ background: 'linear-gradient(180deg, #0c1a0c 0%, #0f1f0f 30%, #0c1a0c 60%, #0f1f0f 100%)',
-        borderRadius: 12, padding: '16px 8px', position: 'relative', overflow: 'hidden' }}>
-        {/* Field lines */}
-        <div style={{ position: 'absolute', inset: 0, opacity: .06,
-          background: 'repeating-linear-gradient(0deg, transparent, transparent 24%, #3fb950 24%, #3fb950 24.5%)' }} />
+      {/* Oval field */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: 420, margin: '0 auto',
+        aspectRatio: '3/4', overflow: 'hidden', borderRadius: '50%/40%',
+        background: 'radial-gradient(ellipse at center, #132a13 0%, #0a1f0a 60%, #071507 100%)',
+        border: '2px solid rgba(63,185,80,.15)' }}>
+        {/* Field markings */}
+        <svg viewBox="0 0 300 400" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+          <ellipse cx="150" cy="200" rx="140" ry="190" fill="none" stroke="rgba(63,185,80,.1)" strokeWidth="1" />
+          <circle cx="150" cy="200" r="40" fill="none" stroke="rgba(63,185,80,.08)" strokeWidth="1" />
+          <line x1="10" y1="200" x2="290" y2="200" stroke="rgba(63,185,80,.06)" strokeWidth="1" />
+          <ellipse cx="150" cy="50" rx="50" ry="30" fill="none" stroke="rgba(63,185,80,.06)" strokeWidth="1" />
+          <ellipse cx="150" cy="350" rx="50" ry="30" fill="none" stroke="rgba(63,185,80,.06)" strokeWidth="1" />
+        </svg>
 
-        <PosRow label="Defenders" players={defs} color={POS_COLORS.DEF} />
-        <PosRow label="Midfielders" players={mids} color={POS_COLORS.MID} />
-        {rucs.length > 0 && <PosRow label="Ruck" players={rucs} color={POS_COLORS.RUC} />}
-        <PosRow label="Forwards" players={fwds} color={POS_COLORS.FWD} />
-        {flex.length > 0 && <PosRow label="Flex" players={flex} color={POS_COLORS.FLEX} />}
+        {/* Position rows placed on the oval */}
+        <Row ps={defs} c={PC.DEF} y={14} />
+        <Row ps={midsTop} c={PC.MID} y={34} />
+        {rucs.length > 0 && <Row ps={rucs} c={PC.RUC} y={50} />}
+        <Row ps={midsBot} c={PC.MID} y={66} />
+        <Row ps={fwds} c={PC.FWD} y={84} />
+        {flex.length > 0 && <Row ps={flex} c={PC.FLEX} y={96} />}
       </div>
 
       {/* Emergency bench */}
       {emergencies.length > 0 && (
-        <div style={{ marginTop: 8, padding: '8px 0' }}>
-          <div style={{ textAlign: 'center', fontSize: '.5rem', fontWeight: 800, color: '#484f58',
-            textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Emergencies</div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
-            {emergencies.sort((a, b) => b.sc - a.sc).map(p => <Chip key={p.name} p={p} posColor={POS_COLORS[p.position] || '#6e7681'} />)}
+        <div style={{ marginTop: 12, padding: '10px 0', borderTop: '1px solid #21262d' }}>
+          <div style={{ textAlign: 'center', fontSize: '.55rem', fontWeight: 700, color: '#484f58',
+            textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Emergencies</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
+            {emergencies.sort((a, b) => b.sc - a.sc).map(p =>
+              <Dot key={p.name} p={p} c={PC[p.position] || '#6e7681'} />
+            )}
           </div>
         </div>
       )}
-
-      <div style={{ fontSize: '.55rem', color: '#484f58', textAlign: 'center', marginTop: 8 }}>
-        Optimal 23 auto-selected · green border = new to best 23 · ages projected per year
-      </div>
     </div>
   )
 }
