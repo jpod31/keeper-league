@@ -1980,40 +1980,59 @@ def team_analytics_api(league_id, team_id):
             dynasty = simulate_dynasty(league_id, year, profile_tags, years_ahead=5)
             cache_analytics(0, year, "dynasty_sim", dynasty)
     else:
-        all_players = AflPlayer.query.all()
-        profile_tags = compute_profile_tags(all_players)
+        profile_tags = None  # not needed when fully cached
 
     # SL intel — compute if missing
     if not sl_intel:
+        if not profile_tags:
+            all_players = AflPlayer.query.all()
+            profile_tags = compute_profile_tags(all_players)
         try:
             sl_intel = compute_state_league_intel(team_id, league_id, year, trade_table)
             cache_analytics(team_id, year, "sl_intel", sl_intel)
         except Exception:
             logger.exception("SL intel failed for team %d", team_id)
 
-    # Narrative + comparative insights (fast, uses already-computed data)
-    narr = _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags)
+    # Narrative + comparative insights — only compute if not fully cached
+    narr = None
     comp_insights = None
-    try:
-        from models.team_analytics import compute_comparative_insights
-        comp_insights = compute_comparative_insights(
-            team_id, league_id, year, analytics, dynasty, trade_table, narr)
-    except Exception:
-        pass
-
-    # AI summary — DON'T block the response waiting for GPT.
-    # Return the page immediately, generate AI report in background.
-    if not ai_summary and analytics:
+    if not ai_summary or request.args.get("rebuild") == "1":
+        if not profile_tags:
+            all_players = AflPlayer.query.all()
+            profile_tags = compute_profile_tags(all_players)
+        narr = _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags)
         try:
-            ai_summary = generate_team_summary(
-                team_id, team.name, year, analytics, {},
-                narrative=narr, comparative_insights=comp_insights)
-            if ai_summary:
-                cache_analytics(team_id, year, "ai_summary", ai_summary)
+            from models.team_analytics import compute_comparative_insights
+            comp_insights = compute_comparative_insights(
+                team_id, league_id, year, analytics, dynasty, trade_table, narr)
         except Exception:
             pass
 
-    # Parse AI into sections
+    # AI summary — generate in BACKGROUND THREAD if not cached.
+    # Return the page immediately, frontend polls /ai-status for the report.
+    if not ai_summary and analytics:
+        import threading
+        _team_name = team.name
+        _analytics = analytics
+        _narr = narr
+        _comp = comp_insights
+
+        def _gen_ai():
+            try:
+                with db.session.begin_nested() if hasattr(db.session, 'begin_nested') else nullcontext():
+                    result = generate_team_summary(
+                        team_id, _team_name, year, _analytics, {},
+                        narrative=_narr, comparative_insights=_comp)
+                    if result:
+                        cache_analytics(team_id, year, "ai_summary", result)
+            except Exception:
+                logger.exception("Background GPT generation failed for team %d", team_id)
+
+        from contextlib import nullcontext
+        t = threading.Thread(target=_gen_ai, daemon=True)
+        t.start()
+
+    # Parse AI into sections (will be empty if GPT is still generating)
     ai_sections = []
     if ai_summary:
         import re as _re
@@ -2044,7 +2063,42 @@ def team_analytics_api(league_id, team_id):
         "narrative": narr,
         "comparative_insights": comp_insights,
         "sl_intel": sl_intel,
+        "ai_pending": not ai_summary and analytics is not None,
     })
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/analytics/ai-poll")
+@login_required
+def analytics_ai_poll(league_id, team_id):
+    """Poll endpoint: returns AI report sections once GPT finishes generating."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"ready": False})
+
+    from models.team_ai_summary import get_cached_analytics
+    year = league.season_year
+    ai_summary = get_cached_analytics(team_id, year, "ai_summary")
+    if not ai_summary:
+        return jsonify({"ready": False, "sections": []})
+
+    import re as _re
+    sections = []
+    for section in str(ai_summary).split("---"):
+        section = section.strip()
+        if not section:
+            continue
+        section = _re.sub(r'^#{1,4}\s*', '', section)
+        section = _re.sub(r'^\*{1,2}', '', section)
+        if ":" in section:
+            title, body = section.split(":", 1)
+            title = _re.sub(r'\*{1,2}$', '', title).strip()
+            body = body.strip()
+            if body:
+                sections.append({"title": title, "body": body})
+        elif section:
+            sections.append({"title": "", "body": section})
+
+    return jsonify({"ready": True, "sections": sections})
 
 
 def _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags):
