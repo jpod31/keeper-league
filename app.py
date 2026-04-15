@@ -744,15 +744,15 @@ def create_app():
             afl_team_history = []
             from models.database import PlayerStat as _PS
             team_years = db.session.query(
-                _PS.year, AflPlayer.afl_team
-            ).join(AflPlayer, _PS.player_id == AflPlayer.id).filter(
+                _PS.year, _AP.afl_team
+            ).join(_AP, _PS.player_id == _AP.id).filter(
                 _PS.player_id == afl_row.id
             ).group_by(_PS.year).order_by(_PS.year).all()
             # Simple approach: check the afl_team from the player's stats per year
             # Actually, we need to track team changes. Let's use a different approach:
             # group PlayerStat by year and get the most common afl_team for each
             seen_teams = {}
-            for ps_row in PlayerStat.query.filter_by(player_id=afl_row.id).order_by(PlayerStat.year).all():
+            for ps_row in _PS.query.filter_by(player_id=afl_row.id).order_by(_PS.year).all():
                 yr = ps_row.year
                 if yr not in seen_teams:
                     seen_teams[yr] = afl_row.afl_team  # fallback
