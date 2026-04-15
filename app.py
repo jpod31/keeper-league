@@ -740,27 +740,60 @@ def create_app():
                     state_league_data = state_league_data or {}
                     state_league_data["u18"] = _build_section(sl_u18)
 
-            # AFL team history (which AFL team per year)
+            # AFL team history — build from CSV data + state league listings
             afl_team_history = []
-            from models.database import PlayerStat as _PS
-            team_years = db.session.query(
-                _PS.year, _AP.afl_team
-            ).join(_AP, _PS.player_id == _AP.id).filter(
-                _PS.player_id == afl_row.id
-            ).group_by(_PS.year).order_by(_PS.year).all()
-            # Simple approach: check the afl_team from the player's stats per year
-            # Actually, we need to track team changes. Let's use a different approach:
-            # group PlayerStat by year and get the most common afl_team for each
-            seen_teams = {}
-            for ps_row in _PS.query.filter_by(player_id=afl_row.id).order_by(_PS.year).all():
-                yr = ps_row.year
-                if yr not in seen_teams:
-                    seen_teams[yr] = afl_row.afl_team  # fallback
-            # For now, just use current team for all years (team changes aren't tracked per-round)
-            # But we can detect changes from the data
             from config import TEAM_LOGOS
-            if seen_teams:
-                afl_team_history = [{"year": yr, "team": afl_row.afl_team, "logo": TEAM_LOGOS.get(afl_row.afl_team)} for yr in sorted(seen_teams.keys())]
+            import pandas as pd
+            import os as _os
+
+            year_team = {}  # {year: (team_name, games_played)}
+            data_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "data")
+
+            # 1. Scan player_stats CSVs for actual team per year
+            for yr in range(2013, config.CURRENT_YEAR + 1):
+                csv_path = _os.path.join(data_dir, f"player_stats_{yr}.csv")
+                if not _os.path.exists(csv_path):
+                    continue
+                try:
+                    df = pd.read_csv(csv_path, low_memory=False)
+                    if "Player" not in df.columns or "Team" not in df.columns:
+                        continue
+                    player_rows = df[df["Player"] == name]
+                    if len(player_rows):
+                        team = player_rows["Team"].mode().iloc[0] if len(player_rows) > 0 else None
+                        if team:
+                            year_team[yr] = (team, len(player_rows))
+                except Exception:
+                    pass
+
+            # 2. Fill gaps from StateLeagueStat (AFL-listed but 0 AFL games)
+            from models.database import StateLeagueStat as _SLS
+            sl_listed = _SLS.query.filter(
+                db.or_(_SLS.player_id == afl_row.id, _SLS.player_name == name),
+                _SLS.is_afl_listed == True,
+            ).all()
+            for sl in sl_listed:
+                if sl.season not in year_team:
+                    # Listed at an AFL club but no AFL games — find which club
+                    # Try to infer from adjacent years or current team
+                    prev_team = year_team.get(sl.season - 1, (None, 0))[0]
+                    next_team = year_team.get(sl.season + 1, (None, 0))[0]
+                    team = prev_team or next_team or afl_row.afl_team
+                    year_team[sl.season] = (team, 0)
+
+            # 3. Current year — always show even if no games yet
+            if config.CURRENT_YEAR not in year_team and afl_row.afl_team:
+                year_team[config.CURRENT_YEAR] = (afl_row.afl_team, 0)
+
+            # Build history list
+            for yr in sorted(year_team.keys()):
+                team, games = year_team[yr]
+                afl_team_history.append({
+                    "year": yr,
+                    "team": team,
+                    "logo": TEAM_LOGOS.get(team),
+                    "games": games,
+                })
 
         return render_template("player.html",
                                player=player,

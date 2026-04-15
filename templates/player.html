@@ -519,12 +519,16 @@
   <div class="card bg-dark border-secondary mb-4">
     <div class="card-body">
       <h6 class="fw-semibold text-uppercase text-muted small mb-3">AFL Career</h6>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="d-flex flex-wrap gap-2 align-items-end">
         {% for th in afl_team_history %}
-        <div class="text-center" style="min-width:48px;">
-          {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }}">{% endif %}
-          <div style="font-size:.65rem;color:#8b949e;">{{ th.year }}</div>
+        <div class="text-center" style="min-width:48px;{% if th.games == 0 %}opacity:.5;{% endif %}">
+          {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }} ({{ th.games }} games)">{% endif %}
+          <div style="font-size:.65rem;color:#c9d1d9;font-weight:700;">{{ th.year }}</div>
+          <div style="font-size:.55rem;color:{% if th.games > 0 %}#8b949e{% else %}#484f58{% endif %};">{{ th.games }}gm</div>
         </div>
+        {% if not loop.last and afl_team_history[loop.index].team != th.team %}
+        <div style="font-size:.6rem;color:#58a6ff;font-weight:700;padding:0 2px;">→</div>
+        {% endif %}
         {% endfor %}
       </div>
     </div>
