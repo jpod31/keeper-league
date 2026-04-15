@@ -13,6 +13,7 @@ from collections import defaultdict
 
 from models.database import (
     db, AflPlayer, FantasyRoster, FantasyTeam, LeaguePositionSlot,
+    StateLeagueStat,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,100 +36,176 @@ def _get_position_requirements(league_id):
     return result
 
 
-def _estimate_kid_projection(player, age_at_year, profile_tag):
-    """Estimate SC for a young player with limited data.
+# ── Position-specific absolute ceilings (based on all-time SC data) ──
+# No player in AFL history has sustained above these over a full season.
+_POS_CEILING = {"DEF": 125, "MID": 132, "FWD": 130, "RUC": 138}
+_ABSOLUTE_CEILING = 138  # fallback
 
-    Uses a blend of:
-    1. Actual SC data (if any)
-    2. Historical trajectory
-    3. Career games as a maturity indicator
-    4. Height-based role inference
+# ── Age-based development multipliers (vs peak) ──
+# Based on historical data, corrected for survivorship bias.
+# Peak is 26-28 for most positions. Values are fraction of peak ability.
+_AGE_CURVE = {
+    18: 0.58, 19: 0.63, 20: 0.68, 21: 0.74, 22: 0.80, 23: 0.86,
+    24: 0.92, 25: 0.96, 26: 0.99, 27: 1.00, 28: 0.99, 29: 0.97,
+    30: 0.94, 31: 0.90, 32: 0.85, 33: 0.79, 34: 0.72, 35: 0.64,
+    36: 0.55, 37: 0.45,
+}
 
-    More career games = more confidence in current SC.
-    Fewer career games = more regression to a development curve.
+
+def _get_age_multiplier(age):
+    if age in _AGE_CURVE:
+        return _AGE_CURVE[age]
+    if age < 18:
+        return 0.55
+    if age > 37:
+        return max(0.3, 0.45 - (age - 37) * 0.1)
+    return 0.5
+
+
+def _get_ceiling(player):
+    """Get the realistic SC ceiling for a player based on position, talent,
+    state league performance, and scouting model projection.
+
+    Uses multiple signals:
+    - AFL SC history (strongest signal for established players)
+    - Rating/potential (front-office assessment)
+    - State league fantasy avg (VFL/SANFL/WAFL indicator for developing players)
+    - Scouting model AFL projection (for players with state league data)
     """
-    sc = player.sc_avg or 0
-    sc_prev = player.sc_avg_prev or 0
-    career = player.career_games or 0
-    traj = profile_tag.get("trajectory", 0)
-    current_age = player.age or 20
+    pos = ((player.position or "MID").split("/")[0])
+    pos_cap = _POS_CEILING.get(pos, _ABSOLUTE_CEILING)
 
-    # Base estimate: use actual if available, else prev, else baseline
-    if sc > 0 and (player.games_played or 0) >= 3:
-        base = sc
-    elif sc > 0:
-        # Few games this year — regress toward prev year
-        base = sc * 0.6 + (sc_prev if sc_prev > 0 else 60) * 0.4
-    elif sc_prev > 0:
-        base = sc_prev
+    best_sc = max(player.sc_avg or 0, player.sc_avg_prev or 0)
+    rating = player.rating or 0
+    potential = player.potential or 0
+    age = player.age or 25
+
+    # For young/developing players, check state league data
+    sl_signal = 0
+    if age <= 26:
+        try:
+            sl = StateLeagueStat.query.filter_by(player_id=player.id)\
+                .filter(StateLeagueStat.competition.in_(["vfl", "sanfl", "wafl"]))\
+                .order_by(StateLeagueStat.season.desc()).first()
+            if sl and sl.dreamteam_avg:
+                # VFL fantasy avg translates to ~60-70% of AFL equivalent
+                # A 100+ VFL fantasy avg suggests 70-80 AFL ceiling potential
+                sl_signal = sl.dreamteam_avg * 0.7
+        except Exception:
+            pass
+
+    # For players with scouting model predictions, use that too
+    model_signal = 0
+    if age <= 26 and (best_sc < 80 or not best_sc):
+        try:
+            from models.scouting_model import predict_afl_output
+            pred = predict_afl_output(player_id=player.id)
+            if pred:
+                model_signal = pred["predicted_afl"].get("afl_sc_avg", 0)
+        except Exception:
+            pass
+
+    # Combine signals to estimate ceiling
+    if best_sc >= 110:
+        personal_ceiling = min(best_sc * 1.08, pos_cap)
+    elif best_sc >= 90:
+        personal_ceiling = min(best_sc * 1.12, pos_cap * 0.92)
+    elif best_sc >= 70:
+        # Blend AFL data with scouting model for players still developing
+        afl_est = best_sc * 1.18
+        if model_signal > 0:
+            afl_est = max(afl_est, model_signal * 1.05)
+        personal_ceiling = min(afl_est, pos_cap * 0.85)
+    elif potential and potential >= 80:
+        # High potential but hasn't shown it at AFL level yet
+        pot_est = potential * 1.1
+        personal_ceiling = min(max(pot_est, model_signal, sl_signal), pos_cap * 0.82)
+    elif model_signal > 0:
+        # Scouting model gives us a projection
+        personal_ceiling = min(model_signal * 1.1, pos_cap * 0.80)
+    elif sl_signal > 0:
+        # Only state league data to go on
+        personal_ceiling = min(sl_signal * 1.15, pos_cap * 0.75)
+    elif rating and rating >= 70:
+        personal_ceiling = min(rating * 1.2, pos_cap * 0.75)
     else:
-        # No data at all — use age-based baseline
-        # Young players with more career games are more established
-        if career >= 30:
-            base = 65  # established but no current data
-        elif career >= 10:
-            base = 55
-        else:
-            base = 45  # very raw
+        personal_ceiling = min(max(best_sc * 1.15, 60), pos_cap * 0.65)
 
-    # Apply trajectory for future years
-    years_ahead = age_at_year - current_age
-    if years_ahead <= 0:
-        return round(base, 1)
-
-    if traj > 0:
-        # Positive trajectory: apply with diminishing returns
-        # Year 1: full traj, Year 2: 80%, Year 3: 60%, etc.
-        projected = base
-        for y in range(years_ahead):
-            decay = max(0.4, 1.0 - y * 0.15)
-            projected += traj * decay
-        return round(max(projected, base * 0.8), 1)
-    else:
-        # Flat or negative: young players usually improve regardless
-        # Apply a gentle development curve: +3-5 per year until ~25
-        annual_dev = max(0, 5.0 - (current_age - 18) * 0.5) if current_age < 25 else 0
-        projected = base + annual_dev * years_ahead + traj * years_ahead * 0.3
-        return round(max(projected, base * 0.7), 1)
+    return round(personal_ceiling, 1)
 
 
 def _project_player_at_age(player, target_age, profile_tag, age_curves):
     """Project a player's SC at a specific age.
 
-    For players under 25 with limited data, uses the kid projection model.
-    For established players, uses age curve decay/growth.
+    Uses a ceiling-bounded model:
+    1. Estimate the player's personal SC ceiling (based on position, current SC, rating)
+    2. Apply age curve to determine what fraction of ceiling they express at each age
+    3. Blend with trajectory data for near-term (1-2 year) adjustments
+    4. Hard cap at position ceiling — nobody exceeds historical maximums
+
+    This prevents runaway projections (no more 163 SC averages).
     """
     current_age = player.age or 25
-    sc = player.sc_avg or player.sc_avg_prev or 0
     years_ahead = target_age - current_age
-
     if years_ahead <= 0:
-        return sc
+        return player.sc_avg or player.sc_avg_prev or 0
 
-    # Kids (under 25 with < 50 career games): use development model
-    if current_age < 25 and (player.career_games or 0) < 80:
-        return _estimate_kid_projection(player, target_age, profile_tag)
+    # Current SC: best estimate of true ability
+    sc = player.sc_avg or 0
+    sc_prev = player.sc_avg_prev or 0
+    games = player.games_played or 0
+    career = player.career_games or 0
 
-    # Established players: use trajectory for near-term, age curve for longer
-    traj = profile_tag.get("trajectory", 0)
-    peak_phase = profile_tag.get("peak_phase", "peak")
-
-    if peak_phase == "pre-peak" and traj > 0:
-        # Still improving — use trajectory with decay
-        projected = sc
-        for y in range(years_ahead):
-            decay = max(0.3, 1.0 - y * 0.2)
-            projected += traj * decay
-        return round(projected, 1)
-    elif peak_phase == "peak":
-        # At peak — slight decline per year
-        decline = 2.0 * years_ahead
-        return round(max(sc - decline, sc * 0.75), 1)
+    # Robust base estimate
+    if sc > 0 and games >= 5:
+        base = sc
+    elif sc > 0 and sc_prev > 0:
+        weight = min(games / 10, 0.6)
+        base = sc * weight + sc_prev * (1 - weight)
+    elif sc > 0:
+        base = sc * 0.7 + 60 * 0.3  # regress toward mean
+    elif sc_prev > 0:
+        base = sc_prev
+    elif player.rating:
+        base = player.rating * 0.8
     else:
-        # Post-peak — steeper decline
-        decline_rate = 0.04 + 0.01 * max(0, current_age - 30)
-        projected = sc * ((1 - decline_rate) ** years_ahead)
-        return round(max(projected, 30), 1)
+        base = 55 if career > 20 else 45
+
+    ceiling = _get_ceiling(player)
+    traj = profile_tag.get("trajectory", 0)
+
+    # Age curve: what fraction of ceiling does this player express now vs at target age?
+    current_mult = _get_age_multiplier(current_age)
+    target_mult = _get_age_multiplier(target_age)
+
+    # Implied peak SC (what ceiling the player is "on track for" based on current)
+    if current_mult > 0:
+        implied_peak = base / current_mult
+    else:
+        implied_peak = base
+
+    # Cap implied peak at personal ceiling
+    implied_peak = min(implied_peak, ceiling)
+
+    # Base projection from age curve
+    projected = implied_peak * target_mult
+
+    # Near-term trajectory adjustment (only for 1-2 years out, diminishing)
+    if years_ahead <= 2 and traj != 0:
+        # Cap trajectory contribution: max +/- 8 per year
+        capped_traj = max(-8, min(8, traj))
+        traj_boost = capped_traj * max(0, 1.0 - (years_ahead - 1) * 0.5)
+        projected += traj_boost
+
+    # Hard ceiling: never exceed position max
+    pos = ((player.position or "MID").split("/")[0])
+    hard_cap = _POS_CEILING.get(pos, _ABSOLUTE_CEILING)
+    projected = min(projected, hard_cap)
+
+    # Floor: don't project below 30 (player would be delisted)
+    projected = max(projected, 30)
+
+    return round(projected, 1)
 
 
 def _select_best_23(players_with_projections, pos_requirements):
