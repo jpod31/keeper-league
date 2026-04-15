@@ -1925,7 +1925,12 @@ def team_analytics_api(league_id, team_id):
         invalidate_analytics_cache(team_id, year)
         invalidate_analytics_cache(0, year)
 
-    # ── Fast path: everything cached → return in <1s ──
+    # ── Fastest path: single combined cache entry ──
+    full_response = get_cached_analytics(team_id, year, "full_response")
+    if full_response and request.args.get("rebuild") != "1":
+        return jsonify(full_response)
+
+    # ── Fast path: per-section caches ──
     analytics = get_cached_analytics(team_id, year, "deep")
     trade_table = get_cached_analytics(team_id, year, "trade_table")
     squad_depth_data = get_cached_analytics(team_id, year, "squad_depth")
@@ -2052,7 +2057,7 @@ def team_analytics_api(league_id, team_id):
             elif section:
                 ai_sections.append({"title": "", "body": section})
 
-    return jsonify({
+    response_data = {
         "team": {"id": team.id, "name": team.name},
         "analytics": analytics,
         "trade_table": trade_table,
@@ -2064,7 +2069,13 @@ def team_analytics_api(league_id, team_id):
         "comparative_insights": comp_insights,
         "sl_intel": sl_intel,
         "ai_pending": not ai_summary and analytics is not None,
-    })
+    }
+
+    # Cache the full assembled response for instant next load (single DB read)
+    if ai_sections and analytics and dynasty:
+        cache_analytics(team_id, year, "full_response", response_data)
+
+    return jsonify(response_data)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/analytics/ai-poll")
