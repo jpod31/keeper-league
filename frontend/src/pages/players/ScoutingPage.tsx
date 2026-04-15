@@ -365,8 +365,10 @@ export function ScoutingPage() {
       .then(r => r.json()).then(setComps).catch(() => {})
   }, [leagueId])
 
-  const seasons = [...new Set(comps.map(c => c.season))].sort((a, b) => b - a)
-  const compList = [...new Set(comps.map(c => c.comp))].sort()
+  const filteredComps = comp ? comps.filter(c => c.comp === comp) : comps
+  const filteredSeasons = season ? comps.filter(c => c.season === season) : comps
+  const seasons = [...new Set(filteredComps.map(c => c.season))].sort((a, b) => b - a)
+  const compList = [...new Set(filteredSeasons.map(c => c.comp))].sort()
 
   useEffect(() => {
     if (seasons.length && !season) setSeason(seasons[0])
@@ -412,7 +414,15 @@ export function ScoutingPage() {
         </div>
 
         <div className="scout-filters">
-          <select value={comp} onChange={e => { setComp(e.target.value); setPage(1) }}>
+          <select value={comp} onChange={e => {
+            const newComp = e.target.value
+            setComp(newComp)
+            setPage(1)
+            if (newComp && season) {
+              const available = comps.filter(c => c.comp === newComp).map(c => c.season)
+              if (!available.includes(season as number)) setSeason(available[0] ?? '')
+            }
+          }}>
             <option value="">All Comps</option>
             {compList.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
           </select>

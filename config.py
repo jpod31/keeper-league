@@ -160,7 +160,7 @@ STATE_LEAGUE_LOGOS = {
     # VFL — standalone with AFL affiliate logos
     "Box Hill": f"{_LOGO_BASE}Hawthorn.png",
     "Casey": f"{_LOGO_BASE}Melbourne.png",
-    "Sandringham": f"{_LOGO_BASE}StKilda.png",
+    "Sandringham": f"{_SL_LOGO}sandringham.png",
     "Southport": f"{_LOGO_BASE}GoldCoast.png",
     "Tasmania": f"{_LOGO_BASE}NorthMelbourne.png",
     # VFL — standalone with own logos
