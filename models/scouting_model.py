@@ -2,6 +2,11 @@
 
 Trains position-aware models on players who've played both levels.
 Predicts AFL output for current state league players.
+
+Key insight: age fundamentally changes translation. A 20yo dominating
+VFL is discovering their game. A 30yo dominating VFL is either
+rehabbing or playing a different role when promoted. The model learns
+this from age × stat interaction features.
 """
 
 import logging
@@ -16,19 +21,6 @@ from models.database import db, AflPlayer, PlayerStat, StateLeagueStat
 logger = logging.getLogger(__name__)
 
 _MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "scouting_model.pkl")
-
-_SL_FEATURES = [
-    "disposals", "kicks", "handballs", "marks", "goals_per_game", "behinds",
-    "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
-    "clearances", "inside_fifties", "rebounds", "intercepts",
-    "contested_marks", "score_involvements", "disposal_efficiency",
-    "tackles_inside_50", "frees_for", "frees_against",
-]
-
-_AFL_TARGETS = [
-    "afl_disposals", "afl_marks", "afl_goals", "afl_tackles", "afl_hitouts",
-    "afl_contested_possessions", "afl_clearances", "afl_sc_avg",
-]
 
 _POS_GROUPS = {
     "MID": ["MID", "FWD/MID", "DEF/MID"],
@@ -46,6 +38,62 @@ def _pos_group(position: str) -> str:
             return group
     primary = position.split("/")[0]
     return primary if primary in _POS_GROUPS else "MID"
+
+
+def _build_features(sl, age: int, pos: str, matches: int, goals_total: float) -> dict:
+    """Build feature dict from a state league row. Includes age × stat interactions."""
+    gpg = (goals_total / matches) if goals_total and matches else 0
+    disp = sl.disposals or 0
+    cp = sl.contested_possessions or 0
+    clr = sl.clearances or 0
+    ho = sl.hitouts or 0
+    marks = sl.marks or 0
+    tackles = sl.tackles or 0
+    i50 = sl.inside_fifties or 0
+
+    return {
+        "age": age,
+        "age_sq": age * age,
+        "sl_matches": matches,
+        "pos_MID": 1 if pos == "MID" else 0,
+        "pos_FWD": 1 if pos == "FWD" else 0,
+        "pos_DEF": 1 if pos == "DEF" else 0,
+        "pos_RUC": 1 if pos == "RUC" else 0,
+        "disposals": disp,
+        "kicks": sl.kicks or 0,
+        "handballs": sl.handballs or 0,
+        "marks": marks,
+        "goals_per_game": gpg,
+        "behinds": sl.behinds or 0,
+        "tackles": tackles,
+        "hitouts": ho,
+        "contested_possessions": cp,
+        "uncontested_possessions": sl.uncontested_possessions or 0,
+        "clearances": clr,
+        "inside_fifties": i50,
+        "rebounds": sl.rebounds or 0,
+        "intercepts": sl.intercepts or 0,
+        "contested_marks": sl.contested_marks or 0,
+        "score_involvements": sl.score_involvements or 0,
+        "disposal_efficiency": sl.disposal_efficiency or 0,
+        "tackles_inside_50": sl.tackles_inside_50 or 0,
+        "frees_for": sl.frees_for or 0,
+        "frees_against": sl.frees_against or 0,
+        # Age × stat interactions — lets the model learn that
+        # 25 disposals at age 20 means something different to age 30
+        "age_x_disp": age * disp,
+        "age_x_cp": age * cp,
+        "age_x_clr": age * clr,
+        "age_x_goals": age * gpg,
+        "age_x_ho": age * ho,
+        "age_x_marks": age * marks,
+        "age_x_tackles": age * tackles,
+        "age_x_i50": age * i50,
+        # Young player flag — explicit signal for sub-23
+        "is_young": 1 if age <= 23 else 0,
+        "is_prime": 1 if 24 <= age <= 27 else 0,
+        "is_veteran": 1 if age >= 28 else 0,
+    }
 
 
 def _build_training_data():
@@ -89,7 +137,6 @@ def _build_training_data():
         for sl in player_sl[pid]:
             if not sl.matches or sl.matches < 2:
                 continue
-            gpg = (sl.goals / sl.matches) if sl.goals else 0
 
             for afl in player_afl[pid]:
                 if afl.year < sl.season:
@@ -97,35 +144,10 @@ def _build_training_data():
                 if afl.year > sl.season + 2:
                     continue
 
-                features = {
-                    "age": sl.age or 0,
-                    "sl_matches": sl.matches,
-                    "pos_MID": 1 if pos == "MID" else 0,
-                    "pos_FWD": 1 if pos == "FWD" else 0,
-                    "pos_DEF": 1 if pos == "DEF" else 0,
-                    "pos_RUC": 1 if pos == "RUC" else 0,
-                    "disposals": sl.disposals or 0,
-                    "kicks": sl.kicks or 0,
-                    "handballs": sl.handballs or 0,
-                    "marks": sl.marks or 0,
-                    "goals_per_game": gpg,
-                    "behinds": sl.behinds or 0,
-                    "tackles": sl.tackles or 0,
-                    "hitouts": sl.hitouts or 0,
-                    "contested_possessions": sl.contested_possessions or 0,
-                    "uncontested_possessions": sl.uncontested_possessions or 0,
-                    "clearances": sl.clearances or 0,
-                    "inside_fifties": sl.inside_fifties or 0,
-                    "rebounds": sl.rebounds or 0,
-                    "intercepts": sl.intercepts or 0,
-                    "contested_marks": sl.contested_marks or 0,
-                    "score_involvements": sl.score_involvements or 0,
-                    "disposal_efficiency": sl.disposal_efficiency or 0,
-                    "tackles_inside_50": sl.tackles_inside_50 or 0,
-                    "frees_for": sl.frees_for or 0,
-                    "frees_against": sl.frees_against or 0,
-                    "years_gap": afl.year - sl.season,
-                }
+                age = sl.age or 22
+                features = _build_features(sl, age, pos, sl.matches, sl.goals)
+                features["years_gap"] = afl.year - sl.season
+
                 targets = {
                     "afl_disposals": afl.disposals or 0,
                     "afl_marks": afl.marks or 0,
@@ -140,22 +162,6 @@ def _build_training_data():
 
     logger.info("Built %d training samples from %d players", len(samples), len(player_sl))
     return samples
-
-
-def _peak_age_factor(age: int, position: str) -> float:
-    """Age curve multiplier. Peak years differ by position."""
-    pos = _pos_group(position)
-    if pos == "RUC":
-        peak = 28
-    elif pos == "FWD":
-        peak = 27
-    else:
-        peak = 26
-    diff = abs(age - peak)
-    if age < peak:
-        return 1.0 + diff * 0.02
-    else:
-        return max(0.7, 1.0 - diff * 0.03)
 
 
 def train_model():
@@ -176,8 +182,8 @@ def train_model():
 
     model = MultiOutputRegressor(
         GradientBoostingRegressor(
-            n_estimators=200, max_depth=4, learning_rate=0.1,
-            min_samples_leaf=10, subsample=0.8, random_state=42,
+            n_estimators=250, max_depth=5, learning_rate=0.08,
+            min_samples_leaf=8, subsample=0.8, random_state=42,
         )
     )
     model.fit(X, Y)
@@ -189,8 +195,23 @@ def train_model():
         mae = mean_absolute_error(Y[:, i], preds[:, i])
         logger.info("  %s: R²=%.3f  MAE=%.2f", t, r2, mae)
 
+    # Train a separate breakout classifier
+    # "Breakout" = player achieves SC avg >= 70 at AFL level within 2 years
+    breakout_labels = (Y[:, target_names.index("afl_sc_avg")] >= 70).astype(int)
+    from sklearn.ensemble import GradientBoostingClassifier
+    breakout_model = GradientBoostingClassifier(
+        n_estimators=200, max_depth=4, learning_rate=0.08,
+        min_samples_leaf=10, subsample=0.8, random_state=42,
+    )
+    breakout_model.fit(X, breakout_labels)
+    from sklearn.metrics import roc_auc_score
+    bp = breakout_model.predict_proba(X)[:, 1]
+    auc = roc_auc_score(breakout_labels, bp)
+    logger.info("  breakout_classifier: AUC=%.3f  (threshold: SC>=70)", auc)
+
     artifact = {
         "model": model,
+        "breakout_model": breakout_model,
         "feature_names": feature_names,
         "target_names": target_names,
         "n_samples": len(samples),
@@ -227,120 +248,106 @@ def predict_afl_output(player_id: int = None, sl_row: StateLeagueStat = None) ->
     player = db.session.get(AflPlayer, sl_row.player_id) if sl_row.player_id else None
     pos = player.position if player else None
     age = sl_row.age or (player.age if player else 22)
-    gpg = (sl_row.goals / sl_row.matches) if sl_row.goals else 0
+    pos_grp = _pos_group(pos)
 
-    features = {
-        "age": age,
-        "sl_matches": sl_row.matches,
-        "pos_MID": 1 if _pos_group(pos) == "MID" else 0,
-        "pos_FWD": 1 if _pos_group(pos) == "FWD" else 0,
-        "pos_DEF": 1 if _pos_group(pos) == "DEF" else 0,
-        "pos_RUC": 1 if _pos_group(pos) == "RUC" else 0,
-        "disposals": sl_row.disposals or 0,
-        "kicks": sl_row.kicks or 0,
-        "handballs": sl_row.handballs or 0,
-        "marks": sl_row.marks or 0,
-        "goals_per_game": gpg,
-        "behinds": sl_row.behinds or 0,
-        "tackles": sl_row.tackles or 0,
-        "hitouts": sl_row.hitouts or 0,
-        "contested_possessions": sl_row.contested_possessions or 0,
-        "uncontested_possessions": sl_row.uncontested_possessions or 0,
-        "clearances": sl_row.clearances or 0,
-        "inside_fifties": sl_row.inside_fifties or 0,
-        "rebounds": sl_row.rebounds or 0,
-        "intercepts": sl_row.intercepts or 0,
-        "contested_marks": sl_row.contested_marks or 0,
-        "score_involvements": sl_row.score_involvements or 0,
-        "disposal_efficiency": sl_row.disposal_efficiency or 0,
-        "tackles_inside_50": sl_row.tackles_inside_50 or 0,
-        "frees_for": sl_row.frees_for or 0,
-        "frees_against": sl_row.frees_against or 0,
-        "years_gap": 0,
-    }
+    features = _build_features(sl_row, age, pos_grp, sl_row.matches, sl_row.goals)
+    features["years_gap"] = 0
 
     fn = artifact["feature_names"]
     X = np.array([[features[f] for f in fn]])
+
     preds = artifact["model"].predict(X)[0]
     tn = artifact["target_names"]
-    raw = {tn[i]: round(float(preds[i]), 1) for i in range(len(tn))}
+    raw = {tn[i]: round(max(0, float(preds[i])), 1) for i in range(len(tn))}
 
-    age_mult = _peak_age_factor(age, pos or "MID")
+    # Breakout probability from the trained classifier
+    breakout_model = artifact.get("breakout_model")
+    if breakout_model:
+        bp = float(breakout_model.predict_proba(X)[0, 1])
+    else:
+        bp = 0.0
 
-    breakout_score = _calc_breakout_score(raw, age, sl_row, pos)
+    # Draft probability for unlisted players
+    draft_prob = None
+    if not sl_row.is_afl_listed:
+        if age <= 21:
+            draft_prob = min(bp * 1.2, 0.95)
+        elif age <= 23:
+            draft_prob = bp * 0.6
+        elif age <= 25:
+            draft_prob = bp * 0.2
+        else:
+            draft_prob = bp * 0.03
 
+    # 3-year projections with age awareness baked into the model
     projections = {}
     for yr_offset in range(3):
-        proj_age = age + yr_offset
-        mult = _peak_age_factor(proj_age, pos or "MID")
-        yr_proj = {}
-        for k, v in raw.items():
-            yr_proj[k] = round(v * mult, 1)
+        proj_features = dict(features)
+        proj_age = age + yr_offset + 1
+        proj_features["age"] = proj_age
+        proj_features["age_sq"] = proj_age * proj_age
+        proj_features["is_young"] = 1 if proj_age <= 23 else 0
+        proj_features["is_prime"] = 1 if 24 <= proj_age <= 27 else 0
+        proj_features["is_veteran"] = 1 if proj_age >= 28 else 0
+        proj_features["years_gap"] = yr_offset + 1
+        # Update age interactions
+        for stat_key in ["disp", "cp", "clr", "goals", "ho", "marks", "tackles", "i50"]:
+            base_key = {
+                "disp": "disposals", "cp": "contested_possessions",
+                "clr": "clearances", "goals": "goals_per_game",
+                "ho": "hitouts", "marks": "marks", "tackles": "tackles",
+                "i50": "inside_fifties",
+            }[stat_key]
+            proj_features[f"age_x_{stat_key}"] = proj_age * proj_features[base_key]
+
+        X_proj = np.array([[proj_features[f] for f in fn]])
+        proj_preds = artifact["model"].predict(X_proj)[0]
+        yr_proj = {tn[i]: round(max(0, float(proj_preds[i])), 1) for i in range(len(tn))}
         yr_proj["age"] = proj_age
         yr_proj["year"] = sl_row.season + yr_offset + 1
         projections[f"year_{yr_offset + 1}"] = yr_proj
 
+    # Keeper league relevance tag
+    tag, tag_css = _relevance_tag(raw, bp, age, sl_row.is_afl_listed, draft_prob)
+
     return {
         "predicted_afl": raw,
         "projections": projections,
-        "breakout_probability": breakout_score,
+        "breakout_probability": round(bp * 100),
+        "draft_probability": round(draft_prob * 100) if draft_prob is not None else None,
         "age": age,
         "position": pos,
-        "position_group": _pos_group(pos),
-        "age_factor": round(age_mult, 2),
+        "position_group": pos_grp,
+        "tag": tag,
+        "tag_css": tag_css,
     }
 
 
-def _calc_breakout_score(predicted: dict, age: int, sl: StateLeagueStat, position: str) -> float:
-    """0-100 breakout probability based on predicted AFL output + profile."""
+def _relevance_tag(predicted: dict, bp: float, age: int,
+                   is_listed: bool, draft_prob: float | None) -> tuple[str, str]:
+    """Assign a keeper league relevance tag."""
     sc = predicted.get("afl_sc_avg", 0)
-    disp = predicted.get("afl_disposals", 0)
 
-    score = 0
-    if sc >= 90:
-        score += 30
-    elif sc >= 75:
-        score += 20
-    elif sc >= 60:
-        score += 10
+    if not is_listed:
+        if draft_prob and draft_prob > 0.3 and age <= 22:
+            return "Draft Watch", "tag-watch"
+        if draft_prob and draft_prob > 0.15:
+            return "On Radar", "tag-radar"
+        return "Development", "tag-dev"
 
-    if disp >= 20:
-        score += 15
-    elif disp >= 15:
-        score += 10
-
-    if age <= 21:
-        score += 25
-    elif age <= 23:
-        score += 18
-    elif age <= 25:
-        score += 10
-    elif age <= 27:
-        score += 0
-    elif age <= 29:
-        score -= 15
-    else:
-        score -= 30
-
-    if sl.matches and sl.matches >= 10:
-        score += 10
-    elif sl.matches and sl.matches >= 5:
-        score += 5
-
-    pos = _pos_group(position)
-    if pos == "MID" and (sl.clearances or 0) >= 4:
-        score += 10
-    elif pos == "FWD" and (sl.goals or 0) / max(sl.matches or 1, 1) >= 2:
-        score += 10
-    elif pos == "DEF" and (sl.intercepts or 0) >= 4:
-        score += 10
-    elif pos == "RUC" and (sl.hitouts or 0) >= 20:
-        score += 10
-
-    if sl.contested_possessions and sl.contested_possessions >= 8:
-        score += 5
-
-    return min(score, 100)
+    if sc >= 85 and age <= 25:
+        return "Star Potential", "tag-star"
+    if sc >= 75 and age <= 23:
+        return "Breakout Candidate", "tag-breakout"
+    if sc >= 70 and bp >= 0.4:
+        return "Emerging", "tag-emerging"
+    if sc >= 60 and age <= 24:
+        return "Developing", "tag-developing"
+    if age >= 28:
+        return "Veteran", "tag-veteran"
+    if sc >= 50:
+        return "Depth", "tag-depth"
+    return "Fringe", "tag-fringe"
 
 
 def bulk_predict(season: int = None, competition: str = None,

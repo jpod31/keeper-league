@@ -147,6 +147,7 @@ const CSS = `
 .scout-trend-up { color: #3fb950; }
 .scout-trend-down { color: #f85149; }
 
+.scout-tag { font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
 @media(max-width:768px) {
   .scout-tbl { font-size: .72rem; }
   .scout-tbl th, .scout-tbl td { padding: 6px 5px; }
@@ -170,7 +171,9 @@ interface Prediction {
   predicted_afl: Record<string, number>
   projections: Record<string, Record<string, number>>
   breakout_probability: number
-  age: number; position: string; position_group: string; age_factor: number
+  draft_probability: number | null
+  age: number; position: string; position_group: string
+  tag: string; tag_css: string
 }
 
 function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; leagueId: string; onClose: () => void; logos: Record<string, string> }) {
@@ -244,11 +247,25 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
             <>
               <div className="scout-detail-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>AFL Projection</span>
-                <span style={{ fontSize: '.7rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20,
-                  background: prediction.breakout_probability >= 50 ? 'rgba(63,185,80,.15)' : prediction.breakout_probability >= 30 ? 'rgba(210,153,34,.15)' : 'rgba(139,148,158,.1)',
-                  color: prediction.breakout_probability >= 50 ? '#3fb950' : prediction.breakout_probability >= 30 ? '#d29922' : '#8b949e' }}>
-                  {prediction.breakout_probability}% breakout
-                </span>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: '.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                    background: prediction.tag_css === 'tag-star' ? 'rgba(188,140,255,.15)' :
+                      prediction.tag_css === 'tag-breakout' ? 'rgba(63,185,80,.15)' :
+                      prediction.tag_css === 'tag-emerging' ? 'rgba(88,166,255,.15)' :
+                      prediction.tag_css === 'tag-watch' ? 'rgba(210,153,34,.15)' :
+                      prediction.tag_css === 'tag-veteran' ? 'rgba(139,148,158,.08)' : 'rgba(139,148,158,.1)',
+                    color: prediction.tag_css === 'tag-star' ? '#bc8cff' :
+                      prediction.tag_css === 'tag-breakout' ? '#3fb950' :
+                      prediction.tag_css === 'tag-emerging' ? '#58a6ff' :
+                      prediction.tag_css === 'tag-watch' ? '#d29922' :
+                      prediction.tag_css === 'tag-veteran' ? '#6e7681' : '#8b949e' }}>
+                    {prediction.tag}
+                  </span>
+                  <span style={{ fontSize: '.65rem', color: '#6e7681' }}>
+                    {prediction.breakout_probability}% breakout
+                    {prediction.draft_probability != null && ` · ${prediction.draft_probability}% draft`}
+                  </span>
+                </div>
               </div>
               <div className="scout-detail-stats">
                 {[
