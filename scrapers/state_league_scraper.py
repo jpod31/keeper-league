@@ -112,6 +112,9 @@ def sync_state_league_stats(comp: str | None = None, season: int | None = None) 
                 if not pname:
                     continue
                 team = row.get("team", "")
+                # Sandringham rebranded to St Kilda VFL in 2026
+                if team == "Sandringham" and yr >= 2026:
+                    team = "St Kilda"
                 is_listed = bool(row.get("is_afl_listed"))
                 pid = _match_player(pname, is_listed, name_idx)
                 existing = StateLeagueStat.query.filter_by(
