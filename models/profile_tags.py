@@ -89,7 +89,22 @@ def _primary_pos(position_str):
     return position_str.split("/")[0]
 
 
+_profile_cache = {"data": None, "ts": 0}
+_PROFILE_TTL = 300  # 5 minute cache
+
+
 def compute_profile_tags(players):
+    """Compute rich, data-driven profile tags for all players (cached 5min)."""
+    import time
+    if _profile_cache["data"] and (time.time() - _profile_cache["ts"]) < _PROFILE_TTL:
+        return _profile_cache["data"]
+    result = _compute_profile_tags_inner(players)
+    _profile_cache["data"] = result
+    _profile_cache["ts"] = time.time()
+    return result
+
+
+def _compute_profile_tags_inner(players):
     """Compute rich, data-driven profile tags for all players.
 
     Returns: {player_id: {
