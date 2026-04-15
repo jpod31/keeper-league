@@ -430,6 +430,8 @@ export function ScoutingPage() {
   }, [comps])
 
   const fetchData = useCallback(() => {
+    // Don't fetch until we have a season set (wait for comps to load)
+    if (!season && comps.length === 0) return
     setLoading(true)
     const params = new URLSearchParams()
     if (comp) params.set('comp', comp)
@@ -444,7 +446,7 @@ export function ScoutingPage() {
     fetch(`/api/leagues/${leagueId}/state-league-stats?${params}`)
       .then(r => r.json()).then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [leagueId, comp, season, aflOnly, search, teamFilter, sort, dir, page, mode])
+  }, [leagueId, comp, season, aflOnly, search, teamFilter, sort, dir, page, mode, comps.length])
 
   useEffect(() => { fetchData() }, [fetchData])
 
