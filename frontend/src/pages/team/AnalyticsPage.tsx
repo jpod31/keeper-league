@@ -1018,11 +1018,18 @@ export function AnalyticsPage() {
     window.location.href = `/leagues/${leagueId}/team/${teamId}/analytics`
   }
 
-  if (loading) return <Spinner text={rebuild ? "Rebuilding analytics..." : "Loading analytics..."} />
+  if (loading) return <Spinner text={rebuild ? "Rebuilding analytics — this may take 20-30s on first load..." : "Loading analytics..."} />
   if (error || !data) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <p className="text-danger">Failed to load analytics. Try refreshing.</p>
+        <p style={{ color: '#ef4444', fontSize: '.9rem', marginBottom: 12 }}>
+          {error === 'timeout' ? 'Analytics took too long to compute.' : 'Failed to load analytics.'}
+        </p>
+        <button onClick={() => window.location.reload()}
+          style={{ padding: '8px 20px', background: '#58a6ff', color: '#0d1117', border: 'none',
+            borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
+          Retry
+        </button>
       </div>
     )
   }

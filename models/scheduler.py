@@ -218,6 +218,18 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # Precompute analytics for all teams: Monday 01:00 UTC (11am AEST)
+    # Warms the cache so analytics page loads instantly
+    scheduler.add_job(
+        _precompute_all_analytics,
+        "cron",
+        day_of_week="mon",
+        hour=1,
+        minute=0,
+        id="weekly_analytics_precompute",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
     logger.info("Scheduler started with %d jobs", len(scheduler.get_jobs()))
 
@@ -912,3 +924,102 @@ def _sync_fitzroy_stats():
         except Exception as e:
             _track_failure("fitzroy_sync", e)
             logger.exception("fitzRoy stats sync failed")
+
+
+def _precompute_all_analytics():
+    """Background job: precompute analytics for ALL teams so the cache is warm.
+
+    Runs Monday morning after stats are updated. When a user opens their
+    analytics page, everything loads from cache in <1 second.
+    """
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            import config
+            from models.database import FantasyTeam, League, AflPlayer, FantasyRoster
+            from models.profile_tags import compute_profile_tags
+            from models.team_analytics import compute_deep_analytics
+            from models.team_ai_summary import (
+                generate_team_summary, get_cached_analytics, cache_analytics,
+                invalidate_analytics_cache,
+            )
+            from models.war_room import (
+                compute_trade_table, compute_squad_depth,
+                compute_league_landscape, compute_state_league_intel,
+            )
+            from models.dynasty_sim import simulate_dynasty
+            from models.narrative import build_narrative
+            from models.team_analytics import compute_comparative_insights
+            from collections import defaultdict
+
+            year = config.CURRENT_YEAR
+            all_players = AflPlayer.query.all()
+            profile_tags = compute_profile_tags(all_players)
+
+            for league in League.query.all():
+                lid = league.id
+                teams = FantasyTeam.query.filter_by(league_id=lid).all()
+                if not teams:
+                    continue
+
+                logger.info("Precomputing analytics for league %d (%d teams)", lid, len(teams))
+
+                # Dynasty sim is per-league (shared across all teams)
+                invalidate_analytics_cache(0, year)
+                dynasty = simulate_dynasty(lid, year, profile_tags, years_ahead=5)
+                cache_analytics(0, year, "dynasty_sim", dynasty)
+
+                landscape = compute_league_landscape(lid, year, profile_tags)
+
+                # League-wide position averages
+                lp = defaultdict(list)
+                for lt in teams:
+                    for r in FantasyRoster.query.filter_by(team_id=lt.id, is_active=True, is_benched=False).all():
+                        p = db.session.get(AflPlayer, r.player_id)
+                        if p and p.sc_avg:
+                            lp[(p.position or "MID").split("/")[0]].append(p.sc_avg)
+                league_pos_avgs = {pos: sum(v) / len(v) for pos, v in lp.items() if v}
+
+                for team in teams:
+                    tid = team.id
+                    try:
+                        invalidate_analytics_cache(tid, year)
+
+                        analytics = compute_deep_analytics(tid, lid, year, profile_tags)
+                        cache_analytics(tid, year, "deep", analytics)
+
+                        trade_table = compute_trade_table(tid, lid, year, profile_tags)
+                        cache_analytics(tid, year, "trade_table", trade_table)
+
+                        roster = FantasyRoster.query.filter_by(team_id=tid, is_active=True).all()
+                        field_p = [db.session.get(AflPlayer, r.player_id) for r in roster if not r.is_benched]
+                        bench_p = [db.session.get(AflPlayer, r.player_id) for r in roster if r.is_benched]
+                        field_p = [p for p in field_p if p]
+                        bench_p = [p for p in bench_p if p]
+                        squad_depth = compute_squad_depth(field_p, bench_p, profile_tags, league_pos_avgs)
+                        cache_analytics(tid, year, "squad_depth", squad_depth)
+                        cache_analytics(tid, year, "landscape", landscape)
+
+                        sl_intel = compute_state_league_intel(tid, lid, year, trade_table)
+                        cache_analytics(tid, year, "sl_intel", sl_intel)
+
+                        narr = build_narrative(tid, lid, year, dynasty, analytics, trade_table, profile_tags)
+                        comp = compute_comparative_insights(tid, lid, year, analytics, dynasty, trade_table, narr)
+
+                        ai = generate_team_summary(
+                            tid, team.name, year, analytics, {},
+                            narrative=narr, comparative_insights=comp)
+                        if ai:
+                            cache_analytics(tid, year, "ai_summary", ai)
+
+                        logger.info("  Precomputed analytics for team %d (%s)", tid, team.name)
+                    except Exception:
+                        logger.exception("  Failed to precompute for team %d", tid)
+
+            _track_success("analytics_precompute")
+            logger.info("Analytics precomputation complete")
+        except Exception as e:
+            _track_failure("analytics_precompute", e)
+            logger.exception("Analytics precomputation failed")

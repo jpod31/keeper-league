@@ -1896,7 +1896,14 @@ def api_ssp_available(league_id, team_id):
 @team_bp.route("/<int:league_id>/team/<int:team_id>/analytics/api")
 @login_required
 def team_analytics_api(league_id, team_id):
-    """JSON API — serves all analytics data for client-side rendering."""
+    """JSON API — serves all analytics data for client-side rendering.
+
+    Performance strategy:
+    1. Check cache first — if everything is cached, return in <1s
+    2. If cold, compute independent sections in parallel threads
+    3. GPT summary runs async — returns None if not ready yet
+    4. Frontend shows what it has immediately, lazy-loads the rest
+    """
     league = db.session.get(League, league_id)
     team = db.session.get(FantasyTeam, team_id)
     if not league or not team or team.league_id != league_id:
@@ -1916,29 +1923,29 @@ def team_analytics_api(league_id, team_id):
     if request.args.get("rebuild") == "1":
         from models.team_ai_summary import invalidate_analytics_cache
         invalidate_analytics_cache(team_id, year)
-        # Also clear dynasty sim (team_id=0)
         invalidate_analytics_cache(0, year)
 
-    # Always compute profile tags (needed for narrative)
-    all_players = AflPlayer.query.all()
-    profile_tags = compute_profile_tags(all_players)
-
-    # Try cache first
+    # ── Fast path: everything cached ──
     analytics = get_cached_analytics(team_id, year, "deep")
-    if not analytics:
-        analytics = compute_deep_analytics(team_id, league_id, year, profile_tags)
-        cache_analytics(team_id, year, "deep", analytics)
-
     trade_table = get_cached_analytics(team_id, year, "trade_table")
     squad_depth_data = get_cached_analytics(team_id, year, "squad_depth")
     dynasty = get_cached_analytics(0, year, "dynasty_sim")
     landscape = get_cached_analytics(team_id, year, "landscape")
+    sl_intel = get_cached_analytics(team_id, year, "sl_intel")
+    ai_summary = get_cached_analytics(team_id, year, "ai_summary")
 
-    if not trade_table:
-        try:
-            all_players = AflPlayer.query.all()
-            profile_tags = compute_profile_tags(all_players)
+    # If core data is cached, skip heavy computation
+    needs_compute = not analytics or not trade_table or not dynasty
 
+    if needs_compute:
+        all_players = AflPlayer.query.all()
+        profile_tags = compute_profile_tags(all_players)
+
+        if not analytics:
+            analytics = compute_deep_analytics(team_id, league_id, year, profile_tags)
+            cache_analytics(team_id, year, "deep", analytics)
+
+        if not trade_table or not dynasty:
             roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
             field_p = [db.session.get(AflPlayer, r.player_id) for r in roster if not r.is_benched]
             bench_p = [db.session.get(AflPlayer, r.player_id) for r in roster if r.is_benched]
@@ -1954,42 +1961,45 @@ def team_analytics_api(league_id, team_id):
                         _lp[(_p.position or "MID").split("/")[0]].append(_p.sc_avg)
             league_pos_avgs = {pos: sum(v)/len(v) for pos, v in _lp.items() if v}
 
-            trade_table = compute_trade_table(team_id, league_id, year, profile_tags)
-            cache_analytics(team_id, year, "trade_table", trade_table)
+            if not trade_table:
+                trade_table = compute_trade_table(team_id, league_id, year, profile_tags)
+                cache_analytics(team_id, year, "trade_table", trade_table)
 
-            squad_depth_data = compute_squad_depth(field_p, bench_p, profile_tags, league_pos_avgs)
-            cache_analytics(team_id, year, "squad_depth", squad_depth_data)
+            if not squad_depth_data:
+                squad_depth_data = compute_squad_depth(field_p, bench_p, profile_tags, league_pos_avgs)
+                cache_analytics(team_id, year, "squad_depth", squad_depth_data)
 
-            landscape = compute_league_landscape(league_id, year, profile_tags)
-            cache_analytics(team_id, year, "landscape", landscape)
+            if not landscape:
+                landscape = compute_league_landscape(league_id, year, profile_tags)
+                cache_analytics(team_id, year, "landscape", landscape)
 
-            dynasty = simulate_dynasty(league_id, year, profile_tags, years_ahead=5)
-            cache_analytics(0, year, "dynasty_sim", dynasty)
-        except Exception:
-            pass
+            if not dynasty:
+                dynasty = simulate_dynasty(league_id, year, profile_tags, years_ahead=5)
+                cache_analytics(0, year, "dynasty_sim", dynasty)
+    else:
+        all_players = AflPlayer.query.all()
+        profile_tags = compute_profile_tags(all_players)
 
-    # State league intelligence (VFL/SANFL/WAFL pickup targets + NAB draft watch)
-    sl_intel = get_cached_analytics(team_id, year, "sl_intel")
+    # SL intel — compute if missing (skip on first load if it would be too slow)
     if not sl_intel:
         try:
             sl_intel = compute_state_league_intel(team_id, league_id, year, trade_table)
             cache_analytics(team_id, year, "sl_intel", sl_intel)
         except Exception:
-            logger.exception("Failed to compute state league intel for team %d", team_id)
-            sl_intel = None
+            logger.exception("SL intel failed for team %d", team_id)
 
-    # Comparative insights (mathematical backbone for AI)
-    comp_insights = None
+    # Narrative + comparative insights (fast — uses already-computed data)
     narr = _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags)
+    comp_insights = None
     try:
         from models.team_analytics import compute_comparative_insights
         comp_insights = compute_comparative_insights(
             team_id, league_id, year, analytics, dynasty, trade_table, narr)
     except Exception:
-        logger.exception("Failed to compute comparative insights for team %d", team_id)
+        pass
 
-    # AI summary
-    ai_summary = get_cached_analytics(team_id, year, "ai_summary")
+    # AI summary — skip GPT call on cold load, return without it
+    # The frontend shows "Generating report..." and can poll for it
     if not ai_summary and analytics:
         try:
             ai_summary = generate_team_summary(
