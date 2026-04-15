@@ -166,14 +166,25 @@ function DetailTooltip({ active, payload, label }: { active?: boolean; payload?:
   )
 }
 
+interface Prediction {
+  predicted_afl: Record<string, number>
+  projections: Record<string, Record<string, number>>
+  breakout_probability: number
+  age: number; position: string; position_group: string; age_factor: number
+}
+
 function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; leagueId: string; onClose: () => void; logos: Record<string, string> }) {
   const [career, setCareer] = useState<CareerSeason[] | null>(null)
+  const [prediction, setPrediction] = useState<Prediction | null>(null)
 
   useEffect(() => {
-    if (!player.player_id) return
-    fetch(`/api/leagues/${leagueId}/state-league-stats/player/${player.player_id}`)
-      .then(r => r.json()).then(setCareer).catch(() => {})
-  }, [player.player_id, leagueId])
+    if (player.player_id) {
+      fetch(`/api/leagues/${leagueId}/state-league-stats/player/${player.player_id}`)
+        .then(r => r.json()).then(setCareer).catch(() => {})
+    }
+    fetch(`/api/leagues/${leagueId}/scouting/predict/${player.id}`)
+      .then(r => r.ok ? r.json() : null).then(setPrediction).catch(() => {})
+  }, [player.player_id, player.id, leagueId])
 
   const chartData = career?.map(h => ({
     label: `${h.level} ${String(h.season).slice(-2)}`,
@@ -227,6 +238,50 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
               </div>
             ))}
           </div>
+
+          {/* AFL Projection */}
+          {prediction && (
+            <>
+              <div className="scout-detail-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>AFL Projection</span>
+                <span style={{ fontSize: '.7rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20,
+                  background: prediction.breakout_probability >= 50 ? 'rgba(63,185,80,.15)' : prediction.breakout_probability >= 30 ? 'rgba(210,153,34,.15)' : 'rgba(139,148,158,.1)',
+                  color: prediction.breakout_probability >= 50 ? '#3fb950' : prediction.breakout_probability >= 30 ? '#d29922' : '#8b949e' }}>
+                  {prediction.breakout_probability}% breakout
+                </span>
+              </div>
+              <div className="scout-detail-stats">
+                {[
+                  ['afl_sc_avg', 'SC AVG'], ['afl_disposals', 'DIS'], ['afl_marks', 'MRK'],
+                  ['afl_goals', 'GLS'], ['afl_tackles', 'TKL'], ['afl_hitouts', 'HO'],
+                  ['afl_contested_possessions', 'CP'], ['afl_clearances', 'CLR'],
+                ].map(([key, label]) => {
+                  const val = prediction.predicted_afl[key]
+                  if (val == null || (val === 0 && !['afl_goals', 'afl_hitouts'].includes(key))) return null
+                  return (
+                    <div key={key} className="scout-stat-cell" style={{ borderColor: 'rgba(88,166,255,.15)' }}>
+                      <div className="scout-stat-val" style={{ color: '#58a6ff' }}>{val % 1 ? val.toFixed(1) : val}</div>
+                      <div className="scout-stat-label">{label}</div>
+                    </div>
+                  )
+                })}
+              </div>
+              {/* 3-year projection */}
+              {Object.keys(prediction.projections).length > 0 && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                  {Object.entries(prediction.projections).map(([key, proj]) => (
+                    <div key={key} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', background: 'rgba(88,166,255,.03)',
+                      border: '1px solid rgba(48,54,61,.2)', borderRadius: 8 }}>
+                      <div style={{ fontSize: '.58rem', color: '#6e7681', textTransform: 'uppercase', marginBottom: 3 }}>{proj.year}</div>
+                      <div style={{ fontSize: '.95rem', fontWeight: 800, color: '#58a6ff' }}>{Math.round(proj.afl_sc_avg)}</div>
+                      <div style={{ fontSize: '.5rem', color: '#484f58' }}>SC AVG</div>
+                      <div style={{ fontSize: '.7rem', color: '#c9d1d9', marginTop: 2 }}>{proj.afl_disposals?.toFixed(1)} dis</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
 
           {/* Current season stats */}
           <div className="scout-detail-section">
