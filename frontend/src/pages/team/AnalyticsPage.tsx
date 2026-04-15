@@ -328,7 +328,7 @@ function DynastyRace({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>
         })}
       </div>
       <div style={{ fontSize: '.6rem', color: '#484f58', textAlign: 'center', marginTop: 10 }}>
-        Best 22 auto-selected per year · kids develop and displace veterans over time
+        Best 23 auto-selected per year · kids develop and displace veterans over time
       </div>
     </div>
   )
@@ -479,7 +479,7 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
                   </span>}
                 </div>
                 <div style={{ fontSize: '.65rem', color: '#8b949e' }}>
-                  {p.position_group} · {p.sl_team} · {p.age}yo · {p.career_nab_seasons} NAB seasons
+                  {p.position_group} · {p.sl_team} · {p.age}yo
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
@@ -673,7 +673,7 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
 
       {/* Oval field */}
       <div style={{ position: 'relative', width: '100%', maxWidth: 420, margin: '0 auto',
-        aspectRatio: '3/4', overflow: 'hidden', borderRadius: '50%/40%',
+        aspectRatio: '3/4', overflow: 'visible', borderRadius: '50%/40%',
         background: 'radial-gradient(ellipse at center, #132a13 0%, #0a1f0a 60%, #071507 100%)',
         border: '2px solid rgba(63,185,80,.15)' }}>
         {/* Field markings */}
@@ -1008,25 +1008,6 @@ function LeagueStandings({ landscape, teamId }: { landscape: AnalyticsData['land
 }
 
 /* ═══ Round-by-round ═══ */
-function RoundChart({ rounds }: { rounds: { round: number; score: number }[] }) {
-  const data = rounds.map(r => ({ label: `R${r.round}`, score: r.score }))
-  const avg = data.reduce((s, d) => s + d.score, 0) / (data.length || 1)
-  return (
-    <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={data} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#161b22" vertical={false} />
-        <XAxis dataKey="label" stroke="#6e7681" fontSize={11} tickLine={false} axisLine={{ stroke: '#21262d' }} />
-        <YAxis stroke="#6e7681" fontSize={10} tickLine={false} axisLine={false} domain={[(dataMin: number) => Math.floor(dataMin * 0.9), 'auto']} />
-        <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, fontSize: '.78rem', color: '#c9d1d9' }} cursor={{ fill: 'rgba(88,166,255,.05)' }} />
-        <Bar dataKey="score" radius={[4, 4, 0, 0]}>
-          {data.map((d, i) => (
-            <Cell key={i} fill={d.score >= avg * 1.05 ? '#3fb950' : d.score >= avg * 0.95 ? '#58a6ff' : '#ef4444'} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
-  )
-}
 
 /* ═══ MAIN ═══ */
 export function AnalyticsPage() {
@@ -1063,7 +1044,6 @@ export function AnalyticsPage() {
   const gap = n.biggest_gap
   const hasTrade = data.trade_table && (data.trade_table.free_agents?.length || data.trade_table.trade_targets?.length)
   const hasHealth = a.health_components && Object.keys(a.health_components).length > 0
-  const hasRounds = (a.round_data?.length || 0) > 1
   const aiSections = (data.ai_sections || []).slice(1) // first section is usually the verdict already shown in hero
   const hasDynasty = data.dynasty && Object.keys(data.dynasty).length > 0
 
@@ -1183,29 +1163,10 @@ export function AnalyticsPage() {
           </Chapter>
         )}
 
-        {/* 9. Round-by-round */}
-        {hasRounds && (
-          <Chapter label="Season So Far" title="Round-by-Round">
-            <div className="wr-card wr-card-tight">
-              <RoundChart rounds={a.round_data} />
-              <div style={{ fontSize: '.62rem', color: '#6e7681', textAlign: 'center', marginTop: 6 }}>
-                Green above +5%, blue near average, red below -5% vs season avg
-              </div>
-            </div>
-          </Chapter>
-        )}
-
         <div style={{ textAlign: 'center', marginTop: 10, paddingBottom: 30 }}>
           <Link to={`/leagues/${leagueId}/team/${teamId}`} style={{ color: '#6e7681', fontSize: '.78rem', textDecoration: 'none' }}>
             <i className="bi bi-arrow-left me-1"></i>Back to squad
           </Link>
-          <button
-            type="button"
-            onClick={handleRebuild}
-            style={{ background: 'none', border: '1px solid var(--kl-border)', color: '#8b949e', fontSize: '.72rem', padding: '4px 12px', borderRadius: 6, cursor: 'pointer', marginLeft: 12 }}
-          >
-            <i className="bi bi-arrow-clockwise me-1"></i>Rebuild
-          </button>
         </div>
       </div>
 

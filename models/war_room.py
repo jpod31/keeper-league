@@ -177,16 +177,37 @@ def compute_trade_table(team_id, league_id, year, profile_tags):
     trade_targets = trade_targets[:15]
 
     # Surplus players (own bench with decent SC who could be traded)
-    # EXCLUDE players at positions where we have a gap — trading them would hurt
+    # EXCLUDE: positions with gaps, backup rucks (only 1 field slot — need depth)
     surplus = []
+    # Count field rucks to know if bench rucks are essential backup
+    field_ruck_count = sum(1 for p in field_players if (p.position or "MID").split("/")[0] == "RUC")
+
     for p in bench_players_own:
         if not p.sc_avg or p.sc_avg < 50:
             continue
         pos = (p.position or "MID").split("/")[0]
-        # Don't suggest trading players at a position we're weak at
         if pos in gap_positions:
             continue
+        # Don't trade backup rucks — only 1 field slot, need insurance
+        if pos == "RUC" and field_ruck_count <= 1:
+            continue
         pt = profile_tags.get(p.id, {})
+
+        # Find which teams need this position (potential trade partners)
+        buyers = []
+        for other_team in FantasyTeam.query.filter_by(league_id=league_id).filter(FantasyTeam.id != team_id).all():
+            other_roster = FantasyRoster.query.filter_by(team_id=other_team.id, is_active=True, is_benched=False).all()
+            other_at_pos = [db.session.get(AflPlayer, r.player_id) for r in other_roster
+                           if db.session.get(AflPlayer, r.player_id) and
+                           (db.session.get(AflPlayer, r.player_id).position or "MID").split("/")[0] == pos]
+            other_avg = sum(op.sc_avg or 0 for op in other_at_pos) / max(len(other_at_pos), 1)
+            if p.sc_avg > other_avg:
+                buyers.append(other_team.name)
+
+        reason = f"Surplus {pos} depth"
+        if buyers:
+            reason += f" — would upgrade {buyers[0]}" + (f" and {len(buyers)-1} others" if len(buyers) > 1 else "")
+
         surplus.append({
             "name": p.name,
             "position": pos,
@@ -194,7 +215,7 @@ def compute_trade_table(team_id, league_id, year, profile_tags):
             "sc_avg": round(p.sc_avg, 1),
             "tag": pt.get("tag", ""),
             "tag_css": pt.get("css", ""),
-            "reason": f"Bench depth at {pos} — tradeable for positional upgrade",
+            "reason": reason,
         })
     surplus.sort(key=lambda x: -x["sc_avg"])
     surplus = surplus[:10]
@@ -477,17 +498,19 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
     draft_watch.sort(key=lambda x: -(x["draft_probability"] + x["breakout_pct"]))
     draft_watch = draft_watch[:10]
 
-    # ── 3. VFL form for players you own ──
+    # ── 3. State league form for players you own (VFL + SANFL + WAFL) ──
     vfl_form_owned = []
     for pid in my_player_ids:
-        sl = StateLeagueStat.query.filter_by(
-            player_id=pid, season=year
-        ).order_by(StateLeagueStat.dreamteam_avg.desc()).first()
-        if not sl or not sl.matches or not sl.dreamteam_avg:
-            continue
-
         player = db.session.get(AflPlayer, pid)
         if not player:
+            continue
+        # Search by player_id first, then by name (covers unlinked players)
+        sl = StateLeagueStat.query.filter(
+            db.or_(StateLeagueStat.player_id == pid, StateLeagueStat.player_name == player.name),
+            StateLeagueStat.season == year,
+            StateLeagueStat.competition.in_(["vfl", "sanfl", "wafl"]),
+        ).order_by(StateLeagueStat.dreamteam_avg.desc()).first()
+        if not sl or not sl.matches or not sl.dreamteam_avg:
             continue
 
         afl_sc = player.sc_avg or 0

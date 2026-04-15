@@ -396,37 +396,68 @@ def _compute_bucket_priors(all_players_db):
     return priors
 
 
-def _bayesian_estimate(prior_mean, prior_std, observed_scores, sc_avg_prev=None):
+def _bayesian_estimate(prior_mean, prior_std, observed_scores, sc_avg_prev=None,
+                       career_seasons=None):
     """Compute Bayesian true-talent estimate for a single player.
 
-    Model:
-      posterior_mean = (n / (n + k)) * observed_mean + (k / (n + k)) * prior_mean
-      where k = _REGRESSION_K
+    Uses MULTI-YEAR career history as evidence, not just current season.
+    A player with 3 years of 100+ SC should not regress to 75 just because
+    they've only played 5 games in 2026.
 
-    For players with 0 current-year games, we use sc_avg_prev with heavier regression.
+    Model:
+      effective_evidence = current_year_games + career_bonus
+      career_bonus = sum(min(prev_year_games, 15) * recency_weight) across up to 3 prior years
+      posterior_mean = (eff_n / (eff_n + k)) * weighted_mean + (k / (eff_n + k)) * prior_mean
 
     Returns: dict with true_talent, regression_pct, observed_mean, prior_used, ceiling, floor
     """
     n = len(observed_scores)
+    career_seasons = career_seasons or []  # list of (avg, games) from prior years, newest first
 
-    if n > 0:
-        obs_mean = sum(observed_scores) / n
-        obs_std = _std_dev(observed_scores) if n >= 2 else prior_std
-        weight_evidence = n / (n + _REGRESSION_K)
-        weight_prior = _REGRESSION_K / (n + _REGRESSION_K)
-        true_talent = weight_evidence * obs_mean + weight_prior * prior_mean
+    if n > 0 or career_seasons:
+        # Build a weighted mean from current year + career history
+        weighted_sum = 0
+        weight_total = 0
+
+        if n > 0:
+            obs_mean = sum(observed_scores) / n
+            obs_std = _std_dev(observed_scores) if n >= 2 else prior_std
+            # Current year: full weight per game
+            weighted_sum += obs_mean * n
+            weight_total += n
+        else:
+            obs_mean = 0
+            obs_std = prior_std
+
+        # Add career history with recency decay
+        for i, (yr_avg, yr_games) in enumerate(career_seasons[:3]):
+            if yr_avg and yr_avg > 0 and yr_games and yr_games > 0:
+                recency = [0.7, 0.4, 0.2][i]  # last year=0.7, 2 ago=0.4, 3 ago=0.2
+                effective_games = min(yr_games, 18) * recency
+                weighted_sum += yr_avg * effective_games
+                weight_total += effective_games
+
+        if weight_total > 0:
+            blended_mean = weighted_sum / weight_total
+        else:
+            blended_mean = prior_mean
+
+        # Effective evidence: current games + discounted career games
+        eff_n = weight_total
+        weight_evidence = eff_n / (eff_n + _REGRESSION_K)
+        weight_prior = _REGRESSION_K / (eff_n + _REGRESSION_K)
+        true_talent = weight_evidence * blended_mean + weight_prior * prior_mean
+
     elif sc_avg_prev and sc_avg_prev > 0:
-        # No current-year games — use last year with heavy regression
+        # No current games, no career data passed — use prev year
         obs_mean = sc_avg_prev
         obs_std = prior_std
-        # Treat prev-year avg as equivalent to ~4 games of evidence (half weight of real games)
-        equiv_games = 4
+        equiv_games = 6
         weight_evidence = equiv_games / (equiv_games + _REGRESSION_K)
         weight_prior = _REGRESSION_K / (equiv_games + _REGRESSION_K)
         true_talent = weight_evidence * obs_mean + weight_prior * prior_mean
         n = 0
     else:
-        # No data at all — pure prior
         obs_mean = 0.0
         obs_std = prior_std
         true_talent = prior_mean
@@ -434,19 +465,16 @@ def _bayesian_estimate(prior_mean, prior_std, observed_scores, sc_avg_prev=None)
 
     regression_pct = round(weight_prior * 100 if 'weight_prior' in dir() else 100, 1)
 
-    # Ceiling/floor: use the posterior distribution
-    # Effective std shrinks as we get more games
     effective_std = obs_std if n >= 5 else prior_std
-    ceiling = round(true_talent + 1.28 * effective_std, 1)  # ~90th percentile
-    floor = round(max(0, true_talent - 1.28 * effective_std), 1)  # ~10th percentile
-    # Ceiling should never be below observed average — that looks absurd
+    ceiling = round(true_talent + 1.28 * effective_std, 1)
+    floor = round(max(0, true_talent - 1.28 * effective_std), 1)
     if n > 0 and ceiling < obs_mean:
         ceiling = round(obs_mean + 0.5 * effective_std, 1)
 
     return {
         "true_talent": round(true_talent, 1),
         "regression_pct": regression_pct,
-        "observed_mean": round(obs_mean, 1),
+        "observed_mean": round(obs_mean, 1) if n > 0 else round(true_talent, 1),
         "observed_std": round(obs_std, 1),
         "prior_used": round(prior_mean, 1),
         "ceiling": ceiling,
@@ -757,7 +785,9 @@ def _compute_scenarios(field_players, bayesian_map, roster_map, all_players_on_t
                 sub_name = bp.name
                 used_subs.add(bp.id)
                 break
-        drop = round(p_sc - sub_sc, 1)
+        drop = round(max(0, p_sc - sub_sc), 1)
+        if drop < 1:
+            continue  # don't show if replacement is equal or better
         key_injuries.append({
             "name": p.name,
             "team_score_without": round(current_total - drop, 1),
@@ -826,18 +856,25 @@ def _compute_health_score(field_players, bench_players, bayesian_map, profile_ta
     else:
         depth = 50.0
 
-    # --- Balance (15%) ---
+    # --- Balance (15%) --- measures both positional coverage AND quality at each position
     pos_counts = defaultdict(int)
+    pos_sc = defaultdict(list)
     for p in field_players:
-        pos_counts[_primary_pos(p.position)] += 1
+        ppos = _primary_pos(p.position)
+        pos_counts[ppos] += 1
+        pos_sc[ppos].append(p.sc_avg or 0)
 
     balance_score = 0
     for pos, ideal in _IDEAL_FIELD.items():
         actual = pos_counts.get(pos, 0)
         if actual >= ideal:
-            balance_score += 25  # each position worth 25 points
+            balance_score += 15  # coverage: 15 points per position
         elif actual > 0:
-            balance_score += 25 * (actual / ideal)
+            balance_score += 15 * (actual / ideal)
+        # Quality: compare position avg to replacement level (60)
+        avg_at_pos = sum(pos_sc.get(pos, [0])) / max(len(pos_sc.get(pos, [1])), 1)
+        quality_at_pos = min((avg_at_pos - 60) / 40, 1.0) * 10  # 0-10 pts per position
+        balance_score += max(0, quality_at_pos)
     balance = _clamp(balance_score, 0, 100)
 
     # --- Youth (15%) ---
@@ -859,14 +896,16 @@ def _compute_health_score(field_players, bench_players, bayesian_map, profile_ta
         youth = 50.0
     youth = _clamp(youth, 0, 100)
 
-    # --- Trajectory (10%) ---
-    trajectories = [profile_tags.get(p.id, {}).get("trajectory", 0) for p in field_players]
-    if trajectories:
-        avg_traj = sum(trajectories) / len(trajectories)
-        # Range roughly -10 to +10. 0 is neutral (50), +5 is great (100), -5 is bad (0)
-        traj_score = 50 + avg_traj * 10
-    else:
-        traj_score = 50.0
+    # --- Trajectory (10%) --- uses TEAM-LEVEL projected change, not individual slopes
+    # Individual trajectories can all be positive while team total declines (age curves)
+    # So we use the projected change % which accounts for composition
+    proj_change = sum(
+        (projections_by_player.get(p.id, {}).get("yr1", p.sc_avg or 0) - (p.sc_avg or 0))
+        for p in field_players
+    )
+    proj_pct = proj_change / max(sum(p.sc_avg or 0 for p in field_players), 1) * 100
+    # +5% = 100, 0% = 50, -5% = 0
+    traj_score = _clamp(50 + proj_pct * 10, 0, 100)
     traj_score = _clamp(traj_score, 0, 100)
 
     # --- Durability (10%) ---
@@ -1255,6 +1294,27 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     bayesian_map = {}  # player_id -> bayesian estimate dict
     player_game_scores = {}  # player_id -> [scores]
 
+    # Pre-fetch career season averages for all players (for multi-year Bayesian)
+    from sqlalchemy import func as sqla_func
+    _career_data = {}  # player_id -> [(avg, games)] newest first
+    player_ids = [p.id for p in players]
+    if player_ids:
+        career_rows = db.session.query(
+            PlayerStat.player_id, PlayerStat.year,
+            sqla_func.avg(PlayerStat.supercoach_score).label("avg"),
+            sqla_func.count().label("gm"),
+        ).filter(
+            PlayerStat.player_id.in_(player_ids),
+            PlayerStat.supercoach_score > 0,
+            PlayerStat.year < year,  # prior years only
+        ).group_by(PlayerStat.player_id, PlayerStat.year).all()
+
+        for pid, yr, avg, gm in career_rows:
+            _career_data.setdefault(pid, []).append((yr, float(avg), gm))
+        # Sort newest first per player
+        for pid in _career_data:
+            _career_data[pid].sort(key=lambda x: -x[0])
+
     for p in players:
         bucket = _role_bucket(p.position, p.height_cm)
         prior = bucket_priors.get(bucket, {"mean": 65.0, "std": 20.0})
@@ -1266,8 +1326,12 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
             if len(csv_scores) >= 3:
                 scores = csv_scores
 
+        # Career history: [(avg, games)] for prior years, newest first
+        career_seasons = [(avg, gm) for _, avg, gm in _career_data.get(p.id, [])]
+
         player_game_scores[p.id] = scores
-        est = _bayesian_estimate(prior["mean"], prior["std"], scores, p.sc_avg_prev)
+        est = _bayesian_estimate(prior["mean"], prior["std"], scores, p.sc_avg_prev,
+                                 career_seasons=career_seasons)
         est["role_bucket"] = bucket
         bayesian_map[p.id] = est
 
@@ -1717,8 +1781,8 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
             "projected_sc": round(yr1, 1),
             "change": change,
         }
-        # Aging out: 29+ OR projected decline > 5 points
-        if (p.age or 0) >= 29 or change < -5:
+        # Aging out: 29+ AND projected to decline, OR any age with big decline
+        if ((p.age or 0) >= 29 and change < 0) or change < -5:
             aging_out.append(entry)
         # Aging in: under 27 AND projected improvement > 3 points
         elif (p.age or 0) <= 27 and change > 3:
@@ -2141,7 +2205,8 @@ def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
     if key_injuries and dynasty:
         worst = key_injuries[0]
         insights["vulnerabilities"].append(
-            f"Losing {worst['name']} costs {worst['drop']:.0f} points per week — {worst.get('detail', '')}")
+            f"Losing {worst['name']} costs {worst['drop']:.0f} points per week"
+            + (f", replaced by {worst['replaced_by']}" if worst.get('replaced_by') else ""))
 
     # Age cliff detection per position
     for pos in ["DEF", "MID", "FWD"]:

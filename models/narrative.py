@@ -68,9 +68,11 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
     # Used to avoid reporting "enters" for players already on the roster
     all_rostered = set(p["name"] for p in my_years[0]["squad"]) if my_years else set()
 
+    # Track who has already been "replaced" globally (prevent double replacement)
+    globally_replaced = set()
+
     kid_timeline = []
     for i in range(1, len(my_years)):
-        # Compare best 23 (non-emergency) between years
         curr_names = set(p["name"] for p in my_years[i]["squad"] if not p.get("is_emergency"))
         prev_names = set(p["name"] for p in my_years[i-1]["squad"] if not p.get("is_emergency"))
         entered = curr_names - prev_names
@@ -78,7 +80,7 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
 
         prev_by_name = {p["name"]: p for p in my_years[i-1]["squad"]}
         curr_by_name = {p["name"]: p for p in my_years[i]["squad"]}
-        left_list = list(left)
+        left_list = [n for n in left if n not in globally_replaced]
 
         for name in entered:
             entry = curr_by_name.get(name)
@@ -87,28 +89,29 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
             entry_age = entry.get("age", 0)
             entry_sc = entry.get("sc", 0)
 
-            # Gate: must be a young entrant (under 25), not a 30yo rotation
             if entry_age > 25:
                 continue
-
-            # Skip players already on the roster (e.g. moving from EMG to best 23)
-            # This is a promotion, not a breakthrough
-            if name in all_rostered and i == 1:
+            # Skip players already rostered (EMG → best 23 is a promotion, not breakthrough)
+            if name in all_rostered:
                 continue
 
             entry_pos = (entry.get("position", "MID")).split("/")[0]
 
-            # Find a position-matched departed player who is actually aging out
+            # Find a position-matched departed player who is aging out
             replaces = None
             for j, dep_name in enumerate(left_list):
                 dep = prev_by_name.get(dep_name, {})
                 dep_pos = dep.get("position", "MID").split("/")[0]
                 dep_age = dep.get("age", 0)
                 dep_sc = dep.get("sc", 0)
-                # Must be same position, 27+, and the kid must project higher
                 if dep_pos == entry_pos and dep_age >= 26 and entry_sc >= dep_sc * 0.85:
                     replaces = left_list.pop(j)
+                    globally_replaced.add(replaces)
                     break
+
+            # Only add to timeline if there's a clear replacement story
+            if not replaces:
+                continue
 
             kid_timeline.append({
                 "year": my_years[i]["year"],
@@ -189,11 +192,13 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
     total_teams = lc.get("avg_sc_rank", {}).get("of", "?")
 
     if trajectory == "dominant":
-        verdict = f"The strongest team in the league now and projected to stay that way. Your youth pipeline means you get better every year while others decline."
+        verdict = f"The strongest team in the league now and projected to stay that way. Your youth pipeline means you get better while others decline."
+    elif trajectory == "rising" and first_now:
+        verdict = f"Ranked #{rank} in the league right now with a young core that's still improving. The best is ahead of you — projected to dominate from {my_years[2]['year'] if len(my_years) > 2 else 'soon'}."
     elif trajectory == "rising":
-        verdict = f"Currently {rank}/{total_teams} but your young core projects to push you toward the top within 2-3 years. Patience will pay off."
+        verdict = f"Currently {rank}/{total_teams} but rising fast. Your young core projects to push you toward the top within 2-3 years."
     elif trajectory == "peaking":
-        verdict = f"You're at or near your peak. The next 1-2 years are your best window to win it all before age catches up."
+        verdict = f"Ranked #{rank} and at your peak. The next 1-2 years are your best window to win it all before age catches up."
     elif trajectory == "steady":
         verdict = f"Ranked {rank}/{total_teams} and projected to hold steady. Not declining, but not climbing either — a trade or two could tip you over."
     else:
