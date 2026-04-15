@@ -686,6 +686,51 @@ def create_app():
                         info["draft_type"] = ds.draft_round_type if ds else "initial"
                 acquisition_info.append(info)
 
+        # State league data
+        state_league_data = None
+        if afl_row:
+            from models.database import StateLeagueStat
+            from sqlalchemy import func as sqla_func
+            sl_rows = StateLeagueStat.query.filter(
+                db.or_(
+                    StateLeagueStat.player_id == afl_row.id,
+                    StateLeagueStat.player_name == name,
+                )
+            ).order_by(StateLeagueStat.season.desc()).all()
+            if sl_rows:
+                sl_career = []
+                for r in sl_rows:
+                    sl_career.append({
+                        "season": r.season, "competition": r.competition.upper(),
+                        "team": r.team, "matches": r.matches, "age": r.age,
+                        "disposals": r.disposals, "marks": r.marks, "goals": r.goals,
+                        "tackles": r.tackles, "hitouts": r.hitouts,
+                        "contested_possessions": r.contested_possessions,
+                        "clearances": r.clearances, "inside_fifties": r.inside_fifties,
+                        "fantasy_avg": r.dreamteam_avg,
+                    })
+                # Rankings: where does this player rank in their most recent comp/season?
+                latest = sl_rows[0]
+                rankings = {}
+                if latest.dreamteam_avg and latest.competition and latest.season:
+                    all_in_comp = StateLeagueStat.query.filter_by(
+                        competition=latest.competition, season=latest.season
+                    ).filter(StateLeagueStat.matches >= 3).all()
+                    all_in_team = [s for s in all_in_comp if s.team == latest.team]
+                    for label, pool, attr in [
+                        ("comp", all_in_comp, "dreamteam_avg"),
+                        ("team", all_in_team, "dreamteam_avg"),
+                        ("comp_disposals", all_in_comp, "disposals"),
+                        ("comp_tackles", all_in_comp, "tackles"),
+                    ]:
+                        vals = sorted([getattr(s, attr) or 0 for s in pool], reverse=True)
+                        my_val = getattr(latest, attr) or 0
+                        rank = next((i + 1 for i, v in enumerate(vals) if v <= my_val), len(vals))
+                        rankings[label] = {"rank": rank, "of": len(vals), "value": round(my_val, 1)}
+                state_league_data = {"career": sl_career, "rankings": rankings,
+                                     "latest_comp": latest.competition.upper(),
+                                     "latest_season": latest.season}
+
         return render_template("player.html",
                                player=player,
                                breakdown=breakdown,
@@ -695,7 +740,8 @@ def create_app():
                                weights=config.DRAFT_WEIGHTS,
                                player_ratings=player_ratings,
                                player_injury=player_injury,
-                               acquisition_info=acquisition_info)
+                               acquisition_info=acquisition_info,
+                               state_league_data=state_league_data)
 
     @app.route("/refresh", methods=["POST"])
     def trigger_refresh_all():

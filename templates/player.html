@@ -204,6 +204,11 @@
     <button class="nav-link" id="rounds-tab" data-bs-toggle="tab" data-bs-target="#rounds" type="button" role="tab">Round-by-Round</button>
   </li>
   {% endif %}
+  {% if state_league_data %}
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="stateleague-tab" data-bs-toggle="tab" data-bs-target="#stateleague" type="button" role="tab">State League</button>
+  </li>
+  {% endif %}
 </ul>
 
 <div class="tab-content" id="playerTabContent">
@@ -439,6 +444,68 @@
               {% for c in detailed.available_cols %}
               <td>{{ r.get(c, '—') if r.get(c) is not none else '—' }}</td>
               {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if state_league_data %}
+<div class="tab-pane fade" id="stateleague" role="tabpanel">
+  <div class="card bg-dark border-secondary mb-4">
+    <div class="card-body">
+      <h6 class="fw-semibold text-uppercase text-muted small mb-3">
+        State League Career
+      </h6>
+
+      {# Rankings badges #}
+      {% if state_league_data.rankings %}
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        {% for key, r in state_league_data.rankings.items() %}
+        <span class="badge {% if r.rank <= 3 %}bg-success{% elif r.rank <= 10 %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size:.78rem; padding:5px 10px;">
+          {% if key == 'comp' %}#{{ r.rank }}/{{ r.of }} Fantasy Avg ({{ state_league_data.latest_comp }} {{ state_league_data.latest_season }})
+          {% elif key == 'team' %}#{{ r.rank }}/{{ r.of }} in Team
+          {% elif key == 'comp_disposals' %}#{{ r.rank }}/{{ r.of }} Disposals
+          {% elif key == 'comp_tackles' %}#{{ r.rank }}/{{ r.of }} Tackles
+          {% endif %}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# Career table #}
+      <div class="table-responsive">
+        <table class="table table-dark table-sm table-hover align-middle" style="font-size:.82rem;">
+          <thead>
+            <tr class="text-muted small text-uppercase">
+              <th>Season</th><th>Comp</th><th>Team</th><th class="text-center">GM</th><th class="text-center">Age</th>
+              <th class="text-end">DIS</th><th class="text-end">MRK</th><th class="text-end">GLS</th>
+              <th class="text-end">TKL</th><th class="text-end">HO</th><th class="text-end">CP</th>
+              <th class="text-end">CLR</th><th class="text-end">I50</th>
+              <th class="text-end fw-bold" style="color:#58a6ff;">FAN</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in state_league_data.career %}
+            <tr>
+              <td class="fw-bold">{{ s.season }}</td>
+              <td><span class="badge {% if s.competition == 'VFL' %}bg-primary{% elif s.competition == 'SANFL' %}bg-info{% elif s.competition == 'NAB' %}bg-warning text-dark{% else %}bg-secondary{% endif %}" style="font-size:.7rem;">{{ s.competition }}</span></td>
+              <td>{{ s.team }}</td>
+              <td class="text-center fw-bold">{{ s.matches or '—' }}</td>
+              <td class="text-center">{{ s.age or '—' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.disposals) if s.disposals else '—' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.marks) if s.marks else '—' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.goals) if s.goals else '—' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.tackles) if s.tackles else '—' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.hitouts) if s.hitouts and s.hitouts > 0 else '—' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.contested_possessions) if s.contested_possessions else '—' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.clearances) if s.clearances else '—' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.inside_fifties) if s.inside_fifties else '—' }}</td>
+              <td class="text-end fw-bold" style="color:#58a6ff;">{{ '%.0f'|format(s.fantasy_avg) if s.fantasy_avg else '—' }}</td>
             </tr>
             {% endfor %}
           </tbody>
