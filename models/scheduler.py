@@ -865,6 +865,26 @@ def _sync_state_league_stats():
             count3 = sync_dfsaustralia(league="NAB", season=year, fetch_logs=True)
             logger.info("DFS Australia NAB sync: %d rows", count3)
 
+            # Precompute scouting model predictions for all SL players
+            from models.scouting_model import predict_afl_output
+            from models.database import StateLeagueStat
+            sl_rows = StateLeagueStat.query.filter_by(season=year).filter(
+                StateLeagueStat.matches >= 2
+            ).all()
+            logger.info("Precomputing scouting predictions for %d SL players", len(sl_rows))
+            for sl in sl_rows:
+                try:
+                    pred = predict_afl_output(sl_row=sl)
+                    if pred:
+                        sl.predicted_afl_sc = pred["predicted_afl"].get("afl_sc_avg")
+                        sl.breakout_probability = pred["breakout_probability"]
+                        sl.draft_probability = pred.get("draft_probability")
+                        sl.scouting_tag = pred.get("tag")
+                except Exception:
+                    pass
+            db.session.commit()
+            logger.info("Scouting predictions precomputed")
+
             _track_success("state_league_sync")
         except Exception as e:
             _track_failure("state_league_sync", e)

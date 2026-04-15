@@ -171,6 +171,12 @@ class StateLeagueStat(db.Model):
     score_involvement_pct = db.Column(db.Float)
     goals_avg = db.Column(db.Float)
 
+    # Precomputed scouting model predictions (populated by weekly sync job)
+    predicted_afl_sc = db.Column(db.Float)        # projected AFL SuperCoach avg
+    breakout_probability = db.Column(db.Float)     # 0-100%
+    draft_probability = db.Column(db.Float)        # 0-100% (unlisted players only)
+    scouting_tag = db.Column(db.String(30))        # e.g. "Star Potential", "Breakout Candidate"
+
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     sl_player = db.relationship("AflPlayer", backref="state_league_stats")

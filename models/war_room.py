@@ -367,7 +367,6 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
     }
     """
     from models.database import StateLeagueStat
-    from models.scouting_model import predict_afl_output
 
     # Get all rostered player IDs across the league
     league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
@@ -386,43 +385,34 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
             gaps[g["position"]] = g["gap"]
 
     # ── 1. Pickup targets: AFL-listed, strong VFL/SANFL/WAFL form, not rostered ──
-    # Use SL fantasy avg as primary signal (fast), only run scouting model on top 20
+    # Read PRECOMPUTED predictions (no model calls — predictions stored on SL rows)
+    from sqlalchemy import func
     sl_current = StateLeagueStat.query.filter(
         StateLeagueStat.season == year,
         StateLeagueStat.is_afl_listed == True,
         StateLeagueStat.matches >= 2,
         StateLeagueStat.competition.in_(["vfl", "sanfl", "wafl"]),
-    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(60).all()
+    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(80).all()
 
-    # Pre-filter: remove rostered players and build candidate list
-    candidates = []
+    pickup_targets = []
     for sl in sl_current:
         if not sl.player_id or sl.player_id in rostered_player_ids:
             continue
         player = db.session.get(AflPlayer, sl.player_id)
         if not player:
             continue
-        # Quick relevance estimate from SL fantasy avg (no model needed)
-        sl_fan = sl.dreamteam_avg or 0
-        estimated_afl = sl_fan * 0.7  # rough VFL→AFL translation
-        if estimated_afl < 45:
-            continue
-        candidates.append((sl, player, estimated_afl))
 
-    # Only run scouting model on top 20 candidates
-    from sqlalchemy import func
-    pickup_targets = []
-    for sl, player, est_afl in candidates[:20]:
-        pred = predict_afl_output(sl_row=sl)
-        projected_sc = pred["predicted_afl"].get("afl_sc_avg", 0) if pred else est_afl
-        breakout = pred["breakout_probability"] if pred else 0
-        tag = pred["tag"] if pred else ""
+        projected_sc = sl.predicted_afl_sc or ((sl.dreamteam_avg or 0) * 0.7)
+        if projected_sc < 50:
+            continue
+
+        breakout = sl.breakout_probability or 0
+        tag = sl.scouting_tag or ""
 
         pos = (player.position or "MID").split("/")[0]
         fills_gap = pos in gaps and gaps[pos] < -3
         relevance = projected_sc + (15 if fills_gap else 0) + (10 if (sl.dreamteam_avg or 0) >= 100 else 0) + (5 if (player.age or 30) <= 24 else 0)
 
-        # AFL form this year (batch later if needed)
         afl_stats = db.session.query(
             func.count(PlayerStat.id), func.avg(PlayerStat.supercoach_score)
         ).filter_by(player_id=player.id, year=year).first()
@@ -446,24 +436,24 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
     pickup_targets.sort(key=lambda x: -x["relevance"])
     pickup_targets = pickup_targets[:15]
 
-    # ── 2. Draft watch: NAB/Coates prospects (top 15 only, model on top 10) ──
+    # ── 2. Draft watch: NAB/Coates prospects (precomputed predictions) ──
     nab_current = StateLeagueStat.query.filter(
         StateLeagueStat.season == year,
         StateLeagueStat.competition == "nab",
         StateLeagueStat.matches >= 2,
-    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(15).all()
+        StateLeagueStat.predicted_afl_sc.isnot(None),
+    ).order_by(StateLeagueStat.predicted_afl_sc.desc()).limit(15).all()
 
     draft_watch = []
-    for sl in nab_current[:10]:
-        pred = predict_afl_output(sl_row=sl)
-        if not pred:
-            continue
-        projected_sc = pred["predicted_afl"].get("afl_sc_avg", 0)
-        draft_prob = pred.get("draft_probability", 0) or 0
+    for sl in nab_current:
+        projected_sc = sl.predicted_afl_sc or 0
+        draft_prob = sl.draft_probability or 0
+        breakout = sl.breakout_probability or 0
         if projected_sc < 40 and draft_prob < 10:
             continue
 
-        pos_grp = pred.get("position_group", "MID")
+        # Infer position from scouting tag or default MID
+        pos_grp = "MID"  # default
         fills_gap = pos_grp in gaps and gaps[pos_grp] < -3
 
         draft_watch.append({
@@ -473,11 +463,11 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
             "sl_disposals": round(sl.disposals, 1) if sl.disposals else 0,
             "projected_afl_sc": round(projected_sc, 1),
             "draft_probability": draft_prob,
-            "breakout_pct": pred["breakout_probability"],
-            "tag": pred["tag"], "position_group": pos_grp,
+            "breakout_pct": breakout,
+            "tag": sl.scouting_tag or "", "position_group": pos_grp,
             "fills_gap": pos_grp if fills_gap else None,
             "career_nab_seasons": 0, "career_nab_avg_fantasy": 0,
-            "projections": pred.get("projections", {}),
+            "projections": {},
         })
 
     draft_watch.sort(key=lambda x: -(x["draft_probability"] + x["breakout_pct"]))
