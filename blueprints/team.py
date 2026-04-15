@@ -2050,7 +2050,6 @@ def team_analytics_api(league_id, team_id):
         "team": {"id": team.id, "name": team.name},
         "analytics": analytics,
         "trade_table": trade_table,
-        "squad_depth": squad_depth_data,
         "dynasty": dynasty,
         "landscape": landscape,
         "ai_sections": ai_sections,

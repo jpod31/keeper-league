@@ -279,9 +279,12 @@ def compute_squad_depth(field_players, bench_players, profile_tags, league_pos_a
                     "avg_sc", "league_avg", "diff"}}
     """
     depth = {}
+    # Include bench players too so RUC depth (1 field slot) shows full picture
+    all_rostered = list(field_players) + list(bench_players)
+    field_ids = {p.id for p in field_players}
     for pos in ["DEF", "MID", "RUC", "FWD"]:
         pos_players = []
-        for p in field_players:
+        for p in all_rostered:
             if (p.position or "MID").split("/")[0] == pos:
                 t = profile_tags.get(p.id, {})
                 traj = t.get("trajectory", 0)
@@ -293,8 +296,9 @@ def compute_squad_depth(field_players, bench_players, profile_tags, league_pos_a
                     "trajectory": "rising" if traj > 3 else "declining" if traj < -3 else "stable",
                     "age": p.age or 0,
                     "peak_phase": t.get("peak_phase", ""),
+                    "is_bench": p.id not in field_ids,
                 })
-        pos_players.sort(key=lambda x: -x["sc"])
+        pos_players.sort(key=lambda x: (-int(not x.get("is_bench", False)), -x["sc"]))
 
         avg = round(sum(p["sc"] for p in pos_players) / max(len(pos_players), 1), 1)
         lg = league_pos_avgs.get(pos, 0)
@@ -457,7 +461,7 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
         fills_gap = pos_grp in gaps and gaps[pos_grp] < -3
 
         draft_watch.append({
-            "name": sl.player_name, "age": sl.age or 0,
+            "name": sl.player_name, "age": sl.age or 18,  # NAB/Coates players are U18s
             "sl_team": sl.team, "sl_matches": sl.matches,
             "sl_fantasy_avg": round(sl.dreamteam_avg, 1) if sl.dreamteam_avg else 0,
             "sl_disposals": round(sl.disposals, 1) if sl.disposals else 0,
@@ -486,18 +490,37 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
         if not player:
             continue
 
-        vfl_form_owned.append({
-            "name": player.name,
-            "position": player.position or "MID",
-            "age": player.age or 0,
-            "sl_competition": sl.competition.upper(),
-            "sl_team": sl.team,
-            "sl_matches": sl.matches,
-            "sl_fantasy_avg": round(sl.dreamteam_avg, 1),
-            "sl_disposals": round(sl.disposals, 1) if sl.disposals else 0,
-            "afl_sc_avg": player.sc_avg or 0,
-            "sl_vs_afl": round(sl.dreamteam_avg - (player.sc_avg or 0), 1),
-        })
+        afl_sc = player.sc_avg or 0
+        predicted_afl = sl.predicted_afl_sc or 0
+        # If no AFL games this season, show predicted AFL SC from scouting model
+        if afl_sc == 0 and predicted_afl > 0:
+            vfl_form_owned.append({
+                "name": player.name,
+                "position": player.position or "MID",
+                "age": player.age or 0,
+                "sl_competition": sl.competition.upper(),
+                "sl_team": sl.team,
+                "sl_matches": sl.matches,
+                "sl_fantasy_avg": round(sl.dreamteam_avg, 1),
+                "sl_disposals": round(sl.disposals, 1) if sl.disposals else 0,
+                "afl_sc_avg": 0,
+                "predicted_afl_sc": round(predicted_afl, 1),
+                "sl_vs_afl": None,  # meaningless when no AFL data
+            })
+        elif afl_sc > 0:
+            vfl_form_owned.append({
+                "name": player.name,
+                "position": player.position or "MID",
+                "age": player.age or 0,
+                "sl_competition": sl.competition.upper(),
+                "sl_team": sl.team,
+                "sl_matches": sl.matches,
+                "sl_fantasy_avg": round(sl.dreamteam_avg, 1),
+                "sl_disposals": round(sl.disposals, 1) if sl.disposals else 0,
+                "afl_sc_avg": afl_sc,
+                "predicted_afl_sc": None,
+                "sl_vs_afl": round(sl.dreamteam_avg - afl_sc, 1),
+            })
 
     vfl_form_owned.sort(key=lambda x: -x["sl_fantasy_avg"])
 

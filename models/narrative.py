@@ -154,24 +154,32 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
     end = my_years[-1]["total"]
     change_pct = (end - start) / max(start, 1) * 100
 
-    # Am I #1 now and throughout?
-    always_first = True
+    # Check rankings across the dynasty timeline
+    my_ranks = []
     for i, yr in enumerate(my_years):
+        rank_this_yr = 1
         for tid, d in dynasty.items():
             if tid == team_id:
                 continue
             if d["years"][i]["total"] > yr["total"]:
-                always_first = False
-                break
-        if not always_first:
-            break
+                rank_this_yr += 1
+        my_ranks.append(rank_this_yr)
 
-    if always_first and change_pct > 5:
+    always_first = all(r == 1 for r in my_ranks)
+    first_now = my_ranks[0] == 1 if my_ranks else False
+    first_later = any(r == 1 for r in my_ranks[2:]) if len(my_ranks) > 2 else False
+    best_future_rank = min(my_ranks[2:]) if len(my_ranks) > 2 else my_ranks[-1] if my_ranks else 99
+
+    if always_first:
         trajectory = "dominant"
-    elif change_pct > 10:
+    elif first_now and change_pct > -5:
+        trajectory = "peaking"  # #1 now but not throughout
+    elif first_later or (best_future_rank <= 2 and change_pct > -5):
+        trajectory = "rising"  # projected top 2 in future
+    elif change_pct > 5:
         trajectory = "rising"
-    elif change_pct > -2:
-        trajectory = "peaking"
+    elif change_pct > -5:
+        trajectory = "steady"
     else:
         trajectory = "declining"
 
@@ -183,11 +191,13 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
     if trajectory == "dominant":
         verdict = f"The strongest team in the league now and projected to stay that way. Your youth pipeline means you get better every year while others decline."
     elif trajectory == "rising":
-        verdict = f"Currently {rank}/{total_teams} but your young core projects to push you to the top within 2-3 years. Patience will pay off."
+        verdict = f"Currently {rank}/{total_teams} but your young core projects to push you toward the top within 2-3 years. Patience will pay off."
     elif trajectory == "peaking":
         verdict = f"You're at or near your peak. The next 1-2 years are your best window to win it all before age catches up."
+    elif trajectory == "steady":
+        verdict = f"Ranked {rank}/{total_teams} and projected to hold steady. Not declining, but not climbing either — a trade or two could tip you over."
     else:
-        verdict = f"Your roster is trending down. Key players are aging out faster than replacements are developing. Time to rebuild through the draft."
+        verdict = f"Your roster is trending down. Key players are aging out faster than replacements are developing. Consider trading aging assets for youth."
 
     if biggest_gap:
         verdict += f" Your biggest weakness is {biggest_gap['position']} — {abs(biggest_gap['gap']):.0f} points below league average."

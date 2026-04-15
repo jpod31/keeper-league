@@ -394,7 +394,7 @@ interface SLDraftWatch {
 interface SLOwnedForm {
   name: string; position: string; age: number; sl_competition: string
   sl_team: string; sl_matches: number; sl_fantasy_avg: number
-  afl_sc_avg: number; sl_vs_afl: number
+  afl_sc_avg: number; sl_vs_afl: number | null; predicted_afl_sc: number | null
 }
 
 function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draft_watch: SLDraftWatch[]; vfl_form_owned: SLOwnedForm[] } }) {
@@ -530,14 +530,37 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
                 <div style={{ fontSize: '.48rem', color: '#484f58' }}>SL FAN</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 800, color: scColor(p.afl_sc_avg) }}>{Math.round(p.afl_sc_avg)}</div>
-                <div style={{ fontSize: '.48rem', color: '#484f58' }}>AFL SC</div>
+                {p.afl_sc_avg > 0 ? (
+                  <>
+                    <div style={{ fontWeight: 800, color: scColor(p.afl_sc_avg) }}>{Math.round(p.afl_sc_avg)}</div>
+                    <div style={{ fontSize: '.48rem', color: '#484f58' }}>AFL SC</div>
+                  </>
+                ) : p.predicted_afl_sc ? (
+                  <>
+                    <div style={{ fontWeight: 800, color: scColor(p.predicted_afl_sc) }}>{Math.round(p.predicted_afl_sc)}</div>
+                    <div style={{ fontSize: '.48rem', color: '#d2a8ff' }}>PROJ AFL</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 600, color: '#484f58' }}>—</div>
+                    <div style={{ fontSize: '.48rem', color: '#484f58' }}>NO AFL</div>
+                  </>
+                )}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, color: p.sl_vs_afl > 10 ? '#3fb950' : p.sl_vs_afl < -10 ? '#ef4444' : '#8b949e' }}>
-                  {p.sl_vs_afl > 0 ? '+' : ''}{Math.round(p.sl_vs_afl)}
-                </div>
-                <div style={{ fontSize: '.48rem', color: '#484f58' }}>SL vs AFL</div>
+                {p.sl_vs_afl != null ? (
+                  <>
+                    <div style={{ fontWeight: 700, color: p.sl_vs_afl > 10 ? '#3fb950' : p.sl_vs_afl < -10 ? '#ef4444' : '#8b949e' }}>
+                      {p.sl_vs_afl > 0 ? '+' : ''}{Math.round(p.sl_vs_afl)}
+                    </div>
+                    <div style={{ fontSize: '.48rem', color: '#484f58' }}>SL vs AFL</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 600, color: '#d2a8ff', fontSize: '.65rem' }}>Watch</div>
+                    <div style={{ fontSize: '.48rem', color: '#484f58' }}>DEVELOPING</div>
+                  </>
+                )}
               </div>
             </div>
           ))}

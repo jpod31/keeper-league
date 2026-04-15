@@ -738,33 +738,32 @@ def _compute_scenarios(field_players, bayesian_map, roster_map, all_players_on_t
         reverse=True
     )
 
-    for i, p in enumerate(field_by_sc[:3]):
+    # Build position-grouped bench for proper replacement matching
+    bench_by_pos = defaultdict(list)
+    for bp in bench_sorted:
+        bpos = _primary_pos(bp.position)
+        bench_by_pos[bpos].append(bp)
+
+    used_subs = set()
+    for p in field_by_sc[:5]:
         p_sc = bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
-        # Best available bench player (not already used as sub in previous scenario)
+        p_pos = _primary_pos(p.position)
+        # Find best bench player at SAME POSITION (not yet used as sub)
         sub_sc = 0
-        if i < len(bench_sorted):
-            sub_sc = bayesian_map.get(bench_sorted[i].id, {}).get("true_talent", 0)
-        score_without = round(current_total - p_sc + sub_sc, 1)
+        sub_name = None
+        for bp in bench_by_pos.get(p_pos, []) + bench_sorted:  # fallback to any
+            if bp.id not in used_subs:
+                sub_sc = bayesian_map.get(bp.id, {}).get("true_talent", 0)
+                sub_name = bp.name
+                used_subs.add(bp.id)
+                break
+        drop = round(p_sc - sub_sc, 1)
         key_injuries.append({
             "name": p.name,
-            "team_score_without": score_without,
-            "drop": round(current_total - score_without, 1),
-        })
-
-    # --- Position collapse (each position group drops 15%) ---
-    pos_totals = defaultdict(float)
-    for p in field_players:
-        ppos = _primary_pos(p.position)
-        pos_totals[ppos] += bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
-
-    position_collapse = {}
-    for pos in ("DEF", "MID", "FWD", "RUC"):
-        pos_sc = pos_totals.get(pos, 0)
-        drop = round(pos_sc * 0.15, 1)
-        position_collapse[pos] = {
-            "score": round(current_total - drop, 1),
+            "team_score_without": round(current_total - drop, 1),
             "drop": drop,
-        }
+            "replaced_by": sub_name,
+        })
 
     return {
         "best_18": best_18_total,
@@ -775,7 +774,6 @@ def _compute_scenarios(field_players, bayesian_map, roster_map, all_players_on_t
             "captain": captain.name if captain else "None",
         },
         "key_injuries": key_injuries,
-        "position_collapse": position_collapse,
         "current_total": round(current_total, 1),
     }
 
@@ -881,7 +879,8 @@ def _compute_health_score(field_players, bench_players, bayesian_map, profile_ta
         dur_score = 50.0
     dur_score = _clamp(dur_score, 0, 100)
 
-    # --- Composite ---
+    # --- Composite (with floor penalty for critical weaknesses) ---
+    components = [power, depth, balance, youth, traj_score, dur_score]
     health = (
         power * 0.30 +
         depth * 0.20 +
@@ -890,6 +889,12 @@ def _compute_health_score(field_players, bench_players, bayesian_map, profile_ta
         traj_score * 0.10 +
         dur_score * 0.10
     )
+    # A team with a crippling weakness shouldn't score 90+
+    worst = min(components)
+    if worst < 40:
+        health = min(health, 72)
+    elif worst < 60:
+        health = min(health, 82)
 
     return {
         "health_score": round(health, 1),
@@ -1012,22 +1017,20 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
                 "impact": round(tt - raw, 1),
             })
 
-    # 5. Depth advantage or weakness
-    best_18_delta = scenarios.get("best_18_delta", 0)
-    if best_18_delta > 20:
-        insights.append({
-            "type": "warning",
-            "title": f"Lineup not optimised ({best_18_delta:.0f} below best 18)",
-            "detail": "Your best possible 18 outscores your current lineup significantly. Check bench.",
-            "impact": round(best_18_delta, 1),
-        })
-    elif best_18_delta < 5 and total_field >= 18:
-        insights.append({
-            "type": "strength",
-            "title": "Lineup is well-optimised",
-            "detail": f"Only {best_18_delta:.0f} SC separates your lineup from your theoretical best 18.",
-            "impact": 0,
-        })
+    # 5. Bench strength indicator
+    best_18 = scenarios.get("best_18", 0)
+    current = scenarios.get("current_total", 0)
+    if best_18 and current and total_field > 18:
+        bench_contribution = round(current - best_18, 1)
+        avg_bench_sc = round(bench_contribution / max(total_field - 18, 1), 1)
+        if avg_bench_sc < 60:
+            insights.append({
+                "type": "warning",
+                "title": f"Weak bench depth (avg {avg_bench_sc:.0f} SC)",
+                "detail": f"Your bottom {total_field - 18} field players average {avg_bench_sc:.0f}. "
+                          "Consider trading bench depth for starter quality.",
+                "impact": round(avg_bench_sc, 1),
+            })
 
     # 6. Position weakness
     for pos, ideal in _IDEAL_FIELD.items():
@@ -1466,23 +1469,31 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     else:
         now_pct = future_pct = 0
 
-    # Window considers both age profile AND current scoring
-    # Quick avg for window calc (full avg_sc_field computed later)
+    # Window considers: age profile + current scoring + projected trajectory
     _quick_avg = sum(p.sc_avg or 0 for p in field_players) / max(len(field_players), 1)
     is_top_scorer = _quick_avg >= league_avg_sc if league_avg_sc > 0 else True
+    # projected_change_pct computed later — use a quick estimate here
+    _proj_change = sum(
+        (projections_by_player.get(p.id, {}).get("yr1", p.sc_avg or 0) - (p.sc_avg or 0))
+        for p in field_players
+    )
+    _proj_improving = _proj_change > 0
 
-    if peak_count >= total_field * 0.5:
-        window = "Win Now"
-        window_detail = f"{peak_count}/{total_field} field players in their peak window"
-    elif pre_peak_count >= total_field * 0.4 and is_top_scorer:
+    if is_top_scorer and pre_peak_count >= total_field * 0.4 and _proj_improving:
         window = "Dominant & Improving"
         window_detail = f"Top scorer with {pre_peak_count}/{total_field} field players still to peak"
-    elif pre_peak_count >= total_field * 0.4:
+    elif is_top_scorer and peak_count >= total_field * 0.4:
+        window = "Win Now"
+        window_detail = f"Top scorer, {peak_count}/{total_field} in peak window — compete immediately"
+    elif pre_peak_count >= total_field * 0.4 and _proj_improving:
         window = "Building"
-        window_detail = f"{pre_peak_count}/{total_field} field players haven't peaked yet"
-    elif post_peak_count >= total_field * 0.35:
+        window_detail = f"{pre_peak_count}/{total_field} field players haven't peaked yet — future looks bright"
+    elif post_peak_count >= total_field * 0.35 and not _proj_improving:
         window = "Declining"
-        window_detail = f"{post_peak_count}/{total_field} field players past their peak"
+        window_detail = f"{post_peak_count}/{total_field} field players past their peak, projected to drop"
+    elif is_top_scorer:
+        window = "Contending"
+        window_detail = f"Above-average scorer, {peak_count} in peak, {pre_peak_count} pre-peak"
     else:
         window = "Balanced"
         window_detail = (f"Mix of peak ({peak_count}), pre-peak ({pre_peak_count}), "
@@ -1696,29 +1707,38 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
     for p in field_players:
         proj = projections_by_player.get(p.id, {})
         yr1 = proj.get("yr1", 0)
-        tt = bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0)
-        change = round(yr1 - tt, 1)
+        # Use ACTUAL current SC, not Bayesian estimate (which blends with prev year)
+        current_sc = p.sc_avg or p.sc_avg_prev or 0
+        change = round(yr1 - current_sc, 1)
         entry = {
             "name": p.name,
             "age": p.age or 0,
-            "current_sc": round(tt, 1),
-            "projected_sc": yr1,
+            "current_sc": round(current_sc, 1),
+            "projected_sc": round(yr1, 1),
             "change": change,
         }
-        if change < -2:
+        # Aging out: 29+ OR projected decline > 5 points
+        if (p.age or 0) >= 29 or change < -5:
             aging_out.append(entry)
-        elif change > 2:
+        # Aging in: under 27 AND projected improvement > 3 points
+        elif (p.age or 0) <= 27 and change > 3:
             aging_in.append(entry)
 
     aging_out.sort(key=lambda x: x["change"])
     aging_in.sort(key=lambda x: -x["change"])
 
-    projected_next_year = proj_1yr_total
+    # Projected change: use field total now vs field total projected
+    # (not proj_1yr_total which includes bench)
     current_total_field = round(sum(
-        bayesian_map.get(p.id, {}).get("true_talent", p.sc_avg or 0) for p in field_players
+        p.sc_avg or p.sc_avg_prev or 0 for p in field_players
     ), 1)
+    projected_field_total = round(sum(
+        projections_by_player.get(p.id, {}).get("yr1", p.sc_avg or 0)
+        for p in field_players
+    ), 1)
+    projected_next_year = projected_field_total
     projected_change_pct = round(
-        _safe_div(projected_next_year - current_total_field, current_total_field) * 100, 1
+        _safe_div(projected_field_total - current_total_field, current_total_field) * 100, 1
     )
 
     # ══════════════════════════════════════════════════════════════════════
@@ -1865,8 +1885,6 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         "mc_p50": mc_results["mc_p50"],
         "mc_p75": mc_results["mc_p75"],
         "mc_p90": mc_results["mc_p90"],
-        "mc_distribution": mc_results["mc_distribution"],
-        "mc_labels": mc_results["mc_labels"],
 
         # ══════════════════════════════════════════════════════════════════
         # BACKWARD-COMPATIBLE FIELDS (preserved for existing template)
