@@ -834,7 +834,7 @@ def state_league_stats(league_id):
                    "tackles", "hitouts", "contested_possessions", "uncontested_possessions",
                    "clearances", "inside_fifties", "rebounds", "intercepts",
                    "score_involvements", "frees_for", "frees_against", "contested_marks",
-                   "tackles_inside_50", "total_possessions"}
+                   "tackles_inside_50", "total_possessions", "dreamteam_avg"}
     _TOTAL_FIELDS = {"goals"}
 
     def _val(r, field):
@@ -874,7 +874,7 @@ def state_league_stats(league_id):
             "frees_for": _val(r, "frees_for"), "frees_against": _val(r, "frees_against"),
             "contested_marks": _val(r, "contested_marks"),
             "tackles_inside_50": _val(r, "tackles_inside_50"),
-            "dreamteam_avg": r.dreamteam_avg, "total_possessions": _val(r, "total_possessions"),
+            "dreamteam_avg": _val(r, "dreamteam_avg"), "total_possessions": _val(r, "total_possessions"),
             "kick_percentage": r.kick_percentage,
             "contested_possession_rate": r.contested_possession_rate,
             "score_involvement_pct": r.score_involvement_pct,
