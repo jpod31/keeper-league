@@ -218,7 +218,18 @@ def _select_best_23(players_with_projections, pos_requirements):
                 break
 
     total = sum(s["sc"] for s in selected)
-    return round(total, 1), selected
+
+    # Emergency selections: best 4 players not in the 23
+    emergencies = []
+    for p, sc, positions in all_remaining:
+        if p.id not in used_ids and len(emergencies) < 4:
+            emergencies.append({"name": p.name, "position": positions[0], "sc": sc,
+                                "age": p.age or 0, "is_emergency": True})
+    # Mark selected players
+    for s in selected:
+        s["is_emergency"] = False
+
+    return round(total, 1), selected, emergencies
 
 
 def simulate_dynasty(league_id, year, profile_tags, years_ahead=5):
@@ -273,14 +284,14 @@ def simulate_dynasty(league_id, year, profile_tags, years_ahead=5):
 
                 projections.append((p, sc))
 
-            # Select best 23
-            total, squad = _select_best_23(projections, pos_reqs)
+            # Select best 23 + 4 emergencies
+            total, squad, emg = _select_best_23(projections, pos_reqs)
 
             team_years.append({
                 "year": target_year,
                 "offset": offset,
                 "total": total,
-                "squad": sorted(squad, key=lambda x: -x["sc"]),
+                "squad": sorted(squad, key=lambda x: -x["sc"]) + sorted(emg, key=lambda x: -x["sc"]),
             })
 
         results[team.id] = {

@@ -138,116 +138,83 @@ def _hash_analytics(analytics):
     return hashlib.md5(key_data.encode()).hexdigest()[:16]
 
 
-def _build_prompt(team_name, analytics, league_comparison, narrative=None):
-    """Build the GPT prompt with structured team data."""
+def _build_prompt(team_name, analytics, league_comparison, narrative=None,
+                  comparative_insights=None):
+    """Build insight-driven GPT prompt.
 
+    Instead of dumping raw stats, we feed pre-computed comparative insights
+    that are mathematically proven. GPT's job is to articulate them well,
+    not to derive analysis from numbers.
+    """
     a = analytics
-    lc = league_comparison
     n = narrative or {}
+    ci = comparative_insights or {}
 
-    prompt = f"""You are an expert fantasy AFL analyst writing a team report for "{team_name}" in a SuperCoach keeper league.
+    prompt = f"""You are an elite fantasy AFL keeper league analyst writing a deep-dive report for "{team_name}".
 
-IMPORTANT CONTEXT: This team's trajectory is "{n.get('trajectory', 'unknown')}". {n.get('verdict', '')}
+TEAM TRAJECTORY: {n.get('trajectory', 'unknown')}. {n.get('verdict', '')}
+WINDOW: {a.get('window', 'Unknown')} — {a.get('window_detail', '')}
 
-## Team Data
+## MATHEMATICALLY COMPUTED INSIGHTS
+The following facts have been computed from league-wide data analysis. Use them as the backbone of your report — cite specific players, positions, and numbers. Do NOT just list them back — weave them into analytical narrative.
 
-**Scoring:**
-- Projected weekly score: {a.get('mc_p50', 0):.0f} (range {a.get('mc_p10', 0):.0f}–{a.get('mc_p90', 0):.0f})
-- Season average: {a.get('season_avg', 0):.0f} per round
-- Last 3 rounds form: {a.get('form_avg', 0):.0f} ({'+' if a.get('form_vs_season', 0) > 0 else ''}{a.get('form_vs_season', 0):.0f} vs season avg)
-- League rank by avg SC/player: {lc.get('sc_rank', '?')}/{lc.get('total_teams', '?')}
-
-**Roster Quality:**
-- Quality score: {a.get('quality_pct', 0)}% (league rank: {lc.get('quality_rank', '?')}/{lc.get('total_teams', '?')})
-- Total Value Above Average: {a.get('total_vorp', 0):.0f} (league rank: {lc.get('vorp_rank', '?')}/{lc.get('total_teams', '?')})
-- Top 5 player dependency: {a.get('top5_pct', 0)}% of total scoring
-- Scoring depth (std dev): {a.get('sc_std', 0)} — {'deep roster' if a.get('sc_std', 30) < 25 else 'top-heavy' if a.get('sc_std', 30) > 35 else 'moderate depth'}
-
-**Competitive Window:**
-- Current window: {a.get('window', 'Unknown')} — {a.get('window_detail', '')}
-- Average age: {a.get('avg_age', 0)} (league avg: {a.get('league_avg_age', 0)})
-- Projected total next year: {a.get('projected_next_year', 0):.0f} ({'+' if a.get('projected_change_pct', 0) > 0 else ''}{a.get('projected_change_pct', 0):.1f}% change)
-
-**Positional Strength:**
 """
-    for pos in ['DEF', 'MID', 'RUC', 'FWD']:
-        pd = a.get('pos_breakdown', {}).get(pos, {})
-        lg_avg = lc.get('pos_league_avg', {}).get(pos, 0)
-        prompt += f"- {pos}: {pd.get('count', 0)} players, avg {pd.get('avg_sc', 0)} (league avg: {lg_avg:.0f})\n"
+    for category, label in [
+        ("positional_dominance", "POSITIONAL DOMINANCE"),
+        ("scoring_comparison", "SCORING POWER"),
+        ("win_window", "CHAMPIONSHIP WINDOW"),
+        ("depth_longevity", "DEPTH & LONGEVITY"),
+        ("vulnerabilities", "RISKS & VULNERABILITIES"),
+        ("actionable", "ACTIONABLE MOVES"),
+    ]:
+        items = ci.get(category, [])
+        if items:
+            prompt += f"**{label}:**\n"
+            for item in items:
+                prompt += f"- {item}\n"
+            prompt += "\n"
 
-    prompt += f"""
-**Reliability:**
-- Consistency: {a.get('avg_consistency', 0)*100:.0f}%
-- Durability: {a.get('avg_durability', 0):.0f} games/season avg
-- Injury risks: {len(a.get('injury_risk', []))} flagged players
-
-**Key Players (top 5 by value above average):**
-"""
+    # Add key players for reference
+    prompt += "**KEY PLAYERS (top 5 by value above replacement):**\n"
     for p in (a.get('player_vorp', []) or [])[:5]:
-        prompt += f"- {p['name']} ({p['position']}): SC {p['sc']:.0f}, value +{p['vorp']:.0f} above replacement\n"
+        prompt += f"- {p['name']} ({p['position']}): SC {p['sc']:.0f}, VORP +{p['vorp']:.0f}\n"
 
     if a.get('aging_out'):
-        prompt += "\n**Biggest Projected Declines (next year):**\n"
+        prompt += "\n**DECLINING ASSETS (next year):**\n"
         for p in a['aging_out'][:3]:
             prompt += f"- {p['name']}: {p['current_sc']:.0f} → {p['projected_sc']:.0f} ({p['change']:+.0f})\n"
 
     if a.get('aging_in'):
-        prompt += "\n**Biggest Projected Gains (next year):**\n"
+        prompt += "\n**RISING ASSETS (next year):**\n"
         for p in a['aging_in'][:3]:
             prompt += f"- {p['name']}: {p['current_sc']:.0f} → {p['projected_sc']:.0f} ({p['change']:+.0f})\n"
 
-    if lc.get('other_teams'):
-        prompt += "\n**League Context:**\n"
-        for t in lc['other_teams']:
-            prompt += f"- {t['name']}: avg SC {t['avg_sc']:.0f}, quality {t['quality_pct']}%, window: {t['window']}\n"
-
-    if n.get('kid_timeline'):
-        prompt += "\n**Youth Breakthrough Timeline:**\n"
-        for k in n['kid_timeline'][:5]:
-            if k.get('replaces'):
-                prompt += f"- {k['year']}: {k['enters']} (projected SC {k['enters_sc']:.0f}) replaces {k['replaces']}\n"
-
-    if n.get('biggest_gap'):
-        g = n['biggest_gap']
-        prompt += f"\n**Biggest Gap:** {g['position']} — your avg {g['your_avg']} vs league {g['league_avg']}."
-        if g.get('best_fill_name'):
-            prompt += f" Best available fill: {g['best_fill_name']} ({g['best_fill_sc']}).\n"
-
     prompt += """
-## Instructions
+## INSTRUCTIONS
 
-Write a concise but insightful team analysis report (250-350 words). Structure it as:
+Write a 400-500 word analytical report. This is NOT a stat summary — it's a strategic assessment. Think like a GM evaluating a franchise, not a journalist recapping a game.
 
-1. **Overall Assessment** (2-3 sentences) — Where does this team sit right now? Are they contenders or pretenders?
+For each section, LEAD with the comparative insight (e.g. "You own 4 of the top 5 defenders"), THEN explain what that means strategically. Connect insights to each other — e.g. if positional dominance + age cliff exist at the same position, that's the story.
 
-2. **Strengths** — What's working? Which positions are strong? Any standout performers?
+REQUIRED SECTIONS (separated by "---" on its own line):
 
-3. **Concerns** — What's the biggest risk? Aging players? Positional weakness? Over-reliance on a few players?
-
-4. **Outlook** — Based on the age curves and projections, is this team getting better or worse? What's the 1-2 year trajectory?
-
-5. **Recommendations** — 2-3 specific, actionable things the coach should do (draft targets, trade candidates, positional upgrades).
-
-Write in a confident, analytical tone — like a sports journalist, not a robot. Use the actual player names and numbers. Don't repeat the raw data — interpret it. Be direct and opinionated.
-
-IMPORTANT FORMAT: Output EXACTLY 5 sections separated by "---" on its own line. Each section starts with a title in caps followed by a colon, then the paragraph. Like:
-
-THE VERDICT: This team is...
+THE VERDICT: 2-3 sentences. Are they a dynasty, contender, pretender, or rebuilding? How do they compare to the field RIGHT NOW and going forward? Be direct and opinionated.
 ---
-THE ENGINE ROOM: The midfield is...
+THE EDGE: What gives this team its competitive advantage? Which positions dominate? How sustainable is it? Name the players that make the difference and WHY they matter to the structure.
 ---
-RISK REGISTER: The biggest concern is...
+THE CRACKS: What breaks first? Age cliffs, single-player dependency, positional weakness — identify the structural risk, not just "Player X is old". Explain what happens when the risk materialises (e.g. "losing X drops you from 1st to 4th").
 ---
-THE OUTLOOK: Looking ahead...
+THE TRAJECTORY: Where is this team in 2 years? 4 years? Use the dynasty projections and crossover data. Be specific about WHEN windows open and close. Name the teams that will overtake or be overtaken.
 ---
-THE PLAYBOOK: The coach should...
+THE PLAYBOOK: 3 specific, high-impact moves. Not generic advice — use the computed trade targets, free agents, and gap analysis. Each recommendation should reference the insight that justifies it.
 
-Keep each section 2-4 sentences. Punchy. No bullet points."""
+TONE: Confident, analytical, direct. Like a front-office memo, not a blog post. Use player names throughout. No bullet points — flowing paragraphs. Each section 3-5 sentences."""
 
     return prompt
 
 
-def generate_team_summary(team_id, team_name, year, analytics, league_comparison, narrative=None):
+def generate_team_summary(team_id, team_name, year, analytics, league_comparison,
+                          narrative=None, comparative_insights=None):
     """Generate or retrieve cached AI summary for a team.
 
     Returns: str (the summary text) or None on failure.
@@ -271,22 +238,23 @@ def generate_team_summary(team_id, team_name, year, analytics, league_comparison
         logger.warning("OPENAI_API_KEY not set — cannot generate team summary")
         return None
 
-    prompt = _build_prompt(team_name, analytics, league_comparison, narrative)
+    prompt = _build_prompt(team_name, analytics, league_comparison, narrative,
+                           comparative_insights)
 
     try:
         resp = requests.post(
             "https://api.openai.com/v1/chat/completions",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
-                "model": "gpt-4o-mini",
+                "model": "gpt-4o",
                 "messages": [
-                    {"role": "system", "content": "You are a fantasy AFL analyst writing team reports for a keeper league platform."},
+                    {"role": "system", "content": "You are an elite fantasy AFL keeper league analyst. You write like a front-office executive — direct, analytical, opinionated. You never summarise raw stats; you interpret what they mean strategically."},
                     {"role": "user", "content": prompt},
                 ],
-                "max_tokens": 600,
+                "max_tokens": 1200,
                 "temperature": 0.7,
             },
-            timeout=30,
+            timeout=45,
         )
         resp.raise_for_status()
         data = resp.json()

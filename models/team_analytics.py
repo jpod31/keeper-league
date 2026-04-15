@@ -1961,9 +1961,259 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
 # ═══════════════════════════════════════════════════════════════════════════
 
 def compute_team_analytics(team_id, league_id, year, profile_tags):
-    """Drop-in replacement — delegates to compute_deep_analytics.
-
-    Existing callers of compute_team_analytics will get the same keys they
-    had before, plus all the new deep analytics fields.
-    """
+    """Drop-in replacement — delegates to compute_deep_analytics."""
     return compute_deep_analytics(team_id, league_id, year, profile_tags)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# COMPARATIVE INSIGHTS ENGINE
+# ═══════════════════════════════════════════════════════════════════════════
+
+def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
+                                  trade_table, narrative):
+    """Pre-compute league-relative comparative insights as structured sentences.
+
+    These become the mathematical backbone for GPT — it articulates facts
+    we've already proven, rather than trying to derive insights from raw stats.
+
+    Returns: dict with insight categories, each a list of sentence strings.
+    """
+    insights = {
+        "positional_dominance": [],
+        "win_window": [],
+        "vulnerabilities": [],
+        "depth_longevity": [],
+        "scoring_comparison": [],
+        "actionable": [],
+    }
+
+    # ── Gather all league rosters by position ──
+    league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    team_map = {t.id: t.name for t in league_teams}
+
+    # Build league-wide player pool: {position: [(player_name, sc, team_name, age)]}
+    league_players_by_pos = defaultdict(list)
+    team_players_by_pos = defaultdict(list)  # just this team
+
+    for lt in league_teams:
+        lt_roster = FantasyRoster.query.filter_by(team_id=lt.id, is_active=True).all()
+        for r in lt_roster:
+            if r.is_benched:
+                continue
+            p = db.session.get(AflPlayer, r.player_id)
+            if not p:
+                continue
+            pos = (p.position or "MID").split("/")[0]
+            entry = (p.name, p.sc_avg or 0, lt.name, p.age or 25, lt.id)
+            league_players_by_pos[pos].append(entry)
+            if lt.id == team_id:
+                team_players_by_pos[pos].append(entry)
+
+    my_team_name = team_map.get(team_id, "Your team")
+
+    # ── POSITIONAL DOMINANCE ──
+    for pos in ["DEF", "MID", "RUC", "FWD"]:
+        all_at_pos = sorted(league_players_by_pos.get(pos, []),
+                            key=lambda x: -x[1])
+        my_at_pos = sorted(team_players_by_pos.get(pos, []),
+                           key=lambda x: -x[1])
+
+        if not all_at_pos or not my_at_pos:
+            continue
+
+        n_teams = len(set(e[4] for e in all_at_pos))
+
+        # How many of the top N are yours?
+        for top_n in [5, 10]:
+            if len(all_at_pos) < top_n:
+                continue
+            top_names = {e[0] for e in all_at_pos[:top_n]}
+            my_in_top = [p for p in my_at_pos if p[0] in top_names]
+            if len(my_in_top) >= 2:
+                names = ", ".join(f"{p[0]} (#{next(i+1 for i,e in enumerate(all_at_pos) if e[0]==p[0])})"
+                                 for p in my_in_top)
+                insights["positional_dominance"].append(
+                    f"You own {len(my_in_top)} of the top {top_n} {pos}s in the league: {names}")
+                break  # only report the more impressive stat
+
+        # Position rank by average
+        pos_avgs = defaultdict(list)
+        for name, sc, tname, age, tid in all_at_pos:
+            pos_avgs[tid].append(sc)
+        team_avg_at_pos = [(tid, sum(scs) / len(scs)) for tid, scs in pos_avgs.items()]
+        team_avg_at_pos.sort(key=lambda x: -x[1])
+        my_rank = next((i + 1 for i, (tid, _) in enumerate(team_avg_at_pos) if tid == team_id), None)
+        if my_rank:
+            insights["positional_dominance"].append(
+                f"Your {pos} line ranks #{my_rank} of {n_teams} teams by average SC")
+
+        # Weakest starter comparison
+        if my_at_pos:
+            weakest = my_at_pos[-1]
+            # Count how many teams this player would start on (be their best or 2nd best)
+            teams_would_start_on = 0
+            for tid, scs in pos_avgs.items():
+                if tid == team_id:
+                    continue
+                sorted_scs = sorted(scs, reverse=True)
+                if weakest[1] > (sorted_scs[1] if len(sorted_scs) > 1 else 0):
+                    teams_would_start_on += 1
+            if teams_would_start_on >= 3:
+                insights["positional_dominance"].append(
+                    f"Your weakest starting {pos} ({weakest[0]}, SC {weakest[1]:.0f}) "
+                    f"would be a top-2 {pos} on {teams_would_start_on} other teams")
+
+    # ── WIN WINDOW (from dynasty sim) ──
+    if dynasty and str(team_id) in dynasty:
+        my_dynasty = dynasty[str(team_id)]
+        all_tids = list(dynasty.keys())
+
+        for yr_data in my_dynasty.get("years", []):
+            yr = yr_data["year"]
+            my_total = yr_data["total"]
+            # Rank this year
+            yr_ranked = []
+            for tid in all_tids:
+                t_years = dynasty[tid].get("years", [])
+                t_yr = next((y for y in t_years if y["year"] == yr), None)
+                if t_yr:
+                    yr_ranked.append((tid, dynasty[tid]["name"], t_yr["total"]))
+            yr_ranked.sort(key=lambda x: -x[2])
+            my_rank = next((i + 1 for i, (tid, _, _) in enumerate(yr_ranked) if str(tid) == str(team_id)), None)
+
+            if my_rank == 1:
+                gap = yr_ranked[0][2] - yr_ranked[1][2] if len(yr_ranked) > 1 else 0
+                insights["win_window"].append(
+                    f"Projected #{my_rank} in {yr} (best 23 total: {my_total:.0f}, "
+                    f"+{gap:.0f} ahead of {yr_ranked[1][1]})")
+            elif my_rank and my_rank <= 3:
+                insights["win_window"].append(
+                    f"Projected #{my_rank} in {yr} (total: {my_total:.0f})")
+
+        # Crossovers from narrative
+        if narrative and narrative.get("crossovers"):
+            for c in narrative["crossovers"][:3]:
+                insights["win_window"].append(f"{c['year']}: {c['event']}")
+
+    # ── VULNERABILITIES ──
+    a = analytics
+
+    # Top-5 dependency
+    top5_pct = a.get("top5_pct", 0)
+    if top5_pct >= 55:
+        top5_names = [p["name"] for p in (a.get("player_vorp") or [])[:5]]
+        insights["vulnerabilities"].append(
+            f"{top5_pct:.0f}% of your scoring comes from just 5 players "
+            f"({', '.join(top5_names)}) — high concentration risk")
+
+    # Key injury vulnerability — compute rank drop
+    scenarios = a.get("scenarios", {})
+    key_injuries = scenarios.get("key_injuries", [])
+    if key_injuries and dynasty:
+        worst = key_injuries[0]
+        insights["vulnerabilities"].append(
+            f"Losing {worst['name']} costs {worst['drop']:.0f} points per week — {worst.get('detail', '')}")
+
+    # Age cliff detection per position
+    for pos in ["DEF", "MID", "FWD"]:
+        my_pos = team_players_by_pos.get(pos, [])
+        old_starters = [p for p in my_pos if p[3] >= 29]
+        young_replacements = [p for p in my_pos if p[3] <= 24]
+        if len(old_starters) >= 2 and len(young_replacements) == 0:
+            old_names = ", ".join(f"{p[0]} ({p[3]}yo)" for p in old_starters[:3])
+            insights["vulnerabilities"].append(
+                f"Age cliff at {pos}: {len(old_starters)} starters are 29+ ({old_names}) "
+                f"with no replacement under 25 developing")
+
+    # ── DEPTH LONGEVITY (from dynasty sim) ──
+    if dynasty and str(team_id) in dynasty:
+        my_years = dynasty[str(team_id)].get("years", [])
+        for pos in ["DEF", "MID", "RUC", "FWD"]:
+            years_above_avg = 0
+            for yr_data in my_years:
+                my_pos_sc = [p["sc"] for p in yr_data.get("squad", [])
+                             if p.get("position") == pos]
+                if not my_pos_sc:
+                    continue
+                my_avg = sum(my_pos_sc) / len(my_pos_sc)
+                # Compare to league avg at this position in year 0
+                league_avg_at_pos = sum(e[1] for e in league_players_by_pos.get(pos, [])) / max(len(league_players_by_pos.get(pos, [])), 1)
+                if my_avg >= league_avg_at_pos:
+                    years_above_avg += 1
+                else:
+                    break  # stop counting consecutive years above average
+
+            if years_above_avg >= 4:
+                insights["depth_longevity"].append(
+                    f"Your {pos} depth stays above league average for {years_above_avg}+ years")
+            elif years_above_avg <= 1 and league_players_by_pos.get(pos):
+                insights["depth_longevity"].append(
+                    f"Your {pos} line falls below league average within 2 years — needs reinforcement")
+
+    # ── SCORING COMPARISON ──
+    league_context = a.get("league_context", {})
+    avg_sc_rank = league_context.get("avg_sc_rank", {})
+    if avg_sc_rank:
+        rank = avg_sc_rank.get("rank", "?")
+        of = avg_sc_rank.get("of", "?")
+        gap = avg_sc_rank.get("gap_to_avg", 0)
+        val = avg_sc_rank.get("value", 0)
+        leader = avg_sc_rank.get("leader", 0)
+        gap_to_leader = avg_sc_rank.get("gap_to_leader", 0)
+
+        if rank == 1:
+            insights["scoring_comparison"].append(
+                f"You're the highest-scoring team in the league (avg {val:.0f}/player, "
+                f"+{abs(gap):.0f} above league average)")
+        else:
+            insights["scoring_comparison"].append(
+                f"Ranked #{rank}/{of} by scoring ({val:.0f}/player, "
+                f"{gap_to_leader:.0f} behind the leader)")
+
+    total_sc_rank = league_context.get("total_sc_rank", {})
+    if total_sc_rank and total_sc_rank.get("rank") == 1:
+        gap = total_sc_rank.get("value", 0) - total_sc_rank.get("leader", 0)
+        insights["scoring_comparison"].append(
+            f"Highest total SC in the league — you outscore every other team")
+
+    # Form vs season
+    form = a.get("form_vs_season", 0)
+    if abs(form) >= 5:
+        direction = "up" if form > 0 else "down"
+        insights["scoring_comparison"].append(
+            f"Recent form is {direction} — last 3 rounds averaging "
+            f"{a.get('form_avg', 0):.0f}/round vs {a.get('season_avg', 0):.0f} season average "
+            f"({'+' if form > 0 else ''}{form:.0f})")
+
+    # ── ACTIONABLE ──
+    if trade_table:
+        gaps = trade_table.get("gaps", [])
+        if gaps:
+            g = gaps[0]
+            insights["actionable"].append(
+                f"Biggest weakness: {g['position']} (your avg {g.get('avg_sc', 0):.0f} vs "
+                f"league avg {g.get('league_avg', 0):.0f})")
+
+        fas = trade_table.get("free_agents", [])
+        if fas:
+            fa = fas[0]
+            insights["actionable"].append(
+                f"Best free agent pickup: {fa['name']} ({fa['position']}, SC {fa['sc_avg']:.0f}) "
+                f"— would fill your {fa.get('fills_gap', 'biggest')} gap")
+
+        surplus = trade_table.get("surplus", [])
+        if surplus:
+            s = surplus[0]
+            insights["actionable"].append(
+                f"Trade asset: {s['name']} ({s['position']}, SC {s['sc_avg']:.0f}) — "
+                f"{s.get('reason', 'surplus to requirements')}")
+
+    # Kid timeline from narrative
+    if narrative and narrative.get("kid_timeline"):
+        for k in narrative["kid_timeline"][:2]:
+            if k.get("replaces"):
+                insights["actionable"].append(
+                    f"{k['year']}: {k['enters']} (age {k['enters_age']}, proj SC {k['enters_sc']:.0f}) "
+                    f"ready to replace {k['replaces']}")
+
+    return insights

@@ -77,7 +77,7 @@ export interface PlayerBayesian {
 
 export interface DynastyTeam {
   name: string
-  years: { year: number; total: number; squad: { name: string; position: string; sc: number; age: number }[] }[]
+  years: { year: number; total: number; squad: { name: string; position: string; sc: number; age: number; is_emergency?: boolean }[] }[]
 }
 
 export interface Narrative {

@@ -1968,12 +1968,23 @@ def team_analytics_api(league_id, team_id):
         except Exception:
             pass
 
+    # Comparative insights (mathematical backbone for AI)
+    comp_insights = None
+    narr = _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags)
+    try:
+        from models.team_analytics import compute_comparative_insights
+        comp_insights = compute_comparative_insights(
+            team_id, league_id, year, analytics, dynasty, trade_table, narr)
+    except Exception:
+        logger.exception("Failed to compute comparative insights for team %d", team_id)
+
     # AI summary
     ai_summary = get_cached_analytics(team_id, year, "ai_summary")
     if not ai_summary and analytics:
         try:
-            narr = _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags if 'profile_tags' in dir() else {})
-            ai_summary = generate_team_summary(team_id, team.name, year, analytics, {}, narrative=narr)
+            ai_summary = generate_team_summary(
+                team_id, team.name, year, analytics, {},
+                narrative=narr, comparative_insights=comp_insights)
             if ai_summary:
                 cache_analytics(team_id, year, "ai_summary", ai_summary)
         except Exception:
@@ -1998,7 +2009,8 @@ def team_analytics_api(league_id, team_id):
         "dynasty": dynasty,
         "landscape": landscape,
         "ai_sections": ai_sections,
-        "narrative": _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags),
+        "narrative": narr,
+        "comparative_insights": comp_insights,
     })
 
 

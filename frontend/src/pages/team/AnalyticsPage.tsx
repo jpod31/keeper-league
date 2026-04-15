@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAnalytics } from '../../hooks/useAnalytics'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 import { Spinner } from '../../components/ui/Spinner'
-import type { AnalyticsData, DynastyTeam, PlayerBayesian, DepthPlayer } from '../../types'
+import type { AnalyticsData, DynastyTeam, PlayerBayesian } from '../../types'
 import {
   BarChart, Bar, XAxis, YAxis, Cell, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, Radar, PolarRadiusAxis,
@@ -376,71 +376,124 @@ function GapVisual({ gap }: { gap: NonNullable<AnalyticsData['narrative']['bigge
   )
 }
 
-/* ═══ Depth Board ═══ */
-function DepthBoard({
-  depth, players, onSelect,
-}: {
-  depth: AnalyticsData['squad_depth']
-  players: PlayerBayesian[]
-  onSelect: (p: PlayerBayesian) => void
-}) {
-  const [filter, setFilter] = useState<'all' | 'DEF' | 'MID' | 'RUC' | 'FWD'>('all')
-  const playerByName = useMemo(() => {
-    const m: Record<string, PlayerBayesian> = {}
-    players.forEach(p => { m[p.name] = p })
-    return m
-  }, [players])
 
-  const positions: ('DEF' | 'MID' | 'RUC' | 'FWD')[] = ['DEF', 'MID', 'RUC', 'FWD']
+/* ═══ Best 23 Timeline ═══ */
+const POS_COLORS: Record<string, string> = { DEF: '#58a6ff', MID: '#d2a8ff', RUC: '#3fb950', FWD: '#fb923c' }
+const POS_BG: Record<string, string> = { DEF: 'rgba(88,166,255,.08)', MID: 'rgba(210,168,255,.08)', RUC: 'rgba(63,185,80,.08)', FWD: 'rgba(251,146,60,.08)' }
+
+function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>; teamId: number }) {
+  const myDynasty = dynasty[String(teamId)]
+  const years = myDynasty?.years || []
+  const [yearIdx, setYearIdx] = useState(0)
+
+  if (!years.length) return null
+
+  const yr = years[yearIdx]
+  const prevYr = yearIdx > 0 ? years[yearIdx - 1] : null
+  const prevNames = new Set(prevYr ? prevYr.squad.filter(p => !p.is_emergency).map(p => p.name) : [])
+
+  const starters = yr.squad.filter(p => !p.is_emergency)
+  const emergencies = yr.squad.filter(p => p.is_emergency)
+  const totalSc = starters.reduce((s, p) => s + p.sc, 0)
+  const avgAge = starters.length ? starters.reduce((s, p) => s + p.age, 0) / starters.length : 0
+  const prevTotal = prevYr ? prevYr.squad.filter(p => !p.is_emergency).reduce((s, p) => s + p.sc, 0) : null
+  const delta = prevTotal != null ? totalSc - prevTotal : null
+
+  const groups: [string, typeof starters][] = []
+  for (const pos of ['DEF', 'MID', 'RUC', 'FWD']) {
+    groups.push([pos, starters.filter(p => p.position === pos)])
+  }
+  // FLEX: anyone not in the 4 main positions
+  const mainPosNames = new Set(groups.flatMap(([, ps]) => ps.map(p => p.name)))
+  const flex = starters.filter(p => !mainPosNames.has(p.name))
+  if (flex.length) groups.push(['FLEX', flex])
+
+  const scColor = (sc: number) => sc >= 110 ? '#3fb950' : sc >= 90 ? '#e6edf3' : sc >= 70 ? '#8b949e' : '#6e7681'
+
+  const renderRow = (p: { name: string; position: string; sc: number; age: number; is_emergency?: boolean }, isNew: boolean, isDeparted: boolean) => (
+    <div key={p.name} style={{
+      display: 'grid', gridTemplateColumns: '1fr 50px 36px', gap: 8, padding: '4px 10px',
+      borderLeft: isNew ? '3px solid #3fb950' : isDeparted ? '3px solid #ef4444' : '3px solid transparent',
+      background: isNew ? 'rgba(63,185,80,.04)' : 'transparent',
+      borderBottom: '1px solid rgba(48,54,61,.15)',
+      fontSize: '.78rem',
+    }}>
+      <span style={{ color: '#e6edf3', fontWeight: 600 }}>{p.name}</span>
+      <span style={{ textAlign: 'right', fontWeight: 800, color: scColor(p.sc), fontVariantNumeric: 'tabular-nums' }}>{Math.round(p.sc)}</span>
+      <span style={{ textAlign: 'right', color: '#8b949e', fontVariantNumeric: 'tabular-nums' }}>{p.age}</span>
+    </div>
+  )
 
   return (
-    <>
-      <div className="wr-filters">
-        <button type="button" className={`wr-fbtn${filter === 'all' ? ' active' : ''}`} onClick={() => setFilter('all')}>All</button>
-        {positions.map(p => (
-          <button key={p} type="button" className={`wr-fbtn${filter === p ? ' active' : ''}`} onClick={() => setFilter(p)}>{p}</button>
-        ))}
+    <div className="wr-card wr-card-tight">
+      {/* Year selector */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#e6edf3', fontVariantNumeric: 'tabular-nums' }}>{yr.year}</div>
+        <input type="range" min={0} max={Math.max(0, years.length - 1)} value={yearIdx}
+          onChange={e => setYearIdx(Number(e.target.value))}
+          style={{ flex: 1, accentColor: '#58a6ff', height: 4 }} />
+        <div style={{ display: 'flex', gap: 4 }}>
+          {years.map((y, i) => (
+            <button key={y.year} onClick={() => setYearIdx(i)}
+              style={{ padding: '3px 8px', fontSize: '.65rem', fontWeight: i === yearIdx ? 800 : 500,
+                background: i === yearIdx ? '#58a6ff' : '#161b22', color: i === yearIdx ? '#0d1117' : '#8b949e',
+                border: '1px solid ' + (i === yearIdx ? '#58a6ff' : '#30363d'), borderRadius: 6, cursor: 'pointer' }}>
+              {y.year}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="wr-card wr-card-tight">
-        {positions.filter(p => filter === 'all' || filter === p).map(pos => {
-          const pd = depth[pos]
-          if (!pd) return null
-          const diff = pd.diff || 0
-          const diffBg = diff > 3 ? 'rgba(63,185,80,.14)' : diff < -3 ? 'rgba(239,68,68,.14)' : 'rgba(139,148,158,.12)'
-          const diffColor = diff > 3 ? '#3fb950' : diff < -3 ? '#ef4444' : '#8b949e'
-          return (
-            <div key={pos} className="wr-depth-row">
-              <div className="wr-depth-hdr">
-                <div className="wr-depth-hdr-left">
-                  <span className={`wr-depth-pos wr-depth-pos-${pos}`}>{pos}</span>
-                  <span className="wr-depth-meta">{pd.count} players · avg <b>{pd.avg_sc}</b></span>
-                </div>
-                <span className="wr-depth-diff" style={{ background: diffBg, color: diffColor }}>
-                  {diff > 0 ? '+' : ''}{Math.round(diff)} vs league
-                </span>
-              </div>
-              <div className="wr-depth-grid">
-                {(pd.players as DepthPlayer[]).slice(0, 8).map(p => {
-                  const bayes = playerByName[p.name]
-                  const trajectoryClass = p.trajectory === 'up' ? 'wr-pc-up' : p.trajectory === 'down' ? 'wr-pc-down' : 'wr-pc-flat'
-                  const scColor = p.sc >= 100 ? '#3fb950' : p.sc >= 80 ? '#e6edf3' : '#8b949e'
-                  return (
-                    <div key={p.name} className={`wr-pc ${trajectoryClass}`} onClick={() => bayes && onSelect(bayes)}>
-                      <div className="wr-pc-name">{p.name}</div>
-                      <div className="wr-pc-sc" style={{ color: scColor }}>{Math.round(p.sc)}</div>
-                      <div className="wr-pc-meta">
-                        <span>{p.age}y</span>
-                        {p.tag && <span className="wr-tag" style={tagStyle(p.tag)}>{p.tag}</span>}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
+
+      {/* Summary bar */}
+      <div style={{ display: 'flex', gap: 16, padding: '10px 12px', background: 'rgba(88,166,255,.04)',
+        borderRadius: 8, marginBottom: 12, fontSize: '.78rem' }}>
+        <div><span style={{ color: '#8b949e' }}>Total SC</span> <b style={{ color: '#e6edf3', marginLeft: 4 }}>{Math.round(totalSc)}</b></div>
+        <div><span style={{ color: '#8b949e' }}>Avg Age</span> <b style={{ color: '#e6edf3', marginLeft: 4 }}>{avgAge.toFixed(1)}</b></div>
+        {delta != null && (
+          <div><span style={{ color: '#8b949e' }}>vs Prev</span>
+            <b style={{ color: delta >= 0 ? '#3fb950' : '#ef4444', marginLeft: 4 }}>{delta >= 0 ? '+' : ''}{Math.round(delta)}</b>
+          </div>
+        )}
+        <div><span style={{ color: '#8b949e' }}>Players</span> <b style={{ color: '#e6edf3', marginLeft: 4 }}>{starters.length}</b></div>
       </div>
-    </>
+
+      {/* Position groups */}
+      {groups.map(([pos, players]) => (
+        <div key={pos} style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+            background: POS_BG[pos] || 'rgba(139,148,158,.05)', borderRadius: '6px 6px 0 0' }}>
+            <span style={{ fontSize: '.6rem', fontWeight: 800, color: POS_COLORS[pos] || '#8b949e',
+              textTransform: 'uppercase', letterSpacing: '.5px' }}>{pos}</span>
+            <span style={{ fontSize: '.65rem', color: '#6e7681' }}>{players.length} players · avg {players.length ? Math.round(players.reduce((s, p) => s + p.sc, 0) / players.length) : 0}</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 50px 36px', gap: 8, padding: '2px 10px',
+            fontSize: '.55rem', color: '#484f58', textTransform: 'uppercase', letterSpacing: '.3px' }}>
+            <span>Player</span><span style={{ textAlign: 'right' }}>SC</span><span style={{ textAlign: 'right' }}>Age</span>
+          </div>
+          {players.sort((a, b) => b.sc - a.sc).map(p => {
+            const isNew = prevNames.size > 0 && !prevNames.has(p.name)
+            return renderRow(p, isNew, false)
+          })}
+        </div>
+      ))}
+
+      {/* Emergencies */}
+      {emergencies.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+            background: 'rgba(139,148,158,.05)', borderRadius: '6px 6px 0 0' }}>
+            <span style={{ fontSize: '.6rem', fontWeight: 800, color: '#6e7681',
+              textTransform: 'uppercase', letterSpacing: '.5px' }}>EMG</span>
+            <span style={{ fontSize: '.65rem', color: '#6e7681' }}>4 emergencies (any position)</span>
+          </div>
+          {emergencies.sort((a, b) => b.sc - a.sc).map(p => renderRow(p, false, false))}
+        </div>
+      )}
+
+      <div style={{ fontSize: '.58rem', color: '#484f58', textAlign: 'center', marginTop: 10 }}>
+        Optimal 23 auto-selected per year · green border = new to best 23
+      </div>
+    </div>
   )
 }
 
@@ -788,7 +841,6 @@ export function AnalyticsPage() {
   const n = data.narrative
   const kids = (n.kid_timeline || []).filter(k => k.replaces)
   const gap = n.biggest_gap
-  const hasDepth = data.squad_depth && Object.keys(data.squad_depth).length > 0
   const hasTrade = data.trade_table && (data.trade_table.free_agents?.length || data.trade_table.trade_targets?.length)
   const hasHealth = a.health_components && Object.keys(a.health_components).length > 0
   const hasRounds = (a.round_data?.length || 0) > 1
@@ -854,14 +906,10 @@ export function AnalyticsPage() {
           </Chapter>
         )}
 
-        {/* 5. Squad depth */}
-        {hasDepth && (
-          <Chapter label="Your Roster" title="Squad Depth">
-            <DepthBoard
-              depth={data.squad_depth}
-              players={a.player_bayesian || []}
-              onSelect={setSelectedPlayer}
-            />
+        {/* 5. Best 23 Timeline */}
+        {data.dynasty && data.dynasty[String(data.team.id)] && (
+          <Chapter label="Your Roster" title="Best 23 + Emergencies">
+            <Best23Timeline dynasty={data.dynasty} teamId={data.team.id} />
           </Chapter>
         )}
 
