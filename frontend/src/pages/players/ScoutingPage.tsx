@@ -1,9 +1,5 @@
 import { useParams } from 'react-router'
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart,
-} from 'recharts'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
@@ -157,16 +153,6 @@ const CSS = `
 }
 `
 
-function DetailTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
-  if (!active || !payload?.length) return null
-  return (
-    <div style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
-      <div style={{ fontSize: '.7rem', color: '#8b949e' }}>{label}</div>
-      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f0f3f6' }}>{payload[0].value.toFixed(1)}</div>
-    </div>
-  )
-}
-
 interface Prediction {
   predicted_afl: Record<string, number>
   projections: Record<string, Record<string, number>>
@@ -174,6 +160,19 @@ interface Prediction {
   draft_probability: number | null
   age: number; position: string; position_group: string
   tag: string; tag_css: string
+}
+
+const TAG_COLORS: Record<string, [string, string]> = {
+  'tag-star': ['rgba(188,140,255,.15)', '#bc8cff'],
+  'tag-breakout': ['rgba(63,185,80,.15)', '#3fb950'],
+  'tag-emerging': ['rgba(88,166,255,.15)', '#58a6ff'],
+  'tag-developing': ['rgba(88,166,255,.1)', '#58a6ff'],
+  'tag-watch': ['rgba(210,153,34,.15)', '#d29922'],
+  'tag-radar': ['rgba(210,153,34,.1)', '#d29922'],
+  'tag-veteran': ['rgba(139,148,158,.08)', '#6e7681'],
+  'tag-depth': ['rgba(139,148,158,.1)', '#8b949e'],
+  'tag-fringe': ['rgba(139,148,158,.08)', '#6e7681'],
+  'tag-dev': ['rgba(139,148,158,.08)', '#6e7681'],
 }
 
 function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; leagueId: string; onClose: () => void; logos: Record<string, string> }) {
@@ -189,226 +188,144 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
       .then(r => r.ok ? r.json() : null).then(setPrediction).catch(() => {})
   }, [player.player_id, player.id, leagueId])
 
-  const chartData = career?.map(h => ({
-    label: `${h.level} ${String(h.season).slice(-2)}`,
-    disp: h.disposals,
-    isAfl: h.level === 'AFL',
-  })) ?? []
-
-  const fmt = (v: number | null | undefined) => v == null ? '—' : typeof v === 'number' ? (v % 1 ? v.toFixed(1) : String(v)) : '—'
-
-  const hasAfl = career?.some(c => c.level === 'AFL')
-  const hasSL = career?.some(c => c.level !== 'AFL')
+  const fmt = (v: number | null | undefined) => v == null ? '—' : typeof v === 'number' ? (v % 1 ? v.toFixed(1) : String(Math.round(v))) : '—'
+  const tagCol = prediction ? (TAG_COLORS[prediction.tag_css] || TAG_COLORS['tag-depth']) : ['', '']
 
   return (
     <>
       <div className="scout-detail-overlay" onClick={onClose} />
       <div className="scout-detail" role="dialog">
         <div className="scout-detail-inner">
+          {/* Header */}
           <div className="scout-detail-header">
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               {logos[player.team] ? (
-                <img src={logos[player.team]} alt="" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8, flexShrink: 0 }} />
+                <img src={logos[player.team]} alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 6, flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: '#21262d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58', flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 6, background: '#21262d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58', flexShrink: 0 }}>
                   <i className="bi bi-shield-fill"></i>
                 </div>
               )}
               <div>
-              <div className="scout-detail-name">{player.player_name}</div>
-              <div className="scout-detail-sub">
-                {player.position && <span className={`pos-pill ${(player.position.split('/')[0] || '').toLowerCase()}`}>{player.position}</span>}
-                {player.afl_team && <span>{player.afl_team}</span>}
-                <span>{player.team} ({player.competition.toUpperCase()})</span>
-                {player.age && <span>{player.age}yo</span>}
-              </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="scout-detail-name">{player.player_name}</span>
+                  {prediction && (
+                    <span style={{ fontSize: '.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                      background: tagCol[0], color: tagCol[1] }}>
+                      {prediction.tag}
+                    </span>
+                  )}
+                </div>
+                <div className="scout-detail-sub">
+                  {player.position && <span className={`pos-pill ${(player.position.split('/')[0] || '').toLowerCase()}`}>{player.position}</span>}
+                  <span>{player.team} · {player.competition.toUpperCase()}</span>
+                  {player.afl_team && <span style={{ color: '#58a6ff' }}>{player.afl_team}</span>}
+                  {player.age && <span>{player.age}yo</span>}
+                  <span>{player.matches}gm</span>
+                </div>
               </div>
             </div>
             <button className="scout-detail-close" onClick={onClose}><i className="bi bi-x-lg"></i></button>
           </div>
 
-          {/* Key numbers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 4 }}>
-            {[
-              { val: fmt(player.disposals), label: `${player.competition.toUpperCase()} DIS`, color: '#58a6ff' },
-              { val: player.matches ?? '—', label: 'GP', color: '#8b949e' },
-              { val: fmt(player.dreamteam_avg), label: `${player.competition.toUpperCase()} FAN`, color: '#3fb950' },
-              { val: player.sc_avg ? Math.round(player.sc_avg) : '—', label: 'AFL SC', color: '#bc8cff' },
-            ].map((s, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: '10px 4px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(48,54,61,.3)', borderRadius: 10 }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.val}</div>
-                <div style={{ fontSize: '.52rem', color: '#6e7681', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 2 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* AFL Projection */}
+          {/* Projected AFL output — the hero section */}
           {prediction && (
-            <>
-              <div className="scout-detail-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>AFL Projection</span>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <span style={{ fontSize: '.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                    background: prediction.tag_css === 'tag-star' ? 'rgba(188,140,255,.15)' :
-                      prediction.tag_css === 'tag-breakout' ? 'rgba(63,185,80,.15)' :
-                      prediction.tag_css === 'tag-emerging' ? 'rgba(88,166,255,.15)' :
-                      prediction.tag_css === 'tag-watch' ? 'rgba(210,153,34,.15)' :
-                      prediction.tag_css === 'tag-veteran' ? 'rgba(139,148,158,.08)' : 'rgba(139,148,158,.1)',
-                    color: prediction.tag_css === 'tag-star' ? '#bc8cff' :
-                      prediction.tag_css === 'tag-breakout' ? '#3fb950' :
-                      prediction.tag_css === 'tag-emerging' ? '#58a6ff' :
-                      prediction.tag_css === 'tag-watch' ? '#d29922' :
-                      prediction.tag_css === 'tag-veteran' ? '#6e7681' : '#8b949e' }}>
-                    {prediction.tag}
-                  </span>
-                  <span style={{ fontSize: '.65rem', color: '#6e7681' }}>
-                    {prediction.breakout_probability}% breakout
-                    {prediction.draft_probability != null && ` · ${prediction.draft_probability}% draft`}
-                  </span>
-                </div>
+            <div style={{ background: 'rgba(88,166,255,.04)', border: '1px solid rgba(88,166,255,.12)',
+              borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontSize: '.7rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  Projected AFL Output
+                </span>
+                <span style={{ fontSize: '.65rem', color: '#6e7681' }}>
+                  {prediction.breakout_probability > 0 && `${prediction.breakout_probability}% breakout`}
+                  {prediction.draft_probability != null && prediction.draft_probability > 0 && ` · ${prediction.draft_probability}% draft chance`}
+                </span>
               </div>
-              <div className="scout-detail-stats">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
                 {[
-                  ['afl_sc_avg', 'SC AVG'], ['afl_disposals', 'DIS'], ['afl_marks', 'MRK'],
-                  ['afl_goals', 'GLS'], ['afl_tackles', 'TKL'], ['afl_hitouts', 'HO'],
-                  ['afl_contested_possessions', 'CP'], ['afl_clearances', 'CLR'],
+                  ['afl_sc_avg', 'SC'], ['afl_disposals', 'DIS'], ['afl_contested_possessions', 'CP'], ['afl_clearances', 'CLR'],
+                  ['afl_marks', 'MRK'], ['afl_goals', 'GLS'], ['afl_tackles', 'TKL'], ['afl_hitouts', 'HO'],
                 ].map(([key, label]) => {
                   const val = prediction.predicted_afl[key]
-                  if (val == null || (val === 0 && !['afl_goals', 'afl_hitouts'].includes(key))) return null
+                  if (val == null || (Math.round(val) === 0 && !['afl_goals'].includes(key))) return null
                   return (
-                    <div key={key} className="scout-stat-cell" style={{ borderColor: 'rgba(88,166,255,.15)' }}>
-                      <div className="scout-stat-val" style={{ color: '#58a6ff' }}>{val % 1 ? val.toFixed(1) : val}</div>
-                      <div className="scout-stat-label">{label}</div>
+                    <div key={key} style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1rem', fontWeight: 800, color: key === 'afl_sc_avg' ? '#58a6ff' : '#c9d1d9' }}>{fmt(val)}</div>
+                      <div style={{ fontSize: '.48rem', color: '#484f58', textTransform: 'uppercase' }}>{label}</div>
                     </div>
                   )
                 })}
               </div>
-              {/* 3-year projection */}
-              {Object.keys(prediction.projections).length > 0 && (
-                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                  {Object.entries(prediction.projections).map(([key, proj]) => (
-                    <div key={key} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', background: 'rgba(88,166,255,.03)',
-                      border: '1px solid rgba(48,54,61,.2)', borderRadius: 8 }}>
-                      <div style={{ fontSize: '.58rem', color: '#6e7681', textTransform: 'uppercase', marginBottom: 3 }}>{proj.year}</div>
-                      <div style={{ fontSize: '.95rem', fontWeight: 800, color: '#58a6ff' }}>{Math.round(proj.afl_sc_avg)}</div>
-                      <div style={{ fontSize: '.5rem', color: '#484f58' }}>SC AVG</div>
-                      <div style={{ fontSize: '.7rem', color: '#c9d1d9', marginTop: 2 }}>{proj.afl_disposals?.toFixed(1)} dis</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
+            </div>
           )}
 
-          {/* Current season stats */}
-          <div className="scout-detail-section">
-            {player.competition.toUpperCase()} Season Averages · {player.season}
+          {/* 3-year outlook — compact row */}
+          {prediction && Object.keys(prediction.projections).length > 0 && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+              {Object.entries(prediction.projections).map(([key, proj]) => (
+                <div key={key} style={{ flex: 1, textAlign: 'center', padding: '8px 4px',
+                  background: 'rgba(255,255,255,.02)', border: '1px solid rgba(48,54,61,.2)', borderRadius: 8 }}>
+                  <div style={{ fontSize: '.55rem', color: '#6e7681', marginBottom: 2 }}>{proj.year} · age {proj.age}</div>
+                  <div style={{ fontSize: '.9rem', fontWeight: 800, color: '#58a6ff' }}>{Math.round(proj.afl_sc_avg)}</div>
+                  <div style={{ fontSize: '.48rem', color: '#484f58' }}>SC AVG</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* State league stats — compact grid */}
+          <div style={{ fontSize: '.68rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase',
+            letterSpacing: '.5px', marginBottom: 6 }}>
+            {player.competition.toUpperCase()} {player.season} Averages
           </div>
-          <div className="scout-detail-stats">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(55px, 1fr))', gap: 4, marginBottom: 14 }}>
             {DETAIL_STATS.map(([key, label]) => {
               const val = player[key as keyof SLPlayer] as number
               if (val == null) return null
               return (
-                <div key={key as string} className="scout-stat-cell">
-                  <div className="scout-stat-val">{typeof val === 'number' && val % 1 ? val.toFixed(1) : val}</div>
-                  <div className="scout-stat-label">{label}</div>
+                <div key={key as string} style={{ textAlign: 'center', padding: '4px 2px' }}>
+                  <div style={{ fontSize: '.8rem', fontWeight: 700, color: '#c9d1d9' }}>{typeof val === 'number' && val % 1 ? val.toFixed(1) : val}</div>
+                  <div style={{ fontSize: '.45rem', color: '#484f58', textTransform: 'uppercase' }}>{label}</div>
                 </div>
               )
             })}
           </div>
 
-          {/* Career pipeline chart */}
-          {chartData.length > 1 && (
+          {/* Career history — simple compact list */}
+          {career && career.length > 1 && (
             <>
-              <div className="scout-detail-section">
-                Career Pipeline {hasSL && hasAfl ? '· State League → AFL' : ''}
-              </div>
-              <div style={{ height: 160 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
-                    <XAxis dataKey="label" stroke="#484f58" fontSize={9} tickLine={false} axisLine={{ stroke: '#21262d' }} />
-                    <YAxis stroke="#484f58" fontSize={9} tickLine={false} axisLine={false} />
-                    <Tooltip content={<DetailTooltip />} cursor={{ fill: 'rgba(88,166,255,.04)' }} />
-                    <Bar dataKey="disp" radius={[4, 4, 0, 0]} maxBarSize={32} fillOpacity={0.85}
-                      fill="#58a6ff"
-                      shape={(props: any) => {
-                        const { x, y, width, height, index } = props
-                        const isAfl = chartData[index]?.isAfl
-                        return <rect x={x} y={y} width={width} height={height} rx={4} fill={isAfl ? '#bc8cff' : '#58a6ff'} fillOpacity={0.85} />
-                      }}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginTop: 6, fontSize: '.65rem', color: '#6e7681' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: '#58a6ff', display: 'inline-block' }}></span>
-                  State League
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: '#bc8cff', display: 'inline-block' }}></span>
-                  AFL
-                </span>
-              </div>
-            </>
-          )}
-
-          {/* Full career timeline */}
-          {career && career.length > 0 && (
-            <>
-              <div className="scout-detail-section">Career Timeline</div>
-              {career.slice().reverse().map((h, i, arr) => {
-                const next = arr[i + 1]
-                const trend = next && next.disposals && h.disposals ? h.disposals - next.disposals : 0
-                const levelChange = next && h.level !== next.level
-                return (
-                  <div key={`${h.level}-${h.season}`}>
-                    {levelChange && (
-                      <div style={{ textAlign: 'center', padding: '6px 0', fontSize: '.6rem', color: '#58a6ff', fontWeight: 700, letterSpacing: '.5px' }}>
-                        ▲ PROMOTED TO {h.level}
-                      </div>
-                    )}
-                    <div className="scout-history-row">
-                      <div>
-                        <div className="scout-history-season" style={{ color: h.level === 'AFL' ? '#bc8cff' : '#f0f3f6' }}>
-                          {h.season}
-                        </div>
-                        <div style={{ fontSize: '.58rem', color: '#6e7681' }}>
-                          {h.level} · {h.matches}gm
-                        </div>
-                      </div>
-                      <div className="scout-history-team">
-                        {h.team}
-                        {h.level === 'AFL' && h.sc_avg && (
-                          <span style={{ marginLeft: 6, fontSize: '.65rem', color: '#bc8cff', fontWeight: 700 }}>
-                            SC {Math.round(h.sc_avg)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="scout-history-disp">
-                        {h.disposals?.toFixed(1)}
-                        {trend !== 0 && (
-                          <span style={{ fontSize: '.6rem', marginLeft: 3 }} className={trend > 0 ? 'scout-trend-up' : 'scout-trend-down'}>
-                            {trend > 0 ? '▲' : '▼'}{Math.abs(trend).toFixed(1)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+              <div style={{ fontSize: '.68rem', fontWeight: 700, color: '#8b949e', textTransform: 'uppercase',
+                letterSpacing: '.5px', marginBottom: 6 }}>Career</div>
+              {career.slice().reverse().map(h => (
+                <div key={`${h.level}-${h.season}`} style={{ display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(48,54,61,.15)', fontSize: '.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontWeight: 700, color: h.level === 'AFL' ? '#bc8cff' : '#c9d1d9', minWidth: 30 }}>{h.season}</span>
+                    <span style={{ fontSize: '.6rem', padding: '1px 4px', borderRadius: 3, fontWeight: 600,
+                      background: h.level === 'AFL' ? 'rgba(188,140,255,.1)' : 'rgba(139,148,158,.08)',
+                      color: h.level === 'AFL' ? '#bc8cff' : '#6e7681' }}>{h.level}</span>
+                    <span style={{ color: '#8b949e' }}>{h.team}</span>
+                    <span style={{ color: '#484f58', fontSize: '.65rem' }}>{h.matches}gm</span>
                   </div>
-                )
-              })}
+                  <div style={{ display: 'flex', gap: 10, fontSize: '.72rem', color: '#c9d1d9' }}>
+                    <span>{h.disposals ? h.disposals.toFixed(1) : '—'} <span style={{ fontSize: '.5rem', color: '#484f58' }}>DIS</span></span>
+                    {h.level === 'AFL' && h.sc_avg && (
+                      <span style={{ color: '#bc8cff' }}>{Math.round(h.sc_avg)} <span style={{ fontSize: '.5rem', color: '#484f58' }}>SC</span></span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </>
           )}
 
-          {/* Link to full profile */}
+          {/* Profile link */}
           {player.player_id && (
             <a href={`/player/${encodeURIComponent(player.player_name)}`}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: 12, borderRadius: 12, marginTop: 16,
-                background: 'rgba(88,166,255,.08)', border: '1px solid rgba(88,166,255,.2)',
-                color: '#58a6ff', fontSize: '.82rem', fontWeight: 700, textDecoration: 'none' }}>
-              <i className="bi bi-person-lines-fill"></i>Full Player Profile
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: 10, borderRadius: 10, marginTop: 14,
+                background: 'rgba(88,166,255,.06)', border: '1px solid rgba(88,166,255,.15)',
+                color: '#58a6ff', fontSize: '.78rem', fontWeight: 700, textDecoration: 'none' }}>
+              <i className="bi bi-person-lines-fill"></i>Full Profile
             </a>
           )}
         </div>
