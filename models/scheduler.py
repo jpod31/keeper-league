@@ -183,6 +183,30 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # State league stats sync: Tuesday 06:00 UTC (after AFL round weekend)
+    # Syncs VFL/SANFL/WAFL/NAB data from both wheeloratings and DFS Australia
+    scheduler.add_job(
+        _sync_state_league_stats,
+        "cron",
+        day_of_week="tue",
+        hour=6,
+        minute=0,
+        id="weekly_state_league_sync",
+        replace_existing=True,
+        max_instances=1,
+    )
+    # Detailed AFL stats import via fitzRoy: Tuesday 03:00 UTC
+    # Fetches per-round detailed stats (disposals, marks, etc.) from fitzRoy
+    scheduler.add_job(
+        _sync_fitzroy_stats,
+        "cron",
+        day_of_week="tue",
+        hour=3,
+        minute=0,
+        id="weekly_fitzroy_sync",
+        replace_existing=True,
+        max_instances=1,
+    )
     # Weekly database vacuum: Sunday 03:00 UTC
     scheduler.add_job(
         _vacuum_database,
@@ -801,3 +825,90 @@ def _vacuum_database():
         except Exception as e:
             _track_failure("vacuum_database", e)
             logger.exception("Database vacuum failed")
+
+
+def _sync_state_league_stats():
+    """Weekly job: sync VFL/SANFL/WAFL/NAB state league stats.
+
+    Pulls latest from wheeloratings (VFL/SANFL/WAFL) and DFS Australia
+    (SANFL 2026 + NAB/Coates for all years).
+    """
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            import config
+            year = config.CURRENT_YEAR
+
+            # Wheeloratings: VFL/SANFL/WAFL current season
+            from scrapers.state_league_scraper import sync_state_league_stats
+            count = sync_state_league_stats(season=year)
+            logger.info("Wheeloratings sync: %d rows for %d", count, year)
+
+            # DFS Australia: SANFL + NAB current season (with game logs for richer stats)
+            from scrapers.dfsaustralia_scraper import sync_dfsaustralia
+            count2 = sync_dfsaustralia(league="SANFL", season=year, fetch_logs=True)
+            logger.info("DFS Australia SANFL sync: %d rows", count2)
+            count3 = sync_dfsaustralia(league="NAB", season=year, fetch_logs=True)
+            logger.info("DFS Australia NAB sync: %d rows", count3)
+
+            _track_success("state_league_sync")
+        except Exception as e:
+            _track_failure("state_league_sync", e)
+            logger.exception("State league sync failed")
+
+
+def _sync_fitzroy_stats():
+    """Weekly job: fetch detailed AFL stats via fitzRoy R script and import.
+
+    Runs the R script to get per-round detailed stats (disposals, marks, etc.)
+    then imports the CSV into the PlayerStat table.
+    """
+    if not _app:
+        return
+
+    with _app.app_context():
+        try:
+            import subprocess
+            import config
+            import os
+
+            year = config.CURRENT_YEAR
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            r_script = os.path.join(base_dir, "scripts", "fetch_stats.R")
+            data_dir = os.path.join(base_dir, "data")
+
+            # Run fitzRoy R script to fetch latest stats
+            if os.path.exists(r_script):
+                result = subprocess.run(
+                    ["Rscript", r_script, str(year)],
+                    capture_output=True, text=True, timeout=120, cwd=base_dir,
+                )
+                if result.returncode == 0:
+                    logger.info("fitzRoy fetch completed for %d", year)
+                else:
+                    logger.warning("fitzRoy fetch failed: %s", result.stderr[:500])
+
+            # Import the CSV into PlayerStat table
+            import_script = os.path.join(base_dir, "scripts", "import_player_stats.py")
+            csv_path = os.path.join(data_dir, f"player_stats_{year}.csv")
+            if os.path.exists(csv_path) and os.path.exists(import_script):
+                result2 = subprocess.run(
+                    ["python3", import_script, str(year)],
+                    capture_output=True, text=True, timeout=120, cwd=base_dir,
+                )
+                if result2.returncode == 0:
+                    logger.info("Player stats import completed for %d", year)
+                else:
+                    logger.warning("Player stats import failed: %s", result2.stderr[:500])
+
+                # Recompute SC averages
+                from models.live_sync import recompute_sc_averages
+                recompute_sc_averages(year)
+                logger.info("Recomputed SC averages for %d", year)
+
+            _track_success("fitzroy_sync")
+        except Exception as e:
+            _track_failure("fitzroy_sync", e)
+            logger.exception("fitzRoy stats sync failed")
