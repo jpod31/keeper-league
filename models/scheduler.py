@@ -183,27 +183,27 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
-    # State league stats sync: Tuesday 06:00 UTC (after AFL round weekend)
-    # Syncs VFL/SANFL/WAFL/NAB data from both wheeloratings and DFS Australia
+    # State league stats sync: Sunday 13:00 UTC (11pm AEST, after games)
+    # and Monday 06:00 UTC (4pm AEST, catch any stragglers)
     scheduler.add_job(
         _sync_state_league_stats,
         "cron",
-        day_of_week="tue",
-        hour=6,
+        day_of_week="sun,mon",
+        hour="6,13",
         minute=0,
-        id="weekly_state_league_sync",
+        id="state_league_sync",
         replace_existing=True,
         max_instances=1,
     )
-    # Detailed AFL stats import via fitzRoy: Tuesday 03:00 UTC
-    # Fetches per-round detailed stats (disposals, marks, etc.) from fitzRoy
+    # Detailed AFL stats import via fitzRoy: Sunday 13:00 UTC (11pm AEST)
+    # and Monday 06:00 UTC (4pm AEST)
     scheduler.add_job(
         _sync_fitzroy_stats,
         "cron",
-        day_of_week="tue",
-        hour=3,
-        minute=0,
-        id="weekly_fitzroy_sync",
+        day_of_week="sun,mon",
+        hour="6,13",
+        minute=30,
+        id="fitzroy_sync",
         replace_existing=True,
         max_instances=1,
     )
