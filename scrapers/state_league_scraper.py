@@ -11,8 +11,8 @@ _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
 COMPETITIONS = {
     "vfl": list(range(2021, 2027)),
-    "sanfl": list(range(2022, 2026)),
-    "wafl": list(range(2022, 2026)),
+    "sanfl": list(range(2022, 2027)),
+    "wafl": list(range(2022, 2027)),
 }
 
 _COL_MAP = {
