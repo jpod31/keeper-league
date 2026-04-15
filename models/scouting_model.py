@@ -261,9 +261,16 @@ def predict_afl_output(player_id: int = None, sl_row: StateLeagueStat = None) ->
     raw = {tn[i]: round(max(0, float(preds[i])), 1) for i in range(len(tn))}
 
     # Breakout probability from the trained classifier
+    # "Breakout" only applies to players with upside — veterans don't break out
     breakout_model = artifact.get("breakout_model")
     if breakout_model:
         bp = float(breakout_model.predict_proba(X)[0, 1])
+        if age >= 30:
+            bp = 0.0
+        elif age >= 28:
+            bp *= 0.15
+        elif age >= 26:
+            bp *= 0.5
     else:
         bp = 0.0
 
