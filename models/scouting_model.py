@@ -221,7 +221,7 @@ def predict_afl_output(player_id: int = None, sl_row: StateLeagueStat = None) ->
     if sl_row is None and player_id:
         sl_row = StateLeagueStat.query.filter_by(player_id=player_id)\
             .order_by(StateLeagueStat.season.desc()).first()
-    if not sl_row or not sl_row.matches or sl_row.matches < 2:
+    if not sl_row or not sl_row.matches:
         return None
 
     player = db.session.get(AflPlayer, sl_row.player_id) if sl_row.player_id else None
