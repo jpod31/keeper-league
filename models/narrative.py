@@ -187,8 +187,9 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
         trajectory = "declining"
 
     # ── VERDICT ──
+    # Use dynasty year 0 rank (total score rank, not per-player average)
+    rank = my_ranks[0] if my_ranks else "?"
     lc = analytics.get("league_context", {})
-    rank = lc.get("avg_sc_rank", {}).get("rank", "?")
     total_teams = lc.get("avg_sc_rank", {}).get("of", "?")
 
     if trajectory == "dominant":
