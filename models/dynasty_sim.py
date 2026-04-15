@@ -37,18 +37,18 @@ def _get_position_requirements(league_id):
 
 
 # ── Position-specific absolute ceilings (based on all-time SC data) ──
-# No player in AFL history has sustained above these over a full season.
-_POS_CEILING = {"DEF": 125, "MID": 132, "FWD": 130, "RUC": 138}
-_ABSOLUTE_CEILING = 138  # fallback
+# These are HARD CAPS. The very best season ever by position.
+# Personal ceilings are much lower for 99% of players.
+_POS_CEILING = {"DEF": 120, "MID": 128, "FWD": 125, "RUC": 132}
+_ABSOLUTE_CEILING = 128
 
 # ── Age-based development multipliers (vs peak) ──
-# Based on historical data, corrected for survivorship bias.
-# Peak is 26-28 for most positions. Values are fraction of peak ability.
+# Corrected for survivorship bias. Peak is 27-28.
 _AGE_CURVE = {
-    18: 0.58, 19: 0.63, 20: 0.68, 21: 0.74, 22: 0.80, 23: 0.86,
-    24: 0.92, 25: 0.96, 26: 0.99, 27: 1.00, 28: 0.99, 29: 0.97,
-    30: 0.94, 31: 0.90, 32: 0.85, 33: 0.79, 34: 0.72, 35: 0.64,
-    36: 0.55, 37: 0.45,
+    18: 0.55, 19: 0.60, 20: 0.66, 21: 0.72, 22: 0.78, 23: 0.84,
+    24: 0.90, 25: 0.95, 26: 0.98, 27: 1.00, 28: 0.99, 29: 0.97,
+    30: 0.93, 31: 0.88, 32: 0.82, 33: 0.75, 34: 0.67, 35: 0.58,
+    36: 0.48, 37: 0.38,
 }
 
 
@@ -62,41 +62,74 @@ def _get_age_multiplier(age):
     return 0.5
 
 
-def _get_ceiling(player):
-    """Get the realistic SC ceiling for a player based on position, talent,
-    state league performance, and scouting model projection.
+def _compute_true_level(player):
+    """Compute a player's true SC level from multi-year weighted history.
 
-    Uses multiple signals:
-    - AFL SC history (strongest signal for established players)
-    - Rating/potential (front-office assessment)
-    - State league fantasy avg (VFL/SANFL/WAFL indicator for developing players)
-    - Scouting model AFL projection (for players with state league data)
+    Current season (small sample) is regressed toward previous years.
+    More games = more weight. This prevents 5-game hot streaks from
+    distorting projections.
+    """
+    from models.database import PlayerStat
+    from sqlalchemy import func
+
+    # Get season-by-season averages
+    seasons = db.session.query(
+        PlayerStat.year,
+        func.avg(PlayerStat.supercoach_score).label("avg"),
+        func.count().label("gm"),
+    ).filter_by(player_id=player.id).filter(
+        PlayerStat.supercoach_score > 0
+    ).group_by(PlayerStat.year).order_by(PlayerStat.year.desc()).limit(4).all()
+
+    if not seasons:
+        return player.sc_avg or player.sc_avg_prev or (player.rating or 60) * 0.8
+
+    # Weight: recent years matter more, but also weight by games played
+    # This naturally regresses small samples toward historical average
+    weighted_sum = 0
+    weight_total = 0
+    for i, (yr, avg, gm) in enumerate(seasons):
+        recency = 1.0 - i * 0.2  # 1.0, 0.8, 0.6, 0.4
+        sample_weight = min(gm / 20.0, 1.0)  # 5 games = 0.25, 20+ games = 1.0
+        w = recency * sample_weight * gm
+        weighted_sum += float(avg) * w
+        weight_total += w
+
+    return round(weighted_sum / weight_total, 1) if weight_total > 0 else 60
+
+
+def _get_ceiling(player):
+    """Get the realistic SC ceiling for a player.
+
+    Uses multiple signals weighted by reliability:
+    1. Multi-year AFL history (strongest — proven over full seasons)
+    2. Rating/potential (front-office assessment, good for young players)
+    3. State league data + scouting model (for developing players with little AFL data)
+    4. Draft pick quality (higher picks have higher ceilings)
+    5. Career trajectory slope (sustained improvement vs one-off spikes)
     """
     pos = ((player.position or "MID").split("/")[0])
     pos_cap = _POS_CEILING.get(pos, _ABSOLUTE_CEILING)
-
-    best_sc = max(player.sc_avg or 0, player.sc_avg_prev or 0)
-    rating = player.rating or 0
-    potential = player.potential or 0
     age = player.age or 25
+    career = player.career_games or 0
 
-    # For young/developing players, check state league data
+    # True level from multi-year history (regressed for small samples)
+    true_level = _compute_true_level(player)
+    potential = player.potential or 0
+    rating = player.rating or 0
+
+    # ── State league signal (for young/developing players) ──
     sl_signal = 0
-    if age <= 26:
+    model_signal = 0
+    if age <= 27 and career < 80:
         try:
             sl = StateLeagueStat.query.filter_by(player_id=player.id)\
                 .filter(StateLeagueStat.competition.in_(["vfl", "sanfl", "wafl"]))\
                 .order_by(StateLeagueStat.season.desc()).first()
             if sl and sl.dreamteam_avg:
-                # VFL fantasy avg translates to ~60-70% of AFL equivalent
-                # A 100+ VFL fantasy avg suggests 70-80 AFL ceiling potential
-                sl_signal = sl.dreamteam_avg * 0.7
+                sl_signal = sl.dreamteam_avg * 0.65  # VFL→AFL translation ~65%
         except Exception:
             pass
-
-    # For players with scouting model predictions, use that too
-    model_signal = 0
-    if age <= 26 and (best_sc < 80 or not best_sc):
         try:
             from models.scouting_model import predict_afl_output
             pred = predict_afl_output(player_id=player.id)
@@ -105,33 +138,45 @@ def _get_ceiling(player):
         except Exception:
             pass
 
-    # Combine signals to estimate ceiling
-    if best_sc >= 110:
-        personal_ceiling = min(best_sc * 1.08, pos_cap)
-    elif best_sc >= 90:
-        personal_ceiling = min(best_sc * 1.12, pos_cap * 0.92)
-    elif best_sc >= 70:
-        # Blend AFL data with scouting model for players still developing
-        afl_est = best_sc * 1.18
-        if model_signal > 0:
-            afl_est = max(afl_est, model_signal * 1.05)
-        personal_ceiling = min(afl_est, pos_cap * 0.85)
-    elif potential and potential >= 80:
-        # High potential but hasn't shown it at AFL level yet
-        pot_est = potential * 1.1
-        personal_ceiling = min(max(pot_est, model_signal, sl_signal), pos_cap * 0.82)
-    elif model_signal > 0:
-        # Scouting model gives us a projection
-        personal_ceiling = min(model_signal * 1.1, pos_cap * 0.80)
-    elif sl_signal > 0:
-        # Only state league data to go on
-        personal_ceiling = min(sl_signal * 1.15, pos_cap * 0.75)
-    elif rating and rating >= 70:
-        personal_ceiling = min(rating * 1.2, pos_cap * 0.75)
-    else:
-        personal_ceiling = min(max(best_sc * 1.15, 60), pos_cap * 0.65)
+    # ── Ceiling estimation ──
+    # The ceiling is how good this player COULD be at their peak.
+    # Most players' ceiling is only modestly above their proven level.
 
-    return round(personal_ceiling, 1)
+    if true_level >= 115:
+        # Already proven elite (Bontempelli, Daicos tier)
+        # Ceiling is basically where they are — maybe 3-5% upside
+        personal_ceiling = min(true_level * 1.03, pos_cap)
+    elif true_level >= 100:
+        # Very good — some upside but not unlimited
+        upside = 1.06 if age <= 26 else 1.03
+        personal_ceiling = min(true_level * upside, pos_cap * 0.95)
+    elif true_level >= 85:
+        # Good — moderate upside, more for young players
+        upside = 1.12 if age <= 24 else 1.08 if age <= 27 else 1.04
+        personal_ceiling = min(true_level * upside, pos_cap * 0.88)
+    elif true_level >= 70:
+        # Decent — young players could improve significantly
+        upside = 1.18 if age <= 23 else 1.12 if age <= 26 else 1.05
+        # Blend with scouting model for developing players
+        est = true_level * upside
+        if model_signal > est:
+            est = est * 0.7 + model_signal * 0.3
+        personal_ceiling = min(est, pos_cap * 0.82)
+    elif potential >= 85 and age <= 24:
+        # High potential youngster with little AFL data
+        est = max(true_level * 1.25, potential * 0.95, model_signal, sl_signal * 1.1)
+        personal_ceiling = min(est, pos_cap * 0.80)
+    elif model_signal > 0 and age <= 25:
+        # Scouting model is our best guide
+        personal_ceiling = min(model_signal * 1.05, pos_cap * 0.75)
+    elif sl_signal > 0 and age <= 25:
+        personal_ceiling = min(sl_signal * 1.1, pos_cap * 0.70)
+    elif rating >= 70:
+        personal_ceiling = min(rating * 1.05, pos_cap * 0.70)
+    else:
+        personal_ceiling = min(max(true_level * 1.1, 55), pos_cap * 0.60)
+
+    return round(min(personal_ceiling, pos_cap), 1)
 
 
 def _project_player_at_age(player, target_age, profile_tag, age_curves):
@@ -148,29 +193,9 @@ def _project_player_at_age(player, target_age, profile_tag, age_curves):
     current_age = player.age or 25
     years_ahead = target_age - current_age
     if years_ahead <= 0:
-        return player.sc_avg or player.sc_avg_prev or 0
+        return _compute_true_level(player)
 
-    # Current SC: best estimate of true ability
-    sc = player.sc_avg or 0
-    sc_prev = player.sc_avg_prev or 0
-    games = player.games_played or 0
-    career = player.career_games or 0
-
-    # Robust base estimate
-    if sc > 0 and games >= 5:
-        base = sc
-    elif sc > 0 and sc_prev > 0:
-        weight = min(games / 10, 0.6)
-        base = sc * weight + sc_prev * (1 - weight)
-    elif sc > 0:
-        base = sc * 0.7 + 60 * 0.3  # regress toward mean
-    elif sc_prev > 0:
-        base = sc_prev
-    elif player.rating:
-        base = player.rating * 0.8
-    else:
-        base = 55 if career > 20 else 45
-
+    base = _compute_true_level(player)
     ceiling = _get_ceiling(player)
     traj = profile_tag.get("trajectory", 0)
 
