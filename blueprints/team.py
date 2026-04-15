@@ -1907,7 +1907,7 @@ def team_analytics_api(league_id, team_id):
     from models.team_ai_summary import (
         generate_team_summary, get_cached_analytics, cache_analytics,
     )
-    from models.war_room import compute_trade_table, compute_squad_depth, compute_league_landscape
+    from models.war_room import compute_trade_table, compute_squad_depth, compute_league_landscape, compute_state_league_intel
     from models.dynasty_sim import simulate_dynasty
 
     year = league.season_year
@@ -1968,6 +1968,16 @@ def team_analytics_api(league_id, team_id):
         except Exception:
             pass
 
+    # State league intelligence (VFL/SANFL/WAFL pickup targets + NAB draft watch)
+    sl_intel = get_cached_analytics(team_id, year, "sl_intel")
+    if not sl_intel:
+        try:
+            sl_intel = compute_state_league_intel(team_id, league_id, year, trade_table)
+            cache_analytics(team_id, year, "sl_intel", sl_intel)
+        except Exception:
+            logger.exception("Failed to compute state league intel for team %d", team_id)
+            sl_intel = None
+
     # Comparative insights (mathematical backbone for AI)
     comp_insights = None
     narr = _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags)
@@ -2011,6 +2021,7 @@ def team_analytics_api(league_id, team_id):
         "ai_sections": ai_sections,
         "narrative": narr,
         "comparative_insights": comp_insights,
+        "sl_intel": sl_intel,
     })
 
 

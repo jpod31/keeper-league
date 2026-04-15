@@ -348,3 +348,196 @@ def compute_league_landscape(league_id, year, profile_tags):
 
     landscape.sort(key=lambda x: -x["total_sc"])
     return landscape
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STATE LEAGUE INTELLIGENCE
+# ═══════════════════════════════════════════════════════════════════════════
+
+def compute_state_league_intel(team_id, league_id, year, trade_table=None):
+    """Find state league players that could benefit this team.
+
+    Uses the scouting ML model to predict AFL output, cross-references with
+    the team's positional gaps and fantasy league ownership.
+
+    Returns: {
+        "pickup_targets": [...],   # AFL-listed FAs killing it in VFL/SANFL/WAFL
+        "draft_watch": [...],      # NAB/Coates prospects worth watching
+        "vfl_form_owned": [...],   # Players you own who are in strong VFL form
+    }
+    """
+    from models.database import StateLeagueStat
+    from models.scouting_model import predict_afl_output
+
+    # Get all rostered player IDs across the league
+    league_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    rostered_player_ids = set()
+    my_player_ids = set()
+    for lt in league_teams:
+        for r in FantasyRoster.query.filter_by(team_id=lt.id, is_active=True).all():
+            rostered_player_ids.add(r.player_id)
+            if lt.id == team_id:
+                my_player_ids.add(r.player_id)
+
+    # Get team's positional gaps
+    gaps = {}
+    if trade_table:
+        for g in trade_table.get("gaps", []):
+            gaps[g["position"]] = g["gap"]
+
+    # ── 1. Pickup targets: AFL-listed, strong VFL/SANFL/WAFL form, not rostered ──
+    sl_current = StateLeagueStat.query.filter(
+        StateLeagueStat.season == year,
+        StateLeagueStat.is_afl_listed == True,
+        StateLeagueStat.matches >= 2,
+        StateLeagueStat.competition.in_(["vfl", "sanfl", "wafl"]),
+    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(200).all()
+
+    pickup_targets = []
+    for sl in sl_current:
+        if not sl.player_id or sl.player_id in rostered_player_ids:
+            continue
+
+        player = db.session.get(AflPlayer, sl.player_id)
+        if not player:
+            continue
+
+        # Run scouting model prediction
+        pred = predict_afl_output(sl_row=sl)
+        if not pred:
+            continue
+
+        projected_sc = pred["predicted_afl"].get("afl_sc_avg", 0)
+        if projected_sc < 50:
+            continue
+
+        pos = (player.position or "MID").split("/")[0]
+        fills_gap = pos in gaps and gaps[pos] < -3
+
+        # Compute a relevance score: projected SC + gap bonus + form bonus
+        relevance = projected_sc
+        if fills_gap:
+            relevance += 15
+        if sl.dreamteam_avg and sl.dreamteam_avg >= 100:
+            relevance += 10
+        if player.age and player.age <= 24:
+            relevance += 5
+
+        # Check actual AFL form this season
+        afl_games = PlayerStat.query.filter_by(
+            player_id=player.id, year=year
+        ).count()
+        afl_avg = None
+        if afl_games:
+            from sqlalchemy import func
+            afl_avg_q = db.session.query(
+                func.avg(PlayerStat.supercoach_score)
+            ).filter_by(player_id=player.id, year=year).scalar()
+            afl_avg = round(float(afl_avg_q), 1) if afl_avg_q else None
+
+        pickup_targets.append({
+            "name": player.name,
+            "position": player.position or "MID",
+            "age": player.age or 0,
+            "afl_team": player.afl_team,
+            "sl_competition": sl.competition.upper(),
+            "sl_team": sl.team,
+            "sl_matches": sl.matches,
+            "sl_fantasy_avg": round(sl.dreamteam_avg, 1) if sl.dreamteam_avg else 0,
+            "sl_disposals": round(sl.disposals, 1) if sl.disposals else 0,
+            "projected_afl_sc": round(projected_sc, 1),
+            "afl_games_this_year": afl_games,
+            "afl_avg_this_year": afl_avg,
+            "breakout_pct": pred["breakout_probability"],
+            "tag": pred["tag"],
+            "fills_gap": pos if fills_gap else None,
+            "relevance": round(relevance, 1),
+        })
+
+    pickup_targets.sort(key=lambda x: -x["relevance"])
+    pickup_targets = pickup_targets[:15]
+
+    # ── 2. Draft watch: NAB/Coates prospects ──
+    nab_current = StateLeagueStat.query.filter(
+        StateLeagueStat.season == year,
+        StateLeagueStat.competition == "nab",
+        StateLeagueStat.matches >= 2,
+    ).order_by(StateLeagueStat.dreamteam_avg.desc()).limit(100).all()
+
+    draft_watch = []
+    for sl in nab_current:
+        pred = predict_afl_output(sl_row=sl)
+        if not pred:
+            continue
+
+        projected_sc = pred["predicted_afl"].get("afl_sc_avg", 0)
+        draft_prob = pred.get("draft_probability", 0) or 0
+        if projected_sc < 40 and draft_prob < 10:
+            continue
+
+        # Check historical NAB data for this player
+        career_nab = StateLeagueStat.query.filter_by(
+            player_name=sl.player_name, competition="nab"
+        ).order_by(StateLeagueStat.season).all()
+        career_seasons = len(career_nab)
+        career_avg_fan = round(
+            sum(s.dreamteam_avg or 0 for s in career_nab) / max(career_seasons, 1), 1
+        )
+
+        pos_grp = pred.get("position_group", "MID")
+        fills_gap = pos_grp in gaps and gaps[pos_grp] < -3
+
+        draft_watch.append({
+            "name": sl.player_name,
+            "age": sl.age or 0,
+            "sl_team": sl.team,
+            "sl_matches": sl.matches,
+            "sl_fantasy_avg": round(sl.dreamteam_avg, 1) if sl.dreamteam_avg else 0,
+            "sl_disposals": round(sl.disposals, 1) if sl.disposals else 0,
+            "projected_afl_sc": round(projected_sc, 1),
+            "draft_probability": draft_prob,
+            "breakout_pct": pred["breakout_probability"],
+            "tag": pred["tag"],
+            "position_group": pos_grp,
+            "fills_gap": pos_grp if fills_gap else None,
+            "career_nab_seasons": career_seasons,
+            "career_nab_avg_fantasy": career_avg_fan,
+            "projections": pred.get("projections", {}),
+        })
+
+    draft_watch.sort(key=lambda x: -(x["draft_probability"] + x["breakout_pct"]))
+    draft_watch = draft_watch[:10]
+
+    # ── 3. VFL form for players you own ──
+    vfl_form_owned = []
+    for pid in my_player_ids:
+        sl = StateLeagueStat.query.filter_by(
+            player_id=pid, season=year
+        ).order_by(StateLeagueStat.dreamteam_avg.desc()).first()
+        if not sl or not sl.matches or not sl.dreamteam_avg:
+            continue
+
+        player = db.session.get(AflPlayer, pid)
+        if not player:
+            continue
+
+        vfl_form_owned.append({
+            "name": player.name,
+            "position": player.position or "MID",
+            "age": player.age or 0,
+            "sl_competition": sl.competition.upper(),
+            "sl_team": sl.team,
+            "sl_matches": sl.matches,
+            "sl_fantasy_avg": round(sl.dreamteam_avg, 1),
+            "sl_disposals": round(sl.disposals, 1) if sl.disposals else 0,
+            "afl_sc_avg": player.sc_avg or 0,
+            "sl_vs_afl": round(sl.dreamteam_avg - (player.sc_avg or 0), 1),
+        })
+
+    vfl_form_owned.sort(key=lambda x: -x["sl_fantasy_avg"])
+
+    return {
+        "pickup_targets": pickup_targets,
+        "draft_watch": draft_watch,
+        "vfl_form_owned": vfl_form_owned,
+    }

@@ -377,6 +377,179 @@ function GapVisual({ gap }: { gap: NonNullable<AnalyticsData['narrative']['bigge
 }
 
 
+/* ═══ State League Intelligence ═══ */
+interface SLPickup {
+  name: string; position: string; age: number; afl_team: string
+  sl_competition: string; sl_team: string; sl_matches: number
+  sl_fantasy_avg: number; sl_disposals: number; projected_afl_sc: number
+  afl_games_this_year: number; afl_avg_this_year: number | null
+  breakout_pct: number; tag: string; fills_gap: string | null; relevance: number
+}
+interface SLDraftWatch {
+  name: string; age: number; sl_team: string; sl_matches: number
+  sl_fantasy_avg: number; projected_afl_sc: number; draft_probability: number
+  breakout_pct: number; tag: string; position_group: string; fills_gap: string | null
+  career_nab_seasons: number; career_nab_avg_fantasy: number
+}
+interface SLOwnedForm {
+  name: string; position: string; age: number; sl_competition: string
+  sl_team: string; sl_matches: number; sl_fantasy_avg: number
+  afl_sc_avg: number; sl_vs_afl: number
+}
+
+function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draft_watch: SLDraftWatch[]; vfl_form_owned: SLOwnedForm[] } }) {
+  const [tab, setTab] = useState<'pickup' | 'draft' | 'owned'>('pickup')
+  const scColor = (sc: number) => sc >= 100 ? '#3fb950' : sc >= 80 ? '#e6edf3' : sc >= 60 ? '#8b949e' : '#6e7681'
+
+  return (
+    <div className="wr-card wr-card-tight">
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+        {[
+          ['pickup', `Pickup Targets (${intel.pickup_targets?.length || 0})`],
+          ['draft', `Draft Watch (${intel.draft_watch?.length || 0})`],
+          ['owned', `Your Players' VFL Form (${intel.vfl_form_owned?.length || 0})`],
+        ].map(([key, label]) => (
+          <button key={key} type="button" className={`wr-fbtn${tab === key ? ' active' : ''}`}
+            onClick={() => setTab(key as any)} style={{ fontSize: '.7rem' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'pickup' && (
+        <>
+          <div style={{ fontSize: '.6rem', color: '#6e7681', marginBottom: 8 }}>
+            AFL-listed free agents performing well in state leagues — ML-projected AFL output
+          </div>
+          {(intel.pickup_targets || []).map(p => (
+            <div key={p.name} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 50px 50px 50px',
+              gap: 6, padding: '6px 8px', borderBottom: '1px solid rgba(48,54,61,.15)',
+              fontSize: '.78rem', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 700, color: '#e6edf3' }}>{p.name}
+                  {p.fills_gap && <span style={{ fontSize: '.55rem', fontWeight: 700, marginLeft: 6,
+                    padding: '1px 5px', borderRadius: 3, background: 'rgba(63,185,80,.12)', color: '#3fb950' }}>
+                    FILLS {p.fills_gap} GAP
+                  </span>}
+                </div>
+                <div style={{ fontSize: '.65rem', color: '#8b949e' }}>
+                  {p.position} · {p.afl_team} · {p.age}yo · {p.sl_competition} {p.sl_team}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 800, color: '#58a6ff' }}>{Math.round(p.sl_fantasy_avg)}</div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>SL FAN</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 800, color: scColor(p.projected_afl_sc) }}>{Math.round(p.projected_afl_sc)}</div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>AFL PROJ</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: p.breakout_pct >= 50 ? '#3fb950' : p.breakout_pct >= 25 ? '#fbbf24' : '#8b949e' }}>
+                  {p.breakout_pct}%
+                </div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>BRKOUT</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 600, color: '#8b949e' }}>{p.sl_matches}gm</div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>SL GM</div>
+              </div>
+            </div>
+          ))}
+          {(!intel.pickup_targets || intel.pickup_targets.length === 0) && (
+            <div style={{ color: '#6e7681', textAlign: 'center', padding: 20, fontSize: '.8rem' }}>No pickup targets found</div>
+          )}
+        </>
+      )}
+
+      {tab === 'draft' && (
+        <>
+          <div style={{ fontSize: '.6rem', color: '#6e7681', marginBottom: 8 }}>
+            Coates Talent League (U18) prospects — ML draft & breakout projections
+          </div>
+          {(intel.draft_watch || []).map(p => (
+            <div key={p.name} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 50px 50px 50px',
+              gap: 6, padding: '6px 8px', borderBottom: '1px solid rgba(48,54,61,.15)',
+              fontSize: '.78rem', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 700, color: '#e6edf3' }}>{p.name}
+                  {p.fills_gap && <span style={{ fontSize: '.55rem', fontWeight: 700, marginLeft: 6,
+                    padding: '1px 5px', borderRadius: 3, background: 'rgba(63,185,80,.12)', color: '#3fb950' }}>
+                    FILLS {p.fills_gap} GAP
+                  </span>}
+                </div>
+                <div style={{ fontSize: '.65rem', color: '#8b949e' }}>
+                  {p.position_group} · {p.sl_team} · {p.age}yo · {p.career_nab_seasons} NAB seasons
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 800, color: '#58a6ff' }}>{Math.round(p.sl_fantasy_avg)}</div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>NAB FAN</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 800, color: scColor(p.projected_afl_sc) }}>{Math.round(p.projected_afl_sc)}</div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>AFL PROJ</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: p.draft_probability >= 40 ? '#3fb950' : p.draft_probability >= 20 ? '#fbbf24' : '#8b949e' }}>
+                  {p.draft_probability}%
+                </div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>DRAFT</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: p.breakout_pct >= 50 ? '#3fb950' : p.breakout_pct >= 25 ? '#fbbf24' : '#8b949e' }}>
+                  {p.breakout_pct}%
+                </div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>BRKOUT</div>
+              </div>
+            </div>
+          ))}
+          {(!intel.draft_watch || intel.draft_watch.length === 0) && (
+            <div style={{ color: '#6e7681', textAlign: 'center', padding: 20, fontSize: '.8rem' }}>No draft prospects found</div>
+          )}
+        </>
+      )}
+
+      {tab === 'owned' && (
+        <>
+          <div style={{ fontSize: '.6rem', color: '#6e7681', marginBottom: 8 }}>
+            How your rostered players are performing in state leagues this season
+          </div>
+          {(intel.vfl_form_owned || []).map(p => (
+            <div key={p.name} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px 50px',
+              gap: 6, padding: '6px 8px', borderBottom: '1px solid rgba(48,54,61,.15)',
+              fontSize: '.78rem', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 700, color: '#e6edf3' }}>{p.name}</div>
+                <div style={{ fontSize: '.65rem', color: '#8b949e' }}>
+                  {p.position} · {p.age}yo · {p.sl_competition} {p.sl_team}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 800, color: '#58a6ff' }}>{Math.round(p.sl_fantasy_avg)}</div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>SL FAN</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 800, color: scColor(p.afl_sc_avg) }}>{Math.round(p.afl_sc_avg)}</div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>AFL SC</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: p.sl_vs_afl > 10 ? '#3fb950' : p.sl_vs_afl < -10 ? '#ef4444' : '#8b949e' }}>
+                  {p.sl_vs_afl > 0 ? '+' : ''}{Math.round(p.sl_vs_afl)}
+                </div>
+                <div style={{ fontSize: '.48rem', color: '#484f58' }}>SL vs AFL</div>
+              </div>
+            </div>
+          ))}
+          {(!intel.vfl_form_owned || intel.vfl_form_owned.length === 0) && (
+            <div style={{ color: '#6e7681', textAlign: 'center', padding: 20, fontSize: '.8rem' }}>No state league data for your players</div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 /* ═══ Best 23 Timeline ═══ */
 const POS_COLORS: Record<string, string> = { DEF: '#58a6ff', MID: '#d2a8ff', RUC: '#3fb950', FWD: '#fb923c' }
 const POS_BG: Record<string, string> = { DEF: 'rgba(88,166,255,.08)', MID: 'rgba(210,168,255,.08)', RUC: 'rgba(63,185,80,.08)', FWD: 'rgba(251,146,60,.08)' }
@@ -917,6 +1090,13 @@ export function AnalyticsPage() {
         {hasTrade && (
           <Chapter label="The Market" title="Available Upgrades">
             <TradeMarket table={data.trade_table} />
+          </Chapter>
+        )}
+
+        {/* 6b. State League Intelligence */}
+        {(data as any).sl_intel && (
+          <Chapter label="State Leagues" title="VFL / SANFL / Coates Intelligence">
+            <StateLeagueIntel intel={(data as any).sl_intel} />
           </Chapter>
         )}
 
