@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router'
 import { LeagueProvider, useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../ui/Spinner'
+import { RoundRecapModal } from '../RoundRecapModal'
 import { useState, useEffect, useMemo } from 'react'
 
 type SectionKey = 'team' | 'players' | 'league' | 'settings'
@@ -240,6 +241,9 @@ function LeagueShellInner() {
 
       {/* Page content (AppShell already wraps in .container py-4) */}
       <Outlet />
+
+      {/* Round recap popup — shows once per completed round on first visit */}
+      <RoundRecapModal />
 
       {/* ═══ Mobile bottom nav ═══ */}
       <nav className="mobile-bottom-nav d-lg-none">

@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-type PlayerSubtab = 'pool' | 'compare' | 'stats' | 'injuries' | 'ratings' | 'scouting'
+type PlayerSubtab = 'pool' | 'compare' | 'stats' | 'injuries' | 'ratings' | 'scouting' | 'breakout'
 
 interface Props {
   active: PlayerSubtab
@@ -14,6 +14,7 @@ const TABS: { key: PlayerSubtab; icon: string; label: string; path: (id: string)
   { key: 'injuries', icon: 'bi-bandaid', label: 'Injuries', path: id => `/leagues/${id}/injuries` },
   { key: 'ratings', icon: 'bi-star-fill', label: 'Ratings', path: id => `/leagues/${id}/player-ratings` },
   { key: 'scouting', icon: 'bi-binoculars', label: 'Scouting', path: id => `/leagues/${id}/scouting` },
+  { key: 'breakout', icon: 'bi-broadcast-pin', label: 'Breakout', path: id => `/leagues/${id}/breakout-radar` },
 ]
 
 export function PlayersSubnav({ active, leagueId }: Props) {

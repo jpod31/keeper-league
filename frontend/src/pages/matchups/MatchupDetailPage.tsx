@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
+import { WinProbabilityGauge } from '../../components/WinProbabilityGauge'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -157,6 +158,12 @@ export function MatchupDetailPage() {
           {fixture.is_final && fixture.final_type && <> / {fixture.final_type}</>}
         </div>
       </div>
+
+      {/* Win probability — only for non-completed matches */}
+      {fixture.status !== 'completed' && (
+        <WinProbabilityGauge leagueId={leagueId!} fixtureId={fixture.id}
+          refreshMs={fixture.status === 'live' ? 30000 : 0} />
+      )}
 
       {/* Hero */}
       <div className="mu-hero">

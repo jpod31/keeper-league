@@ -1200,3 +1200,76 @@ def scouting_predict_single(league_id, sl_id):
         return jsonify({"error": "No model or insufficient data"}), 400
     return jsonify(result)
 
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Innovation features: Breakout Radar, Round Recap, Win Probability
+# ═══════════════════════════════════════════════════════════════════════
+
+@spa_api.route("/leagues/<int:league_id>/breakout-radar")
+@login_required
+def breakout_radar(league_id):
+    """Players trending toward a senior AFL role based on SL form + scouting model."""
+    from models.database import StateLeagueStat, AflPlayer
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "Not found"}), 404
+
+    year = league.season_year
+    comp_filter = request.args.get("comp", "")
+    listed_filter = request.args.get("listed", "any")
+    min_prob = request.args.get("min_prob", 0, type=int)
+
+    q = StateLeagueStat.query.filter(
+        StateLeagueStat.season == year,
+        StateLeagueStat.predicted_afl_sc.isnot(None),
+        StateLeagueStat.matches >= 2,
+    )
+    if comp_filter:
+        q = q.filter(StateLeagueStat.competition == comp_filter)
+    if listed_filter == "afl_only":
+        q = q.filter(StateLeagueStat.is_afl_listed == True)
+    elif listed_filter == "unlisted":
+        q = q.filter(StateLeagueStat.is_afl_listed == False)
+    if min_prob > 0:
+        q = q.filter(StateLeagueStat.breakout_probability >= min_prob)
+
+    rows = q.order_by(StateLeagueStat.predicted_afl_sc.desc()).limit(80).all()
+    player_ids = [r.player_id for r in rows if r.player_id]
+    afl_map = {}
+    if player_ids:
+        for ap in AflPlayer.query.filter(AflPlayer.id.in_(player_ids)).all():
+            afl_map[ap.id] = {"afl_team": ap.afl_team, "position": ap.position,
+                              "sc_avg": ap.sc_avg, "rating": ap.rating,
+                              "potential": ap.potential}
+
+    players = []
+    for r in rows:
+        afl = afl_map.get(r.player_id, {})
+        players.append({
+            "id": r.id,
+            "player_id": r.player_id,
+            "name": r.player_name,
+            "comp": (r.competition or "").upper(),
+            "sl_team": r.team,
+            "age": r.age,
+            "matches": r.matches,
+            "sl_fantasy_avg": round(r.dreamteam_avg, 1) if r.dreamteam_avg else 0,
+            "sl_disposals": round(r.disposals, 1) if r.disposals else 0,
+            "sl_goals_avg": round(r.goals_avg, 2) if r.goals_avg else 0,
+            "is_afl_listed": r.is_afl_listed,
+            "afl_team": afl.get("afl_team"),
+            "afl_sc_avg": afl.get("sc_avg"),
+            "rating": afl.get("rating"),
+            "potential": afl.get("potential"),
+            "predicted_afl_sc": round(r.predicted_afl_sc, 1) if r.predicted_afl_sc else 0,
+            "breakout_probability": round(r.breakout_probability, 0) if r.breakout_probability else 0,
+            "draft_probability": round(r.draft_probability, 0) if r.draft_probability else 0,
+            "scouting_tag": r.scouting_tag or "",
+        })
+
+    return jsonify({"year": year, "players": players, "total": len(players)})
+
+
+from blueprints.innovation_endpoints import register_innovation_endpoints
+register_innovation_endpoints(spa_api)

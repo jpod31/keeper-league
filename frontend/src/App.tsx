@@ -72,6 +72,7 @@ import { PlayerRatingsPage } from './pages/players/PlayerRatingsPage'
 import { PlayerComparePage } from './pages/players/PlayerComparePage'
 import { StatsPage } from './pages/players/StatsPage'
 import { ScoutingPage } from './pages/players/ScoutingPage'
+import { BreakoutRadarPage } from './pages/players/BreakoutRadarPage'
 
 
 export default function App() {
@@ -145,6 +146,7 @@ export default function App() {
           <Route path="list-changes" element={<ListChangesPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="scouting" element={<ScoutingPage />} />
+          <Route path="breakout-radar" element={<BreakoutRadarPage />} />
 
           {/* Settings & Admin */}
           <Route path="settings" element={<SettingsPage />} />

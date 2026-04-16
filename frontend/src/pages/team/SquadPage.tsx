@@ -4,6 +4,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
+import { Field3D, type FieldPlayer } from '../../components/field/Field3D'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
 import { useFieldActions } from '../../hooks/useFieldActions'
@@ -259,6 +260,7 @@ function SquadPageInner() {
             {is_owner && <Link to={`/leagues/${leagueId}/team/${teamId}/draft-weights`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-sliders"></i>Draft</Link>}
             {is_owner && <Link to={`/leagues/${leagueId}/reserve7s/team`} className="squad-pill squad-pill-manage text-decoration-none" style={{ color: '#bc8cff', borderColor: 'rgba(188,140,255,.3)' }}><i className="bi bi-7-circle"></i>7s</Link>}
             <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`squad-pill squad-pill-field text-decoration-none${view === 'field' ? ' active' : ''}`}><i className="bi bi-diagram-3"></i>Field</Link>
+            <Link to={`/leagues/${leagueId}/team/${teamId}?view=3d`} className={`squad-pill squad-pill-field text-decoration-none${view === '3d' ? ' active' : ''}`} style={view === '3d' ? { color: '#3fb950', borderColor: 'rgba(63,185,80,.4)' } : undefined}><i className="bi bi-box"></i>3D</Link>
             <Link to={`/leagues/${leagueId}/team/${teamId}?view=table`} className={`squad-pill squad-pill-list text-decoration-none${view === 'table' ? ' active' : ''}`}><i className="bi bi-table"></i>List</Link>
             {is_owner && <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`squad-pill squad-pill-manage text-decoration-none${view === 'wishlist' ? ' active' : ''}`} style={{ color: '#d29922', borderColor: 'rgba(210,153,34,.3)' }}><i className="bi bi-star"></i>Wishlist</Link>}
           </div>
@@ -268,6 +270,7 @@ function SquadPageInner() {
       {/* ── Mobile subnav ── */}
       <div className="mob-subnav d-lg-none">
         <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`mob-subnav-item text-decoration-none${view === 'field' ? ' active' : ''}`}><i className="bi bi-diagram-3"></i><span>Field</span></Link>
+        <Link to={`/leagues/${leagueId}/team/${teamId}?view=3d`} className={`mob-subnav-item text-decoration-none${view === '3d' ? ' active' : ''}`} style={view === '3d' ? { color: '#3fb950' } : undefined}><i className="bi bi-box"></i><span>3D</span></Link>
         <Link to={`/leagues/${leagueId}/team/${teamId}?view=table`} className={`mob-subnav-item text-decoration-none${view === 'table' ? ' active' : ''}`}><i className="bi bi-table"></i><span>List</span></Link>
         <Link to={`/leagues/${leagueId}/team/${teamId}/stats`} className="mob-subnav-item text-decoration-none"><i className="bi bi-graph-up"></i><span>Stats</span></Link>
         <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="mob-subnav-item text-decoration-none"><i className="bi bi-bar-chart-line"></i><span>Analytics</span></Link>
@@ -375,6 +378,42 @@ function SquadPageInner() {
           )}
         </div>
       )}
+
+      {/* ══════ 3D FIELD VIEW ══════ */}
+      {view === '3d' && fd && (() => {
+        const flat: FieldPlayer[] = []
+        for (const pos of ['DEF', 'MID', 'RUC', 'FWD'] as const) {
+          const arr = (fd.zones[pos] || []).filter(Boolean) as Array<{ id: number; name: string; position: string; afl_team: string; sc_avg: number }>
+          for (const p of arr) {
+            flat.push({
+              id: p.id, name: p.name, position: p.position || pos,
+              position_code: pos, afl_team: p.afl_team, sc_avg: p.sc_avg,
+              is_captain: fd.cap_id === p.id, is_vice_captain: fd.vc_id === p.id,
+            })
+          }
+        }
+        for (const slot of fd.flex_data) {
+          if (slot.player) {
+            flat.push({
+              id: slot.player.id, name: slot.player.name,
+              position: slot.player.position || 'FLEX',
+              position_code: 'MID', // FLEX sits in the middle visually
+              afl_team: slot.player.afl_team, sc_avg: slot.player.sc_avg,
+              is_captain: fd.cap_id === slot.player.id,
+              is_vice_captain: fd.vc_id === slot.player.id,
+            })
+          }
+        }
+        return (
+          <div style={{ marginBottom: 20 }}>
+            <Field3D
+              players={flat}
+              teamColor="#58a6ff"
+              onPlayerClick={(p) => fieldActions.showPlayer(p.id)}
+            />
+          </div>
+        )
+      })()}
 
       {/* ══════ FIELD VIEW ══════ */}
       {view === 'field' && fd && (
