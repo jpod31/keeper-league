@@ -1,119 +1,28 @@
-/* Keeper League Service Worker — Caching + Push Notifications */
+/* Keeper League Service Worker — Push Notifications only.
+ * Caching has been removed entirely — it caused stale-page bugs after deploys
+ * that wasted hours of debugging. The browser's built-in HTTP cache (with the
+ * server's Cache-Control: no-store headers on dynamic responses, and long
+ * immutable caches on hashed static assets) does the right thing without us. */
 
-var SHELL_CACHE = 'kl-shell-v28';
-var DYNAMIC_CACHE = 'kl-dynamic-v28';
-var CDN_CACHE = 'kl-cdn-v28';
-var MAX_DYNAMIC = 50;
+var SW_VERSION = 'kl-v29-killswitch';
 
-var SHELL_ASSETS = [
-  '/static/style.css',
-  '/static/favicon.svg',
-  '/static/icons/icon-192.png',
-  '/static/icons/icon-512.png',
-  '/static/icons/kl-logo.png'
-];
-
-/* CDN origins we want to cache */
-var CDN_ORIGINS = [
-  'cdn.jsdelivr.net',
-  'fonts.googleapis.com',
-  'fonts.gstatic.com'
-];
-
-function isCdnRequest(url) {
-  return CDN_ORIGINS.some(function(origin) { return url.hostname === origin; });
-}
-
-/* ── Install: cache app shell ── */
+/* ── Install: take over immediately ── */
 self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(SHELL_CACHE).then(function(cache) {
-      return cache.addAll(SHELL_ASSETS);
-    }).then(function() {
-      return self.skipWaiting();
-    })
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
-/* ── Activate: clean old caches ── */
+/* ── Activate: nuke ALL caches from previous SW versions, claim clients ── */
 self.addEventListener('activate', function(event) {
-  var currentCaches = [SHELL_CACHE, DYNAMIC_CACHE, CDN_CACHE];
   event.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(k) {
-          return currentCaches.indexOf(k) === -1;
-        }).map(function(k) {
-          return caches.delete(k);
-        })
-      );
+      return Promise.all(keys.map(function(k) { return caches.delete(k); }));
     }).then(function() {
       return self.clients.claim();
     })
   );
 });
 
-/* ── Fetch: shell=cache-first, CDN=cache-first, pages=network-first ── */
-self.addEventListener('fetch', function(event) {
-  var url = new URL(event.request.url);
-
-  // Skip non-GET
-  if (event.request.method !== 'GET') return;
-
-  // CDN assets (Bootstrap, Chart.js, Socket.IO, fonts) — cache-first
-  if (isCdnRequest(url)) {
-    event.respondWith(
-      caches.match(event.request).then(function(cached) {
-        if (cached) return cached;
-        return fetch(event.request).then(function(resp) {
-          if (resp && resp.ok) {
-            var clone = resp.clone();
-            caches.open(CDN_CACHE).then(function(c) { c.put(event.request, clone); });
-          }
-          return resp;
-        });
-      })
-    );
-    return;
-  }
-
-  // Skip other cross-origin requests
-  if (url.origin !== self.location.origin) return;
-
-  // Shell assets — cache-first
-  if (SHELL_ASSETS.some(function(a) { return url.pathname === a; })) {
-    event.respondWith(
-      caches.match(event.request).then(function(cached) {
-        return cached || fetch(event.request).then(function(resp) {
-          var clone = resp.clone();
-          caches.open(SHELL_CACHE).then(function(c) { c.put(event.request, clone); });
-          return resp;
-        });
-      })
-    );
-    return;
-  }
-
-  // HTML pages — always go to network, never cache.
-  // Avoids stale-page bugs after deploys; HTML is small and re-renderable.
-  if (event.request.headers.get('Accept') && event.request.headers.get('Accept').indexOf('text/html') !== -1) {
-    return;  // let the browser handle it normally
-  }
-
-  // Other local static assets — stale-while-revalidate
-  event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      var fetchPromise = fetch(event.request).then(function(resp) {
-        if (resp && resp.ok) {
-          var clone = resp.clone();
-          caches.open(DYNAMIC_CACHE).then(function(c) { c.put(event.request, clone); });
-        }
-        return resp;
-      }).catch(function() { return cached; });
-      return cached || fetchPromise;
-    })
-  );
-});
+/* No fetch handler — every request goes straight through to the network. */
 
 /* ── Push Notifications ── */
 self.addEventListener('push', function(event) {
