@@ -243,18 +243,27 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
               const homeLeading = isLive && (f.home_score || 0) > (f.away_score || 0)
               const awayLeading = isLive && (f.away_score || 0) > (f.home_score || 0)
               const showScore = f.status === 'completed' || isLive || (f.home_score != null && f.away_score != null)
-              const showProgress = isLive && f.home_total && f.away_total
+              const showProgress = isLive && !!f.home_total && !!f.away_total
+              const homeCount = f.home_total ? `${f.home_played ?? 0}/${f.home_total}` : null
+              const awayCount = f.away_total ? `${f.away_played ?? 0}/${f.away_total}` : null
               return (
                 <Link key={f.id}
                   to={to}
                   className="mx-row"
                   style={{ position: 'relative' }}>
-                  <span className={`mx-team mx-team-home${homeWon || homeLeading ? ' won' : ''}`}>
-                    {f.home_team?.name}
-                  </span>
-                  <div className="mx-centre" style={{ flexDirection: 'column', gap: 2 }}>
+                  <div className="mx-team mx-team-home" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                    <span className={homeWon || homeLeading ? 'won' : ''} style={{ fontWeight: (homeWon || homeLeading) ? 700 : 500 }}>
+                      {f.home_team?.name}
+                    </span>
+                    {showProgress && homeCount && (
+                      <span style={{ fontSize: '.62rem', color: '#6e7681', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
+                        {homeCount} played
+                      </span>
+                    )}
+                  </div>
+                  <div className="mx-centre" style={{ minWidth: 110 }}>
                     {showScore ? (
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <>
                         <span className={`mx-sc${homeWon || homeLeading ? ' won' : awayWon || awayLeading ? ' lost' : ' draw'}`}>
                           {Math.round(f.home_score || 0)}
                         </span>
@@ -262,24 +271,21 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
                         <span className={`mx-sc${awayWon || awayLeading ? ' won' : homeWon || homeLeading ? ' lost' : ' draw'}`}>
                           {Math.round(f.away_score || 0)}
                         </span>
-                      </div>
+                      </>
                     ) : (
                       <span className="mx-vs">vs</span>
                     )}
-                    {isLive && (
-                      <span className="mx-live-tag" style={{ fontSize: '.55rem' }}>
-                        <i className="bi bi-broadcast me-1"></i>LIVE
-                      </span>
-                    )}
-                    {showProgress && (
-                      <span style={{ fontSize: '.62rem', color: '#6e7681', fontVariantNumeric: 'tabular-nums' }}>
-                        {f.home_played}/{f.home_total} · {f.away_played}/{f.away_total} played
+                  </div>
+                  <div className="mx-team mx-team-away" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                    <span className={awayWon || awayLeading ? 'won' : ''} style={{ fontWeight: (awayWon || awayLeading) ? 700 : 500 }}>
+                      {f.away_team?.name}
+                    </span>
+                    {showProgress && awayCount && (
+                      <span style={{ fontSize: '.62rem', color: '#6e7681', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
+                        {awayCount} played
                       </span>
                     )}
                   </div>
-                  <span className={`mx-team mx-team-away${awayWon || awayLeading ? ' won' : ''}`}>
-                    {f.away_team?.name}
-                  </span>
                   <div className="mx-arrow">
                     <i className="bi bi-chevron-right" style={{ fontSize: '.65rem' }}></i>
                   </div>

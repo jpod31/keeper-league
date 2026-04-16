@@ -95,8 +95,9 @@ def fixture_view(league_id):
             if not wl:
                 _progress_cache[team_id] = (0, 0)
                 return (0, 0)
+            # Field = on-field only: exclude BENCH and emergency slots
             field_slots = [s for s in LineupSlot.query.filter_by(lineup_id=wl.id).all()
-                           if s.position_code != "BENCH"]
+                           if s.position_code != "BENCH" and not s.is_emergency]
             total = len(field_slots)
             if total == 0:
                 _progress_cache[team_id] = (0, 0)
