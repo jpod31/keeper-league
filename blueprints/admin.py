@@ -2,6 +2,9 @@
 
 from datetime import datetime, timedelta, timezone
 from functools import wraps
+from zoneinfo import ZoneInfo
+
+_AEST = ZoneInfo("Australia/Melbourne")
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
@@ -285,7 +288,10 @@ def analytics_api():
             "views": r.views,
             "active_days": r.active_days,
             "avg_per_day": round(r.views / max(r.active_days, 1), 1),
-            "last_seen": r.last_seen.strftime("%d %b %H:%M") if r.last_seen else "",
+            "last_seen": (
+                (r.last_seen.replace(tzinfo=timezone.utc) if r.last_seen.tzinfo is None else r.last_seen)
+                .astimezone(_AEST).strftime("%d %b %H:%M")
+            ) if r.last_seen else "",
             "sparkline": [c for _, c in spark],
         })
 
