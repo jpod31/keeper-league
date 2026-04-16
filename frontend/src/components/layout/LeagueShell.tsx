@@ -35,7 +35,7 @@ function detectActiveTab(pathname: string): string {
   if (rest.startsWith('gameday')) return 'gameday'
   if (rest.startsWith('afl-live')) return 'live'
   if (rest.startsWith('player-pool') || rest.startsWith('players/') || rest.startsWith('player-ratings') || rest.startsWith('injuries') || rest.startsWith('stats')) return 'players'
-  if (rest.startsWith('standings') || rest.startsWith('fixture') || rest.startsWith('matchup') || rest.startsWith('finals') || rest.startsWith('history') || rest.startsWith('keepers') || rest.startsWith('list-changes') || rest.startsWith('reserve7s')) return 'league'
+  if (rest.startsWith('standings') || rest.startsWith('fixture') || rest.startsWith('matchup') || rest.startsWith('finals') || rest.startsWith('history') || rest.startsWith('list-changes') || rest.startsWith('reserve7s')) return 'league'
   if (rest.startsWith('draft')) return 'draft'
   if (rest.startsWith('chat') || rest.startsWith('notifications') || rest.startsWith('activity') || rest.startsWith('messages')) return 'comms'
   if (rest.startsWith('commissioner')) return 'commissioner'
@@ -103,7 +103,6 @@ function LeagueShellInner() {
         { label: 'Fixtures', icon: 'bi-calendar-week', to: `/leagues/${lid}/fixture`, key: 'fixture' },
         ...(league.finals_teams > 0 ? [{ label: 'Finals', icon: 'bi-trophy', to: `/leagues/${lid}/finals`, key: 'finals' }] : []),
         { label: 'Records', icon: 'bi-trophy', to: `/leagues/${lid}/history`, key: 'records' },
-        { label: 'Keepers', icon: 'bi-shield-check', to: `/leagues/${lid}/keepers`, key: 'keepers' },
         { label: 'Changes', icon: 'bi-clock-history', to: `/leagues/${lid}/list-changes`, key: 'changes' },
         { label: '7s', icon: 'bi-7-circle', to: `/leagues/${lid}/reserve7s/standings`, key: '7s', style: { color: '#bc8cff' } },
       ],

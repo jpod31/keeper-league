@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { useLeague } from '../../contexts/LeagueContext'
 
 interface Props {
-  active: 'ladder' | 'fixture' | 'finals' | 'records' | 'keepers' | 'changes' | '7s'
+  active: 'ladder' | 'fixture' | 'finals' | 'records' | 'changes' | '7s'
   leagueId: string
 }
 
@@ -15,7 +15,6 @@ export function LeagueSubnav({ active, leagueId }: Props) {
     { key: 'fixture', icon: 'bi-calendar-week', label: 'Fixtures', to: `/leagues/${leagueId}/fixture` },
     ...(showFinals ? [{ key: 'finals', icon: 'bi-trophy', label: 'Finals', to: `/leagues/${leagueId}/finals` }] : []),
     { key: 'records', icon: 'bi-trophy', label: 'Records', to: `/leagues/${leagueId}/history` },
-    { key: 'keepers', icon: 'bi-shield-check', label: 'Keepers', to: `/leagues/${leagueId}/keepers` },
     { key: 'changes', icon: 'bi-clock-history', label: 'Changes', to: `/leagues/${leagueId}/list-changes` },
     { key: '7s', icon: 'bi-7-circle', label: '7s', to: `/leagues/${leagueId}/reserve7s/standings` },
   ]

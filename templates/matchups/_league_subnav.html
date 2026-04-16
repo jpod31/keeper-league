@@ -18,10 +18,6 @@
      href="{{ url_for('leagues.league_history', league_id=league.id) }}">
     <i class="bi bi-trophy"></i>Records
   </a>
-  <a class="league-subtab{% if active_subtab|default('') == 'keepers' %} active{% endif %}"
-     href="{{ url_for('leagues.keeper_values', league_id=league.id) }}">
-    <i class="bi bi-shield-check"></i>Keepers
-  </a>
   <a class="league-subtab{% if active_subtab|default('') == 'changes' %} active{% endif %}"
      href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">
     <i class="bi bi-clock-history"></i>Changes
@@ -49,10 +45,6 @@
   <a class="mob-subnav-item{% if active_subtab|default('') == 'records' %} active{% endif %}"
      href="{{ url_for('leagues.league_history', league_id=league.id) }}">
     <i class="bi bi-trophy"></i>Records
-  </a>
-  <a class="mob-subnav-item{% if active_subtab|default('') == 'keepers' %} active{% endif %}"
-     href="{{ url_for('leagues.keeper_values', league_id=league.id) }}">
-    <i class="bi bi-shield-check"></i>Keepers
   </a>
   <a class="mob-subnav-item{% if active_subtab|default('') == 'changes' %} active{% endif %}"
      href="{{ url_for('leagues.list_changes_page', league_id=league.id) }}">

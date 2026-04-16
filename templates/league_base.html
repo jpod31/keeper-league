@@ -225,7 +225,6 @@ var _subtabData = {
       {label:'Finals', icon:'bi-trophy', url:'{{ url_for("matchups.finals_view", league_id=league.id) }}', key:'finals'},
       {% endif %}
       {label:'Records', icon:'bi-trophy', url:'{{ url_for("leagues.league_history", league_id=league.id) }}', key:'records'},
-      {label:'Keepers', icon:'bi-shield-check', url:'{{ url_for("leagues.keeper_values", league_id=league.id) }}', key:'keepers'},
       {label:'Changes', icon:'bi-clock-history', url:'{{ url_for("leagues.list_changes_page", league_id=league.id) }}', key:'changes'},
       {label:'7s', icon:'bi-7-circle', url:'{{ url_for("reserve7s.sevens_standings", league_id=league.id) }}', key:'7s', style:'color:#bc8cff'}
     ]
