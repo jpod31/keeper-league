@@ -102,12 +102,24 @@ function scoringTagType(label: string): string {
   return 'custom'
 }
 
-export function FixturePage() {
+interface FixturePageProps {
+  mode?: 'main' | 'sevens'
+}
+
+export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
   const { leagueId } = useParams()
   const [searchParams] = useSearchParams()
   const urlRound = searchParams.get('round')
-  const url = `/leagues/${leagueId}/fixture?format=json${urlRound ? `&round=${urlRound}` : ''}`
-  const { data, loading } = useFetch<FixtureData>(url)
+  const isSevens = mode === 'sevens'
+  const basePath = isSevens ? `/leagues/${leagueId}/reserve7s/fixture` : `/leagues/${leagueId}/fixture`
+  const gamedayPath = isSevens ? `/leagues/${leagueId}/reserve7s/gameday` : `/leagues/${leagueId}/gameday`
+  const matchupPathFor = (fid: number) =>
+    isSevens ? `/leagues/${leagueId}/reserve7s/matchup/${fid}` : `/leagues/${leagueId}/matchup/${fid}`
+  const apiUrl = isSevens
+    ? `/leagues/${leagueId}/reserve7s/fixture?format=json${urlRound ? `&round=${urlRound}` : ''}`
+    : `/leagues/${leagueId}/fixture?format=json${urlRound ? `&round=${urlRound}` : ''}`
+
+  const { data, loading } = useFetch<FixtureData>(apiUrl)
   const stripRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll round strip to center the active round
@@ -130,15 +142,38 @@ export function FixturePage() {
   const scType = scoringTagType(scoring.label)
   const hasFixtures = sortedRounds.length > 0
 
+  const mainColor = '#58a6ff'
+  const sevensColor = '#bc8cff'
+  const activeColor = isSevens ? sevensColor : mainColor
+  const activeBg = isSevens ? 'rgba(188,140,255,.08)' : 'rgba(88,166,255,.08)'
+  const activeBorder = isSevens ? 'rgba(188,140,255,.3)' : 'rgba(88,166,255,.3)'
+
+  // 7s theme override — repaint the green wins/dots/badges as purple
+  const SEVENS_OVERRIDE = `
+    .fx-sevens .mx-sc.won { color:#bc8cff; }
+    .fx-sevens .rnd-item.active::after { background:#bc8cff; box-shadow:0 0 6px rgba(188,140,255,.5); }
+    .fx-sevens .rnd-dot-done { background:#6e7681; }
+    .fx-sevens .rh-complete { background:rgba(188,140,255,.12); color:#bc8cff; }
+  `
+
   return (
-    <div>
+    <div className={isSevens ? 'fx-sevens' : ''}>
       <style>{FX_CSS}</style>
+      {isSevens && <style>{SEVENS_OVERRIDE}</style>}
       <div className="d-none d-lg-block"><LeagueSubnav active="fixture" leagueId={leagueId!} /></div>
 
-      {/* Competition toggle: Main vs 7s */}
+      {/* Competition toggle: Main ↔ 7s */}
       <div className="comp-toggle">
-        <span className="comp-toggle-btn" style={{ borderColor: 'rgba(88,166,255,.3)', color: '#58a6ff', background: 'rgba(88,166,255,.08)', borderRadius: '8px 0 0 8px' }}>Main</span>
-        <Link to={`/leagues/${leagueId}/reserve7s/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
+        {isSevens ? (
+          <Link to={`/leagues/${leagueId}/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '8px 0 0 8px' }}>Main</Link>
+        ) : (
+          <span className="comp-toggle-btn" style={{ borderColor: activeBorder, color: activeColor, background: activeBg, borderRadius: '8px 0 0 8px' }}>Main</span>
+        )}
+        {isSevens ? (
+          <span className="comp-toggle-btn" style={{ borderColor: activeBorder, color: activeColor, background: activeBg, borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
+        ) : (
+          <Link to={`/leagues/${leagueId}/reserve7s/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
+        )}
       </div>
 
       {hasFixtures ? (
@@ -154,7 +189,7 @@ export function FixturePage() {
               const itemCls = st === 'completed' ? ' rnd-done' : st === 'live' ? ' rnd-live' : ''
               return (
                 <Link key={rnd}
-                  to={`/leagues/${leagueId}/fixture?round=${rnd}`}
+                  to={`${basePath}?round=${rnd}`}
                   className={`rnd-item${rnd === selected_round ? ' active' : ''}${itemCls}`}>
                   <span className="rnd-num">{rnd === 0 ? 'PS' : rnd}</span>
                   <span className={`rnd-dot ${dotCls}`}></span>
@@ -178,7 +213,7 @@ export function FixturePage() {
             </div>
             <div className="rh-actions">
               {current_fixtures.length > 0 && (rs === 'live' || rs === 'completed' || rs === 'partial') && (
-                <Link to={`/leagues/${leagueId}/gameday?round=${selected_round}`} className="rh-btn">
+                <Link to={`${gamedayPath}?round=${selected_round}`} className="rh-btn">
                   <i className="bi bi-broadcast me-1"></i>Live
                 </Link>
               )}
@@ -193,8 +228,8 @@ export function FixturePage() {
               const awayWon = f.status === 'completed' && (f.away_score || 0) > (f.home_score || 0)
               const isLiveRound = rs === 'live' || rs === 'partial'
               const to = isLiveRound
-                ? `/leagues/${leagueId}/gameday?round=${selected_round}&fixture=${f.id}`
-                : `/leagues/${leagueId}/matchup/${f.id}`
+                ? `${gamedayPath}?round=${selected_round}&fixture=${f.id}`
+                : matchupPathFor(f.id)
               return (
                 <Link key={f.id}
                   to={to}

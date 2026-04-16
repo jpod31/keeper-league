@@ -145,9 +145,17 @@ function headlineSlug(h: string): string {
   return (h || 'Steady').toLowerCase().replace(/\s+/g, '')
 }
 
-export function StandingsPage() {
+interface StandingsPageProps {
+  mode?: 'main' | 'sevens'
+}
+
+export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
   const { leagueId } = useParams()
-  const { data, loading } = useFetch<StandingsData>(`/leagues/${leagueId}/standings?format=json`)
+  const isSevens = mode === 'sevens'
+  const apiUrl = isSevens
+    ? `/leagues/${leagueId}/reserve7s/standings?format=json`
+    : `/leagues/${leagueId}/standings?format=json`
+  const { data, loading } = useFetch<StandingsData>(apiUrl)
   const [view, setView] = useState<'ladder' | 'rankings'>('ladder')
 
   if (loading) return <Spinner text="Loading standings..." />
@@ -157,15 +165,37 @@ export function StandingsPage() {
   const hasRankings = rankings && rankings.length > 0
   const scType = scoringTagType(scoring.label)
 
+  const activeColor = isSevens ? '#bc8cff' : '#58a6ff'
+  const activeBg = isSevens ? 'rgba(188,140,255,.08)' : 'rgba(88,166,255,.08)'
+  const activeBorder = isSevens ? 'rgba(188,140,255,.3)' : 'rgba(88,166,255,.3)'
+
+  // 7s theme override — repaint green accents as purple for the 7s ladder
+  const SEVENS_OVERRIDE = `
+    .ldr-sevens .ldr-toggle-btn.active { background:rgba(188,140,255,.12); color:#bc8cff; }
+    .ldr-sevens .pr-score-badge { color:#bc8cff; }
+    .ldr-sevens .pr-hl-onfire, .ldr-sevens .pr-hl-dominant { background:rgba(188,140,255,.18); color:#bc8cff; }
+    .ldr-sevens .pr-hl-surging, .ldr-sevens .pr-hl-strong { background:rgba(188,140,255,.1); color:#bc8cff; }
+    .ldr-sevens .pr-dot-W { background:rgba(188,140,255,.15); color:#bc8cff; }
+  `
+
   return (
-    <div>
+    <div className={isSevens ? 'ldr-sevens' : ''}>
       <style>{LDR_CSS}</style>
+      {isSevens && <style>{SEVENS_OVERRIDE}</style>}
       <div className="d-none d-lg-block"><LeagueSubnav active="ladder" leagueId={leagueId!} /></div>
 
-      {/* Competition toggle: Main vs 7s */}
+      {/* Competition toggle: Main ↔ 7s */}
       <div className="comp-toggle">
-        <span className="comp-toggle-btn" style={{ borderColor: 'rgba(88,166,255,.3)', color: '#58a6ff', background: 'rgba(88,166,255,.08)', borderRadius: '8px 0 0 8px' }}>Main</span>
-        <Link to={`/leagues/${leagueId}/reserve7s/standings`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
+        {isSevens ? (
+          <Link to={`/leagues/${leagueId}/standings`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '8px 0 0 8px' }}>Main</Link>
+        ) : (
+          <span className="comp-toggle-btn" style={{ borderColor: activeBorder, color: activeColor, background: activeBg, borderRadius: '8px 0 0 8px' }}>Main</span>
+        )}
+        {isSevens ? (
+          <span className="comp-toggle-btn" style={{ borderColor: activeBorder, color: activeColor, background: activeBg, borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
+        ) : (
+          <Link to={`/leagues/${leagueId}/reserve7s/standings`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
+        )}
       </div>
 
       {hasRankings && (
