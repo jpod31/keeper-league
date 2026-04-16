@@ -495,7 +495,6 @@ export function GamedayPage() {
       p.is_live && !ytp && !isEmgStandby && 'text-success',
     ].filter(Boolean).join(' ')
 
-    const isLocked = !!(p.player_id && d.locked_player_ids?.includes(p.player_id))
     return (
       <div className={rowClass}>
         <span className="gameday-player-info">
