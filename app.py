@@ -533,6 +533,15 @@ def create_app():
             "frame-ancestors 'self'; "
             "worker-src 'self' blob:;"
         )
+        # Stop browsers caching dynamic HTML so deploys show up immediately.
+        # nginx serves /static/* directly with its own Cache-Control headers,
+        # so this only affects Flask-rendered responses.
+        if not request.path.startswith("/static/"):
+            ctype = response.headers.get("Content-Type", "")
+            if ctype.startswith("text/html") or ctype.startswith("application/json"):
+                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                response.headers["Pragma"] = "no-cache"
+                response.headers["Expires"] = "0"
         return response
 
     # ── Error handlers ────────────────────────────────────────────────
