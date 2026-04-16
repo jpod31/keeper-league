@@ -1,8 +1,6 @@
 /**
- * Big inline loader with the pulsing KL logo and ambient green/blue
- * glow blobs. Use on pages that have a noticeable fetch time so the
- * screen isn't blank during load. For fast pages, prefer the no-op
- * <Spinner /> or no loader at all.
+ * Big inline loader with the pulsing KL logo and an ambient halo that
+ * fades naturally via radial gradients — no rectangular clipping box.
  */
 export function PageLoader({ text }: { text?: string } = {}) {
   return (
@@ -13,37 +11,21 @@ export function PageLoader({ text }: { text?: string } = {}) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
       }}
     >
+      {/* Radial halo — green and blue, centered on the logo, fades to nothing */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
-          top: '-10%',
-          left: '-10%',
-          width: '70%',
-          height: '70%',
-          borderRadius: '50%',
-          filter: 'blur(80px)',
-          background: 'rgba(63,185,80,.28)',
-          animation: 'klGlowGreen 3s ease-in-out infinite',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}
-      />
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          bottom: '-10%',
-          right: '-10%',
-          width: '70%',
-          height: '70%',
-          borderRadius: '50%',
-          filter: 'blur(80px)',
-          background: 'rgba(31,111,235,.28)',
-          animation: 'klGlowBlue 3s ease-in-out infinite',
+          top: '50%',
+          left: '50%',
+          width: 640,
+          height: 640,
+          transform: 'translate(-50%, -50%)',
+          background: 'radial-gradient(circle at 35% 40%, rgba(63,185,80,.35), rgba(63,185,80,0) 55%), radial-gradient(circle at 65% 60%, rgba(31,111,235,.35), rgba(31,111,235,0) 55%)',
+          filter: 'blur(40px)',
+          animation: 'klHalo 3s ease-in-out infinite',
           pointerEvents: 'none',
           zIndex: 1,
         }}
@@ -75,8 +57,10 @@ export function PageLoader({ text }: { text?: string } = {}) {
 
       <style>{`
         @keyframes klPulse { 0%,100% { transform:scale(1); opacity:.88; } 50% { transform:scale(1.03); opacity:1; } }
-        @keyframes klGlowGreen { 0%,100% { transform:scale(.85); opacity:.5; } 50% { transform:scale(1.15); opacity:.9; } }
-        @keyframes klGlowBlue { 0%,100% { transform:scale(1.15); opacity:.9; } 50% { transform:scale(.85); opacity:.5; } }
+        @keyframes klHalo {
+          0%,100% { transform: translate(-50%, -50%) scale(.95); opacity:.6; }
+          50%     { transform: translate(-50%, -50%) scale(1.08); opacity:1; }
+        }
       `}</style>
     </div>
   )
