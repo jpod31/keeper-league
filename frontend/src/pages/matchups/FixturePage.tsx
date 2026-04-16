@@ -148,12 +148,17 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
   const activeBg = isSevens ? 'rgba(188,140,255,.08)' : 'rgba(88,166,255,.08)'
   const activeBorder = isSevens ? 'rgba(188,140,255,.3)' : 'rgba(88,166,255,.3)'
 
-  // 7s theme override — repaint the green wins/dots/badges as purple
+  // 7s theme override — every green accent becomes 7s purple (#bc8cff)
   const SEVENS_OVERRIDE = `
-    .fx-sevens .mx-sc.won { color:#bc8cff; }
-    .fx-sevens .rnd-item.active::after { background:#bc8cff; box-shadow:0 0 6px rgba(188,140,255,.5); }
-    .fx-sevens .rnd-dot-done { background:#6e7681; }
-    .fx-sevens .rh-complete { background:rgba(188,140,255,.12); color:#bc8cff; }
+    .fx-sevens .mx-sc.won { color: #bc8cff !important; }
+    .fx-sevens .mx-live-tag { color: #bc8cff !important; background: rgba(188,140,255,.1) !important; }
+    .fx-sevens .rnd-item.active::after { background: #bc8cff !important; box-shadow: 0 0 6px rgba(188,140,255,.5) !important; }
+    .fx-sevens .rnd-dot-live { background: #bc8cff !important; }
+    .fx-sevens .rnd-item.rnd-live .rnd-num { color: #bc8cff !important; }
+    .fx-sevens .rh-complete { background: rgba(188,140,255,.15) !important; color: #bc8cff !important; }
+    .fx-sevens .rh-live { background: rgba(188,140,255,.15) !important; color: #bc8cff !important; }
+    .fx-sevens .rh-btn-primary { color: #bc8cff !important; border-color: rgba(188,140,255,.3) !important; }
+    .fx-sevens .rh-btn-primary:hover { border-color: #bc8cff !important; background: rgba(188,140,255,.06) !important; }
   `
 
   return (

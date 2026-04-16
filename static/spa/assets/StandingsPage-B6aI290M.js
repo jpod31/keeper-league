@@ -1,0 +1,1 @@
+import{n as e}from"./Spinner-DbpdyvTu.js";import{t}from"./StandingsPage-Bn4zAf0W.js";var n=e();function r(){return(0,n.jsx)(t,{mode:`sevens`})}export{r as Reserve7sStandingsPage};

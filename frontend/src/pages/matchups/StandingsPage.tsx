@@ -169,13 +169,21 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
   const activeBg = isSevens ? 'rgba(188,140,255,.08)' : 'rgba(88,166,255,.08)'
   const activeBorder = isSevens ? 'rgba(188,140,255,.3)' : 'rgba(88,166,255,.3)'
 
-  // 7s theme override — repaint green accents as purple for the 7s ladder
+  // 7s theme override — every green accent becomes 7s purple (#bc8cff)
   const SEVENS_OVERRIDE = `
-    .ldr-sevens .ldr-toggle-btn.active { background:rgba(188,140,255,.12); color:#bc8cff; }
-    .ldr-sevens .pr-score-badge { color:#bc8cff; }
-    .ldr-sevens .pr-hl-onfire, .ldr-sevens .pr-hl-dominant { background:rgba(188,140,255,.18); color:#bc8cff; }
-    .ldr-sevens .pr-hl-surging, .ldr-sevens .pr-hl-strong { background:rgba(188,140,255,.1); color:#bc8cff; }
-    .ldr-sevens .pr-dot-W { background:rgba(188,140,255,.15); color:#bc8cff; }
+    .ldr-sevens .ldr-toggle-btn.active { background: rgba(188,140,255,.12) !important; color: #bc8cff !important; }
+    .ldr-sevens .pr-score-badge { color: #bc8cff !important; }
+    .ldr-sevens .pr-hl-onfire, .ldr-sevens .pr-hl-dominant { background: rgba(188,140,255,.18) !important; color: #bc8cff !important; }
+    .ldr-sevens .pr-hl-surging, .ldr-sevens .pr-hl-strong { background: rgba(188,140,255,.1) !important; color: #bc8cff !important; }
+    .ldr-sevens .pr-dot-W { background: rgba(188,140,255,.15) !important; color: #bc8cff !important; }
+    .ldr-sevens .pr-detail-pos { color: #bc8cff !important; }
+    .ldr-sevens .pr-move-up { color: #bc8cff !important; }
+    /* Ladder table — any green win/percentage/score in the main ladder */
+    .ldr-sevens .ldr-form-W, .ldr-sevens .ldr-row .form-W { background: rgba(188,140,255,.15) !important; color: #bc8cff !important; }
+    .ldr-sevens .ldr-pts { color: #bc8cff !important; }
+    .ldr-sevens .ldr-pf, .ldr-sevens .ldr-pct { color: #bc8cff !important; }
+    /* Badge pills that use green */
+    .ldr-sevens [class*='status-success'], .ldr-sevens .badge-success { background: rgba(188,140,255,.15) !important; color: #bc8cff !important; }
   `
 
   return (
