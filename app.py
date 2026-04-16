@@ -396,6 +396,9 @@ def create_app():
             # Player profile page is still Jinja2 — let it through
             if path.startswith("/player/"):
                 return None
+            # Admin hub pages are still Jinja2 — let them through
+            if path.startswith("/admin/") or path == "/admin":
+                return None
 
             # ── Key check: only intercept BROWSER NAVIGATIONS ──
             # Browsers send Sec-Fetch-Mode: navigate for page loads.
