@@ -129,7 +129,16 @@ const S7_CSS = `
 .s7gd-player-row:last-child { border-bottom: none; }
 .s7gd-player-row:hover { background: #161b22; }
 .s7gd-player-row:hover .s7gd-player-name { color: #a855f7; }
-.s7gd-player-row.p-locked { opacity: 0.7; }
+.s7gd-player-row.p-locked { position: relative; }
+.s7gd-player-row.p-locked::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 10%; bottom: 10%;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(to bottom, rgba(139,148,158,.15), rgba(139,148,158,.45), rgba(139,148,158,.15));
+}
+.s7gd-player-row.p-locked .s7gd-player-name { color: #8b949e; }
 .s7gd-player-row.p-ytp .s7gd-player-score { color: #6e7681; animation: s7gdYtp 2s ease-in-out infinite; }
 @keyframes s7gdYtp { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 .s7gd-player-info { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
@@ -357,7 +366,6 @@ export function Reserve7sGamedayPage() {
         <span className="s7gd-player-info">
           {p.position && <span className={`pos-badge pos-${posCode} s7gd-pos-badge`}>{posCode}</span>}
           {p.is_captain && <span className="s7gd-badge-c">C</span>}
-          {isLocked && <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.6rem' }}></i>}
           <span className="s7gd-player-name">{p.name}</span>
           <span className="s7gd-player-meta">
             {p.afl_team && d.team_logos[p.afl_team]

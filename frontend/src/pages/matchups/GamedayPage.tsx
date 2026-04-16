@@ -114,7 +114,16 @@ const GAMEDAY_CSS = `
 .gameday-player-row:last-child { border-bottom: none; }
 .gameday-player-row:hover { background: var(--kl-bg-card); }
 .gameday-player-row:hover .gameday-player-name { color: var(--kl-accent-blue); }
-.player-locked { opacity: 0.7; }
+.player-locked { position: relative; }
+.player-locked::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 10%; bottom: 10%;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(to bottom, rgba(139,148,158,.15), rgba(139,148,158,.45), rgba(139,148,158,.15));
+}
+.player-locked .gameday-player-name { color: var(--kl-text-secondary); }
 .gameday-player-info { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
 .gameday-player-name { color: var(--kl-text-primary); white-space: nowrap; }
 .gameday-player-meta { color: var(--kl-text-faint); font-size: .7rem; white-space: nowrap; }
@@ -496,7 +505,6 @@ export function GamedayPage() {
           {isSubbedOn && <span className="gameday-badge-emg-active">EMG</span>}
           {p.is_dnp && !isSubbedOn && <span className="gameday-badge-dnp">DNP</span>}
           {isEmgStandby && <span className="gameday-badge-emg">EMG</span>}
-          {isLocked && <i className="bi bi-lock-fill" style={{ color: 'var(--kl-accent-red)', fontSize: '.6rem' }}></i>}
           <span className="gameday-player-name">{p.name}</span>
           <span className="gameday-player-meta">
             {p.afl_team && d.team_logos[p.afl_team]
