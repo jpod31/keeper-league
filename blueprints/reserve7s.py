@@ -9,7 +9,7 @@ from flask_login import login_required, current_user
 from models.database import (
     db, League, FantasyTeam, FantasyRoster, AflPlayer, SeasonConfig,
     Reserve7sLineup, Reserve7sFixture, Reserve7sRoundScore, Reserve7sStanding,
-    AflGame, LiveScoringConfig, PlayerStat,
+    AflGame, LiveScoringConfig, PlayerStat, ScScore,
 )
 from models.fixture_manager import (
     generate_7s_round_robin, generate_7s_finals,
@@ -500,15 +500,87 @@ def sevens_gameday(league_id):
 
     # ── JSON API mode for React SPA ──
     if request.args.get("format") == "json":
+        import math
+
+        # ── 7s projections: for each team, project final score using actual
+        # score where available, else player's season avg (capped for low-game
+        # players). Captain adds +1x their score as bonus. ──
+        def _project_7s_team(team_id: int) -> float:
+            lineup = Reserve7sLineup.query.filter_by(
+                league_id=league_id, team_id=team_id,
+                afl_round=afl_round, year=year,
+            ).all()
+            if not lineup:
+                return 0.0
+            pids = [e.player_id for e in lineup]
+            actual_rows = ScScore.query.filter(
+                ScScore.year == year, ScScore.round == afl_round,
+                ScScore.player_id.in_(pids),
+            ).all()
+            actual = {r.player_id: (r.score or 0) for r in actual_rows}
+            players = {p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_(pids)).all()}
+
+            total = 0.0
+            cap_bonus = 0.0
+            for entry in lineup:
+                if entry.player_id in actual:
+                    val = actual[entry.player_id]
+                else:
+                    p = players.get(entry.player_id)
+                    if p and p.afl_team in teams_playing:
+                        val = p.sc_avg or 60
+                    else:
+                        val = 0  # bye or not playing
+                total += val
+                if entry.is_captain:
+                    cap_bonus = val  # captain doubles
+            return total + cap_bonus
+
         def _ser_team(t):
             return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
 
+        # Project per fixture for the list of round fixtures
+        fixture_projections: dict[int, dict] = {}
+        for f in round_fixtures:
+            hp = _project_7s_team(f.home_team_id)
+            ap = _project_7s_team(f.away_team_id)
+            margin = hp - ap
+            hwin = 100 / (1 + math.exp(-margin / 70))  # tighter spread for 7s
+            fixture_projections[f.id] = {
+                "home_projected": round(hp, 0),
+                "away_projected": round(ap, 0),
+                "home_win_pct": round(hwin, 1),
+                "away_win_pct": round(100 - hwin, 1),
+            }
+
+        # User's matchup projections (for the hero panel)
+        my_projections = None
+        if fixture:
+            fp = fixture_projections.get(fixture.id)
+            if fp:
+                if is_home:
+                    my_projections = {
+                        "my_projected": fp["home_projected"],
+                        "opp_projected": fp["away_projected"],
+                        "my_win_pct": fp["home_win_pct"],
+                        "opp_win_pct": fp["away_win_pct"],
+                    }
+                else:
+                    my_projections = {
+                        "my_projected": fp["away_projected"],
+                        "opp_projected": fp["home_projected"],
+                        "my_win_pct": fp["away_win_pct"],
+                        "opp_win_pct": fp["home_win_pct"],
+                    }
+
         def _ser_fixture(f):
-            return {
+            base = {
                 "id": f.id, "home_team_id": f.home_team_id, "away_team_id": f.away_team_id,
                 "home_score": f.home_score, "away_score": f.away_score, "status": f.status,
                 "home_team": _ser_team(f.home_team), "away_team": _ser_team(f.away_team),
+                "projections": fixture_projections.get(f.id),
             }
+            return base
 
         return jsonify({
             "is_bye": is_bye,
@@ -531,6 +603,7 @@ def sevens_gameday(league_id):
             "my_eligible": my_eligible,
             "opp_played": opp_played,
             "opp_eligible": opp_eligible,
+            "projections": my_projections,
             "round_fixtures": [_ser_fixture(f) for f in round_fixtures],
             "sevens_scores": {str(k): v for k, v in sevens_scores.items()},
             "afl_games": afl_games or [],

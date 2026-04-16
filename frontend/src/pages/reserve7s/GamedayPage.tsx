@@ -8,6 +8,10 @@ interface S7Fixture {
   id: number; home_team_id: number; away_team_id: number
   home_score: number; away_score: number; status: string
   home_team: Team; away_team: Team
+  projections?: {
+    home_projected: number; away_projected: number
+    home_win_pct: number; away_win_pct: number
+  } | null
 }
 interface S7Player {
   player_id: number
@@ -25,6 +29,10 @@ interface S7ScoreEntry {
   team_name?: string; total_score?: number; captain_bonus?: number
   players_played?: number; players_total?: number; captain_id?: number | null
 }
+interface S7Projections {
+  my_projected: number; opp_projected: number; my_win_pct: number; opp_win_pct: number
+}
+
 interface S7GamedayData {
   is_bye: boolean; afl_round: number; round_dates: string | null; first_bounce: string | null
   gameday_state: string; live_enabled: boolean; is_home: boolean
@@ -33,6 +41,7 @@ interface S7GamedayData {
   my_score: number; opp_score: number
   my_captain_bonus: number; opp_captain_bonus: number
   my_played: number; my_eligible: number; opp_played: number; opp_eligible: number
+  projections: S7Projections | null
   round_fixtures: S7Fixture[]
   sevens_scores: Record<string, S7ScoreEntry>
   afl_games: AflGame[]
@@ -265,6 +274,8 @@ export function Reserve7sGamedayPage() {
   let heroLeftPlayers: S7Player[], heroRightPlayers: S7Player[]
   let heroLeftLogo: string | null, heroRightLogo: string | null
   let heroLeftTeamId: number | undefined, heroRightTeamId: number | undefined
+  let heroProjLeft: number | null = null, heroProjRight: number | null = null
+  let heroWinLeft: number | null = null, heroWinRight: number | null = null
 
   if (isViewingOwn || !cachedFixtures[viewedFixtureId!]) {
     heroLeftName = d.my_team?.name || ''
@@ -279,6 +290,12 @@ export function Reserve7sGamedayPage() {
     heroRightLogo = d.opp_team?.logo_url ?? null
     heroLeftTeamId = d.my_team?.id
     heroRightTeamId = d.opp_team?.id
+    if (isViewingOwn && d.projections) {
+      heroProjLeft = d.projections.my_projected
+      heroProjRight = d.projections.opp_projected
+      heroWinLeft = d.projections.my_win_pct
+      heroWinRight = d.projections.opp_win_pct
+    }
   } else {
     const fx = cachedFixtures[viewedFixtureId!]
     const meta = d.round_fixtures.find(f => f.id === viewedFixtureId)
@@ -294,6 +311,12 @@ export function Reserve7sGamedayPage() {
     heroRightLogo = meta?.away_team?.logo_url || null
     heroLeftTeamId = meta?.home_team_id
     heroRightTeamId = meta?.away_team_id
+    if (meta?.projections) {
+      heroProjLeft = meta.projections.home_projected
+      heroProjRight = meta.projections.away_projected
+      heroWinLeft = meta.projections.home_win_pct
+      heroWinRight = meta.projections.away_win_pct
+    }
   }
 
   // sevens_scores entries (captain_id, players_played/total from backend)
@@ -533,6 +556,17 @@ export function Reserve7sGamedayPage() {
                   heroRightScore > heroLeftScore ? <>{heroRightName} BY {diff}</> : 'DRAW'
                 )}
               </div>
+              {heroProjLeft != null && heroProjRight != null && gs !== 'completed' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                  <span style={{ fontSize: '.66rem', color: '#8b949e', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    Proj <b style={{ fontWeight: 700, color: '#c9d1d9' }}>{Math.round(heroProjLeft)}</b>&ndash;<b style={{ fontWeight: 700, color: '#c9d1d9' }}>{Math.round(heroProjRight)}</b>
+                  </span>
+                  <span style={{ width: 1, height: 12, background: 'rgba(139,148,158,.2)' }}></span>
+                  <span style={{ fontSize: '.66rem', color: '#8b949e', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    Win <b style={{ fontWeight: 700, color: '#bc8cff' }}>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b style={{ fontWeight: 700, color: '#bc8cff' }}>{Math.round(heroWinRight || 0)}%</b>
+                  </span>
+                </div>
+              )}
             </div>
 
             {gs === 'upcoming' && d.first_bounce && (
