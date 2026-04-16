@@ -134,9 +134,10 @@ export function Reserve7sFixturePage() {
         <Link to={`/leagues/${leagueId}/reserve7s/team`} className="s7-subnav-tab">My 7s</Link>
       </div>
 
-      <div className="s7f-title">
-        <h3><i className="bi bi-7-circle me-1" style={{ color: '#bc8cff' }}></i>Reserve 7s Season</h3>
-        <span className="s7f-title-badge">RESERVE 7s</span>
+      {/* Competition toggle: Main vs 7s */}
+      <div className="comp-toggle">
+        <Link to={`/leagues/${leagueId}/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '8px 0 0 8px' }}>Main</Link>
+        <span className="comp-toggle-btn" style={{ borderColor: 'rgba(188,140,255,.3)', color: '#bc8cff', background: 'rgba(188,140,255,.08)', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
       </div>
 
       {hasFixtures ? (

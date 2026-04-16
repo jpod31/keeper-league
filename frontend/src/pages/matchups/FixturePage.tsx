@@ -135,6 +135,12 @@ export function FixturePage() {
       <style>{FX_CSS}</style>
       <div className="d-none d-lg-block"><LeagueSubnav active="fixture" leagueId={leagueId!} /></div>
 
+      {/* Competition toggle: Main vs 7s */}
+      <div className="comp-toggle">
+        <span className="comp-toggle-btn" style={{ borderColor: 'rgba(88,166,255,.3)', color: '#58a6ff', background: 'rgba(88,166,255,.08)', borderRadius: '8px 0 0 8px' }}>Main</span>
+        <Link to={`/leagues/${leagueId}/reserve7s/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
+      </div>
+
       {hasFixtures ? (
         <>
           {/* Round strip */}
