@@ -1,7 +1,6 @@
 import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
-import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -77,7 +76,6 @@ export function Reserve7sStandingsPage() {
   return (
     <div>
       <style>{S7_CSS}</style>
-      <LeagueSubnav active="7s" leagueId={leagueId!} />
 
       <div className="s7-subnav">
         <Link to={`/leagues/${leagueId}/reserve7s/standings`} className="s7-subnav-tab active">Ladder</Link>
