@@ -833,6 +833,20 @@ def state_league_stats(league_id):
         q = q.filter(StateLeagueStat.is_afl_listed == True)
     if search:
         q = q.filter(StateLeagueStat.player_name.ilike(f"%{search}%"))
+
+    # Distinct team list for the dropdown — built BEFORE the team filter is applied
+    # so selecting a team doesn't collapse the list to that team only.
+    teams_q = db.session.query(StateLeagueStat.team).distinct()
+    if comp:
+        teams_q = teams_q.filter(StateLeagueStat.competition == comp)
+    if season:
+        teams_q = teams_q.filter(StateLeagueStat.season == season)
+    if afl_only:
+        teams_q = teams_q.filter(StateLeagueStat.is_afl_listed == True)
+    if search:
+        teams_q = teams_q.filter(StateLeagueStat.player_name.ilike(f"%{search}%"))
+    teams_list = sorted([t[0] for t in teams_q.all() if t[0]])
+
     if team_filter:
         q = q.filter(StateLeagueStat.team == team_filter)
 
@@ -1016,6 +1030,7 @@ def state_league_stats(league_id):
     from config import STATE_LEAGUE_LOGOS, TEAM_LOGOS, TEAM_COLOURS
     team_colours = {name: {"bg": bg, "fg": fg} for name, (bg, fg) in TEAM_COLOURS.items()}
     return jsonify({"players": data, "total": total, "page": page, "pages": (total + per_page - 1) // per_page,
+                    "teams": teams_list,
                     "sl_logos": STATE_LEAGUE_LOGOS, "team_logos": TEAM_LOGOS, "team_colours": team_colours})
 
 

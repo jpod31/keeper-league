@@ -34,7 +34,7 @@ interface CareerSeason {
 }
 
 interface TeamColour { bg: string; fg: string }
-interface PageData { players: SLPlayer[]; total: number; page: number; pages: number; sl_logos: Record<string, string>; team_logos: Record<string, string>; team_colours: Record<string, TeamColour> }
+interface PageData { players: SLPlayer[]; total: number; page: number; pages: number; teams: string[]; sl_logos: Record<string, string>; team_logos: Record<string, string>; team_colours: Record<string, TeamColour> }
 
 const STAT_COLS: [keyof SLPlayer, string, number][] = [
   ['disposals', 'DIS', 0], ['kicks', 'KCK', 0], ['marks', 'MRK', 0],
@@ -431,7 +431,7 @@ export function ScoutingPage() {
 
   const fetchData = useCallback(() => {
     // Don't fetch until we have a season set (wait for comps to load)
-    if (!season && comps.length === 0) return
+    if (!season) return
     setLoading(true)
     const params = new URLSearchParams()
     if (comp) params.set('comp', comp)
@@ -493,7 +493,7 @@ export function ScoutingPage() {
             style={{ minWidth: 140 }} />
           <select value={teamFilter} onChange={e => { setTeamFilter(e.target.value); setPage(1) }}>
             <option value="">All Teams</option>
-            {data && [...new Set(data.players.map(p => p.team))].filter(Boolean).sort().map(t =>
+            {data?.teams?.map(t =>
               <option key={t} value={t}>{t}</option>
             )}
           </select>

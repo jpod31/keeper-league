@@ -36,10 +36,16 @@
 {# ── Filter bar ── #}
 <div class="an-filter-bar">
   <span style="font-size:.75rem;color:#6e7681;font-weight:600;">Period:</span>
-  <button class="an-filter-btn" data-days="7" onclick="setDays(7)">7d</button>
-  <button class="an-filter-btn active" data-days="30" onclick="setDays(30)">30d</button>
-  <button class="an-filter-btn" data-days="90" onclick="setDays(90)">90d</button>
-  <button class="an-filter-btn" data-days="365" onclick="setDays(365)">All</button>
+  <button class="an-filter-btn" data-preset="yesterday" onclick="setPreset('yesterday')">Yesterday</button>
+  <button class="an-filter-btn" data-preset="7" onclick="setPreset(7)">7d</button>
+  <button class="an-filter-btn active" data-preset="30" onclick="setPreset(30)">30d</button>
+  <button class="an-filter-btn" data-preset="90" onclick="setPreset(90)">90d</button>
+  <button class="an-filter-btn" data-preset="365" onclick="setPreset(365)">All</button>
+  <span style="width:1px;height:20px;background:#30363d;margin:0 4px;"></span>
+  <input type="date" id="rangeStart" style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;font-size:.75rem;padding:4px 8px;color-scheme:dark;">
+  <span style="font-size:.7rem;color:#6e7681;">to</span>
+  <input type="date" id="rangeEnd" style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;font-size:.75rem;padding:4px 8px;color-scheme:dark;">
+  <button class="an-filter-btn" onclick="applyCustomRange()">Apply</button>
   <span style="width:1px;height:20px;background:#30363d;margin:0 4px;"></span>
   <select id="userFilter" onchange="setUser(this.value)" style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;font-size:.75rem;padding:4px 8px;">
     <option value="">All Users</option>
@@ -47,14 +53,19 @@
     <option value="{{ u.id }}">{{ u.display_name or u.username }}</option>
     {% endfor %}
   </select>
+  <label style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:#c9d1d9;cursor:pointer;">
+    <input type="checkbox" id="excludeJpod" onchange="setExcludeJpod(this.checked)" style="cursor:pointer;">
+    Exclude jpod31
+  </label>
 </div>
 
 {# ── Summary cards ── #}
-<div class="row g-3 mb-3" id="summary-cards">
-  <div class="col-6 col-md-3"><div class="an-card an-stat"><div class="an-stat-val" style="color:#58a6ff;" id="s-views">-</div><div class="an-stat-lbl">Page Views</div><div class="an-stat-delta" id="s-delta"></div></div></div>
-  <div class="col-6 col-md-3"><div class="an-card an-stat"><div class="an-stat-val" style="color:#3fb950;" id="s-users">-</div><div class="an-stat-lbl">Unique Users</div></div></div>
-  <div class="col-6 col-md-3"><div class="an-card an-stat"><div class="an-stat-val" style="color:#d2a8ff;" id="s-daily">-</div><div class="an-stat-lbl">Avg / Day</div></div></div>
-  <div class="col-6 col-md-3"><div class="an-card an-stat"><div class="an-stat-val" id="s-device">-</div><div class="an-stat-lbl">Mobile %</div></div></div>
+<div class="row row-cols-2 row-cols-md-5 g-3 mb-3" id="summary-cards">
+  <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#58a6ff;" id="s-views">-</div><div class="an-stat-lbl">Page Views</div><div class="an-stat-delta" id="s-delta"></div></div></div>
+  <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#f0883e;" id="s-sessions">-</div><div class="an-stat-lbl">Sessions</div></div></div>
+  <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#3fb950;" id="s-users">-</div><div class="an-stat-lbl">Unique Users</div></div></div>
+  <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#d2a8ff;" id="s-daily">-</div><div class="an-stat-lbl">Avg / Day</div></div></div>
+  <div class="col"><div class="an-card an-stat"><div class="an-stat-val" id="s-device">-</div><div class="an-stat-lbl">Mobile %</div></div></div>
 </div>
 
 {# ── Daily views + unique users chart ── #}
@@ -100,25 +111,59 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
-var _days = 30, _userId = '', _charts = {};
+var _days = 30, _userId = '', _excludeJpod = false, _start = null, _end = null, _charts = {};
 var API = "{{ url_for('admin.analytics_api') }}";
 
-function setDays(d) {
-  _days = d;
-  document.querySelectorAll('.an-filter-btn').forEach(function(b) { b.classList.toggle('active', parseInt(b.dataset.days) === d); });
+function _setActiveBtn(presetVal) {
+  document.querySelectorAll('.an-filter-btn[data-preset]').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.preset === String(presetVal));
+  });
+}
+
+function setPreset(p) {
+  _start = null; _end = null;
+  document.getElementById('rangeStart').value = '';
+  document.getElementById('rangeEnd').value = '';
+  if (p === 'yesterday') {
+    var y = new Date(); y.setDate(y.getDate() - 1);
+    var iso = y.toISOString().slice(0, 10);
+    _start = iso; _end = iso; _days = 1;
+  } else {
+    _days = p;
+  }
+  _setActiveBtn(p);
   load();
 }
+
+function applyCustomRange() {
+  var s = document.getElementById('rangeStart').value;
+  var e = document.getElementById('rangeEnd').value;
+  if (!s || !e) { alert('Pick a start and end date.'); return; }
+  if (s > e) { alert('Start date must be on or before end date.'); return; }
+  _start = s; _end = e;
+  _setActiveBtn(null);  // clear preset highlight
+  load();
+}
+
 function setUser(uid) { _userId = uid; load(); }
+function setExcludeJpod(checked) { _excludeJpod = checked; load(); }
 
 function load() {
-  var url = API + '?days=' + _days;
-  if (_userId) url += '&user_id=' + _userId;
-  fetch(url).then(function(r){return r.json()}).then(render);
+  var params = [];
+  if (_start && _end) {
+    params.push('start=' + _start, 'end=' + _end);
+  } else {
+    params.push('days=' + _days);
+  }
+  if (_userId) params.push('user_id=' + _userId);
+  if (_excludeJpod) params.push('exclude_jpod=true');
+  fetch(API + '?' + params.join('&')).then(function(r){return r.json()}).then(render);
 }
 
 function render(d) {
   // Summary
   document.getElementById('s-views').textContent = d.summary.total_views.toLocaleString();
+  document.getElementById('s-sessions').textContent = (d.summary.total_sessions || 0).toLocaleString();
   document.getElementById('s-users').textContent = d.summary.unique_users;
   document.getElementById('s-daily').textContent = d.summary.avg_daily;
   var mob = d.device.mobile, desk = d.device.desktop, total = mob + desk || 1;

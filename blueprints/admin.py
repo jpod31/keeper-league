@@ -191,40 +191,62 @@ def analytics_api():
     now = datetime.now(timezone.utc)
     days = request.args.get("days", 30, type=int)
     user_filter = request.args.get("user_id", None, type=int)
-    cutoff = now - timedelta(days=days)
+    exclude_jpod = request.args.get("exclude_jpod", "false").lower() == "true"
+    start_arg = request.args.get("start")
+    end_arg = request.args.get("end")
 
-    base_q = PageView.query.filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
-    if user_filter:
-        base_q = base_q.filter(PageView.user_id == user_filter)
+    # Resolve date range — custom start/end overrides days
+    if start_arg and end_arg:
+        try:
+            start_dt = datetime.strptime(start_arg, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            # end is inclusive — extend to end-of-day
+            end_dt = (datetime.strptime(end_arg, "%Y-%m-%d") + timedelta(days=1)).replace(tzinfo=timezone.utc)
+            days = max((end_dt - start_dt).days, 1)
+        except ValueError:
+            start_dt = now - timedelta(days=days)
+            end_dt = now
+    else:
+        start_dt = now - timedelta(days=days)
+        end_dt = now
+
+    # Resolve jpod31 user_id (None if user doesn't exist)
+    jpod_id = None
+    if exclude_jpod:
+        jpod = User.query.filter(User.username == "jpod31").first()
+        if jpod:
+            jpod_id = jpod.id
+
+    def _scope(q):
+        """Apply common filters to any PageView query."""
+        q = q.filter(PageView.timestamp >= start_dt,
+                     PageView.timestamp < end_dt,
+                     PageView.user_id.isnot(None))
+        if user_filter:
+            q = q.filter(PageView.user_id == user_filter)
+        elif jpod_id:
+            q = q.filter(PageView.user_id != jpod_id)
+        return q
+
+    base_q = _scope(PageView.query)
 
     # Daily views
-    daily = (
+    daily = _scope(
         db.session.query(func.date(PageView.timestamp).label("day"), func.count(PageView.id))
-        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
-    )
-    if user_filter:
-        daily = daily.filter(PageView.user_id == user_filter)
-    daily = daily.group_by(func.date(PageView.timestamp)).order_by(func.date(PageView.timestamp)).all()
+    ).group_by(func.date(PageView.timestamp)).order_by(func.date(PageView.timestamp)).all()
 
     # Daily unique users
-    daily_users = (
+    daily_users = _scope(
         db.session.query(func.date(PageView.timestamp).label("day"), func.count(func.distinct(PageView.user_id)))
-        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
-        .group_by(func.date(PageView.timestamp)).order_by(func.date(PageView.timestamp)).all()
-    )
+    ).group_by(func.date(PageView.timestamp)).order_by(func.date(PageView.timestamp)).all()
 
     # Hour x Day heatmap
-    heatmap_q = (
+    heatmap_rows = _scope(
         db.session.query(
             func.strftime("%w", PageView.timestamp).label("dow"),
             func.strftime("%H", PageView.timestamp).label("hour"),
             func.count(PageView.id).label("count"),
         )
-        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
-    )
-    if user_filter:
-        heatmap_q = heatmap_q.filter(PageView.user_id == user_filter)
-    heatmap_rows = heatmap_q.group_by("dow", "hour").all()
+    ).group_by("dow", "hour").all()
     # Build 7x24 matrix (shifted to AEST +10)
     heatmap = [[0]*24 for _ in range(7)]
     for dow, hour, count in heatmap_rows:
@@ -232,18 +254,14 @@ def analytics_api():
         heatmap[int(dow)][aest_hour] = count
 
     # Per-user stats
-    user_rows = (
+    user_rows = _scope(
         db.session.query(
             PageView.user_id,
             func.count(PageView.id).label("views"),
             func.count(func.distinct(func.date(PageView.timestamp))).label("active_days"),
             func.max(PageView.timestamp).label("last_seen"),
         )
-        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
-        .group_by(PageView.user_id)
-        .order_by(func.count(PageView.id).desc())
-        .all()
-    )
+    ).group_by(PageView.user_id).order_by(func.count(PageView.id).desc()).all()
     uid_set = {r.user_id for r in user_rows}
     umap = {}
     if uid_set:
@@ -255,7 +273,8 @@ def analytics_api():
         # Per-user daily sparkline
         spark = (
             db.session.query(func.date(PageView.timestamp), func.count(PageView.id))
-            .filter(PageView.timestamp >= cutoff, PageView.user_id == r.user_id)
+            .filter(PageView.timestamp >= start_dt, PageView.timestamp < end_dt,
+                    PageView.user_id == r.user_id)
             .group_by(func.date(PageView.timestamp))
             .order_by(func.date(PageView.timestamp))
             .all()
@@ -277,13 +296,9 @@ def analytics_api():
         "Player Detail": "/player/", "Settings": "/settings", "Chat": "/chat",
         "Fixtures": "/fixture", "AFL Live": "/afl-live",
     }
-    feat_q = (
+    all_paths = _scope(
         db.session.query(PageView.path, func.count(PageView.id))
-        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
-    )
-    if user_filter:
-        feat_q = feat_q.filter(PageView.user_id == user_filter)
-    all_paths = feat_q.group_by(PageView.path).all()
+    ).group_by(PageView.path).all()
     features = {}
     for path, count in all_paths:
         for feat, pattern in feature_map.items():
@@ -295,40 +310,53 @@ def analytics_api():
     features = sorted(features.items(), key=lambda x: x[1], reverse=True)
 
     # Device split
-    ua_q = db.session.query(PageView.user_agent).filter(
-        PageView.timestamp >= cutoff, PageView.user_id.isnot(None), PageView.user_agent.isnot(None))
-    if user_filter:
-        ua_q = ua_q.filter(PageView.user_id == user_filter)
-    all_ua = ua_q.all()
+    all_ua = _scope(
+        db.session.query(PageView.user_agent).filter(PageView.user_agent.isnot(None))
+    ).all()
     mobile = sum(1 for (ua,) in all_ua if ua and any(k in ua for k in ("Mobile", "Android", "iPhone")))
     desktop = len(all_ua) - mobile
 
     # Top pages
-    top_q = (
+    top_pages = _scope(
         db.session.query(PageView.path, func.count(PageView.id).label("c"))
-        .filter(PageView.timestamp >= cutoff, PageView.user_id.isnot(None))
-    )
-    if user_filter:
-        top_q = top_q.filter(PageView.user_id == user_filter)
-    top_pages = top_q.group_by(PageView.path).order_by(func.count(PageView.id).desc()).limit(20).all()
+    ).group_by(PageView.path).order_by(func.count(PageView.id).desc()).limit(20).all()
+
+    # Total sessions — group page views per user, count gaps > 30 min as a new session
+    session_rows = _scope(
+        db.session.query(PageView.user_id, PageView.timestamp)
+    ).order_by(PageView.user_id, PageView.timestamp).all()
+    total_sessions = 0
+    last_uid, last_ts = None, None
+    for uid, ts in session_rows:
+        if uid != last_uid or (ts - last_ts).total_seconds() > 1800:
+            total_sessions += 1
+        last_uid, last_ts = uid, ts
 
     # Summary stats
     total_views = base_q.count()
-    unique_users = db.session.query(func.count(func.distinct(PageView.user_id))).filter(
-        PageView.timestamp >= cutoff, PageView.user_id.isnot(None)).scalar() or 0
+    unique_users = _scope(
+        db.session.query(func.count(func.distinct(PageView.user_id)))
+    ).scalar() or 0
     avg_daily = round(total_views / max(days, 1), 1)
 
-    # This period vs previous period comparison
-    prev_cutoff = cutoff - timedelta(days=days)
-    prev_views = PageView.query.filter(
-        PageView.timestamp >= prev_cutoff, PageView.timestamp < cutoff,
-        PageView.user_id.isnot(None)).count()
+    # This period vs previous period comparison (same length immediately before)
+    period_len = end_dt - start_dt
+    prev_start = start_dt - period_len
+    prev_q = PageView.query.filter(
+        PageView.timestamp >= prev_start, PageView.timestamp < start_dt,
+        PageView.user_id.isnot(None))
+    if user_filter:
+        prev_q = prev_q.filter(PageView.user_id == user_filter)
+    elif jpod_id:
+        prev_q = prev_q.filter(PageView.user_id != jpod_id)
+    prev_views = prev_q.count()
     change_pct = round((total_views - prev_views) / max(prev_views, 1) * 100, 1) if prev_views else 0
 
     return jsonify({
         "summary": {
             "total_views": total_views,
             "unique_users": unique_users,
+            "total_sessions": total_sessions,
             "avg_daily": avg_daily,
             "change_pct": change_pct,
             "prev_views": prev_views,
