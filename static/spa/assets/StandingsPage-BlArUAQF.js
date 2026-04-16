@@ -1,4 +1,4 @@
-import{f as e,i as t,n,t as r}from"./Spinner-BMQkvOc1.js";import{t as i}from"./useFetch-CYYrAUWd.js";import{t as a}from"./LeagueSubnav-CyqjT6mE.js";var o=n(),s=`
+import{f as e,i as t,n,t as r}from"./Spinner-CH0JZ6Tx.js";import{t as i}from"./useFetch-G9Y4hOkH.js";import{t as a}from"./LeagueSubnav-D8ssx1Ob.js";var o=n(),s=`
 .s7-title { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
 .s7-title h3 { font-size:1.1rem; font-weight:700; color:#e6edf3; margin:0; }
 .s7-title-badge { font-size:.6rem; font-weight:700; padding:3px 8px; border-radius:4px; background:rgba(188,140,255,.1); color:#bc8cff; letter-spacing:.5px; }

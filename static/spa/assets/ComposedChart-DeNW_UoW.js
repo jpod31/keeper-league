@@ -1,0 +1,1 @@
+import{h as e,v as t}from"./Spinner-CH0JZ6Tx.js";import{B as n,t as r}from"./CartesianChart-CkVQfWc6.js";var i=t(e()),a=[`axis`],o=(0,i.forwardRef)((e,t)=>i.createElement(r,{chartName:`ComposedChart`,defaultTooltipEventType:`axis`,validateTooltipEventTypes:a,tooltipPayloadSearcher:n,categoricalChartProps:e,ref:t}));export{o as t};
