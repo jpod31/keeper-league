@@ -792,10 +792,35 @@ def sevens_fixture(league_id):
     scoring = get_scoring_context(league)
 
     if request.args.get("format") == "json":
+        from models.database import Reserve7sLineup, ScScore
+
+        _prog_cache: dict[int, tuple[int, int]] = {}
+
+        def _progress(team_id: int) -> tuple[int, int]:
+            if team_id in _prog_cache:
+                return _prog_cache[team_id]
+            lineup = Reserve7sLineup.query.filter_by(
+                league_id=league_id, team_id=team_id,
+                afl_round=selected_round, year=year,
+            ).all()
+            total = len(lineup)
+            if total == 0:
+                _prog_cache[team_id] = (0, 0)
+                return (0, 0)
+            pids = [e.player_id for e in lineup]
+            played = ScScore.query.filter(
+                ScScore.year == year, ScScore.round == selected_round,
+                ScScore.player_id.in_(pids),
+            ).count()
+            _prog_cache[team_id] = (played, total)
+            return (played, total)
+
         def _ser_team(t):
             return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
 
         def _ser_fix(f):
+            hp, ht = _progress(f.home_team_id)
+            ap, at = _progress(f.away_team_id)
             return {
                 "id": f.id,
                 "home_team_id": f.home_team_id,
@@ -805,6 +830,10 @@ def sevens_fixture(league_id):
                 "home_score": f.home_score,
                 "away_score": f.away_score,
                 "status": f.status,
+                "home_played": hp,
+                "home_total": ht,
+                "away_played": ap,
+                "away_total": at,
             }
 
         return jsonify({

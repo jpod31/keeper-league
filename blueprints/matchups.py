@@ -81,10 +81,41 @@ def fixture_view(league_id):
 
     # ── JSON API mode for React SPA ──
     if request.args.get("format") == "json":
+        from models.database import WeeklyLineup, LineupSlot, ScScore
+
+        # Cache lineup progress (played/total) per team for the selected round
+        _progress_cache: dict[int, tuple[int, int]] = {}
+
+        def _lineup_progress(team_id: int) -> tuple[int, int]:
+            if team_id in _progress_cache:
+                return _progress_cache[team_id]
+            wl = WeeklyLineup.query.filter_by(
+                team_id=team_id, afl_round=selected_round, year=year
+            ).first()
+            if not wl:
+                _progress_cache[team_id] = (0, 0)
+                return (0, 0)
+            field_slots = [s for s in LineupSlot.query.filter_by(lineup_id=wl.id).all()
+                           if s.position_code != "BENCH"]
+            total = len(field_slots)
+            if total == 0:
+                _progress_cache[team_id] = (0, 0)
+                return (0, 0)
+            pids = [s.player_id for s in field_slots if s.player_id]
+            played = ScScore.query.filter(
+                ScScore.year == year,
+                ScScore.round == selected_round,
+                ScScore.player_id.in_(pids),
+            ).count() if pids else 0
+            _progress_cache[team_id] = (played, total)
+            return (played, total)
+
         def _ser_team(t):
             return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
 
         def _ser_fixture(f):
+            home_played, home_total = _lineup_progress(f.home_team_id)
+            away_played, away_total = _lineup_progress(f.away_team_id)
             return {
                 "id": f.id,
                 "home_team_id": f.home_team_id,
@@ -94,6 +125,10 @@ def fixture_view(league_id):
                 "home_score": f.home_score,
                 "away_score": f.away_score,
                 "status": f.status,
+                "home_played": home_played,
+                "home_total": home_total,
+                "away_played": away_played,
+                "away_total": away_total,
             }
 
         return jsonify({

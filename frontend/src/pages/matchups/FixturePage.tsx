@@ -15,6 +15,10 @@ interface Fixture {
   home_score: number | null
   away_score: number | null
   status: string
+  home_played?: number
+  home_total?: number
+  away_played?: number
+  away_total?: number
 }
 
 interface ScoringContext {
@@ -235,32 +239,45 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
               const to = isLiveRound
                 ? `${gamedayPath}?round=${selected_round}&fixture=${f.id}`
                 : matchupPathFor(f.id)
+              const isLive = f.status === 'live' || f.status === 'partial'
+              const homeLeading = isLive && (f.home_score || 0) > (f.away_score || 0)
+              const awayLeading = isLive && (f.away_score || 0) > (f.home_score || 0)
+              const showScore = f.status === 'completed' || isLive || (f.home_score != null && f.away_score != null)
+              const showProgress = isLive && f.home_total && f.away_total
               return (
                 <Link key={f.id}
                   to={to}
                   className="mx-row"
                   style={{ position: 'relative' }}>
-                  <span className={`mx-team mx-team-home${homeWon ? ' won' : ''}`}>
+                  <span className={`mx-team mx-team-home${homeWon || homeLeading ? ' won' : ''}`}>
                     {f.home_team?.name}
                   </span>
-                  <div className="mx-centre">
-                    {f.status === 'completed' ? (
-                      <>
-                        <span className={`mx-sc${homeWon ? ' won' : awayWon ? ' lost' : ' draw'}`}>
+                  <div className="mx-centre" style={{ flexDirection: 'column', gap: 2 }}>
+                    {showScore ? (
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className={`mx-sc${homeWon || homeLeading ? ' won' : awayWon || awayLeading ? ' lost' : ' draw'}`}>
                           {Math.round(f.home_score || 0)}
                         </span>
                         <span className="mx-sep">&ndash;</span>
-                        <span className={`mx-sc${awayWon ? ' won' : homeWon ? ' lost' : ' draw'}`}>
+                        <span className={`mx-sc${awayWon || awayLeading ? ' won' : homeWon || homeLeading ? ' lost' : ' draw'}`}>
                           {Math.round(f.away_score || 0)}
                         </span>
-                      </>
-                    ) : f.status === 'live' ? (
-                      <span className="mx-live-tag"><i className="bi bi-broadcast me-1"></i>LIVE</span>
+                      </div>
                     ) : (
                       <span className="mx-vs">vs</span>
                     )}
+                    {isLive && (
+                      <span className="mx-live-tag" style={{ fontSize: '.55rem' }}>
+                        <i className="bi bi-broadcast me-1"></i>LIVE
+                      </span>
+                    )}
+                    {showProgress && (
+                      <span style={{ fontSize: '.62rem', color: '#6e7681', fontVariantNumeric: 'tabular-nums' }}>
+                        {f.home_played}/{f.home_total} · {f.away_played}/{f.away_total} played
+                      </span>
+                    )}
                   </div>
-                  <span className={`mx-team mx-team-away${awayWon ? ' won' : ''}`}>
+                  <span className={`mx-team mx-team-away${awayWon || awayLeading ? ' won' : ''}`}>
                     {f.away_team?.name}
                   </span>
                   <div className="mx-arrow">
