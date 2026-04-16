@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { PageLoader } from '../../components/ui/PageLoader'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
@@ -224,7 +224,7 @@ export function PlayerPoolPage() {
     }
   }
 
-  if (loading) return <Spinner text="Loading player pool..." />
+  if (loading) return <PageLoader text="Loading player pool..." />
   if (!data) return <p className="text-danger">Failed to load player pool</p>
 
   const { league, team_colours, can_pickup, effective_roster_count, ltil_count, ssp_cutoff_round } = data
