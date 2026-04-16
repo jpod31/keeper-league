@@ -517,7 +517,7 @@ def sevens_gameday(league_id):
                 ScScore.year == year, ScScore.round == afl_round,
                 ScScore.player_id.in_(pids),
             ).all()
-            actual = {r.player_id: (r.score or 0) for r in actual_rows}
+            actual = {r.player_id: (r.sc_score or 0) for r in actual_rows}
             players = {p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_(pids)).all()}
 
             total = 0.0

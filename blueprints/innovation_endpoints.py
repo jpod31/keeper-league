@@ -16,7 +16,7 @@ def register_innovation_endpoints(spa_api):
     @login_required
     def round_recap(league_id, team_id):
         """End-of-round recap for a specific team + league-wide notables."""
-        from models.scoring_engine import get_current_afl_round
+        from scrapers.squiggle import get_current_round
 
         league = db.session.get(League, league_id)
         team = db.session.get(FantasyTeam, team_id)
@@ -24,7 +24,7 @@ def register_innovation_endpoints(spa_api):
             return jsonify({"error": "Not found"}), 404
 
         year = league.season_year
-        current_round = get_current_afl_round(year)
+        current_round = get_current_round(year) or 1
         recap_round = current_round - 1 if current_round > 1 else 1
 
         fx = Fixture.query.filter_by(league_id=league_id, year=year, afl_round=recap_round).all()
@@ -69,7 +69,7 @@ def register_innovation_endpoints(spa_api):
             sc_rows = ScScore.query.filter(
                 ScScore.player_id.in_(pids), ScScore.year == year, ScScore.round == recap_round
             ).all() if pids else []
-            sc_map = {s.player_id: s.score for s in sc_rows}
+            sc_map = {s.player_id: s.sc_score for s in sc_rows}
             scored = []
             for s in slot_rows:
                 if s.position_code == "BENCH":
@@ -152,7 +152,7 @@ def register_innovation_endpoints(spa_api):
             sc_rows = ScScore.query.filter(
                 ScScore.year == year, ScScore.round == rnd, ScScore.player_id.in_(pids),
             ).all() if pids else []
-            sc_done = {r.player_id: r.score for r in sc_rows}
+            sc_done = {r.player_id: r.sc_score for r in sc_rows}
             scored_so_far = 0.0
             remaining_means = []
             remaining_sds = []
@@ -163,8 +163,8 @@ def register_innovation_endpoints(spa_api):
                 if s.player_id in sc_done:
                     scored_so_far += (sc_done[s.player_id] or 0) * mult
                 else:
-                    hist = [ps.score for ps in PlayerStat.query.filter_by(player_id=s.player_id, year=year).all()
-                            if ps.score is not None]
+                    hist = [ps.supercoach_score for ps in PlayerStat.query.filter_by(player_id=s.player_id, year=year).all()
+                            if ps.supercoach_score is not None]
                     ap = db.session.get(AflPlayer, s.player_id)
                     if hist:
                         mean = statistics.mean(hist)

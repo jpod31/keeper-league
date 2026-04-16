@@ -294,8 +294,8 @@ def gameday(league_id):
     if not league:
         return jsonify({"error": "Not found"}), 404
 
-    from models.scoring_engine import get_current_afl_round
-    current_round = get_current_afl_round(league.season_year)
+    from scrapers.squiggle import get_current_round
+    current_round = get_current_round(league.season_year) or 1
 
     fixtures = Fixture.query.filter_by(
         league_id=league_id, year=league.season_year, afl_round=current_round
