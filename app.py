@@ -566,11 +566,41 @@ def create_app():
         return render_template("errors/403.html"), 403
 
     # ── Request logging (analytics) ──────────────────────────────────
+    # Only count genuine page navigations, not polling/API/bot probes.
+    _BOT_PATH_PREFIXES = (
+        "/wp-admin", "/wp-login", "/wordpress", "/.env", "/.git",
+        "/phpmyadmin", "/admin.php", "/vendor/", "/cgi-bin/",
+    )
+    _ANALYTICS_SKIP_PREFIXES = (
+        "/static/", "/socket.io/", "/sw.js", "/manifest.json",
+        "/push/", "/auth/api/",
+    )
+
     @app.after_request
     def log_page_view(response):
-        """Record every non-static request to PageView for analytics."""
+        """Record genuine HTML page navigations to PageView for analytics."""
         path = request.path
-        if path.startswith("/static/") or path == "/favicon.ico":
+        # Method filter — only GETs count
+        if request.method != "GET":
+            return response
+        # Skip asset-like paths
+        if path == "/favicon.ico" or path.endswith((".js", ".css", ".png", ".svg", ".ico", ".json", ".map", ".woff", ".woff2")):
+            return response
+        # Skip static / ws / api / push
+        if any(path.startswith(p) for p in _ANALYTICS_SKIP_PREFIXES):
+            return response
+        # Skip any path with /api/ anywhere (catches /leagues/X/draft/api/foo)
+        if "/api/" in path:
+            return response
+        # Skip bot-probe paths
+        if any(path.startswith(p) for p in _BOT_PATH_PREFIXES):
+            return response
+        # Skip non-success responses (4xx/5xx) — login bounces, errors, bot 404s
+        if not (200 <= response.status_code < 400):
+            return response
+        # Only log responses that are actually HTML pages
+        ctype = response.headers.get("Content-Type", "")
+        if not ctype.startswith("text/html"):
             return response
         try:
             import hashlib

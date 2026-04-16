@@ -327,16 +327,86 @@ def analytics_api():
         db.session.query(PageView.path, func.count(PageView.id).label("c"))
     ).group_by(PageView.path).order_by(func.count(PageView.id).desc()).limit(20).all()
 
-    # Total sessions — group page views per user, count gaps > 30 min as a new session
+    # Total sessions — group page views per user, count gaps > 30 min as a new session.
+    # Also track session sizes for bounce rate + pages-per-session.
     session_rows = _scope(
         db.session.query(PageView.user_id, PageView.timestamp)
     ).order_by(PageView.user_id, PageView.timestamp).all()
     total_sessions = 0
+    session_sizes = []  # views per session
+    current_size = 0
     last_uid, last_ts = None, None
     for uid, ts in session_rows:
-        if uid != last_uid or (ts - last_ts).total_seconds() > 1800:
+        new_session = (uid != last_uid) or (ts - last_ts).total_seconds() > 1800
+        if new_session:
+            if current_size:
+                session_sizes.append(current_size)
             total_sessions += 1
+            current_size = 1
+        else:
+            current_size += 1
         last_uid, last_ts = uid, ts
+    if current_size:
+        session_sizes.append(current_size)
+    pages_per_session = round(sum(session_sizes) / max(len(session_sizes), 1), 2) if session_sizes else 0
+    single_page_sessions = sum(1 for s in session_sizes if s == 1)
+    bounce_rate = round(single_page_sessions / max(len(session_sizes), 1) * 100, 1) if session_sizes else 0
+
+    # ── Page coverage: normalize paths (replace numeric IDs), count views per pattern ──
+    import re as _re
+    _ID_PATTERN = _re.compile(r"/\d+(?=/|$)")
+
+    def _normalize(p):
+        return _ID_PATTERN.sub("/:id", p)
+
+    path_rows = _scope(
+        db.session.query(PageView.path, func.count(PageView.id).label("c"),
+                         func.count(func.distinct(PageView.user_id)).label("uu"),
+                         func.max(PageView.timestamp).label("last"))
+    ).group_by(PageView.path).all()
+
+    coverage_map = {}
+    for p, c, uu, last in path_rows:
+        key = _normalize(p)
+        entry = coverage_map.setdefault(key, {"path": key, "views": 0, "unique_users": 0, "last_seen_ts": None})
+        entry["views"] += c
+        entry["unique_users"] = max(entry["unique_users"], uu or 0)  # approx — distinct per raw path, not quite right but usable
+        if last and (entry["last_seen_ts"] is None or last > entry["last_seen_ts"]):
+            entry["last_seen_ts"] = last
+
+    # Compute total views across coverage so we can show % of traffic per page
+    coverage_total = sum(e["views"] for e in coverage_map.values()) or 1
+
+    # Add entries for routes that exist in the app but have 0 views in this period,
+    # so they appear alongside low-traffic pages in the coverage table.
+    from flask import current_app
+    viewed_keys = set(coverage_map.keys())
+    _SKIP_RULE_PREFIXES = ("/static", "/api/", "/auth/api", "/push/", "/socket.io", "/admin/")
+    for rule in current_app.url_map.iter_rules():
+        if "GET" not in rule.methods:
+            continue
+        pattern = rule.rule
+        if any(pattern.startswith(p) for p in _SKIP_RULE_PREFIXES):
+            continue
+        if "/api/" in pattern or "_debug" in pattern:
+            continue
+        norm = _re.sub(r"<[^>]+>", ":id", pattern)
+        if norm in viewed_keys:
+            continue
+        coverage_map[norm] = {"path": norm, "views": 0, "unique_users": 0, "last_seen_ts": None}
+
+    # Format last-seen timestamps, attach pct-of-traffic, finalise
+    coverage = []
+    for entry in coverage_map.values():
+        last_ts_val = entry.pop("last_seen_ts")
+        if last_ts_val:
+            last_aest = (last_ts_val.replace(tzinfo=timezone.utc) if last_ts_val.tzinfo is None else last_ts_val).astimezone(_AEST)
+            entry["last_seen"] = last_aest.strftime("%d %b %H:%M")
+        else:
+            entry["last_seen"] = ""
+        entry["pct_of_traffic"] = round(entry["views"] / coverage_total * 100, 2)
+        coverage.append(entry)
+    coverage.sort(key=lambda e: e["views"], reverse=True)
 
     # Summary stats
     total_views = base_q.count()
@@ -363,6 +433,8 @@ def analytics_api():
             "total_views": total_views,
             "unique_users": unique_users,
             "total_sessions": total_sessions,
+            "pages_per_session": pages_per_session,
+            "bounce_rate": bounce_rate,
             "avg_daily": avg_daily,
             "change_pct": change_pct,
             "prev_views": prev_views,
@@ -374,6 +446,7 @@ def analytics_api():
         "features": features,
         "device": {"mobile": mobile, "desktop": desktop},
         "top_pages": [{"path": p, "views": c} for p, c in top_pages],
+        "page_coverage": coverage,
     })
 
 

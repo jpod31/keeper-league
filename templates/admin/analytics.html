@@ -59,51 +59,77 @@
   </label>
 </div>
 
-{# ── Summary cards ── #}
-<div class="row row-cols-2 row-cols-md-5 g-3 mb-3" id="summary-cards">
+{# ── Summary cards — tight 7-in-a-row layout ── #}
+<div class="row row-cols-2 row-cols-md-4 row-cols-xl-7 g-2 mb-3" id="summary-cards">
   <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#58a6ff;" id="s-views">-</div><div class="an-stat-lbl">Page Views</div><div class="an-stat-delta" id="s-delta"></div></div></div>
   <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#f0883e;" id="s-sessions">-</div><div class="an-stat-lbl">Sessions</div></div></div>
   <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#3fb950;" id="s-users">-</div><div class="an-stat-lbl">Unique Users</div></div></div>
+  <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#bc8cff;" id="s-pps">-</div><div class="an-stat-lbl">Pages / Session</div></div></div>
+  <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#d29922;" id="s-bounce">-</div><div class="an-stat-lbl">Bounce %</div></div></div>
   <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#d2a8ff;" id="s-daily">-</div><div class="an-stat-lbl">Avg / Day</div></div></div>
   <div class="col"><div class="an-card an-stat"><div class="an-stat-val" id="s-device">-</div><div class="an-stat-lbl">Mobile %</div></div></div>
 </div>
 
-{# ── Daily views + unique users chart ── #}
-<div class="an-card mb-3">
-  <div class="an-card-hdr"><h6><i class="bi bi-graph-up me-2"></i>Traffic</h6></div>
-  <div class="an-card-body"><canvas id="trafficChart" height="90"></canvas></div>
+{# ── Traffic chart + Devices side-by-side ── #}
+<div class="row g-3 mb-3">
+  <div class="col-lg-9">
+    <div class="an-card h-100">
+      <div class="an-card-hdr"><h6><i class="bi bi-graph-up me-2"></i>Traffic</h6></div>
+      <div class="an-card-body"><canvas id="trafficChart" height="80"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="an-card h-100">
+      <div class="an-card-hdr"><h6><i class="bi bi-phone me-2"></i>Devices</h6></div>
+      <div class="an-card-body text-center" style="padding:8px;"><canvas id="deviceChart" height="150"></canvas></div>
+    </div>
+  </div>
 </div>
 
-{# ── Heatmap + Device + Features ── #}
+{# ── Heatmap + Features side-by-side ── #}
 <div class="row g-3 mb-3">
   <div class="col-lg-8">
-    <div class="an-card">
+    <div class="an-card h-100">
       <div class="an-card-hdr"><h6><i class="bi bi-grid-3x3 me-2"></i>Activity Heatmap (AEST)</h6></div>
       <div class="an-card-body" style="overflow-x:auto;"><div id="heatmap" class="an-heatmap"></div></div>
     </div>
   </div>
   <div class="col-lg-4">
-    <div class="an-card mb-3">
-      <div class="an-card-hdr"><h6><i class="bi bi-phone me-2"></i>Devices</h6></div>
-      <div class="an-card-body text-center"><canvas id="deviceChart" height="140"></canvas></div>
-    </div>
-    <div class="an-card">
+    <div class="an-card h-100">
       <div class="an-card-hdr"><h6><i class="bi bi-grid me-2"></i>Features</h6></div>
-      <div class="an-card-body p-0" id="feature-list" style="max-height:200px;overflow-y:auto;"></div>
+      <div class="an-card-body p-0" id="feature-list" style="max-height:280px;overflow-y:auto;"></div>
     </div>
   </div>
 </div>
 
-{# ── User engagement table ── #}
-<div class="an-card mb-3">
-  <div class="an-card-hdr"><h6><i class="bi bi-people me-2"></i>User Engagement</h6></div>
-  <div class="an-card-body p-0" id="user-table" style="max-height:400px;overflow-y:auto;"></div>
+{# ── User engagement + Top pages side-by-side ── #}
+<div class="row g-3 mb-3">
+  <div class="col-lg-7">
+    <div class="an-card h-100">
+      <div class="an-card-hdr"><h6><i class="bi bi-people me-2"></i>User Engagement</h6></div>
+      <div class="an-card-body p-0" id="user-table" style="max-height:360px;overflow-y:auto;"></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="an-card h-100">
+      <div class="an-card-hdr"><h6><i class="bi bi-fire me-2"></i>Top Pages</h6></div>
+      <div class="an-card-body p-0" id="top-pages" style="max-height:360px;overflow-y:auto;"></div>
+    </div>
+  </div>
 </div>
 
-{# ── Top pages ── #}
+{# ── Page coverage: every route + % of traffic, sortable ── #}
 <div class="an-card mb-3">
-  <div class="an-card-hdr"><h6><i class="bi bi-fire me-2"></i>Top Pages</h6></div>
-  <div class="an-card-body p-0" id="top-pages" style="max-height:350px;overflow-y:auto;"></div>
+  <div class="an-card-hdr" style="display:flex;align-items:center;gap:12px;">
+    <h6 style="margin:0;"><i class="bi bi-stack me-2"></i>Page Coverage</h6>
+    <span style="font-size:.7rem;color:#6e7681;">Every route in the app with its share of traffic. Click a column to sort.</span>
+    <span style="flex:1;"></span>
+    <label style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#c9d1d9;cursor:pointer;">
+      <input type="checkbox" id="showLowTrafficOnly" onchange="renderCoverage()" style="cursor:pointer;">
+      Show only &lt; 1% of traffic
+    </label>
+  </div>
+  <div class="an-card-body p-0" id="coverage-table" style="max-height:420px;overflow-y:auto;"></div>
 </div>
 
 {% endblock %}
@@ -165,6 +191,8 @@ function render(d) {
   document.getElementById('s-views').textContent = d.summary.total_views.toLocaleString();
   document.getElementById('s-sessions').textContent = (d.summary.total_sessions || 0).toLocaleString();
   document.getElementById('s-users').textContent = d.summary.unique_users;
+  document.getElementById('s-pps').textContent = d.summary.pages_per_session != null ? d.summary.pages_per_session : '-';
+  document.getElementById('s-bounce').textContent = d.summary.bounce_rate != null ? d.summary.bounce_rate + '%' : '-';
   document.getElementById('s-daily').textContent = d.summary.avg_daily;
   var mob = d.device.mobile, desk = d.device.desktop, total = mob + desk || 1;
   document.getElementById('s-device').textContent = Math.round(mob / total * 100) + '%';
@@ -263,6 +291,63 @@ function render(d) {
         +'<td class="text-end fw-semibold" style="padding:6px 16px;">'+p.views+'</td></tr>';
     }).join('')
     + '</tbody></table>';
+
+  // Stash coverage data globally so sort/filter can re-render without re-fetching
+  _coverage = d.page_coverage || [];
+  _coverageSort = { key: 'views', dir: 'desc' };
+  renderCoverage();
+}
+
+var _coverage = [], _coverageSort = { key: 'views', dir: 'desc' };
+
+function sortCoverage(key) {
+  if (_coverageSort.key === key) {
+    _coverageSort.dir = _coverageSort.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    _coverageSort.key = key;
+    _coverageSort.dir = (key === 'path') ? 'asc' : 'desc';
+  }
+  renderCoverage();
+}
+
+function renderCoverage() {
+  var ct = document.getElementById('coverage-table');
+  if (!ct) return;
+  var rows = _coverage.slice();
+  var lowOnly = document.getElementById('showLowTrafficOnly');
+  if (lowOnly && lowOnly.checked) {
+    rows = rows.filter(function(r){ return r.pct_of_traffic < 1; });
+  }
+  var k = _coverageSort.key, dir = _coverageSort.dir === 'desc' ? -1 : 1;
+  rows.sort(function(a, b){
+    var av = a[k], bv = b[k];
+    if (typeof av === 'string') return av.localeCompare(bv) * dir;
+    return (av - bv) * dir;
+  });
+  function arrow(col) {
+    return _coverageSort.key === col ? (_coverageSort.dir === 'desc' ? ' ▼' : ' ▲') : '';
+  }
+  var hdrStyle = 'padding:6px 12px;cursor:pointer;user-select:none;color:#8b949e;font-weight:600;text-transform:uppercase;font-size:.65rem;letter-spacing:.5px;';
+  var html = '<table class="table table-sm table-dark mb-0" style="font-size:.78rem;"><thead><tr>'
+    + '<th style="'+hdrStyle+'" onclick="sortCoverage(\'path\')">Path'+arrow('path')+'</th>'
+    + '<th style="'+hdrStyle+'text-align:right;" onclick="sortCoverage(\'views\')">Views'+arrow('views')+'</th>'
+    + '<th style="'+hdrStyle+'text-align:right;" onclick="sortCoverage(\'pct_of_traffic\')">% of Traffic'+arrow('pct_of_traffic')+'</th>'
+    + '<th style="'+hdrStyle+'text-align:right;" onclick="sortCoverage(\'last_seen\')">Last Visited'+arrow('last_seen')+'</th>'
+    + '</tr></thead><tbody>';
+  if (!rows.length) {
+    html += '<tr><td colspan="4" style="padding:20px;text-align:center;color:#6e7681;">No pages match the filter.</td></tr>';
+  } else {
+    rows.forEach(function(r){
+      var pctCol = r.views === 0 ? '#6e7681' : (r.pct_of_traffic < 0.5 ? '#d29922' : r.pct_of_traffic < 2 ? '#c9d1d9' : '#3fb950');
+      var viewsStyle = r.views === 0 ? 'color:#6e7681;font-style:italic;' : 'font-weight:600;';
+      html += '<tr><td style="padding:5px 12px;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c9d1d9;">'+r.path+'</td>'
+        + '<td style="padding:5px 12px;text-align:right;'+viewsStyle+'">'+(r.views === 0 ? 'never' : r.views.toLocaleString())+'</td>'
+        + '<td style="padding:5px 12px;text-align:right;font-weight:600;color:'+pctCol+';">'+r.pct_of_traffic.toFixed(2)+'%</td>'
+        + '<td style="padding:5px 12px;text-align:right;color:#6e7681;font-size:.72rem;">'+(r.last_seen || '—')+'</td></tr>';
+    });
+  }
+  html += '</tbody></table>';
+  ct.innerHTML = html;
 }
 
 // Initial load
