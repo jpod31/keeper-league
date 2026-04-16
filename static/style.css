@@ -328,6 +328,51 @@
   50% { transform: scale(.85); opacity: .5; }
 }
 
+/* ── Inline variant — big pulsing loader embedded in page content ── */
+.kl-loader-inline {
+  position: relative;
+  min-height: 420px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  transition: opacity .3s ease;
+}
+.kl-loader-inline .kl-loader-inner {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.kl-loader-inline .kl-loader-logo {
+  width: min(40vw, 180px);
+  height: min(40vw, 180px);
+  animation: loaderPulse 2.4s ease-in-out infinite;
+  position: relative; z-index: 2;
+}
+.kl-loader-inline .kl-loader-glow {
+  position: absolute; inset: 0;
+  z-index: 1; pointer-events: none;
+}
+.kl-loader-inline .kl-loader-glow::before,
+.kl-loader-inline .kl-loader-glow::after {
+  content: ''; position: absolute; border-radius: 50%;
+  filter: blur(80px);
+  width: 70%; height: 70%;
+}
+.kl-loader-inline .kl-loader-glow::before {
+  top: -10%; left: -10%;
+  background: rgba(63,185,80,.28);
+  animation: glowGreen 3s ease-in-out infinite;
+}
+.kl-loader-inline .kl-loader-glow::after {
+  bottom: -10%; right: -10%;
+  background: rgba(31,111,235,.28);
+  animation: glowBlue 3s ease-in-out infinite;
+}
+.kl-loader-inline.kl-loader-hidden {
+  display: none;
+}
+
 /* ── Typography ── */
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;

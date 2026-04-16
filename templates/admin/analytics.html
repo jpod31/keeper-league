@@ -60,6 +60,17 @@
   </label>
 </div>
 
+{# ── Inline loader — shown while data is loading ── #}
+<div id="an-loader" class="kl-loader-inline kl-loader-hidden" style="margin-bottom:16px;">
+  <div class="kl-loader-glow"></div>
+  <div class="kl-loader-inner">
+    <img src="{{ url_for('static', filename='icons/kl-logo.png') }}" alt="Loading" class="kl-loader-logo">
+  </div>
+</div>
+
+{# ── Content wrapper — hidden while loading ── #}
+<div id="an-content">
+
 {# ── Summary cards — tight 7-in-a-row layout ── #}
 <div class="row row-cols-2 row-cols-md-4 row-cols-xl-7 g-2 mb-3" id="summary-cards">
   <div class="col"><div class="an-card an-stat"><div class="an-stat-val" style="color:#58a6ff;" id="s-views">-</div><div class="an-stat-lbl">Page Views</div><div class="an-stat-delta" id="s-delta"></div></div></div>
@@ -133,6 +144,8 @@
   <div class="an-card-body p-0" id="coverage-table" style="max-height:420px;overflow-y:auto;"></div>
 </div>
 
+</div>{# end of #an-content #}
+
 {% endblock %}
 
 {% block scripts %}
@@ -188,7 +201,21 @@ function load() {
   }
   if (_userId) params.push('user_id=' + _userId);
   if (_excludeJpod) params.push('exclude_jpod=true');
-  fetch(API + '?' + params.join('&')).then(function(r){return r.json()}).then(render);
+
+  var loader = document.getElementById('an-loader');
+  var content = document.getElementById('an-content');
+  if (loader) loader.classList.remove('kl-loader-hidden');
+  if (content) content.style.visibility = 'hidden';
+
+  fetch(API + '?' + params.join('&')).then(function(r){return r.json()}).then(function(d){
+    render(d);
+    if (loader) loader.classList.add('kl-loader-hidden');
+    if (content) content.style.visibility = 'visible';
+  }).catch(function(err){
+    if (loader) loader.classList.add('kl-loader-hidden');
+    if (content) content.style.visibility = 'visible';
+    console.error('analytics load failed', err);
+  });
 }
 
 function render(d) {
