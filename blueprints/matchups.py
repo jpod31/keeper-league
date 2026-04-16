@@ -863,11 +863,31 @@ def api_gameday_fixtures(league_id):
     round_fixtures = get_round_fixtures(league_id, year, afl_round)
     locked_ids = get_locked_player_ids(afl_round, year)
 
-    # Teams playing this round (needed for projections)
+    # Teams playing this round (needed for projections + sort)
+    afl_games_for_round = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
     teams_playing = set()
-    for g in AflGame.query.filter_by(year=year, afl_round=afl_round).all():
+    _team_start = {}
+    for g in afl_games_for_round:
         teams_playing.add(g.home_team)
         teams_playing.add(g.away_team)
+        ts = g.scheduled_start
+        for t in (g.home_team, g.away_team):
+            if t not in _team_start or (ts and (not _team_start[t] or ts < _team_start[t])):
+                _team_start[t] = ts
+
+    # Match the sort used for the user's own matchup so other-matchup rows
+    # don't appear in a different order (e.g. Sam Walsh drifting to the bottom).
+    _type_order = {"field": 0, "flex": 1, "emergency": 2, "reserve": 3}
+    _far_future = datetime(2099, 1, 1)
+
+    def _player_sort_key(p):
+        team = p.get("afl_team", "")
+        return (
+            _type_order.get(p.get("lineup_type", "field"), 9),
+            _team_start.get(team, _far_future) or _far_future,
+            team,
+            p.get("name", ""),
+        )
 
     from models.matchup_projections import project_matchup
 
@@ -875,6 +895,8 @@ def api_gameday_fixtures(league_id):
     for f in round_fixtures:
         home_players = get_player_score_breakdown(f.home_team_id, afl_round, year, league_id)
         away_players = get_player_score_breakdown(f.away_team_id, afl_round, year, league_id)
+        home_players.sort(key=_player_sort_key)
+        away_players.sort(key=_player_sort_key)
 
         home_rs = RoundScore.query.filter_by(team_id=f.home_team_id, afl_round=afl_round, year=year).first()
         away_rs = RoundScore.query.filter_by(team_id=f.away_team_id, afl_round=afl_round, year=year).first()

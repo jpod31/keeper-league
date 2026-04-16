@@ -964,6 +964,24 @@ def api_7s_live(league_id, afl_round):
     game_statuses = get_game_statuses(afl_round, year)
     locked_ids = list(get_locked_player_ids(afl_round, year))
 
+    # Sort players by AFL game kickoff (matches the user's-own-matchup sort)
+    afl_games_for_round = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+    _team_start = {}
+    for g in afl_games_for_round:
+        ts = g.scheduled_start
+        for t in (g.home_team, g.away_team):
+            if t not in _team_start or (ts and (not _team_start[t] or ts < _team_start[t])):
+                _team_start[t] = ts
+    _far_future = datetime(2099, 1, 1)
+
+    def _7s_sort_key(p):
+        team = p.get("afl_team", "")
+        return (
+            _team_start.get(team, _far_future) or _far_future,
+            team,
+            p.get("name", ""),
+        )
+
     fixture_list = []
     for f in fixtures:
         home_rs = Reserve7sRoundScore.query.filter_by(
@@ -979,6 +997,8 @@ def api_7s_live(league_id, afl_round):
         away_players = _get_7s_player_breakdown(
             league_id, f.away_team_id, afl_round, year, league,
         )
+        home_players.sort(key=_7s_sort_key)
+        away_players.sort(key=_7s_sort_key)
 
         fixture_list.append({
             "fixture_id": f.id,
