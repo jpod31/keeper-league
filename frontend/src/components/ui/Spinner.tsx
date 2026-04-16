@@ -1,21 +1,86 @@
 /**
- * Inline loading indicator — small pulsing KL logo.
- * Renders immediately, doesn't block the screen.
+ * Inline loading indicator — big pulsing KL logo with ambient green/blue
+ * glow blobs. Matches the startup/page-transition .kl-loader visual but
+ * sized for embedding in page content.
  */
 export function Spinner({ text }: { text?: string } = {}) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', gap: 10 }}>
-      <img
-        src="/static/icons/kl-logo.png"
-        alt=""
+    <div
+      style={{
+        position: 'relative',
+        minHeight: 420,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderRadius: 12,
+        background: '#0d1117',
+        border: '1px solid #21262d',
+      }}
+    >
+      {/* Ambient glow blobs — green top-left, blue bottom-right */}
+      <div
+        aria-hidden
         style={{
-          width: 64, height: 64,
-          animation: 'klPulse 1.8s ease-in-out infinite',
-          opacity: 0.7,
+          position: 'absolute',
+          top: '-10%',
+          left: '-10%',
+          width: '70%',
+          height: '70%',
+          borderRadius: '50%',
+          filter: 'blur(80px)',
+          background: 'rgba(63,185,80,.28)',
+          animation: 'klGlowGreen 3s ease-in-out infinite',
+          pointerEvents: 'none',
+          zIndex: 1,
         }}
       />
-      {text && <p style={{ fontSize: '.78rem', color: '#484f58', margin: 0 }}>{text}</p>}
-      <style>{`@keyframes klPulse { 0%,100% { transform:scale(1); opacity:.5; } 50% { transform:scale(1.06); opacity:.85; } }`}</style>
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          bottom: '-10%',
+          right: '-10%',
+          width: '70%',
+          height: '70%',
+          borderRadius: '50%',
+          filter: 'blur(80px)',
+          background: 'rgba(31,111,235,.28)',
+          animation: 'klGlowBlue 3s ease-in-out infinite',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 16,
+        }}
+      >
+        <img
+          src="/static/icons/kl-logo.png"
+          alt=""
+          style={{
+            width: 'min(40vw, 180px)',
+            height: 'min(40vw, 180px)',
+            animation: 'klPulse 2.4s ease-in-out infinite',
+          }}
+        />
+        {text && (
+          <p style={{ fontSize: '.8rem', color: '#8b949e', margin: 0, fontWeight: 500 }}>{text}</p>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes klPulse { 0%,100% { transform:scale(1); opacity:.88; } 50% { transform:scale(1.03); opacity:1; } }
+        @keyframes klGlowGreen { 0%,100% { transform:scale(.85); opacity:.5; } 50% { transform:scale(1.15); opacity:.9; } }
+        @keyframes klGlowBlue { 0%,100% { transform:scale(1.15); opacity:.9; } 50% { transform:scale(.85); opacity:.5; } }
+      `}</style>
     </div>
   )
 }
