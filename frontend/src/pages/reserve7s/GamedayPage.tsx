@@ -473,9 +473,22 @@ export function Reserve7sGamedayPage() {
             const isActive = viewedFixtureId === f.id
             return (
               <div key={f.id}
-                className={`s7-mini-pill${isYours ? ' s7-mini-yours' : ''}`}
+                className="s7-mini-pill"
                 onClick={() => setViewedFixtureId(f.id)}
-                style={isActive ? { borderColor: '#a855f7', boxShadow: '0 0 0 1px #a855f7' } : undefined}>
+                style={{
+                  position: 'relative',
+                  ...(isActive ? { borderColor: '#a855f7', boxShadow: '0 0 0 1px #a855f7' } : {}),
+                }}>
+                {isYours && !isActive && (
+                  <span
+                    title="Your matchup"
+                    style={{
+                      position: 'absolute', top: 4, right: 4,
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: '#a855f7',
+                    }}
+                  />
+                )}
                 <span className="s7-mini-teams">{f.home_team?.name} v {f.away_team?.name}</span>
                 {f.status !== 'scheduled' && <span className="s7-mini-score">{Math.round(hs)}-{Math.round(as_)}</span>}
               </div>

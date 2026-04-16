@@ -619,10 +619,25 @@ export function GamedayPage() {
             const hs = cached?.home_score ?? d.round_scores[String(f.home_team_id)]?.total_score ?? 0
             const as_ = cached?.away_score ?? d.round_scores[String(f.away_team_id)]?.total_score ?? 0
             const isYours = d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id)
+            const isActive = viewedFixtureId === f.id
             return (
-              <div key={f.id} className={`kl-mini-pill${isYours ? ' kl-mini-yours' : ''}`}
+              <div key={f.id} className="kl-mini-pill"
                 onClick={() => viewMatchup(f.id)}
-                style={{ cursor: 'pointer', ...(viewedFixtureId === f.id ? { borderColor: 'var(--kl-accent-blue)', boxShadow: '0 0 0 1px var(--kl-accent-blue)' } : {}) }}>
+                style={{
+                  cursor: 'pointer',
+                  position: 'relative',
+                  ...(isActive ? { borderColor: 'var(--kl-accent-blue)', boxShadow: '0 0 0 1px var(--kl-accent-blue)' } : {}),
+                }}>
+                {isYours && !isActive && (
+                  <span
+                    title="Your matchup"
+                    style={{
+                      position: 'absolute', top: 4, right: 4,
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: 'var(--kl-accent-blue)',
+                    }}
+                  />
+                )}
                 <span className="kl-mini-teams">{f.home_team?.name} v {f.away_team?.name}</span>
                 {f.status !== 'scheduled' && <span className="kl-mini-score">{Math.round(hs)}-{Math.round(as_)}</span>}
               </div>
