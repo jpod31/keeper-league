@@ -105,7 +105,6 @@ function LeagueShellInner() {
         ...(league.finals_teams > 0 ? [{ label: 'Finals', icon: 'bi-trophy', to: `/leagues/${lid}/finals`, key: 'finals' }] : []),
         { label: 'Records', icon: 'bi-trophy', to: `/leagues/${lid}/history`, key: 'records' },
         { label: 'Changes', icon: 'bi-clock-history', to: `/leagues/${lid}/list-changes`, key: 'changes' },
-        { label: '7s', icon: 'bi-7-circle', to: `/leagues/${lid}/reserve7s/standings`, key: '7s', style: { color: '#bc8cff' } },
       ],
     },
     settings: {
