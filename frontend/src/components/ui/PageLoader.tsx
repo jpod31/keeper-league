@@ -9,14 +9,11 @@ export function PageLoader({ text }: { text?: string } = {}) {
     <div
       style={{
         position: 'relative',
-        minHeight: 420,
+        minHeight: 'min(60vh, 520px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        borderRadius: 12,
-        background: '#0d1117',
-        border: '1px solid #21262d',
       }}
     >
       <div
