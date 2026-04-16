@@ -1,8 +1,8 @@
 /* Keeper League Service Worker — Caching + Push Notifications */
 
-var SHELL_CACHE = 'kl-shell-v27';
-var DYNAMIC_CACHE = 'kl-dynamic-v27';
-var CDN_CACHE = 'kl-cdn-v27';
+var SHELL_CACHE = 'kl-shell-v28';
+var DYNAMIC_CACHE = 'kl-dynamic-v28';
+var CDN_CACHE = 'kl-cdn-v28';
 var MAX_DYNAMIC = 50;
 
 var SHELL_ASSETS = [
@@ -94,26 +94,10 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // HTML pages — network-first, fallback to cache
+  // HTML pages — always go to network, never cache.
+  // Avoids stale-page bugs after deploys; HTML is small and re-renderable.
   if (event.request.headers.get('Accept') && event.request.headers.get('Accept').indexOf('text/html') !== -1) {
-    event.respondWith(
-      fetch(event.request).then(function(resp) {
-        var clone = resp.clone();
-        caches.open(DYNAMIC_CACHE).then(function(cache) {
-          cache.put(event.request, clone);
-          // LRU eviction — delete excess entries
-          cache.keys().then(function(keys) {
-            while (keys.length > MAX_DYNAMIC) {
-              cache.delete(keys.shift());
-            }
-          });
-        });
-        return resp;
-      }).catch(function() {
-        return caches.match(event.request);
-      })
-    );
-    return;
+    return;  // let the browser handle it normally
   }
 
   // Other local static assets — stale-while-revalidate
