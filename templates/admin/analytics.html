@@ -36,6 +36,7 @@
 {# ── Filter bar ── #}
 <div class="an-filter-bar">
   <span style="font-size:.75rem;color:#6e7681;font-weight:600;">Period:</span>
+  <button class="an-filter-btn" data-preset="today" onclick="setPreset('today')">Today</button>
   <button class="an-filter-btn" data-preset="yesterday" onclick="setPreset('yesterday')">Yesterday</button>
   <button class="an-filter-btn" data-preset="7" onclick="setPreset(7)">7d</button>
   <button class="an-filter-btn active" data-preset="30" onclick="setPreset(30)">30d</button>
@@ -150,7 +151,11 @@ function setPreset(p) {
   _start = null; _end = null;
   document.getElementById('rangeStart').value = '';
   document.getElementById('rangeEnd').value = '';
-  if (p === 'yesterday') {
+  if (p === 'today') {
+    var t = new Date();
+    var iso = t.toISOString().slice(0, 10);
+    _start = iso; _end = iso; _days = 1;
+  } else if (p === 'yesterday') {
     var y = new Date(); y.setDate(y.getDate() - 1);
     var iso = y.toISOString().slice(0, 10);
     _start = iso; _end = iso; _days = 1;
