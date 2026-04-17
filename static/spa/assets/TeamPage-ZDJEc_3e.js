@@ -1,4 +1,4 @@
-import{b as e,f as t,h as n,i as r,n as i,t as a}from"./Spinner-BZqcd_eb.js";import{t as o}from"./api-Bkdhg9G6.js";var s=e(n(),1),c=i(),l=`
+import{b as e,f as t,h as n,i as r,n as i,t as a}from"./Spinner-BZqcd_eb.js";import{t as o}from"./api-DZyRO_lF.js";var s=e(n(),1),c=i(),l=`
 .sevens-hero { padding:24px 20px 16px; margin-bottom:20px; background:linear-gradient(135deg, rgba(31,111,235,.08), rgba(188,140,255,.06)); border:1px solid #21262d; border-radius:12px; }
 .sevens-hero-title { font-size:1.3rem; font-weight:700; color:#e6edf3; margin:0; }
 .sevens-hero-sub { font-size:.8rem; color:#8b949e; margin-top:4px; }

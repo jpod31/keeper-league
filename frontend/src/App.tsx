@@ -17,7 +17,6 @@ import { CreateLeaguePage } from './pages/leagues/CreateLeaguePage'
 import { SettingsPage } from './pages/leagues/SettingsPage'
 import { CommissionerPage } from './pages/leagues/CommissionerPage'
 import { ScoringPage } from './pages/leagues/ScoringPage'
-import { DraftValuesPage } from './pages/leagues/DraftValuesPage'
 import { HistoryPage } from './pages/leagues/HistoryPage'
 import { InvitePage } from './pages/leagues/InvitePage'
 
@@ -105,7 +104,6 @@ export default function App() {
           <Route path="team/:teamId/lineup/:round" element={<LineupPage />} />
           <Route path="team/:teamId/stats" element={<TeamStatsPage />} />
           <Route path="team/:teamId/analytics" element={<L><AnalyticsPage /></L>} />
-          <Route path="team/:teamId/draft-weights" element={<DraftValuesPage />} />
 
           {/* Matchups */}
           <Route path="standings" element={<StandingsPage />} />
@@ -124,7 +122,6 @@ export default function App() {
           <Route path="draft/setup" element={<L><DraftSetupPage /></L>} />
           <Route path="draft/mock" element={<L><MockDraftPage /></L>} />
           <Route path="draft/recap" element={<L><DraftRecapPage /></L>} />
-          <Route path="draft-values" element={<DraftValuesPage />} />
 
           {/* Trades */}
           <Route path="trades" element={<TradeCenterPage />} />

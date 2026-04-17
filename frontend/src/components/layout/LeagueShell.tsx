@@ -79,14 +79,12 @@ function LeagueShellInner() {
       title: 'My Team',
       tabs: t ? [
         { label: 'Field', icon: 'bi-diagram-3', to: `/leagues/${lid}/team/${t.id}`, key: 'field' },
-        { label: 'List', icon: 'bi-table', to: `/leagues/${lid}/team/${t.id}?view=table`, key: 'table' },
         { label: 'Stats', icon: 'bi-graph-up', to: `/leagues/${lid}/team/${t.id}/stats`, key: 'stats' },
         { label: 'Analytics', icon: 'bi-bar-chart-line', to: `/leagues/${lid}/team/${t.id}/analytics`, key: 'analytics' },
+        { label: 'Trades', icon: 'bi-arrow-left-right', to: `/leagues/${lid}/trades`, key: 'trades' },
         ...(league.is_owner ? [
-          { label: '7s', icon: 'bi-7-circle', to: `/leagues/${lid}/reserve7s/team`, key: '7s', style: { color: '#bc8cff' } as React.CSSProperties },
           { label: 'Wishlist', icon: 'bi-star', to: `/leagues/${lid}/team/${t.id}?view=wishlist`, key: 'wishlist', style: { color: '#d29922' } as React.CSSProperties },
         ] : []),
-        { label: 'Trades', icon: 'bi-arrow-left-right', to: `/leagues/${lid}/trades`, key: 'trades' },
       ] : [],
     },
     players: {

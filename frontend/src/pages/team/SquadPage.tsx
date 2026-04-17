@@ -1,15 +1,13 @@
 import { useParams, Link, useSearchParams } from 'react-router'
-import { useState, useCallback, Component, type ErrorInfo, type ReactNode } from 'react'
+import { useState, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
-import { Field3D, type FieldPlayer } from '../../components/field/Field3D'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
 import { useFieldActions } from '../../hooks/useFieldActions'
 import { SSPModal } from '../../components/squad/SSPModal'
-import { api } from '../../lib/api'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
@@ -78,10 +76,6 @@ function SquadPageInner() {
   const fieldActions = useFieldActions(leagueId!, teamId!, refetch)
   const [mobileActionPlayer, setMobileActionPlayer] = useState<Player | null>(null)
   const [sspLtilId, setSspLtilId] = useState<number | null>(null)
-  const [statsMode, setStatsMode] = useState<'myclub' | 'season' | 'career'>('myclub')
-  const [seasonStats, setSeasonStats] = useState<Record<string, Record<string, number>> | null>(null)
-  const [sortCol, setSortCol] = useState<string>('sc_avg')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [delistTarget, setDelistTarget] = useState<{ id: number; name: string } | null>(null)
   const [delisting, setDelisting] = useState(false)
 
@@ -121,20 +115,10 @@ function SquadPageInner() {
     }
   }
 
-  // Fetch season stats on demand
-  const loadSeasonStats = useCallback(async () => {
-    if (seasonStats) { setStatsMode('season'); return }
-    try {
-      const d = await api<{ stats: Record<string, Record<string, number>> }>(`/leagues/${leagueId}/team/${teamId}/api/season-stats`)
-      setSeasonStats(d.stats)
-      setStatsMode('season')
-    } catch { /* fallback to current */ }
-  }, [leagueId, teamId, seasonStats])
-
   if (loading) return <Spinner />
   if (!data) return <p className="text-danger">Failed to load squad</p>
 
-  const { players, roster, is_owner, field_data: fd, alltime_stats, team_logos,
+  const { players, roster, is_owner, field_data: fd, alltime_stats: _alltime_stats, team_logos,
     selected_player_ids, emergency_ids_all, sevens_ids_all } = data
   const rosterMap: Record<number, RosterEntry> = {}
   roster.forEach(r => { rosterMap[r.player_id] = r })
@@ -148,29 +132,6 @@ function SquadPageInner() {
     if (p.age) { totalAge += p.age; ageCount++ }
     const primary = (p.position || 'MID').split('/')[0]
     if (primary in posCounts) posCounts[primary]++
-  })
-
-  // Active stats based on mode
-  const activeStats = statsMode === 'season' && seasonStats ? seasonStats : alltime_stats
-
-  // Sorted players for list view
-  const toggleSort = (col: string) => {
-    if (sortCol === col) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
-    else { setSortCol(col); setSortDir('desc') }
-  }
-  const sortedPlayers = [...players].sort((a, b) => {
-    const stA = activeStats[String(a.id)] || {}
-    const stB = activeStats[String(b.id)] || {}
-    let va: number | string = 0, vb: number | string = 0
-    if (sortCol === 'name') { va = a.name; vb = b.name }
-    else if (sortCol === 'sc_avg') { va = (stA.sc_avg as number) || a.sc_avg || 0; vb = (stB.sc_avg as number) || b.sc_avg || 0 }
-    else if (sortCol === 'games') { va = (stA.games as number) || 0; vb = (stB.games as number) || 0 }
-    else if (sortCol === 'disposals') { va = (stA.disposals as number) || 0; vb = (stB.disposals as number) || 0 }
-    else if (sortCol === 'goals') { va = (stA.goals as number) || 0; vb = (stB.goals as number) || 0 }
-    else if (sortCol === 'marks') { va = (stA.marks as number) || 0; vb = (stB.marks as number) || 0 }
-    else if (sortCol === 'tackles') { va = (stA.tackles as number) || 0; vb = (stB.tackles as number) || 0 }
-    if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb as string) : (vb as string).localeCompare(va)
-    return sortDir === 'asc' ? (va as number) - (vb as number) : (vb as number) - (va as number)
   })
 
   function StatusDot({ player }: { player: Player }) {
@@ -228,12 +189,6 @@ function SquadPageInner() {
     )
   }
 
-  const SortHeader = ({ col, label, className }: { col: string; label: string; className?: string }) => (
-    <th className={`sortable ${className || ''}`} style={{ cursor: 'pointer' }} onClick={() => toggleSort(col)}>
-      {label} {sortCol === col && <i className={`bi bi-caret-${sortDir === 'desc' ? 'down' : 'up'}-fill sort-icon`}></i>}
-    </th>
-  )
-
   return (
     <div>
       {/* ── Hero Header ── */}
@@ -253,30 +208,37 @@ function SquadPageInner() {
               </div>
             </div>
           </div>
-          <div className="squad-hero-actions d-none d-lg-flex">
-            <Link to={`/leagues/${leagueId}/trades`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-arrow-left-right"></i>Trades</Link>
-            <Link to={`/leagues/${leagueId}/team/${teamId}/stats`} className="squad-pill squad-pill-stats text-decoration-none"><i className="bi bi-graph-up"></i>Stats</Link>
-            <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-bar-chart-line"></i>Analytics</Link>
-            {is_owner && <Link to={`/leagues/${leagueId}/team/${teamId}/draft-weights`} className="squad-pill squad-pill-manage text-decoration-none"><i className="bi bi-sliders"></i>Draft</Link>}
-            {is_owner && <Link to={`/leagues/${leagueId}/reserve7s/team`} className="squad-pill squad-pill-manage text-decoration-none" style={{ color: '#bc8cff', borderColor: 'rgba(188,140,255,.3)' }}><i className="bi bi-7-circle"></i>7s</Link>}
-            <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`squad-pill squad-pill-field text-decoration-none${view === 'field' ? ' active' : ''}`}><i className="bi bi-diagram-3"></i>Field</Link>
-            <Link to={`/leagues/${leagueId}/team/${teamId}?view=3d`} className={`squad-pill squad-pill-field text-decoration-none${view === '3d' ? ' active' : ''}`} style={view === '3d' ? { color: '#3fb950', borderColor: 'rgba(63,185,80,.4)' } : undefined}><i className="bi bi-box"></i>3D</Link>
-            <Link to={`/leagues/${leagueId}/team/${teamId}?view=table`} className={`squad-pill squad-pill-list text-decoration-none${view === 'table' ? ' active' : ''}`}><i className="bi bi-table"></i>List</Link>
-            {is_owner && <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`squad-pill squad-pill-manage text-decoration-none${view === 'wishlist' ? ' active' : ''}`} style={{ color: '#d29922', borderColor: 'rgba(210,153,34,.3)' }}><i className="bi bi-star"></i>Wishlist</Link>}
-          </div>
         </div>
       </div>
 
-      {/* ── Mobile subnav ── */}
+      {/* ── Team tab bar (desktop + mobile) — matches league/players subnav design ── */}
+      <div className="league-subnav d-none d-lg-flex">
+        <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`league-subtab${view === 'field' ? ' active' : ''}`}>
+          <i className="bi bi-diagram-3"></i>Field
+        </Link>
+        <Link to={`/leagues/${leagueId}/team/${teamId}/stats`} className="league-subtab">
+          <i className="bi bi-graph-up"></i>Stats
+        </Link>
+        <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="league-subtab">
+          <i className="bi bi-bar-chart-line"></i>Analytics
+        </Link>
+        <Link to={`/leagues/${leagueId}/trades`} className="league-subtab">
+          <i className="bi bi-arrow-left-right"></i>Trades
+        </Link>
+        {is_owner && (
+          <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`league-subtab${view === 'wishlist' ? ' active' : ''}`} style={view === 'wishlist' ? { color: '#d29922', borderBottomColor: '#d29922' } : undefined}>
+            <i className="bi bi-star"></i>Wishlist
+          </Link>
+        )}
+      </div>
       <div className="mob-subnav d-lg-none">
         <Link to={`/leagues/${leagueId}/team/${teamId}`} className={`mob-subnav-item text-decoration-none${view === 'field' ? ' active' : ''}`}><i className="bi bi-diagram-3"></i><span>Field</span></Link>
-        <Link to={`/leagues/${leagueId}/team/${teamId}?view=3d`} className={`mob-subnav-item text-decoration-none${view === '3d' ? ' active' : ''}`} style={view === '3d' ? { color: '#3fb950' } : undefined}><i className="bi bi-box"></i><span>3D</span></Link>
-        <Link to={`/leagues/${leagueId}/team/${teamId}?view=table`} className={`mob-subnav-item text-decoration-none${view === 'table' ? ' active' : ''}`}><i className="bi bi-table"></i><span>List</span></Link>
         <Link to={`/leagues/${leagueId}/team/${teamId}/stats`} className="mob-subnav-item text-decoration-none"><i className="bi bi-graph-up"></i><span>Stats</span></Link>
         <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="mob-subnav-item text-decoration-none"><i className="bi bi-bar-chart-line"></i><span>Analytics</span></Link>
-        {is_owner && <Link to={`/leagues/${leagueId}/reserve7s/team`} className="mob-subnav-item text-decoration-none" style={{ color: '#bc8cff' }}><i className="bi bi-7-circle"></i><span>7s</span></Link>}
-        {is_owner && <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`mob-subnav-item text-decoration-none${view === 'wishlist' ? ' active' : ''}`} style={{ color: '#d29922' }}><i className="bi bi-star"></i><span>Wishlist</span></Link>}
         <Link to={`/leagues/${leagueId}/trades`} className="mob-subnav-item text-decoration-none"><i className="bi bi-arrow-left-right"></i><span>Trades</span></Link>
+        {is_owner && (
+          <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`mob-subnav-item text-decoration-none${view === 'wishlist' ? ' active' : ''}`} style={{ color: '#d29922' }}><i className="bi bi-star"></i><span>Wishlist</span></Link>
+        )}
       </div>
 
       {/* ── Non-owner notice ── */}
@@ -379,41 +341,6 @@ function SquadPageInner() {
         </div>
       )}
 
-      {/* ══════ 3D FIELD VIEW ══════ */}
-      {view === '3d' && fd && (() => {
-        const flat: FieldPlayer[] = []
-        for (const pos of ['DEF', 'MID', 'RUC', 'FWD'] as const) {
-          const arr = (fd.zones[pos] || []).filter(Boolean) as Array<{ id: number; name: string; position: string; afl_team: string; sc_avg: number }>
-          for (const p of arr) {
-            flat.push({
-              id: p.id, name: p.name, position: p.position || pos,
-              position_code: pos, afl_team: p.afl_team, sc_avg: p.sc_avg,
-              is_captain: fd.cap_id === p.id, is_vice_captain: fd.vc_id === p.id,
-            })
-          }
-        }
-        for (const slot of fd.flex_data) {
-          if (slot.player) {
-            flat.push({
-              id: slot.player.id, name: slot.player.name,
-              position: slot.player.position || 'FLEX',
-              position_code: 'MID', // FLEX sits in the middle visually
-              afl_team: slot.player.afl_team, sc_avg: slot.player.sc_avg,
-              is_captain: fd.cap_id === slot.player.id,
-              is_vice_captain: fd.vc_id === slot.player.id,
-            })
-          }
-        }
-        return (
-          <div style={{ marginBottom: 20 }}>
-            <Field3D
-              players={flat}
-              teamColor="#58a6ff"
-              onPlayerClick={(p) => fieldActions.showPlayer(p.id)}
-            />
-          </div>
-        )
-      })()}
 
       {/* ══════ FIELD VIEW ══════ */}
       {view === 'field' && fd && (
@@ -502,145 +429,6 @@ function SquadPageInner() {
         </>
       )}
 
-      {/* ══════ LIST VIEW ══════ */}
-      {view === 'table' && (
-        <>
-          {/* Delist banners (owner only, list view) */}
-          {is_owner && data.delist_is_open && (
-            <div className="d-flex align-items-center gap-3 mb-3 px-3 py-3" style={{ background: 'rgba(248,81,73,.06)', border: '1px solid rgba(248,81,73,.2)', borderRadius: 10 }}>
-              <i className="bi bi-exclamation-triangle-fill" style={{ color: '#f85149', fontSize: '1.2rem' }}></i>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '.85rem', fontWeight: 600, color: '#f85149' }}>Delist Period Open</div>
-                <div style={{ fontSize: '.78rem', color: '#8b949e' }}>
-                  {data.team_delist_count}/{data.min_delists} delisted
-                  {data.team_delist_count < data.min_delists ? <> — <strong style={{ color: '#f85149' }}>{data.min_delists - data.team_delist_count} more required</strong></> : <> — <span style={{ color: '#3fb950' }}>requirement met</span></>}
-                  {data.delist_period?.closes_at && <> &middot; Closes {new Date(data.delist_period.closes_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</>}
-                </div>
-              </div>
-            </div>
-          )}
-          {is_owner && !data.delist_is_open && data.next_delist_info && (
-            <div className="d-flex align-items-center gap-3 mb-3 px-3 py-3" style={{ background: 'rgba(139,148,158,.06)', border: '1px solid #30363d', borderRadius: 10 }}>
-              <i className="bi bi-clock" style={{ color: '#8b949e', fontSize: '1.2rem' }}></i>
-              <div><div style={{ fontSize: '.85rem', fontWeight: 600, color: '#8b949e' }}>Next Delist Period</div><div style={{ fontSize: '.78rem', color: '#6e7681' }}>{data.next_delist_info}</div></div>
-            </div>
-          )}
-          {is_owner && !data.delist_is_open && !data.next_delist_info && (
-            <div className="d-flex align-items-center gap-3 mb-3 px-3 py-3" style={{ background: 'rgba(139,148,158,.04)', border: '1px solid #21262d', borderRadius: 10 }}>
-              <i className="bi bi-clock" style={{ color: '#484f58', fontSize: '1.2rem' }}></i>
-              <div><div style={{ fontSize: '.85rem', color: '#484f58' }}>No upcoming delist period</div></div>
-            </div>
-          )}
-
-          {/* Desktop table */}
-          <div className="card d-none d-lg-block">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <span className="fw-bold" style={{ fontSize: '.9rem' }}>Squad Roster</span>
-              <div className="btn-group btn-group-sm">
-                <button className={`btn btn-sm ${statsMode === 'myclub' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setStatsMode('myclub')}>In My 23</button>
-                <button className={`btn btn-sm ${statsMode === 'season' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => loadSeasonStats()}>Season</button>
-                <button className={`btn btn-sm ${statsMode === 'career' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setStatsMode('career')}>Career</button>
-              </div>
-            </div>
-            <div className="card-body p-0" style={{ overflowX: 'auto' }}>
-              <table className="table table-hover mb-0" id="rosterTable">
-                <thead><tr>
-                  <th style={{ width: 24 }}></th>
-                  <th style={{ width: 40 }}>#</th>
-                  <SortHeader col="name" label="Player" />
-                  <th>Pos</th>
-                  <th>AFL Team</th>
-                  <SortHeader col="games" label="Games" className="text-center" />
-                  <SortHeader col="goals" label="Goals" className="text-center squad-hide-mobile" />
-                  <SortHeader col="disposals" label="Disp" className="text-center" />
-                  <SortHeader col="marks" label="Marks" className="text-center squad-hide-mobile" />
-                  <SortHeader col="tackles" label="Tackles" className="text-center squad-hide-mobile" />
-                  <SortHeader col="sc_avg" label="SC Avg" className="text-end" />
-                  <th>Acquired</th>
-                  {is_owner && <th className="text-center">Delist</th>}
-                </tr></thead>
-                <tbody>
-                  {sortedPlayers.map((p, i) => {
-                    const r = rosterMap[p.id]; const st = activeStats[String(p.id)] || {}
-                    const scVal = (st.sc_avg as number) || p.sc_avg || 0
-                    const scClass = scVal >= 100 ? 'squad-sc-elite' : scVal >= 80 ? 'squad-sc-good' : scVal >= 60 ? 'squad-sc-avg' : 'squad-sc-low'
-                    const acq = r?.acquired_via || 'draft'
-                    const isDelisted = data.delisted_player_ids.includes(p.id)
-                    return (
-                      <tr key={p.id}>
-                        <td className="text-center"><StatusDot player={p} /></td>
-                        <td style={{ color: '#484f58' }}>{i + 1}</td>
-                        <td><span className="fw-bold" style={{ color: '#c9d1d9' }}>{p.name}</span>
-                          {r?.is_captain && <span className="squad-badge squad-badge-cap">C</span>}
-                          {r?.is_vice_captain && <span className="squad-badge squad-badge-vc">VC</span>}</td>
-                        <td>{(p.position || 'MID').split('/').map(pos => <span key={pos} className={`pos-badge pos-${pos}`}>{pos}</span>)}</td>
-                        <td>{p.afl_team && team_logos[p.afl_team] && <img src={team_logos[p.afl_team]} alt="" height={18} className="me-1" />}<span style={{ fontSize: '.8rem' }}>{p.afl_team || ''}</span></td>
-                        <td className="text-center">{st.games ?? '-'}</td>
-                        <td className="text-center squad-hide-mobile">{st.goals ?? '-'}</td>
-                        <td className="text-center">{st.disposals ?? '-'}</td>
-                        <td className="text-center squad-hide-mobile">{st.marks ?? '-'}</td>
-                        <td className="text-center squad-hide-mobile">{st.tackles ?? '-'}</td>
-                        <td className="text-end">{scVal > 0 ? <span className={`squad-sc ${scClass}`}>{Math.round(scVal)}</span> : '-'}</td>
-                        <td><span className={`squad-acq squad-acq-${acq}`}>{acq.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</span></td>
-                        {is_owner && <td className="text-center">
-                          {isDelisted ? <span className="badge" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149', fontSize: '.7rem' }}>Delisted</span>
-                            : data.delist_is_open ? <button
-                                className="btn btn-sm btn-outline-danger"
-                                style={{ fontSize: '.7rem', padding: '2px 8px', borderRadius: 4 }}
-                                onClick={() => setDelistTarget({ id: p.id, name: p.name })}
-                              ><i className="bi bi-x-circle me-1"></i>Delist</button>
-                            : <button className="btn btn-sm btn-outline-secondary" disabled style={{ fontSize: '.7rem', padding: '2px 8px', borderRadius: 4, opacity: .4 }}><i className="bi bi-x-circle me-1"></i>Delist</button>}
-                        </td>}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Mobile squad cards */}
-          <div className="d-lg-none">
-            <div className="d-flex justify-content-between align-items-center px-2 py-2">
-              <span className="fw-bold" style={{ fontSize: '.85rem' }}>Squad Roster</span>
-              <div className="btn-group btn-group-sm">
-                <button className={`btn btn-sm ${statsMode === 'myclub' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setStatsMode('myclub')}>My 23</button>
-                <button className={`btn btn-sm ${statsMode === 'season' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => loadSeasonStats()}>Season</button>
-                <button className={`btn btn-sm ${statsMode === 'career' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setStatsMode('career')}>Career</button>
-              </div>
-            </div>
-            {sortedPlayers.map(p => {
-              const primary = (p.position || 'MID').split('/')[0]
-              const st = activeStats[String(p.id)] || {}
-              const scVal = (st.sc_avg as number) || p.sc_avg || 0
-              const r = rosterMap[p.id]
-              return (
-                <div key={p.id} className="squad-mob-card">
-                  <StatusDot player={p} />
-                  {p.afl_team && team_logos[p.afl_team] ? <img src={team_logos[p.afl_team]} alt="" className="squad-mob-logo" />
-                    : <div className="squad-mob-logo" style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58' }}><i className="bi bi-shield-fill" style={{ fontSize: '.7rem' }}></i></div>}
-                  <div className="squad-mob-info">
-                    <div className="squad-mob-name">
-                      <span style={{ color: '#c9d1d9' }}>{p.name}</span>
-                      {r?.is_captain && <span className="squad-badge squad-badge-cap">C</span>}
-                      {r?.is_vice_captain && <span className="squad-badge squad-badge-vc">VC</span>}
-                      {r?.is_emergency && <span className="mob-pos-badge mob-badge-emg">E</span>}
-                      {sevens_ids_all.includes(p.id) && <span className="mob-pos-badge mob-badge-7s">7</span>}
-                    </div>
-                    <div className="squad-mob-meta">
-                      <span className={`pos-badge pos-${primary}`} style={{ fontSize: '.6rem', padding: '0 4px' }}>{primary}</span>
-                      <span>{p.afl_team || '-'}</span>
-                      {p.age > 0 && <span>Age {p.age}</span>}
-                      {p.injury_severity && <span className="squad-mob-injury"><i className="bi bi-bandaid-fill"></i> {p.injury_type || 'Injured'}</span>}
-                    </div>
-                  </div>
-                  <div className="squad-mob-sc">{scVal ? <span className="squad-sc">{scVal.toFixed(1)}</span> : <span>-</span>}</div>
-                </div>
-              )
-            })}
-          </div>
-        </>
-      )}
 
       {/* ── Toast ── */}
       {fieldActions.toastMsg && <div className={`fv-toast fv-toast-${fieldActions.toastMsg.type} fv-toast-show`}>{fieldActions.toastMsg.text}</div>}
