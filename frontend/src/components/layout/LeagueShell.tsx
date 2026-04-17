@@ -3,6 +3,7 @@ import { LeagueProvider, useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../ui/Spinner'
 import { RoundRecapModal } from '../RoundRecapModal'
 import { useState, useEffect, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type SectionKey = 'team' | 'players' | 'league' | 'settings'
 
@@ -96,6 +97,8 @@ function LeagueShellInner() {
         { label: 'Stats', icon: 'bi-graph-up', to: `/leagues/${lid}/stats`, key: 'stats' },
         { label: 'Injuries', icon: 'bi-bandaid', to: `/leagues/${lid}/injuries`, key: 'injuries' },
         { label: 'Ratings', icon: 'bi-star-fill', to: `/leagues/${lid}/player-ratings`, key: 'ratings' },
+        { label: 'Scouting', icon: 'bi-binoculars', to: `/leagues/${lid}/scouting`, key: 'scouting' },
+        { label: 'Breakout', icon: 'bi-broadcast-pin', to: `/leagues/${lid}/breakout-radar`, key: 'breakout' },
       ],
     },
     league: {
@@ -239,8 +242,18 @@ function LeagueShellInner() {
         </div>
       </div>
 
-      {/* Page content (AppShell already wraps in .container py-4) */}
-      <Outlet />
+      {/* Page content — wrapped in a keyed motion div so route changes fade+slide */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+        >
+          <Outlet />
+        </motion.div>
+      </AnimatePresence>
 
       {/* Round recap popup — shows once per completed round on first visit */}
       <RoundRecapModal />

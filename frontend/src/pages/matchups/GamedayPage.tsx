@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
+import { AnimatedNumber } from '../../components/ui/AnimatedNumber'
 
 interface Team { id: number; name: string; logo_url: string | null }
 interface GDFixture { id: number; home_team_id: number; away_team_id: number; home_score: number; away_score: number; status: string; home_team: Team; away_team: Team }
@@ -466,8 +467,11 @@ export function GamedayPage() {
   // Score flash: detect when scores change
   if (heroLeftScore !== prevScores.current.left || heroRightScore !== prevScores.current.right) {
     if (prevScores.current.left !== 0 || prevScores.current.right !== 0) {
-      // Not first render — trigger flash
+      // Not first render — trigger flash + subtle haptic buzz on mobile
       setTimeout(() => { setScoreFlash(true); setTimeout(() => setScoreFlash(false), 1500) }, 0)
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(12) } catch { /* ignore */ }
+      }
     }
     prevScores.current = { left: heroLeftScore, right: heroRightScore }
   }
@@ -702,12 +706,14 @@ export function GamedayPage() {
 
             <div className="hero-scores-area">
               <div className="hero-score-col">
-                <span className={`hero-big-score${heroLeftScore > heroRightScore ? ' score-winning' : ''}${scoreFlash ? ' score-flash' : ''}`}>{Math.round(heroLeftScore)}</span>
+                <AnimatedNumber value={heroLeftScore}
+                  className={`hero-big-score${heroLeftScore > heroRightScore ? ' score-winning' : ''}${scoreFlash ? ' score-flash' : ''}`} />
                 {heroLeftCapBonus > 0 && <span className="captain-bonus">+{Math.round(heroLeftCapBonus)} C</span>}
               </div>
               <span className="hero-score-dash">&ndash;</span>
               <div className="hero-score-col">
-                <span className={`hero-big-score${heroRightScore > heroLeftScore ? ' score-winning' : ''}${scoreFlash ? ' score-flash' : ''}`}>{Math.round(heroRightScore)}</span>
+                <AnimatedNumber value={heroRightScore}
+                  className={`hero-big-score${heroRightScore > heroLeftScore ? ' score-winning' : ''}${scoreFlash ? ' score-flash' : ''}`} />
                 {heroRightCapBonus > 0 && <span className="captain-bonus">+{Math.round(heroRightCapBonus)} C</span>}
               </div>
             </div>

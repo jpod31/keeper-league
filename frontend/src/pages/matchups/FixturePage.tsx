@@ -246,13 +246,17 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
               const showProgress = isLive && !!f.home_total && !!f.away_total
               const homeCount = f.home_total ? `${f.home_played ?? 0}/${f.home_total}` : null
               const awayCount = f.away_total ? `${f.away_played ?? 0}/${f.away_total}` : null
+              const truncStyle: React.CSSProperties = {
+                display: 'block', maxWidth: '100%',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }
               return (
                 <Link key={f.id}
                   to={to}
                   className="mx-row"
                   style={{ position: 'relative' }}>
-                  <div className="mx-team mx-team-home" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-                    <span className={homeWon || homeLeading ? 'won' : ''} style={{ fontWeight: (homeWon || homeLeading) ? 700 : 500 }}>
+                  <div className="mx-team mx-team-home" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, minWidth: 0 }}>
+                    <span className={homeWon || homeLeading ? 'won' : ''} style={{ ...truncStyle, fontWeight: (homeWon || homeLeading) ? 700 : 500 }}>
                       {f.home_team?.name}
                     </span>
                     {showProgress && homeCount && (
@@ -261,7 +265,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
                       </span>
                     )}
                   </div>
-                  <div className="mx-centre" style={{ minWidth: 110 }}>
+                  <div className="mx-centre" style={{ minWidth: 90 }}>
                     {showScore ? (
                       <>
                         <span className={`mx-sc${homeWon || homeLeading ? ' won' : awayWon || awayLeading ? ' lost' : ' draw'}`}>
@@ -276,8 +280,8 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
                       <span className="mx-vs">vs</span>
                     )}
                   </div>
-                  <div className="mx-team mx-team-away" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
-                    <span className={awayWon || awayLeading ? 'won' : ''} style={{ fontWeight: (awayWon || awayLeading) ? 700 : 500 }}>
+                  <div className="mx-team mx-team-away" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, minWidth: 0 }}>
+                    <span className={awayWon || awayLeading ? 'won' : ''} style={{ ...truncStyle, fontWeight: (awayWon || awayLeading) ? 700 : 500, textAlign: 'right' }}>
                       {f.away_team?.name}
                     </span>
                     {showProgress && awayCount && (

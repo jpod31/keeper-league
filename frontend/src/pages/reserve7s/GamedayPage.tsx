@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
+import { AnimatedNumber } from '../../components/ui/AnimatedNumber'
 
 interface Team { id: number; name: string; logo_url: string | null }
 interface S7Fixture {
@@ -334,10 +335,13 @@ export function Reserve7sGamedayPage() {
 
   const diff = Math.abs(Math.round(heroLeftScore - heroRightScore))
 
-  // Score flash detection
+  // Score flash detection + haptic on mobile
   if (heroLeftScore !== prevScores.current.left || heroRightScore !== prevScores.current.right) {
     if (prevScores.current.left !== 0 || prevScores.current.right !== 0) {
       setTimeout(() => { setScoreFlash(true); setTimeout(() => setScoreFlash(false), 1500) }, 0)
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(12) } catch { /* ignore */ }
+      }
     }
     prevScores.current = { left: heroLeftScore, right: heroRightScore }
   }
@@ -554,12 +558,14 @@ export function Reserve7sGamedayPage() {
 
             <div className="s7-scores-area">
               <div className="s7-score-col">
-                <span className={`s7-big-score${heroLeftScore > heroRightScore ? ' s7-score-winning' : ''}${scoreFlash ? ' s7-score-flash' : ''}`}>{Math.round(heroLeftScore)}</span>
+                <AnimatedNumber value={heroLeftScore}
+                  className={`s7-big-score${heroLeftScore > heroRightScore ? ' s7-score-winning' : ''}${scoreFlash ? ' s7-score-flash' : ''}`} />
                 {heroLeftCap > 0 && <span className="s7-cap-bonus">+{Math.round(heroLeftCap)} (C)</span>}
               </div>
               <span className="s7-score-dash">&ndash;</span>
               <div className="s7-score-col">
-                <span className={`s7-big-score${heroRightScore > heroLeftScore ? ' s7-score-winning' : ''}${scoreFlash ? ' s7-score-flash' : ''}`}>{Math.round(heroRightScore)}</span>
+                <AnimatedNumber value={heroRightScore}
+                  className={`s7-big-score${heroRightScore > heroLeftScore ? ' s7-score-winning' : ''}${scoreFlash ? ' s7-score-flash' : ''}`} />
                 {heroRightCap > 0 && <span className="s7-cap-bonus">+{Math.round(heroRightCap)} (C)</span>}
               </div>
             </div>
