@@ -152,10 +152,16 @@ export function useFieldActions(
 
     const isEmg = emgIds.includes(pid)
     if (isEmg) {
-      fvApi('/set-emergency', { player_id: pid }).then(d => { if (!d.error) onRefresh() })
+      fvApi('/set-emergency', { player_id: pid }).then(d => {
+        if (d.error) toast(typeof d.error === 'string' ? d.error : 'Could not update emergency', 'error')
+        else onRefresh()
+      })
     } else if (emgIds.filter(id => !lockedPids.has(id)).length < 4) {
       // Room available (counting only unlocked slots)
-      fvApi('/set-emergency', { player_id: pid }).then(d => { if (!d.error) onRefresh() })
+      fvApi('/set-emergency', { player_id: pid }).then(d => {
+        if (d.error) toast(typeof d.error === 'string' ? d.error : 'Could not update emergency', 'error')
+        else onRefresh()
+      })
     } else {
       // Full — enter replacement mode
       setSwapSource({ pid, section: 'reserve', positions: [], fieldPos: '' })
@@ -182,7 +188,10 @@ export function useFieldActions(
 
     const is7s = sevensIds.includes(pid)
     if (is7s) {
-      fvApi('/toggle-7s', { player_id: pid }).then(d => { if (!d.error) onRefresh() })
+      fvApi('/toggle-7s', { player_id: pid }).then(d => {
+        if (d.error) toast(typeof d.error === 'string' ? d.error : 'Could not update 7s', 'error')
+        else onRefresh()
+      })
       return
     }
 

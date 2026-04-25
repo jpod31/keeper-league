@@ -355,6 +355,49 @@ function SquadPageInner() {
             swapSource: fieldActions.swapSource, actionMode: fieldActions.actionMode,
           }} />
 
+          {/* Mobile swap/replace-mode banner — sticks to the top of the
+              viewport so the user doesn't lose context after tapping Swap
+              in the action sheet. Without this the action sheet closes
+              and the list silently enters a different click-behaviour —
+              which reads as "app broken" on phones. */}
+          {fieldActions.swapSource && (() => {
+            const srcPlayer = data.players.find(p => p.id === fieldActions.swapSource!.pid)
+            const mode = fieldActions.actionMode
+            const label =
+              mode === 'emg_replace'
+                ? 'Tap a player to remove from Emergency'
+                : mode === '7s_replace'
+                  ? 'Tap a player to remove from the 7s'
+                  : srcPlayer
+                    ? `Tap a player to swap with ${srcPlayer.name}`
+                    : 'Tap a target player'
+            return (
+              <div className="d-lg-none" style={{
+                position: 'sticky', top: 0, zIndex: 20,
+                background: 'linear-gradient(135deg, rgba(56,166,215,0.22), rgba(163,113,247,0.18))',
+                borderBottom: '1px solid rgba(56,166,215,0.45)',
+                padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+                backdropFilter: 'blur(6px)',
+              }}>
+                <i className="bi bi-arrow-left-right" style={{ color: '#58a6ff', fontSize: '1rem' }}></i>
+                <span style={{ flex: 1, color: '#e6edf3', fontSize: '.86rem', fontWeight: 600 }}>
+                  {label}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => fieldActions.cancelAllModes()}
+                  style={{
+                    background: 'rgba(218,54,51,0.18)', border: '1px solid rgba(218,54,51,0.35)',
+                    color: '#f85149', padding: '5px 12px', borderRadius: 999,
+                    fontSize: '.78rem', fontWeight: 600,
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )
+          })()}
+
           {/* Mobile position-grouped list */}
           <div className={`d-lg-none mob-squad-list${fieldActions.swapSource ? ' fv-swap-mode' : ''}`}>
             {fd && ['DEF', 'MID', 'RUC', 'FWD'].map(pos => {

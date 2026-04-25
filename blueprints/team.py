@@ -1281,6 +1281,29 @@ def api_swap(league_id, team_id):
     entry1.is_emergency = was_e2 if entry1.is_benched else False
     entry2.is_emergency = was_e1 if entry2.is_benched else False
 
+    # Emergency and 7s are mutually exclusive. If either player ends up in
+    # reserves with is_emergency=True AND is already in Reserve7sLineup
+    # for the upcoming round, clear the emergency flag — 7s membership is
+    # a deliberate persistent row and wins. Without this, a swap could
+    # inherit an emergency flag onto a player who's already in 7s, and the
+    # UI would then see them as both (emergency badge visible, but the 7s
+    # slot counter also claims them → "7s full" with no way to fix in-app
+    # because the action sheet hides both toggles when a player is both).
+    from models.database import Reserve7sLineup as _R7s  # local import — avoid cycle
+    from blueprints.reserve7s import _get_next_7s_round as _next_7s_round
+    _s_round = _next_7s_round(league_id, league.season_year)
+    if _s_round is not None:
+        for _entry in (entry1, entry2):
+            if _entry.is_emergency and _entry.is_benched:
+                if _R7s.query.filter_by(
+                    league_id=league_id,
+                    team_id=team_id,
+                    afl_round=_s_round,
+                    year=league.season_year,
+                    player_id=_entry.player_id,
+                ).first():
+                    _entry.is_emergency = False
+
     # Captain/VC can only be on-field — clear if player moved off field
     if entry1.is_benched:
         entry1.is_captain = False

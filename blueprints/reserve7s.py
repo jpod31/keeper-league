@@ -157,16 +157,21 @@ def _ensure_7s_lineup(league_id, team_id, afl_round, year):
         afl_round=latest_round, year=year,
     ).all()
 
-    # Only carry forward players still on the active roster
+    # Only carry forward players still on the active roster. We also
+    # keep a reference to each carried-forward roster row so we can
+    # enforce the emergency/7s mutual-exclusivity invariant below — a
+    # carried-over 7s slot wins over a stale is_emergency flag on the
+    # same player.
     from models.database import FantasyRoster
-    active_ids = {
-        r.player_id for r in
-        FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
-    }
+    active_rows = FantasyRoster.query.filter_by(
+        team_id=team_id, is_active=True,
+    ).all()
+    active_by_pid = {r.player_id: r for r in active_rows}
 
     new_entries = []
     for e in prev_entries:
-        if e.player_id not in active_ids:
+        roster_row = active_by_pid.get(e.player_id)
+        if roster_row is None:
             continue
         new_e = Reserve7sLineup(
             league_id=league_id, team_id=team_id,
@@ -175,6 +180,12 @@ def _ensure_7s_lineup(league_id, team_id, afl_round, year):
         )
         db.session.add(new_e)
         new_entries.append(new_e)
+        # Invariant: a player in 7s must not be flagged as emergency.
+        # Without this a stale is_emergency from a previous round can
+        # ride forward into the new round and the UI ends up thinking
+        # the player is both an Emergency AND counted against "7s full".
+        if roster_row.is_emergency:
+            roster_row.is_emergency = False
 
     if new_entries:
         db.session.commit()
