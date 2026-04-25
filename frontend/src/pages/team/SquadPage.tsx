@@ -569,7 +569,19 @@ function SquadPageInner() {
           onClose={() => setMobileActionPlayer(null)}
           onSetCaptain={() => fieldActions.setCaptain(mobileActionPlayer.id)}
           onSetVC={() => fieldActions.setVC(mobileActionPlayer.id)}
-          onSwap={() => { const isRes = !Object.values(fd.zones).flat().some(p => p?.id === mobileActionPlayer.id) && !fd.flex_data.some(s => s.player?.id === mobileActionPlayer.id); fieldActions.startSwap(mobileActionPlayer.id, isRes ? 'reserve' : fd.flex_data.some(s => s.player?.id === mobileActionPlayer.id) ? 'flex' : 'field', (mobileActionPlayer.position || 'MID').split('/'), '') }}
+          onSwap={() => {
+            const isFlex = fd.flex_data.some(s => s.player?.id === mobileActionPlayer.id)
+            // Find which zone (DEF/MID/RUC/FWD) the player occupies — needed
+            // so checkSwapEligible can validate that a reserve target can fill
+            // the source's field slot. Without this, reserves never highlight.
+            let zone = ''
+            for (const pos of ['DEF', 'MID', 'RUC', 'FWD']) {
+              if ((fd.zones[pos] || []).some(p => p?.id === mobileActionPlayer.id)) { zone = pos; break }
+            }
+            const isField = !!zone
+            const section = isField ? 'field' : isFlex ? 'flex' : 'reserve'
+            fieldActions.startSwap(mobileActionPlayer.id, section, (mobileActionPlayer.position || 'MID').split('/'), zone)
+          }}
           onToggleEmg={() => fieldActions.toggleEmergency(mobileActionPlayer.id, fd.emergency_ids, new Set())}
           onToggle7s={() => fieldActions.toggle7s(mobileActionPlayer.id, fd.sevens_ids, mobileActionPlayer.age, new Set())}
           onSet7sCaptain={() => fieldActions.set7sCaptain(mobileActionPlayer.id)}
