@@ -4187,9 +4187,13 @@ img[src*="Carlton.png"] {
   transition: background .1s;
 }
 .mob-pos-row:active { background: rgba(88,166,255,.08) !important; }
-/* Swap mode highlighting on mobile rows */
-.mob-pos-row.fv-swap-active { background: rgba(88,166,255,.15) !important; border-left: 3px solid #58a6ff !important; }
-.mob-pos-row.fv-swap-eligible { background: rgba(63,185,80,.08) !important; border-left: 3px solid #3fb950 !important; }
+/* Swap mode highlighting on mobile rows — match the desktop convention:
+   dim non-eligible rows so the swap targets are unmistakable. */
+.mob-squad-list.fv-swap-mode .mob-pos-row { opacity: .35; filter: grayscale(.5) brightness(.85); pointer-events: none; }
+.mob-squad-list.fv-swap-mode .mob-pos-row.fv-swap-active,
+.mob-squad-list.fv-swap-mode .mob-pos-row.fv-swap-eligible { opacity: 1; filter: none; pointer-events: auto; }
+.mob-pos-row.fv-swap-active { background: rgba(210,153,34,.18) !important; border-left: 3px solid #d29922 !important; box-shadow: inset 0 0 0 1px rgba(210,153,34,.4); }
+.mob-pos-row.fv-swap-eligible { background: rgba(63,185,80,.12) !important; border-left: 3px solid #3fb950 !important; }
 .mob-pos-logo {
   width: 26px;
   height: 26px;

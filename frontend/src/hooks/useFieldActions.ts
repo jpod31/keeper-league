@@ -102,6 +102,11 @@ export function useFieldActions(
     if (swapSource?.pid === pid) { cancelAllModes(); return }
     setSwapSource({ pid, section, positions, fieldPos })
     setActionMode('swap')
+    // Tactile handshake on mobile — without this, tapping "Swap" in the
+    // action sheet just closes it silently and reads as "nothing happened".
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(15) } catch { /* ignore */ }
+    }
   }, [swapSource, cancelAllModes])
 
   // ── Swap: complete with animation ──

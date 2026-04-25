@@ -6,7 +6,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
-import { useFieldActions } from '../../hooks/useFieldActions'
+import { useFieldActions, checkSwapEligible } from '../../hooks/useFieldActions'
 import { SSPModal } from '../../components/squad/SSPModal'
 
 interface Player {
@@ -147,14 +147,27 @@ function SquadPageInner() {
   }) {
     const lockedTeams = fd ? new Set(fd.locked_teams) : new Set<string>()
     const isLocked = lockedTeams.has(player.afl_team || '')
+    const swapSrc = fieldActions.swapSource
+    const isSwapActive = swapSrc?.pid === player.id
+    const isEmgP = fd ? fd.emergency_ids.includes(player.id) : false
+    const is7sP = fd ? fd.sevens_ids.includes(player.id) : false
+    let isSwapEligible = false
+    if (swapSrc && swapSrc.pid !== player.id && !isLocked) {
+      const posParts = (player.position || 'MID').split('/')
+      if (fieldActions.actionMode === 'swap') {
+        isSwapEligible = checkSwapEligible(swapSrc, section, posParts, (posCode || '').toUpperCase())
+      } else if (fieldActions.actionMode === 'emg_replace') {
+        isSwapEligible = isEmgP
+      } else if (fieldActions.actionMode === '7s_replace') {
+        isSwapEligible = is7sP
+      }
+    }
     return (
-      <div className={`mob-pos-row${isLocked ? ' mob-pos-locked' : ''}${fd?.cap_id === player.id ? ' fv-card-captain' : ''}${fd?.vc_id === player.id ? ' fv-card-vc' : ''}`}
+      <div className={`mob-pos-row${isLocked ? ' mob-pos-locked' : ''}${fd?.cap_id === player.id ? ' fv-card-captain' : ''}${fd?.vc_id === player.id ? ' fv-card-vc' : ''}${isSwapActive ? ' fv-swap-active' : ''}${isSwapEligible ? ' fv-swap-eligible' : ''}`}
         data-player-id={player.id} data-section={section} data-positions={player.position || 'MID'} data-field-pos={posCode || ''}
         data-locked={isLocked ? '1' : ''} data-emg={showEmg ? '1' : ''} data-sevens={show7s ? '1' : ''} data-age={String(player.age || '')}
         onClick={() => {
           if (fieldActions.swapSource) {
-            const isEmgP = fd ? fd.emergency_ids.includes(player.id) : false
-            const is7sP = fd ? fd.sevens_ids.includes(player.id) : false
             fieldActions.handlePlayerClick(player.id, section, (player.position || 'MID').split('/'), posCode || '', isLocked, isEmgP, is7sP)
           } else if (is_owner) { setMobileActionPlayer(player) }
           else { fieldActions.showPlayer(player.id) }
@@ -355,41 +368,50 @@ function SquadPageInner() {
             swapSource: fieldActions.swapSource, actionMode: fieldActions.actionMode,
           }} />
 
-          {/* Mobile swap/replace-mode banner — sticks to the top of the
-              viewport so the user doesn't lose context after tapping Swap
-              in the action sheet. Without this the action sheet closes
-              and the list silently enters a different click-behaviour —
-              which reads as "app broken" on phones. */}
+          {/* Mobile swap/replace-mode banner — fixed to the top of the
+              viewport (not sticky) so it's visible no matter where the
+              user is scrolled when they tap Swap. Pinned with a Cancel
+              button so swap mode is never invisible state. */}
           {fieldActions.swapSource && (() => {
             const srcPlayer = data.players.find(p => p.id === fieldActions.swapSource!.pid)
             const mode = fieldActions.actionMode
+            const heading =
+              mode === 'emg_replace' ? 'REPLACE EMERGENCY'
+              : mode === '7s_replace' ? 'REPLACE 7s PLAYER'
+              : 'SWAP MODE'
             const label =
               mode === 'emg_replace'
-                ? 'Tap a player to remove from Emergency'
+                ? 'Tap an emergency to remove'
                 : mode === '7s_replace'
-                  ? 'Tap a player to remove from the 7s'
+                  ? 'Tap a 7s player to remove'
                   : srcPlayer
-                    ? `Tap a player to swap with ${srcPlayer.name}`
+                    ? `Tap any green-highlighted player to swap with ${srcPlayer.name}`
                     : 'Tap a target player'
             return (
               <div className="d-lg-none" style={{
-                position: 'sticky', top: 0, zIndex: 20,
-                background: 'linear-gradient(135deg, rgba(56,166,215,0.22), rgba(163,113,247,0.18))',
-                borderBottom: '1px solid rgba(56,166,215,0.45)',
-                padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
-                backdropFilter: 'blur(6px)',
+                position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1080,
+                background: 'linear-gradient(135deg, #1f6feb, #8957e5)',
+                borderBottom: '2px solid rgba(255,255,255,0.18)',
+                padding: '10px 14px',
+                display: 'flex', alignItems: 'center', gap: 10,
+                boxShadow: '0 6px 24px -4px rgba(0,0,0,0.55)',
               }}>
-                <i className="bi bi-arrow-left-right" style={{ color: '#58a6ff', fontSize: '1rem' }}></i>
-                <span style={{ flex: 1, color: '#e6edf3', fontSize: '.86rem', fontWeight: 600 }}>
-                  {label}
-                </span>
+                <i className="bi bi-arrow-left-right" style={{ color: '#fff', fontSize: '1.1rem' }}></i>
+                <div style={{ flex: 1, minWidth: 0, lineHeight: 1.15 }}>
+                  <div style={{ color: '#fff', fontSize: '.68rem', fontWeight: 700, letterSpacing: '.08em', opacity: .85 }}>
+                    {heading}
+                  </div>
+                  <div style={{ color: '#fff', fontSize: '.82rem', fontWeight: 600, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {label}
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => fieldActions.cancelAllModes()}
                   style={{
-                    background: 'rgba(218,54,51,0.18)', border: '1px solid rgba(218,54,51,0.35)',
-                    color: '#f85149', padding: '5px 12px', borderRadius: 999,
-                    fontSize: '.78rem', fontWeight: 600,
+                    background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)',
+                    color: '#fff', padding: '6px 14px', borderRadius: 999,
+                    fontSize: '.78rem', fontWeight: 700,
                   }}
                 >
                   Cancel
