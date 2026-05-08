@@ -101,127 +101,155 @@ def _sync_ratings_to_db(app):
         app.logger.info("Ratings sync: XLSX not found, skipping")
         return
 
-    with app.app_context():
-        # Staleness check
-        import datetime as _dt
-        xlsx_mtime = _dt.datetime.fromtimestamp(os.path.getmtime(_XLSX_PATH))
-        newest = AflPlayer.query.filter(AflPlayer.rating.isnot(None)).order_by(
-            AflPlayer.updated_at.desc()
-        ).first()
-        if newest and newest.updated_at:
-            db_time = newest.updated_at.replace(tzinfo=None)
-            if db_time >= xlsx_mtime:
-                app.logger.info("Ratings sync: XLSX not newer than DB, skipping")
-                return
+    # Single-worker guard. Gunicorn spawns N workers and each calls create_app(),
+    # so without a lock every worker would re-run the sync and write duplicate
+    # rating_log rows. Non-blocking flock — first worker wins, others skip.
+    # Kernel releases on process exit, so no stale-lock recovery needed.
+    try:
+        import fcntl
+    except ImportError:
+        fcntl = None  # Windows dev — single-process, no guard needed
 
-        import openpyxl
-        wb = openpyxl.load_workbook(_XLSX_PATH, read_only=True, data_only=True)
-        ws = wb["Player Database"]
+    lock_file = None
+    if fcntl is not None:
+        try:
+            lock_file = open(_XLSX_PATH + ".sync.lock", "w")
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (BlockingIOError, OSError):
+            if lock_file is not None:
+                lock_file.close()
+            app.logger.info("Ratings sync: another worker is syncing, skipping")
+            return
 
-        # Find the current-year column for start-of-year rating
-        # After Dec 1 use next year's column; before Dec 1 use current year
-        from datetime import date
-        today = date.today()
-        target_year = today.year + 1 if today.month == 12 else today.year
-        headers = next(ws.iter_rows(min_row=1, max_row=1, values_only=True))
-        year_col_idx = None
-        for ci, h in enumerate(headers):
-            if h and str(h).strip().isdigit() and int(str(h)) == target_year:
-                year_col_idx = ci
-                break
+    try:
+        with app.app_context():
+            # Staleness check
+            import datetime as _dt
+            xlsx_mtime = _dt.datetime.fromtimestamp(os.path.getmtime(_XLSX_PATH))
+            newest = AflPlayer.query.filter(AflPlayer.rating.isnot(None)).order_by(
+                AflPlayer.updated_at.desc()
+            ).first()
+            if newest and newest.updated_at:
+                db_time = newest.updated_at.replace(tzinfo=None)
+                if db_time >= xlsx_mtime:
+                    app.logger.info("Ratings sync: XLSX not newer than DB, skipping")
+                    return
 
-        # Read rows: col 0=Player, 2=Rating, 3=Potential, 4=Team, year_col_idx=start-of-year
-        xlsx_players = []
-        for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
-            name = row[0]
-            if not name or not isinstance(name, str):
-                continue
-            team_raw = row[4] or ""
-            team = _XLSX_TEAM_MAP.get(team_raw, team_raw)
-            rating = row[2] if isinstance(row[2], (int, float)) else None
-            potential = row[3] if isinstance(row[3], (int, float)) else None
-            rating_start = None
-            if year_col_idx is not None and len(row) > year_col_idx:
-                val = row[year_col_idx]
-                if isinstance(val, (int, float)):
-                    rating_start = int(val)
-            if rating is not None:
-                rating = int(rating)
-                if rating < 0 or rating > 100:
-                    logger.warning("Rating %d out of range for %s — skipping", rating, name)
+            import openpyxl
+            wb = openpyxl.load_workbook(_XLSX_PATH, read_only=True, data_only=True)
+            ws = wb["Player Database"]
+
+            # Find the current-year column for start-of-year rating
+            # After Dec 1 use next year's column; before Dec 1 use current year
+            from datetime import date
+            today = date.today()
+            target_year = today.year + 1 if today.month == 12 else today.year
+            headers = next(ws.iter_rows(min_row=1, max_row=1, values_only=True))
+            year_col_idx = None
+            for ci, h in enumerate(headers):
+                if h and str(h).strip().isdigit() and int(str(h)) == target_year:
+                    year_col_idx = ci
+                    break
+
+            # Read rows: col 0=Player, 2=Rating, 3=Potential, 4=Team, year_col_idx=start-of-year
+            xlsx_players = []
+            for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
+                name = row[0]
+                if not name or not isinstance(name, str):
                     continue
-            if potential is not None:
-                potential = int(potential)
-                if potential < 0 or potential > 100:
-                    logger.warning("Potential %d out of range for %s — skipping", potential, name)
-                    continue
-            xlsx_players.append((name.strip(), team.strip(), rating, potential, rating_start))
-        wb.close()
+                team_raw = row[4] or ""
+                team = _XLSX_TEAM_MAP.get(team_raw, team_raw)
+                rating = row[2] if isinstance(row[2], (int, float)) else None
+                potential = row[3] if isinstance(row[3], (int, float)) else None
+                rating_start = None
+                if year_col_idx is not None and len(row) > year_col_idx:
+                    val = row[year_col_idx]
+                    if isinstance(val, (int, float)):
+                        rating_start = int(val)
+                if rating is not None:
+                    rating = int(rating)
+                    if rating < 0 or rating > 100:
+                        logger.warning("Rating %d out of range for %s — skipping", rating, name)
+                        continue
+                if potential is not None:
+                    potential = int(potential)
+                    if potential < 0 or potential > 100:
+                        logger.warning("Potential %d out of range for %s — skipping", potential, name)
+                        continue
+                xlsx_players.append((name.strip(), team.strip(), rating, potential, rating_start))
+            wb.close()
 
-        # Build DB lookup: (lowercase name, team) -> AflPlayer
-        all_db = AflPlayer.query.all()
-        db_lookup = {}
-        for ap in all_db:
-            key = (ap.name.lower(), ap.afl_team)
-            db_lookup[key] = ap
+            # Build DB lookup: (lowercase name, team) -> AflPlayer
+            all_db = AflPlayer.query.all()
+            db_lookup = {}
+            for ap in all_db:
+                key = (ap.name.lower(), ap.afl_team)
+                db_lookup[key] = ap
 
-        # Build reverse override map: (xlsx_name_lower, team) -> db AflPlayer
-        override_lookup = {}
-        for (db_name, db_team), xlsx_name in _NAME_OVERRIDES.items():
-            ap = db_lookup.get((db_name.lower(), db_team))
-            if ap:
-                override_lookup[(xlsx_name.lower(), db_team)] = ap
+            # Build reverse override map: (xlsx_name_lower, team) -> db AflPlayer
+            override_lookup = {}
+            for (db_name, db_team), xlsx_name in _NAME_OVERRIDES.items():
+                ap = db_lookup.get((db_name.lower(), db_team))
+                if ap:
+                    override_lookup[(xlsx_name.lower(), db_team)] = ap
 
-        matched = 0
-        unmatched = []
+            matched = 0
+            unmatched = []
 
-        for xlsx_name, xlsx_team, rating, potential, rating_start in xlsx_players:
-            # Pass 1: exact match on (name, team)
-            key = (xlsx_name.lower(), xlsx_team)
-            ap = db_lookup.get(key)
+            for xlsx_name, xlsx_team, rating, potential, rating_start in xlsx_players:
+                # Pass 1: exact match on (name, team)
+                key = (xlsx_name.lower(), xlsx_team)
+                ap = db_lookup.get(key)
 
-            # Pass 2: explicit overrides
-            if ap is None:
-                ap = override_lookup.get(key)
+                # Pass 2: explicit overrides
+                if ap is None:
+                    ap = override_lookup.get(key)
 
-            # Pass 3: nickname variants (both directions)
-            if ap is None:
-                for variant in _name_variants(xlsx_name):
-                    key2 = (variant.lower(), xlsx_team)
-                    ap = db_lookup.get(key2)
-                    if ap:
-                        break
+                # Pass 3: nickname variants (both directions)
+                if ap is None:
+                    for variant in _name_variants(xlsx_name):
+                        key2 = (variant.lower(), xlsx_team)
+                        ap = db_lookup.get(key2)
+                        if ap:
+                            break
 
-            if ap:
-                # Log changes before applying
-                rating_changed = (ap.rating != rating) if rating is not None else False
-                potential_changed = (ap.potential != potential) if potential is not None else False
-                if rating_changed or potential_changed:
-                    log = RatingLog(
-                        player_id=ap.id,
-                        old_rating=ap.rating,
-                        new_rating=rating,
-                        old_potential=ap.potential,
-                        new_potential=potential,
-                        rating_start=rating_start if rating_start is not None else ap.rating_start,
-                    )
-                    db.session.add(log)
-                ap.rating = rating
-                ap.potential = potential
-                if rating_start is not None:
-                    ap.rating_start = rating_start
-                matched += 1
-            else:
-                unmatched.append((xlsx_name, xlsx_team))
+                if ap:
+                    # Log changes before applying
+                    rating_changed = (ap.rating != rating) if rating is not None else False
+                    potential_changed = (ap.potential != potential) if potential is not None else False
+                    if rating_changed or potential_changed:
+                        log = RatingLog(
+                            player_id=ap.id,
+                            old_rating=ap.rating,
+                            new_rating=rating,
+                            old_potential=ap.potential,
+                            new_potential=potential,
+                            rating_start=rating_start if rating_start is not None else ap.rating_start,
+                        )
+                        db.session.add(log)
+                    ap.rating = rating
+                    ap.potential = potential
+                    if rating_start is not None:
+                        ap.rating_start = rating_start
+                    matched += 1
+                else:
+                    unmatched.append((xlsx_name, xlsx_team))
 
-        db.session.commit()
-        app.logger.info(
-            f"Ratings sync: {matched} players updated, "
-            f"{len(unmatched)} unmatched from XLSX"
-        )
-        if unmatched and len(unmatched) <= 30:
-            for n, t in unmatched:
-                app.logger.debug(f"  Unmatched: {n} ({t})")
+            db.session.commit()
+            app.logger.info(
+                f"Ratings sync: {matched} players updated, "
+                f"{len(unmatched)} unmatched from XLSX"
+            )
+            if unmatched and len(unmatched) <= 30:
+                for n, t in unmatched:
+                    app.logger.debug(f"  Unmatched: {n} ({t})")
+    finally:
+        if lock_file is not None:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            except OSError:
+                pass
+            lock_file.close()
 
 
 def _sync_players_to_db(app, force=False):
