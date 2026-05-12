@@ -715,7 +715,22 @@ def squad(league_id, team_id):
             "selected_player_ids": list(selected_player_ids),
             "emergency_ids_all": emergency_ids_all,
             "sevens_ids_all": sevens_ids_all,
-            "wishlist_players": wishlist_players if view == "wishlist" else [],
+            "wishlist_players": [
+                {
+                    "player": {
+                        "id": wp["player"].id,
+                        "name": wp["player"].name,
+                        "position": wp["player"].position or "",
+                        "afl_team": wp["player"].afl_team or "",
+                        "age": wp["player"].age or 0,
+                    },
+                    "sc_avg": wp["sc_avg"] or 0,
+                    "trend": wp["trend"],
+                    "games": wp["games"],
+                    "owner": wp["owner"],
+                }
+                for wp in wishlist_players
+            ] if view == "wishlist" else [],
         })
 
     return render_template("team/squad.html",
