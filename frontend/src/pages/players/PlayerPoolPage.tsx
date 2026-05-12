@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { BottomSheet } from '../../components/ui/BottomSheet'
@@ -100,6 +100,10 @@ const POOL_CSS = `
 .pm-l3-delta-up { color: #3fb950; }
 .pm-l3-delta-down { color: #f85149; }
 .pm-l3-delta-flat { color: #484f58; }
+.wishlist-star { cursor: pointer; background: none; border: none; padding: 4px 6px; color: #6e7681; font-size: .95rem; line-height: 1; transition: color .15s, transform .15s; }
+.wishlist-star:hover { color: #d29922; }
+.wishlist-star.active { color: #d29922; }
+.wishlist-star:active { transform: scale(1.2); }
 `
 
 type SortKey = 'name' | 'pos' | 'age' | 'sc_avg' | 'trend' | 'rating' | 'rtg_move' | 'potential' | 'tag'
@@ -134,6 +138,55 @@ export function PlayerPoolPage() {
   const [mobSort, setMobSort] = useState<MobileSortKey>('sc')
   const [pickingUp, setPickingUp] = useState<number | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [wishlistedIds, setWishlistedIds] = useState<Set<number>>(new Set())
+
+  useEffect(() => {
+    fetch(`/leagues/${leagueId}/wishlist/api`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setWishlistedIds(new Set<number>(d.player_ids || [])))
+      .catch(() => {})
+  }, [leagueId])
+
+  async function toggleWishlist(playerId: number) {
+    const wasWishlisted = wishlistedIds.has(playerId)
+    setWishlistedIds(prev => {
+      const next = new Set(prev)
+      if (wasWishlisted) next.delete(playerId)
+      else next.add(playerId)
+      return next
+    })
+    try {
+      const res = await fetch(`/leagues/${leagueId}/wishlist/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId }),
+        credentials: 'include',
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setWishlistedIds(prev => {
+          const next = new Set(prev)
+          if (wasWishlisted) next.add(playerId)
+          else next.delete(playerId)
+          return next
+        })
+      } else {
+        setWishlistedIds(prev => {
+          const next = new Set(prev)
+          if (d.wishlisted) next.add(playerId)
+          else next.delete(playerId)
+          return next
+        })
+      }
+    } catch {
+      setWishlistedIds(prev => {
+        const next = new Set(prev)
+        if (wasWishlisted) next.add(playerId)
+        else next.delete(playerId)
+        return next
+      })
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!data) return []
@@ -354,6 +407,7 @@ export function PlayerPoolPage() {
                 </th>
                 <th style={{ width: 130 }}>Acquired</th>
                 <th className="text-center" style={{ width: 110 }}>Status</th>
+                <th className="text-center" style={{ width: 34 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -461,6 +515,17 @@ export function PlayerPoolPage() {
                         <span className="pm-fa">FA</span>
                       )}
                     </td>
+                    <td className="text-center" style={{ padding: 0 }}>
+                      <button
+                        type="button"
+                        className={`wishlist-star${wishlistedIds.has(p.id) ? ' active' : ''}`}
+                        onClick={e => { e.stopPropagation(); toggleWishlist(p.id) }}
+                        title={wishlistedIds.has(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                        aria-label={wishlistedIds.has(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                      >
+                        <i className={`bi ${wishlistedIds.has(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
+                      </button>
+                    </td>
                   </tr>
                 )
               })}
@@ -564,15 +629,25 @@ export function PlayerPoolPage() {
                     )}
                     {trendUp && <span className="kl-player-card-trend kl-player-card-trend-up">▲ {Math.round(l3Pct)}%</span>}
                     {trendDown && <span className="kl-player-card-trend kl-player-card-trend-down">▼ {Math.round(Math.abs(l3Pct))}%</span>}
-                    {p.owner_team ? (
-                      <span className="kl-player-card-owner" style={{ background: tc?.bg, color: tc?.fg }}>{p.owner_team}</span>
-                    ) : can_pickup ? (
-                      <button className="kl-player-card-add" onClick={e => { e.stopPropagation(); pickup(p.id) }} disabled={pickingUp === p.id}>
-                        <i className="bi bi-plus"></i>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <button
+                        type="button"
+                        className={`wishlist-star${wishlistedIds.has(p.id) ? ' active' : ''}`}
+                        onClick={e => { e.stopPropagation(); toggleWishlist(p.id) }}
+                        aria-label={wishlistedIds.has(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                      >
+                        <i className={`bi ${wishlistedIds.has(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
                       </button>
-                    ) : (
-                      <span className="kl-player-card-fa">FA</span>
-                    )}
+                      {p.owner_team ? (
+                        <span className="kl-player-card-owner" style={{ background: tc?.bg, color: tc?.fg }}>{p.owner_team}</span>
+                      ) : can_pickup ? (
+                        <button className="kl-player-card-add" onClick={e => { e.stopPropagation(); pickup(p.id) }} disabled={pickingUp === p.id}>
+                          <i className="bi bi-plus"></i>
+                        </button>
+                      ) : (
+                        <span className="kl-player-card-fa">FA</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
