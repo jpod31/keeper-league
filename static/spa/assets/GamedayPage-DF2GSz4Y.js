@@ -8,7 +8,7 @@ import{b as e,f as t,h as n,i as r,n as i,p as a,t as o}from"./Spinner-BZqcd_eb.
 .gd-round-state { display: inline-flex; align-items: center; gap: 10px; }
 
 /* TV round clock */
-.gd-clock { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 5px 12px; border-radius: 10px; background: rgba(15,22,36,.55); border: 1px solid rgba(110,130,180,.22); font-family: ui-monospace, SFMono-Regular, monospace; position: relative; min-width: 118px; }
+.gd-clock { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 5px 12px; border-radius: 10px; background: rgba(15,22,36,.55); border: 1px solid rgba(110,130,180,.22); position: relative; min-width: 118px; font-feature-settings: "tnum" 1, "zero" 0; }
 .gd-clock.live { background: linear-gradient(135deg, rgba(61,140,99,.18), rgba(61,140,99,.04)); border-color: rgba(61,140,99,.45); box-shadow: 0 0 16px -4px rgba(61,140,99,.5); }
 .gd-clock.upcoming { background: linear-gradient(135deg, rgba(58,125,196,.14), rgba(58,125,196,.03)); border-color: rgba(58,125,196,.35); }
 .gd-clock-label { font-size: .7rem; font-weight: 800; letter-spacing: .16em; color: #f0f4fc; line-height: 1.1; }
@@ -27,11 +27,9 @@ import{b as e,f as t,h as n,i as r,n as i,p as a,t as o}from"./Spinner-BZqcd_eb.
 .gd-comp-btn:hover { color: #dde4f1; text-decoration: none; }
 .gd-comp-btn.active { background: rgba(58,125,196,.18); color: #82b3e4; }
 
-/* AFL ticker — broadcast pills */
-.gd-ticker { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: thin; padding: 12px 14px; background: rgba(15,22,36,.6); border: 1px solid rgba(110,130,180,.16); border-radius: 12px; margin-bottom: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.gd-ticker::-webkit-scrollbar { height: 4px; }
-.gd-ticker::-webkit-scrollbar-thumb { background: rgba(110,130,180,.3); border-radius: 4px; }
-.gd-ticker-pill { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(20,28,45,.7); border: 1px solid rgba(110,130,180,.2); text-decoration: none; font-size: .72rem; color: #b6c0d3; font-variant-numeric: tabular-nums; transition: background .14s, border-color .14s; }
+/* AFL ticker — broadcast pills, wrap to fit every game on one panel */
+.gd-ticker { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; background: rgba(15,22,36,.6); border: 1px solid rgba(110,130,180,.16); border-radius: 12px; margin-bottom: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.gd-ticker-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(20,28,45,.7); border: 1px solid rgba(110,130,180,.2); text-decoration: none; font-size: .72rem; color: #b6c0d3; font-variant-numeric: tabular-nums; transition: background .14s, border-color .14s; }
 .gd-ticker-pill:hover { background: rgba(28,38,58,.85); border-color: rgba(110,130,180,.32); color: #dde4f1; text-decoration: none; }
 .gd-ticker-dot { width: 7px; height: 7px; border-radius: 50%; background: #97a3ba; flex-shrink: 0; }
 .gd-ticker-pill.live .gd-ticker-dot { background: #6db38a; box-shadow: 0 0 8px rgba(109,179,138,.6); animation: gdPulse 1.6s ease-in-out infinite; }
@@ -44,16 +42,14 @@ import{b as e,f as t,h as n,i as r,n as i,p as a,t as o}from"./Spinner-BZqcd_eb.
 .gd-ticker-pill.upcoming .gd-ticker-tag { background: rgba(58,125,196,.18); color: #82b3e4; }
 .gd-ticker-pill.done .gd-ticker-tag { background: rgba(110,130,180,.16); color: #97a3ba; }
 
-/* KL mini bar */
-.gd-mini-bar { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: thin; padding: 10px 14px; background: rgba(15,22,36,.6); border: 1px solid rgba(110,130,180,.14); border-radius: 12px; margin-bottom: 12px; }
-.gd-mini-bar::-webkit-scrollbar { height: 4px; }
-.gd-mini-bar::-webkit-scrollbar-thumb { background: rgba(110,130,180,.3); border-radius: 4px; }
-.gd-mini-pill { flex: 1; min-width: 140px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 10px; border-radius: 10px; background: rgba(20,28,45,.5); border: 1px solid rgba(110,130,180,.18); cursor: pointer; transition: background .14s, border-color .14s, transform .14s; position: relative; }
+/* KL mini bar — wrap all fixtures so none get hidden */
+.gd-mini-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; padding: 10px 14px; background: rgba(15,22,36,.6); border: 1px solid rgba(110,130,180,.14); border-radius: 12px; margin-bottom: 12px; }
+.gd-mini-pill { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 10px; border-radius: 10px; background: rgba(20,28,45,.5); border: 1px solid rgba(110,130,180,.18); cursor: pointer; transition: background .14s, border-color .14s, transform .14s; position: relative; }
 .gd-mini-pill:hover { background: rgba(28,38,58,.8); border-color: rgba(110,130,180,.32); transform: translateY(-1px); }
 .gd-mini-pill.yours::before { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: #82b3e4; box-shadow: 0 0 6px rgba(130,179,228,.6); }
 .gd-mini-pill.active { border-color: rgba(58,125,196,.55); background: linear-gradient(135deg, rgba(58,125,196,.14), rgba(58,125,196,.03)); box-shadow: inset 0 0 0 1px rgba(58,125,196,.18); }
 .gd-mini-teams { font-size: .7rem; font-weight: 700; color: #dde4f1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.gd-mini-score { font-size: .68rem; color: #97a3ba; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, monospace; }
+.gd-mini-score { font-size: .68rem; color: #97a3ba; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; }
 
 /* Hero card */
 .gd-hero { position: relative; border-radius: 18px; padding: 22px 24px 18px; margin-bottom: 14px; background: radial-gradient(ellipse at 50% 0%, rgba(20,28,46,.92) 0%, rgba(11,16,28,.96) 65%, rgba(8,12,22,.98) 100%); border: 1px solid rgba(110,130,180,.2); overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
@@ -82,7 +78,7 @@ import{b as e,f as t,h as n,i as r,n as i,p as a,t as o}from"./Spinner-BZqcd_eb.
 
 .gd-hero-scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; }
 .gd-hero-score-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.gd-hero-score { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 3.6rem; font-weight: 900; line-height: 1; color: #97a3ba; font-variant-numeric: tabular-nums; letter-spacing: -.04em; transition: color .35s, text-shadow .35s; }
+.gd-hero-score { font-size: 3.6rem; font-weight: 900; line-height: 1; color: #97a3ba; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; letter-spacing: -.04em; transition: color .35s, text-shadow .35s; }
 .gd-hero-score.winning { color: var(--gd-side-accent, #f0f4fc); text-shadow: 0 0 28px rgba(var(--gd-side-rgb, 122,155,196), .4); }
 .gd-hero-dash { font-size: 2.2rem; font-weight: 200; color: #38415a; padding-top: 8px; line-height: 1; }
 .gd-cap-bonus { font-size: .65rem; font-weight: 700; color: #f0d27a; letter-spacing: .08em; white-space: nowrap; }
@@ -111,7 +107,7 @@ import{b as e,f as t,h as n,i as r,n as i,p as a,t as o}from"./Spinner-BZqcd_eb.
 .gd-pcard { background: rgba(15,22,36,.7); border: 1px solid rgba(110,130,180,.16); border-radius: 14px; overflow: hidden; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .gd-pcard-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(20,28,45,.6); border-bottom: 1px solid rgba(110,130,180,.12); }
 .gd-pcard-name { font-size: .82rem; font-weight: 800; color: #f0f4fc; letter-spacing: -.01em; }
-.gd-pcard-total { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 1.1rem; font-weight: 800; color: #f5f8ff; font-variant-numeric: tabular-nums; }
+.gd-pcard-total { font-size: 1.1rem; font-weight: 800; color: #f5f8ff; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; }
 
 .gd-section { display: flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: .58rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #6c7892; background: rgba(11,16,28,.55); border-bottom: 1px solid rgba(110,130,180,.08); border-left: 2px solid transparent; }
 .gd-section.field { border-left-color: rgba(61,140,99,.55); color: #7dc99a; background: rgba(61,140,99,.05); }
@@ -144,7 +140,7 @@ import{b as e,f as t,h as n,i as r,n as i,p as a,t as o}from"./Spinner-BZqcd_eb.
 .gd-pbadge.emg-active { background: rgba(58,125,196,.2); color: #82b3e4; border: 1px solid rgba(58,125,196,.4); }
 .gd-pbadge.dnp { background: rgba(110,130,180,.12); color: #97a3ba; }
 
-.gd-pscore { font-family: ui-monospace, SFMono-Regular, monospace; font-size: .98rem; font-weight: 800; color: #f0f4fc; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 5px; min-width: 36px; justify-content: flex-end; }
+.gd-pscore { font-size: .98rem; font-weight: 800; color: #f0f4fc; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; display: inline-flex; align-items: center; gap: 5px; min-width: 36px; justify-content: flex-end; }
 .gd-pscore.live { color: #7dc99a; }
 .gd-pscore.live::after { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #6db38a; box-shadow: 0 0 6px rgba(109,179,138,.7); animation: gdPulse 1.6s ease-in-out infinite; }
 .gd-pscore.ytp { color: #5a677e; animation: gdPulse 2.4s ease-in-out infinite; }
