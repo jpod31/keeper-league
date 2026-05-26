@@ -556,16 +556,25 @@ def squad(league_id, team_id):
         ).first()
         if season_cfg:
             now_utc = datetime.now(timezone.utc)
+            # SQLite + SQLAlchemy DateTime without timezone=True returns
+            # naive datetimes on read even if we wrote tz-aware. Coerce
+            # before comparing against aware `now_utc`.
+            def _aware(dt):
+                if dt is None:
+                    return None
+                return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+            mid_close = _aware(season_cfg.mid_trade_window_close)
+            mid_open = _aware(season_cfg.mid_trade_window_open)
+            off_close = _aware(season_cfg.off_trade_window_close)
+            off_open = _aware(season_cfg.off_trade_window_open)
             # Check mid-season trade window
-            if (season_cfg.mid_trade_window_open and season_cfg.mid_trade_window_close
-                    and now_utc < season_cfg.mid_trade_window_close):
+            if mid_open and mid_close and now_utc < mid_close:
                 trade_is_open = True
-                trade_close_date = season_cfg.mid_trade_window_close
+                trade_close_date = mid_close
             # Check off-season trade window
-            elif (season_cfg.off_trade_window_open and season_cfg.off_trade_window_close
-                    and now_utc < season_cfg.off_trade_window_close):
+            elif off_open and off_close and now_utc < off_close:
                 trade_is_open = True
-                trade_close_date = season_cfg.off_trade_window_close
+                trade_close_date = off_close
 
         draft_live = DS2.query.filter_by(
             league_id=league_id, is_mock=False

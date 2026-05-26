@@ -301,15 +301,28 @@ class League(db.Model):
                 ) or 0
                 return latest_completed < cfg.mid_season_trade_until_round
 
-            # mode == "window" — use date-based windows
-            if cfg.mid_trade_window_open and cfg.mid_trade_window_close:
-                if cfg.mid_trade_window_open <= now <= cfg.mid_trade_window_close:
+            # mode == "window" — use date-based windows. SQLite + SQLAlchemy
+            # DateTime (no timezone=True) strips tz info on round-trip, so
+            # stored values may be naive. Coerce to aware UTC before
+            # comparing against an aware `now`.
+            def _aware(dt):
+                if dt is None:
+                    return None
+                return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+            mid_open = _aware(cfg.mid_trade_window_open)
+            mid_close = _aware(cfg.mid_trade_window_close)
+            off_open = _aware(cfg.off_trade_window_open)
+            off_close = _aware(cfg.off_trade_window_close)
+
+            if mid_open and mid_close:
+                if mid_open <= now <= mid_close:
                     return True
-            if cfg.off_trade_window_open and cfg.off_trade_window_close:
-                if cfg.off_trade_window_open <= now <= cfg.off_trade_window_close:
+            if off_open and off_close:
+                if off_open <= now <= off_close:
                     return True
             # If any date-based window is configured, use dates only (don't fall back)
-            if cfg.mid_trade_window_open or cfg.off_trade_window_open:
+            if mid_open or off_open:
                 return False
         # Legacy fallback for leagues without date-based windows
         return self._trade_window_open

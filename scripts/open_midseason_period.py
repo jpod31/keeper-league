@@ -28,8 +28,13 @@ from models.database import db, League, SeasonConfig, DelistPeriod
 def aest_to_utc(dt_naive_aest):
     """AEST is UTC+10 year-round (Australia/Brisbane convention).
     For Melbourne/Sydney this is correct in winter; in summer those
-    cities are AEDT (UTC+11) — adjust if running late-Oct to early-Apr."""
-    return (dt_naive_aest - timedelta(hours=10)).replace(tzinfo=timezone.utc)
+    cities are AEDT (UTC+11) — adjust if running late-Oct to early-Apr.
+
+    Returns a NAIVE UTC datetime — SQLite + SQLAlchemy DateTime (without
+    timezone=True) strips tz info on round-trip, so writing tz-aware
+    here causes 'can't compare offset-naive and offset-aware' errors
+    in the existing trade_window_open property."""
+    return dt_naive_aest - timedelta(hours=10)
 
 
 def main():
@@ -48,7 +53,8 @@ def main():
 
     close_aest = datetime.fromisoformat(args.close)
     close_utc = aest_to_utc(close_aest)
-    open_utc = datetime.now(timezone.utc)
+    # Naive UTC — see aest_to_utc comment for why.
+    open_utc = datetime.utcnow()
 
     app = create_app()
     with app.app_context():
