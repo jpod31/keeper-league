@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router'
+import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
@@ -94,11 +95,11 @@ function scoringTagType(label: string): string {
 // Mobile cards inherit the same row layout, just compacter.
 const LAD_CSS = `
 .lad-wrap { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
-/* Grid: # | Team | Status | W-L | Form | Mov | PF | % | Pts */
+/* Grid: # | Team | Status | PR | W-L | Form | Mov | PF | PA | % | Pts */
 .lad-head, .lad-row {
   display: grid;
-  grid-template-columns: 36px 1fr 130px 80px 110px 64px 76px 70px 60px;
-  gap: 12px;
+  grid-template-columns: 36px 1fr 130px 52px 76px 110px 64px 70px 70px 64px 56px;
+  gap: 10px;
   align-items: center;
 }
 .lad-head {
@@ -112,6 +113,31 @@ const LAD_CSS = `
 }
 .lad-head > * { text-align: right; }
 .lad-head > :nth-child(1), .lad-head > :nth-child(2), .lad-head > :nth-child(3) { text-align: left; }
+
+/* Sortable header buttons */
+.lad-head button.lad-sort {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  transition: color .14s ease;
+  font: inherit;
+  letter-spacing: inherit;
+}
+.lad-head button.lad-sort:hover { color: #b6c0d3; }
+.lad-head .lad-sort-chev {
+  font-size: .55rem;
+  opacity: .25;
+  transition: opacity .14s ease, color .14s ease;
+}
+.lad-head .lad-sort.active { color: #dde4f1; }
+.lad-head .lad-sort.active .lad-sort-chev { opacity: 1; color: #82b3e4; }
+.lad-head > :nth-child(n+4) .lad-sort {
+  justify-content: flex-end;
+  width: 100%;
+}
 
 .lad-row {
   position: relative;
@@ -380,6 +406,21 @@ export interface StandingsPageProps {
   mode?: 'main' | 'sevens'
 }
 
+type SortField = 'pos' | 'name' | 'pr' | 'wins' | 'mov' | 'pf' | 'pa' | 'pct' | 'pts'
+type SortDir = 'asc' | 'desc'
+
+const DEFAULT_DIR: Record<SortField, SortDir> = {
+  pos: 'asc',
+  name: 'asc',
+  pr: 'asc',
+  wins: 'desc',
+  mov: 'desc',
+  pf: 'desc',
+  pa: 'desc',
+  pct: 'desc',
+  pts: 'desc',
+}
+
 export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
   const { leagueId } = useParams()
   const isSevens = mode === 'sevens'
@@ -387,17 +428,89 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
     ? `/leagues/${leagueId}/reserve7s/standings?format=json`
     : `/leagues/${leagueId}/standings?format=json`
   const { data, loading } = useFetch<StandingsData>(apiUrl)
+  const [sortField, setSortField] = useState<SortField>('pos')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function setSort(field: SortField) {
+    if (field === sortField) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir(DEFAULT_DIR[field])
+    }
+  }
+
+  const standings = data?.standings ?? []
+  const rankings = data?.rankings ?? []
+
+  const rankingByTeam = useMemo(() => {
+    const m: Record<number, Ranking> = {}
+    for (const r of rankings) m[r.team_id] = r
+    return m
+  }, [rankings])
+
+  const ladderPos = useMemo(() => {
+    const m = new Map<number, number>()
+    standings.forEach((s, i) => m.set(s.team_id, i + 1))
+    return m
+  }, [standings])
+
+  const sortedStandings = useMemo(() => {
+    const arr = [...standings]
+    arr.sort((a, b) => {
+      let av: number | string = 0
+      let bv: number | string = 0
+      switch (sortField) {
+        case 'pos':
+          av = ladderPos.get(a.team_id) ?? 999
+          bv = ladderPos.get(b.team_id) ?? 999
+          break
+        case 'name':
+          av = (a.team?.name || '').toLowerCase()
+          bv = (b.team?.name || '').toLowerCase()
+          break
+        case 'pr':
+          av = rankingByTeam[a.team_id]?.rank ?? 999
+          bv = rankingByTeam[b.team_id]?.rank ?? 999
+          break
+        case 'wins':
+          av = a.wins * 1000 - a.losses
+          bv = b.wins * 1000 - b.losses
+          break
+        case 'mov':
+          av = rankingByTeam[a.team_id]?.movement ?? 0
+          bv = rankingByTeam[b.team_id]?.movement ?? 0
+          break
+        case 'pf': av = a.points_for; bv = b.points_for; break
+        case 'pa': av = a.points_against; bv = b.points_against; break
+        case 'pct': av = a.percentage; bv = b.percentage; break
+        case 'pts': av = a.ladder_points; bv = b.ladder_points; break
+      }
+      let cmp = 0
+      if (typeof av === 'string' && typeof bv === 'string') cmp = av.localeCompare(bv)
+      else cmp = (av as number) - (bv as number)
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+    return arr
+  }, [standings, sortField, sortDir, ladderPos, rankingByTeam])
 
   if (loading) return <Spinner text="Loading standings..." />
   if (!data) return <p className="text-danger">Failed to load standings</p>
 
-  const { standings, finals_teams, scoring, rankings, ranking_details, team_form, user_team_id } = data
-  const hasRankings = rankings && rankings.length > 0
+  const { finals_teams, scoring, ranking_details, team_form, user_team_id } = data
+  const hasRankings = rankings.length > 0
   const scType = scoringTagType(scoring.label)
+  const showFinalsCut = sortField === 'pos' && sortDir === 'asc' && finals_teams > 0
 
-  // Merge standings + rankings into one row per team, keyed by team_id
-  const rankingByTeam: Record<number, Ranking> = {}
-  for (const r of rankings || []) rankingByTeam[r.team_id] = r
+  const SortBtn = ({ field, children }: { field: SortField, children: React.ReactNode }) => {
+    const active = sortField === field
+    const chev = active ? (sortDir === 'asc' ? '▲' : '▼') : '▾'
+    return (
+      <button type="button" className={`lad-sort${active ? ' active' : ''}`} onClick={() => setSort(field)}>
+        {children}<span className="lad-sort-chev">{chev}</span>
+      </button>
+    )
+  }
 
   return (
     <div className={isSevens ? 'lad-sevens' : ''}>
@@ -426,25 +539,27 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
       ) : (
         <>
           <div className="lad-head">
-            <span>#</span>
-            <span>Team</span>
+            <SortBtn field="pos">#</SortBtn>
+            <SortBtn field="name">Team</SortBtn>
             <span>Status</span>
-            <span>W–L</span>
+            <SortBtn field="pr">PR</SortBtn>
+            <SortBtn field="wins">W–L</SortBtn>
             <span>Form · 5</span>
-            <span>Mov.</span>
-            <span>{scoring.for_label}</span>
-            <span>{scoring.pct_label}</span>
-            <span>Pts</span>
+            <SortBtn field="mov">Mov.</SortBtn>
+            <SortBtn field="pf">{scoring.for_label}</SortBtn>
+            <SortBtn field="pa">{scoring.against_label}</SortBtn>
+            <SortBtn field="pct">{scoring.pct_label}</SortBtn>
+            <SortBtn field="pts">Pts</SortBtn>
           </div>
 
           <div className="lad-wrap">
-            {standings.map((s, i) => {
-              const pos = i + 1
+            {sortedStandings.map((s) => {
+              const pos = ladderPos.get(s.team_id) ?? 0
               const rk = rankingByTeam[s.team_id]
               const detail = ranking_details[String(s.team_id)]
               const form = team_form[String(s.team_id)] || []
               const isMine = user_team_id != null && s.team_id === user_team_id
-              const isFinalsCut = finals_teams > 0 && pos === finals_teams
+              const isFinalsCut = showFinalsCut && pos === finals_teams
               const accent = accentFor(s.team_id)
               const movement = rk?.movement ?? 0
               const headline = detail?.headline
@@ -472,6 +587,10 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
                       )}
                     </span>
 
+                    <span className="lad-num lad-pr">
+                      {rk?.rank ? <>#{rk.rank}</> : <span className="lad-num-muted">—</span>}
+                    </span>
+
                     <span className="lad-wl">
                       <span className="w">{s.wins}</span>
                       <span className="sep">–</span>
@@ -493,6 +612,10 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
 
                     <span className="lad-num">
                       {s.points_for > 0 ? Math.round(s.points_for) : '–'}
+                    </span>
+
+                    <span className="lad-num">
+                      {s.points_against > 0 ? Math.round(s.points_against) : '–'}
                     </span>
 
                     <span className="lad-num">
