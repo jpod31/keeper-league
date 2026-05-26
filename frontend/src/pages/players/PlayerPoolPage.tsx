@@ -144,7 +144,7 @@ interface PoolPlayer {
 interface TeamColour { fg: string; bg: string }
 
 interface PoolData {
-  league: { id: number; name: string; squad_size: number }
+  league: { id: number; name: string; squad_size: number; trade_window_open?: boolean }
   players: PoolPlayer[]
   team_colours: Record<string, TeamColour>
   team_logos: Record<string, string>
@@ -153,6 +153,7 @@ interface PoolData {
   effective_roster_count: number
   ltil_count: number
   can_pickup: boolean
+  pickup_reason?: string | null
   ssp_cutoff_round: number
 }
 
@@ -429,6 +430,24 @@ export function PlayerPoolPage() {
           <span style={{ color: '#c9d1d9' }}>
             SSP pickups open — <strong>{effective_roster_count}/{league.squad_size}</strong> roster spots filled
             {ltil_count ? ` (${ltil_count} on LTIL)` : ''}. Closes at Round {ssp_cutoff_round}.
+          </span>
+        </div>
+      )}
+
+      {!can_pickup && data.pickup_reason && data.user_team_id && (
+        <div
+          className="d-flex align-items-center gap-2 mb-3 px-3 py-2"
+          style={{
+            background: 'rgba(210,153,34,.08)',
+            border: '1px solid rgba(210,153,34,.3)',
+            borderRadius: 8,
+            fontSize: '.82rem',
+          }}
+        >
+          <i className="bi bi-info-circle-fill" style={{ color: '#d29922' }}></i>
+          <span style={{ color: '#f0d18a' }}>
+            <strong>Free-agent pickups paused.</strong>
+            <span style={{ color: '#c9d1d9', marginLeft: 6, fontWeight: 400 }}>{data.pickup_reason}</span>
           </span>
         </div>
       )}

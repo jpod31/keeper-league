@@ -252,7 +252,16 @@ def player_pool(league_id):
         )
         current_round = latest_completed.afl_round if latest_completed else 0
 
-        can_pickup = below_cap and current_round < ssp_cutoff_round
+        # Free-agent pickups are STRICTLY in-season SSP territory. As soon
+        # as a trade window opens (mid-season or off-season), squad spots
+        # get refilled via the upcoming draft — never via the player pool.
+        # This also covers the case where AflGame.status isn't being
+        # marked "completed" reliably (which made the round check pass).
+        can_pickup = (
+            below_cap
+            and current_round < ssp_cutoff_round
+            and not league.trade_window_open
+        )
 
     # Keeper Value Index for rostered players
     rostered_pids = list(rostered_map.keys())
@@ -435,9 +444,24 @@ def player_pool(league_id):
                 "acquired_history": [_ser_history_entry(e) for e in hist],
             }
 
+        # Human-readable reason for why pickups might be paused, so the
+        # frontend can show a clear banner instead of just hiding the
+        # Add button silently.
+        pickup_reason = None
+        if user_team and not can_pickup:
+            if league.trade_window_open:
+                pickup_reason = "Pickups paused — squad spots fill via the upcoming draft, not the player pool."
+            elif not below_cap:
+                pickup_reason = f"Your roster is full ({effective_count}/{league.squad_size})."
+            elif current_round >= ssp_cutoff_round:
+                pickup_reason = f"SSP pickup window closed after Round {ssp_cutoff_round}."
+
         from config import TEAM_LOGOS
         return jsonify({
-            "league": {"id": league.id, "name": league.name, "squad_size": league.squad_size},
+            "league": {
+                "id": league.id, "name": league.name, "squad_size": league.squad_size,
+                "trade_window_open": bool(league.trade_window_open),
+            },
             "players": [_ser_player(p) for p in players],
             "team_colours": team_colours,
             "team_logos": TEAM_LOGOS,
@@ -446,6 +470,7 @@ def player_pool(league_id):
             "effective_roster_count": roster_count - ltil_count,
             "ltil_count": ltil_count,
             "can_pickup": bool(can_pickup),
+            "pickup_reason": pickup_reason,
             "ssp_cutoff_round": ssp_cutoff_round,
         })
 
@@ -494,7 +519,14 @@ def player_pickup(league_id):
     if effective_count >= (league.squad_size or 0):
         return jsonify({"error": "Your roster is full (%d/%d)" % (effective_count, league.squad_size)}), 409
 
-    # Check SSP cutoff round
+    # Hard rule: no free-agent pickups while a trade window is open.
+    # Squad spots are filled by the upcoming draft, not the player pool.
+    if league.trade_window_open:
+        return jsonify({
+            "error": "Free-agent pickups are paused — squad spots fill via the upcoming draft, not the player pool."
+        }), 409
+
+    # Check SSP cutoff round (in-season SSP-only window)
     sc = SeasonConfig.query.filter_by(
         league_id=league_id, year=league.season_year
     ).first()
