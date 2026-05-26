@@ -64,23 +64,22 @@ function LeagueShellInner() {
     setSelectorOpen(false)
   }, [pathname])
 
-  // Render the chrome strip in ALL states (loading / error / loaded) so
-  // the nav bar's height is reserved from first paint — eliminates the
-  // "jolt" where the strip would appear ~200ms after the page mounted.
+  // During loading, render the rail's silhouette (collapsed-width
+  // shell with skeleton rows) so the content area's left offset is
+  // reserved from first paint — no layout shift when data arrives.
   if (loading) {
     return (
       <>
-        <div className="league-nav d-none d-lg-block">
-          <div className="league-nav-inner kl-strip-loading">
-            <span className="kl-skel kl-skel-switch" />
-            <span className="kl-skel kl-skel-tab" style={{ width: 88 }} />
-            <span className="kl-skel kl-skel-tab" style={{ width: 92 }} />
-            <span className="kl-skel kl-skel-tab" style={{ width: 80 }} />
-            <span className="kl-skel kl-skel-tab" style={{ width: 80 }} />
-            <span className="kl-skel kl-skel-tab" style={{ width: 80 }} />
-            <span className="kl-skel kl-skel-tab" style={{ width: 80 }} />
+        <aside className="kl-rail d-none d-lg-flex" aria-hidden>
+          <div className="kl-rail-head">
+            <span className="kl-skel kl-skel-avatar" />
           </div>
-        </div>
+          <nav className="kl-rail-nav">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <span key={i} className="kl-skel kl-skel-row" />
+            ))}
+          </nav>
+        </aside>
         <Spinner text="Loading league..." />
       </>
     )
@@ -140,34 +139,20 @@ function LeagueShellInner() {
 
   return (
     <>
-      {/* ═══ Desktop league tab bar ═══ */}
-      <div className="league-nav d-none d-lg-block">
-        <div
-          className="league-nav-inner"
-          style={{ '--lgs-rgb': accentFor(lid).rgb } as React.CSSProperties}
-        >
-          {/* League selector — modern pill switcher */}
-          <LeagueSwitcher
-            currentId={lid}
-            currentName={league.name}
-            currentSeason={league.season_year}
-            leagues={league.user_leagues}
-            isOpen={selectorOpen}
-            setOpen={setSelectorOpen}
-          />
-
-
-          <LeagueTabs
-            lid={lid}
-            teamId={t?.id}
-            activeTab={activeTab}
-            activeDraft={!!league.active_draft}
-            isCommissioner={!!league.is_commissioner}
-            pendingLtilCount={league.pending_ltil_count || 0}
-          />
-
-        </div>
-      </div>
+      {/* ═══ Desktop left rail ═══ */}
+      <LeagueRail
+        lid={lid}
+        teamId={t?.id}
+        leagueName={league.name}
+        leagueSeason={league.season_year}
+        userLeagues={league.user_leagues}
+        activeTab={activeTab}
+        activeDraft={!!league.active_draft}
+        isCommissioner={!!league.is_commissioner}
+        pendingLtilCount={league.pending_ltil_count || 0}
+        switcherOpen={selectorOpen}
+        setSwitcherOpen={setSelectorOpen}
+      />
 
       {/* Page content — wrapped in a keyed motion div so route changes fade+slide */}
       <AnimatePresence mode="wait">
@@ -354,177 +339,239 @@ interface SwitcherLeague {
   invite_code?: string | null
 }
 
-function LeagueSwitcher({
-  currentId, currentName, currentSeason, leagues, isOpen, setOpen,
-}: {
-  currentId: number
-  currentName: string
-  currentSeason: number
-  leagues: SwitcherLeague[]
-  isOpen: boolean
-  setOpen: (v: boolean | ((s: boolean) => boolean)) => void
-}) {
-  const rootRef = useRef<HTMLDivElement>(null)
-  const accent = accentFor(currentId)
 
-  // Close on outside click + Escape
+// ── League rail (desktop left nav) ─────────────────────────────
+// Fixed left rail, collapsed 80px → hover/pinned 240px. Top: league
+// switcher avatar that opens the dropdown. Middle: vertical nav with
+// full-width active state in the league accent + inline sub-tab
+// expansion under the active section. Bottom: round status widget.
+
+interface RailSection {
+  to: string
+  key: string
+  icon: string
+  label: string
+  pulse?: boolean
+  badge?: number
+  sub?: { to: string; label: string; key: string }[]
+}
+
+function LeagueRail({
+  lid, teamId, leagueName, leagueSeason, userLeagues,
+  activeTab, activeDraft, isCommissioner, pendingLtilCount,
+  switcherOpen, setSwitcherOpen,
+}: {
+  lid: number
+  teamId?: number
+  leagueName: string
+  leagueSeason: number
+  userLeagues: SwitcherLeague[]
+  activeTab: string
+  activeDraft: boolean
+  isCommissioner: boolean
+  pendingLtilCount: number
+  switcherOpen: boolean
+  setSwitcherOpen: (v: boolean | ((s: boolean) => boolean)) => void
+}) {
+  // Pinned-state persists across navigations.
+  const [pinned, setPinned] = useState<boolean>(() => {
+    try { return localStorage.getItem('kl_rail_pinned') === '1' } catch { return false }
+  })
+  const [hover, setHover] = useState(false)
+  const expanded = pinned || hover || switcherOpen
+  const accent = accentFor(lid)
+
+  const switcherRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (!isOpen) return
+    if (!switcherOpen) return
     function onDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) setSwitcherOpen(false)
     }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setSwitcherOpen(false) }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [isOpen, setOpen])
+  }, [switcherOpen, setSwitcherOpen])
 
-  // Order: current league first, then others by id (stable)
-  const ordered = useMemo(() => {
-    const current = leagues.find(l => l.id === currentId)
-    const rest = leagues.filter(l => l.id !== currentId).sort((a, b) => a.id - b.id)
-    return current ? [current, ...rest] : leagues
-  }, [leagues, currentId])
+  function togglePin() {
+    setPinned(p => {
+      const next = !p
+      try { localStorage.setItem('kl_rail_pinned', next ? '1' : '0') } catch {}
+      return next
+    })
+  }
 
-  return (
-    <div className="league-selector" ref={rootRef}
-      style={{ '--lgs-rgb': accent.rgb } as React.CSSProperties}>
-      <button
-        type="button"
-        className={`lg-switch${isOpen ? ' open' : ''}`}
-        onClick={() => setOpen(s => !s)}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-      >
-        <span className="lg-switch-avatar">{leagueInitials(currentName)}</span>
-        <span className="lg-switch-body">
-          <span className="lg-switch-name">{currentName}</span>
-          <span className="lg-switch-sub">{currentSeason} season</span>
-        </span>
-        {leagues.length > 1 && (
-          <span className="lg-switch-count">{leagues.length}</span>
-        )}
-        <i className="bi bi-chevron-down lg-switch-chev"></i>
-      </button>
+  // Set body class so content margin adjusts globally
+  useEffect(() => {
+    document.body.classList.add('has-league-rail')
+    return () => document.body.classList.remove('has-league-rail')
+  }, [])
+  useEffect(() => {
+    document.body.classList.toggle('league-rail-expanded', expanded)
+  }, [expanded])
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="lg-switch-menu"
-            role="menu"
-            initial={{ opacity: 0, y: -6, scale: .98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: .98 }}
-            transition={{ duration: .14, ease: [.2, .7, .2, 1] }}
-          >
-            <div className="lg-switch-menu-head">Your leagues · {leagues.length}</div>
-            {ordered.map(lg => {
-              const a = accentFor(lg.id)
-              const isCurrent = lg.id === currentId
-              return (
-                <Link key={lg.id}
-                  to={`/leagues/${lg.id}`}
-                  className={`lg-switch-item${isCurrent ? ' active' : ''}`}
-                  style={{ '--lgs-row-rgb': a.rgb } as React.CSSProperties}
-                  onClick={() => setOpen(false)}
-                  role="menuitem"
-                >
-                  <span className="lg-switch-item-avatar">{leagueInitials(lg.name)}</span>
-                  <span className="lg-switch-item-body">
-                    <span className="lg-switch-item-name">{lg.name}</span>
-                    <span className="lg-switch-item-meta">
-                      {lg.season_year} season
-                      {lg.invite_code && <> · <span style={{ letterSpacing: 1, fontFamily: 'ui-monospace, monospace' }}>{lg.invite_code}</span></>}
-                    </span>
-                  </span>
-                  {isCurrent && <i className="bi bi-check-circle-fill lg-switch-item-active-mark"></i>}
-                </Link>
-              )
-            })}
-            <div className="lg-switch-divider"></div>
-            <Link to="/leagues/create" className="lg-switch-cta" onClick={() => setOpen(false)}>
-              <i className="bi bi-plus-circle-fill"></i>Create a new league
-            </Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-// ── League tabs ────────────────────────────────────────────────
-// Pill-row of glass tabs with a single animated indicator that
-// glides between active tabs via framer-motion layoutId. Mobile
-// gets horizontal scroll + edge-fade mask.
-
-interface TabSpec {
-  to: string
-  key: string
-  icon: string
-  label: string
-  pulse?: boolean   // for live-draft amber
-  badge?: number    // for admin pending count
-}
-
-function LeagueTabs({
-  lid, teamId, activeTab, activeDraft, isCommissioner, pendingLtilCount,
-}: {
-  lid: number
-  teamId?: number
-  activeTab: string
-  activeDraft: boolean
-  isCommissioner: boolean
-  pendingLtilCount: number
-}) {
-  const tabs: TabSpec[] = []
+  const sections: RailSection[] = []
   if (teamId) {
-    tabs.push({ to: `/leagues/${lid}/team/${teamId}`, key: 'team',    icon: 'bi-person-fill-gear',    label: 'My Team' })
-    tabs.push({ to: `/leagues/${lid}/gameday`,        key: 'gameday', icon: 'bi-controller',          label: 'Gameday' })
+    sections.push({
+      to: `/leagues/${lid}/team/${teamId}`, key: 'team', icon: 'bi-person-fill-gear', label: 'My Team',
+      sub: [
+        { to: `/leagues/${lid}/team/${teamId}`,           key: 'field',     label: 'Field' },
+        { to: `/leagues/${lid}/team/${teamId}/stats`,     key: 'stats',     label: 'Stats' },
+        { to: `/leagues/${lid}/team/${teamId}/analytics`, key: 'analytics', label: 'Analytics' },
+        { to: `/leagues/${lid}/trades`,                   key: 'trades',    label: 'Trades' },
+      ],
+    })
+    sections.push({ to: `/leagues/${lid}/gameday`, key: 'gameday', icon: 'bi-controller', label: 'Gameday' })
   }
-  tabs.push({ to: `/leagues/${lid}/player-pool`,    key: 'players', icon: 'bi-grid-3x3-gap-fill',   label: 'Players' })
-  tabs.push({ to: `/leagues/${lid}/fixture`,        key: 'league',  icon: 'bi-calendar-week-fill',  label: 'League' })
+  sections.push({
+    to: `/leagues/${lid}/player-pool`, key: 'players', icon: 'bi-grid-3x3-gap-fill', label: 'Players',
+    sub: [
+      { to: `/leagues/${lid}/player-pool`,       key: 'pool',      label: 'Pool' },
+      { to: `/leagues/${lid}/players/compare`,   key: 'compare',   label: 'Compare' },
+      { to: `/leagues/${lid}/stats`,             key: 'stats',     label: 'Stats' },
+      { to: `/leagues/${lid}/injuries`,          key: 'injuries',  label: 'Injuries' },
+      { to: `/leagues/${lid}/player-ratings`,    key: 'ratings',   label: 'Ratings' },
+      { to: `/leagues/${lid}/scouting`,          key: 'scouting',  label: 'Scouting' },
+    ],
+  })
+  sections.push({
+    to: `/leagues/${lid}/fixture`, key: 'league', icon: 'bi-calendar-week-fill', label: 'League',
+    sub: [
+      { to: `/leagues/${lid}/standings`,    key: 'ladder',   label: 'Ladder' },
+      { to: `/leagues/${lid}/fixture`,      key: 'fixture',  label: 'Fixtures' },
+      { to: `/leagues/${lid}/history`,      key: 'records',  label: 'Records' },
+      { to: `/leagues/${lid}/list-changes`, key: 'changes',  label: 'Changes' },
+    ],
+  })
   if (activeDraft) {
-    tabs.push({ to: `/leagues/${lid}/draft`, key: 'draft', icon: 'bi-list-check', label: 'Draft Room', pulse: true })
+    sections.push({ to: `/leagues/${lid}/draft`, key: 'draft', icon: 'bi-list-check', label: 'Draft Room', pulse: true })
   }
-  tabs.push({ to: `/leagues/${lid}/chat`, key: 'comms', icon: 'bi-megaphone-fill', label: 'Comms' })
+  sections.push({ to: `/leagues/${lid}/chat`, key: 'comms', icon: 'bi-megaphone-fill', label: 'Comms' })
   if (isCommissioner) {
-    tabs.push({ to: `/leagues/${lid}/commissioner`, key: 'commissioner', icon: 'bi-shield-lock-fill', label: 'Admin', badge: pendingLtilCount })
+    sections.push({ to: `/leagues/${lid}/commissioner`, key: 'commissioner', icon: 'bi-shield-lock-fill', label: 'Admin', badge: pendingLtilCount })
   } else {
-    tabs.push({ to: `/leagues/${lid}/settings`, key: 'settings', icon: 'bi-gear-fill', label: 'Settings' })
+    sections.push({ to: `/leagues/${lid}/settings`, key: 'settings', icon: 'bi-gear-fill', label: 'Settings' })
   }
 
-  function isActive(tab: TabSpec): boolean {
-    // Admin tab covers both 'commissioner' and 'settings' active states
-    if (tab.key === 'commissioner') return activeTab === 'commissioner' || activeTab === 'settings'
-    return activeTab === tab.key
+  function isSectionActive(s: RailSection): boolean {
+    if (s.key === 'commissioner') return activeTab === 'commissioner' || activeTab === 'settings'
+    return activeTab === s.key
   }
 
   return (
-    <nav className="kl-tabs d-none d-lg-flex" role="tablist">
-      {tabs.map(tab => {
-        const active = isActive(tab)
-        return (
-          <NavLink
-            key={tab.key}
-            to={tab.to}
-            className={`kl-tab${active ? ' active' : ''}${tab.pulse ? ' pulse' : ''}`}
-            role="tab"
-            aria-selected={active}
-          >
-            <i className={`bi ${tab.icon}`}></i>
-            <span>{tab.label}</span>
-            {tab.pulse && <span className="kl-tab-pulse-dot" aria-hidden="true"></span>}
-            {tab.badge !== undefined && tab.badge > 0 && (
-              <span className="kl-tab-badge">{tab.badge}</span>
-            )}
-          </NavLink>
-        )
-      })}
-    </nav>
+    <aside
+      className={`kl-rail d-none d-lg-flex${expanded ? ' expanded' : ''}${pinned ? ' pinned' : ''}`}
+      style={{ '--lgs-rgb': accent.rgb } as React.CSSProperties}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {/* Header — league avatar/switcher */}
+      <div className="kl-rail-head" ref={switcherRef}>
+        <button
+          type="button"
+          className={`kl-rail-switcher${switcherOpen ? ' open' : ''}`}
+          onClick={() => setSwitcherOpen(o => !o)}
+          aria-haspopup="menu"
+          aria-expanded={switcherOpen}
+          title={`${leagueName} · ${leagueSeason}`}
+        >
+          <span className="kl-rail-avatar">{leagueInitials(leagueName)}</span>
+          <span className="kl-rail-switcher-body">
+            <span className="kl-rail-switcher-name">{leagueName}</span>
+            <span className="kl-rail-switcher-sub">{leagueSeason} season</span>
+          </span>
+          {userLeagues.length > 1 && (
+            <i className="bi bi-chevron-down kl-rail-switcher-chev"></i>
+          )}
+        </button>
+        <button
+          type="button"
+          className={`kl-rail-pin${pinned ? ' pinned' : ''}`}
+          onClick={togglePin}
+          title={pinned ? 'Unpin nav' : 'Pin nav open'}
+          aria-pressed={pinned}
+        >
+          <i className={`bi ${pinned ? 'bi-pin-angle-fill' : 'bi-pin-angle'}`}></i>
+        </button>
+
+        <AnimatePresence>
+          {switcherOpen && (
+            <motion.div
+              className="kl-rail-switcher-menu"
+              role="menu"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: .14, ease: [.2, .7, .2, 1] }}
+            >
+              <div className="kl-rail-switcher-menu-head">Your leagues · {userLeagues.length}</div>
+              {userLeagues.map(lg => {
+                const a = accentFor(lg.id)
+                const isCurrent = lg.id === lid
+                return (
+                  <Link key={lg.id}
+                    to={`/leagues/${lg.id}`}
+                    className={`lg-switch-item${isCurrent ? ' active' : ''}`}
+                    style={{ '--lgs-row-rgb': a.rgb } as React.CSSProperties}
+                    onClick={() => setSwitcherOpen(false)}
+                    role="menuitem"
+                  >
+                    <span className="lg-switch-item-avatar">{leagueInitials(lg.name)}</span>
+                    <span className="lg-switch-item-body">
+                      <span className="lg-switch-item-name">{lg.name}</span>
+                      <span className="lg-switch-item-meta">{lg.season_year} season</span>
+                    </span>
+                    {isCurrent && <i className="bi bi-check-circle-fill lg-switch-item-active-mark"></i>}
+                  </Link>
+                )
+              })}
+              <div className="lg-switch-divider"></div>
+              <Link to="/leagues/create" className="lg-switch-cta" onClick={() => setSwitcherOpen(false)}>
+                <i className="bi bi-plus-circle-fill"></i>Create a new league
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Nav */}
+      <nav className="kl-rail-nav" role="tablist">
+        {sections.map(section => {
+          const active = isSectionActive(section)
+          return (
+            <div key={section.key} className={`kl-rail-item${active ? ' active' : ''}`}>
+              <NavLink
+                to={section.to}
+                className={`kl-rail-row${active ? ' active' : ''}${section.pulse ? ' pulse' : ''}`}
+                role="tab"
+                aria-selected={active}
+              >
+                <span className="kl-rail-icon"><i className={`bi ${section.icon}`}></i></span>
+                <span className="kl-rail-label">{section.label}</span>
+                {section.pulse && <span className="kl-rail-pulse" aria-hidden="true"></span>}
+                {section.badge !== undefined && section.badge > 0 && (
+                  <span className="kl-rail-badge">{section.badge}</span>
+                )}
+              </NavLink>
+              {/* Inline sub-tabs when active + rail expanded */}
+              {active && section.sub && expanded && (
+                <div className="kl-rail-sub">
+                  {section.sub.map(st => (
+                    <NavLink key={st.key} to={st.to} className="kl-rail-sub-row" end={false}>
+                      <span className="kl-rail-sub-dot"></span>
+                      <span>{st.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </nav>
+    </aside>
   )
 }
+

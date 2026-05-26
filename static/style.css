@@ -2367,6 +2367,333 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   font-size: .85rem;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   LEAGUE RAIL — fixed left sidebar nav
+   Replaces the horizontal .kl-tabs strip. 80px collapsed (icon-only),
+   240px on hover or when pinned. Sits below the top bar, runs full
+   height. Glass surface, league-accent gradient line on its right
+   edge. Active section: full-width gradient bar + glowing icon.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --kl-rail-w-collapsed: 76px;
+  --kl-rail-w-expanded:  240px;
+  --kl-rail-top:         58px;   /* matches the new glass top bar height */
+}
+
+/* Content offset — every league page's main container shifts right
+   to clear the rail. Rail expansion is a VISUAL overlay (covers more
+   space when wider) but does NOT push content; content always reserves
+   the collapsed width so layout never jolts on hover. */
+body.has-league-rail main.container {
+  padding-left: calc(var(--kl-rail-w-collapsed) + 16px);
+  transition: padding-left .2s cubic-bezier(.2,.7,.2,1);
+  max-width: none;
+}
+
+/* Rail container */
+.kl-rail {
+  position: fixed;
+  left: 0;
+  top: var(--kl-rail-top);
+  bottom: 0;
+  width: var(--kl-rail-w-collapsed);
+  z-index: 1025;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.2)),
+    rgba(9,11,16,.86);
+  border-right: 1px solid rgba(255,255,255,.06);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  transition: width .22s cubic-bezier(.2,.7,.2,1);
+  overflow: hidden;
+}
+.kl-rail.expanded { width: var(--kl-rail-w-expanded); }
+
+/* Right-edge accent gradient line — anchors the rail to this league */
+.kl-rail::after {
+  content: "";
+  position: absolute;
+  top: 24px; bottom: 24px; right: 0;
+  width: 1px;
+  background: linear-gradient(180deg,
+    transparent,
+    rgba(var(--lgs-rgb, 88,166,255), .65) 20%,
+    rgba(var(--lgs-rgb, 88,166,255), .65) 80%,
+    transparent);
+  opacity: .55;
+}
+
+/* ── Rail header (switcher avatar + pin) ────────────────────── */
+.kl-rail-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  margin-bottom: 12px;
+}
+.kl-rail-switcher {
+  all: unset;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 12px 0 8px;
+  border-radius: 14px;
+  cursor: pointer;
+  background: rgba(var(--lgs-rgb, 88,166,255), .05);
+  border: 1px solid rgba(var(--lgs-rgb, 88,166,255), .25);
+  transition: background .15s ease, border-color .15s ease;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.kl-rail-switcher:hover {
+  background: rgba(var(--lgs-rgb, 88,166,255), .1);
+  border-color: rgba(var(--lgs-rgb, 88,166,255), .45);
+}
+.kl-rail-switcher.open {
+  background: rgba(var(--lgs-rgb, 88,166,255), .12);
+  border-color: rgba(var(--lgs-rgb, 88,166,255), .55);
+  box-shadow: 0 0 0 2px rgba(var(--lgs-rgb, 88,166,255), .15);
+}
+.kl-rail-avatar {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800;
+  font-size: .92rem;
+  letter-spacing: .02em;
+  color: #0d1117;
+  background: linear-gradient(135deg, rgb(var(--lgs-rgb, 88,166,255)), color-mix(in srgb, rgb(var(--lgs-rgb, 88,166,255)) 60%, #ffffff));
+  flex: 0 0 40px;
+  box-shadow: 0 4px 12px -4px rgba(var(--lgs-rgb, 88,166,255), .5);
+}
+.kl-rail-switcher-body {
+  display: none;
+  flex-direction: column;
+  min-width: 0;
+}
+.kl-rail.expanded .kl-rail-switcher-body { display: flex; }
+.kl-rail-switcher-name {
+  font-size: .9rem; font-weight: 700; color: #f0f6fc;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.15;
+}
+.kl-rail-switcher-sub {
+  font-size: .62rem; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: #8b949e; margin-top: 2px;
+}
+.kl-rail-switcher-chev {
+  font-size: .68rem; color: #8b949e;
+  display: none;
+}
+.kl-rail.expanded .kl-rail-switcher-chev { display: inline; }
+
+.kl-rail-pin {
+  all: unset;
+  width: 28px; height: 28px;
+  display: none;
+  align-items: center; justify-content: center;
+  border-radius: 8px;
+  color: #8b949e;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+  flex: 0 0 28px;
+}
+.kl-rail.expanded .kl-rail-pin { display: flex; }
+.kl-rail-pin:hover { background: rgba(255,255,255,.05); color: #f0f6fc; }
+.kl-rail-pin.pinned { color: rgb(var(--lgs-rgb, 88,166,255)); }
+
+/* Switcher dropdown panel */
+.kl-rail-switcher-menu {
+  position: absolute;
+  top: 64px;
+  left: 4px;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  background: linear-gradient(180deg, #161b22, #0d1117);
+  border: 1px solid rgba(48,54,61,.85);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 24px 56px -16px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02) inset;
+  backdrop-filter: blur(10px);
+  z-index: 1030;
+}
+.kl-rail-switcher-menu-head {
+  font-size: .58rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .14em;
+  color: #6e7681; padding: 6px 10px 8px;
+}
+
+/* ── Nav body ───────────────────────────────────────────────── */
+.kl-rail-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.1) transparent;
+  padding: 4px 0;
+}
+.kl-rail-nav::-webkit-scrollbar { width: 4px; }
+.kl-rail-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 999px; }
+
+.kl-rail-item { position: relative; }
+
+.kl-rail-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  color: #9ba4af;
+  text-decoration: none;
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: .005em;
+  white-space: nowrap;
+  transition: background .14s ease, color .14s ease, transform .14s ease;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.kl-rail-row:hover {
+  background: rgba(255,255,255,.04);
+  color: #e6edf3;
+  text-decoration: none;
+}
+.kl-rail-icon {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem;
+  flex: 0 0 28px;
+  color: inherit;
+  transition: transform .14s ease;
+}
+.kl-rail-label {
+  flex: 1;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity .15s ease .04s, transform .18s ease .04s;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kl-rail.expanded .kl-rail-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Active state — accent bar fills the row, icon scales + glows */
+.kl-rail-row.active {
+  color: #ffffff;
+  background:
+    linear-gradient(90deg,
+      rgba(var(--lgs-rgb, 88,166,255), .26),
+      rgba(var(--lgs-rgb, 88,166,255), .1) 70%,
+      transparent);
+  box-shadow: inset 3px 0 0 rgb(var(--lgs-rgb, 88,166,255));
+}
+.kl-rail-row.active .kl-rail-icon {
+  color: rgb(var(--lgs-rgb, 88,166,255));
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 6px rgba(var(--lgs-rgb, 88,166,255), .55));
+}
+
+/* Pulse dot for live draft */
+.kl-rail-pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #ffb86b;
+  box-shadow: 0 0 0 0 rgba(255,184,107,.6);
+  animation: kl-rail-pulse 1.6s ease-out infinite;
+  flex: 0 0 8px;
+  margin-right: 2px;
+}
+@keyframes kl-rail-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255,184,107,.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(255,184,107,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,184,107,0); }
+}
+.kl-rail-row.pulse:not(.active) { color: #ffb86b; }
+.kl-rail-row.pulse:not(.active) .kl-rail-icon { color: #ffb86b; }
+
+/* Badge (admin pending count) */
+.kl-rail-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d29922; color: #1f1500;
+  font-size: .58rem; font-weight: 800; letter-spacing: .04em;
+}
+/* When collapsed, badge floats top-right of the row */
+.kl-rail:not(.expanded) .kl-rail-badge {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 14px; height: 14px;
+  font-size: .5rem;
+}
+.kl-rail:not(.expanded) .kl-rail-pulse {
+  position: absolute;
+  top: 8px; right: 8px;
+  margin: 0;
+}
+
+/* ── Inline sub-tabs ────────────────────────────────────────── */
+.kl-rail-sub {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0 8px 14px;
+  margin-left: 18px;
+  border-left: 1px solid rgba(var(--lgs-rgb, 88,166,255), .25);
+  margin-bottom: 4px;
+  animation: kl-rail-sub-in .2s cubic-bezier(.2,.7,.2,1);
+}
+@keyframes kl-rail-sub-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.kl-rail-sub-row {
+  display: flex; align-items: center; gap: 10px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #8b949e;
+  text-decoration: none;
+  font-size: .78rem;
+  font-weight: 500;
+  transition: color .14s ease, background .14s ease;
+}
+.kl-rail-sub-row:hover { color: #e6edf3; background: rgba(255,255,255,.03); text-decoration: none; }
+.kl-rail-sub-row.active {
+  color: rgb(var(--lgs-rgb, 88,166,255));
+  font-weight: 700;
+}
+.kl-rail-sub-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .5;
+  flex: 0 0 5px;
+}
+.kl-rail-sub-row.active .kl-rail-sub-dot { opacity: 1; box-shadow: 0 0 6px currentColor; }
+
+/* ── Skeletons (loading state) ──────────────────────────────── */
+.kl-skel-avatar { width: 40px; height: 40px; border-radius: 12px; }
+.kl-skel-row { width: calc(100% - 16px); margin: 0 8px; height: 36px; border-radius: 10px; }
+
+/* ── League sub-tabs (.kl-tabs) — legacy, kept temporarily ─── */
+
 /* ── League sub-tabs (.kl-tabs) ──────────────────────────────
    Sit naturally to the right of the switcher; don't stretch. Each
    tab is a calm rounded pill. The active tab fills with the league's
