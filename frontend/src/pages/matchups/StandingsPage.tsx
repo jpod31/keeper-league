@@ -94,11 +94,14 @@ function scoringTagType(label: string): string {
 // Mobile cards inherit the same row layout, just compacter.
 const LAD_CSS = `
 .lad-wrap { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
-.lad-head {
+/* Grid: # | Team | Status | W-L | Form | Mov | PF | % | Pts */
+.lad-head, .lad-row {
   display: grid;
-  grid-template-columns: 36px 1fr 130px 84px 88px 84px 60px;
+  grid-template-columns: 36px 1fr 130px 80px 110px 64px 76px 70px 60px;
   gap: 12px;
   align-items: center;
+}
+.lad-head {
   padding: 0 16px;
   font-size: .58rem;
   font-weight: 800;
@@ -108,14 +111,10 @@ const LAD_CSS = `
   margin-bottom: 4px;
 }
 .lad-head > * { text-align: right; }
-.lad-head > :nth-child(1), .lad-head > :nth-child(2) { text-align: left; }
+.lad-head > :nth-child(1), .lad-head > :nth-child(2), .lad-head > :nth-child(3) { text-align: left; }
 
 .lad-row {
   position: relative;
-  display: grid;
-  grid-template-columns: 36px 1fr 130px 84px 88px 84px 60px;
-  gap: 12px;
-  align-items: center;
   padding: 14px 16px;
   border-radius: 12px;
   background: rgba(15,22,36,.7);
@@ -164,19 +163,7 @@ const LAD_CSS = `
 .lad-rank-2 { color: #b6bdcc; border-color: rgba(182,189,204,.35); background: rgba(182,189,204,.06); }
 .lad-rank-3 { color: #b8855d; border-color: rgba(184,133,93,.35); background: rgba(184,133,93,.06); }
 
-/* Team column */
-.lad-team {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-.lad-team-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
+/* Team column — just the name. Nothing else. */
 .lad-team-name {
   font-size: .92rem;
   font-weight: 700;
@@ -204,18 +191,24 @@ const LAD_CSS = `
 .lad-pill-underperforming, .lad-pill-struggling { color: #d68a7e; border-color: rgba(214,138,126,.35); background: rgba(214,138,126,.08); }
 .lad-pill-sliding, .lad-pill-infreefall { color: #e07a6c; border-color: rgba(224,122,108,.45); background: rgba(224,122,108,.12); }
 
-.lad-team-sub {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: .68rem;
-  color: #97a3ba;
+/* W/L record column */
+.lad-wl {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
   font-variant-numeric: tabular-nums;
+  font-size: .82rem;
+  font-weight: 700;
 }
-.lad-team-sub b { color: #c8d0e0; font-weight: 600; }
-.lad-team-sub .sep { width: 3px; height: 3px; border-radius: 50%; background: #4a5471; }
-.lad-team-sub .pos { color: #6db38a; }
-.lad-team-sub .neg { color: #d68a7e; }
+.lad-wl .w { color: #6db38a; }
+.lad-wl .l { color: #d68a7e; }
+.lad-wl .d { color: #c2932f; }
+.lad-wl .sep { color: #4a5471; font-weight: 400; }
+
+/* Status column — empty when no headline */
+.lad-status { display: flex; align-items: center; }
+.lad-status-empty { color: #4a5471; font-size: .68rem; }
 
 /* Form sparkline (last N results) */
 .lad-form {
@@ -359,7 +352,7 @@ const LAD_CSS = `
   color: #b39ed4;
 }
 
-/* Mobile — switch to stacked card per row */
+/* Mobile — compact 3-column layout */
 @media (max-width: 768px) {
   .lad-head { display: none; }
   .lad-row {
@@ -369,10 +362,12 @@ const LAD_CSS = `
     padding: 12px 14px;
   }
   .lad-row > .lad-rank { grid-row: 1; grid-column: 1; }
-  .lad-row > .lad-team { grid-row: 1; grid-column: 2; }
+  .lad-row > .lad-team-name { grid-row: 1; grid-column: 2; }
   .lad-row > .lad-num-strong { grid-row: 1; grid-column: 3; }
-  .lad-row > .lad-form { grid-row: 2; grid-column: 1 / -1; justify-content: flex-start; }
+  .lad-row > .lad-status { grid-row: 2; grid-column: 2 / 4; justify-self: start; }
+  .lad-row > .lad-form { grid-row: 2; grid-column: 1; justify-content: flex-start; }
   .lad-row > .lad-num:not(.lad-num-strong),
+  .lad-row > .lad-wl,
   .lad-row > .lad-momentum { display: none; }
 }
 
@@ -433,6 +428,8 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
           <div className="lad-head">
             <span>#</span>
             <span>Team</span>
+            <span>Status</span>
+            <span>W–L</span>
             <span>Form · 5</span>
             <span>Mov.</span>
             <span>{scoring.for_label}</span>
@@ -444,7 +441,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
             {standings.map((s, i) => {
               const pos = i + 1
               const rk = rankingByTeam[s.team_id]
-              const detail = rk && ranking_details[String(s.team_id)]
+              const detail = ranking_details[String(s.team_id)]
               const form = team_form[String(s.team_id)] || []
               const isMine = user_team_id != null && s.team_id === user_team_id
               const isFinalsCut = finals_teams > 0 && pos === finals_teams
@@ -465,31 +462,22 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
                   >
                     <span className={`lad-rank${pos <= 3 ? ` lad-rank-${pos}` : ''}`}>{pos}</span>
 
-                    <div className="lad-team">
-                      <div className="lad-team-row">
-                        <span className="lad-team-name">{s.team?.name}</span>
-                        {headline && (
-                          <span className={`lad-pill lad-pill-${headlineCls}`}>{headline}</span>
-                        )}
-                      </div>
-                      <div className="lad-team-sub">
-                        <span className="lad-record">
-                          <span className="w">{s.wins}W</span>
-                          <span className="l">{s.losses}L</span>
-                          {s.draws > 0 && <span className="d">{s.draws}D</span>}
-                        </span>
-                        {detail && (
-                          <>
-                            <span className="sep"></span>
-                            <span>Avg <b>{detail.avg_score}</b></span>
-                            <span className="sep"></span>
-                            <span className={detail.pct_above > 0 ? 'pos' : detail.pct_above < 0 ? 'neg' : ''}>
-                              {detail.pct_above >= 0 ? '+' : ''}{detail.pct_above.toFixed(1)}% vs lge
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                    <span className="lad-team-name">{s.team?.name}</span>
+
+                    <span className="lad-status">
+                      {headline ? (
+                        <span className={`lad-pill lad-pill-${headlineCls}`}>{headline}</span>
+                      ) : (
+                        <span className="lad-status-empty">—</span>
+                      )}
+                    </span>
+
+                    <span className="lad-wl">
+                      <span className="w">{s.wins}</span>
+                      <span className="sep">–</span>
+                      <span className="l">{s.losses}</span>
+                      {s.draws > 0 && <><span className="sep">–</span><span className="d">{s.draws}</span></>}
+                    </span>
 
                     <div className="lad-form">
                       {(form.length > 0 ? form : Array(5).fill('')).slice(-5).map((r, i) => (
