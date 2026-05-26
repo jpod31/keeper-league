@@ -220,23 +220,33 @@ biggest visible-aesthetic gap.*
 
 ## D — New modules
 
-### ☐ 15. AI Coach panel
-Dashboard sidebar card: weekly auto-generated recommendations ("Trade up:
-rating +6", "Captain: Bontempelli +18% vs avg", "Bench risk: Sharp may be
-late OUT") presented as conversation chips.
+### ✗ 15. AI Coach panel — **dropped**
+Not wanted. Scrapped per user direction. Original pitch was a
+dashboard sidebar with rule-based recommendation chips (captain
+pick / bench risk / trade up / form). Skipping entirely.
 
-### ☐ 16. Streaks & achievements
-Gamified badges: 3-week win streak, perfect captain pick, biggest margin,
-comeback win, undefeated month. Shown on profile + glass overlay when
-triggered.
+### ✗ 16. Streaks & achievements — **dropped**
+Not wanted. Scrapped per user direction. Would have required new
+schema + compute logic + retroactive backfill + UI surfaces.
+Skipping.
 
-### ☐ 17. Live commentary feed
-During AFL game windows, rolling feed at the top of gameday: "WALSH MARK
-· +6 SC" — auto-generated from per-event updates, team-coloured bullets.
+### ✗ 17. Live commentary feed — **dropped**
+Not wanted. Scrapped per user direction. The realistic v1 would
+have been a per-player score-delta feed during live windows (no
+true event labels since the data feeds don't expose per-event
+detail). Skipping.
 
-### ☐ 18. Power Rankings module
-Algorithmic ladder. Ladder position + recent form + PF/PA + SoS. Momentum
-chart for each team. Updates weekly.
+### ☑ 18. Power Rankings module — **satisfied by #7**
+Backend power-rank algorithm already existed; #7 (Standings)
+surfaced it on the ladder as a sortable PR column with
+gold/silver/bronze tier chips for the top 3, alongside the Status
+headline pill, Movement chip and Form sparkline. A dedicated
+/power-rankings page wasn't worth the extra surface area when the
+information already lives on Standings.
+
+Not built (out of scope): historical rank snapshots (needs new
+schema), Strength-of-Schedule compute, per-team momentum charts.
+Can be revisited if richer drill-in becomes valuable.
 
 ---
 
