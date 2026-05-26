@@ -1764,6 +1764,125 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   background: rgba(248,81,73,.3);
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Mid-season status pills — beautiful round icon + tiny label.
+   No outer container border; each pill is its own thing. Quiet
+   when stacked, expressive on individual elements.
+   ───────────────────────────────────────────────────────────── */
+.kl-status-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 4px 0 16px;
+  padding: 4px 2px;
+}
+.kl-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .78rem;
+  color: #c9d1d9;
+  text-decoration: none;
+  line-height: 1.15;
+}
+.kl-status-pill-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .85rem;
+  background: rgba(48,54,61,.4);
+  color: #c9d1d9;
+  flex: 0 0 30px;
+  border: 1px solid rgba(110,118,129,.25);
+  box-shadow: 0 4px 12px -6px rgba(0,0,0,.45);
+  transition: transform .15s ease, filter .15s ease;
+}
+.kl-status-pill-text {
+  display: inline-flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+.kl-status-pill-title {
+  font-weight: 700;
+  font-size: .78rem;
+  color: #f0f6fc;
+}
+.kl-status-pill-sub {
+  font-size: .64rem;
+  color: #8b949e;
+  font-weight: 500;
+  letter-spacing: .02em;
+  margin-top: 1px;
+}
+.kl-status-pill-danger .kl-status-pill-icon {
+  background: radial-gradient(circle at 30% 30%, rgba(255,138,130,.25), rgba(248,81,73,.18));
+  color: #ff8a82;
+  border-color: rgba(248,81,73,.5);
+  box-shadow: 0 0 0 2px rgba(248,81,73,.1), 0 6px 14px -6px rgba(248,81,73,.4);
+}
+.kl-status-pill-warn .kl-status-pill-icon {
+  background: radial-gradient(circle at 30% 30%, rgba(240,209,138,.25), rgba(210,153,34,.18));
+  color: #f0d18a;
+  border-color: rgba(210,153,34,.45);
+  box-shadow: 0 0 0 2px rgba(210,153,34,.08), 0 6px 14px -6px rgba(210,153,34,.4);
+}
+.kl-status-pill-info .kl-status-pill-icon {
+  background: radial-gradient(circle at 30% 30%, rgba(166,206,255,.22), rgba(88,166,255,.16));
+  color: #79c0ff;
+  border-color: rgba(88,166,255,.45);
+  box-shadow: 0 0 0 2px rgba(88,166,255,.08), 0 6px 14px -6px rgba(88,166,255,.4);
+}
+.kl-status-pill-good .kl-status-pill-icon {
+  background: radial-gradient(circle at 30% 30%, rgba(126,231,135,.22), rgba(63,185,80,.18));
+  color: #7ee787;
+  border-color: rgba(63,185,80,.45);
+  box-shadow: 0 0 0 2px rgba(63,185,80,.08), 0 6px 14px -6px rgba(63,185,80,.4);
+}
+.kl-status-pill-link { cursor: pointer; }
+.kl-status-pill-link:hover { color: #f0f6fc; text-decoration: none; }
+.kl-status-pill-link:hover .kl-status-pill-icon {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+.kl-status-pill-deadline .kl-status-pill-title {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: #d29922;
+}
+.kl-status-pill-cta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1f6feb, #388bfd);
+  color: #fff !important;
+  font-size: .76rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: filter .12s ease, transform .12s ease, box-shadow .15s ease;
+  box-shadow: 0 4px 12px -4px rgba(31,111,235,.55);
+}
+.kl-status-pill-cta:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  text-decoration: none;
+  color: #fff;
+  box-shadow: 0 8px 18px -6px rgba(31,111,235,.65);
+}
+@media (max-width: 600px) {
+  .kl-status-pills { gap: 12px; }
+  .kl-status-pill-icon { width: 26px; height: 26px; flex: 0 0 26px; font-size: .75rem; }
+  .kl-status-pill-title { font-size: .72rem; }
+  .kl-status-pill-sub { font-size: .6rem; }
+  .kl-status-pill-cta { margin-left: 0; padding: 5px 12px; }
+}
+
 /* Delist action button — destructive, requires confirmation modal */
 .fv-act-delist {
   background: rgba(248,81,73,.1);

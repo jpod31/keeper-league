@@ -291,130 +291,84 @@ function SquadPageInner() {
         </div>
       )}
 
-      {/* ── Ineligible roster alert — fires when active roster can't
-              cover the on-field position requirements (e.g. only 1
-              RUC, only 2 DEFs). Only shown while the mid-season
-              trade window is open; after close, the lineup rules
-              kick in instead. ── */}
-      {is_owner && data.ineligible_roster && data.trade_is_open && (
-        <div className="lm-alerts">
-          <div className="lm-alert-row" style={{
-            background: 'rgba(248,81,73,.12)',
-            border: '1px solid rgba(248,81,73,.5)',
-            color: '#ffb4ae',
-          }}>
-            <i className="bi bi-shield-fill-exclamation" style={{ color: '#f85149' }}></i>
-            <span>
-              <strong>Ineligible roster</strong>
-              <span style={{ color: '#8b949e', marginLeft: 6, fontWeight: 400 }}>
-                — short {data.eligibility_shortages
-                  .map(s => `${s.short_by} ${s.pos}`)
-                  .join(', ')}
+      {/* ── Mid-season status pills — round icon + tiny label.
+              One row of beautiful little badges; no big banner. ── */}
+      {is_owner && (data.trade_is_open || data.delist_is_open || data.over_squad || data.under_squad) && (
+        <div className="kl-status-pills">
+          {data.over_squad && (
+            <div className="kl-status-pill kl-status-pill-danger" title={`${data.active_count}/${data.squad_size}${data.approved_ltil_count > 0 ? ` + ${data.approved_ltil_count} LTIL` : ''}`}>
+              <span className="kl-status-pill-icon"><i className="bi bi-exclamation-octagon-fill"></i></span>
+              <span className="kl-status-pill-text">
+                <span className="kl-status-pill-title">{data.squad_excess} over cap</span>
+                <span className="kl-status-pill-sub">{data.active_count}/{data.squad_size}{data.approved_ltil_count > 0 ? ` + ${data.approved_ltil_count} LTIL` : ''}</span>
               </span>
-              <span style={{ color: '#8b949e', marginLeft: 8, fontWeight: 400 }}>
-                · fix via trade or mid-season draft before the window closes.
+            </div>
+          )}
+          {data.under_squad && !data.over_squad && (
+            <div className="kl-status-pill kl-status-pill-warn" title={`${data.active_count}/${data.squad_size}`}>
+              <span className="kl-status-pill-icon"><i className="bi bi-dash-circle"></i></span>
+              <span className="kl-status-pill-text">
+                <span className="kl-status-pill-title">{data.squad_shortfall} open spot{data.squad_shortfall === 1 ? '' : 's'}</span>
+                <span className="kl-status-pill-sub">{data.active_count}/{data.squad_size}</span>
               </span>
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Roster size alerts — fire when a team is over or under
-              squad_size after LTIL is accounted for. Over-squad is
-              red (must delist before window close); under-squad is
-              amber (will be filled by mid-season draft / SSP). ── */}
-      {is_owner && data.over_squad && (
-        <div className="lm-alerts">
-          <div
-            className="lm-alert-row"
-            style={{
-              background: 'rgba(248,81,73,.08)',
-              border: '1px solid rgba(248,81,73,.35)',
-              color: '#ffb4ae',
-            }}
-          >
-            <i className="bi bi-exclamation-octagon-fill" style={{ color: '#f85149' }}></i>
-            <span>
-              <strong>{data.squad_excess} player{data.squad_excess === 1 ? '' : 's'} over squad cap</strong>
-              <span style={{ color: '#8b949e', marginLeft: 6, fontWeight: 400 }}>
-                ({data.active_count}/{data.squad_size}
-                {data.approved_ltil_count > 0 ? ` + ${data.approved_ltil_count} LTIL` : ''})
+            </div>
+          )}
+          {data.ineligible_roster && data.trade_is_open && (
+            <div className="kl-status-pill kl-status-pill-danger"
+              title="Roster can't field a valid round-start lineup">
+              <span className="kl-status-pill-icon"><i className="bi bi-shield-fill-exclamation"></i></span>
+              <span className="kl-status-pill-text">
+                <span className="kl-status-pill-title">Ineligible</span>
+                <span className="kl-status-pill-sub">short {data.eligibility_shortages.map(s => `${s.short_by} ${s.pos}`).join(', ')}</span>
               </span>
-              <span style={{ color: '#8b949e', marginLeft: 8, fontWeight: 400 }}>
-                — must delist before trade window closes.
+            </div>
+          )}
+          {data.delist_is_open && (
+            <div className="kl-status-pill kl-status-pill-warn" title="Hover any player → click ⊗ to delist">
+              <span className="kl-status-pill-icon"><i className="bi bi-x-octagon"></i></span>
+              <span className="kl-status-pill-text">
+                <span className="kl-status-pill-title">Delists {data.team_delist_count}{data.max_delists != null ? `/${data.max_delists}` : ''}</span>
+                <span className="kl-status-pill-sub">hover player → ⊗</span>
               </span>
-            </span>
-          </div>
-        </div>
-      )}
-      {is_owner && data.under_squad && !data.over_squad && (
-        <div className="lm-alerts">
-          <div
-            className="lm-alert-row"
-            style={{
-              background: 'rgba(210,153,34,.08)',
-              border: '1px solid rgba(210,153,34,.35)',
-              color: '#f0d18a',
-            }}
-          >
-            <i className="bi bi-info-circle-fill" style={{ color: '#d29922' }}></i>
-            <span>
-              <strong>{data.squad_shortfall} squad spot{data.squad_shortfall === 1 ? '' : 's'} open</strong>
-              <span style={{ color: '#8b949e', marginLeft: 6, fontWeight: 400 }}>
-                ({data.active_count}/{data.squad_size})
+            </div>
+          )}
+          {data.pending_incoming > 0 && (
+            <Link to={`/leagues/${leagueId}/trades`} className="kl-status-pill kl-status-pill-info kl-status-pill-link">
+              <span className="kl-status-pill-icon"><i className="bi bi-inbox-fill"></i></span>
+              <span className="kl-status-pill-text">
+                <span className="kl-status-pill-title">{data.pending_incoming} incoming</span>
+                <span className="kl-status-pill-sub">trade proposal{data.pending_incoming === 1 ? '' : 's'}</span>
               </span>
-              <span style={{ color: '#8b949e', marginLeft: 8, fontWeight: 400 }}>
-                — fill via mid-season draft once the trade window closes.
+            </Link>
+          )}
+          {data.trade_is_open && data.trade_close_date && (
+            <div className="kl-status-pill kl-status-pill-warn kl-status-pill-deadline"
+              title={new Date(data.trade_close_date).toLocaleString()}>
+              <span className="kl-status-pill-icon"><i className="bi bi-clock"></i></span>
+              <span className="kl-status-pill-text">
+                <span className="kl-status-pill-title">{new Date(data.trade_close_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                <span className="kl-status-pill-sub">window closes</span>
               </span>
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Delist period banner — show how many delists left,
-              when the period closes, and how to actually delist
-              (click any player → red × button). ── */}
-      {is_owner && data.delist_is_open && (
-        <div className="lm-alerts">
-          <div className="lm-alert-row" style={{
-            background: 'rgba(248,81,73,.08)',
-            border: '1px solid rgba(248,81,73,.35)',
-            color: '#ffb4ae',
-          }}>
-            <i className="bi bi-x-octagon-fill" style={{ color: '#f85149' }}></i>
-            <span>
-              <strong>Delist period open</strong>
-              <span style={{ color: '#8b949e', marginLeft: 6, fontWeight: 400 }}>
-                {data.team_delist_count}
-                {data.max_delists != null ? `/${data.max_delists}` : ''} used
-                {data.delist_period?.closes_at && ` · closes ${new Date(data.delist_period.closes_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`}
-              </span>
-              <span style={{ color: '#8b949e', marginLeft: 8, fontWeight: 400 }}>
-                — hover any player and click <i className="bi bi-x-octagon mx-1"></i> to delist.
-              </span>
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Trade / Draft Alerts ── */}
-      {is_owner && (data.trade_is_open || data.has_active_draft) && (
-        <div className="lm-alerts">
+            </div>
+          )}
           {data.trade_is_open && (
-            <Link to={`/leagues/${leagueId}/trades`} className="lm-alert-row text-decoration-none">
-              <i className="bi bi-arrow-left-right" style={{ color: 'var(--kl-accent-orange)' }}></i>
-              <span>Trade window open{data.trade_close_date ? ` — closes ${new Date(data.trade_close_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}</span>
-              {data.pending_incoming > 0 && <span className="lm-alert-badge">{data.pending_incoming} incoming</span>}
-              <i className="bi bi-arrow-right ms-auto" style={{ color: 'var(--kl-accent-blue)', fontSize: '.7rem' }}></i>
+            <Link to={`/leagues/${leagueId}/trades`} className="kl-status-pill-cta">
+              Trade Center
+              <i className="bi bi-arrow-right"></i>
             </Link>
           )}
-          {data.has_active_draft && (
-            <Link to={`/leagues/${leagueId}/draft`} className="lm-alert-row text-decoration-none">
-              <i className="bi bi-list-check" style={{ color: 'var(--kl-accent-blue)' }}></i>
-              <span>Draft live{data.active_draft_round ? ` — Rd ${data.active_draft_round}` : ''}</span>
-              <i className="bi bi-arrow-right ms-auto" style={{ color: 'var(--kl-accent-blue)', fontSize: '.7rem' }}></i>
-            </Link>
-          )}
+        </div>
+      )}
+
+      {/* Active draft jumps to its own dedicated alert — distinct
+          action from "trade window open", different urgency. */}
+      {is_owner && data.has_active_draft && (
+        <div className="lm-alerts">
+          <Link to={`/leagues/${leagueId}/draft`} className="lm-alert-row text-decoration-none">
+            <i className="bi bi-list-check" style={{ color: 'var(--kl-accent-blue)' }}></i>
+            <span>Draft live{data.active_draft_round ? ` — Rd ${data.active_draft_round}` : ''}</span>
+            <i className="bi bi-arrow-right ms-auto" style={{ color: 'var(--kl-accent-blue)', fontSize: '.7rem' }}></i>
+          </Link>
         </div>
       )}
 
