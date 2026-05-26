@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams } from 'react-router'
-import { useState, Component, type ErrorInfo, type ReactNode } from 'react'
+import { useState, useMemo, useCallback, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
@@ -161,6 +161,25 @@ function SquadPageInner() {
   const rosterMap: Record<number, RosterEntry> = {}
   roster.forEach(r => { rosterMap[r.player_id] = r })
   const selectedSet = new Set(selected_player_ids)
+
+  // Stable callbacks/memoised context — without these, every render
+  // of SquadPage built a fresh Set and onDelist closure, which
+  // re-rendered FieldView and every PlayerCard underneath. With
+  // a 25+ player roster + complex per-card DOM, that was the source
+  // of the user's "clicks are really slow" report.
+  const onDelist = useCallback((pid: number, name: string) => {
+    setDelistTarget({ id: pid, name })
+  }, [])
+  const delistContext = useMemo(() => {
+    if (!data.delist_is_open) return null
+    return {
+      canDelist: (data.max_delists == null) || (data.team_delist_count < data.max_delists),
+      used: data.team_delist_count,
+      max: data.max_delists,
+      alreadyDelistedIds: new Set(data.delisted_player_ids),
+      onDelist,
+    }
+  }, [data.delist_is_open, data.max_delists, data.team_delist_count, data.delisted_player_ids, onDelist])
 
   // Summary stats
   let totalSc = 0, scCount = 0, totalAge = 0, ageCount = 0
@@ -457,13 +476,7 @@ function SquadPageInner() {
       {view === 'field' && fd && (
         <>
           <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner}
-            delistContext={data.delist_is_open ? {
-              canDelist: (data.max_delists == null) || (data.team_delist_count < data.max_delists),
-              used: data.team_delist_count,
-              max: data.max_delists,
-              alreadyDelistedIds: new Set(data.delisted_player_ids),
-              onDelist: (pid, name) => setDelistTarget({ id: pid, name }),
-            } : null}
+            delistContext={delistContext}
             actions={{
               setCaptain: fieldActions.setCaptain, setVC: fieldActions.setVC,
               startSwap: fieldActions.startSwap, handlePlayerClick: fieldActions.handlePlayerClick,
