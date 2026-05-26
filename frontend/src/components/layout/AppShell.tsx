@@ -4,8 +4,13 @@ import { NotificationBell } from '../NotificationBell'
 import { useState, useRef, useEffect } from 'react'
 
 /**
- * Top-level app shell: brand, home, notifications, user menu, admin icon.
- * Plain flex — no Bootstrap collapse/navbar-collapse, no JS-gated popper classes.
+ * Top-level app shell — glass-blur sticky header.
+ * Brand mark + home pill on the left, right-side glass cluster of
+ * admin / bell / user-pill on the right. User dropdown styled to
+ * match the league switcher.
+ *
+ * Inline <style> block keeps the chrome's CSS co-located so a future
+ * design swap is one file's worth of work.
  */
 export function AppShell() {
   const { user, logout } = useAuth()
@@ -19,8 +24,13 @@ export function AppShell() {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
     }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [])
 
   const handleLogout = async () => {
@@ -57,66 +67,308 @@ export function AppShell() {
   return (
     <div>
       <style>{`
-        .kl-topbar { position: sticky; top: 0; z-index: 1030; background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-border); }
-        .kl-topbar-inner { display: flex; align-items: center; gap: .75rem; padding: .6rem 1rem; max-width: 1320px; margin: 0 auto; }
-        .kl-topbar-brand { display: flex; align-items: center; gap: .5rem; text-decoration: none; color: inherit; flex-shrink: 0; }
-        .kl-topbar-brand img { width: 32px; height: 32px; border-radius: 6px; }
-        .kl-topbar-brand .brand-text { font-weight: 800; font-size: .92rem; letter-spacing: -.2px; color: #e6edf3; }
-        .kl-topbar-home { display: inline-flex; align-items: center; gap: .35rem; color: var(--kl-text-secondary); text-decoration: none; font-size: .8rem; font-weight: 500; padding: .4rem .6rem; border-radius: 6px; transition: color .15s, background .15s; }
-        .kl-topbar-home:hover { color: var(--kl-text-primary); background: rgba(255,255,255,.03); }
-        .kl-topbar-spacer { flex: 1 1 auto; }
-        .kl-topbar-right { display: flex; align-items: center; gap: .25rem; flex-shrink: 0; }
-        .kl-topbar-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--kl-text-secondary); background: none; border: none; padding: .4rem .55rem; border-radius: 6px; font-size: 1.05rem; cursor: pointer; text-decoration: none; transition: color .15s, background .15s; }
-        .kl-topbar-icon:hover { color: var(--kl-text-primary); background: rgba(255,255,255,.04); }
-        .kl-user-btn { display: flex; align-items: center; gap: .5rem; background: none; border: none; color: inherit; padding: .3rem .5rem; border-radius: 6px; cursor: pointer; }
-        .kl-user-btn:hover { background: rgba(255,255,255,.04); }
-        .kl-user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--kl-bg-elevated); font-size: .75rem; font-weight: 700; color: var(--kl-text-primary); flex-shrink: 0; }
-        .kl-user-name { font-size: .82rem; font-weight: 500; color: var(--kl-text-secondary); }
-        @media (max-width: 767.98px) { .kl-user-name, .kl-brand-text-lg, .kl-topbar-home span { display: none; } }
-        .kl-user-menu { position: absolute; right: 0; top: 100%; margin-top: .25rem; min-width: 200px; background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.4); padding: .25rem 0; z-index: 1040; }
-        .kl-user-menu a, .kl-user-menu button { display: flex; align-items: center; gap: .5rem; width: 100%; padding: .5rem .85rem; color: var(--kl-text-primary); text-decoration: none; font-size: .82rem; background: none; border: none; text-align: left; cursor: pointer; }
-        .kl-user-menu a:hover, .kl-user-menu button:hover { background: rgba(255,255,255,.05); }
-        .kl-user-menu hr { margin: .25rem 0; border: none; border-top: 1px solid var(--kl-border); }
+        /* ── Glass sticky top bar ─────────────────────────────── */
+        .kl-bar {
+          position: sticky; top: 0; z-index: 1030;
+          /* Subtle ambient accent bleed — looks even better when LeagueShell adds its team accent below */
+          background:
+            radial-gradient(800px 240px at 8% 0%,  rgba(0,212,255,.05), transparent 55%),
+            radial-gradient(800px 240px at 92% 0%, rgba(255,45,146,.05), transparent 55%),
+            rgba(7,8,13,.72);
+          backdrop-filter: blur(14px) saturate(140%);
+          -webkit-backdrop-filter: blur(14px) saturate(140%);
+          border-bottom: 1px solid rgba(255,255,255,.07);
+          box-shadow: 0 1px 0 rgba(255,255,255,.03) inset;
+        }
+        .kl-bar-inner {
+          display: flex; align-items: center; gap: 10px;
+          padding: 10px 18px;
+          max-width: 1360px;
+          margin: 0 auto;
+        }
+
+        /* Brand */
+        .kl-bar-brand {
+          display: inline-flex; align-items: center; gap: 10px;
+          text-decoration: none;
+          flex-shrink: 0;
+          color: inherit;
+          padding: 4px 4px 4px 0;
+          border-radius: 12px;
+          transition: opacity .15s ease;
+        }
+        .kl-bar-brand:hover { opacity: .9; }
+        .kl-bar-brand-mark {
+          width: 34px; height: 34px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #00d4ff 0%, #5cc8ff 35%, #ff2d92 100%);
+          display: flex; align-items: center; justify-content: center;
+          font-weight: 900;
+          font-size: 1rem;
+          color: #07080d;
+          letter-spacing: -.02em;
+          box-shadow: 0 4px 18px -4px rgba(0,212,255,.55), 0 0 0 1px rgba(255,255,255,.08) inset;
+          position: relative;
+          overflow: hidden;
+        }
+        .kl-bar-brand-mark::after {
+          /* Specular highlight */
+          content: ""; position: absolute; inset: 0;
+          background: radial-gradient(60% 40% at 30% 20%, rgba(255,255,255,.4), transparent 70%);
+          pointer-events: none;
+        }
+        .kl-bar-brand-mark img {
+          width: 100%; height: 100%; object-fit: cover; border-radius: inherit;
+          position: relative; z-index: 1;
+        }
+        .kl-bar-wordmark {
+          font-weight: 800;
+          font-size: .92rem;
+          letter-spacing: -.015em;
+          color: #f0f6fc;
+        }
+
+        /* Home pill */
+        .kl-bar-home {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 7px 14px;
+          border-radius: 999px;
+          background: rgba(255,255,255,.05);
+          border: 1px solid rgba(255,255,255,.08);
+          color: #c9d1d9;
+          text-decoration: none;
+          font-size: .78rem;
+          font-weight: 600;
+          transition: background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+        }
+        .kl-bar-home:hover {
+          background: rgba(255,255,255,.08);
+          color: #f0f6fc;
+          border-color: rgba(255,255,255,.16);
+          transform: translateY(-1px);
+        }
+        .kl-bar-home i { font-size: .9rem; }
+
+        .kl-bar-spacer { flex: 1 1 auto; }
+
+        /* Right-side glass cluster */
+        .kl-bar-cluster {
+          display: inline-flex; align-items: center;
+          gap: 4px;
+          padding: 4px;
+          background: rgba(255,255,255,.04);
+          border: 1px solid rgba(255,255,255,.08);
+          border-radius: 999px;
+          backdrop-filter: blur(8px);
+        }
+        .kl-bar-icon-btn,
+        .kl-bar-cluster .nav-link {
+          display: inline-flex !important; align-items: center; justify-content: center;
+          width: 36px; height: 36px;
+          border-radius: 50% !important;
+          background: transparent !important;
+          border: 0 !important;
+          padding: 0 !important;
+          color: #c9d1d9 !important;
+          font-size: 1.05rem;
+          cursor: pointer;
+          text-decoration: none;
+          position: relative;
+          transition: background .14s ease, color .14s ease, transform .14s ease;
+        }
+        .kl-bar-icon-btn:hover,
+        .kl-bar-cluster .nav-link:hover {
+          background: rgba(255,255,255,.08) !important;
+          color: #f0f6fc !important;
+          transform: scale(1.05);
+        }
+        /* Notification dot inside the bell button */
+        .kl-bar-cluster .notif-dot {
+          position: absolute;
+          top: 7px; right: 8px;
+          width: 8px; height: 8px;
+          border-radius: 50%;
+          background: #ff5470;
+          box-shadow: 0 0 0 2px rgba(7,8,13,.95), 0 0 10px rgba(255,84,112,.7);
+          animation: kl-pulse-dot 1.6s ease-out infinite;
+        }
+        @keyframes kl-pulse-dot {
+          0%, 100% { transform: scale(1);   opacity: 1; }
+          50%      { transform: scale(1.15); opacity: .85; }
+        }
+
+        /* User pill */
+        .kl-bar-user {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 4px 12px 4px 4px;
+          border-radius: 999px;
+          background: transparent;
+          border: 0;
+          color: #c9d1d9;
+          cursor: pointer;
+          transition: background .14s ease, color .14s ease;
+        }
+        .kl-bar-user:hover { background: rgba(255,255,255,.08); color: #f0f6fc; }
+        .kl-bar-user-avatar {
+          width: 30px; height: 30px;
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          font-size: .78rem;
+          font-weight: 800;
+          color: #07080d;
+          background: linear-gradient(135deg, #b5ff3c 0%, #2ee59d 100%);
+          box-shadow: 0 4px 12px -4px rgba(46,229,157,.5);
+          letter-spacing: -.01em;
+          flex-shrink: 0;
+        }
+        .kl-bar-user-name {
+          font-size: .82rem;
+          font-weight: 600;
+          color: #c9d1d9;
+          max-width: 140px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .kl-bar-user-chev {
+          font-size: .64rem;
+          color: #6e7681;
+          transition: transform .2s ease, color .15s ease;
+        }
+        .kl-bar-user.open .kl-bar-user-chev { transform: rotate(180deg); color: #f0f6fc; }
+
+        /* Dropdown panel (same DNA as league switcher) */
+        .kl-bar-menu {
+          position: absolute;
+          right: 0;
+          top: calc(100% + 8px);
+          min-width: 240px;
+          background: linear-gradient(180deg, #161b22, #0d1117);
+          border: 1px solid rgba(48,54,61,.85);
+          border-radius: 14px;
+          padding: 8px;
+          box-shadow: 0 24px 56px -16px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02) inset;
+          backdrop-filter: blur(10px);
+          z-index: 1040;
+          animation: kl-bar-menu-in .14s cubic-bezier(.2,.7,.2,1);
+        }
+        @keyframes kl-bar-menu-in {
+          from { opacity: 0; transform: translateY(-4px) scale(.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .kl-bar-menu-head {
+          display: flex; align-items: center; gap: 10px;
+          padding: 8px 10px 12px;
+          border-bottom: 1px solid rgba(48,54,61,.5);
+          margin-bottom: 8px;
+        }
+        .kl-bar-menu-head-name { font-size: .92rem; font-weight: 700; color: #f0f6fc; }
+        .kl-bar-menu-head-sub  { font-size: .68rem; color: #8b949e; }
+        .kl-bar-menu-item {
+          display: flex; align-items: center; gap: 10px;
+          width: 100%;
+          padding: 8px 10px;
+          border-radius: 10px;
+          background: transparent;
+          border: 0;
+          color: #c9d1d9;
+          font-size: .82rem;
+          font-weight: 600;
+          text-decoration: none;
+          text-align: left;
+          cursor: pointer;
+          transition: background .14s ease, transform .14s ease, color .14s ease;
+        }
+        .kl-bar-menu-item:hover {
+          background: rgba(255,255,255,.05);
+          color: #f0f6fc;
+          transform: translateX(2px);
+          text-decoration: none;
+        }
+        .kl-bar-menu-item i { font-size: .9rem; color: #8b949e; transition: color .14s ease; }
+        .kl-bar-menu-item:hover i { color: #f0f6fc; }
+        .kl-bar-menu-item-danger { color: #ff8a82; }
+        .kl-bar-menu-item-danger:hover { background: rgba(248,81,73,.1); color: #ff8a82; }
+        .kl-bar-menu-item-danger i { color: #f85149; }
+        .kl-bar-menu-divider {
+          height: 1px;
+          margin: 6px 4px;
+          background: rgba(48,54,61,.6);
+        }
+
+        /* Mobile (<992px) — bar still visible but compact, no name */
+        @media (max-width: 991.98px) {
+          .kl-bar-inner { padding: 8px 12px; }
+          .kl-bar-wordmark { display: none; }
+          .kl-bar-home { display: none; }
+          .kl-bar-user-name { display: none; }
+          .kl-bar-user-chev { display: none; }
+        }
       `}</style>
 
-      <header className="kl-topbar d-none d-lg-block">
-        <div className="kl-topbar-inner">
-          <Link className="kl-topbar-brand" to="/leagues">
-            <img src="/static/icons/kl-logo.png" alt="KL" />
-            <span className="brand-text kl-brand-text-lg">Keeper League</span>
+      <header className="kl-bar">
+        <div className="kl-bar-inner">
+          <Link className="kl-bar-brand" to="/leagues" aria-label="Keeper League home">
+            <span className="kl-bar-brand-mark">
+              <img src="/static/icons/kl-logo.png" alt="" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            </span>
+            <span className="kl-bar-wordmark">Keeper League</span>
           </Link>
 
           {user && (
-            <Link className="kl-topbar-home" to="/leagues" title="My Leagues">
-              <i className="bi bi-house"></i><span>Home</span>
+            <Link className="kl-bar-home" to="/leagues" title="Your leagues">
+              <i className="bi bi-house-door-fill"></i><span>Home</span>
             </Link>
           )}
 
-          <div className="kl-topbar-spacer" />
+          <div className="kl-bar-spacer" />
 
           {user && (
-            <div className="kl-topbar-right">
+            <div className="kl-bar-cluster">
               {user.is_admin && (
-                <Link className="kl-topbar-icon" to="/admin/analytics" title="Admin Analytics">
-                  <i className="bi bi-bar-chart-line"></i>
+                <Link className="kl-bar-icon-btn" to="/admin/analytics" title="Admin Analytics">
+                  <i className="bi bi-bar-chart-line-fill"></i>
                 </Link>
               )}
               <NotificationBell />
               <div ref={menuRef} style={{ position: 'relative' }}>
-                <button type="button" className="kl-user-btn" onClick={() => setMenuOpen(o => !o)} aria-label="User menu">
-                  <span className="kl-user-avatar">{initial}</span>
-                  <span className="kl-user-name">{displayName}</span>
-                  <i className="bi bi-chevron-down" style={{ fontSize: '.65rem', color: 'var(--kl-text-faint)' }}></i>
+                <button
+                  type="button"
+                  className={`kl-bar-user${menuOpen ? ' open' : ''}`}
+                  onClick={() => setMenuOpen(o => !o)}
+                  aria-label="User menu"
+                  aria-expanded={menuOpen}
+                >
+                  <span className="kl-bar-user-avatar">{initial}</span>
+                  <span className="kl-bar-user-name">{displayName}</span>
+                  <i className="bi bi-chevron-down kl-bar-user-chev"></i>
                 </button>
                 {menuOpen && (
-                  <div className="kl-user-menu">
-                    <Link to="/leagues" onClick={() => setMenuOpen(false)}><i className="bi bi-house"></i>My Leagues</Link>
-                    <Link to="/leagues/create" onClick={() => setMenuOpen(false)}><i className="bi bi-plus-circle"></i>Create League</Link>
-                    <button type="button" onClick={openJoin}><i className="bi bi-box-arrow-in-right"></i>Join League</button>
-                    <hr />
-                    <Link to="/auth/profile" onClick={() => setMenuOpen(false)}><i className="bi bi-person"></i>Profile</Link>
-                    <hr />
-                    <button type="button" onClick={handleLogout}><i className="bi bi-box-arrow-right"></i>Log Out</button>
+                  <div className="kl-bar-menu" role="menu">
+                    <div className="kl-bar-menu-head">
+                      <span className="kl-bar-user-avatar">{initial}</span>
+                      <div>
+                        <div className="kl-bar-menu-head-name">{displayName || 'You'}</div>
+                        <div className="kl-bar-menu-head-sub">{user.email || ''}</div>
+                      </div>
+                    </div>
+                    <Link className="kl-bar-menu-item" to="/leagues" onClick={() => setMenuOpen(false)}>
+                      <i className="bi bi-house-door"></i>My leagues
+                    </Link>
+                    <Link className="kl-bar-menu-item" to="/leagues/create" onClick={() => setMenuOpen(false)}>
+                      <i className="bi bi-plus-circle"></i>Create a league
+                    </Link>
+                    <button type="button" className="kl-bar-menu-item" onClick={openJoin}>
+                      <i className="bi bi-box-arrow-in-right"></i>Join a league
+                    </button>
+                    <div className="kl-bar-menu-divider"></div>
+                    <Link className="kl-bar-menu-item" to="/auth/profile" onClick={() => setMenuOpen(false)}>
+                      <i className="bi bi-person-circle"></i>Profile
+                    </Link>
+                    <div className="kl-bar-menu-divider"></div>
+                    <button type="button" className="kl-bar-menu-item kl-bar-menu-item-danger" onClick={handleLogout}>
+                      <i className="bi bi-box-arrow-right"></i>Log out
+                    </button>
                   </div>
                 )}
               </div>
