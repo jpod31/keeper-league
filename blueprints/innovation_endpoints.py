@@ -87,13 +87,16 @@ def register_innovation_endpoints(spa_api):
                 if s.position_code == "BENCH":
                     continue
                 base = sc_map.get(s.player_id, 0) or 0
-                score = base * 2 if s.is_captain else base
                 ap = db.session.get(AflPlayer, s.player_id)
+                # Show the player's actual SC score — NOT captain-doubled.
+                # The captain bonus is a team-total concept, not a personal
+                # performance one; showing 240 next to a captain's name
+                # implied he played that well, which he didn't.
                 scored.append({
                     "player_id": s.player_id,
                     "name": ap.name if ap else "?",
                     "afl_team": ap.afl_team if ap else "",
-                    "score": round(score, 1),
+                    "score": round(base, 1),
                     "is_captain": s.is_captain,
                 })
             scored.sort(key=lambda x: x["score"], reverse=True)
