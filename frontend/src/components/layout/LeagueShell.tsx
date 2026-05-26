@@ -310,20 +310,20 @@ function LeagueShellInner() {
 // the avatar / glow stays consistent across renders. Click-outside +
 // Escape both close it.
 
-// Refined / desaturated palette — pulled ~30-40% saturation out of
-// the previous electric set. Each league still gets a recognisable
-// colour identity but reads as "premium product" rather than "gamer
-// dashboard". Tuned to look good as both the avatar gradient and as
-// the rail's active-state fill.
+// Jewel-tone palette — saturated at mid-luminance rather than pulled
+// pastel. Reads as deep / confident / expensive rather than gamey OR
+// washed-out. Each entry was chosen so it works as: an avatar gradient
+// stop, a 17% opacity active-row fill, a 2px solid edge stripe, and
+// a solid icon colour, with white-on-fill text still readable.
 const SWITCH_PALETTE: { hex: string; rgb: string }[] = [
-  { hex: '#7a9bc4', rgb: '122,155,196' },   // slate blue
-  { hex: '#cba679', rgb: '203,166,121' },   // warm tan
-  { hex: '#b7a4cd', rgb: '183,164,205' },   // muted lilac
-  { hex: '#8eb495', rgb: '142,180,149' },   // sage green
-  { hex: '#c8a25e', rgb: '200,162,94' },    // refined gold
-  { hex: '#c4847a', rgb: '196,132,122' },   // terracotta
-  { hex: '#7eaac1', rgb: '126,170,193' },   // slate cyan
-  { hex: '#bf8da6', rgb: '191,141,166' },   // dusty rose
+  { hex: '#3a7dc4', rgb: '58,125,196' },    // sapphire
+  { hex: '#b87f3d', rgb: '184,127,61' },    // cognac
+  { hex: '#8a6db8', rgb: '138,109,184' },   // amethyst
+  { hex: '#3d8c63', rgb: '61,140,99' },     // forest green
+  { hex: '#c2932f', rgb: '194,147,47' },    // deep gold / ochre
+  { hex: '#b85a4a', rgb: '184,90,74' },     // rust
+  { hex: '#3d8a9c', rgb: '61,138,156' },    // teal
+  { hex: '#9d5878', rgb: '157,88,120' },    // garnet
 ]
 
 function accentFor(id: number) {

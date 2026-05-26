@@ -2194,8 +2194,10 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   display: flex; align-items: center; justify-content: center;
   font-size: .74rem; font-weight: 800;
   letter-spacing: .02em;
-  color: #0d1117;
-  background: linear-gradient(135deg, rgb(var(--lgs-rgb, 88,166,255)), color-mix(in srgb, rgb(var(--lgs-rgb, 88,166,255)) 60%, #ffffff));
+  color: #ffffff;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, rgb(var(--lgs-rgb, 58,125,196)) 70%, #000),
+    rgb(var(--lgs-rgb, 58,125,196)));
   flex: 0 0 30px;
 }
 .lg-switch-body {
@@ -2282,8 +2284,10 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   font-size: .72rem; font-weight: 800;
-  color: #0d1117;
-  background: linear-gradient(135deg, rgb(var(--lgs-row-rgb, 88,166,255)), color-mix(in srgb, rgb(var(--lgs-row-rgb, 88,166,255)) 55%, #fff));
+  color: #ffffff;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, rgb(var(--lgs-row-rgb, 58,125,196)) 70%, #000),
+    rgb(var(--lgs-row-rgb, 58,125,196)));
   box-shadow: 0 1px 2px rgba(0,0,0,.4);
 }
 .lg-switch-item-body { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
@@ -2451,9 +2455,12 @@ body.has-league-rail main.container {
   font-weight: 800;
   font-size: .82rem;
   letter-spacing: .02em;
-  color: #0a0c12;
-  background: linear-gradient(135deg, rgb(var(--lgs-rgb, 122,155,196)), color-mix(in srgb, rgb(var(--lgs-rgb, 122,155,196)) 65%, #ffffff));
+  color: #ffffff;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, rgb(var(--lgs-rgb, 58,125,196)) 70%, #000),
+    rgb(var(--lgs-rgb, 58,125,196)));
   flex: 0 0 36px;
+  box-shadow: 0 4px 12px -4px rgba(var(--lgs-rgb, 58,125,196), .35);
 }
 .kl-rail-id-body {
   display: none;
@@ -2549,18 +2556,18 @@ body.has-league-rail main.container {
   transform: translateX(0);
 }
 
-/* Active state — calm accent fade + soft 2px left edge, no aggressive glow */
+/* Active state — confident accent gradient + 2px left edge */
 .kl-rail-row.active {
-  color: #eaeef4;
+  color: #ffffff;
   background:
     linear-gradient(90deg,
-      rgba(var(--lgs-rgb, 122,155,196), .14),
-      rgba(var(--lgs-rgb, 122,155,196), .05) 70%,
+      rgba(var(--lgs-rgb, 58,125,196), .18),
+      rgba(var(--lgs-rgb, 58,125,196), .06) 75%,
       transparent);
-  box-shadow: inset 2px 0 0 rgb(var(--lgs-rgb, 122,155,196));
+  box-shadow: inset 2px 0 0 rgb(var(--lgs-rgb, 58,125,196));
 }
 .kl-rail-row.active .kl-rail-icon {
-  color: rgb(var(--lgs-rgb, 122,155,196));
+  color: rgb(var(--lgs-rgb, 58,125,196));
 }
 
 /* Pulse dot for live draft */
