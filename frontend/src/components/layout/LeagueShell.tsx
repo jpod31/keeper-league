@@ -134,77 +134,15 @@ function LeagueShellInner() {
           />
 
 
-          <nav className="league-tabs d-none d-lg-flex">
-            {t && (
-              <>
-                <NavLink
-                  to={`/leagues/${lid}/team/${t.id}`}
-                  className={`league-tab${activeTab === 'team' ? ' active' : ''}`}
-                >
-                  <i className="bi bi-people"></i><span>My Team</span>
-                </NavLink>
-                <NavLink
-                  to={`/leagues/${lid}/gameday`}
-                  className={`league-tab${activeTab === 'gameday' ? ' active' : ''}`}
-                >
-                  <i className="bi bi-controller"></i><span>Gameday</span>
-                </NavLink>
-              </>
-            )}
-            <NavLink
-              to={`/leagues/${lid}/player-pool`}
-              className={`league-tab${activeTab === 'players' ? ' active' : ''}`}
-            >
-              <i className="bi bi-person-plus"></i><span>Players</span>
-            </NavLink>
-            <NavLink
-              to={`/leagues/${lid}/fixture`}
-              className={`league-tab${activeTab === 'league' ? ' active' : ''}`}
-            >
-              <i className="bi bi-calendar-week"></i><span>League</span>
-            </NavLink>
-            {league.active_draft && (
-              <NavLink
-                to={`/leagues/${lid}/draft`}
-                className={`league-tab${activeTab === 'draft' ? ' active' : ''}`}
-                style={{ color: '#d29922' }}
-              >
-                <i className="bi bi-list-check"></i><span>Draft Room</span>
-              </NavLink>
-            )}
-            <NavLink
-              to={`/leagues/${lid}/chat`}
-              className={`league-tab${activeTab === 'comms' ? ' active' : ''}`}
-            >
-              <i className="bi bi-megaphone"></i><span>Comms</span>
-            </NavLink>
-            {league.is_commissioner ? (
-              <NavLink
-                to={`/leagues/${lid}/commissioner`}
-                className={`league-tab${activeTab === 'commissioner' || activeTab === 'settings' ? ' active' : ''}`}
-                style={{ color: '#d29922' }}
-              >
-                <i className="bi bi-shield-lock"></i>
-                <span>
-                  Admin
-                  {league.pending_ltil_count > 0 && (
-                    <span className="badge rounded-pill ms-1" style={{
-                      background: '#d29922', color: '#000', fontSize: '.55rem', verticalAlign: 'middle',
-                    }}>
-                      {league.pending_ltil_count}
-                    </span>
-                  )}
-                </span>
-              </NavLink>
-            ) : (
-              <NavLink
-                to={`/leagues/${lid}/settings`}
-                className={`league-tab${activeTab === 'settings' ? ' active' : ''}`}
-              >
-                <i className="bi bi-gear"></i><span>Settings</span>
-              </NavLink>
-            )}
-          </nav>
+          <LeagueTabs
+            lid={lid}
+            teamId={t?.id}
+            activeTab={activeTab}
+            activeDraft={!!league.active_draft}
+            isCommissioner={!!league.is_commissioner}
+            pendingLtilCount={league.pending_ltil_count || 0}
+          />
+
         </div>
       </div>
 
@@ -493,5 +431,88 @@ function LeagueSwitcher({
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+// ── League tabs ────────────────────────────────────────────────
+// Pill-row of glass tabs with a single animated indicator that
+// glides between active tabs via framer-motion layoutId. Mobile
+// gets horizontal scroll + edge-fade mask.
+
+interface TabSpec {
+  to: string
+  key: string
+  icon: string
+  label: string
+  pulse?: boolean   // for live-draft amber
+  badge?: number    // for admin pending count
+}
+
+function LeagueTabs({
+  lid, teamId, activeTab, activeDraft, isCommissioner, pendingLtilCount,
+}: {
+  lid: number
+  teamId?: number
+  activeTab: string
+  activeDraft: boolean
+  isCommissioner: boolean
+  pendingLtilCount: number
+}) {
+  const tabs: TabSpec[] = []
+  if (teamId) {
+    tabs.push({ to: `/leagues/${lid}/team/${teamId}`, key: 'team',    icon: 'bi-person-fill-gear',    label: 'My Team' })
+    tabs.push({ to: `/leagues/${lid}/gameday`,        key: 'gameday', icon: 'bi-controller',          label: 'Gameday' })
+  }
+  tabs.push({ to: `/leagues/${lid}/player-pool`,    key: 'players', icon: 'bi-grid-3x3-gap-fill',   label: 'Players' })
+  tabs.push({ to: `/leagues/${lid}/fixture`,        key: 'league',  icon: 'bi-calendar-week-fill',  label: 'League' })
+  if (activeDraft) {
+    tabs.push({ to: `/leagues/${lid}/draft`, key: 'draft', icon: 'bi-list-check', label: 'Draft Room', pulse: true })
+  }
+  tabs.push({ to: `/leagues/${lid}/chat`, key: 'comms', icon: 'bi-megaphone-fill', label: 'Comms' })
+  if (isCommissioner) {
+    tabs.push({ to: `/leagues/${lid}/commissioner`, key: 'commissioner', icon: 'bi-shield-lock-fill', label: 'Admin', badge: pendingLtilCount })
+  } else {
+    tabs.push({ to: `/leagues/${lid}/settings`, key: 'settings', icon: 'bi-gear-fill', label: 'Settings' })
+  }
+
+  function isActive(tab: TabSpec): boolean {
+    // Admin tab covers both 'commissioner' and 'settings' active states
+    if (tab.key === 'commissioner') return activeTab === 'commissioner' || activeTab === 'settings'
+    return activeTab === tab.key
+  }
+
+  return (
+    <nav className="kl-tabs d-none d-lg-flex" role="tablist">
+      <div className="kl-tabs-scroll">
+        {tabs.map(tab => {
+          const active = isActive(tab)
+          return (
+            <NavLink
+              key={tab.key}
+              to={tab.to}
+              className={`kl-tab${active ? ' active' : ''}${tab.pulse ? ' pulse' : ''}`}
+              role="tab"
+              aria-selected={active}
+            >
+              {active && (
+                <motion.span
+                  layoutId="kl-tab-indicator"
+                  className="kl-tab-indicator"
+                  transition={{ type: 'spring', stiffness: 420, damping: 32, mass: .9 }}
+                />
+              )}
+              <span className="kl-tab-content">
+                <i className={`bi ${tab.icon}`}></i>
+                <span>{tab.label}</span>
+                {tab.pulse && <span className="kl-tab-pulse-dot" aria-hidden="true"></span>}
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className="kl-tab-badge">{tab.badge}</span>
+                )}
+              </span>
+            </NavLink>
+          )
+        })}
+      </div>
+    </nav>
   )
 }

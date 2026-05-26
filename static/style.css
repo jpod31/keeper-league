@@ -2307,7 +2307,8 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   .lg-switch-sub { display: none; }
 }
 
-/* Tab bar */
+/* Tab bar (legacy .league-tabs — kept for any remaining Jinja pages
+   that haven't been migrated; the React shell uses .kl-tabs below) */
 .league-tabs {
   display: flex;
   align-items: stretch;
@@ -2344,6 +2345,118 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 .league-tab i {
   font-size: .85rem;
+}
+
+/* ── New animated glass pill-row tabs (.kl-tabs) ─────────────
+   Pill-row container with a single framer-motion indicator
+   that slides between active tabs. Edge-fade mask on overflow
+   for graceful horizontal scroll. */
+.kl-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  /* Soft fade on the edges so any overflow looks intentional */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+}
+.kl-tabs-scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  max-width: 100%;
+}
+.kl-tabs-scroll::-webkit-scrollbar { display: none; }
+
+.kl-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: #9ba4af;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color .18s ease, transform .18s ease;
+  isolation: isolate;
+}
+.kl-tab:hover {
+  color: #d8dee6;
+  text-decoration: none;
+}
+.kl-tab.active {
+  color: #f0f6fc;
+}
+.kl-tab i { font-size: .85rem; line-height: 1; }
+.kl-tab-content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* The sliding indicator pill — framer-motion layoutId animates between active tabs */
+.kl-tab-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(0,212,255,.22), rgba(255,45,146,.18));
+  border: 1px solid rgba(0,212,255,.4);
+  box-shadow:
+    0 0 0 1px rgba(0,212,255,.18) inset,
+    0 6px 22px -6px rgba(0,212,255,.45),
+    0 6px 22px -6px rgba(255,45,146,.35);
+  z-index: 0;
+}
+
+/* Pulsing dot for live-draft tab */
+.kl-tab-pulse-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #ffb86b;
+  box-shadow: 0 0 0 0 rgba(255,184,107,.7);
+  animation: kl-tab-pulse 1.6s ease-out infinite;
+}
+@keyframes kl-tab-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255,184,107,.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(255,184,107,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,184,107,0); }
+}
+.kl-tab.pulse:not(.active) { color: #ffb86b; }
+
+/* Badge (admin pending count) */
+.kl-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d29922;
+  color: #1f1500;
+  font-size: .54rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  margin-left: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kl-tab-pulse-dot { animation: none; }
 }
 
 /* Sub-nav (League section) */
