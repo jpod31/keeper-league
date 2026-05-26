@@ -72,7 +72,7 @@ function SquadPageInner() {
   const { league } = useLeague()
   const [searchParams] = useSearchParams()
   const view = searchParams.get('view') || 'field'
-  const { data, loading, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
+  const { data, loading, error, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
   const fieldActions = useFieldActions(leagueId!, teamId!, refetch)
   const [mobileActionPlayer, setMobileActionPlayer] = useState<Player | null>(null)
   const [sspLtilId, setSspLtilId] = useState<number | null>(null)
@@ -116,7 +116,31 @@ function SquadPageInner() {
   }
 
   if (loading) return <Spinner />
-  if (!data) return <p className="text-danger">Failed to load squad</p>
+  if (!data) {
+    // Hook already retried once silently. Surface the real reason and
+    // give a retry button instead of a dead-end message.
+    return (
+      <div className="card mt-4"><div className="card-body text-center" style={{ padding: '32px 20px' }}>
+        <div style={{ fontSize: '2rem', color: '#484f58', marginBottom: 8 }}>
+          <i className="bi bi-cloud-slash"></i>
+        </div>
+        <h5 style={{ color: '#c9d1d9' }}>Couldn't load your squad</h5>
+        <p style={{ fontSize: '.85rem', color: '#8b949e', maxWidth: 420, margin: '8px auto 16px' }}>
+          {error
+            ? `Server said: ${error.length > 200 ? error.slice(0, 200) + '...' : error}`
+            : 'Network seems quiet. The app server may be restarting after a deploy.'}
+        </p>
+        <div className="d-flex gap-2 justify-content-center">
+          <button className="btn btn-sm btn-primary" onClick={() => refetch()}>
+            <i className="bi bi-arrow-clockwise me-1"></i>Try again
+          </button>
+          <button className="btn btn-sm btn-outline-secondary" onClick={() => window.location.reload()}>
+            Full reload
+          </button>
+        </div>
+      </div></div>
+    )
+  }
 
   const { players, roster, is_owner, field_data: fd, alltime_stats: _alltime_stats, team_logos,
     selected_player_ids, emergency_ids_all, sevens_ids_all } = data
