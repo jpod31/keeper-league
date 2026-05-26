@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { BottomSheet } from '../../components/ui/BottomSheet'
@@ -26,75 +26,133 @@ interface AcquiredHistoryEntry {
   draft_type: string | null
 }
 
-/** Render one tenure line: drafted / traded / delisted by team. */
-function HistoryLine({ e }: { e: AcquiredHistoryEntry }) {
-  const dimmed = !e.is_active
-  // Action label varies by how the tenure ENDED for inactive rows,
-  // and by how it STARTED for active rows.
-  let actionLabel = ''
-  let actionIcon = ''
-  let actionColor = '#c9d1d9'
+/** Decoration for a single tenure entry. */
+function entryStyle(e: AcquiredHistoryEntry): { label: string; icon: string; color: string } {
   if (e.is_active) {
     if (e.method === 'draft' && e.pick_number) {
-      actionLabel = `Drafted · #${e.pick_number}${e.draft_year ? ` (${e.draft_year})` : ''}`
-      actionIcon = 'bi-trophy'
-      actionColor = '#79c0ff'
-    } else if (e.method === 'supplemental' && e.pick_number) {
-      actionLabel = `Supp draft · #${e.pick_number}${e.draft_year ? ` (${e.draft_year})` : ''}`
-      actionIcon = 'bi-stars'
-      actionColor = '#d2a8ff'
-    } else if (e.method === 'trade') {
-      actionLabel = `Traded in${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`
-      actionIcon = 'bi-arrow-left-right'
-      actionColor = '#ffb471'
-    } else if (e.method === 'ssp') {
-      actionLabel = 'SSP signing'
-      actionIcon = 'bi-bandaid'
-      actionColor = '#f0d18a'
-    } else {
-      actionLabel = e.method || '—'
-      actionIcon = 'bi-person-plus'
+      return { label: `Drafted · #${e.pick_number}${e.draft_year ? ` (${e.draft_year})` : ''}`, icon: 'bi-trophy', color: '#79c0ff' }
     }
-  } else {
-    // Inactive: this tenure ended somehow
-    if (e.delisted) {
-      actionLabel = `Delisted${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`
-      actionIcon = 'bi-x-octagon'
-      actionColor = '#ff8a82'
-    } else {
-      actionLabel = `Traded away${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`
-      actionIcon = 'bi-arrow-right'
-      actionColor = '#8b949e'
+    if (e.method === 'supplemental' && e.pick_number) {
+      return { label: `Supp draft · #${e.pick_number}${e.draft_year ? ` (${e.draft_year})` : ''}`, icon: 'bi-stars', color: '#d2a8ff' }
     }
+    if (e.method === 'trade') {
+      return { label: `Traded in${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`, icon: 'bi-arrow-left-right', color: '#ffb471' }
+    }
+    if (e.method === 'ssp') {
+      return { label: 'SSP signing', icon: 'bi-bandaid', color: '#f0d18a' }
+    }
+    return { label: e.method || '—', icon: 'bi-person-plus', color: '#c9d1d9' }
   }
+  // Inactive
+  if (e.delisted) {
+    return { label: `Delisted${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`, icon: 'bi-x-octagon', color: '#ff8a82' }
+  }
+  return { label: `Traded away${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`, icon: 'bi-arrow-right', color: '#8b949e' }
+}
+
+/** Single inline render of a tenure. */
+function HistoryLine({ e, compact = false }: { e: AcquiredHistoryEntry; compact?: boolean }) {
+  const s = entryStyle(e)
+  const dimmed = !e.is_active
   return (
     <div style={{
-      fontSize: '.66rem',
+      fontSize: compact ? '.66rem' : '.7rem',
       lineHeight: 1.25,
-      opacity: dimmed ? 0.55 : 1,
-      marginBottom: 1,
+      opacity: dimmed ? 0.6 : 1,
     }}>
       <div style={{ color: dimmed ? '#8b949e' : '#c9d1d9', fontWeight: e.is_active ? 600 : 400 }}>
         {e.team || e.coach || '—'}
       </div>
-      <div style={{ color: actionColor, fontSize: '.6rem' }}>
-        <i className={`bi ${actionIcon}`} style={{ marginRight: 3 }}></i>
-        {actionLabel}
+      <div style={{ color: s.color, fontSize: compact ? '.6rem' : '.64rem' }}>
+        <i className={`bi ${s.icon}`} style={{ marginRight: 3 }}></i>{s.label}
       </div>
     </div>
   )
 }
 
-/** Stacked tenure history. If the player only has one tenure (just
- *  drafted, no trades), the stack is just that one row, which renders
- *  identically to the old single-row treatment. */
+/** Tenure history rendered as: current row + a "+N more ▾" pill if
+ *  there were prior tenures. The pill opens a popover with the full
+ *  stack (oldest → newest). Players with a single tenure render
+ *  identically to before. */
 function AcquiredHistory({
   history, fallback,
 }: { history: AcquiredHistoryEntry[] | undefined; fallback: Acquired | null }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
   if (history && history.length > 0) {
+    if (history.length === 1) {
+      return <HistoryLine e={history[0]} />
+    }
+    // Multiple — show the most recent at the top + summary chip
+    const ordered = [...history].sort((a, b) => {
+      const at = a.acquired_at ? new Date(a.acquired_at).getTime() : 0
+      const bt = b.acquired_at ? new Date(b.acquired_at).getTime() : 0
+      return bt - at
+    })
+    const headline = ordered.find(e => e.is_active) || ordered[0]
+    const olderCount = history.length - 1
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {history.map((e, i) => <HistoryLine key={i} e={e} />)}
+      <div ref={rootRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <HistoryLine e={headline} />
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setOpen(o => !o) }}
+          className={`pp-acq-toggle${open ? ' open' : ''}`}
+          aria-haspopup="menu"
+          aria-expanded={open}
+        >
+          <i className="bi bi-clock-history"></i>
+          <span>+{olderCount} prior</span>
+          <i className="bi bi-chevron-down" style={{ marginLeft: 2, transition: 'transform .15s ease', transform: open ? 'rotate(180deg)' : 'none' }}></i>
+        </button>
+        {open && (
+          <div
+            className="pp-acq-popover"
+            onClick={(e) => e.stopPropagation()}
+            role="menu"
+          >
+            <div className="pp-acq-popover-head">Full history · {history.length} entries</div>
+            <div className="pp-acq-popover-list">
+              {/* oldest → newest, with timeline dot trail */}
+              {[...ordered].reverse().map((e, i) => {
+                const s = entryStyle(e)
+                const isLast = i === ordered.length - 1
+                return (
+                  <div key={i} className="pp-acq-popover-item">
+                    <div className="pp-acq-popover-rail">
+                      <span className="pp-acq-popover-dot" style={{ background: s.color }}></span>
+                      {!isLast && <span className="pp-acq-popover-line"></span>}
+                    </div>
+                    <div className="pp-acq-popover-body">
+                      <div className="pp-acq-popover-team">
+                        {e.team || e.coach || '—'}
+                        {e.is_active && <span className="pp-acq-popover-current">CURRENT</span>}
+                      </div>
+                      <div className="pp-acq-popover-meta" style={{ color: s.color }}>
+                        <i className={`bi ${s.icon}`}></i>{s.label}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
