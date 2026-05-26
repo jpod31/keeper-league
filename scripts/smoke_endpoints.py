@@ -45,6 +45,10 @@ JSON_CHECKS = [
     ("/leagues/3/trades?format=json",         {401}, False),
     ("/leagues/3/trades/propose?format=json", {401}, False),
     ("/leagues/3/trades/1?format=json",       {401, 404}, False),
+    # Anon delist POST should be 401 (auth required) — confirms the
+    # route exists + JSON envelope path doesn't 500. 405 if route
+    # is GET-only (would catch regressions where it disappears).
+    ("/leagues/3/season/delist?format=json",  {401, 405}, False),
 ]
 
 

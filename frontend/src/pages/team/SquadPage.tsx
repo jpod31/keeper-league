@@ -105,17 +105,25 @@ function SquadPageInner() {
     try {
       const form = new FormData()
       form.set('player_id', String(delistTarget.id))
-      const res = await fetch(`/leagues/${leagueId}/season/delist`, {
+      // format=json makes the server reply with a real JSON envelope
+      // instead of a 302 redirect that fetch() with redirect:'manual'
+      // silently treats as success — the previous version of this
+      // function quietly closed the modal even when the server rejected.
+      const res = await fetch(`/leagues/${leagueId}/season/delist?format=json`, {
         method: 'POST',
         body: form,
         credentials: 'include',
-        redirect: 'manual',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
       })
-      if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
+      let body: { success?: boolean; error?: string } = {}
+      try { body = await res.json() } catch { /* non-JSON body */ }
+      if (!res.ok || body.success === false) {
+        throw new Error(body.error || `Server error: ${res.status}`)
+      }
       setDelistTarget(null)
       refetch()
     } catch (err) {
-      alert((err as Error).message)
+      alert(`Delist failed: ${(err as Error).message}`)
     } finally {
       setDelisting(false)
     }

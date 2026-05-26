@@ -348,26 +348,36 @@ def offseason_start_step(league_id):
 @leagues_bp.route("/<int:league_id>/season/delist", methods=["POST"])
 @login_required
 def delist_player_action(league_id):
-    """Delist a player during an active delist period (midseason or offseason only)."""
-    league = db.session.get(League, league_id)
-    if not league:
-        flash("League not found.", "warning")
+    """Delist a player while a DelistPeriod is open for this league.
+
+    The canonical "can I delist?" signal is whether a DelistPeriod row
+    exists with status='open' for the current season — NOT the league
+    phase. The phase check this used to do rejected mid-season trade-
+    window delists because the league is still 'active' / phase='regular'
+    when the window opens; the period is what we explicitly created.
+    """
+    # SPA POSTs include ?format=json so we know to reply with a JSON
+    # error envelope instead of a redirect (which the SPA fetch with
+    # `redirect: 'manual'` silently treats as success).
+    wants_json = (
+        request.args.get("format") == "json"
+        or request.headers.get("Accept", "").startswith("application/json")
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    )
+
+    def _fail(msg, code=400):
+        if wants_json:
+            return jsonify({"success": False, "error": msg}), code
+        flash(msg, "warning")
         return redirect(url_for("leagues.league_list"))
 
-    # Only allow delisting during midseason or offseason phases
-    from models.database import SeasonConfig
-    season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
-    is_midseason = (league.status == "active" and season_cfg
-                    and season_cfg.season_phase == "midseason")
-    is_offseason = league.status == "offseason"
-    if not is_midseason and not is_offseason:
-        flash("Delisting is only available during mid-season and off-season periods.", "warning")
-        return redirect(url_for("leagues.dashboard", league_id=league_id))
+    league = db.session.get(League, league_id)
+    if not league:
+        return _fail("League not found.", 404)
 
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
     if not user_team:
-        flash("You need a team to delist players.", "warning")
-        return redirect(url_for("leagues.dashboard", league_id=league_id))
+        return _fail("You need a team to delist players.", 403)
 
     team_url = url_for("team.squad", league_id=league_id, team_id=user_team.id)
 
@@ -376,17 +386,25 @@ def delist_player_action(league_id):
         league_id=league_id, year=league.season_year, status="open"
     ).first()
     if not delist_period:
-        flash("No active delist period.", "warning")
+        msg = "No active delist period."
+        if wants_json:
+            return jsonify({"success": False, "error": msg}), 409
+        flash(msg, "warning")
         return redirect(team_url)
 
     player_id = request.form.get("player_id", type=int)
     if not player_id:
-        flash("No player selected.", "warning")
+        msg = "No player selected."
+        if wants_json:
+            return jsonify({"success": False, "error": msg}), 400
+        flash(msg, "warning")
         return redirect(team_url)
 
     from models.season_manager import delist_player
     _, error = delist_player(delist_period.id, user_team.id, player_id)
     if error:
+        if wants_json:
+            return jsonify({"success": False, "error": error}), 400
         flash(error, "warning")
     else:
         # Notify all other team owners in the league
@@ -406,6 +424,8 @@ def delist_player_action(league_id):
                 link=url_for("leagues.list_changes_page", league_id=league_id),
             )
         flash("Player delisted.", "success")
+        if wants_json:
+            return jsonify({"success": True, "player_id": player_id}), 200
 
     next_url = request.form.get("next")
     if next_url:
