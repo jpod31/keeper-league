@@ -127,38 +127,46 @@ const GAMEDAY_CSS = `
 .gd-mini-teams { font-size: .7rem; font-weight: 700; color: #dde4f1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .gd-mini-score { font-size: .68rem; color: #97a3ba; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; }
 
-/* Hero — neutral scoreboard. Single dark surface for both sides;
-   team identity comes through LOGO + NAME, not through colouring the
-   panel backgrounds (colours next to each other read as
-   winning/losing semantics in a sports context, which they shouldn't
-   here). Team accent is reduced to a thin decorative outer-edge
-   stripe — present but not loud. */
-.gd-hero { position: relative; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #0f1626; border: 1px solid rgba(110,130,180,.18); box-shadow: 0 10px 28px -10px rgba(0,0,0,.5); }
+/* Hero — neutral scoreboard with deliberate accent placement.
+   Team identity = LOGO + a top accent band split 50/50. Emphasis =
+   the LEADING score is coloured in its team accent (loser stays
+   muted). Colour appears where it carries meaning; never paints a
+   whole panel. */
+.gd-hero { position: relative; border-radius: 10px; overflow: hidden; margin-bottom: 14px; background: #0f1626; border: 1px solid rgba(110,130,180,.18); box-shadow: 0 12px 32px -10px rgba(0,0,0,.55); }
+
+/* Top accent band — 5px stripe split 50/50 across both sides. Each
+   half holds its team's accent. Clear team identifier per side at a
+   glance. */
+.gd-hero-band { height: 5px; display: grid; grid-template-columns: 1fr 1fr; }
+.gd-hero-band-l { background: linear-gradient(90deg, var(--gd-left-accent, rgba(110,130,180,.5)) 0%, var(--gd-left-accent, rgba(110,130,180,.5)) 60%, color-mix(in srgb, var(--gd-left-accent, rgba(110,130,180,.5)) 60%, transparent) 100%); }
+.gd-hero-band-r { background: linear-gradient(90deg, color-mix(in srgb, var(--gd-right-accent, rgba(110,130,180,.5)) 60%, transparent) 0%, var(--gd-right-accent, rgba(110,130,180,.5)) 40%, var(--gd-right-accent, rgba(110,130,180,.5)) 100%); }
 
 .gd-hero-split { display: grid; grid-template-columns: 1fr 1fr; position: relative; }
-.gd-hero-split::after { content: ''; position: absolute; top: 22px; bottom: 22px; left: 50%; width: 1px; background: linear-gradient(to bottom, transparent, rgba(110,130,180,.22), transparent); }
+.gd-hero-split::after { content: ''; position: absolute; top: 26px; bottom: 26px; left: 50%; width: 1px; background: linear-gradient(to bottom, transparent, rgba(110,130,180,.22), transparent); }
 
-.gd-hero-side { padding: 22px 24px 18px; color: #f0f4fc; position: relative; min-height: 158px; display: flex; flex-direction: column; justify-content: space-between; }
-.gd-hero-side.right { text-align: right; }
-.gd-hero-side::before { content: ''; position: absolute; top: 22px; bottom: 22px; width: 3px; border-radius: 2px; background: var(--gd-side-accent, rgba(110,130,180,.4)); opacity: .8; left: 0; }
-.gd-hero-side.right::before { left: auto; right: 0; }
+.gd-hero-side { padding: 26px 28px 22px; color: #f0f4fc; position: relative; min-height: 208px; display: flex; flex-direction: column; }
+.gd-hero-side.right { text-align: right; align-items: flex-end; }
+.gd-hero-side:not(.right) { align-items: flex-start; }
 
-/* Top: crest + team name */
-.gd-hero-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; min-width: 0; }
+/* Top: crest + team name (tier 2 — team identity) */
+.gd-hero-top { display: flex; align-items: center; gap: 14px; min-width: 0; max-width: 100%; }
 .gd-hero-side.right .gd-hero-top { flex-direction: row-reverse; }
 
-.gd-hero-crest { width: 44px; height: 44px; border-radius: 10px; background: rgba(20,28,45,.7); border: 1px solid var(--gd-side-accent, rgba(110,130,180,.3)); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; font-size: .82rem; font-weight: 900; letter-spacing: .04em; color: #dde4f1; }
+.gd-hero-crest { width: 56px; height: 56px; border-radius: 12px; background: rgba(20,28,45,.85); border: 2px solid var(--gd-side-accent, rgba(110,130,180,.4)); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; font-size: 1rem; font-weight: 900; letter-spacing: .04em; color: #f0f4fc; box-shadow: 0 6px 18px -6px rgba(0,0,0,.45); }
 .gd-hero-crest img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.gd-hero-name { font-size: .95rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #f0f4fc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; line-height: 1.2; }
+.gd-hero-name { font-size: 1.05rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #f5f8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: 1.15; }
 
-/* Scoreline row — score sits on outer edge, big and dominant */
-.gd-hero-score-row { display: flex; align-items: flex-end; }
-.gd-hero-side.right .gd-hero-score-row { justify-content: flex-end; }
-.gd-hero-score { font-size: 4.4rem; font-weight: 900; line-height: 1; color: #f5f8ff; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; letter-spacing: -.04em; transition: color .35s ease; }
-.gd-hero-score.pre { color: #4a5471; }
+/* Big score (tier 1 — eye lands here). Leading side gets coloured
+   in its team accent + soft glow. Non-leading stays muted. */
+.gd-hero-score-wrap { flex: 1; display: flex; align-items: center; padding: 16px 0 12px; }
+.gd-hero-side:not(.right) .gd-hero-score-wrap { justify-content: flex-start; }
+.gd-hero-side.right .gd-hero-score-wrap { justify-content: flex-end; }
+.gd-hero-score { font-size: 5rem; font-weight: 900; line-height: .9; color: #6c7892; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; letter-spacing: -.05em; transition: color .35s, text-shadow .35s; }
+.gd-hero-score.leading { color: var(--gd-side-hex, #f5f8ff); text-shadow: 0 0 32px rgba(var(--gd-side-rgb, 122,155,196), .45); }
+.gd-hero-score.pre { color: #38415a; }
 
-.gd-hero-meta { display: flex; align-items: center; gap: 8px; font-size: .66rem; color: #97a3ba; letter-spacing: .04em; min-height: 18px; }
+.gd-hero-meta { display: flex; align-items: center; gap: 8px; font-size: .68rem; color: #97a3ba; letter-spacing: .04em; min-height: 20px; }
 .gd-hero-side.right .gd-hero-meta { justify-content: flex-end; }
 .gd-hero-played { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .gd-cap-bonus { font-size: .64rem; font-weight: 700; color: #f0d27a; letter-spacing: .06em; white-space: nowrap; }
@@ -399,20 +407,21 @@ const GAMEDAY_CSS = `
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 .gd-mob-section-hdr { padding: 6px 10px; font-size: .68rem; font-weight: 700; color: #58a6ff; text-transform: uppercase; letter-spacing: .5px; background: rgba(88,166,255,.05); border-bottom: 1px solid rgba(48,54,61,.3); }
 @media (max-width: 767.98px) {
-  /* Hero — slim down */
-  .gd-hero-side { padding: 14px 14px 12px; min-height: 118px; }
-  .gd-hero-top { gap: 9px; margin-bottom: 8px; }
-  .gd-hero-crest { width: 36px; height: 36px; border-radius: 8px; font-size: .72rem; }
-  .gd-hero-name { font-size: .72rem; letter-spacing: .04em; }
-  .gd-hero-score { font-size: 2.6rem; }
+  /* Hero — slim down for mobile */
+  .gd-hero-side { padding: 16px 16px 14px; min-height: 158px; }
+  .gd-hero-top { gap: 10px; }
+  .gd-hero-crest { width: 44px; height: 44px; border-radius: 10px; font-size: .82rem; border-width: 2px; }
+  .gd-hero-name { font-size: .82rem; letter-spacing: .03em; }
+  .gd-hero-score-wrap { padding: 10px 0 8px; }
+  .gd-hero-score { font-size: 3rem; letter-spacing: -.04em; }
   .gd-hero-meta { font-size: .58rem; gap: 5px; }
   .gd-cap-bonus { font-size: .56rem; }
   .gd-hero-strip { padding: 10px 14px; gap: 8px; font-size: .68rem; }
   .gd-margin-chip { font-size: .7rem; padding: 4px 11px; }
   .gd-first-bounce { font-size: .72rem; padding: 4px 11px; }
   .gd-proj-row { gap: 8px; font-size: .62rem; }
-  .gd-hero-you { font-size: .48rem; padding: 2px 6px; top: 8px; right: 10px; }
-  .gd-hero-side.right .gd-hero-you { left: 10px; right: auto; }
+  .gd-hero-you { font-size: .48rem; padding: 2px 6px; top: 10px; right: 12px; }
+  .gd-hero-side.right .gd-hero-you { left: 12px; right: auto; }
 
   /* Legacy classes (kept harmless for any straggling Jinja paths) */
   .gameday-hero { border-radius: 16px; margin: 0 -4px 8px; }
@@ -903,41 +912,56 @@ export function GamedayPage() {
         </div>
       ) : (
         <>
-          {/* Hero — neutral scoreboard. Team identity = LOGO + NAME.
-              Team accent is a thin decorative outer-edge stripe. */}
+          {/* Hero — neutral scoreboard. Team identity = LOGO + top
+              accent band. Emphasis = leading score coloured in its
+              team accent. */}
           {(() => {
             const leftAccent = accentFor(heroLeftTeamId)
             const rightAccent = accentFor(heroRightTeamId)
             const leftWinning = heroLeftScore > heroRightScore
             const rightWinning = heroRightScore > heroLeftScore
+            const isPre = gs === 'upcoming'
             const leftCount = heroLeftRs?.players_total != null
               ? { played: heroLeftRs.players_played ?? 0, total: heroLeftRs.players_total }
               : countPlayed(heroLeftPlayers)
             const rightCount = heroRightRs?.players_total != null
               ? { played: heroRightRs.players_played ?? 0, total: heroRightRs.players_total }
               : countPlayed(heroRightPlayers)
-            const leftStyle = { ['--gd-side-accent' as string]: `rgba(${leftAccent.rgb},.55)` } as React.CSSProperties
-            const rightStyle = { ['--gd-side-accent' as string]: `rgba(${rightAccent.rgb},.55)` } as React.CSSProperties
+            const leftStyle = {
+              ['--gd-side-accent' as string]: `rgba(${leftAccent.rgb},.6)`,
+              ['--gd-side-hex' as string]: leftAccent.hex,
+              ['--gd-side-rgb' as string]: leftAccent.rgb,
+            } as React.CSSProperties
+            const rightStyle = {
+              ['--gd-side-accent' as string]: `rgba(${rightAccent.rgb},.6)`,
+              ['--gd-side-hex' as string]: rightAccent.hex,
+              ['--gd-side-rgb' as string]: rightAccent.rgb,
+            } as React.CSSProperties
+            const bandStyle = {
+              ['--gd-left-accent' as string]: leftAccent.hex,
+              ['--gd-right-accent' as string]: rightAccent.hex,
+            } as React.CSSProperties
+            const leftScoreCls = `gd-hero-score${isPre ? ' pre' : leftWinning ? ' leading' : ''}${scoreFlash ? ' score-flash' : ''}`
+            const rightScoreCls = `gd-hero-score${isPre ? ' pre' : rightWinning ? ' leading' : ''}${scoreFlash ? ' score-flash' : ''}`
             return (
               <div className="gd-hero">
+                <div className="gd-hero-band" style={bandStyle}>
+                  <span className="gd-hero-band-l"></span>
+                  <span className="gd-hero-band-r"></span>
+                </div>
                 <div className="gd-hero-split">
                   <div className="gd-hero-side" style={leftStyle}>
                     {isViewingOwn && <span className="gd-hero-you">YOU</span>}
-                    <div>
-                      <div className="gd-hero-top">
-                        <span className="gd-hero-crest">
-                          {heroLeftLogo
-                            ? <img src={heroLeftLogo} alt="" />
-                            : heroLeftName.substring(0, 2).toUpperCase()}
-                        </span>
-                        <span className="gd-hero-name">{heroLeftName}</span>
-                      </div>
-                      <div className="gd-hero-score-row">
-                        <AnimatedNumber
-                          value={heroLeftScore}
-                          className={`gd-hero-score${gs === 'upcoming' ? ' pre' : ''}${scoreFlash ? ' score-flash' : ''}`}
-                        />
-                      </div>
+                    <div className="gd-hero-top">
+                      <span className="gd-hero-crest">
+                        {heroLeftLogo
+                          ? <img src={heroLeftLogo} alt="" />
+                          : heroLeftName.substring(0, 2).toUpperCase()}
+                      </span>
+                      <span className="gd-hero-name">{heroLeftName}</span>
+                    </div>
+                    <div className="gd-hero-score-wrap">
+                      <AnimatedNumber value={heroLeftScore} className={leftScoreCls} />
                     </div>
                     <div className="gd-hero-meta">
                       {leftCount.total > 0 && <span className="gd-hero-played">{leftCount.played}/{leftCount.total} played</span>}
@@ -947,21 +971,16 @@ export function GamedayPage() {
                   </div>
 
                   <div className="gd-hero-side right" style={rightStyle}>
-                    <div>
-                      <div className="gd-hero-top">
-                        <span className="gd-hero-crest">
-                          {heroRightLogo
-                            ? <img src={heroRightLogo} alt="" />
-                            : heroRightName.substring(0, 2).toUpperCase()}
-                        </span>
-                        <span className="gd-hero-name">{heroRightName}</span>
-                      </div>
-                      <div className="gd-hero-score-row">
-                        <AnimatedNumber
-                          value={heroRightScore}
-                          className={`gd-hero-score${gs === 'upcoming' ? ' pre' : ''}${scoreFlash ? ' score-flash' : ''}`}
-                        />
-                      </div>
+                    <div className="gd-hero-top">
+                      <span className="gd-hero-crest">
+                        {heroRightLogo
+                          ? <img src={heroRightLogo} alt="" />
+                          : heroRightName.substring(0, 2).toUpperCase()}
+                      </span>
+                      <span className="gd-hero-name">{heroRightName}</span>
+                    </div>
+                    <div className="gd-hero-score-wrap">
+                      <AnimatedNumber value={heroRightScore} className={rightScoreCls} />
                     </div>
                     <div className="gd-hero-meta">
                       {heroRightCapBonus > 0 && <span className="gd-cap-bonus">+{Math.round(heroRightCapBonus)} C</span>}
