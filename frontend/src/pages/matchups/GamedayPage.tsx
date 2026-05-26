@@ -127,49 +127,67 @@ const GAMEDAY_CSS = `
 .gd-mini-teams { font-size: .7rem; font-weight: 700; color: #dde4f1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .gd-mini-score { font-size: .68rem; color: #97a3ba; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; }
 
-/* Hero card — AFL broadcast scoreboard.
-   Two solid team-coloured panels split down the middle, white type on
-   each side, hard rectangles, no glass. Scores dominate the page;
-   everything else steps down. */
-.gd-hero { position: relative; border-radius: 8px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 10px 28px -10px rgba(0,0,0,.55); }
-.gd-hero-split { display: grid; grid-template-columns: 1fr 1fr; }
-.gd-hero-side { padding: 20px 22px 18px; color: #fff; position: relative; min-height: 158px; display: flex; flex-direction: column; justify-content: space-between; }
+/* Hero — neutral scoreboard. Single dark surface for both sides;
+   team identity comes through LOGO + NAME, not through colouring the
+   panel backgrounds (colours next to each other read as
+   winning/losing semantics in a sports context, which they shouldn't
+   here). Team accent is reduced to a thin decorative outer-edge
+   stripe — present but not loud. */
+.gd-hero { position: relative; border-radius: 8px; overflow: hidden; margin-bottom: 12px; background: #0f1626; border: 1px solid rgba(110,130,180,.18); box-shadow: 0 10px 28px -10px rgba(0,0,0,.5); }
+
+.gd-hero-split { display: grid; grid-template-columns: 1fr 1fr; position: relative; }
+.gd-hero-split::after { content: ''; position: absolute; top: 22px; bottom: 22px; left: 50%; width: 1px; background: linear-gradient(to bottom, transparent, rgba(110,130,180,.22), transparent); }
+
+.gd-hero-side { padding: 22px 24px 18px; color: #f0f4fc; position: relative; min-height: 158px; display: flex; flex-direction: column; justify-content: space-between; }
 .gd-hero-side.right { text-align: right; }
-.gd-hero-side::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.28) 100%); pointer-events: none; }
-.gd-hero-side > * { position: relative; z-index: 1; }
+.gd-hero-side::before { content: ''; position: absolute; top: 22px; bottom: 22px; width: 3px; border-radius: 2px; background: var(--gd-side-accent, rgba(110,130,180,.4)); opacity: .8; left: 0; }
+.gd-hero-side.right::before { left: auto; right: 0; }
 
-.gd-hero-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+/* Top: crest + team name */
+.gd-hero-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; min-width: 0; }
 .gd-hero-side.right .gd-hero-top { flex-direction: row-reverse; }
-.gd-hero-name { font-size: .95rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.94); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; line-height: 1.2; }
-.gd-hero-side.right .gd-hero-name { text-align: right; }
-.gd-hero-score { font-size: 4.4rem; font-weight: 900; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; letter-spacing: -.04em; text-shadow: 0 2px 14px rgba(0,0,0,.28); flex-shrink: 0; }
 
-.gd-hero-meta { display: flex; align-items: center; gap: 8px; font-size: .66rem; color: rgba(255,255,255,.82); letter-spacing: .04em; }
+.gd-hero-crest { width: 44px; height: 44px; border-radius: 10px; background: rgba(20,28,45,.7); border: 1px solid var(--gd-side-accent, rgba(110,130,180,.3)); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; font-size: .82rem; font-weight: 900; letter-spacing: .04em; color: #dde4f1; }
+.gd-hero-crest img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.gd-hero-name { font-size: .95rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #f0f4fc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; line-height: 1.2; }
+
+/* Scoreline row — score sits on outer edge, big and dominant */
+.gd-hero-score-row { display: flex; align-items: flex-end; }
+.gd-hero-side.right .gd-hero-score-row { justify-content: flex-end; }
+.gd-hero-score { font-size: 4.4rem; font-weight: 900; line-height: 1; color: #f5f8ff; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; letter-spacing: -.04em; transition: color .35s ease; }
+.gd-hero-score.pre { color: #4a5471; }
+
+.gd-hero-meta { display: flex; align-items: center; gap: 8px; font-size: .66rem; color: #97a3ba; letter-spacing: .04em; min-height: 18px; }
 .gd-hero-side.right .gd-hero-meta { justify-content: flex-end; }
 .gd-hero-played { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.gd-cap-bonus { font-size: .64rem; font-weight: 700; color: rgba(255,255,255,.92); letter-spacing: .06em; white-space: nowrap; }
+.gd-cap-bonus { font-size: .64rem; font-weight: 700; color: #f0d27a; letter-spacing: .06em; white-space: nowrap; }
 
-/* C/VC badge rebadged for coloured-panel context */
-.gd-role-badge { font-size: .54rem; font-weight: 800; letter-spacing: .1em; padding: 2px 6px; border-radius: 3px; color: rgba(255,255,255,.55); background: rgba(0,0,0,.16); border: 1px solid rgba(255,255,255,.16); }
-.gd-role-badge.active { color: #fff; background: rgba(0,0,0,.36); border-color: rgba(255,255,255,.5); }
+/* C/VC badges */
+.gd-role-badge { font-size: .54rem; font-weight: 800; letter-spacing: .1em; padding: 2px 6px; border-radius: 3px; color: #6c7892; background: rgba(110,130,180,.08); border: 1px solid rgba(110,130,180,.18); }
+.gd-role-badge.active { color: #f0d27a; background: rgba(194,147,47,.16); border-color: rgba(194,147,47,.36); }
+.gd-role-badge.active.vc { color: #82b3e4; background: rgba(58,125,196,.16); border-color: rgba(58,125,196,.36); }
 
-/* "YOU" pin — only shown on the user's side */
-.gd-hero-you { position: absolute; top: 10px; left: 12px; z-index: 2; font-size: .54rem; font-weight: 800; letter-spacing: .14em; color: rgba(255,255,255,.96); padding: 2px 8px; background: rgba(0,0,0,.32); border: 1px solid rgba(255,255,255,.4); border-radius: 3px; }
-.gd-hero-side.right .gd-hero-you { left: auto; right: 12px; }
+/* "YOU" pin — friendly sapphire, only on user's side */
+.gd-hero-you { position: absolute; top: 12px; right: 14px; z-index: 2; font-size: .54rem; font-weight: 800; letter-spacing: .16em; color: #a8c8ed; padding: 2px 8px; background: rgba(58,125,196,.14); border: 1px solid rgba(58,125,196,.4); border-radius: 3px; }
+.gd-hero-side.right .gd-hero-you { left: 14px; right: auto; }
 
-/* Bottom strip — margin chip + projection */
-.gd-hero-strip { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 18px; background: #0b1019; color: #dde4f1; border-top: 1px solid rgba(255,255,255,.05); flex-wrap: wrap; }
-.gd-margin-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 14px; border-radius: 4px; font-size: .82rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #f0f4fc; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; }
-.gd-margin-chip.win { color: #fff; background: rgba(61,140,99,.32); border-color: rgba(109,179,138,.6); }
-.gd-margin-chip.loss { color: #fff; background: rgba(184,90,74,.3); border-color: rgba(224,122,108,.55); }
-.gd-margin-chip.up { color: #7dc99a; background: rgba(61,140,99,.18); border-color: rgba(61,140,99,.42); }
-.gd-margin-chip.down { color: #e07a6c; background: rgba(184,90,74,.18); border-color: rgba(184,90,74,.42); }
+/* Bottom strip — state-aware. Pre-match: no margin chip, just bounce
+   time + projection. Live: margin chip + projection. Done: margin
+   chip + breakdown link. */
+.gd-hero-strip { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 18px; background: rgba(11,16,28,.6); border-top: 1px solid rgba(110,130,180,.1); flex-wrap: wrap; }
+.gd-margin-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 14px; border-radius: 4px; font-size: .82rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #f0f4fc; background: rgba(255,255,255,.04); border: 1px solid rgba(110,130,180,.18); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; }
+.gd-margin-chip.win { color: #7dc99a; background: rgba(61,140,99,.14); border-color: rgba(61,140,99,.4); }
+.gd-margin-chip.loss { color: #e07a6c; background: rgba(184,90,74,.14); border-color: rgba(184,90,74,.4); }
+.gd-margin-chip.up { color: #7dc99a; background: rgba(61,140,99,.1); border-color: rgba(61,140,99,.3); }
+.gd-margin-chip.down { color: #e07a6c; background: rgba(184,90,74,.1); border-color: rgba(184,90,74,.3); }
 
 .gd-proj-row { display: flex; align-items: center; gap: 12px; font-size: .68rem; color: #97a3ba; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; }
 .gd-proj-item b { font-weight: 700; color: #dde4f1; }
 .gd-proj-sep { width: 3px; height: 3px; border-radius: 50%; background: rgba(110,130,180,.4); }
 
-.gd-first-bounce { font-size: .76rem; color: #b6c0d3; font-weight: 600; letter-spacing: .04em; }
+.gd-first-bounce { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: #dde4f1; font-weight: 700; letter-spacing: .04em; padding: 5px 14px; border-radius: 4px; background: rgba(58,125,196,.08); border: 1px solid rgba(58,125,196,.22); }
+.gd-first-bounce i { color: #82b3e4; }
 .gd-breakdown-link { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 4px; font-size: .72rem; font-weight: 700; color: #82b3e4; text-decoration: none; background: rgba(58,125,196,.14); border: 1px solid rgba(58,125,196,.32); transition: background .14s; }
 .gd-breakdown-link:hover { background: rgba(58,125,196,.22); color: #a8c8ed; text-decoration: none; }
 
@@ -381,17 +399,20 @@ const GAMEDAY_CSS = `
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 .gd-mob-section-hdr { padding: 6px 10px; font-size: .68rem; font-weight: 700; color: #58a6ff; text-transform: uppercase; letter-spacing: .5px; background: rgba(88,166,255,.05); border-bottom: 1px solid rgba(48,54,61,.3); }
 @media (max-width: 767.98px) {
-  /* New broadcast hero — slim down */
-  .gd-hero-side { padding: 14px 14px 12px; min-height: 110px; }
+  /* Hero — slim down */
+  .gd-hero-side { padding: 14px 14px 12px; min-height: 118px; }
+  .gd-hero-top { gap: 9px; margin-bottom: 8px; }
+  .gd-hero-crest { width: 36px; height: 36px; border-radius: 8px; font-size: .72rem; }
   .gd-hero-name { font-size: .72rem; letter-spacing: .04em; }
   .gd-hero-score { font-size: 2.6rem; }
   .gd-hero-meta { font-size: .58rem; gap: 5px; }
   .gd-cap-bonus { font-size: .56rem; }
   .gd-hero-strip { padding: 10px 14px; gap: 8px; font-size: .68rem; }
   .gd-margin-chip { font-size: .7rem; padding: 4px 11px; }
+  .gd-first-bounce { font-size: .72rem; padding: 4px 11px; }
   .gd-proj-row { gap: 8px; font-size: .62rem; }
-  .gd-hero-you { font-size: .48rem; padding: 2px 6px; top: 8px; left: 8px; }
-  .gd-hero-side.right .gd-hero-you { right: 8px; left: auto; }
+  .gd-hero-you { font-size: .48rem; padding: 2px 6px; top: 8px; right: 10px; }
+  .gd-hero-side.right .gd-hero-you { left: 10px; right: auto; }
 
   /* Legacy classes (kept harmless for any straggling Jinja paths) */
   .gameday-hero { border-radius: 16px; margin: 0 -4px 8px; }
@@ -619,6 +640,7 @@ export function GamedayPage() {
   let heroLeftScore: number, heroRightScore: number
   let heroLeftCapBonus: number, heroRightCapBonus: number
   let heroLeftPlayers: GDPlayer[], heroRightPlayers: GDPlayer[]
+  let heroLeftLogo: string | null | undefined, heroRightLogo: string | null | undefined
   let heroLeftRs: RoundScoreEntry | undefined, heroRightRs: RoundScoreEntry | undefined
   let heroLeftTeamId: number | undefined, heroRightTeamId: number | undefined
   // Projection in left/right orientation — must follow the viewed matchup, not d.projections.
@@ -635,6 +657,8 @@ export function GamedayPage() {
     heroRightCapBonus = d.opp_captain_bonus
     heroLeftPlayers = d.my_players || []
     heroRightPlayers = d.opp_players || []
+    heroLeftLogo = d.my_team?.logo_url
+    heroRightLogo = d.opp_team?.logo_url
     heroLeftTeamId = d.my_team?.id
     heroRightTeamId = d.opp_team?.id
     // Only show own projection if the user is actually viewing their own matchup.
@@ -658,6 +682,8 @@ export function GamedayPage() {
     heroRightCapBonus = fx.away_captain_bonus || 0
     heroLeftPlayers = fx.home_players || []
     heroRightPlayers = fx.away_players || []
+    heroLeftLogo = meta?.home_team?.logo_url
+    heroRightLogo = meta?.away_team?.logo_url
     heroLeftTeamId = meta?.home_team_id
     heroRightTeamId = meta?.away_team_id
     // fx.projections has home_/away_ semantics
@@ -877,31 +903,41 @@ export function GamedayPage() {
         </div>
       ) : (
         <>
-          {/* Hero — AFL broadcast scoreboard, two team-coloured panels */}
+          {/* Hero — neutral scoreboard. Team identity = LOGO + NAME.
+              Team accent is a thin decorative outer-edge stripe. */}
           {(() => {
             const leftAccent = accentFor(heroLeftTeamId)
             const rightAccent = accentFor(heroRightTeamId)
             const leftWinning = heroLeftScore > heroRightScore
             const rightWinning = heroRightScore > heroLeftScore
-            const leftRs = heroLeftRs
-            const rightRs = heroRightRs
-            const leftCount = leftRs?.players_total != null
-              ? { played: leftRs.players_played ?? 0, total: leftRs.players_total }
+            const leftCount = heroLeftRs?.players_total != null
+              ? { played: heroLeftRs.players_played ?? 0, total: heroLeftRs.players_total }
               : countPlayed(heroLeftPlayers)
-            const rightCount = rightRs?.players_total != null
-              ? { played: rightRs.players_played ?? 0, total: rightRs.players_total }
+            const rightCount = heroRightRs?.players_total != null
+              ? { played: heroRightRs.players_played ?? 0, total: heroRightRs.players_total }
               : countPlayed(heroRightPlayers)
+            const leftStyle = { ['--gd-side-accent' as string]: `rgba(${leftAccent.rgb},.55)` } as React.CSSProperties
+            const rightStyle = { ['--gd-side-accent' as string]: `rgba(${rightAccent.rgb},.55)` } as React.CSSProperties
             return (
               <div className="gd-hero">
                 <div className="gd-hero-split">
-                  <div className="gd-hero-side" style={{ background: leftAccent.hex }}>
+                  <div className="gd-hero-side" style={leftStyle}>
                     {isViewingOwn && <span className="gd-hero-you">YOU</span>}
-                    <div className="gd-hero-top">
-                      <span className="gd-hero-name">{heroLeftName}</span>
-                      <AnimatedNumber
-                        value={heroLeftScore}
-                        className={`gd-hero-score${scoreFlash ? ' score-flash' : ''}`}
-                      />
+                    <div>
+                      <div className="gd-hero-top">
+                        <span className="gd-hero-crest">
+                          {heroLeftLogo
+                            ? <img src={heroLeftLogo} alt="" />
+                            : heroLeftName.substring(0, 2).toUpperCase()}
+                        </span>
+                        <span className="gd-hero-name">{heroLeftName}</span>
+                      </div>
+                      <div className="gd-hero-score-row">
+                        <AnimatedNumber
+                          value={heroLeftScore}
+                          className={`gd-hero-score${gs === 'upcoming' ? ' pre' : ''}${scoreFlash ? ' score-flash' : ''}`}
+                        />
+                      </div>
                     </div>
                     <div className="gd-hero-meta">
                       {leftCount.total > 0 && <span className="gd-hero-played">{leftCount.played}/{leftCount.total} played</span>}
@@ -909,13 +945,23 @@ export function GamedayPage() {
                       {heroLeftCapBonus > 0 && <span className="gd-cap-bonus">+{Math.round(heroLeftCapBonus)} C</span>}
                     </div>
                   </div>
-                  <div className="gd-hero-side right" style={{ background: rightAccent.hex }}>
-                    <div className="gd-hero-top">
-                      <span className="gd-hero-name">{heroRightName}</span>
-                      <AnimatedNumber
-                        value={heroRightScore}
-                        className={`gd-hero-score${scoreFlash ? ' score-flash' : ''}`}
-                      />
+
+                  <div className="gd-hero-side right" style={rightStyle}>
+                    <div>
+                      <div className="gd-hero-top">
+                        <span className="gd-hero-crest">
+                          {heroRightLogo
+                            ? <img src={heroRightLogo} alt="" />
+                            : heroRightName.substring(0, 2).toUpperCase()}
+                        </span>
+                        <span className="gd-hero-name">{heroRightName}</span>
+                      </div>
+                      <div className="gd-hero-score-row">
+                        <AnimatedNumber
+                          value={heroRightScore}
+                          className={`gd-hero-score${gs === 'upcoming' ? ' pre' : ''}${scoreFlash ? ' score-flash' : ''}`}
+                        />
+                      </div>
                     </div>
                     <div className="gd-hero-meta">
                       {heroRightCapBonus > 0 && <span className="gd-cap-bonus">+{Math.round(heroRightCapBonus)} C</span>}
@@ -925,39 +971,75 @@ export function GamedayPage() {
                   </div>
                 </div>
 
+                {/* State-aware bottom strip — no margin chip pre-match */}
                 <div className="gd-hero-strip">
-                  <div className={`gd-margin-chip${
-                    isViewingOwn && gs === 'completed' && leftWinning ? ' win'
-                    : isViewingOwn && gs === 'completed' && rightWinning ? ' loss'
-                    : isViewingOwn && leftWinning ? ' up'
-                    : isViewingOwn && rightWinning ? ' down'
-                    : ''
-                  }`}>
-                    {isViewingOwn && gs === 'completed' ? (
-                      leftWinning ? <><i className="bi bi-trophy-fill"></i>WON BY {diff}</> :
-                      rightWinning ? <>LOST BY {diff}</> : 'DRAW'
-                    ) : isViewingOwn ? (
-                      leftWinning ? <><i className="bi bi-caret-up-fill"></i>UP {diff}</> :
-                      rightWinning ? <><i className="bi bi-caret-down-fill"></i>DOWN {diff}</> : 'TIED'
-                    ) : (
-                      leftWinning ? <>{heroLeftName} BY {diff}</> :
-                      rightWinning ? <>{heroRightName} BY {diff}</> : 'DRAW'
-                    )}
-                  </div>
-                  {heroProjLeft != null && heroProjRight != null && gs !== 'completed' && (
-                    <div className="gd-proj-row">
-                      <span className="gd-proj-item">Proj <b>{Math.round(heroProjLeft)}</b>&ndash;<b>{Math.round(heroProjRight)}</b></span>
-                      <span className="gd-proj-sep"></span>
-                      <span className="gd-proj-item">Win <b>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b>{Math.round(heroWinRight || 0)}%</b></span>
-                    </div>
-                  )}
-                  {gs === 'upcoming' && d.first_bounce && (
-                    <span className="gd-first-bounce"><i className="bi bi-clock me-1"></i>First bounce {d.first_bounce}</span>
-                  )}
-                  {gs === 'completed' && d.fixture && (
-                    <Link to={`/leagues/${leagueId}/matchup/${d.fixture.id}`} className="gd-breakdown-link">
-                      <i className="bi bi-bar-chart-line"></i>Full Breakdown
-                    </Link>
+                  {gs === 'upcoming' ? (
+                    <>
+                      {d.first_bounce && (
+                        <span className="gd-first-bounce">
+                          <i className="bi bi-clock-fill"></i>First bounce {d.first_bounce}
+                        </span>
+                      )}
+                      {heroProjLeft != null && heroProjRight != null && (
+                        <div className="gd-proj-row">
+                          <span className="gd-proj-item">Proj <b>{Math.round(heroProjLeft)}</b>&ndash;<b>{Math.round(heroProjRight)}</b></span>
+                          <span className="gd-proj-sep"></span>
+                          <span className="gd-proj-item">Win <b>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b>{Math.round(heroWinRight || 0)}%</b></span>
+                        </div>
+                      )}
+                    </>
+                  ) : gs === 'completed' ? (
+                    <>
+                      {(leftWinning || rightWinning) && (
+                        <div className={`gd-margin-chip${
+                          isViewingOwn && leftWinning ? ' win'
+                          : isViewingOwn && rightWinning ? ' loss'
+                          : ''
+                        }`}>
+                          {isViewingOwn ? (
+                            leftWinning ? <><i className="bi bi-trophy-fill"></i>WON BY {diff}</> :
+                            <>LOST BY {diff}</>
+                          ) : (
+                            leftWinning ? <>{heroLeftName} BY {diff}</> :
+                            <>{heroRightName} BY {diff}</>
+                          )}
+                        </div>
+                      )}
+                      {!leftWinning && !rightWinning && (
+                        <div className="gd-margin-chip">DRAW</div>
+                      )}
+                      {d.fixture && (
+                        <Link to={`/leagues/${leagueId}/matchup/${d.fixture.id}`} className="gd-breakdown-link">
+                          <i className="bi bi-bar-chart-line"></i>Full Breakdown
+                        </Link>
+                      )}
+                    </>
+                  ) : (
+                    /* Live — only show margin chip once one side is actually ahead */
+                    <>
+                      {(leftWinning || rightWinning) && (
+                        <div className={`gd-margin-chip${
+                          isViewingOwn && leftWinning ? ' up'
+                          : isViewingOwn && rightWinning ? ' down'
+                          : ''
+                        }`}>
+                          {isViewingOwn ? (
+                            leftWinning ? <><i className="bi bi-caret-up-fill"></i>UP {diff}</> :
+                            <><i className="bi bi-caret-down-fill"></i>DOWN {diff}</>
+                          ) : (
+                            leftWinning ? <>{heroLeftName} BY {diff}</> :
+                            <>{heroRightName} BY {diff}</>
+                          )}
+                        </div>
+                      )}
+                      {heroProjLeft != null && heroProjRight != null && (
+                        <div className="gd-proj-row">
+                          <span className="gd-proj-item">Proj <b>{Math.round(heroProjLeft)}</b>&ndash;<b>{Math.round(heroProjRight)}</b></span>
+                          <span className="gd-proj-sep"></span>
+                          <span className="gd-proj-item">Win <b>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b>{Math.round(heroWinRight || 0)}%</b></span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
