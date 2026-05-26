@@ -1,4 +1,4 @@
-import{b as e,f as t,h as n,i as r,n as i,p as a,t as o}from"./Spinner-BZqcd_eb.js";import{t as s}from"./useFetch-1yv96nK-.js";import{t as c}from"./LeagueSubnav-DWRqiFih.js";var l=e(n(),1),u=i(),d=`
+import{b as e,f as t,h as n,i as r,n as i,p as a,t as o}from"./Spinner-BZqcd_eb.js";import{t as s}from"./useFetch-k76LU9jk.js";import{t as c}from"./LeagueSubnav-DExbcoL5.js";var l=e(n(),1),u=i(),d=`
 .rnd-strip { display:flex; align-items:stretch; background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; margin-bottom:20px; }
 .rnd-strip::-webkit-scrollbar { display:none; }
 .rnd-item { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1 1 0; min-width:44px; padding:12px 2px 10px; text-decoration:none; border-right:1px solid #161b22; transition:background .12s; position:relative; cursor:pointer; color:inherit; }

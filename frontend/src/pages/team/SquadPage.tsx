@@ -613,8 +613,8 @@ function SquadPageInner() {
       )}
 
 
-      {/* ── Toast ── */}
-      {fieldActions.toastMsg && <div className={`fv-toast fv-toast-${fieldActions.toastMsg.type} fv-toast-show`}>{fieldActions.toastMsg.text}</div>}
+      {/* Toasts now route through the global ToastProvider (.kl-toast) —
+          old fv-toast pill render deleted */}
 
       {/* ── Player modal ── */}
       {fieldActions.playerModal && <PlayerModal player={fieldActions.playerModal} teamLogos={data.team_logos} onClose={fieldActions.closePlayerModal} leagueId={leagueId} />}

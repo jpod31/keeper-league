@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { post, api } from '../lib/api'
+import { useToast } from '../components/ui/Toast'
 
 interface PlayerDetail {
   id: number; name: string; position: string; afl_team: string
@@ -42,15 +43,22 @@ export function useFieldActions(
   ageCutoff = 24, maxSenior7s = 2,
 ) {
   const API = `/leagues/${leagueId}/team/${teamId}/api`
-  const [toastMsg, setToastMsg] = useState<{ text: string; type: string } | null>(null)
   const [swapSource, setSwapSource] = useState<SwapSourceInfo | null>(null)
   const [actionMode, setActionMode] = useState<ActionMode>(null)
   const [playerModal, setPlayerModal] = useState<PlayerDetail | null>(null)
 
-  const toast = useCallback((text: string, type = 'info') => {
-    setToastMsg({ text, type })
-    setTimeout(() => setToastMsg(null), 2500)
-  }, [])
+  // Route through the GLOBAL ToastProvider — no more local fv-toast
+  // pill rendering in SquadPage. The old local implementation is what
+  // the user was seeing as a "small green pill bottom middle near
+  // transparent"; my new redesigned glass toasts never fired because
+  // every callsite here was hitting a different (local) toast function.
+  const { toast: globalToast } = useToast()
+  const toast = useCallback((text: string, type: string = 'info') => {
+    const t = (type === 'success' || type === 'error' || type === 'warning')
+      ? type
+      : 'info'
+    globalToast(text, t as 'success' | 'error' | 'info' | 'warning')
+  }, [globalToast])
 
   const fvApi = useCallback(async (endpoint: string, body: Record<string, unknown>) => {
     try {
@@ -288,7 +296,7 @@ export function useFieldActions(
   const closePlayerModal = useCallback(() => setPlayerModal(null), [])
 
   return {
-    toastMsg, swapSource, actionMode, playerModal,
+    swapSource, actionMode, playerModal,
     setCaptain, setVC, startSwap, completeSwap, cancelAllModes,
     toggleEmergency, toggle7s, set7sCaptain, addToLTIL, removeFromLTIL,
     completeEmgReplace, complete7sReplace, handlePlayerClick,
