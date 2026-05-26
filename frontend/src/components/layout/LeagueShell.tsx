@@ -122,7 +122,10 @@ function LeagueShellInner() {
     <>
       {/* ═══ Desktop league tab bar ═══ */}
       <div className="league-nav d-none d-lg-block">
-        <div className="league-nav-inner">
+        <div
+          className="league-nav-inner"
+          style={{ '--lgs-rgb': accentFor(lid).rgb } as React.CSSProperties}
+        >
           {/* League selector — modern pill switcher */}
           <LeagueSwitcher
             currentId={lid}
@@ -483,36 +486,25 @@ function LeagueTabs({
 
   return (
     <nav className="kl-tabs d-none d-lg-flex" role="tablist">
-      <div className="kl-tabs-scroll">
-        {tabs.map(tab => {
-          const active = isActive(tab)
-          return (
-            <NavLink
-              key={tab.key}
-              to={tab.to}
-              className={`kl-tab${active ? ' active' : ''}${tab.pulse ? ' pulse' : ''}`}
-              role="tab"
-              aria-selected={active}
-            >
-              {active && (
-                <motion.span
-                  layoutId="kl-tab-indicator"
-                  className="kl-tab-indicator"
-                  transition={{ type: 'spring', stiffness: 420, damping: 32, mass: .9 }}
-                />
-              )}
-              <span className="kl-tab-content">
-                <i className={`bi ${tab.icon}`}></i>
-                <span>{tab.label}</span>
-                {tab.pulse && <span className="kl-tab-pulse-dot" aria-hidden="true"></span>}
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="kl-tab-badge">{tab.badge}</span>
-                )}
-              </span>
-            </NavLink>
-          )
-        })}
-      </div>
+      {tabs.map(tab => {
+        const active = isActive(tab)
+        return (
+          <NavLink
+            key={tab.key}
+            to={tab.to}
+            className={`kl-tab${active ? ' active' : ''}${tab.pulse ? ' pulse' : ''}`}
+            role="tab"
+            aria-selected={active}
+          >
+            <i className={`bi ${tab.icon}`}></i>
+            <span>{tab.label}</span>
+            {tab.pulse && <span className="kl-tab-pulse-dot" aria-hidden="true"></span>}
+            {tab.badge !== undefined && tab.badge > 0 && (
+              <span className="kl-tab-badge">{tab.badge}</span>
+            )}
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }

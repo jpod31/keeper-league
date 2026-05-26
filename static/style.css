@@ -2347,88 +2347,74 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   font-size: .85rem;
 }
 
-/* ── New animated glass pill-row tabs (.kl-tabs) ─────────────
-   Pill-row container with a single framer-motion indicator
-   that slides between active tabs. Edge-fade mask on overflow
-   for graceful horizontal scroll. */
+/* ── New filled-pill tabs (.kl-tabs) ──────────────────────────
+   No outer container, no animated indicator — each tab's active
+   state is the highlight (instant CSS transition). Accent colour
+   comes from the parent's --lgs-rgb CSS variable, so the tabs
+   take on the active league's identity (same colour as the
+   switcher pill avatar). Edge-fade mask only kicks in at narrow
+   widths where overflow is real. */
 .kl-tabs {
+  display: flex;
   flex: 1;
   min-width: 0;
-  display: flex;
   align-items: center;
-  /* Soft fade on the edges so any overflow looks intentional */
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
-}
-.kl-tabs-scroll {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 999px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  gap: 2px;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  max-width: 100%;
 }
-.kl-tabs-scroll::-webkit-scrollbar { display: none; }
+.kl-tabs::-webkit-scrollbar { display: none; }
+@media (max-width: 1080px) {
+  .kl-tabs {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  }
+}
 
 .kl-tab {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 16px;
+  padding: 9px 16px;
   border-radius: 999px;
-  font-size: .78rem;
+  font-size: .8rem;
   font-weight: 600;
   letter-spacing: .01em;
-  color: #9ba4af;
+  color: #8b949e;
   text-decoration: none;
   white-space: nowrap;
-  transition: color .18s ease, transform .18s ease;
-  isolation: isolate;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
 }
 .kl-tab:hover {
   color: #d8dee6;
+  background: rgba(255,255,255,.04);
   text-decoration: none;
 }
+.kl-tab i { font-size: .9rem; line-height: 1; }
+
 .kl-tab.active {
-  color: #f0f6fc;
-}
-.kl-tab i { font-size: .85rem; line-height: 1; }
-.kl-tab-content {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-/* The sliding indicator pill — framer-motion layoutId animates between active tabs */
-.kl-tab-indicator {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(0,212,255,.22), rgba(255,45,146,.18));
-  border: 1px solid rgba(0,212,255,.4);
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(var(--lgs-rgb, 88,166,255), .22), rgba(var(--lgs-rgb, 88,166,255), .12)),
+    rgba(0,0,0,.2);
+  border-color: rgba(var(--lgs-rgb, 88,166,255), .55);
   box-shadow:
-    0 0 0 1px rgba(0,212,255,.18) inset,
-    0 6px 22px -6px rgba(0,212,255,.45),
-    0 6px 22px -6px rgba(255,45,146,.35);
-  z-index: 0;
+    0 0 0 1px rgba(var(--lgs-rgb, 88,166,255), .15) inset,
+    0 6px 18px -6px rgba(var(--lgs-rgb, 88,166,255), .55),
+    0 1px 0 rgba(255,255,255,.06) inset;
 }
+.kl-tab.active i { color: rgb(var(--lgs-rgb, 88,166,255)); }
 
-/* Pulsing dot for live-draft tab */
+/* Draft live → amber pulse dot */
 .kl-tab-pulse-dot {
-  width: 6px; height: 6px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   background: #ffb86b;
-  box-shadow: 0 0 0 0 rgba(255,184,107,.7);
+  box-shadow: 0 0 0 0 rgba(255,184,107,.6);
   animation: kl-tab-pulse 1.6s ease-out infinite;
 }
 @keyframes kl-tab-pulse {
@@ -2438,20 +2424,16 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 .kl-tab.pulse:not(.active) { color: #ffb86b; }
 
-/* Badge (admin pending count) */
+/* Admin pending-count badge */
 .kl-tab-badge {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 16px;
-  height: 16px;
+  align-items: center; justify-content: center;
+  min-width: 16px; height: 16px;
   padding: 0 5px;
   border-radius: 999px;
   background: #d29922;
   color: #1f1500;
-  font-size: .54rem;
-  font-weight: 800;
-  letter-spacing: .04em;
+  font-size: .54rem; font-weight: 800; letter-spacing: .04em;
   margin-left: 2px;
 }
 
