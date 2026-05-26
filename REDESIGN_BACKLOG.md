@@ -188,12 +188,33 @@ highlighted with accent gradient bg.
 - No JSX changes — every page using Bootstrap btn classes picks up the
   new look automatically.
 
-### ☐ 13. Forms
-Floating-label inputs (label slides up into the border on focus), focus rings
-in the active league's accent, validation states as inline pills.
+### ⏸ 13. Forms — **deferred**
+*Skipped this session — not a current priority. Pitch on file: base
+repaint with `--lgs-rgb` focus ring, Bootstrap `.form-floating`
+styling, validation pills, restyled check/radio inputs. Pure CSS
+override, no JSX changes needed. Revisit when forms feel like the
+biggest visible-aesthetic gap.*
 
-### ☐ 14. Empty states
-Abstract illustrations / pattern + primary CTA instead of flat icons + text.
+### ☑ 14. Empty states
+**Shipped — CSS-only update to `.empty-state` in `static/style.css`.**
+- 96px tonal icon ring (was 64px ghost), gradient fill + 36px outer
+  glow + accent border in the active tone.
+- Ambient concentric-rings pattern radiating from the icon center
+  (4 layered radial-gradients: halo + 3 faint rings). Subtle, no
+  artwork required.
+- Typography refresh: 1.25rem heading on `--kl-text-heading`,
+  0.85rem paragraph with 400px max-width.
+- Tonal variants via additional class on `.empty-state`:
+  · default → sapphire
+  · `.positive` → forest ("you're all caught up")
+  · `.attention` → ochre ("set this up")
+  Tones drive the icon ring, glow and ring pattern via
+  `--es-accent-hex` + `--es-accent-rgb` custom props.
+- CTA buttons inherit the new gradient-pill / ghost-outline styles
+  from #12 automatically.
+- Mobile: 76px icon, tighter padding, scaled-down ring pattern.
+- Out of scope: custom-drawn team/league illustrations (separate
+  design exercise).
 
 ---
 
