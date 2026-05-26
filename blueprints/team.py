@@ -1915,6 +1915,23 @@ def api_add_to_ltil(league_id, team_id):
     ltil, err = add_to_ltil(team_id, player_id, league_id, league.season_year)
     if err:
         return jsonify({"error": err}), 409
+
+    # Fan out a league-wide list_change notif so other managers see
+    # who's on LTIL without checking the player pool. Same shape as
+    # delist + SSP notifs.
+    from models.notification_manager import create_notification
+    player = db.session.get(AflPlayer, player_id)
+    pname = player.name if player else "Unknown"
+    suffix = " (pending approval)" if ltil.status == "pending" else ""
+    for t in FantasyTeam.query.filter_by(league_id=league_id).all():
+        create_notification(
+            user_id=t.owner_id,
+            league_id=league_id,
+            notif_type="list_change",
+            title=f"{team.name} added {pname} to LTIL{suffix}",
+            body=f"{pname} placed on the long-term injury list.",
+            link=url_for("leagues.list_changes_page", league_id=league_id),
+        )
     return jsonify({"ok": True, "ltil_id": ltil.id})
 
 
@@ -1938,6 +1955,19 @@ def api_remove_from_ltil(league_id, team_id):
     ltil, err = remove_from_ltil(team_id, player_id, league_id=league_id)
     if err:
         return jsonify({"error": err}), 409
+
+    from models.notification_manager import create_notification
+    player = db.session.get(AflPlayer, player_id)
+    pname = player.name if player else "Unknown"
+    for t in FantasyTeam.query.filter_by(league_id=league_id).all():
+        create_notification(
+            user_id=t.owner_id,
+            league_id=league_id,
+            notif_type="list_change",
+            title=f"{team.name} returned {pname} from LTIL",
+            body=f"{pname} is back on the active squad.",
+            link=url_for("leagues.list_changes_page", league_id=league_id),
+        )
     return jsonify({"ok": True})
 
 

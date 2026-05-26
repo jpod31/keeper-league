@@ -7,10 +7,113 @@ import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
 interface Acquired {
   coach: string | null
+  team?: string | null
   method: string | null
   pick_number: number | null
   draft_year: number | null
   draft_type: string | null
+}
+
+interface AcquiredHistoryEntry {
+  coach: string | null
+  team: string | null
+  method: string | null
+  acquired_at: string | null
+  is_active: boolean
+  delisted: boolean
+  pick_number: number | null
+  draft_year: number | null
+  draft_type: string | null
+}
+
+/** Render one tenure line: drafted / traded / delisted by team. */
+function HistoryLine({ e }: { e: AcquiredHistoryEntry }) {
+  const dimmed = !e.is_active
+  // Action label varies by how the tenure ENDED for inactive rows,
+  // and by how it STARTED for active rows.
+  let actionLabel = ''
+  let actionIcon = ''
+  let actionColor = '#c9d1d9'
+  if (e.is_active) {
+    if (e.method === 'draft' && e.pick_number) {
+      actionLabel = `Drafted · #${e.pick_number}${e.draft_year ? ` (${e.draft_year})` : ''}`
+      actionIcon = 'bi-trophy'
+      actionColor = '#79c0ff'
+    } else if (e.method === 'supplemental' && e.pick_number) {
+      actionLabel = `Supp draft · #${e.pick_number}${e.draft_year ? ` (${e.draft_year})` : ''}`
+      actionIcon = 'bi-stars'
+      actionColor = '#d2a8ff'
+    } else if (e.method === 'trade') {
+      actionLabel = `Traded in${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`
+      actionIcon = 'bi-arrow-left-right'
+      actionColor = '#ffb471'
+    } else if (e.method === 'ssp') {
+      actionLabel = 'SSP signing'
+      actionIcon = 'bi-bandaid'
+      actionColor = '#f0d18a'
+    } else {
+      actionLabel = e.method || '—'
+      actionIcon = 'bi-person-plus'
+    }
+  } else {
+    // Inactive: this tenure ended somehow
+    if (e.delisted) {
+      actionLabel = `Delisted${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`
+      actionIcon = 'bi-x-octagon'
+      actionColor = '#ff8a82'
+    } else {
+      actionLabel = `Traded away${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`
+      actionIcon = 'bi-arrow-right'
+      actionColor = '#8b949e'
+    }
+  }
+  return (
+    <div style={{
+      fontSize: '.66rem',
+      lineHeight: 1.25,
+      opacity: dimmed ? 0.55 : 1,
+      marginBottom: 1,
+    }}>
+      <div style={{ color: dimmed ? '#8b949e' : '#c9d1d9', fontWeight: e.is_active ? 600 : 400 }}>
+        {e.team || e.coach || '—'}
+      </div>
+      <div style={{ color: actionColor, fontSize: '.6rem' }}>
+        <i className={`bi ${actionIcon}`} style={{ marginRight: 3 }}></i>
+        {actionLabel}
+      </div>
+    </div>
+  )
+}
+
+/** Stacked tenure history. If the player only has one tenure (just
+ *  drafted, no trades), the stack is just that one row, which renders
+ *  identically to the old single-row treatment. */
+function AcquiredHistory({
+  history, fallback,
+}: { history: AcquiredHistoryEntry[] | undefined; fallback: Acquired | null }) {
+  if (history && history.length > 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {history.map((e, i) => <HistoryLine key={i} e={e} />)}
+      </div>
+    )
+  }
+  // Old API shape (or player never on a roster) — render legacy single row
+  if (!fallback) return <span style={{ color: '#484f58' }}>—</span>
+  return (
+    <>
+      {fallback.coach && <div style={{ color: '#c9d1d9' }}>{fallback.coach}</div>}
+      <div style={{ fontSize: '.65rem' }}>
+        {fallback.method === 'draft' && fallback.pick_number
+          ? `Pick #${fallback.pick_number}${fallback.draft_year ? ` (${fallback.draft_year})` : ''}`
+          : fallback.method === 'supplemental' && fallback.pick_number
+            ? `Supp #${fallback.pick_number}${fallback.draft_year ? ` (${fallback.draft_year})` : ''}`
+            : fallback.method === 'trade' ? 'Trade'
+              : fallback.method === 'ssp' ? 'SSP'
+                : fallback.method || '—'}
+      </div>
+    </>
+  )
 }
 
 interface PoolPlayer {
@@ -35,6 +138,7 @@ interface PoolPlayer {
   is_selected: boolean
   is_bye: boolean
   acquired: Acquired | null
+  acquired_history?: AcquiredHistoryEntry[]
 }
 
 interface TeamColour { fg: string; bg: string }
@@ -480,20 +584,7 @@ export function PlayerPoolPage() {
                       )}
                     </td>
                     <td style={{ fontSize: '.7rem', color: '#8b949e' }}>
-                      {p.acquired ? (
-                        <>
-                          {p.acquired.coach && <div style={{ color: '#c9d1d9' }}>{p.acquired.coach}</div>}
-                          <div style={{ fontSize: '.65rem' }}>
-                            {p.acquired.method === 'draft' && p.acquired.pick_number
-                              ? `Pick #${p.acquired.pick_number}${p.acquired.draft_year ? ` (${p.acquired.draft_year})` : ''}`
-                              : p.acquired.method === 'supplemental' && p.acquired.pick_number
-                              ? `Supp #${p.acquired.pick_number}${p.acquired.draft_year ? ` (${p.acquired.draft_year})` : ''}`
-                              : p.acquired.method === 'trade' ? 'Trade'
-                              : p.acquired.method === 'ssp' ? 'SSP'
-                              : p.acquired.method || '-'}
-                          </div>
-                        </>
-                      ) : <span style={{ color: '#484f58' }}>-</span>}
+                      <AcquiredHistory history={p.acquired_history} fallback={p.acquired} />
                     </td>
                     <td className="text-center">
                       {p.owner_team ? (

@@ -5,7 +5,7 @@ import re
 import json
 import statistics
 from collections import defaultdict
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pandas as pd
 from flask import render_template, request, redirect, url_for, flash, jsonify
@@ -261,18 +261,29 @@ def player_pool(league_id):
         from models.keeper_value import compute_keeper_values
         kvi_map = compute_keeper_values(rostered_pids, league.season_year)
 
-    # Acquisition info: player_id -> {coach, method, pick_number, draft_year, draft_type}
+    # Acquisition history: player_id -> [history_entries...] sorted
+    # oldest-first. Includes INACTIVE roster rows too (so delisted /
+    # traded-away tenures still show), and stacks the chronology:
+    #
+    #   Jhye Clark:
+    #     1. drafted by Lamb of North Cult (2026 R3 pick 27)
+    #     2. traded to Charlies Demons (2026-05-26)
+    #
+    # `acquired_map[pid]` is kept for backward compat — it's the
+    # most-recent entry (what used to be returned).
     acquired_map = {}
+    history_map = {}
     acq_rows = (
         db.session.query(
             FantasyRoster.player_id,
             FantasyRoster.acquired_via,
             FantasyRoster.acquired_at,
+            FantasyRoster.is_active,
             FantasyTeam.name.label("team_name"),
             FantasyTeam.owner_id,
         )
         .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
-        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)
+        .filter(FantasyTeam.league_id == league_id)
         .all()
     )
     from models.database import User
@@ -281,7 +292,10 @@ def player_pool(league_id):
     if owner_ids:
         for u in User.query.filter(User.id.in_(owner_ids)).all():
             owner_names[u.id] = u.display_name or u.username
-    # Get draft pick details for players acquired via draft/supplemental
+
+    # Draft pick details — keyed by (player_id, draft_session) so
+    # supplemental drafts later in the season also get attached to
+    # their own history row (rather than overwriting the initial pick).
     draft_pick_map = {}
     league_drafts = DraftSession.query.filter_by(league_id=league_id, status="completed").all()
     if league_drafts:
@@ -299,18 +313,46 @@ def player_pool(league_id):
                 "draft_type": ds.draft_round_type if ds else "initial",
             }
 
-    for r in acq_rows:
-        info = {
+    # Delist actions — to mark final inactive tenure as "delisted"
+    # rather than just "traded away" or generic inactive.
+    from models.database import DelistAction as _DelistAction, DelistPeriod as _DP
+    delist_periods = {p.id for p in _DP.query.filter_by(league_id=league_id).all()}
+    delisted_pids = set()
+    if delist_periods:
+        for da in _DelistAction.query.filter(_DelistAction.delist_period_id.in_(delist_periods)).all():
+            delisted_pids.add(da.player_id)
+
+    # Sort all rows oldest-first so chronology renders top-down
+    acq_rows_sorted = sorted(
+        acq_rows,
+        key=lambda r: (r.acquired_at or datetime.min),
+    )
+    for r in acq_rows_sorted:
+        entry = {
             "coach": owner_names.get(r.owner_id, ""),
+            "team": r.team_name,
             "method": r.acquired_via or "draft",
             "acquired_at": r.acquired_at,
+            "is_active": bool(r.is_active),
         }
+        # Attach draft-pick details only to the row that represents
+        # the original draft tenure (acquired_via == draft/supplemental).
         dp = draft_pick_map.get(r.player_id)
-        if dp and r.acquired_via in ("draft", "supplemental", None):
-            info["pick_number"] = dp["pick_number"]
-            info["draft_year"] = dp["draft_year"]
-            info["draft_type"] = dp["draft_type"]
-        acquired_map[r.player_id] = info
+        if dp and (r.acquired_via in ("draft", "supplemental", None)):
+            entry["pick_number"] = dp["pick_number"]
+            entry["draft_year"] = dp["draft_year"]
+            entry["draft_type"] = dp["draft_type"]
+        history_map.setdefault(r.player_id, []).append(entry)
+
+    # Mark the most-recent entry as "delisted" if applicable AND the
+    # tenure is inactive (player isn't currently rostered anywhere).
+    for pid, hist in history_map.items():
+        if pid in delisted_pids and not any(e["is_active"] for e in hist):
+            hist[-1]["delisted"] = True
+        # Back-compat acquired_map: pick the active entry if there
+        # is one, else the most recent.
+        active = [e for e in hist if e["is_active"]]
+        acquired_map[pid] = (active[-1] if active else hist[-1])
 
     # Build set of player IDs selected to play this round (for status dot)
     from models.database import AflTeamSelection
@@ -341,11 +383,26 @@ def player_pool(league_id):
         cache_analytics(0, league.season_year, "profile_tags_all", profile_tags)
 
     if request.args.get("format") == "json":
+        def _ser_history_entry(e):
+            """Serialize one tenure row for the stacked history view."""
+            return {
+                "coach": e.get("coach"),
+                "team": e.get("team"),
+                "method": e.get("method"),
+                "acquired_at": e["acquired_at"].isoformat() if e.get("acquired_at") else None,
+                "is_active": e.get("is_active", False),
+                "delisted": e.get("delisted", False),
+                "pick_number": e.get("pick_number"),
+                "draft_year": e.get("draft_year"),
+                "draft_type": e.get("draft_type"),
+            }
+
         def _ser_player(p):
             pr = rolling.get(p.name, {}) if isinstance(rolling, dict) else {}
             owner = rostered_map.get(p.id)
             tag = profile_tags.get(p.id, {}) if isinstance(profile_tags, dict) else {}
             acq = acquired_map.get(p.id, {}) if isinstance(acquired_map, dict) else {}
+            hist = history_map.get(p.id, [])
             return {
                 "id": p.id,
                 "name": p.name,
@@ -369,11 +426,13 @@ def player_pool(league_id):
                 "is_bye": bool(teams_playing and p.afl_team and p.afl_team not in teams_playing),
                 "acquired": {
                     "coach": acq.get("coach"),
+                    "team": acq.get("team"),
                     "method": acq.get("method"),
                     "pick_number": acq.get("pick_number"),
                     "draft_year": acq.get("draft_year"),
                     "draft_type": acq.get("draft_type"),
                 } if acq else None,
+                "acquired_history": [_ser_history_entry(e) for e in hist],
             }
 
         from config import TEAM_LOGOS
