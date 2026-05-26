@@ -397,6 +397,20 @@ def create_app():
     _spa_dir = os.path.join(app.static_folder, "spa")
     _spa_mode = os.environ.get("SPA_MODE", "0") == "1"
 
+    def _send_spa_shell():
+        """Serve the SPA index.html with strict no-cache headers.
+        The HTML embeds cache-busted asset URLs (style.css?v=<hash>);
+        if THIS file caches, the busted URLs go stale and users see
+        old CSS even after a deploy. We discovered the user's browser
+        was caching the shell for 30 min behind nginx — toast redesign
+        appeared not to render because the cached HTML still referenced
+        the pre-bump v=20260413e string. No-store closes that loop."""
+        resp = send_from_directory(_spa_dir, "index.html")
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
+
     # ── SPA-mode: intercept browser navigations and serve the React shell ──
     # Only catches real page navigations (user clicking link / typing URL).
     # Fetch/XHR API calls pass through to Flask as normal.
@@ -449,7 +463,7 @@ def create_app():
                 if "text/html" not in accept:
                     return None
 
-            return send_from_directory(_spa_dir, "index.html")
+            return _send_spa_shell()
 
         # Return 401 JSON (not 302 redirect) when @login_required fails.
         # In SPA mode, ALL requests are either page navigations (already
@@ -470,7 +484,7 @@ def create_app():
             if qs:
                 target += f"?{qs}"
             return redirect(target, 301)
-        return send_from_directory(_spa_dir, "index.html")
+        return _send_spa_shell()
 
     # Static asset cache buster (hash of style.css mtime)
     import hashlib
@@ -596,7 +610,7 @@ def create_app():
     @app.errorhandler(404)
     def page_not_found(e):
         if _spa_mode and request.accept_mimetypes.accept_html:
-            return send_from_directory(_spa_dir, "index.html"), 200
+            return _send_spa_shell(), 200
         return render_template("errors/404.html"), 404
 
     @app.errorhandler(500)
@@ -607,7 +621,7 @@ def create_app():
     @app.errorhandler(403)
     def forbidden(e):
         if _spa_mode and request.accept_mimetypes.accept_html:
-            return send_from_directory(_spa_dir, "index.html"), 200
+            return _send_spa_shell(), 200
         return render_template("errors/403.html"), 403
 
     # ── Request logging (analytics) ──────────────────────────────────
