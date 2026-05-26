@@ -42,17 +42,29 @@ interface StatsData {
 }
 
 const STYLE = `
-.stat-card { background:#161b22; border:1px solid #30363d; border-radius:8px; }
-.stat-card .card-header { border-bottom:1px solid #30363d; padding:.6rem .9rem; }
-.stat-card .card-header h6 { margin:0; font-size:.85rem; font-weight:600; color:#e6edf3; display:flex; align-items:center; gap:.5rem; }
-.stat-table th { padding:.4rem .6rem; font-size:.7rem; color:#8b949e; text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid #30363d; }
-.stat-table td { padding:.4rem .6rem; font-size:.8rem; vertical-align:middle; color:#c9d1d9; }
-.stat-table tbody tr:hover { background:rgba(88,166,255,.04); }
-.stat-rank { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:.65rem; font-weight:700; }
-.rank-1 { background:rgba(210,153,34,.2); color:#e3b341; }
-.rank-2 { background:rgba(139,148,158,.15); color:#8b949e; }
-.rank-3 { background:rgba(205,127,50,.2); color:#cd7f32; }
-.rank-other { background:#21262d; color:#484f58; }
+/* .stat-card on this page is used as a CARD WRAPPER around tables/charts,
+   not as a label+value tile. Override the new global stat-card rules
+   (text-align: center, padding, ::before stripe) to keep tables flush. */
+.stat-card {
+  background: rgba(15,22,36,.7);
+  border: 1px solid rgba(110,130,180,.18);
+  border-radius: 10px;
+  text-align: initial;
+  padding: 0;
+  transform: none !important;
+}
+.stat-card::before { display: none !important; }
+.stat-card:hover { transform: none; }
+.stat-card .card-header { border-bottom: 1px solid rgba(110,130,180,.12); padding: 10px 14px; background: rgba(20,28,45,.55); }
+.stat-card .card-header h6 { margin: 0; font-size: .85rem; font-weight: 700; color: #f0f4fc; display: flex; align-items: center; gap: 6px; }
+.stat-table th { padding: 8px 10px; font-size: .58rem; color: #6c7892; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; border-bottom: 1px solid rgba(110,130,180,.18); }
+.stat-table td { padding: 7px 10px; font-size: .8rem; vertical-align: middle; color: #dde4f1; border-bottom: 1px solid rgba(110,130,180,.06); }
+.stat-table tbody tr:hover { background: rgba(58,125,196,.05); }
+.stat-rank { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:.65rem; font-weight:800; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1, "zero" 0; }
+.rank-1 { background:rgba(194,147,47,.18); color:#f0d27a; border:1px solid rgba(194,147,47,.4); }
+.rank-2 { background:rgba(204,210,222,.14); color:#d8deea; border:1px solid rgba(204,210,222,.3); }
+.rank-3 { background:rgba(184,127,61,.18); color:#d6a779; border:1px solid rgba(184,127,61,.36); }
+.rank-other { background:rgba(110,130,180,.08); color:#6c7892; }
 .pos-bar-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:.75rem; }
 .pos-bar-label { min-width:40px; color:#8b949e; font-weight:600; }
 .pos-bar-track { flex:1; height:18px; background:#0d1117; border-radius:3px; overflow:hidden; }

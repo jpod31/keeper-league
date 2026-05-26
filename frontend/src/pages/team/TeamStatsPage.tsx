@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { StatTile } from '../../components/ui/StatTile'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 
 interface Player {
@@ -36,7 +37,7 @@ export function TeamStatsPage() {
   if (!data) return <p className="text-danger">Failed to load team stats</p>
 
   const { league, team, players, total_sc, avg_age, position_counts } = data
-  const avgSc = players.length > 0 ? (total_sc / players.length).toFixed(1) : '0'
+  const avgSc = players.length > 0 ? total_sc / players.length : 0
   const top10 = [...players].sort((a, b) => (b.sc_avg || 0) - (a.sc_avg || 0)).slice(0, 10)
   const posEntries = Object.entries(position_counts).sort((a, b) => b[1] - a[1])
 
@@ -65,28 +66,16 @@ export function TeamStatsPage() {
       {/* Stat cards */}
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
-          <div className="stat-card">
-            <div className="stat-value text-accent">{players.length}</div>
-            <div className="stat-label">Squad Size</div>
-          </div>
+          <StatTile label="Squad Size" value={players.length} accent="sapphire" />
         </div>
         <div className="col-6 col-md-3">
-          <div className="stat-card">
-            <div className="stat-value" style={{ color: '#3fb950' }}>{total_sc}</div>
-            <div className="stat-label">Total SC Value</div>
-          </div>
+          <StatTile label="Total SC Value" value={total_sc} accent="forest" />
         </div>
         <div className="col-6 col-md-3">
-          <div className="stat-card">
-            <div className="stat-value" style={{ color: '#d29922' }}>{avg_age}</div>
-            <div className="stat-label">Avg Age</div>
-          </div>
+          <StatTile label="Avg Age" value={avg_age} accent="ochre" decimals={1} />
         </div>
         <div className="col-6 col-md-3">
-          <div className="stat-card">
-            <div className="stat-value" style={{ color: '#bc8cff' }}>{avgSc}</div>
-            <div className="stat-label">Avg SC / Player</div>
-          </div>
+          <StatTile label="Avg SC / Player" value={avgSc} accent="amethyst" decimals={1} />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { useState, useMemo, useCallback, Component, type ErrorInfo, type ReactNo
 import { useFetch } from '../../hooks/useFetch'
 import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
+import { StatTile } from '../../components/ui/StatTile'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
@@ -400,9 +401,9 @@ function SquadPageInner() {
 
       {/* ── Stat Cards ── */}
       <div className={`squad-stat-cards${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
-        <div className="stat-card"><div className="stat-value" style={{ color: '#3fb950' }}>{Math.round(totalSc)}</div><div className="stat-label">Total SC Value</div></div>
-        <div className="stat-card"><div className="stat-value" style={{ color: '#58a6ff' }}>{scCount ? (totalSc / scCount).toFixed(1) : '-'}</div><div className="stat-label">Avg SC / Player</div></div>
-        <div className="stat-card"><div className="stat-value" style={{ color: '#d29922' }}>{ageCount ? (totalAge / ageCount).toFixed(1) : '-'}</div><div className="stat-label">Avg Age</div></div>
+        <StatTile label="Total SC Value" value={Math.round(totalSc)} accent="forest" />
+        <StatTile label="Avg SC / Player" value={scCount ? totalSc / scCount : 0} accent="sapphire" decimals={1} />
+        <StatTile label="Avg Age" value={ageCount ? totalAge / ageCount : 0} accent="ochre" decimals={1} />
         <div className="stat-card"><div className="squad-pos-summary">
           {posCounts.DEF > 0 && <span className="squad-pos-chip squad-chip-def">DEF {posCounts.DEF}</span>}
           {posCounts.MID > 0 && <span className="squad-pos-chip squad-chip-mid">MID {posCounts.MID}</span>}

@@ -146,10 +146,30 @@ highlighted with accent gradient bg.
 
 ## C — Component-level upgrades (replace globally)
 
-### ☐ 11. Stat tiles
-Replace `.pp-tile` and similar with animated tiles that count up on mount,
-optional sparkline behind the value, rank chip in the corner. Single tile
-component, used everywhere.
+### ☑ 11. Stat tiles
+**Shipped.**
+- New `<StatTile>` component at `frontend/src/components/ui/StatTile.tsx`.
+  Props: label / value / sub / accent (9-tone palette) / rank / sparkline /
+  decimals / animate. AnimatedNumber count-up on mount when value is
+  numeric. 2px accent top stripe + value tinted to match. Rank chip in
+  the corner when supplied. Optional behind-value sparkline svg.
+- Legacy CSS refreshed in `static/style.css`:
+  - `.stat-card` (used in Jinja templates + un-migrated SPA spots) now
+    on Stadium tones: rgba(15,22,36,.7) surface, jewel-tone accent
+    stripe at top, tabular-nums + slashed-zero off.
+  - `.pp-tile` (player profile) ditto. Accent helpers
+    `.pp-tile-accent-rating/pot/sc/form-*` swapped from GitHub
+    greens/blues/pinks to forest/sapphire/ochre/forest/rust.
+- SPA migrations:
+  - `SquadPage`: 3 of 4 tiles → StatTile (Roster Makeup kept as chip
+    layout). Inline hex tints removed.
+  - `TeamStatsPage`: all 4 tiles → StatTile.
+  - `StatsPage`: `.stat-card` here is used as a card WRAPPER around
+    tables/charts, not as a tile. Local CSS overrides the new global
+    rules so tables stay flush. Rank chips repainted to ochre/silver/
+    cognac instead of GitHub gold/grey/bronze.
+- Out of scope: per-stat sparkline data wiring (prop exists; nothing
+  uses it yet). Rank chips only show when callers provide a number.
 
 ### ☐ 12. Buttons
 Primary CTAs → gradient pills with soft glow shadows. Secondary stays ghost.

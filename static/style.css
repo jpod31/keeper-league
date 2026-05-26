@@ -456,33 +456,125 @@ body {
   background: transparent;
   border-top-color: var(--kl-border);
 }
+/* Legacy stat-card — refreshed to Stadium tones. Kept for Jinja
+   templates and any SPA pages that haven't migrated to <StatTile> yet. */
 .stat-card {
-  background: var(--kl-bg-card);
-  border: 1px solid var(--kl-border);
+  background: rgba(15,22,36,.7);
+  border: 1px solid rgba(110,130,180,.18);
   border-radius: 10px;
   padding: 1.25rem;
   text-align: center;
-  transition: border-color .15s, transform .15s;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .15s, transform .15s, background .15s;
+}
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: rgba(110,130,180,.4);
+  opacity: .7;
 }
 .stat-card:hover {
-  border-color: var(--kl-border-light);
+  border-color: rgba(110,130,180,.32);
   transform: translateY(-1px);
+  background: rgba(20,28,45,.8);
 }
 .stat-card .stat-value {
   font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1.2;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #f5f8ff;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 0;
+  letter-spacing: -.02em;
 }
 .stat-card .stat-label {
-  font-size: 0.7rem;
-  color: var(--kl-text-secondary);
+  font-size: 0.62rem;
+  color: #6c7892;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 2px;
+  letter-spacing: .12em;
+  margin-top: 4px;
 }
 .stat-card .stat-sub {
-  font-size: 0.7rem;
-  color: var(--kl-text-muted);
+  font-size: 0.68rem;
+  color: #97a3ba;
+  margin-top: 2px;
+}
+
+/* ── kl-tile (canonical StatTile component) ─────────────────── */
+.kl-tile {
+  background: rgba(15,22,36,.7);
+  border: 1px solid rgba(110,130,180,.18);
+  border-radius: 10px;
+  padding: 16px 18px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .15s ease, transform .15s ease, background .15s ease;
+}
+.kl-tile::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--kl-tile-accent, rgba(110,130,180,.4));
+  opacity: .8;
+}
+.kl-tile:hover {
+  border-color: rgba(var(--kl-tile-rgb, 110,130,180), .4);
+  background: rgba(20,28,45,.78);
+  transform: translateY(-1px);
+}
+.kl-tile-value {
+  position: relative;
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--kl-tile-accent, #f5f8ff);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 0;
+  letter-spacing: -.025em;
+  z-index: 1;
+}
+.kl-tile-label {
+  font-size: .6rem;
+  color: #6c7892;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  margin-top: 5px;
+}
+.kl-tile-sub {
+  font-size: .68rem;
+  color: #97a3ba;
+  margin-top: 2px;
+}
+.kl-tile-rank {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: .54rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--kl-tile-accent, #b6c0d3);
+  background: rgba(var(--kl-tile-rgb, 110,130,180), .14);
+  border: 1px solid rgba(var(--kl-tile-rgb, 110,130,180), .3);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 0;
+}
+.kl-tile-spark {
+  position: absolute;
+  inset: auto 8px 6px 8px;
+  height: 28px;
+  width: calc(100% - 16px);
+  z-index: 0;
+  opacity: .9;
+  pointer-events: none;
 }
 
 /* ── Tables ── */
@@ -6112,10 +6204,10 @@ th.sortable:hover { color: #58a6ff; }
 }
 .pp-card-title { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; color: var(--pp-text-muted); }
 
-/* ── Stat tile (replaces .stat-card everywhere) ─────────────── */
+/* ── Player-profile stat tile — Stadium repaint ─────────────── */
 .pp-tile {
-  background: var(--pp-surface-1);
-  border: 1px solid var(--pp-surface-edge);
+  background: rgba(15,22,36,.7);
+  border: 1px solid rgba(110,130,180,.18);
   border-radius: var(--pp-radius);
   padding: var(--pp-4) var(--pp-3);
   text-align: center;
@@ -6128,27 +6220,36 @@ th.sortable:hover { color: #58a6ff; }
   position: absolute;
   inset: 0 0 auto 0;
   height: 2px;
-  background: var(--pp-tile-accent, transparent);
-  opacity: .6;
+  background: var(--pp-tile-accent, rgba(110,130,180,.4));
+  opacity: .8;
 }
-.pp-tile:hover { transform: translateY(-2px); border-color: var(--pp-surface-edge-hover); }
-.pp-tile-value { font-size: 1.8rem; font-weight: 800; line-height: 1.05; color: var(--pp-tile-accent, var(--pp-text-strong)); font-variant-numeric: tabular-nums; }
-.pp-tile-label { font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; color: var(--pp-text-muted); margin-top: 4px; }
-.pp-tile-sub   { font-size: .68rem; color: var(--pp-text-dim); margin-top: 2px; }
+.pp-tile:hover { transform: translateY(-1px); border-color: rgba(110,130,180,.32); background: rgba(20,28,45,.78); }
+.pp-tile-value {
+  font-size: 1.8rem; font-weight: 800; line-height: 1.1;
+  color: var(--pp-tile-accent, #f5f8ff);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 0;
+  letter-spacing: -.025em;
+}
+.pp-tile-label { font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; color: #6c7892; margin-top: 5px; }
+.pp-tile-sub   { font-size: .68rem; color: #97a3ba; margin-top: 2px; }
 .pp-tile-rank  {
   position: absolute; top: 6px; right: 6px;
-  font-size: .55rem; font-weight: 800; letter-spacing: .04em;
-  padding: 2px 6px; border-radius: 999px;
-  background: rgba(var(--pp-primary-rgb), .15);
-  color: var(--pp-text);
+  font-size: .55rem; font-weight: 800; letter-spacing: .08em;
+  padding: 2px 7px; border-radius: 999px;
+  background: rgba(110,130,180,.16);
+  color: #b6c0d3;
+  border: 1px solid rgba(110,130,180,.28);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 0;
 }
 
-/* Tile accent helpers — set via inline --pp-tile-accent or class */
-.pp-tile-accent-rating { --pp-tile-accent: #3fb950; }
-.pp-tile-accent-pot    { --pp-tile-accent: #58a6ff; }
-.pp-tile-accent-sc     { --pp-tile-accent: #f778ba; }
-.pp-tile-accent-form-up   { --pp-tile-accent: #3fb950; }
-.pp-tile-accent-form-down { --pp-tile-accent: #f85149; }
+/* Tile accent helpers — jewel tones */
+.pp-tile-accent-rating    { --pp-tile-accent: #7dc99a; }  /* forest */
+.pp-tile-accent-pot       { --pp-tile-accent: #82b3e4; }  /* sapphire */
+.pp-tile-accent-sc        { --pp-tile-accent: #f0d27a; }  /* ochre */
+.pp-tile-accent-form-up   { --pp-tile-accent: #7dc99a; }  /* forest */
+.pp-tile-accent-form-down { --pp-tile-accent: #e07a6c; }  /* rust */
 
 /* ── Tabs (chip style, matches .tr-status-* aesthetic) ──────── */
 .pp-tabs {
