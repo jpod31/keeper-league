@@ -289,9 +289,13 @@ def add_to_ltil(team_id, player_id, league_id, year):
             return None, "LTIL request already pending for this player."
         return None, "Player is already on the long-term injury list."
 
-    # Check SSP round cutoff
+    # Check SSP round cutoff — bypassed during a mid-season trade
+    # window so managers can list newly injured players during the
+    # reshaping period (mirrors the relaxed remove_from_ltil rule).
     season_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
-    if season_cfg and season_cfg.ssp_cutoff_round:
+    league = db.session.get(League, league_id) if league_id else None
+    trade_window_open = bool(league and league.trade_window_open)
+    if season_cfg and season_cfg.ssp_cutoff_round and not trade_window_open:
         latest_completed = (
             db.session.query(db.func.max(Fixture.afl_round))
             .filter_by(league_id=league_id, year=year, status="completed", is_final=False)

@@ -57,9 +57,23 @@ export function useFieldActions(
       const data = await post<{ error?: string }>(API + endpoint, body)
       if (data.error) toast(data.error, 'error')
       return data
-    } catch {
-      toast('Request failed', 'error')
-      return { error: true }
+    } catch (e) {
+      // api.ts throws ApiError with the raw response body as .message;
+      // most routes reply with JSON {error: "..."}. Parse it so the
+      // user sees the real reason ("SSP window closed after round 4")
+      // instead of a generic "Request failed".
+      let msg = 'Request failed'
+      if (e instanceof Error && e.message) {
+        try {
+          const parsed = JSON.parse(e.message)
+          if (parsed && typeof parsed.error === 'string') msg = parsed.error
+        } catch {
+          // Body wasn't JSON — fall back to whatever we got, trimmed
+          msg = e.message.length > 160 ? e.message.slice(0, 160) + '…' : e.message
+        }
+      }
+      toast(msg, 'error')
+      return { error: msg }
     }
   }, [API, toast])
 
