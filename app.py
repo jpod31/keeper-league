@@ -480,6 +480,23 @@ def create_app():
     except Exception:
         _asset_v = "1"
 
+    # Tiny Jinja filter — convert "#58a6ff" → "88,166,255" so templates
+    # can drive --css-var: rgb(R,G,B) and rgba(R,G,B, alpha) gradients
+    # without a separate context var per colour.
+    @app.template_filter("hex_to_rgb")
+    def _hex_to_rgb(hex_str):
+        if not hex_str or not isinstance(hex_str, str):
+            return "88,166,255"
+        h = hex_str.strip().lstrip("#")
+        if len(h) == 3:
+            h = "".join(c * 2 for c in h)
+        if len(h) != 6:
+            return "88,166,255"
+        try:
+            return f"{int(h[0:2], 16)},{int(h[2:4], 16)},{int(h[4:6], 16)}"
+        except ValueError:
+            return "88,166,255"
+
     # Context processor — inject globals into all templates
     @app.context_processor
     def inject_globals():

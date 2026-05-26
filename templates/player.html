@@ -3,10 +3,14 @@
 
 {% set team_primary = TEAM_COLOURS.get(player.team, ('#58a6ff','#fff'))[0] %}
 {% set team_secondary = TEAM_COLOURS.get(player.team, ('#58a6ff','#fff'))[1] %}
+{% set team_primary_rgb = team_primary|hex_to_rgb %}
 {% set has_sc = player.sc_avg is not none %}
 {% set has_detailed = detailed.has_data %}
 
 {% block content %}
+<div class="player-page"
+     style="--pp-primary: {{ team_primary }}; --pp-secondary: {{ team_secondary }}; --pp-primary-rgb: {{ team_primary_rgb }};">
+
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="{{ url_for('leagues.league_list') }}">Home</a></li>
@@ -14,117 +18,123 @@
   </ol>
 </nav>
 
-{# ── Hero header ── #}
-<div class="player-hero" style="border-left: 4px solid {{ team_primary }}">
-  <img src="{{ TEAM_LOGOS.get(player.team, '') }}" class="team-logo" alt="{{ player.team }}" onerror="this.style.display='none'">
-  <div class="flex-grow-1">
-    <h1 class="player-name">{{ player.name }}</h1>
-    <div class="player-meta">
-      <span>
-        <img src="{{ TEAM_LOGOS.get(player.team, '') }}" style="width:14px;height:14px;object-fit:contain" alt="" onerror="this.style.display='none'">
-        {{ player.team }}
-      </span>
-      <span><span class="pos-badge pos-{{ player.primary_position }}">{{ player.position }}</span></span>
-      {% if player.age %}<span>{{ player.age }} yrs</span>{% endif %}
-      {% if player.height %}<span>{{ player.height }} cm</span>{% endif %}
-      {% if player.games %}<span>{{ player.games }} career games</span>{% endif %}
-    </div>
-    {% if player_injury and player_injury.severity %}
-    <div class="player-injury-banner player-injury-{{ player_injury.severity }}">
-      <i class="bi bi-bandaid"></i>
-      <span>{{ player_injury.type or 'Injured' }} — {{ player_injury.display or player_injury['return'] or '' }}</span>
-    </div>
-    {% endif %}
-    {% if acquisition_info %}
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
-      {% for acq in acquisition_info %}
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.12);border-radius:6px;font-size:.75rem;">
-        <i class="bi {% if acq.method == 'trade' %}bi-arrow-left-right{% elif acq.method == 'free_agent' %}bi-person-plus{% else %}bi-hammer{% endif %}" style="color:{% if acq.method == 'trade' %}#bc8cff{% elif acq.method == 'free_agent' %}#3fb950{% else %}#58a6ff{% endif %};"></i>
-        <span style="color:#c9d1d9;">Acquired by <strong>{{ acq.coach }}</strong>{% if acq.get('pick_number') %} with pick #{{ acq.pick_number }} in the {{ acq.draft_year }}{% if acq.draft_type == 'supplemental' %} midseason{% endif %} draft{% elif acq.method == 'trade' %} via trade{% elif acq.method == 'free_agent' %} as a free agent{% endif %}</span>
+{# ══════════════ HERO POSTER ══════════════ #}
+<section class="pp-poster">
+  <div class="pp-poster-grid">
+    <div>
+      <div class="pp-poster-head">
+        <div class="pp-poster-logo">
+          {% if TEAM_LOGOS.get(player.team) %}
+          <img src="{{ TEAM_LOGOS.get(player.team) }}" alt="{{ player.team }}" onerror="this.style.display='none'">
+          {% else %}
+          <i class="bi bi-shield-fill" style="color: var(--pp-primary); font-size: 1.4rem;"></i>
+          {% endif %}
+        </div>
+        <div>
+          <div class="pp-eyebrow">{{ player.team }}</div>
+          <h1 class="pp-display">{{ player.name }}</h1>
+        </div>
       </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  <div class="d-flex align-items-center gap-3">
-    {% if player.draft_score %}
-    {% set ds = player.draft_score %}
-    {% set ds_color = '#f0883e' if ds >= 70 else '#d29922' if ds >= 50 else '#da6d42' if ds >= 30 else '#8b6c32' %}
-    <div class="draft-ring text-center">
-      <svg width="80" height="80" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r="35" fill="none" stroke="#30363d" stroke-width="5"/>
-        <circle cx="40" cy="40" r="35" fill="none" stroke="{{ ds_color }}" stroke-width="5"
-                stroke-dasharray="{{ (ds / 100 * 220)|round }} 220"
-                stroke-linecap="round"/>
-      </svg>
-      <div class="ring-value" style="color:{{ ds_color }}">{{ ds|round(0)|int }}</div>
-      <div style="font-size:.65rem;color:#c9d1d9;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Draft</div>
-    </div>
-    {% endif %}
-    {% if player_ratings.get('rating') %}
-    {% set rtg = player_ratings.rating %}
-    {% set rtg_color = '#3fb950' if rtg >= 80 else '#56d364' if rtg >= 70 else '#7ee787' if rtg >= 60 else '#2ea043' %}
-    <div class="draft-ring text-center">
-      <svg width="80" height="80" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r="35" fill="none" stroke="#30363d" stroke-width="5"/>
-        <circle cx="40" cy="40" r="35" fill="none" stroke="{{ rtg_color }}" stroke-width="5"
-                stroke-dasharray="{{ (rtg / 100 * 220)|round }} 220"
-                stroke-linecap="round"/>
-      </svg>
-      <div class="ring-value" style="color:{{ rtg_color }}">{{ rtg }}</div>
-      <div style="font-size:.65rem;color:#c9d1d9;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Rating</div>
-    </div>
-    {% endif %}
-    {% if player_ratings.get('potential') %}
-    {% set pot = player_ratings.potential %}
-    {% set pot_color = '#58a6ff' if pot >= 85 else '#79c0ff' if pot >= 75 else '#a5d6ff' if pot >= 65 else '#388bfd' %}
-    <div class="draft-ring text-center">
-      <svg width="80" height="80" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r="35" fill="none" stroke="#30363d" stroke-width="5"/>
-        <circle cx="40" cy="40" r="35" fill="none" stroke="{{ pot_color }}" stroke-width="5"
-                stroke-dasharray="{{ (pot / 100 * 220)|round }} 220"
-                stroke-linecap="round"/>
-      </svg>
-      <div class="ring-value" style="color:{{ pot_color }}">{{ pot }}</div>
-      <div style="font-size:.65rem;color:#c9d1d9;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;">Potential</div>
-    </div>
-    {% endif %}
-  </div>
-</div>
 
-{# ── Quick stat cards (always show if we have any data) ── #}
+      <div class="pp-poster-meta">
+        <span><span class="pos-badge pos-{{ player.primary_position }}">{{ player.position }}</span></span>
+        {% if player.age %}<span><i class="bi bi-person"></i><b>{{ player.age }}</b> yrs</span>{% endif %}
+        {% if player.height %}<span><i class="bi bi-arrows-vertical"></i><b>{{ player.height }}</b> cm</span>{% endif %}
+        {% if player.games %}<span><i class="bi bi-controller"></i><b>{{ player.games }}</b> career games</span>{% endif %}
+      </div>
+
+      {% if player_injury and player_injury.severity %}
+      <div class="pp-injury">
+        <i class="bi bi-bandaid-fill"></i>
+        <span>{{ player_injury.type or 'Injured' }} — {{ player_injury.display or player_injury['return'] or '' }}</span>
+      </div>
+      {% endif %}
+
+      {% if acquisition_info %}
+      <div class="pp-acq-strip">
+        {% for acq in acquisition_info %}
+        <span class="pp-acq-chip">
+          <i class="bi {% if acq.method == 'trade' %}bi-arrow-left-right{% elif acq.method == 'free_agent' %}bi-person-plus{% else %}bi-trophy{% endif %}"></i>
+          Acquired by <b style="margin-left:2px;">{{ acq.coach }}</b>{% if acq.get('pick_number') %} · pick #{{ acq.pick_number }} {{ acq.draft_year }}{% if acq.draft_type == 'supplemental' %} midseason{% endif %} draft{% elif acq.method == 'trade' %} via trade{% elif acq.method == 'free_agent' %} as a free agent{% endif %}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="pp-poster-rings">
+      {% if player.draft_score %}
+      {% set ds = player.draft_score %}
+      {% set ds_color = '#f0883e' if ds >= 70 else '#d29922' if ds >= 50 else '#da6d42' if ds >= 30 else '#8b6c32' %}
+      {% set ds_arc = (ds / 100 * 220)|round %}
+      <div class="pp-ring">
+        <svg viewBox="0 0 80 80">
+          <circle class="pp-ring-track" cx="40" cy="40" r="35"/>
+          <circle class="pp-ring-fill" cx="40" cy="40" r="35" stroke="{{ ds_color }}" style="--pp-ring-arc: {{ ds_arc }};"/>
+        </svg>
+        <div class="pp-ring-value" style="color: {{ ds_color }};">{{ ds|round(0)|int }}</div>
+        <div class="pp-ring-label">Draft</div>
+      </div>
+      {% endif %}
+      {% if player_ratings.get('rating') %}
+      {% set rtg = player_ratings.rating %}
+      {% set rtg_color = '#3fb950' if rtg >= 80 else '#56d364' if rtg >= 70 else '#7ee787' if rtg >= 60 else '#2ea043' %}
+      {% set rtg_arc = (rtg / 100 * 220)|round %}
+      <div class="pp-ring">
+        <svg viewBox="0 0 80 80">
+          <circle class="pp-ring-track" cx="40" cy="40" r="35"/>
+          <circle class="pp-ring-fill" cx="40" cy="40" r="35" stroke="{{ rtg_color }}" style="--pp-ring-arc: {{ rtg_arc }};"/>
+        </svg>
+        <div class="pp-ring-value" style="color: {{ rtg_color }};">{{ rtg }}</div>
+        <div class="pp-ring-label">Rating</div>
+      </div>
+      {% endif %}
+      {% if player_ratings.get('potential') %}
+      {% set pot = player_ratings.potential %}
+      {% set pot_color = '#58a6ff' if pot >= 85 else '#79c0ff' if pot >= 75 else '#a5d6ff' if pot >= 65 else '#388bfd' %}
+      {% set pot_arc = (pot / 100 * 220)|round %}
+      <div class="pp-ring">
+        <svg viewBox="0 0 80 80">
+          <circle class="pp-ring-track" cx="40" cy="40" r="35"/>
+          <circle class="pp-ring-fill" cx="40" cy="40" r="35" stroke="{{ pot_color }}" style="--pp-ring-arc: {{ pot_arc }};"/>
+        </svg>
+        <div class="pp-ring-value" style="color: {{ pot_color }};">{{ pot }}</div>
+        <div class="pp-ring-label">Potential</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{# ══════════════ STAT TILES (signature row) ══════════════ #}
 {% if has_detailed and detailed.last_3_avg %}
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 pp-stagger">
   {% if player_ratings.get('rating') %}
   <div class="col-6 col-md">
-    <div class="stat-card">
-      {% set rtg = player_ratings.rating %}
-      <div class="stat-value" style="color:{% if rtg >= 80 %}#3fb950{% elif rtg >= 70 %}#d29922{% elif rtg >= 60 %}#f0883e{% else %}#f85149{% endif %}">{{ rtg }}</div>
-      <div class="stat-label">Rating</div>
+    <div class="pp-tile pp-tile-accent-rating">
+      <div class="pp-tile-value">{{ player_ratings.rating }}</div>
+      <div class="pp-tile-label">Rating</div>
       {% if player_ratings.get('potential') %}
-      <div class="stat-sub">Pot: {{ player_ratings.potential }}</div>
+      <div class="pp-tile-sub">Pot {{ player_ratings.potential }}</div>
       {% endif %}
     </div>
   </div>
   {% endif %}
   {% set card_stats = [
-    ('disposals', 'Disposals', '#58a6ff'),
-    ('marks', 'Marks', '#bc8cff'),
-    ('tackles', 'Tackles', '#f0883e'),
-    ('goals', 'Goals', '#3fb950'),
-    ('supercoach_score', 'SC Score', '#f778ba'),
+    ('disposals', 'Disposals', 'rating'),
+    ('marks', 'Marks', 'pot'),
+    ('tackles', 'Tackles', 'form-up'),
+    ('goals', 'Goals', 'form-up'),
+    ('supercoach_score', 'SC', 'sc'),
   ] %}
-  {% for key, label, colour in card_stats %}
+  {% for key, label, accent in card_stats %}
     {% if detailed.last_3_avg.get(key) is not none %}
     <div class="col-6 col-md">
-      <div class="stat-card">
-        <div class="stat-value" style="color:{{ colour }}">{{ detailed.last_3_avg[key] }}</div>
-        <div class="stat-label">{{ label }}</div>
-        <div class="stat-sub">
-          L3 avg
-          {% if detailed.last_5_avg.get(key) is not none %}
-           / L5: {{ detailed.last_5_avg[key] }}
-          {% endif %}
+      <div class="pp-tile pp-tile-accent-{{ accent }}">
+        <div class="pp-tile-value">{{ detailed.last_3_avg[key] }}</div>
+        <div class="pp-tile-label">{{ label }}</div>
+        <div class="pp-tile-sub">
+          L3{% if detailed.last_5_avg.get(key) is not none %} · L5 {{ detailed.last_5_avg[key] }}{% endif %}
         </div>
       </div>
     </div>
@@ -132,84 +142,72 @@
   {% endfor %}
 </div>
 {% elif has_sc %}
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 pp-stagger">
   <div class="col-6 col-md-3">
-    <div class="stat-card">
-      <div class="stat-value" style="color:#f778ba">{{ player.sc_avg }}</div>
-      <div class="stat-label">SC Average</div>
+    <div class="pp-tile pp-tile-accent-sc">
+      <div class="pp-tile-value">{{ player.sc_avg }}</div>
+      <div class="pp-tile-label">SC Average</div>
     </div>
   </div>
   {% if player_ratings.get('rating') %}
   <div class="col-6 col-md-3">
-    <div class="stat-card">
-      {% set rtg = player_ratings.rating %}
-      <div class="stat-value" style="color:{% if rtg >= 80 %}#3fb950{% elif rtg >= 70 %}#d29922{% elif rtg >= 60 %}#f0883e{% else %}#f85149{% endif %}">{{ rtg }}</div>
-      <div class="stat-label">Rating</div>
+    <div class="pp-tile pp-tile-accent-rating">
+      <div class="pp-tile-value">{{ player_ratings.rating }}</div>
+      <div class="pp-tile-label">Rating</div>
     </div>
   </div>
   {% endif %}
   {% if player_ratings.get('potential') %}
   <div class="col-6 col-md-3">
-    <div class="stat-card">
-      {% set pot = player_ratings.potential %}
-      <div class="stat-value" style="color:{% if pot >= 80 %}#3fb950{% elif pot >= 70 %}#d29922{% elif pot >= 60 %}#f0883e{% else %}#f85149{% endif %}">{{ pot }}</div>
-      <div class="stat-label">Potential</div>
+    <div class="pp-tile pp-tile-accent-pot">
+      <div class="pp-tile-value">{{ player_ratings.potential }}</div>
+      <div class="pp-tile-label">Potential</div>
     </div>
   </div>
   {% endif %}
   {% if sc_history.career_avg %}
   <div class="col-6 col-md-3">
-    <div class="stat-card">
-      <div class="stat-value" style="color:#58a6ff">{{ sc_history.career_avg }}</div>
-      <div class="stat-label">Career SC Avg</div>
+    <div class="pp-tile pp-tile-accent-pot">
+      <div class="pp-tile-value">{{ sc_history.career_avg }}</div>
+      <div class="pp-tile-label">Career SC</div>
     </div>
   </div>
   {% endif %}
   {% if sc_history.peak_avg %}
   <div class="col-6 col-md-3">
-    <div class="stat-card">
-      <div class="stat-value" style="color:#3fb950">{{ sc_history.peak_avg }}</div>
-      <div class="stat-label">Peak ({{ sc_history.peak_year }})</div>
+    <div class="pp-tile pp-tile-accent-rating">
+      <div class="pp-tile-value">{{ sc_history.peak_avg }}</div>
+      <div class="pp-tile-label">Peak</div>
+      <div class="pp-tile-sub">{{ sc_history.peak_year }}</div>
     </div>
   </div>
   {% endif %}
   {% if sc_history.trajectory_slope is not none %}
   <div class="col-6 col-md-3">
-    <div class="stat-card">
-      <div class="stat-value" style="color:{% if sc_history.trajectory_slope > 0 %}#3fb950{% elif sc_history.trajectory_slope < 0 %}#f85149{% else %}#8b949e{% endif %}">
-        {% if sc_history.trajectory_slope > 0 %}+{% endif %}{{ sc_history.trajectory_slope }}
-      </div>
-      <div class="stat-label">SC Trend (pts/yr)</div>
+    <div class="pp-tile {% if sc_history.trajectory_slope > 0 %}pp-tile-accent-form-up{% elif sc_history.trajectory_slope < 0 %}pp-tile-accent-form-down{% endif %}">
+      <div class="pp-tile-value">{% if sc_history.trajectory_slope > 0 %}+{% endif %}{{ sc_history.trajectory_slope }}</div>
+      <div class="pp-tile-label">SC trend</div>
+      <div class="pp-tile-sub">pts/yr</div>
     </div>
   </div>
   {% endif %}
 </div>
 {% endif %}
 
-{# ── Tabs ── #}
-<ul class="nav nav-tabs mb-4" id="playerTabs" role="tablist">
-  <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
-  </li>
+{# ══════════════ TABS ══════════════ #}
+<div class="pp-tabs" id="playerTabs" role="tablist">
+  <button class="pp-tab active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
   {% if has_detailed %}
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="detailed-tab" data-bs-toggle="tab" data-bs-target="#detailed" type="button" role="tab">Season Stats</button>
-  </li>
+  <button class="pp-tab" id="detailed-tab" data-bs-toggle="tab" data-bs-target="#detailed" type="button" role="tab">Season Stats</button>
   {% endif %}
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab">Charts</button>
-  </li>
+  <button class="pp-tab" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab">Charts</button>
   {% if has_detailed and detailed.current_rounds %}
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="rounds-tab" data-bs-toggle="tab" data-bs-target="#rounds" type="button" role="tab">Round-by-Round</button>
-  </li>
+  <button class="pp-tab" id="rounds-tab" data-bs-toggle="tab" data-bs-target="#rounds" type="button" role="tab">Round-by-Round</button>
   {% endif %}
   {% if state_league_data %}
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="stateleague-tab" data-bs-toggle="tab" data-bs-target="#stateleague" type="button" role="tab">State League</button>
-  </li>
+  <button class="pp-tab" id="stateleague-tab" data-bs-toggle="tab" data-bs-target="#stateleague" type="button" role="tab">State League</button>
   {% endif %}
-</ul>
+</div>
 
 <div class="tab-content" id="playerTabContent">
 
@@ -218,58 +216,56 @@
   <div class="row g-4">
     {# ── Draft breakdown ── #}
     <div class="col-lg-6">
-      <div class="card">
-        <div class="card-body">
-          <h6 class="fw-semibold text-uppercase text-muted small mb-3">Draft Score Breakdown</h6>
-          {% for factor, raw in breakdown.items() %}
-          <div class="mb-3">
-            <div class="d-flex justify-content-between mb-1">
-              <span class="small fw-medium">{{ factor|replace('_', ' ')|title }}</span>
-              <span class="small text-muted">{{ (raw * weights.get(factor, 0) * 100)|round(1) }} pts</span>
-            </div>
-            <div class="progress">
-              <div class="progress-bar" style="width:{{ (raw * 100)|round }}%; background:{{ team_primary }}"></div>
-            </div>
-          </div>
-          {% endfor %}
+      <div class="pp-card">
+        <div class="pp-card-header">
+          <span class="pp-card-title">Draft Score Breakdown</span>
         </div>
+        {% for factor, raw in breakdown.items() %}
+        <div class="pp-factor">
+          <div class="pp-factor-row">
+            <span class="pp-factor-name">{{ factor|replace('_', ' ')|title }}</span>
+            <span class="pp-factor-pts pp-mono">{{ (raw * weights.get(factor, 0) * 100)|round(1) }} pts</span>
+          </div>
+          <div class="pp-factor-track">
+            <div class="pp-factor-fill" style="--pp-bar-w: {{ (raw * 100)|round }}%;"></div>
+          </div>
+        </div>
+        {% endfor %}
       </div>
     </div>
 
     {# ── SC History ── #}
     <div class="col-lg-6">
       {% if sc_history.yearly_averages %}
-      <div class="card">
-        <div class="card-body">
-          <h6 class="fw-semibold text-uppercase text-muted small mb-3">SC History</h6>
-          <table class="table table-sm mb-0">
-            <thead><tr><th>Year</th><th>SC Avg</th><th>Games</th></tr></thead>
-            <tbody>
-              {% for y in sc_history.yearly_averages %}
-              <tr>
-                <td>{{ y.year }}</td>
-                <td class="fw-semibold">{{ y.avg }}</td>
-                <td class="text-muted">{{ y.games_played }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {% elif not has_sc %}
-      <div class="card">
-        <div class="card-body text-center py-5">
-          <div class="text-muted mb-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-              <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
-            </svg>
-          </div>
-          <p class="text-muted small mb-0">No SuperCoach data available for this player.</p>
-          {% if player.games and player.games == 0 %}
-          <p class="text-muted small mb-0">Yet to make AFL debut.</p>
+      <div class="pp-card">
+        <div class="pp-card-header">
+          <span class="pp-card-title">SC History</span>
+          {% if sc_history.career_avg %}
+          <span class="pp-meta pp-mono">Career avg <b style="color: var(--pp-text);">{{ sc_history.career_avg }}</b></span>
           {% endif %}
         </div>
+        <table class="pp-table">
+          <thead><tr><th>Year</th><th class="num">SC Avg</th><th class="num">Games</th></tr></thead>
+          <tbody>
+            {% for y in sc_history.yearly_averages %}
+            <tr>
+              <td><b style="color: var(--pp-text-strong);">{{ y.year }}</b></td>
+              <td class="num pp-mono"><b>{{ y.avg }}</b></td>
+              <td class="num pp-mono" style="color: var(--pp-text-muted);">{{ y.games_played }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% elif not has_sc %}
+      <div class="pp-card" style="text-align:center; padding: var(--pp-7) var(--pp-5);">
+        <div style="font-size: 2rem; color: var(--pp-text-dim); margin-bottom: var(--pp-3);">
+          <i class="bi bi-question-circle"></i>
+        </div>
+        <div class="pp-body" style="color: var(--pp-text-muted);">No SuperCoach data available for this player.</div>
+        {% if player.games and player.games == 0 %}
+        <div class="pp-meta" style="margin-top: 6px;">Yet to make AFL debut.</div>
+        {% endif %}
       </div>
       {% endif %}
     </div>
@@ -285,86 +281,87 @@
   {% endfor %}
 
   {# ── Season averages ── #}
-  <div class="card mb-4">
-    <div class="card-body">
-      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Season Averages</h6>
-      <div class="table-responsive">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th>Year</th><th>GP</th>
-              {% for c in display_cols %}<th>{{ c|replace('_',' ')|title }}</th>{% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in detailed.season_averages %}
-            <tr>
-              <td class="fw-medium">{{ s.year }}</td>
-              <td>{{ s.games }}</td>
-              {% for c in display_cols %}
-              <td>{{ s.get('avg_' ~ c, '—') if s.get('avg_' ~ c) is not none else '—' }}</td>
-              {% endfor %}
-            </tr>
+  <div class="pp-card mb-4">
+    <div class="pp-card-header">
+      <span class="pp-card-title">Season Averages</span>
+    </div>
+    <div style="overflow-x: auto;">
+      <table class="pp-table">
+        <thead>
+          <tr>
+            <th>Year</th><th class="num">GP</th>
+            {% for c in display_cols %}<th class="num">{{ c|replace('_',' ')|title }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in detailed.season_averages %}
+          <tr>
+            <td><b style="color: var(--pp-text-strong);">{{ s.year }}</b></td>
+            <td class="num pp-mono" style="color: var(--pp-text-muted);">{{ s.games }}</td>
+            {% for c in display_cols %}
+            <td class="num pp-mono">{{ s.get('avg_' ~ c, '—') if s.get('avg_' ~ c) is not none else '—' }}</td>
             {% endfor %}
-          </tbody>
-        </table>
-      </div>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
   {# ── Career totals ── #}
   {% if detailed.career_totals %}
-  <div class="card mb-4">
-    <div class="card-body">
-      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Career Totals ({{ detailed.career_totals.games }} games)</h6>
-      <div class="row g-3">
-        {% for c in display_cols %}
-          {% if detailed.career_totals.get('avg_' ~ c) is not none %}
-          <div class="col-6 col-md-3 col-lg-2">
-            <div class="stat-card" style="padding:0.75rem">
-              <div class="stat-value" style="font-size:1.25rem">{{ detailed.career_totals['avg_' ~ c] }}</div>
-              <div class="stat-label" style="font-size:0.6rem">avg {{ c|replace('_',' ')|title }}</div>
-              <div class="stat-sub">{{ detailed.career_totals.get('total_' ~ c, '')|int }} total</div>
-            </div>
+  <div class="pp-card mb-4">
+    <div class="pp-card-header">
+      <span class="pp-card-title">Career Totals</span>
+      <span class="pp-meta">{{ detailed.career_totals.games }} games</span>
+    </div>
+    <div class="row g-3 pp-stagger">
+      {% for c in display_cols %}
+        {% if detailed.career_totals.get('avg_' ~ c) is not none %}
+        <div class="col-6 col-md-3 col-lg-2">
+          <div class="pp-tile">
+            <div class="pp-tile-value" style="font-size: 1.3rem;">{{ detailed.career_totals['avg_' ~ c] }}</div>
+            <div class="pp-tile-label">{{ c|replace('_',' ') }}</div>
+            <div class="pp-tile-sub">{{ detailed.career_totals.get('total_' ~ c, '')|int }} total</div>
           </div>
-          {% endif %}
-        {% endfor %}
-      </div>
+        </div>
+        {% endif %}
+      {% endfor %}
     </div>
   </div>
   {% endif %}
 
   {# ── Timeline slicer ── #}
   {% if detailed.current_rounds %}
-  <div class="card">
-    <div class="card-body">
-      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Timeline Slicer</h6>
-      <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
-        <div>
-          <label class="form-label small mb-0">From</label>
-          <select id="sliceFrom" class="form-select form-select-sm" style="width:90px">
-            {% for r in detailed.current_rounds %}
-            <option value="{{ r.round }}">{{ r.round_label|default('R' ~ r.round) }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="form-label small mb-0">To</label>
-          <select id="sliceTo" class="form-select form-select-sm" style="width:90px">
-            {% for r in detailed.current_rounds %}
-            <option value="{{ r.round }}" {{ 'selected' if loop.last }}>{{ r.round_label|default('R' ~ r.round) }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <button class="btn btn-sm btn-outline-primary" onclick="applySlice()">Apply</button>
-        <button class="btn btn-sm btn-outline-secondary" onclick="resetSlice()">Reset</button>
-        <span id="sliceInfo" class="text-muted small ms-2"></span>
+  <div class="pp-card">
+    <div class="pp-card-header">
+      <span class="pp-card-title">Timeline Slicer</span>
+      <span id="sliceInfo" class="pp-meta pp-mono"></span>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+      <div>
+        <label class="pp-eyebrow d-block mb-1">From</label>
+        <select id="sliceFrom" class="form-select form-select-sm" style="width: 90px;">
+          {% for r in detailed.current_rounds %}
+          <option value="{{ r.round }}">{{ r.round_label|default('R' ~ r.round) }}</option>
+          {% endfor %}
+        </select>
       </div>
-      <div id="slicedAvgs" style="display:none">
-        <div class="alert alert-info py-2 small mb-0">
-          <strong>Rounds <span id="sliceRange"></span>:</strong>
-          <span id="sliceAvgText"></span>
-        </div>
+      <div>
+        <label class="pp-eyebrow d-block mb-1">To</label>
+        <select id="sliceTo" class="form-select form-select-sm" style="width: 90px;">
+          {% for r in detailed.current_rounds %}
+          <option value="{{ r.round }}" {{ 'selected' if loop.last }}>{{ r.round_label|default('R' ~ r.round) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-sm btn-outline-primary" onclick="applySlice()">Apply</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="resetSlice()">Reset</button>
+    </div>
+    <div id="slicedAvgs" style="display:none;">
+      <div class="pp-card-inset" style="border-color: rgba(var(--pp-primary-rgb), .35);">
+        <span class="pp-eyebrow">Rounds <span id="sliceRange"></span></span>
+        <div class="pp-body pp-mono" style="margin-top: 4px;" id="sliceAvgText"></div>
       </div>
     </div>
   </div>
@@ -374,42 +371,35 @@
 
 {# ══════════════ TAB 3: CHARTS ══════════════ #}
 <div class="tab-pane fade" id="charts" role="tabpanel">
-  <div class="row g-4">
-    {# Chart 1: SC Career Trajectory (kept as-is, needs 2+ years) #}
+  <div class="row g-4 pp-stagger">
     {% if sc_history.yearly_averages and sc_history.yearly_averages|length >= 2 %}
     <div class="col-lg-6">
-      <div class="chart-card">
-        <h6 class="fw-semibold text-uppercase text-muted small mb-3">SC Career Trajectory</h6>
+      <div class="pp-card">
+        <div class="pp-card-header"><span class="pp-card-title">SC Career Trajectory</span></div>
         <canvas id="trajectoryChart" height="220"></canvas>
       </div>
     </div>
     {% endif %}
-
-    {# Chart 2: Key Stats Over Career (multi-line: disposals, marks, tackles, goals) #}
     {% if has_detailed and detailed.season_averages|length >= 2 %}
     <div class="col-lg-6">
-      <div class="chart-card">
-        <h6 class="fw-semibold text-uppercase text-muted small mb-3">Key Stats Over Career</h6>
+      <div class="pp-card">
+        <div class="pp-card-header"><span class="pp-card-title">Key Stats Over Career</span></div>
         <canvas id="keyStatsChart" height="220"></canvas>
       </div>
     </div>
     {% endif %}
-
-    {# Chart 3: Draft Score Over Time (needs 2+ years) #}
     {% if draft_history|length >= 2 %}
     <div class="col-lg-6">
-      <div class="chart-card">
-        <h6 class="fw-semibold text-uppercase text-muted small mb-3">Draft Score Over Time</h6>
+      <div class="pp-card">
+        <div class="pp-card-header"><span class="pp-card-title">Draft Score Over Time</span></div>
         <canvas id="draftScoreChart" height="220"></canvas>
       </div>
     </div>
     {% endif %}
-
-    {# Chart 4: Stat Profile vs League (radar, kept as-is) #}
     {% if has_detailed and detailed.career_totals %}
     <div class="col-lg-6">
-      <div class="chart-card">
-        <h6 class="fw-semibold text-uppercase text-muted small mb-3">Stat Profile vs League</h6>
+      <div class="pp-card">
+        <div class="pp-card-header"><span class="pp-card-title">Stat Profile vs League</span></div>
         <canvas id="radarChart" height="280"></canvas>
       </div>
     </div>
@@ -417,38 +407,39 @@
   </div>
 
   {% if not sc_history.yearly_averages and not has_detailed and draft_history|length < 2 %}
-  <p class="text-muted">No chart data available for this player.</p>
+  <p class="pp-meta">No chart data available for this player.</p>
   {% endif %}
 </div>
 
 {# ══════════════ TAB 4: ROUND-BY-ROUND ══════════════ #}
 {% if has_detailed and detailed.current_rounds %}
 <div class="tab-pane fade" id="rounds" role="tabpanel">
-  <div class="card">
-    <div class="card-body">
-      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Round-by-Round ({{ detailed.current_rounds|length }} games)</h6>
-      <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0" id="roundByRoundTable">
-          <thead>
-            <tr>
-              <th style="cursor:pointer">Rnd</th>
-              {% for c in detailed.available_cols %}
-              <th style="cursor:pointer">{{ c|replace('_',' ')|title }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in detailed.current_rounds %}
-            <tr data-round="{{ r.round }}">
-              <td class="fw-medium">{{ r.round_label|default(r.round) }}</td>
-              {% for c in detailed.available_cols %}
-              <td>{{ r.get(c, '—') if r.get(c) is not none else '—' }}</td>
-              {% endfor %}
-            </tr>
+  <div class="pp-card">
+    <div class="pp-card-header">
+      <span class="pp-card-title">Round-by-Round</span>
+      <span class="pp-meta">{{ detailed.current_rounds|length }} games</span>
+    </div>
+    <div style="overflow-x: auto;">
+      <table class="pp-table" id="roundByRoundTable">
+        <thead>
+          <tr>
+            <th style="cursor:pointer;">Rnd</th>
+            {% for c in detailed.available_cols %}
+            <th class="num" style="cursor:pointer;">{{ c|replace('_',' ')|title }}</th>
             {% endfor %}
-          </tbody>
-        </table>
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in detailed.current_rounds %}
+          <tr data-round="{{ r.round }}">
+            <td><b style="color: var(--pp-text-strong);">{{ r.round_label|default(r.round) }}</b></td>
+            {% for c in detailed.available_cols %}
+            <td class="num pp-mono">{{ r.get(c, '—') if r.get(c) is not none else '—' }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -549,6 +540,8 @@
 {% endif %}
 
 </div>{# end tab-content #}
+
+</div>{# end .player-page #}
 {% endblock %}
 
 {% block scripts %}
