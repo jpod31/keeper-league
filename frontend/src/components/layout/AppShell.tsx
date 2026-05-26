@@ -99,27 +99,15 @@ export function AppShell() {
         }
         .kl-bar-brand:hover { opacity: .9; }
         .kl-bar-brand-mark {
-          width: 34px; height: 34px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, #00d4ff 0%, #5cc8ff 35%, #ff2d92 100%);
+          width: 36px; height: 36px;
           display: flex; align-items: center; justify-content: center;
-          font-weight: 900;
-          font-size: 1rem;
-          color: #07080d;
-          letter-spacing: -.02em;
-          box-shadow: 0 4px 18px -4px rgba(0,212,255,.55), 0 0 0 1px rgba(255,255,255,.08) inset;
-          position: relative;
-          overflow: hidden;
-        }
-        .kl-bar-brand-mark::after {
-          /* Specular highlight */
-          content: ""; position: absolute; inset: 0;
-          background: radial-gradient(60% 40% at 30% 20%, rgba(255,255,255,.4), transparent 70%);
-          pointer-events: none;
+          flex-shrink: 0;
         }
         .kl-bar-brand-mark img {
-          width: 100%; height: 100%; object-fit: cover; border-radius: inherit;
-          position: relative; z-index: 1;
+          width: 100%; height: 100%; object-fit: contain;
+          /* Tiny soft glow so the logo sits comfortably on the dark glass
+             without changing its own colours. */
+          filter: drop-shadow(0 2px 8px rgba(0,0,0,.4));
         }
         .kl-bar-wordmark {
           font-weight: 800;
