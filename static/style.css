@@ -2427,72 +2427,49 @@ body.has-league-rail main.container {
   opacity: .55;
 }
 
-/* ── Rail header (switcher avatar + pin) ────────────────────── */
+/* ── Rail header — static league identity + pin button ───── */
 .kl-rail-head {
   position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px;
-  margin-bottom: 12px;
+  padding: 6px 8px 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
 }
-.kl-rail-switcher {
-  all: unset;
+.kl-rail-id {
   flex: 1;
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 56px;
-  padding: 0 12px 0 8px;
-  border-radius: 14px;
-  cursor: pointer;
-  background: rgba(var(--lgs-rgb, 88,166,255), .05);
-  border: 1px solid rgba(var(--lgs-rgb, 88,166,255), .25);
-  transition: background .15s ease, border-color .15s ease;
-  box-sizing: border-box;
   min-width: 0;
 }
-.kl-rail-switcher:hover {
-  background: rgba(var(--lgs-rgb, 88,166,255), .1);
-  border-color: rgba(var(--lgs-rgb, 88,166,255), .45);
-}
-.kl-rail-switcher.open {
-  background: rgba(var(--lgs-rgb, 88,166,255), .12);
-  border-color: rgba(var(--lgs-rgb, 88,166,255), .55);
-  box-shadow: 0 0 0 2px rgba(var(--lgs-rgb, 88,166,255), .15);
-}
 .kl-rail-avatar {
-  width: 40px; height: 40px;
-  border-radius: 12px;
+  width: 36px; height: 36px;
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-weight: 800;
-  font-size: .92rem;
+  font-size: .82rem;
   letter-spacing: .02em;
-  color: #0d1117;
-  background: linear-gradient(135deg, rgb(var(--lgs-rgb, 88,166,255)), color-mix(in srgb, rgb(var(--lgs-rgb, 88,166,255)) 60%, #ffffff));
-  flex: 0 0 40px;
-  box-shadow: 0 4px 12px -4px rgba(var(--lgs-rgb, 88,166,255), .5);
+  color: #0a0c12;
+  background: linear-gradient(135deg, rgb(var(--lgs-rgb, 122,155,196)), color-mix(in srgb, rgb(var(--lgs-rgb, 122,155,196)) 65%, #ffffff));
+  flex: 0 0 36px;
 }
-.kl-rail-switcher-body {
+.kl-rail-id-body {
   display: none;
   flex-direction: column;
   min-width: 0;
 }
-.kl-rail.expanded .kl-rail-switcher-body { display: flex; }
-.kl-rail-switcher-name {
-  font-size: .9rem; font-weight: 700; color: #f0f6fc;
+.kl-rail.expanded .kl-rail-id-body { display: flex; }
+.kl-rail-id-name {
+  font-size: .85rem; font-weight: 700; color: #eaeef4;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   line-height: 1.15;
 }
-.kl-rail-switcher-sub {
-  font-size: .62rem; font-weight: 700; letter-spacing: .14em;
+.kl-rail-id-sub {
+  font-size: .58rem; font-weight: 700; letter-spacing: .14em;
   text-transform: uppercase; color: #8b949e; margin-top: 2px;
 }
-.kl-rail-switcher-chev {
-  font-size: .68rem; color: #8b949e;
-  display: none;
-}
-.kl-rail.expanded .kl-rail-switcher-chev { display: inline; }
 
 .kl-rail-pin {
   all: unset;
@@ -2506,29 +2483,8 @@ body.has-league-rail main.container {
   flex: 0 0 28px;
 }
 .kl-rail.expanded .kl-rail-pin { display: flex; }
-.kl-rail-pin:hover { background: rgba(255,255,255,.05); color: #f0f6fc; }
-.kl-rail-pin.pinned { color: rgb(var(--lgs-rgb, 88,166,255)); }
-
-/* Switcher dropdown panel */
-.kl-rail-switcher-menu {
-  position: absolute;
-  top: 64px;
-  left: 4px;
-  width: 280px;
-  max-width: calc(100vw - 32px);
-  background: linear-gradient(180deg, #161b22, #0d1117);
-  border: 1px solid rgba(48,54,61,.85);
-  border-radius: 14px;
-  padding: 8px;
-  box-shadow: 0 24px 56px -16px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02) inset;
-  backdrop-filter: blur(10px);
-  z-index: 1030;
-}
-.kl-rail-switcher-menu-head {
-  font-size: .58rem; font-weight: 800;
-  text-transform: uppercase; letter-spacing: .14em;
-  color: #6e7681; padding: 6px 10px 8px;
-}
+.kl-rail-pin:hover { background: rgba(255,255,255,.05); color: #eaeef4; }
+.kl-rail-pin.pinned { color: rgb(var(--lgs-rgb, 122,155,196)); }
 
 /* ── Nav body ───────────────────────────────────────────────── */
 .kl-rail-nav {
@@ -2593,20 +2549,18 @@ body.has-league-rail main.container {
   transform: translateX(0);
 }
 
-/* Active state — accent bar fills the row, icon scales + glows */
+/* Active state — calm accent fade + soft 2px left edge, no aggressive glow */
 .kl-rail-row.active {
-  color: #ffffff;
+  color: #eaeef4;
   background:
     linear-gradient(90deg,
-      rgba(var(--lgs-rgb, 88,166,255), .26),
-      rgba(var(--lgs-rgb, 88,166,255), .1) 70%,
+      rgba(var(--lgs-rgb, 122,155,196), .14),
+      rgba(var(--lgs-rgb, 122,155,196), .05) 70%,
       transparent);
-  box-shadow: inset 3px 0 0 rgb(var(--lgs-rgb, 88,166,255));
+  box-shadow: inset 2px 0 0 rgb(var(--lgs-rgb, 122,155,196));
 }
 .kl-rail-row.active .kl-rail-icon {
-  color: rgb(var(--lgs-rgb, 88,166,255));
-  transform: scale(1.08);
-  filter: drop-shadow(0 0 6px rgba(var(--lgs-rgb, 88,166,255), .55));
+  color: rgb(var(--lgs-rgb, 122,155,196));
 }
 
 /* Pulse dot for live draft */

@@ -70,15 +70,18 @@ export function AppShell() {
         /* ── Glass sticky top bar ─────────────────────────────── */
         .kl-bar {
           position: sticky; top: 0; z-index: 1030;
-          /* Subtle ambient accent bleed — looks even better when LeagueShell adds its team accent below */
+          /* Calm, single warm fade — no electric accents */
           background:
-            radial-gradient(800px 240px at 8% 0%,  rgba(0,212,255,.05), transparent 55%),
-            radial-gradient(800px 240px at 92% 0%, rgba(255,45,146,.05), transparent 55%),
-            rgba(7,8,13,.72);
-          backdrop-filter: blur(14px) saturate(140%);
-          -webkit-backdrop-filter: blur(14px) saturate(140%);
-          border-bottom: 1px solid rgba(255,255,255,.07);
-          box-shadow: 0 1px 0 rgba(255,255,255,.03) inset;
+            linear-gradient(180deg, rgba(255,255,255,.02), transparent),
+            rgba(10,12,18,.78);
+          backdrop-filter: blur(14px) saturate(120%);
+          -webkit-backdrop-filter: blur(14px) saturate(120%);
+          border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+        .kl-bar-league-slot {
+          display: inline-flex;
+          align-items: center;
+          margin-left: 4px;
         }
         .kl-bar-inner {
           display: flex; align-items: center; gap: 10px;
@@ -308,6 +311,9 @@ export function AppShell() {
               <i className="bi bi-house-door-fill"></i><span>Home</span>
             </Link>
           )}
+
+          {/* Portal slot — LeagueShell injects its switcher here when mounted */}
+          <div id="kl-bar-league-slot" className="kl-bar-league-slot" />
 
           <div className="kl-bar-spacer" />
 

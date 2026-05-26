@@ -3,6 +3,7 @@ import { LeagueProvider, useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../ui/Spinner'
 import { RoundRecapModal } from '../RoundRecapModal'
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 type SectionKey = 'team' | 'players' | 'league' | 'settings'
@@ -309,15 +310,20 @@ function LeagueShellInner() {
 // the avatar / glow stays consistent across renders. Click-outside +
 // Escape both close it.
 
+// Refined / desaturated palette — pulled ~30-40% saturation out of
+// the previous electric set. Each league still gets a recognisable
+// colour identity but reads as "premium product" rather than "gamer
+// dashboard". Tuned to look good as both the avatar gradient and as
+// the rail's active-state fill.
 const SWITCH_PALETTE: { hex: string; rgb: string }[] = [
-  { hex: '#58a6ff', rgb: '88,166,255' },
-  { hex: '#ffb471', rgb: '255,180,113' },
-  { hex: '#d2a8ff', rgb: '210,168,255' },
-  { hex: '#7ee787', rgb: '126,231,135' },
-  { hex: '#e3b341', rgb: '227,179,65' },
-  { hex: '#ff7b72', rgb: '255,123,114' },
-  { hex: '#79c0ff', rgb: '121,192,255' },
-  { hex: '#f778ba', rgb: '247,120,186' },
+  { hex: '#7a9bc4', rgb: '122,155,196' },   // slate blue
+  { hex: '#cba679', rgb: '203,166,121' },   // warm tan
+  { hex: '#b7a4cd', rgb: '183,164,205' },   // muted lilac
+  { hex: '#8eb495', rgb: '142,180,149' },   // sage green
+  { hex: '#c8a25e', rgb: '200,162,94' },    // refined gold
+  { hex: '#c4847a', rgb: '196,132,122' },   // terracotta
+  { hex: '#7eaac1', rgb: '126,170,193' },   // slate cyan
+  { hex: '#bf8da6', rgb: '191,141,166' },   // dusty rose
 ]
 
 function accentFor(id: number) {
@@ -380,21 +386,6 @@ function LeagueRail({
   const [hover, setHover] = useState(false)
   const expanded = pinned || hover || switcherOpen
   const accent = accentFor(lid)
-
-  const switcherRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!switcherOpen) return
-    function onDown(e: MouseEvent) {
-      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) setSwitcherOpen(false)
-    }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setSwitcherOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [switcherOpen, setSwitcherOpen])
 
   function togglePin() {
     setPinned(p => {
@@ -462,80 +453,43 @@ function LeagueRail({
   }
 
   return (
-    <aside
-      className={`kl-rail d-none d-lg-flex${expanded ? ' expanded' : ''}${pinned ? ' pinned' : ''}`}
-      style={{ '--lgs-rgb': accent.rgb } as React.CSSProperties}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      {/* Header — league avatar/switcher */}
-      <div className="kl-rail-head" ref={switcherRef}>
-        <button
-          type="button"
-          className={`kl-rail-switcher${switcherOpen ? ' open' : ''}`}
-          onClick={() => setSwitcherOpen(o => !o)}
-          aria-haspopup="menu"
-          aria-expanded={switcherOpen}
-          title={`${leagueName} · ${leagueSeason}`}
-        >
-          <span className="kl-rail-avatar">{leagueInitials(leagueName)}</span>
-          <span className="kl-rail-switcher-body">
-            <span className="kl-rail-switcher-name">{leagueName}</span>
-            <span className="kl-rail-switcher-sub">{leagueSeason} season</span>
-          </span>
-          {userLeagues.length > 1 && (
-            <i className="bi bi-chevron-down kl-rail-switcher-chev"></i>
-          )}
-        </button>
-        <button
-          type="button"
-          className={`kl-rail-pin${pinned ? ' pinned' : ''}`}
-          onClick={togglePin}
-          title={pinned ? 'Unpin nav' : 'Pin nav open'}
-          aria-pressed={pinned}
-        >
-          <i className={`bi ${pinned ? 'bi-pin-angle-fill' : 'bi-pin-angle'}`}></i>
-        </button>
+    <>
+      {/* Portal: league switcher gets rendered into the top bar's slot */}
+      <TopBarSwitcher
+        lid={lid}
+        leagueName={leagueName}
+        leagueSeason={leagueSeason}
+        userLeagues={userLeagues}
+        isOpen={switcherOpen}
+        setOpen={setSwitcherOpen}
+      />
 
-        <AnimatePresence>
-          {switcherOpen && (
-            <motion.div
-              className="kl-rail-switcher-menu"
-              role="menu"
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: .14, ease: [.2, .7, .2, 1] }}
-            >
-              <div className="kl-rail-switcher-menu-head">Your leagues · {userLeagues.length}</div>
-              {userLeagues.map(lg => {
-                const a = accentFor(lg.id)
-                const isCurrent = lg.id === lid
-                return (
-                  <Link key={lg.id}
-                    to={`/leagues/${lg.id}`}
-                    className={`lg-switch-item${isCurrent ? ' active' : ''}`}
-                    style={{ '--lgs-row-rgb': a.rgb } as React.CSSProperties}
-                    onClick={() => setSwitcherOpen(false)}
-                    role="menuitem"
-                  >
-                    <span className="lg-switch-item-avatar">{leagueInitials(lg.name)}</span>
-                    <span className="lg-switch-item-body">
-                      <span className="lg-switch-item-name">{lg.name}</span>
-                      <span className="lg-switch-item-meta">{lg.season_year} season</span>
-                    </span>
-                    {isCurrent && <i className="bi bi-check-circle-fill lg-switch-item-active-mark"></i>}
-                  </Link>
-                )
-              })}
-              <div className="lg-switch-divider"></div>
-              <Link to="/leagues/create" className="lg-switch-cta" onClick={() => setSwitcherOpen(false)}>
-                <i className="bi bi-plus-circle-fill"></i>Create a new league
-              </Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <aside
+        className={`kl-rail d-none d-lg-flex${expanded ? ' expanded' : ''}${pinned ? ' pinned' : ''}`}
+        style={{ '--lgs-rgb': accent.rgb } as React.CSSProperties}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {/* Rail head — static identity badge + pin button.
+            Switcher is in the top bar (portalled). */}
+        <div className="kl-rail-head">
+          <div className="kl-rail-id" title={`${leagueName} · ${leagueSeason}`}>
+            <span className="kl-rail-avatar">{leagueInitials(leagueName)}</span>
+            <span className="kl-rail-id-body">
+              <span className="kl-rail-id-name">{leagueName}</span>
+              <span className="kl-rail-id-sub">{leagueSeason} season</span>
+            </span>
+          </div>
+          <button
+            type="button"
+            className={`kl-rail-pin${pinned ? ' pinned' : ''}`}
+            onClick={togglePin}
+            title={pinned ? 'Unpin nav' : 'Pin nav open'}
+            aria-pressed={pinned}
+          >
+            <i className={`bi ${pinned ? 'bi-pin-angle-fill' : 'bi-pin-angle'}`}></i>
+          </button>
+        </div>
 
       {/* Nav */}
       <nav className="kl-rail-nav" role="tablist">
@@ -572,6 +526,117 @@ function LeagueRail({
         })}
       </nav>
     </aside>
+    </>
+  )
+}
+
+// ── Top-bar league switcher (portalled) ────────────────────────
+// Renders into AppShell's #kl-bar-league-slot. Sits next to brand
+// in the top bar; matches the previous switcher pill look.
+function TopBarSwitcher({
+  lid, leagueName, leagueSeason, userLeagues, isOpen, setOpen,
+}: {
+  lid: number
+  leagueName: string
+  leagueSeason: number
+  userLeagues: SwitcherLeague[]
+  isOpen: boolean
+  setOpen: (v: boolean | ((s: boolean) => boolean)) => void
+}) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const accent = accentFor(lid)
+  const [slotEl, setSlotEl] = useState<HTMLElement | null>(null)
+
+  useEffect(() => {
+    setSlotEl(document.getElementById('kl-bar-league-slot'))
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [isOpen, setOpen])
+
+  if (!slotEl) return null
+
+  const ordered = (() => {
+    const current = userLeagues.find(l => l.id === lid)
+    const rest = userLeagues.filter(l => l.id !== lid).sort((a, b) => a.id - b.id)
+    return current ? [current, ...rest] : userLeagues
+  })()
+
+  return createPortal(
+    <div
+      className="league-selector"
+      ref={rootRef}
+      style={{ '--lgs-rgb': accent.rgb } as React.CSSProperties}
+    >
+      <button
+        type="button"
+        className={`lg-switch${isOpen ? ' open' : ''}`}
+        onClick={() => setOpen(s => !s)}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+      >
+        <span className="lg-switch-avatar">{leagueInitials(leagueName)}</span>
+        <span className="lg-switch-body">
+          <span className="lg-switch-name">{leagueName}</span>
+          <span className="lg-switch-sub">{leagueSeason} season</span>
+        </span>
+        {userLeagues.length > 1 && (
+          <span className="lg-switch-count">{userLeagues.length}</span>
+        )}
+        <i className="bi bi-chevron-down lg-switch-chev"></i>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="lg-switch-menu"
+            role="menu"
+            initial={{ opacity: 0, y: -6, scale: .98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: .98 }}
+            transition={{ duration: .14, ease: [.2, .7, .2, 1] }}
+          >
+            <div className="lg-switch-menu-head">Your leagues · {userLeagues.length}</div>
+            {ordered.map(lg => {
+              const a = accentFor(lg.id)
+              const isCurrent = lg.id === lid
+              return (
+                <Link key={lg.id}
+                  to={`/leagues/${lg.id}`}
+                  className={`lg-switch-item${isCurrent ? ' active' : ''}`}
+                  style={{ '--lgs-row-rgb': a.rgb } as React.CSSProperties}
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  <span className="lg-switch-item-avatar">{leagueInitials(lg.name)}</span>
+                  <span className="lg-switch-item-body">
+                    <span className="lg-switch-item-name">{lg.name}</span>
+                    <span className="lg-switch-item-meta">{lg.season_year} season</span>
+                  </span>
+                  {isCurrent && <i className="bi bi-check-circle-fill lg-switch-item-active-mark"></i>}
+                </Link>
+              )
+            })}
+            <div className="lg-switch-divider"></div>
+            <Link to="/leagues/create" className="lg-switch-cta" onClick={() => setOpen(false)}>
+              <i className="bi bi-plus-circle-fill"></i>Create a new league
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>,
+    slotEl,
   )
 }
 
