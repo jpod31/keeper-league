@@ -1,1 +1,0 @@
-import{n as e}from"./Spinner-BZqcd_eb.js";import{t}from"./FixturePage-CJ9xZsp4.js";var n=e();function r(){return(0,n.jsx)(t,{mode:`sevens`})}export{r as Reserve7sFixturePage};

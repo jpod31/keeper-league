@@ -2374,6 +2374,332 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   NOTIFICATIONS DRAWER — slide-in glass panel from the right edge.
+   On mobile (≤768px) slides up from the bottom as a sheet instead.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.kl-drawer-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(2,4,10,.58);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 1090;
+}
+
+.kl-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(600px 220px at 100% 0%, rgba(60,120,210,.12), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,.02), transparent),
+    rgba(8,14,28,.92);
+  border-left: 1px solid rgba(110,130,180,.18);
+  box-shadow: -24px 0 80px -24px rgba(0,0,0,.7);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+@media (max-width: 600px) {
+  .kl-drawer {
+    top: auto;
+    left: 0; right: 0; bottom: 0;
+    width: 100vw;
+    max-height: 88vh;
+    border-left: 0;
+    border-top: 1px solid rgba(110,130,180,.18);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -24px 60px -16px rgba(0,0,0,.7);
+  }
+}
+
+/* Header */
+.kl-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid rgba(110,130,180,.12);
+}
+.kl-drawer-eyebrow {
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #97a3ba;
+  margin-bottom: 6px;
+}
+.kl-drawer-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -.015em;
+  color: #f5f8ff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.kl-drawer-unread-chip {
+  display: inline-flex; align-items: center;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(60,120,210,.18);
+  border: 1px solid rgba(60,120,210,.4);
+  color: #9ec2f0;
+}
+.kl-drawer-head-actions {
+  display: flex; align-items: center; gap: 6px;
+}
+.kl-drawer-action {
+  background: transparent;
+  border: 0;
+  font-size: .76rem;
+  font-weight: 600;
+  color: #9ec2f0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+}
+.kl-drawer-action:hover {
+  background: rgba(60,120,210,.12);
+  color: #cfe3fa;
+}
+.kl-drawer-close {
+  background: transparent;
+  border: 0;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  color: #97a3ba;
+  cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+}
+.kl-drawer-close:hover {
+  background: rgba(255,255,255,.06);
+  color: #f5f8ff;
+}
+
+/* Body */
+.kl-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 14px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.1) transparent;
+}
+.kl-drawer-body::-webkit-scrollbar { width: 6px; }
+.kl-drawer-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 999px; }
+
+.kl-drawer-group { margin: 12px 0 4px; }
+.kl-drawer-group-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 8px 6px;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #6c7892;
+}
+.kl-drawer-group-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(110,130,180,.2), transparent);
+}
+.kl-drawer-group-count {
+  font-variant-numeric: tabular-nums;
+  font-size: .56rem;
+  color: #97a3ba;
+  background: rgba(255,255,255,.04);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.kl-drawer-list {
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+/* Notification item */
+.kl-notif {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 12px;
+  border-radius: 12px;
+  background: transparent;
+  text-decoration: none;
+  color: #dde4f1;
+  transition: background .14s ease, transform .14s ease;
+  opacity: 0; transform: translateY(4px);
+  animation: kl-notif-rise .35s cubic-bezier(.2,.7,.2,1) forwards;
+}
+@keyframes kl-notif-rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+.kl-notif:hover {
+  background: rgba(60,90,150,.08);
+  text-decoration: none;
+  transform: translateX(2px);
+}
+.kl-notif.unread {
+  background: rgba(60,120,210,.06);
+}
+.kl-notif.unread::before {
+  content: "";
+  position: absolute;
+  left: 2px; top: 14px; bottom: 14px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--tone-rgb-fallback, #3a7dc4);
+}
+.kl-notif-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .95rem;
+  flex: 0 0 36px;
+  border: 1px solid;
+}
+
+/* Type-coloured icon glass circles (jewel-tone palette) */
+.kl-notif-icon-trade {
+  background: rgba(184,127,61,.12);
+  border-color: rgba(184,127,61,.36);
+  color: #d4a26b;
+}
+.kl-notif-icon-list {
+  background: rgba(184,90,74,.12);
+  border-color: rgba(184,90,74,.36);
+  color: #d68a7e;
+}
+.kl-notif-icon-draft {
+  background: rgba(58,125,196,.14);
+  border-color: rgba(58,125,196,.4);
+  color: #82b3e4;
+}
+.kl-notif-icon-message {
+  background: rgba(138,109,184,.14);
+  border-color: rgba(138,109,184,.38);
+  color: #b39ed4;
+}
+.kl-notif-icon-default {
+  background: rgba(110,130,180,.1);
+  border-color: rgba(110,130,180,.3);
+  color: #97a3ba;
+}
+
+/* Per-tone unread stripe colour */
+.kl-notif-tone-trade.unread::before    { background: #b87f3d; }
+.kl-notif-tone-list.unread::before     { background: #b85a4a; }
+.kl-notif-tone-draft.unread::before    { background: #3a7dc4; }
+.kl-notif-tone-message.unread::before  { background: #8a6db8; }
+.kl-notif-tone-default.unread::before  { background: #6c7892; }
+
+.kl-notif-body { min-width: 0; }
+.kl-notif-title {
+  display: block;
+  font-size: .86rem;
+  font-weight: 700;
+  color: #f5f8ff;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.kl-notif-sub {
+  display: block;
+  font-size: .72rem;
+  color: #97a3ba;
+  margin-top: 2px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kl-notif-time {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: .68rem;
+  font-weight: 600;
+  color: #97a3ba;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+  white-space: nowrap;
+}
+
+/* Empty state */
+.kl-drawer-empty {
+  text-align: center;
+  padding: 64px 24px;
+}
+.kl-drawer-empty-icon {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  background: rgba(60,120,210,.08);
+  border: 1px solid rgba(60,120,210,.2);
+  color: #82b3e4;
+}
+.kl-drawer-empty-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f5f8ff;
+  margin-bottom: 6px;
+}
+.kl-drawer-empty-sub {
+  font-size: .82rem;
+  color: #97a3ba;
+  max-width: 280px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Footer */
+.kl-drawer-foot {
+  border-top: 1px solid rgba(110,130,180,.12);
+  padding: 12px 18px;
+}
+.kl-drawer-foot-link {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: #97a3ba;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: background .14s ease, color .14s ease;
+}
+.kl-drawer-foot-link:hover {
+  background: rgba(255,255,255,.04);
+  color: #dde4f1;
+  text-decoration: none;
+}
+
+/* Notification dot — pulses when unread (already inherits .notif-dot from AppShell) */
+.kl-bar-cluster .nav-link.has-unread {
+  color: #f5f8ff !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kl-notif { animation: none; opacity: 1; transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    LEAGUE RAIL — fixed left sidebar nav
    Replaces the horizontal .kl-tabs strip. 80px collapsed (icon-only),
    240px on hover or when pinned. Sits below the top bar, runs full

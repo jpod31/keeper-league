@@ -1,4 +1,4 @@
-import{b as e,f as t,h as n,i as r,n as i,t as a}from"./Spinner-BZqcd_eb.js";import{t as o}from"./useFetch-1yv96nK-.js";import{t as s}from"./LeagueSubnav-CeAE_YDs.js";var c=e(n(),1),l=i(),u=`
+import{b as e,f as t,h as n,i as r,n as i,t as a}from"./Spinner-BZqcd_eb.js";import{t as o}from"./useFetch-1yv96nK-.js";import{t as s}from"./LeagueSubnav-DWRqiFih.js";var c=e(n(),1),l=i(),u=`
 .ldr-wrap { background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden; }
 .ldr-table { width:100%; border-collapse:collapse; }
 .ldr-table th { font-size:.65rem; font-weight:600; color:#484f58; text-transform:uppercase; letter-spacing:.5px; padding:10px 12px; border-bottom:1px solid #21262d; white-space:nowrap; }
