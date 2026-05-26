@@ -839,6 +839,10 @@ class DelistPeriod(db.Model):
     opens_at = db.Column(db.DateTime)
     closes_at = db.Column(db.DateTime)
     min_delists = db.Column(db.Integer, default=3)
+    # NULL = no upper cap (old behaviour: only enforces min for offseason
+    # contraction). Mid-season windows set this (e.g. 2) so teams can't
+    # gut their squad before the supplemental draft.
+    max_delists = db.Column(db.Integer)
     period_type = db.Column(db.String(20), default="offseason")  # midseason|offseason
 
 

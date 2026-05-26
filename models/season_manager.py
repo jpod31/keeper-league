@@ -29,8 +29,13 @@ def update_season_config(league_id, year, **kwargs):
     return config
 
 
-def open_delist_period(league_id, year, opens_at=None, closes_at=None, min_delists=3, period_type="offseason"):
-    """Open a delist period for the league."""
+def open_delist_period(league_id, year, opens_at=None, closes_at=None,
+                       min_delists=3, max_delists=None, period_type="offseason"):
+    """Open a delist period for the league.
+    max_delists: optional cap. NULL means no upper bound (back-compat for
+    offseason where everyone needs to contract). Set to 2 for mid-season
+    where teams can use a couple of slots to reshape but can't gut.
+    """
     existing = DelistPeriod.query.filter_by(
         league_id=league_id, year=year, status="open"
     ).first()
@@ -44,6 +49,7 @@ def open_delist_period(league_id, year, opens_at=None, closes_at=None, min_delis
         opens_at=opens_at or datetime.now(timezone.utc),
         closes_at=closes_at,
         min_delists=min_delists,
+        max_delists=max_delists,
         period_type=period_type,
     )
     db.session.add(period)
@@ -99,6 +105,18 @@ def delist_player(period_id, team_id, player_id):
     ).first()
     if existing:
         return None, "Player already delisted this period."
+
+    # Enforce per-period max-delists cap (mid-season windows cap at 2).
+    # NULL on the period means no cap.
+    if period.max_delists is not None:
+        current_count = DelistAction.query.filter_by(
+            delist_period_id=period_id, team_id=team_id
+        ).count()
+        if current_count >= period.max_delists:
+            return None, (
+                f"Already delisted {current_count} player(s) this period "
+                f"(max {period.max_delists})."
+            )
 
     # Deactivate from roster
     roster_entry.is_active = False
@@ -306,16 +324,26 @@ def add_to_ltil(team_id, player_id, league_id, year):
 def remove_from_ltil(team_id, player_id, league_id=None, commissioner_override=False):
     """Remove a player from the long-term injury list.
 
-    Only allowed when the league status is 'offseason' or 'setup',
-    unless commissioner_override=True (commissioner can remove any time).
-    If a replacement player was selected via SSP, the replacement is dropped
-    from the team's roster.
+    Allowed during off-season / setup AT ANY TIME, and also during a
+    mid-season trade window (so managers can reactivate a returning
+    player as part of squad reshaping). Otherwise blocked unless
+    commissioner_override=True.
+
+    If a replacement player was selected via SSP, the replacement is
+    dropped from the team's roster.
     Returns (ltil_entry, None) on success or (None, error_msg) on failure.
     """
     if league_id and not commissioner_override:
         league = db.session.get(League, league_id)
         if league and league.status not in ("offseason", "setup"):
-            return None, "Players can only be removed from LTIL during the off-season."
+            # Mid-season carve-out: allow when a trade window is open,
+            # since that's the only time roster reshaping is on the
+            # table outside the offseason.
+            if not (league and league.trade_window_open):
+                return None, (
+                    "Players can only be removed from LTIL during the off-season "
+                    "or while a trade window is open."
+                )
 
     ltil = LongTermInjury.query.filter_by(
         team_id=team_id, player_id=player_id, removed_at=None, status="approved"

@@ -286,10 +286,19 @@ def check_trade_validity(league_id, proposer_team_id, recipient_team_id,
     ).count()
     proposer_size = len(proposer_roster) - proposer_ltil - len(give_player_ids) + len(receive_player_ids)
     recipient_size = len(recipient_roster) - recipient_ltil - len(receive_player_ids) + len(give_player_ids)
-    if proposer_size > league.squad_size:
-        return f"Proposer would exceed squad size ({proposer_size} > {league.squad_size})."
-    if recipient_size > league.squad_size:
-        return f"Recipient would exceed squad size ({recipient_size} > {league.squad_size})."
+
+    # Squad-size enforcement is window-aware. When a trade window is
+    # OPEN we allow uneven trades (1-for-N, 2-for-N, etc.) that
+    # temporarily over-roster a team — they'll resolve it via delist
+    # or the mid-season draft before the window closes, and the
+    # eligibility lock at window close blocks closure with any team
+    # still over. When the window is CLOSED we enforce strictly so
+    # a regular-season trade can't push anyone over.
+    if not league.trade_window_open:
+        if proposer_size > league.squad_size:
+            return f"Proposer would exceed squad size ({proposer_size} > {league.squad_size})."
+        if recipient_size > league.squad_size:
+            return f"Recipient would exceed squad size ({recipient_size} > {league.squad_size})."
 
     return None
 
