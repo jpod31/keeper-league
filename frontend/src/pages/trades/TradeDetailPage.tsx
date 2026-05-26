@@ -3,13 +3,20 @@ import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 
-interface Team { id: number; name: string }
+interface Team {
+  id: number
+  name: string
+  logo_url?: string | null
+  owner?: string | null
+}
 
 interface PlayerAsset {
   player_id: number | null
   name: string
   position: string
   sc_avg: number
+  afl_team: string
+  age?: number
 }
 
 interface PickAsset {
@@ -43,7 +50,8 @@ interface Trade {
 }
 
 interface TradeDetailData {
-  league: { id: number; name: string }
+  league: { id: number; name: string; trade_window_open: boolean }
+  team_logos: Record<string, string>
   trade: Trade
   giving: PlayerAsset[]
   receiving: PlayerAsset[]
@@ -55,8 +63,55 @@ interface TradeDetailData {
   is_proposer: boolean
 }
 
-function posCode(pos: string): string {
-  return (pos || 'MID').split('/')[0].toUpperCase()
+function aflInitials(name: string): string {
+  if (!name) return '·'
+  const words = name.split(/\s+/).filter(Boolean)
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
+  return name.slice(0, 3).toUpperCase()
+}
+
+function teamInitials(name: string): string {
+  if (!name) return '·'
+  const words = name.split(/\s+/).filter(Boolean).slice(0, 2)
+  return words.map(w => w[0]).join('').toUpperCase().slice(0, 2)
+}
+
+function StaticPlayerCard({ player, logoUrl, side }: {
+  player: PlayerAsset; logoUrl?: string | null; side: 'out' | 'in'
+}) {
+  const positions = (player.position || 'MID').split('/')
+  const primary = positions[0]
+  return (
+    <div className={`tr-card tr-card-${primary} tr-card-${side}`} style={{ cursor: 'default' }}>
+      <div className="tr-card-top">
+        <div className="tr-card-logo">
+          {logoUrl
+            ? <img src={logoUrl} alt="" />
+            : <span className="tr-card-logo-placeholder">{aflInitials(player.afl_team)}</span>}
+        </div>
+        <div className="tr-card-pos">
+          {positions.map(p => <span key={p} className={`pos-badge pos-${p}`}>{p}</span>)}
+        </div>
+      </div>
+      <div className="tr-card-name">{player.name}</div>
+      <div className="tr-card-meta">
+        <span className="tr-card-sc">{player.sc_avg ? Math.round(player.sc_avg) : '—'}</span>
+        {player.age ? <span className="tr-card-age">{player.age}y</span> : <span />}
+      </div>
+    </div>
+  )
+}
+
+function StaticPickCard({ pick, side }: { pick: PickAsset; side: 'out' | 'in' }) {
+  return (
+    <div className={`tr-pick tr-pick-${side}`} style={{ cursor: 'default' }}>
+      <div className="tr-pick-year">{pick.year} draft</div>
+      <div className="tr-pick-round">Round {pick.round_number}</div>
+      {!pick.is_own && pick.original_team && (
+        <div className="tr-pick-orig">via {pick.original_team}</div>
+      )}
+    </div>
+  )
 }
 
 export function TradeDetailPage() {
@@ -66,32 +121,34 @@ export function TradeDetailPage() {
   const [comment, setComment] = useState('')
   const [vetoReason, setVetoReason] = useState('')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   if (loading) return <Spinner text="Loading trade..." />
   if (!data) return <p className="text-danger">Failed to load trade</p>
 
-  const { league, trade, giving, receiving, giving_picks, receiving_picks, comments, is_commissioner, is_recipient, is_proposer } = data
+  const { league, trade, giving, receiving, giving_picks, receiving_picks, comments, team_logos,
+    is_commissioner, is_recipient, is_proposer } = data
+  const status = trade.status || 'pending'
+
+  const giveSc = giving.reduce((s, p) => s + (p.sc_avg || 0), 0)
+  const recvSc = receiving.reduce((s, p) => s + (p.sc_avg || 0), 0)
+  const scDelta = recvSc - giveSc
+  const rosterDelta = receiving.length - giving.length
 
   async function respondAction(action: 'accept' | 'reject' | 'cancel') {
     if (action === 'accept' && !confirm('Accept this trade?')) return
-    setBusy(true)
+    setBusy(true); setError(null)
     try {
       const form = new FormData()
       form.set('action', action)
       const res = await fetch(`/leagues/${leagueId}/trades/${tradeId}/respond`, {
-        method: 'POST',
-        body: form,
-        credentials: 'include',
-        redirect: 'manual',
+        method: 'POST', body: form, credentials: 'include', redirect: 'manual',
       })
       if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
-      if (action === 'cancel') {
-        navigate(`/leagues/${leagueId}/trades`)
-      } else {
-        refetch()
-      }
+      if (action === 'cancel') navigate(`/leagues/${leagueId}/trades`)
+      else refetch()
     } catch (e) {
-      alert((e as Error).message)
+      setError((e as Error).message)
     } finally {
       setBusy(false)
     }
@@ -99,20 +156,17 @@ export function TradeDetailPage() {
 
   async function vetoAction() {
     if (!confirm('Veto this trade?')) return
-    setBusy(true)
+    setBusy(true); setError(null)
     try {
       const form = new FormData()
       form.set('reason', vetoReason)
       const res = await fetch(`/leagues/${leagueId}/trades/${tradeId}/veto`, {
-        method: 'POST',
-        body: form,
-        credentials: 'include',
-        redirect: 'manual',
+        method: 'POST', body: form, credentials: 'include', redirect: 'manual',
       })
       if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
       refetch()
     } catch (e) {
-      alert((e as Error).message)
+      setError((e as Error).message)
     } finally {
       setBusy(false)
     }
@@ -121,62 +175,21 @@ export function TradeDetailPage() {
   async function submitComment(e: React.FormEvent) {
     e.preventDefault()
     if (!comment.trim()) return
-    setBusy(true)
+    setBusy(true); setError(null)
     try {
       const form = new FormData()
       form.set('comment', comment)
       const res = await fetch(`/leagues/${leagueId}/trades/${tradeId}/comment`, {
-        method: 'POST',
-        body: form,
-        credentials: 'include',
-        redirect: 'manual',
+        method: 'POST', body: form, credentials: 'include', redirect: 'manual',
       })
       if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
       setComment('')
       refetch()
     } catch (err) {
-      alert((err as Error).message)
+      setError((err as Error).message)
     } finally {
       setBusy(false)
     }
-  }
-
-  function renderAssetTable(players: PlayerAsset[], picks: PickAsset[]) {
-    return (
-      <table className="table table-sm mb-0">
-        <tbody>
-          {players.map(a => (
-            <tr key={`p-${a.player_id}`}>
-              <td>
-                <span className="text-decoration-none">
-                  {a.name}
-                </span>
-              </td>
-              <td><span className={`pos-badge pos-${posCode(a.position)}`}>{a.position}</span></td>
-              <td className="text-end text-secondary">
-                {a.sc_avg ? Math.round(a.sc_avg) : '-'}
-              </td>
-            </tr>
-          ))}
-          {picks.map(a => (
-            <tr key={`pk-${a.id}`}>
-              <td colSpan={2}>
-                <i className="bi bi-ticket-perforated me-1" style={{ color: '#58a6ff' }}></i>
-                {a.year} Round {a.round_number} Pick
-                {!a.is_own && a.original_team && (
-                  <span className="text-secondary" style={{ fontSize: '.75rem' }}>
-                    {' '}(originally {a.original_team}'s)
-                  </span>
-                )}
-              </td>
-              <td className="text-end">
-                <span className="badge" style={{ background: 'rgba(88,166,255,.15)', color: '#58a6ff', fontSize: '.65rem' }}>PICK</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )
   }
 
   return (
@@ -192,59 +205,111 @@ export function TradeDetailPage() {
             <Link to={`/leagues/${leagueId}/trades`} className="btn btn-sm btn-outline-secondary" style={{ padding: '4px 10px' }}>
               <i className="bi bi-arrow-left"></i>
             </Link>
-            <h2 className="mb-0">Trade Details</h2>
+            <h2 className="mb-0">Trade #{trade.id}</h2>
           </div>
-          <span className={`status-pill status-${trade.status}`} style={{ fontSize: '.85rem' }}>{trade.status}</span>
+          <span className={`tr-center-card-status tr-status-${status}`} style={{ fontSize: '.75rem' }}>{status}</span>
         </div>
       </div>
 
-      {trade.status === 'agreed' && (
-        <div className="alert" style={{ background: 'rgba(88,166,255,.08)', border: '1px solid rgba(88,166,255,.25)', color: '#c9d1d9', marginBottom: '1.5rem' }}>
-          <i className="bi bi-info-circle me-1" style={{ color: '#58a6ff' }}></i>
-          Both teams have agreed to this trade. It will auto-execute when the trade window opens.
+      {error && <div className="alert alert-danger" style={{ marginBottom: 12 }}>{error}</div>}
+
+      {status === 'agreed' && (
+        <div className="tr-window-banner tr-window-banner-closed" style={{ marginBottom: 16 }}>
+          <div className="tr-window-banner-icon" style={{ background: 'rgba(88,166,255,.15)', color: '#79c0ff' }}>
+            <i className="bi bi-check-circle-fill"></i>
+          </div>
+          <div className="tr-window-banner-body">
+            <div className="tr-window-banner-title">Both teams agreed</div>
+            <div className="tr-window-banner-sub">This trade will auto-execute when the trade window opens.</div>
+          </div>
         </div>
       )}
 
-      <div className="row g-4 mb-4">
-        <div className="col-md-5">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <span style={{ color: '#f85149' }}><i className="bi bi-arrow-up-right me-1"></i></span>
-                {trade.proposer_team?.name} sends
-              </h5>
-            </div>
-            <div className="card-body p-0">
-              {renderAssetTable(giving, giving_picks)}
-            </div>
+      {/* Deal poster */}
+      <div className="tr-deal" style={{ marginBottom: 20 }}>
+        <div className="tr-deal-header">
+          <div className="tr-deal-title">The deal</div>
+          <div className="tr-deal-balance">
+            <span><b>{giving.length + giving_picks.length}</b> ↔ <b>{receiving.length + receiving_picks.length}</b></span>
+            <span style={{ color: '#484f58' }}>·</span>
+            <span className={rosterDelta > 0 ? 'tr-bal-pos' : rosterDelta < 0 ? 'tr-bal-neg' : ''}>
+              {trade.proposer_team?.name?.split(' ')[0]} roster {rosterDelta > 0 ? '+' : ''}{rosterDelta}
+            </span>
+            {(giving.length > 0 || receiving.length > 0) && (
+              <>
+                <span style={{ color: '#484f58' }}>·</span>
+                <span className={scDelta > 0 ? 'tr-bal-pos' : scDelta < 0 ? 'tr-bal-neg' : ''}>
+                  SC {scDelta > 0 ? '+' : ''}{Math.round(scDelta)}
+                </span>
+              </>
+            )}
           </div>
+          <span />
         </div>
 
-        <div className="col-md-2 d-flex align-items-center justify-content-center py-2 py-md-0">
-          <i className="bi bi-arrow-down-up d-md-none" style={{ fontSize: '1.5rem', color: '#30363d' }}></i>
-          <i className="bi bi-arrow-left-right d-none d-md-inline" style={{ fontSize: '2rem', color: '#30363d' }}></i>
-        </div>
+        <div className="tr-deal-grid">
+          {/* Proposer side (out, red) */}
+          <div className="tr-deal-side tr-deal-side-out" style={{ minHeight: 'unset' }}>
+            <div className="tr-deal-side-label">sends</div>
+            <div className="tr-deal-side-team" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="tr-team-chip-logo">
+                {trade.proposer_team?.logo_url
+                  ? <img src={trade.proposer_team.logo_url} alt="" />
+                  : teamInitials(trade.proposer_team?.name || '')}
+              </span>
+              {trade.proposer_team?.name}
+            </div>
+            {giving.length === 0 && giving_picks.length === 0 ? (
+              <div className="tr-deal-empty">Nothing</div>
+            ) : (
+              <div className="tr-deck" style={{ marginTop: 6 }}>
+                {giving.map(p => (
+                  <StaticPlayerCard key={`p${p.player_id}`} player={p} side="out"
+                    logoUrl={team_logos[p.afl_team || '']} />
+                ))}
+                {giving_picks.map(pk => (
+                  <StaticPickCard key={`pk${pk.id}`} pick={pk} side="out" />
+                ))}
+              </div>
+            )}
+          </div>
 
-        <div className="col-md-5">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <span style={{ color: '#3fb950' }}><i className="bi bi-arrow-down-left me-1"></i></span>
-                {trade.recipient_team?.name} sends
-              </h5>
+          <div className="tr-deal-arrow"><i className="bi bi-arrow-left-right"></i></div>
+
+          {/* Recipient side (in, green) */}
+          <div className="tr-deal-side tr-deal-side-in" style={{ minHeight: 'unset' }}>
+            <div className="tr-deal-side-label">sends</div>
+            <div className="tr-deal-side-team" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="tr-team-chip-logo">
+                {trade.recipient_team?.logo_url
+                  ? <img src={trade.recipient_team.logo_url} alt="" />
+                  : teamInitials(trade.recipient_team?.name || '')}
+              </span>
+              {trade.recipient_team?.name}
             </div>
-            <div className="card-body p-0">
-              {renderAssetTable(receiving, receiving_picks)}
-            </div>
+            {receiving.length === 0 && receiving_picks.length === 0 ? (
+              <div className="tr-deal-empty">Nothing</div>
+            ) : (
+              <div className="tr-deck" style={{ marginTop: 6 }}>
+                {receiving.map(p => (
+                  <StaticPlayerCard key={`p${p.player_id}`} player={p} side="in"
+                    logoUrl={team_logos[p.afl_team || '']} />
+                ))}
+                {receiving_picks.map(pk => (
+                  <StaticPickCard key={`pk${pk.id}`} pick={pk} side="in" />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Meta + notes */}
       <div className="card mb-4">
         <div className="card-body">
           <div className="d-flex flex-wrap gap-4" style={{ fontSize: '.8rem', color: '#8b949e' }}>
             <span><i className="bi bi-clock me-1"></i>Proposed {trade.proposed_at}</span>
-            {trade.review_deadline && trade.status === 'pending' && (
+            {trade.review_deadline && status === 'pending' && (
               <span><i className="bi bi-hourglass-split me-1"></i>Deadline {trade.review_deadline}</span>
             )}
             {trade.responded_at && (
@@ -253,7 +318,7 @@ export function TradeDetailPage() {
             {trade.intended_period && (
               <span>
                 <i className="bi bi-calendar-event me-1"></i>
-                {trade.intended_period === 'midseason' ? 'Mid-Season' : 'End of Season'}
+                {trade.intended_period === 'midseason' ? 'Mid-season' : 'End of season'}
               </span>
             )}
           </div>
@@ -270,7 +335,7 @@ export function TradeDetailPage() {
         </div>
       </div>
 
-      {trade.status === 'pending' && (
+      {status === 'pending' && (
         <div className="d-flex flex-wrap gap-2 mb-4">
           {is_recipient && (
             <>
@@ -310,10 +375,12 @@ export function TradeDetailPage() {
         </div>
       )}
 
+      {/* Comments */}
       <div className="card">
         <div className="card-header">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-            <i className="bi bi-chat-dots me-2" style={{ color: '#8b949e' }}></i>Comments
+            <i className="bi bi-chat-dots me-2" style={{ color: '#8b949e' }}></i>
+            Comments {comments.length > 0 && <span className="text-secondary" style={{ fontSize: '.75rem', fontWeight: 500 }}>({comments.length})</span>}
           </h5>
         </div>
         <div className="card-body">

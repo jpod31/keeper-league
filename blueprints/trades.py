@@ -41,24 +41,71 @@ def trade_center(league_id):
     history = [t for t in all_trades if t.status != "pending"]
 
     if request.args.get("format") == "json":
+        from config import TEAM_LOGOS
+
+        # Trade window close — same shape as propose, so the center page
+        # can show a countdown banner without a second round-trip.
+        trade_close = None
+        season_cfg = SeasonConfig.query.filter_by(
+            league_id=league_id, year=league.season_year
+        ).first()
+        if season_cfg:
+            for col in (season_cfg.mid_trade_window_close, season_cfg.off_trade_window_close):
+                if col is None:
+                    continue
+                trade_close = col.isoformat() + ("" if col.tzinfo else "+00:00")
+                break
+
         def _ser_team(t):
-            return {"id": t.id, "name": t.name} if t else None
+            return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
+
+        def _ser_asset(a, t):
+            if a.player_id and a.player:
+                return {
+                    "kind": "player",
+                    "name": a.player.name,
+                    "position": a.player.position or "",
+                    "afl_team": a.player.afl_team or "",
+                    "sc_avg": a.player.sc_avg or 0,
+                    "from_team_id": a.from_team_id,
+                }
+            if a.future_pick_id and a.future_pick:
+                return {
+                    "kind": "pick",
+                    "name": f"{a.future_pick.year} R{a.future_pick.round_number}",
+                    "year": a.future_pick.year,
+                    "round_number": a.future_pick.round_number,
+                    "from_team_id": a.from_team_id,
+                }
+            return {"kind": "unknown", "name": "?", "from_team_id": a.from_team_id}
 
         def _ser_trade(t):
+            proposer_id = t.proposer_team_id
+            recipient_id = t.recipient_team_id
+            assets = [_ser_asset(a, t) for a in (t.assets or [])]
+            from_proposer = [a for a in assets if a["from_team_id"] == proposer_id]
+            from_recipient = [a for a in assets if a["from_team_id"] == recipient_id]
             return {
                 "id": t.id,
                 "status": t.status,
                 "proposer_team": _ser_team(t.proposer_team),
                 "recipient_team": _ser_team(t.recipient_team),
-                "asset_count": len(t.assets) if t.assets else 0,
+                "asset_count": len(assets),
+                "from_proposer": from_proposer,
+                "from_recipient": from_recipient,
                 "proposed_at": t.proposed_at.strftime("%d %b %Y %H:%M") if t.proposed_at else None,
+                "proposed_at_iso": (t.proposed_at.isoformat() + ("" if t.proposed_at.tzinfo else "+00:00")) if t.proposed_at else None,
+                "intended_period": getattr(t, "intended_period", None),
             }
 
         return jsonify({
-            "league": {"id": league.id, "name": league.name, "trade_window_open": bool(league.trade_window_open)},
+            "league": {"id": league.id, "name": league.name,
+                       "trade_window_open": bool(league.trade_window_open),
+                       "trade_close_at": trade_close},
             "user_team": _ser_team(user_team),
             "is_commissioner": is_commissioner,
             "tab": tab,
+            "team_logos": TEAM_LOGOS,
             "incoming": [_ser_trade(t) for t in incoming],
             "outgoing": [_ser_trade(t) for t in outgoing],
             "history": [_ser_trade(t) for t in history],
@@ -223,6 +270,8 @@ def trade_detail(league_id, trade_id):
     receiving_picks = [a for a in trade.assets if a.from_team_id == trade.recipient_team_id and a.future_pick_id]
 
     if request.args.get("format") == "json":
+        from config import TEAM_LOGOS
+
         def _ser_player_asset(a):
             p = a.player
             return {
@@ -230,6 +279,8 @@ def trade_detail(league_id, trade_id):
                 "name": p.name if p else "?",
                 "position": p.position if p else "",
                 "sc_avg": p.sc_avg if p else 0,
+                "afl_team": p.afl_team if p else "",
+                "age": p.age if p else 0,
             }
 
         def _ser_pick_asset(a):
@@ -252,13 +303,25 @@ def trade_detail(league_id, trade_id):
                 "created_at": c.created_at.strftime("%d %b %H:%M") if c.created_at else None,
             }
 
+        def _ser_team_full(t):
+            if not t:
+                return None
+            return {
+                "id": t.id,
+                "name": t.name,
+                "logo_url": t.logo_url,
+                "owner": t.owner.display_name if t.owner else None,
+            }
+
         return jsonify({
-            "league": {"id": league.id, "name": league.name},
+            "league": {"id": league.id, "name": league.name,
+                       "trade_window_open": bool(league.trade_window_open)},
+            "team_logos": TEAM_LOGOS,
             "trade": {
                 "id": trade.id,
                 "status": trade.status,
-                "proposer_team": {"id": trade.proposer_team.id, "name": trade.proposer_team.name} if trade.proposer_team else None,
-                "recipient_team": {"id": trade.recipient_team.id, "name": trade.recipient_team.name} if trade.recipient_team else None,
+                "proposer_team": _ser_team_full(trade.proposer_team),
+                "recipient_team": _ser_team_full(trade.recipient_team),
                 "proposed_at": trade.proposed_at.strftime("%d %b %Y %H:%M") if trade.proposed_at else None,
                 "review_deadline": trade.review_deadline.strftime("%d %b %Y %H:%M") if trade.review_deadline else None,
                 "responded_at": trade.responded_at.strftime("%d %b %Y %H:%M") if trade.responded_at else None,

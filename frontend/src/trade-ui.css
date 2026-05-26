@@ -492,3 +492,127 @@
   gap: 12px;
   align-items: center;
 }
+
+/* Team chip used in trade-center card teams row + side labels */
+.tr-team-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.tr-team-chip-logo {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: rgba(48,54,61,.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .58rem; font-weight: 800; color: #c9d1d9; letter-spacing: .04em;
+  flex: 0 0 26px;
+  overflow: hidden;
+}
+.tr-team-chip-logo img { width: 100%; height: 100%; object-fit: cover; }
+.tr-center-card-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: #484f58;
+  font-size: 1.1rem;
+}
+@media (max-width: 600px) {
+  .tr-center-card-grid { grid-template-columns: 1fr; }
+  .tr-center-card-arrow { transform: rotate(90deg); margin: -2px 0; font-size: .9rem; }
+}
+
+/* Asset row inside the trade-center card side */
+.tr-asset-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.tr-asset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px 3px 5px;
+  border-radius: 6px;
+  background: rgba(48,54,61,.45);
+  border: 1px solid rgba(48,54,61,.6);
+  font-size: .76rem;
+  color: #f0f6fc;
+  line-height: 1.1;
+}
+.tr-asset-chip-pos {
+  font-size: .55rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.tr-asset-chip-pos-DEF { background: rgba(88,166,255,.18); color: #79c0ff; }
+.tr-asset-chip-pos-MID { background: rgba(210,168,255,.18); color: #d2a8ff; }
+.tr-asset-chip-pos-FWD { background: rgba(255,180,113,.18); color: #ffb471; }
+.tr-asset-chip-pos-RUC { background: rgba(126,231,135,.18); color: #7ee787; }
+.tr-asset-chip-pick {
+  background: linear-gradient(135deg, rgba(88,166,255,.16), rgba(22,27,34,.6));
+  border-color: rgba(88,166,255,.35);
+  color: #c9d1d9;
+}
+.tr-asset-chip-sc {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: .68rem;
+  color: #8b949e;
+  font-weight: 600;
+}
+.tr-side-label {
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: #6e7681;
+  margin-bottom: 6px;
+}
+
+/* ── Hero strip (status tiles at top of trade center) ─────── */
+.tr-hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.tr-hero-tile {
+  background: #161b22;
+  border: 1px solid rgba(48,54,61,.7);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  overflow: hidden;
+}
+.tr-hero-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgba(110,118,129,.4);
+}
+.tr-hero-tile-pending::before { background: #d29922; }
+.tr-hero-tile-outgoing::before { background: #79c0ff; }
+.tr-hero-tile-history::before { background: #7ee787; }
+.tr-hero-tile-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f0f6fc;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.tr-hero-tile-label {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #8b949e;
+}
+.tr-hero-tile-sub {
+  font-size: .7rem;
+  color: #6e7681;
+  margin-top: 2px;
+}
