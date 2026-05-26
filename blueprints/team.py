@@ -726,6 +726,52 @@ def squad(league_id, team_id):
         under_squad = squad_size > 0 and active_count < squad_size
         squad_shortfall = max(0, squad_size - active_count)
 
+        # ── Positional eligibility check ──
+        # A roster is "ineligible" if it cannot field the on-field
+        # lineup required by the league's position config. Greedy
+        # bipartite assignment: single-position players claim their
+        # one slot first, then dual-position players fill remaining
+        # gaps. Any unfilled on-field slot ⇒ ineligible. FLEX is
+        # NOT required (it's a bench slot), so it doesn't gate.
+        position_slots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
+        required_by_pos = {ps.position_code: ps.count for ps in position_slots if not ps.is_bench}
+        if not required_by_pos:
+            required_by_pos = config.POSITIONS.copy()
+
+        # Build (player, [positions]) for every active (non-LTIL) player.
+        elig_players = []
+        for p in players:
+            if not p or p.id in approved_ltil_ids:
+                continue
+            parts = [pp for pp in (p.position or "MID").split("/") if pp in required_by_pos]
+            if not parts:
+                continue
+            elig_players.append((p.id, parts))
+
+        # Single-position players first, then dual+ (most-flexible last).
+        elig_players.sort(key=lambda t: len(t[1]))
+        remaining = dict(required_by_pos)  # pos → unfilled count
+        for _pid, parts in elig_players:
+            # Pick the scarcest position this player can fill that
+            # still has capacity. Scarcity = remaining/required ratio
+            # — lower = scarcer.
+            best = None
+            best_score = None
+            for pos in parts:
+                if remaining.get(pos, 0) > 0:
+                    score = remaining[pos] / max(required_by_pos[pos], 1)
+                    if best is None or score < best_score:
+                        best = pos
+                        best_score = score
+            if best is not None:
+                remaining[best] -= 1
+
+        eligibility_shortages = [
+            {"pos": pos, "short_by": short}
+            for pos, short in remaining.items() if short > 0
+        ]
+        ineligible_roster = len(eligibility_shortages) > 0
+
         return jsonify({
             "league": {"id": league.id, "name": league.name, "season_year": league.season_year},
             "team": {"id": team.id, "name": team.name, "logo_url": team.logo_url,
@@ -744,6 +790,8 @@ def squad(league_id, team_id):
             "squad_excess": squad_excess,
             "under_squad": under_squad,
             "squad_shortfall": squad_shortfall,
+            "ineligible_roster": ineligible_roster,
+            "eligibility_shortages": eligibility_shortages,
             "delist_is_open": delist_is_open,
             "delist_period": {"closes_at": delist_period.closes_at.isoformat() if delist_period and delist_period.closes_at else None} if delist_period else None,
             "team_delist_count": team_delist_count,

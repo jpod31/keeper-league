@@ -32,6 +32,8 @@ interface SquadData {
   squad_size: number; active_count: number; approved_ltil_count: number
   over_squad: boolean; squad_excess: number
   under_squad: boolean; squad_shortfall: number
+  ineligible_roster: boolean
+  eligibility_shortages: { pos: string; short_by: number }[]
   delist_is_open: boolean; delist_period: { closes_at: string | null } | null
   team_delist_count: number; min_delists: number; max_delists: number | null
   delisted_player_ids: number[]
@@ -286,6 +288,34 @@ function SquadPageInner() {
       {!is_owner && (
         <div className="d-flex align-items-center gap-2 mb-3 px-3 py-2" style={{ background: 'rgba(139,148,158,.08)', border: '1px solid #30363d', borderRadius: 8, fontSize: '.85rem', color: '#8b949e' }}>
           <i className="bi bi-eye"></i><span>Viewing <strong style={{ color: '#c9d1d9' }}>{data.team.name}</strong>'s squad (read-only)</span>
+        </div>
+      )}
+
+      {/* ── Ineligible roster alert — fires when active roster can't
+              cover the on-field position requirements (e.g. only 1
+              RUC, only 2 DEFs). Only shown while the mid-season
+              trade window is open; after close, the lineup rules
+              kick in instead. ── */}
+      {is_owner && data.ineligible_roster && data.trade_is_open && (
+        <div className="lm-alerts">
+          <div className="lm-alert-row" style={{
+            background: 'rgba(248,81,73,.12)',
+            border: '1px solid rgba(248,81,73,.5)',
+            color: '#ffb4ae',
+          }}>
+            <i className="bi bi-shield-fill-exclamation" style={{ color: '#f85149' }}></i>
+            <span>
+              <strong>Ineligible roster</strong>
+              <span style={{ color: '#8b949e', marginLeft: 6, fontWeight: 400 }}>
+                — short {data.eligibility_shortages
+                  .map(s => `${s.short_by} ${s.pos}`)
+                  .join(', ')}
+              </span>
+              <span style={{ color: '#8b949e', marginLeft: 8, fontWeight: 400 }}>
+                · fix via trade or mid-season draft before the window closes.
+              </span>
+            </span>
+          </div>
         </div>
       )}
 
