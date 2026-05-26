@@ -2,7 +2,7 @@ import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router'
 import { LeagueProvider, useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../ui/Spinner'
 import { RoundRecapModal } from '../RoundRecapModal'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 type SectionKey = 'team' | 'players' | 'league' | 'settings'
@@ -123,48 +123,16 @@ function LeagueShellInner() {
       {/* ═══ Desktop league tab bar ═══ */}
       <div className="league-nav d-none d-lg-block">
         <div className="league-nav-inner">
-          {/* League selector */}
-          <div className="dropdown league-selector">
-            <button
-              type="button"
-              className="btn btn-sm dropdown-toggle league-selector-btn"
-              onClick={() => setSelectorOpen(s => !s)}
-            >
-              <i className="bi bi-trophy-fill me-1"></i>{league.name}
-              {league.invite_code && (
-                <span className="text-secondary ms-1" style={{ fontSize: '.65rem', letterSpacing: 1 }}>
-                  {league.invite_code}
-                </span>
-              )}
-            </button>
-            {selectorOpen && (
-              <ul
-                className="dropdown-menu show"
-                style={{ background: 'var(--kl-bg-card)', borderColor: 'var(--kl-border)', display: 'block' }}
-              >
-                {league.user_leagues.map(lg => (
-                  <li key={lg.id}>
-                    <Link
-                      className={`dropdown-item${lg.id === lid ? ' active' : ''}`}
-                      to={`/leagues/${lg.id}`}
-                    >
-                      {lg.name}
-                      {lg.invite_code && (
-                        <span className="text-secondary ms-1" style={{ fontSize: '.65rem', letterSpacing: 1 }}>{lg.invite_code}</span>
-                      )}
-                      <span className="text-secondary ms-1" style={{ fontSize: '.7rem' }}>{lg.season_year}</span>
-                    </Link>
-                  </li>
-                ))}
-                <li><hr className="dropdown-divider" style={{ borderColor: 'var(--kl-border)' }} /></li>
-                <li>
-                  <Link className="dropdown-item" to="/leagues/create">
-                    <i className="bi bi-plus-circle me-2" style={{ color: '#3fb950' }}></i>Create League
-                  </Link>
-                </li>
-              </ul>
-            )}
-          </div>
+          {/* League selector — modern pill switcher */}
+          <LeagueSwitcher
+            currentId={lid}
+            currentName={league.name}
+            currentSeason={league.season_year}
+            leagues={league.user_leagues}
+            isOpen={selectorOpen}
+            setOpen={setSelectorOpen}
+          />
+
 
           <nav className="league-tabs d-none d-lg-flex">
             {t && (
@@ -386,5 +354,144 @@ function LeagueShellInner() {
         </>
       )}
     </>
+  )
+}
+
+// ── League switcher ───────────────────────────────────────────
+// Pill button + dropdown panel that replaces the old Bootstrap dropdown.
+// Each league gets a deterministic accent colour derived from its id so
+// the avatar / glow stays consistent across renders. Click-outside +
+// Escape both close it.
+
+const SWITCH_PALETTE: { hex: string; rgb: string }[] = [
+  { hex: '#58a6ff', rgb: '88,166,255' },
+  { hex: '#ffb471', rgb: '255,180,113' },
+  { hex: '#d2a8ff', rgb: '210,168,255' },
+  { hex: '#7ee787', rgb: '126,231,135' },
+  { hex: '#e3b341', rgb: '227,179,65' },
+  { hex: '#ff7b72', rgb: '255,123,114' },
+  { hex: '#79c0ff', rgb: '121,192,255' },
+  { hex: '#f778ba', rgb: '247,120,186' },
+]
+
+function accentFor(id: number) {
+  return SWITCH_PALETTE[(id || 0) % SWITCH_PALETTE.length]
+}
+
+function leagueInitials(name: string): string {
+  if (!name) return '·'
+  // Two-letter monogram from the league name — e.g. "Charlies Demons" → "CD"
+  const words = name.replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).filter(Boolean)
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
+  return (words[0] || '·').slice(0, 2).toUpperCase()
+}
+
+interface SwitcherLeague {
+  id: number
+  name: string
+  season_year: number
+  invite_code?: string | null
+}
+
+function LeagueSwitcher({
+  currentId, currentName, currentSeason, leagues, isOpen, setOpen,
+}: {
+  currentId: number
+  currentName: string
+  currentSeason: number
+  leagues: SwitcherLeague[]
+  isOpen: boolean
+  setOpen: (v: boolean | ((s: boolean) => boolean)) => void
+}) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const accent = accentFor(currentId)
+
+  // Close on outside click + Escape
+  useEffect(() => {
+    if (!isOpen) return
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [isOpen, setOpen])
+
+  // Order: current league first, then others by id (stable)
+  const ordered = useMemo(() => {
+    const current = leagues.find(l => l.id === currentId)
+    const rest = leagues.filter(l => l.id !== currentId).sort((a, b) => a.id - b.id)
+    return current ? [current, ...rest] : leagues
+  }, [leagues, currentId])
+
+  return (
+    <div className="league-selector" ref={rootRef}
+      style={{ '--lgs-rgb': accent.rgb } as React.CSSProperties}>
+      <button
+        type="button"
+        className={`lg-switch${isOpen ? ' open' : ''}`}
+        onClick={() => setOpen(s => !s)}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+      >
+        <span className="lg-switch-avatar">{leagueInitials(currentName)}</span>
+        <span className="lg-switch-body">
+          <span className="lg-switch-name">{currentName}</span>
+          <span className="lg-switch-sub">{currentSeason} season</span>
+        </span>
+        {leagues.length > 1 && (
+          <span className="lg-switch-count">{leagues.length}</span>
+        )}
+        <i className="bi bi-chevron-down lg-switch-chev"></i>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="lg-switch-menu"
+            role="menu"
+            initial={{ opacity: 0, y: -6, scale: .98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: .98 }}
+            transition={{ duration: .14, ease: [.2, .7, .2, 1] }}
+          >
+            <div className="lg-switch-menu-head">Your leagues · {leagues.length}</div>
+            {ordered.map(lg => {
+              const a = accentFor(lg.id)
+              const isCurrent = lg.id === currentId
+              return (
+                <Link key={lg.id}
+                  to={`/leagues/${lg.id}`}
+                  className={`lg-switch-item${isCurrent ? ' active' : ''}`}
+                  style={{ '--lgs-row-rgb': a.rgb } as React.CSSProperties}
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
+                >
+                  <span className="lg-switch-item-avatar">{leagueInitials(lg.name)}</span>
+                  <span className="lg-switch-item-body">
+                    <span className="lg-switch-item-name">{lg.name}</span>
+                    <span className="lg-switch-item-meta">
+                      {lg.season_year} season
+                      {lg.invite_code && <> · <span style={{ letterSpacing: 1, fontFamily: 'ui-monospace, monospace' }}>{lg.invite_code}</span></>}
+                    </span>
+                  </span>
+                  {isCurrent && <i className="bi bi-check-circle-fill lg-switch-item-active-mark"></i>}
+                </Link>
+              )
+            })}
+            <div className="lg-switch-divider"></div>
+            <Link to="/leagues/create" className="lg-switch-cta" onClick={() => setOpen(false)}>
+              <i className="bi bi-plus-circle-fill"></i>Create a new league
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
