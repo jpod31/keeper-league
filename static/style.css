@@ -2381,149 +2381,158 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 
 .kl-toasts {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 28px;
+  right: 28px;
   z-index: 1200;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
+  gap: 14px;
   pointer-events: none;
-  width: 360px;
+  width: 440px;
   max-width: calc(100vw - 32px);
 }
 .kl-toasts > * { pointer-events: auto; }
 
-/* SOLID, opaque card — no glass blur, no transparency. The previous
-   version read as "weak transparent box"; this reads as a confident
-   message that earned its place on screen. */
+/* FULLY OPAQUE solid card — no glass, no transparency. Confident
+   presence, big enough to read across the room. */
 .kl-toast {
   position: relative;
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 60px 1fr 44px;
   align-items: stretch;
   width: 100%;
-  border-radius: 12px;
-  background: #131b2d;                                     /* solid dark navy */
-  border: 1px solid rgba(255,255,255,.06);
+  min-height: 76px;
+  border-radius: 14px;
+  background: #141d2f;                                     /* solid */
+  border: 1px solid var(--kl-toast-edge, rgba(255,255,255,.08));
   box-shadow:
-    0 20px 50px -16px rgba(0,0,0,.7),
-    0 4px 12px -4px rgba(0,0,0,.6),
-    0 0 0 1px rgba(0,0,0,.4);
+    0 24px 60px -16px rgba(0,0,0,.85),
+    0 8px 18px -6px rgba(0,0,0,.7),
+    0 0 0 1px rgba(0,0,0,.6);
   color: #f0f4fc;
   overflow: hidden;
-  transition: transform .14s ease, box-shadow .14s ease;
   isolation: isolate;
+  transition: transform .15s ease, box-shadow .15s ease;
 }
 .kl-toast.clickable { cursor: pointer; }
 .kl-toast.clickable:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 26px 60px -16px rgba(0,0,0,.8),
-    0 4px 12px -4px rgba(0,0,0,.6),
-    0 0 0 1px var(--kl-toast-icon-color, rgba(255,255,255,.08));
+    0 30px 72px -18px rgba(0,0,0,.95),
+    0 10px 24px -6px rgba(0,0,0,.7),
+    0 0 0 1px var(--kl-toast-glow, rgba(255,255,255,.1));
 }
 
-/* Tone-coloured icon block on the left (NOT a circle — a full-bleed
-   accent slab, gives the toast clear identity and weight). */
+/* Tone-coloured icon block — full-bleed accent slab on the left.
+   Vivid solid colour with a white icon — reads instantly. */
 .kl-toast-icon {
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.05rem;
-  width: 44px;
+  font-size: 1.4rem;
+  width: 60px;
   background: var(--kl-toast-icon-bg);
-  color: var(--kl-toast-icon-color);
-  border-right: 1px solid rgba(0,0,0,.25);
+  color: #ffffff;
   position: relative;
 }
 .kl-toast-icon::after {
-  /* Subtle inner highlight */
+  /* Top-light highlight on the slab */
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
   height: 1px;
-  background: rgba(255,255,255,.08);
+  background: rgba(255,255,255,.18);
+}
+.kl-toast-icon::before {
+  /* Soft inner gradient for depth */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.12), transparent 50%);
+  pointer-events: none;
 }
 
 .kl-toast-success {
-  --kl-toast-icon-bg: #3d8c63;
-  --kl-toast-icon-color: #ffffff;
-  --kl-toast-progress: #6db38a;
+  --kl-toast-icon-bg: linear-gradient(135deg, #15a163, #0f7a4b);
+  --kl-toast-progress: #34c781;
+  --kl-toast-glow: rgba(21,161,99,.5);
+  --kl-toast-edge: rgba(21,161,99,.35);
 }
 .kl-toast-error {
-  --kl-toast-icon-bg: #b85a4a;
-  --kl-toast-icon-color: #ffffff;
-  --kl-toast-progress: #d68a7e;
+  --kl-toast-icon-bg: linear-gradient(135deg, #e0584e, #b03c34);
+  --kl-toast-progress: #f0796f;
+  --kl-toast-glow: rgba(224,88,78,.5);
+  --kl-toast-edge: rgba(224,88,78,.35);
 }
 .kl-toast-info {
-  --kl-toast-icon-bg: #3a7dc4;
-  --kl-toast-icon-color: #ffffff;
-  --kl-toast-progress: #82b3e4;
+  --kl-toast-icon-bg: linear-gradient(135deg, #4691e0, #2768b0);
+  --kl-toast-progress: #6fb1f0;
+  --kl-toast-glow: rgba(70,145,224,.5);
+  --kl-toast-edge: rgba(70,145,224,.35);
 }
 .kl-toast-warning {
-  --kl-toast-icon-bg: #c2932f;
-  --kl-toast-icon-color: #ffffff;
-  --kl-toast-progress: #e0b85d;
+  --kl-toast-icon-bg: linear-gradient(135deg, #e0a426, #b07d18);
+  --kl-toast-progress: #f0c45a;
+  --kl-toast-glow: rgba(224,164,38,.5);
+  --kl-toast-edge: rgba(224,164,38,.35);
 }
 
 .kl-toast-body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  justify-content: center;
   min-width: 0;
-  padding: 12px 4px 14px 14px;
-  align-self: center;
+  padding: 14px 8px 16px 18px;
 }
 .kl-toast-title {
-  font-size: .86rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #f5f8ff;
+  color: #ffffff;
   line-height: 1.25;
-  letter-spacing: -.005em;
+  letter-spacing: -.01em;
 }
 .kl-toast-msg {
-  font-size: .84rem;
+  font-size: .92rem;
   font-weight: 500;
-  color: #e6ecf6;
-  line-height: 1.35;
+  color: #eaf0fa;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .kl-toast-title + .kl-toast-msg {
-  color: #a6b2c8;
+  color: #a8b3c8;
   font-weight: 500;
-  font-size: .78rem;
+  font-size: .82rem;
 }
 
 .kl-toast-close {
   background: transparent;
   border: 0;
-  width: 32px;
+  width: 44px;
   align-self: stretch;
   display: flex; align-items: center; justify-content: center;
-  color: #6c7892;
+  color: #7a8499;
   cursor: pointer;
   transition: background .14s ease, color .14s ease;
-  flex: 0 0 32px;
 }
-.kl-toast-close i { font-size: .72rem; }
+.kl-toast-close i { font-size: .82rem; }
 .kl-toast-close:hover {
-  background: rgba(255,255,255,.04);
-  color: #f5f8ff;
+  background: rgba(255,255,255,.05);
+  color: #ffffff;
 }
 
 /* Progress bar */
 .kl-toast-progress {
   position: absolute;
   left: 0; bottom: 0;
-  height: 2px;
+  height: 3px;
   width: 100%;
   background: var(--kl-toast-progress, #97a3ba);
   transform-origin: left center;
   animation: kl-toast-drain linear forwards;
-  border-radius: 0 0 14px 14px;
-  opacity: .8;
+  box-shadow: 0 0 8px var(--kl-toast-progress, transparent);
 }
 @keyframes kl-toast-drain {
   from { transform: scaleX(1); }

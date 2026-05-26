@@ -92,10 +92,10 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
       className={`kl-toast kl-toast-${item.type}${clickable ? ' clickable' : ''}`}
       role="status"
       layout
-      initial={{ x: 32, opacity: 0, scale: .96 }}
-      animate={{ x: 0, opacity: 1, scale: 1 }}
-      exit={{ x: 32, opacity: 0, scale: .96, transition: { duration: .18 } }}
-      transition={{ type: 'spring', stiffness: 420, damping: 32, mass: .8 }}
+      initial={{ x: 120, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 120, opacity: 0, transition: { duration: .24, ease: [.4, 0, 1, 1] } }}
+      transition={{ type: 'spring', stiffness: 240, damping: 24, mass: 1.1 }}
       onClick={clickable ? handleClick : undefined}
     >
       <span className="kl-toast-icon">
