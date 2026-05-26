@@ -23,14 +23,18 @@ interface Props {
   onSet7sCaptain: () => void
   onAddLTIL: () => void
   onViewPlayer: () => void
+  onDelist?: () => void
   ltilSlotsAvailable?: boolean
+  canDelist?: boolean
+  alreadyDelisted?: boolean
 }
 
 export function MobileActionSheet({
   player: p, teamLogos, isCaptain, isVC, isEmergency, is7s, is7sCaptain,
   isReserve, has7sFixture, sevens_captain_enabled,
   onClose, onSetCaptain, onSetVC, onSwap, onToggleEmg, onToggle7s,
-  onSet7sCaptain, onAddLTIL, onViewPlayer, ltilSlotsAvailable,
+  onSet7sCaptain, onAddLTIL, onViewPlayer, onDelist, ltilSlotsAvailable,
+  canDelist, alreadyDelisted,
 }: Props) {
   const logoUrl = p.afl_team ? teamLogos[p.afl_team] : null
 
@@ -111,6 +115,18 @@ export function MobileActionSheet({
               onClick={() => { onAddLTIL(); onClose() }}>
               <i className="bi bi-bandaid"></i>
               <span>LTIL</span>
+            </button>
+          )}
+
+          {/* Delist */}
+          {onDelist && (
+            <button
+              className={`fv-action-sheet-btn fv-as-delist${alreadyDelisted ? ' active' : ''}`}
+              onClick={() => { if (!alreadyDelisted && canDelist) { onDelist(); onClose() } }}
+              disabled={alreadyDelisted || canDelist === false}
+              title={alreadyDelisted ? 'Already delisted' : canDelist === false ? 'Max delists reached' : 'Delist this player'}>
+              <i className="bi bi-x-octagon"></i>
+              <span>{alreadyDelisted ? 'Delisted' : 'Delist'}</span>
             </button>
           )}
 

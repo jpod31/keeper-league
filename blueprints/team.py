@@ -414,7 +414,14 @@ def squad(league_id, team_id):
         ssp_window_active = False
         if season_cfg and season_cfg.ssp_window_open and season_cfg.ssp_window_close:
             ssp_window_active = season_cfg.ssp_window_open <= now <= season_cfg.ssp_window_close
-        can_remove_ltil = league.status in ("offseason", "setup")
+        # LTIL can be re-activated during off-season OR while a trade
+        # window is open (mid-season too) — the trade_manager already
+        # permits this, but the FieldView hid the X button without
+        # the flag.
+        can_remove_ltil = (
+            league.status in ("offseason", "setup")
+            or bool(league.trade_window_open)
+        )
 
         # Reserve 7s lineup IDs for the upcoming round
         from models.database import Reserve7sLineup, Reserve7sFixture
@@ -741,6 +748,7 @@ def squad(league_id, team_id):
             "delist_period": {"closes_at": delist_period.closes_at.isoformat() if delist_period and delist_period.closes_at else None} if delist_period else None,
             "team_delist_count": team_delist_count,
             "min_delists": min_delists,
+            "max_delists": (delist_period.max_delists if delist_period and delist_period.max_delists is not None else None),
             "delisted_player_ids": list(delisted_player_ids),
             "pending_incoming": pending_incoming,
             "trade_is_open": trade_is_open,

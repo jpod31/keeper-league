@@ -87,7 +87,7 @@ export function useFieldActions(
   }, [fvApi, toast, onRefresh])
 
   const removeFromLTIL = useCallback(async (pid: number) => {
-    if (!confirm('Remove this player from the LTIL? (Only available during off-season)')) return
+    if (!confirm('Remove this player from the LTIL? They return to your active squad.')) return
     const data = await fvApi('/remove-from-ltil', { player_id: pid })
     if (!data.error) { toast('Player removed from LTIL', 'success'); onRefresh() }
   }, [fvApi, toast, onRefresh])

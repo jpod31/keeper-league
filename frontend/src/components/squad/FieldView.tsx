@@ -50,14 +50,23 @@ interface Actions {
   actionMode: ActionMode
 }
 
+interface DelistContext {
+  canDelist: boolean
+  used: number
+  max: number | null
+  alreadyDelistedIds: Set<number>
+  onDelist: (playerId: number, playerName: string) => void
+}
+
 interface Props {
   fd: FieldData
   teamLogos: Record<string, string>
   isOwner: boolean
   actions?: Actions
+  delistContext?: DelistContext | null
 }
 
-export function FieldView({ fd: rawFd, teamLogos, isOwner, actions }: Props) {
+export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContext }: Props) {
   // Defensive defaults for fields that may not exist in older API responses
   const fd = {
     ...rawFd,
@@ -206,6 +215,29 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions }: Props) {
                 <i className="bi bi-bandaid"></i>
               </button>
             )}
+            {delistContext && (() => {
+              const alreadyGone = delistContext.alreadyDelistedIds.has(p.id)
+              const noRoom = !delistContext.canDelist && !alreadyGone
+              if (alreadyGone) {
+                return (
+                  <button className="fv-action-btn fv-act-delist active"
+                    title="Already delisted — click to undo via commish" disabled
+                    onClick={e => e.stopPropagation()}>
+                    <i className="bi bi-x-octagon-fill"></i>
+                  </button>
+                )
+              }
+              return (
+                <button className="fv-action-btn fv-act-delist"
+                  title={noRoom
+                    ? `Max delists reached (${delistContext.used}/${delistContext.max})`
+                    : 'Delist player'}
+                  disabled={noRoom}
+                  onClick={e => { e.stopPropagation(); delistContext.onDelist(p.id, p.name) }}>
+                  <i className="bi bi-x-octagon"></i>
+                </button>
+              )
+            })()}
           </div>
         )}
 

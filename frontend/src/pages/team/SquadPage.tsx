@@ -33,7 +33,8 @@ interface SquadData {
   over_squad: boolean; squad_excess: number
   under_squad: boolean; squad_shortfall: number
   delist_is_open: boolean; delist_period: { closes_at: string | null } | null
-  team_delist_count: number; min_delists: number; delisted_player_ids: number[]
+  team_delist_count: number; min_delists: number; max_delists: number | null
+  delisted_player_ids: number[]
   pending_incoming: number; trade_is_open: boolean; trade_close_date: string | null
   has_active_draft: boolean; active_draft_round: number | null; next_delist_info: string | null
   selected_player_ids: number[]; emergency_ids_all: number[]; sevens_ids_all: number[]
@@ -340,6 +341,32 @@ function SquadPageInner() {
         </div>
       )}
 
+      {/* ── Delist period banner — show how many delists left,
+              when the period closes, and how to actually delist
+              (click any player → red × button). ── */}
+      {is_owner && data.delist_is_open && (
+        <div className="lm-alerts">
+          <div className="lm-alert-row" style={{
+            background: 'rgba(248,81,73,.08)',
+            border: '1px solid rgba(248,81,73,.35)',
+            color: '#ffb4ae',
+          }}>
+            <i className="bi bi-x-octagon-fill" style={{ color: '#f85149' }}></i>
+            <span>
+              <strong>Delist period open</strong>
+              <span style={{ color: '#8b949e', marginLeft: 6, fontWeight: 400 }}>
+                {data.team_delist_count}
+                {data.max_delists != null ? `/${data.max_delists}` : ''} used
+                {data.delist_period?.closes_at && ` · closes ${new Date(data.delist_period.closes_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`}
+              </span>
+              <span style={{ color: '#8b949e', marginLeft: 8, fontWeight: 400 }}>
+                — hover any player and click <i className="bi bi-x-octagon mx-1"></i> to delist.
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ── Trade / Draft Alerts ── */}
       {is_owner && (data.trade_is_open || data.has_active_draft) && (
         <div className="lm-alerts">
@@ -437,15 +464,23 @@ function SquadPageInner() {
       {/* ══════ FIELD VIEW ══════ */}
       {view === 'field' && fd && (
         <>
-          <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner} actions={{
-            setCaptain: fieldActions.setCaptain, setVC: fieldActions.setVC,
-            startSwap: fieldActions.startSwap, handlePlayerClick: fieldActions.handlePlayerClick,
-            toggleEmergency: fieldActions.toggleEmergency, toggle7s: fieldActions.toggle7s,
-            set7sCaptain: fieldActions.set7sCaptain, addToLTIL: fieldActions.addToLTIL,
-            removeFromLTIL: fieldActions.removeFromLTIL, onOpenSSP: (ltilId: number) => setSspLtilId(ltilId),
-            showPlayer: fieldActions.showPlayer, cancelAllModes: fieldActions.cancelAllModes,
-            swapSource: fieldActions.swapSource, actionMode: fieldActions.actionMode,
-          }} />
+          <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner}
+            delistContext={data.delist_is_open ? {
+              canDelist: (data.max_delists == null) || (data.team_delist_count < data.max_delists),
+              used: data.team_delist_count,
+              max: data.max_delists,
+              alreadyDelistedIds: new Set(data.delisted_player_ids),
+              onDelist: (pid, name) => setDelistTarget({ id: pid, name }),
+            } : null}
+            actions={{
+              setCaptain: fieldActions.setCaptain, setVC: fieldActions.setVC,
+              startSwap: fieldActions.startSwap, handlePlayerClick: fieldActions.handlePlayerClick,
+              toggleEmergency: fieldActions.toggleEmergency, toggle7s: fieldActions.toggle7s,
+              set7sCaptain: fieldActions.set7sCaptain, addToLTIL: fieldActions.addToLTIL,
+              removeFromLTIL: fieldActions.removeFromLTIL, onOpenSSP: (ltilId: number) => setSspLtilId(ltilId),
+              showPlayer: fieldActions.showPlayer, cancelAllModes: fieldActions.cancelAllModes,
+              swapSource: fieldActions.swapSource, actionMode: fieldActions.actionMode,
+            }} />
 
           {/* Mobile swap/replace-mode banner — fixed to the top of the
               viewport (not sticky) so it's visible no matter where the
@@ -666,6 +701,11 @@ function SquadPageInner() {
           onSet7sCaptain={() => fieldActions.set7sCaptain(mobileActionPlayer.id)}
           onAddLTIL={() => fieldActions.addToLTIL(mobileActionPlayer.id)}
           onViewPlayer={() => fieldActions.showPlayer(mobileActionPlayer.id)}
+          onDelist={data.delist_is_open && is_owner
+            ? () => setDelistTarget({ id: mobileActionPlayer.id, name: mobileActionPlayer.name })
+            : undefined}
+          canDelist={data.delist_is_open ? ((data.max_delists == null) || (data.team_delist_count < data.max_delists)) : false}
+          alreadyDelisted={data.delisted_player_ids.includes(mobileActionPlayer.id)}
           ltilSlotsAvailable={fd.ssp_enabled && (fd.ltil_entries.length + fd.pending_ltil_count) < fd.ssp_slots}
         />
       )}
