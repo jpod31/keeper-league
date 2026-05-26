@@ -6,7 +6,7 @@ from flask import jsonify, request
 from flask_login import login_required
 
 from models.database import (
-    db, League, FantasyTeam, FantasyRoster, Fixture, LineupSlot,
+    db, League, FantasyTeam, FantasyRoster, Fixture, LineupSlot, WeeklyLineup,
     PlayerStat, ScScore, AflPlayer,
 )
 
@@ -61,8 +61,20 @@ def register_innovation_endpoints(spa_api):
                 "margin": abs(my_score - opp_score),
             }
 
-        # Per-player scores this round
-        slot_rows = LineupSlot.query.filter_by(team_id=team_id, afl_round=recap_round, year=year).all()
+        # Per-player scores this round.
+        # LineupSlot only carries lineup_id — join through WeeklyLineup
+        # to filter by team+round+year. Previous filter_by(team_id=...)
+        # was nonsense (the column doesn't exist) and 500'd every load.
+        slot_rows = (
+            LineupSlot.query
+            .join(WeeklyLineup, LineupSlot.lineup_id == WeeklyLineup.id)
+            .filter(
+                WeeklyLineup.team_id == team_id,
+                WeeklyLineup.afl_round == recap_round,
+                WeeklyLineup.year == year,
+            )
+            .all()
+        )
         mvp, bust = None, None
         if slot_rows:
             pids = [s.player_id for s in slot_rows if s.player_id]
@@ -139,7 +151,18 @@ def register_innovation_endpoints(spa_api):
         rnd = fx.afl_round
 
         def team_projection(team_id):
-            slots = LineupSlot.query.filter_by(team_id=team_id, afl_round=rnd, year=year).all()
+            # Same join needed here — LineupSlot has no team_id column;
+            # filter through WeeklyLineup.
+            slots = (
+                LineupSlot.query
+                .join(WeeklyLineup, LineupSlot.lineup_id == WeeklyLineup.id)
+                .filter(
+                    WeeklyLineup.team_id == team_id,
+                    WeeklyLineup.afl_round == rnd,
+                    WeeklyLineup.year == year,
+                )
+                .all()
+            )
             if not slots:
                 slots = []
                 for rr in FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all():
