@@ -91,10 +91,23 @@ gold/silver/bronze tiers for top 3 + a 3px left-edge accent
 strip. Glass rows with team-coloured 2px left stripe, mine
 highlighted with accent gradient bg.
 
-### ☐ 8. Gameday / Live scoring
-Broadcast aesthetic: animated H2H scoreboard at top, "what's happening now"
-rail with bullet-style updates, per-player tiles arranged by position with live
-SC numbers in tabular monospace, TV-style round clock.
+### ☑ 8. Gameday / Live scoring
+**Shipped after several iterations.** Final state:
+- Round bar with TV-style clock (LIVE · N ON / PRE-MATCH / FT)
+- AFL broadcast ticker — sorted live → upcoming → done, wraps to
+  fit every game on one panel (no horizontal scroll)
+- KL fixtures mini bar — grid that fits all matchups on one row
+- Neutral hero scoreboard: deep navy panel, top accent band split
+  50/50 in each team's accent, leading score coloured in team
+  accent with soft glow, loser stays muted, pre-match both stay
+  muted (no false leader). Logos restored, 56px crests with team-
+  accent borders. State-aware bottom strip — no margin chip
+  pre-match.
+- Player rows → broadcast tiles with position chips, name + AFL
+  fixture line, tabular score with live pulse dot.
+- Section headers (Field / Bench / Emergency / DNP / No Game)
+  with tone-coloured left stripes + counts.
+- Slashed-zero suppressed everywhere via font-feature-settings.
 
 ### ☐ 9. Draft Room
 War-room layout: huge countdown timer top-centre with pulse glow, current-pick
