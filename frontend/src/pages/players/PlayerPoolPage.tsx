@@ -523,7 +523,11 @@ export function PlayerPoolPage() {
                 const l3Pct = l3Base ? (l3Diff / l3Base) * 100 : 0
                 const rtgMove = p.rating && p.rating_start ? p.rating - p.rating_start : 0
                 return (
-                  <tr key={p.id}>
+                  <tr
+                    key={p.id}
+                    onClick={() => { window.location.href = `/player/${encodeURIComponent(p.name)}` }}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <td style={{ padding: '0 0 0 .4rem', verticalAlign: 'middle' }}>
                       {p.is_bye ? <span className="status-dot status-dot-bye"></span>
                         : p.is_selected ? <span className="status-dot status-dot-taken"></span>
@@ -597,7 +601,7 @@ export function PlayerPoolPage() {
                       ) : can_pickup ? (
                         <button
                           className="pm-add"
-                          onClick={() => pickup(p.id)}
+                          onClick={e => { e.stopPropagation(); pickup(p.id) }}
                           disabled={pickingUp === p.id}
                         >
                           {pickingUp === p.id ? '...' : <><i className="bi bi-plus-lg"></i> Add</>}
@@ -689,7 +693,12 @@ export function PlayerPoolPage() {
               const trendUp = l3Pct > 5
               const trendDown = l3Pct < -5
               return (
-                <div key={p.id} className="kl-player-card">
+                <div
+                  key={p.id}
+                  className="kl-player-card"
+                  onClick={() => { window.location.href = `/player/${encodeURIComponent(p.name)}` }}
+                  style={{ cursor: 'pointer' }}
+                >
                   {p.afl_team && data.team_logos[p.afl_team] ? (
                     <img src={data.team_logos[p.afl_team]} alt="" className="kl-player-card-logo" />
                   ) : (
