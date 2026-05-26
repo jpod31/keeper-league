@@ -236,6 +236,55 @@ const LAD_CSS = `
 .lad-status { display: flex; align-items: center; }
 .lad-status-empty { color: #4a5471; font-size: .68rem; }
 
+/* Power-rank chip — distinct from the ladder rank cell. Top 3 get medal
+   gradient + glow, everyone else gets a neutral chip. The small left-edge
+   accent strip gives the chip its own identity vs a plain rounded box. */
+.lad-pr { text-align: right; display: flex; justify-content: flex-end; align-items: center; }
+.lad-pr-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 38px;
+  height: 22px;
+  padding: 0 9px 0 7px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  background: linear-gradient(135deg, rgba(110,130,180,.10), rgba(110,130,180,.02));
+  border: 1px solid rgba(110,130,180,.22);
+  color: #b6c0d3;
+  position: relative;
+}
+.lad-pr-chip::before {
+  content: "";
+  width: 3px;
+  height: 12px;
+  background: currentColor;
+  opacity: .55;
+  border-radius: 2px;
+}
+.lad-pr-chip.tier-1 {
+  background: linear-gradient(135deg, rgba(232,194,91,.28), rgba(232,194,91,.06));
+  border-color: rgba(232,194,91,.55);
+  color: #f0d27a;
+  box-shadow: 0 0 14px -2px rgba(232,194,91,.4);
+}
+.lad-pr-chip.tier-2 {
+  background: linear-gradient(135deg, rgba(204,210,222,.22), rgba(204,210,222,.06));
+  border-color: rgba(204,210,222,.48);
+  color: #e0e6f1;
+}
+.lad-pr-chip.tier-3 {
+  background: linear-gradient(135deg, rgba(199,152,112,.24), rgba(199,152,112,.06));
+  border-color: rgba(199,152,112,.5);
+  color: #e0b48a;
+}
+.lad-pr-empty { color: #4a5471; font-size: .82rem; }
+
 /* Form sparkline (last N results) */
 .lad-form {
   display: flex;
@@ -393,6 +442,7 @@ const LAD_CSS = `
   .lad-row > .lad-status { grid-row: 2; grid-column: 2 / 4; justify-self: start; }
   .lad-row > .lad-form { grid-row: 2; grid-column: 1; justify-content: flex-start; }
   .lad-row > .lad-num:not(.lad-num-strong),
+  .lad-row > .lad-pr,
   .lad-row > .lad-wl,
   .lad-row > .lad-momentum { display: none; }
 }
@@ -587,8 +637,14 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
                       )}
                     </span>
 
-                    <span className="lad-num lad-pr">
-                      {rk?.rank ? <>#{rk.rank}</> : <span className="lad-num-muted">—</span>}
+                    <span className="lad-pr">
+                      {rk?.rank ? (
+                        <span className={`lad-pr-chip${rk.rank <= 3 ? ` tier-${rk.rank}` : ''}`}>
+                          {rk.rank}
+                        </span>
+                      ) : (
+                        <span className="lad-pr-empty">—</span>
+                      )}
                     </span>
 
                     <span className="lad-wl">
