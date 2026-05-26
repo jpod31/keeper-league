@@ -29,6 +29,9 @@ interface SquadData {
   field_data: FieldData | null
   alltime_stats: Record<string, Record<string, number>>
   team_logos: Record<string, string>
+  squad_size: number; active_count: number; approved_ltil_count: number
+  over_squad: boolean; squad_excess: number
+  under_squad: boolean; squad_shortfall: number
   delist_is_open: boolean; delist_period: { closes_at: string | null } | null
   team_delist_count: number; min_delists: number; delisted_player_ids: number[]
   pending_incoming: number; trade_is_open: boolean; trade_close_date: string | null
@@ -282,6 +285,58 @@ function SquadPageInner() {
       {!is_owner && (
         <div className="d-flex align-items-center gap-2 mb-3 px-3 py-2" style={{ background: 'rgba(139,148,158,.08)', border: '1px solid #30363d', borderRadius: 8, fontSize: '.85rem', color: '#8b949e' }}>
           <i className="bi bi-eye"></i><span>Viewing <strong style={{ color: '#c9d1d9' }}>{data.team.name}</strong>'s squad (read-only)</span>
+        </div>
+      )}
+
+      {/* ── Roster size alerts — fire when a team is over or under
+              squad_size after LTIL is accounted for. Over-squad is
+              red (must delist before window close); under-squad is
+              amber (will be filled by mid-season draft / SSP). ── */}
+      {is_owner && data.over_squad && (
+        <div className="lm-alerts">
+          <div
+            className="lm-alert-row"
+            style={{
+              background: 'rgba(248,81,73,.08)',
+              border: '1px solid rgba(248,81,73,.35)',
+              color: '#ffb4ae',
+            }}
+          >
+            <i className="bi bi-exclamation-octagon-fill" style={{ color: '#f85149' }}></i>
+            <span>
+              <strong>{data.squad_excess} player{data.squad_excess === 1 ? '' : 's'} over squad cap</strong>
+              <span style={{ color: '#8b949e', marginLeft: 6, fontWeight: 400 }}>
+                ({data.active_count}/{data.squad_size}
+                {data.approved_ltil_count > 0 ? ` + ${data.approved_ltil_count} LTIL` : ''})
+              </span>
+              <span style={{ color: '#8b949e', marginLeft: 8, fontWeight: 400 }}>
+                — must delist before trade window closes.
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+      {is_owner && data.under_squad && !data.over_squad && (
+        <div className="lm-alerts">
+          <div
+            className="lm-alert-row"
+            style={{
+              background: 'rgba(210,153,34,.08)',
+              border: '1px solid rgba(210,153,34,.35)',
+              color: '#f0d18a',
+            }}
+          >
+            <i className="bi bi-info-circle-fill" style={{ color: '#d29922' }}></i>
+            <span>
+              <strong>{data.squad_shortfall} squad spot{data.squad_shortfall === 1 ? '' : 's'} open</strong>
+              <span style={{ color: '#8b949e', marginLeft: 6, fontWeight: 400 }}>
+                ({data.active_count}/{data.squad_size})
+              </span>
+              <span style={{ color: '#8b949e', marginLeft: 8, fontWeight: 400 }}>
+                — fill via mid-season draft once the trade window closes.
+              </span>
+            </span>
+          </div>
         </div>
       )}
 

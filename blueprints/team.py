@@ -690,6 +690,26 @@ def squad(league_id, team_id):
                 } for lt in fd.get("ltil_entries", [])],
             }
 
+        # Roster-size accounting for the "too many players" indicator.
+        # Approved LTIL players don't count against squad size — they
+        # free up a slot for an SSP replacement. Pending LTIL still
+        # count (commissioner hasn't approved). This is the canonical
+        # rule used by trade_manager + delist enforcement.
+        approved_ltil_ids = {
+            lt.player_id for lt in LongTermInjury.query.filter_by(
+                team_id=team_id, removed_at=None, year=league.season_year, status="approved"
+            ).all()
+        }
+        squad_size = league.squad_size or 0
+        # Unique active player ids (FantasyRoster has is_active filter
+        # in the query upstream; players list mirrors that).
+        active_player_ids = {p.id for p in players if p and p.id not in approved_ltil_ids}
+        active_count = len(active_player_ids)
+        over_squad = squad_size > 0 and active_count > squad_size
+        squad_excess = max(0, active_count - squad_size)
+        under_squad = squad_size > 0 and active_count < squad_size
+        squad_shortfall = max(0, squad_size - active_count)
+
         return jsonify({
             "league": {"id": league.id, "name": league.name, "season_year": league.season_year},
             "team": {"id": team.id, "name": team.name, "logo_url": team.logo_url,
@@ -701,6 +721,13 @@ def squad(league_id, team_id):
             "field_data": _serialize_field_data(field_data) if field_data else None,
             "alltime_stats": {str(k): v for k, v in alltime_stats.items()},
             "team_logos": TEAM_LOGOS,
+            "squad_size": squad_size,
+            "active_count": active_count,
+            "approved_ltil_count": len(approved_ltil_ids),
+            "over_squad": over_squad,
+            "squad_excess": squad_excess,
+            "under_squad": under_squad,
+            "squad_shortfall": squad_shortfall,
             "delist_is_open": delist_is_open,
             "delist_period": {"closes_at": delist_period.closes_at.isoformat() if delist_period and delist_period.closes_at else None} if delist_period else None,
             "team_delist_count": team_delist_count,
