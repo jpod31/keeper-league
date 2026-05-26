@@ -17,20 +17,38 @@ pitching the next. After each ship:
 
 ## A — Chrome / global structure
 
-### ☐ 1. The top bar
+### ☑ 1. The top bar
+**Shipped** (commit `a3d8bfa` + `3d0d94e`). Glass-blur sticky header,
+gradient brand mark restored to clean transparent logo, glass home pill,
+right-side glass cluster, user pill with avatar gradient + dropdown
+matching league switcher.
 The thin Bootstrap-ish strip becomes a glass-blur sticky header. Pill switcher
 (already shipped) on the left, primary nav as a glass pill-tab group in the
 centre, notification bell + avatar on the right. `backdrop-filter: blur()`,
 1px hairline border, subtle gradient bleed from the active league's accent.
 
-### ☐ 2. League shell sub-tabs
+### ☑ 2. League shell sub-tabs → left vertical rail
+**Shipped.** After multiple iterations, replaced the horizontal tab
+strip entirely with a fixed left rail (Option A from the redesign
+pitch). League switcher moved to the top bar via React portal.
+Palette pushed to jewel tones on a cool deep navy canvas; rail
+surface elevated above canvas; three real layers; active row uses
+the league's accent at 18% fill with a 2px soft left edge.
+Sub-tabs expand inline under the active section. Hover-to-expand
++ click-to-pin (persists via localStorage). Loading skeleton
+reserves the rail's silhouette so no jolt on first paint.
 The underlined Bootstrap nav-tabs (My Team / Players / League / Trades / etc.)
 become the same glass pill-row pattern as the player profile, plus an animated
 indicator that slides between tabs (`framer-motion` `layoutId`). Active tab gets
 a soft accent-coloured glow. Mobile keeps the row with horizontal scroll + edge
 fade.
 
-### ☐ 3. Notifications drawer
+### ☑ 3. Notifications drawer
+**Shipped.** Slide-in glass panel from the right (bottom sheet on
+mobile). Items grouped by day with tone-coloured glass icon circles
+matching the jewel-tone palette. Unread items get a tinted bg +
+left stripe. Spring animations, body scroll lock, Esc/backdrop/route
+all close.
 Currently a small dropdown. Becomes a slide-in right-side glass panel — full
 height, backdrop-blur, items grouped by day (Today / Yesterday / This week),
 each item a rich card with type-coloured icon + timestamp pill. Animated unread
@@ -41,7 +59,12 @@ Stacked glass cards in the bottom-right, each with a thin progress bar that
 drains as the toast times out, accent-coloured by type, slide-in from the right
 with spring physics.
 
-### ☐ 5. Mobile bottom tab bar — **new**
+### ⏸ 5. Mobile bottom tab bar — **deferred**
+*Paused this session — mobile-focused work is being skipped for now.
+Will revisit alongside any major desktop change that needs mobile
+parity. Pitch on file, ready to execute when revisited.*
+
+### ☐ 5 [original]. Mobile bottom tab bar — **new**
 A floating glass bottom bar (My Team / Players / Trades / Standings / More) —
 backdrop-blur, rounded corners, sits 16px above the bottom edge. Active tab
 gets a coloured dot + scale animation. Massive UX win on mobile.
@@ -57,10 +80,16 @@ football field**: green gradient pitch, white line markings (centre circle,
 cards stationed in their zones. Lockout state pulses red. Captains get a "C"
 sticker. Team colour washes the field subtly.
 
-### ☐ 7. Standings / Ladder page
-Top 3 become a podium row (1st centre-tall, 2nd & 3rd flanking, each with
-team-colour glow), positions 4+ as horizontal glass rows with mini form-bar
-sparklines (last 5 results) + momentum arrow.
+### ☑ 7. Standings / Ladder page
+**Shipped.** Unified ladder (no podium hero — user wanted it to read
+like a true ladder). 11 columns: # | Team | Status | PR | W–L |
+Form · 5 | Mov. | PF | PA | % | Pts. Sortable headers on every
+metric (highest first per `feedback_sort_descending`). # stays
+anchored to ladder rank under any sort; finals-cut divider only
+shows in canonical ladder order. PR rendered as a chip with
+gold/silver/bronze tiers for top 3 + a 3px left-edge accent
+strip. Glass rows with team-coloured 2px left stripe, mine
+highlighted with accent gradient bg.
 
 ### ☐ 8. Gameday / Live scoring
 Broadcast aesthetic: animated H2H scoreboard at top, "what's happening now"

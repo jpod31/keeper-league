@@ -38,8 +38,216 @@ interface GamedayData {
   team_logos: Record<string, string>; team_abbr: Record<string, string>
 }
 
-// All 450 lines of inline CSS from gameday.html
+// Stadium jewel-tone palette (same as Ladder/Shell — keeps team accents
+// consistent across every page that paints with a team's colour).
+const PALETTE: { hex: string; rgb: string }[] = [
+  { hex: '#3a7dc4', rgb: '58,125,196' },
+  { hex: '#b87f3d', rgb: '184,127,61' },
+  { hex: '#8a6db8', rgb: '138,109,184' },
+  { hex: '#3d8c63', rgb: '61,140,99' },
+  { hex: '#c2932f', rgb: '194,147,47' },
+  { hex: '#b85a4a', rgb: '184,90,74' },
+  { hex: '#3d8a9c', rgb: '61,138,156' },
+  { hex: '#9d5878', rgb: '157,88,120' },
+]
+function accentFor(id: number | undefined | null) {
+  const i = id ?? 0
+  return PALETTE[((i % PALETTE.length) + PALETTE.length) % PALETTE.length]
+}
+
+interface ClockState { tone: 'live' | 'upcoming' | 'done'; label: string; sub: string }
+function deriveClock(d: GamedayData): ClockState {
+  const games = d.afl_games || []
+  const liveCount = games.filter(g => g.status === 'live').length
+  const doneCount = games.filter(g => g.status === 'complete').length
+  const total = games.length
+  if (d.gameday_state === 'completed') {
+    return { tone: 'done', label: 'FULL TIME', sub: total ? `${total}/${total} games` : 'Round complete' }
+  }
+  if (d.gameday_state === 'live') {
+    return {
+      tone: 'live',
+      label: liveCount > 0 ? `LIVE · ${liveCount} ON` : 'BETWEEN GAMES',
+      sub: `${doneCount}/${total} games done`,
+    }
+  }
+  return { tone: 'upcoming', label: 'PRE-MATCH', sub: d.first_bounce ? `Bounce ${d.first_bounce}` : 'Awaiting first bounce' }
+}
+
 const GAMEDAY_CSS = `
+/* === Gameday · Stadium broadcast =============================== */
+
+/* Round header bar */
+.gd-round-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; margin-bottom: 12px; background: rgba(15,22,36,.7); border: 1px solid rgba(110,130,180,.18); border-radius: 14px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.gd-round-title { font-size: 1rem; font-weight: 800; letter-spacing: .18em; color: #f0f4fc; margin: 0; text-transform: uppercase; }
+.gd-round-dates { font-size: .68rem; color: #6c7892; margin-top: 3px; letter-spacing: .04em; }
+.gd-round-state { display: inline-flex; align-items: center; gap: 10px; }
+
+/* TV round clock */
+.gd-clock { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 5px 12px; border-radius: 10px; background: rgba(15,22,36,.55); border: 1px solid rgba(110,130,180,.22); font-family: ui-monospace, SFMono-Regular, monospace; position: relative; min-width: 118px; }
+.gd-clock.live { background: linear-gradient(135deg, rgba(61,140,99,.18), rgba(61,140,99,.04)); border-color: rgba(61,140,99,.45); box-shadow: 0 0 16px -4px rgba(61,140,99,.5); }
+.gd-clock.upcoming { background: linear-gradient(135deg, rgba(58,125,196,.14), rgba(58,125,196,.03)); border-color: rgba(58,125,196,.35); }
+.gd-clock-label { font-size: .7rem; font-weight: 800; letter-spacing: .16em; color: #f0f4fc; line-height: 1.1; }
+.gd-clock.live .gd-clock-label { color: #7dc99a; }
+.gd-clock.upcoming .gd-clock-label { color: #82b3e4; }
+.gd-clock-sub { font-size: .56rem; color: #97a3ba; letter-spacing: .08em; margin-top: 3px; text-transform: uppercase; }
+.gd-clock.live::before { content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 3px; background: #6db38a; border-radius: 10px 0 0 10px; animation: gdPulse 1.8s ease-in-out infinite; }
+
+.gd-refresh { all: unset; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; color: #97a3ba; background: rgba(255,255,255,.04); border: 1px solid rgba(110,130,180,.18); transition: color .14s, background .14s; }
+.gd-refresh:hover { color: #dde4f1; background: rgba(255,255,255,.08); }
+.gd-refresh:disabled { opacity: .4; cursor: wait; }
+
+/* Comp toggle */
+.gd-comp-toggle { display: inline-flex; background: rgba(15,22,36,.5); border: 1px solid rgba(110,130,180,.18); border-radius: 999px; padding: 3px; margin-bottom: 14px; }
+.gd-comp-btn { padding: 6px 14px; border-radius: 999px; font-size: .74rem; font-weight: 700; color: #97a3ba; text-decoration: none; border: 0; background: transparent; cursor: pointer; }
+.gd-comp-btn:hover { color: #dde4f1; text-decoration: none; }
+.gd-comp-btn.active { background: rgba(58,125,196,.18); color: #82b3e4; }
+
+/* AFL ticker — broadcast pills */
+.gd-ticker { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: thin; padding: 12px 14px; background: rgba(15,22,36,.6); border: 1px solid rgba(110,130,180,.16); border-radius: 12px; margin-bottom: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.gd-ticker::-webkit-scrollbar { height: 4px; }
+.gd-ticker::-webkit-scrollbar-thumb { background: rgba(110,130,180,.3); border-radius: 4px; }
+.gd-ticker-pill { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(20,28,45,.7); border: 1px solid rgba(110,130,180,.2); text-decoration: none; font-size: .72rem; color: #b6c0d3; font-variant-numeric: tabular-nums; transition: background .14s, border-color .14s; }
+.gd-ticker-pill:hover { background: rgba(28,38,58,.85); border-color: rgba(110,130,180,.32); color: #dde4f1; text-decoration: none; }
+.gd-ticker-dot { width: 7px; height: 7px; border-radius: 50%; background: #97a3ba; flex-shrink: 0; }
+.gd-ticker-pill.live .gd-ticker-dot { background: #6db38a; box-shadow: 0 0 8px rgba(109,179,138,.6); animation: gdPulse 1.6s ease-in-out infinite; }
+.gd-ticker-pill.upcoming .gd-ticker-dot { background: #82b3e4; }
+.gd-ticker-pill.done .gd-ticker-dot { background: #5a677e; }
+.gd-ticker-teams { font-weight: 600; color: #dde4f1; }
+.gd-ticker-score { color: #97a3ba; font-size: .68rem; }
+.gd-ticker-tag { font-size: .54rem; font-weight: 800; letter-spacing: .14em; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; }
+.gd-ticker-pill.live .gd-ticker-tag { background: rgba(61,140,99,.22); color: #7dc99a; }
+.gd-ticker-pill.upcoming .gd-ticker-tag { background: rgba(58,125,196,.18); color: #82b3e4; }
+.gd-ticker-pill.done .gd-ticker-tag { background: rgba(110,130,180,.16); color: #97a3ba; }
+
+/* KL mini bar */
+.gd-mini-bar { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: thin; padding: 10px 14px; background: rgba(15,22,36,.6); border: 1px solid rgba(110,130,180,.14); border-radius: 12px; margin-bottom: 12px; }
+.gd-mini-bar::-webkit-scrollbar { height: 4px; }
+.gd-mini-bar::-webkit-scrollbar-thumb { background: rgba(110,130,180,.3); border-radius: 4px; }
+.gd-mini-pill { flex: 1; min-width: 140px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 10px; border-radius: 10px; background: rgba(20,28,45,.5); border: 1px solid rgba(110,130,180,.18); cursor: pointer; transition: background .14s, border-color .14s, transform .14s; position: relative; }
+.gd-mini-pill:hover { background: rgba(28,38,58,.8); border-color: rgba(110,130,180,.32); transform: translateY(-1px); }
+.gd-mini-pill.yours::before { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: #82b3e4; box-shadow: 0 0 6px rgba(130,179,228,.6); }
+.gd-mini-pill.active { border-color: rgba(58,125,196,.55); background: linear-gradient(135deg, rgba(58,125,196,.14), rgba(58,125,196,.03)); box-shadow: inset 0 0 0 1px rgba(58,125,196,.18); }
+.gd-mini-teams { font-size: .7rem; font-weight: 700; color: #dde4f1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.gd-mini-score { font-size: .68rem; color: #97a3ba; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, monospace; }
+
+/* Hero card */
+.gd-hero { position: relative; border-radius: 18px; padding: 22px 24px 18px; margin-bottom: 14px; background: radial-gradient(ellipse at 50% 0%, rgba(20,28,46,.92) 0%, rgba(11,16,28,.96) 65%, rgba(8,12,22,.98) 100%); border: 1px solid rgba(110,130,180,.2); overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.gd-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, rgba(var(--gd-left-rgb, 97,140,196), .55), transparent 35%, transparent 65%, rgba(var(--gd-right-rgb, 184,90,74), .55)); }
+.gd-hero.live::after { content: ''; position: absolute; inset: 0; border-radius: 18px; pointer-events: none; box-shadow: 0 0 36px -4px rgba(61,140,99,.22) inset; animation: gdHeroGlow 5s ease-in-out infinite; }
+@keyframes gdHeroGlow { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+
+.gd-hero-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-bottom: 16px; }
+.gd-hero-team { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.gd-hero-team.right { flex-direction: row-reverse; }
+
+.gd-crest { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 14px; font-weight: 900; font-size: 1.05rem; letter-spacing: .04em; color: #fff; flex-shrink: 0; box-shadow: 0 8px 22px -4px rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.08); }
+.gd-crest-img { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; flex-shrink: 0; box-shadow: 0 8px 22px -4px rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.1); background: rgba(15,22,36,.4); }
+
+.gd-team-detail { min-width: 0; flex: 1; }
+.gd-hero-team.right .gd-team-detail { text-align: right; }
+.gd-team-name { font-size: .94rem; font-weight: 800; color: #f5f8ff; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.gd-team-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.gd-hero-team.right .gd-team-meta { justify-content: flex-end; }
+.gd-played { font-size: .64rem; color: #6c7892; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: .04em; }
+.gd-role-badge { font-size: .54rem; font-weight: 800; letter-spacing: .08em; padding: 2px 6px; border-radius: 4px; color: #6c7892; background: rgba(110,130,180,.08); border: 1px solid rgba(110,130,180,.15); }
+.gd-role-badge.active { color: #f0d27a; background: rgba(194,147,47,.16); border-color: rgba(194,147,47,.36); }
+.gd-role-badge.active.vc { color: #82b3e4; background: rgba(58,125,196,.16); border-color: rgba(58,125,196,.36); }
+
+.gd-vs { font-size: .56rem; font-weight: 800; letter-spacing: .22em; color: #4a5471; padding: 0 4px; }
+
+.gd-hero-scores { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; }
+.gd-hero-score-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.gd-hero-score { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 3.6rem; font-weight: 900; line-height: 1; color: #97a3ba; font-variant-numeric: tabular-nums; letter-spacing: -.04em; transition: color .35s, text-shadow .35s; }
+.gd-hero-score.winning { color: var(--gd-side-accent, #f0f4fc); text-shadow: 0 0 28px rgba(var(--gd-side-rgb, 122,155,196), .4); }
+.gd-hero-dash { font-size: 2.2rem; font-weight: 200; color: #38415a; padding-top: 8px; line-height: 1; }
+.gd-cap-bonus { font-size: .65rem; font-weight: 700; color: #f0d27a; letter-spacing: .08em; white-space: nowrap; }
+
+.gd-hero-footer { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(110,130,180,.1); }
+.gd-margin-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 18px; border-radius: 10px; font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #dde4f1; background: rgba(255,255,255,.04); border: 1px solid rgba(110,130,180,.18); font-variant-numeric: tabular-nums; }
+.gd-margin-chip.win { color: #7dc99a; background: rgba(61,140,99,.1); border-color: rgba(61,140,99,.3); }
+.gd-margin-chip.loss { color: #e07a6c; background: rgba(184,90,74,.1); border-color: rgba(184,90,74,.3); }
+.gd-margin-chip.up { color: #7dc99a; }
+.gd-margin-chip.down { color: #e07a6c; }
+
+.gd-proj-row { display: flex; align-items: center; gap: 14px; font-size: .66rem; color: #6c7892; font-variant-numeric: tabular-nums; }
+.gd-proj-item b { font-weight: 700; color: #b6c0d3; }
+.gd-proj-sep { width: 3px; height: 3px; border-radius: 50%; background: rgba(110,130,180,.3); }
+
+.gd-first-bounce { text-align: center; font-size: .82rem; color: #b6c0d3; margin-top: 4px; }
+.gd-breakdown-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 8px; font-size: .72rem; font-weight: 700; color: #82b3e4; text-decoration: none; background: rgba(58,125,196,.1); border: 1px solid rgba(58,125,196,.25); transition: background .14s; margin-top: 4px; }
+.gd-breakdown-link:hover { background: rgba(58,125,196,.18); color: #a8c8ed; text-decoration: none; }
+
+/* Score flash */
+.score-flash { animation: gdScoreFlash 1.4s ease-out; }
+@keyframes gdScoreFlash { 0% { transform: scale(1.18); filter: brightness(1.4); } 35% { transform: scale(.96); } 100% { transform: scale(1); filter: brightness(1); } }
+@keyframes gdPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* Player card column */
+.gd-pcard { background: rgba(15,22,36,.7); border: 1px solid rgba(110,130,180,.16); border-radius: 14px; overflow: hidden; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.gd-pcard-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(20,28,45,.6); border-bottom: 1px solid rgba(110,130,180,.12); }
+.gd-pcard-name { font-size: .82rem; font-weight: 800; color: #f0f4fc; letter-spacing: -.01em; }
+.gd-pcard-total { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 1.1rem; font-weight: 800; color: #f5f8ff; font-variant-numeric: tabular-nums; }
+
+.gd-section { display: flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: .58rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #6c7892; background: rgba(11,16,28,.55); border-bottom: 1px solid rgba(110,130,180,.08); border-left: 2px solid transparent; }
+.gd-section.field { border-left-color: rgba(61,140,99,.55); color: #7dc99a; background: rgba(61,140,99,.05); }
+.gd-section.bench { border-left-color: rgba(58,125,196,.45); color: #82b3e4; }
+.gd-section.emergency { border-left-color: rgba(194,147,47,.5); color: #c2932f; background: rgba(194,147,47,.04); }
+.gd-section.dnp { border-left-color: rgba(184,90,74,.45); color: #d68a7e; }
+.gd-section.nogame { color: #6c7892; }
+
+/* Player row — broadcast tile */
+.gd-prow { display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center; padding: 9px 14px; border-bottom: 1px solid rgba(110,130,180,.06); transition: background .14s; }
+.gd-prow:last-child { border-bottom: none; }
+.gd-prow:hover { background: rgba(28,38,58,.45); }
+
+.gd-pos { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 22px; border-radius: 5px; font-size: .56rem; font-weight: 800; letter-spacing: .06em; background: rgba(110,130,180,.1); border: 1px solid rgba(110,130,180,.18); color: #b6c0d3; }
+.gd-pos.def { background: rgba(61,138,156,.14); color: #7ec0d3; border-color: rgba(61,138,156,.3); }
+.gd-pos.mid { background: rgba(58,125,196,.14); color: #82b3e4; border-color: rgba(58,125,196,.3); }
+.gd-pos.ruc { background: rgba(138,109,184,.14); color: #b39ed4; border-color: rgba(138,109,184,.3); }
+.gd-pos.fwd { background: rgba(184,90,74,.14); color: #e07a6c; border-color: rgba(184,90,74,.3); }
+
+.gd-pbody { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gd-prow-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.gd-pname { font-size: .82rem; font-weight: 600; color: #dde4f1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gd-pfix { display: flex; align-items: center; gap: 4px; font-size: .62rem; color: #6c7892; }
+.gd-pfix img { width: 12px; height: 12px; }
+
+.gd-pbadge { font-size: .52rem; font-weight: 800; letter-spacing: .06em; padding: 1px 4px; border-radius: 3px; line-height: 1.3; flex-shrink: 0; }
+.gd-pbadge.c { background: rgba(194,147,47,.2); color: #f0d27a; border: 1px solid rgba(194,147,47,.4); }
+.gd-pbadge.vc { background: rgba(58,125,196,.2); color: #82b3e4; border: 1px solid rgba(58,125,196,.4); }
+.gd-pbadge.emg { background: rgba(184,90,74,.16); color: #e07a6c; border: 1px solid rgba(184,90,74,.36); }
+.gd-pbadge.emg-active { background: rgba(58,125,196,.2); color: #82b3e4; border: 1px solid rgba(58,125,196,.4); }
+.gd-pbadge.dnp { background: rgba(110,130,180,.12); color: #97a3ba; }
+
+.gd-pscore { font-family: ui-monospace, SFMono-Regular, monospace; font-size: .98rem; font-weight: 800; color: #f0f4fc; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 5px; min-width: 36px; justify-content: flex-end; }
+.gd-pscore.live { color: #7dc99a; }
+.gd-pscore.live::after { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #6db38a; box-shadow: 0 0 6px rgba(109,179,138,.7); animation: gdPulse 1.6s ease-in-out infinite; }
+.gd-pscore.ytp { color: #5a677e; animation: gdPulse 2.4s ease-in-out infinite; }
+.gd-pscore.dnp { color: #5a677e; }
+.gd-pscore.muted { color: #38415a; }
+
+.gd-prow.locked .gd-pname { color: #97a3ba; }
+.gd-prow.dnp { opacity: .65; }
+.gd-prow.dnp .gd-pname { color: #6c7892; }
+.gd-prow.reserve { opacity: .55; }
+.gd-prow.emg-standby { opacity: .65; }
+.gd-prow.emg-standby .gd-pname { color: #c2932f; }
+.gd-prow.subbed-on { background: rgba(61,140,99,.05); }
+
+.gd-sub-note { font-size: .58rem; color: #6c7892; font-style: italic; margin-left: 4px; }
+
+/* Footer */
+.gd-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 0 4px; font-size: .68rem; color: #6c7892; }
+.gd-foot a { color: #97a3ba; text-decoration: none; font-size: .7rem; }
+.gd-foot a:hover { color: #82b3e4; }
+
+/* BYE state */
+.gd-bye { text-align: center; padding: 50px 24px; background: rgba(15,22,36,.6); border: 1px solid rgba(110,130,180,.16); border-radius: 18px; }
+.gd-bye h4 { color: #dde4f1; font-size: 1.1rem; font-weight: 700; margin: 0 0 6px; }
+.gd-bye p { font-size: .85rem; color: #6c7892; margin: 0; }
+
+/* Mobile side-by-side (preserved from legacy) */
 .gameday-round-header { margin-bottom: 10px; }
 .gameday-round-title { font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; color: var(--kl-text-heading); }
 .gameday-round-dates { color: var(--kl-text-secondary); font-size: .8rem; }
@@ -387,9 +595,9 @@ export function GamedayPage() {
       ? { hasCap: !!rs.has_captain, capPlayed: !!rs.captain_played, hasVc: !!rs.has_vc, vcPlayed: !!rs.vc_played }
       : capVcStatus(players)
     return (
-      <span className="hero-cap-badges">
-        {s.hasCap && <span className={`hero-role-badge${s.capPlayed ? ' role-active' : ''}`}>C</span>}
-        {s.hasVc && <span className={`hero-role-badge${s.vcPlayed ? ' role-active' : ''}`}>VC</span>}
+      <span style={{ display: 'inline-flex', gap: 4 }}>
+        {s.hasCap && <span className={`gd-role-badge${s.capPlayed ? ' active' : ''}`}>C</span>}
+        {s.hasVc && <span className={`gd-role-badge vc${s.vcPlayed ? ' active' : ''}`}>VC</span>}
       </span>
     )
   }
@@ -480,52 +688,61 @@ export function GamedayPage() {
     const ytp = !p.game_started && gs === 'live'
     const isSubbedOn = p.subbed_on
     const isEmgStandby = p.is_emergency && !isSubbedOn
+    const isLocked = !!(p.player_id && d.locked_player_ids?.includes(p.player_id))
+
     const rowClass = [
-      'gameday-player-row',
-      p.player_id && d.locked_player_ids?.includes(p.player_id) && 'player-locked',
-      p.is_dnp && 'player-dnp',
-      isSubbedOn && 'player-subbed-on',
-      p.lineup_type === 'reserve' && 'player-reserve',
-      isEmgStandby && 'player-emergency-standby',
-      ytp && 'player-yet-to-play',
+      'gd-prow',
+      isLocked && 'locked',
+      p.is_dnp && 'dnp',
+      isSubbedOn && 'subbed-on',
+      p.lineup_type === 'reserve' && 'reserve',
+      isEmgStandby && 'emg-standby',
+      ytp && 'ytp',
     ].filter(Boolean).join(' ')
 
-    const scoreClass = [
-      'gameday-player-score',
-      p.is_dnp && 'score-dnp',
-      p.lineup_type === 'reserve' && 'score-reserve',
-      isEmgStandby && 'score-emg-standby',
-      ytp && 'score-ytp',
-      p.is_live && !ytp && !isEmgStandby && 'text-success',
+    const scoreCls = [
+      'gd-pscore',
+      p.is_dnp && 'dnp',
+      (p.lineup_type === 'reserve' || isEmgStandby) && 'muted',
+      ytp && 'ytp',
+      p.is_live && !ytp && !isEmgStandby && 'live',
     ].filter(Boolean).join(' ')
+
+    const pos = (p.position || '').split('/')[0].toUpperCase()
+    const posCls = `gd-pos ${pos.toLowerCase()}`
 
     return (
       <div className={rowClass}>
-        <span className="gameday-player-info">
-          {p.position && <span className={`pos-badge pos-${p.position.split('/')[0].toUpperCase()} gameday-pos-badge`}>{p.position.toUpperCase()}</span>}
-          {p.is_captain && <span className="gameday-badge-c">C</span>}
-          {p.is_vice_captain && <span className="gameday-badge-vc">VC</span>}
-          {isSubbedOn && <span className="gameday-badge-emg-active">EMG</span>}
-          {p.is_dnp && !isSubbedOn && <span className="gameday-badge-dnp">DNP</span>}
-          {isEmgStandby && <span className="gameday-badge-emg">EMG</span>}
-          <span className="gameday-player-name">{p.name}</span>
-          <span className="gameday-player-meta">
+        <span className={posCls}>{pos || '—'}</span>
+        <div className="gd-pbody">
+          <div className="gd-prow-name">
+            {p.is_captain && <span className="gd-pbadge c">C</span>}
+            {p.is_vice_captain && <span className="gd-pbadge vc">VC</span>}
+            {isSubbedOn && <span className="gd-pbadge emg-active">EMG</span>}
+            {p.is_dnp && !isSubbedOn && <span className="gd-pbadge dnp">DNP</span>}
+            {isEmgStandby && <span className="gd-pbadge emg">EMG</span>}
+            <span className="gd-pname">{p.name}</span>
+          </div>
+          <div className="gd-pfix">
             {p.afl_team && d.team_logos[p.afl_team]
-              ? <img src={d.team_logos[p.afl_team]} alt={p.afl_team} title={p.afl_team} className="gameday-team-logo" />
-              : p.afl_team}
-            {d.afl_matchup_info[p.afl_team] && <span style={{ color: 'var(--kl-text-faint)', fontSize: '.65rem', marginLeft: 2 }}>{d.afl_matchup_info[p.afl_team]}</span>}
-            {p.replaces && <span className="gameday-sub-note">&rarr; replacing {p.replaces}</span>}
-          </span>
-        </span>
-        <span className={scoreClass}>
-          {p.lineup_type === 'reserve' || isEmgStandby ? '–' : ytp ? <><i className="bi bi-clock" style={{ fontSize: '.65rem', marginRight: 2 }}></i>&mdash;</> : (p.score || 0)}
-          {p.is_live && !ytp && !isEmgStandby && <i className="bi bi-circle-fill gameday-live-dot"></i>}
+              ? <img src={d.team_logos[p.afl_team]} alt={p.afl_team} title={p.afl_team} />
+              : <span>{p.afl_team}</span>}
+            {d.afl_matchup_info[p.afl_team] && <span>{d.afl_matchup_info[p.afl_team]}</span>}
+            {p.replaces && <span className="gd-sub-note">&rarr; for {p.replaces}</span>}
+          </div>
+        </div>
+        <span className={scoreCls}>
+          {p.lineup_type === 'reserve' || isEmgStandby
+            ? '–'
+            : ytp
+              ? <><i className="bi bi-clock" style={{ fontSize: '.62rem' }}></i></>
+              : (p.score || 0)}
         </span>
       </div>
     )
   }
 
-  function PlayerCard({ players, teamName, score, side }: { players: GDPlayer[]; teamName: string; score: number; side: 'left' | 'right' }) {
+  function PlayerCard({ players, teamName, score }: { players: GDPlayer[]; teamName: string; score: number }) {
     // Has a game this round?
     const hasGame = (p: GDPlayer) => teamsPlayingSet.size === 0 || teamsPlayingSet.has(p.afl_team)
 
@@ -543,30 +760,28 @@ export function GamedayPage() {
     const noGame = players.filter(p => !hasGame(p))
 
     return (
-      <div className={`gameday-player-card card-${side}-team`}>
-        <div className="gameday-player-card-header">
-          <span>{teamName}</span>
-          <span className="gameday-card-score">{gs !== 'upcoming' ? Math.round(score) : ''}</span>
+      <div className="gd-pcard">
+        <div className="gd-pcard-header">
+          <span className="gd-pcard-name">{teamName}</span>
+          {gs !== 'upcoming' && <span className="gd-pcard-total">{Math.round(score)}</span>}
         </div>
-        <div className="gameday-player-list">
-          <div className="gameday-section-hdr section-field"><i className="bi bi-people-fill me-1"></i>Field</div>
+        <div>
+          <div className="gd-section field"><i className="bi bi-broadcast"></i>Field · {field.length}</div>
           {field.map((p, i) => <PlayerRow key={i} p={p} />)}
           {bench.length > 0 && <>
-            <div className="gameday-section-hdr section-bench"><i className="bi bi-arrow-left-right me-1"></i>Bench</div>
+            <div className="gd-section bench"><i className="bi bi-arrow-left-right"></i>Bench · {bench.length}</div>
             {bench.map((p, i) => <PlayerRow key={`b${i}`} p={p} />)}
           </>}
           {emgStandby.length > 0 && <>
-            <div className="gameday-section-hdr section-emergency"><i className="bi bi-shield-exclamation me-1"></i>Emergency</div>
+            <div className="gd-section emergency"><i className="bi bi-shield-exclamation"></i>Emergency · {emgStandby.length}</div>
             {emgStandby.map((p, i) => <PlayerRow key={`e${i}`} p={p} />)}
           </>}
           {dnps.length > 0 && <>
-            <div className="gameday-section-hdr section-dnp"><i className="bi bi-x-circle me-1"></i>Did Not Play</div>
+            <div className="gd-section dnp"><i className="bi bi-x-circle"></i>Did Not Play · {dnps.length}</div>
             {dnps.map((p, i) => <PlayerRow key={`d${i}`} p={p} />)}
           </>}
           {noGame.length > 0 && <>
-            <div className="gameday-section-hdr" style={{ color: 'var(--kl-text-secondary)' }}>
-              <i className="bi bi-calendar-x me-1"></i>No Game This Round
-            </div>
+            <div className="gd-section nogame"><i className="bi bi-calendar-x"></i>No Game · {noGame.length}</div>
             {noGame.map((p, i) => <PlayerRow key={`ng${i}`} p={p} />)}
           </>}
         </div>
@@ -578,79 +793,73 @@ export function GamedayPage() {
     <div>
       <style>{GAMEDAY_CSS}</style>
 
-      {/* Competition toggle */}
-      <div className="comp-toggle">
-        <span className="comp-toggle-btn" style={{ borderColor: 'rgba(88,166,255,.3)', color: '#58a6ff', background: 'rgba(88,166,255,.08)', borderRadius: '8px 0 0 8px' }}>Main</span>
-        <Link to={`/leagues/${leagueId}/reserve7s/gameday`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
+      {/* Comp toggle */}
+      <div className="gd-comp-toggle">
+        <span className="gd-comp-btn active">Main</span>
+        <Link to={`/leagues/${leagueId}/reserve7s/gameday`} className="gd-comp-btn">7s</Link>
       </div>
 
-      {/* Round header */}
-      <div className="gameday-round-header">
-        <div className="d-flex justify-content-between align-items-center">
-          <h2 className="gameday-round-title mb-0">{d.afl_round === 0 ? 'PRE-SEASON' : `ROUND ${d.afl_round}`}</h2>
-          <div className="d-flex align-items-center gap-2">
-            {gs === 'live' && <span className="gameday-state-badge badge-live"><i className="bi bi-broadcast me-1"></i><span className="live-pulse-dot"></span> LIVE</span>}
-            {gs === 'completed' && <span className="gameday-state-badge badge-final"><i className="bi bi-check-circle-fill me-1"></i>FINAL</span>}
-            {gs === 'upcoming' && <span className="gameday-state-badge badge-upcoming"><i className="bi bi-calendar-event me-1"></i>UPCOMING</span>}
-            <button className="btn btn-sm" onClick={handleRefresh} disabled={refreshing}
-              style={{ background: 'rgba(88,166,255,.1)', color: '#58a6ff', border: '1px solid rgba(88,166,255,.25)', fontSize: '.7rem', padding: '3px 10px', borderRadius: 6 }}>
-              {refreshing ? <span className="spinner-border spinner-border-sm" style={{ width: 12, height: 12 }}></span> : <i className="bi bi-arrow-clockwise"></i>}
-            </button>
+      {/* Round bar — title + TV clock + refresh */}
+      <div className="gd-round-bar">
+        <div>
+          <div className="gd-round-title">{d.afl_round === 0 ? 'PRE-SEASON' : `ROUND ${d.afl_round}`}</div>
+          {d.round_dates && <div className="gd-round-dates">{d.round_dates}</div>}
+        </div>
+        <div className="gd-round-state">
+          {(() => {
+            const c = deriveClock(d)
+            return (
+              <div className={`gd-clock ${c.tone}`}>
+                <span className="gd-clock-label">{c.label}</span>
+                <span className="gd-clock-sub">{c.sub}</span>
+              </div>
+            )
+          })()}
+          <button className="gd-refresh" onClick={handleRefresh} disabled={refreshing} title="Sync scores">
+            {refreshing ? <span className="spinner-border spinner-border-sm" style={{ width: 12, height: 12 }}></span> : <i className="bi bi-arrow-clockwise"></i>}
+          </button>
+        </div>
+      </div>
+
+      {/* AFL broadcast ticker — live first, then upcoming, then complete */}
+      {d.afl_games && d.afl_games.length > 0 && (() => {
+        const order = (s: string) => s === 'live' ? 0 : s === 'complete' ? 2 : 1
+        const sorted = [...d.afl_games].sort((a, b) => order(a.status) - order(b.status))
+        return (
+          <div className="gd-ticker d-none d-lg-flex">
+            {sorted.map(g => {
+              const tone = g.status === 'live' ? 'live' : g.status === 'complete' ? 'done' : 'upcoming'
+              const homeAbbr = d.team_abbr[g.home_team] || g.home_team.substring(0, 3).toUpperCase()
+              const awayAbbr = d.team_abbr[g.away_team] || g.away_team.substring(0, 3).toUpperCase()
+              return (
+                <Link key={g.game_id} to={`/leagues/${leagueId}/gameday/afl-game/${g.game_id}`} className={`gd-ticker-pill ${tone}`}>
+                  <span className="gd-ticker-dot"></span>
+                  <span className="gd-ticker-teams">{homeAbbr} v {awayAbbr}</span>
+                  {g.home_score != null && <span className="gd-ticker-score">{g.home_score}-{g.away_score}</span>}
+                  <span className="gd-ticker-tag">
+                    {g.status === 'live' ? 'LIVE' : g.status === 'complete' ? 'FT' : (g.scheduled_display || (g.scheduled_start ? g.scheduled_start.substring(11, 16) : 'TBC'))}
+                  </span>
+                </Link>
+              )
+            })}
           </div>
-        </div>
-        {d.round_dates && <div className="gameday-round-dates mt-1">{d.round_dates}</div>}
-      </div>
+        )
+      })()}
 
-      {/* AFL game pills */}
-      {d.afl_games && d.afl_games.length > 0 && (
-        <div className="gameday-afl-bar d-none d-lg-flex">
-          {d.afl_games.map(g => (
-            <Link key={g.game_id} to={`/leagues/${leagueId}/gameday/afl-game/${g.game_id}`} className="game-status-pill">
-              <span className="game-teams">{d.team_abbr[g.home_team] || g.home_team.substring(0, 3).toUpperCase()} v {d.team_abbr[g.away_team] || g.away_team.substring(0, 3).toUpperCase()}</span>
-              {g.status === 'live' && <span className="badge game-badge-live">LIVE</span>}
-              {g.status === 'complete' && <span className="badge game-badge-ft">FT</span>}
-              {g.status !== 'live' && g.status !== 'complete' && (
-                <span className="badge game-badge-sched">
-                  {g.scheduled_display || (g.scheduled_start ? g.scheduled_start.substring(11, 16) : 'TBC')}
-                </span>
-              )}
-              {g.home_score != null && <span className="game-afl-score">{g.home_score}-{g.away_score}</span>}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* KL mini bar */}
+      {/* KL fixtures mini bar */}
       {d.round_fixtures && d.round_fixtures.length > 0 && (
-        <div className="kl-mini-bar">
+        <div className="gd-mini-bar">
           {d.round_fixtures.map(f => {
-            // Prefer live-updated fixture detail (WebSocket score_update writes here),
-            // fall back to round_scores from the initial gameday payload.
             const cached = cachedFixtures[f.id]
             const hs = cached?.home_score ?? d.round_scores[String(f.home_team_id)]?.total_score ?? 0
             const as_ = cached?.away_score ?? d.round_scores[String(f.away_team_id)]?.total_score ?? 0
-            const isYours = d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id)
+            const isYours = !!(d.my_team && (f.home_team_id === d.my_team.id || f.away_team_id === d.my_team.id))
             const isActive = viewedFixtureId === f.id
+            const cls = ['gd-mini-pill', isActive && 'active', isYours && !isActive && 'yours'].filter(Boolean).join(' ')
             return (
-              <div key={f.id} className="kl-mini-pill"
-                onClick={() => viewMatchup(f.id)}
-                style={{
-                  cursor: 'pointer',
-                  position: 'relative',
-                  ...(isActive ? { borderColor: 'var(--kl-accent-blue)', boxShadow: '0 0 0 1px var(--kl-accent-blue)' } : {}),
-                }}>
-                {isYours && !isActive && (
-                  <span
-                    title="Your matchup"
-                    style={{
-                      position: 'absolute', top: 4, right: 4,
-                      width: 6, height: 6, borderRadius: '50%',
-                      background: 'var(--kl-accent-blue)',
-                    }}
-                  />
-                )}
-                <span className="kl-mini-teams">{f.home_team?.name} v {f.away_team?.name}</span>
-                {f.status !== 'scheduled' && <span className="kl-mini-score">{Math.round(hs)}-{Math.round(as_)}</span>}
+              <div key={f.id} className={cls} onClick={() => viewMatchup(f.id)}>
+                <span className="gd-mini-teams">{f.home_team?.name} v {f.away_team?.name}</span>
+                {f.status !== 'scheduled' && <span className="gd-mini-score">{Math.round(hs)}-{Math.round(as_)}</span>}
               </div>
             )
           })}
@@ -659,99 +868,134 @@ export function GamedayPage() {
 
       {/* BYE */}
       {d.is_bye ? (
-        <div className="gameday-hero hero-upcoming" style={{ textAlign: 'center' }}>
-          <span className="gameday-state-badge badge-bye" style={{ marginBottom: 12 }}><i className="bi bi-dash-circle me-1"></i>BYE</span>
-          <p style={{ color: 'var(--kl-text-primary)', fontSize: '.95rem', marginBottom: 6 }}>You have a bye this round.</p>
-          <p style={{ color: 'var(--kl-text-faint)', fontSize: '.85rem', marginBottom: 0 }}>Click any matchup below to view it.</p>
+        <div className="gd-bye">
+          <h4><i className="bi bi-dash-circle me-2"></i>Bye this round</h4>
+          <p>Click any matchup above to view it.</p>
         </div>
       ) : (
         <>
-          {/* Hero card */}
-          <div className={`gameday-hero hero-${gs}`}>
-            <div className="hero-teams-row">
-              <div className="hero-team-block hero-team-left">
-                {heroLeftLogo ? <img src={heroLeftLogo} alt="" className="hero-crest-img" />
-                  : <span className="hero-crest left-initial">{heroLeftName.substring(0, 2).toUpperCase()}</span>}
-                <div className="hero-team-detail">
-                  <div className="hero-team-name">{heroLeftName}</div>
-                  <div className="hero-team-meta">
-                    {(() => {
-                      const rs = heroLeftRs
-                      const total = rs?.players_total ?? countPlayed(heroLeftPlayers).total
-                      const played = rs?.players_played ?? countPlayed(heroLeftPlayers).played
-                      return total > 0 ? <span className="hero-players-count">{played}/{total} played</span> : null
-                    })()}
-                    <CapBadges players={heroLeftPlayers} rs={heroLeftRs} />
+          {/* Hero card — Stadium broadcast scoreboard */}
+          {(() => {
+            const leftAccent = accentFor(heroLeftTeamId)
+            const rightAccent = accentFor(heroRightTeamId)
+            const leftWinning = heroLeftScore > heroRightScore
+            const rightWinning = heroRightScore > heroLeftScore
+            const winnerAccent = leftWinning ? leftAccent : rightAccent
+            const heroStyle = {
+              ['--gd-left-rgb' as string]: leftAccent.rgb,
+              ['--gd-right-rgb' as string]: rightAccent.rgb,
+            } as React.CSSProperties
+            const leftCrestBg = `linear-gradient(145deg, rgba(${leftAccent.rgb},.55), rgba(${leftAccent.rgb},.95))`
+            const rightCrestBg = `linear-gradient(145deg, rgba(${rightAccent.rgb},.55), rgba(${rightAccent.rgb},.95))`
+            return (
+              <div className={`gd-hero ${gs}`} style={heroStyle}>
+                <div className="gd-hero-teams">
+                  <div className="gd-hero-team">
+                    {heroLeftLogo
+                      ? <img src={heroLeftLogo} alt="" className="gd-crest-img" />
+                      : <span className="gd-crest" style={{ background: leftCrestBg }}>{heroLeftName.substring(0, 2).toUpperCase()}</span>}
+                    <div className="gd-team-detail">
+                      <div className="gd-team-name">{heroLeftName}</div>
+                      <div className="gd-team-meta">
+                        {(() => {
+                          const rs = heroLeftRs
+                          const total = rs?.players_total ?? countPlayed(heroLeftPlayers).total
+                          const played = rs?.players_played ?? countPlayed(heroLeftPlayers).played
+                          return total > 0 ? <span className="gd-played">{played}/{total} played</span> : null
+                        })()}
+                        <CapBadges players={heroLeftPlayers} rs={heroLeftRs} />
+                      </div>
+                    </div>
+                  </div>
+                  <span className="gd-vs">VS</span>
+                  <div className="gd-hero-team right">
+                    {heroRightLogo
+                      ? <img src={heroRightLogo} alt="" className="gd-crest-img" />
+                      : <span className="gd-crest" style={{ background: rightCrestBg }}>{heroRightName.substring(0, 2).toUpperCase()}</span>}
+                    <div className="gd-team-detail">
+                      <div className="gd-team-name">{heroRightName}</div>
+                      <div className="gd-team-meta">
+                        <CapBadges players={heroRightPlayers} rs={heroRightRs} />
+                        {(() => {
+                          const rs = heroRightRs
+                          const total = rs?.players_total ?? countPlayed(heroRightPlayers).total
+                          const played = rs?.players_played ?? countPlayed(heroRightPlayers).played
+                          return total > 0 ? <span className="gd-played">{played}/{total} played</span> : null
+                        })()}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <span className="hero-vs">VS</span>
-              <div className="hero-team-block hero-team-right">
-                <div className="hero-team-detail" style={{ textAlign: 'right' }}>
-                  <div className="hero-team-name">{heroRightName}</div>
-                  <div className="hero-team-meta" style={{ justifyContent: 'flex-end' }}>
-                    <CapBadges players={heroRightPlayers} rs={heroRightRs} />
-                    {(() => {
-                      const rs = heroRightRs
-                      const total = rs?.players_total ?? countPlayed(heroRightPlayers).total
-                      const played = rs?.players_played ?? countPlayed(heroRightPlayers).played
-                      return total > 0 ? <span className="hero-players-count">{played}/{total} played</span> : null
-                    })()}
+
+                <div className="gd-hero-scores">
+                  <div className="gd-hero-score-col">
+                    <AnimatedNumber
+                      value={heroLeftScore}
+                      className={`gd-hero-score${leftWinning ? ' winning' : ''}${scoreFlash ? ' score-flash' : ''}`}
+                      style={leftWinning ? {
+                        ['--gd-side-accent' as string]: leftAccent.hex,
+                        ['--gd-side-rgb' as string]: leftAccent.rgb,
+                      } as React.CSSProperties : undefined}
+                    />
+                    {heroLeftCapBonus > 0 && <span className="gd-cap-bonus">+{Math.round(heroLeftCapBonus)} C</span>}
+                  </div>
+                  <span className="gd-hero-dash">&ndash;</span>
+                  <div className="gd-hero-score-col">
+                    <AnimatedNumber
+                      value={heroRightScore}
+                      className={`gd-hero-score${rightWinning ? ' winning' : ''}${scoreFlash ? ' score-flash' : ''}`}
+                      style={rightWinning ? {
+                        ['--gd-side-accent' as string]: rightAccent.hex,
+                        ['--gd-side-rgb' as string]: rightAccent.rgb,
+                      } as React.CSSProperties : undefined}
+                    />
+                    {heroRightCapBonus > 0 && <span className="gd-cap-bonus">+{Math.round(heroRightCapBonus)} C</span>}
                   </div>
                 </div>
-                {heroRightLogo ? <img src={heroRightLogo} alt="" className="hero-crest-img" />
-                  : <span className="hero-crest right-initial">{heroRightName.substring(0, 2).toUpperCase()}</span>}
-              </div>
-            </div>
 
-            <div className="hero-scores-area">
-              <div className="hero-score-col">
-                <AnimatedNumber value={heroLeftScore}
-                  className={`hero-big-score${heroLeftScore > heroRightScore ? ' score-winning' : ''}${scoreFlash ? ' score-flash' : ''}`} />
-                {heroLeftCapBonus > 0 && <span className="captain-bonus">+{Math.round(heroLeftCapBonus)} C</span>}
-              </div>
-              <span className="hero-score-dash">&ndash;</span>
-              <div className="hero-score-col">
-                <AnimatedNumber value={heroRightScore}
-                  className={`hero-big-score${heroRightScore > heroLeftScore ? ' score-winning' : ''}${scoreFlash ? ' score-flash' : ''}`} />
-                {heroRightCapBonus > 0 && <span className="captain-bonus">+{Math.round(heroRightCapBonus)} C</span>}
-              </div>
-            </div>
-
-            <div className="hero-footer">
-              <div className="hero-margin-chip">
-                {isViewingOwn && gs === 'completed' ? (
-                  heroLeftScore > heroRightScore ? <><i className="bi bi-trophy-fill"></i> WON BY {diff}</> :
-                  heroRightScore > heroLeftScore ? <>LOST BY {diff}</> : 'DRAW'
-                ) : isViewingOwn ? (
-                  heroLeftScore > heroRightScore ? <><i className="bi bi-caret-up-fill"></i> UP {diff}</> :
-                  heroRightScore > heroLeftScore ? <><i className="bi bi-caret-down-fill"></i> DOWN {diff}</> : 'TIED'
-                ) : (
-                  heroLeftScore > heroRightScore ? <>{heroLeftName} BY {diff}</> :
-                  heroRightScore > heroLeftScore ? <>{heroRightName} BY {diff}</> : 'DRAW'
-                )}
-              </div>
-              {heroProjLeft != null && heroProjRight != null && gs !== 'completed' && (
-                <div className="hero-proj-row">
-                  <span className="hero-proj-item">Proj <b>{Math.round(heroProjLeft)}</b>&ndash;<b>{Math.round(heroProjRight)}</b></span>
-                  <span className="hero-proj-sep"></span>
-                  <span className="hero-proj-item">Win <b>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b>{Math.round(heroWinRight || 0)}%</b></span>
+                <div className="gd-hero-footer">
+                  <div className={`gd-margin-chip${
+                    isViewingOwn && gs === 'completed' && leftWinning ? ' win'
+                    : isViewingOwn && gs === 'completed' && rightWinning ? ' loss'
+                    : isViewingOwn && leftWinning ? ' up'
+                    : isViewingOwn && rightWinning ? ' down'
+                    : ''
+                  }`}
+                    style={!isViewingOwn && (leftWinning || rightWinning) ? {
+                      color: winnerAccent.hex,
+                      borderColor: `rgba(${winnerAccent.rgb},.4)`,
+                      background: `rgba(${winnerAccent.rgb},.1)`,
+                    } : undefined}>
+                    {isViewingOwn && gs === 'completed' ? (
+                      leftWinning ? <><i className="bi bi-trophy-fill"></i> WON BY {diff}</> :
+                      rightWinning ? <>LOST BY {diff}</> : 'DRAW'
+                    ) : isViewingOwn ? (
+                      leftWinning ? <><i className="bi bi-caret-up-fill"></i> UP {diff}</> :
+                      rightWinning ? <><i className="bi bi-caret-down-fill"></i> DOWN {diff}</> : 'TIED'
+                    ) : (
+                      leftWinning ? <>{heroLeftName} BY {diff}</> :
+                      rightWinning ? <>{heroRightName} BY {diff}</> : 'DRAW'
+                    )}
+                  </div>
+                  {heroProjLeft != null && heroProjRight != null && gs !== 'completed' && (
+                    <div className="gd-proj-row">
+                      <span className="gd-proj-item">Proj <b>{Math.round(heroProjLeft)}</b>&ndash;<b>{Math.round(heroProjRight)}</b></span>
+                      <span className="gd-proj-sep"></span>
+                      <span className="gd-proj-item">Win <b>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b>{Math.round(heroWinRight || 0)}%</b></span>
+                    </div>
+                  )}
+                  {gs === 'upcoming' && d.first_bounce && (
+                    <div className="gd-first-bounce"><i className="bi bi-clock me-1"></i>First bounce {d.first_bounce}</div>
+                  )}
+                  {gs === 'completed' && d.fixture && (
+                    <Link to={`/leagues/${leagueId}/matchup/${d.fixture.id}`} className="gd-breakdown-link">
+                      <i className="bi bi-bar-chart-line"></i>Full Breakdown
+                    </Link>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {gs === 'upcoming' && d.first_bounce && (
-              <div className="hero-first-bounce"><i className="bi bi-clock me-1"></i>First bounce {d.first_bounce}</div>
-            )}
-
-            {gs === 'completed' && d.fixture && (
-              <div className="hero-breakdown-wrap">
-                <Link to={`/leagues/${leagueId}/matchup/${d.fixture.id}`} className="hero-breakdown-link">
-                  <i className="bi bi-bar-chart-line me-1"></i>Full Breakdown
-                </Link>
               </div>
-            )}
-          </div>
+            )
+          })()}
 
           {/* Mobile side-by-side view */}
           <div className="d-lg-none mt-3 gd-mob-vs">
@@ -820,10 +1064,10 @@ export function GamedayPage() {
           {/* Player cards - desktop */}
           <div className="row g-3 mt-2 d-none d-lg-flex">
             <div className="col-md-6">
-              <PlayerCard players={heroLeftPlayers} teamName={heroLeftName} score={heroLeftScore} side="left" />
+              <PlayerCard players={heroLeftPlayers} teamName={heroLeftName} score={heroLeftScore} />
             </div>
             <div className="col-md-6">
-              <PlayerCard players={heroRightPlayers} teamName={heroRightName} score={heroRightScore} side="right" />
+              <PlayerCard players={heroRightPlayers} teamName={heroRightName} score={heroRightScore} />
             </div>
           </div>
 
@@ -832,20 +1076,14 @@ export function GamedayPage() {
         </>
       )}
 
-      {/* Footer — live status + fixture link */}
-      <div className="mt-3 d-flex align-items-center justify-content-between" style={{ fontSize: '.75rem', color: 'var(--kl-text-faint)' }}>
+      {/* Footer */}
+      <div className="gd-foot">
         <span>
-          {gs === 'live' ? (
-            <><i className="bi bi-broadcast me-1" style={{ color: 'var(--kl-accent-green)' }}></i>Live updates via WebSocket</>
-          ) : gs === 'completed' ? (
-            'Final results'
-          ) : (
-            <>&nbsp;</>
-          )}
+          {gs === 'live' ? <><i className="bi bi-broadcast me-1" style={{ color: '#7dc99a' }}></i>Live · WebSocket sync</>
+            : gs === 'completed' ? 'Final results'
+            : <>&nbsp;</>}
         </span>
-        <Link to={`/leagues/${leagueId}/fixture`} style={{ color: 'var(--kl-text-secondary)', textDecoration: 'none', fontSize: '.7rem' }}>
-          Season Fixture &rarr;
-        </Link>
+        <Link to={`/leagues/${leagueId}/fixture`}>Season Fixture &rarr;</Link>
       </div>
 
       {/* All matchups grid — hidden (matching original template display:none) */}
