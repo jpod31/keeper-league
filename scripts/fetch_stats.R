@@ -44,13 +44,22 @@ data_dir <- get_data_dir()
 cat(sprintf("Fetching player stats for %d-%d\n", start_year, end_year))
 cat(sprintf("Data directory: %s\n\n", normalizePath(data_dir, mustWork = FALSE)))
 
+current_year <- as.integer(format(Sys.Date(), "%Y"))
+
 for (year in start_year:end_year) {
   csv_path <- file.path(data_dir, sprintf("player_stats_%d.csv", year))
 
-  # Skip if CSV already exists on disk
-  if (file.exists(csv_path)) {
+  # Skip if CSV already exists on disk — but only for COMPLETED seasons.
+  # The current season is still in progress so its CSV grows weekly;
+  # re-fetching every run is what we want, otherwise the on-disk file
+  # gets stuck at whatever round it was first written at (this caused
+  # the live 2026 file to cap at round 5 from a mid-April write).
+  if (file.exists(csv_path) && year != current_year) {
     cat(sprintf("[SKIP] %d - already on disk: %s\n", year, basename(csv_path)))
     next
+  }
+  if (file.exists(csv_path) && year == current_year) {
+    cat(sprintf("[REFETCH] %d - current season, refreshing in-progress data\n", year))
   }
 
   cat(sprintf("[FETCH] %d - trying footywire (has SC scores)... ", year))
