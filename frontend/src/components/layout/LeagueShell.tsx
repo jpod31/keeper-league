@@ -64,7 +64,27 @@ function LeagueShellInner() {
     setSelectorOpen(false)
   }, [pathname])
 
-  if (loading) return <Spinner text="Loading league..." />
+  // Render the chrome strip in ALL states (loading / error / loaded) so
+  // the nav bar's height is reserved from first paint — eliminates the
+  // "jolt" where the strip would appear ~200ms after the page mounted.
+  if (loading) {
+    return (
+      <>
+        <div className="league-nav d-none d-lg-block">
+          <div className="league-nav-inner kl-strip-loading">
+            <span className="kl-skel kl-skel-switch" />
+            <span className="kl-skel kl-skel-tab" style={{ width: 88 }} />
+            <span className="kl-skel kl-skel-tab" style={{ width: 92 }} />
+            <span className="kl-skel kl-skel-tab" style={{ width: 80 }} />
+            <span className="kl-skel kl-skel-tab" style={{ width: 80 }} />
+            <span className="kl-skel kl-skel-tab" style={{ width: 80 }} />
+            <span className="kl-skel kl-skel-tab" style={{ width: 80 }} />
+          </div>
+        </div>
+        <Spinner text="Loading league..." />
+      </>
+    )
+  }
   if (error || !league) return (
     <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
       <p className="text-danger">Failed to load league.</p>

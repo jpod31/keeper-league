@@ -2124,59 +2124,79 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
    League Tab Navigation
    ═══════════════════════════════════════════════ */
 .league-nav {
+  position: relative;
   margin: -1rem -0.75rem 1.5rem;
   padding: 0 0.75rem;
-  border-bottom: 1px solid var(--kl-bg-elevated);
-  background: var(--kl-bg-body);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.015), transparent),
+    var(--kl-bg-body);
+  /* Accent gradient line below the strip — anchors the strip to this
+     league's identity. Fades on both edges so it doesn't feel hard. */
+}
+.league-nav::after {
+  content: "";
+  position: absolute;
+  left: 16px; right: 16px; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(var(--lgs-rgb, 88,166,255), .55) 20%,
+    rgba(var(--lgs-rgb, 88,166,255), .55) 80%,
+    transparent);
+  opacity: .65;
+  pointer-events: none;
 }
 .league-nav-inner {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: 20px;            /* context shift between switcher group and tabs group */
+  min-height: 52px;     /* RESERVES the strip's height so loading state doesn't jolt */
+  padding: 6px 0;
 }
 
 /* League selector — modernised pill switcher */
 .league-selector {
   flex-shrink: 0;
-  padding: .5rem 0;
   position: relative;
+  display: inline-flex;     /* sits flush with tabs on a single 40px eyeline */
+  align-items: center;
 }
 
 .lg-switch {
   all: unset;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 12px 6px 6px;
+  gap: 8px;
+  height: 40px;                /* matches tab height — both elements share an eyeline */
+  padding: 0 12px 0 5px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(var(--lgs-rgb, 88,166,255), .08), rgba(13,17,23,.6));
-  border: 1px solid rgba(var(--lgs-rgb, 88,166,255), .28);
+  background: rgba(var(--lgs-rgb, 88,166,255), .06);
+  border: 1px solid rgba(var(--lgs-rgb, 88,166,255), .25);
   color: #f0f6fc;
   font-weight: 700;
   font-size: .82rem;
   cursor: pointer;
-  transition: border-color .15s ease, background .15s ease, transform .15s ease, box-shadow .15s ease;
-  box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px -16px rgba(var(--lgs-rgb, 88,166,255), .35);
+  transition: border-color .15s ease, background .15s ease;
+  box-sizing: border-box;
 }
 .lg-switch:hover {
-  border-color: rgba(var(--lgs-rgb, 88,166,255), .55);
-  background: linear-gradient(180deg, rgba(var(--lgs-rgb, 88,166,255), .14), rgba(13,17,23,.6));
-  transform: translateY(-1px);
+  border-color: rgba(var(--lgs-rgb, 88,166,255), .5);
+  background: rgba(var(--lgs-rgb, 88,166,255), .1);
 }
 .lg-switch.open {
-  border-color: rgba(var(--lgs-rgb, 88,166,255), .65);
-  box-shadow: 0 0 0 3px rgba(var(--lgs-rgb, 88,166,255), .12), 0 8px 24px -10px rgba(var(--lgs-rgb, 88,166,255), .45);
+  border-color: rgba(var(--lgs-rgb, 88,166,255), .6);
+  background: rgba(var(--lgs-rgb, 88,166,255), .12);
+  box-shadow: 0 0 0 2px rgba(var(--lgs-rgb, 88,166,255), .15);
 }
 .lg-switch-avatar {
-  width: 26px; height: 26px;
+  width: 30px; height: 30px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: .72rem; font-weight: 800;
+  font-size: .74rem; font-weight: 800;
   letter-spacing: .02em;
   color: #0d1117;
   background: linear-gradient(135deg, rgb(var(--lgs-rgb, 88,166,255)), color-mix(in srgb, rgb(var(--lgs-rgb, 88,166,255)) 60%, #ffffff));
-  box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 0 0 2px rgba(255,255,255,.04) inset;
-  flex: 0 0 26px;
+  flex: 0 0 30px;
 }
 .lg-switch-body {
   display: inline-flex;
@@ -2347,22 +2367,20 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   font-size: .85rem;
 }
 
-/* ── New filled-pill tabs (.kl-tabs) ──────────────────────────
-   No outer container, no animated indicator — each tab's active
-   state is the highlight (instant CSS transition). Accent colour
-   comes from the parent's --lgs-rgb CSS variable, so the tabs
-   take on the active league's identity (same colour as the
-   switcher pill avatar). Edge-fade mask only kicks in at narrow
-   widths where overflow is real. */
+/* ── League sub-tabs (.kl-tabs) ──────────────────────────────
+   Sit naturally to the right of the switcher; don't stretch. Each
+   tab is a calm rounded pill. The active tab fills with the league's
+   accent (--lgs-rgb) and gains a 2px accent underline that protrudes
+   below the strip's edge so it feels like a real "selected" state. */
 .kl-tabs {
   display: flex;
-  flex: 1;
-  min-width: 0;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  /* No flex: 1 — tabs hug their content; the strip uses justify naturally */
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-width: 0;          /* needed for ellipsis if anything ever overflows */
 }
 .kl-tabs::-webkit-scrollbar { display: none; }
 @media (max-width: 1080px) {
@@ -2377,37 +2395,71 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 9px 16px;
+  height: 40px;              /* matches switcher — both share an eyeline */
+  padding: 0 14px;
   border-radius: 999px;
   font-size: .8rem;
   font-weight: 600;
   letter-spacing: .01em;
-  color: #8b949e;
+  color: #9ba4af;
   text-decoration: none;
   white-space: nowrap;
   background: transparent;
   border: 1px solid transparent;
-  transition: background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+  box-sizing: border-box;
 }
 .kl-tab:hover {
-  color: #d8dee6;
-  background: rgba(255,255,255,.04);
+  color: #e6edf3;
+  background: rgba(255,255,255,.035);
   text-decoration: none;
 }
 .kl-tab i { font-size: .9rem; line-height: 1; }
 
+/* Active — accent fill + 2px accent line below the strip edge.
+   The under-line sits at the bottom of the strip (NOT under the pill)
+   so it reads as "this tab points to a chosen section", like a real
+   nav indicator. */
 .kl-tab.active {
   color: #ffffff;
   background:
-    linear-gradient(180deg, rgba(var(--lgs-rgb, 88,166,255), .22), rgba(var(--lgs-rgb, 88,166,255), .12)),
-    rgba(0,0,0,.2);
-  border-color: rgba(var(--lgs-rgb, 88,166,255), .55);
-  box-shadow:
-    0 0 0 1px rgba(var(--lgs-rgb, 88,166,255), .15) inset,
-    0 6px 18px -6px rgba(var(--lgs-rgb, 88,166,255), .55),
-    0 1px 0 rgba(255,255,255,.06) inset;
+    linear-gradient(180deg,
+      rgba(var(--lgs-rgb, 88,166,255), .18),
+      rgba(var(--lgs-rgb, 88,166,255), .08));
+  border-color: rgba(var(--lgs-rgb, 88,166,255), .35);
 }
 .kl-tab.active i { color: rgb(var(--lgs-rgb, 88,166,255)); }
+.kl-tab.active::after {
+  /* Down-pointing accent line on the strip's bottom edge */
+  content: "";
+  position: absolute;
+  left: 14px; right: 14px;
+  bottom: -10px;          /* lands on the strip's accent line */
+  height: 2px;
+  background: rgb(var(--lgs-rgb, 88,166,255));
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 8px 0 rgba(var(--lgs-rgb, 88,166,255), .6);
+}
+
+/* Loading skeleton (for the strip slot before data arrives) */
+.kl-strip-loading { /* same flex container as the loaded state */ }
+.kl-skel {
+  display: inline-block;
+  height: 40px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 100%);
+  background-size: 200% 100%;
+  animation: kl-skel-shimmer 1.4s ease-in-out infinite;
+}
+.kl-skel-switch { width: 170px; }
+.kl-skel-tab { height: 40px; }
+@keyframes kl-skel-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kl-skel { animation: none; }
+}
 
 /* Draft live → amber pulse dot */
 .kl-tab-pulse-dot {
