@@ -129,6 +129,24 @@ function SquadPageInner() {
     }
   }
 
+  // ── Hooks MUST be unconditional — declare these before any early
+  // returns. delistContext memoises the per-render-fresh Set + closure
+  // that was forcing FieldView (and every PlayerCard) to re-render
+  // each time SquadPage updated.
+  const onDelist = useCallback((pid: number, name: string) => {
+    setDelistTarget({ id: pid, name })
+  }, [])
+  const delistContext = useMemo(() => {
+    if (!data || !data.delist_is_open) return null
+    return {
+      canDelist: (data.max_delists == null) || (data.team_delist_count < data.max_delists),
+      used: data.team_delist_count,
+      max: data.max_delists,
+      alreadyDelistedIds: new Set(data.delisted_player_ids),
+      onDelist,
+    }
+  }, [data, onDelist])
+
   if (loading) return <Spinner />
   if (!data) {
     // Hook already retried once silently. Surface the real reason and
@@ -161,25 +179,6 @@ function SquadPageInner() {
   const rosterMap: Record<number, RosterEntry> = {}
   roster.forEach(r => { rosterMap[r.player_id] = r })
   const selectedSet = new Set(selected_player_ids)
-
-  // Stable callbacks/memoised context — without these, every render
-  // of SquadPage built a fresh Set and onDelist closure, which
-  // re-rendered FieldView and every PlayerCard underneath. With
-  // a 25+ player roster + complex per-card DOM, that was the source
-  // of the user's "clicks are really slow" report.
-  const onDelist = useCallback((pid: number, name: string) => {
-    setDelistTarget({ id: pid, name })
-  }, [])
-  const delistContext = useMemo(() => {
-    if (!data.delist_is_open) return null
-    return {
-      canDelist: (data.max_delists == null) || (data.team_delist_count < data.max_delists),
-      used: data.team_delist_count,
-      max: data.max_delists,
-      alreadyDelistedIds: new Set(data.delisted_player_ids),
-      onDelist,
-    }
-  }, [data.delist_is_open, data.max_delists, data.team_delist_count, data.delisted_player_ids, onDelist])
 
   // Summary stats
   let totalSc = 0, scCount = 0, totalAge = 0, ageCount = 0
