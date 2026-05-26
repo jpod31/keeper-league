@@ -1,17 +1,19 @@
 /* ── CSS Custom Properties ── */
 :root,
 [data-bs-theme="dark"] {
-  --kl-bg-body: #0d1117;
-  --kl-bg-card: #161b22;
-  --kl-bg-elevated: #21262d;
-  --kl-bg-hover: #1c2128;
-  --kl-border: #30363d;
-  --kl-border-light: #484f58;
-  --kl-text-primary: #d1d5db;
-  --kl-text-heading: #f0f3f6;
-  --kl-text-secondary: #8b949e;
-  --kl-text-muted: #6e7681;
-  --kl-text-faint: #484f58;
+  /* Cool, deep base — pushes the whole app toward blue/navy character
+     and gives more elevation contrast between layers. */
+  --kl-bg-body: #050912;          /* near-black with navy undertone */
+  --kl-bg-card: #0f1626;          /* visibly elevated above body */
+  --kl-bg-elevated: #1a2235;
+  --kl-bg-hover: #131a2b;
+  --kl-border: #28324a;
+  --kl-border-light: #3d4866;
+  --kl-text-primary: #dde4f1;     /* cooler bright */
+  --kl-text-heading: #f5f8ff;     /* near-white with cool tint */
+  --kl-text-secondary: #97a3ba;
+  --kl-text-muted: #6c7892;
+  --kl-text-faint: #4a5471;
   --kl-accent-blue: #58a6ff;
   --kl-accent-green: #3fb950;
   --kl-accent-red: #f85149;
@@ -2395,7 +2397,7 @@ body.has-league-rail main.container {
   max-width: none;
 }
 
-/* Rail container */
+/* Rail container — clearly elevated above the deep canvas */
 .kl-rail {
   position: fixed;
   left: 0;
@@ -2407,13 +2409,14 @@ body.has-league-rail main.container {
   flex-direction: column;
   padding: 12px 8px;
   background:
-    linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.2)),
-    rgba(9,11,16,.86);
-  border-right: 1px solid rgba(255,255,255,.06);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
+    linear-gradient(180deg, rgba(60,90,150,.04), rgba(0,0,0,.15)),
+    rgba(15,22,36,.92);
+  border-right: 1px solid rgba(110,130,180,.14);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
   transition: width .22s cubic-bezier(.2,.7,.2,1);
   overflow: hidden;
+  box-shadow: 1px 0 0 rgba(0,0,0,.4);
 }
 .kl-rail.expanded { width: var(--kl-rail-w-expanded); }
 

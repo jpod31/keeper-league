@@ -70,13 +70,16 @@ export function AppShell() {
         /* ── Glass sticky top bar ─────────────────────────────── */
         .kl-bar {
           position: sticky; top: 0; z-index: 1030;
-          /* Calm, single warm fade — no electric accents */
+          /* Deep navy ambient at top-centre + cool dark canvas. The
+             ambient gives the whole app a cool blue character without
+             being loud. */
           background:
-            linear-gradient(180deg, rgba(255,255,255,.02), transparent),
-            rgba(10,12,18,.78);
-          backdrop-filter: blur(14px) saturate(120%);
-          -webkit-backdrop-filter: blur(14px) saturate(120%);
-          border-bottom: 1px solid rgba(255,255,255,.06);
+            radial-gradient(900px 200px at 50% -40px, rgba(60,120,210,.16), transparent 60%),
+            linear-gradient(180deg, rgba(255,255,255,.025), transparent),
+            rgba(8,14,28,.82);
+          backdrop-filter: blur(16px) saturate(130%);
+          -webkit-backdrop-filter: blur(16px) saturate(130%);
+          border-bottom: 1px solid rgba(110,130,180,.12);
         }
         .kl-bar-league-slot {
           display: inline-flex;
