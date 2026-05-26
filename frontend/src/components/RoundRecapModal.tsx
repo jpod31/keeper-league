@@ -49,122 +49,355 @@ export function RoundRecapModal() {
 
   if (!visible || !recap) return null
 
-  const outcomeColor = recap.result?.outcome === 'win' ? '#3fb950'
-    : recap.result?.outcome === 'loss' ? '#f85149' : '#d29922'
-  const outcomeIcon = recap.result?.outcome === 'win' ? 'bi-trophy-fill'
-    : recap.result?.outcome === 'loss' ? 'bi-emoji-frown' : 'bi-dash-circle'
+  const outcome = recap.result?.outcome
+  const outcomeTone = outcome === 'win' ? 'win' : outcome === 'loss' ? 'loss' : 'draw'
+  const outcomeHeadline = recap.result
+    ? (outcome === 'win'
+        ? `WON BY ${recap.result.margin}`
+        : outcome === 'loss'
+          ? `LOST BY ${recap.result.margin}`
+          : 'DRAW')
+    : null
 
   return (
     <>
       <style>{`
-        @keyframes klRecapIn { 0% { opacity:0; transform:translateY(24px) scale(.96); } 100% { opacity:1; transform:none; } }
-        @keyframes klRecapGlowIn { 0% { opacity:0; } 100% { opacity:.5; } }
-        .kl-recap-overlay { position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.7); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; padding:20px; }
-        .kl-recap-panel { position:relative; max-width:520px; width:100%; background:linear-gradient(160deg, #161b22, #0d1117); border:1px solid #30363d; border-radius:16px; padding:0; overflow:hidden; box-shadow:0 20px 80px rgba(0,0,0,.6); animation:klRecapIn .5s cubic-bezier(.2,.8,.2,1); }
-        .kl-recap-glow { position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 30% 20%, ${outcomeColor}33, transparent 60%); animation:klRecapGlowIn 1s ease-in forwards; }
-        .kl-recap-header { position:relative; padding:24px 28px 16px; border-bottom:1px solid rgba(139,148,158,.08); }
-        .kl-recap-round-lbl { font-size:.68rem; color:#6e7681; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-        .kl-recap-title { font-size:1.6rem; font-weight:900; color:#e6edf3; margin:6px 0 0; letter-spacing:-.02em; }
-        .kl-recap-body { padding:20px 28px; display:flex; flex-direction:column; gap:14px; }
-        .kl-recap-row { display:flex; align-items:center; gap:12px; }
-        .kl-recap-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
-        .kl-recap-row-label { font-size:.7rem; color:#6e7681; text-transform:uppercase; letter-spacing:.5px; margin-bottom:2px; }
-        .kl-recap-row-value { font-size:.95rem; color:#e6edf3; font-weight:600; line-height:1.3; }
-        .kl-recap-row-sub { font-size:.74rem; color:#8b949e; margin-top:1px; }
-        .kl-recap-footer { padding:14px 28px 22px; display:flex; justify-content:flex-end; gap:10px; }
-        .kl-recap-btn { padding:8px 20px; border-radius:8px; border:1px solid #30363d; background:transparent; color:#c9d1d9; font-size:.78rem; font-weight:600; cursor:pointer; transition:all .15s; }
-        .kl-recap-btn:hover { background:#21262d; color:#fff; }
-        .kl-recap-btn-primary { background:#58a6ff; color:#0d1117; border-color:#58a6ff; }
-        .kl-recap-btn-primary:hover { background:#79b8ff; color:#0d1117; }
+        @keyframes klRecapIn { 0% { opacity: 0; transform: translateY(24px) scale(.96); } 100% { opacity: 1; transform: none; } }
+
+        .kl-recap-overlay {
+          position: fixed; inset: 0; z-index: 10000;
+          background: rgba(5,9,18,.78);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          display: flex; align-items: center; justify-content: center;
+          padding: 20px;
+        }
+        .kl-recap-panel {
+          position: relative;
+          max-width: 540px;
+          width: 100%;
+          background: #0f1626;
+          border: 1px solid rgba(110,130,180,.22);
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 24px 80px rgba(0,0,0,.7);
+          animation: klRecapIn .5s cubic-bezier(.2,.8,.2,1);
+        }
+        /* Outcome-tinted top stripe */
+        .kl-recap-panel::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 3px;
+          z-index: 2;
+        }
+        .kl-recap-panel.win::before { background: linear-gradient(90deg, rgba(61,140,99,0), rgba(109,179,138,.9), rgba(61,140,99,0)); }
+        .kl-recap-panel.loss::before { background: linear-gradient(90deg, rgba(184,90,74,0), rgba(224,122,108,.9), rgba(184,90,74,0)); }
+        .kl-recap-panel.draw::before { background: linear-gradient(90deg, rgba(194,147,47,0), rgba(240,210,122,.9), rgba(194,147,47,0)); }
+
+        .kl-recap-header {
+          position: relative;
+          padding: 22px 26px 18px;
+          border-bottom: 1px solid rgba(110,130,180,.1);
+        }
+        .kl-recap-round-lbl {
+          font-size: .58rem;
+          color: #6c7892;
+          text-transform: uppercase;
+          letter-spacing: .22em;
+          font-weight: 800;
+        }
+        .kl-recap-title {
+          font-size: 1.5rem;
+          font-weight: 800;
+          color: #f5f8ff;
+          margin: 4px 0 0;
+          letter-spacing: -.015em;
+          line-height: 1.15;
+        }
+
+        /* Headline outcome strip */
+        .kl-recap-headline {
+          padding: 18px 26px 16px;
+          text-align: center;
+          border-bottom: 1px solid rgba(110,130,180,.08);
+        }
+        .kl-recap-outcome {
+          display: inline-block;
+          font-size: 1.7rem;
+          font-weight: 900;
+          letter-spacing: .04em;
+          line-height: 1;
+          font-variant-numeric: tabular-nums;
+          font-feature-settings: "tnum" 1, "zero" 0;
+        }
+        .kl-recap-outcome.win { color: #7dc99a; text-shadow: 0 0 24px rgba(61,140,99,.45); }
+        .kl-recap-outcome.loss { color: #e07a6c; text-shadow: 0 0 24px rgba(184,90,74,.45); }
+        .kl-recap-outcome.draw { color: #f0d27a; text-shadow: 0 0 24px rgba(194,147,47,.45); }
+        .kl-recap-score {
+          margin-top: 8px;
+          font-size: .82rem;
+          color: #97a3ba;
+          font-variant-numeric: tabular-nums;
+          font-feature-settings: "tnum" 1, "zero" 0;
+        }
+        .kl-recap-score b { color: #dde4f1; font-weight: 700; }
+
+        /* MVP hero card */
+        .kl-recap-mvp {
+          margin: 18px 22px 14px;
+          padding: 16px 18px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, rgba(194,147,47,.18), rgba(194,147,47,.04));
+          border: 1px solid rgba(194,147,47,.4);
+          box-shadow: 0 0 28px -8px rgba(194,147,47,.35);
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+        .kl-recap-mvp-icon {
+          width: 52px; height: 52px;
+          border-radius: 12px;
+          background: rgba(194,147,47,.22);
+          border: 1px solid rgba(240,210,122,.48);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 1.4rem;
+          color: #f0d27a;
+          flex-shrink: 0;
+        }
+        .kl-recap-mvp-body { flex: 1; min-width: 0; }
+        .kl-recap-mvp-label {
+          font-size: .54rem;
+          color: #c2932f;
+          text-transform: uppercase;
+          letter-spacing: .18em;
+          font-weight: 800;
+        }
+        .kl-recap-mvp-name {
+          font-size: 1.1rem;
+          font-weight: 800;
+          color: #f5f8ff;
+          margin-top: 4px;
+          letter-spacing: -.005em;
+          line-height: 1.15;
+        }
+        .kl-recap-mvp-sub {
+          font-size: .72rem;
+          color: #97a3ba;
+          margin-top: 2px;
+        }
+        .kl-recap-mvp-cap {
+          font-size: .54rem;
+          padding: 1px 6px;
+          margin-left: 8px;
+          background: rgba(194,147,47,.24);
+          color: #f0d27a;
+          border: 1px solid rgba(194,147,47,.45);
+          border-radius: 3px;
+          font-weight: 800;
+          letter-spacing: .08em;
+          vertical-align: middle;
+        }
+        .kl-recap-mvp-score {
+          font-size: 2.2rem;
+          font-weight: 900;
+          color: #f0d27a;
+          font-variant-numeric: tabular-nums;
+          font-feature-settings: "tnum" 1, "zero" 0;
+          letter-spacing: -.03em;
+          line-height: 1;
+          text-shadow: 0 0 20px rgba(194,147,47,.4);
+          flex-shrink: 0;
+        }
+
+        /* Secondary rows */
+        .kl-recap-rows {
+          padding: 4px 22px 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .kl-recap-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 9px 12px;
+          border-radius: 8px;
+          background: rgba(20,28,45,.5);
+          border: 1px solid rgba(110,130,180,.12);
+        }
+        .kl-recap-row-icon {
+          width: 30px; height: 30px;
+          border-radius: 7px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: .85rem;
+          flex-shrink: 0;
+        }
+        .kl-recap-row-icon.bust { background: rgba(184,90,74,.14); color: #e07a6c; border: 1px solid rgba(184,90,74,.32); }
+        .kl-recap-row-icon.top { background: rgba(58,125,196,.14); color: #82b3e4; border: 1px solid rgba(58,125,196,.32); }
+        .kl-recap-row-icon.blowout { background: rgba(138,109,184,.14); color: #b39ed4; border: 1px solid rgba(138,109,184,.32); }
+        .kl-recap-row-body { flex: 1; min-width: 0; }
+        .kl-recap-row-label {
+          font-size: .54rem;
+          color: #6c7892;
+          text-transform: uppercase;
+          letter-spacing: .14em;
+          font-weight: 800;
+        }
+        .kl-recap-row-value {
+          font-size: .82rem;
+          color: #dde4f1;
+          font-weight: 600;
+          margin-top: 2px;
+          line-height: 1.25;
+          word-break: break-word;
+        }
+        .kl-recap-row-sub {
+          font-size: .66rem;
+          color: #6c7892;
+          margin-top: 1px;
+        }
+        .kl-recap-row-chip {
+          font-size: .82rem;
+          font-weight: 800;
+          color: #f0f4fc;
+          font-variant-numeric: tabular-nums;
+          font-feature-settings: "tnum" 1, "zero" 0;
+          padding: 4px 10px;
+          border-radius: 5px;
+          background: rgba(110,130,180,.14);
+          border: 1px solid rgba(110,130,180,.2);
+          margin-left: 8px;
+          flex-shrink: 0;
+        }
+        .kl-recap-row-chip.bust { color: #e07a6c; background: rgba(184,90,74,.14); border-color: rgba(184,90,74,.3); }
+        .kl-recap-row-chip.top { color: #82b3e4; background: rgba(58,125,196,.14); border-color: rgba(58,125,196,.3); }
+        .kl-recap-row-chip.blowout { color: #b39ed4; background: rgba(138,109,184,.14); border-color: rgba(138,109,184,.3); }
+
+        /* Footer */
+        .kl-recap-footer {
+          padding: 12px 22px 18px;
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          border-top: 1px solid rgba(110,130,180,.08);
+        }
+        .kl-recap-btn {
+          padding: 7px 18px;
+          border-radius: 8px;
+          border: 1px solid rgba(110,130,180,.22);
+          background: rgba(20,28,45,.5);
+          color: #b6c0d3;
+          font-size: .76rem;
+          font-weight: 700;
+          letter-spacing: .04em;
+          cursor: pointer;
+          transition: background .15s, color .15s, border-color .15s;
+        }
+        .kl-recap-btn:hover { background: rgba(28,38,58,.85); color: #f0f4fc; border-color: rgba(110,130,180,.32); }
+        .kl-recap-btn.primary {
+          background: rgba(58,125,196,.18);
+          color: #a8c8ed;
+          border-color: rgba(58,125,196,.45);
+        }
+        .kl-recap-btn.primary:hover { background: rgba(58,125,196,.3); color: #fff; border-color: rgba(58,125,196,.6); }
+
+        @media (max-width: 600px) {
+          .kl-recap-panel { border-radius: 14px; }
+          .kl-recap-header { padding: 18px 18px 14px; }
+          .kl-recap-title { font-size: 1.25rem; }
+          .kl-recap-headline { padding: 14px 18px 12px; }
+          .kl-recap-outcome { font-size: 1.45rem; }
+          .kl-recap-mvp { margin: 14px 14px 10px; padding: 14px; gap: 10px; }
+          .kl-recap-mvp-icon { width: 44px; height: 44px; font-size: 1.1rem; }
+          .kl-recap-mvp-name { font-size: 1rem; }
+          .kl-recap-mvp-score { font-size: 1.8rem; }
+          .kl-recap-rows { padding: 4px 14px 14px; }
+          .kl-recap-row { padding: 8px 10px; gap: 10px; }
+          .kl-recap-footer { padding: 12px 16px 16px; }
+        }
       `}</style>
+
       <div className="kl-recap-overlay" onClick={dismiss}>
-        <div className="kl-recap-panel" onClick={e => e.stopPropagation()}>
-          <div className="kl-recap-glow" />
+        <div className={`kl-recap-panel ${outcomeTone}`} onClick={e => e.stopPropagation()}>
           <div className="kl-recap-header">
-            <div className="kl-recap-round-lbl">Round {recap.recap_round} Recap</div>
+            <div className="kl-recap-round-lbl">Round {recap.recap_round} · Recap</div>
             <h2 className="kl-recap-title">{recap.team_name}</h2>
           </div>
 
-          <div className="kl-recap-body">
-            {recap.result && (
-              <div className="kl-recap-row">
-                <div className="kl-recap-icon" style={{ background: `${outcomeColor}22`, color: outcomeColor }}>
-                  <i className={`bi ${outcomeIcon}`}></i>
-                </div>
-                <div>
-                  <div className="kl-recap-row-label">Result</div>
-                  <div className="kl-recap-row-value" style={{ color: outcomeColor }}>
-                    {recap.result.outcome.toUpperCase()} — {recap.result.my_score} to {recap.result.opp_score}
-                  </div>
-                  <div className="kl-recap-row-sub">vs {recap.result.opp_name} · margin {recap.result.margin}</div>
-                </div>
+          {recap.result && (
+            <div className="kl-recap-headline">
+              <span className={`kl-recap-outcome ${outcomeTone}`}>{outcomeHeadline}</span>
+              <div className="kl-recap-score">
+                <b>{recap.result.my_score}</b> – <b>{recap.result.opp_score}</b> · vs {recap.result.opp_name}
               </div>
-            )}
+            </div>
+          )}
 
-            {recap.mvp && (
-              <div className="kl-recap-row">
-                <div className="kl-recap-icon" style={{ background: 'rgba(210,153,34,.15)', color: '#d29922' }}>
-                  <i className="bi bi-star-fill"></i>
-                </div>
-                <div>
-                  <div className="kl-recap-row-label">MVP</div>
-                  <div className="kl-recap-row-value">
-                    {recap.mvp.name} <span style={{ color: '#d29922' }}>{recap.mvp.score}</span>
-                    {recap.mvp.is_captain && <span style={{ fontSize: '.6rem', marginLeft: 6, color: '#d29922', fontWeight: 800 }}>(C)</span>}
-                  </div>
-                  <div className="kl-recap-row-sub">{recap.mvp.afl_team}</div>
-                </div>
+          {recap.mvp && (
+            <div className="kl-recap-mvp">
+              <div className="kl-recap-mvp-icon">
+                <i className="bi bi-star-fill"></i>
               </div>
-            )}
+              <div className="kl-recap-mvp-body">
+                <div className="kl-recap-mvp-label">Your MVP</div>
+                <div className="kl-recap-mvp-name">
+                  {recap.mvp.name}
+                  {recap.mvp.is_captain && <span className="kl-recap-mvp-cap">C</span>}
+                </div>
+                <div className="kl-recap-mvp-sub">{recap.mvp.afl_team}</div>
+              </div>
+              <div className="kl-recap-mvp-score">{recap.mvp.score}</div>
+            </div>
+          )}
 
-            {recap.bust && (
-              <div className="kl-recap-row">
-                <div className="kl-recap-icon" style={{ background: 'rgba(248,81,73,.12)', color: '#f85149' }}>
-                  <i className="bi bi-emoji-dizzy"></i>
-                </div>
-                <div>
-                  <div className="kl-recap-row-label">Bust</div>
-                  <div className="kl-recap-row-value">
-                    {recap.bust.name} <span style={{ color: '#f85149' }}>{recap.bust.score}</span>
+          {(recap.bust || recap.best_team || recap.biggest_margin) && (
+            <div className="kl-recap-rows">
+              {recap.bust && (
+                <div className="kl-recap-row">
+                  <div className="kl-recap-row-icon bust">
+                    <i className="bi bi-emoji-dizzy"></i>
                   </div>
-                  <div className="kl-recap-row-sub">{recap.bust.afl_team}</div>
-                </div>
-              </div>
-            )}
-
-            {recap.best_team && (
-              <div className="kl-recap-row">
-                <div className="kl-recap-icon" style={{ background: 'rgba(88,166,255,.15)', color: '#58a6ff' }}>
-                  <i className="bi bi-trophy"></i>
-                </div>
-                <div>
-                  <div className="kl-recap-row-label">League top score</div>
-                  <div className="kl-recap-row-value">
-                    {recap.best_team.name} <span style={{ color: '#58a6ff' }}>{recap.best_team.score}</span>
+                  <div className="kl-recap-row-body">
+                    <div className="kl-recap-row-label">Bust</div>
+                    <div className="kl-recap-row-value">{recap.bust.name}</div>
+                    <div className="kl-recap-row-sub">{recap.bust.afl_team}</div>
                   </div>
+                  <span className="kl-recap-row-chip bust">{recap.bust.score}</span>
                 </div>
-              </div>
-            )}
-
-            {recap.biggest_margin && (
-              <div className="kl-recap-row">
-                <div className="kl-recap-icon" style={{ background: 'rgba(188,140,255,.15)', color: '#bc8cff' }}>
-                  <i className="bi bi-arrows-expand"></i>
-                </div>
-                <div>
-                  <div className="kl-recap-row-label">Biggest blowout</div>
-                  <div className="kl-recap-row-value">
-                    {recap.biggest_margin.home} {recap.biggest_margin.home_score} — {recap.biggest_margin.away_score} {recap.biggest_margin.away}
+              )}
+              {recap.best_team && (
+                <div className="kl-recap-row">
+                  <div className="kl-recap-row-icon top">
+                    <i className="bi bi-trophy"></i>
                   </div>
-                  <div className="kl-recap-row-sub">margin {recap.biggest_margin.margin}</div>
+                  <div className="kl-recap-row-body">
+                    <div className="kl-recap-row-label">League top score</div>
+                    <div className="kl-recap-row-value">{recap.best_team.name}</div>
+                  </div>
+                  <span className="kl-recap-row-chip top">{recap.best_team.score}</span>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+              {recap.biggest_margin && (
+                <div className="kl-recap-row">
+                  <div className="kl-recap-row-icon blowout">
+                    <i className="bi bi-arrows-expand"></i>
+                  </div>
+                  <div className="kl-recap-row-body">
+                    <div className="kl-recap-row-label">Biggest blowout</div>
+                    <div className="kl-recap-row-value">
+                      {recap.biggest_margin.home} {recap.biggest_margin.home_score} – {recap.biggest_margin.away_score} {recap.biggest_margin.away}
+                    </div>
+                  </div>
+                  <span className="kl-recap-row-chip blowout">+{recap.biggest_margin.margin}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="kl-recap-footer">
             <button className="kl-recap-btn" onClick={dismiss}>Skip</button>
-            <button className="kl-recap-btn kl-recap-btn-primary" onClick={dismiss}>Got it</button>
+            <button className="kl-recap-btn primary" onClick={dismiss}>Got it</button>
           </div>
         </div>
       </div>

@@ -109,15 +109,38 @@ highlighted with accent gradient bg.
   with tone-coloured left stripes + counts.
 - Slashed-zero suppressed everywhere via font-feature-settings.
 
-### ☐ 9. Draft Room
-War-room layout: huge countdown timer top-centre with pulse glow, current-pick
-spotlight, recent-picks ticker scrolling underneath, available-players grid
-with trading-card-style cards (hover tilt, click expand).
+### ☑ 9. Draft Room
+**Shipped.** Render-layer-only repaint; sockets/timer/WS untouched.
+- Pick banner: 52×52 badge, 2.4rem timer (rust pulse ≤10s),
+  sapphire "Your Pick" pill (was amber), forest tint on complete.
+- Available players table: Ladder-style sortable headers, shared
+  DEF/MID/RUC/FWD position-chip palette, rating/potential/draft-
+  score now tier chips (gold/sapphire/amethyst/rust), sapphire
+  row hover, glass filter inputs.
+- Position-need pills: forest met / ochre short / rust blocked /
+  sapphire NM.
+- Right column: pick history with sapphire highlight on user's
+  picks, your-team grouped by position with tone-coloured section
+  headers, chat author palette swapped to jewel tones.
+- Values panel: custom slider track with sapphire thumb.
+- Pre-draft event card: tri-tone gradient strip + big tabular
+  countdown.
+- NOT touched: MockDraftPage (separate route, still on legacy).
 
-### ☐ 10. Round Recap modal
-Full overlay match-centre: player-of-the-week hero card, "biggest move"
-call-outs (biggest score / margin / surprise / dud), shareable result image,
-swipe-down dismiss on mobile.
+### ☑ 10. Round Recap modal
+**Shipped.** Auto-fires once per completed round (localStorage-gated).
+- Stadium repaint: win=forest, loss=rust, draw=ochre. Outcome-tinted
+  top stripe + radial glow tuned to result.
+- New headline strip "WON BY 14 / LOST BY 23 / DRAW" in bold caps
+  with tone-coloured glow. Score line + opponent name underneath.
+- MVP promoted to hero card — gold gradient bg, 52×52 star icon,
+  big 2.2rem tabular score, captain pill inline.
+- Bust / League top / Biggest blowout collapsed into compact rows
+  with tone-coloured icon backdrops + score chips (rust /
+  sapphire / amethyst).
+- Footer buttons restyled (sapphire primary, neutral skip).
+- Out of scope (kept on backlog): shareable result image (canvas /
+  server render), swipe-down dismiss on mobile.
 
 ---
 
