@@ -239,16 +239,39 @@ def _normalise_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# In-memory cache: {year: (mtime, normalised_df_or_None)}. CSVs are
+# rewritten by ingestion jobs occasionally; we re-load if mtime changes
+# so a refresh doesn't require a process restart. Keyed by year only —
+# 13 entries max, ~tens of MB total. Each player_detail page call used
+# to re-read all 13 from disk + re-run pandas normalisation, costing
+# ~1s; caching drops that to <1ms after the first hit.
+_year_csv_cache: Dict[int, tuple] = {}
+
+
 def _load_year_csv(year: int) -> Optional[pd.DataFrame]:
-    """Load a single year CSV and normalise columns."""
+    """Load a single year CSV and normalise columns (in-memory cached)."""
     path = os.path.join(DATA_DIR, f"player_stats_{year}.csv")
     if not os.path.exists(path):
+        _year_csv_cache.pop(year, None)
         return None
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = 0
+    cached = _year_csv_cache.get(year)
+    if cached and cached[0] == mtime:
+        return cached[1]
     df = pd.read_csv(path)
     df = _normalise_columns(df)
     if "player_name" not in df.columns:
+        _year_csv_cache[year] = (mtime, None)
         return None
     df["year"] = year
+    # Pre-lowercase player_name once so per-player filters can be
+    # vectorised lookups instead of re-lowercasing the whole column
+    # on every call.
+    df["_player_name_lower"] = df["player_name"].astype(str).str.lower()
+    _year_csv_cache[year] = (mtime, df)
     return df
 
 
@@ -294,12 +317,13 @@ def load_player_detailed_stats(player_name: str) -> dict:
     """
     all_frames: List[pd.DataFrame] = []
 
+    needle = player_name.lower()
     for year in range(2013, CURRENT_YEAR + 1):
         df = _load_year_csv(year)
         if df is None:
             continue
-        # Filter to this player
-        player_df = df[df["player_name"].str.lower() == player_name.lower()]
+        # Filter to this player using the precomputed lowercase column
+        player_df = df[df["_player_name_lower"] == needle]
         if player_df.empty:
             continue
         all_frames.append(player_df)
@@ -481,6 +505,7 @@ def load_player_sc_history_fitzroy(player_name: str) -> dict:
     yearly_averages = []
     current_rounds = []
 
+    needle = player_name.lower()
     for year in SC_HISTORY_YEARS:
         df = _load_year_csv(year)
         if df is None:
@@ -488,7 +513,7 @@ def load_player_sc_history_fitzroy(player_name: str) -> dict:
         if "supercoach_score" not in df.columns:
             continue
 
-        pdata = df[df["player_name"].str.lower() == player_name.lower()]
+        pdata = df[df["_player_name_lower"] == needle]
         if pdata.empty:
             continue
 

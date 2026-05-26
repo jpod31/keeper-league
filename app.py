@@ -651,18 +651,41 @@ def create_app():
 
     # ── Helpers ──────────────────────────────────────────────────────
 
+    # Process-local cache for ranked players. _get_ranked_players is
+    # called on every /player/<name> hit and rank_players costs ~0.3s
+    # for ~800 players. Output is keyed on (player_count, max_updated_at)
+    # so any DB write to AflPlayer invalidates automatically without
+    # needing an explicit invalidation hook.
+    _ranked_cache = {"key": None, "players": None}
+
     def _get_ranked_players():
-        from models.database import AflPlayer
+        from models.database import AflPlayer, db as _db
         from models.player import orm_to_player
+        from sqlalchemy import func as _sa_func
+        # Cheap key: row count + max updated_at. Both cost <1ms in SQLite.
+        try:
+            row = _db.session.query(
+                _sa_func.count(AflPlayer.id),
+                _sa_func.max(AflPlayer.updated_at) if hasattr(AflPlayer, "updated_at") else _sa_func.max(AflPlayer.id),
+            ).first()
+            cache_key = (row[0], row[1])
+        except Exception:
+            cache_key = None
+        if cache_key and _ranked_cache["key"] == cache_key and _ranked_cache["players"] is not None:
+            return _ranked_cache["players"]
+
         afl_players = AflPlayer.query.all()
         if afl_players:
             players = [orm_to_player(ap) for ap in afl_players]
             rank_players(players, config.DRAFT_WEIGHTS)
-            return players
-        # Fallback to CSV if DB is empty
-        players = load_players_csv()
-        if players:
-            rank_players(players, config.DRAFT_WEIGHTS)
+        else:
+            # Fallback to CSV if DB is empty
+            players = load_players_csv()
+            if players:
+                rank_players(players, config.DRAFT_WEIGHTS)
+        if cache_key:
+            _ranked_cache["key"] = cache_key
+            _ranked_cache["players"] = players
         return players
 
     # ── Public routes (no login required) ────────────────────────────
