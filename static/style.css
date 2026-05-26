@@ -2374,6 +2374,177 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   TOASTS — stacked glass cards in the bottom-right (bottom-centre on
+   mobile). Tone-coloured icon, optional title + message, ✕ to dismiss,
+   thin progress bar drains over the duration.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.kl-toasts {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;        /* let clicks pass through gaps */
+  max-width: 380px;
+}
+.kl-toasts > * { pointer-events: auto; }
+
+.kl-toast {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 14px 14px;
+  min-width: 280px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.025), transparent),
+    rgba(12,18,32,.92);
+  border: 1px solid var(--kl-toast-edge, rgba(110,130,180,.25));
+  box-shadow: 0 18px 40px -14px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02) inset;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  color: #dde4f1;
+  overflow: hidden;
+  transition: transform .14s ease, box-shadow .14s ease;
+}
+.kl-toast.clickable { cursor: pointer; }
+.kl-toast.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 50px -16px rgba(0,0,0,.7), 0 0 0 1px var(--kl-toast-edge-hover, rgba(110,130,180,.45)) inset;
+}
+
+/* Tone-coloured icon circles + accent edges. Pulled from the jewel-tone
+   palette so toasts feel like one product with notifications + rail. */
+.kl-toast-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex: 0 0 36px;
+  border: 1px solid;
+  background: var(--kl-toast-icon-bg, rgba(110,130,180,.12));
+  border-color: var(--kl-toast-icon-border, rgba(110,130,180,.34));
+  color: var(--kl-toast-icon-color, #97a3ba);
+}
+
+.kl-toast-success {
+  --kl-toast-edge: rgba(61,140,99,.4);
+  --kl-toast-edge-hover: rgba(61,140,99,.6);
+  --kl-toast-icon-bg: rgba(61,140,99,.14);
+  --kl-toast-icon-border: rgba(61,140,99,.4);
+  --kl-toast-icon-color: #6db38a;
+  --kl-toast-progress: #3d8c63;
+}
+.kl-toast-error {
+  --kl-toast-edge: rgba(184,90,74,.4);
+  --kl-toast-edge-hover: rgba(184,90,74,.65);
+  --kl-toast-icon-bg: rgba(184,90,74,.14);
+  --kl-toast-icon-border: rgba(184,90,74,.4);
+  --kl-toast-icon-color: #d68a7e;
+  --kl-toast-progress: #b85a4a;
+}
+.kl-toast-info {
+  --kl-toast-edge: rgba(58,125,196,.4);
+  --kl-toast-edge-hover: rgba(58,125,196,.6);
+  --kl-toast-icon-bg: rgba(58,125,196,.14);
+  --kl-toast-icon-border: rgba(58,125,196,.4);
+  --kl-toast-icon-color: #82b3e4;
+  --kl-toast-progress: #3a7dc4;
+}
+.kl-toast-warning {
+  --kl-toast-edge: rgba(194,147,47,.45);
+  --kl-toast-edge-hover: rgba(194,147,47,.65);
+  --kl-toast-icon-bg: rgba(194,147,47,.14);
+  --kl-toast-icon-border: rgba(194,147,47,.4);
+  --kl-toast-icon-color: #e0b85d;
+  --kl-toast-progress: #c2932f;
+}
+
+.kl-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.kl-toast-title {
+  font-size: .82rem;
+  font-weight: 700;
+  color: #f5f8ff;
+  line-height: 1.25;
+}
+.kl-toast-msg {
+  font-size: .82rem;
+  font-weight: 500;
+  color: #dde4f1;
+  line-height: 1.35;
+  /* Clamp to 3 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.kl-toast-title + .kl-toast-msg {
+  color: #b6c0d3;
+  font-weight: 500;
+  font-size: .76rem;
+}
+
+.kl-toast-close {
+  background: transparent;
+  border: 0;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  color: #6c7892;
+  cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+  flex: 0 0 26px;
+  align-self: flex-start;
+}
+.kl-toast-close i { font-size: .72rem; }
+.kl-toast-close:hover {
+  background: rgba(255,255,255,.06);
+  color: #f5f8ff;
+}
+
+/* Progress bar */
+.kl-toast-progress {
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--kl-toast-progress, #97a3ba);
+  transform-origin: left center;
+  animation: kl-toast-drain linear forwards;
+  border-radius: 0 0 14px 14px;
+  opacity: .8;
+}
+@keyframes kl-toast-drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Mobile — bottom-centre, clamped width */
+@media (max-width: 600px) {
+  .kl-toasts {
+    left: 16px; right: 16px;
+    bottom: 16px;
+    max-width: none;
+    align-items: stretch;
+  }
+  .kl-toast { min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kl-toast-progress { animation: none; transform: scaleX(.5); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    NOTIFICATIONS DRAWER — slide-in glass panel from the right edge.
    On mobile (≤768px) slides up from the bottom as a sheet instead.
    ═══════════════════════════════════════════════════════════════════ */

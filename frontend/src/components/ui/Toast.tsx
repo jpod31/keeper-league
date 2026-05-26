@@ -1,39 +1,123 @@
 import { createContext, useContext, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
-type ToastType = 'success' | 'error' | 'info'
-interface ToastItem { id: number; message: string; type: ToastType }
+type ToastType = 'success' | 'error' | 'info' | 'warning'
 
-interface ToastCtx { toast: (message: string, type?: ToastType) => void }
+interface ToastOptions {
+  type?: ToastType
+  title?: string
+  duration?: number      // ms; default 4000
+  onClick?: () => void
+}
+
+interface ToastItem {
+  id: number
+  message: string
+  type: ToastType
+  title?: string
+  duration: number
+  onClick?: () => void
+}
+
+interface ToastCtx {
+  /** Backward-compatible: toast('msg', 'success') OR toast('msg', { type, title, duration, onClick }) */
+  toast: (message: string, opts?: ToastType | ToastOptions) => void
+}
 const ToastContext = createContext<ToastCtx>(null!)
 
 let _nextId = 0
 
+const ICONS: Record<ToastType, string> = {
+  success: 'bi-check-circle-fill',
+  error:   'bi-exclamation-octagon-fill',
+  info:    'bi-info-circle-fill',
+  warning: 'bi-exclamation-triangle-fill',
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  const toast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = _nextId++
-    setToasts(prev => [...prev, { id, message, type }])
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500)
+  const dismiss = useCallback((id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
   }, [])
 
-  const colorMap = { success: 'var(--kl-accent-green)', error: 'var(--kl-accent-red)', info: 'var(--kl-accent-blue)' }
+  const toast = useCallback((message: string, opts?: ToastType | ToastOptions) => {
+    const id = _nextId++
+    // Normalise: legacy `toast('msg', 'error')` → opts object
+    const normalised: ToastOptions = typeof opts === 'string'
+      ? { type: opts }
+      : (opts || {})
+    const item: ToastItem = {
+      id,
+      message,
+      type: normalised.type || 'info',
+      title: normalised.title,
+      duration: normalised.duration ?? 4000,
+      onClick: normalised.onClick,
+    }
+    setToasts(prev => {
+      // Cap at 4 visible — drop oldest if pushing a 5th
+      const next = prev.length >= 4 ? prev.slice(prev.length - 3) : prev
+      return [...next, item]
+    })
+    setTimeout(() => dismiss(id), item.duration)
+  }, [dismiss])
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {toasts.map(t => (
-          <div key={t.id} style={{
-            padding: '8px 16px', borderRadius: 10, fontSize: '.85rem', fontWeight: 500,
-            background: 'var(--kl-bg-card)', border: `1px solid ${colorMap[t.type]}`,
-            color: colorMap[t.type], boxShadow: '0 4px 12px rgba(0,0,0,.3)',
-          }}>
-            {t.message}
-          </div>
-        ))}
-      </div>
+      {createPortal(
+        <div className="kl-toasts" role="region" aria-label="Notifications" aria-live="polite">
+          <AnimatePresence initial={false}>
+            {toasts.map(t => (
+              <ToastCard key={t.id} item={t} onDismiss={() => dismiss(t.id)} />
+            ))}
+          </AnimatePresence>
+        </div>,
+        document.body,
+      )}
     </ToastContext.Provider>
+  )
+}
+
+function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) {
+  const handleClick = () => {
+    if (item.onClick) item.onClick()
+    onDismiss()
+  }
+  const clickable = !!item.onClick
+  return (
+    <motion.div
+      className={`kl-toast kl-toast-${item.type}${clickable ? ' clickable' : ''}`}
+      role="status"
+      layout
+      initial={{ x: 32, opacity: 0, scale: .96 }}
+      animate={{ x: 0, opacity: 1, scale: 1 }}
+      exit={{ x: 32, opacity: 0, scale: .96, transition: { duration: .18 } }}
+      transition={{ type: 'spring', stiffness: 420, damping: 32, mass: .8 }}
+      onClick={clickable ? handleClick : undefined}
+    >
+      <span className="kl-toast-icon">
+        <i className={`bi ${ICONS[item.type]}`}></i>
+      </span>
+      <span className="kl-toast-body">
+        {item.title && <span className="kl-toast-title">{item.title}</span>}
+        <span className="kl-toast-msg">{item.message}</span>
+      </span>
+      <button
+        type="button"
+        className="kl-toast-close"
+        aria-label="Dismiss"
+        onClick={(e) => { e.stopPropagation(); onDismiss() }}
+      >
+        <i className="bi bi-x-lg"></i>
+      </button>
+      <span
+        className="kl-toast-progress"
+        style={{ animationDuration: `${item.duration}ms` }}
+      />
+    </motion.div>
   )
 }
 
