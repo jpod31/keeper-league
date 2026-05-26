@@ -33,17 +33,28 @@ def get_cached_analytics(team_id, year, cache_type):
     entry = _mem_cache.get(key)
     if entry and (time.time() - entry["ts"]) < _CACHE_TTL:
         return entry["data"]
-    # DB cache (survives restarts)
+    # DB cache (survives restarts).
+    # SQLite + SQLAlchemy DateTime (no timezone=True) returns naive
+    # datetimes on read. The previous version compared an aware
+    # datetime.now(timezone.utc) against this naive value, raising
+    # TypeError which the bare except swallowed — leaving the cache
+    # permanently broken. Coerce naive → aware before subtracting.
     try:
         row = AnalyticsJsonCache.query.filter_by(
             team_id=team_id, year=year, cache_type=cache_type
         ).first()
-        if row and row.data and (datetime.now(timezone.utc) - row.generated_at).total_seconds() < _CACHE_TTL:
-            data = json.loads(row.data)
-            _mem_cache[key] = {"data": data, "ts": time.time()}
-            return data
+        if row and row.data and row.generated_at:
+            ga = row.generated_at
+            if ga.tzinfo is None:
+                ga = ga.replace(tzinfo=timezone.utc)
+            age = (datetime.now(timezone.utc) - ga).total_seconds()
+            if age < _CACHE_TTL:
+                data = json.loads(row.data)
+                _mem_cache[key] = {"data": data, "ts": time.time()}
+                return data
     except Exception:
-        pass
+        logger.warning("Analytics cache read failed (team=%s year=%s type=%s)",
+                       team_id, year, cache_type, exc_info=True)
     return None
 
 
