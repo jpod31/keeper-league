@@ -337,6 +337,16 @@ def dashboard(league_id):
 
     # ── JSON API mode for React SPA ──
     if request.args.get("format") == "json":
+        from models.database import (
+            Fixture as _Fx, SeasonStanding as _SS, RoundScore as _RS,
+            Trade as _Tr, AflGame as _AG, Notification as _Notif,
+            LineupSlot as _LS, WeeklyLineup as _WL, AflPlayer as _AP,
+            LongTermInjury as _LTIL, DelistAction as _DA, DelistPeriod as _DP,
+        )
+        from scrapers.squiggle import get_current_round as _gcr
+        from datetime import datetime, timezone, timedelta
+        from sqlalchemy import or_, and_
+
         def _ser_team(t):
             return {
                 "id": t.id,
@@ -348,6 +358,223 @@ def dashboard(league_id):
                 "roster_count": sum(1 for r in t.roster if r.is_active) if t.roster else 0,
                 "logo_url": t.logo_url,
             }
+
+        # Stable accent palette so each fantasy team gets a distinctive
+        # colour for hero gradients and ladder rows. Keyed by team_id %
+        # len so a re-rendered page always shows the same colour for the
+        # same team — even if FantasyTeam doesn't yet have a team_colour
+        # column.
+        _TEAM_PALETTE = [
+            "#58a6ff", "#ffb471", "#bc8cff", "#3fb950", "#e3b341",
+            "#ff7b72", "#7ee787", "#f778ba", "#79c0ff", "#ff9e64",
+            "#9ece6a", "#bb9af7",
+        ]
+
+        def _team_summary(t):
+            """Compact team shape for matchup hero / fixture cards."""
+            if not t:
+                return None
+            colour = (getattr(t, "team_colour", None)
+                      or _TEAM_PALETTE[(t.id or 0) % len(_TEAM_PALETTE)])
+            return {
+                "id": t.id,
+                "name": t.name,
+                "owner": t.owner.display_name if t.owner else "?",
+                "is_mine": t.owner_id == current_user.id,
+                "logo_url": t.logo_url,
+                "colour": colour,
+            }
+
+        # ── Current AFL round + lockout countdown ──
+        current_round = _gcr(league.season_year) or 0
+        next_lockout_at = None
+        live_games_count = 0
+        try:
+            next_game = (
+                _AG.query
+                .filter_by(year=league.season_year)
+                .filter(_AG.status.in_(["scheduled", "live"]))
+                .filter(_AG.scheduled_start.isnot(None))
+                .order_by(_AG.scheduled_start.asc())
+                .first()
+            )
+            if next_game and next_game.scheduled_start:
+                ga = next_game.scheduled_start
+                next_lockout_at = (
+                    ga.isoformat() + ("" if ga.tzinfo else "+00:00")
+                )
+            live_games_count = _AG.query.filter_by(
+                year=league.season_year, status="live"
+            ).count()
+        except Exception:
+            pass
+
+        # ── Trade window close countdown ──
+        trade_close_at = None
+        try:
+            from models.database import SeasonConfig as _SC
+            cfg = _SC.query.filter_by(
+                league_id=league_id, year=league.season_year
+            ).first()
+            if cfg:
+                for col in (cfg.mid_trade_window_close, cfg.off_trade_window_close):
+                    if col is None:
+                        continue
+                    trade_close_at = col.isoformat() + ("" if col.tzinfo else "+00:00")
+                    break
+        except Exception:
+            pass
+
+        # ── This week's matchup for the current user ──
+        this_matchup = None
+        if user_team and current_round:
+            fx = (
+                _Fx.query
+                .filter_by(league_id=league_id, year=league.season_year, afl_round=current_round)
+                .filter(or_(_Fx.home_team_id == user_team.id, _Fx.away_team_id == user_team.id))
+                .first()
+            )
+            if fx:
+                is_home = fx.home_team_id == user_team.id
+                my_team = fx.home_team if is_home else fx.away_team
+                opp_team = fx.away_team if is_home else fx.home_team
+                my_score = (fx.home_score if is_home else fx.away_score) or 0
+                opp_score = (fx.away_score if is_home else fx.home_score) or 0
+                this_matchup = {
+                    "round": current_round,
+                    "status": fx.status,
+                    "me": {**_team_summary(my_team), "score": round(my_score, 1)},
+                    "opp": {**_team_summary(opp_team), "score": round(opp_score, 1)},
+                    "margin": round(my_score - opp_score, 1),
+                }
+
+        # ── Standings (top + my rank) ──
+        standings_rows = (
+            _SS.query.filter_by(league_id=league_id, year=league.season_year).all()
+        )
+        standings_sorted = sorted(
+            standings_rows,
+            key=lambda s: (-(s.ladder_points or 0), -(s.percentage or 0)),
+        )
+        standings = []
+        my_rank = None
+        for i, s in enumerate(standings_sorted, 1):
+            if user_team and s.team_id == user_team.id:
+                my_rank = i
+            standings.append({
+                "rank": i,
+                "team": _team_summary(s.team),
+                "wins": s.wins or 0,
+                "losses": s.losses or 0,
+                "draws": s.draws or 0,
+                "pf": round(s.points_for or 0, 1),
+                "pa": round(s.points_against or 0, 1),
+                "pct": round(s.percentage or 0, 1),
+                "pts": s.ladder_points or 0,
+            })
+
+        # ── Round fixtures (all matchups in current round) ──
+        league_fixtures = []
+        if current_round:
+            for fx in _Fx.query.filter_by(
+                league_id=league_id, year=league.season_year, afl_round=current_round,
+            ).all():
+                league_fixtures.append({
+                    "id": fx.id,
+                    "status": fx.status,
+                    "home": {**_team_summary(fx.home_team), "score": round(fx.home_score or 0, 1)},
+                    "away": {**_team_summary(fx.away_team), "score": round(fx.away_score or 0, 1)},
+                })
+
+        # ── Top performers (best individual player scores this round) ──
+        top_performers = []
+        if user_team and current_round:
+            from models.database import ScScore as _SCS, FantasyRoster as _FR
+            league_pids = [
+                pid for (pid,) in db.session.query(_FR.player_id)
+                .join(FantasyTeam, _FR.team_id == FantasyTeam.id)
+                .filter(FantasyTeam.league_id == league_id, _FR.is_active == True)
+                .all()
+            ]
+            if league_pids:
+                sc_rows = (
+                    _SCS.query
+                    .filter(
+                        _SCS.year == league.season_year,
+                        _SCS.round == current_round,
+                        _SCS.player_id.in_(league_pids),
+                    )
+                    .order_by(_SCS.sc_score.desc().nullslast())
+                    .limit(6)
+                    .all()
+                )
+                # Who owns each player → for the team colour border
+                owner_map = {}
+                for r in db.session.query(_FR.player_id, FantasyTeam).join(
+                    FantasyTeam, _FR.team_id == FantasyTeam.id,
+                ).filter(
+                    FantasyTeam.league_id == league_id, _FR.is_active == True,
+                    _FR.player_id.in_([s.player_id for s in sc_rows]),
+                ).all():
+                    owner_map[r[0]] = r[1]
+                for s in sc_rows:
+                    if not s.sc_score:
+                        continue
+                    p = db.session.get(_AP, s.player_id)
+                    if not p:
+                        continue
+                    owner = owner_map.get(s.player_id)
+                    top_performers.append({
+                        "player_id": p.id,
+                        "name": p.name,
+                        "afl_team": p.afl_team or "",
+                        "position": p.position or "",
+                        "sc_score": s.sc_score,
+                        "owner_team": _team_summary(owner) if owner else None,
+                    })
+
+        # ── Recent activity (last 20 notifications league-wide) ──
+        recent_activity = []
+        cutoff = datetime.utcnow() - timedelta(days=7)
+        notif_rows = (
+            _Notif.query.filter_by(league_id=league_id)
+            .filter(_Notif.created_at > cutoff)
+            .order_by(_Notif.created_at.desc())
+            .limit(40)
+            .all()
+        )
+        # De-dupe by title within the last hour (same title fan-out to N owners)
+        seen = set()
+        for n in notif_rows:
+            key = (n.title, n.created_at.replace(minute=0, second=0, microsecond=0))
+            if key in seen:
+                continue
+            seen.add(key)
+            recent_activity.append({
+                "type": n.type,
+                "title": n.title,
+                "body": n.body,
+                "created_at": (n.created_at.isoformat() + ("" if n.created_at.tzinfo else "+00:00")) if n.created_at else None,
+                "link": n.link,
+            })
+            if len(recent_activity) >= 12:
+                break
+
+        # ── Pending trade counts for the current user ──
+        pending_incoming = 0
+        pending_outgoing = 0
+        if user_team:
+            pending_incoming = _Tr.query.filter_by(
+                league_id=league_id, recipient_team_id=user_team.id, status="pending",
+            ).count()
+            pending_outgoing = _Tr.query.filter_by(
+                league_id=league_id, proposer_team_id=user_team.id, status="pending",
+            ).count()
+
+        # ── Delist period open? ──
+        delist_open = (_DP.query.filter_by(
+            league_id=league_id, year=league.season_year, status="open",
+        ).first() is not None)
 
         return jsonify({
             "league": {
@@ -363,6 +590,7 @@ def dashboard(league_id):
                 "draft_type": league.draft_type,
                 "pick_timer_secs": league.pick_timer_secs,
                 "trade_window_open": bool(league.trade_window_open),
+                "trade_close_at": trade_close_at,
                 "commissioner_name": league.commissioner.display_name if league.commissioner else "?",
                 "invite_code": league.invite_code,
                 "position_slots": [
@@ -375,6 +603,19 @@ def dashboard(league_id):
             "is_commissioner": is_commissioner,
             "scoring_rules": scoring_rules,
             "has_completed_onboarding": bool(getattr(current_user, "has_completed_onboarding", True)),
+            # NEW — feeds the redesigned dashboard
+            "current_round": current_round,
+            "live_games_count": live_games_count,
+            "next_lockout_at": next_lockout_at,
+            "this_matchup": this_matchup,
+            "my_rank": my_rank,
+            "standings": standings,
+            "league_fixtures": league_fixtures,
+            "top_performers": top_performers,
+            "recent_activity": recent_activity,
+            "pending_incoming": pending_incoming,
+            "pending_outgoing": pending_outgoing,
+            "delist_open": delist_open,
         })
 
     # Default to My Team view if user has a team (HTML mode only)
