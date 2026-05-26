@@ -76,10 +76,119 @@
   padding-right: 80px;
 }
 .tr-deal-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+/* Compact card used inside the deal poster — same visual language as
+   .tr-card but tighter so multiple fit in a sticky panel without
+   crowding the roster underneath. */
+.tr-deal-card {
+  position: relative;
+  border-radius: 9px;
+  padding: 8px 8px 7px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 78px;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+  background: linear-gradient(135deg, rgba(13,17,23,.85), rgba(22,27,34,.85) 60%);
+  border: 1px solid rgba(48,54,61,.6);
+  overflow: hidden;
+}
+.tr-deal-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -12px rgba(0,0,0,.55);
+}
+.tr-deal-card-out {
+  background: linear-gradient(135deg, rgba(248,81,73,.22), rgba(22,27,34,.92) 65%);
+  border-color: rgba(248,81,73,.5);
+  box-shadow: 0 0 0 1px rgba(248,81,73,.18);
+}
+.tr-deal-card-in {
+  background: linear-gradient(135deg, rgba(63,185,80,.22), rgba(22,27,34,.92) 65%);
+  border-color: rgba(63,185,80,.5);
+  box-shadow: 0 0 0 1px rgba(63,185,80,.18);
+}
+.tr-deal-card-DEF { border-left: 3px solid #58a6ff; }
+.tr-deal-card-MID { border-left: 3px solid #d2a8ff; }
+.tr-deal-card-FWD { border-left: 3px solid #ffb471; }
+.tr-deal-card-RUC { border-left: 3px solid #7ee787; }
+.tr-deal-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 6px;
 }
+.tr-deal-card-logo {
+  width: 20px; height: 20px;
+  flex: 0 0 20px;
+  border-radius: 4px;
+  background: rgba(48,54,61,.55);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  font-size: .5rem; font-weight: 800; color: #8b949e;
+}
+.tr-deal-card-logo img { width: 100%; height: 100%; object-fit: contain; }
+.tr-deal-card-pos {
+  font-size: .54rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.tr-deal-card-name {
+  font-size: .76rem;
+  font-weight: 700;
+  color: #f0f6fc;
+  line-height: 1.12;
+  word-break: break-word;
+}
+.tr-deal-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+.tr-deal-card-sc {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: .8rem;
+  font-weight: 800;
+  color: #f0f6fc;
+}
+.tr-deal-card-out .tr-deal-card-sc { color: #ffd6d2; }
+.tr-deal-card-in  .tr-deal-card-sc { color: #c8f0c5; }
+.tr-deal-card-remove {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .6rem;
+  font-weight: 800;
+  background: rgba(13,17,23,.7);
+  color: #c9d1d9;
+  border: 1px solid rgba(110,118,129,.4);
+  transition: background .12s ease;
+}
+.tr-deal-card:hover .tr-deal-card-remove {
+  background: rgba(248,81,73,.7);
+  color: #fff;
+  border-color: rgba(248,81,73,.7);
+}
+.tr-deal-card-in:hover .tr-deal-card-remove {
+  background: rgba(110,118,129,.5);
+  border-color: rgba(110,118,129,.6);
+}
+/* Pick rendered inside deal poster */
+.tr-deal-card-pick {
+  background: linear-gradient(135deg, rgba(88,166,255,.18), rgba(22,27,34,.9) 60%);
+  border: 1px solid rgba(88,166,255,.35);
+  min-height: 78px;
+}
+.tr-deal-card-pick.tr-deal-card-out { background: linear-gradient(135deg, rgba(248,81,73,.22), rgba(22,27,34,.92) 65%); border-color: rgba(248,81,73,.5); }
+.tr-deal-card-pick.tr-deal-card-in  { background: linear-gradient(135deg, rgba(63,185,80,.22), rgba(22,27,34,.92) 65%); border-color: rgba(63,185,80,.5); }
+.tr-deal-card-pick-year { font-size: .58rem; font-weight: 800; color: #79c0ff; letter-spacing: .06em; text-transform: uppercase; }
+.tr-deal-card-pick-round { font-size: .9rem; font-weight: 800; color: #f0f6fc; line-height: 1.1; }
 .tr-deal-empty {
   color: #484f58;
   font-size: .82rem;
@@ -272,7 +381,7 @@
 .tr-pick-round { font-size: .85rem; font-weight: 700; color: #f0f6fc; }
 .tr-pick-orig { font-size: .62rem; color: #6e7681; }
 
-/* ── Deck (grid of cards) ─────────────────────────────────── */
+/* ── Deck (grid of cards) — still used by trade-detail static view ── */
 .tr-deck {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -281,6 +390,108 @@
 @media (max-width: 480px) {
   .tr-deck { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }
+
+/* ── Roster rows — compact alternative to .tr-card for the propose
+   page's selection panels. The deal poster has the proud cards;
+   here the goal is dense scannability. */
+.tr-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tr-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(13,17,23,.35);
+  border: 1px solid rgba(48,54,61,.4);
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease, transform .12s ease;
+  color: #c9d1d9;
+}
+.tr-row:hover {
+  background: rgba(48,54,61,.35);
+  border-color: rgba(110,118,129,.45);
+}
+.tr-row-out {
+  background: linear-gradient(90deg, rgba(248,81,73,.18), rgba(248,81,73,.04) 70%);
+  border-color: rgba(248,81,73,.55);
+  box-shadow: inset 3px 0 0 #f85149;
+}
+.tr-row-in {
+  background: linear-gradient(90deg, rgba(63,185,80,.18), rgba(63,185,80,.04) 70%);
+  border-color: rgba(63,185,80,.55);
+  box-shadow: inset 3px 0 0 #3fb950;
+}
+.tr-row-pos {
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 2px 5px;
+  border-radius: 3px;
+  text-align: center;
+}
+.tr-row-pos-DEF { background: rgba(88,166,255,.18); color: #79c0ff; }
+.tr-row-pos-MID { background: rgba(210,168,255,.18); color: #d2a8ff; }
+.tr-row-pos-FWD { background: rgba(255,180,113,.18); color: #ffb471; }
+.tr-row-pos-RUC { background: rgba(126,231,135,.18); color: #7ee787; }
+.tr-row-name {
+  font-size: .85rem;
+  font-weight: 600;
+  color: #f0f6fc;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tr-row-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tr-row-team {
+  font-size: .68rem;
+  color: #6e7681;
+  font-weight: 500;
+}
+.tr-row-sc {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: .9rem;
+  font-weight: 800;
+  color: #c9d1d9;
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+  text-align: right;
+}
+.tr-row-out .tr-row-sc { color: #ffd6d2; }
+.tr-row-in  .tr-row-sc { color: #c8f0c5; }
+.tr-row-state {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .58rem;
+  font-weight: 800;
+  background: transparent;
+  border: 1px solid rgba(110,118,129,.35);
+  color: #6e7681;
+}
+.tr-row-out .tr-row-state { background: #f85149; border-color: #f85149; color: #fff; }
+.tr-row-in  .tr-row-state { background: #3fb950; border-color: #3fb950; color: #fff; }
+
+/* Compact pick row for the same panel */
+.tr-row-pick {
+  background: linear-gradient(90deg, rgba(88,166,255,.06), transparent 80%);
+  border-color: rgba(88,166,255,.22);
+}
+.tr-row-pick.tr-row-out { background: linear-gradient(90deg, rgba(248,81,73,.18), transparent 80%); border-color: rgba(248,81,73,.55); }
+.tr-row-pick.tr-row-in  { background: linear-gradient(90deg, rgba(63,185,80,.18), transparent 80%); border-color: rgba(63,185,80,.55); }
+.tr-row-pick-meta { font-size: .68rem; color: #79c0ff; font-weight: 600; }
 
 /* ── Section header within a deck ─────────────────────────── */
 .tr-section-h {

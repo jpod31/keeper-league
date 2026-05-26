@@ -72,84 +72,124 @@ function fmtCountdown(closeAt: string | null): string | null {
 
 // ── Card components ─────────────────────────────────────────
 
-function PlayerCard({
-  player, state, logoUrl, onClick,
+// ── Roster row (compact selection list) ─────────────────────
+function PlayerRow({
+  player, state, onClick,
 }: {
   player: Player
   state: 'idle' | 'out' | 'in'
-  logoUrl?: string | null
   onClick: () => void
 }) {
-  const positions = (player.position || 'MID').split('/')
-  const primary = positions[0]
-  const stateClass = state === 'out' ? 'tr-card-out' : state === 'in' ? 'tr-card-in' : ''
+  const primary = posPrimary(player.position)
+  const stateClass = state === 'out' ? 'tr-row-out' : state === 'in' ? 'tr-row-in' : ''
   return (
     <div
-      className={`tr-card tr-card-${primary} ${stateClass}`}
+      className={`tr-row ${stateClass}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } }}
     >
-      {state !== 'idle' && (
-        <div className="tr-card-check">{state === 'out' ? '−' : '+'}</div>
-      )}
-      <div className="tr-card-top">
-        <div className="tr-card-logo">
-          {logoUrl
-            ? <img src={logoUrl} alt="" />
-            : <span className="tr-card-logo-placeholder">{aflInitials(player.afl_team || '')}</span>}
-        </div>
-        <div className="tr-card-pos">
-          {positions.map(p => (
-            <span key={p} className={`pos-badge pos-${p}`}>{p}</span>
-          ))}
-        </div>
-      </div>
-      <div className="tr-card-name">{player.name}</div>
-      <div className="tr-card-meta">
-        <span className="tr-card-sc">{fmtSc(player.sc_avg)}</span>
-        {player.age ? <span className="tr-card-age">{player.age}y</span> : <span />}
-      </div>
+      <span className={`tr-row-pos tr-row-pos-${primary}`}>{primary}</span>
+      <span className="tr-row-name">
+        <span className="tr-row-name-text">{player.name}</span>
+        {player.afl_team && <span className="tr-row-team">· {player.afl_team}</span>}
+      </span>
+      <span className="tr-row-sc">{fmtSc(player.sc_avg)}</span>
+      <span className="tr-row-state">{state === 'out' ? '−' : state === 'in' ? '+' : ''}</span>
     </div>
   )
 }
 
-function PickCard({
-  pick, state, onClick, hideOwner,
+function PickRow({
+  pick, state, onClick,
 }: {
   pick: Pick
   state: 'idle' | 'out' | 'in'
   onClick: () => void
-  hideOwner?: boolean
 }) {
-  const stateClass = state === 'out' ? 'tr-pick-out' : state === 'in' ? 'tr-pick-in' : ''
+  const stateClass = state === 'out' ? 'tr-row-out' : state === 'in' ? 'tr-row-in' : ''
   return (
-    <div className={`tr-pick ${stateClass}`} onClick={onClick} role="button" tabIndex={0}
+    <div
+      className={`tr-row tr-row-pick ${stateClass}`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } }}
     >
-      <div className="tr-pick-year">{pick.year} draft</div>
-      <div className="tr-pick-round">Round {pick.round_number}</div>
-      {!hideOwner && !pick.is_own && pick.original_team_id !== undefined && (
-        <div className="tr-pick-orig">via {pick.original_team}</div>
-      )}
+      <i className="bi bi-ticket-perforated" style={{ color: '#79c0ff', fontSize: '.85rem', textAlign: 'center' }}></i>
+      <span className="tr-row-name">
+        <span className="tr-row-name-text">{pick.year} Round {pick.round_number}</span>
+        {!pick.is_own && pick.original_team && (
+          <span className="tr-row-team">· via {pick.original_team}</span>
+        )}
+      </span>
+      <span className="tr-row-pick-meta">PICK</span>
+      <span className="tr-row-state">{state === 'out' ? '−' : state === 'in' ? '+' : ''}</span>
     </div>
   )
 }
 
-function MiniChip({
-  label, kind, sc, onRemove,
-}: { label: string; kind: 'out' | 'in'; sc?: number | null; onRemove: () => void }) {
+// ── Deal poster cards (proud — selected players showcase here) ──
+function DealPlayerCard({
+  player, side, logoUrl, onRemove,
+}: {
+  player: Player
+  side: 'out' | 'in'
+  logoUrl?: string | null
+  onRemove: () => void
+}) {
+  const primary = posPrimary(player.position)
   return (
-    <span
-      className={`tr-mini tr-mini-${kind}`}
-      onClick={(e) => { e.stopPropagation(); onRemove() }}
+    <div
+      className={`tr-deal-card tr-deal-card-${side} tr-deal-card-${primary}`}
+      onClick={onRemove}
       role="button"
+      tabIndex={0}
+      title="Click to remove"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRemove() } }}
     >
-      {label}
-      {sc != null && <span className="tr-mini-sc">{fmtSc(sc)}</span>}
-      <span className="tr-mini-x">×</span>
-    </span>
+      <div className="tr-deal-card-top">
+        <span className="tr-deal-card-logo">
+          {logoUrl
+            ? <img src={logoUrl} alt="" />
+            : <span>{aflInitials(player.afl_team || '')}</span>}
+        </span>
+        <span className={`tr-deal-card-pos pos-badge pos-${primary}`}>{primary}</span>
+      </div>
+      <div className="tr-deal-card-name">{player.name}</div>
+      <div className="tr-deal-card-meta">
+        <span className="tr-deal-card-sc">{fmtSc(player.sc_avg)}</span>
+        <span className="tr-deal-card-remove">×</span>
+      </div>
+    </div>
+  )
+}
+
+function DealPickCard({
+  pick, side, onRemove,
+}: { pick: Pick; side: 'out' | 'in'; onRemove: () => void }) {
+  return (
+    <div
+      className={`tr-deal-card tr-deal-card-pick tr-deal-card-${side}`}
+      onClick={onRemove}
+      role="button"
+      tabIndex={0}
+      title="Click to remove"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRemove() } }}
+    >
+      <div className="tr-deal-card-top">
+        <span className="tr-deal-card-logo">
+          <i className="bi bi-ticket-perforated" style={{ fontSize: '.65rem', color: '#79c0ff' }}></i>
+        </span>
+        <span className="tr-deal-card-pick-year">{pick.year}</span>
+      </div>
+      <div className="tr-deal-card-pick-round">Round {pick.round_number}</div>
+      <div className="tr-deal-card-meta">
+        <span style={{ fontSize: '.6rem', color: '#6e7681' }}>{pick.is_own ? 'Own' : pick.original_team}</span>
+        <span className="tr-deal-card-remove">×</span>
+      </div>
+    </div>
   )
 }
 
@@ -379,15 +419,16 @@ export function TradeProposePage() {
               <div className="tr-deal-side-label">You send</div>
               <div className="tr-deal-side-team">{user_team.name}</div>
               {outCount === 0 ? (
-                <div className="tr-deal-empty">Click cards below to send →</div>
+                <div className="tr-deal-empty">Click rows below to send →</div>
               ) : (
                 <div className="tr-deal-cards">
                   {givePlayers.map(p => (
-                    <MiniChip key={p.id} label={p.name} kind="out" sc={p.sc_avg}
+                    <DealPlayerCard key={p.id} player={p} side="out"
+                      logoUrl={team_logos[p.afl_team || '']}
                       onRemove={() => toggle(givePlayerIds, p.id, setGivePlayerIds)} />
                   ))}
                   {givePicks.map(pk => (
-                    <MiniChip key={pk.id} label={`${pk.year} R${pk.round_number}`} kind="out"
+                    <DealPickCard key={pk.id} pick={pk} side="out"
                       onRemove={() => toggle(givePickIds, pk.id, setGivePickIds)} />
                   ))}
                 </div>
@@ -399,16 +440,17 @@ export function TradeProposePage() {
               <div className="tr-deal-side-team">{recipientTeam ? recipientTeam.name : 'Pick a team below'}</div>
               {inCount === 0 ? (
                 <div className="tr-deal-empty">
-                  {recipientTeam ? '← Click cards from their roster' : 'Choose a trade partner first'}
+                  {recipientTeam ? '← Click rows from their roster' : 'Choose a trade partner first'}
                 </div>
               ) : (
                 <div className="tr-deal-cards">
                   {receivePlayers.map(p => (
-                    <MiniChip key={p.id} label={p.name} kind="in" sc={p.sc_avg}
+                    <DealPlayerCard key={p.id} player={p} side="in"
+                      logoUrl={team_logos[p.afl_team || '']}
                       onRemove={() => toggle(receivePlayerIds, p.id, setReceivePlayerIds)} />
                   ))}
                   {receivePicks.map(pk => (
-                    <MiniChip key={pk.id} label={`${pk.year} R${pk.round_number}`} kind="in"
+                    <DealPickCard key={pk.id} pick={pk} side="in"
                       onRemove={() => toggle(receivePickIds, pk.id, setReceivePickIds)} />
                   ))}
                 </div>
@@ -479,7 +521,7 @@ export function TradeProposePage() {
                   {my_players.length + my_picks.length} assets
                 </span>
               </div>
-              <div className="tr-panel-sub">Click any card to add it to <strong style={{ color: '#ffb4ae' }}>You send</strong>.</div>
+              <div className="tr-panel-sub">Click any row to add it to <strong style={{ color: '#ffb4ae' }}>You send</strong>.</div>
             </div>
             <div className="tr-panel-body">
               {POS_ORDER.map(pos => {
@@ -495,13 +537,12 @@ export function TradeProposePage() {
                       <span className="tr-section-h-bar" />
                       <span className="tr-section-h-count">{list.length}</span>
                     </div>
-                    <div className="tr-deck">
+                    <div className="tr-rows">
                       {list.map(p => (
-                        <PlayerCard
+                        <PlayerRow
                           key={p.id}
                           player={p}
                           state={givePlayerIds.has(p.id) ? 'out' : 'idle'}
-                          logoUrl={team_logos[p.afl_team || '']}
                           onClick={() => toggle(givePlayerIds, p.id, setGivePlayerIds)}
                         />
                       ))}
@@ -516,9 +557,9 @@ export function TradeProposePage() {
                     <span className="tr-section-h-bar" />
                     <span className="tr-section-h-count">{my_picks.length}</span>
                   </div>
-                  <div className="tr-deck">
+                  <div className="tr-rows">
                     {my_picks.map(pk => (
-                      <PickCard
+                      <PickRow
                         key={pk.id}
                         pick={pk}
                         state={givePickIds.has(pk.id) ? 'out' : 'idle'}
@@ -548,7 +589,7 @@ export function TradeProposePage() {
               </div>
               <div className="tr-panel-sub">
                 {recipientTeam
-                  ? <>Click any card to add it to <strong style={{ color: '#7ee787' }}>You receive</strong>.</>
+                  ? <>Click any row to add it to <strong style={{ color: '#7ee787' }}>You receive</strong>.</>
                   : 'Pick a trade partner above to see their roster.'}
               </div>
             </div>
@@ -575,13 +616,12 @@ export function TradeProposePage() {
                           <span className="tr-section-h-bar" />
                           <span className="tr-section-h-count">{list.length}</span>
                         </div>
-                        <div className="tr-deck">
+                        <div className="tr-rows">
                           {list.map(p => (
-                            <PlayerCard
+                            <PlayerRow
                               key={p.id}
                               player={p}
                               state={receivePlayerIds.has(p.id) ? 'in' : 'idle'}
-                              logoUrl={team_logos[p.afl_team || '']}
                               onClick={() => toggle(receivePlayerIds, p.id, setReceivePlayerIds)}
                             />
                           ))}
@@ -596,9 +636,9 @@ export function TradeProposePage() {
                         <span className="tr-section-h-bar" />
                         <span className="tr-section-h-count">{theirAssets.picks.length}</span>
                       </div>
-                      <div className="tr-deck">
+                      <div className="tr-rows">
                         {theirAssets.picks.map(pk => (
-                          <PickCard
+                          <PickRow
                             key={pk.id}
                             pick={pk}
                             state={receivePickIds.has(pk.id) ? 'in' : 'idle'}
