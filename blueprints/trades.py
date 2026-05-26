@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
-from models.database import db, League, FantasyTeam, FantasyRoster, Trade, FutureDraftPick
+from models.database import db, League, FantasyTeam, FantasyRoster, Trade, FutureDraftPick, SeasonConfig
 from blueprints import check_league_access
 from models.trade_manager import (
     propose_trade, respond_to_trade, cancel_trade, veto_trade,
@@ -143,16 +143,39 @@ def trade_propose(league_id):
     ).order_by(FutureDraftPick.year, FutureDraftPick.round_number).all()
 
     if request.args.get("format") == "json":
+        from config import TEAM_LOGOS
+        # Compute trade window close (the new propose UI shows a countdown)
+        trade_close = None
+        season_cfg = SeasonConfig.query.filter_by(
+            league_id=league_id, year=league.season_year
+        ).first()
+        if season_cfg:
+            for col in (season_cfg.mid_trade_window_close, season_cfg.off_trade_window_close):
+                if col is None:
+                    continue
+                # Naive datetimes coerced to ISO with implied UTC.
+                trade_close = col.isoformat() + ("" if col.tzinfo else "+00:00")
+                break
         return jsonify({
             "league": {"id": league.id, "name": league.name},
-            "user_team": {"id": user_team.id, "name": user_team.name},
+            "user_team": {"id": user_team.id, "name": user_team.name,
+                          "logo_url": user_team.logo_url},
             "trade_window_open": bool(league.trade_window_open),
+            "trade_close_at": trade_close,
+            "team_logos": TEAM_LOGOS,
             "other_teams": [
-                {"id": t.id, "name": t.name, "owner": t.owner.display_name if t.owner else "?"}
+                {"id": t.id, "name": t.name,
+                 "owner": t.owner.display_name if t.owner else "?",
+                 "logo_url": t.logo_url}
                 for t in other_teams
             ],
             "my_players": [
-                {"id": p.id, "name": p.name, "position": p.position or "", "sc_avg": p.sc_avg or 0}
+                {"id": p.id, "name": p.name,
+                 "position": p.position or "",
+                 "afl_team": p.afl_team or "",
+                 "sc_avg": p.sc_avg or 0,
+                 "age": p.age or 0,
+                 "rating": p.rating}
                 for p in my_players
             ],
             "my_picks": [
@@ -383,6 +406,8 @@ def api_team_roster(league_id, team_id):
         "position": r.player.position,
         "afl_team": r.player.afl_team,
         "sc_avg": r.player.sc_avg,
+        "age": r.player.age,
+        "rating": r.player.rating,
     } for r in roster])
 
 
