@@ -36,12 +36,15 @@ ANON_CHECKS = [
     ("/leagues/3/team/4",          {200, 302, 401}, False),
     ("/leagues/3/trades",          {200, 302, 401}, False),
     ("/leagues/3/trades/propose",  {200, 302, 401}, False),
+    ("/leagues/3/trades/1",        {200, 302, 401, 404}, False),
 ]
 
 # JSON endpoints that should return 401 when anon (not 200 or 500)
 JSON_CHECKS = [
     ("/leagues/3/team/4?format=json",         {401}, False),
+    ("/leagues/3/trades?format=json",         {401}, False),
     ("/leagues/3/trades/propose?format=json", {401}, False),
+    ("/leagues/3/trades/1?format=json",       {401, 404}, False),
 ]
 
 
