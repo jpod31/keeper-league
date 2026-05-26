@@ -171,9 +171,22 @@ highlighted with accent gradient bg.
 - Out of scope: per-stat sparkline data wiring (prop exists; nothing
   uses it yet). Rank chips only show when callers provide a number.
 
-### ☐ 12. Buttons
-Primary CTAs → gradient pills with soft glow shadows. Secondary stays ghost.
-Destructive gets red glow. Three variants total.
+### ☑ 12. Buttons
+**Shipped — CSS-only override of Bootstrap classes in `static/style.css`.**
+- Three variants:
+  · **Gradient CTA pill + glow** — sapphire / forest / rust / ochre / teal
+    matching .btn-primary/.btn-success/.btn-danger/.btn-warning/.btn-info.
+    Each has a 16px tone-tinted drop shadow, 1px translateY lift on
+    hover.
+  · **Ghost outline** — `.btn-outline-*` (six tones). Transparent with
+    accent border + text; hover gets a 12% wash in the same tone.
+  · **Subtle link** — `.btn-link` text-only in sapphire with faint
+    hover bg.
+- Disabled state: 45% opacity, no glow, no transform, cursor not-allowed.
+- Focus rings: 3px accent halo per tone.
+- Size variants (.btn-sm / .btn-lg) get matched typography + padding.
+- No JSX changes — every page using Bootstrap btn classes picks up the
+  new look automatically.
 
 ### ☐ 13. Forms
 Floating-label inputs (label slides up into the border on focus), focus rings
