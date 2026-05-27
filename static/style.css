@@ -8416,6 +8416,25 @@ th.sortable:hover { color: #58a6ff; }
 .rowsk-row { border-radius: 8px; }
 
 /* ══════════════════════════════════════════════════
+   ICON SYSTEM (#29) — three documented sizes + the
+   outline-vs-filled convention.
+   ──────────────────────────────────────────────────
+   SIZES
+     .kl-i-sm  →  14px  inline body text, tight table cells, chip badges
+     .kl-i-md  →  18px  nav links, button icons, status-pill icons
+     .kl-i-lg  →  24px  page headers, hero icons, modal headers
+   OUTLINE vs FILLED  (chosen via the Bootstrap Icons class name)
+     bi-foo       outline  → nav at rest, labels, neutral states
+     bi-foo-fill  filled   → active / emphasis / alerts / unread counts
+   Add the size class to any <i> when you want it to render at one of
+   the documented sizes; existing icons keep their inline font-size
+   until they're touched (the audit is opportunistic, not a sprint).
+   ══════════════════════════════════════════════════ */
+.kl-i-sm { font-size: .875rem; line-height: 1; }
+.kl-i-md { font-size: 1.125rem; line-height: 1; }
+.kl-i-lg { font-size: 1.5rem; line-height: 1; }
+
+/* ══════════════════════════════════════════════════
    LEAGUE BREADCRUMB — hover-popover league name link
    Reads LeagueContext for the popover content so it
    shows quick league context without an extra HTTP.

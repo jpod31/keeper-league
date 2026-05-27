@@ -1328,3 +1328,14 @@ Update this log as we walk through them together.
 | 34 | Empty-state icon vs concentric rings centring | implement | The icon and the ambient ring pattern don't share a vertical centre — rings sit at 5.5rem from container top, icon centre at 7.5rem (32px off on desktop, ~22px on mobile). Fix the ring centres, NOT the icon position (moving icon up makes it crowd the card top). Visible most clearly on the trade empty state. |
 | 35 | Draft Room access + upcoming-only scoping        | implement | Users should be able to enter the Draft Room when no draft is live, purely to prepare (browse pool, set queue, plan tiers). Today the room appears tied to a live/scheduled session. Also: when multiple drafts exist (past + future), show ONLY the upcoming/scheduled draft, not historical ones — those belong on a recap surface (DraftRecapPage already exists). |
 | 36 | Player acquisition history phrasing              | implement | In PlayerPool's "Acquired" dropdown, multi-tenure players currently read like a soap opera ("jpod31 traded away" then "Charlies Demons traded in") because each entry is framed from THAT team's perspective on the exit/entry event. Rephrase to describe how each team **got** the player (the origin event for that tenure): "Pick #10 drafted by jpod31", "Charlies Demons acquired by trade · 12 Mar", "SSP signing by X". Fix in `entryStyle()` in PlayerPoolPage.tsx — both the active and inactive branches currently key off the LEAVING event for past tenures. |
+
+---
+
+## Icon system — current state (#29, partial)
+
+Convention now documented inline in `static/style.css` (search "ICON SYSTEM (#29)"):
+
+- **Sizes** — `.kl-i-sm` (14px), `.kl-i-md` (18px), `.kl-i-lg` (24px).
+- **Outline vs filled** — `bi-foo` for nav-at-rest / labels / neutral states; `bi-foo-fill` for active / emphasis / alerts.
+
+Full sweep across the 508 `bi bi-*` usages in 66 files is intentionally deferred — the doc itself says "Time-cost vs visible improvement; can be done over time." New components written from this point on adopt the utility classes; existing icons keep their inline font-size until they're touched for other reasons.
