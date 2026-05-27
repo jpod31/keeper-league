@@ -6,6 +6,7 @@ import { MatchupStrip } from '../../components/ui/MatchupStrip'
 import { SquadSkeleton } from '../../components/ui/SquadSkeleton'
 import { RosterHealthStrip } from '../../components/ui/RosterHealthStrip'
 import { ByePlanner } from '../../components/ui/ByePlanner'
+import { HistoricalSquadView } from '../../components/squad/HistoricalSquadView'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
@@ -80,6 +81,8 @@ export { SquadPageWrapper as SquadPage }
 function SquadPageInner() {
   const { leagueId, teamId } = useParams()
   const { league } = useLeague()
+  // Past-round browsing (#21). null = current (live FieldView), number = snapshot.
+  const [archiveRound, setArchiveRound] = useState<number | null>(null)
   // Owner name → team_id lookup for trade-from-row deep links inside
   // the wishlist view (wp.owner is the team name string).
   const ownerNameToId = useMemo(() => {
@@ -513,6 +516,27 @@ function SquadPageInner() {
           )}
           {is_owner && <RosterHealthStrip leagueId={leagueId!} teamId={teamId!} />}
           {is_owner && <ByePlanner leagueId={leagueId!} teamId={teamId!} />}
+          {is_owner && league?.current_round && league.current_round > 1 && (
+            <div className="d-flex align-items-center gap-2 mb-3" style={{ fontSize: '.82rem' }}>
+              <label htmlFor="archive-round" className="text-secondary">Round:</label>
+              <select
+                id="archive-round"
+                className="form-select form-select-sm"
+                style={{ maxWidth: 220 }}
+                value={archiveRound ?? ''}
+                onChange={e => setArchiveRound(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">Current (live)</option>
+                {Array.from({ length: league.current_round - 1 }, (_, i) => league.current_round - 1 - i).map(r => (
+                  <option key={r} value={r}>R{r} archive</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {archiveRound != null && (
+            <HistoricalSquadView leagueId={leagueId!} teamId={teamId!} round={archiveRound} />
+          )}
+          {archiveRound == null && (<>
           <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner}
             delistContext={delistContext}
             actions={{
@@ -648,6 +672,7 @@ function SquadPageInner() {
               </div>
             )}
           </div>
+          </>)}
         </>
       )}
 

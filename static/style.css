@@ -8542,6 +8542,83 @@ th.sortable:hover { color: #58a6ff; }
 @media (prefers-reduced-motion: reduce) {
   .pmod-shell { animation: none; }
 }
+
+/* ══════════════════════════════════════════════════
+   HISTORICAL SQUAD VIEW — read-only past-round lineup
+   ══════════════════════════════════════════════════ */
+.hsv { display: flex; flex-direction: column; gap: var(--space-3); }
+.hsv-loading,
+.hsv-error {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--kl-text-muted);
+  font-size: .85rem;
+}
+.hsv-error { color: var(--kl-accent-red); }
+.hsv-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(88,166,255,.08);
+  border: 1px solid rgba(88,166,255,.25);
+  border-radius: 8px;
+  color: var(--kl-accent-blue);
+  font-size: .82rem;
+  align-self: flex-start;
+}
+.hsv-zone {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.hsv-zone-head {
+  padding: var(--space-2) var(--space-3);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--kl-text-secondary);
+  background: rgba(255,255,255,.02);
+  border-bottom: 1px solid var(--kl-border);
+}
+.hsv-zone-head.pos-DEF { color: #79c0ff; }
+.hsv-zone-head.pos-MID { color: #d2a8ff; }
+.hsv-zone-head.pos-RUC { color: #7ee787; }
+.hsv-zone-head.pos-FWD { color: #ffb471; }
+.hsv-list { list-style: none; padding: 0; margin: 0; }
+.hsv-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto 48px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid rgba(48,54,74,.4);
+  font-size: .85rem;
+}
+.hsv-row:last-child { border-bottom: none; }
+.hsv-row-bench { grid-template-columns: auto 1fr auto 48px; opacity: .9; }
+.hsv-name { color: var(--kl-text-heading); font-weight: 600; }
+.hsv-team { color: var(--kl-text-muted); font-size: .75rem; }
+.hsv-sc { color: var(--kl-text-primary); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.hsv-badges { display: inline-flex; gap: 2px; }
+.hsv-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.hsv-badge-c   { background: rgba(210,153,34,.18); color: #f1c64a; }
+.hsv-badge-vc  { background: rgba(151,163,186,.18); color: var(--kl-text-secondary); }
+.hsv-badge-e   { background: rgba(240,136,62,.18); color: var(--kl-accent-orange); }
+.hsv-badge-inj { background: rgba(248,81,73,.18); color: var(--kl-accent-red); }
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
