@@ -8361,6 +8361,41 @@ th.sortable:hover { color: #58a6ff; }
 .cvsk-bubble-out { align-self: flex-end; }
 .cvsk-input { height: 44px; border-radius: 10px; }
 
+/* InboxSkeleton — header + 2-col layout (conv list + new-msg side). */
+.inbsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+.inbsk-header { display: flex; }
+.inbsk-title  { height: 28px; width: 160px; border-radius: 6px; }
+.inbsk-cols {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-3);
+}
+.inbsk-list,
+.inbsk-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+}
+.inbsk-listhead { height: 22px; width: 40%; border-radius: 6px; }
+.inbsk-sidehead { height: 22px; width: 60%; border-radius: 6px; }
+.inbsk-row      { height: 48px; border-radius: 8px; }
+.inbsk-input    { height: 32px; border-radius: 6px; }
+.inbsk-textarea { height: 72px; border-radius: 6px; }
+.inbsk-btn      { height: 32px; border-radius: 6px; }
+
+@media (max-width: 720px) {
+  .inbsk-cols { grid-template-columns: 1fr; }
+}
+
 /* ══════════════════════════════════════════════════
    LEAGUE BREADCRUMB — hover-popover league name link
    Reads LeagueContext for the popover content so it

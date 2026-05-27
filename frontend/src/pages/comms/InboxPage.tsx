@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { InboxSkeleton } from '../../components/ui/InboxSkeleton'
 import { CommsSubnav } from '../../components/nav/CommsSubnav'
 
 interface Conversation {
@@ -40,7 +40,7 @@ export function InboxPage() {
   const [newBody, setNewBody] = useState('')
   const [sending, setSending] = useState(false)
 
-  if (loading) return <Spinner text="Loading messages..." />
+  if (loading) return <InboxSkeleton />
   if (!data) return <p className="text-danger">Failed to load messages</p>
 
   async function startConversation() {
