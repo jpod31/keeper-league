@@ -60,16 +60,8 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', zIndex: 1055 }} />
-      <div role="dialog" aria-modal="true" style={{
-        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-        zIndex: 1060,
-        width: '94%', maxWidth: 520, maxHeight: '90vh',
-        background: 'linear-gradient(165deg, #1c2330 0%, #141a22 100%)',
-        borderRadius: 16, border: '1px solid rgba(48,54,61,.4)',
-        boxShadow: '0 24px 80px rgba(0,0,0,.7)',
-        overflowY: 'auto', WebkitOverflowScrolling: 'touch',
-      }}>
+      <div onClick={onClose} className="pmod-backdrop" />
+      <div role="dialog" aria-modal="true" className="pmod-shell">
         <div style={{ padding: '18px 20px 24px' }}>
           {/* Header row */}
           <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>

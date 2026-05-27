@@ -8478,6 +8478,70 @@ th.sortable:hover { color: #58a6ff; }
 }
 .byeplan-detail-name { color: var(--kl-text-primary); font-weight: 600; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .byeplan-detail-team { color: var(--kl-text-muted); font-size: .72rem; }
+
+/* ══════════════════════════════════════════════════
+   PLAYER MODAL — centred sheet on mobile, docked side
+   panel on desktop (#2). The JSX always renders the
+   same shell; this CSS reshapes it for ≥1100px.
+   ══════════════════════════════════════════════════ */
+.pmod-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1055;
+}
+.pmod-shell {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1060;
+  width: 94%;
+  max-width: 520px;
+  max-height: 90vh;
+  background: linear-gradient(165deg, #1c2330 0%, #141a22 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(48,54,61,.4);
+  box-shadow: 0 24px 80px rgba(0,0,0,.7);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop: dock the panel to the right edge with a soft slide-in.
+   Backdrop gets a lighter tone (you can still see the squad behind),
+   matching the doc's "modal-to-panel" direction for #2. */
+@media (min-width: 1100px) {
+  .pmod-backdrop {
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+  .pmod-shell {
+    top: 0;
+    left: auto;
+    right: 0;
+    transform: none;
+    width: 440px;
+    max-width: 440px;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border-left: 1px solid var(--kl-border);
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+    box-shadow: -24px 0 60px -16px rgba(0,0,0,.6);
+    animation: pmod-slide-in .32s cubic-bezier(.32,.72,.24,1);
+  }
+  @keyframes pmod-slide-in {
+    from { transform: translateX(20px); opacity: 0; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pmod-shell { animation: none; }
+}
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
