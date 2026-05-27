@@ -1,7 +1,7 @@
 import { useParams } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
@@ -112,7 +112,7 @@ export function HistoryPage() {
     return { same: false, empty: false, ...rec }
   }, [data, h2hT1, h2hT2])
 
-  if (loading) return <Spinner text="Loading league history..." />
+  if (loading) return <RowsSkeleton rows={10} />
   if (!data) return <p className="text-danger">Failed to load history</p>
 
   const sortedTeams = [...data.teams].sort((a, b) => a.name.localeCompare(b.name))

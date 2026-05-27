@@ -1,6 +1,6 @@
 import { useParams } from 'react-router'
 import { useState, useEffect, useMemo } from 'react'
-import { Spinner } from '../../components/ui/Spinner'
+import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
 interface RadarPlayer {
@@ -93,7 +93,7 @@ export function BreakoutRadarPage() {
 
   if (loading) return <>
     <PlayersSubnav active="breakout" leagueId={leagueId!} />
-    <Spinner text="Scanning breakout candidates..." />
+    <RowsSkeleton rows={12} />
   </>
 
   return (
