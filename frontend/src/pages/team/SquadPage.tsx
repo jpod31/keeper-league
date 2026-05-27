@@ -4,6 +4,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { StatTile } from '../../components/ui/StatTile'
 import { MatchupStrip } from '../../components/ui/MatchupStrip'
 import { SquadSkeleton } from '../../components/ui/SquadSkeleton'
+import { RosterHealthStrip } from '../../components/ui/RosterHealthStrip'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
@@ -509,6 +510,7 @@ function SquadPageInner() {
               leagueId={leagueId!}
             />
           )}
+          {is_owner && <RosterHealthStrip leagueId={leagueId!} teamId={teamId!} />}
           <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner}
             delistContext={delistContext}
             actions={{

@@ -424,6 +424,58 @@ def team_squad(league_id, team_id):
     })
 
 
+# ── Roster health (#6 — pos avg + count for the strip above the squad) ─
+#
+# Computes per-position SC averages across the league (active, on-field
+# rosters) plus the requesting team's own counts and averages, so the
+# squad page can render "DEF 6 · +1.2 vs lg avg" chips at a glance.
+
+@spa_api.route("/leagues/<int:league_id>/team/<int:team_id>/pos-avgs")
+@login_required
+def team_pos_avgs(league_id, team_id):
+    from collections import defaultdict
+    team = db.session.get(FantasyTeam, team_id)
+    if not team or team.league_id != league_id:
+        return jsonify({"error": "Not found"}), 404
+
+    # League-wide: every active, on-field player across every team.
+    league_buckets = defaultdict(list)
+    for lt in FantasyTeam.query.filter_by(league_id=league_id).all():
+        rosters = FantasyRoster.query.filter_by(
+            team_id=lt.id, is_active=True, is_benched=False,
+        ).all()
+        for r in rosters:
+            p = db.session.get(AflPlayer, r.player_id)
+            if not p or not p.sc_avg:
+                continue
+            pos = (p.position or "MID").split("/")[0].upper()
+            league_buckets[pos].append(p.sc_avg)
+    league_avg = {pos: round(sum(v) / len(v), 1) for pos, v in league_buckets.items() if v}
+
+    # Mine: same shape but just this team's active, on-field roster.
+    my_buckets = defaultdict(list)
+    my_count = defaultdict(int)
+    for r in FantasyRoster.query.filter_by(
+        team_id=team_id, is_active=True, is_benched=False,
+    ).all():
+        p = db.session.get(AflPlayer, r.player_id)
+        if not p:
+            continue
+        pos = (p.position or "MID").split("/")[0].upper()
+        my_count[pos] += 1
+        if p.sc_avg:
+            my_buckets[pos].append(p.sc_avg)
+    mine = {
+        pos: {
+            "count": my_count[pos],
+            "avg": round(sum(my_buckets[pos]) / len(my_buckets[pos]), 1) if my_buckets[pos] else None,
+        }
+        for pos in ("DEF", "MID", "RUC", "FWD")
+    }
+
+    return jsonify({"league_avg": league_avg, "mine": mine})
+
+
 # ── Team stats ────────────────────────────────────────────────────────
 
 @spa_api.route("/leagues/<int:league_id>/team/<int:team_id>/stats")

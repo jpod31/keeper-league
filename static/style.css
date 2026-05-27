@@ -8098,6 +8098,61 @@ th.sortable:hover { color: #58a6ff; }
   .stsk-row { grid-template-columns: 28px 1fr 50px 50px; }
   .stsk-row .stsk-cell:last-child { display: none; }
 }
+
+/* ══════════════════════════════════════════════════
+   ROSTER HEALTH STRIP — at-a-glance positional balance
+   above the squad. Four chips (DEF/MID/RUC/FWD), each
+   with count + delta vs league average. Tone shifts by
+   delta size.
+   ══════════════════════════════════════════════════ */
+.rhealth {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-3) 0;
+}
+.rhealth-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  font-size: .76rem;
+  font-weight: 600;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--kl-border);
+  font-variant-numeric: tabular-nums;
+}
+.rhealth-pos {
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.rhealth-count {
+  color: var(--kl-text-heading);
+  font-weight: 700;
+}
+.rhealth-delta {
+  font-size: .7rem;
+  opacity: .85;
+}
+
+/* Position colours hooked off the existing .pos-DEF/MID/RUC/FWD vars,
+   but we re-tint the chip border + pos label to make them readable
+   against the tonal background. */
+.rhealth-chip.pos-DEF .rhealth-pos { color: #79c0ff; }
+.rhealth-chip.pos-MID .rhealth-pos { color: #d2a8ff; }
+.rhealth-chip.pos-RUC .rhealth-pos { color: #7ee787; }
+.rhealth-chip.pos-FWD .rhealth-pos { color: #ffb471; }
+
+/* Tone variants — the delta vs league average drives the chip's
+   border + delta colour so the user can scan for weak spots. */
+.rhealth-good    { border-color: rgba(63,185,80,.45); }
+.rhealth-good .rhealth-delta    { color: var(--kl-accent-green); }
+.rhealth-bad     { border-color: rgba(240,136,62,.45); }
+.rhealth-bad .rhealth-delta     { color: var(--kl-accent-orange); }
+.rhealth-neutral .rhealth-delta { color: var(--kl-text-secondary); }
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
