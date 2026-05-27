@@ -49,6 +49,14 @@ interface DraftRoomData {
   state: DraftState
 }
 
+interface DraftEmptyState {
+  empty_state: true
+  league: { id: number; name: string; draft_type: string; pick_timer_secs: number }
+  is_commissioner: boolean
+}
+
+type DraftRoomResponse = DraftRoomData | DraftEmptyState
+
 interface AvailablePlayer {
   id: number
   name: string
@@ -488,6 +496,7 @@ export function DraftRoomPage() {
   const { leagueId } = useParams()
   const navigate = useNavigate()
   const [data, setData] = useState<DraftRoomData | null>(null)
+  const [emptyState, setEmptyState] = useState<DraftEmptyState | null>(null)
   const [loading, setLoading] = useState(true)
   const [state, setState] = useState<DraftState | null>(null)
   const [available, setAvailable] = useState<AvailablePlayer[]>([])
@@ -524,8 +533,14 @@ export function DraftRoomPage() {
   // Load initial data
   useEffect(() => {
     setLoading(true)
-    api<DraftRoomData>(`/leagues/${leagueId}/draft?format=json`)
+    api<DraftRoomResponse>(`/leagues/${leagueId}/draft?format=json`)
       .then(d => {
+        if ('empty_state' in d) {
+          // Per #35: no upcoming draft. Surface a stub state via setEmptyState
+          // and skip the data wiring — the render path will branch.
+          setEmptyState(d)
+          return
+        }
         setData(d)
         setState(d.state)
         setWeights(d.user_weights)
@@ -803,6 +818,37 @@ export function DraftRoomPage() {
   }
 
   if (loading) return <DraftSkeleton />
+  if (emptyState) {
+    // Per #35: render a prep-friendly empty state instead of redirecting
+    // away when no draft is scheduled. Browsing the pool + setting up
+    // the draft are both accessible from here.
+    return (
+      <div>
+        <div className="empty-state">
+          <div className="empty-icon"><i className="bi bi-list-check"></i></div>
+          <h4>No draft scheduled yet</h4>
+          <p>
+            {emptyState.is_commissioner
+              ? "Set up a draft session to get everyone in the room. While you wait, you can plan your picks in the player pool."
+              : "Your commissioner hasn't scheduled the next draft. You can still browse the player pool and plan your picks."}
+          </p>
+          <div className="d-flex justify-content-center gap-2 flex-wrap">
+            <Link to={`/leagues/${leagueId}/player-pool`} className="btn btn-primary btn-sm">
+              <i className="bi bi-search me-1"></i>Browse player pool
+            </Link>
+            {emptyState.is_commissioner && (
+              <Link to={`/leagues/${leagueId}/draft/setup`} className="btn btn-outline-primary btn-sm">
+                <i className="bi bi-calendar-plus me-1"></i>Set up draft
+              </Link>
+            )}
+            <Link to={`/leagues/${leagueId}/player-ratings`} className="btn btn-outline-secondary btn-sm">
+              <i className="bi bi-star me-1"></i>Player ratings
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
   if (!data || !state) return <p className="text-danger">Failed to load draft room</p>
 
   const { league, user_team, is_commissioner, can_restart, session } = data

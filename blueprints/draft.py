@@ -17,21 +17,20 @@ draft_bp = Blueprint("draft_live", __name__, url_prefix="/leagues",
 
 
 def _get_active_draft_session(league_id, include_mock=False):
-    """Return the most relevant draft session: active first, then latest.
-    Excludes mock sessions by default.
+    """Return the most relevant active draft session (scheduled / in_progress /
+    paused). Excludes mock sessions by default.
+
+    Per #35: we previously fell back to the latest session (often a completed
+    one), which meant entering the Draft Room would surface a past draft
+    instead of the upcoming one. Completed drafts live on DraftRecapPage —
+    don't surface them here. Returns None if no upcoming/active session.
     """
     q = DraftSession.query.filter_by(league_id=league_id)
     if not include_mock:
         q = q.filter(DraftSession.is_mock == False)
-    active = q.filter(
+    return q.filter(
         DraftSession.status.in_(["in_progress", "paused", "scheduled"])
     ).order_by(DraftSession.id.desc()).first()
-    if active:
-        return active
-    q2 = DraftSession.query.filter_by(league_id=league_id)
-    if not include_mock:
-        q2 = q2.filter(DraftSession.is_mock == False)
-    return q2.order_by(DraftSession.id.desc()).first()
 
 
 # ── Cached score lookup to avoid re-ranking 786 players on every request ──
@@ -86,12 +85,26 @@ def draft_room(league_id):
 
     session = _get_active_draft_session(league_id)
     if not session:
-        if league.commissioner_id == current_user.id:
+        # Per #35: don't redirect when there's no upcoming draft. SPA wants a
+        # friendly empty-state page so the user can still browse the pool and
+        # plan picks. Legacy Jinja path keeps the old redirect behaviour.
+        is_commish = league.commissioner_id == current_user.id
+        if request.args.get("format") == "json":
+            return jsonify({
+                "empty_state": True,
+                "league": {
+                    "id": league.id,
+                    "name": league.name,
+                    "draft_type": league.draft_type,
+                    "pick_timer_secs": league.pick_timer_secs,
+                },
+                "is_commissioner": is_commish,
+            })
+        if is_commish:
             flash("No draft session created yet.", "info")
             return redirect(url_for("draft_live.draft_setup", league_id=league_id))
-        else:
-            flash("The draft hasn't been set up yet. Ask your commissioner to create a draft session.", "info")
-            return redirect(url_for("leagues.dashboard", league_id=league_id))
+        flash("The draft hasn't been set up yet. Ask your commissioner to create a draft session.", "info")
+        return redirect(url_for("leagues.dashboard", league_id=league_id))
 
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
     is_commissioner = league.commissioner_id == current_user.id
