@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router'
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { api } from '../../lib/api'
-import { Spinner } from '../../components/ui/Spinner'
+import { DraftSkeleton } from '../../components/ui/DraftSkeleton'
 import { useSocket } from '../../hooks/useSocket'
 
 interface PickHistoryEntry {
@@ -802,7 +802,7 @@ export function DraftRoomPage() {
     } catch { /* noop */ }
   }
 
-  if (loading) return <Spinner text="Loading draft room..." />
+  if (loading) return <DraftSkeleton />
   if (!data || !state) return <p className="text-danger">Failed to load draft room</p>
 
   const { league, user_team, is_commissioner, can_restart, session } = data

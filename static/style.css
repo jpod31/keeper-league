@@ -7866,6 +7866,53 @@ th.sortable:hover { color: #58a6ff; }
   .gdsk-name { width: 100px; }
   .gdsk-score { width: 88px; }
 }
+
+/* DraftSkeleton — pick clock + 2-col main area + history strip. */
+.drsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+.drsk-clock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+}
+.drsk-timer   { width: 110px; height: 32px; border-radius: 6px; }
+.drsk-onclock { height: 28px; flex: 1 1 auto; border-radius: 6px; }
+.drsk-cols {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--space-3);
+}
+.drsk-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+}
+.drsk-filter     { height: 36px; border-radius: 8px; }
+.drsk-row        { height: 40px; border-radius: 8px; }
+.drsk-board-head { height: 28px; width: 60%; border-radius: 6px; }
+.drsk-board-row  { height: 48px; border-radius: 8px; }
+.drsk-history {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.drsk-pick { height: 28px; width: 92px; border-radius: 14px; }
+
+@media (max-width: 900px) {
+  .drsk-cols { grid-template-columns: 1fr; }
+}
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
