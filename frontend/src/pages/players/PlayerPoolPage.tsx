@@ -6,6 +6,8 @@ import { BottomSheet } from '../../components/ui/BottomSheet'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { useWishlist } from '../../hooks/useWishlist'
 import { useLeague } from '../../contexts/LeagueContext'
+import { useDensity } from '../../hooks/useDensity'
+import { DensityToggle } from '../../components/ui/DensityToggle'
 
 interface Acquired {
   coach: string | null
@@ -316,6 +318,9 @@ export function PlayerPoolPage() {
     leagueCtx?.teams.forEach(t => m.set(t.name, t.id))
     return m
   }, [leagueCtx])
+  // Desktop density. Mobile uses its own card layout (kl-player-card)
+  // that already runs tight, so the toggle is desktop-only.
+  const { density, setDensity } = useDensity('players.pool.density')
 
   const filtered = useMemo(() => {
     if (!data) return []
@@ -476,7 +481,7 @@ export function PlayerPoolPage() {
         </div>
       )}
 
-      <div className="card d-none d-lg-block">
+      <div className="card d-none d-lg-block" data-density={density}>
         <div className="card-header py-2">
           <div className="filter-bar">
             <div style={{ flex: '1 1 200px', maxWidth: 280 }}>
@@ -516,6 +521,9 @@ export function PlayerPoolPage() {
               <option value="">All Coaches</option>
               {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
+            <span style={{ marginLeft: 'auto' }}>
+              <DensityToggle density={density} onChange={setDensity} />
+            </span>
           </div>
         </div>
 

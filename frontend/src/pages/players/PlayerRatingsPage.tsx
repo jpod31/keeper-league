@@ -4,6 +4,8 @@ import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { useWishlist } from '../../hooks/useWishlist'
 import { WishlistStar } from '../../components/ui/WishlistStar'
+import { useDensity } from '../../hooks/useDensity'
+import { DensityToggle } from '../../components/ui/DensityToggle'
 
 interface RatingChange {
   player_id: number
@@ -43,6 +45,8 @@ export function PlayerRatingsPage() {
   const { leagueId } = useParams()
   const { data, loading } = useFetch<RatingsData>(`/leagues/${leagueId}/player-ratings?format=json`)
   const wishlist = useWishlist(leagueId)
+  // Single density preference shared across both tables on this page.
+  const { density, setDensity } = useDensity('players.ratings.density')
 
   if (loading) return <Spinner text="Loading ratings..." />
   if (!data) return <p className="text-danger">Failed to load ratings</p>
@@ -54,15 +58,20 @@ export function PlayerRatingsPage() {
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Ratings
         </div>
-        <h2><i className="bi bi-star me-2" style={{ color: '#d29922' }}></i>Player Ratings</h2>
-        {data.last_update_date && (
-          <div className="text-secondary" style={{ fontSize: '.85rem' }}>
-            Last updated: {new Date(data.last_update_date).toLocaleString()}
+        <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+          <div>
+            <h2 className="mb-0"><i className="bi bi-star me-2" style={{ color: '#d29922' }}></i>Player Ratings</h2>
+            {data.last_update_date && (
+              <div className="text-secondary" style={{ fontSize: '.85rem' }}>
+                Last updated: {new Date(data.last_update_date).toLocaleString()}
+              </div>
+            )}
           </div>
-        )}
+          <DensityToggle density={density} onChange={setDensity} />
+        </div>
       </div>
 
-      <div className="row g-4">
+      <div className="row g-4" data-density={density}>
         <div className="col-lg-6">
           <div className="card">
             <div className="card-header">
