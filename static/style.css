@@ -4822,52 +4822,23 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   background: rgba(88,166,255,.08);
 }
 
-/* Mobile sub-nav is now the primary in-section navigation surface
-   (sticky tab bar at the top of each section page). The bottom-nav
-   "subtab sheet" pattern was confusing — a button that didn't
-   navigate; this restores the standard mobile pattern where bottom
-   nav goes to a section's home and inline tabs switch within it.
-   Visibility is gated by .d-lg-none on the markup — only renders at
-   <992px — so no media query needed on the structural rules. */
-.mob-subnav {
-  display: flex;
-  gap: 0;
-  margin: 0 -.6rem .75rem;
-  padding: 0 .6rem;
-  border-bottom: 1px solid var(--kl-border);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  background: var(--kl-bg-body);
-  position: sticky;
-  /* .kl-bar on mobile = 36px brand + 8px padding × 2 = 52px. Match
-     exactly so the subnav sits flush below the top bar with no gap. */
-  top: 52px;
-  z-index: 1020;
+/* Mobile + tablet: hide inline sub-nav. Sub-page navigation is
+   driven by the bottom-nav subtab sheets (Team / Players / League
+   buttons open a sheet with sub-options). Per Lucas: "sub buttons
+   on tabs ie field, stats etc. which should just be a sub menu when
+   clicking on team instead of in the ui of the team page". The page
+   itself is content only on mobile. Markup keeps .mob-subnav for
+   legacy reasons; CSS just hides it. */
+@media (max-width: 991.98px) {
+  .mob-subnav { display: none !important; }
+
+  /* Hide the legacy status-pill row on mobile too — "open spots" /
+     "cap over" / trade-window / pending-incoming banners are desktop-y
+     and clutter the mobile screen. Critical context still surfaces in
+     the relevant section pages (trades page shows pending; squad
+     page shows over-cap inline near the field). */
+  .kl-status-pills { display: none !important; }
 }
-.mob-subnav::-webkit-scrollbar { display: none; }
-.mob-subnav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 10px 14px;
-  min-width: 60px;
-  min-height: 52px;
-  font-size: .72rem;
-  font-weight: 600;
-  color: var(--kl-text-muted);
-  text-decoration: none;
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  transition: color .15s, border-color .15s;
-}
-.mob-subnav-item i { font-size: 1.2rem; }
-.mob-subnav-item.active {
-  color: var(--kl-accent-blue);
-  border-bottom-color: var(--kl-accent-blue);
-}
-.mob-subnav-item:hover { color: var(--kl-text-primary); text-decoration: none; }
 
 /* ══════════════════════════════════════════════════
    FIELD VIEW ACTION SHEET (mobile)
@@ -7722,10 +7693,25 @@ th.sortable:hover { color: #58a6ff; }
 }
 
 @media (max-width: 991.98px) {
-  .kl-lockbadge { height: 28px; padding: 0 var(--space-2); font-size: .72rem; }
-  /* On narrow screens, the "Rxx" prefix carries enough context; drop
-     the separator so the pill stays compact. */
+  .kl-lockbadge {
+    height: 26px;
+    padding: 0 8px;
+    font-size: .68rem;
+    gap: 4px;
+    /* Force the pill to fit inside the top bar slot — no overflow,
+       no horizontal scroll. */
+    max-width: 130px;
+    overflow: hidden;
+  }
   .kl-lockbadge-sep { display: none; }
+  /* Tighten the round prefix on mobile so the countdown has room. */
+  .kl-lockbadge-round { font-size: .68rem; }
+}
+@media (max-width: 380px) {
+  /* Very narrow phones: drop the round prefix entirely; the countdown
+     alone fits. The full info is still reachable via the squad page. */
+  .kl-lockbadge { max-width: 90px; padding: 0 6px; }
+  .kl-lockbadge-round { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -7800,9 +7786,30 @@ th.sortable:hover { color: #58a6ff; }
   box-shadow: 0 0 0 2px rgba(88,166,255,.08), 0 6px 14px -6px rgba(88,166,255,.4);
   transition: transform .15s ease, filter .15s ease;
 }
-.mstrip-text { display: inline-flex; flex-direction: column; white-space: nowrap; }
-.mstrip-title { font-weight: 700; font-size: .78rem; color: #f0f6fc; }
-.mstrip-sub   { font-size: .64rem; color: #8b949e; font-weight: 500; letter-spacing: .02em; margin-top: 1px; }
+.mstrip-text { display: inline-flex; flex-direction: column; min-width: 0; }
+.mstrip-title {
+  font-weight: 700;
+  font-size: .78rem;
+  color: #f0f6fc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.mstrip-sub   {
+  font-size: .64rem;
+  color: #8b949e;
+  font-weight: 500;
+  letter-spacing: .02em;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  /* Truncate long opponent names ("vs Reservoir Wogs" type stuff)
+     so the pill doesn't blow out the row. */
+  .mstrip-title { max-width: 140px; }
+}
 
 /* Live + completed tone variants — re-tint the icon ring. */
 .mstrip-live .mstrip-icon {
@@ -8250,6 +8257,21 @@ th.sortable:hover { color: #58a6ff; }
 .rhealth-bad     { border-color: rgba(240,136,62,.45); }
 .rhealth-bad .rhealth-delta     { color: var(--kl-accent-orange); }
 .rhealth-neutral .rhealth-delta { color: var(--kl-text-secondary); }
+
+@media (max-width: 640px) {
+  /* Mobile: 4 chips on one row, no wrap. Tighter padding + smaller
+     font so DEF/MID/RUC/FWD all fit on a single horizontal line. */
+  .rhealth { flex-wrap: nowrap; gap: 6px; overflow-x: auto; }
+  .rhealth-chip {
+    padding: 2px 6px 2px 3px;
+    gap: 4px;
+    font-size: .68rem;
+    flex: 0 0 auto;
+  }
+  .rhealth-pos { min-width: 18px; height: 18px; padding: 0 4px; font-size: .54rem; }
+  .rhealth-count { font-size: .76rem; }
+  .rhealth-delta { font-size: .6rem; }
+}
 
 /* DashboardSkeleton — round/lockout hero + matchup card + tile row. */
 .dbsk {

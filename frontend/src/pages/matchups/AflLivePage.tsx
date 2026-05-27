@@ -102,37 +102,38 @@ export function AflLivePage() {
                 </span>
               )}
             </div>
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <div style={{ fontWeight: homeWin ? 700 : 500, color: homeWin ? 'var(--kl-text-primary)' : 'var(--kl-text-secondary)' }}>
-                  {g.home_team}
-                </div>
-                <div style={{ fontWeight: awayWin ? 700 : 500, color: awayWin ? 'var(--kl-text-primary)' : 'var(--kl-text-secondary)', marginTop: 2 }}>
-                  {g.away_team}
-                </div>
-              </div>
-              <div className="text-end">
-                {g.home_score !== null && (
-                  <>
-                    <div style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 700 }}>
-                      {g.home_score}
-                      {g.home_goals !== null && (
-                        <span className="text-secondary ms-2" style={{ fontSize: '.7rem', fontWeight: 400 }}>
-                          ({g.home_goals}.{g.home_behinds})
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 700, marginTop: 2 }}>
-                      {g.away_score}
-                      {g.away_goals !== null && (
-                        <span className="text-secondary ms-2" style={{ fontSize: '.7rem', fontWeight: 400 }}>
-                          ({g.away_goals}.{g.away_behinds})
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+            {/* Per-team rows: name flush left, score flush right, each
+                row aligned to its own baseline. Cleaner read than the
+                two-column stack and the names sit where you'd expect. */}
+            <div className="d-flex justify-content-between align-items-baseline">
+              <span style={{ fontWeight: homeWin ? 700 : 500, color: homeWin ? 'var(--kl-text-primary)' : 'var(--kl-text-secondary)' }}>
+                {g.home_team}
+              </span>
+              {g.home_score !== null && (
+                <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 700 }}>
+                  {g.home_score}
+                  {g.home_goals !== null && (
+                    <span className="text-secondary ms-2" style={{ fontSize: '.7rem', fontWeight: 400 }}>
+                      ({g.home_goals}.{g.home_behinds})
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+            <div className="d-flex justify-content-between align-items-baseline" style={{ marginTop: 4 }}>
+              <span style={{ fontWeight: awayWin ? 700 : 500, color: awayWin ? 'var(--kl-text-primary)' : 'var(--kl-text-secondary)' }}>
+                {g.away_team}
+              </span>
+              {g.away_score !== null && (
+                <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 700 }}>
+                  {g.away_score}
+                  {g.away_goals !== null && (
+                    <span className="text-secondary ms-2" style={{ fontSize: '.7rem', fontWeight: 400 }}>
+                      ({g.away_goals}.{g.away_behinds})
+                    </span>
+                  )}
+                </span>
+              )}
             </div>
           </div>
         </div>
