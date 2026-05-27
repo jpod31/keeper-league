@@ -32,26 +32,28 @@ interface AcquiredHistoryEntry {
 
 /** Decoration for a single tenure entry. */
 function entryStyle(e: AcquiredHistoryEntry): { label: string; icon: string; color: string } {
-  if (e.is_active) {
-    if (e.method === 'draft' && e.pick_number) {
-      return { label: `Drafted · #${e.pick_number}${e.draft_year ? ` (${e.draft_year})` : ''}`, icon: 'bi-trophy', color: '#79c0ff' }
-    }
-    if (e.method === 'supplemental' && e.pick_number) {
-      return { label: `Supp draft · #${e.pick_number}${e.draft_year ? ` (${e.draft_year})` : ''}`, icon: 'bi-stars', color: '#d2a8ff' }
-    }
-    if (e.method === 'trade') {
-      return { label: `Traded in${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`, icon: 'bi-arrow-left-right', color: '#ffb471' }
-    }
-    if (e.method === 'ssp') {
-      return { label: 'SSP signing', icon: 'bi-bandaid', color: '#f0d18a' }
-    }
-    return { label: e.method || '—', icon: 'bi-person-plus', color: '#c9d1d9' }
+  // Always frame by how THIS team got the player (their origin event for
+  // this tenure), regardless of whether the tenure is active or past.
+  // The is_active / delisted flags only drive dim/opacity in HistoryLine.
+  // Per Lucas (#36): the previous behaviour read past tenures as the
+  // EXIT event ("Traded away") which mismatched the present-tense entry
+  // events shown for active tenures.
+  const dateSuffix = e.acquired_at
+    ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
+    : ''
+  if (e.method === 'draft' && e.pick_number) {
+    return { label: `Pick #${e.pick_number}${e.draft_year ? ` · ${e.draft_year} draft` : ''}`, icon: 'bi-trophy', color: '#79c0ff' }
   }
-  // Inactive
-  if (e.delisted) {
-    return { label: `Delisted${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`, icon: 'bi-x-octagon', color: '#ff8a82' }
+  if (e.method === 'supplemental' && e.pick_number) {
+    return { label: `Supp pick #${e.pick_number}${e.draft_year ? ` · ${e.draft_year}` : ''}`, icon: 'bi-stars', color: '#d2a8ff' }
   }
-  return { label: `Traded away${e.acquired_at ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : ''}`, icon: 'bi-arrow-right', color: '#8b949e' }
+  if (e.method === 'trade') {
+    return { label: `Acquired by trade${dateSuffix}`, icon: 'bi-arrow-left-right', color: '#ffb471' }
+  }
+  if (e.method === 'ssp') {
+    return { label: `SSP signing${dateSuffix}`, icon: 'bi-bandaid', color: '#f0d18a' }
+  }
+  return { label: e.method || '—', icon: 'bi-person-plus', color: '#c9d1d9' }
 }
 
 /** Single inline render of a tenure. */
