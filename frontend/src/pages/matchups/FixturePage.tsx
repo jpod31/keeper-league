@@ -1,7 +1,7 @@
 import { useParams, Link, useSearchParams } from 'react-router'
 import { useEffect, useRef } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { FixtureSkeleton } from '../../components/ui/FixtureSkeleton'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 
 interface Team { id: number; name: string; logo_url?: string | null }
@@ -137,7 +137,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
     }
   }, [data?.selected_round])
 
-  if (loading) return <Spinner text="Loading fixture..." />
+  if (loading) return <FixtureSkeleton />
   if (!data) return <p className="text-danger">Failed to load fixture</p>
 
   const { round_meta, selected_round, current_fixtures, scoring, is_commissioner } = data
