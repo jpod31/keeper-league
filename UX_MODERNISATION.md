@@ -1164,6 +1164,59 @@ them; fix it at the source.
 
 ---
 
+## 33. Timezone audit — every datetime surfaced to the SPA
+
+### Problem
+The codebase stores most fixture-related datetimes as **naive Melbourne
+wall-clock** (see `scrapers/squiggle.py` — Squiggle returns AEST/AEDT and we
+strip the tzinfo before persisting). Backend endpoints that serialise these
+values via `.isoformat()`, or worse append `+00:00` to make them look UTC,
+hand a wrong-time string to the React client. JS `new Date(...)` interprets
+"`+00:00`" as UTC and renders the local time accordingly, so countdowns
+appear ~10h late in winter (AEST is UTC+10) and ~11h late in summer (AEDT
+is UTC+11).
+
+This bit the **lockout badge + matchup strip shipped 2026-05-27** (commit
+`38253b1`): R12 displayed "Locks in 1d 15h" when the actual lockout was
+~1d 5h away. Fixed in `blueprints/spa_api.py` by attaching
+`ZoneInfo("Australia/Melbourne")` before serialising. But that's a one-spot
+fix; the broader pattern almost certainly exists elsewhere.
+
+### Proposed Improvement
+1. Sweep all SPA-facing endpoints for `.isoformat()` calls on datetimes that
+   originate from `AflGame.scheduled_start`, `Fixture` timestamps,
+   `WeeklyLineup.created_at`, `LongTermInjury.opened_at`, etc. Audit which
+   are stored naive-Melbourne, naive-UTC, or tz-aware.
+2. Adopt a single helper, e.g. `serialise_dt(dt)`, that does the right thing
+   based on the source convention. Centralise so future endpoints can't get
+   it wrong.
+3. Also audit the existing `blueprints/leagues.py` dashboard endpoint's
+   `next_lockout_at` — it uses the same broken `+ "+00:00"` pattern as the
+   pre-fix spa_api.py code; it likely has the same bug, just hidden behind
+   the dashboard's own rendering.
+
+### Why It Improves UX
+Times that lie by 10 hours are worse than no times — users plan around
+them. A consistent helper means the moment a new endpoint is added, the
+right output shape is the obvious one.
+
+### Complexity
+Medium — touching every fixture-related serialiser plus the dashboard fix.
+
+### Impact
+High (correctness — wrong times are actively misleading).
+
+### Screens/Areas Affected
+Anywhere a fixture / game / lockout time is shown to the SPA: dashboard,
+lockout badge, matchup strip, gameday, fixtures, finals, draft schedule.
+
+### Risks or Tradeoffs
+The fix can't be one-line global because some datetimes ARE stored UTC
+(`created_at` / `updated_at` on most models — SQLAlchemy default). Need to
+audit per-field rather than blanket-convert.
+
+---
+
 # Top 10 Highest-Leverage Improvements
 
 Ranked by (impact × reuse) ÷ complexity:
@@ -1271,3 +1324,4 @@ Update this log as we walk through them together.
 | 30 | First-visit guided tour                            | reject    |       |
 | 31 | Remove "My Team" subheaders from Squad page        | implement | Subheader content lives in the side panel only — declutter the main page. |
 | 32 | Chatbox: stop echoing sender's message into incoming feed | implement | Bug — sent message appears both as "you" and as an incoming message. Fix the duplication. |
+| 33 | Timezone audit — every datetime surfaced to the client | implement | Sweep all places we serialise a naive datetime to the SPA. Most fixture-related datetimes are naive Melbourne wall-clock; default `.isoformat()` (or appending `+00:00`) lies and the client renders ~10h late in winter / ~11h in summer. Adopt a single helper. |

@@ -68,6 +68,7 @@ def league_context(league_id):
     current_round = 0
     next_lockout_at = None
     try:
+        from zoneinfo import ZoneInfo
         from models.database import AflGame
         from scrapers.squiggle import get_current_round
         current_round = get_current_round(league.season_year) or 0
@@ -81,7 +82,13 @@ def league_context(league_id):
         )
         if next_game and next_game.scheduled_start:
             ga = next_game.scheduled_start
-            next_lockout_at = ga.isoformat() + ("" if ga.tzinfo else "+00:00")
+            # scheduled_start is naive Melbourne wall-clock (see scrapers/squiggle.py).
+            # Attach the proper zone so the ISO string carries the correct offset,
+            # otherwise the client interprets it as UTC and shows a ~10h-too-late
+            # countdown during winter (AEST) or ~11h during summer (AEDT).
+            if ga.tzinfo is None:
+                ga = ga.replace(tzinfo=ZoneInfo("Australia/Melbourne"))
+            next_lockout_at = ga.isoformat()
     except Exception:
         pass
 
