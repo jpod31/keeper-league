@@ -50,8 +50,6 @@ const LC_CSS = `
 .lc-card-header { display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid #21262d; }
 .lc-card-header h5 { margin:0; font-size:1rem; font-weight:600; color:#e6edf3; }
 .lc-card-body { padding:16px 20px; }
-.lc-empty { text-align:center; padding:40px 20px; color:#484f58; }
-.lc-empty i { font-size:2rem; display:block; margin-bottom:10px; }
 `
 
 // (filter key, display label) — labels match the Jinja buttons exactly
@@ -140,9 +138,10 @@ export function ListChangesPage() {
               ))}
             </>
           ) : (
-            <div className="lc-empty">
-              <i className="bi bi-clock-history"></i>
-              <p>No list changes recorded yet. Draft players, make trades, or delist to see history here.</p>
+            <div className="empty-state">
+              <div className="empty-icon"><i className="bi bi-clock-history"></i></div>
+              <h4>No list changes yet</h4>
+              <p>Draft picks, trades, delists, and SSP signings will show up here as they happen.</p>
             </div>
           )}
         </div>

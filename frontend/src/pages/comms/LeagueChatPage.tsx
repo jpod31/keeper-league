@@ -112,9 +112,10 @@ export function LeagueChatPage() {
       <div className="card chat-wrapper" style={{ height: 'calc(100dvh - 260px)', display: 'flex', flexDirection: 'column' }}>
         <div ref={scrollRef} className="card-body" style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
           {messages.length === 0 && (
-            <div className="text-center text-secondary py-4" style={{ fontSize: '.85rem' }}>
-              <i className="bi bi-chat-dots" style={{ fontSize: '2rem', display: 'block', marginBottom: '.5rem', color: 'var(--kl-border-light)' }}></i>
-              No messages yet. Start the conversation!
+            <div className="empty-state">
+              <div className="empty-icon"><i className="bi bi-chat-dots"></i></div>
+              <h4>No messages yet</h4>
+              <p>Kick off the league chat — share a take, gloat about a captain pick, or rattle a trade partner.</p>
             </div>
           )}
           {messages.map(m => {
