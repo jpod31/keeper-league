@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { api } from '../../lib/api'
-import { Spinner } from '../../components/ui/Spinner'
+import { TradeProposeSkeleton } from '../../components/ui/TradeProposeSkeleton'
 
 interface Team { id: number; name: string; owner?: string; logo_url?: string | null }
 interface Player {
@@ -322,7 +322,7 @@ export function TradeProposePage() {
   const rosterDelta = receivePlayers.length - givePlayers.length
   const hasAny = outCount > 0 || inCount > 0
 
-  if (loading) return <Spinner text="Loading..." />
+  if (loading) return <TradeProposeSkeleton />
   if (error && !data) return <p className="text-danger">{error}</p>
   if (!data) return <p className="text-danger">Failed to load trade propose</p>
 
@@ -639,7 +639,9 @@ export function TradeProposePage() {
                   <p className="mt-3 mb-0" style={{ fontSize: '.86rem' }}>Choose a team above to see their players</p>
                 </div>
               ) : loadingTheir || !theirAssets || !theirByPos ? (
-                <Spinner text="Loading roster..." />
+                <div className="text-center text-secondary py-4" style={{ fontSize: '.8rem' }}>
+                  Loading roster…
+                </div>
               ) : (
                 <>
                   {POS_ORDER.map(pos => {

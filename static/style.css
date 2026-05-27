@@ -7950,6 +7950,57 @@ th.sortable:hover { color: #58a6ff; }
   .tcsk-arrow { width: 100%; height: 16px; border-radius: 6px; }
 }
 
+/* TradeProposeSkeleton — recipient + period header, deal poster
+   silhouette, two roster columns below. */
+.tpsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+.tpsk-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.tpsk-recipient { height: 36px; width: 260px; border-radius: 8px; }
+.tpsk-period    { height: 32px; width: 200px; border-radius: 999px; }
+.tpsk-deal {
+  display: grid;
+  grid-template-columns: 1fr 36px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+}
+.tpsk-side  { height: 100px; border-radius: 10px; }
+.tpsk-arrow { height: 36px; width: 36px; border-radius: 50%; justify-self: center; }
+.tpsk-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.tpsk-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+}
+.tpsk-colhead { height: 24px; width: 60%; border-radius: 6px; }
+.tpsk-row     { height: 40px; border-radius: 8px; }
+
+@media (max-width: 600px) {
+  .tpsk-deal { grid-template-columns: 1fr; }
+  .tpsk-arrow { width: 100%; height: 16px; border-radius: 6px; justify-self: stretch; }
+  .tpsk-cols { grid-template-columns: 1fr; }
+}
+
 /* Trade-from-row — small ↔ link rendered next to an owned player on
    PlayerPool / Injuries / etc. Click navigates to /trades/propose
    with the player + owner pre-selected. Global so any page can drop
