@@ -793,7 +793,20 @@ export function PlayerPoolPage() {
                         <i className={`bi ${wishlist.isWishlisted(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
                       </button>
                       {p.owner_team ? (
-                        <span className="kl-player-card-owner" style={{ background: tc?.bg, color: tc?.fg }}>{p.owner_team}</span>
+                        <>
+                          <span className="kl-player-card-owner" style={{ background: tc?.bg, color: tc?.fg }}>{p.owner_team}</span>
+                          {p.owner_team !== leagueCtx?.user_team?.name && ownerNameToId.has(p.owner_team) && (
+                            <Link
+                              to={`/leagues/${leagueId}/trades/propose?with=${p.id}&from=${ownerNameToId.get(p.owner_team)}`}
+                              className="trade-from-row"
+                              title={`Propose trade for ${p.name} with ${p.owner_team}`}
+                              aria-label={`Propose trade for ${p.name}`}
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <i className="bi bi-arrow-left-right"></i>
+                            </Link>
+                          )}
+                        </>
                       ) : can_pickup ? (
                         <button className="kl-player-card-add" onClick={e => { e.stopPropagation(); pickup(p.id) }} disabled={pickingUp === p.id}>
                           <i className="bi bi-plus"></i>
