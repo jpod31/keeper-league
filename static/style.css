@@ -20,11 +20,27 @@
   --kl-accent-yellow: #d29922;
   --kl-accent-orange: #f0883e;
   --kl-accent-purple: #bc8cff;
-  --kl-space-xs: 0.25rem;
-  --kl-space-sm: 0.5rem;
-  --kl-space-md: 1rem;
-  --kl-space-lg: 1.5rem;
-  --kl-space-xl: 2rem;
+  /* ── Spacing scale (canonical) ──
+     7-tier numeric scale on 4 / 8 / 12 / 16 / 24 / 40 / 64.
+     Use --space-N for all new margins, paddings, and gaps.
+     The scale is intentionally strict — if a design needs something
+     off-scale, reconsider the design before introducing a new token.
+     Skipped on purpose: 20, 28, 32, 48 (use the adjacent step). */
+  --space-1: 0.25rem;   /*  4px — hairline gaps, icon-to-text */
+  --space-2: 0.5rem;    /*  8px — chip padding, tight rows */
+  --space-3: 0.75rem;   /* 12px — comfortable row gaps */
+  --space-4: 1rem;      /* 16px — default card/section padding */
+  --space-5: 1.5rem;    /* 24px — section separation */
+  --space-6: 2.5rem;    /* 40px — page-block separation */
+  --space-7: 4rem;      /* 64px — hero / major layout breaks */
+  /* Semantic aliases (back-compat). Prefer --space-N in new code.
+     --kl-space-xl was 32px; realigned to --space-6 (40px) — no
+     consumers existed at realignment time so blast radius was zero. */
+  --kl-space-xs: var(--space-1);
+  --kl-space-sm: var(--space-2);
+  --kl-space-md: var(--space-4);
+  --kl-space-lg: var(--space-5);
+  --kl-space-xl: var(--space-6);
   /* Mobile surface layers */
   --kl-bg-surface: #131920;
   --kl-bg-card-hover: #1a2029;
@@ -7272,4 +7288,291 @@ th.sortable:hover { color: #58a6ff; }
 
 @media (prefers-reduced-motion: reduce) {
   .lg-stagger > *, .lg-pulse-dot-live { animation: none; opacity: 1; transform: none; }
+}
+
+/* ══════════════════════════════════════════════════
+   PLAYER CHIP — canonical player primitive
+   Three variants (compact/default/detailed). Consumes the --space-N
+   scale. Reuse .pos-DEF/.pos-MID/.pos-RUC/.pos-FWD for position chips.
+   ══════════════════════════════════════════════════ */
+.pchip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--kl-text-primary);
+  text-align: left;
+  border-radius: 10px;
+  transition: background .12s ease, border-color .12s ease, transform .08s ease;
+  font-family: inherit;
+}
+.pchip-interactive { cursor: pointer; }
+.pchip-interactive:hover { background: var(--kl-bg-hover); border-color: var(--kl-border); }
+.pchip-interactive:active { transform: scale(.99); }
+.pchip-interactive:focus-visible {
+  outline: 2px solid var(--kl-accent-blue);
+  outline-offset: 2px;
+}
+.pchip-locked { opacity: .65; }
+
+.pchip-logo {
+  flex: 0 0 auto;
+  display: block;
+  border-radius: 4px;
+  object-fit: contain;
+}
+.pchip-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.pchip-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.pchip-name {
+  font-weight: 600;
+  color: var(--kl-text-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.pchip-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: .72rem;
+  color: var(--kl-text-secondary);
+  min-width: 0;
+}
+.pchip-pos {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.pchip-meta-extra {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pchip-right {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.pchip-sc {
+  font-weight: 700;
+  color: var(--kl-text-heading);
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+.pchip-sc-label {
+  font-size: .6rem;
+  color: var(--kl-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.pchip-trend {
+  font-size: .58rem;
+  line-height: 1;
+}
+.pchip-trend-up   { color: var(--kl-accent-green); }
+.pchip-trend-down { color: var(--kl-accent-red); }
+
+/* Badges (C/VC/E/7/L) */
+.pchip-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+}
+.pchip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  line-height: 1;
+}
+.pchip-badge-c  { background: rgba(210,153,34,.18); color: #f1c64a; }
+.pchip-badge-vc { background: rgba(151,163,186,.18); color: var(--kl-text-secondary); }
+.pchip-badge-e  { background: rgba(240,136,62,.18); color: var(--kl-accent-orange); }
+.pchip-badge-7  { background: rgba(188,140,255,.18); color: var(--kl-accent-purple); }
+.pchip-badge-l  { background: rgba(108,120,146,.2); color: var(--kl-text-muted); }
+
+/* Variant sizing */
+.pchip-compact {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
+  gap: var(--space-2);
+}
+.pchip-compact .pchip-logo { width: 22px; height: 22px; }
+.pchip-compact .pchip-name { font-size: .82rem; }
+.pchip-compact .pchip-sc   { font-size: .9rem; }
+
+.pchip-default {
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+}
+.pchip-default .pchip-logo { width: 28px; height: 28px; }
+.pchip-default .pchip-name { font-size: .88rem; }
+.pchip-default .pchip-sc   { font-size: 1rem; }
+
+.pchip-detailed {
+  min-height: 72px;
+  padding: var(--space-3) var(--space-4);
+}
+.pchip-detailed .pchip-logo { width: 40px; height: 40px; }
+.pchip-detailed .pchip-name { font-size: 1rem; }
+.pchip-detailed .pchip-sc   { font-size: 1.2rem; }
+.pchip-detailed .pchip-meta { font-size: .78rem; }
+
+/* ══════════════════════════════════════════════════
+   FILTER BAR — standardised list-page filter row
+   ══════════════════════════════════════════════════ */
+.fbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--kl-bg-card);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+  padding: var(--space-3) var(--space-4);
+}
+.fbar-sticky {
+  position: sticky;
+  z-index: 10;
+  /* Soft shadow to lift the bar off the content when stuck. */
+  box-shadow: 0 4px 12px -8px rgba(0,0,0,.4);
+}
+.fbar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.fbar-search { flex: 1 1 220px; min-width: 0; }
+.fbar-search input,
+.fbar-search input[type="search"] {
+  width: 100%;
+  background: var(--kl-bg-body);
+  border: 1px solid var(--kl-border);
+  border-radius: 8px;
+  color: var(--kl-text-primary);
+  padding: var(--space-2) var(--space-3);
+  font-size: .88rem;
+}
+.fbar-search input:focus {
+  outline: none;
+  border-color: var(--kl-accent-blue);
+}
+.fbar-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.fbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.fbar-active {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--kl-border);
+}
+.fbar-active-chip {
+  /* Reuse .kl-chip base; this just adds a remove cursor hint. */
+  cursor: pointer;
+  background: none;
+  border-radius: 20px;
+}
+.fbar-clear {
+  background: none;
+  border: none;
+  color: var(--kl-text-secondary);
+  font-size: .76rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 6px;
+}
+.fbar-clear:hover { color: var(--kl-text-primary); background: var(--kl-bg-hover); }
+
+@media (max-width: 720px) {
+  .fbar-row { flex-wrap: wrap; }
+  .fbar-actions { margin-left: 0; }
+}
+
+/* "Sorted by: X" caption — pairs with useListSort + SortedByLabel. */
+.sorted-by {
+  font-size: .72rem;
+  color: var(--kl-text-muted);
+  letter-spacing: .02em;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.sorted-by strong { color: var(--kl-text-secondary); font-weight: 600; }
+
+/* ══════════════════════════════════════════════════
+   SAVING CHIP — inline optimistic-mutation status
+   ══════════════════════════════════════════════════ */
+.schip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 2px var(--space-2);
+  border-radius: 10px;
+  line-height: 1;
+  vertical-align: middle;
+  animation: schipIn .12s ease;
+}
+@keyframes schipIn { from { opacity: 0; transform: translateY(-2px); } }
+.schip-icon { font-size: .68rem; }
+.schip-saving {
+  background: rgba(151,163,186,.16);
+  color: var(--kl-text-secondary);
+}
+.schip-saving .schip-icon { animation: schipPulse 1s ease-in-out infinite; }
+@keyframes schipPulse { 50% { opacity: .3; } }
+.schip-saved {
+  background: rgba(63,185,80,.16);
+  color: var(--kl-accent-green);
+}
+.schip-error {
+  background: rgba(248,81,73,.16);
+  color: var(--kl-accent-red);
+}
+@media (prefers-reduced-motion: reduce) {
+  .schip, .schip-saving .schip-icon { animation: none; }
 }
