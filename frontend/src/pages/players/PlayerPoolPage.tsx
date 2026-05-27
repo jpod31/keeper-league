@@ -269,9 +269,6 @@ const POOL_CSS = `
 .wishlist-star:hover { color: #d29922; }
 .wishlist-star.active { color: #d29922; }
 .wishlist-star:active { transform: scale(1.2); }
-.trade-from-row { display: inline-flex; align-items: center; justify-content: center; padding: 4px 6px; color: #6e7681; font-size: .9rem; line-height: 1; transition: color .15s, transform .15s; text-decoration: none; }
-.trade-from-row:hover { color: #58a6ff; transform: translateY(-1px); }
-.trade-from-row:active { transform: scale(.95); }
 `
 
 type SortKey = 'name' | 'pos' | 'age' | 'sc_avg' | 'trend' | 'rating' | 'rtg_move' | 'potential' | 'tag'

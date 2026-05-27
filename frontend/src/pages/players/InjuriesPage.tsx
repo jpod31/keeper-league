@@ -8,6 +8,7 @@ import { useListSort } from '../../hooks/useListSort'
 import { SortedByLabel } from '../../components/ui/SortedByLabel'
 import { useWishlist } from '../../hooks/useWishlist'
 import { WishlistStar } from '../../components/ui/WishlistStar'
+import { useLeague } from '../../contexts/LeagueContext'
 
 interface InjuredPlayer {
   id: number
@@ -52,6 +53,14 @@ export function InjuriesPage() {
   const { leagueId } = useParams()
   const { data, loading } = useFetch<InjuriesData>(`/leagues/${leagueId}/injuries?format=json`)
   const wishlist = useWishlist(leagueId)
+  const { league: leagueCtx } = useLeague()
+  // Resolve owner-team-name → team_id for the trade-from-row deep link.
+  // Mirrors the lookup pattern in PlayerPoolPage.
+  const ownerNameToId = useMemo(() => {
+    const m = new Map<string, number>()
+    leagueCtx?.teams.forEach(t => m.set(t.name, t.id))
+    return m
+  }, [leagueCtx])
   const [posFilter, setPosFilter] = useState('')
   const [teamFilter, setTeamFilter] = useState('')
   const [sevFilter, setSevFilter] = useState('')
@@ -163,7 +172,19 @@ export function InjuriesPage() {
                   <td className="mob-hide text-secondary" style={{ fontSize: '.75rem' }}>{p.injury_return || '—'}</td>
                   <td>
                     {p.rostered_by ? (
-                      <span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.rostered_by}</span>
+                      <span className="d-inline-flex align-items-center gap-1">
+                        <span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.rostered_by}</span>
+                        {p.rostered_by !== leagueCtx?.user_team?.name && ownerNameToId.has(p.rostered_by) && (
+                          <Link
+                            to={`/leagues/${leagueId}/trades/propose?with=${p.id}&from=${ownerNameToId.get(p.rostered_by)}`}
+                            className="trade-from-row"
+                            title={`Propose trade for ${p.name} with ${p.rostered_by}`}
+                            aria-label={`Propose trade for ${p.name}`}
+                          >
+                            <i className="bi bi-arrow-left-right"></i>
+                          </Link>
+                        )}
+                      </span>
                     ) : (
                       <span className="badge" style={{ background: 'rgba(63,185,80,.12)', color: '#3fb950', fontSize: '.65rem' }}>FREE</span>
                     )}

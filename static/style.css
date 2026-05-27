@@ -7956,6 +7956,24 @@ th.sortable:hover { color: #58a6ff; }
   .tcsk-card { grid-template-columns: 1fr; }
   .tcsk-arrow { width: 100%; height: 16px; border-radius: 6px; }
 }
+
+/* Trade-from-row — small ↔ link rendered next to an owned player on
+   PlayerPool / Injuries / etc. Click navigates to /trades/propose
+   with the player + owner pre-selected. Global so any page can drop
+   it in without needing to import the style. */
+.trade-from-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  color: var(--kl-text-muted);
+  font-size: .9rem;
+  line-height: 1;
+  transition: color .15s, transform .15s;
+  text-decoration: none;
+}
+.trade-from-row:hover  { color: var(--kl-accent-blue); transform: translateY(-1px); text-decoration: none; }
+.trade-from-row:active { transform: scale(.95); }
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
