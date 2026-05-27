@@ -86,6 +86,15 @@ export function AppShell() {
           align-items: center;
           margin-left: 4px;
         }
+        .kl-bar-lockout-slot {
+          display: inline-flex;
+          align-items: center;
+          margin-left: 8px;
+        }
+        @media (max-width: 991.98px) {
+          /* Keep the lockout badge visible on mobile but tighten the gap. */
+          .kl-bar-lockout-slot { margin-left: 4px; }
+        }
         .kl-bar-inner {
           display: flex; align-items: center; gap: 10px;
           padding: 10px 18px;
@@ -317,6 +326,10 @@ export function AppShell() {
 
           {/* Portal slot — LeagueShell injects its switcher here when mounted */}
           <div id="kl-bar-league-slot" className="kl-bar-league-slot" />
+
+          {/* Portal slot — LeagueShell injects LockoutBadge here. Lives
+              next to the switcher so round/lockout context is always glanceable. */}
+          <div id="kl-bar-lockout-slot" className="kl-bar-lockout-slot" />
 
           <div className="kl-bar-spacer" />
 

@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router'
 import { LeagueProvider, useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../ui/Spinner'
+import { LockoutBadge } from '../ui/LockoutBadge'
 import { RoundRecapModal } from '../RoundRecapModal'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -153,6 +154,13 @@ function LeagueShellInner() {
         pendingLtilCount={league.pending_ltil_count || 0}
         switcherOpen={selectorOpen}
         setSwitcherOpen={setSelectorOpen}
+      />
+
+      {/* Top-bar lockout badge — portals into AppShell's slot. */}
+      <LockoutBadge
+        round={league.current_round}
+        lockoutTime={league.next_lockout_at}
+        squadHref={t ? `/leagues/${lid}/team/${t.id}` : undefined}
       />
 
       {/* Page content — wrapped in a keyed motion div so route changes fade+slide */}

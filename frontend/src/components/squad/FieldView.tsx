@@ -2,7 +2,6 @@
  * AFL Field View — React port of team/field_view.html
  * Desktop only (d-none d-lg-block) — mobile uses mob-squad-list.
  */
-import { LockoutBanner } from './LockoutBanner'
 import { checkSwapEligible, type SwapSourceInfo, type ActionMode } from '../../hooks/useFieldActions'
 import { useEffect, useRef } from 'react'
 
@@ -327,8 +326,6 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
 
   return (
     <div className={`fv-outer d-none d-lg-block${inMode ? ' fv-swap-mode' : ''}`} id="fvWrapper">
-      {fd.next_lockout_time && <LockoutBanner lockoutTime={fd.next_lockout_time} />}
-
       <div className="fv-wrapper">
         <div className="fv-field">
           <svg className="fv-markings" viewBox="0 0 400 600" preserveAspectRatio="none">

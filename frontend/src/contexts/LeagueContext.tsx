@@ -25,6 +25,8 @@ export interface LeagueInfo {
     team_id: number
     team_name: string
   }[]
+  current_round: number
+  next_lockout_at: string | null
 }
 
 interface LeagueCtx {

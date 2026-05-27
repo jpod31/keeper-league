@@ -7576,3 +7576,108 @@ th.sortable:hover { color: #58a6ff; }
 @media (prefers-reduced-motion: reduce) {
   .schip, .schip-saving .schip-icon { animation: none; }
 }
+
+/* ══════════════════════════════════════════════════
+   LOCKOUT BADGE — top-bar round + countdown pill
+   Anchored in #kl-bar-lockout-slot via portal from LeagueShell.
+   Tone shifts as lockout approaches.
+   ══════════════════════════════════════════════════ */
+.kl-lockbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 var(--space-3);
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--kl-text-secondary);
+  font-size: .76rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease,
+              color .14s ease, transform .14s ease;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.kl-lockbadge:hover {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.14);
+  color: #f0f6fc;
+  transform: translateY(-1px);
+}
+.kl-lockbadge:focus-visible {
+  outline: 2px solid var(--kl-accent-blue);
+  outline-offset: 2px;
+}
+.kl-lockbadge-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: .9rem;
+  line-height: 1;
+}
+.kl-lockbadge-round  { color: var(--kl-text-primary); font-weight: 700; }
+.kl-lockbadge-sep    { opacity: .45; }
+.kl-lockbadge-countdown { color: inherit; }
+
+/* "soon" (≤24h) — sapphire glow */
+.kl-lockbadge-soon {
+  background: rgba(88,166,255,.10);
+  border-color: rgba(88,166,255,.28);
+  color: #cfe4ff;
+}
+.kl-lockbadge-soon .kl-lockbadge-round { color: var(--kl-accent-blue); }
+.kl-lockbadge-soon:hover {
+  background: rgba(88,166,255,.16);
+  border-color: rgba(88,166,255,.42);
+  color: #fff;
+}
+
+/* "imminent" (≤2h) — rust glow + soft pulse */
+.kl-lockbadge-imminent {
+  background: rgba(240,136,62,.12);
+  border-color: rgba(240,136,62,.34);
+  color: #ffd7b3;
+  animation: klLockPulse 1.6s ease-in-out infinite;
+}
+.kl-lockbadge-imminent .kl-lockbadge-round { color: var(--kl-accent-orange); }
+.kl-lockbadge-imminent:hover {
+  background: rgba(240,136,62,.20);
+  border-color: rgba(240,136,62,.48);
+  color: #fff;
+}
+@keyframes klLockPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(240,136,62,0); }
+  50%      { box-shadow: 0 0 0 4px rgba(240,136,62,.18); }
+}
+
+/* "locked" — live red dot */
+.kl-lockbadge-locked {
+  background: rgba(248,81,73,.12);
+  border-color: rgba(248,81,73,.34);
+  color: #ffc1bd;
+}
+.kl-lockbadge-locked .kl-lockbadge-round { color: var(--kl-accent-red); }
+.kl-lockbadge-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--kl-accent-red);
+  box-shadow: 0 0 0 0 rgba(248,81,73,.5);
+  animation: klLockDot 1.4s ease-out infinite;
+}
+@keyframes klLockDot {
+  0%   { box-shadow: 0 0 0 0 rgba(248,81,73,.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(248,81,73,0); }
+  100% { box-shadow: 0 0 0 0 rgba(248,81,73,0); }
+}
+
+@media (max-width: 991.98px) {
+  .kl-lockbadge { height: 28px; padding: 0 var(--space-2); font-size: .72rem; }
+  /* On narrow screens, the "Rxx" prefix carries enough context; drop
+     the separator so the pill stays compact. */
+  .kl-lockbadge-sep { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kl-lockbadge-imminent, .kl-lockbadge-dot { animation: none; }
+}

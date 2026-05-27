@@ -63,6 +63,28 @@ def league_context(league_id):
     if season_cfg and getattr(season_cfg, "finals_format", None):
         finals_teams = {"top_4": 4, "top_6": 6, "top_8": 8}.get(season_cfg.finals_format, 0)
 
+    # Current round + next lockout — used by the global lockout badge in
+    # the top bar. Mirrors the logic in blueprints/leagues.py dashboard.
+    current_round = 0
+    next_lockout_at = None
+    try:
+        from models.database import AflGame
+        from scrapers.squiggle import get_current_round
+        current_round = get_current_round(league.season_year) or 0
+        next_game = (
+            AflGame.query
+            .filter_by(year=league.season_year)
+            .filter(AflGame.status.in_(["scheduled", "live"]))
+            .filter(AflGame.scheduled_start.isnot(None))
+            .order_by(AflGame.scheduled_start.asc())
+            .first()
+        )
+        if next_game and next_game.scheduled_start:
+            ga = next_game.scheduled_start
+            next_lockout_at = ga.isoformat() + ("" if ga.tzinfo else "+00:00")
+    except Exception:
+        pass
+
     return jsonify({
         "id": league.id,
         "name": league.name,
@@ -78,6 +100,8 @@ def league_context(league_id):
         "pending_ltil_count": pending_ltil_count,
         "finals_teams": finals_teams,
         "user_leagues": user_leagues,
+        "current_round": current_round,
+        "next_lockout_at": next_lockout_at,
     })
 
 
