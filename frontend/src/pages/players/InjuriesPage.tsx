@@ -6,6 +6,7 @@ import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { FilterBar, type ActiveFilter } from '../../components/ui/FilterBar'
 import { useListSort } from '../../hooks/useListSort'
 import { SortedByLabel } from '../../components/ui/SortedByLabel'
+import { useWishlist } from '../../hooks/useWishlist'
 
 interface InjuredPlayer {
   id: number
@@ -49,6 +50,7 @@ const SEV_RANK: Record<string, number> = { out: 4, major: 4, test: 2, minor: 2, 
 export function InjuriesPage() {
   const { leagueId } = useParams()
   const { data, loading } = useFetch<InjuriesData>(`/leagues/${leagueId}/injuries?format=json`)
+  const wishlist = useWishlist(leagueId)
   const [posFilter, setPosFilter] = useState('')
   const [teamFilter, setTeamFilter] = useState('')
   const [sevFilter, setSevFilter] = useState('')
@@ -132,6 +134,7 @@ export function InjuriesPage() {
           <table className="table table-sm mb-0">
             <thead>
               <tr>
+                <th style={{ width: 30 }} aria-label="Watchlist"></th>
                 <SortableTh col="name" sort={sort}>Player</SortableTh>
                 <SortableTh col="afl_team" sort={sort} className="mob-hide">Team</SortableTh>
                 <SortableTh col="position" sort={sort}>Pos</SortableTh>
@@ -142,8 +145,29 @@ export function InjuriesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
+              {filtered.map(p => {
+                const pinned = wishlist.isWishlisted(p.id)
+                return (
                 <tr key={p.id}>
+                  <td className="text-center" style={{ padding: 0, verticalAlign: 'middle' }}>
+                    <button
+                      type="button"
+                      onClick={() => wishlist.toggle(p.id)}
+                      title={pinned ? 'Remove from wishlist' : 'Add to wishlist'}
+                      aria-label={pinned ? `Remove ${p.name} from wishlist` : `Add ${p.name} to wishlist`}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: 4,
+                        cursor: 'pointer',
+                        color: pinned ? '#d29922' : 'var(--kl-text-faint)',
+                        fontSize: '.85rem',
+                        lineHeight: 1,
+                      }}
+                    >
+                      <i className={`bi ${pinned ? 'bi-star-fill' : 'bi-star'}`}></i>
+                    </button>
+                  </td>
                   <td><strong>{p.name}</strong></td>
                   <td className="mob-hide"><span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.afl_team}</span></td>
                   <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
@@ -162,7 +186,8 @@ export function InjuriesPage() {
                     )}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
           {filtered.length === 0 && (
