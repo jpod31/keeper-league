@@ -78,6 +78,13 @@ export { SquadPageWrapper as SquadPage }
 function SquadPageInner() {
   const { leagueId, teamId } = useParams()
   const { league } = useLeague()
+  // Owner name → team_id lookup for trade-from-row deep links inside
+  // the wishlist view (wp.owner is the team name string).
+  const ownerNameToId = useMemo(() => {
+    const m = new Map<string, number>()
+    league?.teams.forEach(t => m.set(t.name, t.id))
+    return m
+  }, [league])
   const [searchParams] = useSearchParams()
   const view = searchParams.get('view') || 'field'
   const { data, loading, error, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
@@ -451,8 +458,23 @@ function SquadPageInner() {
                         </td>
                         <td className="text-center" style={{ color: '#8b949e' }}>{wp.games || '-'}</td>
                         <td className="text-center">
-                          {wp.owner ? <span className="status-chip" style={{ background: 'rgba(248,81,73,.1)', color: '#f85149', fontSize: '.65rem' }}>{wp.owner}</span>
-                            : <span className="status-chip" style={{ background: 'rgba(63,185,80,.1)', color: '#3fb950', fontSize: '.65rem' }}>Available</span>}
+                          {wp.owner ? (
+                            <span className="d-inline-flex align-items-center gap-1">
+                              <span className="status-chip" style={{ background: 'rgba(248,81,73,.1)', color: '#f85149', fontSize: '.65rem' }}>{wp.owner}</span>
+                              {wp.owner !== league?.user_team?.name && ownerNameToId.has(wp.owner) && (
+                                <Link
+                                  to={`/leagues/${leagueId}/trades/propose?with=${p.id}&from=${ownerNameToId.get(wp.owner)}`}
+                                  className="trade-from-row"
+                                  title={`Propose trade for ${p.name} with ${wp.owner}`}
+                                  aria-label={`Propose trade for ${p.name}`}
+                                >
+                                  <i className="bi bi-arrow-left-right"></i>
+                                </Link>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="status-chip" style={{ background: 'rgba(63,185,80,.1)', color: '#3fb950', fontSize: '.65rem' }}>Available</span>
+                          )}
                         </td>
                       </tr>
                     )
