@@ -399,10 +399,14 @@ def dashboard(league_id):
                 .first()
             )
             if next_game and next_game.scheduled_start:
+                from zoneinfo import ZoneInfo
                 ga = next_game.scheduled_start
-                next_lockout_at = (
-                    ga.isoformat() + ("" if ga.tzinfo else "+00:00")
-                )
+                # scheduled_start is naive Melbourne wall-clock (see
+                # scrapers/squiggle.py). Attach the proper zone so the
+                # countdown isn't ~10h late in winter / ~11h late in summer.
+                if ga.tzinfo is None:
+                    ga = ga.replace(tzinfo=ZoneInfo("Australia/Melbourne"))
+                next_lockout_at = ga.isoformat()
             live_games_count = _AG.query.filter_by(
                 year=league.season_year, status="live"
             ).count()
