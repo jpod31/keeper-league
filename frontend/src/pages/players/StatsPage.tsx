@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { StatsSkeleton } from '../../components/ui/StatsSkeleton'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 
 interface PlayerMetric {
@@ -123,7 +123,7 @@ export function StatsPage() {
   const [tab, setTab] = useState<'leaders' | 'team'>('leaders')
   const [selectedTeamId, setSelectedTeamId] = useState<string>('')
 
-  if (loading) return <Spinner text="Loading advanced stats..." />
+  if (loading) return <StatsSkeleton />
   if (!data) return <p className="text-danger">Failed to load stats</p>
 
   const leaders = data.leaders
