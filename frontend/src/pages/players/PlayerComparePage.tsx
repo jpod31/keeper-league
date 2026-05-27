@@ -1,8 +1,9 @@
-import { useParams, useSearchParams, Link } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
+import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
 interface ComparePlayer {
   id: number
@@ -85,7 +86,7 @@ export function PlayerComparePage() {
       <div className="d-none d-lg-block"><PlayersSubnav active="compare" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Compare
+          <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Players / Compare
         </div>
         <h2><i className="bi bi-people-fill me-2" style={{ color: '#58a6ff' }}></i>Player Compare</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>Side-by-side comparison of up to 4 players</div>

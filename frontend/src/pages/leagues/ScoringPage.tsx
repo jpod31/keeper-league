@@ -1,8 +1,9 @@
-import { useParams, Link } from 'react-router'
+import { useParams } from 'react-router'
 import { useState, useEffect } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { AdminSubnav } from '../../components/nav/AdminSubnav'
+import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
 interface ScoringData {
   league: {
@@ -101,7 +102,7 @@ export function ScoringPage() {
       <div className="d-none d-lg-block"><AdminSubnav active="scoring" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Admin / Scoring
+          <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Admin / Scoring
         </div>
         <h2><i className="bi bi-calculator me-2" style={{ color: '#58a6ff' }}></i>Scoring Configuration</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>Configure how player stats convert to fantasy points.</div>

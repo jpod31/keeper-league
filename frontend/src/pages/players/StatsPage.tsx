@@ -1,8 +1,9 @@
-import { useParams, Link } from 'react-router'
+import { useParams } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { StatsSkeleton } from '../../components/ui/StatsSkeleton'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
+import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
 interface PlayerMetric {
   id: number
@@ -138,7 +139,7 @@ export function StatsPage() {
       <div className="d-none d-lg-block"><PlayersSubnav active="stats" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Stats
+          <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Players / Stats
         </div>
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>

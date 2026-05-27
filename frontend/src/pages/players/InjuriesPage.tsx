@@ -11,6 +11,7 @@ import { WishlistStar } from '../../components/ui/WishlistStar'
 import { useLeague } from '../../contexts/LeagueContext'
 import { useDensity } from '../../hooks/useDensity'
 import { DensityToggle } from '../../components/ui/DensityToggle'
+import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
 interface InjuredPlayer {
   id: number
@@ -109,7 +110,7 @@ export function InjuriesPage() {
       <div className="d-none d-lg-block"><PlayersSubnav active="injuries" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Injuries
+          <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Players / Injuries
         </div>
         <h2><i className="bi bi-bandaid me-2" style={{ color: '#f85149' }}></i>Injuries</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>

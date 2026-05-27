@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router'
+import { useParams } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
@@ -6,6 +6,7 @@ import { useWishlist } from '../../hooks/useWishlist'
 import { WishlistStar } from '../../components/ui/WishlistStar'
 import { useDensity } from '../../hooks/useDensity'
 import { DensityToggle } from '../../components/ui/DensityToggle'
+import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
 interface RatingChange {
   player_id: number
@@ -56,7 +57,7 @@ export function PlayerRatingsPage() {
       <div className="d-none d-lg-block"><PlayersSubnav active="ratings" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Players / Ratings
+          <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Players / Ratings
         </div>
         <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap">
           <div>

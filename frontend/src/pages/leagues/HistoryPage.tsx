@@ -1,8 +1,9 @@
-import { useParams, Link } from 'react-router'
+import { useParams } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
+import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
 interface Champion { year: number; team_name: string; wins: number; losses: number; draws: number; points_for: number; percentage: number }
 interface AlltimeRow { team_name: string; wins: number; losses: number; draws: number; points_for: number; points_against: number; total_games: number; win_pct: number; percentage: number; seasons: number }
@@ -124,7 +125,7 @@ export function HistoryPage() {
       <div className="d-none d-lg-block"><LeagueSubnav active="records" leagueId={leagueId!} /></div>
       <div className="page-header">
         <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}`}>{data.league.name}</Link> / Records
+          <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Records
         </div>
         <h2><i className="bi bi-trophy me-2" style={{ color: '#d29922' }}></i>League Records</h2>
       </div>
