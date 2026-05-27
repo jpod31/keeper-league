@@ -8059,6 +8059,45 @@ th.sortable:hover { color: #58a6ff; }
   .fxsk-row { padding: var(--space-2) var(--space-3); }
   .fxsk-score { width: 70px; }
 }
+
+/* StandingsSkeleton — header + 10 ladder rows. */
+.stsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+.stsk-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.stsk-title { height: 28px; width: 200px; border-radius: 8px; }
+.stsk-meta  { height: 22px; width: 120px; border-radius: 6px; }
+.stsk-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.stsk-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 60px 60px 60px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 10px;
+}
+.stsk-rank { height: 22px; border-radius: 4px; }
+.stsk-name { height: 22px; border-radius: 6px; }
+.stsk-cell { height: 22px; border-radius: 4px; }
+
+@media (max-width: 600px) {
+  .stsk-row { grid-template-columns: 28px 1fr 50px 50px; }
+  .stsk-row .stsk-cell:last-child { display: none; }
+}
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }

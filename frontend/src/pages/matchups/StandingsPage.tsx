@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { StandingsSkeleton } from '../../components/ui/StandingsSkeleton'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 
 interface Team { id: number; name: string; logo_url?: string | null }
@@ -544,7 +544,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
     return arr
   }, [standings, sortField, sortDir, ladderPos, rankingByTeam])
 
-  if (loading) return <Spinner text="Loading standings..." />
+  if (loading) return <StandingsSkeleton />
   if (!data) return <p className="text-danger">Failed to load standings</p>
 
   const { finals_teams, scoring, ranking_details, team_form, user_team_id } = data
