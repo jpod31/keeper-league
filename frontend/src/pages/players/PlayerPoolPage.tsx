@@ -4,6 +4,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
+import { useWishlist } from '../../hooks/useWishlist'
 
 interface Acquired {
   coach: string | null
@@ -301,55 +302,7 @@ export function PlayerPoolPage() {
   const [mobSort, setMobSort] = useState<MobileSortKey>('sc')
   const [pickingUp, setPickingUp] = useState<number | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
-  const [wishlistedIds, setWishlistedIds] = useState<Set<number>>(new Set())
-
-  useEffect(() => {
-    fetch(`/leagues/${leagueId}/wishlist/api`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => setWishlistedIds(new Set<number>(d.player_ids || [])))
-      .catch(() => {})
-  }, [leagueId])
-
-  async function toggleWishlist(playerId: number) {
-    const wasWishlisted = wishlistedIds.has(playerId)
-    setWishlistedIds(prev => {
-      const next = new Set(prev)
-      if (wasWishlisted) next.delete(playerId)
-      else next.add(playerId)
-      return next
-    })
-    try {
-      const res = await fetch(`/leagues/${leagueId}/wishlist/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ player_id: playerId }),
-        credentials: 'include',
-      })
-      const d = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setWishlistedIds(prev => {
-          const next = new Set(prev)
-          if (wasWishlisted) next.add(playerId)
-          else next.delete(playerId)
-          return next
-        })
-      } else {
-        setWishlistedIds(prev => {
-          const next = new Set(prev)
-          if (d.wishlisted) next.add(playerId)
-          else next.delete(playerId)
-          return next
-        })
-      }
-    } catch {
-      setWishlistedIds(prev => {
-        const next = new Set(prev)
-        if (wasWishlisted) next.add(playerId)
-        else next.delete(playerId)
-        return next
-      })
-    }
-  }
+  const wishlist = useWishlist(leagueId)
 
   const filtered = useMemo(() => {
     if (!data) return []
@@ -690,12 +643,12 @@ export function PlayerPoolPage() {
                     <td className="text-center" style={{ padding: 0 }}>
                       <button
                         type="button"
-                        className={`wishlist-star${wishlistedIds.has(p.id) ? ' active' : ''}`}
-                        onClick={e => { e.stopPropagation(); toggleWishlist(p.id) }}
-                        title={wishlistedIds.has(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                        aria-label={wishlistedIds.has(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                        className={`wishlist-star${wishlist.isWishlisted(p.id) ? ' active' : ''}`}
+                        onClick={e => { e.stopPropagation(); wishlist.toggle(p.id) }}
+                        title={wishlist.isWishlisted(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                        aria-label={wishlist.isWishlisted(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                       >
-                        <i className={`bi ${wishlistedIds.has(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
+                        <i className={`bi ${wishlist.isWishlisted(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
                       </button>
                     </td>
                   </tr>
@@ -809,11 +762,11 @@ export function PlayerPoolPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <button
                         type="button"
-                        className={`wishlist-star${wishlistedIds.has(p.id) ? ' active' : ''}`}
-                        onClick={e => { e.stopPropagation(); toggleWishlist(p.id) }}
-                        aria-label={wishlistedIds.has(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                        className={`wishlist-star${wishlist.isWishlisted(p.id) ? ' active' : ''}`}
+                        onClick={e => { e.stopPropagation(); wishlist.toggle(p.id) }}
+                        aria-label={wishlist.isWishlisted(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                       >
-                        <i className={`bi ${wishlistedIds.has(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
+                        <i className={`bi ${wishlist.isWishlisted(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
                       </button>
                       {p.owner_team ? (
                         <span className="kl-player-card-owner" style={{ background: tc?.bg, color: tc?.fg }}>{p.owner_team}</span>
