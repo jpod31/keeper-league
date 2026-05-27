@@ -7782,6 +7782,42 @@ th.sortable:hover { color: #58a6ff; }
 @media (prefers-reduced-motion: reduce) {
   .mstrip-live, .mstrip-livedot { animation: none; }
 }
+
+/* ══════════════════════════════════════════════════
+   SQUAD SKELETON — layout-aware loader for SquadPage
+   Reuses .kl-skel shimmer; just lays out the right shapes.
+   ══════════════════════════════════════════════════ */
+.sqsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+.sqsk-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.sqsk-logo  { width: 48px; height: 48px; border-radius: 10px; }
+.sqsk-title { height: 28px; width: 240px; border-radius: 8px; }
+.sqsk-tabs {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.sqsk-tab { width: 92px; height: 36px; border-radius: 8px; }
+.sqsk-strip { height: 44px; width: 100%; border-radius: 10px; }
+.sqsk-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.sqsk-zone {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--space-2);
+}
+.sqsk-card { height: 72px; border-radius: 10px; }
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }

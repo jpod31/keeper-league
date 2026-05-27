@@ -1,9 +1,9 @@
 import { useParams, Link, useSearchParams } from 'react-router'
 import { useState, useMemo, useCallback, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
 import { StatTile } from '../../components/ui/StatTile'
 import { MatchupStrip } from '../../components/ui/MatchupStrip'
+import { SquadSkeleton } from '../../components/ui/SquadSkeleton'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
@@ -149,7 +149,7 @@ function SquadPageInner() {
     }
   }, [data, onDelist])
 
-  if (loading) return <Spinner />
+  if (loading) return <SquadSkeleton />
   if (!data) {
     // Hook already retried once silently. Surface the real reason and
     // give a retry button instead of a dead-end message.
