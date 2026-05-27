@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 
 interface Team {
   id: number
@@ -123,7 +123,7 @@ export function TradeDetailPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (loading) return <Spinner text="Loading trade..." />
+  if (loading) return <RowsSkeleton rows={6} />
   if (!data) return <p className="text-danger">Failed to load trade</p>
 
   const { league, trade, giving, receiving, giving_picks, receiving_picks, comments, team_logos,

@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { api } from '../../lib/api'
-import { Spinner } from '../../components/ui/Spinner'
+import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 
 interface Team { id: number; name: string; owner: string; draft_order: number }
 interface DraftSessionSummary {
@@ -240,7 +240,7 @@ export function DraftSetupPage() {
     } catch { /* noop */ }
   }
 
-  if (loading) return <Spinner text="Loading draft setup..." />
+  if (loading) return <RowsSkeleton rows={8} />
   if (!data) return <p className="text-danger">Failed to load draft setup</p>
 
   const { league, teams, session, initial_session, initial_completed, supp_session, mock_session, season_config, can_restart } = data
