@@ -7,6 +7,7 @@ import { FilterBar, type ActiveFilter } from '../../components/ui/FilterBar'
 import { useListSort } from '../../hooks/useListSort'
 import { SortedByLabel } from '../../components/ui/SortedByLabel'
 import { useWishlist } from '../../hooks/useWishlist'
+import { WishlistStar } from '../../components/ui/WishlistStar'
 
 interface InjuredPlayer {
   id: number
@@ -145,28 +146,10 @@ export function InjuriesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => {
-                const pinned = wishlist.isWishlisted(p.id)
-                return (
+              {filtered.map(p => (
                 <tr key={p.id}>
                   <td className="text-center" style={{ padding: 0, verticalAlign: 'middle' }}>
-                    <button
-                      type="button"
-                      onClick={() => wishlist.toggle(p.id)}
-                      title={pinned ? 'Remove from wishlist' : 'Add to wishlist'}
-                      aria-label={pinned ? `Remove ${p.name} from wishlist` : `Add ${p.name} to wishlist`}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        padding: 4,
-                        cursor: 'pointer',
-                        color: pinned ? '#d29922' : 'var(--kl-text-faint)',
-                        fontSize: '.85rem',
-                        lineHeight: 1,
-                      }}
-                    >
-                      <i className={`bi ${pinned ? 'bi-star-fill' : 'bi-star'}`}></i>
-                    </button>
+                    <WishlistStar wishlist={wishlist} playerId={p.id} playerName={p.name} />
                   </td>
                   <td><strong>{p.name}</strong></td>
                   <td className="mob-hide"><span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.afl_team}</span></td>
@@ -186,8 +169,7 @@ export function InjuriesPage() {
                     )}
                   </td>
                 </tr>
-                )
-              })}
+              ))}
             </tbody>
           </table>
           {filtered.length === 0 && (

@@ -2,6 +2,8 @@ import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
+import { useWishlist } from '../../hooks/useWishlist'
+import { WishlistStar } from '../../components/ui/WishlistStar'
 
 interface RatingChange {
   player_id: number
@@ -40,6 +42,7 @@ function deltaBadge(delta: number) {
 export function PlayerRatingsPage() {
   const { leagueId } = useParams()
   const { data, loading } = useFetch<RatingsData>(`/leagues/${leagueId}/player-ratings?format=json`)
+  const wishlist = useWishlist(leagueId)
 
   if (loading) return <Spinner text="Loading ratings..." />
   if (!data) return <p className="text-danger">Failed to load ratings</p>
@@ -68,10 +71,13 @@ export function PlayerRatingsPage() {
             </div>
             <div className="card-body p-0" style={{ maxHeight: 600, overflowY: 'auto' }}>
               <table className="table table-sm mb-0">
-                <thead><tr><th>Player</th><th>Pos</th><th className="text-end">Old</th><th className="text-end">New</th><th className="text-end">Δ</th></tr></thead>
+                <thead><tr><th style={{ width: 30 }} aria-label="Watchlist"></th><th>Player</th><th>Pos</th><th className="text-end">Old</th><th className="text-end">New</th><th className="text-end">Δ</th></tr></thead>
                 <tbody>
                   {data.last_update.map(r => (
                     <tr key={`${r.player_id}-${r.changed_at}`}>
+                      <td className="text-center" style={{ padding: 0, verticalAlign: 'middle' }}>
+                        <WishlistStar wishlist={wishlist} playerId={r.player_id} playerName={r.player_name} />
+                      </td>
                       <td><strong>{r.player_name}</strong><div className="text-secondary" style={{ fontSize: '.7rem' }}>{r.afl_team}</div></td>
                       <td><span className={`pos-badge pos-${r.position}`}>{r.position}</span></td>
                       <td className="text-end">{r.old_rating}</td>
@@ -81,7 +87,13 @@ export function PlayerRatingsPage() {
                   ))}
                 </tbody>
               </table>
-              {data.last_update.length === 0 && <div className="text-center py-4 text-secondary">No recent changes</div>}
+              {data.last_update.length === 0 && (
+                <div className="empty-state">
+                  <div className="empty-icon"><i className="bi bi-stars"></i></div>
+                  <h4>No recent changes</h4>
+                  <p>Player ratings update periodically — check back after the next refresh.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -94,10 +106,13 @@ export function PlayerRatingsPage() {
             </div>
             <div className="card-body p-0" style={{ maxHeight: 600, overflowY: 'auto' }}>
               <table className="table table-sm mb-0">
-                <thead><tr><th>Player</th><th>Pos</th><th className="text-end">Start</th><th className="text-end">Now</th><th className="text-end">Δ</th></tr></thead>
+                <thead><tr><th style={{ width: 30 }} aria-label="Watchlist"></th><th>Player</th><th>Pos</th><th className="text-end">Start</th><th className="text-end">Now</th><th className="text-end">Δ</th></tr></thead>
                 <tbody>
                   {data.season_movers.slice(0, 50).map(p => (
                     <tr key={p.id}>
+                      <td className="text-center" style={{ padding: 0, verticalAlign: 'middle' }}>
+                        <WishlistStar wishlist={wishlist} playerId={p.id} playerName={p.name} />
+                      </td>
                       <td><strong>{p.name}</strong><div className="text-secondary" style={{ fontSize: '.7rem' }}>{p.afl_team}</div></td>
                       <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
                       <td className="text-end">{p.rating_start}</td>
