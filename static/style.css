@@ -8153,6 +8153,44 @@ th.sortable:hover { color: #58a6ff; }
 .rhealth-bad     { border-color: rgba(240,136,62,.45); }
 .rhealth-bad .rhealth-delta     { color: var(--kl-accent-orange); }
 .rhealth-neutral .rhealth-delta { color: var(--kl-text-secondary); }
+
+/* DashboardSkeleton — round/lockout hero + matchup card + tile row. */
+.dbsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+.dbsk-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.dbsk-round   { height: 36px; width: 140px; border-radius: 999px; }
+.dbsk-lockout { height: 36px; flex: 1 1 auto; border-radius: 999px; }
+.dbsk-matchup {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+}
+.dbsk-side { height: 80px; border-radius: 10px; }
+.dbsk-vs   { height: 36px; width: 36px; border-radius: 50%; }
+.dbsk-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+.dbsk-tile { height: 96px; border-radius: 12px; }
+
+@media (max-width: 600px) {
+  .dbsk-matchup { padding: var(--space-3); }
+  .dbsk-side { height: 60px; }
+}
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }

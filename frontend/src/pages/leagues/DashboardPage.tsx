@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router'
 import { useEffect, useMemo, useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton'
 
 // ── Types ────────────────────────────────────────────────────
 interface PositionSlot { position_code: string; count: number; is_bench: boolean }
@@ -190,7 +190,7 @@ export function DashboardPage() {
     return m
   }, [data])
 
-  if (loading) return <Spinner text="Loading dashboard..." />
+  if (loading) return <DashboardSkeleton />
   if (!data) return <p className="text-danger">Failed to load dashboard</p>
 
   const { league, user_team, teams, scoring_rules, this_matchup, my_rank, standings,
