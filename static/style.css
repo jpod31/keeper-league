@@ -7974,6 +7974,53 @@ th.sortable:hover { color: #58a6ff; }
 }
 .trade-from-row:hover  { color: var(--kl-accent-blue); transform: translateY(-1px); text-decoration: none; }
 .trade-from-row:active { transform: scale(.95); }
+
+/* ══════════════════════════════════════════════════
+   DENSITY TOGGLE — comfortable vs compact row spacing
+   Pair with useDensity hook. Wrap the table (or any
+   list container) in [data-density="..."] for the
+   compact rule below to take effect.
+   ══════════════════════════════════════════════════ */
+.dty {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--kl-border);
+  border-radius: 8px;
+  gap: 2px;
+}
+.dty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--kl-text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .9rem;
+  transition: background .12s, color .12s;
+}
+.dty-btn:hover { color: var(--kl-text-primary); }
+.dty-btn.active {
+  background: rgba(88,166,255,.16);
+  color: var(--kl-accent-blue);
+}
+
+/* Compact mode: tighten table-sm row padding further. Comfortable
+   mode (default) leaves Bootstrap's table-sm as-is. */
+[data-density="compact"] .table-sm > :not(caption) > * > * {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+[data-density="compact"] .table > :not(caption) > * > * {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }

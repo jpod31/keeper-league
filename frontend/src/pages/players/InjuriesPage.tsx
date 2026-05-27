@@ -9,6 +9,8 @@ import { SortedByLabel } from '../../components/ui/SortedByLabel'
 import { useWishlist } from '../../hooks/useWishlist'
 import { WishlistStar } from '../../components/ui/WishlistStar'
 import { useLeague } from '../../contexts/LeagueContext'
+import { useDensity } from '../../hooks/useDensity'
+import { DensityToggle } from '../../components/ui/DensityToggle'
 
 interface InjuredPlayer {
   id: number
@@ -54,6 +56,7 @@ export function InjuriesPage() {
   const { data, loading } = useFetch<InjuriesData>(`/leagues/${leagueId}/injuries?format=json`)
   const wishlist = useWishlist(leagueId)
   const { league: leagueCtx } = useLeague()
+  const { density, setDensity } = useDensity('players.injuries.density')
   // Resolve owner-team-name → team_id for the trade-from-row deep link.
   // Mirrors the lookup pattern in PlayerPoolPage.
   const ownerNameToId = useMemo(() => {
@@ -134,12 +137,17 @@ export function InjuriesPage() {
             </select>
           </>
         }
-        actions={<SortedByLabel column={sort.column} direction={sort.direction} columnLabels={SORT_LABELS} />}
+        actions={
+          <>
+            <SortedByLabel column={sort.column} direction={sort.direction} columnLabels={SORT_LABELS} />
+            <DensityToggle density={density} onChange={setDensity} />
+          </>
+        }
         activeFilters={activeFilters}
         onClearAll={activeFilters.length > 0 ? () => { setPosFilter(''); setTeamFilter(''); setSevFilter('') } : undefined}
       />
 
-      <div className="card mt-3">
+      <div className="card mt-3" data-density={density}>
         <div className="card-body p-0">
           <table className="table table-sm mb-0">
             <thead>
