@@ -85,6 +85,29 @@ def league_context(league_id):
     except Exception:
         pass
 
+    # Current matchup — used by the squad page mini fixture strip.
+    # Looks up the user's fixture for the current AFL round.
+    current_matchup = None
+    if user_team and current_round:
+        fx = Fixture.query.filter(
+            Fixture.league_id == league_id,
+            Fixture.year == league.season_year,
+            Fixture.afl_round == current_round,
+            db.or_(Fixture.home_team_id == user_team.id, Fixture.away_team_id == user_team.id),
+        ).first()
+        if fx:
+            user_is_home = fx.home_team_id == user_team.id
+            opp_team = fx.away_team if user_is_home else fx.home_team
+            current_matchup = {
+                "fixture_id": fx.id,
+                "opponent_id": opp_team.id if opp_team else None,
+                "opponent_name": opp_team.name if opp_team else "?",
+                "user_is_home": user_is_home,
+                "status": fx.status,
+                "user_score": (fx.home_score if user_is_home else fx.away_score) or None,
+                "opponent_score": (fx.away_score if user_is_home else fx.home_score) or None,
+            }
+
     return jsonify({
         "id": league.id,
         "name": league.name,
@@ -102,6 +125,7 @@ def league_context(league_id):
         "user_leagues": user_leagues,
         "current_round": current_round,
         "next_lockout_at": next_lockout_at,
+        "current_matchup": current_matchup,
     })
 
 

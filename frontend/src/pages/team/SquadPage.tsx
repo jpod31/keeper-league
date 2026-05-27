@@ -3,11 +3,13 @@ import { useState, useMemo, useCallback, Component, type ErrorInfo, type ReactNo
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { StatTile } from '../../components/ui/StatTile'
+import { MatchupStrip } from '../../components/ui/MatchupStrip'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
 import { useFieldActions, checkSwapEligible } from '../../hooks/useFieldActions'
 import { SSPModal } from '../../components/squad/SSPModal'
+import { useLeague } from '../../contexts/LeagueContext'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
@@ -75,6 +77,7 @@ export { SquadPageWrapper as SquadPage }
 
 function SquadPageInner() {
   const { leagueId, teamId } = useParams()
+  const { league } = useLeague()
   const [searchParams] = useSearchParams()
   const view = searchParams.get('view') || 'field'
   const { data, loading, error, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
@@ -471,6 +474,14 @@ function SquadPageInner() {
       {/* ══════ FIELD VIEW ══════ */}
       {view === 'field' && fd && (
         <>
+          {is_owner && league?.current_matchup && (
+            <MatchupStrip
+              round={league.current_round}
+              matchup={league.current_matchup}
+              lockoutTime={league.next_lockout_at}
+              leagueId={leagueId!}
+            />
+          )}
           <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner}
             delistContext={delistContext}
             actions={{

@@ -27,6 +27,15 @@ export interface LeagueInfo {
   }[]
   current_round: number
   next_lockout_at: string | null
+  current_matchup: {
+    fixture_id: number
+    opponent_id: number | null
+    opponent_name: string
+    user_is_home: boolean
+    status: string                  // 'scheduled' | 'live' | 'completed'
+    user_score: number | null
+    opponent_score: number | null
+  } | null
 }
 
 interface LeagueCtx {

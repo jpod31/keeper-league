@@ -7695,6 +7695,93 @@ th.sortable:hover { color: #58a6ff; }
 .kl-breathe {
   animation: klBreathe 4s ease-in-out infinite;
 }
+
+/* ══════════════════════════════════════════════════
+   MATCHUP STRIP — mini fixture indicator above the squad
+   "R14 · vs Ralph's Roos · Locks in 4h 12m"
+   ══════════════════════════════════════════════════ */
+.mstrip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-3) 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+  border: 1px solid var(--kl-border);
+  border-radius: 10px;
+  color: var(--kl-text-secondary);
+  font-size: .82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+  font-variant-numeric: tabular-nums;
+}
+.mstrip:hover {
+  background: rgba(255,255,255,.06);
+  border-color: var(--kl-border-light);
+  color: var(--kl-text-primary);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+.mstrip-round {
+  color: var(--kl-text-heading);
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+.mstrip-sep { opacity: .4; }
+.mstrip-matchup { color: var(--kl-text-primary); min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mstrip-prefix { color: var(--kl-text-muted); font-weight: 500; }
+.mstrip-opp    { color: var(--kl-text-heading); font-weight: 600; }
+.mstrip-tail {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+.mstrip-countdown {
+  color: var(--kl-accent-blue);
+  font-weight: 600;
+  font-size: .78rem;
+}
+.mstrip-score {
+  color: var(--kl-text-heading);
+  font-weight: 700;
+  font-size: .92rem;
+}
+.mstrip-chev {
+  color: var(--kl-text-faint);
+  font-size: .8rem;
+  flex: 0 0 auto;
+}
+
+/* Live state — small red dot + sapphire→rust shift on the countdown,
+   plus the kl-breathe utility kicks in. */
+.mstrip-live {
+  border-color: rgba(248,81,73,.34);
+  background: linear-gradient(180deg, rgba(248,81,73,.06), rgba(248,81,73,.02));
+  animation: klBreathe 4s ease-in-out infinite;
+}
+.mstrip-live .mstrip-countdown { color: var(--kl-accent-red); }
+.mstrip-livedot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--kl-accent-red);
+  box-shadow: 0 0 0 0 rgba(248,81,73,.55);
+  animation: klLockDot 1.4s ease-out infinite;
+}
+
+/* Completed — muted, score takes the spotlight. */
+.mstrip-done {
+  opacity: .82;
+}
+
+@media (max-width: 720px) {
+  .mstrip { padding: var(--space-2) var(--space-3); font-size: .78rem; }
+  .mstrip-chev { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mstrip-live, .mstrip-livedot { animation: none; }
+}
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
