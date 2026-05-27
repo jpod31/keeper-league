@@ -76,9 +76,23 @@ export function InboxPage() {
             </div>
             <div className="card-body p-0">
               {data.conversations.length === 0 ? (
-                <div className="text-center text-secondary py-5">
-                  <i className="bi bi-chat-dots" style={{ fontSize: '2rem', display: 'block', marginBottom: 8 }}></i>
-                  No conversations yet
+                <div className="empty-state">
+                  <div className="empty-icon"><i className="bi bi-chat-dots"></i></div>
+                  <h4>No conversations yet</h4>
+                  <p>Start a chat with another team — propose a trade, share a take, or just open a line.</p>
+                  {data.all_teams.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => {
+                        const sel = document.querySelector('select.form-select-sm') as HTMLSelectElement | null
+                        sel?.focus()
+                        sel?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }}
+                    >
+                      <i className="bi bi-send me-1"></i>Send your first message
+                    </button>
+                  )}
                 </div>
               ) : (
                 data.conversations.map(c => (

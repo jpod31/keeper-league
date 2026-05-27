@@ -166,7 +166,26 @@ export function InjuriesPage() {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <div className="text-center py-4 text-secondary">No players match the current filters.</div>
+            activeFilters.length > 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon"><i className="bi bi-funnel"></i></div>
+                <h4>No matches</h4>
+                <p>No injured players match your current filters.</p>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => { setPosFilter(''); setTeamFilter(''); setSevFilter('') }}
+                >
+                  <i className="bi bi-x-circle me-1"></i>Clear filters
+                </button>
+              </div>
+            ) : (
+              <div className="empty-state positive">
+                <div className="empty-icon"><i className="bi bi-shield-check"></i></div>
+                <h4>No injuries reported</h4>
+                <p>Every player on the radar is healthy right now.</p>
+              </div>
+            )
           )}
         </div>
       </div>

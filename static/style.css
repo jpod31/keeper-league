@@ -7652,11 +7652,13 @@ th.sortable:hover { color: #58a6ff; }
   50%      { box-shadow: 0 0 0 4px rgba(240,136,62,.18); }
 }
 
-/* "locked" — live red dot */
+/* "locked" — live red dot + the .kl-breathe utility for the whole pill
+   so the badge subtly breathes while AFL games are in progress. */
 .kl-lockbadge-locked {
   background: rgba(248,81,73,.12);
   border-color: rgba(248,81,73,.34);
   color: #ffc1bd;
+  animation: klBreathe 4s ease-in-out infinite;
 }
 .kl-lockbadge-locked .kl-lockbadge-round { color: var(--kl-accent-red); }
 .kl-lockbadge-dot {
@@ -7679,5 +7681,24 @@ th.sortable:hover { color: #58a6ff; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kl-lockbadge-imminent, .kl-lockbadge-dot { animation: none; }
+  .kl-lockbadge-imminent, .kl-lockbadge-dot, .kl-lockbadge-locked { animation: none; }
+}
+
+/* ══════════════════════════════════════════════════
+   LIVE BREATH — utility for "this element is live right now"
+   Apply .kl-breathe alongside any element that should subtly
+   pulse while live data is updating behind it. 4s opacity cycle,
+   reduced-motion respected. Used by .kl-lockbadge-locked; opt
+   other live elements in (live game pills, live player scores, etc.)
+   by adding the class.
+   ══════════════════════════════════════════════════ */
+.kl-breathe {
+  animation: klBreathe 4s ease-in-out infinite;
+}
+@keyframes klBreathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .82; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kl-breathe, .kl-lockbadge-locked { animation: none; }
 }
