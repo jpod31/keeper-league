@@ -476,6 +476,73 @@ def team_pos_avgs(league_id, team_id):
     return jsonify({"league_avg": league_avg, "mine": mine})
 
 
+# ── Bye-round planner (#14) ───────────────────────────────────────────
+#
+# For the next N AFL rounds, list each player on this team who's on bye
+# (their AFL team isn't playing that round). Powers the bye planner
+# overlay on SquadPage so users can spot positional congestion ahead.
+
+@spa_api.route("/leagues/<int:league_id>/team/<int:team_id>/byes")
+@login_required
+def team_byes(league_id, team_id):
+    team = db.session.get(FantasyTeam, team_id)
+    if not team or team.league_id != league_id:
+        return jsonify({"error": "Not found"}), 404
+
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "Not found"}), 404
+
+    lookahead = max(1, min(20, request.args.get("lookahead", 10, type=int)))
+
+    # Pull team's active roster + their AflPlayer record (skip benched? no
+    # — bye planning cares about the whole list since you might be moving
+    # players up). For now: all active roster spots.
+    rosters = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    pairs = [(db.session.get(AflPlayer, r.player_id), r) for r in rosters]
+    pairs = [(p, r) for p, r in pairs if p]
+
+    # Anchor at the current AFL round; if we can't determine one, start at 1.
+    try:
+        from scrapers.squiggle import get_current_round
+        current_round = get_current_round(league.season_year) or 1
+    except Exception:
+        current_round = 1
+
+    results = []
+    for rnd in range(current_round, current_round + lookahead):
+        games = AflGame.query.filter_by(year=league.season_year, afl_round=rnd).all()
+        if not games:
+            continue  # round not in the scraped schedule yet
+        teams_playing = set()
+        for g in games:
+            teams_playing.add(g.home_team)
+            teams_playing.add(g.away_team)
+        players_out = []
+        for p, _r in pairs:
+            if p.afl_team and p.afl_team not in teams_playing:
+                players_out.append({
+                    "id": p.id,
+                    "name": p.name,
+                    "afl_team": p.afl_team,
+                    "position": (p.position or "MID").split("/")[0].upper(),
+                })
+        # Sort players_out by position for readable grouping.
+        pos_order = {"DEF": 0, "MID": 1, "RUC": 2, "FWD": 3}
+        players_out.sort(key=lambda x: (pos_order.get(x["position"], 9), x["name"]))
+        results.append({
+            "round": rnd,
+            "players_out": players_out,
+            "total_out": len(players_out),
+        })
+
+    return jsonify({
+        "current_round": current_round,
+        "lookahead": lookahead,
+        "rounds": results,
+    })
+
+
 # ── Team stats ────────────────────────────────────────────────────────
 
 @spa_api.route("/leagues/<int:league_id>/team/<int:team_id>/stats")
