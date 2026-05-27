@@ -353,7 +353,7 @@ def send_chat_message(league_id):
     if _socketio:
         _socketio.emit("chat_message", {
             "id": msg.id,
-            "sender_id": current_user.id,
+            "sender_user_id": current_user.id,
             "sender_name": current_user.display_name or current_user.username,
             "body": body,
             "created_at": msg.created_at.isoformat(),
