@@ -461,10 +461,15 @@ function SquadPageInner() {
               </table>
             </div>
           ) : (
-            <div className="card-body text-center py-5">
-              <i className="bi bi-star" style={{ fontSize: '2rem', color: '#484f58' }}></i>
-              <p className="mt-2 mb-1" style={{ color: '#8b949e', fontSize: '.88rem' }}>No players on your wishlist yet.</p>
-              <Link to={`/leagues/${leagueId}/player-pool`} className="btn btn-sm btn-outline-primary mt-1"><i className="bi bi-search me-1"></i>Browse Player Pool</Link>
+            <div className="card-body p-0">
+              <div className="empty-state attention">
+                <div className="empty-icon"><i className="bi bi-star"></i></div>
+                <h4>Your wishlist is empty</h4>
+                <p>Pin players you're watching — trade targets, draft-day shortlists, that breakout you keep circling.</p>
+                <Link to={`/leagues/${leagueId}/player-pool`} className="btn btn-primary btn-sm">
+                  <i className="bi bi-search me-1"></i>Browse the player pool
+                </Link>
+              </div>
             </div>
           )}
         </div>
