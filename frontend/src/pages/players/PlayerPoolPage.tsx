@@ -5,6 +5,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { useWishlist } from '../../hooks/useWishlist'
+import { useLeague } from '../../contexts/LeagueContext'
 
 interface Acquired {
   coach: string | null
@@ -268,6 +269,9 @@ const POOL_CSS = `
 .wishlist-star:hover { color: #d29922; }
 .wishlist-star.active { color: #d29922; }
 .wishlist-star:active { transform: scale(1.2); }
+.trade-from-row { display: inline-flex; align-items: center; justify-content: center; padding: 4px 6px; color: #6e7681; font-size: .9rem; line-height: 1; transition: color .15s, transform .15s; text-decoration: none; }
+.trade-from-row:hover { color: #58a6ff; transform: translateY(-1px); }
+.trade-from-row:active { transform: scale(.95); }
 `
 
 type SortKey = 'name' | 'pos' | 'age' | 'sc_avg' | 'trend' | 'rating' | 'rtg_move' | 'potential' | 'tag'
@@ -303,6 +307,18 @@ export function PlayerPoolPage() {
   const [pickingUp, setPickingUp] = useState<number | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
   const wishlist = useWishlist(leagueId)
+  // LeagueContext (separate from data.league below — that one is the
+  // PoolData league summary, this one carries the teams[] roster for
+  // the trade-from-row deep link).
+  const { league: leagueCtx } = useLeague()
+  // Owner name → team_id lookup. PoolData.players.owner_team is a name
+  // string; we resolve it against LeagueContext.teams to build the
+  // trade-propose URL.
+  const ownerNameToId = useMemo(() => {
+    const m = new Map<string, number>()
+    leagueCtx?.teams.forEach(t => m.set(t.name, t.id))
+    return m
+  }, [leagueCtx])
 
   const filtered = useMemo(() => {
     if (!data) return []
@@ -640,7 +656,7 @@ export function PlayerPoolPage() {
                         <span className="pm-fa">FA</span>
                       )}
                     </td>
-                    <td className="text-center" style={{ padding: 0 }}>
+                    <td className="text-center" style={{ padding: 0, whiteSpace: 'nowrap' }}>
                       <button
                         type="button"
                         className={`wishlist-star${wishlist.isWishlisted(p.id) ? ' active' : ''}`}
@@ -650,6 +666,17 @@ export function PlayerPoolPage() {
                       >
                         <i className={`bi ${wishlist.isWishlisted(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
                       </button>
+                      {p.owner_team && p.owner_team !== leagueCtx?.user_team?.name && ownerNameToId.has(p.owner_team) && (
+                        <Link
+                          to={`/leagues/${leagueId}/trades/propose?with=${p.id}&from=${ownerNameToId.get(p.owner_team)}`}
+                          className="trade-from-row"
+                          title={`Propose trade for ${p.name} with ${p.owner_team}`}
+                          aria-label={`Propose trade for ${p.name}`}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <i className="bi bi-arrow-left-right"></i>
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 )

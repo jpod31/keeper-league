@@ -1,5 +1,5 @@
-import { useParams, Link, useNavigate } from 'react-router'
-import { useState, useEffect, useMemo } from 'react'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 
@@ -214,6 +214,15 @@ function groupByPosition(players: Player[]): Record<string, Player[]> {
 export function TradeProposePage() {
   const { leagueId } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  // Deep-link from "trade with this player" buttons elsewhere in the app:
+  //   /trades/propose?with=<player_id>&from=<owner_team_id>
+  // We set recipient on first render after data loads, then add the
+  // player to the receive side once their assets resolve. Tracked via a
+  // ref so the user's later manual changes don't get clobbered.
+  const deepLinkWith = Number(searchParams.get('with')) || null
+  const deepLinkFrom = Number(searchParams.get('from')) || null
+  const deepLinkApplied = useRef(false)
   const [data, setData] = useState<ProposeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -243,6 +252,36 @@ export function TradeProposePage() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [leagueId])
+
+  // Deep-link pre-fill: set recipient as soon as data is in, then
+  // tick over to receive-player selection once their assets load.
+  useEffect(() => {
+    if (deepLinkApplied.current) return
+    if (!data || !deepLinkFrom) return
+    // Stage 1: select the recipient. Only fire while recipientId is
+    // null — if the user has picked their own counterparty in the
+    // meantime, surrender silently instead of fighting them.
+    if (recipientId === null) {
+      const valid = data.other_teams.some(t => t.id === deepLinkFrom)
+      if (valid) setRecipientId(deepLinkFrom)
+      else deepLinkApplied.current = true  // invalid from-id; give up
+      return
+    }
+    if (recipientId !== deepLinkFrom) {
+      // User chose someone else before the effect fired — abandon link.
+      deepLinkApplied.current = true
+      return
+    }
+    // Stage 2: once their assets are loaded, add the player to receive.
+    if (deepLinkWith && theirAssets) {
+      const present = theirAssets.players.some(p => p.id === deepLinkWith)
+      if (present) setReceivePlayerIds(new Set([deepLinkWith]))
+      deepLinkApplied.current = true
+    } else if (!deepLinkWith) {
+      // Only a "from" was supplied — recipient is set, nothing else to do.
+      deepLinkApplied.current = true
+    }
+  }, [data, theirAssets, deepLinkFrom, deepLinkWith, recipientId])
 
   useEffect(() => {
     if (!recipientId) { setTheirAssets(null); return }
