@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
 import { api } from '../../lib/api'
-import { Spinner } from '../../components/ui/Spinner'
+import { ConversationSkeleton } from '../../components/ui/ConversationSkeleton'
 import { useSocket } from '../../hooks/useSocket'
 
 interface Message {
@@ -71,7 +71,7 @@ export function ConversationPage() {
     },
   })
 
-  if (loading) return <Spinner text="Loading conversation..." />
+  if (loading) return <ConversationSkeleton />
   if (!data) return <p className="text-danger">Failed to load conversation</p>
 
   async function send(e: React.FormEvent) {
@@ -114,6 +114,13 @@ export function ConversationPage() {
 
       <div className="card" style={{ height: 'calc(100dvh - 260px)', display: 'flex', flexDirection: 'column' }}>
         <div ref={scrollRef} className="card-body" style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+          {messages.length === 0 && (
+            <div className="empty-state">
+              <div className="empty-icon"><i className="bi bi-chat-text"></i></div>
+              <h4>Start the conversation</h4>
+              <p>Say hi to {data.other_team.name} — propose a trade, ask a question, or shoot the breeze.</p>
+            </div>
+          )}
           {messages.map(m => {
             const isMine = m.sender_user_id === data.current_user_id
             return (

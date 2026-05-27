@@ -8273,6 +8273,40 @@ th.sortable:hover { color: #58a6ff; }
 @media (prefers-reduced-motion: reduce) {
   .ansk-rebuild i { animation: none; }
 }
+
+/* ConversationSkeleton — back arrow + title + alternating bubble stack + input. */
+.cvsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  height: calc(100dvh - 260px);
+}
+.cvsk-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.cvsk-back  { width: 22px; height: 22px; border-radius: 6px; }
+.cvsk-title { height: 28px; width: 200px; border-radius: 6px; }
+.cvsk-stack {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cvsk-bubble {
+  height: 38px;
+  border-radius: 12px;
+  align-self: flex-start;
+}
+.cvsk-bubble-out { align-self: flex-end; }
+.cvsk-input { height: 44px; border-radius: 10px; }
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
