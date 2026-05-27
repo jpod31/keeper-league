@@ -7700,91 +7700,84 @@ th.sortable:hover { color: #58a6ff; }
   animation: klBreathe 4s ease-in-out infinite;
 }
 
-/* ══════════════════════════════════════════════════
-   MATCHUP STRIP — mini fixture indicator above the squad
-   "R14 · vs Ralph's Roos · Locks in 4h 12m"
-   ══════════════════════════════════════════════════ */
-.mstrip {
+/* Squad page: inline pill row that hosts matchup + roster-health
+   chips + bye-planner toggle. Mirrors .kl-status-pills layout so
+   all squad context reads as one row of small pills, not a stack
+   of full-width bars. The bye planner body, when expanded, drops
+   below the row. */
+.squad-info-pills {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  margin: 0 0 var(--space-3) 0;
-  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
-  border: 1px solid var(--kl-border);
-  border-radius: 10px;
-  color: var(--kl-text-secondary);
-  font-size: .82rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background .14s ease, border-color .14s ease, transform .14s ease;
-  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 4px 0 16px;
+  padding: 4px 2px;
 }
-.mstrip:hover {
-  background: rgba(255,255,255,.06);
-  border-color: var(--kl-border-light);
-  color: var(--kl-text-primary);
-  text-decoration: none;
-  transform: translateY(-1px);
+.squad-info-pills > .mstrip,
+.squad-info-pills > .byeplan { margin-bottom: 0; }
+.squad-info-pills > .rhealth {
+  margin-bottom: 0;
+  gap: 8px;
 }
-.mstrip-round {
-  color: var(--kl-text-heading);
-  font-weight: 700;
-  letter-spacing: .01em;
-}
-.mstrip-sep { opacity: .4; }
-.mstrip-matchup { color: var(--kl-text-primary); min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mstrip-prefix { color: var(--kl-text-muted); font-weight: 500; }
-.mstrip-opp    { color: var(--kl-text-heading); font-weight: 600; }
-.mstrip-tail {
+/* When the bye planner is expanded, let its body break out of the
+   inline flex flow so the grid spans full width below the pill row. */
+.squad-info-pills > .byeplan.open { flex-basis: 100%; order: 99; }
+
+/* ══════════════════════════════════════════════════
+   MATCHUP STRIP — kl-status-pill style (no longer a
+   full-width bar). Reads as an inline status chip
+   matching the delist/trade pills.
+   ══════════════════════════════════════════════════ */
+.mstrip {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  flex: 0 0 auto;
-}
-.mstrip-countdown {
-  color: var(--kl-accent-blue);
-  font-weight: 600;
+  gap: 8px;
+  margin: 0 0 var(--space-3) 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: #c9d1d9;
   font-size: .78rem;
+  text-decoration: none;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
 }
-.mstrip-score {
-  color: var(--kl-text-heading);
-  font-weight: 700;
-  font-size: .92rem;
+.mstrip:hover { text-decoration: none; color: #f0f6fc; }
+.mstrip:hover .mstrip-icon { transform: translateY(-1px); filter: brightness(1.15); }
+.mstrip-icon {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 30px;
+  font-size: .85rem;
+  background: radial-gradient(circle at 30% 30%, rgba(166,206,255,.22), rgba(88,166,255,.16));
+  color: #79c0ff;
+  border: 1px solid rgba(88,166,255,.45);
+  box-shadow: 0 0 0 2px rgba(88,166,255,.08), 0 6px 14px -6px rgba(88,166,255,.4);
+  transition: transform .15s ease, filter .15s ease;
 }
-.mstrip-chev {
-  color: var(--kl-text-faint);
-  font-size: .8rem;
-  flex: 0 0 auto;
-}
+.mstrip-text { display: inline-flex; flex-direction: column; white-space: nowrap; }
+.mstrip-title { font-weight: 700; font-size: .78rem; color: #f0f6fc; }
+.mstrip-sub   { font-size: .64rem; color: #8b949e; font-weight: 500; letter-spacing: .02em; margin-top: 1px; }
 
-/* Live state — small red dot + sapphire→rust shift on the countdown,
-   plus the kl-breathe utility kicks in. */
-.mstrip-live {
-  border-color: rgba(248,81,73,.34);
-  background: linear-gradient(180deg, rgba(248,81,73,.06), rgba(248,81,73,.02));
+/* Live + completed tone variants — re-tint the icon ring. */
+.mstrip-live .mstrip-icon {
+  background: radial-gradient(circle at 30% 30%, rgba(255,138,130,.25), rgba(248,81,73,.18));
+  color: #ff8a82;
+  border-color: rgba(248,81,73,.5);
+  box-shadow: 0 0 0 2px rgba(248,81,73,.1), 0 6px 14px -6px rgba(248,81,73,.4);
   animation: klBreathe 4s ease-in-out infinite;
 }
-.mstrip-live .mstrip-countdown { color: var(--kl-accent-red); }
-.mstrip-livedot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--kl-accent-red);
-  box-shadow: 0 0 0 0 rgba(248,81,73,.55);
-  animation: klLockDot 1.4s ease-out infinite;
-}
-
-/* Completed — muted, score takes the spotlight. */
-.mstrip-done {
-  opacity: .82;
-}
-
-@media (max-width: 720px) {
-  .mstrip { padding: var(--space-2) var(--space-3); font-size: .78rem; }
-  .mstrip-chev { display: none; }
+.mstrip-done { opacity: .82; }
+.mstrip-done .mstrip-icon {
+  background: rgba(48,54,61,.4);
+  color: #c9d1d9;
+  border-color: rgba(110,118,129,.25);
+  box-shadow: 0 4px 12px -6px rgba(0,0,0,.45);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mstrip-live, .mstrip-livedot { animation: none; }
+  .mstrip-live .mstrip-icon { animation: none; }
 }
 
 /* ══════════════════════════════════════════════════
@@ -8105,49 +8098,58 @@ th.sortable:hover { color: #58a6ff; }
    with count + delta vs league average. Tone shifts by
    delta size.
    ══════════════════════════════════════════════════ */
+/* Roster health — 4 small pills (DEF/MID/RUC/FWD). Sits inline,
+   no row-level chrome. Each chip has a tiny coloured pos label +
+   count + optional delta vs league average. */
 .rhealth {
   display: flex;
-  gap: var(--space-2);
+  gap: 10px;
   flex-wrap: wrap;
   margin: 0 0 var(--space-3) 0;
 }
 .rhealth-chip {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
+  gap: 6px;
+  padding: 2px 10px 2px 4px;
   border-radius: 999px;
-  font-size: .76rem;
-  font-weight: 600;
-  background: rgba(255,255,255,.03);
-  border: 1px solid var(--kl-border);
+  font-size: .72rem;
+  background: rgba(48,54,61,.4);
+  border: 1px solid rgba(110,118,129,.25);
   font-variant-numeric: tabular-nums;
+  box-shadow: 0 4px 12px -6px rgba(0,0,0,.45);
 }
 .rhealth-pos {
-  font-size: .62rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: .58rem;
   font-weight: 800;
-  letter-spacing: .06em;
+  letter-spacing: .04em;
   text-transform: uppercase;
 }
 .rhealth-count {
-  color: var(--kl-text-heading);
+  color: #f0f6fc;
   font-weight: 700;
+  font-size: .82rem;
 }
 .rhealth-delta {
-  font-size: .7rem;
-  opacity: .85;
+  font-size: .66rem;
+  opacity: .9;
+  margin-left: 1px;
 }
 
-/* Position colours hooked off the existing .pos-DEF/MID/RUC/FWD vars,
-   but we re-tint the chip border + pos label to make them readable
-   against the tonal background. */
-.rhealth-chip.pos-DEF .rhealth-pos { color: #79c0ff; }
-.rhealth-chip.pos-MID .rhealth-pos { color: #d2a8ff; }
-.rhealth-chip.pos-RUC .rhealth-pos { color: #7ee787; }
-.rhealth-chip.pos-FWD .rhealth-pos { color: #ffb471; }
+/* Position dot tints match the existing .pos-DEF/MID/RUC/FWD vocab. */
+.rhealth-chip.pos-DEF .rhealth-pos { background: rgba(26,63,102,.6);  color: #8cc8ff; }
+.rhealth-chip.pos-MID .rhealth-pos { background: rgba(53,29,74,.6);   color: #dbb8ff; }
+.rhealth-chip.pos-RUC .rhealth-pos { background: rgba(29,61,46,.6);   color: #90edb0; }
+.rhealth-chip.pos-FWD .rhealth-pos { background: rgba(70,41,10,.6);   color: #ffc58a; }
 
-/* Tone variants — the delta vs league average drives the chip's
-   border + delta colour so the user can scan for weak spots. */
+/* Tone variants — the delta drives a subtle border + delta colour. */
 .rhealth-good    { border-color: rgba(63,185,80,.45); }
 .rhealth-good .rhealth-delta    { color: var(--kl-accent-green); }
 .rhealth-bad     { border-color: rgba(240,136,62,.45); }
@@ -8379,37 +8381,53 @@ th.sortable:hover { color: #58a6ff; }
 }
 
 /* ══════════════════════════════════════════════════
-   BYE PLANNER — collapsible round-by-round bye grid
-   Lazy-loaded — pays nothing until first opened.
+   BYE PLANNER — kl-status-pill style toggle, with
+   expandable body below when open. Reads as an
+   inline status chip, not a full-width bar.
    ══════════════════════════════════════════════════ */
 .byeplan {
   margin: 0 0 var(--space-3) 0;
+}
+.byeplan-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: #c9d1d9;
+  cursor: pointer;
+  font-size: .78rem;
+  text-align: left;
+  line-height: 1.15;
+}
+.byeplan-toggle:hover { color: #f0f6fc; }
+.byeplan-toggle:hover .byeplan-toggle-icon { transform: translateY(-1px); filter: brightness(1.15); }
+.byeplan-toggle-icon {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 30px;
+  font-size: .85rem;
+  background: radial-gradient(circle at 30% 30%, rgba(240,209,138,.25), rgba(210,153,34,.18));
+  color: #f0d18a;
+  border: 1px solid rgba(210,153,34,.45);
+  box-shadow: 0 0 0 2px rgba(210,153,34,.08), 0 6px 14px -6px rgba(210,153,34,.4);
+  transition: transform .15s ease, filter .15s ease;
+}
+.byeplan-toggle-text { display: inline-flex; flex-direction: column; white-space: nowrap; }
+.byeplan-toggle-label { font-weight: 700; font-size: .78rem; color: #f0f6fc; }
+.byeplan-toggle-sub   { font-size: .64rem; color: #8b949e; font-weight: 500; letter-spacing: .02em; margin-top: 1px; }
+.byeplan-toggle-chev  { color: var(--kl-text-muted); font-size: .7rem; margin-left: 2px; transition: transform .15s ease; }
+.byeplan.open .byeplan-toggle-chev { transform: rotate(90deg); color: var(--kl-text-primary); }
+
+.byeplan-body {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
   background: rgba(255,255,255,.02);
   border: 1px solid var(--kl-border);
   border-radius: 10px;
-  overflow: hidden;
 }
-.byeplan-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  background: transparent;
-  border: 0;
-  color: var(--kl-text-secondary);
-  cursor: pointer;
-  font-size: .82rem;
-  font-weight: 600;
-  text-align: left;
-  transition: background .12s ease, color .12s ease;
-}
-.byeplan-toggle:hover { background: rgba(255,255,255,.04); color: var(--kl-text-primary); }
-.byeplan-toggle i { color: var(--kl-text-muted); }
-.byeplan-toggle-label { color: var(--kl-text-heading); font-weight: 700; }
-.byeplan-toggle-sub   { color: var(--kl-text-muted); font-weight: 500; font-size: .74rem; margin-left: auto; }
-
-.byeplan-body { padding: 0 var(--space-3) var(--space-3); }
 .byeplan-loading,
 .byeplan-error,
 .byeplan-empty {

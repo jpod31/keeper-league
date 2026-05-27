@@ -503,6 +503,7 @@ def team_byes(league_id, team_id):
     pairs = [(p, r) for p, r in pairs if p]
 
     # Anchor at the current AFL round; if we can't determine one, start at 1.
+    from models.database import AflGame
     try:
         from scrapers.squiggle import get_current_round
         current_round = get_current_round(league.season_year) or 1

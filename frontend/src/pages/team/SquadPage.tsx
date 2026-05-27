@@ -506,16 +506,20 @@ function SquadPageInner() {
       {/* ══════ FIELD VIEW ══════ */}
       {view === 'field' && fd && (
         <>
-          {is_owner && league?.current_matchup && (
-            <MatchupStrip
-              round={league.current_round}
-              matchup={league.current_matchup}
-              lockoutTime={league.next_lockout_at}
-              leagueId={leagueId!}
-            />
+          {is_owner && (
+            <div className="squad-info-pills">
+              {league?.current_matchup && (
+                <MatchupStrip
+                  round={league.current_round}
+                  matchup={league.current_matchup}
+                  lockoutTime={league.next_lockout_at}
+                  leagueId={leagueId!}
+                />
+              )}
+              <RosterHealthStrip leagueId={leagueId!} teamId={teamId!} />
+              <ByePlanner leagueId={leagueId!} teamId={teamId!} />
+            </div>
           )}
-          {is_owner && <RosterHealthStrip leagueId={leagueId!} teamId={teamId!} />}
-          {is_owner && <ByePlanner leagueId={leagueId!} teamId={teamId!} />}
           {is_owner && league?.current_round && league.current_round > 1 && (
             <div className="d-flex align-items-center gap-2 mb-3" style={{ fontSize: '.82rem' }}>
               <label htmlFor="archive-round" className="text-secondary">Round:</label>

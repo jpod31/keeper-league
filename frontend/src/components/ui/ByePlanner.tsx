@@ -77,9 +77,14 @@ export function ByePlanner({ leagueId, teamId }: ByePlannerProps) {
         onClick={toggle}
         aria-expanded={open}
       >
-        <i className={`bi ${open ? 'bi-chevron-down' : 'bi-chevron-right'}`} aria-hidden></i>
-        <span className="byeplan-toggle-label">Bye planner</span>
-        <span className="byeplan-toggle-sub">Next 10 rounds</span>
+        <span className="byeplan-toggle-icon" aria-hidden>
+          <i className="bi bi-calendar-x"></i>
+        </span>
+        <span className="byeplan-toggle-text">
+          <span className="byeplan-toggle-label">Bye planner</span>
+          <span className="byeplan-toggle-sub">Next 10 rounds</span>
+        </span>
+        <i className="bi bi-chevron-right byeplan-toggle-chev" aria-hidden></i>
       </button>
 
       {open && (

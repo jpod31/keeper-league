@@ -1,13 +1,16 @@
 /**
- * MatchupStrip — small horizontal strip showing this round's matchup
- * above the squad. Bridges squad-page context with the matchup the
- * user is preparing for.
+ * MatchupStrip — inline status pill for this round's matchup.
  *
- * Renders nothing if there's no current matchup (e.g. pre-season, bye).
+ * Visually matches the existing .kl-status-pill chips on SquadPage
+ * (delist / trade / squad-cap pills) — small icon ring + 2-line text,
+ * NOT a full-width banner. Clicks navigate to the matchup detail.
  *
- * Click jumps to the gameday view for that fixture.
+ * Three tones via icon ring:
+ *   - default / scheduled  → sapphire
+ *   - live                 → rust + .kl-breathe pulse
+ *   - completed            → muted glass
  *
- * Styles live as .mstrip-* in static/style.css. Consumes --space-N tokens.
+ * Hidden when there's no current matchup (pre-season, bye).
  */
 
 import { Link } from 'react-router'
@@ -34,41 +37,40 @@ function fmtLockout(iso: string | null): string {
   const d = Math.floor(diff / 86400000)
   const h = Math.floor((diff % 86400000) / 3600000)
   const m = Math.floor((diff % 3600000) / 60000)
-  if (d > 0) return `Locks in ${d}d ${h}h`
-  if (h > 0) return `Locks in ${h}h ${m}m`
-  return `Locks in ${m}m`
-}
-
-function fmtScore(a: number | null, b: number | null): string | null {
-  if (a == null && b == null) return null
-  return `${a ?? 0} – ${b ?? 0}`
+  if (d > 0) return `${d}d ${h}h`
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
 }
 
 export function MatchupStrip({ round, matchup, lockoutTime, leagueId }: MatchupStripProps) {
   const { opponent_name, user_is_home, status, user_score, opponent_score, fixture_id } = matchup
-  const score = fmtScore(user_score, opponent_score)
   const isLive = status === 'live'
   const isDone = status === 'completed'
   const prefix = user_is_home ? 'vs' : '@'
-  const href = `/leagues/${leagueId}/matchup/${fixture_id}`
+  const score = (user_score != null || opponent_score != null)
+    ? `${user_score ?? 0} – ${opponent_score ?? 0}`
+    : null
+  const sub = isDone && score
+    ? `R${round} · ${score}`
+    : isLive && score
+    ? `R${round} · LIVE ${score}`
+    : `R${round}${lockoutTime ? ` · ${fmtLockout(lockoutTime)}` : ''}`
+  const tone = isLive ? 'mstrip-live' : isDone ? 'mstrip-done' : ''
+  const icon = isLive ? 'bi-broadcast' : isDone ? 'bi-flag-fill' : 'bi-calendar-event'
 
   return (
-    <Link to={href} className={`mstrip${isLive ? ' mstrip-live' : ''}${isDone ? ' mstrip-done' : ''}`}>
-      <span className="mstrip-round">R{round}</span>
-      <span className="mstrip-sep" aria-hidden>·</span>
-      <span className="mstrip-matchup">
-        <span className="mstrip-prefix">{prefix}</span>{' '}
-        <span className="mstrip-opp">{opponent_name}</span>
+    <Link
+      to={`/leagues/${leagueId}/matchup/${fixture_id}`}
+      className={`mstrip ${tone}`.trim()}
+      aria-label={`Round ${round} matchup ${prefix} ${opponent_name}`}
+    >
+      <span className="mstrip-icon" aria-hidden>
+        <i className={`bi ${icon}`}></i>
       </span>
-      <span className="mstrip-tail">
-        {isLive && <span className="mstrip-livedot" aria-hidden />}
-        {score ? (
-          <span className="mstrip-score">{score}</span>
-        ) : lockoutTime ? (
-          <span className="mstrip-countdown">{fmtLockout(lockoutTime)}</span>
-        ) : null}
+      <span className="mstrip-text">
+        <span className="mstrip-title">{prefix} {opponent_name}</span>
+        <span className="mstrip-sub">{sub}</span>
       </span>
-      <i className="bi bi-chevron-right mstrip-chev" aria-hidden></i>
     </Link>
   )
 }
