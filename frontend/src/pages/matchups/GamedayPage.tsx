@@ -2,7 +2,7 @@ import { useParams, Link, useSearchParams } from 'react-router'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
-import { Spinner } from '../../components/ui/Spinner'
+import { GamedaySkeleton } from '../../components/ui/GamedaySkeleton'
 import { AnimatedNumber } from '../../components/ui/AnimatedNumber'
 
 interface Team { id: number; name: string; logo_url: string | null }
@@ -597,7 +597,7 @@ export function GamedayPage() {
     return () => clearInterval(timer)
   }, [data?.gameday_state, data?.afl_round, leagueId])
 
-  if (loading) return <Spinner text="Loading gameday..." />
+  if (loading) return <GamedaySkeleton />
   if (!data) return <p className="text-danger">Failed to load gameday</p>
 
   // Helper: count players played/eligible from player array.

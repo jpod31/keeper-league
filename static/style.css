@@ -7818,6 +7818,50 @@ th.sortable:hover { color: #58a6ff; }
   gap: var(--space-2);
 }
 .sqsk-card { height: 72px; border-radius: 10px; }
+
+/* GamedaySkeleton — matchup hero + two columns of player rows. */
+.gdsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+.gdsk-hero {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+}
+.gdsk-side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.gdsk-side-r { justify-content: flex-end; }
+.gdsk-logo  { width: 44px; height: 44px; border-radius: 10px; }
+.gdsk-name  { height: 22px; width: 160px; border-radius: 6px; }
+.gdsk-score { height: 38px; width: 120px; border-radius: 8px; }
+.gdsk-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.gdsk-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.gdsk-row { height: 44px; border-radius: 8px; }
+
+@media (max-width: 720px) {
+  .gdsk-cols { grid-template-columns: 1fr; }
+  .gdsk-name { width: 100px; }
+  .gdsk-score { width: 88px; }
+}
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
