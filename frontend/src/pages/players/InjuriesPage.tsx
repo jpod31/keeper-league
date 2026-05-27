@@ -1,8 +1,11 @@
 import { useParams, Link } from 'react-router'
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
+import { FilterBar, type ActiveFilter } from '../../components/ui/FilterBar'
+import { useListSort } from '../../hooks/useListSort'
+import { SortedByLabel } from '../../components/ui/SortedByLabel'
 
 interface InjuredPlayer {
   id: number
@@ -30,6 +33,19 @@ const SEV_COLOR: Record<string, string> = {
   tbc: '#8b949e',
 }
 
+const SORT_LABELS = {
+  name: 'Name',
+  afl_team: 'AFL team',
+  position: 'Position',
+  injury_severity: 'Severity',
+  injury_return: 'Return',
+  rostered_by: 'Rostered',
+}
+
+// Severity gets a manual rank so "out" sorts above "test" instead of
+// alphabetical noise. Higher = more severe.
+const SEV_RANK: Record<string, number> = { out: 4, major: 4, test: 2, minor: 2, tbc: 1 }
+
 export function InjuriesPage() {
   const { leagueId } = useParams()
   const { data, loading } = useFetch<InjuriesData>(`/leagues/${leagueId}/injuries?format=json`)
@@ -37,19 +53,41 @@ export function InjuriesPage() {
   const [teamFilter, setTeamFilter] = useState('')
   const [sevFilter, setSevFilter] = useState('')
 
+  // Default: severity desc — most-severe injuries surface first.
+  // Name and AFL team default to ascending on first click; everything
+  // else (severity, sort by rostered) defaults to descending per the
+  // project rule (see feedback_sort_descending.md).
+  const sort = useListSort({
+    storageKey: 'players.injuries.sort',
+    defaultColumn: 'injury_severity',
+    defaultDirection: 'desc',
+    ascByDefaultColumns: ['name', 'afl_team', 'position', 'injury_return'],
+  })
+
   const filtered = useMemo(() => {
     if (!data) return []
-    return data.players.filter(p => {
+    const rows = data.players.filter(p => {
       if (posFilter && p.position !== posFilter) return false
       if (teamFilter === 'fa' && p.rostered_by) return false
       if (teamFilter && teamFilter !== 'fa' && p.rostered_by !== teamFilter) return false
       if (sevFilter && p.injury_severity !== sevFilter) return false
       return true
     })
-  }, [data, posFilter, teamFilter, sevFilter])
+    return [...rows].sort(sort.compare<InjuredPlayer>((row, col) => {
+      if (col === 'injury_severity') return SEV_RANK[row.injury_severity] ?? 0
+      if (col === 'rostered_by') return row.rostered_by || ''
+      return (row as unknown as Record<string, string | number | null>)[col] ?? null
+    }))
+  }, [data, posFilter, teamFilter, sevFilter, sort])
 
   if (loading) return <Spinner text="Loading injuries..." />
   if (!data) return <p className="text-danger">Failed to load injuries</p>
+
+  // Build the active-filter chips that the FilterBar shows under the bar.
+  const activeFilters: ActiveFilter[] = []
+  if (posFilter)  activeFilters.push({ key: 'pos',  label: `POS: ${posFilter}`,             onRemove: () => setPosFilter('') })
+  if (teamFilter) activeFilters.push({ key: 'team', label: teamFilter === 'fa' ? 'Free agents only' : teamFilter, onRemove: () => setTeamFilter('') })
+  if (sevFilter)  activeFilters.push({ key: 'sev',  label: `SEV: ${sevFilter.toUpperCase()}`, onRemove: () => setSevFilter('') })
 
   return (
     <div>
@@ -64,36 +102,43 @@ export function InjuriesPage() {
         </div>
       </div>
 
-      <div className="d-flex gap-2 mb-3 flex-wrap">
-        <select className="form-select form-select-sm" style={{ maxWidth: 140 }} value={posFilter} onChange={e => setPosFilter(e.target.value)}>
-          <option value="">All positions</option>
-          {['DEF', 'MID', 'RUC', 'FWD'].map(p => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <select className="form-select form-select-sm" style={{ maxWidth: 200 }} value={teamFilter} onChange={e => setTeamFilter(e.target.value)}>
-          <option value="">All players</option>
-          <option value="fa">Free agents only</option>
-          {data.fantasy_teams.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select className="form-select form-select-sm" style={{ maxWidth: 140 }} value={sevFilter} onChange={e => setSevFilter(e.target.value)}>
-          <option value="">All severities</option>
-          <option value="test">Test</option>
-          <option value="out">Out</option>
-          <option value="major">Major</option>
-        </select>
-      </div>
+      <FilterBar
+        filters={
+          <>
+            <select className="form-select form-select-sm" style={{ maxWidth: 140 }} value={posFilter} onChange={e => setPosFilter(e.target.value)}>
+              <option value="">All positions</option>
+              {['DEF', 'MID', 'RUC', 'FWD'].map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <select className="form-select form-select-sm" style={{ maxWidth: 200 }} value={teamFilter} onChange={e => setTeamFilter(e.target.value)}>
+              <option value="">All players</option>
+              <option value="fa">Free agents only</option>
+              {data.fantasy_teams.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <select className="form-select form-select-sm" style={{ maxWidth: 140 }} value={sevFilter} onChange={e => setSevFilter(e.target.value)}>
+              <option value="">All severities</option>
+              <option value="test">Test</option>
+              <option value="out">Out</option>
+              <option value="major">Major</option>
+            </select>
+          </>
+        }
+        actions={<SortedByLabel column={sort.column} direction={sort.direction} columnLabels={SORT_LABELS} />}
+        activeFilters={activeFilters}
+        onClearAll={activeFilters.length > 0 ? () => { setPosFilter(''); setTeamFilter(''); setSevFilter('') } : undefined}
+      />
 
-      <div className="card">
+      <div className="card mt-3">
         <div className="card-body p-0">
           <table className="table table-sm mb-0">
             <thead>
               <tr>
-                <th>Player</th>
-                <th className="mob-hide">Team</th>
-                <th>Pos</th>
-                <th>Severity</th>
+                <SortableTh col="name" sort={sort}>Player</SortableTh>
+                <SortableTh col="afl_team" sort={sort} className="mob-hide">Team</SortableTh>
+                <SortableTh col="position" sort={sort}>Pos</SortableTh>
+                <SortableTh col="injury_severity" sort={sort}>Severity</SortableTh>
                 <th className="mob-hide">Type</th>
-                <th className="mob-hide">Return</th>
-                <th>Rostered</th>
+                <SortableTh col="injury_return" sort={sort} className="mob-hide">Return</SortableTh>
+                <SortableTh col="rostered_by" sort={sort}>Rostered</SortableTh>
               </tr>
             </thead>
             <tbody>
@@ -126,5 +171,29 @@ export function InjuriesPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Small inline component — keeps the table-header markup readable.
+// Clicking the header toggles via useListSort, which handles the
+// "first-click is the column's default direction" rule.
+function SortableTh({
+  col, sort, children, className,
+}: {
+  col: string
+  sort: ReturnType<typeof useListSort>
+  children: React.ReactNode
+  className?: string
+}) {
+  const active = sort.column === col
+  const arrow = active ? (sort.direction === 'asc' ? '↑' : '↓') : ''
+  return (
+    <th
+      className={className}
+      onClick={() => sort.toggle(col)}
+      style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+    >
+      {children} {arrow && <span style={{ opacity: .7, marginLeft: 2 }}>{arrow}</span>}
+    </th>
   )
 }
