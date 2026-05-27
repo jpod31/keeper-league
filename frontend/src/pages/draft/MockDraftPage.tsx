@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '../../lib/api'
-import { Spinner } from '../../components/ui/Spinner'
+import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 
 interface PickHistoryEntry {
   pick_number: number
@@ -258,7 +258,7 @@ export function MockDraftPage() {
     } catch { /* noop */ }
   }
 
-  if (loading) return <Spinner text="Loading mock draft..." />
+  if (loading) return <RowsSkeleton rows={14} />
   if (!data || !state) return <p className="text-danger">Failed to load mock draft</p>
 
   const { league, user_team } = data

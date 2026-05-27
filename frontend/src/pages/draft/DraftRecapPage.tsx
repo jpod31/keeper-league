@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 
 interface Pick {
   pick_number: number
@@ -40,7 +40,7 @@ export function DraftRecapPage() {
   const { leagueId } = useParams()
   const { data, loading } = useFetch<RecapData>(`/leagues/${leagueId}/draft/recap?format=json`)
 
-  if (loading) return <Spinner text="Loading draft recap..." />
+  if (loading) return <RowsSkeleton rows={14} />
   if (!data) return <p className="text-danger">Failed to load draft recap</p>
 
   const { picks, grades } = data

@@ -1,7 +1,7 @@
 import { useParams } from 'react-router'
 import { useState, useEffect } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { AdminSubnav } from '../../components/nav/AdminSubnav'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
@@ -45,7 +45,7 @@ export function ScoringPage() {
     setHybridMode(data.league.hybrid_custom_mode || 'points')
   }, [data])
 
-  if (loading) return <Spinner text="Loading scoring..." />
+  if (loading) return <RowsSkeleton rows={8} />
   if (!data) return <p className="text-danger">Failed to load scoring</p>
   if (!data.league.is_commissioner) {
     return <div className="alert alert-warning">Only the commissioner can edit scoring rules.</div>

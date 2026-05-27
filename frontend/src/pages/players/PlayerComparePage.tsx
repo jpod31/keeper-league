@@ -1,7 +1,7 @@
 import { useParams, useSearchParams } from 'react-router'
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
-import { Spinner } from '../../components/ui/Spinner'
+import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
 
@@ -46,7 +46,7 @@ export function PlayerComparePage() {
       .finally(() => setLoading(false))
   }, [leagueId, params])
 
-  if (loading) return <Spinner text="Loading comparison..." />
+  if (loading) return <RowsSkeleton rows={10} />
   if (!data) return <p className="text-danger">Failed to load comparison</p>
 
   function addPlayer(id: number) {
