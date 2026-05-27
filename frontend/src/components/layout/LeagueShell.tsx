@@ -7,21 +7,6 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
-type SectionKey = 'team' | 'players' | 'league' | 'settings'
-
-interface SubtabDef {
-  label: string
-  icon: string
-  to: string
-  key: string
-  style?: React.CSSProperties
-}
-
-interface SectionDef {
-  title: string
-  tabs: SubtabDef[]
-}
-
 export function LeagueShell() {
   return (
     <LeagueProvider>
@@ -54,7 +39,6 @@ function LeagueShellInner() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [moreOpen, setMoreOpen] = useState(false)
-  const [subtabOpen, setSubtabOpen] = useState<SectionKey | null>(null)
   const [selectorOpen, setSelectorOpen] = useState(false)
 
   const activeTab = useMemo(() => detectActiveTab(pathname), [pathname])
@@ -62,7 +46,6 @@ function LeagueShellInner() {
   useEffect(() => {
     // Close sheets on route change
     setMoreOpen(false)
-    setSubtabOpen(null)
     setSelectorOpen(false)
   }, [pathname])
 
@@ -94,50 +77,6 @@ function LeagueShellInner() {
 
   const lid = league.id
   const t = league.user_team
-
-  const subtabSections: Record<SectionKey, SectionDef> = {
-    team: {
-      title: 'My Team',
-      tabs: t ? [
-        { label: 'Field', icon: 'bi-diagram-3', to: `/leagues/${lid}/team/${t.id}`, key: 'field' },
-        { label: 'Stats', icon: 'bi-graph-up', to: `/leagues/${lid}/team/${t.id}/stats`, key: 'stats' },
-        { label: 'Analytics', icon: 'bi-bar-chart-line', to: `/leagues/${lid}/team/${t.id}/analytics`, key: 'analytics' },
-        { label: 'Trades', icon: 'bi-arrow-left-right', to: `/leagues/${lid}/trades`, key: 'trades' },
-        ...(league.is_owner ? [
-          { label: 'Wishlist', icon: 'bi-star', to: `/leagues/${lid}/team/${t.id}?view=wishlist`, key: 'wishlist', style: { color: '#d29922' } as React.CSSProperties },
-        ] : []),
-      ] : [],
-    },
-    players: {
-      title: 'Players',
-      tabs: [
-        { label: 'Pool', icon: 'bi-person-plus', to: `/leagues/${lid}/player-pool`, key: 'pool' },
-        { label: 'Compare', icon: 'bi-people', to: `/leagues/${lid}/players/compare`, key: 'compare' },
-        { label: 'Stats', icon: 'bi-graph-up', to: `/leagues/${lid}/stats`, key: 'stats' },
-        { label: 'Injuries', icon: 'bi-bandaid', to: `/leagues/${lid}/injuries`, key: 'injuries' },
-        { label: 'Ratings', icon: 'bi-star-fill', to: `/leagues/${lid}/player-ratings`, key: 'ratings' },
-        { label: 'Scouting', icon: 'bi-binoculars', to: `/leagues/${lid}/scouting`, key: 'scouting' },
-        { label: 'Breakout', icon: 'bi-broadcast-pin', to: `/leagues/${lid}/breakout-radar`, key: 'breakout' },
-      ],
-    },
-    league: {
-      title: 'League',
-      tabs: [
-        { label: 'Ladder', icon: 'bi-bar-chart', to: `/leagues/${lid}/standings`, key: 'ladder' },
-        { label: 'Fixtures', icon: 'bi-calendar-week', to: `/leagues/${lid}/fixture`, key: 'fixture' },
-        ...(league.finals_teams > 0 ? [{ label: 'Finals', icon: 'bi-trophy', to: `/leagues/${lid}/finals`, key: 'finals' }] : []),
-        { label: 'Records', icon: 'bi-trophy', to: `/leagues/${lid}/history`, key: 'records' },
-        { label: 'Changes', icon: 'bi-clock-history', to: `/leagues/${lid}/list-changes`, key: 'changes' },
-      ],
-    },
-    settings: {
-      title: 'Settings',
-      tabs: [
-        { label: 'General', icon: 'bi-gear', to: `/leagues/${lid}/settings`, key: 'general' },
-        { label: 'Scoring', icon: 'bi-calculator', to: `/leagues/${lid}/scoring`, key: 'scoring' },
-      ],
-    },
-  }
 
   return (
     <>
@@ -179,17 +118,20 @@ function LeagueShellInner() {
       {/* Round recap popup — shows once per completed round on first visit */}
       <RoundRecapModal />
 
-      {/* ═══ Mobile bottom nav ═══ */}
+      {/* ═══ Mobile bottom nav ═══
+          Direct navigation only (no sub-tab sheets). Each button goes to
+          that section's default page; sub-area switching happens via the
+          sticky .mob-subnav tab bar at the top of section pages. The More
+          button still opens a sheet for tertiary surfaces. */}
       <nav className="mobile-bottom-nav d-lg-none">
         {t && (
           <>
-            <button
-              type="button"
+            <NavLink
+              to={`/leagues/${lid}/team/${t.id}`}
               className={`mob-nav-item${activeTab === 'team' ? ' active' : ''}`}
-              onClick={() => setSubtabOpen('team')}
             >
               <i className="bi bi-people"></i><span>Team</span>
-            </button>
+            </NavLink>
             <NavLink
               to={`/leagues/${lid}/gameday`}
               className={`mob-nav-item${activeTab === 'gameday' ? ' active' : ''}`}
@@ -204,20 +146,18 @@ function LeagueShellInner() {
         >
           <i className="bi bi-broadcast"></i><span>AFL Live</span>
         </NavLink>
-        <button
-          type="button"
+        <NavLink
+          to={`/leagues/${lid}/player-pool`}
           className={`mob-nav-item${activeTab === 'players' ? ' active' : ''}`}
-          onClick={() => setSubtabOpen('players')}
         >
           <i className="bi bi-person-plus"></i><span>Players</span>
-        </button>
-        <button
-          type="button"
+        </NavLink>
+        <NavLink
+          to={`/leagues/${lid}/fixture`}
           className={`mob-nav-item${activeTab === 'league' ? ' active' : ''}`}
-          onClick={() => setSubtabOpen('league')}
         >
           <i className="bi bi-calendar-week"></i><span>League</span>
-        </button>
+        </NavLink>
         <button
           type="button"
           className={`mob-nav-item${['comms', 'commissioner', 'settings'].includes(activeTab) ? ' active' : ''}`}
@@ -285,29 +225,6 @@ function LeagueShellInner() {
         </>
       )}
 
-      {/* ═══ Subtab sheet ═══ */}
-      {subtabOpen && (
-        <>
-          <div className="subtab-sheet-backdrop open" onClick={() => setSubtabOpen(null)} />
-          <div className="subtab-sheet open">
-            <div className="more-sheet-handle"></div>
-            <div className="subtab-sheet-title">{subtabSections[subtabOpen].title}</div>
-            <div className="more-sheet-grid">
-              {subtabSections[subtabOpen].tabs.map(tab => (
-                <div
-                  key={tab.key}
-                  className="more-sheet-item"
-                  style={tab.style}
-                  onClick={() => navigate(tab.to)}
-                >
-                  <i className={`bi ${tab.icon}`}></i>
-                  <span>{tab.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
     </>
   )
 }

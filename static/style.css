@@ -391,6 +391,29 @@
   display: none;
 }
 
+/* ── Mobile foundation ──
+   Prevents the "pinch-zoom out beyond the page bounds" and the "things
+   half cut off" symptoms by:
+   - Locking the viewport to its width (no horizontal overflow leaks).
+   - Letting the page use the full safe-area-respecting height (100dvh
+     correctly handles iOS Safari's collapsing URL bar where 100vh
+     would not).
+   - Killing pinch-to-zoom only horizontally via touch-action so vertical
+     pinch on detail content (e.g. PlayerModal text) still works. */
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  overflow-x: hidden;
+  min-height: 100dvh;
+  max-width: 100vw;
+  position: relative;
+  /* iOS rubber-banding into the off-page area amplifies the "see beyond"
+     bug; lock it to vertical only at the body root. */
+  overscroll-behavior-x: none;
+}
+
 /* ── Typography ── */
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -3262,10 +3285,16 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
    to clear the rail. Rail expansion is a VISUAL overlay (covers more
    space when wider) but does NOT push content; content always reserves
    the collapsed width so layout never jolts on hover. */
-body.has-league-rail main.container {
-  padding-left: calc(var(--kl-rail-w-collapsed) + 16px);
-  transition: padding-left .2s cubic-bezier(.2,.7,.2,1);
-  max-width: none;
+/* Desktop only — on mobile/tablet the rail is hidden (.d-none .d-lg-flex)
+   but the has-league-rail body class is still applied, so without this
+   media gate every page got ~92px of phantom left padding on mobile.
+   That was the "all the pages are centred" complaint. */
+@media (min-width: 992px) {
+  body.has-league-rail main.container {
+    padding-left: calc(var(--kl-rail-w-collapsed) + 16px);
+    transition: padding-left .2s cubic-bezier(.2,.7,.2,1);
+    max-width: none;
+  }
 }
 
 /* Rail container — clearly elevated above the deep canvas */
@@ -4303,6 +4332,11 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
 
 /* Squad mobile overrides */
 @media (max-width: 768px) {
+  /* Tighten the hero on mobile so the field/squad gets more vertical
+     real estate. Title shrinks slightly too — h2 was 1.5rem desktop,
+     1.1rem reads better here. */
+  .squad-hero { padding: .85rem 1rem; margin-bottom: .65rem; }
+  .squad-hero-title { font-size: 1.1rem; }
   .squad-hero-inner {
     flex-direction: column;
     align-items: flex-start;
@@ -4788,10 +4822,52 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   background: rgba(88,166,255,.08);
 }
 
-/* ── Hide inline mob-subnav on mobile (replaced by bottom sheet) ── */
-@media (max-width: 768px) {
-  .mob-subnav { display: none !important; }
+/* Mobile sub-nav is now the primary in-section navigation surface
+   (sticky tab bar at the top of each section page). The bottom-nav
+   "subtab sheet" pattern was confusing — a button that didn't
+   navigate; this restores the standard mobile pattern where bottom
+   nav goes to a section's home and inline tabs switch within it.
+   Visibility is gated by .d-lg-none on the markup — only renders at
+   <992px — so no media query needed on the structural rules. */
+.mob-subnav {
+  display: flex;
+  gap: 0;
+  margin: 0 -.6rem .75rem;
+  padding: 0 .6rem;
+  border-bottom: 1px solid var(--kl-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  background: var(--kl-bg-body);
+  position: sticky;
+  /* .kl-bar on mobile = 36px brand + 8px padding × 2 = 52px. Match
+     exactly so the subnav sits flush below the top bar with no gap. */
+  top: 52px;
+  z-index: 1020;
 }
+.mob-subnav::-webkit-scrollbar { display: none; }
+.mob-subnav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 14px;
+  min-width: 60px;
+  min-height: 52px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--kl-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.mob-subnav-item i { font-size: 1.2rem; }
+.mob-subnav-item.active {
+  color: var(--kl-accent-blue);
+  border-bottom-color: var(--kl-accent-blue);
+}
+.mob-subnav-item:hover { color: var(--kl-text-primary); text-decoration: none; }
 
 /* ══════════════════════════════════════════════════
    FIELD VIEW ACTION SHEET (mobile)
@@ -5398,41 +5474,9 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   /* ── Chat — fit mobile viewport with bottom nav ── */
   .chat-wrapper { height: calc(100dvh - 300px) !important; }
 
-  /* ── Mobile sub-navigation (squad, team pages) ── */
-  .mob-subnav {
-    display: flex;
-    gap: 0;
-    margin: 0 -.6rem .75rem;
-    padding: 0 .6rem;
-    border-bottom: 1px solid var(--kl-border);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    background: var(--kl-bg-body);
-  }
-  .mob-subnav::-webkit-scrollbar { display: none; }
-  .mob-subnav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    padding: 10px 14px;
-    min-width: 60px;
-    min-height: 52px;
-    font-size: .72rem;
-    font-weight: 600;
-    color: var(--kl-text-muted);
-    text-decoration: none;
-    white-space: nowrap;
-    border-bottom: 2px solid transparent;
-    transition: color .15s, border-color .15s;
-  }
-  .mob-subnav-item i { font-size: 1.2rem; }
-  .mob-subnav-item.active {
-    color: var(--kl-accent-blue);
-    border-bottom-color: var(--kl-accent-blue);
-  }
-  .mob-subnav-item:hover { color: var(--kl-text-primary); text-decoration: none; }
+  /* mob-subnav structural styles moved out of this media block — see
+     the top-level .mob-subnav rule. The .d-lg-none class on the
+     markup gates visibility to <992px. */
 
   /* ── Breadcrumbs — hide on mobile ── */
   .squad-hero-crumb.lm-desktop { display: none; }
