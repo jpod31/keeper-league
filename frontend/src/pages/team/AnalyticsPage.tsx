@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAnalytics } from '../../hooks/useAnalytics'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
-import { Spinner } from '../../components/ui/Spinner'
+import { AnalyticsSkeleton } from '../../components/ui/AnalyticsSkeleton'
 import type { AnalyticsData, DynastyTeam, PlayerBayesian } from '../../types'
 import {
   BarChart, Bar, XAxis, YAxis, Cell, Tooltip, ResponsiveContainer,
@@ -1022,7 +1022,7 @@ export function AnalyticsPage() {
     window.location.href = `/leagues/${leagueId}/team/${teamId}/analytics`
   }
 
-  if (loading) return <Spinner text={rebuild ? "Rebuilding analytics — this may take 20-30s on first load..." : "Loading analytics..."} />
+  if (loading) return <AnalyticsSkeleton rebuilding={rebuild} />
   if (error || !data) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px' }}>
