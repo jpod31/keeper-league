@@ -1,7 +1,7 @@
 import { useParams, Link, useSearchParams } from 'react-router'
 import { useEffect, useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Spinner } from '../../components/ui/Spinner'
+import { TradeCenterSkeleton } from '../../components/ui/TradeCenterSkeleton'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -170,7 +170,7 @@ export function TradeCenterPage() {
     return () => clearInterval(t)
   }, [])
 
-  if (loading) return <Spinner text="Loading trades..." />
+  if (loading) return <TradeCenterSkeleton />
   if (!data) return <p className="text-danger">Failed to load trades</p>
 
   const { league, user_team, incoming, outgoing, history, team_logos } = data

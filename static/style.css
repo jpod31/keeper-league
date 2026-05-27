@@ -7913,6 +7913,49 @@ th.sortable:hover { color: #58a6ff; }
 @media (max-width: 900px) {
   .drsk-cols { grid-template-columns: 1fr; }
 }
+
+/* TradeCenterSkeleton — header + tabs + 3 trade-card placeholders. */
+.tcsk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+.tcsk-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.tcsk-title { height: 28px; width: 200px; border-radius: 8px; }
+.tcsk-cta   { height: 34px; width: 140px; border-radius: 8px; }
+.tcsk-tabs {
+  display: flex;
+  gap: var(--space-2);
+}
+.tcsk-tab { height: 36px; width: 110px; border-radius: 8px; }
+.tcsk-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.tcsk-card {
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+}
+.tcsk-side  { height: 60px; border-radius: 10px; }
+.tcsk-arrow { height: 24px; width: 24px; border-radius: 50%; }
+
+@media (max-width: 600px) {
+  .tcsk-card { grid-template-columns: 1fr; }
+  .tcsk-arrow { width: 100%; height: 16px; border-radius: 6px; }
+}
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }
