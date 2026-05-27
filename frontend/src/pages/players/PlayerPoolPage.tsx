@@ -662,26 +662,34 @@ export function PlayerPoolPage() {
                       )}
                     </td>
                     <td className="text-center" style={{ padding: 0, whiteSpace: 'nowrap' }}>
-                      <button
-                        type="button"
-                        className={`wishlist-star${wishlist.isWishlisted(p.id) ? ' active' : ''}`}
-                        onClick={e => { e.stopPropagation(); wishlist.toggle(p.id) }}
-                        title={wishlist.isWishlisted(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                        aria-label={wishlist.isWishlisted(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                      >
-                        <i className={`bi ${wishlist.isWishlisted(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
-                      </button>
-                      {p.owner_team && p.owner_team !== leagueCtx?.user_team?.name && ownerNameToId.has(p.owner_team) && (
-                        <Link
-                          to={`/leagues/${leagueId}/trades/propose?with=${p.id}&from=${ownerNameToId.get(p.owner_team)}`}
-                          className="trade-from-row"
-                          title={`Propose trade for ${p.name} with ${p.owner_team}`}
-                          aria-label={`Propose trade for ${p.name}`}
-                          onClick={e => e.stopPropagation()}
+                      {/* Fixed-layout wrapper so the star sits at the same x-position
+                          on every row regardless of whether the trade button is shown.
+                          Trade slot is always reserved (~26px) and filled when the
+                          player is owned by another team. */}
+                      <span className="d-inline-flex align-items-center">
+                        <button
+                          type="button"
+                          className={`wishlist-star${wishlist.isWishlisted(p.id) ? ' active' : ''}`}
+                          onClick={e => { e.stopPropagation(); wishlist.toggle(p.id) }}
+                          title={wishlist.isWishlisted(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                          aria-label={wishlist.isWishlisted(p.id) ? 'Remove from wishlist' : 'Add to wishlist'}
                         >
-                          <i className="bi bi-arrow-left-right"></i>
-                        </Link>
-                      )}
+                          <i className={`bi ${wishlist.isWishlisted(p.id) ? 'bi-star-fill' : 'bi-star'}`}></i>
+                        </button>
+                        {p.owner_team && p.owner_team !== leagueCtx?.user_team?.name && ownerNameToId.has(p.owner_team) ? (
+                          <Link
+                            to={`/leagues/${leagueId}/trades/propose?with=${p.id}&from=${ownerNameToId.get(p.owner_team)}`}
+                            className="trade-from-row"
+                            title={`Propose trade for ${p.name} with ${p.owner_team}`}
+                            aria-label={`Propose trade for ${p.name}`}
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <i className="bi bi-arrow-left-right"></i>
+                          </Link>
+                        ) : (
+                          <span aria-hidden style={{ display: 'inline-block', width: 26 }} />
+                        )}
+                      </span>
                     </td>
                   </tr>
                 )
