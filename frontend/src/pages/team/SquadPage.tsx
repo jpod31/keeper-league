@@ -1,7 +1,6 @@
 import { useParams, Link, useSearchParams } from 'react-router'
 import { useState, useMemo, useCallback, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../../components/ui/Spinner'
 import { StatTile } from '../../components/ui/StatTile'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
@@ -76,7 +75,6 @@ export { SquadPageWrapper as SquadPage }
 
 function SquadPageInner() {
   const { leagueId, teamId } = useParams()
-  const { league } = useLeague()
   const [searchParams] = useSearchParams()
   const view = searchParams.get('view') || 'field'
   const { data, loading, error, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
@@ -270,11 +268,9 @@ function SquadPageInner() {
                 : <div className="squad-logo-placeholder">{data.team.name.substring(0, 2).toUpperCase()}</div>}
             </div>
             <div>
-              <div className="squad-hero-crumb d-none d-lg-block"><Link to={`/leagues/${leagueId}`}>{league?.name}</Link> / {data.team.name}</div>
               <div className="d-flex align-items-center gap-2 flex-wrap">
                 <h2 className="squad-hero-title">{data.team.name}</h2>
                 <span className="squad-hero-count d-none d-lg-inline">{players.length} players</span>
-                {is_owner && <span className="squad-hero-owner d-none d-lg-inline">Your Team</span>}
               </div>
             </div>
           </div>

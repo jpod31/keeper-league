@@ -1,4 +1,4 @@
-import{b as e,d as t,f as n,h as r,i,n as a,t as ee}from"./Spinner-BZqcd_eb.js";import{n as te}from"./api-BFFY-yxh.js";import{t as ne}from"./useSocket-bes6cOr3.js";var o=e(r(),1),s=a(),c=[{key:`sc_average`,label:`SC Avg`},{key:`age_factor`,label:`Longevity`},{key:`positional_scarcity`,label:`Scarcity`},{key:`trajectory`,label:`Trajectory`},{key:`durability`,label:`Durability`},{key:`rating_potential`,label:`Growth`}],re=[`#82b3e4`,`#7dc99a`,`#c2932f`,`#e07a6c`,`#b39ed4`,`#7ec0d3`,`#d68a7e`,`#f0d27a`],ie=`
+import{b as e,d as t,f as n,h as r,i,n as a,t as ee}from"./Spinner-BZqcd_eb.js";import{n as te}from"./api-BFFY-yxh.js";import{t as ne}from"./useSocket-BMjclO-K.js";var o=e(r(),1),s=a(),c=[{key:`sc_average`,label:`SC Avg`},{key:`age_factor`,label:`Longevity`},{key:`positional_scarcity`,label:`Scarcity`},{key:`trajectory`,label:`Trajectory`},{key:`durability`,label:`Durability`},{key:`rating_potential`,label:`Growth`}],re=[`#82b3e4`,`#7dc99a`,`#c2932f`,`#e07a6c`,`#b39ed4`,`#7ec0d3`,`#d68a7e`,`#f0d27a`],ie=`
 /* === Draft room · Stadium ====================================== */
 
 /* Banner — current pick + timer. Overrides the legacy GitHub-toned
