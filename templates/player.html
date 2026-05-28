@@ -505,17 +505,18 @@
   </div>
   {% endmacro %}
 
-  {# AFL Team History #}
+  {# Career timeline — AFL list years (AFL logo) + senior state-league years
+     (VFL/SANFL/WAFL logo) for seasons not on an AFL list. One entry per year. #}
   {% if afl_team_history and afl_team_history|length > 0 %}
   <div class="card bg-dark border-secondary mb-4">
     <div class="card-body">
-      <h6 class="fw-semibold text-uppercase text-muted small mb-3">AFL Career</h6>
+      <h6 class="fw-semibold text-uppercase text-muted small mb-3">Career</h6>
       <div class="d-flex flex-wrap gap-2 align-items-end">
         {% for th in afl_team_history %}
-        <div class="text-center" style="min-width:48px;{% if th.games == 0 %}opacity:.5;{% endif %}">
-          {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }} ({{ th.games }} games)">{% endif %}
+        <div class="text-center" style="min-width:48px;{% if th.level != 'AFL' %}opacity:.78;{% endif %}">
+          {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }} — {{ th.level }} ({{ th.games }} {{ 'games' if th.level == 'AFL' else 'matches' }})">{% endif %}
           <div style="font-size:.65rem;color:#c9d1d9;font-weight:700;">{{ th.year }}</div>
-          <div style="font-size:.55rem;color:{% if th.games > 0 %}#8b949e{% else %}#484f58{% endif %};">{{ th.games }}gm</div>
+          <div style="font-size:.55rem;font-weight:700;color:{% if th.level == 'AFL' %}#58a6ff{% else %}#8b949e{% endif %};">{{ th.level }}</div>
         </div>
         {% if not loop.last and afl_team_history[loop.index].team != th.team %}
         <div style="font-size:.6rem;color:#58a6ff;font-weight:700;padding:0 2px;">→</div>

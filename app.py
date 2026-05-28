@@ -907,45 +907,61 @@ def create_app():
                     state_league_data = state_league_data or {}
                     state_league_data["u18"] = _build_section(sl_u18)
 
-            # AFL team history — authoritative club-by-year from AflListHistory
-            # (draftguru list/draft data). This is the ONLY source that records
-            # the AFL club for seasons a player was listed but played no senior
-            # games (e.g. delisted-then-redrafted players). Match-stats feeds are
-            # games-only; the old code had no historical-club source and so
-            # smeared the player's CURRENT club across every past season.
-            from config import TEAM_LOGOS
-            from models.database import AflListHistory as _ALH
+            # Career timeline — one entry per year the player was on an AFL or
+            # senior state-league list. AFL listing (AflListHistory, from
+            # draftguru) is authoritative and OVERRIDES a state-league row for
+            # the same year (a listed player also turns out for the reserves —
+            # show the AFL club + logo, not both). Years with only a VFL/SANFL/
+            # WAFL listing show that club + its state-league logo. AFL listing is
+            # the only source that records non-playing list seasons. U18/NAB
+            # (junior) is excluded — it has its own section.
+            from config import TEAM_LOGOS, STATE_LEAGUE_LOGOS
+            from models.database import AflListHistory as _ALH, StateLeagueStat as _SLS
+
+            afl_by_year = {}
+            for r in _ALH.query.filter(
+                db.or_(_ALH.player_id == afl_row.id, _ALH.player_name == name)
+            ).all():
+                cur = afl_by_year.get(r.season)
+                if cur is None or (r.games or 0) > (cur.games or 0):
+                    afl_by_year[r.season] = r
+
+            sl_by_year = {}
+            for r in _SLS.query.filter(
+                db.or_(_SLS.player_id == afl_row.id, _SLS.player_name == name)
+            ).all():
+                if (r.competition or "").lower() not in ("vfl", "sanfl", "wafl"):
+                    continue  # skip U18 / NAB — junior, shown separately
+                cur = sl_by_year.get(r.season)
+                if cur is None or (r.matches or 0) > (cur.matches or 0):
+                    sl_by_year[r.season] = r
 
             afl_team_history = []
-            lh_rows = _ALH.query.filter(
-                db.or_(_ALH.player_id == afl_row.id, _ALH.player_name == name)
-            ).order_by(_ALH.season).all()
+            for yr in sorted(set(afl_by_year) | set(sl_by_year)):
+                if yr in afl_by_year:  # AFL listing overrides the reserves row
+                    r = afl_by_year[yr]
+                    afl_team_history.append({
+                        "year": yr, "team": r.club,
+                        "logo": TEAM_LOGOS.get(r.club),
+                        "games": r.games or 0, "level": "AFL",
+                    })
+                else:
+                    r = sl_by_year[yr]
+                    afl_team_history.append({
+                        "year": yr, "team": r.team,
+                        "logo": STATE_LEAGUE_LOGOS.get(r.team),
+                        "games": r.matches or 0,
+                        "level": (r.competition or "").upper(),
+                    })
 
-            # One club per season (keep the listing with the most games if a
-            # mid-year move produced two rows for a season).
-            by_year = {}
-            for r in lh_rows:
-                cur = by_year.get(r.season)
-                if cur is None or (r.games or 0) > (cur.games or 0):
-                    by_year[r.season] = r
-            for yr in sorted(by_year):
-                r = by_year[yr]
-                afl_team_history.append({
-                    "year": yr,
-                    "team": r.club,
-                    "logo": TEAM_LOGOS.get(r.club),
-                    "games": r.games or 0,
-                })
-
-            # Fallback: no list history yet (backfill not run, or no draftguru
-            # match) — show just the current listing so the widget isn't empty
-            # and, crucially, doesn't fabricate past seasons.
+            # Fallback: nothing on record — show just the current listing so the
+            # widget isn't empty and, crucially, doesn't fabricate past seasons.
             if not afl_team_history and afl_row.afl_team:
                 afl_team_history.append({
                     "year": config.CURRENT_YEAR,
                     "team": afl_row.afl_team,
                     "logo": TEAM_LOGOS.get(afl_row.afl_team),
-                    "games": 0,
+                    "games": 0, "level": "AFL",
                 })
 
         return render_template("player.html",
