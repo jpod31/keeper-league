@@ -2742,6 +2742,17 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   .lg-switch-menu { left: 0; }
 }
 
+/* Very narrow phones (≤360px, e.g. iPhone SE): tighten the top-bar
+   gaps so the right cluster (bell + avatar) never clips off the edge.
+   AppShell's .kl-bar-* rules live in an inline <style> injected after
+   this sheet, so !important is required to win the cascade on gap. */
+@media (max-width: 360px) {
+  .kl-bar-inner { gap: 5px !important; }
+  .kl-bar-league-slot { margin-left: 2px !important; }
+  .kl-bar-lockout-slot { margin-left: 2px !important; }
+  .kl-lockbadge { padding: 0 8px; }
+}
+
 /* Tab bar (legacy .league-tabs — kept for any remaining Jinja pages
    that haven't been migrated; the React shell uses .kl-tabs below) */
 .league-tabs {
