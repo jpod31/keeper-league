@@ -4840,6 +4840,15 @@ th.sort-desc::after { content: ' \25BC'; font-size: .55rem; opacity: .7; }
   .kl-status-pills { display: none !important; }
 }
 
+/* Desktop: hide the inline .league-subnav tab strip too. Sub-page
+   navigation lives in the left rail's sub-tabs (kl-rail-sub-row).
+   Per Lucas: "design decision needs to be made about having 2 points
+   of navigation for sub tabs.. i think remove for now maybe" —
+   single source of truth is the rail. */
+@media (min-width: 992px) {
+  .league-subnav { display: none !important; }
+}
+
 /* ══════════════════════════════════════════════════
    FIELD VIEW ACTION SHEET (mobile)
    ══════════════════════════════════════════════════ */
@@ -8611,12 +8620,122 @@ th.sortable:hover { color: #58a6ff; }
 .byeplan-toggle-chev  { color: var(--kl-text-muted); font-size: .7rem; margin-left: 2px; transition: transform .15s ease; }
 .byeplan.open .byeplan-toggle-chev { transform: rotate(90deg); color: var(--kl-text-primary); }
 
+/* Body uses a softer panel (no thick border like the midseason-draft
+   banner) — feels like a popover anchored to the pill, not a section
+   card. The .open + flex-basis trick from .squad-info-pills makes it
+   break to a full-width row below the pill chain. */
 .byeplan-body {
-  margin-top: var(--space-2);
+  margin-top: 0;
   padding: var(--space-3);
-  background: rgba(255,255,255,.02);
-  border: 1px solid var(--kl-border);
+  background: rgba(15,22,36,.65);
+  border: 1px solid rgba(110,130,180,.12);
   border-radius: 10px;
+  box-shadow: 0 8px 24px -12px rgba(0,0,0,.45);
+}
+
+/* ══════════════════════════════════════════════════
+   ROUND PICKER — chip-grid popover replacing the
+   legacy <select> dropdown.
+   ══════════════════════════════════════════════════ */
+.rpick { position: relative; display: inline-block; }
+.rpick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: #c9d1d9;
+  cursor: pointer;
+  font-size: .78rem;
+  line-height: 1.15;
+  font-family: inherit;
+}
+.rpick-btn:hover { color: #f0f6fc; }
+.rpick-btn:hover .rpick-icon { transform: translateY(-1px); filter: brightness(1.15); }
+.rpick-icon {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 30px;
+  font-size: .85rem;
+  background: rgba(48,54,61,.4);
+  color: #c9d1d9;
+  border: 1px solid rgba(110,118,129,.25);
+  box-shadow: 0 4px 12px -6px rgba(0,0,0,.45);
+  transition: transform .15s ease, filter .15s ease;
+}
+.rpick-text { display: inline-flex; flex-direction: column; white-space: nowrap; text-align: left; }
+.rpick-title { font-weight: 700; font-size: .78rem; color: #f0f6fc; }
+.rpick-sub   { font-size: .64rem; color: #8b949e; font-weight: 500; letter-spacing: .02em; margin-top: 1px; }
+.rpick-chev  { color: var(--kl-text-muted); font-size: .7rem; margin-left: 2px; transition: transform .15s ease; }
+.rpick.open .rpick-chev { transform: rotate(180deg); color: var(--kl-text-primary); }
+
+.rpick-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1050;
+  min-width: 260px;
+  max-width: 320px;
+  padding: var(--space-3);
+  background: linear-gradient(180deg, var(--kl-bg-card), var(--kl-bg-body));
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+  box-shadow: 0 16px 32px -12px rgba(0,0,0,.55);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: rpick-in .12s ease;
+}
+@keyframes rpick-in { from { opacity: 0; transform: translateY(-3px); } }
+.rpick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 6px;
+}
+.rpick-chip {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  background: rgba(48,54,61,.4);
+  border: 1px solid var(--kl-border);
+  border-radius: 8px;
+  color: var(--kl-text-secondary);
+  font-size: .76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s, border-color .12s, color .12s, transform .08s;
+}
+.rpick-chip:hover { color: var(--kl-text-primary); border-color: var(--kl-border-light); transform: translateY(-1px); }
+.rpick-chip.active {
+  background: rgba(88,166,255,.18);
+  border-color: rgba(88,166,255,.5);
+  color: var(--kl-accent-blue);
+}
+.rpick-chip-live {
+  /* The Live option gets a full-width primary treatment so it reads as
+     the default action and is easy to return to. */
+  width: 100%;
+  height: 36px;
+  background: rgba(63,185,80,.10);
+  border-color: rgba(63,185,80,.32);
+  color: var(--kl-accent-green);
+  font-size: .8rem;
+}
+.rpick-chip-live.active {
+  background: rgba(63,185,80,.18);
+  border-color: rgba(63,185,80,.5);
+}
+.rpick-chip-live i { font-size: .9rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rpick-pop { animation: none; }
 }
 .byeplan-loading,
 .byeplan-error,
@@ -8753,6 +8872,11 @@ th.sortable:hover { color: #58a6ff; }
 
 /* ══════════════════════════════════════════════════
    HISTORICAL SQUAD VIEW — read-only past-round lineup
+   Lays out the lineup in 4 field-shaped vertical zones
+   (DEF / MID / RUC / FWD) with player cards arranged
+   horizontally inside each zone — visually echoes the
+   live FieldView without trying to replicate its SVG
+   markings or fixed-slot grid.
    ══════════════════════════════════════════════════ */
 .hsv { display: flex; flex-direction: column; gap: var(--space-3); }
 .hsv-loading,
@@ -8775,58 +8899,123 @@ th.sortable:hover { color: #58a6ff; }
   font-size: .82rem;
   align-self: flex-start;
 }
+
+/* The "field" — subtle oval gradient backdrop evokes the AFL field
+   without trying to replicate the live SVG markings. Zones stack
+   top-to-bottom: DEF / MID / RUC / FWD. */
+.hsv-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background:
+    radial-gradient(ellipse 90% 80% at 50% 50%, rgba(34,80,52,.16), rgba(15,22,36,.6) 70%),
+    rgba(15,22,36,.4);
+  border: 1px solid var(--kl-border);
+  border-radius: 14px;
+}
 .hsv-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 8px;
+  background: rgba(0,0,0,.18);
+}
+.hsv-zone-label {
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--kl-text-muted);
+}
+.hsv-zone.pos-DEF .hsv-zone-label { color: #79c0ff; }
+.hsv-zone.pos-MID .hsv-zone-label { color: #d2a8ff; }
+.hsv-zone.pos-RUC .hsv-zone-label { color: #7ee787; }
+.hsv-zone.pos-FWD .hsv-zone-label { color: #ffb471; }
+
+.hsv-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-2);
+}
+.hsv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 8px;
+  background: rgba(15,22,36,.85);
+  border: 1px solid var(--kl-border);
+  border-radius: 8px;
+  min-height: 50px;
+}
+.hsv-card-bench { opacity: .82; }
+.hsv-card-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.hsv-card-name {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--kl-text-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hsv-card-pos {
+  font-size: .55rem;
+  padding: 1px 5px;
+  flex: 0 0 auto;
+}
+.hsv-card-badges {
+  display: inline-flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.hsv-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: .68rem;
+}
+.hsv-card-team { color: var(--kl-text-muted); }
+.hsv-card-sc {
+  color: var(--kl-text-heading);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bench — separate panel under the field, no field gradient. */
+.hsv-bench {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
   background: rgba(255,255,255,.02);
   border: 1px solid var(--kl-border);
   border-radius: 10px;
-  overflow: hidden;
 }
-.hsv-zone-head {
-  padding: var(--space-2) var(--space-3);
-  font-size: .68rem;
-  font-weight: 800;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--kl-text-secondary);
-  background: rgba(255,255,255,.02);
-  border-bottom: 1px solid var(--kl-border);
-}
-.hsv-zone-head.pos-DEF { color: #79c0ff; }
-.hsv-zone-head.pos-MID { color: #d2a8ff; }
-.hsv-zone-head.pos-RUC { color: #7ee787; }
-.hsv-zone-head.pos-FWD { color: #ffb471; }
-.hsv-list { list-style: none; padding: 0; margin: 0; }
-.hsv-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto 48px;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid rgba(48,54,74,.4);
-  font-size: .85rem;
-}
-.hsv-row:last-child { border-bottom: none; }
-.hsv-row-bench { grid-template-columns: auto 1fr auto 48px; opacity: .9; }
-.hsv-name { color: var(--kl-text-heading); font-weight: 600; }
-.hsv-team { color: var(--kl-text-muted); font-size: .75rem; }
-.hsv-sc { color: var(--kl-text-primary); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
-.hsv-badges { display: inline-flex; gap: 2px; }
+
 .hsv-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 4px;
-  font-size: .6rem;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: .55rem;
   font-weight: 800;
   letter-spacing: .04em;
 }
-.hsv-badge-c   { background: rgba(210,153,34,.18); color: #f1c64a; }
-.hsv-badge-vc  { background: rgba(151,163,186,.18); color: var(--kl-text-secondary); }
-.hsv-badge-e   { background: rgba(240,136,62,.18); color: var(--kl-accent-orange); }
-.hsv-badge-inj { background: rgba(248,81,73,.18); color: var(--kl-accent-red); }
+.hsv-badge-c   { background: rgba(210,153,34,.22); color: #f1c64a; }
+.hsv-badge-vc  { background: rgba(151,163,186,.22); color: var(--kl-text-secondary); }
+.hsv-badge-e   { background: rgba(240,136,62,.22); color: var(--kl-accent-orange); }
+.hsv-badge-inj { background: rgba(248,81,73,.22); color: var(--kl-accent-red); }
 @keyframes klBreathe {
   0%, 100% { opacity: 1; }
   50%      { opacity: .82; }

@@ -374,6 +374,29 @@ interface RailSection {
   sub?: { to: string; label: string; key: string }[]
 }
 
+/**
+ * Match a sub-row `to` against the current location.
+ * - Paths must match exactly (no prefix matching — fixes the issue where
+ *   /team/X/stats highlights BOTH "Field" and "Stats").
+ * - If `to` carries a query string (e.g. `?view=wishlist`), every key/value
+ *   in `to`'s query must also be present in the current search. If `to`
+ *   has no query but the current URL has view=wishlist, treat the row as
+ *   NOT active (otherwise Field highlights when Wishlist is open).
+ */
+function subActive(to: string, currentPath: string, currentSearch: string): boolean {
+  const [path, query] = to.split('?')
+  if (path !== currentPath) return false
+  const current = new URLSearchParams(currentSearch)
+  if (query) {
+    const required = new URLSearchParams(query)
+    for (const [k, v] of required) if (current.get(k) !== v) return false
+    return true
+  }
+  // No query in target: must not be a parametrised view of the same path.
+  if (current.get('view')) return false
+  return true
+}
+
 function LeagueRail({
   lid, teamId, leagueName, leagueSeason, userLeagues,
   activeTab, activeDraft, isCommissioner, pendingLtilCount,
@@ -398,6 +421,10 @@ function LeagueRail({
   const [hover, setHover] = useState(false)
   const expanded = pinned || hover || switcherOpen
   const accent = accentFor(lid)
+  // Sub-row active state needs both pathname and search to handle
+  // ?view=wishlist properly. Pulled here so subActive() can be called
+  // in the render loop below without re-subscribing per row.
+  const { pathname: railPathname, search: railSearch } = useLocation()
 
   function togglePin() {
     setPinned(p => {
@@ -421,10 +448,11 @@ function LeagueRail({
     sections.push({
       to: `/leagues/${lid}/team/${teamId}`, key: 'team', icon: 'bi-person-fill-gear', label: 'My Team',
       sub: [
-        { to: `/leagues/${lid}/team/${teamId}`,           key: 'field',     label: 'Field' },
-        { to: `/leagues/${lid}/team/${teamId}/stats`,     key: 'stats',     label: 'Stats' },
-        { to: `/leagues/${lid}/team/${teamId}/analytics`, key: 'analytics', label: 'Analytics' },
-        { to: `/leagues/${lid}/trades`,                   key: 'trades',    label: 'Trades' },
+        { to: `/leagues/${lid}/team/${teamId}`,                   key: 'field',     label: 'Field' },
+        { to: `/leagues/${lid}/team/${teamId}/stats`,             key: 'stats',     label: 'Stats' },
+        { to: `/leagues/${lid}/team/${teamId}/analytics`,         key: 'analytics', label: 'Analytics' },
+        { to: `/leagues/${lid}/trades`,                           key: 'trades',    label: 'Trades' },
+        { to: `/leagues/${lid}/team/${teamId}?view=wishlist`,     key: 'wishlist',  label: 'Wishlist' },
       ],
     })
     sections.push({ to: `/leagues/${lid}/gameday`, key: 'gameday', icon: 'bi-controller', label: 'Gameday' })
@@ -438,6 +466,7 @@ function LeagueRail({
       { to: `/leagues/${lid}/injuries`,          key: 'injuries',  label: 'Injuries' },
       { to: `/leagues/${lid}/player-ratings`,    key: 'ratings',   label: 'Ratings' },
       { to: `/leagues/${lid}/scouting`,          key: 'scouting',  label: 'Scouting' },
+      { to: `/leagues/${lid}/breakout-radar`,    key: 'breakout',  label: 'Breakout' },
     ],
   })
   sections.push({
@@ -522,15 +551,25 @@ function LeagueRail({
                   <span className="kl-rail-badge">{section.badge}</span>
                 )}
               </NavLink>
-              {/* Inline sub-tabs when active + rail expanded */}
+              {/* Inline sub-tabs when active + rail expanded.
+                  Active state is computed manually (not via NavLink) so
+                  it can handle ?view=wishlist exactly without prefix-
+                  matching every nested route. */}
               {active && section.sub && expanded && (
                 <div className="kl-rail-sub">
-                  {section.sub.map(st => (
-                    <NavLink key={st.key} to={st.to} className="kl-rail-sub-row" end={false}>
-                      <span className="kl-rail-sub-dot"></span>
-                      <span>{st.label}</span>
-                    </NavLink>
-                  ))}
+                  {section.sub.map(st => {
+                    const isActive = subActive(st.to, railPathname, railSearch)
+                    return (
+                      <Link
+                        key={st.key}
+                        to={st.to}
+                        className={`kl-rail-sub-row${isActive ? ' active' : ''}`}
+                      >
+                        <span className="kl-rail-sub-dot"></span>
+                        <span>{st.label}</span>
+                      </Link>
+                    )
+                  })}
                 </div>
               )}
             </div>

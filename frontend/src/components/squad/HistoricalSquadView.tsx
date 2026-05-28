@@ -1,13 +1,13 @@
 /**
  * HistoricalSquadView — read-only render of a past round's lineup.
  *
- * Fetches /api/leagues/<id>/team/<id>/lineup/<round> on mount and
- * lays out the players grouped by position with captain / VC /
- * emergency badges. Designed as a tight, simple view distinct from
- * the live FieldView — no actions, no swap mode, no lockout context.
+ * Renders the lineup in a field-like 4-zone layout (DEF / MID / RUC /
+ * FWD) with player cards arranged horizontally inside each zone, so
+ * it visually echoes the live FieldView instead of reading as text
+ * lists. Bench players go in their own row underneath.
  *
- * Powers #21: historical squad snapshots. Use the round picker on
- * SquadPage to swap in this view for any past round.
+ * Fetches /api/leagues/<id>/team/<id>/lineup/<round> on mount.
+ * No actions, no swap mode, no lockout context — pure archive.
  *
  * Styles live as .hsv-* in static/style.css. Consumes --space-N tokens.
  */
@@ -73,8 +73,8 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
   if (error) return <div className="hsv-error">{error}</div>
   if (!data) return null
 
-  // Group players by position bucket. Bench / emergencies render in a
-  // separate row at the bottom.
+  // Group players by position bucket. Bench / emergencies render in
+  // a separate row at the bottom.
   const onField: Record<string, HistPlayer[]> = { DEF: [], MID: [], RUC: [], FWD: [] }
   const bench: HistPlayer[] = []
   for (const p of data.players) {
@@ -94,44 +94,57 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
         Viewing R{data.round} archive — read-only
       </div>
 
-      {POS_ORDER.map(pos => {
-        const players = onField[pos]
-        if (players.length === 0) return null
-        return (
-          <section key={pos} className="hsv-zone">
-            <div className={`hsv-zone-head pos-${pos}`}>{pos}</div>
-            <ul className="hsv-list">
-              {players.map(p => (
-                <li key={p.id} className="hsv-row">
-                  <span className="hsv-name">{p.name}</span>
-                  <span className="hsv-badges">
-                    {p.is_captain && <span className="hsv-badge hsv-badge-c" title="Captain">C</span>}
-                    {p.is_vc && <span className="hsv-badge hsv-badge-vc" title="Vice-captain">VC</span>}
-                    {p.is_emergency > 0 && <span className="hsv-badge hsv-badge-e" title="Emergency">E</span>}
-                    {p.injury && <span className="hsv-badge hsv-badge-inj" title={p.injury}><i className="bi bi-bandaid-fill"></i></span>}
-                  </span>
-                  <span className="hsv-team">{p.afl_team}</span>
-                  <span className="hsv-sc">{p.sc_avg ? Math.round(p.sc_avg) : '—'}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      })}
+      {/* Field-shaped vertical zones (DEF top, FWD bottom — mirrors
+          the live FieldView). Each zone lays its players out as
+          horizontal cards. */}
+      <div className="hsv-field">
+        {POS_ORDER.map(pos => {
+          const players = onField[pos]
+          if (players.length === 0) return null
+          return (
+            <section key={pos} className={`hsv-zone pos-${pos}`}>
+              <div className="hsv-zone-label">{pos}</div>
+              <div className="hsv-cards">
+                {players.map(p => (
+                  <div key={p.id} className="hsv-card">
+                    <div className="hsv-card-head">
+                      <span className="hsv-card-name" title={p.name}>{p.name}</span>
+                      <span className="hsv-card-badges">
+                        {p.is_captain && <span className="hsv-badge hsv-badge-c" title="Captain">C</span>}
+                        {p.is_vc && <span className="hsv-badge hsv-badge-vc" title="Vice-captain">VC</span>}
+                        {p.is_emergency > 0 && <span className="hsv-badge hsv-badge-e" title="Emergency">E</span>}
+                        {p.injury && <span className="hsv-badge hsv-badge-inj" title={p.injury}><i className="bi bi-bandaid-fill"></i></span>}
+                      </span>
+                    </div>
+                    <div className="hsv-card-meta">
+                      <span className="hsv-card-team">{p.afl_team}</span>
+                      <span className="hsv-card-sc">{p.sc_avg ? Math.round(p.sc_avg) : '—'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )
+        })}
+      </div>
 
       {bench.length > 0 && (
-        <section className="hsv-zone hsv-zone-bench">
-          <div className="hsv-zone-head">Bench</div>
-          <ul className="hsv-list">
+        <section className="hsv-bench">
+          <div className="hsv-zone-label">Bench</div>
+          <div className="hsv-cards">
             {bench.map(p => (
-              <li key={p.id} className="hsv-row hsv-row-bench">
-                <span className={`pos-badge pos-${posPrimary(p.position)}`} style={{ fontSize: '.55rem', padding: '1px 5px' }}>{posPrimary(p.position)}</span>
-                <span className="hsv-name">{p.name}</span>
-                <span className="hsv-team">{p.afl_team}</span>
-                <span className="hsv-sc">{p.sc_avg ? Math.round(p.sc_avg) : '—'}</span>
-              </li>
+              <div key={p.id} className="hsv-card hsv-card-bench">
+                <div className="hsv-card-head">
+                  <span className={`pos-badge pos-${posPrimary(p.position)} hsv-card-pos`}>{posPrimary(p.position)}</span>
+                  <span className="hsv-card-name" title={p.name}>{p.name}</span>
+                </div>
+                <div className="hsv-card-meta">
+                  <span className="hsv-card-team">{p.afl_team}</span>
+                  <span className="hsv-card-sc">{p.sc_avg ? Math.round(p.sc_avg) : '—'}</span>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
       )}
     </div>

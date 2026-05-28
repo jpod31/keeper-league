@@ -4,9 +4,9 @@ import { useFetch } from '../../hooks/useFetch'
 import { StatTile } from '../../components/ui/StatTile'
 import { MatchupStrip } from '../../components/ui/MatchupStrip'
 import { SquadSkeleton } from '../../components/ui/SquadSkeleton'
-import { RosterHealthStrip } from '../../components/ui/RosterHealthStrip'
 import { ByePlanner } from '../../components/ui/ByePlanner'
 import { HistoricalSquadView } from '../../components/squad/HistoricalSquadView'
+import { RoundPicker } from '../../components/ui/RoundPicker'
 import { FieldView, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
@@ -506,6 +506,9 @@ function SquadPageInner() {
       {/* ══════ FIELD VIEW ══════ */}
       {view === 'field' && fd && (
         <>
+          {/* Coherent page-context row: matchup + bye + round picker
+              all read as the same family of small chips, no bolted-on
+              banners. RosterHealthStrip removed per Lucas. */}
           {is_owner && (
             <div className="squad-info-pills">
               {league?.current_matchup && (
@@ -516,25 +519,14 @@ function SquadPageInner() {
                   leagueId={leagueId!}
                 />
               )}
-              <RosterHealthStrip leagueId={leagueId!} teamId={teamId!} />
               <ByePlanner leagueId={leagueId!} teamId={teamId!} />
-            </div>
-          )}
-          {is_owner && league?.current_round && league.current_round > 1 && (
-            <div className="d-flex align-items-center gap-2 mb-3" style={{ fontSize: '.82rem' }}>
-              <label htmlFor="archive-round" className="text-secondary">Round:</label>
-              <select
-                id="archive-round"
-                className="form-select form-select-sm"
-                style={{ maxWidth: 220 }}
-                value={archiveRound ?? ''}
-                onChange={e => setArchiveRound(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">Current (live)</option>
-                {Array.from({ length: league.current_round - 1 }, (_, i) => league.current_round - 1 - i).map(r => (
-                  <option key={r} value={r}>R{r} archive</option>
-                ))}
-              </select>
+              {league?.current_round && league.current_round > 1 && (
+                <RoundPicker
+                  currentRound={league.current_round}
+                  selected={archiveRound}
+                  onSelect={setArchiveRound}
+                />
+              )}
             </div>
           )}
           {archiveRound != null && (
