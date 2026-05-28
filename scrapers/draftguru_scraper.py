@@ -88,6 +88,7 @@ def build_player_url_index():
             continue
         for path, label in re.findall(r'href="(/players/[^"]+)"[^>]*>([^<]+)</a>', html):
             nm = _clean(label).lower()
+            path = _html.unescape(path)  # &#39; -> ' so apostrophe names resolve
             if nm and path:
                 idx.setdefault(nm, path)
         time.sleep(0.2)
