@@ -304,6 +304,20 @@ def make_pick(session_id, player_id, is_auto=False):
         if player_id in picked_ids:
             return None, "Player has already been picked."
 
+        # Defensive: never draft a player already on an active roster in this
+        # league (owned via initial draft/trades) — that would create a
+        # duplicate fantasy_roster row and crash the pick.
+        if not session.is_mock:
+            owned = db.session.query(FantasyRoster.id).join(
+                FantasyTeam, FantasyRoster.team_id == FantasyTeam.id
+            ).filter(
+                FantasyTeam.league_id == session.league_id,
+                FantasyRoster.player_id == player_id,
+                FantasyRoster.is_active == True,
+            ).first()
+            if owned:
+                return None, "That player is already on a roster."
+
         # Verify player exists
         player = db.session.get(AflPlayer, player_id)
         if not player:
@@ -605,6 +619,13 @@ def auto_pick(session_id, team_id):
     if not session:
         return None, "No draft session."
 
+    # A full team (45 excl. LTIL) can't add players — pass on their behalf so
+    # the timer path always advances (never returns an error → never hangs).
+    if not session.is_mock and session.draft_round_type == "supplemental":
+        league = db.session.get(League, session.league_id)
+        if league and team_is_full(league, team_id):
+            return pass_pick(session_id)
+
     # Get position constraints
     pos_needs = get_position_needs(session.league_id, session_id, team_id)
     blocked = set(pos_needs["blocked_positions"])
@@ -621,18 +642,30 @@ def auto_pick(session_id, team_id):
         DraftPick.draft_session_id == session_id,
         DraftPick.player_id.isnot(None),
     ).all()
-    picked_ids = {row[0] for row in already_picked}
+    unavailable = {row[0] for row in already_picked}
+    # Supplemental: players already on ANY active roster in the league are
+    # owned and can't be drafted again (mirror get_available_players). Without
+    # this the fallback would grab a rostered star → duplicate roster row →
+    # IntegrityError → the timer's auto-pick hangs the draft.
+    if session.draft_round_type == "supplemental":
+        rostered = db.session.query(FantasyRoster.player_id).join(
+            FantasyTeam, FantasyRoster.team_id == FantasyTeam.id
+        ).filter(
+            FantasyTeam.league_id == session.league_id,
+            FantasyRoster.is_active == True,
+        ).all()
+        unavailable.update(row[0] for row in rostered)
 
     for queue_entry in queue_entries:
-        if queue_entry.player_id not in picked_ids:
+        if queue_entry.player_id not in unavailable:
             player = db.session.get(AflPlayer, queue_entry.player_id)
             if player and _player_position_allowed(player, blocked):
                 return make_pick(session_id, queue_entry.player_id, is_auto=True)
 
-    # Fallback: pick highest draft_score available player respecting position limits
+    # Fallback: highest draft_score available player respecting position limits
     query = AflPlayer.query
-    if picked_ids:
-        query = query.filter(AflPlayer.id.notin_(picked_ids))
+    if unavailable:
+        query = query.filter(AflPlayer.id.notin_(unavailable))
     candidates = query.order_by(AflPlayer.draft_score.desc().nullslast()).limit(50).all()
 
     for player in candidates:
