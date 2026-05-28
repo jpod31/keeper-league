@@ -28,17 +28,29 @@ def trade_center(league_id):
     # Expire stale trades
     expire_stale_trades(league_id)
 
-    # Get trades
-    tab = request.args.get("tab", "incoming")
+    # Get trades. Three audiences:
+    #   - Pending: the user's own active offers (in + out). Private — a
+    #     pending offer is only ever visible to the two parties.
+    #   - Completed: the user's OWN accepted (finalised) trades.
+    #   - History: ALL-league accepted trades — the public ledger.
+    # Rejected / cancelled / vetoed / expired trades are NOT surfaced
+    # league-wide (that was the privacy leak — previously `history` was
+    # every non-pending trade, exposing other teams' declined offers).
+    tab = request.args.get("tab", "pending")
+    ACTIVE = ("pending", "agreed")
     if user_team:
-        incoming = [t for t in get_team_trades(user_team.id) if t.recipient_team_id == user_team.id]
-        outgoing = [t for t in get_team_trades(user_team.id) if t.proposer_team_id == user_team.id]
+        my_trades = get_team_trades(user_team.id)
+        incoming = [t for t in my_trades if t.recipient_team_id == user_team.id and t.status in ACTIVE]
+        outgoing = [t for t in my_trades if t.proposer_team_id == user_team.id and t.status in ACTIVE]
+        completed = [t for t in my_trades if t.status == "accepted"]
     else:
         incoming = []
         outgoing = []
+        completed = []
 
     all_trades = get_league_trades(league_id)
-    history = [t for t in all_trades if t.status != "pending"]
+    # Public ledger: accepted trades only.
+    history = [t for t in all_trades if t.status == "accepted"]
 
     if request.args.get("format") == "json":
         from config import TEAM_LOGOS
@@ -108,6 +120,7 @@ def trade_center(league_id):
             "team_logos": TEAM_LOGOS,
             "incoming": [_ser_trade(t) for t in incoming],
             "outgoing": [_ser_trade(t) for t in outgoing],
+            "completed": [_ser_trade(t) for t in completed],
             "history": [_ser_trade(t) for t in history],
         })
 
@@ -117,6 +130,7 @@ def trade_center(league_id):
                            is_commissioner=is_commissioner,
                            incoming=incoming,
                            outgoing=outgoing,
+                           completed=completed,
                            history=history,
                            tab=tab)
 
@@ -262,6 +276,16 @@ def trade_detail(league_id, trade_id):
     is_commissioner = league.commissioner_id == current_user.id
     is_recipient = user_team and trade.recipient_team_id == user_team.id
     is_proposer = user_team and trade.proposer_team_id == user_team.id
+
+    # Privacy guard: only accepted (finalised) trades are public. A
+    # pending / rejected / cancelled / vetoed / expired trade is visible
+    # ONLY to the two parties and the commissioner — not the rest of the
+    # league, and not via URL-guessing.
+    if trade.status != "accepted" and not (is_recipient or is_proposer or is_commissioner):
+        if request.args.get("format") == "json":
+            return jsonify({"error": "This trade is private to the parties involved."}), 403
+        flash("That trade is private to the teams involved.", "warning")
+        return redirect(url_for("trades.trade_center", league_id=league_id))
 
     # Separate assets by direction and type
     giving_players = [a for a in trade.assets if a.from_team_id == trade.proposer_team_id and a.player_id]

@@ -736,10 +736,14 @@ def trade_list(league_id):
             "players_in": [a.player.name if a.player else "Pick" for a in t.assets if a.from_team_id == t.recipient_team_id],
         }
 
+    # Privacy: pending offers are private to the two parties; the public
+    # "completed" ledger only shows ACCEPTED trades (never rejected /
+    # cancelled / vetoed / expired ones from other teams).
+    active = ("pending", "agreed")
     return jsonify({
-        "incoming": [fmt(t) for t in all_trades if t.recipient_team_id == user_team.id and t.status == "pending"],
-        "outgoing": [fmt(t) for t in all_trades if t.proposer_team_id == user_team.id and t.status == "pending"],
-        "completed": [fmt(t) for t in all_trades if t.status != "pending"][:20],
+        "incoming": [fmt(t) for t in all_trades if t.recipient_team_id == user_team.id and t.status in active],
+        "outgoing": [fmt(t) for t in all_trades if t.proposer_team_id == user_team.id and t.status in active],
+        "completed": [fmt(t) for t in all_trades if t.status == "accepted"][:20],
     })
 
 
@@ -894,7 +898,14 @@ def trade_detail(league_id, trade_id):
     if not t or t.league_id != league_id:
         return jsonify({"error": "Not found"}), 404
 
+    league = db.session.get(League, league_id)
     user_team = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
+    is_party = user_team and user_team.id in (t.proposer_team_id, t.recipient_team_id)
+    is_commish = league and league.commissioner_id == current_user.id
+
+    # Privacy: non-accepted trades are visible only to the parties + commish.
+    if t.status != "accepted" and not (is_party or is_commish):
+        return jsonify({"error": "This trade is private to the parties involved."}), 403
 
     return jsonify({
         "id": t.id,
@@ -915,7 +926,7 @@ def trade_detail(league_id, trade_id):
         "players_in": [{"name": a.player.name if a.player else "Pick", "position": a.player.position if a.player else "", "sc_avg": a.player.sc_avg or 0 if a.player else 0} for a in t.assets if a.from_team_id == t.recipient_team_id],
         "comments": [{"author": c.user.display_name if c.user else "?", "text": c.comment, "created": c.created_at.strftime("%b %d, %H:%M") if c.created_at else ""} for c in t.comments],
         "can_respond": user_team and user_team.id == t.recipient_team_id and t.status == "pending",
-        "can_veto": league.commissioner_id == current_user.id and t.status == "pending",
+        "can_veto": is_commish and t.status == "pending",
     })
 
 

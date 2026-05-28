@@ -591,6 +591,21 @@
 .tr-team-pick-name { font-size: .9rem; font-weight: 600; line-height: 1.15; }
 .tr-team-pick-owner { font-size: .72rem; color: #8b949e; }
 
+/* ── Section heads (Pending tab: Incoming / Outgoing labels) ── */
+.tr-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 2px 8px;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #8b949e;
+}
+.tr-section-head:first-of-type { margin-top: 4px; }
+.tr-section-head i { font-size: .85rem; color: #58a6ff; }
+
 /* ── Window status banner ─────────────────────────────────── */
 .tr-window-banner {
   display: flex;

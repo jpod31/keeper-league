@@ -42,6 +42,7 @@ interface TradeCenterData {
   team_logos: Record<string, string>
   incoming: TradeSummary[]
   outgoing: TradeSummary[]
+  completed: TradeSummary[]
   history: TradeSummary[]
 }
 
@@ -160,7 +161,7 @@ function TradeCard({ trade, leagueId, teamLogos }: {
 export function TradeCenterPage() {
   const { leagueId } = useParams()
   const [searchParams] = useSearchParams()
-  const tab = (searchParams.get('tab') || 'incoming') as 'incoming' | 'outgoing' | 'history'
+  const tab = (searchParams.get('tab') || 'pending') as 'pending' | 'completed' | 'history'
   const { data, loading } = useFetch<TradeCenterData>(`/leagues/${leagueId}/trades?format=json&tab=${tab}`)
 
   // Countdown re-render
@@ -173,11 +174,10 @@ export function TradeCenterPage() {
   if (loading) return <TradeCenterSkeleton />
   if (!data) return <p className="text-danger">Failed to load trades</p>
 
-  const { league, user_team, incoming, outgoing, history, team_logos } = data
-  const currentTrades = tab === 'incoming' ? incoming : tab === 'outgoing' ? outgoing : history
-  const pendingIncoming = incoming.filter(t => t.status === 'pending').length
-  const pendingOutgoing = outgoing.filter(t => t.status === 'pending').length
-  const completedCount = history.filter(t => t.status === 'accepted').length
+  const { league, user_team, incoming, outgoing, completed, history, team_logos } = data
+  const pendingIncoming = incoming.length
+  const pendingOutgoing = outgoing.length
+  const pendingTotal = pendingIncoming + pendingOutgoing
   const countdown = fmtCountdown(league.trade_close_at)
 
   return (
@@ -241,49 +241,82 @@ export function TradeCenterPage() {
           <div className="tr-hero-tile-sub">awaiting their response</div>
         </div>
         <div className="tr-hero-tile tr-hero-tile-history">
-          <div className="tr-hero-tile-label">Completed</div>
-          <div className="tr-hero-tile-value">{completedCount}</div>
-          <div className="tr-hero-tile-sub">accepted trades this season</div>
+          <div className="tr-hero-tile-label">Your completed</div>
+          <div className="tr-hero-tile-value">{completed.length}</div>
+          <div className="tr-hero-tile-sub">accepted deals this season</div>
         </div>
       </div>
 
       <div className="league-subnav">
-        <Link to={`/leagues/${leagueId}/trades?tab=incoming`} className={`league-subtab${tab === 'incoming' ? ' active' : ''}`}>
-          <i className="bi bi-inbox"></i>Incoming
-          {pendingIncoming > 0 && (
-            <span className="badge" style={{ background: '#f85149', fontSize: '.55rem', marginLeft: 4, borderRadius: 8 }}>{pendingIncoming}</span>
+        <Link to={`/leagues/${leagueId}/trades?tab=pending`} className={`league-subtab${tab === 'pending' ? ' active' : ''}`}>
+          <i className="bi bi-hourglass-split"></i>Pending
+          {pendingTotal > 0 && (
+            <span className="badge" style={{ background: '#f85149', fontSize: '.55rem', marginLeft: 4, borderRadius: 8 }}>{pendingTotal}</span>
           )}
         </Link>
-        <Link to={`/leagues/${leagueId}/trades?tab=outgoing`} className={`league-subtab${tab === 'outgoing' ? ' active' : ''}`}>
-          <i className="bi bi-send"></i>Outgoing
-          {pendingOutgoing > 0 && (
-            <span className="badge" style={{ background: '#d29922', fontSize: '.55rem', marginLeft: 4, borderRadius: 8 }}>{pendingOutgoing}</span>
-          )}
+        <Link to={`/leagues/${leagueId}/trades?tab=completed`} className={`league-subtab${tab === 'completed' ? ' active' : ''}`}>
+          <i className="bi bi-check-circle"></i>Completed
         </Link>
         <Link to={`/leagues/${leagueId}/trades?tab=history`} className={`league-subtab${tab === 'history' ? ' active' : ''}`}>
-          <i className="bi bi-clock-history"></i>History
+          <i className="bi bi-clock-history"></i>League history
         </Link>
       </div>
 
-      {currentTrades.length > 0 ? (
-        currentTrades.map(t => <TradeCard key={t.id} trade={t} leagueId={leagueId!} teamLogos={team_logos} />)
-      ) : (
-        <div className="empty-state">
-          <div className="empty-icon">
-            <i className="bi bi-arrow-left-right" style={{ fontSize: '1.5rem' }}></i>
+      {/* ── PENDING: your incoming + outgoing offers (private to parties) ── */}
+      {tab === 'pending' && (
+        pendingTotal > 0 ? (
+          <>
+            {incoming.length > 0 && (
+              <>
+                <div className="tr-section-head"><i className="bi bi-inbox"></i> Incoming · {incoming.length}</div>
+                {incoming.map(t => <TradeCard key={t.id} trade={t} leagueId={leagueId!} teamLogos={team_logos} />)}
+              </>
+            )}
+            {outgoing.length > 0 && (
+              <>
+                <div className="tr-section-head"><i className="bi bi-send"></i> Outgoing · {outgoing.length}</div>
+                {outgoing.map(t => <TradeCard key={t.id} trade={t} leagueId={leagueId!} teamLogos={team_logos} />)}
+              </>
+            )}
+          </>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon"><i className="bi bi-hourglass"></i></div>
+            <h4>No pending trades</h4>
+            <p>No active offers in or out right now. Only you and the other team can see a pending offer.</p>
+            {user_team && (
+              <Link to={`/leagues/${leagueId}/trades/propose`} className="btn btn-primary btn-sm mt-2">
+                <i className="bi bi-plus-lg me-1"></i>Propose a trade
+              </Link>
+            )}
           </div>
-          <h4>No {tab} trades</h4>
-          <p>
-            {tab === 'incoming' ? 'No one has proposed a trade to you yet.'
-              : tab === 'outgoing' ? "You haven't proposed any trades."
-              : 'No completed trades to show.'}
-          </p>
-          {tab !== 'history' && user_team && (
-            <Link to={`/leagues/${leagueId}/trades/propose`} className="btn btn-primary btn-sm mt-2">
-              <i className="bi bi-plus-lg me-1"></i>Propose a trade
-            </Link>
-          )}
-        </div>
+        )
+      )}
+
+      {/* ── COMPLETED: your accepted deals ── */}
+      {tab === 'completed' && (
+        completed.length > 0 ? (
+          completed.map(t => <TradeCard key={t.id} trade={t} leagueId={leagueId!} teamLogos={team_logos} />)
+        ) : (
+          <div className="empty-state positive">
+            <div className="empty-icon"><i className="bi bi-check-circle"></i></div>
+            <h4>No completed trades yet</h4>
+            <p>Deals you've successfully made this season will show here.</p>
+          </div>
+        )
+      )}
+
+      {/* ── LEAGUE HISTORY: all accepted trades (public ledger) ── */}
+      {tab === 'history' && (
+        history.length > 0 ? (
+          history.map(t => <TradeCard key={t.id} trade={t} leagueId={leagueId!} teamLogos={team_logos} />)
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon"><i className="bi bi-clock-history"></i></div>
+            <h4>No trades yet</h4>
+            <p>Completed trades across the whole league will appear here as they happen.</p>
+          </div>
+        )
       )}
     </div>
   )
