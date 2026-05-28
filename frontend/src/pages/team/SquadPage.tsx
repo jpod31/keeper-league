@@ -461,19 +461,26 @@ function SquadPageInner() {
         </div>
       )}
 
-      {/* ── Next-window badge ──
+      {/* ── Closed-window badge ──
               When no trade/delist window is open, the trade-period centre is
-              gone — replaced by this tiny pill showing when the next window
-              opens, so the page stays clean off-season/off-window. */}
-      {is_owner && !data.trade_is_open && !data.delist_is_open && data.next_window_open_at && (
+              gone — replaced by this tiny pill. It names the reopen date when a
+              future window is scheduled, otherwise just shows trades are closed
+              so the collapsed state is always visible (never blank). */}
+      {is_owner && !data.trade_is_open && !data.delist_is_open && (
         <div
           className="kl-window-badge"
-          title={`${data.next_window_label ?? 'Trade'} window opens ${new Date(data.next_window_open_at).toLocaleString()}`}
+          title={data.next_window_open_at
+            ? `${data.next_window_label ?? 'Trade'} window opens ${new Date(data.next_window_open_at).toLocaleString()}`
+            : 'Trades and delistings are currently closed'}
         >
           <span className="kl-window-badge-dot"><i className="bi bi-calendar-event"></i></span>
           <span className="kl-window-badge-text">
-            {data.next_window_label ?? 'Trade'} window opens{' '}
-            <strong>{new Date(data.next_window_open_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</strong>
+            {data.next_window_open_at ? (
+              <>{data.next_window_label ?? 'Trade'} window opens{' '}
+              <strong>{new Date(data.next_window_open_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</strong></>
+            ) : (
+              <>Trades closed</>
+            )}
           </span>
         </div>
       )}
