@@ -119,7 +119,17 @@ def create_draft_session(league_id, supplemental=False, total_rounds_override=No
     if not teams:
         return None, "No teams in the league."
 
-    total_rounds = total_rounds_override or league.squad_size
+    if supplemental and not is_mock:
+        # No fixed round cap on supplemental drafts — generate enough rounds for
+        # the emptiest team to fill to the squad cap. The squad-cap auto-pass and
+        # the all-pass auto-end terminate the draft, not the round count.
+        cap = league.squad_size or 0
+        free = [max(0, cap - team_list_size(league, t.id)) for t in teams]
+        total_rounds = max(free) if free else 0
+        if total_rounds <= 0:
+            return None, "Every team is already at the squad cap — no supplemental picks available."
+    else:
+        total_rounds = total_rounds_override or league.squad_size
 
     session = DraftSession(
         league_id=league_id,
