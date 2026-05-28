@@ -63,9 +63,13 @@ interface Props {
   isOwner: boolean
   actions?: Actions
   delistContext?: DelistContext | null
+  /** Bye preview (#14): player IDs on bye for the previewed round.
+   *  Matching cards get a partial grey-out. undefined = not previewing. */
+  byeIds?: Set<number>
+  byeRound?: number | null
 }
 
-export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContext }: Props) {
+export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContext, byeIds, byeRound }: Props) {
   // Defensive defaults for fields that may not exist in older API responses
   const fd = {
     ...rawFd,
@@ -141,6 +145,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       else if (actions.actionMode === '7s_replace') isSwapEligible = is7s
     }
 
+    const isOnByePreview = !!byeIds && byeIds.has(p.id)
     const cardClasses = [
       'fv-card', `fv-card-${posClass}`,
       isFlex && 'fv-card-flex', isReserve && 'fv-card-reserve',
@@ -148,6 +153,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       isCap && 'fv-card-captain', isVC && 'fv-card-vc',
       isLocked && 'fv-card-locked',
       isSwapActive && 'fv-swap-active', isSwapEligible && 'fv-swap-eligible',
+      isOnByePreview && 'fv-card-bye',
     ].filter(Boolean).join(' ')
 
     const ltilHasRoom = fd.ssp_enabled && (fd.ltil_entries.length + fd.pending_ltil_count) < fd.ssp_slots
@@ -325,7 +331,13 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
   const POS_LABELS: Record<string, string> = { DEF: 'Defenders', MID: 'Midfielders', RUC: 'Rucks', FWD: 'Forwards' }
 
   return (
-    <div className={`fv-outer d-none d-lg-block${inMode ? ' fv-swap-mode' : ''}`} id="fvWrapper">
+    <div className={`fv-outer d-none d-lg-block${inMode ? ' fv-swap-mode' : ''}${byeIds ? ' fv-bye-preview' : ''}`} id="fvWrapper">
+      {byeIds && byeRound != null && (
+        <div className="fv-bye-banner">
+          <i className="bi bi-calendar-x"></i>
+          Bye preview · Round {byeRound} — {byeIds.size} player{byeIds.size === 1 ? '' : 's'} out (greyed)
+        </div>
+      )}
       <div className="fv-wrapper">
         <div className="fv-field">
           <svg className="fv-markings" viewBox="0 0 400 600" preserveAspectRatio="none">

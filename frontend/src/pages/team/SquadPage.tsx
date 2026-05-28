@@ -83,6 +83,10 @@ function SquadPageInner() {
   const { league } = useLeague()
   // Past-round browsing (#21). null = current (live FieldView), number = snapshot.
   const [archiveRound, setArchiveRound] = useState<number | null>(null)
+  // Bye preview (#14). When set, the field greys out players on bye that round.
+  const [byePreviewRound, setByePreviewRound] = useState<number | null>(null)
+  // playerId set for the previewed bye round, populated by ByePlanner via callback.
+  const [byePreviewIds, setByePreviewIds] = useState<Set<number>>(new Set())
   // Owner name → team_id lookup for trade-from-row deep links inside
   // the wishlist view (wp.owner is the team name string).
   const ownerNameToId = useMemo(() => {
@@ -329,13 +333,13 @@ function SquadPageInner() {
         </div>
       )}
 
-      {/* ── Unified squad context row ──
-              Single row of pills covering BOTH league-state alerts
-              (cap / delists / trade window) and squad-page context
-              (matchup / bye planner / round picker). Was two split
-              rows that looked unrelated; now one cohesive flow. */}
+      {/* ── Squad tools ──
+              Matchup + bye planner + round picker. Grouped as a distinct
+              "tools" panel, visually separate from the trade-period
+              centre below — these are persistent squad context, not the
+              temporary trade-window alerts. */}
       {is_owner && (
-        <div className="squad-info-pills">
+        <div className="squad-tools">
           {league?.current_matchup && (
             <MatchupStrip
               round={league.current_round}
@@ -344,6 +348,32 @@ function SquadPageInner() {
               leagueId={leagueId!}
             />
           )}
+          <ByePlanner
+            leagueId={leagueId!}
+            teamId={teamId!}
+            previewRound={byePreviewRound}
+            onPreviewRound={(round, ids) => {
+              setByePreviewRound(round)
+              setByePreviewIds(new Set(ids))
+            }}
+          />
+          {league?.current_round && league.current_round > 1 && (
+            <RoundPicker
+              currentRound={league.current_round}
+              selected={archiveRound}
+              onSelect={setArchiveRound}
+            />
+          )}
+        </div>
+      )}
+
+      {/* ── Trade-period centre ──
+              Temporary alerts that only appear during a trade/delist
+              window: cap status, delists left, incoming offers, window
+              countdown + a jump to the Trade Center. Its own grouping. */}
+      {is_owner && (data.trade_is_open || data.delist_is_open || data.over_squad || data.under_squad || data.pending_incoming > 0) && (
+        <div className="kl-status-pills kl-trade-centre">
+          <span className="kl-trade-centre-label"><i className="bi bi-arrow-left-right"></i> Trade period</span>
           {data.over_squad && (
             <div className="kl-status-pill kl-status-pill-danger" title={`${data.active_count}/${data.squad_size}${data.approved_ltil_count > 0 ? ` + ${data.approved_ltil_count} LTIL` : ''}`}>
               <span className="kl-status-pill-icon"><i className="bi bi-exclamation-octagon-fill"></i></span>
@@ -417,14 +447,6 @@ function SquadPageInner() {
                 <span className="kl-status-pill-sub">window closes</span>
               </span>
             </div>
-          )}
-          <ByePlanner leagueId={leagueId!} teamId={teamId!} />
-          {league?.current_round && league.current_round > 1 && (
-            <RoundPicker
-              currentRound={league.current_round}
-              selected={archiveRound}
-              onSelect={setArchiveRound}
-            />
           )}
           {data.trade_is_open && (
             <Link to={`/leagues/${leagueId}/trades`} className="kl-status-pill-cta">
@@ -549,6 +571,8 @@ function SquadPageInner() {
           {archiveRound == null && (<>
           <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner}
             delistContext={delistContext}
+            byeIds={byePreviewRound != null ? byePreviewIds : undefined}
+            byeRound={byePreviewRound}
             actions={{
               setCaptain: fieldActions.setCaptain, setVC: fieldActions.setVC,
               startSwap: fieldActions.startSwap, handlePlayerClick: fieldActions.handlePlayerClick,

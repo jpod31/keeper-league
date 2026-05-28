@@ -1339,3 +1339,34 @@ Convention now documented inline in `static/style.css` (search "ICON SYSTEM (#29
 - **Outline vs filled** — `bi-foo` for nav-at-rest / labels / neutral states; `bi-foo-fill` for active / emphasis / alerts.
 
 Full sweep across the 508 `bi bi-*` usages in 66 files is intentionally deferred — the doc itself says "Time-cost vs visible improvement; can be done over time." New components written from this point on adopt the utility classes; existing icons keep their inline font-size until they're touched for other reasons.
+
+---
+
+## 37. Trade area — visibility, privacy, and section structure
+
+### Problem (Lucas, 2026-05-28)
+The Trade Center got muddled during the UX sweep — it's no longer clear
+where to see incoming / outgoing / pending trades. Worse, there's a
+**privacy hole**: pending and rejected trade offers appear to be visible
+to the whole league. A trade that hasn't been accepted should only be
+visible to the two parties involved.
+
+### Required structure
+- **Pending** — your active offers, both incoming and outgoing. Only you
+  (and the counterparty) can see a given pending trade.
+- **Completed** — YOUR accepted trades only.
+- **History** — all-league completed trades (the public record).
+
+So: pending/rejected = private to the parties; completed = visible to you;
+history = visible to everyone but only includes ACCEPTED/finalised trades.
+
+### Scope
+- `frontend/src/pages/trades/TradeCenterPage.tsx` — the three-tab structure.
+- Backend trade-list endpoints — must filter pending/rejected so only the
+  involved teams receive them; history endpoint returns only finalised
+  trades to anyone.
+- Audit `blueprints/trades.py` (or wherever trade lists are served) for the
+  visibility filter.
+
+### Status
+Logged 2026-05-28. Checklist tracked in the session task list.

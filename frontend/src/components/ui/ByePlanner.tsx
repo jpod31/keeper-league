@@ -1,20 +1,18 @@
 /**
- * ByePlanner — collapsible round-by-round bye view above the squad.
+ * ByePlanner — pill that opens a round-chip popover. Selecting a round
+ * drives a "bye preview" on the field: players on bye that round get a
+ * partial grey-out on their cards (handled by FieldView via byeIds).
  *
- * Lazy-fetches /api/leagues/<id>/team/<id>/byes when first expanded so
- * pages that never open it pay nothing. Each round chip shows how many
- * players are out; click to expand the list (grouped by position).
+ * Lazy-fetches /api/leagues/<id>/team/<id>/byes on first open. The
+ * round chips are colour-coded by how many of YOUR players are out:
+ *   0 → muted · 1-2 → neutral · 3-4 → ochre · 5+ → rust.
  *
- * Tone heat by total_out:
- *   0      → soft good
- *   1-2    → neutral
- *   3-4    → ochre warn
- *   5+     → rust alarm
+ * Selecting the active round again (or "Clear") exits preview mode.
  *
  * Styles live as .byeplan-* in static/style.css. Consumes --space-N tokens.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface PlayerOut {
   id: number
@@ -38,43 +36,76 @@ interface ByesResponse {
 export interface ByePlannerProps {
   leagueId: string | number
   teamId: string | number
+  previewRound: number | null
+  onPreviewRound: (round: number | null, playerIds: number[]) => void
 }
 
 function toneClass(n: number): string {
-  if (n === 0) return 'byeplan-cell-good'
-  if (n <= 2) return 'byeplan-cell-neutral'
-  if (n <= 4) return 'byeplan-cell-warn'
-  return 'byeplan-cell-alarm'
+  if (n === 0) return 'byechip-good'
+  if (n <= 2) return 'byechip-neutral'
+  if (n <= 4) return 'byechip-warn'
+  return 'byechip-alarm'
 }
 
-export function ByePlanner({ leagueId, teamId }: ByePlannerProps) {
+export function ByePlanner({ leagueId, teamId, previewRound, onPreviewRound }: ByePlannerProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<ByesResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [expandedRound, setExpandedRound] = useState<number | null>(null)
+  const rootRef = useRef<HTMLSpanElement>(null)
 
-  function toggle() {
-    const next = !open
-    setOpen(next)
-    if (next && !data && !loading) {
-      // Lazy fetch on first open.
-      setLoading(true)
-      setError(null)
-      fetch(`/api/leagues/${leagueId}/team/${teamId}/byes?lookahead=10`, { credentials: 'include' })
-        .then(r => r.json())
-        .then((d: ByesResponse) => setData(d))
-        .catch(() => setError('Failed to load byes'))
-        .finally(() => setLoading(false))
+  // Lazy fetch on first open.
+  useEffect(() => {
+    if (!open || data || loading) return
+    setLoading(true)
+    setError(null)
+    fetch(`/api/leagues/${leagueId}/team/${teamId}/byes?lookahead=14`, { credentials: 'include' })
+      .then(r => r.json())
+      .then((d: ByesResponse) => setData(d))
+      .catch(() => setError('Failed to load byes'))
+      .finally(() => setLoading(false))
+  }, [open, data, loading, leagueId, teamId])
+
+  // Close popover on outside click / Escape.
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
     }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  // Only rounds where at least one of your players is out are worth showing.
+  const byeRounds = (data?.rounds ?? []).filter(r => r.total_out > 0)
+
+  function pick(r: ByeRound) {
+    if (previewRound === r.round) {
+      onPreviewRound(null, [])  // toggle off
+    } else {
+      onPreviewRound(r.round, r.players_out.map(p => p.id))
+    }
+    setOpen(false)
   }
 
+  function clearPreview() {
+    onPreviewRound(null, [])
+    setOpen(false)
+  }
+
+  const active = previewRound != null
+
   return (
-    <section className={`byeplan${open ? ' open' : ''}`}>
+    <span ref={rootRef} className={`byeplan${open ? ' open' : ''}`}>
       <button
         type="button"
-        className="byeplan-toggle"
-        onClick={toggle}
+        className={`byeplan-toggle${active ? ' previewing' : ''}`}
+        onClick={() => setOpen(o => !o)}
         aria-expanded={open}
       >
         <span className="byeplan-toggle-icon" aria-hidden>
@@ -82,63 +113,44 @@ export function ByePlanner({ leagueId, teamId }: ByePlannerProps) {
         </span>
         <span className="byeplan-toggle-text">
           <span className="byeplan-toggle-label">Bye planner</span>
-          <span className="byeplan-toggle-sub">Next 10 rounds</span>
+          <span className="byeplan-toggle-sub">{active ? `Previewing R${previewRound}` : 'Preview a bye round'}</span>
         </span>
-        <i className="bi bi-chevron-right byeplan-toggle-chev" aria-hidden></i>
+        <i className="bi bi-chevron-down byeplan-toggle-chev" aria-hidden></i>
       </button>
 
       {open && (
-        <div className="byeplan-body">
+        <div className="byeplan-pop" role="dialog" aria-label="Bye planner">
           {loading && <div className="byeplan-loading">Loading byes…</div>}
           {error && <div className="byeplan-error">{error}</div>}
-          {data && data.rounds.length === 0 && (
-            <div className="byeplan-empty">No upcoming round data yet.</div>
+          {data && byeRounds.length === 0 && (
+            <div className="byeplan-empty">No bye rounds with players out in the next stretch.</div>
           )}
-          {data && data.rounds.length > 0 && (
-            <div className="byeplan-grid">
-              {data.rounds.map(r => {
-                const isExpanded = expandedRound === r.round
-                return (
+          {byeRounds.length > 0 && (
+            <>
+              <div className="byeplan-pop-head">Tap a round to preview who's out</div>
+              <div className="byeplan-chips">
+                {byeRounds.map(r => (
                   <button
                     key={r.round}
                     type="button"
-                    className={`byeplan-cell ${toneClass(r.total_out)}${isExpanded ? ' expanded' : ''}`}
-                    onClick={() => setExpandedRound(isExpanded ? null : r.round)}
-                    aria-expanded={isExpanded}
-                    title={`Round ${r.round} — ${r.total_out} player${r.total_out === 1 ? '' : 's'} out`}
+                    className={`byechip ${toneClass(r.total_out)}${previewRound === r.round ? ' active' : ''}`}
+                    onClick={() => pick(r)}
+                    title={`${r.total_out} player${r.total_out === 1 ? '' : 's'} out in R${r.round}`}
                   >
-                    <span className="byeplan-cell-round">R{r.round}</span>
-                    <span className="byeplan-cell-count">{r.total_out}</span>
+                    <span className="byechip-round">R{r.round}</span>
+                    <span className="byechip-count">{r.total_out} out</span>
                   </button>
-                )
-              })}
-            </div>
-          )}
-          {data && expandedRound != null && (() => {
-            const round = data.rounds.find(r => r.round === expandedRound)
-            if (!round) return null
-            if (round.players_out.length === 0) {
-              return <div className="byeplan-detail">Round {round.round}: nobody on bye. Full squad available.</div>
-            }
-            return (
-              <div className="byeplan-detail">
-                <div className="byeplan-detail-head">
-                  Round {round.round} — {round.total_out} player{round.total_out === 1 ? '' : 's'} on bye
-                </div>
-                <ul className="byeplan-detail-list">
-                  {round.players_out.map(p => (
-                    <li key={p.id}>
-                      <span className={`pos-badge pos-${p.position}`} style={{ fontSize: '.6rem', padding: '1px 5px' }}>{p.position}</span>
-                      <span className="byeplan-detail-name">{p.name}</span>
-                      <span className="byeplan-detail-team">{p.afl_team}</span>
-                    </li>
-                  ))}
-                </ul>
+                ))}
               </div>
-            )
-          })()}
+              {active && (
+                <button type="button" className="byeplan-clear" onClick={clearPreview}>
+                  <i className="bi bi-x-circle"></i> Clear preview
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
-    </section>
+    </span>
   )
 }

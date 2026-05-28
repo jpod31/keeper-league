@@ -7739,28 +7739,45 @@ th.sortable:hover { color: #58a6ff; }
   animation: klBreathe 4s ease-in-out infinite;
 }
 
-/* Squad page: inline pill row that hosts matchup + roster-health
-   chips + bye-planner toggle. Mirrors .kl-status-pills layout so
-   all squad context reads as one row of small pills, not a stack
-   of full-width bars. The bye planner body, when expanded, drops
-   below the row. */
-.squad-info-pills {
+/* Squad tools — matchup / bye planner / round picker, grouped in a
+   distinct rounded panel so they read as persistent squad context,
+   visually separate from the trade-period alert pills below. */
+.squad-tools {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
-  margin: 4px 0 16px;
-  padding: 4px 2px;
+  gap: 16px;
+  margin: 4px 0 12px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(110,130,180,.12);
+  border-radius: 12px;
 }
-.squad-info-pills > .mstrip,
-.squad-info-pills > .byeplan { margin-bottom: 0; }
-.squad-info-pills > .rhealth {
-  margin-bottom: 0;
-  gap: 8px;
+.squad-tools > .mstrip,
+.squad-tools > .byeplan { margin-bottom: 0; }
+
+/* Trade-period centre — the temporary alert row. A leading label
+   makes its purpose explicit and visually distinguishes it from the
+   squad-tools panel above. */
+.kl-trade-centre {
+  margin-top: 0 !important;
+  padding: 8px 12px !important;
+  background: rgba(240,136,62,.05);
+  border: 1px solid rgba(240,136,62,.18);
+  border-radius: 12px;
 }
-/* When the bye planner is expanded, let its body break out of the
-   inline flex flow so the grid spans full width below the pill row. */
-.squad-info-pills > .byeplan.open { flex-basis: 100%; order: 99; }
+.kl-trade-centre-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--kl-accent-orange);
+  margin-right: 4px;
+}
+.kl-trade-centre-label i { font-size: .8rem; }
 
 /* ══════════════════════════════════════════════════
    MATCHUP STRIP — kl-status-pill style (no longer a
@@ -8584,9 +8601,7 @@ th.sortable:hover { color: #58a6ff; }
    expandable body below when open. Reads as an
    inline status chip, not a full-width bar.
    ══════════════════════════════════════════════════ */
-.byeplan {
-  margin: 0 0 var(--space-3) 0;
-}
+.byeplan { position: relative; display: inline-block; }
 .byeplan-toggle {
   display: inline-flex;
   align-items: center;
@@ -8599,6 +8614,7 @@ th.sortable:hover { color: #58a6ff; }
   font-size: .78rem;
   text-align: left;
   line-height: 1.15;
+  font-family: inherit;
 }
 .byeplan-toggle:hover { color: #f0f6fc; }
 .byeplan-toggle:hover .byeplan-toggle-icon { transform: translateY(-1px); filter: brightness(1.15); }
@@ -8618,23 +8634,111 @@ th.sortable:hover { color: #58a6ff; }
   box-shadow: 0 0 0 2px rgba(188,140,255,.08), 0 6px 14px -6px rgba(188,140,255,.4);
   transition: transform .15s ease, filter .15s ease;
 }
+/* Previewing state — solid violet ring so it's obvious the field is
+   in bye-preview mode. */
+.byeplan-toggle.previewing .byeplan-toggle-icon {
+  background: rgba(188,140,255,.3);
+  box-shadow: 0 0 0 3px rgba(188,140,255,.18), 0 6px 14px -6px rgba(188,140,255,.5);
+}
 .byeplan-toggle-text { display: inline-flex; flex-direction: column; white-space: nowrap; }
 .byeplan-toggle-label { font-weight: 700; font-size: .78rem; color: #f0f6fc; }
 .byeplan-toggle-sub   { font-size: .64rem; color: #8b949e; font-weight: 500; letter-spacing: .02em; margin-top: 1px; }
+.byeplan-toggle.previewing .byeplan-toggle-sub { color: #d2a8ff; }
 .byeplan-toggle-chev  { color: var(--kl-text-muted); font-size: .7rem; margin-left: 2px; transition: transform .15s ease; }
-.byeplan.open .byeplan-toggle-chev { transform: rotate(90deg); color: var(--kl-text-primary); }
+.byeplan.open .byeplan-toggle-chev { transform: rotate(180deg); color: var(--kl-text-primary); }
 
-/* Body uses a softer panel (no thick border like the midseason-draft
-   banner) — feels like a popover anchored to the pill, not a section
-   card. The .open + flex-basis trick from .squad-info-pills makes it
-   break to a full-width row below the pill chain. */
-.byeplan-body {
-  margin-top: 0;
+/* Popover — round-chip selector anchored to the pill. */
+.byeplan-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1050;
+  min-width: 280px;
+  max-width: 340px;
   padding: var(--space-3);
-  background: rgba(15,22,36,.65);
-  border: 1px solid rgba(110,130,180,.12);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px -12px rgba(0,0,0,.45);
+  background: linear-gradient(180deg, var(--kl-bg-card), var(--kl-bg-body));
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+  box-shadow: 0 16px 32px -12px rgba(0,0,0,.55);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: rpick-in .12s ease;
+}
+.byeplan-pop-head { font-size: .7rem; color: var(--kl-text-muted); }
+.byeplan-loading, .byeplan-error, .byeplan-empty {
+  font-size: .8rem; color: var(--kl-text-muted); padding: var(--space-2) 0;
+}
+.byeplan-error { color: var(--kl-accent-red); }
+.byeplan-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px;
+}
+.byechip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 4px;
+  border-radius: 8px;
+  border: 1px solid var(--kl-border);
+  background: rgba(48,54,61,.4);
+  cursor: pointer;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  transition: transform .1s, border-color .12s, background .12s;
+}
+.byechip:hover { transform: translateY(-1px); }
+.byechip.active { outline: 2px solid #bc8cff; outline-offset: 1px; }
+.byechip-round { font-size: .8rem; font-weight: 800; color: var(--kl-text-heading); }
+.byechip-count { font-size: .6rem; color: var(--kl-text-muted); }
+.byechip-good    { background: rgba(63,185,80,.08);  border-color: rgba(63,185,80,.28); }
+.byechip-neutral { background: rgba(255,255,255,.02); }
+.byechip-warn    { background: rgba(210,153,34,.10); border-color: rgba(210,153,34,.32); }
+.byechip-warn  .byechip-count { color: var(--kl-accent-yellow); }
+.byechip-alarm   { background: rgba(248,81,73,.12); border-color: rgba(248,81,73,.34); }
+.byechip-alarm .byechip-count { color: var(--kl-accent-red); }
+.byeplan-clear {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: var(--space-1) var(--space-2);
+  background: none;
+  border: 0;
+  color: var(--kl-text-secondary);
+  font-size: .74rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.byeplan-clear:hover { color: var(--kl-text-primary); background: var(--kl-bg-hover); }
+
+/* Field bye-preview — partial grey on cards of players on bye that
+   round. NOT a full grey-out: ~45% opacity + desaturate so you can
+   still read who they are. */
+.fv-card-bye {
+  opacity: .45;
+  filter: grayscale(.7);
+  transition: opacity .15s ease, filter .15s ease;
+}
+.fv-bye-preview .fv-card:not(.fv-card-bye) {
+  /* Slight emphasis on the AVAILABLE players so the contrast reads. */
+  box-shadow: 0 0 0 1px rgba(188,140,255,.18);
+}
+.fv-bye-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(188,140,255,.10);
+  border: 1px solid rgba(188,140,255,.3);
+  border-radius: 8px;
+  color: #d2a8ff;
+  font-size: .8rem;
+  font-weight: 600;
 }
 
 /* ══════════════════════════════════════════════════
