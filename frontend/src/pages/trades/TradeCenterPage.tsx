@@ -103,23 +103,40 @@ function AssetChip({ asset }: { asset: TradeAsset }) {
   )
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Pending', agreed: 'Agreed', accepted: 'Accepted',
+  rejected: 'Rejected', cancelled: 'Cancelled', vetoed: 'Vetoed', expired: 'Expired',
+}
+
+function sideScTotal(assets: TradeAsset[]): number {
+  return Math.round(assets.reduce((s, a) => s + (a.sc_avg || 0), 0))
+}
+
 function TradeCard({ trade, leagueId, teamLogos }: {
   trade: TradeSummary; leagueId: string; teamLogos: Record<string, string>
 }) {
   const status = trade.status || 'pending'
+  const propSc = sideScTotal(trade.from_proposer)
+  const recSc = sideScTotal(trade.from_recipient)
+  // Net from the proposer's perspective: positive = they receive more SC value.
+  const net = recSc - propSc
   return (
-    <Link to={`/leagues/${leagueId}/trades/${trade.id}`} className="tr-center-card">
+    <Link to={`/leagues/${leagueId}/trades/${trade.id}`} className={`tr-center-card tr-card-${status}`}>
+      <span className="tr-card-stripe" aria-hidden></span>
       <div className="tr-center-card-top">
         <div className="tr-center-card-teams">
           <TeamChip team={trade.proposer_team} teamLogos={teamLogos} />
           <i className="bi bi-arrow-left-right" style={{ color: '#484f58', fontSize: '.85rem' }}></i>
           <TeamChip team={trade.recipient_team} teamLogos={teamLogos} />
         </div>
-        <span className={`tr-center-card-status tr-status-${status}`}>{status}</span>
+        <span className={`tr-center-card-status tr-status-${status}`}>{STATUS_LABEL[status] || status}</span>
       </div>
       <div className="tr-center-card-grid">
         <div className="tr-center-card-side">
-          <div className="tr-side-label">{trade.proposer_team?.name || 'Proposer'} sends</div>
+          <div className="tr-side-label">
+            <span>{trade.proposer_team?.name || 'Proposer'} sends</span>
+            {propSc > 0 && <span className="tr-side-sc">{propSc} SC</span>}
+          </div>
           {trade.from_proposer.length === 0 ? (
             <span className="text-secondary" style={{ fontSize: '.78rem', fontStyle: 'italic' }}>nothing</span>
           ) : (
@@ -130,7 +147,10 @@ function TradeCard({ trade, leagueId, teamLogos }: {
         </div>
         <div className="tr-center-card-arrow"><i className="bi bi-arrow-left-right"></i></div>
         <div className="tr-center-card-side">
-          <div className="tr-side-label">{trade.recipient_team?.name || 'Recipient'} sends</div>
+          <div className="tr-side-label">
+            <span>{trade.recipient_team?.name || 'Recipient'} sends</span>
+            {recSc > 0 && <span className="tr-side-sc">{recSc} SC</span>}
+          </div>
           {trade.from_recipient.length === 0 ? (
             <span className="text-secondary" style={{ fontSize: '.78rem', fontStyle: 'italic' }}>nothing</span>
           ) : (
@@ -144,6 +164,15 @@ function TradeCard({ trade, leagueId, teamLogos }: {
         <span><i className="bi bi-clock me-1"></i>{trade.proposed_at || '—'}</span>
         <span>·</span>
         <span><i className="bi bi-box-seam me-1"></i>{trade.asset_count} asset{trade.asset_count === 1 ? '' : 's'}</span>
+        {(propSc > 0 || recSc > 0) && (
+          <>
+            <span>·</span>
+            <span className={`tr-net${net > 0 ? ' tr-net-pos' : net < 0 ? ' tr-net-neg' : ''}`}>
+              <i className="bi bi-bar-chart-steps me-1"></i>
+              {net === 0 ? 'Even SC' : `${net > 0 ? '+' : ''}${net} SC ${net > 0 ? 'to ' + (trade.proposer_team?.name || 'proposer') : 'to ' + (trade.recipient_team?.name || 'recipient')}`}
+            </span>
+          </>
+        )}
         {trade.intended_period && (
           <>
             <span>·</span>
@@ -247,18 +276,23 @@ export function TradeCenterPage() {
         </div>
       </div>
 
-      <div className="league-subnav">
-        <Link to={`/leagues/${leagueId}/trades?tab=pending`} className={`league-subtab${tab === 'pending' ? ' active' : ''}`}>
-          <i className="bi bi-hourglass-split"></i>Pending
-          {pendingTotal > 0 && (
-            <span className="badge" style={{ background: '#f85149', fontSize: '.55rem', marginLeft: 4, borderRadius: 8 }}>{pendingTotal}</span>
-          )}
+      {/* Dedicated tab class (.tr-tabs) — NOT .league-subnav, which is
+          hidden on desktop as duplicate section nav. These are in-page
+          content tabs and must stay visible everywhere. */}
+      <div className="tr-tabs">
+        <Link to={`/leagues/${leagueId}/trades?tab=pending`} className={`tr-tab${tab === 'pending' ? ' active' : ''}`}>
+          <i className="bi bi-hourglass-split"></i>
+          <span>Pending</span>
+          {pendingTotal > 0 && <span className="tr-tab-badge">{pendingTotal}</span>}
         </Link>
-        <Link to={`/leagues/${leagueId}/trades?tab=completed`} className={`league-subtab${tab === 'completed' ? ' active' : ''}`}>
-          <i className="bi bi-check-circle"></i>Completed
+        <Link to={`/leagues/${leagueId}/trades?tab=completed`} className={`tr-tab${tab === 'completed' ? ' active' : ''}`}>
+          <i className="bi bi-check-circle"></i>
+          <span>Completed</span>
+          {completed.length > 0 && <span className="tr-tab-badge tr-tab-badge-muted">{completed.length}</span>}
         </Link>
-        <Link to={`/leagues/${leagueId}/trades?tab=history`} className={`league-subtab${tab === 'history' ? ' active' : ''}`}>
-          <i className="bi bi-clock-history"></i>League history
+        <Link to={`/leagues/${leagueId}/trades?tab=history`} className={`tr-tab${tab === 'history' ? ' active' : ''}`}>
+          <i className="bi bi-clock-history"></i>
+          <span>League history</span>
         </Link>
       </div>
 

@@ -591,6 +591,58 @@
 .tr-team-pick-name { font-size: .9rem; font-weight: 600; line-height: 1.15; }
 .tr-team-pick-owner { font-size: .72rem; color: #8b949e; }
 
+/* ── Trade Center tabs (segmented control) ── */
+.tr-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  background: rgba(13,17,23,.55);
+  border: 1px solid rgba(48,54,61,.6);
+  border-radius: 12px;
+}
+.tr-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: #8b949e;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .14s, color .14s;
+}
+.tr-tab i { font-size: .95rem; }
+.tr-tab:hover { color: #e6edf3; text-decoration: none; background: rgba(255,255,255,.03); }
+.tr-tab.active {
+  background: linear-gradient(135deg, #1f6feb, #388bfd);
+  color: #fff;
+  box-shadow: 0 4px 14px -6px rgba(31,111,235,.6);
+}
+.tr-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #f85149;
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 800;
+}
+.tr-tab.active .tr-tab-badge { background: rgba(255,255,255,.25); }
+.tr-tab-badge-muted { background: rgba(110,118,129,.5); }
+@media (max-width: 560px) {
+  /* Icons + badges only on very narrow screens; labels hide to fit. */
+  .tr-tab span:not(.tr-tab-badge) { display: none; }
+}
+
 /* ── Section heads (Pending tab: Incoming / Outgoing labels) ── */
 .tr-section-head {
   display: flex;
@@ -650,16 +702,41 @@
 
 /* ── Trade center card (rich list row) ────────────────────── */
 .tr-center-card {
-  background: #161b22;
+  position: relative;
+  background: linear-gradient(180deg, #1a2230, #141a22);
   border: 1px solid rgba(48,54,61,.7);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 14px 16px 14px 20px;
   display: block;
   text-decoration: none;
   color: #c9d1d9;
+  overflow: hidden;
   transition: transform .15s ease, border-color .15s, box-shadow .15s;
   margin-bottom: 10px;
 }
+/* Status accent stripe down the left edge — instant visual scan. */
+.tr-card-stripe {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: #6e7681;
+}
+.tr-card-pending  .tr-card-stripe { background: #d29922; }
+.tr-card-agreed   .tr-card-stripe { background: #79c0ff; }
+.tr-card-accepted .tr-card-stripe { background: #3fb950; }
+.tr-card-rejected .tr-card-stripe,
+.tr-card-cancelled .tr-card-stripe,
+.tr-card-vetoed .tr-card-stripe,
+.tr-card-expired .tr-card-stripe { background: #6e7681; }
+.tr-side-sc {
+  font-size: .62rem;
+  font-weight: 800;
+  color: #8b949e;
+  font-variant-numeric: tabular-nums;
+}
+.tr-net { color: #6e7681; }
+.tr-net-pos { color: #7ee787; }
+.tr-net-neg { color: #ffb471; }
 .tr-center-card:hover {
   transform: translateY(-1px);
   border-color: rgba(110,118,129,.6);
@@ -787,6 +864,10 @@
   font-weight: 600;
 }
 .tr-side-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
   font-size: .6rem;
   font-weight: 800;
   text-transform: uppercase;
