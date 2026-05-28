@@ -3,7 +3,7 @@
  * Desktop only (d-none d-lg-block) — mobile uses mob-squad-list.
  */
 import { checkSwapEligible, type SwapSourceInfo, type ActionMode } from '../../hooks/useFieldActions'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef } from 'react'
 
 export interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
@@ -129,7 +129,6 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
   const sevensSet = new Set(fd.sevens_ids || [])
   const playingSet = new Set(fd.teams_playing || [])
   const inMode = !!(actions?.swapSource)
-  const [benchTab, setBenchTab] = useState<string | null>(null)
 
   // ── Focused swap picker (replaces expand-everything + scroll) ──
   const { targets: swapTargets, srcPlayer: swapSrcPlayer } =
@@ -467,78 +466,62 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         </div>
       </div>
 
-      {/* ── Bench & Lists ──
-          Reserves / Emergencies / 7s / Injury / Rookies. Segmented by default
-          so the page stays scannable; fully expanded during swap or bye-preview
-          so every potential swap target / affected card stays visible. */}
-      {(() => {
-        const reserveCard = (p: Player) => (
-          <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />
-        )
-        const reservesContent = (
-          <>
-            {['DEF', 'MID', 'RUC', 'FWD'].map(posCode => {
-              const posPlayers = fd.reserves_by_pos?.[posCode] || []
-              if (!posPlayers.length) return null
-              return (
-                <div className="fv-reserves-group" key={posCode}>
-                  <div className="fv-reserves-group-hdr">
-                    <span className={`fv-zone-pill fv-zp-${posCode.toLowerCase()}`}>{posCode}</span>
-                    <span className="fv-reserves-group-label">{POS_LABELS[posCode]}</span>
-                    <span className="fv-zone-tally ms-1">{posPlayers.length}</span>
-                  </div>
-                  <div className="fv-reserves-grid">{posPlayers.map(reserveCard)}</div>
+      {/* Emergencies */}
+      {fd.emergency_players.length > 0 && (
+        <div className="fv-emg-section">
+          <div className="fv-emg-hdr"><i className="bi bi-shield-exclamation me-1"></i>Emergencies<span className="fv-zone-tally ms-2">{fd.emergency_players.length} / 4</span></div>
+          <div className="fv-reserves-grid">{fd.emergency_players.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
+        </div>
+      )}
+
+      {/* 7s */}
+      {fd.has_7s_fixture && (
+        <div className="fv-7s-section">
+          <div className="fv-7s-hdr"><i className="bi bi-7-circle me-1"></i>7s Squad<span className="fv-zone-tally ms-2">{fd.sevens_players.length} / 7</span></div>
+          {fd.sevens_players.length > 0 ? (
+            <div className="fv-reserves-grid">{fd.sevens_players.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
+          ) : (
+            <div className="text-center py-3" style={{ color: '#484f58', fontSize: '.8rem' }}>Tap the <span style={{ color: '#bc8cff', fontWeight: 600 }}>7</span> button on any reserve to add them to your 7s squad</div>
+          )}
+        </div>
+      )}
+
+      {/* Injury list */}
+      {fd.injury_list.length > 0 && (
+        <div className="fv-injury-section">
+          <div className="fv-injury-hdr"><i className="bi bi-bandaid me-1"></i>Injury List<span className="fv-zone-tally ms-2">{fd.injury_list.length}</span></div>
+          <div className="fv-reserves-grid">{fd.injury_list.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
+        </div>
+      )}
+
+      {/* Reserves by position */}
+      {fd.reserves.length > 0 && (
+        <div className="fv-reserves-section">
+          <div className="fv-reserves-hdr"><i className="bi bi-people me-1"></i>Reserves<span className="fv-zone-tally ms-2">{fd.reserves.length} players</span></div>
+          {['DEF', 'MID', 'RUC', 'FWD'].map(posCode => {
+            const posPlayers = fd.reserves_by_pos?.[posCode] || []
+            if (!posPlayers.length) return null
+            return (
+              <div className="fv-reserves-group" key={posCode}>
+                <div className="fv-reserves-group-hdr">
+                  <span className={`fv-zone-pill fv-zp-${posCode.toLowerCase()}`}>{posCode}</span>
+                  <span className="fv-reserves-group-label">{POS_LABELS[posCode]}</span>
+                  <span className="fv-zone-tally ms-1">{posPlayers.length}</span>
                 </div>
-              )
-            })}
-          </>
-        )
-        const sevensContent = fd.sevens_players.length > 0
-          ? <div className="fv-reserves-grid">{fd.sevens_players.map(reserveCard)}</div>
-          : <div className="text-center py-3" style={{ color: '#484f58', fontSize: '.8rem' }}>Tap the <span style={{ color: '#bc8cff', fontWeight: 600 }}>7</span> button on any reserve to add them to your 7s squad</div>
+                <div className="fv-reserves-grid">{posPlayers.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-        type BenchSection = { key: string; label: string; icon: string; count: ReactNode; content: ReactNode }
-        const sections: BenchSection[] = []
-        if (fd.reserves.length > 0) sections.push({ key: 'reserves', label: 'Reserves', icon: 'bi-people', count: fd.reserves.length, content: reservesContent })
-        if (fd.emergency_players.length > 0) sections.push({ key: 'emg', label: 'Emergencies', icon: 'bi-shield-exclamation', count: `${fd.emergency_players.length}/4`, content: <div className="fv-reserves-grid">{fd.emergency_players.map(reserveCard)}</div> })
-        if (fd.has_7s_fixture) sections.push({ key: '7s', label: '7s Squad', icon: 'bi-7-circle', count: `${fd.sevens_players.length}/7`, content: sevensContent })
-        if (fd.injury_list.length > 0) sections.push({ key: 'injury', label: 'Injury List', icon: 'bi-bandaid', count: fd.injury_list.length, content: <div className="fv-reserves-grid">{fd.injury_list.map(reserveCard)}</div> })
-        if ((fd.rookies?.length ?? 0) > 0) sections.push({ key: 'rookies', label: 'Rookies', icon: 'bi-stars', count: fd.rookies!.length, content: <div className="fv-reserves-grid">{fd.rookies!.map(reserveCard)}</div> })
-        if (sections.length === 0) return null
-
-        // Bye preview needs every card visible at once. Swap no longer expands
-        // everything — the focused swap picker (below) surfaces eligible targets.
-        if (byeIds) {
-          return (
-            <div className="fv-bench fv-bench-expanded">
-              {sections.map(s => (
-                <div className="fv-bench-block" key={s.key}>
-                  <div className="fv-bench-block-hdr"><i className={`bi ${s.icon} me-1`}></i>{s.label}<span className="fv-zone-tally ms-2">{s.count}</span></div>
-                  {s.content}
-                </div>
-              ))}
-            </div>
-          )
-        }
-
-        const activeKey = (benchTab && sections.some(s => s.key === benchTab)) ? benchTab : sections[0].key
-        const active = sections.find(s => s.key === activeKey)!
-        return (
-          <div className="fv-bench">
-            <div className="fv-bench-tabs" role="tablist">
-              {sections.map(s => (
-                <button key={s.key} type="button" role="tab" aria-selected={s.key === activeKey}
-                  className={`fv-bench-tab${s.key === activeKey ? ' active' : ''}`} onClick={() => setBenchTab(s.key)}>
-                  <i className={`bi ${s.icon}`}></i>
-                  <span className="fv-bench-tab-label">{s.label}</span>
-                  <span className="fv-bench-count">{s.count}</span>
-                </button>
-              ))}
-            </div>
-            <div className="fv-bench-body">{active.content}</div>
-          </div>
-        )
-      })()}
+      {/* Rookies — bench players U22 with rating < 70 */}
+      {(fd.rookies?.length ?? 0) > 0 && (
+        <div className="fv-rookies-section">
+          <div className="fv-rookies-hdr"><i className="bi bi-stars me-1"></i>Rookies<span className="fv-zone-tally ms-2">{fd.rookies!.length}</span></div>
+          <div className="fv-reserves-grid">{fd.rookies!.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
+        </div>
+      )}
 
       {/* ── Focused swap picker ── eligible targets in one panel; no expand,
           no scrolling the page to find a cross-category target. */}
