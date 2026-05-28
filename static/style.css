@@ -2721,6 +2721,27 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   .lg-switch-sub { display: none; }
 }
 
+/* Phones: the top bar (logo + switcher + lockout + right cluster) is a
+   single non-wrapping flex row. The full league-name switcher pill is
+   ~200px and was blowing the row past the viewport, shoving the right
+   cluster off-screen ("header half off the screen"). Collapse it to a
+   tappable avatar — the name lives in the dropdown it opens anyway. */
+@media (max-width: 600px) {
+  .lg-switch {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .lg-switch-body,
+  .lg-switch-count,
+  .lg-switch-chev { display: none; }
+  .lg-switch-avatar { width: 30px; height: 30px; flex: 0 0 30px; }
+  .lg-switch-menu { left: 0; }
+}
+
 /* Tab bar (legacy .league-tabs — kept for any remaining Jinja pages
    that haven't been migrated; the React shell uses .kl-tabs below) */
 .league-tabs {
@@ -7702,25 +7723,19 @@ th.sortable:hover { color: #58a6ff; }
 }
 
 @media (max-width: 991.98px) {
+  /* Size to content — never clip the countdown. The bar has room once
+     the league switcher collapses to an avatar (see .lg-switch below),
+     so "R12 · 1d 5h" shows in full. flex-shrink:0 stops the flex row
+     from squeezing it. */
   .kl-lockbadge {
-    height: 26px;
-    padding: 0 8px;
-    font-size: .68rem;
-    gap: 4px;
-    /* Force the pill to fit inside the top bar slot — no overflow,
-       no horizontal scroll. */
-    max-width: 130px;
-    overflow: hidden;
+    height: 28px;
+    padding: 0 10px;
+    font-size: .72rem;
+    gap: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
-  .kl-lockbadge-sep { display: none; }
-  /* Tighten the round prefix on mobile so the countdown has room. */
-  .kl-lockbadge-round { font-size: .68rem; }
-}
-@media (max-width: 380px) {
-  /* Very narrow phones: drop the round prefix entirely; the countdown
-     alone fits. The full info is still reachable via the squad page. */
-  .kl-lockbadge { max-width: 90px; padding: 0 6px; }
-  .kl-lockbadge-round { display: none; }
+  .kl-lockbadge-round { font-size: .72rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
