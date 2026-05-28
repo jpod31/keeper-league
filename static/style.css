@@ -8602,16 +8602,20 @@ th.sortable:hover { color: #58a6ff; }
 }
 .byeplan-toggle:hover { color: #f0f6fc; }
 .byeplan-toggle:hover .byeplan-toggle-icon { transform: translateY(-1px); filter: brightness(1.15); }
+/* Bye planner uses a violet tint — distinct from the ochre/yellow
+   warn pills (delists / trade window) that share the same row, so the
+   bye chip doesn't visually blur into them. Violet reads as planning /
+   foresight, separate from "act now" warnings. */
 .byeplan-toggle-icon {
   width: 30px; height: 30px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   flex: 0 0 30px;
   font-size: .85rem;
-  background: radial-gradient(circle at 30% 30%, rgba(240,209,138,.25), rgba(210,153,34,.18));
-  color: #f0d18a;
-  border: 1px solid rgba(210,153,34,.45);
-  box-shadow: 0 0 0 2px rgba(210,153,34,.08), 0 6px 14px -6px rgba(210,153,34,.4);
+  background: radial-gradient(circle at 30% 30%, rgba(210,168,255,.25), rgba(188,140,255,.18));
+  color: #d2a8ff;
+  border: 1px solid rgba(188,140,255,.42);
+  box-shadow: 0 0 0 2px rgba(188,140,255,.08), 0 6px 14px -6px rgba(188,140,255,.4);
   transition: transform .15s ease, filter .15s ease;
 }
 .byeplan-toggle-text { display: inline-flex; flex-direction: column; white-space: nowrap; }

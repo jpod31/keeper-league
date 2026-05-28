@@ -329,10 +329,21 @@ function SquadPageInner() {
         </div>
       )}
 
-      {/* ── Mid-season status pills — round icon + tiny label.
-              One row of beautiful little badges; no big banner. ── */}
-      {is_owner && (data.trade_is_open || data.delist_is_open || data.over_squad || data.under_squad) && (
-        <div className="kl-status-pills">
+      {/* ── Unified squad context row ──
+              Single row of pills covering BOTH league-state alerts
+              (cap / delists / trade window) and squad-page context
+              (matchup / bye planner / round picker). Was two split
+              rows that looked unrelated; now one cohesive flow. */}
+      {is_owner && (
+        <div className="squad-info-pills">
+          {league?.current_matchup && (
+            <MatchupStrip
+              round={league.current_round}
+              matchup={league.current_matchup}
+              lockoutTime={league.next_lockout_at}
+              leagueId={leagueId!}
+            />
+          )}
           {data.over_squad && (
             <div className="kl-status-pill kl-status-pill-danger" title={`${data.active_count}/${data.squad_size}${data.approved_ltil_count > 0 ? ` + ${data.approved_ltil_count} LTIL` : ''}`}>
               <span className="kl-status-pill-icon"><i className="bi bi-exclamation-octagon-fill"></i></span>
@@ -361,11 +372,29 @@ function SquadPageInner() {
               </span>
             </div>
           )}
-          {data.delist_is_open && (
-            <div className="kl-status-pill kl-status-pill-warn" title="Hover any player → click ⊗ to delist">
+          {/* Per Lucas: show how many delists are LEFT, not how many
+              have been done. Frame from the "what can I still do?"
+              perspective. Tone downgrades to neutral once exhausted. */}
+          {data.delist_is_open && data.max_delists != null && (() => {
+            const remaining = Math.max(0, data.max_delists - data.team_delist_count)
+            const exhausted = remaining === 0
+            return (
+              <div className={`kl-status-pill ${exhausted ? '' : 'kl-status-pill-warn'}`} title={`Used ${data.team_delist_count} of ${data.max_delists} this delist period`}>
+                <span className="kl-status-pill-icon"><i className="bi bi-x-octagon"></i></span>
+                <span className="kl-status-pill-text">
+                  <span className="kl-status-pill-title">
+                    {exhausted ? 'No delists left' : `${remaining} delist${remaining === 1 ? '' : 's'} left`}
+                  </span>
+                  <span className="kl-status-pill-sub">{exhausted ? 'period is exhausted' : 'hover player → ⊗'}</span>
+                </span>
+              </div>
+            )
+          })()}
+          {data.delist_is_open && data.max_delists == null && (
+            <div className="kl-status-pill kl-status-pill-warn" title="Delist period open (no per-team cap)">
               <span className="kl-status-pill-icon"><i className="bi bi-x-octagon"></i></span>
               <span className="kl-status-pill-text">
-                <span className="kl-status-pill-title">Delists {data.team_delist_count}{data.max_delists != null ? `/${data.max_delists}` : ''}</span>
+                <span className="kl-status-pill-title">Delists open</span>
                 <span className="kl-status-pill-sub">hover player → ⊗</span>
               </span>
             </div>
@@ -388,6 +417,14 @@ function SquadPageInner() {
                 <span className="kl-status-pill-sub">window closes</span>
               </span>
             </div>
+          )}
+          <ByePlanner leagueId={leagueId!} teamId={teamId!} />
+          {league?.current_round && league.current_round > 1 && (
+            <RoundPicker
+              currentRound={league.current_round}
+              selected={archiveRound}
+              onSelect={setArchiveRound}
+            />
           )}
           {data.trade_is_open && (
             <Link to={`/leagues/${leagueId}/trades`} className="kl-status-pill-cta">
@@ -506,29 +543,6 @@ function SquadPageInner() {
       {/* ══════ FIELD VIEW ══════ */}
       {view === 'field' && fd && (
         <>
-          {/* Coherent page-context row: matchup + bye + round picker
-              all read as the same family of small chips, no bolted-on
-              banners. RosterHealthStrip removed per Lucas. */}
-          {is_owner && (
-            <div className="squad-info-pills">
-              {league?.current_matchup && (
-                <MatchupStrip
-                  round={league.current_round}
-                  matchup={league.current_matchup}
-                  lockoutTime={league.next_lockout_at}
-                  leagueId={leagueId!}
-                />
-              )}
-              <ByePlanner leagueId={leagueId!} teamId={teamId!} />
-              {league?.current_round && league.current_round > 1 && (
-                <RoundPicker
-                  currentRound={league.current_round}
-                  selected={archiveRound}
-                  onSelect={setArchiveRound}
-                />
-              )}
-            </div>
-          )}
           {archiveRound != null && (
             <HistoricalSquadView leagueId={leagueId!} teamId={teamId!} round={archiveRound} />
           )}
