@@ -278,21 +278,29 @@ export function TradeCenterPage() {
 
       {/* Dedicated tab class (.tr-tabs) — NOT .league-subnav, which is
           hidden on desktop as duplicate section nav. These are in-page
-          content tabs and must stay visible everywhere. */}
+          content tabs and must stay visible everywhere. Each tab carries
+          its own accent identity (amber / green / sapphire). */}
       <div className="tr-tabs">
-        <Link to={`/leagues/${leagueId}/trades?tab=pending`} className={`tr-tab${tab === 'pending' ? ' active' : ''}`}>
-          <i className="bi bi-hourglass-split"></i>
-          <span>Pending</span>
-          {pendingTotal > 0 && <span className="tr-tab-badge">{pendingTotal}</span>}
+        <Link to={`/leagues/${leagueId}/trades?tab=pending`} className={`tr-tab tr-tab-pending${tab === 'pending' ? ' active' : ''}`}>
+          <span className="tr-tab-ic"><i className="bi bi-hourglass-split"></i></span>
+          <span className="tr-tab-body">
+            <span className="tr-tab-label">Pending</span>
+            <span className="tr-tab-sub">{pendingTotal > 0 ? `${pendingTotal} active` : 'no offers'}</span>
+          </span>
         </Link>
-        <Link to={`/leagues/${leagueId}/trades?tab=completed`} className={`tr-tab${tab === 'completed' ? ' active' : ''}`}>
-          <i className="bi bi-check-circle"></i>
-          <span>Completed</span>
-          {completed.length > 0 && <span className="tr-tab-badge tr-tab-badge-muted">{completed.length}</span>}
+        <Link to={`/leagues/${leagueId}/trades?tab=completed`} className={`tr-tab tr-tab-completed${tab === 'completed' ? ' active' : ''}`}>
+          <span className="tr-tab-ic"><i className="bi bi-check-circle-fill"></i></span>
+          <span className="tr-tab-body">
+            <span className="tr-tab-label">Completed</span>
+            <span className="tr-tab-sub">{completed.length > 0 ? `${completed.length} of yours` : 'your deals'}</span>
+          </span>
         </Link>
-        <Link to={`/leagues/${leagueId}/trades?tab=history`} className={`tr-tab${tab === 'history' ? ' active' : ''}`}>
-          <i className="bi bi-clock-history"></i>
-          <span>League history</span>
+        <Link to={`/leagues/${leagueId}/trades?tab=history`} className={`tr-tab tr-tab-history${tab === 'history' ? ' active' : ''}`}>
+          <span className="tr-tab-ic"><i className="bi bi-clock-history"></i></span>
+          <span className="tr-tab-body">
+            <span className="tr-tab-label">League history</span>
+            <span className="tr-tab-sub">{history.length > 0 ? `${history.length} all-time` : 'all trades'}</span>
+          </span>
         </Link>
       </div>
 
