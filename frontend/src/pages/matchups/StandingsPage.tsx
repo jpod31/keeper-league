@@ -547,7 +547,13 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
   if (loading) return <StandingsSkeleton />
   if (!data) return <p className="text-danger">Failed to load standings</p>
 
-  const { finals_teams, scoring, ranking_details, team_form, user_team_id } = data
+  // ranking_details / team_form / rankings are main-ladder extras; the
+  // 7s standings endpoint doesn't send them. Default to empty so the
+  // shared component doesn't crash on the 7s ladder (was a hard
+  // TypeError → blank page, which read as "7s ladder doesn't work").
+  const { finals_teams, scoring, user_team_id } = data
+  const ranking_details = data.ranking_details ?? {}
+  const team_form = data.team_form ?? {}
   const hasRankings = rankings.length > 0
   const scType = scoringTagType(scoring.label)
   const showFinalsCut = sortField === 'pos' && sortDir === 'asc' && finals_teams > 0

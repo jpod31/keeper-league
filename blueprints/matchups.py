@@ -986,6 +986,8 @@ def afl_live(league_id):
                 "game_id": g.get("game_id"),
                 "home_team": g.get("home_team"),
                 "away_team": g.get("away_team"),
+                "home_logo": TEAM_LOGOS.get(g.get("home_team")),
+                "away_logo": TEAM_LOGOS.get(g.get("away_team")),
                 "home_score": g.get("home_score"),
                 "away_score": g.get("away_score"),
                 "home_goals": g.get("home_goals"),

@@ -7,6 +7,8 @@ interface AflGame {
   game_id: number
   home_team: string
   away_team: string
+  home_logo: string | null
+  away_logo: string | null
   home_score: number | null
   away_score: number | null
   home_goals: number | null
@@ -28,6 +30,38 @@ interface AflLiveData {
   afl_round: number
   round_dates: string | null
   games: AflGame[]
+}
+
+function TeamRow({
+  name, logo, score, goals, behinds, win, lose, showScore,
+}: {
+  name: string
+  logo: string | null
+  score: number | null
+  goals: number | null
+  behinds: number | null
+  win: boolean
+  lose: boolean
+  showScore: boolean
+}) {
+  const cls = `afl-team-row${win ? ' win' : ''}${lose ? ' lose' : ''}`
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()
+  return (
+    <div className={cls}>
+      {logo
+        ? <img className="afl-team-logo" src={logo} alt="" loading="lazy" />
+        : <span className="afl-team-logo-fallback">{initials}</span>}
+      <span className="afl-team-name">{name}</span>
+      {showScore && score !== null && (
+        <span className="afl-team-score">
+          {score}
+          {goals !== null && (
+            <span className="afl-team-detail">{goals}.{behinds}</span>
+          )}
+        </span>
+      )}
+    </div>
+  )
 }
 
 export function AflLivePage() {
@@ -63,80 +97,39 @@ export function AflLivePage() {
   const completedGames = data.games.filter(g => g.is_complete)
 
   function GameCard({ g }: { g: AflGame }) {
-    const homeWin = (g.home_score ?? 0) > (g.away_score ?? 0)
-    const awayWin = (g.away_score ?? 0) > (g.home_score ?? 0)
-    const live = g.is_live
+    const hs = g.home_score ?? 0
+    const as = g.away_score ?? 0
+    const homeWin = g.is_complete && hs > as
+    const awayWin = g.is_complete && as > hs
+    const showScore = g.is_live || g.is_complete
     return (
       <Link
         to={`/leagues/${leagueId}/gameday/afl-game/${g.game_id}`}
-        className="text-decoration-none"
-        style={{ color: 'inherit' }}
+        className={`afl-game-card${g.is_live ? ' is-live' : ''}`}
       >
-        <div
-          className="card mb-2"
-          style={{
-            cursor: 'pointer',
-            borderColor: live ? '#f85149' : 'var(--kl-border)',
-            background: live ? 'rgba(248,81,73,.04)' : undefined,
-          }}
-        >
-          <div className="card-body p-3">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <div style={{ fontSize: '.7rem', color: 'var(--kl-text-muted)' }}>
-                {g.venue || ''}
-              </div>
-              {live && (
-                <span className="badge" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149', fontSize: '.65rem' }}>
-                  <i className="bi bi-broadcast me-1"></i>
-                  {g.quarter ?? ''} {g.time_remaining ?? 'LIVE'}
-                </span>
-              )}
-              {g.is_complete && (
-                <span className="badge" style={{ background: '#21262d', color: '#8b949e', fontSize: '.65rem' }}>
-                  Final
-                </span>
-              )}
-              {!live && !g.is_complete && (
-                <span className="badge" style={{ background: '#21262d', color: '#8b949e', fontSize: '.65rem' }}>
-                  {g.scheduled_display || 'Upcoming'}
-                </span>
-              )}
-            </div>
-            {/* Per-team rows: name flush left, score flush right, each
-                row aligned to its own baseline. Cleaner read than the
-                two-column stack and the names sit where you'd expect. */}
-            <div className="d-flex justify-content-between align-items-baseline">
-              <span style={{ fontWeight: homeWin ? 700 : 500, color: homeWin ? 'var(--kl-text-primary)' : 'var(--kl-text-secondary)' }}>
-                {g.home_team}
-              </span>
-              {g.home_score !== null && (
-                <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 700 }}>
-                  {g.home_score}
-                  {g.home_goals !== null && (
-                    <span className="text-secondary ms-2" style={{ fontSize: '.7rem', fontWeight: 400 }}>
-                      ({g.home_goals}.{g.home_behinds})
-                    </span>
-                  )}
-                </span>
-              )}
-            </div>
-            <div className="d-flex justify-content-between align-items-baseline" style={{ marginTop: 4 }}>
-              <span style={{ fontWeight: awayWin ? 700 : 500, color: awayWin ? 'var(--kl-text-primary)' : 'var(--kl-text-secondary)' }}>
-                {g.away_team}
-              </span>
-              {g.away_score !== null && (
-                <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 700 }}>
-                  {g.away_score}
-                  {g.away_goals !== null && (
-                    <span className="text-secondary ms-2" style={{ fontSize: '.7rem', fontWeight: 400 }}>
-                      ({g.away_goals}.{g.away_behinds})
-                    </span>
-                  )}
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="afl-game-head">
+          <span className="afl-game-venue">{g.venue || ''}</span>
+          {g.is_live && (
+            <span className="afl-status-pill live">
+              <span className="afl-status-dot" />
+              {[g.quarter, g.time_remaining].filter(Boolean).join(' ') || 'LIVE'}
+            </span>
+          )}
+          {g.is_complete && <span className="afl-status-pill final">Final</span>}
+          {!g.is_live && !g.is_complete && (
+            <span className="afl-status-pill soon">{g.scheduled_display || 'Upcoming'}</span>
+          )}
         </div>
+        <TeamRow
+          name={g.home_team} logo={g.home_logo}
+          score={g.home_score} goals={g.home_goals} behinds={g.home_behinds}
+          win={homeWin} lose={awayWin} showScore={showScore}
+        />
+        <TeamRow
+          name={g.away_team} logo={g.away_logo}
+          score={g.away_score} goals={g.away_goals} behinds={g.away_behinds}
+          win={awayWin} lose={homeWin} showScore={showScore}
+        />
       </Link>
     )
   }
@@ -151,7 +144,7 @@ export function AflLivePage() {
         </div>
       </div>
 
-      <div className="d-flex gap-2 mb-3">
+      <div className="afl-round-nav">
         <button
           className="btn btn-sm btn-outline-secondary"
           onClick={() => setParams(p => {
@@ -172,20 +165,20 @@ export function AflLivePage() {
       </div>
 
       {liveGames.length > 0 && (
-        <div className="mb-4">
-          <h6 className="text-uppercase text-secondary fw-bold mb-2" style={{ fontSize: '.7rem', letterSpacing: '.5px' }}>Live Now</h6>
+        <div className="afl-live-section">
+          <div className="afl-live-section-head"><span className="afl-live-dot" />Live Now</div>
           {liveGames.map(g => <GameCard key={g.game_id} g={g} />)}
         </div>
       )}
       {upcomingGames.length > 0 && (
-        <div className="mb-4">
-          <h6 className="text-uppercase text-secondary fw-bold mb-2" style={{ fontSize: '.7rem', letterSpacing: '.5px' }}>Upcoming</h6>
+        <div className="afl-live-section">
+          <div className="afl-live-section-head">Upcoming</div>
           {upcomingGames.map(g => <GameCard key={g.game_id} g={g} />)}
         </div>
       )}
       {completedGames.length > 0 && (
-        <div className="mb-4">
-          <h6 className="text-uppercase text-secondary fw-bold mb-2" style={{ fontSize: '.7rem', letterSpacing: '.5px' }}>Completed</h6>
+        <div className="afl-live-section">
+          <div className="afl-live-section-head">Completed</div>
           {completedGames.map(g => <GameCard key={g.game_id} g={g} />)}
         </div>
       )}

@@ -648,12 +648,145 @@ def lineup(league_id, team_id, round_num):
             "injury": injury,
         })
 
+    # ── Build a FieldData-shaped snapshot so the historical view can
+    #    render in the SAME FieldView (field background + positioned
+    #    cards) as the live squad, just read-only. ──
+    from models.database import LeaguePositionSlot
+    import config as _cfg
+
+    def _sp(p):
+        return {
+            "id": p.id, "name": p.name, "position": p.position or "",
+            "afl_team": p.afl_team or "", "age": p.age or 0,
+            "sc_avg": p.sc_avg or 0, "games_played": p.games_played or 0,
+            "career_games": p.career_games or 0, "rating": p.rating,
+            "injury_type": p.injury_type, "injury_return": p.injury_return,
+            "injury_severity": p.injury_severity,
+        }
+
+    pos_slots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
+    slot_counts, flex_count = {}, 0
+    for ps in pos_slots:
+        if ps.is_bench and ps.position_code == "FLEX":
+            flex_count = ps.count
+        elif not ps.is_bench:
+            slot_counts[ps.position_code] = ps.count
+    if not slot_counts:
+        slot_counts = _cfg.POSITIONS.copy()
+    if not flex_count:
+        flex_count = 1
+
+    zones = {}
+    flex_slots = []
+    reserves = []
+    emergency_players = []
+    emergency_ids = []
+    cap_id = vc_id = None
+    roster_by_id = {rs.player_id: rs for rs in roster}
+
+    if wl:
+        # Use the saved lineup slots.
+        for slot in wl.slots:
+            p = slot.player
+            if not p:
+                continue
+            if slot.is_captain:
+                cap_id = p.id
+            if slot.is_vice_captain:
+                vc_id = p.id
+            if slot.is_emergency:
+                emergency_players.append(_sp(p))
+                emergency_ids.append(p.id)
+                continue
+            code = slot.position_code
+            if code in ("DEF", "MID", "FWD", "RUC"):
+                zones.setdefault(code, []).append(_sp(p))
+            elif code == "FLEX":
+                flex_slots.append(_sp(p))
+            else:
+                reserves.append(_sp(p))
+        # Players on roster not in any slot → reserves.
+        slotted = {s.player_id for s in wl.slots}
+        for rs in roster:
+            if rs.player and rs.player_id not in slotted:
+                reserves.append(_sp(rs.player))
+    else:
+        # No saved lineup for this round — fall back to current roster
+        # flags so the field still renders something coherent.
+        for rs in roster:
+            p = rs.player
+            if not p:
+                continue
+            if rs.is_captain:
+                cap_id = p.id
+            if rs.is_vice_captain:
+                vc_id = p.id
+            if rs.is_benched:
+                reserves.append(_sp(p))
+            elif rs.position_code in ("DEF", "MID", "FWD", "RUC"):
+                zones.setdefault(rs.position_code, []).append(_sp(p))
+            elif rs.position_code == "FLEX":
+                flex_slots.append(_sp(p))
+            else:
+                reserves.append(_sp(p))
+
+    # Pad zones to slot counts with None.
+    for code, count in slot_counts.items():
+        cur = zones.get(code, [])
+        while len(cur) < count:
+            cur.append(None)
+        zones[code] = cur[:count]
+
+    flex_data = [{"player": flex_slots[i] if i < len(flex_slots) else None} for i in range(flex_count)]
+
+    reserves_by_pos = {}
+    for sp in reserves:
+        primary = (sp["position"] or "MID").split("/")[0]
+        reserves_by_pos.setdefault(primary, []).append(sp)
+
+    field_data = {
+        "zones": zones,
+        "flex_data": flex_data,
+        "flex_count": flex_count,
+        "cap_id": cap_id,
+        "vc_id": vc_id,
+        "reserves": reserves,
+        "reserves_by_pos": reserves_by_pos,
+        "emergency_players": emergency_players,
+        "emergency_ids": emergency_ids,
+        "sevens_players": [],
+        "sevens_ids": [],
+        "sevens_captain_id": None,
+        "sevens_captain_enabled": False,
+        "has_7s_fixture": False,
+        "injury_list": [],
+        "ltil_entries": [],
+        "ltil_full": [],
+        "pending_ltil": [],
+        "pending_ltil_count": 0,
+        "ssp_slots": 1,
+        "ssp_enabled": False,
+        "ssp_window_active": False,
+        "can_remove_ltil": False,
+        "locked_teams": [],
+        "teams_playing": [],
+        "selected_player_ids": [],
+        "next_lockout_time": None,
+        "slot_counts": slot_counts,
+        "zone_layouts": {},
+        "player_form": {},
+        "cap_locked": False,
+        "vc_locked": False,
+    }
+
     return jsonify({
         "team": {"id": team.id, "name": team.name},
         "round": round_num,
         "max_round": max_round,
         "players": players,
         "locked": wl.is_locked if wl else False,
+        "field_data": field_data,
+        "team_logos": getattr(_cfg, "TEAM_LOGOS", {}),
     })
 
 

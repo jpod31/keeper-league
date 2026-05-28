@@ -9131,3 +9131,228 @@ th.sortable:hover { color: #58a6ff; }
 @media (prefers-reduced-motion: reduce) {
   .kl-breathe, .kl-lockbadge-locked { animation: none; }
 }
+
+/* ===========================================================
+   AFL Live — match cards
+   =========================================================== */
+.afl-live-section { margin-bottom: var(--space-5); }
+.afl-live-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--kl-text-muted);
+  margin: 0 0 var(--space-2) 2px;
+}
+.afl-live-section-head .afl-live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--kl-accent-red);
+  box-shadow: 0 0 0 3px rgba(248,81,73,.18);
+  animation: klBreathe 1.6s ease-in-out infinite;
+}
+
+.afl-game-card {
+  display: block;
+  position: relative;
+  border: 1px solid var(--kl-border);
+  border-radius: 16px;
+  background: var(--kl-surface);
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.afl-game-card:hover {
+  border-color: var(--kl-border-strong, #30363d);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.18);
+}
+.afl-game-card.is-live {
+  border-color: rgba(248,81,73,.55);
+  background: linear-gradient(180deg, rgba(248,81,73,.06), rgba(248,81,73,.015));
+}
+
+.afl-game-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 11px;
+}
+.afl-game-venue {
+  font-size: .7rem;
+  color: var(--kl-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.afl-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.afl-status-pill.live   { background: rgba(248,81,73,.16); color: #ff7b72; }
+.afl-status-pill.final  { background: rgba(139,148,158,.14); color: var(--kl-text-secondary); }
+.afl-status-pill.soon   { background: rgba(56,139,253,.14); color: #6cb0ff; }
+.afl-status-pill .afl-status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  animation: klBreathe 1.6s ease-in-out infinite;
+}
+
+.afl-team-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.afl-team-row + .afl-team-row { margin-top: 9px; }
+.afl-team-logo {
+  width: 30px; height: 30px;
+  flex: 0 0 30px;
+  object-fit: contain;
+}
+.afl-team-logo-fallback {
+  width: 30px; height: 30px;
+  flex: 0 0 30px;
+  border-radius: 50%;
+  background: var(--kl-surface-2, #1c2128);
+  display: grid;
+  place-items: center;
+  font-size: .62rem;
+  font-weight: 800;
+  color: var(--kl-text-muted);
+}
+.afl-team-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--kl-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.afl-team-score {
+  flex: 0 0 auto;
+  font-family: var(--kl-font-mono, ui-monospace, monospace);
+  font-weight: 800;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--kl-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.afl-team-detail {
+  font-family: var(--kl-font-mono, ui-monospace, monospace);
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--kl-text-muted);
+  margin-left: 7px;
+}
+.afl-team-row.win .afl-team-name { color: var(--kl-text-primary); font-weight: 800; }
+.afl-team-row.win .afl-team-score { color: var(--kl-text-primary); }
+.afl-team-row.lose { opacity: .62; }
+.afl-team-row.win::after {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--kl-accent-green, #3fb950);
+  flex: 0 0 5px;
+  margin-left: -4px;
+}
+
+.afl-round-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-3);
+}
+@media (max-width: 768px) {
+  .afl-team-name { font-size: .9rem; }
+  .afl-team-score { font-size: 1.15rem; }
+  .afl-game-card { padding: 12px 14px; }
+}
+
+/* ===========================================================
+   MY TEAM — mobile squad-tools + popover sheets
+   On phones the matchup / bye-planner / round-picker pills
+   were a loose flex-wrap of desktop-style chips, and their
+   absolutely-positioned popovers (min-width 260-280px) spilled
+   off the right edge. Reflow the tools into a native full-width
+   row stack, and turn the popovers into bottom sheets.
+   =========================================================== */
+@media (max-width: 640px) {
+  .squad-tools {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 2px 12px;
+  }
+  .squad-tools > * { width: 100%; }
+  .squad-tools > * + * { border-top: 1px solid rgba(110,130,180,.10); }
+
+  /* Each tool becomes a tappable full-width row: icon + 2-line
+     text on the left, chevron pinned to the right edge. */
+  .byeplan, .rpick { display: block; width: 100%; }
+  .mstrip,
+  .byeplan-toggle,
+  .rpick-btn {
+    width: 100%;
+    padding: 13px 2px;
+    margin: 0;
+  }
+  .mstrip-text,
+  .byeplan-toggle-text,
+  .rpick-text { flex: 1 1 auto; }
+  .byeplan-toggle-chev,
+  .rpick-chev { margin-left: auto; }
+  /* No truncation cap on mobile — full row width is available. */
+  .mstrip-title { max-width: none; }
+
+  /* Popovers → bottom sheets. Full-bleed, never overflow, slide up. */
+  .byeplan-pop,
+  .rpick-pop {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    max-height: 72vh;
+    overflow-y: auto;
+    z-index: 1200;
+    border-radius: 18px 18px 0 0;
+    border-bottom: 0;
+    padding: var(--space-4) var(--space-3) calc(var(--space-4) + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 44px -6px rgba(0,0,0,.7);
+    animation: kl-sheet-up .2s ease;
+  }
+  /* Drag-handle affordance at the top of each sheet. */
+  .byeplan-pop::before,
+  .rpick-pop::before {
+    content: "";
+    position: sticky;
+    top: 0;
+    align-self: center;
+    width: 38px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--kl-border-light, #444c56);
+    margin: -4px 0 6px;
+  }
+}
+@keyframes kl-sheet-up { from { transform: translateY(100%); opacity: .6; } }
