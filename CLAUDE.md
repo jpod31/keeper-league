@@ -9,6 +9,31 @@ wiring every session. Keep it current when structure changes.
 
 ---
 
+## Scope discipline (READ THIS FIRST — hard rules)
+
+These exist because changes got bundled in that the user didn't ask for, then
+had to be reverted (the swap-picker rebuild, a bench-list collapse, an added
+status line — all on a page the user was happy with).
+
+- **Deferral words mean DO NOT BUILD IT.** "add to backlog", "note it",
+  "later", "for now", "don't fix yet", "leave it", "another time" → record it in
+  memory/backlog and STOP. An explicit deferral overrides any "keep going" /
+  "do everything" momentum. If the user flags a problem AND defers it in the
+  same breath, deferring wins — do not implement it.
+- **A suggestion / audit / "ideas" list is a MENU, not a build queue.** "Give me
+  N options / suggestions" means review them together. Only build the specific
+  items the user explicitly approves ("do them all", "implement #3", "go").
+- **Don't redesign working UI unrequested.** If the user is happy with a page,
+  do not "improve" it as a side-quest. Default to the *smallest* change that
+  satisfies the literal request; don't bundle extra polish/refactors.
+- **Reverts: revert exactly what was named.** Don't over-remove surrounding
+  features, and don't silently leave your own other additions — name them and
+  ask. (See [[feedback_no_overremoval]].)
+- When unsure whether something is in scope, do the literal ask and *say* what
+  you deliberately left out, rather than guessing wider.
+
+---
+
 ## Deploy + validate workflow (READ THIS)
 
 **Deploying is expected after every change** — the owner wants work live
