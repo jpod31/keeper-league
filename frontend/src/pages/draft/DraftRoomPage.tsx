@@ -1006,12 +1006,18 @@ export function DraftRoomPage() {
               </div>
             </div>
           </div>
-          <div className="draft-timer-block">
-            <span className={`draft-timer${(state.timer_remaining ?? 0) <= 10 && state.timer_remaining != null ? ' timer-urgent' : ''}`}>
-              {bannerCompleted ? '-' : (state.timer_remaining ?? session.pick_timer_secs)}
-            </span>
-            <span className="draft-timer-label">seconds</span>
-          </div>
+          {session.pick_timer_secs > 0 ? (
+            <div className="draft-timer-block">
+              <span className={`draft-timer${(state.timer_remaining ?? 0) <= 10 && state.timer_remaining != null ? ' timer-urgent' : ''}`}>
+                {bannerCompleted ? '-' : (state.timer_remaining ?? session.pick_timer_secs)}
+              </span>
+              <span className="draft-timer-label">seconds</span>
+            </div>
+          ) : (
+            <div className="draft-timer-block">
+              <span className="draft-timer-label"><i className="bi bi-infinity me-1"></i>Untimed</span>
+            </div>
+          )}
         </div>
       )}
 

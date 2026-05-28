@@ -482,6 +482,19 @@ def _start_timer(socketio, session_id, league_id):
     if not session:
         return
 
+    # Untimed draft: pick_timer_secs of 0/None means no clock — picks never
+    # auto-advance. Stop any running tick loop, clear the persisted deadline,
+    # and bail without starting a countdown.
+    if not session.pick_timer_secs or session.pick_timer_secs <= 0:
+        _timers[session_id] = {
+            "remaining": None, "running": False,
+            "generation": _timers.get(session_id, {}).get("generation", 0) + 1,
+        }
+        if session.pick_deadline is not None:
+            session.pick_deadline = None
+            db.session.commit()
+        return
+
     prev_gen = _timers.get(session_id, {}).get("generation", 0)
     gen = prev_gen + 1
     duration = session.pick_timer_secs
@@ -594,6 +607,8 @@ def _recover_timer(socketio, session_id, league_id):
     session = db.session.get(DraftSession, session_id)
     if not session or session.status != "in_progress" or not session.pick_deadline:
         return
+    if not session.pick_timer_secs or session.pick_timer_secs <= 0:
+        return  # untimed draft — no auto-pick recovery
 
     from datetime import datetime, timezone
     remaining = int((session.pick_deadline - datetime.utcnow()).total_seconds())
