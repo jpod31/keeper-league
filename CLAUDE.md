@@ -91,7 +91,7 @@ ssh root@43.224.183.136 'bash /opt/keeper-league/scripts/update_server.sh'
 | `blueprints/` | HTTP routes, grouped by feature (see table below). |
 | `models/` | SQLAlchemy models (`database.py`, `auth.py`) + domain/business logic engines (scoring, lineup, draft, trades, fixtures, scheduler, analytics, etc.). Despite the name, most files here are logic, not just ORM. |
 | `sockets/` | SocketIO event handlers (draft / matchup / notification). |
-| `scrapers/` | External data ingestion: Squiggle (fixtures), Footywire (SC scores, rosters, live), wheeloratings (state leagues), AFL injuries, CSV import. |
+| `scrapers/` | External data ingestion: Squiggle (fixtures), Footywire (SC scores, rosters, live), wheeloratings + dfsaustralia (state leagues), draftguru (AFL list/draft history -> `AflListHistory`), AFL injuries, CSV import. |
 | `scripts/` | One-off + operational scripts. `update_server.sh` / `deploy_server.sh` (deploy), `rescore_all.py`, `precompute_scouting.py`, `smoke_endpoints.py`, `train_scouting_model.py` are operational. `migrate_*.py` are historical one-off migrations (already applied). `debug_*/investigate_*/fix_*/verify_*/check_*` are one-off forensics. |
 | `templates/` | Jinja2 templates for the non-SPA pages still served server-side (admin, draft setup, player profile, errors, email). |
 | `static/` | `style.css` (the big one), `spa/` (built React bundle — generated, do not hand-edit), `sw.js`, icons, `changelog.json`. |
@@ -136,6 +136,14 @@ All registered in `app.py::create_app`. Most JSON-API blueprints are
   for a past round (most live-only fields hardcoded empty). They share only pure
   helpers (zone layout, rookie rule) via `models/field_layout.py`. Do NOT merge
   them — they'd diverge in behavior.
+- **Player club data is split by purpose**: `afl_player.afl_team` is only ever
+  the player's CURRENT club. Per-season match stats (`player_stats_*.csv`) are
+  games-only (a listed player who didn't play a senior game is absent).
+  Historical AFL club BY YEAR — including non-playing list seasons — comes ONLY
+  from `AflListHistory` (draftguru). Do NOT infer historical club from the
+  state-league/reserves team name: a delisted player can play VFL for a
+  non-aligned club (e.g. Williamstown). Backfill: `scripts/backfill_list_history.py`
+  on the server (creates the table + scrapes draftguru).
 - **Positional priority for dual-position players**: FWD > DEF > RUC > MID.
 - **Rookie rule**: bench player with `age < 22` AND `rating < 70` → Rookies
   section (field/flex/7s/emergency/injury take precedence). Single source of
