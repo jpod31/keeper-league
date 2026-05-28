@@ -85,6 +85,21 @@ def draft_room(league_id):
 
     session = _get_active_draft_session(league_id)
     if not session:
+        # Keep a JUST-completed draft viewable so the room becomes a results
+        # page rather than ejecting everyone the moment it finishes. Older
+        # completed drafts fall through to the empty/plan state (per #35).
+        from datetime import datetime, timezone, timedelta
+        recent_completed = (
+            DraftSession.query.filter_by(league_id=league_id, is_mock=False, status="completed")
+            .order_by(DraftSession.id.desc()).first()
+        )
+        if recent_completed and recent_completed.completed_at:
+            ca = recent_completed.completed_at
+            if ca.tzinfo is None:
+                ca = ca.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - ca < timedelta(hours=12):
+                session = recent_completed
+    if not session:
         # Per #35: don't redirect when there's no upcoming draft. SPA wants a
         # friendly empty-state page so the user can still browse the pool and
         # plan picks. Legacy Jinja path keeps the old redirect behaviour.
