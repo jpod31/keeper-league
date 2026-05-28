@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router'
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, Component, type ErrorInfo, type ReactNode } from 'react'
 import { api } from '../../lib/api'
 import { DraftSkeleton } from '../../components/ui/DraftSkeleton'
 import { useSocket } from '../../hooks/useSocket'
@@ -493,7 +493,7 @@ function potentialTier(p: number | null): string {
   return 'tier-low'
 }
 
-export function DraftRoomPage() {
+function DraftRoomPageInner() {
   const { leagueId } = useParams()
   const navigate = useNavigate()
   const [data, setData] = useState<DraftRoomData | null>(null)
@@ -591,7 +591,7 @@ export function DraftRoomPage() {
     if (!data?.user_team) return
     fetch(`/leagues/${leagueId}/draft/api/team_picks/${data.user_team.id}`, { credentials: 'same-origin' })
       .then(r => r.json())
-      .then(setYourTeamPicks)
+      .then(d => setYourTeamPicks(Array.isArray(d) ? d : []))
       .catch(() => {})
   }, [leagueId, data?.user_team])
 
@@ -605,7 +605,7 @@ export function DraftRoomPage() {
     params.set('limit', String(fetchLimit))
     fetch(`/leagues/${leagueId}/draft/api/available?${params.toString()}&${wParams}`, { credentials: 'same-origin' })
       .then(r => r.json())
-      .then((players: AvailablePlayer[]) => setAvailable(players))
+      .then((players: AvailablePlayer[]) => setAvailable(Array.isArray(players) ? players : []))
       .catch(() => setAvailable([]))
   }, [leagueId, search, posFilter, clubFilter, weights])
 
@@ -640,7 +640,7 @@ export function DraftRoomPage() {
     if (!data) return
     fetch(`/leagues/${leagueId}/draft/api/chat_history`, { credentials: 'same-origin' })
       .then(r => r.json())
-      .then((msgs: ChatMessage[]) => setChatMessages(msgs))
+      .then((msgs: ChatMessage[]) => setChatMessages(Array.isArray(msgs) ? msgs : []))
       .catch(() => {})
   }, [leagueId, data])
 
@@ -1468,4 +1468,29 @@ export function DraftRoomPage() {
       )}
     </div>
   )
+}
+
+// Error boundary so a render error in the draft room shows a contained
+// message (with the error) instead of white-screening the whole site.
+class DraftRoomErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error('Draft room crash:', error, info) }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="card mt-4"><div className="card-body">
+          <h5 style={{ color: '#f85149' }}><i className="bi bi-exclamation-triangle me-2"></i>Draft room hit an error</h5>
+          <p style={{ fontSize: '.85rem', color: '#8b949e' }}>The draft data still loaded — this is a display glitch, not lost picks. Reload to try again.</p>
+          <pre style={{ fontSize: '.72rem', color: '#8b949e', whiteSpace: 'pre-wrap', maxHeight: 220, overflow: 'auto' }}>{this.state.error.message}{'\n'}{this.state.error.stack}</pre>
+          <button className="btn btn-sm btn-outline-primary mt-2" onClick={() => window.location.reload()}>Reload</button>
+        </div></div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+export function DraftRoomPage() {
+  return <DraftRoomErrorBoundary><DraftRoomPageInner /></DraftRoomErrorBoundary>
 }
