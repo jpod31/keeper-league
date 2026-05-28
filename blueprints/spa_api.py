@@ -737,6 +737,37 @@ def lineup(league_id, team_id, round_num):
             cur.append(None)
         zones[code] = cur[:count]
 
+    # zone_layouts drives the field render: it's the per-zone list of row
+    # sizes (e.g. 4 → [2,2]) that FieldView slices the padded zones list
+    # by. Without it the zones render EMPTY. Mirror team.py's calc_zone_rows.
+    def _calc_zone_rows(count):
+        if count <= 0:
+            return []
+        if count <= 3:
+            return [count]
+        if count == 4:
+            return [2, 2]
+        if count == 5:
+            return [3, 2]
+        if count == 6:
+            return [3, 3]
+        if count == 7:
+            return [2, 3, 2]
+        if count == 8:
+            return [3, 2, 3]
+        if count == 9:
+            return [5, 4]
+        if count == 10:
+            return [5, 5]
+        rows, remaining = [], count
+        while remaining > 0:
+            row = min(5, remaining)
+            rows.append(row)
+            remaining -= row
+        return rows
+
+    zone_layouts = {code: _calc_zone_rows(count) for code, count in slot_counts.items()}
+
     flex_data = [{"player": flex_slots[i] if i < len(flex_slots) else None} for i in range(flex_count)]
 
     reserves_by_pos = {}
@@ -773,7 +804,7 @@ def lineup(league_id, team_id, round_num):
         "selected_player_ids": [],
         "next_lockout_time": None,
         "slot_counts": slot_counts,
-        "zone_layouts": {},
+        "zone_layouts": zone_layouts,
         "player_form": {},
         "cap_locked": False,
         "vc_locked": False,
