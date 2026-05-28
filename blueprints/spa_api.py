@@ -11,6 +11,8 @@ from models.database import (
     WeeklyLineup, LineupSlot, RoundScore, StateLeagueStat,
 )
 
+from models.field_layout import calc_zone_rows, is_rookie
+
 logger = logging.getLogger(__name__)
 
 spa_api = Blueprint("spa_api", __name__, url_prefix="/api")
@@ -738,45 +740,16 @@ def lineup(league_id, team_id, round_num):
         zones[code] = cur[:count]
 
     # zone_layouts drives the field render: it's the per-zone list of row
-    # sizes (e.g. 4 → [2,2]) that FieldView slices the padded zones list
-    # by. Without it the zones render EMPTY. Mirror team.py's calc_zone_rows.
-    def _calc_zone_rows(count):
-        if count <= 0:
-            return []
-        if count <= 3:
-            return [count]
-        if count == 4:
-            return [2, 2]
-        if count == 5:
-            return [3, 2]
-        if count == 6:
-            return [3, 3]
-        if count == 7:
-            return [2, 3, 2]
-        if count == 8:
-            return [3, 2, 3]
-        if count == 9:
-            return [5, 4]
-        if count == 10:
-            return [5, 5]
-        rows, remaining = [], count
-        while remaining > 0:
-            row = min(5, remaining)
-            rows.append(row)
-            remaining -= row
-        return rows
-
-    zone_layouts = {code: _calc_zone_rows(count) for code, count in slot_counts.items()}
+    # sizes (e.g. 4 → [2,2]) that FieldView slices the padded zones list by.
+    # Without it the zones render EMPTY. Shared with the live builder.
+    zone_layouts = {code: calc_zone_rows(count) for code, count in slot_counts.items()}
 
     flex_data = [{"player": flex_slots[i] if i < len(flex_slots) else None} for i in range(flex_count)]
 
     # Rookies: bench players under 22 with rating < 70 (AFL ratings doc).
     # Field / flex / emergency slots are already excluded from `reserves`, so
     # only genuine bench sitters land here — those sections take precedence.
-    def _is_rookie_sp(sp):
-        return (sp.get("age") and sp["age"] < 22
-                and sp.get("rating") is not None and sp["rating"] < 70)
-    rookies = [sp for sp in reserves if _is_rookie_sp(sp)]
+    rookies = [sp for sp in reserves if is_rookie(sp.get("age"), sp.get("rating"))]
     if rookies:
         _rk_ids = {sp["id"] for sp in rookies}
         reserves = [sp for sp in reserves if sp["id"] not in _rk_ids]

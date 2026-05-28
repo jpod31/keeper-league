@@ -10,3 +10,5 @@ venv/
 .pytest_cache/
 cookies.txt
 .DS_Store
+_mobtest/
+node_modules/

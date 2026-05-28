@@ -1,3 +1,68 @@
+/* ╔═══════════════════════════════════════════════════════════════════╗
+   ║  STYLE.CSS — TABLE OF CONTENTS                                      ║
+   ║  ~9.6k lines, ONE served file (base.html links it; cache-busted by  ║
+   ║  mtime). No build needed — edit + deploy. To jump to a section,     ║
+   ║  Grep its marker text below (line numbers drift, so aren't listed). ║
+   ║  Roughly: foundations → shared components → page/feature sections   ║
+   ║  → a big mobile/responsive band → late-added features at the end.   ║
+   ╠═══════════════════════════════════════════════════════════════════╣
+
+   FOUNDATIONS
+     CSS Custom Properties · Typography · Mobile foundation · Navbar
+     Forms (dark theme) · Buttons (Stadium) · Cards · kl-tile (canonical
+     StatTile) · Tables · Sortable headers · Empty states (Stadium)
+     Section headings
+
+   SHARED COMPONENTS / PRIMITIVES
+     Status pill · Player chip · Filter bar · Saving chip · Lockout badge
+     Live breath · Icon system (#29) · Toasts · Notification panel
+     Notifications drawer · Density toggle · Roster health strip
+     Trend pills · Scoring type tag · Player table shared styles
+
+   NAVIGATION & SHELL
+     League rail · Mobile bottom navigation · League tab navigation
+     Bottom sheet · More sheet · Field view action sheet · Filter bottom
+     sheet · League breadcrumb · Theme toggle
+
+   SQUAD / FIELD VIEW
+     AFL Field View · Zone rows · Player card · Empty slot · Flex section
+     LTIL sidebar/section · Reserves section · Emergency section
+     7s section · Injury list section · Rookies section · Swap mode
+     Hover action bubbles · Squad page · Squad mobile cards · Squad mobile
+     overrides · Mobile position list · Historical squad view · Bye planner
+     Round picker · My team (mobile squad-tools) · Draft strip
+     Next-window badge
+
+   DRAFT
+     Draft room · Draft score ring · DraftSkeleton
+
+   MATCHUPS / DASHBOARD / LIVE
+     Matchup strip · League dashboard / lobby · Live pulse bar
+     Matchup hero · Quick actions strip · Standings ladder mini
+     Gameday mobile side-by-side · AFL Live — match cards
+
+   PLAYER PROFILE & POOL
+     Player hero header · Player profile design system v2 · Ring gauges
+     Player pool card view (mobile) · Player modal · Player-pool
+     acquired-history popover
+
+   LEAGUE MANAGEMENT
+     Commissioner hub · Settings (toggle switch + expandable sections)
+     List management · Season hub timeline
+
+   COMMS
+     Messenger (unified comms) · ConversationSkeleton · InboxSkeleton
+
+   SKELETONS (loaders)
+     Squad · Gameday · Draft · Trade centre/propose · Fixture · Standings
+     Dashboard · Stats · Analytics · Rows (generic)
+
+   MOBILE / RESPONSIVE BANDS
+     Mobile breakpoint (<=768px) · Additional mobile breakpoints
+     Premium mobile visual overhaul (parts 1 & 2) · Mobile UX sweep
+     Standings mobile column hiding · Ladder mobile cards · PWA standalone
+   ╚═══════════════════════════════════════════════════════════════════╝ */
+
 /* ── CSS Custom Properties ── */
 :root,
 [data-bs-theme="dark"] {

@@ -24,6 +24,7 @@ from models.lineup_manager import (
     auto_fill_lineup, lock_lineup, get_bye_players,
     snapshot_lineups_for_round,
 )
+from models.field_layout import calc_zone_rows, is_rookie
 
 
 def _refresh_snapshot_if_live(league):
@@ -304,35 +305,6 @@ def squad(league_id, team_id):
                        for code, plist in zones.items()}
 
         # Dynamic row layouts for each zone (adapts field view to any count)
-        def calc_zone_rows(count):
-            """Return list of row sizes for a given position count."""
-            if count <= 0:
-                return []
-            if count <= 3:
-                return [count]
-            if count == 4:
-                return [2, 2]
-            if count == 5:
-                return [3, 2]
-            if count == 6:
-                return [3, 3]
-            if count == 7:
-                return [2, 3, 2]
-            if count == 8:
-                return [3, 2, 3]
-            if count == 9:
-                return [5, 4]
-            if count == 10:
-                return [5, 5]
-            # 11+: rows of 5 then 4
-            rows = []
-            remaining = count
-            while remaining > 0:
-                row = min(5, remaining)
-                rows.append(row)
-                remaining -= row
-            return rows
-
         zone_layouts = {}
         for code, count in slot_counts.items():
             zone_layouts[code] = calc_zone_rows(count)
@@ -469,10 +441,7 @@ def squad(league_id, team_id):
         # AFL ratings doc). Field / flex / 7s / emergency / injury already
         # pulled their players out of `reserves` above, so this only catches
         # genuine bench sitters — those take precedence as required.
-        def _is_rookie(p):
-            return (p.age is not None and p.age < 22
-                    and p.rating is not None and p.rating < 70)
-        rookies = [p for p in reserves if _is_rookie(p)]
+        rookies = [p for p in reserves if is_rookie(p.age, p.rating)]
         if rookies:
             _rookie_ids = {p.id for p in rookies}
             reserves = [p for p in reserves if p.id not in _rookie_ids]
