@@ -92,28 +92,49 @@ def player_ratings(league_id):
         return redirect(url_for("leagues.league_list"))
 
     # ── Last Update: most recent sync batch ──
-    latest_ts = db.session.query(db.func.max(RatingLog.changed_at)).scalar()
+    # Only GENUINE changes: a known prior rating that actually differs. This
+    # excludes first-time None→rating rows written when the player table is
+    # rebuilt (which otherwise show every player as "+<full rating>"), and we
+    # dedupe per player in case a multi-worker sync double-logged a change.
+    latest_ts = (
+        db.session.query(db.func.max(RatingLog.changed_at))
+        .filter(
+            RatingLog.old_rating.isnot(None),
+            RatingLog.new_rating.isnot(None),
+            RatingLog.new_rating != RatingLog.old_rating,
+        )
+        .scalar()
+    )
     last_update = []
     last_update_date = None
     if latest_ts:
         cutoff = latest_ts - timedelta(minutes=5)
-        last_update = (
+        rows = (
             db.session.query(RatingLog, AflPlayer.name, AflPlayer.afl_team, AflPlayer.position)
             .join(AflPlayer, RatingLog.player_id == AflPlayer.id)
-            .filter(RatingLog.changed_at >= cutoff)
+            .filter(
+                RatingLog.changed_at >= cutoff,
+                RatingLog.old_rating.isnot(None),
+                RatingLog.new_rating.isnot(None),
+                RatingLog.new_rating != RatingLog.old_rating,
+            )
             .order_by(
-                db.case(
-                    (RatingLog.new_rating > RatingLog.old_rating, 0),
-                    (RatingLog.new_rating < RatingLog.old_rating, 1),
-                    else_=2,
-                ),
+                db.case((RatingLog.new_rating > RatingLog.old_rating, 0), else_=1),
                 (RatingLog.new_rating - RatingLog.old_rating).desc(),
             )
             .all()
         )
-        last_update_date = latest_ts
+        seen = set()
+        for row in rows:
+            pid = row[0].player_id
+            if pid in seen:
+                continue
+            seen.add(pid)
+            last_update.append(row)
+        if last_update:
+            last_update_date = max(r[0].changed_at for r in last_update)
 
-    # ── Season Movers: rating != rating_start ──
+    # ── Season Movers: rating moved from start-of-year baseline ──
     season_movers = (
         AflPlayer.query
         .filter(
@@ -147,6 +168,12 @@ def player_ratings(league_id):
                 "rating": p.rating,
                 "rating_start": p.rating_start,
                 "delta": (p.rating or 0) - (p.rating_start or 0),
+                # career_games = games in PRIOR seasons; 0 ⇒ debuted this year.
+                # The frontend uses this to filter out first-year players,
+                # whose base→X jumps dwarf established players' moves.
+                "career_games": p.career_games or 0,
+                "games_played": p.games_played or 0,
+                "is_debutant": (p.career_games or 0) == 0,
             } for p in season_movers],
         })
 

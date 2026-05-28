@@ -214,10 +214,14 @@ def _sync_ratings_to_db(app):
                             break
 
                 if ap:
-                    # Log changes before applying
-                    rating_changed = (ap.rating != rating) if rating is not None else False
-                    potential_changed = (ap.potential != potential) if potential is not None else False
-                    if rating_changed or potential_changed:
+                    # Only log GENUINE rating changes — a known prior rating
+                    # that actually differs. Skip first-time None→rating sets
+                    # (e.g. after a player-table rebuild) which otherwise flood
+                    # the "Latest Update" with every player at "+<full rating>".
+                    rating_changed = (
+                        ap.rating is not None and rating is not None and ap.rating != rating
+                    )
+                    if rating_changed:
                         log = RatingLog(
                             player_id=ap.id,
                             old_rating=ap.rating,
