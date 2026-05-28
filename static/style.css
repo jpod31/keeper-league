@@ -401,11 +401,17 @@
    - Killing pinch-to-zoom only horizontally via touch-action so vertical
      pinch on detail content (e.g. PlayerModal text) still works. */
 html {
-  overflow-x: hidden;
+  /* clip (not hidden): blocks horizontal overflow WITHOUT turning the
+     root into a scroll container. overflow-x:hidden was computing
+     overflow-y to auto, which made <html> the scroller and broke the
+     sticky top bar — it scrolled away instead of staying pinned to the
+     top-left. clip keeps the viewport as the scroller so sticky/fixed
+     chrome stays put. */
+  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
 }
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100dvh;
   max-width: 100vw;
   position: relative;
