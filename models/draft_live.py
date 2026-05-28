@@ -6,11 +6,82 @@ from datetime import datetime, timezone
 from models.database import (
     db, DraftSession, DraftPick, DraftQueue,
     FantasyTeam, FantasyRoster, AflPlayer, League,
-    LeaguePositionSlot,
+    LeaguePositionSlot, LongTermInjury,
 )
 
 # Thread lock for SQLite concurrency safety during picks
 _pick_lock = threading.Lock()
+
+
+def team_list_size(league, team_id):
+    """Active list size for the squad cap: roster players minus approved LTIL.
+    Mirrors the canonical rule in team.py / trade_manager / delist enforcement."""
+    roster_ids = {
+        r.player_id for r in FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    }
+    ltil_ids = {
+        lt.player_id for lt in LongTermInjury.query.filter_by(
+            team_id=team_id, removed_at=None, year=league.season_year, status="approved"
+        ).all()
+    }
+    return len(roster_ids - ltil_ids)
+
+
+def team_is_full(league, team_id):
+    cap = league.squad_size or 0
+    return cap > 0 and team_list_size(league, team_id) >= cap
+
+
+def _resolve_caps_and_completion(session):
+    """After a pick/pass in a SUPPLEMENTAL draft: auto-pass the upcoming slots
+    of any team that has hit its 45-man cap (excl. LTIL), then complete the
+    session if no eligible slots remain or a full round of passes has elapsed
+    (everyone full / everyone passed). Returns True if the draft completed.
+
+    No-op for initial drafts (total_rounds == squad_size already bounds them)
+    and mocks (no real rosters), so their behaviour is unchanged.
+    """
+    if session.is_mock or session.draft_round_type != "supplemental":
+        # Original rule: complete only when every slot is picked/passed.
+        remaining = (
+            DraftPick.query.filter_by(draft_session_id=session.id, player_id=None)
+            .filter(DraftPick.is_pass == False).count()
+        )
+        return remaining == 0
+
+    league = db.session.get(League, session.league_id)
+    num_teams = FantasyTeam.query.filter_by(league_id=session.league_id).count() or 1
+    now = datetime.now(timezone.utc)
+
+    # Auto-pass the front of the queue while it belongs to a full team.
+    while True:
+        cur = (
+            DraftPick.query.filter_by(draft_session_id=session.id, player_id=None)
+            .filter(DraftPick.is_pass == False)
+            .order_by(DraftPick.pick_number).first()
+        )
+        if not cur or not team_is_full(league, cur.team_id):
+            break
+        cur.is_pass = True
+        cur.is_auto_pick = True
+        cur.picked_at = now
+
+    remaining = (
+        DraftPick.query.filter_by(draft_session_id=session.id, player_id=None)
+        .filter(DraftPick.is_pass == False).count()
+    )
+    if remaining == 0:
+        return True
+
+    # A full round (num_teams) of consecutive passes ⇒ everyone's done.
+    recent = (
+        DraftPick.query.filter_by(draft_session_id=session.id)
+        .filter(db.or_(DraftPick.player_id.isnot(None), DraftPick.is_pass == True))
+        .order_by(DraftPick.pick_number.desc()).limit(num_teams).all()
+    )
+    if len(recent) >= num_teams and all(p.is_pass for p in recent):
+        return True
+    return False
 
 
 def create_draft_session(league_id, supplemental=False, total_rounds_override=None,
@@ -160,6 +231,16 @@ def start_draft(session_id):
         league = db.session.get(League, session.league_id)
         if league:
             league.status = "drafting"
+
+    # Skip any teams already at the 45-man cap so the clock starts on a team
+    # that can actually pick; complete immediately if everyone is already full.
+    if _resolve_caps_and_completion(session):
+        session.status = "completed"
+        session.completed_at = datetime.now(timezone.utc)
+        if not session.is_mock:
+            league = db.session.get(League, session.league_id)
+            if league:
+                league.status = "active"
     db.session.commit()
     return session, None
 
@@ -208,6 +289,12 @@ def make_pick(session_id, player_id, is_auto=False):
         if not current_pick:
             return None, "All picks have been made."
 
+        # Squad cap: a team at its 45-man limit (excl. LTIL) cannot add more.
+        if not session.is_mock and session.draft_round_type == "supplemental":
+            _lg = db.session.get(League, session.league_id)
+            if _lg and team_is_full(_lg, current_pick.team_id):
+                return None, "This team's list is full (45) — pass instead."
+
         # Verify player is available
         already_picked = db.session.query(DraftPick.player_id).filter(
             DraftPick.draft_session_id == session_id,
@@ -240,15 +327,10 @@ def make_pick(session_id, player_id, is_auto=False):
         # Remove from all queues
         DraftQueue.query.filter_by(player_id=player_id).delete()
 
-        # Check if draft is complete (exclude passed picks)
-        remaining = (
-            DraftPick.query
-            .filter_by(draft_session_id=session_id, player_id=None)
-            .filter(DraftPick.is_pass == False)
-            .count()
-        )
+        # Auto-pass full teams + decide completion (cap-aware for supplementals).
         is_supplemental = session.draft_round_type == "supplemental"
-        if remaining == 0:
+        completed = _resolve_caps_and_completion(session)
+        if completed:
             session.status = "completed"
             session.completed_at = datetime.now(timezone.utc)
             if not session.is_mock:
@@ -278,7 +360,7 @@ def make_pick(session_id, player_id, is_auto=False):
                     )
 
             # Draft completed notification
-            if remaining == 0:
+            if completed:
                 draft_label = "Supplemental draft" if is_supplemental else "Draft"
                 all_teams = FantasyTeam.query.filter_by(league_id=session.league_id).all()
                 for t in all_teams:
@@ -362,14 +444,9 @@ def pass_pick(session_id):
         current_pick.is_pass = True
         current_pick.picked_at = datetime.now(timezone.utc)
 
-        # Check if draft is complete (all picks either have a player or are passed)
-        remaining = (
-            DraftPick.query
-            .filter_by(draft_session_id=session_id, player_id=None)
-            .filter(DraftPick.is_pass == False)
-            .count()
-        )
-        if remaining == 0:
+        # Auto-pass full teams + decide completion (cap-aware for supplementals).
+        completed = _resolve_caps_and_completion(session)
+        if completed:
             session.status = "completed"
             session.completed_at = datetime.now(timezone.utc)
             if not session.is_mock:
@@ -380,7 +457,7 @@ def pass_pick(session_id):
         db.session.commit()
 
         # Draft completed notification (via pass)
-        if remaining == 0 and not session.is_mock:
+        if completed and not session.is_mock:
             from models.notification_manager import create_notification
             draft_label = "Supplemental draft" if session.draft_round_type == "supplemental" else "Draft"
             all_teams = FantasyTeam.query.filter_by(league_id=session.league_id).all()
