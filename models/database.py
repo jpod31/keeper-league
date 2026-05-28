@@ -187,6 +187,33 @@ class StateLeagueStat(db.Model):
     )
 
 
+class AflListHistory(db.Model):
+    """A player's AFL club for a given season, including list-only (no senior
+    game) seasons. Sourced from draftguru.com.au — the only feed that records
+    non-playing list stints (match-stats feeds are games-only). Drives the
+    "AFL Career" timeline on the player profile.
+    """
+    __tablename__ = "afl_list_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=True, index=True)
+    player_name = db.Column(db.String(120), nullable=False)
+    season = db.Column(db.Integer, nullable=False)
+    club = db.Column(db.String(80), nullable=False)
+    list_type = db.Column(db.String(20))   # rookie / senior / primary
+    games = db.Column(db.Integer, default=0)
+    source = db.Column(db.String(20), default="draftguru")
+
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    list_player = db.relationship("AflPlayer", backref="list_history")
+
+    __table_args__ = (
+        db.UniqueConstraint("player_name", "season", "club",
+                            name="uq_list_history_player_season_club"),
+    )
+
+
 # ── AFL game schedule (for live scoring + lockouts) ──────────────────
 
 

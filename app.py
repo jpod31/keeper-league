@@ -907,59 +907,45 @@ def create_app():
                     state_league_data = state_league_data or {}
                     state_league_data["u18"] = _build_section(sl_u18)
 
-            # AFL team history — build from CSV data + state league listings
-            afl_team_history = []
+            # AFL team history — authoritative club-by-year from AflListHistory
+            # (draftguru list/draft data). This is the ONLY source that records
+            # the AFL club for seasons a player was listed but played no senior
+            # games (e.g. delisted-then-redrafted players). Match-stats feeds are
+            # games-only; the old code had no historical-club source and so
+            # smeared the player's CURRENT club across every past season.
             from config import TEAM_LOGOS
-            import pandas as pd
-            import os as _os
+            from models.database import AflListHistory as _ALH
 
-            year_team = {}  # {year: (team_name, games_played)}
-            data_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "data")
+            afl_team_history = []
+            lh_rows = _ALH.query.filter(
+                db.or_(_ALH.player_id == afl_row.id, _ALH.player_name == name)
+            ).order_by(_ALH.season).all()
 
-            # 1. Scan player_stats CSVs for actual team per year
-            for yr in range(2013, config.CURRENT_YEAR + 1):
-                csv_path = _os.path.join(data_dir, f"player_stats_{yr}.csv")
-                if not _os.path.exists(csv_path):
-                    continue
-                try:
-                    df = pd.read_csv(csv_path, low_memory=False)
-                    if "Player" not in df.columns or "Team" not in df.columns:
-                        continue
-                    player_rows = df[df["Player"] == name]
-                    if len(player_rows):
-                        team = player_rows["Team"].mode().iloc[0] if len(player_rows) > 0 else None
-                        if team:
-                            year_team[yr] = (team, len(player_rows))
-                except Exception:
-                    pass
-
-            # 2. Fill gaps from StateLeagueStat (AFL-listed but 0 AFL games)
-            from models.database import StateLeagueStat as _SLS
-            sl_listed = _SLS.query.filter(
-                db.or_(_SLS.player_id == afl_row.id, _SLS.player_name == name),
-                _SLS.is_afl_listed == True,
-            ).all()
-            for sl in sl_listed:
-                if sl.season not in year_team:
-                    # Listed at an AFL club but no AFL games — find which club
-                    # Try to infer from adjacent years or current team
-                    prev_team = year_team.get(sl.season - 1, (None, 0))[0]
-                    next_team = year_team.get(sl.season + 1, (None, 0))[0]
-                    team = prev_team or next_team or afl_row.afl_team
-                    year_team[sl.season] = (team, 0)
-
-            # 3. Current year — always show even if no games yet
-            if config.CURRENT_YEAR not in year_team and afl_row.afl_team:
-                year_team[config.CURRENT_YEAR] = (afl_row.afl_team, 0)
-
-            # Build history list
-            for yr in sorted(year_team.keys()):
-                team, games = year_team[yr]
+            # One club per season (keep the listing with the most games if a
+            # mid-year move produced two rows for a season).
+            by_year = {}
+            for r in lh_rows:
+                cur = by_year.get(r.season)
+                if cur is None or (r.games or 0) > (cur.games or 0):
+                    by_year[r.season] = r
+            for yr in sorted(by_year):
+                r = by_year[yr]
                 afl_team_history.append({
                     "year": yr,
-                    "team": team,
-                    "logo": TEAM_LOGOS.get(team),
-                    "games": games,
+                    "team": r.club,
+                    "logo": TEAM_LOGOS.get(r.club),
+                    "games": r.games or 0,
+                })
+
+            # Fallback: no list history yet (backfill not run, or no draftguru
+            # match) — show just the current listing so the widget isn't empty
+            # and, crucially, doesn't fabricate past seasons.
+            if not afl_team_history and afl_row.afl_team:
+                afl_team_history.append({
+                    "year": config.CURRENT_YEAR,
+                    "team": afl_row.afl_team,
+                    "logo": TEAM_LOGOS.get(afl_row.afl_team),
+                    "games": 0,
                 })
 
         return render_template("player.html",
