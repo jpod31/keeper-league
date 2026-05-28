@@ -114,6 +114,24 @@
   --kl-radius-sm: 8px;
   --kl-radius-md: 12px;
   --kl-radius-lg: 16px;
+  --kl-radius-pill: 999px;
+  /* ── Elevation (3-tier; pair with --kl-border for crisp edges, not glass) ── */
+  --kl-elev-1: 0 1px 2px rgba(0,0,0,.25);
+  --kl-elev-2: 0 4px 14px rgba(0,0,0,.38);
+  --kl-elev-3: 0 14px 36px rgba(0,0,0,.52);
+  /* ── Motion (prefer these over ad-hoc seconds; respect reduced-motion) ── */
+  --kl-dur-fast: .12s;
+  --kl-dur-base: .2s;
+  --kl-dur-slow: .32s;
+  --kl-ease: cubic-bezier(.4, 0, .2, 1);
+  --kl-ease-out: cubic-bezier(.16, 1, .3, 1);
+  /* ── Semantic state colours (always pair colour with an icon/shape too) ── */
+  --kl-live: #f85149;
+  --kl-locked: #6c7892;
+  --kl-injured: #f85149;
+  --kl-suspended: #d29922;
+  --kl-rookie: #2dd4bf;
+  --kl-keeper: #bc8cff;
 }
 
 /* ══════════════════════════════════════════════════
@@ -2092,6 +2110,49 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   opacity: 1;
   border-color: rgba(45,212,191,.3);
   background: linear-gradient(135deg, rgba(45,212,191,.1), var(--kl-bg-card) 60%);
+}
+
+/* ═══ Bench & Lists (segmented) ═══ (#3 progressive disclosure)
+   Reserves / Emergencies / 7s / Injury / Rookies under one tab strip so the
+   squad page no longer stacks five full-width sections. */
+.fv-bench { margin-top: var(--space-5); }
+.fv-bench-tabs {
+  display: flex; flex-wrap: wrap; gap: var(--space-2);
+  border-bottom: 1px solid var(--kl-border);
+  padding-bottom: var(--space-3); margin-bottom: var(--space-4);
+}
+.fv-bench-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px; border-radius: var(--kl-radius-pill);
+  border: 1px solid var(--kl-border); background: var(--kl-bg-surface);
+  color: var(--kl-text-secondary); font-size: .8rem; font-weight: 600;
+  cursor: pointer;
+  transition: background var(--kl-dur-fast) var(--kl-ease),
+              color var(--kl-dur-fast) var(--kl-ease),
+              border-color var(--kl-dur-fast) var(--kl-ease);
+}
+.fv-bench-tab:hover { color: var(--kl-text-primary); border-color: var(--kl-border-light); }
+.fv-bench-tab.active {
+  background: rgba(88,166,255,.12);
+  border-color: rgba(88,166,255,.42);
+  color: var(--kl-text-heading);
+}
+.fv-bench-tab i { font-size: .85rem; opacity: .85; }
+.fv-bench-count {
+  background: rgba(255,255,255,.06); color: var(--kl-text-secondary);
+  border-radius: var(--kl-radius-pill); padding: 0 7px;
+  font-size: .72rem; line-height: 1.55; font-weight: 700;
+}
+.fv-bench-tab.active .fv-bench-count { background: rgba(88,166,255,.26); color: #cfe3ff; }
+.fv-bench-body { animation: fv-bench-fade var(--kl-dur-base) var(--kl-ease-out); }
+@keyframes fv-bench-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fv-bench-body { animation: none; } }
+/* Expanded mode (swap / bye preview): blocks stacked, lightweight headers. */
+.fv-bench-expanded .fv-bench-block { margin-top: var(--space-4); }
+.fv-bench-block-hdr {
+  font-size: .8rem; font-weight: 700; color: var(--kl-text-secondary);
+  margin-bottom: var(--space-3); display: flex; align-items: center;
+  padding-left: var(--space-1); border-left: 3px solid var(--kl-border-light);
 }
 
 /* ═══ LTIL Section ═══ */
@@ -9668,3 +9729,17 @@ th.sortable:hover { color: #58a6ff; }
 }
 .kl-window-badge-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kl-window-badge-text strong { color: var(--kl-text-secondary); font-weight: 700; }
+
+/* ── Lineup status anchor (#16) — glanceable "is my field set" on My Team ── */
+.kl-lineup-status {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: var(--kl-radius-md);
+  margin-bottom: var(--space-4); border: 1px solid var(--kl-border);
+  font-size: .85rem; color: var(--kl-text-primary);
+}
+.kl-lineup-status.ok { background: rgba(63,185,80,.08); border-color: rgba(63,185,80,.28); }
+.kl-lineup-status.warn { background: rgba(210,153,34,.10); border-color: rgba(210,153,34,.35); }
+.kl-lineup-status-dot { font-size: 1rem; display: grid; place-items: center; }
+.kl-lineup-status.ok .kl-lineup-status-dot { color: var(--kl-accent-green); }
+.kl-lineup-status.warn .kl-lineup-status-dot { color: var(--kl-accent-yellow); }
+.kl-lineup-status-text strong { color: var(--kl-text-heading); font-weight: 700; }

@@ -626,6 +626,21 @@ function SquadPageInner() {
             <HistoricalSquadView leagueId={leagueId!} teamId={teamId!} round={archiveRound} />
           )}
           {archiveRound == null && (<>
+          {is_owner && (() => {
+            const empty = ['DEF', 'MID', 'RUC', 'FWD'].reduce((n, pos) =>
+              n + Math.max(0, (fd.slot_counts[pos] || 0) - (fd.zones[pos] || []).filter(Boolean).length), 0)
+              + Math.max(0, (fd.flex_count || 0) - fd.flex_data.filter(s => s.player).length)
+            return (
+              <div className={`kl-lineup-status ${empty > 0 ? 'warn' : 'ok'}`}>
+                <span className="kl-lineup-status-dot"><i className={`bi ${empty > 0 ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'}`}></i></span>
+                <span className="kl-lineup-status-text">
+                  {empty > 0
+                    ? <><strong>{empty} {empty === 1 ? 'spot' : 'spots'} to fill</strong> on the field</>
+                    : <><strong>Lineup set</strong> — every field position filled</>}
+                </span>
+              </div>
+            )
+          })()}
           <FieldView fd={fd} teamLogos={data.team_logos} isOwner={is_owner}
             delistContext={delistContext}
             byeIds={byePreviewRound != null ? byePreviewIds : undefined}
