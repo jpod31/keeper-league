@@ -2009,6 +2009,26 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   box-shadow: 0 0 8px rgba(255,140,20,.15);
 }
 
+/* ═══ Rookies Section ═══ (U22 + rating < 70, bench only) */
+.fv-rookies-section {
+  padding: .5rem 0;
+}
+.fv-rookies-hdr {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #5eead4;
+  margin-bottom: .75rem;
+  display: flex;
+  align-items: center;
+  padding-left: .25rem;
+  border-left: 3px solid #2dd4bf;
+}
+.fv-rookies-section .fv-card-reserve {
+  opacity: 1;
+  border-color: rgba(45,212,191,.3);
+  background: linear-gradient(135deg, rgba(45,212,191,.1), var(--kl-bg-card) 60%);
+}
+
 /* ═══ LTIL Section ═══ */
 .fv-ltil-section {
   background: #1a0f0f;

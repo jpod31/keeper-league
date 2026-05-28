@@ -465,6 +465,25 @@ def squad(league_id, team_id):
                     best = "MID"
                 reserves_by_pos.setdefault(best, []).append(p)
 
+        # Rookies: bench players who are young (<22) AND low-rated (<70 in the
+        # AFL ratings doc). Field / flex / 7s / emergency / injury already
+        # pulled their players out of `reserves` above, so this only catches
+        # genuine bench sitters — those take precedence as required.
+        def _is_rookie(p):
+            return (p.age is not None and p.age < 22
+                    and p.rating is not None and p.rating < 70)
+        rookies = [p for p in reserves if _is_rookie(p)]
+        if rookies:
+            _rookie_ids = {p.id for p in rookies}
+            reserves = [p for p in reserves if p.id not in _rookie_ids]
+            reserves_by_pos = {}
+            for p in reserves:
+                positions = (p.position or "MID").split("/")
+                best = min(positions, key=lambda x: _pos_priority.get(x, 99))
+                if best not in _pos_priority:
+                    best = "MID"
+                reserves_by_pos.setdefault(best, []).append(p)
+
         # Form arrows (up/down/flat) for field view
         from models.form_utils import compute_player_form
         all_pids = [p.id for p in players if p]
@@ -488,6 +507,7 @@ def squad(league_id, team_id):
             "flex_count": flex_count,
             "reserves": reserves,
             "reserves_by_pos": reserves_by_pos,
+            "rookies": rookies,
             "cap_id": cap_id,
             "vc_id": vc_id,
             "slot_counts": slot_counts,
@@ -680,6 +700,7 @@ def squad(league_id, team_id):
                 "vc_id": fd.get("vc_id"),
                 "reserves": [_serialize_player(p) for p in fd.get("reserves", [])],
                 "reserves_by_pos": {pos: [_serialize_player(p) for p in plist] for pos, plist in fd.get("reserves_by_pos", {}).items()},
+                "rookies": [_serialize_player(p) for p in fd.get("rookies", [])],
                 "emergency_players": [_serialize_player(p) for p in fd.get("emergency_players", [])],
                 "emergency_ids": list(fd.get("emergency_ids", [])),
                 "sevens_players": [_serialize_player(p) for p in fd.get("sevens_players", [])],

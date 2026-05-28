@@ -770,6 +770,17 @@ def lineup(league_id, team_id, round_num):
 
     flex_data = [{"player": flex_slots[i] if i < len(flex_slots) else None} for i in range(flex_count)]
 
+    # Rookies: bench players under 22 with rating < 70 (AFL ratings doc).
+    # Field / flex / emergency slots are already excluded from `reserves`, so
+    # only genuine bench sitters land here — those sections take precedence.
+    def _is_rookie_sp(sp):
+        return (sp.get("age") and sp["age"] < 22
+                and sp.get("rating") is not None and sp["rating"] < 70)
+    rookies = [sp for sp in reserves if _is_rookie_sp(sp)]
+    if rookies:
+        _rk_ids = {sp["id"] for sp in rookies}
+        reserves = [sp for sp in reserves if sp["id"] not in _rk_ids]
+
     reserves_by_pos = {}
     for sp in reserves:
         primary = (sp["position"] or "MID").split("/")[0]
@@ -783,6 +794,7 @@ def lineup(league_id, team_id, round_num):
         "vc_id": vc_id,
         "reserves": reserves,
         "reserves_by_pos": reserves_by_pos,
+        "rookies": rookies,
         "emergency_players": emergency_players,
         "emergency_ids": emergency_ids,
         "sevens_players": [],

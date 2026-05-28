@@ -16,6 +16,7 @@ export interface FieldData {
   flex_data: { player: Player | null }[]
   flex_count: number; cap_id: number | null; vc_id: number | null
   reserves: Player[]; reserves_by_pos: Record<string, Player[]>
+  rookies?: Player[]
   emergency_players: Player[]; emergency_ids: number[]
   sevens_players: Player[]; sevens_ids: number[]; sevens_captain_id: number | null
   sevens_captain_enabled: boolean; has_7s_fixture: boolean
@@ -78,6 +79,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     pending_ltil_count: rawFd.pending_ltil_count || 0,
     player_form: rawFd.player_form || {},
     reserves_by_pos: rawFd.reserves_by_pos || {},
+    rookies: rawFd.rookies || [],
     cap_locked: rawFd.cap_locked || false,
     vc_locked: rawFd.vc_locked || false,
     ssp_window_active: rawFd.ssp_window_active || false,
@@ -468,6 +470,14 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Rookies — bench players U22 with rating < 70 */}
+      {(fd.rookies?.length ?? 0) > 0 && (
+        <div className="fv-rookies-section">
+          <div className="fv-rookies-hdr"><i className="bi bi-stars me-1"></i>Rookies<span className="fv-zone-tally ms-2">{fd.rookies!.length}</span></div>
+          <div className="fv-reserves-grid">{fd.rookies!.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
         </div>
       )}
     </div>

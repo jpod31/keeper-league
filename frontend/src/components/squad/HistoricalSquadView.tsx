@@ -149,6 +149,15 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
             {fd.reserves.map(p => <MobRow key={p.id} p={p} />)}
           </div>
         )}
+        {(fd.rookies?.length ?? 0) > 0 && (
+          <div className="mob-pos-group">
+            <div className="mob-pos-header" style={{ background: 'rgba(45,212,191,.12)', borderLeft: '3px solid #2dd4bf' }}>
+              <span className="mob-pos-label" style={{ color: '#2dd4bf' }}><i className="bi bi-stars me-1"></i>ROOKIES</span>
+              <span className="mob-pos-count">{fd.rookies!.length}</span>
+            </div>
+            {fd.rookies!.map(p => <MobRow key={p.id} p={p} />)}
+          </div>
+        )}
       </div>
     </div>
   )
