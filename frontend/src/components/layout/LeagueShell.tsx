@@ -243,7 +243,7 @@ function LeagueShellInner() {
                   <i className="bi bi-list-check"></i><span>Draft Room</span>
                 </div>
               )}
-              <div className="more-sheet-item" onClick={() => navigate(`/leagues/${lid}/chat`)}>
+              <div className="more-sheet-item" onClick={() => navigate(`/leagues/${lid}/messages`)}>
                 <i className="bi bi-megaphone"></i><span>Comms</span>
               </div>
               {league.is_commissioner ? (
@@ -481,7 +481,13 @@ function LeagueRail({
   if (activeDraft) {
     sections.push({ to: `/leagues/${lid}/draft`, key: 'draft', icon: 'bi-list-check', label: 'Draft Room', pulse: true })
   }
-  sections.push({ to: `/leagues/${lid}/chat`, key: 'comms', icon: 'bi-megaphone-fill', label: 'Comms' })
+  sections.push({
+    to: `/leagues/${lid}/messages`, key: 'comms', icon: 'bi-megaphone-fill', label: 'Comms',
+    sub: [
+      { to: `/leagues/${lid}/messages`, key: 'messages', label: 'Messages' },
+      { to: `/leagues/${lid}/activity`, key: 'activity',  label: 'Activity' },
+    ],
+  })
   if (isCommissioner) {
     sections.push({ to: `/leagues/${lid}/commissioner`, key: 'commissioner', icon: 'bi-shield-lock-fill', label: 'Admin', badge: pendingLtilCount })
   } else {

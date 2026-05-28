@@ -9388,3 +9388,111 @@ th.sortable:hover { color: #58a6ff; }
   }
 }
 @keyframes kl-sheet-up { from { transform: translateY(100%); opacity: .6; } }
+
+/* ===========================================================
+   MESSENGER — unified comms (League Chat pinned + DMs)
+   =========================================================== */
+.msgr {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  height: calc(100dvh - 140px);
+  min-height: 420px;
+}
+.msgr-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--kl-border);
+  border-radius: 14px;
+  background: var(--kl-bg-card);
+  overflow-y: auto;
+}
+.msgr-list-head {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  font-weight: 800; font-size: .95rem; color: var(--kl-text-heading);
+  background: var(--kl-bg-card);
+  border-bottom: 1px solid var(--kl-border);
+}
+.msgr-new-btn {
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--kl-border);
+  color: var(--kl-text-secondary);
+  width: 30px; height: 30px; border-radius: 8px;
+  display: grid; place-items: center; cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.msgr-new-btn:hover { background: rgba(88,166,255,.14); color: var(--kl-accent-blue); }
+.msgr-new { padding: 12px 14px; border-bottom: 1px solid var(--kl-border); background: rgba(255,255,255,.02); }
+.msgr-list-divider {
+  padding: 12px 16px 4px;
+  font-size: .6rem; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--kl-text-muted);
+}
+.msgr-empty-dm { padding: 6px 16px 16px; font-size: .78rem; color: var(--kl-text-muted); }
+
+.msgr-convo {
+  display: flex; align-items: center; gap: 11px;
+  width: 100%; text-align: left;
+  padding: 11px 14px;
+  background: transparent; border: 0;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  cursor: pointer; color: inherit; font-family: inherit;
+  transition: background .12s;
+}
+.msgr-convo:hover { background: rgba(255,255,255,.03); }
+.msgr-convo.active { background: rgba(88,166,255,.08); border-left-color: var(--kl-accent-blue); }
+.msgr-convo-league.active { background: rgba(63,185,80,.08); border-left-color: var(--kl-accent-green); }
+.msgr-avatar {
+  width: 38px; height: 38px; flex: 0 0 38px; border-radius: 10px;
+  display: grid; place-items: center; font-weight: 800; font-size: .72rem;
+  background: rgba(110,130,180,.16); color: var(--kl-text-secondary);
+}
+.msgr-avatar-group { background: rgba(63,185,80,.16); color: var(--kl-accent-green); font-size: 1rem; }
+.msgr-convo-body { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 1px; }
+.msgr-convo-name { font-weight: 700; font-size: .86rem; color: var(--kl-text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msgr-convo-preview { font-size: .74rem; color: var(--kl-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msgr-convo.unread .msgr-convo-name { color: #fff; }
+.msgr-convo.unread .msgr-convo-preview { color: var(--kl-text-secondary); font-weight: 600; }
+.msgr-convo-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: 0 0 auto; }
+.msgr-convo-time { font-size: .66rem; color: var(--kl-text-muted); }
+.msgr-unread-badge {
+  background: var(--kl-accent-red, #f85149); color: #fff;
+  font-size: .6rem; font-weight: 800; min-width: 18px; height: 18px;
+  border-radius: 999px; display: grid; place-items: center; padding: 0 5px;
+}
+
+.msgr-thread {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--kl-border); border-radius: 14px;
+  background: var(--kl-bg-card); overflow: hidden;
+  min-width: 0;
+}
+.msgr-thread-head {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 11px;
+  padding: 12px 16px; border-bottom: 1px solid var(--kl-border);
+}
+.msgr-back { display: none; background: none; border: 0; color: var(--kl-text-secondary); font-size: 1.15rem; padding: 0 2px 0 0; cursor: pointer; }
+.msgr-thread-title { display: flex; flex-direction: column; min-width: 0; }
+.msgr-thread-name { font-weight: 800; font-size: .95rem; color: var(--kl-text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msgr-thread-sub { font-size: .7rem; color: var(--kl-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msgr-thread-body { flex: 1 1 auto; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.msgr-row { display: flex; }
+.msgr-row.mine { justify-content: flex-end; }
+.msgr-bubble { max-width: 72%; padding: 7px 11px; border-radius: 12px; background: var(--kl-bg-elevated, #1c2128); }
+.msgr-row.mine .msgr-bubble { background: rgba(88,166,255,.16); }
+.msgr-sender { font-size: .68rem; font-weight: 700; color: var(--kl-accent-blue); margin-bottom: 2px; }
+.msgr-text { font-size: .86rem; color: var(--kl-text-primary); overflow-wrap: anywhere; }
+.msgr-time { font-size: .6rem; color: var(--kl-text-muted); margin-top: 2px; text-align: right; }
+.msgr-composer { flex: 0 0 auto; display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--kl-border); }
+
+@media (max-width: 991.98px) {
+  .msgr { grid-template-columns: 1fr; height: calc(100dvh - 170px); gap: 0; }
+  .msgr-back { display: inline-flex; }
+  /* One pane at a time: list by default, thread when one is open. */
+  .msgr:not(.show-thread) .msgr-thread { display: none; }
+  .msgr.show-thread .msgr-list { display: none; }
+}

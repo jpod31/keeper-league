@@ -58,11 +58,9 @@ import { TradeProposePage } from './pages/trades/TradeProposePage'
 import { TradeDetailPage } from './pages/trades/TradeDetailPage'
 
 // Comms pages
-import { LeagueChatPage } from './pages/comms/LeagueChatPage'
 import { NotificationsPage } from './pages/comms/NotificationsPage'
 import { ActivityFeedPage } from './pages/comms/ActivityFeedPage'
-import { InboxPage } from './pages/comms/InboxPage'
-import { ConversationPage } from './pages/comms/ConversationPage'
+import { MessagesPage } from './pages/comms/MessagesPage'
 
 // Player pages
 import { PlayerPoolPage } from './pages/players/PlayerPoolPage'
@@ -128,12 +126,12 @@ export default function App() {
           <Route path="trades/propose" element={<TradeProposePage />} />
           <Route path="trades/:tradeId" element={<TradeDetailPage />} />
 
-          {/* Comms */}
-          <Route path="chat" element={<LeagueChatPage />} />
+          {/* Comms — unified messenger (league chat = pinned group convo) */}
+          <Route path="chat" element={<Navigate to="../messages/league" replace />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="activity" element={<ActivityFeedPage />} />
-          <Route path="messages" element={<InboxPage />} />
-          <Route path="messages/:convoId" element={<ConversationPage />} />
+          <Route path="messages" element={<MessagesPage />} />
+          <Route path="messages/:convoId" element={<MessagesPage />} />
 
           {/* Players */}
           <Route path="player-pool" element={<PlayerPoolPage />} />
