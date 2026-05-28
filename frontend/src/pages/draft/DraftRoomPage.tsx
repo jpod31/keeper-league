@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { api } from '../../lib/api'
 import { DraftSkeleton } from '../../components/ui/DraftSkeleton'
 import { useSocket } from '../../hooks/useSocket'
+import { useWishlist } from '../../hooks/useWishlist'
 
 interface PickHistoryEntry {
   pick_number: number
@@ -519,6 +520,12 @@ export function DraftRoomPage() {
   const [showEndDraftModal, setShowEndDraftModal] = useState(false)
   const [commOverride, setCommOverride] = useState(false)
 
+  // Pre-draft queue (preselected picks) + wishlist board
+  const [queue, setQueue] = useState<{ player_id: number; player_name: string | null; priority: number }[]>([])
+  const [boardTab, setBoardTab] = useState<'queue' | 'wishlist'>('queue')
+  const wishlist = useWishlist(leagueId)
+  const queuedIds = useMemo(() => new Set(queue.map(q => q.player_id)), [queue])
+
   const [chatOpen, setChatOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 992)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
@@ -602,8 +609,31 @@ export function DraftRoomPage() {
       .catch(() => setAvailable([]))
   }, [leagueId, search, posFilter, clubFilter, weights])
 
+  // Pre-draft queue
+  const fetchQueue = useCallback(() => {
+    if (!data?.user_team) return
+    fetch(`/leagues/${leagueId}/draft/api/queue`, { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(q => setQueue(Array.isArray(q) ? q : []))
+      .catch(() => {})
+  }, [leagueId, data?.user_team])
+
+  const addToQueue = useCallback((playerId: number) => {
+    fetch(`/leagues/${leagueId}/draft/api/queue`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: playerId }), credentials: 'same-origin',
+    }).then(() => fetchQueue()).catch(() => {})
+  }, [leagueId, fetchQueue])
+
+  const removeFromQueue = useCallback((playerId: number) => {
+    fetch(`/leagues/${leagueId}/draft/api/queue`, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: playerId }), credentials: 'same-origin',
+    }).then(() => fetchQueue()).catch(() => {})
+  }, [leagueId, fetchQueue])
+
   useEffect(() => { if (data) fetchAvailable() }, [data, fetchAvailable])
-  useEffect(() => { if (data) { fetchPositionNeeds(); fetchYourTeamPicks() } }, [data, fetchPositionNeeds, fetchYourTeamPicks])
+  useEffect(() => { if (data) { fetchPositionNeeds(); fetchYourTeamPicks(); fetchQueue() } }, [data, fetchPositionNeeds, fetchYourTeamPicks, fetchQueue])
 
   // Load chat history once
   useEffect(() => {
@@ -629,6 +659,7 @@ export function DraftRoomPage() {
         fetchPositionNeeds()
         fetchYourTeamPicks()
         fetchAvailable()
+        fetchQueue()
       },
       pick_made: p => {
         const pick = p as PickHistoryEntry
@@ -995,7 +1026,7 @@ export function DraftRoomPage() {
                 </h5>
                 <div className="d-flex gap-1 align-items-center">
                   {state.status === 'in_progress' && (
-                    <button className="btn btn-outline-warning py-0 px-2" onClick={() => setShowPassModal(true)} style={{ fontSize: '.7rem' }} title="Pass on this pick">
+                    <button className="btn btn-outline-warning py-0 px-2" onClick={() => setShowPassModal(true)} disabled={!canPick} style={{ fontSize: '.7rem' }} title={canPick ? 'Pass on this pick' : 'You can pass when it’s your turn'}>
                       <i className="bi bi-skip-forward me-1"></i>Pass
                     </button>
                   )}
@@ -1120,15 +1151,25 @@ export function DraftRoomPage() {
                         <td className="stat-cell"><span className={`draft-stat-chip ${potentialTier(p.potential)}`}>{p.potential ?? '–'}</span></td>
                         <td className="stat-cell"><span className="draft-stat-chip draft-score">{p.draft_score != null ? p.draft_score.toFixed(1) : '–'}</span></td>
                         <td>
-                          <button
-                            className="btn btn-outline-primary btn-sm py-0 px-2"
-                            onClick={() => canPick && pickPlayer(p.id)}
-                            disabled={!canPick}
-                            title={blocked ? 'Position blocked — draft other positions first' : ''}
-                            style={{ fontSize: '.7rem' }}
-                          >
-                            {blocked ? <i className="bi bi-lock-fill"></i> : 'Pick'}
-                          </button>
+                          <div className="d-flex gap-1 justify-content-end align-items-center">
+                            <button
+                              className={`btn btn-sm py-0 px-2 ${queuedIds.has(p.id) ? 'btn-warning' : 'btn-outline-secondary'}`}
+                              onClick={() => queuedIds.has(p.id) ? removeFromQueue(p.id) : addToQueue(p.id)}
+                              title={queuedIds.has(p.id) ? 'Remove from your queue' : 'Add to your pre-draft queue'}
+                              style={{ fontSize: '.7rem' }}
+                            >
+                              <i className={`bi ${queuedIds.has(p.id) ? 'bi-bookmark-check-fill' : 'bi-bookmark-plus'}`}></i>
+                            </button>
+                            <button
+                              className="btn btn-outline-primary btn-sm py-0 px-2"
+                              onClick={() => canPick && pickPlayer(p.id)}
+                              disabled={!canPick}
+                              title={blocked ? 'Position blocked — draft other positions first' : ''}
+                              style={{ fontSize: '.7rem' }}
+                            >
+                              {blocked ? <i className="bi bi-lock-fill"></i> : 'Pick'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -1142,6 +1183,75 @@ export function DraftRoomPage() {
         {/* Right column */}
         <div className="col-lg-5">
           <div className="draft-right-col">
+            {/* Draft board — your pre-draft queue + wishlist */}
+            {user_team && (() => {
+              const wishlistAvail = available.filter(p => wishlist.ids.has(p.id))
+              return (
+                <div className="card" style={{ flexShrink: 0 }}>
+                  <div className="card-header d-flex justify-content-between align-items-center">
+                    <div className="btn-group btn-group-sm" role="group">
+                      <button type="button" className={`btn btn-sm btn-outline-secondary${boardTab === 'queue' ? ' active' : ''}`} onClick={() => setBoardTab('queue')} style={{ fontSize: '.72rem', padding: '2px 10px' }}>
+                        <i className="bi bi-bookmark-star me-1"></i>Queue{queue.length > 0 ? ` (${queue.length})` : ''}
+                      </button>
+                      <button type="button" className={`btn btn-sm btn-outline-secondary${boardTab === 'wishlist' ? ' active' : ''}`} onClick={() => setBoardTab('wishlist')} style={{ fontSize: '.72rem', padding: '2px 10px' }}>
+                        <i className="bi bi-star me-1"></i>Wishlist{wishlistAvail.length > 0 ? ` (${wishlistAvail.length})` : ''}
+                      </button>
+                    </div>
+                    {boardTab === 'queue' && queue.length > 0 && (
+                      <span className="badge" style={{ background: '#21262d', color: '#8b949e', fontSize: '.68rem' }}>auto-pick order</span>
+                    )}
+                  </div>
+                  <div className="card-body p-0" style={{ overflowY: 'auto', maxHeight: 240 }}>
+                    {boardTab === 'queue' ? (
+                      queue.length === 0 ? (
+                        <div className="text-center" style={{ color: '#6c7892', fontSize: '.76rem', padding: '14px 16px', lineHeight: 1.5 }}>
+                          Tap <i className="bi bi-bookmark-plus"></i> on players to line up your picks. When it's your turn just hit <strong>Pick</strong> here — and if your timer runs out, the top available player in this list is auto-drafted.
+                        </div>
+                      ) : (
+                        <table className="table table-sm mb-0">
+                          <tbody>
+                            {queue.map((q, i) => (
+                              <tr key={q.player_id}>
+                                <td style={{ color: '#6c7892', width: 22 }}>{i + 1}</td>
+                                <td className="player-name">{q.player_name}</td>
+                                <td className="text-end" style={{ width: 96, whiteSpace: 'nowrap' }}>
+                                  <button className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!canPick} onClick={() => canPick && pickPlayer(q.player_id)} style={{ fontSize: '.68rem' }}>Pick</button>
+                                  <button className="btn btn-link p-0 ms-2" onClick={() => removeFromQueue(q.player_id)} title="Remove" style={{ color: '#f85149', fontSize: '.8rem' }}><i className="bi bi-x-lg"></i></button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )
+                    ) : (
+                      wishlistAvail.length === 0 ? (
+                        <div className="text-center" style={{ color: '#6c7892', fontSize: '.76rem', padding: '14px 16px', lineHeight: 1.5 }}>
+                          Star players (★) anywhere in the app to build your wishlist — the available ones show here, ready to queue or draft.
+                        </div>
+                      ) : (
+                        <table className="table table-sm mb-0">
+                          <tbody>
+                            {wishlistAvail.map(p => (
+                              <tr key={p.id}>
+                                <td className="player-name">{p.name}</td>
+                                <td style={{ width: 48 }}>{p.position && <span className={`draft-pos-chip ${posClass(p.position)}`}>{p.position.split('/')[0]}</span>}</td>
+                                <td className="text-end" style={{ width: 110, whiteSpace: 'nowrap' }}>
+                                  <button className={`btn btn-sm py-0 px-2 ${queuedIds.has(p.id) ? 'btn-warning' : 'btn-outline-secondary'}`} onClick={() => queuedIds.has(p.id) ? removeFromQueue(p.id) : addToQueue(p.id)} title={queuedIds.has(p.id) ? 'Queued' : 'Add to queue'} style={{ fontSize: '.68rem' }}>
+                                    <i className={`bi ${queuedIds.has(p.id) ? 'bi-bookmark-check-fill' : 'bi-bookmark-plus'}`}></i>
+                                  </button>
+                                  <button className="btn btn-outline-primary btn-sm py-0 px-2 ms-1" disabled={!canPick} onClick={() => canPick && pickPlayer(p.id)} style={{ fontSize: '.68rem' }}>Pick</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
+
             {/* Pick history */}
             <div className="card" style={{ flex: 3 }}>
               <div className="card-header d-flex justify-content-between align-items-center">
