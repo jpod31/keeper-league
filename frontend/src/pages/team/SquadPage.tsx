@@ -43,6 +43,7 @@ interface SquadData {
   team_delist_count: number; min_delists: number; max_delists: number | null
   delisted_player_ids: number[]
   pending_incoming: number; trade_is_open: boolean; trade_close_date: string | null
+  next_window_open_at: string | null; next_window_label: string | null
   has_active_draft: boolean; active_draft_round: number | null; next_delist_info: string | null
   draft_status: string | null; draft_scheduled_at: string | null; is_commissioner: boolean
   selected_player_ids: number[]; emergency_ids_all: number[]; sevens_ids_all: number[]
@@ -370,10 +371,11 @@ function SquadPageInner() {
       )}
 
       {/* ── Trade-period centre ──
-              Temporary alerts that only appear during a trade/delist
-              window: cap status, delists left, incoming offers, window
-              countdown + a jump to the Trade Center. Its own grouping. */}
-      {is_owner && (data.trade_is_open || data.delist_is_open || data.over_squad || data.under_squad || data.pending_incoming > 0) && (
+              Only shown while a trade/delist window is actually OPEN: cap
+              status, delists left, incoming offers, window countdown + a jump
+              to the Trade Center. When closed it collapses to the compact
+              "next window opens" badge below. */}
+      {is_owner && (data.trade_is_open || data.delist_is_open) && (
         <div className="kl-status-pills kl-trade-centre">
           <span className="kl-trade-centre-label"><i className="bi bi-arrow-left-right"></i> Trade period</span>
           {data.over_squad && (
@@ -456,6 +458,23 @@ function SquadPageInner() {
               <i className="bi bi-arrow-right"></i>
             </Link>
           )}
+        </div>
+      )}
+
+      {/* ── Next-window badge ──
+              When no trade/delist window is open, the trade-period centre is
+              gone — replaced by this tiny pill showing when the next window
+              opens, so the page stays clean off-season/off-window. */}
+      {is_owner && !data.trade_is_open && !data.delist_is_open && data.next_window_open_at && (
+        <div
+          className="kl-window-badge"
+          title={`${data.next_window_label ?? 'Trade'} window opens ${new Date(data.next_window_open_at).toLocaleString()}`}
+        >
+          <span className="kl-window-badge-dot"><i className="bi bi-calendar-event"></i></span>
+          <span className="kl-window-badge-text">
+            {data.next_window_label ?? 'Trade'} window opens{' '}
+            <strong>{new Date(data.next_window_open_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</strong>
+          </span>
         </div>
       )}
 

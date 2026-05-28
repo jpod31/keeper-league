@@ -570,6 +570,8 @@ def squad(league_id, team_id):
     pending_incoming = 0
     trade_is_open = False
     trade_close_date = None
+    next_window_open_at = None
+    next_window_label = None
     has_active_draft = False
     active_draft_round = None
     draft_status = None
@@ -597,14 +599,25 @@ def squad(league_id, team_id):
             mid_open = _aware(season_cfg.mid_trade_window_open)
             off_close = _aware(season_cfg.off_trade_window_close)
             off_open = _aware(season_cfg.off_trade_window_open)
-            # Check mid-season trade window
-            if mid_open and mid_close and now_utc < mid_close:
+            # A window is OPEN only while now is between its open and close.
+            if mid_open and mid_close and mid_open <= now_utc < mid_close:
                 trade_is_open = True
                 trade_close_date = mid_close
-            # Check off-season trade window
-            elif off_open and off_close and now_utc < off_close:
+            elif off_open and off_close and off_open <= now_utc < off_close:
                 trade_is_open = True
                 trade_close_date = off_close
+            # When nothing's open, find the soonest FUTURE window to open so the
+            # page can show a compact "opens on" badge instead of the full
+            # trade-period centre.
+            if not trade_is_open:
+                upcoming = []
+                if mid_open and now_utc < mid_open:
+                    upcoming.append((mid_open, "Mid-season"))
+                if off_open and now_utc < off_open:
+                    upcoming.append((off_open, "Off-season"))
+                if upcoming:
+                    upcoming.sort(key=lambda x: x[0])
+                    next_window_open_at, next_window_label = upcoming[0]
 
         draft_live = DS2.query.filter_by(
             league_id=league_id, is_mock=False
@@ -830,6 +843,8 @@ def squad(league_id, team_id):
             "pending_incoming": pending_incoming,
             "trade_is_open": trade_is_open,
             "trade_close_date": trade_close_date.isoformat() if trade_close_date else None,
+            "next_window_open_at": next_window_open_at.isoformat() if next_window_open_at else None,
+            "next_window_label": next_window_label,
             "has_active_draft": has_active_draft,
             "active_draft_round": active_draft_round,
             "draft_status": draft_status,
