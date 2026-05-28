@@ -73,9 +73,11 @@ def squad(league_id, team_id):
     delisted_player_ids = set()
     next_delist_info = None
     if is_owner:
-        delist_period = DelistPeriod.query.filter_by(
-            league_id=league_id, year=league.season_year, status="open"
-        ).first()
+        from models.window_state import get_open_delist_period
+        # Date-checked: a stale status="open" whose closes_at has passed is NOT
+        # open (that was leaving the delist bubble on every card after the
+        # period ended).
+        delist_period = get_open_delist_period(league_id, league.season_year)
         if delist_period:
             delist_is_open = True
             min_delists = delist_period.min_delists or 0

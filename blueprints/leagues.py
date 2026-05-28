@@ -575,10 +575,9 @@ def dashboard(league_id):
                 league_id=league_id, proposer_team_id=user_team.id, status="pending",
             ).count()
 
-        # ── Delist period open? ──
-        delist_open = (_DP.query.filter_by(
-            league_id=league_id, year=league.season_year, status="open",
-        ).first() is not None)
+        # ── Delist period open? (date-checked — not a stale status flag) ──
+        from models.window_state import get_open_delist_period, is_trade_window_open
+        delist_open = get_open_delist_period(league_id, league.season_year) is not None
 
         return jsonify({
             "league": {
@@ -593,7 +592,7 @@ def dashboard(league_id):
                 "on_field_count": league.on_field_count,
                 "draft_type": league.draft_type,
                 "pick_timer_secs": league.pick_timer_secs,
-                "trade_window_open": bool(league.trade_window_open),
+                "trade_window_open": is_trade_window_open(league_id, league.season_year),
                 "trade_close_at": trade_close_at,
                 "commissioner_name": league.commissioner.display_name if league.commissioner else "?",
                 "invite_code": league.invite_code,
