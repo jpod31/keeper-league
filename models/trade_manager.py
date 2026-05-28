@@ -342,6 +342,10 @@ def get_league_trades(league_id, status=None):
 
 def _execute_trade(trade):
     """Swap roster entries and draft pick ownership for an accepted trade."""
+    from models.season_manager import drop_player_from_future_7s
+    from models.database import League as _League
+    _lg = db.session.get(_League, trade.league_id)
+    _year = _lg.season_year if _lg else None
     for asset in trade.assets:
         if asset.player_id:
             # Deactivate from source team
@@ -350,6 +354,9 @@ def _execute_trade(trade):
             ).first()
             if source_entry:
                 source_entry.is_active = False
+                # Player left this team — drop them from its upcoming 7s lineups.
+                if _year is not None:
+                    drop_player_from_future_7s(trade.league_id, asset.from_team_id, asset.player_id, _year)
 
             # Add to destination team
             dest_entry = FantasyRoster(

@@ -84,6 +84,29 @@ def close_delist_period(period_id):
     return period, None
 
 
+def drop_player_from_future_7s(league_id, team_id, player_id, year):
+    """Remove a player from a team's upcoming (current + future) 7s lineups
+    after they leave the roster (delist / trade / commissioner move). Past
+    completed rounds keep them for scoring history. No-op if the league
+    runs no 7s comp. Caller is responsible for committing.
+    """
+    from models.database import Reserve7sLineup
+    try:
+        from blueprints.reserve7s import _get_next_7s_round
+        next_round = _get_next_7s_round(league_id, year)
+    except Exception:
+        next_round = None
+    if next_round is None:
+        return
+    Reserve7sLineup.query.filter(
+        Reserve7sLineup.league_id == league_id,
+        Reserve7sLineup.team_id == team_id,
+        Reserve7sLineup.player_id == player_id,
+        Reserve7sLineup.year == year,
+        Reserve7sLineup.afl_round >= next_round,
+    ).delete(synchronize_session=False)
+
+
 def delist_player(period_id, team_id, player_id):
     """Delist a player from a team during an open delist period.
     Returns (action, None) on success or (None, error_msg) on failure.
@@ -118,8 +141,9 @@ def delist_player(period_id, team_id, player_id):
                 f"(max {period.max_delists})."
             )
 
-    # Deactivate from roster
+    # Deactivate from roster + drop from upcoming 7s lineups
     roster_entry.is_active = False
+    drop_player_from_future_7s(period.league_id, team_id, player_id, period.year)
 
     action = DelistAction(
         delist_period_id=period_id,

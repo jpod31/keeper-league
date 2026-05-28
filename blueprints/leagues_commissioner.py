@@ -402,6 +402,8 @@ def commissioner_delist(league_id):
     entry.is_captain = False
     entry.is_vice_captain = False
     entry.is_emergency = False
+    from models.season_manager import drop_player_from_future_7s
+    drop_player_from_future_7s(league_id, team_id, player_id, league.season_year)
     db.session.commit()
 
     return jsonify({"ok": True, "message": f"{player_name} delisted from {team.name}"})
@@ -448,11 +450,13 @@ def commissioner_force_move(league_id):
 
     player_name = entry.player.name if entry.player else f"Player {player_id}"
 
-    # Deactivate from source team
+    # Deactivate from source team + drop from its upcoming 7s lineups
     entry.is_active = False
     entry.is_captain = False
     entry.is_vice_captain = False
     entry.is_emergency = False
+    from models.season_manager import drop_player_from_future_7s
+    drop_player_from_future_7s(league_id, from_team_id, player_id, league.season_year)
 
     # Add to destination team
     new_entry = FantasyRoster(
