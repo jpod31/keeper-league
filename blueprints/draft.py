@@ -17,20 +17,35 @@ draft_bp = Blueprint("draft_live", __name__, url_prefix="/leagues",
 
 
 def _get_active_draft_session(league_id, include_mock=False):
-    """Return the most relevant active draft session (scheduled / in_progress /
-    paused). Excludes mock sessions by default.
+    """Return the most relevant draft session for the room: active
+    (scheduled / in_progress / paused), or — if none — a draft that COMPLETED
+    within the last 12h so the room (and its sub-endpoints: team picks,
+    available, position needs, chat) work as a results view right after it
+    finishes. Older completed drafts return None (per #35: don't resurface
+    stale drafts; full recap lives on DraftRecapPage). Excludes mocks.
 
-    Per #35: we previously fell back to the latest session (often a completed
-    one), which meant entering the Draft Room would surface a past draft
-    instead of the upcoming one. Completed drafts live on DraftRecapPage —
-    don't surface them here. Returns None if no upcoming/active session.
+    Action endpoints (update_schedule / end) status-guard, so a completed
+    session is handled gracefully there. The socket pick path uses its own
+    active-only lookup, so a completed draft can't be picked in.
     """
     q = DraftSession.query.filter_by(league_id=league_id)
     if not include_mock:
         q = q.filter(DraftSession.is_mock == False)
-    return q.filter(
+    session = q.filter(
         DraftSession.status.in_(["in_progress", "paused", "scheduled"])
     ).order_by(DraftSession.id.desc()).first()
+    if session:
+        return session
+    from datetime import datetime, timezone, timedelta
+    rc = (
+        DraftSession.query.filter_by(league_id=league_id, is_mock=False, status="completed")
+        .order_by(DraftSession.id.desc()).first()
+    )
+    if rc and rc.completed_at:
+        ca = rc.completed_at if rc.completed_at.tzinfo else rc.completed_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - ca < timedelta(hours=12):
+            return rc
+    return None
 
 
 # ── Cached score lookup to avoid re-ranking 786 players on every request ──
@@ -84,21 +99,6 @@ def draft_room(league_id):
         return redirect(url_for("leagues.league_list"))
 
     session = _get_active_draft_session(league_id)
-    if not session:
-        # Keep a JUST-completed draft viewable so the room becomes a results
-        # page rather than ejecting everyone the moment it finishes. Older
-        # completed drafts fall through to the empty/plan state (per #35).
-        from datetime import datetime, timezone, timedelta
-        recent_completed = (
-            DraftSession.query.filter_by(league_id=league_id, is_mock=False, status="completed")
-            .order_by(DraftSession.id.desc()).first()
-        )
-        if recent_completed and recent_completed.completed_at:
-            ca = recent_completed.completed_at
-            if ca.tzinfo is None:
-                ca = ca.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) - ca < timedelta(hours=12):
-                session = recent_completed
     if not session:
         # Per #35: don't redirect when there's no upcoming draft. SPA wants a
         # friendly empty-state page so the user can still browse the pool and
