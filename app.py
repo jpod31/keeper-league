@@ -176,15 +176,19 @@ def _sync_ratings_to_db(app):
                     if potential < 0 or potential > 100:
                         logger.warning("Potential %d out of range for %s — skipping", potential, name)
                         continue
-                xlsx_players.append((name.strip(), team.strip(), rating, potential, rating_start))
+                pos_raw = row[5] if len(row) > 5 else None
+                age_val = int(row[1]) if isinstance(row[1], (int, float)) else None
+                xlsx_players.append((name.strip(), team.strip(), rating, potential, rating_start, pos_raw, age_val))
             wb.close()
 
             # Build DB lookup: (lowercase name, team) -> AflPlayer
             all_db = AflPlayer.query.all()
             db_lookup = {}
+            name_lookup = {}
             for ap in all_db:
                 key = (ap.name.lower(), ap.afl_team)
                 db_lookup[key] = ap
+                name_lookup.setdefault(ap.name.lower(), []).append(ap)
 
             # Build reverse override map: (xlsx_name_lower, team) -> db AflPlayer
             override_lookup = {}
@@ -194,9 +198,13 @@ def _sync_ratings_to_db(app):
                     override_lookup[(xlsx_name.lower(), db_team)] = ap
 
             matched = 0
+            created = 0
             unmatched = []
+            # XLSX position codes → app DEF/MID/FWD/RUC (used when creating new players)
+            _POS_MAP = {"MID": "MID", "RUC": "RUC", "GD": "DEF", "KD": "DEF",
+                        "GF": "FWD", "KF": "FWD"}
 
-            for xlsx_name, xlsx_team, rating, potential, rating_start in xlsx_players:
+            for xlsx_name, xlsx_team, rating, potential, rating_start, pos_raw, age_val in xlsx_players:
                 # Pass 1: exact match on (name, team)
                 key = (xlsx_name.lower(), xlsx_team)
                 ap = db_lookup.get(key)
@@ -212,6 +220,14 @@ def _sync_ratings_to_db(app):
                         ap = db_lookup.get(key2)
                         if ap:
                             break
+
+                # Pass 4: single existing player with this exact name but a
+                # different team (mid-year trade / team mismatch) — update them
+                # rather than creating a duplicate. Skip if the name is ambiguous.
+                if ap is None:
+                    same_name = name_lookup.get(xlsx_name.lower())
+                    if same_name and len(same_name) == 1:
+                        ap = same_name[0]
 
                 if ap:
                     # Only log GENUINE rating changes — a known prior rating
@@ -237,11 +253,34 @@ def _sync_ratings_to_db(app):
                         ap.rating_start = rating_start
                     matched += 1
                 else:
-                    unmatched.append((xlsx_name, xlsx_team))
+                    # Genuinely new player (e.g. a debutant the user added to
+                    # the XLSX) — create them so they hit the pool / draft.
+                    # Needs a rating to be useful; career_games=0 marks a
+                    # first-year player (debuted this year).
+                    if rating is None:
+                        unmatched.append((xlsx_name, xlsx_team))
+                        continue
+                    new_player = AflPlayer(
+                        name=xlsx_name,
+                        afl_team=xlsx_team,
+                        position=_POS_MAP.get(pos_raw, "MID"),
+                        age=age_val,
+                        rating=rating,
+                        potential=potential,
+                        rating_start=rating_start if rating_start is not None else rating,
+                        games_played=0,
+                        career_games=0,
+                    )
+                    db.session.add(new_player)
+                    db.session.flush()
+                    # Register so a later XLSX row with the same name/team in
+                    # this run matches instead of creating a duplicate.
+                    db_lookup[(xlsx_name.lower(), xlsx_team)] = new_player
+                    created += 1
 
             db.session.commit()
             app.logger.info(
-                f"Ratings sync: {matched} players updated, "
+                f"Ratings sync: {matched} players updated, {created} created, "
                 f"{len(unmatched)} unmatched from XLSX"
             )
             if unmatched and len(unmatched) <= 30:
