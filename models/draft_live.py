@@ -70,18 +70,13 @@ def _resolve_caps_and_completion(session):
         DraftPick.query.filter_by(draft_session_id=session.id, player_id=None)
         .filter(DraftPick.is_pass == False).count()
     )
-    if remaining == 0:
-        return True
-
-    # A full round (num_teams) of consecutive passes ⇒ everyone's done.
-    recent = (
-        DraftPick.query.filter_by(draft_session_id=session.id)
-        .filter(db.or_(DraftPick.player_id.isnot(None), DraftPick.is_pass == True))
-        .order_by(DraftPick.pick_number.desc()).limit(num_teams).all()
-    )
-    if len(recent) >= num_teams and all(p.is_pass for p in recent):
-        return True
-    return False
+    # Complete ONLY when every slot is resolved. The auto-pass loop above stops
+    # at the first NON-full team, so any remaining unresolved slot belongs to a
+    # team that can still pick — the draft must keep going. (A "consecutive
+    # passes" shortcut previously counted full-team auto-passes and ended the
+    # draft early while an emptier team still had picks left. Voluntary passes
+    # still resolve slots, so "everyone passed" → remaining==0 → complete.)
+    return remaining == 0
 
 
 def create_draft_session(league_id, supplemental=False, total_rounds_override=None,
