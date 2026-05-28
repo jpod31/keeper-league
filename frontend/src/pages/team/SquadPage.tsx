@@ -515,16 +515,10 @@ function SquadPageInner() {
           </Link>
         )
       })()}
-      {is_owner && !data.has_active_draft && data.is_commissioner && (
-        <Link to={`/leagues/${leagueId}/draft/setup`} className="kl-draft-strip">
-          <span className="kl-draft-strip-icon"><i className="bi bi-calendar-plus"></i></span>
-          <span className="kl-draft-strip-body">
-            <span className="kl-draft-strip-title">Set up a draft</span>
-            <span className="kl-draft-strip-sub">Schedule a draft so owners can pre-select before it starts</span>
-          </span>
-          <span className="kl-draft-strip-cta"><i className="bi bi-gear"></i><span>Set up</span></span>
-        </Link>
-      )}
+      {/* The persistent "Set up a draft" commissioner CTA was removed from My
+          Team — it belongs in the Commissioner hub (admin action), not on every
+          owner's team page. The active/scheduled draft strip above still shows
+          when a draft is actually happening. */}
 
       {/* ── Stat Cards ── */}
       <div className={`squad-stat-cards${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
