@@ -122,7 +122,13 @@ def sync_state_league_stats(comp: str | None = None, season: int | None = None) 
                 else:
                     obj = StateLeagueStat(player_name=pname, competition=c, season=yr, team=team)
                     db.session.add(obj)
-                obj.player_id = pid
+                # Only set the link when we have a match — never clear an
+                # existing player_id. A young player's historical rows get
+                # linked (by name) once they're drafted even though the source
+                # still flags them as not-AFL-listed; re-scrapes must not undo
+                # that attribution.
+                if pid:
+                    obj.player_id = pid
                 obj.is_afl_listed = is_listed
                 for field in [
                     "age", "matches", "kicks", "handballs", "disposals", "marks",
