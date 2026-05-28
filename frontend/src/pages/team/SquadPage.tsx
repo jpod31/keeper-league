@@ -44,6 +44,7 @@ interface SquadData {
   delisted_player_ids: number[]
   pending_incoming: number; trade_is_open: boolean; trade_close_date: string | null
   has_active_draft: boolean; active_draft_round: number | null; next_delist_info: string | null
+  draft_status: string | null; draft_scheduled_at: string | null; is_commissioner: boolean
   selected_player_ids: number[]; emergency_ids_all: number[]; sevens_ids_all: number[]
   wishlist_players: WishlistPlayer[]
 }
@@ -458,16 +459,45 @@ function SquadPageInner() {
         </div>
       )}
 
-      {/* Active draft jumps to its own dedicated alert — distinct
-          action from "trade window open", different urgency. */}
-      {is_owner && data.has_active_draft && (
-        <div className="lm-alerts">
-          <Link to={`/leagues/${leagueId}/draft`} className="lm-alert-row text-decoration-none">
-            <i className="bi bi-list-check" style={{ color: 'var(--kl-accent-blue)' }}></i>
-            <span>Draft live{data.active_draft_round ? ` — Rd ${data.active_draft_round}` : ''}</span>
-            <i className="bi bi-arrow-right ms-auto" style={{ color: 'var(--kl-accent-blue)', fontSize: '.7rem' }}></i>
+      {/* ── Draft strip ──
+          Prominent, mobile-visible entry to the draft room so owners can
+          set their pre-draft order before a scheduled draft, or jump in
+          when it's live. Falls back to a setup CTA for the commissioner
+          when no draft exists yet. */}
+      {is_owner && data.has_active_draft && (() => {
+        const live = data.draft_status === 'in_progress' || data.draft_status === 'paused'
+        const sched = data.draft_status === 'scheduled'
+        const when = data.draft_scheduled_at
+          ? new Date(data.draft_scheduled_at).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+          : null
+        return (
+          <Link to={`/leagues/${leagueId}/draft`} className={`kl-draft-strip${live ? ' live' : ''}`}>
+            <span className="kl-draft-strip-icon"><i className="bi bi-list-check"></i></span>
+            <span className="kl-draft-strip-body">
+              <span className="kl-draft-strip-title">
+                {sched ? 'Draft Room' : `Draft live${data.active_draft_round ? ` — Round ${data.active_draft_round}` : ''}`}
+                {sched && <span className="kl-draft-pill-tag">Scheduled</span>}
+                {live && <span className="kl-draft-pill-tag">Live</span>}
+              </span>
+              <span className="kl-draft-strip-sub">
+                {sched
+                  ? (when ? `Starts ${when} · set your pre-draft order now` : 'Set your pre-draft order before it starts')
+                  : 'Make your picks now'}
+              </span>
+            </span>
+            <span className="kl-draft-strip-cta"><i className="bi bi-box-arrow-in-right"></i><span>Enter</span></span>
           </Link>
-        </div>
+        )
+      })()}
+      {is_owner && !data.has_active_draft && data.is_commissioner && (
+        <Link to={`/leagues/${leagueId}/draft/setup`} className="kl-draft-strip">
+          <span className="kl-draft-strip-icon"><i className="bi bi-calendar-plus"></i></span>
+          <span className="kl-draft-strip-body">
+            <span className="kl-draft-strip-title">Set up a draft</span>
+            <span className="kl-draft-strip-sub">Schedule a draft so owners can pre-select before it starts</span>
+          </span>
+          <span className="kl-draft-strip-cta"><i className="bi bi-gear"></i><span>Set up</span></span>
+        </Link>
       )}
 
       {/* ── Stat Cards ── */}

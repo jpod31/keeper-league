@@ -552,6 +552,9 @@ def squad(league_id, team_id):
     trade_close_date = None
     has_active_draft = False
     active_draft_round = None
+    draft_status = None
+    draft_scheduled_at = None
+    is_commissioner = bool(getattr(current_user, "id", None) and league.commissioner_id == current_user.id)
     if is_owner:
         from models.database import Trade, DraftSession as DS2
         pending_incoming = Trade.query.filter_by(
@@ -589,6 +592,11 @@ def squad(league_id, team_id):
         if draft_live:
             has_active_draft = True
             active_draft_round = draft_live.current_round
+            draft_status = draft_live.status
+            draft_scheduled_at = (
+                draft_live.scheduled_start.isoformat()
+                if draft_live.scheduled_start else None
+            )
 
     # ── Wishlist data (owner only, wishlist view) ──
     wishlist_players = []
@@ -803,6 +811,9 @@ def squad(league_id, team_id):
             "trade_close_date": trade_close_date.isoformat() if trade_close_date else None,
             "has_active_draft": has_active_draft,
             "active_draft_round": active_draft_round,
+            "draft_status": draft_status,
+            "draft_scheduled_at": draft_scheduled_at,
+            "is_commissioner": is_commissioner,
             "next_delist_info": next_delist_info,
             "selected_player_ids": list(selected_player_ids),
             "emergency_ids_all": emergency_ids_all,

@@ -9496,3 +9496,61 @@ th.sortable:hover { color: #58a6ff; }
   .msgr:not(.show-thread) .msgr-thread { display: none; }
   .msgr.show-thread .msgr-list { display: none; }
 }
+
+/* ===========================================================
+   DRAFT STRIP — My Team page entry to the draft room.
+   Shown on BOTH desktop and mobile (unlike .kl-status-pills,
+   which are hidden on mobile), so owners can reach the room to
+   set their pre-draft order before a scheduled draft starts.
+   =========================================================== */
+.kl-draft-strip {
+  display: flex; align-items: center; gap: 12px;
+  margin: 4px 0 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(88,166,255,.10), rgba(188,140,255,.06));
+  border: 1px solid rgba(88,166,255,.30);
+  text-decoration: none;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.kl-draft-strip:hover {
+  border-color: rgba(88,166,255,.55);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px -10px rgba(88,166,255,.45);
+  text-decoration: none;
+}
+.kl-draft-strip.live {
+  background: linear-gradient(135deg, rgba(63,185,80,.13), rgba(63,185,80,.04));
+  border-color: rgba(63,185,80,.42);
+  animation: klBreathe 3.5s ease-in-out infinite;
+}
+.kl-draft-strip-icon {
+  width: 38px; height: 38px; flex: 0 0 38px;
+  border-radius: 10px; display: grid; place-items: center;
+  font-size: 1.2rem;
+  background: rgba(88,166,255,.18); color: #79c0ff;
+}
+.kl-draft-strip.live .kl-draft-strip-icon { background: rgba(63,185,80,.18); color: #7ee787; }
+.kl-draft-strip-body { flex: 1 1 auto; min-width: 0; }
+.kl-draft-strip-title {
+  font-weight: 800; font-size: .9rem; color: #f0f6fc;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.kl-draft-strip-sub {
+  font-size: .74rem; color: var(--kl-text-secondary); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.kl-draft-strip-cta {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 999px;
+  background: rgba(88,166,255,.18); color: #79c0ff;
+  font-size: .78rem; font-weight: 700; white-space: nowrap;
+}
+.kl-draft-strip.live .kl-draft-strip-cta { background: rgba(63,185,80,.2); color: #7ee787; }
+.kl-draft-pill-tag {
+  font-size: .58rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px;
+  background: rgba(88,166,255,.2); color: #79c0ff;
+}
+.kl-draft-strip.live .kl-draft-pill-tag { background: rgba(63,185,80,.2); color: #7ee787; }
+@media (max-width: 600px) { .kl-draft-strip-cta span { display: none; } }
