@@ -5,11 +5,13 @@
 import { checkSwapEligible, type SwapSourceInfo, type ActionMode } from '../../hooks/useFieldActions'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
-interface Player {
+export interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
   sc_avg: number; games_played: number; career_games: number; rating: number | null
   injury_type: string | null; injury_return: string | null; injury_severity: string | null
 }
+
+export type SwapTarget = { p: Player; section: string; fieldPos: string; isEmg: boolean; is7s: boolean; label: string }
 
 export interface FieldData {
   zones: Record<string, (Player | null)[]>
@@ -70,6 +72,40 @@ interface Props {
   byeRound?: number | null
 }
 
+/** Eligible swap/replace targets for the focused picker. Shared by the desktop
+ *  FieldView panel and the mobile bottom sheet so both stay consistent. Uses the
+ *  same checkSwapEligible / mode rules as the inline card path. */
+export function computeSwapTargets(fd: FieldData, src: SwapSourceInfo, mode: ActionMode): { targets: SwapTarget[]; srcPlayer: Player | null } {
+  const lockedSet = new Set(fd.locked_teams || [])
+  const emgSet = new Set(fd.emergency_ids || [])
+  const sevensSet = new Set(fd.sevens_ids || [])
+  let srcPlayer: Player | null = null
+  const targets: SwapTarget[] = []
+  const seen = new Set<number>()
+  const consider = (p: Player | null, section: string, fieldPos: string, label: string) => {
+    if (!p) return
+    if (p.id === src.pid) { srcPlayer = p; return }
+    if (seen.has(p.id)) return
+    seen.add(p.id)
+    if (lockedSet.has(p.afl_team)) return  // locked (game started) can't be swapped
+    const positions = (p.position || 'MID').split('/')
+    const isEmg = emgSet.has(p.id), is7s = sevensSet.has(p.id)
+    let ok = false
+    if (mode === 'swap') ok = checkSwapEligible(src, section, positions, fieldPos)
+    else if (mode === 'emg_replace') ok = isEmg
+    else if (mode === '7s_replace') ok = is7s
+    if (ok) targets.push({ p, section, fieldPos, isEmg, is7s, label })
+  }
+  ;['DEF', 'MID', 'RUC', 'FWD'].forEach(pos => (fd.zones[pos] || []).forEach(p => consider(p, 'field', pos, pos)))
+  fd.flex_data.forEach(s => consider(s.player, 'flex', '', 'FLEX'))
+  fd.reserves.forEach(p => consider(p, 'reserve', '', 'Bench'))
+  fd.emergency_players.forEach(p => consider(p, 'reserve', '', 'EMG'))
+  fd.sevens_players.forEach(p => consider(p, 'reserve', '', '7s'))
+  fd.injury_list.forEach(p => consider(p, 'reserve', '', 'Injury'))
+  ;(fd.rookies || []).forEach(p => consider(p, 'reserve', '', 'Rookie'))
+  return { targets, srcPlayer }
+}
+
 export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContext, byeIds, byeRound }: Props) {
   // Defensive defaults for fields that may not exist in older API responses
   const fd = {
@@ -94,6 +130,12 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
   const playingSet = new Set(fd.teams_playing || [])
   const inMode = !!(actions?.swapSource)
   const [benchTab, setBenchTab] = useState<string | null>(null)
+
+  // ── Focused swap picker (replaces expand-everything + scroll) ──
+  const { targets: swapTargets, srcPlayer: swapSrcPlayer } =
+    (inMode && actions?.swapSource)
+      ? computeSwapTargets(fd, actions.swapSource, actions.actionMode)
+      : { targets: [] as SwapTarget[], srcPlayer: null as Player | null }
 
   // Auto-refresh every 5 minutes during lockout
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -464,8 +506,9 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         if ((fd.rookies?.length ?? 0) > 0) sections.push({ key: 'rookies', label: 'Rookies', icon: 'bi-stars', count: fd.rookies!.length, content: <div className="fv-reserves-grid">{fd.rookies!.map(reserveCard)}</div> })
         if (sections.length === 0) return null
 
-        // Swap / bye preview need every card visible at once.
-        if (inMode || byeIds) {
+        // Bye preview needs every card visible at once. Swap no longer expands
+        // everything — the focused swap picker (below) surfaces eligible targets.
+        if (byeIds) {
           return (
             <div className="fv-bench fv-bench-expanded">
               {sections.map(s => (
@@ -496,6 +539,38 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
           </div>
         )
       })()}
+
+      {/* ── Focused swap picker ── eligible targets in one panel; no expand,
+          no scrolling the page to find a cross-category target. */}
+      {inMode && actions && (
+        <div className="fv-swap-picker" role="dialog" aria-label="Choose swap target">
+          <div className="fv-swap-picker-hdr">
+            <div className="fv-swap-picker-title">
+              <i className="bi bi-arrow-left-right"></i>
+              <span>{actions.actionMode === 'emg_replace' ? 'Replace emergency' : actions.actionMode === '7s_replace' ? 'Replace 7s player' : 'Swap'}{swapSrcPlayer ? `: ${(swapSrcPlayer as Player).name}` : ''}</span>
+            </div>
+            <button type="button" className="fv-swap-picker-close" onClick={() => actions.cancelAllModes()} aria-label="Cancel">
+              <i className="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div className="fv-swap-picker-sub">{swapTargets.length} eligible {swapTargets.length === 1 ? 'option' : 'options'} &middot; or tap a highlighted card</div>
+          <div className="fv-swap-picker-list">
+            {swapTargets.length === 0 && <div className="fv-swap-picker-empty">No eligible targets for this player</div>}
+            {swapTargets.map(t => {
+              const posClass = (t.p.position || 'MID').split('/')[0].toLowerCase()
+              return (
+                <button type="button" key={t.p.id} className="fv-swap-picker-row"
+                  onClick={() => actions.handlePlayerClick(t.p.id, t.section, (t.p.position || 'MID').split('/'), t.fieldPos, false, t.isEmg, t.is7s)}>
+                  <span className={`fv-zone-pill fv-zp-${posClass} fv-swap-pick-pos`}>{(t.p.position || 'MID').split('/')[0]}</span>
+                  <span className="fv-swap-pick-name">{t.p.name}</span>
+                  <span className="fv-swap-pick-loc">{t.label}</span>
+                  <span className="fv-swap-pick-sc">{t.p.sc_avg ? Math.round(t.p.sc_avg) : '-'}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

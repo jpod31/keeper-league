@@ -7,7 +7,7 @@ import { SquadSkeleton } from '../../components/ui/SquadSkeleton'
 import { ByePlanner } from '../../components/ui/ByePlanner'
 import { HistoricalSquadView } from '../../components/squad/HistoricalSquadView'
 import { RoundPicker } from '../../components/ui/RoundPicker'
-import { FieldView, type FieldData } from '../../components/squad/FieldView'
+import { FieldView, computeSwapTargets, type FieldData } from '../../components/squad/FieldView'
 import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
 import { useFieldActions, checkSwapEligible } from '../../hooks/useFieldActions'
@@ -655,54 +655,42 @@ function SquadPageInner() {
               swapSource: fieldActions.swapSource, actionMode: fieldActions.actionMode,
             }} />
 
-          {/* Mobile swap/replace-mode banner — fixed to the top of the
-              viewport (not sticky) so it's visible no matter where the
-              user is scrolled when they tap Swap. Pinned with a Cancel
-              button so swap mode is never invisible state. */}
-          {fieldActions.swapSource && (() => {
-            const srcPlayer = data.players.find(p => p.id === fieldActions.swapSource!.pid)
+          {/* Mobile swap picker — a bottom sheet of eligible targets (mobile-
+              native: a sheet, not inline tabs). Tap a target to complete the
+              swap; no scrolling the list to find a cross-category target. */}
+          {fieldActions.swapSource && fd && (() => {
+            const { targets, srcPlayer } = computeSwapTargets(fd, fieldActions.swapSource, fieldActions.actionMode)
             const mode = fieldActions.actionMode
-            const heading =
-              mode === 'emg_replace' ? 'REPLACE EMERGENCY'
-              : mode === '7s_replace' ? 'REPLACE 7s PLAYER'
-              : 'SWAP MODE'
-            const label =
-              mode === 'emg_replace'
-                ? 'Tap an emergency to remove'
-                : mode === '7s_replace'
-                  ? 'Tap a 7s player to remove'
-                  : srcPlayer
-                    ? `Tap any green-highlighted player to swap with ${srcPlayer.name}`
-                    : 'Tap a target player'
+            const heading = mode === 'emg_replace' ? 'Replace emergency'
+              : mode === '7s_replace' ? 'Replace 7s player' : 'Swap'
             return (
-              <div className="d-lg-none" style={{
-                position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1080,
-                background: 'linear-gradient(135deg, #1f6feb, #8957e5)',
-                borderBottom: '2px solid rgba(255,255,255,0.18)',
-                padding: '10px 14px',
-                display: 'flex', alignItems: 'center', gap: 10,
-                boxShadow: '0 6px 24px -4px rgba(0,0,0,0.55)',
-              }}>
-                <i className="bi bi-arrow-left-right" style={{ color: '#fff', fontSize: '1.1rem' }}></i>
-                <div style={{ flex: 1, minWidth: 0, lineHeight: 1.15 }}>
-                  <div style={{ color: '#fff', fontSize: '.68rem', fontWeight: 700, letterSpacing: '.08em', opacity: .85 }}>
-                    {heading}
+              <div className="d-lg-none fv-swap-sheet">
+                <div className="fv-swap-sheet-grip"></div>
+                <div className="fv-swap-sheet-hdr">
+                  <div className="fv-swap-picker-title">
+                    <i className="bi bi-arrow-left-right"></i>
+                    <span>{heading}{srcPlayer ? `: ${srcPlayer.name}` : ''}</span>
                   </div>
-                  <div style={{ color: '#fff', fontSize: '.82rem', fontWeight: 600, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {label}
-                  </div>
+                  <button type="button" className="fv-swap-picker-close" onClick={() => fieldActions.cancelAllModes()} aria-label="Cancel">
+                    <i className="bi bi-x-lg"></i>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => fieldActions.cancelAllModes()}
-                  style={{
-                    background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)',
-                    color: '#fff', padding: '6px 14px', borderRadius: 999,
-                    fontSize: '.78rem', fontWeight: 700,
-                  }}
-                >
-                  Cancel
-                </button>
+                <div className="fv-swap-picker-sub">{targets.length} eligible {targets.length === 1 ? 'option' : 'options'}</div>
+                <div className="fv-swap-sheet-list">
+                  {targets.length === 0 && <div className="fv-swap-picker-empty">No eligible targets for this player</div>}
+                  {targets.map(t => {
+                    const posClass = (t.p.position || 'MID').split('/')[0].toLowerCase()
+                    return (
+                      <button type="button" key={t.p.id} className="fv-swap-picker-row"
+                        onClick={() => fieldActions.handlePlayerClick(t.p.id, t.section, (t.p.position || 'MID').split('/'), t.fieldPos, false, t.isEmg, t.is7s)}>
+                        <span className={`fv-zone-pill fv-zp-${posClass} fv-swap-pick-pos`}>{(t.p.position || 'MID').split('/')[0]}</span>
+                        <span className="fv-swap-pick-name">{t.p.name}</span>
+                        <span className="fv-swap-pick-loc">{t.label}</span>
+                        <span className="fv-swap-pick-sc">{t.p.sc_avg ? Math.round(t.p.sc_avg) : '-'}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )
           })()}
