@@ -12,6 +12,7 @@ Year | Age | Club | # | List | Grade | Games | ... where the Club column is the
 AFL club that season (blank when not on an AFL list that year).
 """
 
+import html as _html
 import logging
 import re
 import time
@@ -70,7 +71,10 @@ def _get(url):
 
 
 def _clean(cell_html):
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", cell_html)).replace("\xa0", " ").strip()
+    txt = re.sub(r"<[^>]+>", " ", cell_html)
+    txt = _html.unescape(txt)            # &nbsp; -> \xa0, &amp; -> &, etc.
+    txt = txt.replace("\xa0", " ")
+    return re.sub(r"\s+", " ", txt).strip()
 
 
 def build_player_url_index():
