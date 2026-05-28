@@ -133,6 +133,7 @@ def sync_draftguru_list_history(limit=None):
 
     Returns (players_matched, rows_written).
     """
+    from sqlalchemy.exc import IntegrityError
     from models.database import db, AflPlayer, AflListHistory
 
     valid_clubs = _valid_clubs()
@@ -140,12 +141,20 @@ def sync_draftguru_list_history(limit=None):
     players = AflPlayer.query.all()
     matched = 0
     rows_written = 0
-    for i, p in enumerate(players):
+    seen_names = set()
+    for p in players:
         if limit and matched >= limit:
             break
-        url = idx.get((p.name or "").strip().lower())
+        name_key = (p.name or "").strip().lower()
+        url = idx.get(name_key)
         if not url:
             continue
+        # The unique constraint is on (player_name, season, club). Duplicate
+        # real-world names (e.g. two "Max King"s) resolve to one draftguru URL
+        # and would collide — process each name once.
+        if name_key in seen_names:
+            continue
+        seen_names.add(name_key)
         try:
             seasons = fetch_player_list_history(url, valid_clubs)
         except Exception as e:
@@ -153,10 +162,19 @@ def sync_draftguru_list_history(limit=None):
             continue
         if not seasons:
             continue
-        matched += 1
-        # Replace this player's rows so re-runs stay idempotent.
-        AflListHistory.query.filter_by(player_id=p.id).delete()
+        # Idempotent: clear any prior rows for this player (by id AND name, so
+        # re-runs and name-collisions don't duplicate or crash).
+        AflListHistory.query.filter(
+            db.or_(AflListHistory.player_id == p.id,
+                   AflListHistory.player_name == p.name)
+        ).delete(synchronize_session=False)
+        seen_rows = set()
+        added = 0
         for s in seasons:
+            key = (p.name, s["season"], s["club"])
+            if key in seen_rows:
+                continue
+            seen_rows.add(key)
             db.session.add(AflListHistory(
                 player_id=p.id,
                 player_name=p.name,
@@ -166,8 +184,15 @@ def sync_draftguru_list_history(limit=None):
                 games=s["games"],
                 source="draftguru",
             ))
-            rows_written += 1
-        db.session.commit()
+            added += 1
+        try:
+            db.session.commit()
+        except IntegrityError as e:
+            db.session.rollback()
+            logger.warning("draftguru commit failed for %s: %s", p.name, e)
+            continue
+        matched += 1
+        rows_written += added
         time.sleep(0.25)
     logger.info("draftguru sync: %d players matched, %d rows", matched, rows_written)
     return matched, rows_written
