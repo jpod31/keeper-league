@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash
 
 from models.database import (
     AflPlayer, League, FantasyTeam, FantasyRoster, User,
-    SeasonConfig, AflGame, PlayerStat, AflByeRound,
+    SeasonConfig, AflGame, PlayerStat,
 )
 from models.scoring_engine import score_team_round
 from models.live_sync import get_player_score_breakdown
@@ -39,7 +39,7 @@ def _setup(db, all_locked):
         PlayerStat(player_id=p_play.id, year=2026, round=1, supercoach_score=100),
         PlayerStat(player_id=emg.id, year=2026, round=1, supercoach_score=70),
     ])
-    db.session.add(AflByeRound(year=2026, afl_round=1, afl_team="Geelong"))
+    # Geelong has no game this round → inferred as bye (byes derived from fixtures)
     db.session.add(AflGame(year=2026, afl_round=1, home_team="Adelaide",
                            away_team="Carlton", status="complete"))
     db.session.add(AflGame(year=2026, afl_round=1, home_team="Melbourne", away_team="Sydney",

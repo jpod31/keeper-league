@@ -761,11 +761,11 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
                 if t not in team_kickoff or ts < team_kickoff[t]:
                     team_kickoff[t] = ts
 
-    # Bye players are DNP (emergency subs on) only once the round is fully
-    # locked — until then their slot is still swappable (end-of-round resolution).
-    from models.lineup_manager import get_bye_teams
+    # A player with no game this round (bye) is DNP (emergency subs on) only once
+    # the round is fully locked — until then their slot is still swappable
+    # (end-of-round resolution). Byes derived from fixtures, not AflByeRound.
+    round_teams = {t for g in all_round_games for t in (g.home_team, g.away_team)}
     round_locked = _round_fully_locked(all_round_games)
-    bye_teams = get_bye_teams(afl_round, year)
 
     # Determine which emergencies auto-subbed for DNP field players
     # Highest-scoring emergency subs in first, then second-highest, etc.
@@ -791,7 +791,8 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
         player_team = player.afl_team if player else ""
         game_started = player_team in started_teams
 
-        if player_team in bye_teams:
+        if round_teams and player_team not in round_teams:
+            # No game this round (bye)
             if round_locked:
                 dnp_field_entries.append(entry)
             # else: bye slot still swappable — pending, no emergency yet

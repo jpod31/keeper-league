@@ -95,12 +95,11 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
     # the round is fully locked — until then their slot is still swappable, so
     # the emergency must wait until end of round (no double-up if they swap).
     from models.database import AflGame, AflPlayer
-    from models.lineup_manager import get_bye_teams
     round_games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
     started_teams = {t for g in round_games if g.status in ("live", "complete")
                      for t in (g.home_team, g.away_team)}
+    round_teams = {t for g in round_games for t in (g.home_team, g.away_team)}
     round_locked = _round_fully_locked(round_games)
-    bye_teams = get_bye_teams(afl_round, year)
 
     dnp_entries = []
     for entry in on_field:
@@ -108,8 +107,8 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
         player = db.session.get(AflPlayer, entry.player_id)
         player_team = player.afl_team if player else ""
 
-        if player_team in bye_teams:
-            # Bye: emergency comes on only at end of round (when slots lock)
+        if round_teams and player_team not in round_teams:
+            # No game this round (bye): emergency comes on only at end of round
             if round_locked:
                 dnp_entries.append(entry)
             else:
