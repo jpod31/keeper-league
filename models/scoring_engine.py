@@ -9,6 +9,18 @@ from models.database import (
 FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
 
 
+def _round_fully_locked(round_games):
+    """True once every game in the round has started (live/complete).
+
+    At that point no more lineup swaps are possible, so a bye player's slot is
+    final and their emergency can be resolved (end of round). Until then a bye
+    player is still swappable, so we must not bring an emergency on for them.
+    """
+    return bool(round_games) and all(
+        g.status in ("live", "complete") for g in round_games
+    )
+
+
 def score_round(league_id, afl_round, year):
     """Score all teams for a given round. Uses SuperCoach or custom scoring based on league config.
     Returns dict of {team_id: total_score}.
@@ -78,16 +90,17 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
             em_scores.append((em, em_score))
     em_scores.sort(key=lambda x: x[1], reverse=True)
 
-    # Identify DNP field entries (only if their game has started)
+    # Identify DNP field entries. A normal player is DNP once their game has
+    # started with no score (or SC=0 = late out). A bye player is DNP only once
+    # the round is fully locked — until then their slot is still swappable, so
+    # the emergency must wait until end of round (no double-up if they swap).
     from models.database import AflGame, AflPlayer
-    started_teams = set()
-    all_round_teams = set()
-    for g in AflGame.query.filter_by(year=year, afl_round=afl_round).all():
-        all_round_teams.add(g.home_team)
-        all_round_teams.add(g.away_team)
-        if g.status in ("live", "complete"):
-            started_teams.add(g.home_team)
-            started_teams.add(g.away_team)
+    from models.lineup_manager import get_bye_teams
+    round_games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+    started_teams = {t for g in round_games if g.status in ("live", "complete")
+                     for t in (g.home_team, g.away_team)}
+    round_locked = _round_fully_locked(round_games)
+    bye_teams = get_bye_teams(afl_round, year)
 
     dnp_entries = []
     for entry in on_field:
@@ -95,10 +108,15 @@ def score_team_round(team_id, league_id, afl_round, year, scoring_type, hybrid_b
         player = db.session.get(AflPlayer, entry.player_id)
         player_team = player.afl_team if player else ""
 
-        if player_score is None or (player_score == 0 and player_team in started_teams):
-            # DNP: no score at all, OR scored exactly 0 from a completed/live game
-            # (SC score of 0 means the player was a late out / did not play)
-            if player_team in started_teams or player_team not in all_round_teams:
+        if player_team in bye_teams:
+            # Bye: emergency comes on only at end of round (when slots lock)
+            if round_locked:
+                dnp_entries.append(entry)
+            else:
+                breakdown[str(entry.player_id)] = 0
+        elif player_score is None or (player_score == 0 and player_team in started_teams):
+            # No score, or SC=0 from a started game (late out) = DNP
+            if player_team in started_teams:
                 dnp_entries.append(entry)
             else:
                 # Game hasn't started yet — score 0 for now, not DNP

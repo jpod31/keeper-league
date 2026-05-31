@@ -59,7 +59,7 @@ ssh root@43.224.183.136 'bash /opt/keeper-league/scripts/update_server.sh'
   server `.env` (`RATINGS_XLSX_PATH`).
 
 ### Validation before declaring done
-1. **Tests**: `python -m pytest -q`. Baseline = **37 pass / 5 fail**. The 5
+1. **Tests**: `python -m pytest -q`. Baseline = **39 pass / 5 fail**. The 5
    failures are pre-existing (rate-limit, live-scores fixtures, standings
    finalize). A change is safe if those 37 stay green and no NEW failures appear.
 2. **Offline simulation**: copy the prod DB to test against real data — you MUST
@@ -189,7 +189,7 @@ All registered in `app.py::create_app`. Most JSON-API blueprints are
 
 ## Test baseline
 
-`python -m pytest -q` → **37 passed, 5 failed** as of 2026-05-28. Pre-existing
+`python -m pytest -q` → **39 passed, 5 failed** as of 2026-05-31. Pre-existing
 failures (NOT regressions — don't chase unless asked):
 - `test_data_validation.py::TestLoginRateLimiting::test_rate_limit_blocks_after_max_attempts`
 - `test_live_scoring.py::TestApiLiveScores::test_api_returns_json`
