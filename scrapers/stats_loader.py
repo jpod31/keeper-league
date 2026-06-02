@@ -275,6 +275,87 @@ def _load_year_csv(year: int) -> Optional[pd.DataFrame]:
     return df
 
 
+def compute_scoring_profile(player_name: str) -> dict:
+    """Per-game SuperCoach distribution + derived scoring metrics for a player,
+    across all available seasons: ceiling/floor (p90/p10), consistency (from CV),
+    boom/bust frequency, recent form, and a score histogram. Powers the Stats
+    drill-down "Scoring" tab. DNP/zero games are excluded."""
+    from collections import Counter
+
+    needle = (player_name or "").lower()
+    games = []  # (year, round_sort, sc)
+    for year in range(2013, CURRENT_YEAR + 1):
+        df = _load_year_csv(year)
+        if df is None or "supercoach_score" not in df.columns:
+            continue
+        pdata = df[df["_player_name_lower"] == needle]
+        if pdata.empty:
+            continue
+        has_round = "round" in pdata.columns
+        for _, row in pdata.iterrows():
+            sc = pd.to_numeric(pd.Series([row.get("supercoach_score")]), errors="coerce").dropna()
+            if len(sc) == 0:
+                continue
+            v = float(sc.iloc[0])
+            if v <= 0:
+                continue  # DNP / no score
+            rsort = _parse_round(row.get("round"))[0] if has_round else 0
+            games.append((year, rsort, v))
+
+    if not games:
+        return {"has_data": False}
+
+    games.sort(key=lambda g: (g[0], g[1]))
+    vals = [g[2] for g in games]
+    n = len(vals)
+    svals = sorted(vals)
+
+    def pct(p):
+        if n == 1:
+            return svals[0]
+        i = (n - 1) * p
+        lo = int(i)
+        hi = min(lo + 1, n - 1)
+        return svals[lo] + (svals[hi] - svals[lo]) * (i - lo)
+
+    mean = sum(vals) / n
+    stdev = (sum((v - mean) ** 2 for v in vals) / n) ** 0.5
+    cv = stdev / mean if mean else 0
+    consistency = max(0, min(100, round(100 * (1 - cv))))
+    boom = sum(1 for v in vals if v >= 120)
+    bust = sum(1 for v in vals if v <= 60)
+
+    def bucket(v):
+        if v < 60:
+            return "<60"
+        if v < 80:
+            return "60–79"
+        if v < 100:
+            return "80–99"
+        if v < 120:
+            return "100–119"
+        return "120+"
+    order = ["<60", "60–79", "80–99", "100–119", "120+"]
+    cnt = Counter(bucket(v) for v in vals)
+
+    return {
+        "has_data": True,
+        "games": n,
+        "mean": round(mean, 1),
+        "median": round(pct(0.5), 1),
+        "ceiling": round(pct(0.9), 1),
+        "floor": round(pct(0.1), 1),
+        "stdev": round(stdev, 1),
+        "consistency": consistency,
+        "boom": boom,
+        "bust": bust,
+        "boom_pct": round(boom / n * 100),
+        "bust_pct": round(bust / n * 100),
+        "last5": [round(v) for v in vals[-5:]],
+        "hist": [{"bucket": b, "count": cnt.get(b, 0)} for b in order],
+    }
+
+
 def _least_squares_slope(xs: List[float], ys: List[float]) -> float:
     """Pure-Python least-squares linear regression slope."""
     n = len(xs)

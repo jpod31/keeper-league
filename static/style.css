@@ -4652,6 +4652,23 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .usage-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: .72rem; color: #8b949e; }
 .usage-legend-item { display: inline-flex; align-items: center; gap: 5px; }
 .usage-legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.usage-tabs { display: flex; gap: 4px; padding: 10px 14px 0; border-bottom: 1px solid rgba(110,130,180,.15); }
+.usage-tab {
+  background: none; border: 0; border-bottom: 2px solid transparent;
+  color: #8b949e; font-size: .82rem; font-weight: 600; padding: 7px 12px 9px; cursor: pointer;
+}
+.usage-tab:hover { color: #c9d1d9; }
+.usage-tab.active { color: #f0f4fb; border-bottom-color: #58a6ff; }
+.scoring-range { position: relative; height: 12px; border-radius: 6px; background: rgba(110,130,180,.14); margin-top: 4px; }
+.scoring-range-fill { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, #ef6b5e, #d2884f, #4ec77a, #a98bff); }
+.scoring-range-tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #f0f4fb; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+.scoring-range-axis { display: flex; justify-content: space-between; font-size: .62rem; color: #6e7681; margin-top: 3px; }
+.scoring-last5 { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
+.scoring-last5-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; height: 24px; padding: 0 6px; border-radius: 5px;
+  font-size: .74rem; font-weight: 800; color: #0d1117;
+}
 
 /* Summary stat cards row */
 .squad-stat-cards {

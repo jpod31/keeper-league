@@ -1088,6 +1088,17 @@ def player_team_usage(league_id, team_id, player_id):
     return jsonify(compute_player_team_usage(league_id, team_id, player_id, league.season_year))
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/scoring")
+@login_required
+def player_scoring(league_id, team_id, player_id):
+    """Per-game SuperCoach distribution + derived scoring metrics (JSON only)."""
+    player = db.session.get(AflPlayer, player_id)
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+    from scrapers.stats_loader import compute_scoring_profile
+    return jsonify(compute_scoring_profile(player.name))
+
+
 @team_bp.route("/<int:league_id>/squad-health")
 @login_required
 def squad_health(league_id):

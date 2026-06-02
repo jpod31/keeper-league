@@ -375,10 +375,26 @@ const ROLE_META: Record<string, { c: string; label: string }> = {
   out: { c: '#30363d', label: 'Out / not selected' },
 }
 
+interface ScoringData {
+  has_data: boolean; games: number; mean: number; median: number
+  ceiling: number; floor: number; stdev: number; consistency: number
+  boom: number; bust: number; boom_pct: number; bust_pct: number
+  last5: number[]; hist: { bucket: string; count: number }[]
+}
+function consistencyLabel(c: number): string {
+  return c >= 80 ? 'Metronomic' : c >= 65 ? 'Reliable' : c >= 45 ? 'Streaky' : 'Volatile'
+}
+const HIST_COLOR: Record<string, string> = {
+  '<60': '#ef6b5e', '60–79': '#d2884f', '80–99': '#5aa0ff', '100–119': '#4ec77a', '120+': '#a98bff',
+}
+
 function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
   player: Player; leagueId: string; teamId: string; teamName: string; onClose: () => void
 }) {
+  const [tab, setTab] = useState<'usage' | 'scoring'>('usage')
   const { data: u, loading } = useFetch<UsageData>(`/leagues/${leagueId}/team/${teamId}/player/${player.id}/usage?format=json`)
+  const { data: sc, loading: scLoading } = useFetch<ScoringData>(
+    tab === 'scoring' ? `/leagues/${leagueId}/team/${teamId}/player/${player.id}/scoring?format=json` : null)
   const primary = posCode(player.position)
   const rolesPresent = u ? Array.from(new Set(u.timeline.map(t => t.role))) : []
 
@@ -396,8 +412,84 @@ function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
           </div>
           <button className="usage-close" onClick={onClose} aria-label="Close"><i className="bi bi-x-lg"></i></button>
         </div>
+        <div className="usage-tabs">
+          <button className={`usage-tab${tab === 'usage' ? ' active' : ''}`} onClick={() => setTab('usage')}>Your usage</button>
+          <button className={`usage-tab${tab === 'scoring' ? ' active' : ''}`} onClick={() => setTab('scoring')}>Scoring profile</button>
+        </div>
 
-        {loading || !u ? (
+        {tab === 'scoring' ? (
+          <div className="usage-body">
+            {scLoading || !sc ? (
+              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading scoring…</div>
+            ) : !sc.has_data ? (
+              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>No SuperCoach game history on record.</div>
+            ) : (
+              <>
+                <div className="usage-tiles">
+                  <div className="usage-tile" style={{ ['--uc' as string]: '#a98bff' } as React.CSSProperties}>
+                    <div className="usage-tile-val">{Math.round(sc.ceiling)}</div>
+                    <div className="usage-tile-lbl">Ceiling</div>
+                    <div className="usage-tile-sub">90th-pct game</div>
+                  </div>
+                  <div className="usage-tile" style={{ ['--uc' as string]: '#ef6b5e' } as React.CSSProperties}>
+                    <div className="usage-tile-val">{Math.round(sc.floor)}</div>
+                    <div className="usage-tile-lbl">Floor</div>
+                    <div className="usage-tile-sub">10th-pct game</div>
+                  </div>
+                  <div className="usage-tile" style={{ ['--uc' as string]: '#4ec77a' } as React.CSSProperties}>
+                    <div className="usage-tile-val">{sc.consistency}</div>
+                    <div className="usage-tile-lbl">Consistency</div>
+                    <div className="usage-tile-sub">{consistencyLabel(sc.consistency)}</div>
+                  </div>
+                  <div className="usage-tile" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}>
+                    <div className="usage-tile-val">{sc.boom_pct}<span className="usage-tile-unit">%</span></div>
+                    <div className="usage-tile-lbl">Boom rate</div>
+                    <div className="usage-tile-sub">{sc.boom} games 120+</div>
+                  </div>
+                  <div className="usage-tile" style={{ ['--uc' as string]: '#d2884f' } as React.CSSProperties}>
+                    <div className="usage-tile-val">{sc.bust_pct}<span className="usage-tile-unit">%</span></div>
+                    <div className="usage-tile-lbl">Bust rate</div>
+                    <div className="usage-tile-sub">{sc.bust} games ≤60</div>
+                  </div>
+                </div>
+
+                {/* Ceiling–floor range bar */}
+                <div className="usage-timeline-wrap">
+                  <div className="usage-section-title">Scoring range <span style={{ color: '#6e7681', fontWeight: 400 }}>· {sc.games} games · median {Math.round(sc.median)}</span></div>
+                  <div className="scoring-range">
+                    <div className="scoring-range-fill" style={{ left: `${sc.floor / 150 * 100}%`, width: `${Math.max(2, (sc.ceiling - sc.floor) / 150 * 100)}%` }}></div>
+                    <div className="scoring-range-tick" style={{ left: `${sc.median / 150 * 100}%` }} title={`Median ${Math.round(sc.median)}`}></div>
+                  </div>
+                  <div className="scoring-range-axis"><span>0</span><span>50</span><span>100</span><span>150</span></div>
+                  {sc.last5.length > 0 && (
+                    <div className="scoring-last5">
+                      <span className="usage-section-title" style={{ margin: 0 }}>Last 5</span>
+                      {sc.last5.map((v, i) => (
+                        <span key={i} className="scoring-last5-chip" style={{ background: v >= 120 ? '#a98bff' : v >= 100 ? '#4ec77a' : v >= 80 ? '#5aa0ff' : v >= 60 ? '#d2884f' : '#ef6b5e' }}>{v}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Distribution histogram */}
+                <div className="usage-timeline-wrap">
+                  <div className="usage-section-title">Score distribution</div>
+                  <ResponsiveContainer width="100%" height={150}>
+                    <BarChart data={sc.hist} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
+                      <XAxis dataKey="bucket" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+                      <YAxis allowDecimals={false} tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+                      <Tooltip cursor={{ fill: 'rgba(110,130,180,.08)' }}
+                        contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                        {sc.hist.map((h, i) => <Cell key={i} fill={HIST_COLOR[h.bucket] || '#5aa0ff'} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </div>
+        ) : loading || !u ? (
           <div className="usage-body"><div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading usage…</div></div>
         ) : (
           <div className="usage-body">
