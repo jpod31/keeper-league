@@ -578,6 +578,11 @@ interface UsageData {
   sevens_games: number; sevens_captain: number; sevens_points: number
   acquired_via: string | null
   timeline: { round: number; role: string; score: number | null; captain: boolean; vc: boolean }[]
+  career?: { year: number; team: string; logo: string | null; games: number; level: string }[]
+}
+interface SimilarData {
+  has_data: boolean; position: string
+  similar: { player_id: number; name: string; position: string; afl_team: string; sc_avg: number; rating: number | null; age: number | null; similarity: number }[]
 }
 const ROLE_META: Record<string, { c: string; label: string }> = {
   field: { c: '#4ec77a', label: 'On field' },
@@ -616,9 +621,11 @@ interface ProjectionData {
 function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
   player: Player; leagueId: string; teamId: string; teamName: string; onClose: () => void
 }) {
-  const [tab, setTab] = useState<'usage' | 'scoring' | 'projection' | 'benchmarks'>('usage')
+  const [tab, setTab] = useState<'usage' | 'scoring' | 'projection' | 'benchmarks' | 'similar'>('usage')
   const base = `/leagues/${leagueId}/team/${teamId}/player/${player.id}`
   const { data: u, loading } = useFetch<UsageData>(`${base}/usage?format=json`)
+  const { data: sim, loading: simLoading } = useFetch<SimilarData>(
+    tab === 'similar' ? `${base}/similar?format=json` : null)
   const { data: sc, loading: scLoading } = useFetch<ScoringData>(
     tab === 'scoring' ? `${base}/scoring?format=json` : null)
   const { data: pj, loading: pjLoading } = useFetch<ProjectionData>(
@@ -647,9 +654,42 @@ function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
           <button className={`usage-tab${tab === 'scoring' ? ' active' : ''}`} onClick={() => setTab('scoring')}>Scoring profile</button>
           <button className={`usage-tab${tab === 'projection' ? ' active' : ''}`} onClick={() => setTab('projection')}>Projection</button>
           <button className={`usage-tab${tab === 'benchmarks' ? ' active' : ''}`} onClick={() => setTab('benchmarks')}>Benchmarks</button>
+          <button className={`usage-tab${tab === 'similar' ? ' active' : ''}`} onClick={() => setTab('similar')}>Similar</button>
         </div>
 
-        {tab === 'benchmarks' ? (
+        {u?.career && u.career.length > 0 && (
+          <div className="career-strip">
+            {u.career.map((c, i) => (
+              <div key={i} className={`career-yr${c.level === 'AFL' ? ' afl' : ''}`} title={`${c.year} · ${c.team} · ${c.games} games (${c.level})`}>
+                <div className="career-yr-year">'{String(c.year).slice(-2)}</div>
+                {c.logo ? <img src={c.logo} alt="" className="career-yr-logo" /> : <div className="career-yr-abbr">{c.team.slice(0, 3)}</div>}
+                <div className="career-yr-games">{c.games}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'similar' ? (
+          <div className="usage-body">
+            {simLoading || !sim ? (
+              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading similar players…</div>
+            ) : !sim.has_data ? (
+              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Not enough data to find comparable players.</div>
+            ) : (
+              <>
+                <div className="usage-section-title">Plays like <span style={{ color: '#6e7681', fontWeight: 400 }}>· nearest {sim.position}s by profile</span></div>
+                {sim.similar.map(s => (
+                  <a key={s.player_id} href={`/player/${encodeURIComponent(s.name)}`} className="sim-row">
+                    <div className="sim-bar-wrap"><div className="sim-bar" style={{ width: `${s.similarity}%` }}></div></div>
+                    <div className="sim-name">{s.name}<span className="sim-meta">{posCode(s.position)} · {s.afl_team}</span></div>
+                    <div className="sim-stats">{s.sc_avg} SC{s.rating != null ? ` · ${s.rating} rtg` : ''}{s.age != null ? ` · ${s.age}y` : ''}</div>
+                    <div className="sim-pct">{s.similarity}%</div>
+                  </a>
+                ))}
+              </>
+            )}
+          </div>
+        ) : tab === 'benchmarks' ? (
           <div className="usage-body">
             {bmLoading || !bm ? (
               <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading benchmarks…</div>

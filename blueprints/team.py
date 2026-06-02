@@ -1086,8 +1086,18 @@ def player_team_usage(league_id, team_id, player_id):
     team = db.session.get(FantasyTeam, team_id)
     if not league or not team or team.league_id != league_id:
         return jsonify({"error": "Team not found"}), 404
-    from models.player_usage import compute_player_team_usage
-    return jsonify(compute_player_team_usage(league_id, team_id, player_id, league.season_year))
+    from models.player_usage import compute_player_team_usage, compute_career_history
+    data = compute_player_team_usage(league_id, team_id, player_id, league.season_year)
+    data["career"] = compute_career_history(player_id).get("history", [])
+    return jsonify(data)
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/similar")
+@login_required
+def player_similar(league_id, team_id, player_id):
+    """'Plays like' nearest players (JSON only)."""
+    from models.player_usage import compute_similar_players
+    return jsonify(compute_similar_players(player_id))
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/scoring")

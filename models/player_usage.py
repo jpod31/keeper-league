@@ -15,6 +15,91 @@ def _primary_pos(p):
     return (p.position or "MID").split("/")[0].upper()
 
 
+def compute_career_history(player_id):
+    """Club-by-year career arc (#27): AFL listing (authoritative, incl. non-
+    playing seasons) overrides a same-year state-league row; VFL/SANFL/WAFL years
+    show their own club. U18/NAB excluded (junior)."""
+    from models.database import AflListHistory, StateLeagueStat
+    from config import TEAM_LOGOS, STATE_LEAGUE_LOGOS
+
+    me = db.session.get(AflPlayer, player_id)
+    if not me:
+        return {"has_data": False, "history": []}
+
+    afl_by_year = {}
+    for r in AflListHistory.query.filter(
+            db.or_(AflListHistory.player_id == me.id, AflListHistory.player_name == me.name)).all():
+        cur = afl_by_year.get(r.season)
+        if cur is None or (r.games or 0) > (cur.games or 0):
+            afl_by_year[r.season] = r
+    sl_by_year = {}
+    for r in StateLeagueStat.query.filter(
+            db.or_(StateLeagueStat.player_id == me.id, StateLeagueStat.player_name == me.name)).all():
+        if (r.competition or "").lower() not in ("vfl", "sanfl", "wafl"):
+            continue
+        cur = sl_by_year.get(r.season)
+        if cur is None or (r.matches or 0) > (cur.matches or 0):
+            sl_by_year[r.season] = r
+
+    history = []
+    for yr in sorted(set(afl_by_year) | set(sl_by_year)):
+        if yr in afl_by_year:
+            r = afl_by_year[yr]
+            history.append({"year": yr, "team": r.club, "logo": TEAM_LOGOS.get(r.club),
+                            "games": r.games or 0, "level": "AFL"})
+        else:
+            r = sl_by_year[yr]
+            history.append({"year": yr, "team": r.team, "logo": STATE_LEAGUE_LOGOS.get(r.team),
+                            "games": r.matches or 0, "level": (r.competition or "").upper()})
+    return {"has_data": bool(history), "history": history}
+
+
+def compute_similar_players(player_id, k=6):
+    """'Plays like' — nearest players in the same position by a z-scored feature
+    vector (SC, rating, age, CBA%, height). Idea #10."""
+    import statistics
+
+    me = db.session.get(AflPlayer, player_id)
+    if not me or not (me.sc_avg or 0):
+        return {"has_data": False}
+    primary = _primary_pos(me)
+    cohort = [q for q in AflPlayer.query.all()
+              if _primary_pos(q) == primary and q.id != me.id and (q.sc_avg or 0) > 0]
+    if len(cohort) < 3:
+        return {"has_data": False}
+
+    feats = ["sc_avg", "rating", "age", "cba_pct", "height_cm"]
+    pool = cohort + [me]
+    norms = {}
+    for f in feats:
+        vals = [getattr(p, f) for p in pool if getattr(p, f) is not None]
+        if len(vals) >= 2:
+            norms[f] = (statistics.mean(vals), statistics.pstdev(vals) or 1.0)
+        else:
+            norms[f] = (0.0, 1.0)
+
+    def vec(p):
+        out = []
+        for f in feats:
+            m, s = norms[f]
+            v = getattr(p, f)
+            out.append(((v if v is not None else m) - m) / s)
+        return out
+
+    mv = vec(me)
+    scored = sorted(
+        ((sum((a - b) ** 2 for a, b in zip(mv, vec(q))) ** 0.5, q) for q in cohort),
+        key=lambda x: x[0])
+    top = scored[:k]
+    scale = (top[-1][0] or 1.0) * 1.15
+    similar = [{
+        "player_id": q.id, "name": q.name, "position": q.position, "afl_team": q.afl_team,
+        "sc_avg": round(q.sc_avg or 0, 1), "rating": q.rating, "age": q.age,
+        "similarity": max(45, round(100 * (1 - dist / scale))),
+    } for dist, q in top]
+    return {"has_data": True, "position": primary, "similar": similar}
+
+
 def compute_draft_roi(league_id, team_id):
     """Draft-value ROI (#11): where the team drafted each player vs what they've
     returned (SC avg), against a league-wide expected-value-by-pick curve.
