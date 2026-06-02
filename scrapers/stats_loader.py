@@ -356,6 +356,44 @@ def compute_scoring_profile(player_name: str) -> dict:
     }
 
 
+def compute_stat_fingerprint(player_name: str) -> dict:
+    """Career per-game stat mix → a 'what kind of scorer' archetype (#26)."""
+    needle = (player_name or "").lower()
+    cols = ["disposals", "marks", "tackles", "goals", "hitouts"]
+    tot = {c: 0.0 for c in cols}
+    games = 0
+    for year in range(2013, CURRENT_YEAR + 1):
+        df = _load_year_csv(year)
+        if df is None:
+            continue
+        pdata = df[df["_player_name_lower"] == needle]
+        if pdata.empty:
+            continue
+        for c in cols:
+            if c in pdata.columns:
+                tot[c] += float(pd.to_numeric(pdata[c], errors="coerce").fillna(0).sum())
+        games += len(pdata)
+    if games == 0:
+        return {"has_data": False}
+    per = {c: round(tot[c] / games, 1) for c in cols}
+
+    if per["hitouts"] >= 12:
+        arch = "Ruck"
+    elif per["goals"] >= 1.6:
+        arch = "Goalkicker"
+    elif per["disposals"] >= 24 and per["tackles"] >= 5:
+        arch = "Two-way midfielder"
+    elif per["disposals"] >= 24:
+        arch = "Ball magnet"
+    elif per["tackles"] >= 5:
+        arch = "Pressure forward/mid"
+    elif per["marks"] >= 6:
+        arch = "Marking target"
+    else:
+        arch = "Utility"
+    return {"has_data": True, "games": games, "per_game": per, "archetype": arch}
+
+
 def compute_player_projection(player_name: str, age=None) -> dict:
     """Next-round (form-weighted) and next-season (recency + age-curve) SC
     projections for a player, with an uncertainty band from season volatility.

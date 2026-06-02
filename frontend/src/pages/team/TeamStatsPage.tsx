@@ -592,6 +592,7 @@ interface ScoringData {
   ceiling: number; floor: number; stdev: number; consistency: number
   boom: number; bust: number; boom_pct: number; bust_pct: number
   last5: number[]; hist: { bucket: string; count: number }[]
+  fingerprint?: { has_data: boolean; games: number; per_game: Record<string, number>; archetype: string }
 }
 function consistencyLabel(c: number): string {
   return c >= 80 ? 'Metronomic' : c >= 65 ? 'Reliable' : c >= 45 ? 'Streaky' : 'Volatile'
@@ -785,6 +786,20 @@ function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+
+                {sc.fingerprint?.has_data && (
+                  <div className="usage-timeline-wrap">
+                    <div className="usage-section-title">Scoring style</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <span className="fp-archetype">{sc.fingerprint.archetype}</span>
+                      <span className="fp-mix">
+                        {[['Disp', 'disposals'], ['Mk', 'marks'], ['Tk', 'tackles'], ['Gl', 'goals'], ['HO', 'hitouts']]
+                          .filter(([, k]) => (sc.fingerprint!.per_game[k] ?? 0) > 0)
+                          .map(([lbl, k]) => <span key={k} className="fp-stat"><b>{sc.fingerprint!.per_game[k]}</b> {lbl}</span>)}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

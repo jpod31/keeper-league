@@ -4663,6 +4663,9 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .scoring-range-fill { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, #ef6b5e, #d2884f, #4ec77a, #a98bff); }
 .scoring-range-tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #f0f4fb; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
 .scoring-range-axis { display: flex; justify-content: space-between; font-size: .62rem; color: #6e7681; margin-top: 3px; }
+.fp-archetype { display: inline-block; background: rgba(169,139,255,.14); color: #c4b1ff; border: 1px solid rgba(169,139,255,.32); border-radius: 999px; padding: 4px 12px; font-size: .82rem; font-weight: 700; }
+.fp-mix { display: inline-flex; gap: 10px; flex-wrap: wrap; font-size: .74rem; color: #8b949e; }
+.fp-stat b { color: #c9d1d9; font-variant-numeric: tabular-nums; }
 .scoring-last5 { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
 .scoring-last5-chip {
   display: inline-flex; align-items: center; justify-content: center;

@@ -1097,8 +1097,11 @@ def player_scoring(league_id, team_id, player_id):
     player = db.session.get(AflPlayer, player_id)
     if not player:
         return jsonify({"error": "Player not found"}), 404
-    from scrapers.stats_loader import compute_scoring_profile
-    return jsonify(compute_scoring_profile(player.name))
+    from scrapers.stats_loader import compute_scoring_profile, compute_stat_fingerprint
+    out = compute_scoring_profile(player.name)
+    if out.get("has_data"):
+        out["fingerprint"] = compute_stat_fingerprint(player.name)
+    return jsonify(out)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/projection")
