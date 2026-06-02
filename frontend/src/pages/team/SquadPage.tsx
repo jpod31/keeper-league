@@ -1,7 +1,7 @@
 import { useParams, Link, useSearchParams } from 'react-router'
 import { useState, useMemo, useCallback, useRef, useEffect, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { StatTile } from '../../components/ui/StatTile'
+import { StatTile, type StatTileAccent } from '../../components/ui/StatTile'
 import { MatchupStrip } from '../../components/ui/MatchupStrip'
 import { SquadSkeleton } from '../../components/ui/SquadSkeleton'
 import { ByePlanner } from '../../components/ui/ByePlanner'
@@ -270,15 +270,46 @@ function SquadPageInner() {
   roster.forEach(r => { rosterMap[r.player_id] = r })
   const selectedSet = new Set(selected_player_ids)
 
-  // Summary stats
-  let totalSc = 0, scCount = 0, totalAge = 0, ageCount = 0
+  // ── Squad vitals — fun, informative team metrics (not flat averages) ──
+  let totalAge = 0, ageCount = 0
   const posCounts: Record<string, number> = { DEF: 0, MID: 0, FWD: 0, RUC: 0 }
+  const onfieldIds = new Set(roster.filter(r => !r.is_benched).map(r => r.player_id))
+  const captainId = roster.find(r => r.is_captain)?.player_id
+  const allRatings: number[] = []
+  let starCount = 0
+  let topStar: Player | null = null
+  let injured = 0
+  const onfield: Player[] = []
   players.forEach(p => {
-    if (p.sc_avg) { totalSc += p.sc_avg; scCount++ }
     if (p.age) { totalAge += p.age; ageCount++ }
     const primary = (p.position || 'MID').split('/')[0]
     if (primary in posCounts) posCounts[primary]++
+    if (p.rating) {
+      allRatings.push(p.rating)
+      if (p.rating >= 80) starCount++
+      if (!topStar || p.rating > (topStar.rating || 0)) topStar = p
+    }
+    if (p.injury_severity === 'short' || p.injury_severity === 'long') injured++
+    if (onfieldIds.has(p.id)) onfield.push(p)
   })
+  // Use the on-field XI when set, otherwise fall back to the whole squad.
+  const ratePool = (onfield.length ? onfield : players).map(p => p.rating || 0).filter(r => r > 0)
+  const squadRating = ratePool.length ? Math.round(ratePool.reduce((a, b) => a + b, 0) / ratePool.length) : 0
+  const ratingTier = squadRating >= 83 ? 'Elite' : squadRating >= 78 ? 'Contender'
+    : squadRating >= 73 ? 'Mid-table' : squadRating > 0 ? 'Rebuilding' : '—'
+  const ratingAccent: StatTileAccent = squadRating >= 83 ? 'amethyst' : squadRating >= 78 ? 'forest'
+    : squadRating >= 73 ? 'sapphire' : 'cognac'
+  const scPool = onfield.length ? onfield : players
+  let projScore = scPool.reduce((a, p) => a + (p.sc_avg || 0), 0)
+  const capP = captainId != null ? players.find(p => p.id === captainId) : undefined
+  if (capP && onfieldIds.has(capP.id)) projScore += (capP.sc_avg || 0)  // captain scores double
+  const avgAge = ageCount ? totalAge / ageCount : 0
+  const ageWindow = avgAge === 0 ? '—' : avgAge < 24.5 ? 'Young & rising'
+    : avgAge <= 27.5 ? 'Peak window' : 'Veteran core'
+  const available = players.length - injured
+  const ratingSpark = [...allRatings].sort((a, b) => a - b)
+  const scSpark = scPool.map(p => p.sc_avg || 0).filter(v => v > 0).sort((a, b) => a - b)
+  const starName = topStar ? (topStar as Player).name.split(' ').slice(-1)[0] : ''
 
   function StatusDot({ player }: { player: Player }) {
     const teamsPlaying = fd ? new Set(fd.teams_playing) : new Set<string>()
@@ -593,17 +624,52 @@ function SquadPageInner() {
           owner's team page. The active/scheduled draft strip above still shows
           when a draft is actually happening. */}
 
-      {/* ── Stat Cards ── */}
+      {/* ── Squad Vitals ── fun, informative team metrics with insight subs + depth sparklines */}
       <div className={`squad-stat-cards${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
-        <StatTile label="Total SC Value" value={Math.round(totalSc)} accent="forest" />
-        <StatTile label="Avg SC / Player" value={scCount ? totalSc / scCount : 0} accent="sapphire" decimals={1} />
-        <StatTile label="Avg Age" value={ageCount ? totalAge / ageCount : 0} accent="ochre" decimals={1} />
-        <div className="stat-card"><div className="squad-pos-summary">
-          {posCounts.DEF > 0 && <span className="squad-pos-chip squad-chip-def">DEF {posCounts.DEF}</span>}
-          {posCounts.MID > 0 && <span className="squad-pos-chip squad-chip-mid">MID {posCounts.MID}</span>}
-          {posCounts.FWD > 0 && <span className="squad-pos-chip squad-chip-fwd">FWD {posCounts.FWD}</span>}
-          {posCounts.RUC > 0 && <span className="squad-pos-chip squad-chip-ruc">RUC {posCounts.RUC}</span>}
-        </div><div className="stat-label">Roster Makeup</div></div>
+        <StatTile
+          label="Squad Rating"
+          value={squadRating}
+          accent={ratingAccent}
+          sparkline={ratingSpark}
+          sub={<span><i className="bi bi-shield-fill-check me-1"></i>{ratingTier}</span>}
+        />
+        <StatTile
+          label="Projected Score"
+          value={Math.round(projScore)}
+          accent="sapphire"
+          sparkline={scSpark}
+          sub={<span><i className="bi bi-lightning-charge-fill me-1"></i>{capP && onfieldIds.has(capP.id) ? 'incl. captain ×2' : 'set a captain'}</span>}
+        />
+        <StatTile
+          label="Star Power"
+          value={starCount}
+          accent="ochre"
+          sub={topStar ? <span><i className="bi bi-star-fill me-1"></i>{starName} {(topStar as Player).rating}</span> : 'rated 80+'}
+        />
+        <StatTile
+          label="Squad Window"
+          value={avgAge}
+          decimals={1}
+          accent="teal"
+          sub={<span><i className="bi bi-hourglass-split me-1"></i>{ageWindow}</span>}
+        />
+        <StatTile
+          label="Available"
+          value={`${available}/${players.length}`}
+          accent={injured > 0 ? 'rust' : 'forest'}
+          sub={injured > 0
+            ? <span><i className="bi bi-bandaid-fill me-1"></i>{injured} injured</span>
+            : <span><i className="bi bi-heart-pulse-fill me-1"></i>fully fit</span>}
+        />
+        <div className="kl-tile" style={{ ['--kl-tile-accent' as string]: '#dde4f1', ['--kl-tile-rgb' as string]: '110,130,180' } as React.CSSProperties}>
+          <div className="kl-tile-value" style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', lineHeight: 1 }}>
+            {posCounts.DEF > 0 && <span className="squad-pos-chip squad-chip-def">DEF {posCounts.DEF}</span>}
+            {posCounts.MID > 0 && <span className="squad-pos-chip squad-chip-mid">MID {posCounts.MID}</span>}
+            {posCounts.FWD > 0 && <span className="squad-pos-chip squad-chip-fwd">FWD {posCounts.FWD}</span>}
+            {posCounts.RUC > 0 && <span className="squad-pos-chip squad-chip-ruc">RUC {posCounts.RUC}</span>}
+          </div>
+          <div className="kl-tile-label">Squad Balance</div>
+        </div>
       </div>
 
       {/* ══════ WISHLIST VIEW ══════ */}
