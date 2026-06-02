@@ -1147,6 +1147,78 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
 # LEAGUE CONTEXT HELPERS
 # ═══════════════════════════════════════════════════════════════════════════
 
+_HEALTH_DESCRIPTORS = {
+    ("elite", "young"): "Rising powerhouse",
+    ("elite", "peak"): "Prime contender",
+    ("elite", "vet"): "Win-now window",
+    ("contender", "young"): "Rising core",
+    ("contender", "peak"): "Solid contender",
+    ("contender", "vet"): "Win-now, aging",
+    ("mid", "young"): "Building nicely",
+    ("mid", "peak"): "Mid-table",
+    ("mid", "vet"): "Aging mid-pack",
+    ("rebuild", "young"): "Future project",
+    ("rebuild", "peak"): "Rebuilding",
+    ("rebuild", "vet"): "Needs a reset",
+}
+
+
+def compute_league_squad_health(league_id):
+    """Squad Health composite + league rank for every team in a league.
+
+    Balanced (now + future): base = average on-field FIFA rating, plus a youth
+    upside bonus (young high-rated players, who are keepable) and an aging drag
+    (older squads decline). Returns a list ranked by health so the squad page
+    can show a team's score, its league rank, and the breakdown behind it.
+    """
+    from models.database import FantasyTeam, FantasyRoster, AflPlayer, db
+
+    rows = []
+    for t in FantasyTeam.query.filter_by(league_id=league_id).all():
+        roster = FantasyRoster.query.filter_by(team_id=t.id, is_active=True).all()
+        field = [p for p in (db.session.get(AflPlayer, r.player_id)
+                             for r in roster if not r.is_benched) if p]
+        if not field:   # no lineup set — fall back to the whole active squad
+            field = [p for p in (db.session.get(AflPlayer, r.player_id)
+                                 for r in roster) if p]
+        rated = [p for p in field if p.rating]
+        if not rated:
+            rows.append({"team_id": t.id, "health": 0, "rating": 0, "avg_age": 0,
+                         "young_guns": 0, "elite_vets": 0, "youth_upside": 0,
+                         "aging_drag": 0, "descriptor": "—"})
+            continue
+
+        base = sum(p.rating for p in rated) / len(rated)
+        ages = [p.age for p in field if p.age]
+        avg_age = sum(ages) / len(ages) if ages else 0.0
+        young_guns = sum(1 for p in rated if (p.age or 99) <= 23 and p.rating >= 78)
+        elite_vets = sum(1 for p in rated if (p.age or 0) >= 30 and p.rating >= 80)
+        youth_upside = min(6.0, 1.5 * young_guns)
+        aging_drag = min(8.0, max(0.0, avg_age - 26.0) * 2.0)
+        health = max(40, min(99, round(base + youth_upside - aging_drag)))
+
+        tier = ("elite" if base >= 83 else "contender" if base >= 78
+                else "mid" if base >= 73 else "rebuild")
+        window = ("young" if avg_age and avg_age < 24.5
+                  else "peak" if avg_age <= 27.5 else "vet")
+        rows.append({
+            "team_id": t.id,
+            "health": health,
+            "rating": round(base),
+            "avg_age": round(avg_age, 1),
+            "young_guns": young_guns,
+            "elite_vets": elite_vets,
+            "youth_upside": round(youth_upside, 1),
+            "aging_drag": round(aging_drag, 1),
+            "descriptor": _HEALTH_DESCRIPTORS.get((tier, window), "Balanced"),
+        })
+
+    rows.sort(key=lambda r: r["health"], reverse=True)
+    for i, r in enumerate(rows):
+        r["rank"] = i + 1
+    return {"n_teams": len(rows), "teams": rows}
+
+
 def _compute_league_context(team_id, league_id, year, team_total, avg_sc, avg_age,
                             all_league_data):
     """For each key metric, show rank and distance from 1st/average.

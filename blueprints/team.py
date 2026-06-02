@@ -1070,6 +1070,17 @@ def team_stats(league_id, team_id):
                            position_counts=position_counts)
 
 
+@team_bp.route("/<int:league_id>/squad-health")
+@login_required
+def squad_health(league_id):
+    """Squad Health composite + league rank for every team (JSON only)."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+    from models.team_analytics import compute_league_squad_health
+    return jsonify(compute_league_squad_health(league_id))
+
+
 @team_bp.route("/<int:league_id>/draft-weights", methods=["GET", "POST"])
 @login_required
 def draft_weights(league_id):

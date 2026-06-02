@@ -18,6 +18,16 @@ interface StandingsLite {
   finals_teams: number
   team_form: Record<string, string[]>
 }
+interface SquadHealthTeam {
+  team_id: number; rank: number; health: number; rating: number; avg_age: number
+  young_guns: number; elite_vets: number; youth_upside: number; aging_drag: number; descriptor: string
+}
+interface SquadHealthData { n_teams: number; teams: SquadHealthTeam[] }
+
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100
+  return n + (s[(v - 20) % 10] || s[v] || s[0])
+}
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
   sc_avg: number; games_played: number; career_games: number; rating: number | null
@@ -74,6 +84,66 @@ class SquadErrorBoundary extends Component<{ children: ReactNode }, { error: Err
 
 // Single "Optimise lineup" dropdown (matches the SPA's custom-dropdown pattern,
 // not Bootstrap JS). Picks the metric, then defers to the parent's optimise().
+// Squad Health ribbon cell — composite score + league rank; tap opens a
+// breakdown popover (gauge, components, youth/veteran callouts, descriptor).
+function HealthCell({ h, nTeams }: { h: SquadHealthTeam | undefined; nTeams: number }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+
+  if (!h || h.health === 0) {
+    return (
+      <div className="squad-stat" style={{ ['--c' as string]: '#8a6db8' } as React.CSSProperties}>
+        <div className="squad-stat-val">—</div>
+        <div className="squad-stat-label">Health</div>
+        <div className="squad-stat-sub">no ratings yet</div>
+      </div>
+    )
+  }
+  const color = h.health >= 85 ? '#a98bff' : h.health >= 78 ? '#4ec77a' : h.health >= 70 ? '#5aa0ff' : '#cf9f6a'
+  const pct = Math.max(4, Math.min(100, (h.health - 40) / 59 * 100))   // 40..99 → bar fill
+  return (
+    <div ref={ref} className={`squad-stat squad-stat-health${open ? ' open' : ''}`}
+      style={{ ['--c' as string]: color } as React.CSSProperties}
+      role="button" tabIndex={0} aria-expanded={open}
+      onClick={() => setOpen(o => !o)}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o) } }}>
+      <div className="squad-stat-val">{h.health}<i className="bi bi-chevron-down squad-stat-chev" aria-hidden></i></div>
+      <div className="squad-stat-label">Health</div>
+      <div className="squad-stat-sub">#{h.rank} of {nTeams}</div>
+      {open && (
+        <div className="squad-health-pop" onClick={e => e.stopPropagation()}>
+          <div className="shp-head">
+            <span className="shp-title">Squad Health</span>
+            <span className="shp-score">{h.health}</span>
+            <span className="shp-rank">#{h.rank} of {nTeams}</span>
+          </div>
+          <div className="shp-bar"><span style={{ width: `${pct}%`, background: color }}></span></div>
+          <div className="shp-desc" style={{ color }}>{h.descriptor}</div>
+          <div className="shp-rows">
+            <div><span>Squad rating</span><strong>{h.rating}</strong></div>
+            <div><span>Average age</span><strong>{h.avg_age}y</strong></div>
+            {h.youth_upside > 0 && <div><span>Youth upside</span><strong className="pos">+{h.youth_upside}</strong></div>}
+            {h.aging_drag > 0 && <div><span>Aging drag</span><strong className="neg">−{h.aging_drag}</strong></div>}
+          </div>
+          <div className="shp-callouts">
+            {h.young_guns > 0 && <span className="shp-tag young"><i className="bi bi-star-fill"></i>{h.young_guns} young gun{h.young_guns > 1 ? 's' : ''} rated 78+</span>}
+            {h.elite_vets > 0 && <span className="shp-tag vet"><i className="bi bi-gem-fill"></i>{h.elite_vets} elite vet{h.elite_vets > 1 ? 's' : ''} 30+</span>}
+            {h.young_guns === 0 && h.elite_vets === 0 && <span className="shp-tag">balanced age profile</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function OptimiseMenu({ optimising, onPick }: {
   optimising: 'rating' | 'sc_avg' | null
   onPick: (m: 'rating' | 'sc_avg') => void
@@ -152,6 +222,7 @@ function SquadPageInner() {
   const view = searchParams.get('view') || 'field'
   const { data, loading, error, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
   const { data: standings } = useFetch<StandingsLite>(leagueId ? `/leagues/${leagueId}/standings?format=json` : null)
+  const { data: health } = useFetch<SquadHealthData>(leagueId ? `/leagues/${leagueId}/squad-health?format=json` : null)
   const fieldActions = useFieldActions(leagueId!, teamId!, refetch)
   const [optimising, setOptimising] = useState<'rating' | 'sc_avg' | null>(null)
 
@@ -276,17 +347,11 @@ function SquadPageInner() {
   roster.forEach(r => { rosterMap[r.player_id] = r })
   const selectedSet = new Set(selected_player_ids)
 
-  // ── Command-bar metrics: ladder + form (standings) · projected · rating ──
+  // ── Command-bar metrics: ladder + form (standings) · projected · squad health ──
   const onfieldIds = new Set(roster.filter(r => !r.is_benched).map(r => r.player_id))
   const captainId = roster.find(r => r.is_captain)?.player_id
   const onfield = players.filter(p => onfieldIds.has(p.id))
   // Use the on-field XI when set, otherwise fall back to the whole squad.
-  const ratePool = (onfield.length ? onfield : players).map(p => p.rating || 0).filter(r => r > 0)
-  const squadRating = ratePool.length ? Math.round(ratePool.reduce((a, b) => a + b, 0) / ratePool.length) : 0
-  const ratingTier = squadRating >= 83 ? 'Elite' : squadRating >= 78 ? 'Contender'
-    : squadRating >= 73 ? 'Mid-table' : squadRating > 0 ? 'Rebuilding' : '—'
-  const ratingColor = squadRating >= 83 ? '#a98bff' : squadRating >= 78 ? '#4ec77a'
-    : squadRating >= 73 ? '#5aa0ff' : '#cf9f6a'
   const scPool = onfield.length ? onfield : players
   let projScore = scPool.reduce((a, p) => a + (p.sc_avg || 0), 0)
   const capP = captainId != null ? players.find(p => p.id === captainId) : undefined
@@ -302,10 +367,7 @@ function SquadPageInner() {
   const nTeams = ladder.length
   const finalsN = standings?.finals_teams ?? 0
   const inFinals = ladderPos != null && finalsN > 0 && ladderPos <= finalsN
-  const ordinal = (n: number) => {
-    const s = ['th', 'st', 'nd', 'rd'], v = n % 100
-    return n + (s[(v - 20) % 10] || s[v] || s[0])
-  }
+  const myHealth = health?.teams?.find(t => t.team_id === Number(teamId))
   const recentForm = (standings?.team_form?.[String(teamId)] ?? []).slice(-5)
   const lastResult = recentForm[recentForm.length - 1]
   let streak = 0
@@ -460,11 +522,7 @@ function SquadPageInner() {
             <div className="squad-stat-label">Projected</div>
             <div className="squad-stat-sub">{projSub}</div>
           </div>
-          <div className="squad-stat" style={{ ['--c' as string]: ratingColor } as React.CSSProperties}>
-            <div className="squad-stat-val">{squadRating}</div>
-            <div className="squad-stat-label">Rating</div>
-            <div className="squad-stat-sub">{ratingTier}</div>
-          </div>
+          <HealthCell h={myHealth} nTeams={health?.n_teams ?? 0} />
         </div>
       </div>
 
