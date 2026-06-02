@@ -4619,6 +4619,37 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .si-heat-cell { width: 30px; height: 26px; text-align: center; border-radius: 5px; color: #e6edf3; font-variant-numeric: tabular-nums; background: rgba(110,130,180,.06); font-size: .68rem; }
 .si-heat-trend { white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; }
 
+/* Squad Matrix — interactive view-mode grid */
+.si-matrix-card { overflow: visible; }
+.si-mx-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.si-mx-views { display: inline-flex; background: rgba(110,130,180,.1); border-radius: 9px; padding: 3px; }
+.si-mx-view { background: none; border: 0; color: #8b949e; font-size: .78rem; font-weight: 600; padding: 5px 13px; border-radius: 7px; cursor: pointer; transition: all .15s ease; }
+.si-mx-view:hover { color: #c9d1d9; }
+.si-mx-view.active { background: #1f6feb; color: #fff; }
+.si-mx-filter { display: inline-flex; gap: 4px; }
+.si-mx-pos { background: rgba(110,130,180,.08); border: 1px solid rgba(110,130,180,.18); color: #8b949e; font-size: .72rem; font-weight: 600; padding: 4px 10px; border-radius: 7px; cursor: pointer; }
+.si-mx-pos.active { background: rgba(88,166,255,.16); border-color: rgba(88,166,255,.4); color: #c9d1d9; }
+.si-matrix { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.si-matrix thead th { color: #7d8694; font-weight: 600; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; padding: 9px 10px; border-bottom: 1px solid rgba(110,130,180,.15); white-space: nowrap; }
+.si-mx-sort { cursor: pointer; user-select: none; }
+.si-mx-sort:hover { color: #e6edf3; }
+.si-matrix tbody td { padding: 7px 10px; border-bottom: 1px solid rgba(110,130,180,.08); vertical-align: middle; font-variant-numeric: tabular-nums; color: #c9d1d9; }
+.si-mx-row { transition: background .12s ease; }
+.si-mx-row:hover { background: rgba(110,130,180,.07); }
+.si-mx-row.sel { background: rgba(88,166,255,.07); }
+.si-mx-chk { width: 30px; text-align: center; }
+.si-mx-player { cursor: pointer; white-space: nowrap; }
+.si-mx-name { color: #e6edf3; font-weight: 600; border-bottom: 1px dotted rgba(110,130,180,.35); }
+.si-mx-row:hover .si-mx-name { border-bottom-color: #58a6ff; }
+.si-mx-bar { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.si-mx-bar-track { width: 46px; height: 6px; border-radius: 3px; background: rgba(110,130,180,.16); overflow: hidden; }
+.si-mx-bar-fill { height: 100%; border-radius: 3px; }
+.si-mx-bar-val { min-width: 26px; text-align: right; font-size: .76rem; }
+@media (max-width: 991px) {
+  .si-mx-views, .si-mx-filter { font-size: .7rem; }
+  .si-matrix { font-size: .76rem; }
+}
+
 /* Team Stats page — watchlist flag chips + sortable rich table */
 .stats-flag-chip {
   display: inline-flex; align-items: center; gap: 7px;

@@ -86,7 +86,6 @@ const FLAGS: FlagDef[] = [
     reason: () => 'Currently injured' },
 ]
 
-type SortField = 'rating' | 'potential' | 'runway' | 'keeper_value' | 'cba_pct' | 'sc_avg' | 'scDelta' | 'age' | 'career_games' | 'draft_score'
 
 // ── Squad Intelligence types + cockpit components ──
 interface IntelPlayer {
@@ -185,18 +184,150 @@ function FormHeatmap({ players, onSelect }: { players: IntelPlayer[]; onSelect: 
   )
 }
 
+function siFmt(v: number | null | undefined, d = 0): string {
+  return v == null ? '–' : d ? v.toFixed(d) : String(Math.round(v))
+}
+function MicroSpark({ form }: { form: { sc: number; z: number }[] }) {
+  const vals = form.map(f => f.sc)
+  if (vals.length < 2) return <span style={{ color: '#484f58' }}>–</span>
+  const min = Math.min(...vals), max = Math.max(...vals), rng = max - min || 1
+  const W = 58, H = 18
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - ((v - min) / rng) * H}`).join(' ')
+  const last = form[form.length - 1]
+  const col = last.z >= 0.5 ? '#4ec77a' : last.z <= -0.5 ? '#ef6b5e' : '#8b949e'
+  return (
+    <svg width={W} height={H} style={{ display: 'block' }}>
+      <polyline points={pts} fill="none" stroke={col} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={W} cy={H - ((vals[vals.length - 1] - min) / rng) * H} r="2" fill={col} />
+    </svg>
+  )
+}
+function MiniBar({ value, max, color, signed }: { value: number | null; max: number; color: string; signed?: boolean }) {
+  if (value == null) return <span style={{ color: '#484f58' }}>–</span>
+  const pct = Math.max(0, Math.min(100, (Math.abs(value) / max) * 100))
+  return (
+    <div className="si-mx-bar">
+      <div className="si-mx-bar-track"><div className="si-mx-bar-fill" style={{ width: `${pct}%`, background: color }}></div></div>
+      <span className="si-mx-bar-val" style={signed ? { color } : undefined}>{signed && value > 0 ? '+' : ''}{Math.round(value)}</span>
+    </div>
+  )
+}
+
+type MxCol = { k: string; l: string; align?: string; num: (p: IntelPlayer) => number | null; cell: (p: IntelPlayer) => React.ReactNode }
+const SI_VIEWS: { id: string; label: string; cols: MxCol[] }[] = [
+  {
+    id: 'perf', label: 'Performance', cols: [
+      { k: 'sc_avg', l: 'SC avg', align: 'end', num: p => p.sc_avg, cell: p => <b>{siFmt(p.sc_avg, 1)}</b> },
+      { k: 'form_z', l: 'Form', align: 'center', num: p => p.form_z, cell: p => <MicroSpark form={p.round_form} /> },
+      { k: 'ceiling', l: 'Ceiling', align: 'end', num: p => p.ceiling, cell: p => <span style={{ color: '#a98bff' }}>{siFmt(p.ceiling)}</span> },
+      { k: 'floor', l: 'Floor', align: 'end', num: p => p.floor, cell: p => <span style={{ color: '#8b949e' }}>{siFmt(p.floor)}</span> },
+      { k: 'consistency', l: 'Cons', align: 'end', num: p => p.consistency, cell: p => siFmt(p.consistency) },
+      { k: 'boom_pct', l: 'Boom%', align: 'end', num: p => p.boom_pct, cell: p => p.boom_pct == null ? '–' : `${p.boom_pct}%` },
+    ],
+  },
+  {
+    id: 'usage', label: 'Your usage', cols: [
+      { k: 'team_games', l: 'Games', align: 'center', num: p => p.team_games, cell: p => <b>{p.team_games ?? '–'}</b> },
+      { k: 'captain_games', l: '(C)', align: 'center', num: p => p.captain_games, cell: p => p.captain_games ? <span style={{ color: '#e0a93f' }}>{p.captain_games}</span> : <span style={{ color: '#484f58' }}>–</span> },
+      { k: 'points_banked', l: 'Banked', align: 'end', num: p => p.points_banked, cell: p => <b>{siFmt(p.points_banked)}</b> },
+      { k: 'contribution_pct', l: '% of team', align: 'end', num: p => p.contribution_pct, cell: p => p.contribution_pct == null ? '–' : `${p.contribution_pct}%` },
+      { k: 'sevens_games', l: '7s', align: 'center', num: p => p.sevens_games, cell: p => p.sevens_games ? p.sevens_games : <span style={{ color: '#484f58' }}>–</span> },
+      { k: 'cba_pct', l: 'Mid role', align: 'end', num: p => p.cba_pct, cell: p => <MiniBar value={p.cba_pct} max={90} color="#bc8cff" /> },
+    ],
+  },
+  {
+    id: 'value', label: 'Value', cols: [
+      { k: 'vorp', l: 'VORP', align: 'end', num: p => p.vorp, cell: p => <MiniBar value={p.vorp} max={40} color={(p.vorp ?? 0) >= 0 ? '#4ec77a' : '#ef6b5e'} signed /> },
+      { k: 'keeper_value', l: 'Keeper', align: 'end', num: p => p.keeper_value, cell: p => <span style={{ color: (p.keeper_value ?? 0) >= 70 ? '#a98bff' : '#8b949e', fontWeight: 700 }}>{siFmt(p.keeper_value)}</span> },
+      { k: 'proj', l: 'Proj next yr', align: 'end', num: p => p.proj, cell: p => p.proj == null ? '–' : <span>{p.proj}<span style={{ color: '#6e7681', fontSize: '.66rem' }}> {p.proj_lo}–{p.proj_hi}</span></span> },
+      { k: 'age', l: 'Age', align: 'center', num: p => p.age, cell: p => p.age ?? '–' },
+      { k: 'sc_pctile', l: 'Pos %ile', align: 'end', num: p => p.sc_pctile, cell: p => <MiniBar value={p.sc_pctile} max={100} color="#5aa0ff" /> },
+    ],
+  },
+]
+
+function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, onSelect }: {
+  players: IntelPlayer[]
+  flagMap: Map<number, FlagDef[]>
+  activeFlag: FlagKey | null
+  compareSet: number[]
+  toggleCompare: (id: number) => void
+  onSelect: (id: number) => void
+}) {
+  const [view, setView] = useState('perf')
+  const [pos, setPos] = useState<string | null>(null)
+  const [sortKey, setSortKey] = useState('sc_avg')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const cols = (SI_VIEWS.find(v => v.id === view) || SI_VIEWS[0]).cols
+  const numOf = (p: IntelPlayer, k: string) => cols.find(c => c.k === k)?.num(p) ?? null
+
+  let rows = players.filter(p => !pos || p.primary === pos)
+  if (activeFlag) rows = rows.filter(p => flagMap.get(p.id)?.some(f => f.key === activeFlag))
+  rows = [...rows].sort((a, b) => {
+    const av = numOf(a, sortKey), bv = numOf(b, sortKey)
+    const an = av == null ? -Infinity : av, bn = bv == null ? -Infinity : bv
+    return sortDir === 'desc' ? bn - an : an - bn
+  })
+  function sortBy(k: string) {
+    if (k === sortKey) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+    else { setSortKey(k); setSortDir('desc') }
+  }
+  const ind = (k: string) => k === sortKey ? (sortDir === 'desc' ? ' ▾' : ' ▴') : ''
+
+  return (
+    <div className="card si-matrix-card">
+      <div className="card-header si-mx-head">
+        <div className="si-mx-views">
+          {SI_VIEWS.map(v => (
+            <button key={v.id} className={`si-mx-view${view === v.id ? ' active' : ''}`} onClick={() => setView(v.id)}>{v.label}</button>
+          ))}
+        </div>
+        <div className="si-mx-filter">
+          {[null, 'DEF', 'MID', 'FWD', 'RUC'].map(pp => (
+            <button key={pp ?? 'all'} className={`si-mx-pos${pos === pp ? ' active' : ''}`} onClick={() => setPos(pp)}>{pp ?? 'All'}</button>
+          ))}
+        </div>
+      </div>
+      <div className="card-body p-0" style={{ overflowX: 'auto' }}>
+        <table className="si-matrix">
+          <thead>
+            <tr>
+              <th className="si-mx-chk"></th>
+              <th className="si-mx-player">Player</th>
+              {cols.map(c => <th key={c.k} className={`si-mx-sort text-${c.align || 'end'}`} onClick={() => sortBy(c.k)}>{c.l}{ind(c.k)}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(p => {
+              const inC = compareSet.includes(p.id)
+              const flags = flagMap.get(p.id) || []
+              return (
+                <tr key={p.id} className={inC ? 'si-mx-row sel' : 'si-mx-row'}>
+                  <td className="si-mx-chk"><input type="checkbox" className="stats-cmp-check" checked={inC}
+                    disabled={!inC && compareSet.length >= 4} onChange={() => toggleCompare(p.id)} title="Compare" /></td>
+                  <td className="si-mx-player" onClick={() => onSelect(p.id)}>
+                    <span className={`pos-dot pos-${p.primary}`}></span>
+                    <span className="si-mx-name">{p.name}</span>
+                    {p.injury && <i className="bi bi-bandaid-fill" style={{ color: '#ef6b5e', fontSize: '.6rem', marginLeft: 4 }}></i>}
+                    {flags.map(f => <i key={f.key} className={`bi ${f.icon}`} style={{ color: f.color, fontSize: '.6rem', marginLeft: 3 }} title={f.label}></i>)}
+                  </td>
+                  {cols.map(c => <td key={c.k} className={`text-${c.align || 'end'}`} onClick={() => onSelect(p.id)}>{c.cell(p)}</td>)}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {rows.length === 0 && <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>No players match.</div>}
+      </div>
+    </div>
+  )
+}
+
 export function TeamStatsPage() {
   const { leagueId, teamId } = useParams()
   const { data, loading } = useFetch<StatsData>(`/leagues/${leagueId}/team/${teamId}/stats?format=json`)
   const { data: roi } = useFetch<DraftRoiData>(`/leagues/${leagueId}/team/${teamId}/draft-roi?format=json`)
   const { data: intel } = useFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
-  const intelById = useMemo(() => {
-    const m = new Map<number, IntelPlayer>()
-    intel?.players?.forEach(p => m.set(p.id, p))
-    return m
-  }, [intel])
-  const [sortField, setSortField] = useState<SortField>('sc_avg')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
   const [usagePlayer, setUsagePlayer] = useState<Player | null>(null)
   const [compareSet, setCompareSet] = useState<number[]>([])
@@ -245,28 +376,6 @@ export function TeamStatsPage() {
     return { bucket: b.label, count: inBucket.length, scShare, scShareLabel: `${scShare}%` }
   })
 
-  // Sorted, optionally flag-filtered player rows
-  const sortVal = (p: Player, f: SortField): number => {
-    switch (f) {
-      case 'runway': return (p.potential ?? 0) - (p.rating ?? 0)
-      case 'scDelta': return p.sc_avg_prev != null ? p.sc_avg - p.sc_avg_prev : -999
-      default: return (p as unknown as Record<string, number | null>)[f] ?? -Infinity as number
-    }
-  }
-  const visible = players.filter(p => !activeFlag || flagMap.get(p.id)?.some(f => f.key === activeFlag))
-  const sorted = [...visible].sort((a, b) => {
-    const d = (sortVal(b, sortField) as number) - (sortVal(a, sortField) as number)
-    return sortDir === 'desc' ? d : -d
-  })
-  function sortBy(f: SortField) {
-    if (f === sortField) { setSortDir(d => (d === 'desc' ? 'asc' : 'desc')) }
-    else { setSortField(f); setSortDir('desc') }   // first click → highest first
-  }
-  const sortIcon = (f: SortField) => f !== sortField ? '' : sortDir === 'desc' ? ' ▾' : ' ▴'
-
-  const kvColor = (kv: number | null) => kv == null ? '#484f58'
-    : kv >= 80 ? '#a98bff' : kv >= 65 ? '#4ec77a' : kv >= 50 ? '#5aa0ff' : '#8b949e'
-
   return (
     <div>
       <TeamMobSubnav active="stats" leagueId={leagueId!} teamId={teamId!} />
@@ -298,6 +407,13 @@ export function TeamStatsPage() {
         </div>
       )}
       {intel?.has_data && <FormHeatmap players={intel.players} onSelect={id => { const p = players.find(pp => pp.id === id); if (p) setUsagePlayer(p) }} />}
+      {/* Squad Matrix — interactive view-mode grid (replaces the static table) */}
+      {intel?.has_data
+        ? <SquadMatrix players={intel.players} flagMap={flagMap} activeFlag={activeFlag}
+            compareSet={compareSet} toggleCompare={toggleCompare}
+            onSelect={id => { const p = players.find(pp => pp.id === id); if (p) setUsagePlayer(p) }} />
+        : <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Loading squad intelligence…</div>}
+
 
       {/* Watchlist auto-flags shelf */}
       {flagCounts.length > 0 && (
@@ -426,124 +542,8 @@ export function TeamStatsPage() {
         </div>
       )}
 
-      {/* All players — rich sortable table */}
-      <div className="card">
-        <div className="card-header d-flex align-items-center justify-content-between">
-          <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-            <i className="bi bi-list-ul me-2" style={{ color: '#8b949e' }}></i>
-            {activeFlag ? FLAGS.find(f => f.key === activeFlag)?.label : 'All Players'}
-            <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.78rem' }}>{sorted.length}</span>
-          </h5>
-        </div>
 
-        {/* Mobile cards */}
-        <div className="d-lg-none squad-cards-mobile">
-          {sorted.map(p => {
-            const primary = posCode(p.position)
-            const scColor = p.sc_avg >= 90 ? '#3fb950' : p.sc_avg >= 70 ? '#58a6ff' : '#8b949e'
-            const hits = flagMap.get(p.id) || []
-            return (
-              <span key={p.id} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }} onClick={() => setUsagePlayer(p)}>
-                <input type="checkbox" className="stats-cmp-check" checked={compareSet.includes(p.id)}
-                  disabled={!compareSet.includes(p.id) && compareSet.length >= 4}
-                  onClick={e => e.stopPropagation()} onChange={() => toggleCompare(p.id)} title="Add to compare" />
-                <span className={`pos-badge pos-${primary}`} style={{ minWidth: 32, textAlign: 'center', fontSize: '.65rem' }}>{primary}</span>
-                <div className="squad-mob-info">
-                  <div className="squad-mob-name">
-                    {p.name}
-                    {hits.map(f => <i key={f.key} className={`bi ${f.icon} ms-1`} style={{ fontSize: '.62rem', color: f.color }} title={f.label}></i>)}
-                  </div>
-                  <div className="squad-mob-meta">
-                    <span>Age {p.age || '?'}</span>
-                    {p.rating != null && <span>Rtg {p.rating}</span>}
-                    {p.keeper_value != null && <span style={{ color: kvColor(p.keeper_value) }}>KV {Math.round(p.keeper_value)}</span>}
-                  </div>
-                </div>
-                <div className="squad-mob-sc" style={{ color: scColor }}>{p.sc_avg ? Math.round(p.sc_avg) : '-'}</div>
-              </span>
-            )
-          })}
-        </div>
-
-        {/* Desktop table */}
-        <div className="card-body p-0 d-none d-lg-block" style={{ overflowX: 'auto' }}>
-          <table className="table table-hover table-sm mb-0 stats-rich-table">
-            <thead>
-              <tr>
-                <th style={{ width: 26 }} title="Add to compare"></th>
-                <th>Player</th>
-                <th>Pos</th>
-                <th className="text-center sortable" onClick={() => sortBy('age')}>Age{sortIcon('age')}</th>
-                <th className="text-end sortable" onClick={() => sortBy('rating')}>Rating{sortIcon('rating')}</th>
-                <th className="text-end sortable" onClick={() => sortBy('potential')}>Pot{sortIcon('potential')}</th>
-                <th className="text-end sortable" onClick={() => sortBy('runway')}>Runway{sortIcon('runway')}</th>
-                <th className="text-end sortable" onClick={() => sortBy('keeper_value')}>Keeper{sortIcon('keeper_value')}</th>
-                <th className="text-end sortable" onClick={() => sortBy('sc_avg')}>SC Avg{sortIcon('sc_avg')}</th>
-                <th className="text-end sortable" onClick={() => sortBy('scDelta')}>Δ yr{sortIcon('scDelta')}</th>
-                <th className="text-end sortable" onClick={() => sortBy('cba_pct')} title="Centre Bounce Attendance % — midfield role">CBA%{sortIcon('cba_pct')}</th>
-                <th className="text-center sortable" onClick={() => sortBy('career_games')}>Games{sortIcon('career_games')}</th>
-                <th className="text-end" title="Value Over Replacement (SC above a freely-available player at the position)">VORP</th>
-                <th className="text-center" title="Games played for YOUR team this season (+ captain games)">Gms (you)</th>
-                <th className="text-end" title="SuperCoach points banked for your team">Banked</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map(p => {
-                const runway = (p.potential ?? 0) - (p.rating ?? 0)
-                const delta = p.sc_avg_prev != null ? p.sc_avg - p.sc_avg_prev : null
-                const hits = flagMap.get(p.id) || []
-                const inCompare = compareSet.includes(p.id)
-                return (
-                  <tr key={p.id} className={inCompare ? 'stats-row-compare' : ''}>
-                    <td className="text-center" style={{ padding: 0 }}>
-                      <input type="checkbox" className="stats-cmp-check" checked={inCompare}
-                        disabled={!inCompare && compareSet.length >= 4}
-                        onChange={() => toggleCompare(p.id)} title="Add to compare" />
-                    </td>
-                    <td>
-                      <span className="stats-player-link" style={{ color: '#c9d1d9' }} onClick={() => setUsagePlayer(p)} title="View your usage of this player">{p.name}</span>
-                      {hits.map(f => <i key={f.key} className={`bi ${f.icon} ms-1`} style={{ fontSize: '.66rem', color: f.color }} title={`${f.label} — ${f.reason(p)}`}></i>)}
-                    </td>
-                    <td>{(p.position || 'MID').split('/').map(pos => <span key={pos} className={`pos-badge pos-${pos}`}>{pos}</span>)}</td>
-                    <td className="text-center" style={{ color: '#8b949e' }}>{p.age || '-'}</td>
-                    <td className="text-end">{p.rating ?? '-'}</td>
-                    <td className="text-end" style={{ color: '#8b949e' }}>{p.potential ?? '-'}</td>
-                    <td className="text-end">{p.potential != null && p.rating != null
-                      ? <span style={{ color: runway > 0 ? '#4ec77a' : '#6e7681' }}>{runway > 0 ? `+${runway}` : runway}</span> : '-'}</td>
-                    <td className="text-end fw-bold" style={{ color: kvColor(p.keeper_value) }}>{p.keeper_value != null ? Math.round(p.keeper_value) : '-'}</td>
-                    <td className="text-end fw-bold">{p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
-                    <td className="text-end">{delta == null ? '-'
-                      : <span style={{ color: delta >= 0 ? '#4ec77a' : '#ef6b5e' }}>{delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(0)}</span>}</td>
-                    <td className="text-end">{p.cba_pct == null ? '-'
-                      : <span style={{ color: p.cba_pct >= 60 ? '#bc8cff' : p.cba_pct >= 25 ? '#8b949e' : '#484f58' }}>
-                          {Math.round(p.cba_pct)}
-                          {p.cba_pct >= 25 && p.cba_trend != null && Math.abs(p.cba_trend) >= 12 && (
-                            <span style={{ color: p.cba_trend > 0 ? '#bc8cff' : '#d2884f', fontSize: '.62rem', marginLeft: 3 }} title={`CBA trend ${p.cba_trend > 0 ? '+' : ''}${p.cba_trend} vs season`}>{p.cba_trend > 0 ? '▲' : '▼'}</span>
-                          )}
-                        </span>}</td>
-                    <td className="text-center" style={{ color: '#8b949e' }}>{p.career_games || '-'}</td>
-                    {(() => {
-                      const ix = intelById.get(p.id)
-                      return (
-                        <>
-                          <td className="text-end">{ix?.vorp != null
-                            ? <span style={{ color: ix.vorp > 0 ? '#4ec77a' : '#ef6b5e', fontWeight: 700 }}>{ix.vorp > 0 ? '+' : ''}{ix.vorp}</span> : '-'}</td>
-                          <td className="text-center" style={{ color: '#c9d1d9' }}>
-                            {ix?.team_games ?? '-'}
-                            {ix?.captain_games ? <span style={{ color: '#e0a93f', fontSize: '.6rem', marginLeft: 3 }} title={`${ix.captain_games} captain games`}>{ix.captain_games}C</span> : null}
-                          </td>
-                          <td className="text-end" style={{ color: '#8b949e' }}>{ix?.points_banked != null ? Math.round(ix.points_banked) : '-'}</td>
-                        </>
-                      )
-                    })()}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
+      
       {usagePlayer && (
         <PlayerUsageModal player={usagePlayer} leagueId={leagueId!} teamId={teamId!}
           teamName={team.name} onClose={() => setUsagePlayer(null)} />
