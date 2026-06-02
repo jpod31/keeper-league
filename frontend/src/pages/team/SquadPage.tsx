@@ -175,7 +175,7 @@ function OptimiseMenu({ optimising, onPick }: {
         </span>
         <span className="rpick-text">
           <span className="rpick-title">{busy ? 'Optimising…' : 'Optimise'}</span>
-          <span className="rpick-sub">Best available XI</span>
+          <span className="rpick-sub">Best available lineup</span>
         </span>
         <i className="bi bi-chevron-down rpick-chev" aria-hidden></i>
       </button>
@@ -355,14 +355,14 @@ function SquadPageInner() {
   const onfieldIds = new Set(roster.filter(r => !r.is_benched).map(r => r.player_id))
   const captainId = roster.find(r => r.is_captain)?.player_id
   const onfield = players.filter(p => onfieldIds.has(p.id))
-  // Use the on-field XI when set, otherwise fall back to the whole squad.
+  // Use the on-field lineup when set, otherwise fall back to the whole squad.
   const scPool = onfield.length ? onfield : players
   let projScore = scPool.reduce((a, p) => a + (p.sc_avg || 0), 0)
   const capP = captainId != null ? players.find(p => p.id === captainId) : undefined
   const capScoring = data.captain_scoring_enabled   // league toggle — many leagues run it off
   const capOnField = !!(capP && onfieldIds.has(capP.id))
   if (capScoring && capOnField) projScore += (capP!.sc_avg || 0)  // captain scores double (only if enabled)
-  const projSub = !capScoring ? 'best XI · SC avg'
+  const projSub = !capScoring ? 'on-field SC avg'
     : capOnField ? 'incl. captain ×2' : 'set a captain for ×2'
   // Ladder position + recent form for THIS team (from the standings endpoint).
   const ladder = standings?.standings ?? []
