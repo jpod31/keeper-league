@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams } from 'react-router'
-import { useState, useMemo, useCallback, Component, type ErrorInfo, type ReactNode } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { StatTile } from '../../components/ui/StatTile'
 import { MatchupStrip } from '../../components/ui/MatchupStrip'
@@ -65,6 +65,58 @@ class SquadErrorBoundary extends Component<{ children: ReactNode }, { error: Err
     )
     return this.props.children
   }
+}
+
+// Single "Optimise lineup" dropdown (matches the SPA's custom-dropdown pattern,
+// not Bootstrap JS). Picks the metric, then defers to the parent's optimise().
+function OptimiseMenu({ optimising, onPick }: {
+  optimising: 'rating' | 'sc_avg' | null
+  onPick: (m: 'rating' | 'sc_avg') => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+  const itemStyle: React.CSSProperties = {
+    display: 'block', width: '100%', textAlign: 'left', background: 'transparent',
+    border: 'none', color: '#c9d1d9', padding: '7px 12px', borderRadius: 6,
+    fontSize: '.85rem', cursor: 'pointer', whiteSpace: 'nowrap',
+  }
+  function pick(m: 'rating' | 'sc_avg') { setOpen(false); onPick(m) }
+  return (
+    <span ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      <button type="button" className="btn btn-sm btn-primary" disabled={optimising !== null}
+        onClick={() => setOpen(o => !o)} aria-expanded={open} aria-haspopup="true">
+        {optimising !== null
+          ? <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Optimising…</>
+          : <><i className="bi bi-magic me-1"></i>Optimise lineup<i className="bi bi-chevron-down ms-1"></i></>}
+      </button>
+      {open && (
+        <div role="menu" style={{
+          position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 30,
+          background: '#161b22', border: '1px solid #30363d', borderRadius: 8,
+          padding: 4, minWidth: 180, boxShadow: '0 8px 24px rgba(0,0,0,.4)',
+        }}>
+          <button type="button" role="menuitem" style={itemStyle} onClick={() => pick('rating')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(177,186,196,.12)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+            <i className="bi bi-star me-2"></i>By Rating
+          </button>
+          <button type="button" role="menuitem" style={itemStyle} onClick={() => pick('sc_avg')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(177,186,196,.12)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+            <i className="bi bi-graph-up me-2"></i>By SC Average
+          </button>
+        </div>
+      )}
+    </span>
+  )
 }
 
 export function SquadPageWrapper() {
@@ -392,17 +444,7 @@ function SquadPageInner() {
           )}
           {view === 'field' && (
             <div className="d-flex align-items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
-              <span style={{ fontSize: '.75rem', color: '#8b949e' }}><i className="bi bi-magic me-1"></i>Optimise lineup:</span>
-              <button className="btn btn-sm btn-primary" disabled={optimising !== null} onClick={() => optimise('rating')}>
-                {optimising === 'rating'
-                  ? <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Optimising…</>
-                  : 'By Rating'}
-              </button>
-              <button className="btn btn-sm btn-outline-primary" disabled={optimising !== null} onClick={() => optimise('sc_avg')}>
-                {optimising === 'sc_avg'
-                  ? <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Optimising…</>
-                  : 'By SC Avg'}
-              </button>
+              <OptimiseMenu optimising={optimising} onPick={optimise} />
             </div>
           )}
         </div>
