@@ -370,7 +370,8 @@ def _cba_backfill_if_empty(app):
         try:
             from models.database import AflPlayer
             total = AflPlayer.query.count()
-            populated = (AflPlayer.query.filter(AflPlayer.cba_pct.isnot(None)).count()
+            # guard on cba_trend (newest field) so adding it re-runs the sync once
+            populated = (AflPlayer.query.filter(AflPlayer.cba_trend.isnot(None)).count()
                          if total else 0)
         except Exception as e:
             print(f"[cba] precheck failed: {e}", file=sys.stderr, flush=True)

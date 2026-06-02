@@ -38,6 +38,30 @@ def _norm(name: str) -> str:
     return " ".join(n.lower().replace(".", "").split())
 
 
+def _round_trend(r, season_avg):
+    """Recent-vs-season CBA% trend = mean(last 3 rounds that happened) − season
+    avg. Positive = midfield role rising, negative = role shrinking. None if too
+    few rounds. Uses G{n}team>0 to tell which rounds actually happened."""
+    happened = []
+    for n in range(1, 25):
+        team = r.get(f"G{n}team")
+        try:
+            team_n = int(team) if team not in (None, "") else 0
+        except (TypeError, ValueError):
+            team_n = 0
+        if team_n <= 0:
+            continue
+        pa = r.get(f"G{n}avg")
+        try:
+            happened.append(float(pa) if pa not in (None, "") else 0.0)
+        except (TypeError, ValueError):
+            happened.append(0.0)
+    if len(happened) < 6:
+        return None
+    recent = sum(happened[-3:]) / 3
+    return round(recent - season_avg, 1)
+
+
 def _fetch_team(season, team, retries=3):
     for attempt in range(retries):
         try:
@@ -71,6 +95,7 @@ def sync_cbas(season=None):
             except (TypeError, ValueError):
                 avg = 0.0
             cba[_norm(name)] = {"name": name, "avg": round(avg, 1),
+                                "trend": _round_trend(r, avg),
                                 "position": r.get("position"), "team": team}
         time.sleep(0.4)
 
@@ -110,6 +135,7 @@ def sync_cbas(season=None):
                 continue
         for p in cands:
             p.cba_pct = info["avg"]
+            p.cba_trend = info["trend"]
             matched_ids.add(p.id)
         matched += 1
 

@@ -25,6 +25,7 @@ interface Player {
   keeper_value: number | null
   height_cm: number | null
   cba_pct: number | null
+  cba_trend: number | null
   injury_severity: string | null
 }
 
@@ -56,7 +57,7 @@ function avg(nums: number[]): number {
 }
 
 // ── Watchlist auto-flags (Idea #29) — derived purely from available fields ──
-type FlagKey = 'sellHigh' | 'buyLow' | 'breakout' | 'decline' | 'injury' | 'keep'
+type FlagKey = 'sellHigh' | 'buyLow' | 'breakout' | 'decline' | 'injury' | 'keep' | 'roleRiser' | 'roleFaller'
 interface FlagDef { key: FlagKey; label: string; icon: string; color: string; test: (p: Player) => boolean; reason: (p: Player) => string }
 const FLAGS: FlagDef[] = [
   { key: 'keep', label: 'Keep locks', icon: 'bi-shield-fill-check', color: '#a98bff',
@@ -65,6 +66,12 @@ const FLAGS: FlagDef[] = [
   { key: 'breakout', label: 'Breakout watch', icon: 'bi-rocket-takeoff-fill', color: '#3fc4c4',
     test: p => (p.age ?? 99) <= 23 && p.potential != null && p.rating != null && (p.potential - p.rating) >= 6,
     reason: p => `Age ${p.age}, +${p.potential! - p.rating!} rating runway` },
+  { key: 'roleRiser', label: 'Role riser', icon: 'bi-arrow-up-right-circle-fill', color: '#bc8cff',
+    test: p => (p.cba_pct ?? 0) >= 25 && (p.cba_trend ?? 0) >= 12,
+    reason: p => `CBA +${p.cba_trend} recent — winning more midfield time` },
+  { key: 'roleFaller', label: 'Role faller', icon: 'bi-arrow-down-right-circle-fill', color: '#d2884f',
+    test: p => (p.cba_pct ?? 0) >= 25 && (p.cba_trend ?? 0) <= -12,
+    reason: p => `CBA ${p.cba_trend} recent — losing midfield time` },
   { key: 'sellHigh', label: 'Sell-high', icon: 'bi-graph-up-arrow', color: '#4ec77a',
     test: p => p.sc_avg_prev != null && p.sc_avg - p.sc_avg_prev >= 12,
     reason: p => `+${(p.sc_avg - p.sc_avg_prev!).toFixed(0)} SC vs last year` },
@@ -399,7 +406,12 @@ export function TeamStatsPage() {
                     <td className="text-end">{delta == null ? '-'
                       : <span style={{ color: delta >= 0 ? '#4ec77a' : '#ef6b5e' }}>{delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(0)}</span>}</td>
                     <td className="text-end">{p.cba_pct == null ? '-'
-                      : <span style={{ color: p.cba_pct >= 60 ? '#bc8cff' : p.cba_pct >= 25 ? '#8b949e' : '#484f58' }}>{Math.round(p.cba_pct)}</span>}</td>
+                      : <span style={{ color: p.cba_pct >= 60 ? '#bc8cff' : p.cba_pct >= 25 ? '#8b949e' : '#484f58' }}>
+                          {Math.round(p.cba_pct)}
+                          {p.cba_pct >= 25 && p.cba_trend != null && Math.abs(p.cba_trend) >= 12 && (
+                            <span style={{ color: p.cba_trend > 0 ? '#bc8cff' : '#d2884f', fontSize: '.62rem', marginLeft: 3 }} title={`CBA trend ${p.cba_trend > 0 ? '+' : ''}${p.cba_trend} vs season`}>{p.cba_trend > 0 ? '▲' : '▼'}</span>
+                          )}
+                        </span>}</td>
                     <td className="text-center" style={{ color: '#8b949e' }}>{p.career_games || '-'}</td>
                   </tr>
                 )

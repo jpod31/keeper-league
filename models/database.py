@@ -35,6 +35,7 @@ class AflPlayer(db.Model):
     injury_severity = db.Column(db.String(10))   # "test", "short", "long". NULL = not injured
     keeper_value = db.Column(db.Float)           # 0-99 Keeper Value Index
     cba_pct = db.Column(db.Float)                # season centre-bounce attendance % (dfsaustralia)
+    cba_trend = db.Column(db.Float)              # recent-vs-season CBA% trend (+ = midfield role rising)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))
 
@@ -1344,6 +1345,7 @@ def _run_migrations(app):
             ("injury_severity", "VARCHAR(10)"),
             ("keeper_value", "FLOAT"),
             ("cba_pct", "FLOAT"),
+            ("cba_trend", "FLOAT"),
         ]:
             if col_name not in existing_ap:
                 db.session.execute(

@@ -1059,6 +1059,7 @@ def team_stats(league_id, team_id):
                     "keeper_value": p.keeper_value,
                     "height_cm": p.height_cm,
                     "cba_pct": p.cba_pct,
+                    "cba_trend": p.cba_trend,
                     "injury_severity": p.injury_severity,
                 }
                 for p in players
