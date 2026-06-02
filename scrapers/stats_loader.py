@@ -292,15 +292,14 @@ def compute_scoring_profile(player_name: str) -> dict:
         if pdata.empty:
             continue
         has_round = "round" in pdata.columns
-        for _, row in pdata.iterrows():
-            sc = pd.to_numeric(pd.Series([row.get("supercoach_score")]), errors="coerce").dropna()
-            if len(sc) == 0:
-                continue
-            v = float(sc.iloc[0])
-            if v <= 0:
-                continue  # DNP / no score
-            rsort = _parse_round(row.get("round"))[0] if has_round else 0
-            games.append((year, rsort, v))
+        scs = pd.to_numeric(pdata["supercoach_score"], errors="coerce")
+        keep = scs.notna() & (scs > 0)
+        if not keep.any():
+            continue
+        vals = scs[keep].astype(float).tolist()
+        rsorts = ([_parse_round(r)[0] for r in pdata.loc[keep, "round"].tolist()]
+                  if has_round else [0] * len(vals))
+        games.extend((year, rs, v) for rs, v in zip(rsorts, vals))
 
     if not games:
         return {"has_data": False}
@@ -413,16 +412,15 @@ def compute_player_projection(player_name: str, age=None) -> dict:
         if pdata.empty:
             continue
         has_round = "round" in pdata.columns
-        for _, row in pdata.iterrows():
-            sc = pd.to_numeric(pd.Series([row.get("supercoach_score")]), errors="coerce").dropna()
-            if len(sc) == 0:
-                continue
-            v = float(sc.iloc[0])
-            if v <= 0:
-                continue
-            by_year.setdefault(year, []).append(v)
-            rsort = _parse_round(row.get("round"))[0] if has_round else 0
-            chrono.append((year, rsort, v))
+        scs = pd.to_numeric(pdata["supercoach_score"], errors="coerce")
+        keep = scs.notna() & (scs > 0)
+        if not keep.any():
+            continue
+        vals = scs[keep].astype(float).tolist()
+        rsorts = ([_parse_round(r)[0] for r in pdata.loc[keep, "round"].tolist()]
+                  if has_round else [0] * len(vals))
+        by_year.setdefault(year, []).extend(vals)
+        chrono.extend((year, rs, v) for rs, v in zip(rsorts, vals))
 
     if not chrono:
         return {"has_data": False}
