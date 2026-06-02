@@ -88,10 +88,113 @@ const FLAGS: FlagDef[] = [
 
 type SortField = 'rating' | 'potential' | 'runway' | 'keeper_value' | 'cba_pct' | 'sc_avg' | 'scDelta' | 'age' | 'career_games' | 'draft_score'
 
+// ── Squad Intelligence types + cockpit components ──
+interface IntelPlayer {
+  id: number; name: string; pos: string; primary: string; afl_team: string
+  age: number | null; height: number | null; injury: string | null
+  rating: number | null; potential: number | null; keeper_value: number | null
+  cba_pct: number | null; cba_trend: number | null
+  sc_avg: number; sc_prev: number | null; ceiling: number | null; floor: number | null
+  consistency: number | null; boom_pct: number | null
+  proj: number | null; proj_lo: number | null; proj_hi: number | null
+  vorp: number | null; sc_pctile: number | null
+  form_z: number; round_form: { round: number; sc: number; z: number }[]
+  team_games: number; bench_rounds: number; captain_games: number; sevens_games: number
+  emg_activated: number; points_banked: number; contribution_pct: number
+}
+interface SquadIntel {
+  has_data: boolean; team: { id: number; name: string }; replacement: Record<string, number>
+  players: IntelPlayer[]
+  team_metrics: {
+    vorp_total: number; avg_age: number
+    depth: Record<string, { count: number; above_repl: number; replacement: number }>
+    health: number | null; health_rank: number | null; descriptor: string | null; n_teams: number
+  }
+  insights: { kind: string; headline: string; detail?: string; player?: number }[]
+}
+
+function zColor(z: number): string {
+  const t = Math.max(-1.6, Math.min(1.6, z)) / 1.6
+  return t >= 0 ? `rgba(78,199,122,${(0.18 + 0.62 * t).toFixed(2)})`
+                : `rgba(239,107,94,${(0.18 + 0.62 * -t).toFixed(2)})`
+}
+
+function InsightHeader({ intel }: { intel: SquadIntel }) {
+  const m = intel.team_metrics
+  const thin = Object.entries(m.depth).filter(([, d]) => d.count > 0)
+    .sort((a, b) => a[1].above_repl - b[1].above_repl)[0]
+  return (
+    <div className="si-header">
+      <div className="si-header-main">
+        <div className="si-window">{m.descriptor || 'Squad overview'}</div>
+        <div className="si-chips">
+          {intel.insights.filter(i => i.kind !== 'window').slice(0, 3).map((i, n) => (
+            <span key={n} className="si-chip"><i className="bi bi-lightning-charge-fill"></i>{i.headline}{i.detail ? <em> · {i.detail}</em> : ''}</span>
+          ))}
+        </div>
+      </div>
+      <div className="si-tiles">
+        <div className="si-tile"><div className="si-tile-v">{m.health ?? '–'}</div><div className="si-tile-l">Squad health</div><div className="si-tile-s">{m.health_rank ? `#${m.health_rank} of ${m.n_teams}` : ''}</div></div>
+        <div className="si-tile"><div className="si-tile-v">{m.vorp_total}</div><div className="si-tile-l">Squad VORP</div><div className="si-tile-s">value over replacement</div></div>
+        <div className="si-tile"><div className="si-tile-v">{m.avg_age}</div><div className="si-tile-l">Avg age</div><div className="si-tile-s">contention window</div></div>
+        {thin && <div className="si-tile"><div className="si-tile-v" style={{ color: '#e0a93f' }}>{thin[0]}</div><div className="si-tile-l">Thinnest</div><div className="si-tile-s">{thin[1].above_repl} above repl</div></div>}
+      </div>
+    </div>
+  )
+}
+
+function FormHeatmap({ players, onSelect }: { players: IntelPlayer[]; onSelect: (id: number) => void }) {
+  const withForm = players.filter(p => p.round_form && p.round_form.length > 0)
+  if (withForm.length === 0) return null
+  const allRounds = Array.from(new Set(withForm.flatMap(p => p.round_form.map(r => r.round)))).sort((a, b) => a - b).slice(-14)
+  const rows = [...withForm].sort((a, b) => b.form_z - a.form_z)
+  return (
+    <div className="card mb-4 si-heat-card">
+      <div className="card-header d-flex align-items-center justify-content-between">
+        <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+          <i className="bi bi-grid-3x3-gap-fill me-2" style={{ color: '#8b949e' }}></i>Squad Form
+          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>SC by round vs each player's own season · hot ▶ cold</span>
+        </h5>
+        <div className="si-heat-legend"><span className="hl cold"></span>cold<span className="hl mid"></span><span className="hl hot"></span>hot</div>
+      </div>
+      <div className="card-body p-0">
+        <div className="si-heat-scroll">
+          <table className="si-heat">
+            <thead><tr><th className="si-heat-name"></th>{allRounds.map(r => <th key={r}>R{r}</th>)}<th className="si-heat-trend">trend</th></tr></thead>
+            <tbody>
+              {rows.map(p => {
+                const byRound: Record<number, { sc: number; z: number }> = {}
+                p.round_form.forEach(r => { byRound[r.round] = { sc: r.sc, z: r.z } })
+                return (
+                  <tr key={p.id} onClick={() => onSelect(p.id)}>
+                    <td className="si-heat-name"><span className={`pos-dot pos-${p.primary}`}></span>{p.name}</td>
+                    {allRounds.map(r => {
+                      const c = byRound[r]
+                      return <td key={r} className="si-heat-cell" style={c ? { background: zColor(c.z) } : undefined}
+                        title={c ? `R${r}: ${c.sc} SC (${c.z > 0 ? '+' : ''}${c.z}σ)` : `R${r}: didn't play`}>{c ? Math.round(c.sc) : ''}</td>
+                    })}
+                    <td className="si-heat-trend">{p.form_z >= 0.5 ? <span style={{ color: '#4ec77a' }}>▲ {p.form_z}</span> : p.form_z <= -0.5 ? <span style={{ color: '#ef6b5e' }}>▼ {p.form_z}</span> : <span style={{ color: '#6e7681' }}>–</span>}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function TeamStatsPage() {
   const { leagueId, teamId } = useParams()
   const { data, loading } = useFetch<StatsData>(`/leagues/${leagueId}/team/${teamId}/stats?format=json`)
   const { data: roi } = useFetch<DraftRoiData>(`/leagues/${leagueId}/team/${teamId}/draft-roi?format=json`)
+  const { data: intel } = useFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
+  const intelById = useMemo(() => {
+    const m = new Map<number, IntelPlayer>()
+    intel?.players?.forEach(p => m.set(p.id, p))
+    return m
+  }, [intel])
   const [sortField, setSortField] = useState<SortField>('sc_avg')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
@@ -183,15 +286,18 @@ export function TeamStatsPage() {
         </div>
       </div>
 
-      {/* Stat tiles */}
-      <div className="row g-3 mb-4">
-        <div className="col-6 col-md-2"><StatTile label="Squad Size" value={players.length} accent="sapphire" /></div>
-        <div className="col-6 col-md-2"><StatTile label="Avg Rating" value={avgRating} accent="amethyst" decimals={1} /></div>
-        <div className="col-6 col-md-2"><StatTile label="Avg Keeper Val" value={avgKV} accent="teal" decimals={0} /></div>
-        <div className="col-6 col-md-2"><StatTile label="Total SC" value={total_sc} accent="forest" /></div>
-        <div className="col-6 col-md-2"><StatTile label="Avg SC" value={avgSc} accent="ochre" decimals={1} /></div>
-        <div className="col-6 col-md-2"><StatTile label="Avg Age" value={avg_age} accent="rust" decimals={1} /></div>
-      </div>
+      {/* Insight header + Squad form heatmap (Squad Intelligence) */}
+      {intel?.has_data ? <InsightHeader intel={intel} /> : (
+        <div className="row g-3 mb-4">
+          <div className="col-6 col-md-2"><StatTile label="Squad Size" value={players.length} accent="sapphire" /></div>
+          <div className="col-6 col-md-2"><StatTile label="Avg Rating" value={avgRating} accent="amethyst" decimals={1} /></div>
+          <div className="col-6 col-md-2"><StatTile label="Avg Keeper Val" value={avgKV} accent="teal" decimals={0} /></div>
+          <div className="col-6 col-md-2"><StatTile label="Total SC" value={total_sc} accent="forest" /></div>
+          <div className="col-6 col-md-2"><StatTile label="Avg SC" value={avgSc} accent="ochre" decimals={1} /></div>
+          <div className="col-6 col-md-2"><StatTile label="Avg Age" value={avg_age} accent="rust" decimals={1} /></div>
+        </div>
+      )}
+      {intel?.has_data && <FormHeatmap players={intel.players} onSelect={id => { const p = players.find(pp => pp.id === id); if (p) setUsagePlayer(p) }} />}
 
       {/* Watchlist auto-flags shelf */}
       {flagCounts.length > 0 && (
@@ -376,6 +482,9 @@ export function TeamStatsPage() {
                 <th className="text-end sortable" onClick={() => sortBy('scDelta')}>Δ yr{sortIcon('scDelta')}</th>
                 <th className="text-end sortable" onClick={() => sortBy('cba_pct')} title="Centre Bounce Attendance % — midfield role">CBA%{sortIcon('cba_pct')}</th>
                 <th className="text-center sortable" onClick={() => sortBy('career_games')}>Games{sortIcon('career_games')}</th>
+                <th className="text-end" title="Value Over Replacement (SC above a freely-available player at the position)">VORP</th>
+                <th className="text-center" title="Games played for YOUR team this season (+ captain games)">Gms (you)</th>
+                <th className="text-end" title="SuperCoach points banked for your team">Banked</th>
               </tr>
             </thead>
             <tbody>
@@ -413,6 +522,20 @@ export function TeamStatsPage() {
                           )}
                         </span>}</td>
                     <td className="text-center" style={{ color: '#8b949e' }}>{p.career_games || '-'}</td>
+                    {(() => {
+                      const ix = intelById.get(p.id)
+                      return (
+                        <>
+                          <td className="text-end">{ix?.vorp != null
+                            ? <span style={{ color: ix.vorp > 0 ? '#4ec77a' : '#ef6b5e', fontWeight: 700 }}>{ix.vorp > 0 ? '+' : ''}{ix.vorp}</span> : '-'}</td>
+                          <td className="text-center" style={{ color: '#c9d1d9' }}>
+                            {ix?.team_games ?? '-'}
+                            {ix?.captain_games ? <span style={{ color: '#e0a93f', fontSize: '.6rem', marginLeft: 3 }} title={`${ix.captain_games} captain games`}>{ix.captain_games}C</span> : null}
+                          </td>
+                          <td className="text-end" style={{ color: '#8b949e' }}>{ix?.points_banked != null ? Math.round(ix.points_banked) : '-'}</td>
+                        </>
+                      )
+                    })()}
                   </tr>
                 )
               })}

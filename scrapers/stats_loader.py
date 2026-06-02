@@ -338,9 +338,13 @@ def compute_scoring_profile(player_name: str) -> dict:
     order = ["<60", "60–79", "80–99", "100–119", "120+"]
     cnt = Counter(bucket(v) for v in vals)
 
+    current_rounds = [{"round": int(rs), "sc": round(v, 1)}
+                      for (yy, rs, v) in games if yy == CURRENT_YEAR]
+
     return {
         "has_data": True,
         "games": n,
+        "current_rounds": current_rounds,
         "mean": round(mean, 1),
         "median": round(pct(0.5), 1),
         "ceiling": round(pct(0.9), 1),

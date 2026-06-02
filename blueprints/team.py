@@ -1146,6 +1146,29 @@ def player_compare(league_id, team_id):
     return jsonify({"players": [o for o in out if o]})
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/squad-intel")
+@login_required
+def squad_intel(league_id, team_id):
+    """Batched Squad Intelligence payload (cached). JSON only."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+    year = league.season_year
+    from models.team_ai_summary import get_cached_analytics, cache_analytics
+    if request.args.get("rebuild") != "1":
+        cached = get_cached_analytics(team_id, year, "squad_intel")
+        if cached:
+            return jsonify(cached)
+    from models.squad_intel import compute_squad_intel
+    data = compute_squad_intel(league_id, team_id, year)
+    try:
+        cache_analytics(team_id, year, "squad_intel", data)
+    except Exception:
+        pass
+    return jsonify(data)
+
+
 @team_bp.route("/<int:league_id>/team/<int:team_id>/draft-roi")
 @login_required
 def draft_roi(league_id, team_id):

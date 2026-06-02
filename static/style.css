@@ -4585,6 +4585,40 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   .squad-stat { flex: 0 0 40%; }
 }
 
+/* ══ Squad Intelligence cockpit ══ */
+.si-header { display: flex; gap: 18px; flex-wrap: wrap; justify-content: space-between; align-items: stretch;
+  background: linear-gradient(135deg, rgba(31,111,235,.14), rgba(22,27,34,.6) 60%);
+  border: 1px solid var(--kl-border); border-radius: 14px; padding: 16px 18px; margin-bottom: 16px; }
+.si-header-main { min-width: 240px; flex: 1 1 320px; display: flex; flex-direction: column; gap: 10px; }
+.si-window { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; color: #f0f4fb; line-height: 1.05; }
+.si-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.si-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .76rem; color: #c9d1d9;
+  background: rgba(110,130,180,.1); border: 1px solid rgba(110,130,180,.22); border-radius: 999px; padding: 4px 11px; }
+.si-chip i { color: #d8a23a; font-size: .72rem; }
+.si-chip em { color: #8b949e; font-style: normal; }
+.si-tiles { display: flex; gap: 10px; flex-wrap: wrap; }
+.si-tile { background: rgba(13,17,23,.55); border: 1px solid rgba(110,130,180,.16); border-radius: 11px; padding: 10px 14px; min-width: 92px; }
+.si-tile-v { font-size: 1.7rem; font-weight: 800; color: #f0f4fb; line-height: 1; font-variant-numeric: tabular-nums; }
+.si-tile-l { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #7d8694; margin-top: 6px; }
+.si-tile-s { font-size: .68rem; color: #8b949e; margin-top: 2px; }
+
+.si-heat-legend { display: flex; align-items: center; gap: 4px; font-size: .68rem; color: #8b949e; }
+.si-heat-legend .hl { width: 14px; height: 12px; border-radius: 3px; display: inline-block; }
+.si-heat-legend .cold { background: rgba(239,107,94,.7); }
+.si-heat-legend .mid { background: rgba(110,130,180,.2); }
+.si-heat-legend .hot { background: rgba(78,199,122,.7); }
+.si-heat-scroll { overflow-x: auto; }
+.si-heat { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: .72rem; padding: 6px; }
+.si-heat thead th { color: #6e7681; font-weight: 600; font-size: .62rem; text-align: center; padding-bottom: 2px; }
+.si-heat th.si-heat-name { text-align: left; }
+.si-heat tbody tr { cursor: pointer; }
+.si-heat tbody tr:hover .si-heat-name { color: #fff; }
+.si-heat-name { white-space: nowrap; color: #c9d1d9; font-weight: 600; padding-right: 10px; position: sticky; left: 0; background: var(--kl-card-bg, #0d1117); }
+.pos-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.pos-dot.pos-DEF { background: #58a6ff; } .pos-dot.pos-MID { background: #bc8cff; } .pos-dot.pos-FWD { background: #f0883e; } .pos-dot.pos-RUC { background: #3fb950; }
+.si-heat-cell { width: 30px; height: 26px; text-align: center; border-radius: 5px; color: #e6edf3; font-variant-numeric: tabular-nums; background: rgba(110,130,180,.06); font-size: .68rem; }
+.si-heat-trend { white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; }
+
 /* Team Stats page — watchlist flag chips + sortable rich table */
 .stats-flag-chip {
   display: inline-flex; align-items: center; gap: 7px;
