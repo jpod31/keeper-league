@@ -24,6 +24,7 @@ interface Player {
   potential: number | null
   keeper_value: number | null
   height_cm: number | null
+  cba_pct: number | null
   injury_severity: string | null
 }
 
@@ -71,7 +72,7 @@ const FLAGS: FlagDef[] = [
     reason: () => 'Currently injured' },
 ]
 
-type SortField = 'rating' | 'potential' | 'runway' | 'keeper_value' | 'sc_avg' | 'scDelta' | 'age' | 'career_games' | 'draft_score'
+type SortField = 'rating' | 'potential' | 'runway' | 'keeper_value' | 'cba_pct' | 'sc_avg' | 'scDelta' | 'age' | 'career_games' | 'draft_score'
 
 export function TeamStatsPage() {
   const { leagueId, teamId } = useParams()
@@ -325,6 +326,7 @@ export function TeamStatsPage() {
                 <th className="text-end sortable" onClick={() => sortBy('keeper_value')}>Keeper{sortIcon('keeper_value')}</th>
                 <th className="text-end sortable" onClick={() => sortBy('sc_avg')}>SC Avg{sortIcon('sc_avg')}</th>
                 <th className="text-end sortable" onClick={() => sortBy('scDelta')}>Δ yr{sortIcon('scDelta')}</th>
+                <th className="text-end sortable" onClick={() => sortBy('cba_pct')} title="Centre Bounce Attendance % — midfield role">CBA%{sortIcon('cba_pct')}</th>
                 <th className="text-center sortable" onClick={() => sortBy('career_games')}>Games{sortIcon('career_games')}</th>
               </tr>
             </thead>
@@ -355,6 +357,8 @@ export function TeamStatsPage() {
                     <td className="text-end fw-bold">{p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
                     <td className="text-end">{delta == null ? '-'
                       : <span style={{ color: delta >= 0 ? '#4ec77a' : '#ef6b5e' }}>{delta >= 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(0)}</span>}</td>
+                    <td className="text-end">{p.cba_pct == null ? '-'
+                      : <span style={{ color: p.cba_pct >= 60 ? '#bc8cff' : p.cba_pct >= 25 ? '#8b949e' : '#484f58' }}>{Math.round(p.cba_pct)}</span>}</td>
                     <td className="text-center" style={{ color: '#8b949e' }}>{p.career_games || '-'}</td>
                   </tr>
                 )
@@ -402,6 +406,7 @@ export function TeamStatsPage() {
 interface ComparePlayer {
   player_id: number; name: string; position: string; afl_team: string; age: number | null
   sc_avg: number | null; rating: number | null; potential: number | null; keeper_value: number | null
+  cba_pct: number | null
   ceiling: number | null; floor: number | null; consistency: number | null; next_season: number | null
   points_banked: number | null; team_games: number | null; captain_games: number | null
   season_trend: { year: number; avg: number }[]
@@ -412,6 +417,7 @@ const CMP_ROWS: { k: keyof ComparePlayer; label: string; hb: boolean }[] = [
   { k: 'rating', label: 'Rating', hb: true },
   { k: 'potential', label: 'Potential', hb: true },
   { k: 'keeper_value', label: 'Keeper Value', hb: true },
+  { k: 'cba_pct', label: 'CBA% (mid role)', hb: true },
   { k: 'age', label: 'Age', hb: false },
   { k: 'ceiling', label: 'Ceiling', hb: true },
   { k: 'floor', label: 'Floor', hb: true },

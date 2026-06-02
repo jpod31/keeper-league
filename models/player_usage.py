@@ -33,6 +33,7 @@ def compute_player_compare(league_id, team_id, player_id, year):
         "sc_avg": round(me.sc_avg, 1) if me.sc_avg else None,
         "rating": me.rating, "potential": me.potential,
         "keeper_value": round(me.keeper_value) if me.keeper_value is not None else None,
+        "cba_pct": round(me.cba_pct, 1) if me.cba_pct is not None else None,
         "ceiling": sc.get("ceiling") if has_sc else None,
         "floor": sc.get("floor") if has_sc else None,
         "consistency": sc.get("consistency") if has_sc else None,
@@ -72,6 +73,7 @@ def compute_player_benchmarks(player_id):
         ("rating", "Rating", lambda q: q.rating, True, False),
         ("potential", "Potential", lambda q: q.potential, True, False),
         ("keeper_value", "Keeper Value", lambda q: q.keeper_value, True, True),
+        ("cba_pct", "Midfield role (CBA%)", lambda q: q.cba_pct, True, True),
         ("career_games", "Experience", lambda q: q.career_games, True, True),
         ("youth", "Youth (younger = higher)", lambda q: q.age, False, True),
     ]
