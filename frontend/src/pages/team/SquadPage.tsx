@@ -35,6 +35,7 @@ interface SquadData {
   league: { id: number; name: string }
   team: { id: number; name: string; logo_url: string | null; owner: string }
   players: Player[]; roster: RosterEntry[]; is_owner: boolean; view: string
+  captain_scoring_enabled: boolean
   field_data: FieldData | null
   alltime_stats: Record<string, Record<string, number>>
   team_logos: Record<string, string>
@@ -289,8 +290,11 @@ function SquadPageInner() {
   const scPool = onfield.length ? onfield : players
   let projScore = scPool.reduce((a, p) => a + (p.sc_avg || 0), 0)
   const capP = captainId != null ? players.find(p => p.id === captainId) : undefined
+  const capScoring = data.captain_scoring_enabled   // league toggle — many leagues run it off
   const capOnField = !!(capP && onfieldIds.has(capP.id))
-  if (capOnField) projScore += (capP!.sc_avg || 0)  // captain scores double
+  if (capScoring && capOnField) projScore += (capP!.sc_avg || 0)  // captain scores double (only if enabled)
+  const projSub = !capScoring ? 'best XI · SC avg'
+    : capOnField ? 'incl. captain ×2' : 'set a captain for ×2'
   // Ladder position + recent form for THIS team (from the standings endpoint).
   const ladder = standings?.standings ?? []
   const ladderIdx = ladder.findIndex(s => s.team_id === Number(teamId))
@@ -454,7 +458,7 @@ function SquadPageInner() {
           <div className="squad-stat" style={{ ['--c' as string]: '#5aa0ff' } as React.CSSProperties}>
             <div className="squad-stat-val">{Math.round(projScore).toLocaleString()}</div>
             <div className="squad-stat-label">Projected</div>
-            <div className="squad-stat-sub">{capOnField ? 'incl. captain ×2' : 'set a captain'}</div>
+            <div className="squad-stat-sub">{projSub}</div>
           </div>
           <div className="squad-stat" style={{ ['--c' as string]: ratingColor } as React.CSSProperties}>
             <div className="squad-stat-val">{squadRating}</div>

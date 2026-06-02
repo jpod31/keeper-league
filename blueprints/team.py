@@ -793,6 +793,10 @@ def squad(league_id, team_id):
             "roster": [_serialize_roster(r) for r in roster],
             "is_owner": is_owner,
             "view": view,
+            "captain_scoring_enabled": (
+                season_cfg.captain_scoring_enabled
+                if season_cfg and season_cfg.captain_scoring_enabled is not None else True
+            ),
             "field_data": _serialize_field_data(field_data) if field_data else None,
             "alltime_stats": {str(k): v for k, v in alltime_stats.items()},
             "team_logos": TEAM_LOGOS,
