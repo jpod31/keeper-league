@@ -359,6 +359,48 @@ def compute_scoring_profile(player_name: str) -> dict:
     }
 
 
+def compute_player_splits(player_name: str) -> dict:
+    """SuperCoach by opponent and by venue (best/worst matchups & stadiums),
+    across all seasons. Difference vs the player's overall average is the signal."""
+    needle = (player_name or "").lower()
+    by_opp, by_venue, all_sc = {}, {}, []
+    for year in range(2013, CURRENT_YEAR + 1):
+        df = _load_year_csv(year)
+        if df is None or "supercoach_score" not in df.columns:
+            continue
+        pdata = df[df["_player_name_lower"] == needle]
+        if pdata.empty:
+            continue
+        scs = pd.to_numeric(pdata["supercoach_score"], errors="coerce")
+        keep = scs.notna() & (scs > 0)
+        if not keep.any():
+            continue
+        sub = pdata[keep]
+        vals = scs[keep].astype(float).tolist()
+        opps = sub["Opposition"].tolist() if "Opposition" in sub.columns else [None] * len(vals)
+        vens = sub["Venue"].tolist() if "Venue" in sub.columns else [None] * len(vals)
+        for v, o, ve in zip(vals, opps, vens):
+            all_sc.append(v)
+            if o is not None and str(o).strip() and str(o) != "nan":
+                by_opp.setdefault(str(o).strip(), []).append(v)
+            if ve is not None and str(ve).strip() and str(ve) != "nan":
+                by_venue.setdefault(str(ve).strip(), []).append(v)
+
+    if not all_sc:
+        return {"has_data": False}
+    overall = round(sum(all_sc) / len(all_sc), 1)
+
+    def summarize(d, min_games=2):
+        rows = [{"key": k, "avg": round(sum(vs) / len(vs), 1), "games": len(vs),
+                 "diff": round(sum(vs) / len(vs) - overall, 1)}
+                for k, vs in d.items() if len(vs) >= min_games]
+        rows.sort(key=lambda r: r["avg"], reverse=True)
+        return rows
+
+    return {"has_data": True, "overall_avg": overall, "games": len(all_sc),
+            "opponents": summarize(by_opp), "venues": summarize(by_venue)}
+
+
 def compute_stat_fingerprint(player_name: str) -> dict:
     """Career per-game stat mix → a 'what kind of scorer' archetype (#26)."""
     needle = (player_name or "").lower()

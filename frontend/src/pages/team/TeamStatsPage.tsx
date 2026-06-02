@@ -817,6 +817,28 @@ interface UsageData {
   timeline: { round: number; role: string; score: number | null; captain: boolean; vc: boolean }[]
   career?: { year: number; team: string; logo: string | null; games: number; level: string }[]
 }
+interface SplitRow { key: string; avg: number; games: number; diff: number }
+interface SplitsData { has_data: boolean; overall_avg: number; games: number; opponents: SplitRow[]; venues: SplitRow[] }
+function SplitList({ title, rows }: { title: string; rows: SplitRow[] }) {
+  const maxAbs = Math.max(8, ...rows.map(r => Math.abs(r.diff)))
+  return (
+    <div className="split-col">
+      <div className="split-col-title">{title}</div>
+      {rows.length === 0 ? <div className="text-secondary" style={{ fontSize: '.75rem', padding: 6 }}>—</div> : rows.map(r => (
+        <div key={r.key} className="split-row" title={`${r.key}: ${r.avg} avg over ${r.games} games (${r.diff >= 0 ? '+' : ''}${r.diff} vs season)`}>
+          <span className="split-name">{r.key}</span>
+          <span className="split-games">{r.games}g</span>
+          <div className="split-track">
+            <div className="split-fill" style={{ width: `${Math.abs(r.diff) / maxAbs * 50}%`, background: r.diff >= 0 ? '#4ec77a' : '#ef6b5e', marginLeft: r.diff >= 0 ? '50%' : `${50 - Math.abs(r.diff) / maxAbs * 50}%` }}></div>
+            <div className="split-mid"></div>
+          </div>
+          <span className="split-avg">{r.avg}</span>
+          <span className="split-diff" style={{ color: r.diff >= 0 ? '#4ec77a' : '#ef6b5e' }}>{r.diff >= 0 ? '+' : ''}{r.diff}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 interface SimilarData {
   has_data: boolean; position: string
   similar: { player_id: number; name: string; position: string; afl_team: string; sc_avg: number; rating: number | null; age: number | null; similarity: number }[]
@@ -858,9 +880,11 @@ interface ProjectionData {
 function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
   player: Player; leagueId: string; teamId: string; teamName: string; onClose: () => void
 }) {
-  const [tab, setTab] = useState<'usage' | 'scoring' | 'projection' | 'benchmarks' | 'similar'>('usage')
+  const [tab, setTab] = useState<'usage' | 'scoring' | 'splits' | 'projection' | 'benchmarks' | 'similar'>('usage')
   const base = `/leagues/${leagueId}/team/${teamId}/player/${player.id}`
   const { data: u, loading } = useFetch<UsageData>(`${base}/usage?format=json`)
+  const { data: sp, loading: spLoading } = useFetch<SplitsData>(
+    tab === 'splits' ? `${base}/splits?format=json` : null)
   const { data: sim, loading: simLoading } = useFetch<SimilarData>(
     tab === 'similar' ? `${base}/similar?format=json` : null)
   const { data: sc, loading: scLoading } = useFetch<ScoringData>(
@@ -889,6 +913,7 @@ function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
         <div className="usage-tabs">
           <button className={`usage-tab${tab === 'usage' ? ' active' : ''}`} onClick={() => setTab('usage')}>Your usage</button>
           <button className={`usage-tab${tab === 'scoring' ? ' active' : ''}`} onClick={() => setTab('scoring')}>Scoring profile</button>
+          <button className={`usage-tab${tab === 'splits' ? ' active' : ''}`} onClick={() => setTab('splits')}>Splits</button>
           <button className={`usage-tab${tab === 'projection' ? ' active' : ''}`} onClick={() => setTab('projection')}>Projection</button>
           <button className={`usage-tab${tab === 'benchmarks' ? ' active' : ''}`} onClick={() => setTab('benchmarks')}>Benchmarks</button>
           <button className={`usage-tab${tab === 'similar' ? ' active' : ''}`} onClick={() => setTab('similar')}>Similar</button>
@@ -906,7 +931,23 @@ function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
           </div>
         )}
 
-        {tab === 'similar' ? (
+        {tab === 'splits' ? (
+          <div className="usage-body">
+            {spLoading || !sp ? (
+              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading splits…</div>
+            ) : !sp.has_data ? (
+              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>No game history for splits yet.</div>
+            ) : (
+              <>
+                <div className="usage-section-title">Matchup & venue splits <span style={{ color: '#6e7681', fontWeight: 400 }}>· {sp.games} games · avg {sp.overall_avg}</span></div>
+                <div className="split-cols">
+                  <SplitList title="By opponent" rows={sp.opponents} />
+                  <SplitList title="By venue" rows={sp.venues} />
+                </div>
+              </>
+            )}
+          </div>
+        ) : tab === 'similar' ? (
           <div className="usage-body">
             {simLoading || !sim ? (
               <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading similar players…</div>

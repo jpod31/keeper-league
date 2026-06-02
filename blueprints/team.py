@@ -1125,6 +1125,17 @@ def player_projection(league_id, team_id, player_id):
     return jsonify(compute_player_projection(player.name, player.age))
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/splits")
+@login_required
+def player_splits(league_id, team_id, player_id):
+    """SC by opponent & venue (best/worst matchups & stadiums) — JSON only."""
+    player = db.session.get(AflPlayer, player_id)
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+    from scrapers.stats_loader import compute_player_splits
+    return jsonify(compute_player_splits(player.name))
+
+
 @team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/benchmarks")
 @login_required
 def player_benchmarks(league_id, team_id, player_id):
