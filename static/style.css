@@ -4423,6 +4423,114 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   vertical-align: .15em;
 }
 
+/* ══ Command bar ══ one card: identity + matchup/actions on top, dense stat ribbon below.
+   Replaced the padded hero box + separate tools row + closed-trade badge + big stat-card grid
+   (which left empty grid cells and lots of dead space). NO overflow:hidden here — the
+   Optimise/Bye/Round popovers must be free to overflow the card. */
+.squad-cmd {
+  background: linear-gradient(135deg, rgba(22,27,34,.95), rgba(13,17,23,.82));
+  border: 1px solid var(--kl-border);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+.squad-cmd-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: .8rem 1.05rem;
+}
+.squad-cmd-id { display: flex; align-items: center; gap: .8rem; min-width: 0; }
+.squad-cmd-name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  margin: 0;
+  color: var(--kl-text-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.squad-cmd-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: 3px;
+  font-size: .74rem;
+  color: #8b949e;
+}
+.squad-cmd-meta .dot { opacity: .4; }
+.squad-cmd-trade { display: inline-flex; align-items: center; gap: .3rem; }
+.squad-cmd-trade i { font-size: .8rem; opacity: .85; }
+.squad-cmd-trade strong { color: #c9d1d9; font-weight: 700; }
+.squad-cmd-trade.open { color: #d8a23a; }
+.squad-cmd-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+
+/* Dense horizontal stat ribbon — fills the card edge-to-edge, no empty cells */
+.squad-cmd-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid rgba(110,130,180,.14);
+  background: rgba(15,22,36,.45);
+  border-radius: 0 0 11px 11px;
+}
+.squad-stat {
+  position: relative;
+  padding: .7rem 1rem .72rem;
+  border-left: 1px solid rgba(110,130,180,.1);
+}
+.squad-stat:first-child { border-left: 0; }
+.squad-stat::after {
+  content: '';
+  position: absolute;
+  left: 1rem; right: 1rem; top: 0;
+  height: 2px;
+  background: var(--c, #6e82b4);
+  opacity: .6;
+  border-radius: 0 0 2px 2px;
+}
+.squad-stat-val {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: #f0f4fb;
+  font-variant-numeric: tabular-nums;
+}
+.squad-stat-val .unit { font-size: .8rem; font-weight: 700; color: #8b949e; }
+.squad-stat-val .unit .bi { color: var(--c); }
+.squad-stat-label {
+  margin-top: 6px;
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #7d8694;
+}
+.squad-stat-sub {
+  margin-top: 3px;
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--c);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 991px) {
+  .squad-cmd-name { font-size: 1.15rem; }
+  .squad-cmd-top { padding: .65rem .8rem; gap: .6rem; }
+  /* swipeable ribbon so 5 stats never crush on narrow screens */
+  .squad-cmd-stats { display: flex; overflow-x: auto; scrollbar-width: none; }
+  .squad-cmd-stats::-webkit-scrollbar { display: none; }
+  .squad-stat { flex: 0 0 40%; }
+}
+
 /* Summary stat cards row */
 .squad-stat-cards {
   display: grid;

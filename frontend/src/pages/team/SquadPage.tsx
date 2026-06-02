@@ -1,7 +1,6 @@
 import { useParams, Link, useSearchParams } from 'react-router'
 import { useState, useMemo, useCallback, useRef, useEffect, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { StatTile, type StatTileAccent } from '../../components/ui/StatTile'
 import { MatchupStrip } from '../../components/ui/MatchupStrip'
 import { SquadSkeleton } from '../../components/ui/SquadSkeleton'
 import { ByePlanner } from '../../components/ui/ByePlanner'
@@ -270,22 +269,17 @@ function SquadPageInner() {
   roster.forEach(r => { rosterMap[r.player_id] = r })
   const selectedSet = new Set(selected_player_ids)
 
-  // ── Squad vitals — fun, informative team metrics (not flat averages) ──
+  // ── Squad vitals — compact command-bar metrics (not flat averages) ──
   let totalAge = 0, ageCount = 0
-  const posCounts: Record<string, number> = { DEF: 0, MID: 0, FWD: 0, RUC: 0 }
   const onfieldIds = new Set(roster.filter(r => !r.is_benched).map(r => r.player_id))
   const captainId = roster.find(r => r.is_captain)?.player_id
-  const allRatings: number[] = []
   let starCount = 0
   let topStar: Player | null = null
   let injured = 0
   const onfield: Player[] = []
   players.forEach(p => {
     if (p.age) { totalAge += p.age; ageCount++ }
-    const primary = (p.position || 'MID').split('/')[0]
-    if (primary in posCounts) posCounts[primary]++
     if (p.rating) {
-      allRatings.push(p.rating)
       if (p.rating >= 80) starCount++
       if (!topStar || p.rating > (topStar.rating || 0)) topStar = p
     }
@@ -297,18 +291,17 @@ function SquadPageInner() {
   const squadRating = ratePool.length ? Math.round(ratePool.reduce((a, b) => a + b, 0) / ratePool.length) : 0
   const ratingTier = squadRating >= 83 ? 'Elite' : squadRating >= 78 ? 'Contender'
     : squadRating >= 73 ? 'Mid-table' : squadRating > 0 ? 'Rebuilding' : '—'
-  const ratingAccent: StatTileAccent = squadRating >= 83 ? 'amethyst' : squadRating >= 78 ? 'forest'
-    : squadRating >= 73 ? 'sapphire' : 'cognac'
+  const ratingColor = squadRating >= 83 ? '#a98bff' : squadRating >= 78 ? '#4ec77a'
+    : squadRating >= 73 ? '#5aa0ff' : '#cf9f6a'
   const scPool = onfield.length ? onfield : players
   let projScore = scPool.reduce((a, p) => a + (p.sc_avg || 0), 0)
   const capP = captainId != null ? players.find(p => p.id === captainId) : undefined
-  if (capP && onfieldIds.has(capP.id)) projScore += (capP.sc_avg || 0)  // captain scores double
+  const capOnField = !!(capP && onfieldIds.has(capP.id))
+  if (capOnField) projScore += (capP!.sc_avg || 0)  // captain scores double
   const avgAge = ageCount ? totalAge / ageCount : 0
   const ageWindow = avgAge === 0 ? '—' : avgAge < 24.5 ? 'Young & rising'
     : avgAge <= 27.5 ? 'Peak window' : 'Veteran core'
   const available = players.length - injured
-  const ratingSpark = [...allRatings].sort((a, b) => a - b)
-  const scSpark = scPool.map(p => p.sc_avg || 0).filter(v => v > 0).sort((a, b) => a - b)
   const starName = topStar ? (topStar as Player).name.split(' ').slice(-1)[0] : ''
 
   function StatusDot({ player }: { player: Player }) {
@@ -382,20 +375,81 @@ function SquadPageInner() {
 
   return (
     <div>
-      {/* ── Hero Header ── */}
-      <div className="squad-hero">
-        <div className="squad-hero-inner">
-          <div className="d-flex align-items-center gap-3">
+      {/* ── Command bar ── identity + matchup + squad actions + dense stat ribbon, in one card */}
+      <div className="squad-cmd">
+        <div className="squad-cmd-top">
+          <div className="squad-cmd-id">
             <div className="squad-logo-wrap">
-              {data.team.logo_url ? <img src={data.team.logo_url} alt="" className="squad-logo-img" width={48} height={48} />
+              {data.team.logo_url ? <img src={data.team.logo_url} alt="" className="squad-logo-img" width={44} height={44} />
                 : <div className="squad-logo-placeholder">{data.team.name.substring(0, 2).toUpperCase()}</div>}
             </div>
-            <div>
-              <div className="d-flex align-items-center gap-2 flex-wrap">
-                <h2 className="squad-hero-title">{data.team.name}</h2>
-                <span className="squad-hero-count d-none d-lg-inline">{players.length} players</span>
+            <div style={{ minWidth: 0 }}>
+              <h2 className="squad-cmd-name">{data.team.name}</h2>
+              <div className="squad-cmd-meta">
+                <span>{players.length} players</span>
+                {is_owner && (data.trade_is_open || data.delist_is_open) && (
+                  <><span className="dot">·</span>
+                  <span className="squad-cmd-trade open"><i className="bi bi-arrow-left-right"></i>Trade period open</span></>
+                )}
+                {is_owner && !data.trade_is_open && !data.delist_is_open && (
+                  <><span className="dot">·</span>
+                  <span className="squad-cmd-trade"><i className="bi bi-calendar-event"></i>
+                    {data.next_window_open_at
+                      ? <>{data.next_window_label ?? 'Trade'} opens <strong>{new Date(data.next_window_open_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</strong></>
+                      : <>Trades closed</>}
+                  </span></>
+                )}
               </div>
             </div>
+          </div>
+          {is_owner && (
+            <div className="squad-cmd-actions">
+              {league?.current_matchup && (
+                <MatchupStrip
+                  round={league.current_round}
+                  matchup={league.current_matchup}
+                  lockoutTime={league.next_lockout_at}
+                  leagueId={leagueId!}
+                />
+              )}
+              <ByePlanner
+                leagueId={leagueId!}
+                teamId={teamId!}
+                previewRound={byePreviewRound}
+                onPreviewRound={(round, ids) => { setByePreviewRound(round); setByePreviewIds(new Set(ids)) }}
+              />
+              {league?.current_round && league.current_round > 1 && (
+                <RoundPicker currentRound={league.current_round} selected={archiveRound} onSelect={setArchiveRound} />
+              )}
+              {view === 'field' && <OptimiseMenu optimising={optimising} onPick={optimise} />}
+            </div>
+          )}
+        </div>
+        <div className={`squad-cmd-stats${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
+          <div className="squad-stat" style={{ ['--c' as string]: ratingColor } as React.CSSProperties}>
+            <div className="squad-stat-val">{squadRating}</div>
+            <div className="squad-stat-label">Rating</div>
+            <div className="squad-stat-sub">{ratingTier}</div>
+          </div>
+          <div className="squad-stat" style={{ ['--c' as string]: '#5aa0ff' } as React.CSSProperties}>
+            <div className="squad-stat-val">{Math.round(projScore).toLocaleString()}</div>
+            <div className="squad-stat-label">Projected</div>
+            <div className="squad-stat-sub">{capOnField ? 'incl. captain ×2' : 'set a captain'}</div>
+          </div>
+          <div className="squad-stat" style={{ ['--c' as string]: '#e0a93f' } as React.CSSProperties}>
+            <div className="squad-stat-val">{starCount}<span className="unit"><i className="bi bi-star-fill"></i></span></div>
+            <div className="squad-stat-label">Stars 80+</div>
+            <div className="squad-stat-sub">{topStar ? `${starName} ${(topStar as Player).rating}` : 'none yet'}</div>
+          </div>
+          <div className="squad-stat" style={{ ['--c' as string]: '#3fc4c4' } as React.CSSProperties}>
+            <div className="squad-stat-val">{avgAge.toFixed(1)}<span className="unit">y</span></div>
+            <div className="squad-stat-label">Window</div>
+            <div className="squad-stat-sub">{ageWindow}</div>
+          </div>
+          <div className="squad-stat" style={{ ['--c' as string]: injured > 0 ? '#ef6b5e' : '#4ec77a' } as React.CSSProperties}>
+            <div className="squad-stat-val">{available}<span className="unit">/{players.length}</span></div>
+            <div className="squad-stat-label">Available</div>
+            <div className="squad-stat-sub">{injured > 0 ? `${injured} injured` : 'fully fit'}</div>
           </div>
         </div>
       </div>
@@ -434,43 +488,6 @@ function SquadPageInner() {
       {!is_owner && (
         <div className="d-flex align-items-center gap-2 mb-3 px-3 py-2" style={{ background: 'rgba(139,148,158,.08)', border: '1px solid #30363d', borderRadius: 8, fontSize: '.85rem', color: '#8b949e' }}>
           <i className="bi bi-eye"></i><span>Viewing <strong style={{ color: '#c9d1d9' }}>{data.team.name}</strong>'s squad (read-only)</span>
-        </div>
-      )}
-
-      {/* ── Squad tools ──
-              Matchup + bye planner + round picker. Grouped as a distinct
-              "tools" panel, visually separate from the trade-period
-              centre below — these are persistent squad context, not the
-              temporary trade-window alerts. */}
-      {is_owner && (
-        <div className="squad-tools">
-          {league?.current_matchup && (
-            <MatchupStrip
-              round={league.current_round}
-              matchup={league.current_matchup}
-              lockoutTime={league.next_lockout_at}
-              leagueId={leagueId!}
-            />
-          )}
-          <ByePlanner
-            leagueId={leagueId!}
-            teamId={teamId!}
-            previewRound={byePreviewRound}
-            onPreviewRound={(round, ids) => {
-              setByePreviewRound(round)
-              setByePreviewIds(new Set(ids))
-            }}
-          />
-          {league?.current_round && league.current_round > 1 && (
-            <RoundPicker
-              currentRound={league.current_round}
-              selected={archiveRound}
-              onSelect={setArchiveRound}
-            />
-          )}
-          {view === 'field' && (
-            <OptimiseMenu optimising={optimising} onPick={optimise} />
-          )}
         </div>
       )}
 
@@ -565,30 +582,6 @@ function SquadPageInner() {
         </div>
       )}
 
-      {/* ── Closed-window badge ──
-              When no trade/delist window is open, the trade-period centre is
-              gone — replaced by this tiny pill. It names the reopen date when a
-              future window is scheduled, otherwise just shows trades are closed
-              so the collapsed state is always visible (never blank). */}
-      {is_owner && !data.trade_is_open && !data.delist_is_open && (
-        <div
-          className="kl-window-badge"
-          title={data.next_window_open_at
-            ? `${data.next_window_label ?? 'Trade'} window opens ${new Date(data.next_window_open_at).toLocaleString()}`
-            : 'Trades and delistings are currently closed'}
-        >
-          <span className="kl-window-badge-dot"><i className="bi bi-calendar-event"></i></span>
-          <span className="kl-window-badge-text">
-            {data.next_window_open_at ? (
-              <>{data.next_window_label ?? 'Trade'} window opens{' '}
-              <strong>{new Date(data.next_window_open_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</strong></>
-            ) : (
-              <>Trades closed</>
-            )}
-          </span>
-        </div>
-      )}
-
       {/* ── Draft strip ──
           Prominent, mobile-visible entry to the draft room so owners can
           set their pre-draft order before a scheduled draft, or jump in
@@ -623,54 +616,6 @@ function SquadPageInner() {
           Team — it belongs in the Commissioner hub (admin action), not on every
           owner's team page. The active/scheduled draft strip above still shows
           when a draft is actually happening. */}
-
-      {/* ── Squad Vitals ── fun, informative team metrics with insight subs + depth sparklines */}
-      <div className={`squad-stat-cards${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
-        <StatTile
-          label="Squad Rating"
-          value={squadRating}
-          accent={ratingAccent}
-          sparkline={ratingSpark}
-          sub={<span><i className="bi bi-shield-fill-check me-1"></i>{ratingTier}</span>}
-        />
-        <StatTile
-          label="Projected Score"
-          value={Math.round(projScore)}
-          accent="sapphire"
-          sparkline={scSpark}
-          sub={<span><i className="bi bi-lightning-charge-fill me-1"></i>{capP && onfieldIds.has(capP.id) ? 'incl. captain ×2' : 'set a captain'}</span>}
-        />
-        <StatTile
-          label="Star Power"
-          value={starCount}
-          accent="ochre"
-          sub={topStar ? <span><i className="bi bi-star-fill me-1"></i>{starName} {(topStar as Player).rating}</span> : 'rated 80+'}
-        />
-        <StatTile
-          label="Squad Window"
-          value={avgAge}
-          decimals={1}
-          accent="teal"
-          sub={<span><i className="bi bi-hourglass-split me-1"></i>{ageWindow}</span>}
-        />
-        <StatTile
-          label="Available"
-          value={`${available}/${players.length}`}
-          accent={injured > 0 ? 'rust' : 'forest'}
-          sub={injured > 0
-            ? <span><i className="bi bi-bandaid-fill me-1"></i>{injured} injured</span>
-            : <span><i className="bi bi-heart-pulse-fill me-1"></i>fully fit</span>}
-        />
-        <div className="kl-tile" style={{ ['--kl-tile-accent' as string]: '#dde4f1', ['--kl-tile-rgb' as string]: '110,130,180' } as React.CSSProperties}>
-          <div className="kl-tile-value" style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', lineHeight: 1 }}>
-            {posCounts.DEF > 0 && <span className="squad-pos-chip squad-chip-def">DEF {posCounts.DEF}</span>}
-            {posCounts.MID > 0 && <span className="squad-pos-chip squad-chip-mid">MID {posCounts.MID}</span>}
-            {posCounts.FWD > 0 && <span className="squad-pos-chip squad-chip-fwd">FWD {posCounts.FWD}</span>}
-            {posCounts.RUC > 0 && <span className="squad-pos-chip squad-chip-ruc">RUC {posCounts.RUC}</span>}
-          </div>
-          <div className="kl-tile-label">Squad Balance</div>
-        </div>
-      </div>
 
       {/* ══════ WISHLIST VIEW ══════ */}
       {view === 'wishlist' && is_owner && (
@@ -763,13 +708,12 @@ function SquadPageInner() {
             const empty = ['DEF', 'MID', 'RUC', 'FWD'].reduce((n, pos) =>
               n + Math.max(0, (fd.slot_counts[pos] || 0) - (fd.zones[pos] || []).filter(Boolean).length), 0)
               + Math.max(0, (fd.flex_count || 0) - fd.flex_data.filter(s => s.player).length)
+            if (empty === 0) return null   // no green "all filled" noise — only flag gaps
             return (
-              <div className={`kl-lineup-status ${empty > 0 ? 'warn' : 'ok'}`}>
-                <span className="kl-lineup-status-dot"><i className={`bi ${empty > 0 ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'}`}></i></span>
+              <div className="kl-lineup-status warn">
+                <span className="kl-lineup-status-dot"><i className="bi bi-exclamation-triangle-fill"></i></span>
                 <span className="kl-lineup-status-text">
-                  {empty > 0
-                    ? <><strong>{empty} {empty === 1 ? 'spot' : 'spots'} to fill</strong> on the field</>
-                    : <><strong>Lineup set</strong> — every field position filled</>}
+                  <strong>{empty} {empty === 1 ? 'spot' : 'spots'} to fill</strong> on the field
                 </span>
               </div>
             )

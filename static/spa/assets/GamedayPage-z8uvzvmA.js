@@ -1,4 +1,4 @@
-import{d as e,m as t,r as n,t as r,y as i}from"./jsx-runtime-mCRDCYrZ.js";import{n as a}from"./api-BFFY-yxh.js";import{t as o}from"./AnimatedNumber-CXYaa4Yl.js";import{t as s}from"./Spinner-BsfKBmVq.js";var c=i(t(),1),l=r(),u=`
+import{d as e,m as t,r as n,t as r,y as i}from"./jsx-runtime-mCRDCYrZ.js";import{n as a}from"./api-BFFY-yxh.js";import{t as o}from"./AnimatedNumber-BdJzEvEc.js";import{t as s}from"./Spinner-Bz9SXICY.js";var c=i(t(),1),l=r(),u=`
 .s7gd-round-header { margin-bottom: 10px; }
 .s7gd-round-title { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; color: #e6edf3; }
 .s7gd-round-dates { color: #8b949e; font-size: .8rem; }

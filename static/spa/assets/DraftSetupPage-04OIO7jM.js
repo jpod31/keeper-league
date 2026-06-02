@@ -1,4 +1,4 @@
-import{d as e,m as t,r as n,t as r,u as i,y as a}from"./jsx-runtime-mCRDCYrZ.js";import{n as o}from"./api-BFFY-yxh.js";import{t as s}from"./RowsSkeleton-kW1CQ4f2.js";var c=a(t(),1),l=r(),ee=`
+import{d as e,m as t,r as n,t as r,u as i,y as a}from"./jsx-runtime-mCRDCYrZ.js";import{n as o}from"./api-BFFY-yxh.js";import{t as s}from"./RowsSkeleton-BJ5ixHjw.js";var c=a(t(),1),l=r(),ee=`
 .draft-order-list { display:flex; flex-direction:column; }
 .draft-order-row { display:flex; align-items:center; gap:.75rem; padding:.65rem 1rem; border-bottom:1px solid var(--kl-border); background:var(--kl-bg-card); transition:background .12s, transform .12s, box-shadow .12s; user-select:none; }
 .draft-order-row:last-child { border-bottom:none; }
