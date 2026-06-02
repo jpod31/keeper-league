@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router'
 import { useState, useMemo, useRef, useLayoutEffect } from 'react'
+import { useLeague } from '../../contexts/LeagueContext'
 import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
   ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList, LineChart, Line, ComposedChart,
@@ -301,6 +302,65 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
   )
 }
 
+// ── Predictions (Monte-Carlo projection + win probability) ──
+interface PredPlayer { name: string; pos: string; proj: number; cap: boolean }
+interface PredData {
+  has_data: boolean; your_proj: number; your_lo: number; your_hi: number
+  your_players: PredPlayer[]; n_starters: number; captain_scoring: boolean
+  opp_name: string | null; opp_proj?: number; opp_lo?: number; opp_hi?: number; win_prob?: number
+}
+function PredictionsSection({ leagueId, teamId, opp }: { leagueId: string; teamId: string; opp: number | null }) {
+  const { data, loading } = useFetch<PredData>(`/leagues/${leagueId}/team/${teamId}/predictions?format=json${opp ? `&opp=${opp}` : ''}`)
+  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Running simulations…</div>
+  if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Not enough data to project (no scoring players on field).</div>
+  const wp = data.win_prob
+  return (
+    <>
+      {data.opp_name && wp != null ? (
+        <div className="card pred-matchup mb-4">
+          <div className="pred-head">Projected this round · vs {data.opp_name}</div>
+          <div className="pred-scores">
+            <div className="pred-side">
+              <div className="pred-score" style={{ color: wp >= 50 ? '#4ec77a' : '#c9d1d9' }}>{data.your_proj}</div>
+              <div className="pred-team">You</div><div className="pred-range">{data.your_lo}–{data.your_hi}</div>
+            </div>
+            <div className="pred-winwrap">
+              <div className="pred-winlabel">win probability</div>
+              <div className="pred-winprob" style={{ color: wp >= 50 ? '#4ec77a' : '#ef6b5e' }}>{wp}%</div>
+              <div className="pred-winbar"><div style={{ width: `${wp}%`, background: wp >= 50 ? '#4ec77a' : '#ef6b5e' }}></div></div>
+            </div>
+            <div className="pred-side">
+              <div className="pred-score" style={{ color: wp < 50 ? '#ef6b5e' : '#c9d1d9' }}>{data.opp_proj}</div>
+              <div className="pred-team">{data.opp_name}</div><div className="pred-range">{data.opp_lo}–{data.opp_hi}</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="si-rank-tiles">
+          <div className="si-rank-tile"><div className="si-rank-v">{data.your_proj}</div><div className="si-rank-l">Projected round score</div></div>
+          <div className="si-rank-tile"><div className="si-rank-v" style={{ fontSize: '1.2rem' }}>{data.your_lo}–{data.your_hi}</div><div className="si-rank-l">likely range (10–90%)</div></div>
+        </div>
+      )}
+      <div className="card">
+        <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+          <i className="bi bi-cpu me-2" style={{ color: '#8b949e' }}></i>Projected XI
+          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>{data.n_starters} on field · {data.captain_scoring ? 'captain ×2' : 'no captain bonus'} · Monte-Carlo from season form</span></h5></div>
+        <div className="card-body">
+          <div className="pred-xi">
+            {data.your_players.map((p, i) => (
+              <div key={i} className="pred-xi-row">
+                <span className={`pos-dot pos-${p.pos}`}></span>
+                <span className="pred-xi-name">{p.name}{p.cap && <span className="pred-c">C</span>}</span>
+                <span className="pred-xi-proj">{p.proj}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Records (team + player) ──
 interface RecordItem { label: string; value: string | number; detail: string; icon: string; color: string; player?: string }
 interface RecordsData { has_data: boolean; team_records: RecordItem[]; player_records: RecordItem[] }
@@ -435,7 +495,9 @@ export function TeamStatsPage() {
   const { data: intel } = useFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
   const [usagePlayer, setUsagePlayer] = useState<Player | null>(null)
-  const [section, setSection] = useState<'squad' | 'league' | 'records'>('squad')
+  const [section, setSection] = useState<'squad' | 'league' | 'records' | 'predictions'>('squad')
+  const { league: leagueCtx } = useLeague()
+  const oppId = leagueCtx?.current_matchup?.opponent_id ?? null
   const [compareSet, setCompareSet] = useState<number[]>([])
   const [showCompare, setShowCompare] = useState(false)
   function toggleCompare(id: number) {
@@ -505,10 +567,12 @@ export function TeamStatsPage() {
         <button className={`si-sectiontab${section === 'squad' ? ' active' : ''}`} onClick={() => setSection('squad')}><i className="bi bi-people-fill"></i>My Squad</button>
         <button className={`si-sectiontab${section === 'league' ? ' active' : ''}`} onClick={() => setSection('league')}><i className="bi bi-trophy-fill"></i>League</button>
         <button className={`si-sectiontab${section === 'records' ? ' active' : ''}`} onClick={() => setSection('records')}><i className="bi bi-award-fill"></i>Records</button>
+        <button className={`si-sectiontab${section === 'predictions' ? ' active' : ''}`} onClick={() => setSection('predictions')}><i className="bi bi-cpu-fill"></i>Predictions</button>
       </div>
 
       {section === 'league' && <LeagueComparison leagueId={leagueId!} teamId={teamId!} />}
       {section === 'records' && <TeamRecords leagueId={leagueId!} teamId={teamId!} />}
+      {section === 'predictions' && <PredictionsSection leagueId={leagueId!} teamId={teamId!} opp={oppId} />}
 
       {section === 'squad' && (<>
       {/* Insight header + Squad form heatmap (Squad Intelligence) */}

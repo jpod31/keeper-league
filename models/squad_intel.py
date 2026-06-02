@@ -41,6 +41,62 @@ def _percentile(value, sorted_desc):
     return round(below / len(sorted_desc) * 100)
 
 
+def compute_predictions(league_id, team_id, opp_team_id, year, n=20000):
+    """Monte-Carlo round projection + win probability. Each on-field starter is
+    sampled from Normal(season SC, heuristic σ); captain doubled if enabled; sum →
+    squad score distribution; compared to the opponent's for win probability."""
+    import numpy as np
+    from models.database import FantasyRoster, SeasonConfig, FantasyTeam
+    FIELD = {"DEF", "MID", "FWD", "RUC", "FLEX"}
+
+    sc_cfg = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    cap_enabled = sc_cfg.captain_scoring_enabled if (sc_cfg and sc_cfg.captain_scoring_enabled is not None) else True
+
+    def sim_team(tid):
+        st = []
+        for r in FantasyRoster.query.filter_by(team_id=tid, is_active=True).all():
+            if r.is_benched or r.is_emergency or (r.position_code or "").upper() not in FIELD:
+                continue
+            p = db.session.get(AflPlayer, r.player_id)
+            if p and (p.sc_avg or 0) > 0:
+                st.append((p, r))
+        if not st:
+            return None
+        means = np.array([p.sc_avg or 0 for p, _ in st])
+        stds = np.maximum(8.0, 0.25 * means)
+        sims = np.clip(np.random.normal(means, stds, size=(n, len(means))), 0, None)
+        cap_idx = next((i for i, (_, r) in enumerate(st) if r.is_captain), None)
+        if cap_enabled and cap_idx is not None:
+            sims[:, cap_idx] *= 2
+        totals = sims.sum(axis=1)
+        if cap_enabled and cap_idx is not None:
+            means = means.copy(); means[cap_idx] *= 2
+        players = sorted([{"name": p.name, "pos": _primary_pos(p), "proj": round(p.sc_avg or 0, 1),
+                           "cap": bool(r.is_captain)} for p, r in st], key=lambda x: -x["proj"])
+        return {"totals": totals, "mean": float(means.sum()), "n": len(st), "players": players}
+
+    you = sim_team(team_id)
+    if not you:
+        return {"has_data": False}
+    out = {"has_data": True, "your_proj": round(you["mean"]),
+           "your_lo": round(float(np.percentile(you["totals"], 10))),
+           "your_hi": round(float(np.percentile(you["totals"], 90))),
+           "your_players": you["players"], "n_starters": you["n"],
+           "captain_scoring": cap_enabled, "opp_name": None}
+    if opp_team_id:
+        opp = sim_team(opp_team_id)
+        ot = db.session.get(FantasyTeam, opp_team_id)
+        out["opp_name"] = ot.name if ot else "Opponent"
+        if opp:
+            out.update({
+                "opp_proj": round(opp["mean"]),
+                "opp_lo": round(float(np.percentile(opp["totals"], 10))),
+                "opp_hi": round(float(np.percentile(opp["totals"], 90))),
+                "win_prob": round(float((you["totals"] > opp["totals"]).mean()) * 100),
+            })
+    return out
+
+
 def compute_team_records(league_id, team_id, year):
     """Team + player records (season + all-time) from scoring & fixture history."""
     from models.database import (RoundScore, Fixture, SeasonStanding,

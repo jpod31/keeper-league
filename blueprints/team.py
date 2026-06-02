@@ -1180,6 +1180,19 @@ def squad_intel(league_id, team_id):
     return jsonify(data)
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/predictions")
+@login_required
+def predictions(league_id, team_id):
+    """Monte-Carlo round projection + win probability (JSON only). ?opp=<team_id>."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+    opp = request.args.get("opp")
+    opp_id = int(opp) if opp and opp.isdigit() else None
+    from models.squad_intel import compute_predictions
+    return jsonify(compute_predictions(league_id, team_id, opp_id, league.season_year))
+
+
 @team_bp.route("/<int:league_id>/team/<int:team_id>/records")
 @login_required
 def team_records(league_id, team_id):

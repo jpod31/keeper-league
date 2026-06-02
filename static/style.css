@@ -4602,6 +4602,25 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .si-rank-of { font-size: .8rem; font-weight: 600; color: #8b949e; margin-left: 6px; }
 .si-rank-desc { font-size: 1.3rem; font-weight: 800; color: #58a6ff; line-height: 1.1; }
 .si-rank-l { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #7d8694; margin-top: 7px; }
+/* Predictions */
+.pred-matchup { padding: 18px 20px; background: linear-gradient(135deg, rgba(31,111,235,.12), rgba(22,27,34,.5)); }
+.pred-head { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #8b949e; margin-bottom: 14px; text-align: center; }
+.pred-scores { display: grid; grid-template-columns: 1fr 1.4fr 1fr; align-items: center; gap: 16px; }
+.pred-side { text-align: center; }
+.pred-score { font-size: 2.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.pred-team { font-size: .82rem; font-weight: 700; color: #c9d1d9; margin-top: 5px; }
+.pred-range { font-size: .68rem; color: #6e7681; margin-top: 2px; }
+.pred-winwrap { text-align: center; }
+.pred-winlabel { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #7d8694; }
+.pred-winprob { font-size: 1.8rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pred-winbar { height: 8px; border-radius: 4px; background: rgba(239,107,94,.25); overflow: hidden; margin-top: 4px; }
+.pred-winbar > div { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.pred-xi { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 18px; }
+.pred-xi-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(110,130,180,.08); font-size: .82rem; }
+.pred-xi-name { flex: 1; color: #c9d1d9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pred-c { background: #e0a93f; color: #0d1117; font-size: .56rem; font-weight: 800; padding: 1px 4px; border-radius: 3px; margin-left: 5px; }
+.pred-xi-proj { font-weight: 800; color: #f0f4fb; font-variant-numeric: tabular-nums; }
+
 /* Records */
 .rec-section { margin-bottom: 22px; }
 .rec-section-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #8b949e; margin-bottom: 11px; }
