@@ -387,6 +387,10 @@ function consistencyLabel(c: number): string {
 const HIST_COLOR: Record<string, string> = {
   '<60': '#ef6b5e', '60–79': '#d2884f', '80–99': '#5aa0ff', '100–119': '#4ec77a', '120+': '#a98bff',
 }
+interface BenchmarkData {
+  has_data: boolean; position: string; cohort: number
+  metrics: { key: string; label: string; value: number; percentile: number; of: number }[]
+}
 interface ProjectionData {
   has_data: boolean
   next_round: number
@@ -399,13 +403,15 @@ interface ProjectionData {
 function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
   player: Player; leagueId: string; teamId: string; teamName: string; onClose: () => void
 }) {
-  const [tab, setTab] = useState<'usage' | 'scoring' | 'projection'>('usage')
+  const [tab, setTab] = useState<'usage' | 'scoring' | 'projection' | 'benchmarks'>('usage')
   const base = `/leagues/${leagueId}/team/${teamId}/player/${player.id}`
   const { data: u, loading } = useFetch<UsageData>(`${base}/usage?format=json`)
   const { data: sc, loading: scLoading } = useFetch<ScoringData>(
     tab === 'scoring' ? `${base}/scoring?format=json` : null)
   const { data: pj, loading: pjLoading } = useFetch<ProjectionData>(
     tab === 'projection' ? `${base}/projection?format=json` : null)
+  const { data: bm, loading: bmLoading } = useFetch<BenchmarkData>(
+    tab === 'benchmarks' ? `${base}/benchmarks?format=json` : null)
   const primary = posCode(player.position)
   const rolesPresent = u ? Array.from(new Set(u.timeline.map(t => t.role))) : []
 
@@ -427,9 +433,33 @@ function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
           <button className={`usage-tab${tab === 'usage' ? ' active' : ''}`} onClick={() => setTab('usage')}>Your usage</button>
           <button className={`usage-tab${tab === 'scoring' ? ' active' : ''}`} onClick={() => setTab('scoring')}>Scoring profile</button>
           <button className={`usage-tab${tab === 'projection' ? ' active' : ''}`} onClick={() => setTab('projection')}>Projection</button>
+          <button className={`usage-tab${tab === 'benchmarks' ? ' active' : ''}`} onClick={() => setTab('benchmarks')}>Benchmarks</button>
         </div>
 
-        {tab === 'projection' ? (
+        {tab === 'benchmarks' ? (
+          <div className="usage-body">
+            {bmLoading || !bm ? (
+              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading benchmarks…</div>
+            ) : !bm.has_data ? (
+              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Not enough cohort data to benchmark.</div>
+            ) : (
+              <>
+                <div className="usage-section-title">vs other {bm.position}s <span style={{ color: '#6e7681', fontWeight: 400 }}>· {bm.cohort} in pool · percentile</span></div>
+                {bm.metrics.map(m => {
+                  const c = m.percentile >= 80 ? '#4ec77a' : m.percentile >= 55 ? '#5aa0ff' : m.percentile >= 30 ? '#d2884f' : '#ef6b5e'
+                  return (
+                    <div key={m.key} className="bm-row">
+                      <div className="bm-label">{m.label}</div>
+                      <div className="bm-track"><div className="bm-fill" style={{ width: `${m.percentile}%`, background: c }}></div></div>
+                      <div className="bm-val">{m.value}</div>
+                      <div className="bm-pct" style={{ color: c }}>{m.percentile}<span className="bm-pct-th">{m.percentile % 10 === 1 && m.percentile !== 11 ? 'st' : m.percentile % 10 === 2 && m.percentile !== 12 ? 'nd' : m.percentile % 10 === 3 && m.percentile !== 13 ? 'rd' : 'th'}</span></div>
+                    </div>
+                  )
+                })}
+              </>
+            )}
+          </div>
+        ) : tab === 'projection' ? (
           <div className="usage-body">
             {pjLoading || !pj ? (
               <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading projection…</div>

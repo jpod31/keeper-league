@@ -6,9 +6,52 @@ Reserve7s*). Powers the Stats-page player drill-down (ideas #31–38).
 
 from models.database import (
     db, WeeklyLineup, RoundScore, Reserve7sLineup, Reserve7sRoundScore,
-    FantasyRoster,
+    FantasyRoster, AflPlayer,
 )
 from models.scoring_engine import FIELD_POSITIONS
+
+
+def _primary_pos(p):
+    return (p.position or "MID").split("/")[0].upper()
+
+
+def compute_player_benchmarks(player_id):
+    """Percentile rank of a player vs their primary-position cohort across the
+    pool, on metrics already stored on AflPlayer (cheap, no CSV). Idea #9."""
+    me = db.session.get(AflPlayer, player_id)
+    if not me:
+        return {"has_data": False}
+    primary = _primary_pos(me)
+    cohort = [q for q in AflPlayer.query.all() if _primary_pos(q) == primary]
+
+    def pctile(getter, higher_better=True, positive=False):
+        mine = getter(me)
+        if mine is None:
+            return None
+        vals = [getter(q) for q in cohort]
+        vals = [v for v in vals if v is not None and (v > 0 if positive else True)]
+        if len(vals) < 4:
+            return None
+        if higher_better:
+            rank = sum(1 for v in vals if v <= mine)
+        else:
+            rank = sum(1 for v in vals if v >= mine)
+        return {"value": round(mine, 1), "percentile": round(rank / len(vals) * 100), "of": len(vals)}
+
+    specs = [
+        ("sc_avg", "SuperCoach avg", lambda q: q.sc_avg, True, True),
+        ("rating", "Rating", lambda q: q.rating, True, False),
+        ("potential", "Potential", lambda q: q.potential, True, False),
+        ("keeper_value", "Keeper Value", lambda q: q.keeper_value, True, True),
+        ("career_games", "Experience", lambda q: q.career_games, True, True),
+        ("youth", "Youth (younger = higher)", lambda q: q.age, False, True),
+    ]
+    metrics = []
+    for key, label, getter, hb, pos in specs:
+        r = pctile(getter, hb, pos)
+        if r:
+            metrics.append({"key": key, "label": label, **r})
+    return {"has_data": bool(metrics), "position": primary, "cohort": len(cohort), "metrics": metrics}
 
 
 def _num(v):

@@ -4681,6 +4681,14 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .proj-card-val { font-size: 2.1rem; font-weight: 800; color: #f0f4fb; line-height: 1; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .proj-band { font-size: .85rem; font-weight: 700; color: #8b949e; }
 .proj-card-sub { font-size: .72rem; color: #8b949e; margin-top: 7px; }
+.bm-row { display: grid; grid-template-columns: 110px 1fr 42px 42px; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bm-label { font-size: .76rem; color: #c9d1d9; }
+.bm-track { height: 8px; border-radius: 4px; background: rgba(110,130,180,.16); overflow: hidden; }
+.bm-fill { height: 100%; border-radius: 4px; transition: width .3s ease; }
+.bm-val { font-size: .76rem; color: #8b949e; text-align: right; font-variant-numeric: tabular-nums; }
+.bm-pct { font-size: .9rem; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.bm-pct-th { font-size: .58rem; font-weight: 700; }
+@media (max-width: 520px) { .bm-row { grid-template-columns: 84px 1fr 34px 38px; gap: 7px; } .bm-label { font-size: .7rem; } }
 
 /* Summary stat cards row */
 .squad-stat-cards {

@@ -1110,6 +1110,14 @@ def player_projection(league_id, team_id, player_id):
     return jsonify(compute_player_projection(player.name, player.age))
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/benchmarks")
+@login_required
+def player_benchmarks(league_id, team_id, player_id):
+    """Percentile rank vs position cohort (JSON only)."""
+    from models.player_usage import compute_player_benchmarks
+    return jsonify(compute_player_benchmarks(player_id))
+
+
 @team_bp.route("/<int:league_id>/squad-health")
 @login_required
 def squad_health(league_id):
