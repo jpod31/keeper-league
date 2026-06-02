@@ -32,26 +32,32 @@ _FIELD = {"DEF", "MID", "FWD", "RUC", "FLEX"}
 
 # ─────────────────────────── Style Universe ───────────────────────────
 
-def _archetype_name(centroid, feat_names):
-    """Name a cluster from its two most distinctive (highest z) features."""
-    order = np.argsort(centroid)[::-1]
-    top = [feat_names[i] for i in order[:2]]
-    has = lambda *xs: any(t in top for t in xs)
-    if has("hitouts"):
-        return "Ruck engine"
-    if has("goals") and not has("clearances", "contested_possessions"):
-        return "Goal source"
-    if has("clearances", "contested_possessions"):
-        return "Inside bull"
-    if has("tackles", "pressure_acts"):
-        return "Pressure forward"
-    if has("metres_gained", "marks") and has("kicks", "metres_gained", "marks"):
-        return "Rebounding general"
-    if has("handballs"):
-        return "Outside link"
-    if has("kicks", "marks"):
-        return "Distributor"
-    return "Utility"
+_FEAT_ARCHETYPE = {
+    "hitouts": "Ruck engine", "goals": "Goal source", "clearances": "Inside bull",
+    "contested_possessions": "Contested beast", "tackles": "Pressure forward",
+    "pressure_acts": "Pressure forward", "marks": "Intercept marker",
+    "metres_gained": "Rebounding general", "kicks": "Ball distributor",
+    "handballs": "Outside link", "inside_fifties": "Attacking driver",
+}
+
+
+def _name_clusters(cent, feat_names):
+    """Distinct, evocative names for each cluster from its centroid z-profile.
+    Low-signal clusters (no feature meaningfully above average) → 'Rotation / role'."""
+    names, used = [], {}
+    for c in cent:
+        order = np.argsort(c)[::-1]
+        if float(c[order[0]]) < 0.25:
+            base = "Rotation / role"
+        else:
+            base = _FEAT_ARCHETYPE.get(feat_names[order[0]]) or _FEAT_ARCHETYPE.get(feat_names[order[1]]) or "Utility"
+        if base in used:
+            # disambiguate by the next distinctive trait
+            qual = next((feat_names[i].split("_")[0] for i in order[1:] if float(c[i]) > 0.2), None)
+            base = f"{base} ({qual})" if qual else f"{base} II"
+        used[base] = True
+        names.append(base)
+    return names
 
 
 def compute_style_universe(league_id, team_id, year):
@@ -105,7 +111,7 @@ def compute_style_universe(league_id, team_id, year):
         for c in range(k):
             if (labels == c).any():
                 cent[c] = Z[labels == c].mean(0)
-    names = [_archetype_name(cent[c], _FEATS) for c in range(k)]
+    names = _name_clusters(cent, _FEATS)
 
     owned = {r.player_id for r in FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()}
     nodes = []

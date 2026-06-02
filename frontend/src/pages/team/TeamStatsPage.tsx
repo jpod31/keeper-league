@@ -10,6 +10,7 @@ import {
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
+import { CommandDeck } from './CommandDeck'
 
 interface Player {
   id: number
@@ -642,7 +643,7 @@ export function TeamStatsPage() {
   const navigate = useNavigate()
   const openPlayer = (id: number) => navigate(`/leagues/${leagueId}/team/${teamId}/player/${id}`)
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
-  const [section, setSection] = useState<'keeper' | 'squad' | 'this-round' | 'league'>('keeper')
+  const [section, setSection] = useState<'deck' | 'keeper' | 'squad' | 'this-round' | 'league'>('deck')
   const [compareSet, setCompareSet] = useState<number[]>([])
   const [showCompare, setShowCompare] = useState(false)
   function toggleCompare(id: number) {
@@ -706,16 +707,18 @@ export function TeamStatsPage() {
         </div>
       </div>
 
-      {/* The Read — persistent keeper-framed verdict band */}
-      {intel?.has_data && <TheRead intel={intel} />}
+      {/* The Read — keeper-framed verdict band (Deck has its own headline) */}
+      {intel?.has_data && section !== 'deck' && <TheRead intel={intel} />}
 
       <div className="si-sectionnav">
+        <button className={`si-sectiontab${section === 'deck' ? ' active' : ''}`} onClick={() => setSection('deck')}><i className="bi bi-grid-1x2-fill"></i>Deck</button>
         <button className={`si-sectiontab${section === 'keeper' ? ' active' : ''}`} onClick={() => setSection('keeper')}><i className="bi bi-clipboard-check"></i>Keeper</button>
         <button className={`si-sectiontab${section === 'squad' ? ' active' : ''}`} onClick={() => setSection('squad')}><i className="bi bi-people-fill"></i>Squad</button>
         <button className={`si-sectiontab${section === 'this-round' ? ' active' : ''}`} onClick={() => setSection('this-round')}><i className="bi bi-cpu-fill"></i>This Round</button>
         {showLeague && <button className={`si-sectiontab${section === 'league' ? ' active' : ''}`} onClick={() => setSection('league')}><i className="bi bi-trophy-fill"></i>League</button>}
       </div>
 
+      {section === 'deck' && <CommandDeck leagueId={leagueId!} teamId={teamId!} descriptor={intel?.team_metrics?.descriptor ?? null} />}
       {section === 'keeper' && <KeeperTab leagueId={leagueId!} teamId={teamId!} onSelect={openPlayer} />}
       {section === 'this-round' && <ThisRound leagueId={leagueId!} teamId={teamId!} onSelect={openPlayer} />}
       {section === 'league' && showLeague && <LeagueComparison leagueId={leagueId!} teamId={teamId!} />}
