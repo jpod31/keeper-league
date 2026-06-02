@@ -105,6 +105,159 @@ def compute_dynasty_window(league_id, team_id, year):
             "current": trajectory[0]["output"], "archetypes": archetypes}
 
 
+_KEEPER_ORDER = ["Cornerstone", "Keep", "Develop", "Sell-high", "Hold", "Replaceable"]
+
+
+def compute_keeper_board(players):
+    """Bucket each rostered player into a keep/trade decision from already-computed
+    squad-intel fields (value percentile, keeper value, VORP, age vs peak,
+    next-season trajectory). Returns one row per player sorted by bucket priority."""
+    board = []
+    for p in players:
+        age = p.get("age")
+        sc = p.get("sc_avg") or 0
+        pct = p.get("sc_pctile")            # 0-100 within position cohort
+        kv = p.get("keeper_value") or 0
+        vorp = p.get("vorp")
+        proj = p.get("proj")                # projected next season
+        rating = p.get("rating") or 0
+        pot = p.get("potential") or 0
+        pos = p.get("primary")
+
+        rising = proj is not None and sc > 0 and proj >= sc + 2
+        declining = proj is not None and sc > 0 and proj <= sc - 3
+        high_value = (pct is not None and pct >= 78) or kv >= 80
+        solid = pct is not None and pct >= 50
+        young = age is not None and age <= 23
+        old = age is not None and age >= 29
+        below_repl = vorp is not None and vorp <= 0
+        upside = (pot - rating) >= 6
+
+        if high_value and not declining:
+            bucket = "Cornerstone"
+            why = (f"Top-{pct}% {pos}" if pct is not None else f"Keeper value {round(kv)}")
+            if rising:
+                why += " · still climbing"
+        elif young and upside and not high_value:
+            bucket = "Develop"
+            why = f"Age {age} · {round(pot - rating)} ratings of upside to grow into"
+        elif old and declining and sc >= 75:
+            bucket = "Sell-high"
+            why = f"Age {age} · projects {round(proj)} next yr ({round(proj - sc):+d}) — move while value holds"
+        elif below_repl and not young:
+            bucket = "Replaceable"
+            why = "Below replacement" + (f" (VORP {round(vorp):+d})" if vorp is not None else "") + f" at {age if age is not None else '?'}"
+        elif solid and (not old or rising):
+            bucket = "Keep"
+            why = f"Solid {pos}" + (f" · {pct}th pct" if pct is not None else "")
+            if rising:
+                why += " · trending up"
+        else:
+            bucket = "Hold"
+            why = (f"{pct}th pct {pos}" if pct is not None else "Limited sample") + (" · early days" if young else " · watch")
+
+        board.append({
+            "id": p.get("id"), "name": p.get("name"), "primary": pos,
+            "age": age, "sc_avg": round(sc, 1) if sc else 0,
+            "keeper_value": round(kv) if kv else None,
+            "vorp": round(vorp, 1) if vorp is not None else None,
+            "sc_pctile": pct, "proj": round(proj) if proj is not None else None,
+            "bucket": bucket, "why": why,
+        })
+    order = {b: i for i, b in enumerate(_KEEPER_ORDER)}
+    board.sort(key=lambda x: (order.get(x["bucket"], 99), -(x["sc_avg"] or 0)))
+    return board
+
+
+def compute_this_round(league_id, team_id, year):
+    """This-round matchup read: resolve the fantasy opponent + projected score /
+    win probability (Monte-Carlo), then each on-field starter with their projection,
+    captain status, risk flags (bye / injury) and the matchup split vs the specific
+    AFL opponent + venue they face this round."""
+    from models.database import AflGame, Fixture
+    from scrapers.squiggle import get_current_round
+    from scrapers.stats_loader import compute_player_splits
+    FIELD = {"DEF", "MID", "FWD", "RUC", "FLEX"}
+
+    rnd = get_current_round(year)
+    if rnd is None:
+        g = (AflGame.query.filter_by(year=year)
+             .filter(AflGame.status == "scheduled")
+             .order_by(AflGame.afl_round.asc()).first())
+        if g is None:
+            g = (AflGame.query.filter_by(year=year)
+                 .order_by(AflGame.afl_round.desc()).first())
+        rnd = g.afl_round if g else None
+    if rnd is None:
+        return {"has_data": False, "note": "No fixtures scheduled yet."}
+
+    # AFL games this round → afl_team -> (opponent, venue); absent = bye
+    by_team = {}
+    for g in AflGame.query.filter_by(year=year, afl_round=rnd).all():
+        by_team[g.home_team] = (g.away_team, g.venue)
+        by_team[g.away_team] = (g.home_team, g.venue)
+
+    fx = (Fixture.query.filter_by(league_id=league_id, year=year, afl_round=rnd)
+          .filter(db.or_(Fixture.home_team_id == team_id, Fixture.away_team_id == team_id))
+          .first())
+    opp_id = None
+    if fx:
+        opp_id = fx.away_team_id if fx.home_team_id == team_id else fx.home_team_id
+
+    pred = compute_predictions(league_id, team_id, opp_id, year)
+    if not pred.get("has_data"):
+        return {"has_data": False, "round": rnd, "note": "No scoring players on field."}
+
+    starters = []
+    for r in FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all():
+        if r.is_benched or r.is_emergency or (r.position_code or "").upper() not in FIELD:
+            continue
+        p = db.session.get(AflPlayer, r.player_id)
+        if not p or (p.sc_avg or 0) <= 0:
+            continue
+        afl_opp, venue = by_team.get(p.afl_team, (None, None))
+        bye = p.afl_team not in by_team
+        opp_diff = venue_diff = None
+        if afl_opp or venue:
+            sp = compute_player_splits(p.name)
+            if sp.get("has_data"):
+                if afl_opp:
+                    m = next((o for o in sp["opponents"] if o["key"] == afl_opp), None)
+                    opp_diff = m["diff"] if m else None
+                if venue:
+                    m = next((v for v in sp["venues"] if v["key"] == venue), None)
+                    venue_diff = m["diff"] if m else None
+        adj = (p.sc_avg or 0) + 0.5 * (opp_diff or 0) + 0.5 * (venue_diff or 0)
+        starters.append({
+            "id": p.id, "name": p.name, "pos": _primary_pos(p),
+            "proj": round(p.sc_avg or 0), "adj": round(adj), "cap": bool(r.is_captain),
+            "afl_opp": afl_opp, "venue": venue,
+            "opp_diff": round(opp_diff, 1) if opp_diff is not None else None,
+            "venue_diff": round(venue_diff, 1) if venue_diff is not None else None,
+            "bye": bye, "injury": getattr(p, "injury_severity", None),
+        })
+    starters.sort(key=lambda s: -s["adj"])
+
+    captain = None
+    if starters:
+        rec = max(starters, key=lambda s: s["adj"])
+        cur = next((s for s in starters if s["cap"]), None)
+        why = f"{rec['proj']} proj"
+        if rec.get("opp_diff"):
+            why += f" · {rec['opp_diff']:+.0f} vs {rec['afl_opp']}"
+        captain = {"id": rec["id"], "name": rec["name"], "why": why,
+                   "is_current": bool(cur and cur["id"] == rec["id"])}
+
+    out = dict(pred)
+    out.update({
+        "round": rnd, "opp_id": opp_id, "starters": starters, "captain": captain,
+        "risks_n": sum(1 for s in starters if s["bye"] or s["injury"]),
+    })
+    if not opp_id:
+        out["note"] = "No fantasy opponent this round (bye or finals) — projection only."
+    return out
+
+
 def compute_predictions(league_id, team_id, opp_team_id, year, n=20000):
     """Monte-Carlo round projection + win probability. Each on-field starter is
     sampled from Normal(season SC, heuristic σ); captain doubled if enabled; sum →

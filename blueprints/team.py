@@ -1187,8 +1187,30 @@ def dynasty(league_id, team_id):
     league = db.session.get(League, league_id)
     if not league:
         return jsonify({"error": "League not found"}), 404
-    from models.squad_intel import compute_dynasty_window
-    return jsonify(compute_dynasty_window(league_id, team_id, league.season_year))
+    from models.squad_intel import compute_dynasty_window, compute_keeper_board, compute_squad_intel
+    year = league.season_year
+    data = compute_dynasty_window(league_id, team_id, year)
+    # Attach the keep/trade board from cached squad-intel (no recompute when warm)
+    try:
+        from models.team_ai_summary import get_cached_analytics
+        intel = get_cached_analytics(team_id, year, "squad_intel") or compute_squad_intel(league_id, team_id, year)
+        if intel.get("has_data"):
+            data["keeper_board"] = compute_keeper_board(intel["players"])
+    except Exception:
+        pass
+    return jsonify(data)
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/this-round")
+@login_required
+def this_round(league_id, team_id):
+    """This-round matchup read: opponent, projected score + win prob, per-starter
+    projection / risk flags / matchup split (JSON only)."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+    from models.squad_intel import compute_this_round
+    return jsonify(compute_this_round(league_id, team_id, league.season_year))
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/predictions")

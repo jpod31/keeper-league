@@ -10260,3 +10260,47 @@ th.sortable:hover { color: #58a6ff; }
   -webkit-overflow-scrolling: touch;
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
+
+/* ════ Keeper HQ redesign — keeper board / this round / player profile ════ */
+.kb-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(218px, 1fr)); gap: 14px; align-items: start; }
+.kb-col { background: rgba(110,130,180,.04); border: 1px solid rgba(110,130,180,.14); border-top: 2px solid var(--kb); border-radius: 10px; padding: 10px; }
+.kb-col-head { display: flex; align-items: center; justify-content: space-between; }
+.kb-col-title { font-weight: 700; font-size: .82rem; color: #e6edf3; display: flex; align-items: center; gap: 6px; }
+.kb-col-title i { color: var(--kb); }
+.kb-col-count { background: var(--kb); color: #0d1117; font-weight: 700; font-size: .7rem; border-radius: 10px; padding: 1px 8px; }
+.kb-col-blurb { font-size: .68rem; color: #6e7681; margin: 2px 0 8px; }
+.kb-col-rows { display: flex; flex-direction: column; gap: 6px; }
+.kb-card { width: 100%; text-align: left; background: rgba(13,17,23,.5); border: 1px solid rgba(110,130,180,.14); border-radius: 8px; padding: 7px 9px; cursor: pointer; transition: border-color .15s, transform .15s; }
+.kb-card:hover { border-color: var(--kb); transform: translateY(-1px); }
+.kb-card-top { display: flex; align-items: center; gap: 6px; }
+.kb-card-name { font-weight: 600; font-size: .82rem; color: #e6edf3; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kb-card-sc { font-weight: 700; font-size: .82rem; color: #c9d1d9; }
+.kb-card-why { font-size: .68rem; color: #8b949e; margin-top: 2px; line-height: 1.3; }
+.kb-card-meta { display: flex; gap: 8px; margin-top: 4px; font-size: .66rem; color: #6e7681; }
+.kb-up { color: #4ec77a; } .kb-down { color: #ef6b5e; }
+
+.tr-captain { display: flex; align-items: center; gap: 8px; background: rgba(110,130,180,.06); border: 1px solid rgba(110,130,180,.18); border-left: 3px solid #e0a93f; border-radius: 8px; padding: 9px 12px; margin-bottom: 16px; cursor: pointer; font-size: .84rem; color: #e6edf3; }
+.tr-captain i { color: #e0a93f; }
+.tr-captain.sug { border-left-color: #58a6ff; } .tr-captain.sug i { color: #58a6ff; }
+.tr-cap-why { color: #8b949e; font-size: .74rem; margin-left: 4px; }
+.tr-cap-tag { margin-left: auto; font-size: .7rem; color: #6e7681; white-space: nowrap; }
+.tr-note { color: #8b949e; font-size: .8rem; align-self: center; }
+.tr-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.tr-table th { text-align: left; color: #6e7681; font-weight: 600; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; padding: 8px 12px; border-bottom: 1px solid rgba(110,130,180,.16); }
+.tr-table td { padding: 9px 12px; border-bottom: 1px solid rgba(110,130,180,.07); }
+.tr-table tbody tr { cursor: pointer; } .tr-table tbody tr:hover { background: rgba(110,130,180,.06); }
+.tr-name { display: flex; align-items: center; gap: 7px; color: #e6edf3; font-weight: 500; }
+.tr-match { color: #8b949e; font-size: .78rem; }
+.tr-flag { font-size: .58rem; font-weight: 700; border-radius: 4px; padding: 1px 5px; text-transform: uppercase; }
+.tr-flag.bye { background: rgba(110,130,180,.2); color: #8b949e; }
+.tr-flag.inj { background: rgba(239,107,94,.18); color: #ef6b5e; }
+
+.pp-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 16px 18px; }
+.pp-name { font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1.1; }
+.pp-sub { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; color: #8b949e; font-size: .82rem; }
+.pp-verdict { display: flex; gap: 22px; flex-wrap: wrap; }
+.pp-v { text-align: center; } .pp-v-form { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.pp-v-num { font-size: 1.5rem; font-weight: 800; color: #e6edf3; line-height: 1; }
+.pp-v-arrow { font-size: .9rem; color: #6e7681; margin-left: 3px; }
+.pp-v-lbl { font-size: .64rem; color: #6e7681; text-transform: uppercase; letter-spacing: .04em; margin-top: 3px; }
+@media (max-width: 640px) { .pp-verdict { gap: 16px; } .pp-v-num { font-size: 1.25rem; } }

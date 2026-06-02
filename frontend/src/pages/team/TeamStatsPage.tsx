@@ -1,6 +1,5 @@
-import { useParams, Link } from 'react-router'
+import { useParams, Link, useNavigate } from 'react-router'
 import { useState, useMemo, useRef, useLayoutEffect, useEffect, lazy, Suspense } from 'react'
-import { useLeague } from '../../contexts/LeagueContext'
 const ValueCloud3D = lazy(() => import('./ValueCloud3D'))
 import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
@@ -10,7 +9,6 @@ import {
 } from 'recharts'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
-import { StatTile } from '../../components/ui/StatTile'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 
 interface Player {
@@ -55,10 +53,6 @@ interface DraftRoiData {
   resid_sd: number
 }
 const VERDICT_COLOR: Record<string, string> = { steal: '#4ec77a', fair: '#5aa0ff', bust: '#ef6b5e' }
-function avg(nums: number[]): number {
-  const v = nums.filter(n => n != null && !isNaN(n))
-  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
-}
 
 // ── Watchlist auto-flags (Idea #29) — derived purely from available fields ──
 type FlagKey = 'sellHigh' | 'buyLow' | 'breakout' | 'decline' | 'injury' | 'keep' | 'roleRiser' | 'roleFaller'
@@ -116,25 +110,32 @@ interface SquadIntel {
   insights: { kind: string; headline: string; detail?: string; player?: number }[]
 }
 
-function InsightHeader({ intel }: { intel: SquadIntel }) {
+function TheRead({ intel }: { intel: SquadIntel }) {
   const m = intel.team_metrics
   const thin = Object.entries(m.depth).filter(([, d]) => d.count > 0)
     .sort((a, b) => a[1].above_repl - b[1].above_repl)[0]
+  // keeper-relevant chips only — never surface niche per-player usage (e.g. CBA) as a team headline
+  const chips = intel.insights
+    .filter(i => i.kind !== 'window' && !/cba|midfield role/i.test(`${i.headline} ${i.detail || ''}`))
+    .slice(0, 3)
   return (
     <div className="si-header">
       <div className="si-header-main">
         <div className="si-window">{m.descriptor || 'Squad overview'}</div>
         <div className="si-chips">
-          {intel.insights.filter(i => i.kind !== 'window').slice(0, 3).map((i, n) => (
+          {chips.map((i, n) => (
             <span key={n} className="si-chip"><i className="bi bi-lightning-charge-fill"></i>{i.headline}{i.detail ? <em> · {i.detail}</em> : ''}</span>
           ))}
         </div>
       </div>
       <div className="si-tiles">
-        <div className="si-tile"><div className="si-tile-v">{m.health ?? '–'}</div><div className="si-tile-l">Squad health</div><div className="si-tile-s">{m.health_rank ? `#${m.health_rank} of ${m.n_teams}` : ''}</div></div>
+        {m.health_rank != null && m.n_teams > 1 && (
+          <div className="si-tile"><div className="si-tile-v">#{m.health_rank}<span style={{ fontSize: '.7rem', color: '#6e7681' }}> of {m.n_teams}</span></div><div className="si-tile-l">League rank</div><div className="si-tile-s">by squad strength</div></div>
+        )}
+        <div className="si-tile"><div className="si-tile-v">{m.health ?? '–'}</div><div className="si-tile-l">Squad strength</div><div className="si-tile-s">health composite</div></div>
         <div className="si-tile"><div className="si-tile-v">{m.vorp_total}</div><div className="si-tile-l">Squad VORP</div><div className="si-tile-s">value over replacement</div></div>
         <div className="si-tile"><div className="si-tile-v">{m.avg_age}</div><div className="si-tile-l">Avg age</div><div className="si-tile-s">contention window</div></div>
-        {thin && <div className="si-tile"><div className="si-tile-v" style={{ color: '#e0a93f' }}>{thin[0]}</div><div className="si-tile-l">Thinnest</div><div className="si-tile-s">{thin[1].above_repl} above repl</div></div>}
+        {thin && <div className="si-tile"><div className="si-tile-v" style={{ color: '#e0a93f' }}>{thin[0]}</div><div className="si-tile-l">Thinnest line</div><div className="si-tile-s">{thin[1].above_repl} above repl</div></div>}
       </div>
     </div>
   )
@@ -170,36 +171,16 @@ function MiniBar({ value, max, color, signed }: { value: number | null; max: num
 }
 
 type MxCol = { k: string; l: string; align?: string; num: (p: IntelPlayer) => number | null; cell: (p: IntelPlayer) => React.ReactNode }
-const SI_VIEWS: { id: string; label: string; cols: MxCol[] }[] = [
-  {
-    id: 'perf', label: 'Performance', cols: [
-      { k: 'sc_avg', l: 'SC avg', align: 'end', num: p => p.sc_avg, cell: p => <b>{siFmt(p.sc_avg, 1)}</b> },
-      { k: 'form_z', l: 'Form', align: 'center', num: p => p.form_z, cell: p => <MicroSpark form={p.round_form} /> },
-      { k: 'ceiling', l: 'Ceiling', align: 'end', num: p => p.ceiling, cell: p => <span style={{ color: '#a98bff' }}>{siFmt(p.ceiling)}</span> },
-      { k: 'floor', l: 'Floor', align: 'end', num: p => p.floor, cell: p => <span style={{ color: '#8b949e' }}>{siFmt(p.floor)}</span> },
-      { k: 'consistency', l: 'Cons', align: 'end', num: p => p.consistency, cell: p => siFmt(p.consistency) },
-      { k: 'boom_pct', l: 'Boom%', align: 'end', num: p => p.boom_pct, cell: p => p.boom_pct == null ? '–' : `${p.boom_pct}%` },
-    ],
-  },
-  {
-    id: 'usage', label: 'Your usage', cols: [
-      { k: 'team_games', l: 'Games', align: 'center', num: p => p.team_games, cell: p => <b>{p.team_games ?? '–'}</b> },
-      { k: 'captain_games', l: '(C)', align: 'center', num: p => p.captain_games, cell: p => p.captain_games ? <span style={{ color: '#e0a93f' }}>{p.captain_games}</span> : <span style={{ color: '#484f58' }}>–</span> },
-      { k: 'points_banked', l: 'Banked', align: 'end', num: p => p.points_banked, cell: p => <b>{siFmt(p.points_banked)}</b> },
-      { k: 'contribution_pct', l: '% of team', align: 'end', num: p => p.contribution_pct, cell: p => p.contribution_pct == null ? '–' : `${p.contribution_pct}%` },
-      { k: 'sevens_games', l: '7s', align: 'center', num: p => p.sevens_games, cell: p => p.sevens_games ? p.sevens_games : <span style={{ color: '#484f58' }}>–</span> },
-      { k: 'cba_pct', l: 'Mid role', align: 'end', num: p => p.cba_pct, cell: p => <MiniBar value={p.cba_pct} max={90} color="#bc8cff" /> },
-    ],
-  },
-  {
-    id: 'value', label: 'Value', cols: [
-      { k: 'vorp', l: 'VORP', align: 'end', num: p => p.vorp, cell: p => <MiniBar value={p.vorp} max={40} color={(p.vorp ?? 0) >= 0 ? '#4ec77a' : '#ef6b5e'} signed /> },
-      { k: 'keeper_value', l: 'Keeper', align: 'end', num: p => p.keeper_value, cell: p => <span style={{ color: (p.keeper_value ?? 0) >= 70 ? '#a98bff' : '#8b949e', fontWeight: 700 }}>{siFmt(p.keeper_value)}</span> },
-      { k: 'proj', l: 'Proj next yr', align: 'end', num: p => p.proj, cell: p => p.proj == null ? '–' : <span>{p.proj}<span style={{ color: '#6e7681', fontSize: '.66rem' }}> {p.proj_lo}–{p.proj_hi}</span></span> },
-      { k: 'age', l: 'Age', align: 'center', num: p => p.age, cell: p => p.age ?? '–' },
-      { k: 'sc_pctile', l: 'Pos %ile', align: 'end', num: p => p.sc_pctile, cell: p => <MiniBar value={p.sc_pctile} max={100} color="#5aa0ff" /> },
-    ],
-  },
+// One focused value table — the columns that actually inform a keeper decision.
+const SQUAD_COLS: MxCol[] = [
+  { k: 'sc_avg', l: 'SC avg', align: 'end', num: p => p.sc_avg, cell: p => <b>{siFmt(p.sc_avg, 1)}</b> },
+  { k: 'form_z', l: 'Form', align: 'center', num: p => p.form_z, cell: p => <MicroSpark form={p.round_form} /> },
+  { k: 'ceiling', l: 'Ceiling', align: 'end', num: p => p.ceiling, cell: p => <span style={{ color: '#a98bff' }}>{siFmt(p.ceiling)}</span> },
+  { k: 'floor', l: 'Floor', align: 'end', num: p => p.floor, cell: p => <span style={{ color: '#8b949e' }}>{siFmt(p.floor)}</span> },
+  { k: 'boom_pct', l: 'Boom%', align: 'end', num: p => p.boom_pct, cell: p => p.boom_pct == null ? '–' : `${p.boom_pct}%` },
+  { k: 'vorp', l: 'VORP', align: 'end', num: p => p.vorp, cell: p => <MiniBar value={p.vorp} max={40} color={(p.vorp ?? 0) >= 0 ? '#4ec77a' : '#ef6b5e'} signed /> },
+  { k: 'keeper_value', l: 'Keeper', align: 'end', num: p => p.keeper_value, cell: p => <span style={{ color: (p.keeper_value ?? 0) >= 70 ? '#a98bff' : '#8b949e', fontWeight: 700 }}>{siFmt(p.keeper_value)}</span> },
+  { k: 'age', l: 'Age', align: 'center', num: p => p.age, cell: p => p.age ?? '–' },
 ]
 
 function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, onSelect }: {
@@ -210,11 +191,10 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
   toggleCompare: (id: number) => void
   onSelect: (id: number) => void
 }) {
-  const [view, setView] = useState('perf')
   const [pos, setPos] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState('sc_avg')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
-  const cols = (SI_VIEWS.find(v => v.id === view) || SI_VIEWS[0]).cols
+  const cols = SQUAD_COLS
   const numOf = (p: IntelPlayer, k: string) => cols.find(c => c.k === k)?.num(p) ?? null
 
   let rows = players.filter(p => !pos || p.primary === pos)
@@ -258,11 +238,10 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
   return (
     <div className="card si-matrix-card">
       <div className="card-header si-mx-head">
-        <div className="si-mx-views">
-          {SI_VIEWS.map(v => (
-            <button key={v.id} className={`si-mx-view${view === v.id ? ' active' : ''}`} onClick={() => setView(v.id)}>{v.label}</button>
-          ))}
-        </div>
+        <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+          <i className="bi bi-table me-2" style={{ color: '#8b949e' }}></i>Squad value table
+          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>tap a column to sort · click a player to open</span>
+        </h5>
         <div className="si-mx-filter">
           {[null, 'DEF', 'MID', 'FWD', 'RUC'].map(pp => (
             <button key={pp ?? 'all'} className={`si-mx-pos${pos === pp ? ' active' : ''}`} onClick={() => setPos(pp)}>{pp ?? 'All'}</button>
@@ -278,7 +257,7 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
               {cols.map(c => <th key={c.k} className={`si-mx-sort text-${c.align || 'end'}`} onClick={() => sortBy(c.k)}>{c.l}{ind(c.k)}</th>)}
             </tr>
           </thead>
-          <tbody ref={tbodyRef} key={view} className="si-mx-body">
+          <tbody ref={tbodyRef} className="si-mx-body">
             {rows.map(p => {
               const inC = compareSet.includes(p.id)
               const flags = flagMap.get(p.id) || []
@@ -370,79 +349,139 @@ function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: 
   )
 }
 
-// ── Trends (dynasty window + squad makeup) ──
+// ── Keeper tab (keep/trade board + contention window + makeup) ──
+interface KeeperRow {
+  id: number; name: string; primary: string; age: number | null; sc_avg: number
+  keeper_value: number | null; vorp: number | null; sc_pctile: number | null
+  proj: number | null; bucket: string; why: string
+}
 interface DynastyData {
   has_data: boolean; trajectory: { year: number; output: number; avg_age: number }[]
   peak_year: number; window: number[]; current: number; archetypes: { type: string; count: number }[]
+  keeper_board?: KeeperRow[]
 }
-function TrendsSection({ leagueId, teamId }: { leagueId: string; teamId: string }) {
+const KEEPER_BUCKETS: { key: string; label: string; color: string; blurb: string; icon: string }[] = [
+  { key: 'Cornerstone', label: 'Cornerstones', color: '#a98bff', icon: 'bi-gem', blurb: 'Build around — keep no matter what' },
+  { key: 'Keep', label: 'Keep', color: '#4ec77a', icon: 'bi-check-circle-fill', blurb: 'Solid value, at or before peak' },
+  { key: 'Develop', label: 'Develop', color: '#58a6ff', icon: 'bi-arrow-up-right-circle-fill', blurb: 'Young upside — stash and grow' },
+  { key: 'Sell-high', label: 'Sell high', color: '#e0a93f', icon: 'bi-cash-coin', blurb: 'Aging but still has trade value' },
+  { key: 'Hold', label: 'Hold / watch', color: '#8b949e', icon: 'bi-eye', blurb: 'Fringe — wait and see' },
+  { key: 'Replaceable', label: 'Replaceable', color: '#ef6b5e', icon: 'bi-arrow-down-circle', blurb: 'Below replacement — upgrade target' },
+]
+function KeeperBoard({ board, onSelect }: { board: KeeperRow[]; onSelect: (id: number) => void }) {
+  const groups = KEEPER_BUCKETS.map(b => ({ ...b, rows: board.filter(r => r.bucket === b.key) })).filter(g => g.rows.length)
+  return (
+    <div className="kb-board mb-4">
+      {groups.map(g => (
+        <div key={g.key} className="kb-col" style={{ ['--kb' as string]: g.color } as React.CSSProperties}>
+          <div className="kb-col-head">
+            <span className="kb-col-title"><i className={`bi ${g.icon}`}></i>{g.label}</span>
+            <span className="kb-col-count">{g.rows.length}</span>
+          </div>
+          <div className="kb-col-blurb">{g.blurb}</div>
+          <div className="kb-col-rows">
+            {g.rows.map(r => (
+              <button key={r.id} className="kb-card" onClick={() => onSelect(r.id)}>
+                <div className="kb-card-top">
+                  <span className={`pos-dot pos-${r.primary}`}></span>
+                  <span className="kb-card-name">{r.name}</span>
+                  <span className="kb-card-sc">{r.sc_avg || '–'}</span>
+                </div>
+                <div className="kb-card-why">{r.why}</div>
+                <div className="kb-card-meta">
+                  {r.age != null && <span>{r.age}yo</span>}
+                  {r.keeper_value != null && <span>KV {r.keeper_value}</span>}
+                  {r.proj != null && <span className={r.proj >= r.sc_avg ? 'kb-up' : 'kb-down'}>→ {r.proj}</span>}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+function KeeperTab({ leagueId, teamId, onSelect }: { leagueId: string; teamId: string; onSelect: (id: number) => void }) {
   const { data, loading } = useFetch<DynastyData>(`/leagues/${leagueId}/team/${teamId}/dynasty?format=json`)
-  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Loading trends…</div>
-  if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Not enough scoring history to project the window.</div>
-  const win = data.window
+  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Reading the squad…</div>
+  const board = data.keeper_board || []
+  const win = data.window || []
   const winLabel = win.length ? (win.length > 1 ? `${win[0]}–${win[win.length - 1]}` : `${win[0]}`) : '—'
-  const maxArch = Math.max(1, ...data.archetypes.map(a => a.count))
+  const maxArch = Math.max(1, ...(data.archetypes || []).map(a => a.count))
   return (
     <>
-      <div className="si-rank-tiles">
-        <div className="si-rank-tile"><div className="si-rank-v">{data.current}</div><div className="si-rank-l">Projected output now</div></div>
-        <div className="si-rank-tile"><div className="si-rank-v">{data.peak_year}</div><div className="si-rank-l">Peak season</div></div>
-        <div className="si-rank-tile wide"><div className="si-rank-desc">{winLabel}</div><div className="si-rank-l">Contention window (≥95% of peak)</div></div>
-      </div>
       <div className="card mb-4">
         <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-          <i className="bi bi-graph-up-arrow me-2" style={{ color: '#8b949e' }}></i>Dynasty Window
-          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>projected squad output as your core ages</span></h5></div>
+          <i className="bi bi-clipboard-check me-2" style={{ color: '#8b949e' }}></i>Keep / Trade board
+          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>every player sorted by what to do with them · click to open</span></h5></div>
         <div className="card-body">
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={data.trajectory} margin={{ top: 10, right: 16, bottom: 0, left: -8 }}>
-              <defs><linearGradient id="dyn" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#58a6ff" stopOpacity={0.5} /><stop offset="100%" stopColor="#58a6ff" stopOpacity={0.04} />
-              </linearGradient></defs>
-              <XAxis dataKey="year" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-              <YAxis tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-              <Tooltip contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
-              <ReferenceLine x={data.peak_year} stroke="#4ec77a" strokeDasharray="4 3" label={{ value: 'peak', fill: '#4ec77a', fontSize: 10, position: 'top' }} />
-              <Area type="monotone" dataKey="output" stroke="#58a6ff" strokeWidth={2} fill="url(#dyn)" dot={{ r: 3, fill: '#58a6ff' }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          {board.length
+            ? <KeeperBoard board={board} onSelect={onSelect} />
+            : <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Not enough scoring data yet to grade keepers.</div>}
         </div>
       </div>
-      <div className="card">
-        <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-          <i className="bi bi-pie-chart-fill me-2" style={{ color: '#8b949e' }}></i>Squad Makeup
-          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>player archetypes</span></h5></div>
-        <div className="card-body">
-          {data.archetypes.map(a => (
-            <div key={a.type} className="bm-row" style={{ gridTemplateColumns: '150px 1fr 30px' }}>
-              <div className="bm-label">{a.type}</div>
-              <div className="bm-track"><div className="bm-fill" style={{ width: `${a.count / maxArch * 100}%`, background: '#5aa0ff' }}></div></div>
-              <div className="bm-pct" style={{ color: '#c9d1d9' }}>{a.count}</div>
-            </div>
-          ))}
+      {data.has_data && (<>
+        <div className="card mb-4">
+          <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+            <i className="bi bi-graph-up-arrow me-2" style={{ color: '#8b949e' }}></i>Contention window
+            <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>projected squad output as your core ages · window {winLabel}</span></h5></div>
+          <div className="card-body">
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={data.trajectory} margin={{ top: 10, right: 16, bottom: 0, left: -8 }}>
+                <defs><linearGradient id="dyn" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#58a6ff" stopOpacity={0.5} /><stop offset="100%" stopColor="#58a6ff" stopOpacity={0.04} />
+                </linearGradient></defs>
+                <XAxis dataKey="year" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+                <YAxis tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+                <Tooltip contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                <ReferenceLine x={data.peak_year} stroke="#4ec77a" strokeDasharray="4 3" label={{ value: 'peak', fill: '#4ec77a', fontSize: 10, position: 'top' }} />
+                <Area type="monotone" dataKey="output" stroke="#58a6ff" strokeWidth={2} fill="url(#dyn)" dot={{ r: 3, fill: '#58a6ff' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
+        <div className="card">
+          <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+            <i className="bi bi-pie-chart-fill me-2" style={{ color: '#8b949e' }}></i>Squad makeup
+            <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>player archetypes</span></h5></div>
+          <div className="card-body">
+            {(data.archetypes || []).map(a => (
+              <div key={a.type} className="bm-row" style={{ gridTemplateColumns: '150px 1fr 30px' }}>
+                <div className="bm-label">{a.type}</div>
+                <div className="bm-track"><div className="bm-fill" style={{ width: `${a.count / maxArch * 100}%`, background: '#5aa0ff' }}></div></div>
+                <div className="bm-pct" style={{ color: '#c9d1d9' }}>{a.count}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>)}
     </>
   )
 }
 
-// ── Predictions (Monte-Carlo projection + win probability) ──
-interface PredPlayer { name: string; pos: string; proj: number; cap: boolean }
-interface PredData {
-  has_data: boolean; your_proj: number; your_lo: number; your_hi: number
-  your_players: PredPlayer[]; n_starters: number; captain_scoring: boolean
-  opp_name: string | null; opp_proj?: number; opp_lo?: number; opp_hi?: number; win_prob?: number
+// ── This Round (matchup projection + per-starter read) ──
+interface RoundStarter {
+  id: number; name: string; pos: string; proj: number; adj: number; cap: boolean
+  afl_opp: string | null; venue: string | null; opp_diff: number | null; venue_diff: number | null
+  bye: boolean; injury: string | null
 }
-function PredictionsSection({ leagueId, teamId, opp }: { leagueId: string; teamId: string; opp: number | null }) {
-  const { data, loading } = useFetch<PredData>(`/leagues/${leagueId}/team/${teamId}/predictions?format=json${opp ? `&opp=${opp}` : ''}`)
-  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Running simulations…</div>
-  if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Not enough data to project (no scoring players on field).</div>
+interface ThisRoundData {
+  has_data: boolean; round?: number; note?: string
+  your_proj: number; your_lo: number; your_hi: number; n_starters: number; captain_scoring: boolean
+  opp_id: number | null; opp_name: string | null; opp_proj?: number; opp_lo?: number; opp_hi?: number; win_prob?: number
+  starters: RoundStarter[]; captain: { id: number; name: string; why: string; is_current: boolean } | null
+}
+function ThisRound({ leagueId, teamId, onSelect }: { leagueId: string; teamId: string; onSelect: (id: number) => void }) {
+  const { data, loading } = useFetch<ThisRoundData>(`/leagues/${leagueId}/team/${teamId}/this-round?format=json`)
+  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Running this round's simulation…</div>
+  if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>{data.note || 'Not enough data to project this round.'}</div>
   const wp = data.win_prob
+  const cap = data.captain
   return (
     <>
       {data.opp_name && wp != null ? (
         <div className="card pred-matchup mb-4">
-          <div className="pred-head">Projected this round · vs {data.opp_name}</div>
+          <div className="pred-head">Round {data.round} · projected matchup</div>
           <div className="pred-scores">
             <div className="pred-side">
               <div className="pred-score" style={{ color: wp >= 50 ? '#4ec77a' : '#c9d1d9' }}>{data.your_proj}</div>
@@ -460,67 +499,50 @@ function PredictionsSection({ leagueId, teamId, opp }: { leagueId: string; teamI
           </div>
         </div>
       ) : (
-        <div className="si-rank-tiles">
-          <div className="si-rank-tile"><div className="si-rank-v">{data.your_proj}</div><div className="si-rank-l">Projected round score</div></div>
-          <div className="si-rank-tile"><div className="si-rank-v" style={{ fontSize: '1.2rem' }}>{data.your_lo}–{data.your_hi}</div><div className="si-rank-l">likely range (10–90%)</div></div>
+        <div className="card pred-matchup mb-4">
+          <div className="pred-head">Round {data.round} · projection</div>
+          <div className="pred-scores" style={{ justifyContent: 'flex-start', gap: 28 }}>
+            <div className="pred-side"><div className="pred-score">{data.your_proj}</div><div className="pred-team">projected</div><div className="pred-range">{data.your_lo}–{data.your_hi}</div></div>
+            {data.note && <div className="tr-note">{data.note}</div>}
+          </div>
+        </div>
+      )}
+      {cap && (
+        <div className={`tr-captain ${cap.is_current ? 'ok' : 'sug'}`} onClick={() => onSelect(cap.id)}>
+          <i className="bi bi-star-fill"></i>
+          <span><b>Captain:</b> {cap.name} <span className="tr-cap-why">{cap.why}</span></span>
+          <span className="tr-cap-tag">{cap.is_current ? 'current pick ✓' : 'top projected — consider'}</span>
         </div>
       )}
       <div className="card">
         <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-          <i className="bi bi-cpu me-2" style={{ color: '#8b949e' }}></i>Projected XI
-          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>{data.n_starters} on field · {data.captain_scoring ? 'captain ×2' : 'no captain bonus'} · Monte-Carlo from season form</span></h5></div>
-        <div className="card-body">
-          <div className="pred-xi">
-            {data.your_players.map((p, i) => (
-              <div key={i} className="pred-xi-row">
-                <span className={`pos-dot pos-${p.pos}`}></span>
-                <span className="pred-xi-name">{p.name}{p.cap && <span className="pred-c">C</span>}</span>
-                <span className="pred-xi-proj">{p.proj}</span>
-              </div>
-            ))}
-          </div>
+          <i className="bi bi-people me-2" style={{ color: '#8b949e' }}></i>On-field starters
+          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>{data.n_starters} on field · {data.captain_scoring ? 'captain ×2' : 'no captain bonus'} · matchup-adjusted</span></h5></div>
+        <div className="card-body p-0">
+          <table className="tr-table">
+            <thead><tr><th>Player</th><th className="text-end">Proj</th><th>This week</th><th className="text-end">Adj</th></tr></thead>
+            <tbody>
+              {data.starters.map(s => (
+                <tr key={s.id} onClick={() => onSelect(s.id)}>
+                  <td className="tr-name">
+                    <span className={`pos-dot pos-${s.pos}`}></span>{s.name}
+                    {s.cap && <span className="pred-c">C</span>}
+                    {s.bye && <span className="tr-flag bye">BYE</span>}
+                    {s.injury && <span className="tr-flag inj">{s.injury}</span>}
+                  </td>
+                  <td className="text-end fw-bold">{s.proj}</td>
+                  <td className="tr-match">
+                    {s.bye ? <span className="text-secondary">no game</span>
+                      : s.afl_opp ? <span>vs {s.afl_opp}{s.venue ? ` · ${s.venue}` : ''}{s.opp_diff != null ? <span className={s.opp_diff >= 0 ? 'kb-up' : 'kb-down'}> {s.opp_diff >= 0 ? '+' : ''}{s.opp_diff}</span> : ''}</span>
+                        : <span className="text-secondary">—</span>}
+                  </td>
+                  <td className="text-end" style={{ color: s.adj >= s.proj ? '#4ec77a' : '#ef6b5e' }}>{s.adj}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-    </>
-  )
-}
-
-// ── Records (team + player) ──
-interface RecordItem { label: string; value: string | number; detail: string; icon: string; color: string; player?: string }
-interface RecordsData { has_data: boolean; team_records: RecordItem[]; player_records: RecordItem[] }
-
-function RecordCard({ r }: { r: RecordItem }) {
-  return (
-    <div className="rec-card" style={{ ['--rc' as string]: r.color } as React.CSSProperties}>
-      <div className="rec-icon"><i className={`bi ${r.icon}`}></i></div>
-      <div className="rec-body">
-        <div className="rec-value">{r.value}</div>
-        {r.player && <div className="rec-player">{r.player}</div>}
-        <div className="rec-label">{r.label}</div>
-        <div className="rec-detail">{r.detail}</div>
-      </div>
-    </div>
-  )
-}
-
-function TeamRecords({ leagueId, teamId }: { leagueId: string; teamId: string }) {
-  const { data, loading } = useFetch<RecordsData>(`/leagues/${leagueId}/team/${teamId}/records?format=json`)
-  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Loading records…</div>
-  if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>No records yet — they'll build as the season plays out.</div>
-  return (
-    <>
-      {data.team_records.length > 0 && (
-        <div className="rec-section">
-          <div className="rec-section-title"><i className="bi bi-shield-fill me-2"></i>Team records</div>
-          <div className="rec-grid">{data.team_records.map((r, i) => <RecordCard key={i} r={r} />)}</div>
-        </div>
-      )}
-      {data.player_records.length > 0 && (
-        <div className="rec-section">
-          <div className="rec-section-title"><i className="bi bi-person-fill me-2"></i>Player records</div>
-          <div className="rec-grid">{data.player_records.map((r, i) => <RecordCard key={i} r={r} />)}</div>
-        </div>
-      )}
     </>
   )
 }
@@ -617,11 +639,10 @@ export function TeamStatsPage() {
   const { data, loading } = useFetch<StatsData>(`/leagues/${leagueId}/team/${teamId}/stats?format=json`)
   const { data: roi } = useFetch<DraftRoiData>(`/leagues/${leagueId}/team/${teamId}/draft-roi?format=json`)
   const { data: intel } = useFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
+  const navigate = useNavigate()
+  const openPlayer = (id: number) => navigate(`/leagues/${leagueId}/team/${teamId}/player/${id}`)
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
-  const [usagePlayer, setUsagePlayer] = useState<Player | null>(null)
-  const [section, setSection] = useState<'squad' | 'league' | 'records' | 'predictions' | 'trends'>('squad')
-  const { league: leagueCtx } = useLeague()
-  const oppId = leagueCtx?.current_matchup?.opponent_id ?? null
+  const [section, setSection] = useState<'keeper' | 'squad' | 'this-round' | 'league'>('keeper')
   const [compareSet, setCompareSet] = useState<number[]>([])
   const [showCompare, setShowCompare] = useState(false)
   function toggleCompare(id: number) {
@@ -641,10 +662,8 @@ export function TeamStatsPage() {
   if (loading) return <Spinner text="Loading stats..." />
   if (!data) return <p className="text-danger">Failed to load team stats</p>
 
-  const { league, team, players, total_sc, avg_age } = data
-  const avgSc = avg(players.map(p => p.sc_avg))
-  const avgRating = avg(players.map(p => p.rating ?? NaN))
-  const avgKV = avg(players.map(p => p.keeper_value ?? NaN))
+  const { league, team, players, total_sc } = data
+  const showLeague = (intel?.team_metrics?.n_teams ?? 1) > 1
 
   // Flag tallies for the watchlist shelf
   const flagCounts = FLAGS.map(f => ({ ...f, players: players.filter(p => f.test(p)) }))
@@ -687,37 +706,25 @@ export function TeamStatsPage() {
         </div>
       </div>
 
+      {/* The Read — persistent keeper-framed verdict band */}
+      {intel?.has_data && <TheRead intel={intel} />}
+
       <div className="si-sectionnav">
-        <button className={`si-sectiontab${section === 'squad' ? ' active' : ''}`} onClick={() => setSection('squad')}><i className="bi bi-people-fill"></i>My Squad</button>
-        <button className={`si-sectiontab${section === 'league' ? ' active' : ''}`} onClick={() => setSection('league')}><i className="bi bi-trophy-fill"></i>League</button>
-        <button className={`si-sectiontab${section === 'records' ? ' active' : ''}`} onClick={() => setSection('records')}><i className="bi bi-award-fill"></i>Records</button>
-        <button className={`si-sectiontab${section === 'predictions' ? ' active' : ''}`} onClick={() => setSection('predictions')}><i className="bi bi-cpu-fill"></i>Predictions</button>
-        <button className={`si-sectiontab${section === 'trends' ? ' active' : ''}`} onClick={() => setSection('trends')}><i className="bi bi-graph-up-arrow"></i>Trends</button>
+        <button className={`si-sectiontab${section === 'keeper' ? ' active' : ''}`} onClick={() => setSection('keeper')}><i className="bi bi-clipboard-check"></i>Keeper</button>
+        <button className={`si-sectiontab${section === 'squad' ? ' active' : ''}`} onClick={() => setSection('squad')}><i className="bi bi-people-fill"></i>Squad</button>
+        <button className={`si-sectiontab${section === 'this-round' ? ' active' : ''}`} onClick={() => setSection('this-round')}><i className="bi bi-cpu-fill"></i>This Round</button>
+        {showLeague && <button className={`si-sectiontab${section === 'league' ? ' active' : ''}`} onClick={() => setSection('league')}><i className="bi bi-trophy-fill"></i>League</button>}
       </div>
 
-      {section === 'league' && <LeagueComparison leagueId={leagueId!} teamId={teamId!} />}
-      {section === 'records' && <TeamRecords leagueId={leagueId!} teamId={teamId!} />}
-      {section === 'predictions' && <PredictionsSection leagueId={leagueId!} teamId={teamId!} opp={oppId} />}
-      {section === 'trends' && <TrendsSection leagueId={leagueId!} teamId={teamId!} />}
+      {section === 'keeper' && <KeeperTab leagueId={leagueId!} teamId={teamId!} onSelect={openPlayer} />}
+      {section === 'this-round' && <ThisRound leagueId={leagueId!} teamId={teamId!} onSelect={openPlayer} />}
+      {section === 'league' && showLeague && <LeagueComparison leagueId={leagueId!} teamId={teamId!} />}
 
       {section === 'squad' && (<>
-      {/* Insight header + Squad form heatmap (Squad Intelligence) */}
-      {intel?.has_data ? <InsightHeader intel={intel} /> : (
-        <div className="row g-3 mb-4">
-          <div className="col-6 col-md-2"><StatTile label="Squad Size" value={players.length} accent="sapphire" /></div>
-          <div className="col-6 col-md-2"><StatTile label="Avg Rating" value={avgRating} accent="amethyst" decimals={1} /></div>
-          <div className="col-6 col-md-2"><StatTile label="Avg Keeper Val" value={avgKV} accent="teal" decimals={0} /></div>
-          <div className="col-6 col-md-2"><StatTile label="Total SC" value={total_sc} accent="forest" /></div>
-          <div className="col-6 col-md-2"><StatTile label="Avg SC" value={avgSc} accent="ochre" decimals={1} /></div>
-          <div className="col-6 col-md-2"><StatTile label="Avg Age" value={avg_age} accent="rust" decimals={1} /></div>
-        </div>
-      )}
-      {intel?.has_data && <ScoutingMap players={intel.players} onSelect={id => { const p = players.find(pp => pp.id === id); if (p) setUsagePlayer(p) }} />}
-      {/* Squad Matrix — interactive view-mode grid (replaces the static table) */}
+      {intel?.has_data && <ScoutingMap players={intel.players} onSelect={openPlayer} />}
       {intel?.has_data
         ? <SquadMatrix players={intel.players} flagMap={flagMap} activeFlag={activeFlag}
-            compareSet={compareSet} toggleCompare={toggleCompare}
-            onSelect={id => { const p = players.find(pp => pp.id === id); if (p) setUsagePlayer(p) }} />
+            compareSet={compareSet} toggleCompare={toggleCompare} onSelect={openPlayer} />
         : <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Loading squad intelligence…</div>}
 
 
@@ -848,11 +855,6 @@ export function TeamStatsPage() {
         </div>
       )}
       </>)}
-
-      {usagePlayer && (
-        <PlayerUsageModal player={usagePlayer} leagueId={leagueId!} teamId={teamId!}
-          teamName={team.name} onClose={() => setUsagePlayer(null)} />
-      )}
 
       {compareSet.length > 0 && (
         <div className="cmp-tray">
@@ -989,392 +991,6 @@ function CompareModal({ leagueId, teamId, ids, onClose }: {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── Per-player usage drill-down (ideas #31–38): how this team deployed a player ──
-interface UsageData {
-  team_games: number; bench_rounds: number; out_rounds: number; rounds_rostered: number
-  captain_games: number; vc_games: number; captain_points: number
-  emg_named: number; emg_activated: number; emg_points: number
-  points_banked: number; contribution_pct: number; team_total: number
-  sevens_games: number; sevens_captain: number; sevens_points: number
-  acquired_via: string | null
-  timeline: { round: number; role: string; score: number | null; captain: boolean; vc: boolean }[]
-  career?: { year: number; team: string; logo: string | null; games: number; level: string }[]
-}
-interface SplitRow { key: string; avg: number; games: number; diff: number }
-interface SplitsData { has_data: boolean; overall_avg: number; games: number; opponents: SplitRow[]; venues: SplitRow[] }
-function SplitList({ title, rows }: { title: string; rows: SplitRow[] }) {
-  const maxAbs = Math.max(8, ...rows.map(r => Math.abs(r.diff)))
-  return (
-    <div className="split-col">
-      <div className="split-col-title">{title}</div>
-      {rows.length === 0 ? <div className="text-secondary" style={{ fontSize: '.75rem', padding: 6 }}>—</div> : rows.map(r => (
-        <div key={r.key} className="split-row" title={`${r.key}: ${r.avg} avg over ${r.games} games (${r.diff >= 0 ? '+' : ''}${r.diff} vs season)`}>
-          <span className="split-name">{r.key}</span>
-          <span className="split-games">{r.games}g</span>
-          <div className="split-track">
-            <div className="split-fill" style={{ width: `${Math.abs(r.diff) / maxAbs * 50}%`, background: r.diff >= 0 ? '#4ec77a' : '#ef6b5e', marginLeft: r.diff >= 0 ? '50%' : `${50 - Math.abs(r.diff) / maxAbs * 50}%` }}></div>
-            <div className="split-mid"></div>
-          </div>
-          <span className="split-avg">{r.avg}</span>
-          <span className="split-diff" style={{ color: r.diff >= 0 ? '#4ec77a' : '#ef6b5e' }}>{r.diff >= 0 ? '+' : ''}{r.diff}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-interface SimilarData {
-  has_data: boolean; position: string
-  similar: { player_id: number; name: string; position: string; afl_team: string; sc_avg: number; rating: number | null; age: number | null; similarity: number }[]
-}
-const ROLE_META: Record<string, { c: string; label: string }> = {
-  field: { c: '#4ec77a', label: 'On field' },
-  bench: { c: '#6e7681', label: 'Benched' },
-  emg: { c: '#e0a93f', label: 'Emergency (named)' },
-  emg_in: { c: '#a98bff', label: 'Emergency (subbed in)' },
-  out: { c: '#30363d', label: 'Out / not selected' },
-}
-
-interface ScoringData {
-  has_data: boolean; games: number; mean: number; median: number
-  ceiling: number; floor: number; stdev: number; consistency: number
-  boom: number; bust: number; boom_pct: number; bust_pct: number
-  last5: number[]; hist: { bucket: string; count: number }[]
-  fingerprint?: { has_data: boolean; games: number; per_game: Record<string, number>; archetype: string }
-}
-function consistencyLabel(c: number): string {
-  return c >= 80 ? 'Metronomic' : c >= 65 ? 'Reliable' : c >= 45 ? 'Streaky' : 'Volatile'
-}
-const HIST_COLOR: Record<string, string> = {
-  '<60': '#ef6b5e', '60–79': '#d2884f', '80–99': '#5aa0ff', '100–119': '#4ec77a', '120+': '#a98bff',
-}
-interface BenchmarkData {
-  has_data: boolean; position: string; cohort: number
-  metrics: { key: string; label: string; value: number; percentile: number; of: number }[]
-}
-interface ProjectionData {
-  has_data: boolean
-  next_round: number
-  next_round_inputs: { last3: number; season: number; career: number }
-  next_season: number; next_season_low: number; next_season_high: number
-  age_delta_pct: number; next_age: number | null
-  season_trend: { year: number; avg: number }[]
-}
-
-function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
-  player: Player; leagueId: string; teamId: string; teamName: string; onClose: () => void
-}) {
-  const [tab, setTab] = useState<'usage' | 'scoring' | 'splits' | 'projection' | 'benchmarks' | 'similar'>('usage')
-  const base = `/leagues/${leagueId}/team/${teamId}/player/${player.id}`
-  const { data: u, loading } = useFetch<UsageData>(`${base}/usage?format=json`)
-  const { data: sp, loading: spLoading } = useFetch<SplitsData>(
-    tab === 'splits' ? `${base}/splits?format=json` : null)
-  const { data: sim, loading: simLoading } = useFetch<SimilarData>(
-    tab === 'similar' ? `${base}/similar?format=json` : null)
-  const { data: sc, loading: scLoading } = useFetch<ScoringData>(
-    tab === 'scoring' ? `${base}/scoring?format=json` : null)
-  const { data: pj, loading: pjLoading } = useFetch<ProjectionData>(
-    tab === 'projection' ? `${base}/projection?format=json` : null)
-  const { data: bm, loading: bmLoading } = useFetch<BenchmarkData>(
-    tab === 'benchmarks' ? `${base}/benchmarks?format=json` : null)
-  const primary = posCode(player.position)
-  const rolesPresent = u ? Array.from(new Set(u.timeline.map(t => t.role))) : []
-
-  return (
-    <div className="usage-overlay" onClick={onClose}>
-      <div className="usage-modal" onClick={e => e.stopPropagation()}>
-        <div className="usage-head">
-          <div>
-            <div className="usage-name">{player.name}</div>
-            <div className="usage-sub">
-              <span className={`pos-badge pos-${primary}`}>{player.position}</span>
-              <span>{player.afl_team}</span>{player.age ? <span>Age {player.age}</span> : null}
-              <span className="usage-context">in {teamName}</span>
-            </div>
-          </div>
-          <button className="usage-close" onClick={onClose} aria-label="Close"><i className="bi bi-x-lg"></i></button>
-        </div>
-        <div className="usage-tabs">
-          <button className={`usage-tab${tab === 'usage' ? ' active' : ''}`} onClick={() => setTab('usage')}>Your usage</button>
-          <button className={`usage-tab${tab === 'scoring' ? ' active' : ''}`} onClick={() => setTab('scoring')}>Scoring profile</button>
-          <button className={`usage-tab${tab === 'splits' ? ' active' : ''}`} onClick={() => setTab('splits')}>Splits</button>
-          <button className={`usage-tab${tab === 'projection' ? ' active' : ''}`} onClick={() => setTab('projection')}>Projection</button>
-          <button className={`usage-tab${tab === 'benchmarks' ? ' active' : ''}`} onClick={() => setTab('benchmarks')}>Benchmarks</button>
-          <button className={`usage-tab${tab === 'similar' ? ' active' : ''}`} onClick={() => setTab('similar')}>Similar</button>
-        </div>
-
-        {u?.career && u.career.length > 0 && (
-          <div className="career-strip">
-            {u.career.map((c, i) => (
-              <div key={i} className={`career-yr${c.level === 'AFL' ? ' afl' : ''}`} title={`${c.year} · ${c.team} · ${c.games} games (${c.level})`}>
-                <div className="career-yr-year">'{String(c.year).slice(-2)}</div>
-                {c.logo ? <img src={c.logo} alt="" className="career-yr-logo" /> : <div className="career-yr-abbr">{c.team.slice(0, 3)}</div>}
-                <div className="career-yr-games">{c.games}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {tab === 'splits' ? (
-          <div className="usage-body">
-            {spLoading || !sp ? (
-              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading splits…</div>
-            ) : !sp.has_data ? (
-              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>No game history for splits yet.</div>
-            ) : (
-              <>
-                <div className="usage-section-title">Matchup & venue splits <span style={{ color: '#6e7681', fontWeight: 400 }}>· {sp.games} games · avg {sp.overall_avg}</span></div>
-                <div className="split-cols">
-                  <SplitList title="By opponent" rows={sp.opponents} />
-                  <SplitList title="By venue" rows={sp.venues} />
-                </div>
-              </>
-            )}
-          </div>
-        ) : tab === 'similar' ? (
-          <div className="usage-body">
-            {simLoading || !sim ? (
-              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading similar players…</div>
-            ) : !sim.has_data ? (
-              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Not enough data to find comparable players.</div>
-            ) : (
-              <>
-                <div className="usage-section-title">Plays like <span style={{ color: '#6e7681', fontWeight: 400 }}>· nearest {sim.position}s by profile</span></div>
-                {sim.similar.map(s => (
-                  <a key={s.player_id} href={`/player/${encodeURIComponent(s.name)}`} className="sim-row">
-                    <div className="sim-bar-wrap"><div className="sim-bar" style={{ width: `${s.similarity}%` }}></div></div>
-                    <div className="sim-name">{s.name}<span className="sim-meta">{posCode(s.position)} · {s.afl_team}</span></div>
-                    <div className="sim-stats">{s.sc_avg} SC{s.rating != null ? ` · ${s.rating} rtg` : ''}{s.age != null ? ` · ${s.age}y` : ''}</div>
-                    <div className="sim-pct">{s.similarity}%</div>
-                  </a>
-                ))}
-              </>
-            )}
-          </div>
-        ) : tab === 'benchmarks' ? (
-          <div className="usage-body">
-            {bmLoading || !bm ? (
-              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading benchmarks…</div>
-            ) : !bm.has_data ? (
-              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Not enough cohort data to benchmark.</div>
-            ) : (
-              <>
-                <div className="usage-section-title">vs other {bm.position}s <span style={{ color: '#6e7681', fontWeight: 400 }}>· {bm.cohort} in pool · percentile</span></div>
-                {bm.metrics.map(m => {
-                  const c = m.percentile >= 80 ? '#4ec77a' : m.percentile >= 55 ? '#5aa0ff' : m.percentile >= 30 ? '#d2884f' : '#ef6b5e'
-                  return (
-                    <div key={m.key} className="bm-row">
-                      <div className="bm-label">{m.label}</div>
-                      <div className="bm-track"><div className="bm-fill" style={{ width: `${m.percentile}%`, background: c }}></div></div>
-                      <div className="bm-val">{m.value}</div>
-                      <div className="bm-pct" style={{ color: c }}>{m.percentile}<span className="bm-pct-th">{m.percentile % 10 === 1 && m.percentile !== 11 ? 'st' : m.percentile % 10 === 2 && m.percentile !== 12 ? 'nd' : m.percentile % 10 === 3 && m.percentile !== 13 ? 'rd' : 'th'}</span></div>
-                    </div>
-                  )
-                })}
-              </>
-            )}
-          </div>
-        ) : tab === 'projection' ? (
-          <div className="usage-body">
-            {pjLoading || !pj ? (
-              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading projection…</div>
-            ) : !pj.has_data ? (
-              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Not enough scoring history to project.</div>
-            ) : (
-              <>
-                <div className="proj-cards">
-                  <div className="proj-card" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}>
-                    <div className="proj-card-lbl">Next round</div>
-                    <div className="proj-card-val">~{pj.next_round}</div>
-                    <div className="proj-card-sub">form-weighted · L3 {pj.next_round_inputs.last3} · Szn {pj.next_round_inputs.season} · Career {pj.next_round_inputs.career}</div>
-                  </div>
-                  <div className="proj-card" style={{ ['--uc' as string]: '#a98bff' } as React.CSSProperties}>
-                    <div className="proj-card-lbl">Next season</div>
-                    <div className="proj-card-val">~{pj.next_season} <span className="proj-band">{pj.next_season_low}–{pj.next_season_high}</span></div>
-                    <div className="proj-card-sub">
-                      {pj.next_age ? `age ${pj.next_age} → ` : ''}
-                      <span style={{ color: pj.age_delta_pct > 0 ? '#4ec77a' : pj.age_delta_pct < 0 ? '#ef6b5e' : '#8b949e' }}>
-                        {pj.age_delta_pct > 0 ? '+' : ''}{pj.age_delta_pct}% age curve
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {pj.season_trend.length > 1 && (
-                  <div className="usage-timeline-wrap">
-                    <div className="usage-section-title">Season SC average — career arc</div>
-                    <ResponsiveContainer width="100%" height={170}>
-                      <LineChart data={pj.season_trend} margin={{ top: 8, right: 14, bottom: 0, left: -18 }}>
-                        <XAxis dataKey="year" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-                        <YAxis tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-                        <Tooltip cursor={{ stroke: '#30363d' }}
-                          contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
-                        <Line type="monotone" dataKey="avg" stroke="#58a6ff" strokeWidth={2} dot={{ r: 3, fill: '#58a6ff' }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-                <div className="text-secondary" style={{ fontSize: '.72rem', marginTop: 6 }}>
-                  Estimates from SuperCoach history + a position-agnostic age curve. Not financial advice. 😉
-                </div>
-              </>
-            )}
-          </div>
-        ) : tab === 'scoring' ? (
-          <div className="usage-body">
-            {scLoading || !sc ? (
-              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading scoring…</div>
-            ) : !sc.has_data ? (
-              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>No SuperCoach game history on record.</div>
-            ) : (
-              <>
-                <div className="usage-tiles">
-                  <div className="usage-tile" style={{ ['--uc' as string]: '#a98bff' } as React.CSSProperties}>
-                    <div className="usage-tile-val">{Math.round(sc.ceiling)}</div>
-                    <div className="usage-tile-lbl">Ceiling</div>
-                    <div className="usage-tile-sub">90th-pct game</div>
-                  </div>
-                  <div className="usage-tile" style={{ ['--uc' as string]: '#ef6b5e' } as React.CSSProperties}>
-                    <div className="usage-tile-val">{Math.round(sc.floor)}</div>
-                    <div className="usage-tile-lbl">Floor</div>
-                    <div className="usage-tile-sub">10th-pct game</div>
-                  </div>
-                  <div className="usage-tile" style={{ ['--uc' as string]: '#4ec77a' } as React.CSSProperties}>
-                    <div className="usage-tile-val">{sc.consistency}</div>
-                    <div className="usage-tile-lbl">Consistency</div>
-                    <div className="usage-tile-sub">{consistencyLabel(sc.consistency)}</div>
-                  </div>
-                  <div className="usage-tile" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}>
-                    <div className="usage-tile-val">{sc.boom_pct}<span className="usage-tile-unit">%</span></div>
-                    <div className="usage-tile-lbl">Boom rate</div>
-                    <div className="usage-tile-sub">{sc.boom} games 120+</div>
-                  </div>
-                  <div className="usage-tile" style={{ ['--uc' as string]: '#d2884f' } as React.CSSProperties}>
-                    <div className="usage-tile-val">{sc.bust_pct}<span className="usage-tile-unit">%</span></div>
-                    <div className="usage-tile-lbl">Bust rate</div>
-                    <div className="usage-tile-sub">{sc.bust} games ≤60</div>
-                  </div>
-                </div>
-
-                {/* Ceiling–floor range bar */}
-                <div className="usage-timeline-wrap">
-                  <div className="usage-section-title">Scoring range <span style={{ color: '#6e7681', fontWeight: 400 }}>· {sc.games} games · median {Math.round(sc.median)}</span></div>
-                  <div className="scoring-range">
-                    <div className="scoring-range-fill" style={{ left: `${sc.floor / 150 * 100}%`, width: `${Math.max(2, (sc.ceiling - sc.floor) / 150 * 100)}%` }}></div>
-                    <div className="scoring-range-tick" style={{ left: `${sc.median / 150 * 100}%` }} title={`Median ${Math.round(sc.median)}`}></div>
-                  </div>
-                  <div className="scoring-range-axis"><span>0</span><span>50</span><span>100</span><span>150</span></div>
-                  {sc.last5.length > 0 && (
-                    <div className="scoring-last5">
-                      <span className="usage-section-title" style={{ margin: 0 }}>Last 5</span>
-                      {sc.last5.map((v, i) => (
-                        <span key={i} className="scoring-last5-chip" style={{ background: v >= 120 ? '#a98bff' : v >= 100 ? '#4ec77a' : v >= 80 ? '#5aa0ff' : v >= 60 ? '#d2884f' : '#ef6b5e' }}>{v}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Distribution histogram */}
-                <div className="usage-timeline-wrap">
-                  <div className="usage-section-title">Score distribution</div>
-                  <ResponsiveContainer width="100%" height={150}>
-                    <BarChart data={sc.hist} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
-                      <XAxis dataKey="bucket" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-                      <YAxis allowDecimals={false} tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-                      <Tooltip cursor={{ fill: 'rgba(110,130,180,.08)' }}
-                        contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
-                      <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                        {sc.hist.map((h, i) => <Cell key={i} fill={HIST_COLOR[h.bucket] || '#5aa0ff'} />)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {sc.fingerprint?.has_data && (
-                  <div className="usage-timeline-wrap">
-                    <div className="usage-section-title">Scoring style</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                      <span className="fp-archetype">{sc.fingerprint.archetype}</span>
-                      <span className="fp-mix">
-                        {[['Disp', 'disposals'], ['Mk', 'marks'], ['Tk', 'tackles'], ['Gl', 'goals'], ['HO', 'hitouts']]
-                          .filter(([, k]) => (sc.fingerprint!.per_game[k] ?? 0) > 0)
-                          .map(([lbl, k]) => <span key={k} className="fp-stat"><b>{sc.fingerprint!.per_game[k]}</b> {lbl}</span>)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        ) : loading || !u ? (
-          <div className="usage-body"><div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading usage…</div></div>
-        ) : (
-          <div className="usage-body">
-            <div className="usage-tiles">
-              <div className="usage-tile" style={{ ['--uc' as string]: '#4ec77a' } as React.CSSProperties}>
-                <div className="usage-tile-val">{u.team_games}</div>
-                <div className="usage-tile-lbl">Games for you</div>
-                <div className="usage-tile-sub">{u.bench_rounds} benched · {u.out_rounds} out</div>
-              </div>
-              <div className="usage-tile" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}>
-                <div className="usage-tile-val">{Math.round(u.points_banked)}</div>
-                <div className="usage-tile-lbl">Points banked</div>
-                <div className="usage-tile-sub">{u.contribution_pct}% of your total</div>
-              </div>
-              <div className="usage-tile" style={{ ['--uc' as string]: '#e0a93f' } as React.CSSProperties}>
-                <div className="usage-tile-val">{u.captain_games}<span className="usage-tile-unit">×C</span></div>
-                <div className="usage-tile-lbl">Captained</div>
-                <div className="usage-tile-sub">{u.captain_games > 0 ? `+${Math.round(u.captain_points)} bonus` : `${u.vc_games}× VC`}</div>
-              </div>
-              {u.sevens_games > 0 && (
-                <div className="usage-tile" style={{ ['--uc' as string]: '#bc8cff' } as React.CSSProperties}>
-                  <div className="usage-tile-val">{u.sevens_games}</div>
-                  <div className="usage-tile-lbl">7s games</div>
-                  <div className="usage-tile-sub">{u.sevens_captain}× C · {Math.round(u.sevens_points)} pts</div>
-                </div>
-              )}
-              {u.emg_named > 0 && (
-                <div className="usage-tile" style={{ ['--uc' as string]: '#ef6b5e' } as React.CSSProperties}>
-                  <div className="usage-tile-val">{u.emg_activated}<span className="usage-tile-unit">/{u.emg_named}</span></div>
-                  <div className="usage-tile-lbl">Emergency in</div>
-                  <div className="usage-tile-sub">+{Math.round(u.emg_points)} pts salvaged</div>
-                </div>
-              )}
-            </div>
-
-            {u.timeline.length > 0 && (
-              <div className="usage-timeline-wrap">
-                <div className="usage-section-title">Season usage — round by round</div>
-                <div className="usage-ribbon">
-                  {u.timeline.map(t => {
-                    const meta = ROLE_META[t.role] || ROLE_META.out
-                    return (
-                      <div key={t.round} className="usage-cell" title={`R${t.round} · ${meta.label}${t.score != null ? ` · ${t.score}` : ''}${t.captain ? ' · (C)' : ''}`}>
-                        <div className="usage-cell-round">R{t.round}</div>
-                        <div className="usage-cell-box" style={{ background: meta.c, opacity: t.role === 'out' ? 0.5 : 1 }}>
-                          {t.score != null ? Math.round(t.score) : ''}
-                          {t.captain && <span className="usage-cell-c">C</span>}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="usage-legend">
-                  {rolesPresent.map(r => {
-                    const meta = ROLE_META[r] || ROLE_META.out
-                    return <span key={r} className="usage-legend-item"><span className="usage-legend-dot" style={{ background: meta.c }}></span>{meta.label}</span>
-                  })}
-                </div>
-              </div>
-            )}
-            {u.timeline.length === 0 && (
-              <div className="text-secondary" style={{ padding: '12px 0' }}>No lineup history for this season yet.</div>
             )}
           </div>
         )}

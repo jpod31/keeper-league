@@ -41,6 +41,7 @@ const L = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<
 // Direct imports for lighter pages
 import { LineupPage } from './pages/team/LineupPage'
 import { TeamStatsPage } from './pages/team/TeamStatsPage'
+import { PlayerProfilePage } from './pages/team/PlayerProfilePage'
 
 // Matchup pages
 import { StandingsPage } from './pages/matchups/StandingsPage'
@@ -101,6 +102,7 @@ export default function App() {
           <Route path="team/:teamId" element={<L><SquadPage /></L>} />
           <Route path="team/:teamId/lineup/:round" element={<LineupPage />} />
           <Route path="team/:teamId/stats" element={<TeamStatsPage />} />
+          <Route path="team/:teamId/player/:playerId" element={<PlayerProfilePage />} />
           <Route path="team/:teamId/analytics" element={<L><AnalyticsPage /></L>} />
 
           {/* Matchups */}
