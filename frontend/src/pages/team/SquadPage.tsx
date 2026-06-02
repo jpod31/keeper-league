@@ -102,8 +102,10 @@ function HealthCell({ h, nTeams }: { h: SquadHealthTeam | undefined; nTeams: num
     return (
       <div className="squad-stat" style={{ ['--c' as string]: '#8a6db8' } as React.CSSProperties}>
         <div className="squad-stat-val">—</div>
-        <div className="squad-stat-label">Health</div>
-        <div className="squad-stat-sub">no ratings yet</div>
+        <div className="squad-stat-meta">
+          <div className="squad-stat-label">Health</div>
+          <div className="squad-stat-sub">no ratings yet</div>
+        </div>
       </div>
     )
   }
@@ -116,8 +118,10 @@ function HealthCell({ h, nTeams }: { h: SquadHealthTeam | undefined; nTeams: num
       onClick={() => setOpen(o => !o)}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o) } }}>
       <div className="squad-stat-val">{h.health}<i className="bi bi-chevron-down squad-stat-chev" aria-hidden></i></div>
-      <div className="squad-stat-label">Health</div>
-      <div className="squad-stat-sub">#{h.rank} of {nTeams}</div>
+      <div className="squad-stat-meta">
+        <div className="squad-stat-label">Health</div>
+        <div className="squad-stat-sub">#{h.rank} of {nTeams}</div>
+      </div>
       {open && (
         <div className="squad-health-pop" onClick={e => e.stopPropagation()}>
           <div className="shp-head">
@@ -473,17 +477,17 @@ function SquadPageInner() {
                 )}
               </div>
             </div>
+            {is_owner && league?.current_matchup && (
+              <MatchupStrip
+                round={league.current_round}
+                matchup={league.current_matchup}
+                lockoutTime={league.next_lockout_at}
+                leagueId={leagueId!}
+              />
+            )}
           </div>
           {is_owner && (
             <div className="squad-cmd-actions">
-              {league?.current_matchup && (
-                <MatchupStrip
-                  round={league.current_round}
-                  matchup={league.current_matchup}
-                  lockoutTime={league.next_lockout_at}
-                  leagueId={leagueId!}
-                />
-              )}
               <ByePlanner
                 leagueId={leagueId!}
                 teamId={teamId!}
@@ -500,12 +504,14 @@ function SquadPageInner() {
         <div className={`squad-cmd-stats squad-cmd-stats-4${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
           <div className="squad-stat" style={{ ['--c' as string]: inFinals ? '#4ec77a' : '#ef6b5e' } as React.CSSProperties}>
             <div className="squad-stat-val">{ladderPos != null ? ordinal(ladderPos) : '—'}</div>
-            <div className="squad-stat-label">Ladder</div>
-            <div className="squad-stat-sub">
-              {ladderPos == null ? 'not started'
-                : inFinals ? `of ${nTeams} · finals spot`
-                : finalsN > 0 ? `of ${nTeams} · ${ladderPos - finalsN} out of finals`
-                : `of ${nTeams}`}
+            <div className="squad-stat-meta">
+              <div className="squad-stat-label">Ladder</div>
+              <div className="squad-stat-sub">
+                {ladderPos == null ? 'not started'
+                  : inFinals ? `of ${nTeams} · finals spot`
+                  : finalsN > 0 ? `of ${nTeams} · ${ladderPos - finalsN} out of finals`
+                  : `of ${nTeams}`}
+              </div>
             </div>
           </div>
           <div className="squad-stat" style={{ ['--c' as string]: lastResult === 'L' ? '#ef6b5e' : '#4ec77a' } as React.CSSProperties}>
@@ -514,13 +520,17 @@ function SquadPageInner() {
                 ? <span className="squad-stat-form-empty">—</span>
                 : recentForm.map((r, i) => <span key={i} className={`ssf-dot ssf-${r}`} title={r}></span>)}
             </div>
-            <div className="squad-stat-label">Form</div>
-            <div className="squad-stat-sub">{formSub}</div>
+            <div className="squad-stat-meta">
+              <div className="squad-stat-label">Form</div>
+              <div className="squad-stat-sub">{formSub}</div>
+            </div>
           </div>
           <div className="squad-stat" style={{ ['--c' as string]: '#5aa0ff' } as React.CSSProperties}>
             <div className="squad-stat-val">{Math.round(projScore).toLocaleString()}</div>
-            <div className="squad-stat-label">Projected</div>
-            <div className="squad-stat-sub">{projSub}</div>
+            <div className="squad-stat-meta">
+              <div className="squad-stat-label">Projected</div>
+              <div className="squad-stat-sub">{projSub}</div>
+            </div>
           </div>
           <HealthCell h={myHealth} nTeams={health?.n_teams ?? 0} />
         </div>

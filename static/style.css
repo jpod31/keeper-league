@@ -4467,10 +4467,11 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .squad-cmd-trade i { font-size: .8rem; opacity: .85; }
 .squad-cmd-trade strong { color: #c9d1d9; font-weight: 700; }
 .squad-cmd-trade.open { color: #d8a23a; }
-.squad-cmd-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.squad-cmd-actions { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; flex: 1 1 auto; justify-content: space-evenly; }
 /* the matchup pill carries a legacy margin-bottom from its old standalone use —
-   zero it so it sits on the same baseline as the bye/round/optimise chips */
-.squad-cmd-actions .mstrip { margin: 0; }
+   zero it wherever it sits in the command bar so it baselines with the rest */
+.squad-cmd .mstrip { margin: 0; }
+.squad-cmd-id .mstrip { margin-left: .4rem; }
 
 /* Dense horizontal stat ribbon — fills the card edge-to-edge, no empty cells */
 .squad-cmd-stats {
@@ -4481,37 +4482,37 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   border-radius: 0 0 11px 11px;
 }
 .squad-cmd-stats-4 { grid-template-columns: repeat(4, 1fr); }
+/* Horizontal stat block: big value + label/sub beside it + a colour rail —
+   fills the cell width so there's no dead space hanging off the right. */
 .squad-stat {
   position: relative;
-  padding: .7rem 1rem .72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  padding: .8rem 1rem;
   border-left: 1px solid rgba(110,130,180,.1);
 }
 .squad-stat:first-child { border-left: 0; }
-.squad-stat::after {
-  content: '';
-  position: absolute;
-  left: 1rem; right: 1rem; top: 0;
-  height: 2px;
-  background: var(--c, #6e82b4);
-  opacity: .6;
-  border-radius: 0 0 2px 2px;
-}
 .squad-stat-val {
   display: flex;
   align-items: baseline;
   gap: 2px;
-  min-height: 1.55rem;          /* keep labels on one baseline whether the value is a number or form dots */
-  font-size: 1.55rem;
+  flex: 0 0 auto;
+  font-size: 1.95rem;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -.02em;
+  letter-spacing: -.025em;
   color: #f0f4fb;
   font-variant-numeric: tabular-nums;
 }
-.squad-stat-val .unit { font-size: .8rem; font-weight: 700; color: #8b949e; }
+.squad-stat-val .unit { font-size: .85rem; font-weight: 700; color: #8b949e; }
+.squad-stat-meta { display: flex; flex-direction: column; min-width: 0; }
+.squad-stat-label { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #7d8694; }
+.squad-stat-sub { margin-top: 2px; font-size: .72rem; font-weight: 600; color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Recent-form dots (W/L/D), chronological — most recent on the right */
-.squad-stat-form { align-items: center; gap: 4px; }
-.ssf-dot { width: 12px; height: 12px; border-radius: 50%; background: #30363d; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+.squad-stat-form { align-items: center; gap: 5px; }
+.ssf-dot { width: 13px; height: 13px; border-radius: 50%; background: #30363d; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
 .ssf-dot.ssf-W { background: #4ec77a; }
 .ssf-dot.ssf-L { background: #ef6b5e; }
 .ssf-dot.ssf-D { background: #c2932f; }
