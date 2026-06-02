@@ -4585,6 +4585,25 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   .squad-stat { flex: 0 0 40%; }
 }
 
+/* Team Stats page — watchlist flag chips + sortable rich table */
+.stats-flag-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 11px 6px 10px;
+  border: 1px solid rgba(110,130,180,.25);
+  border-radius: 999px;
+  font-size: .78rem; font-weight: 600; color: #c9d1d9;
+  cursor: pointer; transition: background .14s ease, border-color .14s ease;
+}
+.stats-flag-chip:hover { border-color: var(--fc); }
+.stats-flag-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 9px; color: #0d1117; font-size: .68rem; font-weight: 800;
+}
+.stats-rich-table th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.stats-rich-table th.sortable:hover { color: #e6edf3; }
+.stats-rich-table td, .stats-rich-table th { vertical-align: middle; }
+
 /* Summary stat cards row */
 .squad-stat-cards {
   display: grid;

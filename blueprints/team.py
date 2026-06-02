@@ -1050,9 +1050,15 @@ def team_stats(league_id, team_id):
                     "afl_team": p.afl_team or "",
                     "age": p.age or None,
                     "sc_avg": p.sc_avg or 0,
+                    "sc_avg_prev": p.sc_avg_prev or None,
                     "career_games": p.career_games or 0,
                     "games_played": p.games_played or 0,
                     "draft_score": getattr(p, "draft_score", None),
+                    "rating": p.rating,
+                    "potential": p.potential,
+                    "keeper_value": p.keeper_value,
+                    "height_cm": p.height_cm,
+                    "injury_severity": p.injury_severity,
                 }
                 for p in players
             ],
