@@ -1201,6 +1201,17 @@ def dynasty(league_id, team_id):
     return jsonify(data)
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/deck")
+@login_required
+def deck(league_id, team_id):
+    """Command Deck feed: style universe + season outlook + squad DNA (JSON only)."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+    from models.deep_intel import compute_deck
+    return jsonify(compute_deck(league_id, team_id, league.season_year))
+
+
 @team_bp.route("/<int:league_id>/team/<int:team_id>/this-round")
 @login_required
 def this_round(league_id, team_id):
