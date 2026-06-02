@@ -1076,6 +1076,18 @@ def team_stats(league_id, team_id):
                            position_counts=position_counts)
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/usage")
+@login_required
+def player_team_usage(league_id, team_id, player_id):
+    """How this team has deployed a player this season (JSON only)."""
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+    from models.player_usage import compute_player_team_usage
+    return jsonify(compute_player_team_usage(league_id, team_id, player_id, league.season_year))
+
+
 @team_bp.route("/<int:league_id>/squad-health")
 @login_required
 def squad_health(league_id):

@@ -79,6 +79,7 @@ export function TeamStatsPage() {
   const [sortField, setSortField] = useState<SortField>('sc_avg')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
+  const [usagePlayer, setUsagePlayer] = useState<Player | null>(null)
 
   const flagMap = useMemo(() => {
     const m = new Map<number, FlagDef[]>()
@@ -282,7 +283,7 @@ export function TeamStatsPage() {
             const scColor = p.sc_avg >= 90 ? '#3fb950' : p.sc_avg >= 70 ? '#58a6ff' : '#8b949e'
             const hits = flagMap.get(p.id) || []
             return (
-              <span key={p.id} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <span key={p.id} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }} onClick={() => setUsagePlayer(p)}>
                 <span className={`pos-badge pos-${primary}`} style={{ minWidth: 32, textAlign: 'center', fontSize: '.65rem' }}>{primary}</span>
                 <div className="squad-mob-info">
                   <div className="squad-mob-name">
@@ -326,7 +327,7 @@ export function TeamStatsPage() {
                 return (
                   <tr key={p.id}>
                     <td>
-                      <span style={{ color: '#c9d1d9' }}>{p.name}</span>
+                      <span className="stats-player-link" style={{ color: '#c9d1d9' }} onClick={() => setUsagePlayer(p)} title="View your usage of this player">{p.name}</span>
                       {hits.map(f => <i key={f.key} className={`bi ${f.icon} ms-1`} style={{ fontSize: '.66rem', color: f.color }} title={`${f.label} — ${f.reason(p)}`}></i>)}
                     </td>
                     <td>{(p.position || 'MID').split('/').map(pos => <span key={pos} className={`pos-badge pos-${pos}`}>{pos}</span>)}</td>
@@ -346,6 +347,122 @@ export function TeamStatsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {usagePlayer && (
+        <PlayerUsageModal player={usagePlayer} leagueId={leagueId!} teamId={teamId!}
+          teamName={team.name} onClose={() => setUsagePlayer(null)} />
+      )}
+    </div>
+  )
+}
+
+// ── Per-player usage drill-down (ideas #31–38): how this team deployed a player ──
+interface UsageData {
+  team_games: number; bench_rounds: number; out_rounds: number; rounds_rostered: number
+  captain_games: number; vc_games: number; captain_points: number
+  emg_named: number; emg_activated: number; emg_points: number
+  points_banked: number; contribution_pct: number; team_total: number
+  sevens_games: number; sevens_captain: number; sevens_points: number
+  acquired_via: string | null
+  timeline: { round: number; role: string; score: number | null; captain: boolean; vc: boolean }[]
+}
+const ROLE_META: Record<string, { c: string; label: string }> = {
+  field: { c: '#4ec77a', label: 'On field' },
+  bench: { c: '#6e7681', label: 'Benched' },
+  emg: { c: '#e0a93f', label: 'Emergency (named)' },
+  emg_in: { c: '#a98bff', label: 'Emergency (subbed in)' },
+  out: { c: '#30363d', label: 'Out / not selected' },
+}
+
+function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
+  player: Player; leagueId: string; teamId: string; teamName: string; onClose: () => void
+}) {
+  const { data: u, loading } = useFetch<UsageData>(`/leagues/${leagueId}/team/${teamId}/player/${player.id}/usage?format=json`)
+  const primary = posCode(player.position)
+  const rolesPresent = u ? Array.from(new Set(u.timeline.map(t => t.role))) : []
+
+  return (
+    <div className="usage-overlay" onClick={onClose}>
+      <div className="usage-modal" onClick={e => e.stopPropagation()}>
+        <div className="usage-head">
+          <div>
+            <div className="usage-name">{player.name}</div>
+            <div className="usage-sub">
+              <span className={`pos-badge pos-${primary}`}>{player.position}</span>
+              <span>{player.afl_team}</span>{player.age ? <span>Age {player.age}</span> : null}
+              <span className="usage-context">in {teamName}</span>
+            </div>
+          </div>
+          <button className="usage-close" onClick={onClose} aria-label="Close"><i className="bi bi-x-lg"></i></button>
+        </div>
+
+        {loading || !u ? (
+          <div className="usage-body"><div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading usage…</div></div>
+        ) : (
+          <div className="usage-body">
+            <div className="usage-tiles">
+              <div className="usage-tile" style={{ ['--uc' as string]: '#4ec77a' } as React.CSSProperties}>
+                <div className="usage-tile-val">{u.team_games}</div>
+                <div className="usage-tile-lbl">Games for you</div>
+                <div className="usage-tile-sub">{u.bench_rounds} benched · {u.out_rounds} out</div>
+              </div>
+              <div className="usage-tile" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}>
+                <div className="usage-tile-val">{Math.round(u.points_banked)}</div>
+                <div className="usage-tile-lbl">Points banked</div>
+                <div className="usage-tile-sub">{u.contribution_pct}% of your total</div>
+              </div>
+              <div className="usage-tile" style={{ ['--uc' as string]: '#e0a93f' } as React.CSSProperties}>
+                <div className="usage-tile-val">{u.captain_games}<span className="usage-tile-unit">×C</span></div>
+                <div className="usage-tile-lbl">Captained</div>
+                <div className="usage-tile-sub">{u.captain_games > 0 ? `+${Math.round(u.captain_points)} bonus` : `${u.vc_games}× VC`}</div>
+              </div>
+              {u.sevens_games > 0 && (
+                <div className="usage-tile" style={{ ['--uc' as string]: '#bc8cff' } as React.CSSProperties}>
+                  <div className="usage-tile-val">{u.sevens_games}</div>
+                  <div className="usage-tile-lbl">7s games</div>
+                  <div className="usage-tile-sub">{u.sevens_captain}× C · {Math.round(u.sevens_points)} pts</div>
+                </div>
+              )}
+              {u.emg_named > 0 && (
+                <div className="usage-tile" style={{ ['--uc' as string]: '#ef6b5e' } as React.CSSProperties}>
+                  <div className="usage-tile-val">{u.emg_activated}<span className="usage-tile-unit">/{u.emg_named}</span></div>
+                  <div className="usage-tile-lbl">Emergency in</div>
+                  <div className="usage-tile-sub">+{Math.round(u.emg_points)} pts salvaged</div>
+                </div>
+              )}
+            </div>
+
+            {u.timeline.length > 0 && (
+              <div className="usage-timeline-wrap">
+                <div className="usage-section-title">Season usage — round by round</div>
+                <div className="usage-ribbon">
+                  {u.timeline.map(t => {
+                    const meta = ROLE_META[t.role] || ROLE_META.out
+                    return (
+                      <div key={t.round} className="usage-cell" title={`R${t.round} · ${meta.label}${t.score != null ? ` · ${t.score}` : ''}${t.captain ? ' · (C)' : ''}`}>
+                        <div className="usage-cell-round">R{t.round}</div>
+                        <div className="usage-cell-box" style={{ background: meta.c, opacity: t.role === 'out' ? 0.5 : 1 }}>
+                          {t.score != null ? Math.round(t.score) : ''}
+                          {t.captain && <span className="usage-cell-c">C</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="usage-legend">
+                  {rolesPresent.map(r => {
+                    const meta = ROLE_META[r] || ROLE_META.out
+                    return <span key={r} className="usage-legend-item"><span className="usage-legend-dot" style={{ background: meta.c }}></span>{meta.label}</span>
+                  })}
+                </div>
+              </div>
+            )}
+            {u.timeline.length === 0 && (
+              <div className="text-secondary" style={{ padding: '12px 0' }}>No lineup history for this season yet.</div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
