@@ -1118,6 +1118,19 @@ def player_benchmarks(league_id, team_id, player_id):
     return jsonify(compute_player_benchmarks(player_id))
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/compare")
+@login_required
+def player_compare(league_id, team_id):
+    """Side-by-side comparison bundle for up to 4 players (?ids=1,2,3)."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+    pids = [int(x) for x in request.args.get("ids", "").split(",") if x.strip().isdigit()][:4]
+    from models.player_usage import compute_player_compare
+    out = [compute_player_compare(league_id, team_id, pid, league.season_year) for pid in pids]
+    return jsonify({"players": [o for o in out if o]})
+
+
 @team_bp.route("/<int:league_id>/squad-health")
 @login_required
 def squad_health(league_id):

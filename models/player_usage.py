@@ -15,6 +15,35 @@ def _primary_pos(p):
     return (p.position or "MID").split("/")[0].upper()
 
 
+def compute_player_compare(league_id, team_id, player_id, year):
+    """Compact, aligned metric bundle for one player — for the side-by-side
+    Compare tray (#30). Composes AflPlayer fields + scoring + projection + usage."""
+    me = db.session.get(AflPlayer, player_id)
+    if not me:
+        return None
+    from scrapers.stats_loader import compute_scoring_profile, compute_player_projection
+    sc = compute_scoring_profile(me.name)
+    pj = compute_player_projection(me.name, me.age)
+    usage = compute_player_team_usage(league_id, team_id, player_id, year)
+    has_sc = sc.get("has_data")
+    has_pj = pj.get("has_data")
+    return {
+        "player_id": me.id, "name": me.name, "position": me.position or "",
+        "afl_team": me.afl_team or "", "age": me.age,
+        "sc_avg": round(me.sc_avg, 1) if me.sc_avg else None,
+        "rating": me.rating, "potential": me.potential,
+        "keeper_value": round(me.keeper_value) if me.keeper_value is not None else None,
+        "ceiling": sc.get("ceiling") if has_sc else None,
+        "floor": sc.get("floor") if has_sc else None,
+        "consistency": sc.get("consistency") if has_sc else None,
+        "next_season": pj.get("next_season") if has_pj else None,
+        "points_banked": usage.get("points_banked"),
+        "team_games": usage.get("team_games"),
+        "captain_games": usage.get("captain_games"),
+        "season_trend": pj.get("season_trend", []) if has_pj else [],
+    }
+
+
 def compute_player_benchmarks(player_id):
     """Percentile rank of a player vs their primary-position cohort across the
     pool, on metrics already stored on AflPlayer (cheap, no CSV). Idea #9."""

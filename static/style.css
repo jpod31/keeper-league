@@ -4690,6 +4690,45 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .bm-pct-th { font-size: .58rem; font-weight: 700; }
 @media (max-width: 520px) { .bm-row { grid-template-columns: 84px 1fr 34px 38px; gap: 7px; } .bm-label { font-size: .7rem; } }
 
+/* Compare: checkbox, selected row, sticky tray, compare table */
+.stats-cmp-check { cursor: pointer; accent-color: #58a6ff; width: 15px; height: 15px; }
+.stats-cmp-check:disabled { cursor: not-allowed; opacity: .35; }
+.stats-row-compare { background: rgba(88,166,255,.07) !important; }
+.cmp-tray {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 1090;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  max-width: calc(100vw - 24px);
+  background: #161d27; border: 1px solid rgba(110,130,180,.32);
+  border-radius: 12px; padding: 9px 12px; box-shadow: 0 18px 44px -14px rgba(0,0,0,.8);
+}
+.cmp-tray-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cmp-tray-label { font-size: .74rem; font-weight: 700; color: #8b949e; }
+.cmp-tray-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(88,166,255,.12); border: 1px solid rgba(88,166,255,.3);
+  color: #c9d1d9; font-size: .74rem; font-weight: 600; padding: 3px 8px; border-radius: 6px;
+}
+.cmp-tray-chip .bi { cursor: pointer; font-size: .62rem; color: #8b949e; }
+.cmp-tray-chip .bi:hover { color: #ef6b5e; }
+.cmp-tray-actions { display: flex; align-items: center; gap: 8px; }
+.cmp-tray-clear { background: none; border: 0; color: #8b949e; font-size: .76rem; cursor: pointer; }
+.cmp-tray-clear:hover { color: #c9d1d9; }
+.cmp-tray-go {
+  background: #1f6feb; border: 0; color: #fff; font-size: .8rem; font-weight: 700;
+  padding: 6px 16px; border-radius: 8px; cursor: pointer;
+}
+.cmp-tray-go:disabled { opacity: .4; cursor: not-allowed; }
+.cmp-modal { max-width: 720px; }
+.cmp-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.cmp-table th, .cmp-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid rgba(110,130,180,.12); }
+.cmp-table thead th { vertical-align: bottom; }
+.cmp-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-bottom: 4px; }
+.cmp-name { font-weight: 700; color: #e6edf3; font-size: .8rem; }
+.cmp-meta { font-size: .64rem; color: #8b949e; font-weight: 400; }
+.cmp-row-label { text-align: left !important; color: #8b949e; font-size: .76rem; white-space: nowrap; }
+.cmp-cell { color: #c9d1d9; font-variant-numeric: tabular-nums; }
+.cmp-best { color: #4ec77a; font-weight: 800; background: rgba(78,199,122,.08); border-radius: 4px; }
+
 /* Summary stat cards row */
 .squad-stat-cards {
   display: grid;

@@ -80,6 +80,11 @@ export function TeamStatsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
   const [usagePlayer, setUsagePlayer] = useState<Player | null>(null)
+  const [compareSet, setCompareSet] = useState<number[]>([])
+  const [showCompare, setShowCompare] = useState(false)
+  function toggleCompare(id: number) {
+    setCompareSet(s => s.includes(id) ? s.filter(x => x !== id) : s.length >= 4 ? s : [...s, id])
+  }
 
   const flagMap = useMemo(() => {
     const m = new Map<number, FlagDef[]>()
@@ -284,6 +289,9 @@ export function TeamStatsPage() {
             const hits = flagMap.get(p.id) || []
             return (
               <span key={p.id} className="squad-mob-card" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }} onClick={() => setUsagePlayer(p)}>
+                <input type="checkbox" className="stats-cmp-check" checked={compareSet.includes(p.id)}
+                  disabled={!compareSet.includes(p.id) && compareSet.length >= 4}
+                  onClick={e => e.stopPropagation()} onChange={() => toggleCompare(p.id)} title="Add to compare" />
                 <span className={`pos-badge pos-${primary}`} style={{ minWidth: 32, textAlign: 'center', fontSize: '.65rem' }}>{primary}</span>
                 <div className="squad-mob-info">
                   <div className="squad-mob-name">
@@ -307,6 +315,7 @@ export function TeamStatsPage() {
           <table className="table table-hover table-sm mb-0 stats-rich-table">
             <thead>
               <tr>
+                <th style={{ width: 26 }} title="Add to compare"></th>
                 <th>Player</th>
                 <th>Pos</th>
                 <th className="text-center sortable" onClick={() => sortBy('age')}>Age{sortIcon('age')}</th>
@@ -324,8 +333,14 @@ export function TeamStatsPage() {
                 const runway = (p.potential ?? 0) - (p.rating ?? 0)
                 const delta = p.sc_avg_prev != null ? p.sc_avg - p.sc_avg_prev : null
                 const hits = flagMap.get(p.id) || []
+                const inCompare = compareSet.includes(p.id)
                 return (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={inCompare ? 'stats-row-compare' : ''}>
+                    <td className="text-center" style={{ padding: 0 }}>
+                      <input type="checkbox" className="stats-cmp-check" checked={inCompare}
+                        disabled={!inCompare && compareSet.length >= 4}
+                        onChange={() => toggleCompare(p.id)} title="Add to compare" />
+                    </td>
                     <td>
                       <span className="stats-player-link" style={{ color: '#c9d1d9' }} onClick={() => setUsagePlayer(p)} title="View your usage of this player">{p.name}</span>
                       {hits.map(f => <i key={f.key} className={`bi ${f.icon} ms-1`} style={{ fontSize: '.66rem', color: f.color }} title={`${f.label} — ${f.reason(p)}`}></i>)}
@@ -353,6 +368,144 @@ export function TeamStatsPage() {
         <PlayerUsageModal player={usagePlayer} leagueId={leagueId!} teamId={teamId!}
           teamName={team.name} onClose={() => setUsagePlayer(null)} />
       )}
+
+      {compareSet.length > 0 && (
+        <div className="cmp-tray">
+          <div className="cmp-tray-chips">
+            <span className="cmp-tray-label"><i className="bi bi-layout-split me-1"></i>Compare</span>
+            {compareSet.map(id => {
+              const pl = players.find(p => p.id === id)
+              return (
+                <span key={id} className="cmp-tray-chip">
+                  {pl?.name ?? id}
+                  <i className="bi bi-x-lg" onClick={() => toggleCompare(id)}></i>
+                </span>
+              )
+            })}
+          </div>
+          <div className="cmp-tray-actions">
+            <button className="cmp-tray-clear" onClick={() => setCompareSet([])}>Clear</button>
+            <button className="cmp-tray-go" disabled={compareSet.length < 2} onClick={() => setShowCompare(true)}>
+              Compare {compareSet.length}
+            </button>
+          </div>
+        </div>
+      )}
+      {showCompare && (
+        <CompareModal leagueId={leagueId!} teamId={teamId!} ids={compareSet} onClose={() => setShowCompare(false)} />
+      )}
+    </div>
+  )
+}
+
+// ── Side-by-side compare (#30) ──
+interface ComparePlayer {
+  player_id: number; name: string; position: string; afl_team: string; age: number | null
+  sc_avg: number | null; rating: number | null; potential: number | null; keeper_value: number | null
+  ceiling: number | null; floor: number | null; consistency: number | null; next_season: number | null
+  points_banked: number | null; team_games: number | null; captain_games: number | null
+  season_trend: { year: number; avg: number }[]
+}
+const CMP_PALETTE = ['#58a6ff', '#4ec77a', '#e0a93f', '#bc8cff']
+const CMP_ROWS: { k: keyof ComparePlayer; label: string; hb: boolean }[] = [
+  { k: 'sc_avg', label: 'SuperCoach avg', hb: true },
+  { k: 'rating', label: 'Rating', hb: true },
+  { k: 'potential', label: 'Potential', hb: true },
+  { k: 'keeper_value', label: 'Keeper Value', hb: true },
+  { k: 'age', label: 'Age', hb: false },
+  { k: 'ceiling', label: 'Ceiling', hb: true },
+  { k: 'floor', label: 'Floor', hb: true },
+  { k: 'consistency', label: 'Consistency', hb: true },
+  { k: 'next_season', label: 'Proj. next season', hb: true },
+  { k: 'points_banked', label: 'Banked for you', hb: true },
+  { k: 'team_games', label: 'Games for you', hb: true },
+]
+
+function CompareModal({ leagueId, teamId, ids, onClose }: {
+  leagueId: string; teamId: string; ids: number[]; onClose: () => void
+}) {
+  const { data, loading } = useFetch<{ players: ComparePlayer[] }>(
+    `/leagues/${leagueId}/team/${teamId}/compare?ids=${ids.join(',')}&format=json`)
+  const players = data?.players ?? []
+
+  const bestIdx = (row: typeof CMP_ROWS[number]): number => {
+    let bi = -1, bv: number | null = null
+    players.forEach((p, i) => {
+      const v = p[row.k] as number | null
+      if (v == null) return
+      if (bv == null || (row.hb ? v > bv : v < bv)) { bv = v; bi = i }
+    })
+    return bi
+  }
+
+  // Merge season trends into one dataset for the overlaid chart
+  const years = Array.from(new Set(players.flatMap(p => p.season_trend.map(s => s.year)))).sort()
+  const chartData = years.map(y => {
+    const row: Record<string, number> = { year: y }
+    players.forEach(p => { const t = p.season_trend.find(s => s.year === y); if (t) row[p.name] = t.avg })
+    return row
+  })
+
+  return (
+    <div className="usage-overlay" onClick={onClose}>
+      <div className="usage-modal cmp-modal" onClick={e => e.stopPropagation()}>
+        <div className="usage-head">
+          <div className="usage-name">Compare players</div>
+          <button className="usage-close" onClick={onClose} aria-label="Close"><i className="bi bi-x-lg"></i></button>
+        </div>
+        {loading || !data ? (
+          <div className="usage-body"><div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading comparison…</div></div>
+        ) : (
+          <div className="usage-body">
+            <div style={{ overflowX: 'auto' }}>
+              <table className="cmp-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    {players.map((p, i) => (
+                      <th key={p.player_id}>
+                        <span className="cmp-dot" style={{ background: CMP_PALETTE[i] }}></span>
+                        <div className="cmp-name">{p.name}</div>
+                        <div className="cmp-meta">{posCode(p.position)} · {p.afl_team}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CMP_ROWS.map(row => {
+                    const best = bestIdx(row)
+                    return (
+                      <tr key={row.k as string}>
+                        <td className="cmp-row-label">{row.label}</td>
+                        {players.map((p, i) => {
+                          const v = p[row.k] as number | null
+                          return <td key={p.player_id} className={`cmp-cell${i === best && players.length > 1 ? ' cmp-best' : ''}`}>{v == null ? '–' : v}</td>
+                        })}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {chartData.length > 1 && (
+              <div className="usage-timeline-wrap">
+                <div className="usage-section-title">Career arc — SC average by season</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={chartData} margin={{ top: 8, right: 14, bottom: 0, left: -18 }}>
+                    <XAxis dataKey="year" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+                    <YAxis tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+                    <Tooltip cursor={{ stroke: '#30363d' }}
+                      contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                    {players.map((p, i) => (
+                      <Line key={p.player_id} type="monotone" dataKey={p.name} stroke={CMP_PALETTE[i]} strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
