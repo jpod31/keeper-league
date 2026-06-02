@@ -83,35 +83,30 @@ function OptimiseMenu({ optimising, onPick }: {
     document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
   }, [open])
-  const itemStyle: React.CSSProperties = {
-    display: 'block', width: '100%', textAlign: 'left', background: 'transparent',
-    border: 'none', color: '#c9d1d9', padding: '7px 12px', borderRadius: 6,
-    fontSize: '.85rem', cursor: 'pointer', whiteSpace: 'nowrap',
-  }
   function pick(m: 'rating' | 'sc_avg') { setOpen(false); onPick(m) }
+  const busy = optimising !== null
   return (
-    <span ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
-      <button type="button" className="btn btn-sm btn-primary" disabled={optimising !== null}
+    <span ref={ref} className={`rpick${open ? ' open' : ''}`}>
+      <button type="button" className="rpick-btn" disabled={busy}
         onClick={() => setOpen(o => !o)} aria-expanded={open} aria-haspopup="true">
-        {optimising !== null
-          ? <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Optimising…</>
-          : <><i className="bi bi-magic me-1"></i>Optimise lineup<i className="bi bi-chevron-down ms-1"></i></>}
+        <span className="rpick-icon" aria-hidden>
+          {busy
+            ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: '.85rem', height: '.85rem' }}></span>
+            : <i className="bi bi-magic"></i>}
+        </span>
+        <span className="rpick-text">
+          <span className="rpick-title">{busy ? 'Optimising…' : 'Optimise'}</span>
+          <span className="rpick-sub">Best available XI</span>
+        </span>
+        <i className="bi bi-chevron-down rpick-chev" aria-hidden></i>
       </button>
       {open && (
-        <div role="menu" style={{
-          position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 30,
-          background: '#161b22', border: '1px solid #30363d', borderRadius: 8,
-          padding: 4, minWidth: 180, boxShadow: '0 8px 24px rgba(0,0,0,.4)',
-        }}>
-          <button type="button" role="menuitem" style={itemStyle} onClick={() => pick('rating')}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(177,186,196,.12)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-            <i className="bi bi-star me-2"></i>By Rating
+        <div className="rpick-pop" role="menu" aria-label="Optimise lineup" style={{ minWidth: 220 }}>
+          <button type="button" role="menuitem" className="rpick-chip" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={() => pick('rating')}>
+            <i className="bi bi-star"></i> By Rating
           </button>
-          <button type="button" role="menuitem" style={itemStyle} onClick={() => pick('sc_avg')}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(177,186,196,.12)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-            <i className="bi bi-graph-up me-2"></i>By SC Average
+          <button type="button" role="menuitem" className="rpick-chip" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={() => pick('sc_avg')}>
+            <i className="bi bi-graph-up"></i> By SC Average
           </button>
         </div>
       )}
@@ -443,9 +438,7 @@ function SquadPageInner() {
             />
           )}
           {view === 'field' && (
-            <div className="d-flex align-items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
-              <OptimiseMenu optimising={optimising} onPick={optimise} />
-            </div>
+            <OptimiseMenu optimising={optimising} onPick={optimise} />
           )}
         </div>
       )}
