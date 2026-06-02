@@ -3,6 +3,7 @@ import { useState, useMemo, useRef, useLayoutEffect } from 'react'
 import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
   ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList, LineChart, Line, ComposedChart,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
 } from 'recharts'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
@@ -300,6 +301,93 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
   )
 }
 
+// ── League comparison (how you stack up) ──
+interface LeagueTeamRow {
+  team_id: number; name: string; avg_rating: number; avg_sc: number; avg_age: number
+  keeper_value: number; squad_size: number; by_pos: Record<string, number>
+  health: number | null; descriptor: string | null; rank: number
+}
+interface LeagueCompare {
+  has_data: boolean; n_teams: number; teams: LeagueTeamRow[]
+  league_avg: { avg_rating: number; avg_sc: number; avg_age: number; by_pos: Record<string, number> }
+  your_team_id: number; your_ranks: Record<string, number | null>
+  radar: { pos: string; you: number; league: number; best: number }[]
+}
+
+function LeagueComparison({ leagueId, teamId }: { leagueId: string; teamId: string }) {
+  const { data, loading } = useFetch<LeagueCompare>(`/leagues/${leagueId}/team/${teamId}/league-compare?format=json`)
+  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Loading league comparison…</div>
+  if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>No league data yet.</div>
+  const yr = data.your_ranks
+  const tiles: [string, string][] = [['health', 'Squad Health'], ['avg_rating', 'Squad Rating'], ['avg_sc', 'Avg SC'], ['keeper_value', 'Keeper Value']]
+  const me = data.teams.find(t => t.team_id === data.your_team_id)
+  return (
+    <>
+      <div className="si-rank-tiles">
+        {tiles.map(([k, l]) => (
+          <div key={k} className="si-rank-tile">
+            <div className="si-rank-v">#{yr[k] ?? '–'}<span className="si-rank-of">of {data.n_teams}</span></div>
+            <div className="si-rank-l">{l}</div>
+          </div>
+        ))}
+        {me?.descriptor && <div className="si-rank-tile wide"><div className="si-rank-desc">{me.descriptor}</div><div className="si-rank-l">your window</div></div>}
+      </div>
+
+      <div className="row g-4 mb-4">
+        <div className="col-lg-5">
+          <div className="card h-100">
+            <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+              <i className="bi bi-radar me-2" style={{ color: '#8b949e' }}></i>Positional Strength
+              <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>you vs league avg</span></h5></div>
+            <div className="card-body">
+              <ResponsiveContainer width="100%" height={300}>
+                <RadarChart data={data.radar} outerRadius="72%">
+                  <PolarGrid stroke="#30363d" />
+                  <PolarAngleAxis dataKey="pos" tick={{ fill: '#c9d1d9', fontSize: 12 }} />
+                  <PolarRadiusAxis tick={{ fill: '#6e7681', fontSize: 10 }} stroke="#30363d" angle={90} />
+                  <Radar name="League avg" dataKey="league" stroke="#8b949e" fill="#8b949e" fillOpacity={0.12} />
+                  <Radar name="You" dataKey="you" stroke="#58a6ff" fill="#58a6ff" fillOpacity={0.35} />
+                  <Legend wrapperStyle={{ fontSize: '.72rem' }} />
+                  <Tooltip contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        <div className="col-lg-7">
+          <div className="card h-100">
+            <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+              <i className="bi bi-list-ol me-2" style={{ color: '#8b949e' }}></i>League Ladder by Squad Strength
+              <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>{data.n_teams} teams</span></h5></div>
+            <div className="card-body p-0" style={{ overflowX: 'auto' }}>
+              <table className="si-matrix">
+                <thead><tr>
+                  <th style={{ width: 30 }}>#</th><th className="si-mx-player">Team</th>
+                  <th className="text-end">Health</th><th className="text-end">Rating</th>
+                  <th className="text-end">Avg SC</th><th className="text-center">Age</th><th className="text-end">Keeper</th>
+                </tr></thead>
+                <tbody>
+                  {data.teams.map(t => (
+                    <tr key={t.team_id} className={t.team_id === data.your_team_id ? 'si-mx-row sel' : 'si-mx-row'}>
+                      <td style={{ color: t.rank <= 3 ? '#e8c25b' : '#6e7681', fontWeight: 700 }}>{t.rank}</td>
+                      <td className="si-mx-player"><span className="si-mx-name">{t.name}</span>{t.team_id === data.your_team_id && <span style={{ color: '#58a6ff', fontSize: '.7rem', marginLeft: 5 }}>you</span>}</td>
+                      <td className="text-end fw-bold">{t.health ?? '–'}</td>
+                      <td className="text-end">{t.avg_rating}</td>
+                      <td className="text-end">{t.avg_sc || '–'}</td>
+                      <td className="text-center" style={{ color: '#8b949e' }}>{t.avg_age}</td>
+                      <td className="text-end" style={{ color: '#8b949e' }}>{t.keeper_value || '–'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export function TeamStatsPage() {
   const { leagueId, teamId } = useParams()
   const { data, loading } = useFetch<StatsData>(`/leagues/${leagueId}/team/${teamId}/stats?format=json`)
@@ -307,6 +395,7 @@ export function TeamStatsPage() {
   const { data: intel } = useFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
   const [usagePlayer, setUsagePlayer] = useState<Player | null>(null)
+  const [section, setSection] = useState<'squad' | 'league'>('squad')
   const [compareSet, setCompareSet] = useState<number[]>([])
   const [showCompare, setShowCompare] = useState(false)
   function toggleCompare(id: number) {
@@ -372,6 +461,14 @@ export function TeamStatsPage() {
         </div>
       </div>
 
+      <div className="si-sectionnav">
+        <button className={`si-sectiontab${section === 'squad' ? ' active' : ''}`} onClick={() => setSection('squad')}><i className="bi bi-people-fill"></i>My Squad</button>
+        <button className={`si-sectiontab${section === 'league' ? ' active' : ''}`} onClick={() => setSection('league')}><i className="bi bi-trophy-fill"></i>League</button>
+      </div>
+
+      {section === 'league' && <LeagueComparison leagueId={leagueId!} teamId={teamId!} />}
+
+      {section === 'squad' && (<>
       {/* Insight header + Squad form heatmap (Squad Intelligence) */}
       {intel?.has_data ? <InsightHeader intel={intel} /> : (
         <div className="row g-3 mb-4">
@@ -517,9 +614,8 @@ export function TeamStatsPage() {
           </div>
         </div>
       )}
+      </>)}
 
-
-      
       {usagePlayer && (
         <PlayerUsageModal player={usagePlayer} leagueId={leagueId!} teamId={teamId!}
           teamName={team.name} onClose={() => setUsagePlayer(null)} />

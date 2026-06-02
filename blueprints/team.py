@@ -1169,6 +1169,17 @@ def squad_intel(league_id, team_id):
     return jsonify(data)
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/league-compare")
+@login_required
+def league_compare(league_id, team_id):
+    """How every team in the league stacks up (JSON only)."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+    from models.squad_intel import compute_league_comparison
+    return jsonify(compute_league_comparison(league_id, team_id))
+
+
 @team_bp.route("/<int:league_id>/team/<int:team_id>/draft-roi")
 @login_required
 def draft_roi(league_id, team_id):

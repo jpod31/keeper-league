@@ -4586,6 +4586,23 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 
 /* ══ Squad Intelligence cockpit ══ */
+.si-sectionnav { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.si-sectiontab {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(110,130,180,.07); border: 1px solid rgba(110,130,180,.18);
+  color: #8b949e; font-size: .84rem; font-weight: 600; padding: 8px 16px; border-radius: 10px;
+  cursor: pointer; transition: all .15s ease;
+}
+.si-sectiontab:hover { color: #c9d1d9; border-color: rgba(110,130,180,.35); }
+.si-sectiontab.active { background: linear-gradient(135deg, rgba(31,111,235,.9), rgba(31,111,235,.6)); border-color: transparent; color: #fff; }
+.si-rank-tiles { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.si-rank-tile { flex: 1 1 130px; background: linear-gradient(135deg, rgba(31,111,235,.1), rgba(22,27,34,.5)); border: 1px solid rgba(110,130,180,.18); border-radius: 12px; padding: 14px 16px; }
+.si-rank-tile.wide { flex: 2 1 220px; }
+.si-rank-v { font-size: 1.9rem; font-weight: 800; color: #f0f4fb; line-height: 1; font-variant-numeric: tabular-nums; }
+.si-rank-of { font-size: .8rem; font-weight: 600; color: #8b949e; margin-left: 6px; }
+.si-rank-desc { font-size: 1.3rem; font-weight: 800; color: #58a6ff; line-height: 1.1; }
+.si-rank-l { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #7d8694; margin-top: 7px; }
+
 .si-header { display: flex; gap: 18px; flex-wrap: wrap; justify-content: space-between; align-items: stretch;
   background: linear-gradient(135deg, rgba(31,111,235,.14), rgba(22,27,34,.6) 60%);
   border: 1px solid var(--kl-border); border-radius: 14px; padding: 16px 18px; margin-bottom: 16px; }

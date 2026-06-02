@@ -41,6 +41,88 @@ def _percentile(value, sorted_desc):
     return round(below / len(sorted_desc) * 100)
 
 
+def compute_league_comparison(league_id, team_id):
+    """How every team in the league stacks up: per-team strength metrics +
+    positional strength, league averages, your rank on each, and radar data."""
+    teams = FantasyTeam.query.filter_by(league_id=league_id).all()
+    if not teams:
+        return {"has_data": False}
+
+    POS = ["DEF", "MID", "FWD", "RUC"]
+    rows = []
+    for t in teams:
+        roster = FantasyRoster.query.filter_by(team_id=t.id, is_active=True).all()
+        players = [p for p in (db.session.get(AflPlayer, r.player_id) for r in roster) if p]
+        if not players:
+            continue
+        ratings = [p.rating for p in players if p.rating]
+        scs = [p.sc_avg for p in players if (p.sc_avg or 0) > 0]
+        ages = [p.age for p in players if p.age]
+        kvs = [p.keeper_value for p in players if p.keeper_value is not None]
+        # positional strength = mean rating of the best 4 at that position
+        by_pos = {}
+        for pos in POS:
+            pr = sorted([p.rating for p in players if _primary_pos(p) == pos and p.rating], reverse=True)[:4]
+            by_pos[pos] = round(sum(pr) / len(pr), 1) if pr else 0
+        rows.append({
+            "team_id": t.id, "name": t.name,
+            "avg_rating": round(sum(ratings) / len(ratings), 1) if ratings else 0,
+            "avg_sc": round(sum(scs) / len(scs), 1) if scs else 0,
+            "avg_age": round(sum(ages) / len(ages), 1) if ages else 0,
+            "keeper_value": round(sum(kvs) / len(kvs)) if kvs else 0,
+            "squad_size": len(players),
+            "by_pos": by_pos,
+        })
+    if not rows:
+        return {"has_data": False}
+
+    # squad-health ranking (composite) for the headline ranking
+    try:
+        sh = compute_league_squad_health(league_id)
+        health_by = {x["team_id"]: x for x in sh.get("teams", [])}
+    except Exception:
+        health_by = {}
+    for r in rows:
+        h = health_by.get(r["team_id"])
+        r["health"] = h.get("health") if h else None
+        r["descriptor"] = h.get("descriptor") if h else None
+    rows.sort(key=lambda r: (r["health"] or r["avg_rating"]), reverse=True)
+    for i, r in enumerate(rows):
+        r["rank"] = i + 1
+
+    n = len(rows)
+    league_avg = {
+        "avg_rating": round(sum(r["avg_rating"] for r in rows) / n, 1),
+        "avg_sc": round(sum(r["avg_sc"] for r in rows) / n, 1),
+        "avg_age": round(sum(r["avg_age"] for r in rows) / n, 1),
+        "by_pos": {pos: round(sum(r["by_pos"][pos] for r in rows) / n, 1) for pos in POS},
+    }
+    league_best = {"by_pos": {pos: max(r["by_pos"][pos] for r in rows) for pos in POS}}
+
+    me = next((r for r in rows if r["team_id"] == team_id), None)
+    # your rank on each metric (1 = best; age lower = "younger", reported as-is)
+    def rank_on(key, higher=True):
+        order = sorted(rows, key=lambda r: r[key], reverse=higher)
+        return next((i + 1 for i, r in enumerate(order) if r["team_id"] == team_id), None)
+    your_ranks = {
+        "health": me["rank"] if me else None,
+        "avg_rating": rank_on("avg_rating"),
+        "avg_sc": rank_on("avg_sc"),
+        "keeper_value": rank_on("keeper_value"),
+    } if me else {}
+
+    radar = [{"pos": pos,
+              "you": me["by_pos"][pos] if me else 0,
+              "league": league_avg["by_pos"][pos],
+              "best": league_best["by_pos"][pos]} for pos in POS] if me else []
+
+    return {
+        "has_data": True, "n_teams": n,
+        "teams": rows, "league_avg": league_avg,
+        "your_team_id": team_id, "your_ranks": your_ranks, "radar": radar,
+    }
+
+
 def compute_squad_intel(league_id, team_id, year):
     team = db.session.get(FantasyTeam, team_id)
     if not team:
