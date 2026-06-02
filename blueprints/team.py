@@ -1169,6 +1169,17 @@ def squad_intel(league_id, team_id):
     return jsonify(data)
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/records")
+@login_required
+def team_records(league_id, team_id):
+    """Team + player records (JSON only)."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+    from models.squad_intel import compute_team_records
+    return jsonify(compute_team_records(league_id, team_id, league.season_year))
+
+
 @team_bp.route("/<int:league_id>/team/<int:team_id>/league-compare")
 @login_required
 def league_compare(league_id, team_id):

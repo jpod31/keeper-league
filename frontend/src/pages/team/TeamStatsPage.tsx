@@ -301,6 +301,46 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
   )
 }
 
+// ── Records (team + player) ──
+interface RecordItem { label: string; value: string | number; detail: string; icon: string; color: string; player?: string }
+interface RecordsData { has_data: boolean; team_records: RecordItem[]; player_records: RecordItem[] }
+
+function RecordCard({ r }: { r: RecordItem }) {
+  return (
+    <div className="rec-card" style={{ ['--rc' as string]: r.color } as React.CSSProperties}>
+      <div className="rec-icon"><i className={`bi ${r.icon}`}></i></div>
+      <div className="rec-body">
+        <div className="rec-value">{r.value}</div>
+        {r.player && <div className="rec-player">{r.player}</div>}
+        <div className="rec-label">{r.label}</div>
+        <div className="rec-detail">{r.detail}</div>
+      </div>
+    </div>
+  )
+}
+
+function TeamRecords({ leagueId, teamId }: { leagueId: string; teamId: string }) {
+  const { data, loading } = useFetch<RecordsData>(`/leagues/${leagueId}/team/${teamId}/records?format=json`)
+  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Loading records…</div>
+  if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>No records yet — they'll build as the season plays out.</div>
+  return (
+    <>
+      {data.team_records.length > 0 && (
+        <div className="rec-section">
+          <div className="rec-section-title"><i className="bi bi-shield-fill me-2"></i>Team records</div>
+          <div className="rec-grid">{data.team_records.map((r, i) => <RecordCard key={i} r={r} />)}</div>
+        </div>
+      )}
+      {data.player_records.length > 0 && (
+        <div className="rec-section">
+          <div className="rec-section-title"><i className="bi bi-person-fill me-2"></i>Player records</div>
+          <div className="rec-grid">{data.player_records.map((r, i) => <RecordCard key={i} r={r} />)}</div>
+        </div>
+      )}
+    </>
+  )
+}
+
 // ── League comparison (how you stack up) ──
 interface LeagueTeamRow {
   team_id: number; name: string; avg_rating: number; avg_sc: number; avg_age: number
@@ -395,7 +435,7 @@ export function TeamStatsPage() {
   const { data: intel } = useFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
   const [usagePlayer, setUsagePlayer] = useState<Player | null>(null)
-  const [section, setSection] = useState<'squad' | 'league'>('squad')
+  const [section, setSection] = useState<'squad' | 'league' | 'records'>('squad')
   const [compareSet, setCompareSet] = useState<number[]>([])
   const [showCompare, setShowCompare] = useState(false)
   function toggleCompare(id: number) {
@@ -464,9 +504,11 @@ export function TeamStatsPage() {
       <div className="si-sectionnav">
         <button className={`si-sectiontab${section === 'squad' ? ' active' : ''}`} onClick={() => setSection('squad')}><i className="bi bi-people-fill"></i>My Squad</button>
         <button className={`si-sectiontab${section === 'league' ? ' active' : ''}`} onClick={() => setSection('league')}><i className="bi bi-trophy-fill"></i>League</button>
+        <button className={`si-sectiontab${section === 'records' ? ' active' : ''}`} onClick={() => setSection('records')}><i className="bi bi-award-fill"></i>Records</button>
       </div>
 
       {section === 'league' && <LeagueComparison leagueId={leagueId!} teamId={teamId!} />}
+      {section === 'records' && <TeamRecords leagueId={leagueId!} teamId={teamId!} />}
 
       {section === 'squad' && (<>
       {/* Insight header + Squad form heatmap (Squad Intelligence) */}

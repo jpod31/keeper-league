@@ -41,6 +41,111 @@ def _percentile(value, sorted_desc):
     return round(below / len(sorted_desc) * 100)
 
 
+def compute_team_records(league_id, team_id, year):
+    """Team + player records (season + all-time) from scoring & fixture history."""
+    from models.database import (RoundScore, Fixture, SeasonStanding,
+                                 WeeklyLineup, FantasyTeam)
+    team = db.session.get(FantasyTeam, team_id)
+    if not team:
+        return {"has_data": False}
+
+    team_records, player_records = [], []
+    name_cache = {}
+
+    def pname(pid):
+        if pid not in name_cache:
+            p = db.session.get(AflPlayer, int(pid))
+            name_cache[pid] = p.name if p else f"#{pid}"
+        return name_cache[pid]
+
+    def oppname(oid):
+        t = db.session.get(FantasyTeam, oid)
+        return t.name if t else "?"
+
+    rss = RoundScore.query.filter_by(team_id=team_id).order_by(RoundScore.year, RoundScore.afl_round).all()
+
+    # ── team scoring records ──
+    scored = [(rs.total_score or 0, rs.year, rs.afl_round) for rs in rss if (rs.total_score or 0) > 0]
+    if scored:
+        hi = max(scored, key=lambda x: x[0]); lo = min(scored, key=lambda x: x[0])
+        team_records.append({"label": "Highest round score", "value": round(hi[0]), "detail": f"R{hi[2]} {hi[1]}", "icon": "bi-graph-up-arrow", "color": "#4ec77a"})
+        team_records.append({"label": "Lowest round score", "value": round(lo[0]), "detail": f"R{lo[2]} {lo[1]}", "icon": "bi-graph-down-arrow", "color": "#ef6b5e"})
+        team_records.append({"label": "Average round", "value": round(sum(x[0] for x in scored) / len(scored)), "detail": f"{len(scored)} rounds", "icon": "bi-bar-chart-fill", "color": "#5aa0ff"})
+
+    # ── win/loss records ──
+    fxs = (Fixture.query.filter(Fixture.league_id == league_id,
+            db.or_(Fixture.home_team_id == team_id, Fixture.away_team_id == team_id),
+            Fixture.status == "completed").order_by(Fixture.year, Fixture.afl_round).all())
+    results = []
+    for f in fxs:
+        if f.home_team_id == team_id:
+            mine, opp, oid = (f.home_score or 0), (f.away_score or 0), f.away_team_id
+        else:
+            mine, opp, oid = (f.away_score or 0), (f.home_score or 0), f.home_team_id
+        results.append({"margin": round(mine - opp), "win": mine > opp, "year": f.year, "round": f.afl_round, "opp_id": oid})
+    if results:
+        wins = sum(1 for r in results if r["win"])
+        losses = sum(1 for r in results if not r["win"] and r["margin"] != 0)
+        bw = max(results, key=lambda r: r["margin"]); bl = min(results, key=lambda r: r["margin"])
+        if bw["margin"] > 0:
+            team_records.append({"label": "Biggest win", "value": f"+{bw['margin']}", "detail": f"vs {oppname(bw['opp_id'])} · R{bw['round']} {bw['year']}", "icon": "bi-trophy-fill", "color": "#e8c25b"})
+        if bl["margin"] < 0:
+            team_records.append({"label": "Biggest loss", "value": str(bl['margin']), "detail": f"vs {oppname(bl['opp_id'])} · R{bl['round']} {bl['year']}", "icon": "bi-emoji-frown-fill", "color": "#ef6b5e"})
+
+        def longest(pred):
+            best = cur = 0
+            for r in results:
+                cur = cur + 1 if pred(r) else 0
+                best = max(best, cur)
+            return best
+        ws = longest(lambda r: r["win"]); ls = longest(lambda r: (not r["win"]) and r["margin"] < 0)
+        if ws:
+            team_records.append({"label": "Longest win streak", "value": ws, "detail": "games", "icon": "bi-fire", "color": "#4ec77a"})
+        if ls:
+            team_records.append({"label": "Longest losing streak", "value": ls, "detail": "games", "icon": "bi-snow2", "color": "#8b949e"})
+        if wins + losses:
+            team_records.append({"label": "All-time record", "value": f"{wins}–{losses}", "detail": f"{round(wins / (wins + losses) * 100)}% win rate", "icon": "bi-clipboard-data-fill", "color": "#5aa0ff"})
+
+    best_season = max(SeasonStanding.query.filter_by(team_id=team_id).all(),
+                      key=lambda s: (s.wins or 0, s.percentage or 0), default=None)
+    if best_season:
+        team_records.append({"label": "Best season", "value": f"{best_season.wins}–{best_season.losses}", "detail": f"{best_season.year} · {round(best_season.percentage or 0)}%", "icon": "bi-star-fill", "color": "#e8c25b"})
+
+    # ── player records (from per-round breakdown) ──
+    best_game, banked, tons = None, {}, {}
+    for rs in rss:
+        for k, v in (rs.breakdown or {}).items():
+            if k.startswith("emergency_") or not isinstance(v, (int, float)) or v <= 0:
+                continue
+            if rs.year == year:
+                banked[k] = banked.get(k, 0) + v
+                if v >= 100:
+                    tons[k] = tons.get(k, 0) + 1
+            if best_game is None or v > best_game[1]:
+                best_game = (k, v, rs.year, rs.afl_round)
+    if best_game:
+        player_records.append({"label": "Best individual game", "player": pname(best_game[0]), "value": round(best_game[1]), "detail": f"R{best_game[3]} {best_game[2]}", "icon": "bi-lightning-charge-fill", "color": "#a98bff"})
+    if banked:
+        b = max(banked.items(), key=lambda x: x[1])
+        player_records.append({"label": "Most banked", "player": pname(b[0]), "value": round(b[1]), "detail": f"{year} season", "icon": "bi-piggy-bank-fill", "color": "#4ec77a"})
+    if tons:
+        t = max(tons.items(), key=lambda x: x[1])
+        player_records.append({"label": "Most tons (100+)", "player": pname(t[0]), "value": t[1], "detail": f"{year} season", "icon": "bi-trophy", "color": "#e0a93f"})
+    cap_pts = {}
+    rs_by = {(r.year, r.afl_round): r for r in rss}
+    for wl in WeeklyLineup.query.filter_by(team_id=team_id).all():
+        cap = next((s for s in wl.slots if s.is_captain), None)
+        rs = rs_by.get((wl.year, wl.afl_round))
+        if cap and rs and rs.captain_bonus:
+            cap_pts[str(cap.player_id)] = cap_pts.get(str(cap.player_id), 0) + (rs.captain_bonus or 0)
+    if cap_pts:
+        c = max(cap_pts.items(), key=lambda x: x[1])
+        player_records.append({"label": "Most captain points", "player": pname(c[0]), "value": round(c[1]), "detail": "bonus banked", "icon": "bi-star-fill", "color": "#e8c25b"})
+
+    return {"has_data": bool(team_records or player_records),
+            "team_records": team_records, "player_records": player_records}
+
+
 def compute_league_comparison(league_id, team_id):
     """How every team in the league stacks up: per-team strength metrics +
     positional strength, league averages, your rank on each, and radar data."""
