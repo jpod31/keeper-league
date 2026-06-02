@@ -359,6 +359,30 @@ def _sync_players_to_db(app, force=False):
         app.logger.info(f"Player sync: {added} added, {updated} updated, {total} total in DB")
 
 
+def _cba_backfill_if_empty(app):
+    """One-time CBA% population: if no player has a CBA% yet, fetch it from
+    dfsaustralia in a background thread so boot is never blocked. Guarded so it
+    runs only while unpopulated (re-tries on the next restart if it fails)."""
+    import threading
+
+    def _run():
+        with app.app_context():
+            try:
+                from models.database import AflPlayer
+                if AflPlayer.query.count() == 0:
+                    return
+                if AflPlayer.query.filter(AflPlayer.cba_pct.isnot(None)).count() > 0:
+                    return  # already populated — never re-scrape on boot
+                from scrapers.cba_scraper import sync_cbas
+                rep = sync_cbas()
+                app.logger.info("CBA startup backfill: %s matched, %s unmatched",
+                                rep.get("matched"), len(rep.get("unmatched", [])))
+            except Exception:
+                app.logger.exception("CBA startup backfill failed")
+
+    threading.Thread(target=_run, name="cba-backfill", daemon=True).start()
+
+
 def create_app():
     app = Flask(__name__)
     app.secret_key = config.SECRET_KEY
@@ -401,6 +425,7 @@ def create_app():
     # Sync CSV players into SQLite, then ratings from XLSX
     _sync_players_to_db(app)
     _sync_ratings_to_db(app)
+    _cba_backfill_if_empty(app)
 
     # Register blueprints
     from blueprints.auth import auth_bp
