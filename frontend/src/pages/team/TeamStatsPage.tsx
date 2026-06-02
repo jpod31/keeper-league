@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router'
-import { useState, useMemo, useRef, useLayoutEffect } from 'react'
+import { useState, useMemo, useRef, useLayoutEffect, useEffect } from 'react'
 import { useLeague } from '../../contexts/LeagueContext'
 import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
@@ -299,6 +299,62 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
         </table>
         {rows.length === 0 && <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>No players match.</div>}
       </div>
+    </div>
+  )
+}
+
+// ── Scouting Map — signature ECharts scatter (output × reliability) ──
+const SM_POS_COLOR: Record<string, string> = { DEF: '#58a6ff', MID: '#bc8cff', FWD: '#f0883e', RUC: '#3fb950' }
+function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: (id: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const onSel = useRef(onSelect); onSel.current = onSelect
+  useEffect(() => {
+    const pool = players.filter(p => (p.sc_avg || 0) > 0 && p.consistency != null)
+    if (!ref.current || pool.length === 0) return
+    let chart: any = null  // eslint-disable-line @typescript-eslint/no-explicit-any
+    let disposed = false
+    const onResize = () => chart && chart.resize()
+    import('echarts').then(echarts => {
+      if (disposed || !ref.current) return
+      chart = echarts.init(ref.current, null, { renderer: 'canvas' })
+      const xs = pool.map(p => p.sc_avg), ys = pool.map(p => p.consistency as number)
+      const xMid = xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)]
+      const yMid = ys.slice().sort((a, b) => a - b)[Math.floor(ys.length / 2)]
+      const series = ['DEF', 'MID', 'FWD', 'RUC'].map(pos => ({
+        name: pos, type: 'scatter',
+        emphasis: { focus: 'series', scale: 1.4 },
+        symbolSize: (v: number[]) => 9 + Math.max(0, v[2]) * 0.7,
+        itemStyle: { color: SM_POS_COLOR[pos], opacity: 0.82, borderColor: 'rgba(0,0,0,.3)' },
+        data: pool.filter(p => p.primary === pos).map(p => ({ value: [p.sc_avg, p.consistency, Math.max(0, p.vorp ?? 0)], name: p.name, id: p.id })),
+      }))
+      chart.setOption({
+        backgroundColor: 'transparent',
+        legend: { data: ['DEF', 'MID', 'FWD', 'RUC'], textStyle: { color: '#8b949e' }, top: 2, icon: 'circle' },
+        grid: { left: 52, right: 22, top: 34, bottom: 44 },
+        tooltip: {
+          backgroundColor: '#161d27', borderColor: 'rgba(110,130,180,.3)', textStyle: { color: '#e6edf3', fontSize: 12 },
+          formatter: (p: { data: { name: string; value: number[] } }) => `<b>${p.data.name}</b><br/>SC ${p.data.value[0]} · consistency ${p.data.value[1]} · VORP +${Math.round(p.data.value[2])}`,
+        },
+        xAxis: { name: 'SC output ▶', nameLocation: 'middle', nameGap: 26, nameTextStyle: { color: '#6e7681', fontSize: 11 }, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitLine: { lineStyle: { color: '#1c2230' } } },
+        yAxis: { name: 'reliability ▲', nameLocation: 'middle', nameGap: 34, nameTextStyle: { color: '#6e7681', fontSize: 11 }, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitLine: { lineStyle: { color: '#1c2230' } } },
+        series: [
+          ...series,
+          { type: 'scatter', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: '#3a4150', type: 'dashed' }, label: { show: false }, data: [{ xAxis: xMid }, { yAxis: yMid }] } },
+        ],
+        animationDuration: 600,
+      })
+      chart.on('click', (p: { data?: { id?: number } }) => { if (p.data?.id) onSel.current(p.data.id) })
+    })
+    window.addEventListener('resize', onResize)
+    return () => { disposed = true; window.removeEventListener('resize', onResize); if (chart) chart.dispose() }
+  }, [players])
+  if (players.filter(p => (p.sc_avg || 0) > 0 && p.consistency != null).length === 0) return null
+  return (
+    <div className="card mb-4">
+      <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+        <i className="bi bi-bullseye me-2" style={{ color: '#8b949e' }}></i>Scouting Map
+        <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>output × reliability · bubble = VORP · top-right = safe studs · click to drill</span></h5></div>
+      <div className="card-body"><div ref={ref} style={{ width: '100%', height: 360 }} /></div>
     </div>
   )
 }
@@ -645,6 +701,7 @@ export function TeamStatsPage() {
           <div className="col-6 col-md-2"><StatTile label="Avg Age" value={avg_age} accent="rust" decimals={1} /></div>
         </div>
       )}
+      {intel?.has_data && <ScoutingMap players={intel.players} onSelect={id => { const p = players.find(pp => pp.id === id); if (p) setUsagePlayer(p) }} />}
       {/* Squad Matrix — interactive view-mode grid (replaces the static table) */}
       {intel?.has_data
         ? <SquadMatrix players={intel.players} flagMap={flagMap} activeFlag={activeFlag}
