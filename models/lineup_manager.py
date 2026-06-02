@@ -233,6 +233,157 @@ def auto_fill_lineup(team_id, afl_round, year, league_id):
     return set_lineup(team_id, afl_round, year, slot_data, league_id)
 
 
+def _active_round(year):
+    """Best guess at the current/active AFL round (Squiggle, then DB fallback)."""
+    from scrapers.squiggle import get_current_round
+    try:
+        r = get_current_round(year)
+    except Exception:
+        r = None
+    if r is None:
+        from models.database import AflGame
+        g = (AflGame.query.filter_by(year=year)
+             .filter(AflGame.status.in_(["live", "complete"]))
+             .order_by(AflGame.afl_round.desc()).first())
+        r = g.afl_round if g else None
+    return r
+
+
+def optimise_roster(team_id, league_id, year, metric="rating"):
+    """Rearrange the LIVE FantasyRoster into the best legal playing list.
+
+    metric: "rating" or "sc_avg" — what to optimise on.
+    Excludes from the field: bye players (no game this round, by fixtures),
+    short/long-term injuries, 7s and LTIL players. Locked players (game started)
+    are frozen in place. Sets the best eligible reserves as emergencies (max 4).
+    Captain/VC flags are preserved (and kept on field where eligible).
+    """
+    from models.database import (
+        FantasyRoster, AflGame, LeaguePositionSlot, LongTermInjury, Reserve7sLineup,
+    )
+    from models.live_sync import get_locked_player_ids
+
+    metric = "rating" if metric == "rating" else "sc_avg"
+
+    def mval(p):
+        v = p.rating if metric == "rating" else p.sc_avg
+        return v if v is not None else 0
+
+    afl_round = _active_round(year)
+    round_teams, locked_pids = set(), set()
+    if afl_round is not None:
+        games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
+        round_teams = {t for g in games for t in (g.home_team, g.away_team)}
+        locked_pids = get_locked_player_ids(afl_round, year) or set()
+
+    # If the whole round is locked there is nothing to optimise.
+    roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    if not roster:
+        return None, "No players on roster."
+
+    try:
+        from blueprints.reserve7s import _get_next_7s_round
+        s7 = _get_next_7s_round(league_id, year)
+        sevens_pids = {e.player_id for e in Reserve7sLineup.query.filter_by(
+            league_id=league_id, team_id=team_id, afl_round=s7, year=year).all()}
+    except Exception:
+        sevens_pids = set()
+    ltil_pids = {lt.player_id for lt in LongTermInjury.query.filter_by(
+        team_id=team_id, removed_at=None).all()}
+
+    def is_bye(p):
+        return bool(round_teams) and p.afl_team not in round_teams
+
+    def is_injured(p):
+        return (p.injury_severity or "").lower() in ("short", "long")
+
+    def eligible(entry):
+        p = entry.player
+        if not p:
+            return False
+        if entry.player_id in sevens_pids or entry.player_id in ltil_pids:
+            return False
+        return not is_bye(p) and not is_injured(p)
+
+    pslots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
+    field_slots = {ps.position_code: ps.count for ps in pslots if not ps.is_bench}
+    if not field_slots:
+        return None, "League has no position slots configured."
+    flex_count = sum(ps.count for ps in pslots if ps.is_bench and ps.position_code == "FLEX") or 1
+
+    # Players we never touch: 7s and LTIL. Players frozen: locked.
+    touch = [e for e in roster if e.player_id not in sevens_pids and e.player_id not in ltil_pids]
+    movable = [e for e in touch if e.player_id not in locked_pids]
+    if not movable:
+        return None, "All players are locked (games started)."
+
+    cap_pid = next((e.player_id for e in roster if e.is_captain), None)
+    vc_pid = next((e.player_id for e in roster if e.is_vice_captain), None)
+
+    # Locked, on-field players keep their slot — decrement available capacity.
+    remaining = dict(field_slots)
+    remaining_flex = flex_count
+    used = set()
+    for e in touch:
+        if e.player_id in locked_pids and not e.is_benched:
+            used.add(e.player_id)
+            if e.position_code == "FLEX":
+                remaining_flex = max(0, remaining_flex - 1)
+            elif e.position_code in remaining:
+                remaining[e.position_code] = max(0, remaining[e.position_code] - 1)
+
+    elig = [e for e in movable if eligible(e)]
+    elig.sort(key=lambda e: mval(e.player), reverse=True)
+    # keep current captain / VC on field: place them first
+    forced = [e for e in elig if e.player_id in (cap_pid, vc_pid)]
+    ordered = forced + [e for e in elig if e.player_id not in (cap_pid, vc_pid)]
+
+    assigned = {}
+    for pos in sorted(remaining, key=lambda x: remaining[x]):  # scarcest position first
+        need = remaining[pos]
+        for e in ordered:
+            if need <= 0:
+                break
+            if e.player_id in used:
+                continue
+            positions = (e.player.position or "MID").upper().split("/")
+            if pos in positions:
+                assigned[e.player_id] = pos
+                used.add(e.player_id)
+                need -= 1
+    for e in ordered:  # FLEX with best remaining eligible
+        if remaining_flex <= 0:
+            break
+        if e.player_id in used:
+            continue
+        assigned[e.player_id] = "FLEX"
+        used.add(e.player_id)
+        remaining_flex -= 1
+
+    onfield = set(assigned)
+    bench_elig = sorted(
+        [e for e in movable if e.player_id not in onfield and eligible(e)],
+        key=lambda e: mval(e.player), reverse=True)
+    emerg_pids = {e.player_id for e in bench_elig[:4]}
+
+    for e in movable:
+        if e.player_id in assigned:
+            e.position_code = assigned[e.player_id]
+            e.is_benched = False
+            e.is_emergency = False
+        else:
+            e.position_code = None
+            e.is_benched = True
+            e.is_emergency = e.player_id in emerg_pids
+    db.session.commit()
+    return {
+        "ok": True, "metric": metric, "round": afl_round,
+        "on_field": len(onfield) + len([e for e in touch
+                                        if e.player_id in locked_pids and not e.is_benched]),
+        "emergencies": len(emerg_pids),
+    }, None
+
+
 def lock_lineup(team_id, afl_round, year):
     """Lock a lineup so it can't be changed."""
     lineup = WeeklyLineup.query.filter_by(

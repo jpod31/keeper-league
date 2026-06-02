@@ -100,6 +100,29 @@ function SquadPageInner() {
   const view = searchParams.get('view') || 'field'
   const { data, loading, error, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
   const fieldActions = useFieldActions(leagueId!, teamId!, refetch)
+  const [optimising, setOptimising] = useState<'rating' | 'sc_avg' | null>(null)
+
+  async function optimise(metric: 'rating' | 'sc_avg') {
+    const label = metric === 'rating' ? 'rating' : 'SC average'
+    if (!window.confirm(
+      `Optimise your team by ${label}?\n\nThis rebuilds your on-field lineup and emergencies with the best available players, ` +
+      `excluding bye players, injuries (short/long), 7s and LTIL. Captain & Vice-Captain are kept, and any locked players are left in place.`
+    )) return
+    setOptimising(metric)
+    try {
+      const res = await fetch(`/leagues/${leagueId}/team/${teamId}/api/optimise`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metric }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) { window.alert(j.error || 'Could not optimise team'); return }
+      refetch()
+    } catch {
+      window.alert('Could not optimise team')
+    } finally {
+      setOptimising(null)
+    }
+  }
   const [mobileActionPlayer, setMobileActionPlayer] = useState<Player | null>(null)
   const [sspLtilId, setSspLtilId] = useState<number | null>(null)
   const [delistTarget, setDelistTarget] = useState<{ id: number; name: string } | null>(null)
@@ -366,6 +389,21 @@ function SquadPageInner() {
               selected={archiveRound}
               onSelect={setArchiveRound}
             />
+          )}
+          {view === 'field' && (
+            <div className="d-flex align-items-center gap-2 flex-wrap" style={{ marginTop: 4 }}>
+              <span style={{ fontSize: '.75rem', color: '#8b949e' }}><i className="bi bi-magic me-1"></i>Optimise lineup:</span>
+              <button className="btn btn-sm btn-primary" disabled={optimising !== null} onClick={() => optimise('rating')}>
+                {optimising === 'rating'
+                  ? <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Optimising…</>
+                  : 'By Rating'}
+              </button>
+              <button className="btn btn-sm btn-outline-primary" disabled={optimising !== null} onClick={() => optimise('sc_avg')}>
+                {optimising === 'sc_avg'
+                  ? <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Optimising…</>
+                  : 'By SC Avg'}
+              </button>
+            </div>
           )}
         </div>
       )}

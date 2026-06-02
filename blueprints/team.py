@@ -21,7 +21,7 @@ from models.database import (
 from blueprints import check_league_access
 from models.lineup_manager import (
     get_or_create_lineup, get_lineup_with_slots, set_lineup,
-    auto_fill_lineup, lock_lineup, get_bye_players,
+    auto_fill_lineup, lock_lineup, get_bye_players, optimise_roster,
     snapshot_lineups_for_round,
 )
 from models.field_layout import calc_zone_rows, is_rookie
@@ -1518,6 +1518,33 @@ def api_set_emergency(league_id, team_id):
     db.session.commit()
     _refresh_snapshot_if_live(league)
     return jsonify({"ok": True, "is_emergency": entry.is_emergency})
+
+
+@team_bp.route("/<int:league_id>/team/<int:team_id>/api/optimise", methods=["POST"])
+@login_required
+def api_optimise(league_id, team_id):
+    """Auto-build the best legal playing list by rating or SC average.
+
+    Excludes bye / short+long-injured / 7s / LTIL players from the field, freezes
+    locked players, sets the best eligible reserves as emergencies, keeps C/VC.
+    """
+    league = db.session.get(League, league_id)
+    team = db.session.get(FantasyTeam, team_id)
+    if not league or not team or team.league_id != league_id:
+        return jsonify({"error": "Team not found"}), 404
+    if team.owner_id != current_user.id:
+        return jsonify({"error": "Not your team"}), 403
+
+    data = request.get_json(silent=True) or {}
+    metric = data.get("metric", "rating")
+    if metric not in ("rating", "sc_avg"):
+        return jsonify({"error": "metric must be 'rating' or 'sc_avg'"}), 400
+
+    result, error = optimise_roster(team_id, league_id, league.season_year, metric)
+    if error:
+        return jsonify({"error": error}), 409
+    _refresh_snapshot_if_live(league)
+    return jsonify(result)
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/api/toggle-7s", methods=["POST"])
