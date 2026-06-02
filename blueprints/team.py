@@ -1099,6 +1099,17 @@ def player_scoring(league_id, team_id, player_id):
     return jsonify(compute_scoring_profile(player.name))
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/player/<int:player_id>/projection")
+@login_required
+def player_projection(league_id, team_id, player_id):
+    """Next-round + next-season SC projections (JSON only)."""
+    player = db.session.get(AflPlayer, player_id)
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+    from scrapers.stats_loader import compute_player_projection
+    return jsonify(compute_player_projection(player.name, player.age))
+
+
 @team_bp.route("/<int:league_id>/squad-health")
 @login_required
 def squad_health(league_id):

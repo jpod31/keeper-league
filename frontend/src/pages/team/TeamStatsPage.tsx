@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
-  ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList,
+  ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList, LineChart, Line,
 } from 'recharts'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
@@ -387,14 +387,25 @@ function consistencyLabel(c: number): string {
 const HIST_COLOR: Record<string, string> = {
   '<60': '#ef6b5e', '60–79': '#d2884f', '80–99': '#5aa0ff', '100–119': '#4ec77a', '120+': '#a98bff',
 }
+interface ProjectionData {
+  has_data: boolean
+  next_round: number
+  next_round_inputs: { last3: number; season: number; career: number }
+  next_season: number; next_season_low: number; next_season_high: number
+  age_delta_pct: number; next_age: number | null
+  season_trend: { year: number; avg: number }[]
+}
 
 function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
   player: Player; leagueId: string; teamId: string; teamName: string; onClose: () => void
 }) {
-  const [tab, setTab] = useState<'usage' | 'scoring'>('usage')
-  const { data: u, loading } = useFetch<UsageData>(`/leagues/${leagueId}/team/${teamId}/player/${player.id}/usage?format=json`)
+  const [tab, setTab] = useState<'usage' | 'scoring' | 'projection'>('usage')
+  const base = `/leagues/${leagueId}/team/${teamId}/player/${player.id}`
+  const { data: u, loading } = useFetch<UsageData>(`${base}/usage?format=json`)
   const { data: sc, loading: scLoading } = useFetch<ScoringData>(
-    tab === 'scoring' ? `/leagues/${leagueId}/team/${teamId}/player/${player.id}/scoring?format=json` : null)
+    tab === 'scoring' ? `${base}/scoring?format=json` : null)
+  const { data: pj, loading: pjLoading } = useFetch<ProjectionData>(
+    tab === 'projection' ? `${base}/projection?format=json` : null)
   const primary = posCode(player.position)
   const rolesPresent = u ? Array.from(new Set(u.timeline.map(t => t.role))) : []
 
@@ -415,9 +426,55 @@ function PlayerUsageModal({ player, leagueId, teamId, teamName, onClose }: {
         <div className="usage-tabs">
           <button className={`usage-tab${tab === 'usage' ? ' active' : ''}`} onClick={() => setTab('usage')}>Your usage</button>
           <button className={`usage-tab${tab === 'scoring' ? ' active' : ''}`} onClick={() => setTab('scoring')}>Scoring profile</button>
+          <button className={`usage-tab${tab === 'projection' ? ' active' : ''}`} onClick={() => setTab('projection')}>Projection</button>
         </div>
 
-        {tab === 'scoring' ? (
+        {tab === 'projection' ? (
+          <div className="usage-body">
+            {pjLoading || !pj ? (
+              <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading projection…</div>
+            ) : !pj.has_data ? (
+              <div className="text-secondary" style={{ padding: 20, textAlign: 'center' }}>Not enough scoring history to project.</div>
+            ) : (
+              <>
+                <div className="proj-cards">
+                  <div className="proj-card" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}>
+                    <div className="proj-card-lbl">Next round</div>
+                    <div className="proj-card-val">~{pj.next_round}</div>
+                    <div className="proj-card-sub">form-weighted · L3 {pj.next_round_inputs.last3} · Szn {pj.next_round_inputs.season} · Career {pj.next_round_inputs.career}</div>
+                  </div>
+                  <div className="proj-card" style={{ ['--uc' as string]: '#a98bff' } as React.CSSProperties}>
+                    <div className="proj-card-lbl">Next season</div>
+                    <div className="proj-card-val">~{pj.next_season} <span className="proj-band">{pj.next_season_low}–{pj.next_season_high}</span></div>
+                    <div className="proj-card-sub">
+                      {pj.next_age ? `age ${pj.next_age} → ` : ''}
+                      <span style={{ color: pj.age_delta_pct > 0 ? '#4ec77a' : pj.age_delta_pct < 0 ? '#ef6b5e' : '#8b949e' }}>
+                        {pj.age_delta_pct > 0 ? '+' : ''}{pj.age_delta_pct}% age curve
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {pj.season_trend.length > 1 && (
+                  <div className="usage-timeline-wrap">
+                    <div className="usage-section-title">Season SC average — career arc</div>
+                    <ResponsiveContainer width="100%" height={170}>
+                      <LineChart data={pj.season_trend} margin={{ top: 8, right: 14, bottom: 0, left: -18 }}>
+                        <XAxis dataKey="year" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+                        <YAxis tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+                        <Tooltip cursor={{ stroke: '#30363d' }}
+                          contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                        <Line type="monotone" dataKey="avg" stroke="#58a6ff" strokeWidth={2} dot={{ r: 3, fill: '#58a6ff' }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+                <div className="text-secondary" style={{ fontSize: '.72rem', marginTop: 6 }}>
+                  Estimates from SuperCoach history + a position-agnostic age curve. Not financial advice. 😉
+                </div>
+              </>
+            )}
+          </div>
+        ) : tab === 'scoring' ? (
           <div className="usage-body">
             {scLoading || !sc ? (
               <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Loading scoring…</div>

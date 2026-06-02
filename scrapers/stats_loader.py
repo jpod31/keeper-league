@@ -356,6 +356,88 @@ def compute_scoring_profile(player_name: str) -> dict:
     }
 
 
+def compute_player_projection(player_name: str, age=None) -> dict:
+    """Next-round (form-weighted) and next-season (recency + age-curve) SC
+    projections for a player, with an uncertainty band from season volatility.
+    Powers the Stats drill-down "Projection" tab (ideas #19/#20)."""
+    needle = (player_name or "").lower()
+    by_year = {}     # year -> [sc]
+    chrono = []      # (year, round_sort, sc)
+    for year in range(2013, CURRENT_YEAR + 1):
+        df = _load_year_csv(year)
+        if df is None or "supercoach_score" not in df.columns:
+            continue
+        pdata = df[df["_player_name_lower"] == needle]
+        if pdata.empty:
+            continue
+        has_round = "round" in pdata.columns
+        for _, row in pdata.iterrows():
+            sc = pd.to_numeric(pd.Series([row.get("supercoach_score")]), errors="coerce").dropna()
+            if len(sc) == 0:
+                continue
+            v = float(sc.iloc[0])
+            if v <= 0:
+                continue
+            by_year.setdefault(year, []).append(v)
+            rsort = _parse_round(row.get("round"))[0] if has_round else 0
+            chrono.append((year, rsort, v))
+
+    if not chrono:
+        return {"has_data": False}
+
+    chrono.sort(key=lambda g: (g[0], g[1]))
+    allv = [g[2] for g in chrono]
+    career_avg = sum(allv) / len(allv)
+    season_avgs = {y: sum(vs) / len(vs) for y, vs in by_year.items()}
+    years_sorted = sorted(season_avgs)
+    season_avg = season_avgs[years_sorted[-1]]
+    last3 = allv[-3:]
+    last3_avg = sum(last3) / len(last3)
+
+    # Next round — form-weighted blend
+    next_round = 0.5 * last3_avg + 0.3 * season_avg + 0.2 * career_avg
+
+    # Next season — recency-weighted last 3 seasons, nudged by an age curve
+    recent = [season_avgs[y] for y in years_sorted[-3:]]
+    weights = [0.2, 0.3, 0.5][-len(recent):]
+    base = sum(w * v for w, v in zip(weights, recent)) / sum(weights)
+    next_age = (age + 1) if age else None
+
+    def age_delta(a):
+        if a is None:
+            return 0.0
+        if a <= 22:
+            return 0.05
+        if a <= 24:
+            return 0.03
+        if a <= 27:
+            return 0.0
+        if a <= 29:
+            return -0.03
+        if a <= 31:
+            return -0.07
+        return -0.12
+    delta = age_delta(next_age)
+    proj_season = base * (1 + delta)
+
+    svals = list(season_avgs.values())
+    smean = sum(svals) / len(svals)
+    sstd = (sum((x - smean) ** 2 for x in svals) / len(svals)) ** 0.5 if len(svals) > 1 else 8.0
+    band = round(max(5.0, sstd), 1)
+
+    return {
+        "has_data": True,
+        "next_round": round(next_round),
+        "next_round_inputs": {"last3": round(last3_avg), "season": round(season_avg), "career": round(career_avg)},
+        "next_season": round(proj_season),
+        "next_season_low": round(proj_season - band),
+        "next_season_high": round(proj_season + band),
+        "age_delta_pct": round(delta * 100),
+        "next_age": next_age,
+        "season_trend": [{"year": y, "avg": round(season_avgs[y], 1)} for y in years_sorted],
+    }
+
+
 def _least_squares_slope(xs: List[float], ys: List[float]) -> float:
     """Pure-Python least-squares linear regression slope."""
     n = len(xs)
