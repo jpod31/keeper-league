@@ -112,12 +112,6 @@ interface SquadIntel {
   insights: { kind: string; headline: string; detail?: string; player?: number }[]
 }
 
-function zColor(z: number): string {
-  const t = Math.max(-1.6, Math.min(1.6, z)) / 1.6
-  return t >= 0 ? `rgba(78,199,122,${(0.18 + 0.62 * t).toFixed(2)})`
-                : `rgba(239,107,94,${(0.18 + 0.62 * -t).toFixed(2)})`
-}
-
 function InsightHeader({ intel }: { intel: SquadIntel }) {
   const m = intel.team_metrics
   const thin = Object.entries(m.depth).filter(([, d]) => d.count > 0)
@@ -137,48 +131,6 @@ function InsightHeader({ intel }: { intel: SquadIntel }) {
         <div className="si-tile"><div className="si-tile-v">{m.vorp_total}</div><div className="si-tile-l">Squad VORP</div><div className="si-tile-s">value over replacement</div></div>
         <div className="si-tile"><div className="si-tile-v">{m.avg_age}</div><div className="si-tile-l">Avg age</div><div className="si-tile-s">contention window</div></div>
         {thin && <div className="si-tile"><div className="si-tile-v" style={{ color: '#e0a93f' }}>{thin[0]}</div><div className="si-tile-l">Thinnest</div><div className="si-tile-s">{thin[1].above_repl} above repl</div></div>}
-      </div>
-    </div>
-  )
-}
-
-function FormHeatmap({ players, onSelect }: { players: IntelPlayer[]; onSelect: (id: number) => void }) {
-  const withForm = players.filter(p => p.round_form && p.round_form.length > 0)
-  if (withForm.length === 0) return null
-  const allRounds = Array.from(new Set(withForm.flatMap(p => p.round_form.map(r => r.round)))).sort((a, b) => a - b).slice(-14)
-  const rows = [...withForm].sort((a, b) => b.form_z - a.form_z)
-  return (
-    <div className="card mb-4 si-heat-card">
-      <div className="card-header d-flex align-items-center justify-content-between">
-        <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-          <i className="bi bi-grid-3x3-gap-fill me-2" style={{ color: '#8b949e' }}></i>Squad Form
-          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>SC by round vs each player's own season · hot ▶ cold</span>
-        </h5>
-        <div className="si-heat-legend"><span className="hl cold"></span>cold<span className="hl mid"></span><span className="hl hot"></span>hot</div>
-      </div>
-      <div className="card-body p-0">
-        <div className="si-heat-scroll">
-          <table className="si-heat">
-            <thead><tr><th className="si-heat-name"></th>{allRounds.map(r => <th key={r}>R{r}</th>)}<th className="si-heat-trend">trend</th></tr></thead>
-            <tbody>
-              {rows.map(p => {
-                const byRound: Record<number, { sc: number; z: number }> = {}
-                p.round_form.forEach(r => { byRound[r.round] = { sc: r.sc, z: r.z } })
-                return (
-                  <tr key={p.id} onClick={() => onSelect(p.id)}>
-                    <td className="si-heat-name"><span className={`pos-dot pos-${p.primary}`}></span>{p.name}</td>
-                    {allRounds.map(r => {
-                      const c = byRound[r]
-                      return <td key={r} className="si-heat-cell" style={c ? { background: zColor(c.z) } : undefined}
-                        title={c ? `R${r}: ${c.sc} SC (${c.z > 0 ? '+' : ''}${c.z}σ)` : `R${r}: didn't play`}>{c ? Math.round(c.sc) : ''}</td>
-                    })}
-                    <td className="si-heat-trend">{p.form_z >= 0.5 ? <span style={{ color: '#4ec77a' }}>▲ {p.form_z}</span> : p.form_z <= -0.5 ? <span style={{ color: '#ef6b5e' }}>▼ {p.form_z}</span> : <span style={{ color: '#6e7681' }}>–</span>}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   )
@@ -431,7 +383,6 @@ export function TeamStatsPage() {
           <div className="col-6 col-md-2"><StatTile label="Avg Age" value={avg_age} accent="rust" decimals={1} /></div>
         </div>
       )}
-      {intel?.has_data && <FormHeatmap players={intel.players} onSelect={id => { const p = players.find(pp => pp.id === id); if (p) setUsagePlayer(p) }} />}
       {/* Squad Matrix — interactive view-mode grid (replaces the static table) */}
       {intel?.has_data
         ? <SquadMatrix players={intel.players} flagMap={flagMap} activeFlag={activeFlag}
