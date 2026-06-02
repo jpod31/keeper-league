@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
-  ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList, LineChart, Line,
+  ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList, LineChart, Line, ComposedChart,
 } from 'recharts'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
@@ -43,6 +43,13 @@ const POS_COLOR: Record<string, string> = {
 function posCode(pos: string): string {
   return (pos || 'MID').split('/')[0].toUpperCase()
 }
+interface DraftRoiData {
+  has_data: boolean
+  team: { player_id: number; name: string; position: string; pick: number; value: number; expected: number; residual: number; verdict: string }[]
+  curve: { pick: number; expected: number }[]
+  resid_sd: number
+}
+const VERDICT_COLOR: Record<string, string> = { steal: '#4ec77a', fair: '#5aa0ff', bust: '#ef6b5e' }
 function avg(nums: number[]): number {
   const v = nums.filter(n => n != null && !isNaN(n))
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
@@ -77,6 +84,7 @@ type SortField = 'rating' | 'potential' | 'runway' | 'keeper_value' | 'cba_pct' 
 export function TeamStatsPage() {
   const { leagueId, teamId } = useParams()
   const { data, loading } = useFetch<StatsData>(`/leagues/${leagueId}/team/${teamId}/stats?format=json`)
+  const { data: roi } = useFetch<DraftRoiData>(`/leagues/${leagueId}/team/${teamId}/draft-roi?format=json`)
   const [sortField, setSortField] = useState<SortField>('sc_avg')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
@@ -271,6 +279,39 @@ export function TeamStatsPage() {
           </div>
         </div>
       </div>
+
+      {/* Draft-value ROI */}
+      {roi?.has_data && (
+        <div className="card mb-4">
+          <div className="card-header">
+            <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+              <i className="bi bi-bullseye me-2" style={{ color: '#8b949e' }}></i>Draft Value ROI
+              <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>where you picked vs what they return · dashed = expected</span>
+            </h5>
+          </div>
+          <div className="card-body">
+            <ResponsiveContainer width="100%" height={320}>
+              <ComposedChart margin={{ top: 10, right: 16, bottom: 18, left: -8 }}>
+                <XAxis dataKey="pick" type="number" domain={[1, 'dataMax']} allowDuplicatedCategory={false}
+                  tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d"
+                  label={{ value: 'Draft pick', position: 'insideBottom', offset: -8, fill: '#6e7681', fontSize: 11 }} />
+                <YAxis type="number" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d"
+                  label={{ value: 'SC avg', angle: -90, position: 'insideLeft', offset: 16, fill: '#6e7681', fontSize: 11 }} />
+                <Tooltip content={<RoiTip />} cursor={{ strokeDasharray: '3 3' }} />
+                <Line data={roi.curve} dataKey="expected" type="monotone" stroke="#6e7681" strokeDasharray="5 4" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Scatter data={roi.team} dataKey="value" isAnimationActive={false}>
+                  {roi.team.map((d, i) => <Cell key={i} fill={VERDICT_COLOR[d.verdict] || '#5aa0ff'} />)}
+                </Scatter>
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div className="d-flex gap-3 justify-content-center mt-1" style={{ fontSize: '.72rem' }}>
+              <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#4ec77a', marginRight: 4 }}></span>Steal</span>
+              <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#5aa0ff', marginRight: 4 }}></span>Fair</span>
+              <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#ef6b5e', marginRight: 4 }}></span>Bust</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* All players — rich sortable table */}
       <div className="card">
@@ -813,6 +854,20 @@ function ScatterTip({ active, payload }: { active?: boolean; payload?: { payload
     <div style={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, padding: '7px 10px', fontSize: '.78rem' }}>
       <div style={{ fontWeight: 700, color: '#e6edf3' }}>{d.name}</div>
       <div style={{ color: '#8b949e' }}>{d.pos} · Age {d.x} · {d.y.toFixed(1)} SC · {d.z} gms</div>
+    </div>
+  )
+}
+
+function RoiTip({ active, payload }: { active?: boolean; payload?: { payload: { name?: string; pick: number; value?: number; expected: number; residual?: number; verdict?: string } }[] }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload
+  if (d.name == null) return null   // hovering the expectation line, not a player
+  const c = VERDICT_COLOR[d.verdict || 'fair']
+  return (
+    <div style={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, padding: '7px 10px', fontSize: '.78rem' }}>
+      <div style={{ fontWeight: 700, color: '#e6edf3' }}>{d.name}</div>
+      <div style={{ color: '#8b949e' }}>Pick {d.pick} · {d.value} SC · exp {d.expected}</div>
+      <div style={{ color: c, fontWeight: 700, textTransform: 'capitalize' }}>{d.verdict} ({(d.residual ?? 0) >= 0 ? '+' : ''}{d.residual} vs pick)</div>
     </div>
   )
 }

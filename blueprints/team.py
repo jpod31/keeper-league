@@ -1132,6 +1132,14 @@ def player_compare(league_id, team_id):
     return jsonify({"players": [o for o in out if o]})
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/draft-roi")
+@login_required
+def draft_roi(league_id, team_id):
+    """Draft-value ROI scatter data (JSON only)."""
+    from models.player_usage import compute_draft_roi
+    return jsonify(compute_draft_roi(league_id, team_id))
+
+
 @team_bp.route("/<int:league_id>/squad-health")
 @login_required
 def squad_health(league_id):

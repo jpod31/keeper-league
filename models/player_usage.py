@@ -15,6 +15,60 @@ def _primary_pos(p):
     return (p.position or "MID").split("/")[0].upper()
 
 
+def compute_draft_roi(league_id, team_id):
+    """Draft-value ROI (#11): where the team drafted each player vs what they've
+    returned (SC avg), against a league-wide expected-value-by-pick curve.
+    Residuals beyond ±1σ are flagged steal / bust."""
+    import math
+    import statistics
+    from models.database import DraftPick, DraftSession
+
+    rows = (db.session.query(DraftPick.player_id, DraftPick.pick_number, DraftPick.team_id)
+            .join(DraftSession, DraftPick.draft_session_id == DraftSession.id)
+            .filter(DraftSession.league_id == league_id).all())
+    pdata = []
+    for player_id, pick, tid in rows:
+        p = db.session.get(AflPlayer, player_id)
+        if not p or not pick:
+            continue
+        pdata.append({"player_id": player_id, "name": p.name,
+                      "position": _primary_pos(p), "pick": pick,
+                      "value": round(p.sc_avg or 0, 1), "team_id": tid})
+    if len(pdata) < 4:
+        return {"has_data": False}
+
+    # Expected value ~ a + b·ln(pick) (value falls off with pick number)
+    fit = [(math.log(d["pick"]), d["value"]) for d in pdata if d["pick"] > 0 and d["value"] > 0]
+    if len(fit) >= 4:
+        n = len(fit)
+        sx = sum(x for x, _ in fit); sy = sum(y for _, y in fit)
+        sxx = sum(x * x for x, _ in fit); sxy = sum(x * y for x, y in fit)
+        denom = (n * sxx - sx * sx) or 1
+        b = (n * sxy - sx * sy) / denom
+        a = (sy - b * sx) / n
+        expected = lambda pk: a + b * math.log(pk) if pk > 0 else a
+    else:
+        avg = sum(d["value"] for d in pdata) / len(pdata)
+        expected = lambda pk: avg
+
+    for d in pdata:
+        d["expected"] = round(expected(d["pick"]), 1)
+        d["residual"] = round(d["value"] - d["expected"], 1)
+    sd = statistics.pstdev([d["residual"] for d in pdata]) if len(pdata) > 1 else 10.0
+
+    team = []
+    for d in pdata:
+        if d["team_id"] == team_id:
+            r = d["residual"]
+            d["verdict"] = "steal" if r > sd else "bust" if r < -sd else "fair"
+            team.append({k: d[k] for k in ("player_id", "name", "position", "pick", "value", "expected", "residual", "verdict")})
+
+    maxpick = max(d["pick"] for d in pdata)
+    step = max(1, maxpick // 24)
+    curve = [{"pick": pk, "expected": round(expected(pk), 1)} for pk in range(1, maxpick + 1, step)]
+    return {"has_data": bool(team), "team": team, "curve": curve, "resid_sd": round(sd, 1)}
+
+
 def compute_player_compare(league_id, team_id, player_id, year):
     """Compact, aligned metric bundle for one player — for the side-by-side
     Compare tray (#30). Composes AflPlayer fields + scoring + projection + usage."""
