@@ -41,6 +41,70 @@ def _percentile(value, sorted_desc):
     return round(below / len(sorted_desc) * 100)
 
 
+def _age_curve(a):
+    """Relative SC level by age (peak ~25-27)."""
+    if a is None:
+        return 1.0
+    pts = [(18, 0.70), (20, 0.82), (22, 0.92), (24, 0.98), (26, 1.0),
+           (28, 0.99), (30, 0.93), (32, 0.83), (34, 0.70), (36, 0.58)]
+    if a <= pts[0][0]:
+        return pts[0][1]
+    if a >= pts[-1][0]:
+        return pts[-1][1]
+    for (a0, v0), (a1, v1) in zip(pts, pts[1:]):
+        if a0 <= a <= a1:
+            return v0 + (v1 - v0) * (a - a0) / (a1 - a0)
+    return 1.0
+
+
+def compute_dynasty_window(league_id, team_id, year):
+    """Projected squad output over the next 5 seasons (each player's current SC
+    aged along the league age curve) → contention window + archetype makeup."""
+    roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
+    players = [p for p in (db.session.get(AflPlayer, r.player_id) for r in roster) if p]
+    contributors = [p for p in players if (p.sc_avg or 0) > 0 and p.age]
+    if not contributors:
+        return {"has_data": False}
+    # use the squad's top ~18 by SC as the scoring core
+    core = sorted(contributors, key=lambda p: p.sc_avg or 0, reverse=True)[:18]
+
+    trajectory = []
+    for off in range(0, 5):
+        total = 0.0
+        ages = []
+        for p in core:
+            fa = (p.age or 25) + off
+            total += (p.sc_avg or 0) * _age_curve(fa) / (_age_curve(p.age) or 1)
+            ages.append(fa)
+        trajectory.append({"year": year + off, "output": round(total),
+                           "avg_age": round(sum(ages) / len(ages), 1)})
+
+    peak = max(trajectory, key=lambda t: t["output"])
+    window = [t["year"] for t in trajectory if t["output"] >= 0.95 * peak["output"]]
+
+    # archetype makeup (cheap classification from position + role + scoring)
+    arche = {}
+    for p in players:
+        pos = _primary_pos(p)
+        cba = p.cba_pct or 0
+        if pos == "RUC":
+            a = "Ruck"
+        elif pos == "MID":
+            a = "Inside mid" if cba >= 55 else "Outside mid"
+        elif pos == "DEF":
+            a = "Rebounding def" if (p.sc_avg or 0) >= 80 else "Lockdown def"
+        elif pos == "FWD":
+            a = "High-CBA fwd" if cba >= 30 else "Key/small fwd"
+        else:
+            a = "Utility"
+        arche[a] = arche.get(a, 0) + 1
+    archetypes = sorted([{"type": k, "count": v} for k, v in arche.items()], key=lambda x: -x["count"])
+
+    return {"has_data": True, "trajectory": trajectory,
+            "peak_year": peak["year"], "window": window,
+            "current": trajectory[0]["output"], "archetypes": archetypes}
+
+
 def compute_predictions(league_id, team_id, opp_team_id, year, n=20000):
     """Monte-Carlo round projection + win probability. Each on-field starter is
     sampled from Normal(season SC, heuristic σ); captain doubled if enabled; sum →

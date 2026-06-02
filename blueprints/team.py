@@ -1180,6 +1180,17 @@ def squad_intel(league_id, team_id):
     return jsonify(data)
 
 
+@team_bp.route("/<int:league_id>/team/<int:team_id>/dynasty")
+@login_required
+def dynasty(league_id, team_id):
+    """Dynasty window: projected squad output over coming seasons (JSON only)."""
+    league = db.session.get(League, league_id)
+    if not league:
+        return jsonify({"error": "League not found"}), 404
+    from models.squad_intel import compute_dynasty_window
+    return jsonify(compute_dynasty_window(league_id, team_id, league.season_year))
+
+
 @team_bp.route("/<int:league_id>/team/<int:team_id>/predictions")
 @login_required
 def predictions(league_id, team_id):

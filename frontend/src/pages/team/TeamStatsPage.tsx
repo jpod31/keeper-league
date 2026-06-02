@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
   ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList, LineChart, Line, ComposedChart,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
+  AreaChart, Area, ReferenceLine,
 } from 'recharts'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
@@ -302,6 +303,62 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
   )
 }
 
+// ── Trends (dynasty window + squad makeup) ──
+interface DynastyData {
+  has_data: boolean; trajectory: { year: number; output: number; avg_age: number }[]
+  peak_year: number; window: number[]; current: number; archetypes: { type: string; count: number }[]
+}
+function TrendsSection({ leagueId, teamId }: { leagueId: string; teamId: string }) {
+  const { data, loading } = useFetch<DynastyData>(`/leagues/${leagueId}/team/${teamId}/dynasty?format=json`)
+  if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Loading trends…</div>
+  if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>Not enough scoring history to project the window.</div>
+  const win = data.window
+  const winLabel = win.length ? (win.length > 1 ? `${win[0]}–${win[win.length - 1]}` : `${win[0]}`) : '—'
+  const maxArch = Math.max(1, ...data.archetypes.map(a => a.count))
+  return (
+    <>
+      <div className="si-rank-tiles">
+        <div className="si-rank-tile"><div className="si-rank-v">{data.current}</div><div className="si-rank-l">Projected output now</div></div>
+        <div className="si-rank-tile"><div className="si-rank-v">{data.peak_year}</div><div className="si-rank-l">Peak season</div></div>
+        <div className="si-rank-tile wide"><div className="si-rank-desc">{winLabel}</div><div className="si-rank-l">Contention window (≥95% of peak)</div></div>
+      </div>
+      <div className="card mb-4">
+        <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+          <i className="bi bi-graph-up-arrow me-2" style={{ color: '#8b949e' }}></i>Dynasty Window
+          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>projected squad output as your core ages</span></h5></div>
+        <div className="card-body">
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={data.trajectory} margin={{ top: 10, right: 16, bottom: 0, left: -8 }}>
+              <defs><linearGradient id="dyn" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#58a6ff" stopOpacity={0.5} /><stop offset="100%" stopColor="#58a6ff" stopOpacity={0.04} />
+              </linearGradient></defs>
+              <XAxis dataKey="year" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+              <YAxis tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
+              <Tooltip contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+              <ReferenceLine x={data.peak_year} stroke="#4ec77a" strokeDasharray="4 3" label={{ value: 'peak', fill: '#4ec77a', fontSize: 10, position: 'top' }} />
+              <Area type="monotone" dataKey="output" stroke="#58a6ff" strokeWidth={2} fill="url(#dyn)" dot={{ r: 3, fill: '#58a6ff' }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+          <i className="bi bi-pie-chart-fill me-2" style={{ color: '#8b949e' }}></i>Squad Makeup
+          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>player archetypes</span></h5></div>
+        <div className="card-body">
+          {data.archetypes.map(a => (
+            <div key={a.type} className="bm-row" style={{ gridTemplateColumns: '150px 1fr 30px' }}>
+              <div className="bm-label">{a.type}</div>
+              <div className="bm-track"><div className="bm-fill" style={{ width: `${a.count / maxArch * 100}%`, background: '#5aa0ff' }}></div></div>
+              <div className="bm-pct" style={{ color: '#c9d1d9' }}>{a.count}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Predictions (Monte-Carlo projection + win probability) ──
 interface PredPlayer { name: string; pos: string; proj: number; cap: boolean }
 interface PredData {
@@ -495,7 +552,7 @@ export function TeamStatsPage() {
   const { data: intel } = useFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
   const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
   const [usagePlayer, setUsagePlayer] = useState<Player | null>(null)
-  const [section, setSection] = useState<'squad' | 'league' | 'records' | 'predictions'>('squad')
+  const [section, setSection] = useState<'squad' | 'league' | 'records' | 'predictions' | 'trends'>('squad')
   const { league: leagueCtx } = useLeague()
   const oppId = leagueCtx?.current_matchup?.opponent_id ?? null
   const [compareSet, setCompareSet] = useState<number[]>([])
@@ -568,11 +625,13 @@ export function TeamStatsPage() {
         <button className={`si-sectiontab${section === 'league' ? ' active' : ''}`} onClick={() => setSection('league')}><i className="bi bi-trophy-fill"></i>League</button>
         <button className={`si-sectiontab${section === 'records' ? ' active' : ''}`} onClick={() => setSection('records')}><i className="bi bi-award-fill"></i>Records</button>
         <button className={`si-sectiontab${section === 'predictions' ? ' active' : ''}`} onClick={() => setSection('predictions')}><i className="bi bi-cpu-fill"></i>Predictions</button>
+        <button className={`si-sectiontab${section === 'trends' ? ' active' : ''}`} onClick={() => setSection('trends')}><i className="bi bi-graph-up-arrow"></i>Trends</button>
       </div>
 
       {section === 'league' && <LeagueComparison leagueId={leagueId!} teamId={teamId!} />}
       {section === 'records' && <TeamRecords leagueId={leagueId!} teamId={teamId!} />}
       {section === 'predictions' && <PredictionsSection leagueId={leagueId!} teamId={teamId!} opp={oppId} />}
+      {section === 'trends' && <TrendsSection leagueId={leagueId!} teamId={teamId!} />}
 
       {section === 'squad' && (<>
       {/* Insight header + Squad form heatmap (Squad Intelligence) */}
