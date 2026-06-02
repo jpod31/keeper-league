@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useLayoutEffect } from 'react'
 import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
   ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList, LineChart, Line, ComposedChart,
@@ -274,6 +274,31 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
   }
   const ind = (k: string) => k === sortKey ? (sortDir === 'desc' ? ' ▾' : ' ▴') : ''
 
+  // FLIP: smoothly slide rows to their new positions when the sort changes
+  const tbodyRef = useRef<HTMLTableSectionElement>(null)
+  const prevPos = useRef<Map<number, number>>(new Map())
+  useLayoutEffect(() => {
+    const tb = tbodyRef.current
+    if (!tb) return
+    const trs = Array.from(tb.querySelectorAll('tr[data-id]')) as HTMLElement[]
+    trs.forEach(r => {
+      const id = Number(r.dataset.id)
+      const top = r.offsetTop
+      const old = prevPos.current.get(id)
+      if (old != null && old !== top) {
+        r.style.transition = 'none'
+        r.style.transform = `translateY(${old - top}px)`
+        requestAnimationFrame(() => {
+          r.style.transition = 'transform .4s cubic-bezier(.2,.8,.2,1)'
+          r.style.transform = ''
+        })
+      }
+    })
+    const m = new Map<number, number>()
+    trs.forEach(r => m.set(Number(r.dataset.id), r.offsetTop))
+    prevPos.current = m
+  }, [sortKey, sortDir, pos])
+
   return (
     <div className="card si-matrix-card">
       <div className="card-header si-mx-head">
@@ -297,12 +322,12 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
               {cols.map(c => <th key={c.k} className={`si-mx-sort text-${c.align || 'end'}`} onClick={() => sortBy(c.k)}>{c.l}{ind(c.k)}</th>)}
             </tr>
           </thead>
-          <tbody>
+          <tbody ref={tbodyRef} key={view} className="si-mx-body">
             {rows.map(p => {
               const inC = compareSet.includes(p.id)
               const flags = flagMap.get(p.id) || []
               return (
-                <tr key={p.id} className={inC ? 'si-mx-row sel' : 'si-mx-row'}>
+                <tr key={p.id} data-id={p.id} className={inC ? 'si-mx-row sel' : 'si-mx-row'}>
                   <td className="si-mx-chk"><input type="checkbox" className="stats-cmp-check" checked={inC}
                     disabled={!inC && compareSet.length >= 4} onChange={() => toggleCompare(p.id)} title="Compare" /></td>
                   <td className="si-mx-player" onClick={() => onSelect(p.id)}>
