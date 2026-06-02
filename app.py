@@ -1068,6 +1068,17 @@ def create_app():
         except Exception as e:
             steps.append(f"Ratings sync: {e}")
 
+        # 6b. Centre Bounce Attendance % from dfsaustralia (midfield-role signal)
+        try:
+            from scrapers.cba_scraper import sync_cbas
+            rep = sync_cbas()
+            steps.append(
+                f"CBA%: {rep['matched']}/{rep['cba_players']} matched"
+                + (f", {len(rep['unmatched'])} unmatched" if rep.get("unmatched") else "")
+            )
+        except Exception as e:
+            steps.append(f"CBA sync: {e}")
+
         # 7. Pull AFL game schedule from Squiggle for current + next round
         try:
             from models.live_sync import sync_game_schedule
