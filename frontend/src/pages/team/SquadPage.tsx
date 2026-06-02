@@ -13,6 +13,11 @@ import { useFieldActions, checkSwapEligible } from '../../hooks/useFieldActions'
 import { SSPModal } from '../../components/squad/SSPModal'
 import { useLeague } from '../../contexts/LeagueContext'
 
+interface StandingsLite {
+  standings: { team_id: number }[]   // ordered by ladder position
+  finals_teams: number
+  team_form: Record<string, string[]>
+}
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
   sc_avg: number; games_played: number; career_games: number; rating: number | null
@@ -145,6 +150,7 @@ function SquadPageInner() {
   const [searchParams] = useSearchParams()
   const view = searchParams.get('view') || 'field'
   const { data, loading, error, refetch } = useFetch<SquadData>(`/leagues/${leagueId}/team/${teamId}?format=json&view=${view}`)
+  const { data: standings } = useFetch<StandingsLite>(leagueId ? `/leagues/${leagueId}/standings?format=json` : null)
   const fieldActions = useFieldActions(leagueId!, teamId!, refetch)
   const [optimising, setOptimising] = useState<'rating' | 'sc_avg' | null>(null)
 
@@ -269,23 +275,10 @@ function SquadPageInner() {
   roster.forEach(r => { rosterMap[r.player_id] = r })
   const selectedSet = new Set(selected_player_ids)
 
-  // ── Squad vitals — compact command-bar metrics (not flat averages) ──
-  let totalAge = 0, ageCount = 0
+  // ── Command-bar metrics: ladder + form (standings) · projected · rating ──
   const onfieldIds = new Set(roster.filter(r => !r.is_benched).map(r => r.player_id))
   const captainId = roster.find(r => r.is_captain)?.player_id
-  let starCount = 0
-  let topStar: Player | null = null
-  let injured = 0
-  const onfield: Player[] = []
-  players.forEach(p => {
-    if (p.age) { totalAge += p.age; ageCount++ }
-    if (p.rating) {
-      if (p.rating >= 80) starCount++
-      if (!topStar || p.rating > (topStar.rating || 0)) topStar = p
-    }
-    if (p.injury_severity === 'short' || p.injury_severity === 'long') injured++
-    if (onfieldIds.has(p.id)) onfield.push(p)
-  })
+  const onfield = players.filter(p => onfieldIds.has(p.id))
   // Use the on-field XI when set, otherwise fall back to the whole squad.
   const ratePool = (onfield.length ? onfield : players).map(p => p.rating || 0).filter(r => r > 0)
   const squadRating = ratePool.length ? Math.round(ratePool.reduce((a, b) => a + b, 0) / ratePool.length) : 0
@@ -298,11 +291,24 @@ function SquadPageInner() {
   const capP = captainId != null ? players.find(p => p.id === captainId) : undefined
   const capOnField = !!(capP && onfieldIds.has(capP.id))
   if (capOnField) projScore += (capP!.sc_avg || 0)  // captain scores double
-  const avgAge = ageCount ? totalAge / ageCount : 0
-  const ageWindow = avgAge === 0 ? '—' : avgAge < 24.5 ? 'Young & rising'
-    : avgAge <= 27.5 ? 'Peak window' : 'Veteran core'
-  const available = players.length - injured
-  const starName = topStar ? (topStar as Player).name.split(' ').slice(-1)[0] : ''
+  // Ladder position + recent form for THIS team (from the standings endpoint).
+  const ladder = standings?.standings ?? []
+  const ladderIdx = ladder.findIndex(s => s.team_id === Number(teamId))
+  const ladderPos = ladderIdx >= 0 ? ladderIdx + 1 : null
+  const nTeams = ladder.length
+  const finalsN = standings?.finals_teams ?? 0
+  const inFinals = ladderPos != null && finalsN > 0 && ladderPos <= finalsN
+  const ordinal = (n: number) => {
+    const s = ['th', 'st', 'nd', 'rd'], v = n % 100
+    return n + (s[(v - 20) % 10] || s[v] || s[0])
+  }
+  const recentForm = (standings?.team_form?.[String(teamId)] ?? []).slice(-5)
+  const lastResult = recentForm[recentForm.length - 1]
+  let streak = 0
+  for (let i = recentForm.length - 1; i >= 0 && recentForm[i] === lastResult; i--) streak++
+  const formSub = recentForm.length === 0 ? 'no games yet'
+    : lastResult === 'W' ? `won last ${streak}`
+    : lastResult === 'L' ? `lost last ${streak}` : `last ${recentForm.length} played`
 
   function StatusDot({ player }: { player: Player }) {
     const teamsPlaying = fd ? new Set(fd.teams_playing) : new Set<string>()
@@ -425,31 +431,35 @@ function SquadPageInner() {
             </div>
           )}
         </div>
-        <div className={`squad-cmd-stats${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
-          <div className="squad-stat" style={{ ['--c' as string]: ratingColor } as React.CSSProperties}>
-            <div className="squad-stat-val">{squadRating}</div>
-            <div className="squad-stat-label">Rating</div>
-            <div className="squad-stat-sub">{ratingTier}</div>
+        <div className={`squad-cmd-stats squad-cmd-stats-4${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
+          <div className="squad-stat" style={{ ['--c' as string]: inFinals ? '#4ec77a' : '#ef6b5e' } as React.CSSProperties}>
+            <div className="squad-stat-val">{ladderPos != null ? ordinal(ladderPos) : '—'}</div>
+            <div className="squad-stat-label">Ladder</div>
+            <div className="squad-stat-sub">
+              {ladderPos == null ? 'not started'
+                : inFinals ? `of ${nTeams} · finals spot`
+                : finalsN > 0 ? `of ${nTeams} · ${ladderPos - finalsN} out of finals`
+                : `of ${nTeams}`}
+            </div>
+          </div>
+          <div className="squad-stat" style={{ ['--c' as string]: lastResult === 'L' ? '#ef6b5e' : '#4ec77a' } as React.CSSProperties}>
+            <div className="squad-stat-val squad-stat-form">
+              {recentForm.length === 0
+                ? <span className="squad-stat-form-empty">—</span>
+                : recentForm.map((r, i) => <span key={i} className={`ssf-dot ssf-${r}`} title={r}></span>)}
+            </div>
+            <div className="squad-stat-label">Form</div>
+            <div className="squad-stat-sub">{formSub}</div>
           </div>
           <div className="squad-stat" style={{ ['--c' as string]: '#5aa0ff' } as React.CSSProperties}>
             <div className="squad-stat-val">{Math.round(projScore).toLocaleString()}</div>
             <div className="squad-stat-label">Projected</div>
             <div className="squad-stat-sub">{capOnField ? 'incl. captain ×2' : 'set a captain'}</div>
           </div>
-          <div className="squad-stat" style={{ ['--c' as string]: '#e0a93f' } as React.CSSProperties}>
-            <div className="squad-stat-val">{starCount}<span className="unit"><i className="bi bi-star-fill"></i></span></div>
-            <div className="squad-stat-label">Stars 80+</div>
-            <div className="squad-stat-sub">{topStar ? `${starName} ${(topStar as Player).rating}` : 'none yet'}</div>
-          </div>
-          <div className="squad-stat" style={{ ['--c' as string]: '#3fc4c4' } as React.CSSProperties}>
-            <div className="squad-stat-val">{avgAge.toFixed(1)}<span className="unit">y</span></div>
-            <div className="squad-stat-label">Window</div>
-            <div className="squad-stat-sub">{ageWindow}</div>
-          </div>
-          <div className="squad-stat" style={{ ['--c' as string]: injured > 0 ? '#ef6b5e' : '#4ec77a' } as React.CSSProperties}>
-            <div className="squad-stat-val">{available}<span className="unit">/{players.length}</span></div>
-            <div className="squad-stat-label">Available</div>
-            <div className="squad-stat-sub">{injured > 0 ? `${injured} injured` : 'fully fit'}</div>
+          <div className="squad-stat" style={{ ['--c' as string]: ratingColor } as React.CSSProperties}>
+            <div className="squad-stat-val">{squadRating}</div>
+            <div className="squad-stat-label">Rating</div>
+            <div className="squad-stat-sub">{ratingTier}</div>
           </div>
         </div>
       </div>

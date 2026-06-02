@@ -4468,6 +4468,9 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 .squad-cmd-trade strong { color: #c9d1d9; font-weight: 700; }
 .squad-cmd-trade.open { color: #d8a23a; }
 .squad-cmd-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+/* the matchup pill carries a legacy margin-bottom from its old standalone use —
+   zero it so it sits on the same baseline as the bye/round/optimise chips */
+.squad-cmd-actions .mstrip { margin: 0; }
 
 /* Dense horizontal stat ribbon — fills the card edge-to-edge, no empty cells */
 .squad-cmd-stats {
@@ -4477,6 +4480,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   background: rgba(15,22,36,.45);
   border-radius: 0 0 11px 11px;
 }
+.squad-cmd-stats-4 { grid-template-columns: repeat(4, 1fr); }
 .squad-stat {
   position: relative;
   padding: .7rem 1rem .72rem;
@@ -4496,6 +4500,7 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   display: flex;
   align-items: baseline;
   gap: 2px;
+  min-height: 1.55rem;          /* keep labels on one baseline whether the value is a number or form dots */
   font-size: 1.55rem;
   font-weight: 800;
   line-height: 1;
@@ -4504,6 +4509,13 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   font-variant-numeric: tabular-nums;
 }
 .squad-stat-val .unit { font-size: .8rem; font-weight: 700; color: #8b949e; }
+/* Recent-form dots (W/L/D), chronological — most recent on the right */
+.squad-stat-form { align-items: center; gap: 4px; }
+.ssf-dot { width: 12px; height: 12px; border-radius: 50%; background: #30363d; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+.ssf-dot.ssf-W { background: #4ec77a; }
+.ssf-dot.ssf-L { background: #ef6b5e; }
+.ssf-dot.ssf-D { background: #c2932f; }
+.squad-stat-form-empty { color: #6e7681; font-weight: 700; }
 .squad-stat-val .unit .bi { color: var(--c); }
 .squad-stat-label {
   margin-top: 6px;
