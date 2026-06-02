@@ -362,23 +362,37 @@ def _sync_players_to_db(app, force=False):
 def _cba_backfill_if_empty(app):
     """One-time CBA% population: if no player has a CBA% yet, fetch it from
     dfsaustralia in a background thread so boot is never blocked. Guarded so it
-    runs only while unpopulated (re-tries on the next restart if it fails)."""
+    runs only while unpopulated. Decisions print to stderr (captured by gunicorn)."""
     import threading
+    import sys
+
+    with app.app_context():
+        try:
+            from models.database import AflPlayer
+            total = AflPlayer.query.count()
+            populated = (AflPlayer.query.filter(AflPlayer.cba_pct.isnot(None)).count()
+                         if total else 0)
+        except Exception as e:
+            print(f"[cba] precheck failed: {e}", file=sys.stderr, flush=True)
+            return
+
+    if not total or populated > 0:
+        print(f"[cba] skip backfill — {populated}/{total} players already have CBA%",
+              file=sys.stderr, flush=True)
+        return
+
+    print(f"[cba] starting backfill ({total} players, none populated)…", file=sys.stderr, flush=True)
 
     def _run():
         with app.app_context():
             try:
-                from models.database import AflPlayer
-                if AflPlayer.query.count() == 0:
-                    return
-                if AflPlayer.query.filter(AflPlayer.cba_pct.isnot(None)).count() > 0:
-                    return  # already populated — never re-scrape on boot
                 from scrapers.cba_scraper import sync_cbas
                 rep = sync_cbas()
-                app.logger.info("CBA startup backfill: %s matched, %s unmatched",
-                                rep.get("matched"), len(rep.get("unmatched", [])))
-            except Exception:
-                app.logger.exception("CBA startup backfill failed")
+                print(f"[cba] backfill done: {rep['matched']} matched, "
+                      f"{len(rep['unmatched'])} unmatched, {rep['cba_players']} listed",
+                      file=sys.stderr, flush=True)
+            except Exception as e:
+                print(f"[cba] backfill failed: {e}", file=sys.stderr, flush=True)
 
     threading.Thread(target=_run, name="cba-backfill", daemon=True).start()
 
