@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router'
-import { useState, useMemo, useRef, useLayoutEffect, useEffect } from 'react'
+import { useState, useMemo, useRef, useLayoutEffect, useEffect, lazy, Suspense } from 'react'
 import { useLeague } from '../../contexts/LeagueContext'
+const ValueCloud3D = lazy(() => import('./ValueCloud3D'))
 import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis,
   ReferenceArea, Tooltip, BarChart, Bar, Cell, LabelList, LineChart, Line, ComposedChart,
@@ -308,9 +309,10 @@ const SM_POS_COLOR: Record<string, string> = { DEF: '#58a6ff', MID: '#bc8cff', F
 function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: (id: number) => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const onSel = useRef(onSelect); onSel.current = onSelect
+  const [mode, setMode] = useState<'2d' | '3d'>('2d')
+  const pool = players.filter(p => (p.sc_avg || 0) > 0 && p.consistency != null)
   useEffect(() => {
-    const pool = players.filter(p => (p.sc_avg || 0) > 0 && p.consistency != null)
-    if (!ref.current || pool.length === 0) return
+    if (mode !== '2d' || !ref.current || pool.length === 0) return
     let chart: any = null  // eslint-disable-line @typescript-eslint/no-explicit-any
     let disposed = false
     const onResize = () => chart && chart.resize()
@@ -321,8 +323,7 @@ function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: 
       const xMid = xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)]
       const yMid = ys.slice().sort((a, b) => a - b)[Math.floor(ys.length / 2)]
       const series = ['DEF', 'MID', 'FWD', 'RUC'].map(pos => ({
-        name: pos, type: 'scatter',
-        emphasis: { focus: 'series', scale: 1.4 },
+        name: pos, type: 'scatter', emphasis: { focus: 'series', scale: 1.4 },
         symbolSize: (v: number[]) => 9 + Math.max(0, v[2]) * 0.7,
         itemStyle: { color: SM_POS_COLOR[pos], opacity: 0.82, borderColor: 'rgba(0,0,0,.3)' },
         data: pool.filter(p => p.primary === pos).map(p => ({ value: [p.sc_avg, p.consistency, Math.max(0, p.vorp ?? 0)], name: p.name, id: p.id })),
@@ -337,24 +338,34 @@ function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: 
         },
         xAxis: { name: 'SC output ▶', nameLocation: 'middle', nameGap: 26, nameTextStyle: { color: '#6e7681', fontSize: 11 }, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitLine: { lineStyle: { color: '#1c2230' } } },
         yAxis: { name: 'reliability ▲', nameLocation: 'middle', nameGap: 34, nameTextStyle: { color: '#6e7681', fontSize: 11 }, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitLine: { lineStyle: { color: '#1c2230' } } },
-        series: [
-          ...series,
-          { type: 'scatter', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: '#3a4150', type: 'dashed' }, label: { show: false }, data: [{ xAxis: xMid }, { yAxis: yMid }] } },
-        ],
+        series: [...series, { type: 'scatter', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: '#3a4150', type: 'dashed' }, label: { show: false }, data: [{ xAxis: xMid }, { yAxis: yMid }] } }],
         animationDuration: 600,
       })
       chart.on('click', (p: { data?: { id?: number } }) => { if (p.data?.id) onSel.current(p.data.id) })
     })
     window.addEventListener('resize', onResize)
     return () => { disposed = true; window.removeEventListener('resize', onResize); if (chart) chart.dispose() }
-  }, [players])
-  if (players.filter(p => (p.sc_avg || 0) > 0 && p.consistency != null).length === 0) return null
+  }, [pool, mode])
+  if (pool.length === 0) return null
   return (
     <div className="card mb-4">
-      <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-        <i className="bi bi-bullseye me-2" style={{ color: '#8b949e' }}></i>Scouting Map
-        <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>output × reliability · bubble = VORP · top-right = safe studs · click to drill</span></h5></div>
-      <div className="card-body"><div ref={ref} style={{ width: '100%', height: 360 }} /></div>
+      <div className="card-header d-flex align-items-center justify-content-between">
+        <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
+          <i className="bi bi-bullseye me-2" style={{ color: '#8b949e' }}></i>Scouting Map
+          <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>output × reliability{mode === '3d' ? ' × VORP' : ''} · {mode === '3d' ? 'drag to orbit' : 'top-right = safe studs'} · click to drill</span>
+        </h5>
+        <div className="si-mx-views">
+          <button className={`si-mx-view${mode === '2d' ? ' active' : ''}`} onClick={() => setMode('2d')}>2D</button>
+          <button className={`si-mx-view${mode === '3d' ? ' active' : ''}`} onClick={() => setMode('3d')}>3D</button>
+        </div>
+      </div>
+      <div className="card-body">
+        {mode === '3d'
+          ? <Suspense fallback={<div style={{ height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8b949e', fontSize: '.85rem' }}><Spinner /><span className="ms-2">Building value cloud…</span></div>}>
+              <ValueCloud3D players={pool} onSelect={id => onSel.current(id)} />
+            </Suspense>
+          : <div ref={ref} style={{ width: '100%', height: 360 }} />}
+      </div>
     </div>
   )
 }
