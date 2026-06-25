@@ -323,6 +323,10 @@ def standings(league_id):
                 else:
                     team_form[tid].append("L")
 
+    # completed_fx is newest-first; consumers (SPA "won/lost last N", the form
+    # dots) expect chronological order with the most recent result last.
+    team_form = {tid: list(reversed(v)) for tid, v in team_form.items()}
+
     # Build detailed ranking analysis per team
     ranking_details = {}
     if rankings:
