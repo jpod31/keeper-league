@@ -209,12 +209,30 @@ def squad(league_id, team_id):
                     unpositioned.remove(p)
                     needed -= 1
 
-        # Pad each zone with None to reach full slot count
+        # Pad each zone with None to reach full slot count. Players beyond
+        # a zone's cap are illegal on-field overflow (e.g. left over after a
+        # slot-count reduction). They get truncated out of the displayed
+        # field and fall into reserves — but unless we also demote them in
+        # the DB they keep is_benched=0/position_code='FWD', which makes a
+        # bench-to-bench swap wrongly fail the on-field check ("can't play FWD").
+        overflow_players = []
         for code, count in slot_counts.items():
             current = zones.get(code, [])
+            if len(current) > count:
+                overflow_players.extend(p for p in current[count:] if p is not None)
             while len(current) < count:
                 current.append(None)
             zones[code] = current[:count]
+
+        if overflow_players:
+            for p in overflow_players:
+                entry = roster_map.get(p.id)
+                if entry:
+                    entry.is_benched = True
+                    entry.position_code = None
+                    entry.is_captain = False
+                    entry.is_vice_captain = False
+            db.session.commit()
 
         # Rebuild used_ids from truncated zones
         used_ids = set()
@@ -1590,18 +1608,18 @@ def api_swap(league_id, team_id):
     p1_positions = (p1.position or "MID").split("/")
     p2_positions = (p2.position or "MID").split("/")
 
-    def _check_slot_eligibility(player_positions, target_code, player_name):
-        """Check if player can fill the target slot (field or flex)."""
-        if target_code in ("DEF", "MID", "FWD", "RUC"):
+    def _check_slot_eligibility(player_positions, target_code, target_benched, player_name):
+        """Position eligibility only applies to on-field slots. Bench/reserve
+        slots (and FLEX) accept any position — matches the frontend."""
+        if not target_benched and target_code in ("DEF", "MID", "FWD", "RUC"):
             if target_code not in player_positions:
                 return f"{player_name} can't play {target_code}"
-        # FLEX accepts any position — no check needed
         return None
 
-    err_msg = _check_slot_eligibility(p1_positions, entry2.position_code, p1.name)
+    err_msg = _check_slot_eligibility(p1_positions, entry2.position_code, entry2.is_benched, p1.name)
     if err_msg:
         return jsonify({"error": err_msg}), 409
-    err_msg = _check_slot_eligibility(p2_positions, entry1.position_code, p2.name)
+    err_msg = _check_slot_eligibility(p2_positions, entry1.position_code, entry1.is_benched, p2.name)
     if err_msg:
         return jsonify({"error": err_msg}), 409
 
