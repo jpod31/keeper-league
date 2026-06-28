@@ -5,7 +5,7 @@ import math
 from models.database import (
     db, FantasyRoster, AflPlayer, PlayerStat, AflGame, SeasonConfig,
 )
-from models.scoring_engine import _positions_compatible
+from models.scoring_engine import _positions_compatible, get_named_team_status
 
 FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
 
@@ -83,6 +83,10 @@ def _project_team(team_id, afl_round, year, league_id, teams_playing, completed_
     sc = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
     captain_enabled = sc.captain_scoring_enabled if sc and sc.captain_scoring_enabled is not None else True
 
+    # Confirmed AFL team selections — a named-but-omitted player is out, so the
+    # projection subs their emergency on even before the bounce.
+    named_teams, named_pids = get_named_team_status(afl_round, year)
+
     total = 0.0
     captain_proj = 0.0
     dnp_entries = []
@@ -90,10 +94,16 @@ def _project_team(team_id, afl_round, year, league_id, teams_playing, completed_
     for entry in on_field:
         pid = entry.player_id
         player = players.get(pid)
+        confirmed_out = (player and player.afl_team in named_teams
+                         and pid not in named_pids and pid not in actual_stats)
 
         if pid in actual_stats:
             score = actual_stats[pid]
             total += score
+        elif confirmed_out:
+            # Named side is out, player omitted → confirmed DNP
+            dnp_entries.append(entry)
+            score = None
         elif player and player.afl_team and player.afl_team in teams_playing:
             if player.afl_team in completed_teams:
                 # Game finished but no stat → confirmed DNP
@@ -120,6 +130,8 @@ def _project_team(team_id, afl_round, year, league_id, teams_playing, completed_
         player = players.get(pid)
         if pid in actual_stats:
             em_scores.append((em, actual_stats[pid]))
+        elif player and player.afl_team in named_teams and pid not in named_pids:
+            continue  # emergency is themselves omitted — can't cover
         elif player and player.afl_team and player.afl_team in teams_playing:
             if player.afl_team not in completed_teams:
                 em_scores.append((em, player.sc_avg or 0))

@@ -17,7 +17,7 @@ from models.database import (
     CustomScoringRule, WeeklyLineup, LineupSlot,
     Reserve7sFixture, Reserve7sRoundScore,
 )
-from models.scoring_engine import score_team_round, _compute_uf_fixture, _positions_compatible, _round_fully_locked
+from models.scoring_engine import score_team_round, _compute_uf_fixture, _positions_compatible, _round_fully_locked, get_named_team_status
 from scrapers.squiggle import (
     get_games as squiggle_get_games,
     normalise_team_name,
@@ -767,22 +767,42 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
     round_teams = {t for g in all_round_games for t in (g.home_team, g.away_team)}
     round_locked = _round_fully_locked(all_round_games)
 
+    # Confirmed AFL team selections: once a team's lineup is named, a field
+    # player who is NOT in the named side is OUT (omitted / late withdrawal),
+    # so their emergency comes on now — we don't wait for the bounce.
+    named_teams, named_pids = get_named_team_status(afl_round, year)
+
+    def _confirmed_out(entry, player_team, stat):
+        return (player_team in named_teams
+                and entry.player_id not in named_pids
+                and (stat is None or stat.supercoach_score == 0))
+
     # Determine which emergencies auto-subbed for DNP field players
     # Highest-scoring emergency subs in first, then second-highest, etc.
     used_emergencies = set()        # emergency player_id -> True
     dnp_replaced_by = {}            # field player_id -> emergency player_id
     emergency_replaces = {}         # emergency player_id -> field player name
 
-    # Pre-calculate emergency scores and sort by highest first
+    # Pre-calculate emergency scores and sort by highest first. Before a game
+    # starts there's no live stat, so fall back to the player's season average
+    # for ordering — that lets an emergency sub on for a confirmed-out starter
+    # pre-bounce. Skip an emergency who is themselves confirmed out.
     em_scored = []
     for em in emergencies:
         em_stat = stats_map.get(em.player_id)
+        em_player = em.player
+        em_team = em_player.afl_team if em_player else ""
+        if em_stat is None and _confirmed_out(em, em_team, em_stat):
+            continue
         if em_stat is not None:
             em_score = _compute_player_score(em_stat, league_id, scoring_type, hybrid_base)
-            em_scored.append((em, em_score))
+        else:
+            em_score = (em_player.sc_avg or 0) if em_player else 0
+        em_scored.append((em, em_score))
     em_scored.sort(key=lambda x: x[1], reverse=True)
 
-    # Collect DNP field entries (no stat OR SC=0 from a started game = DNP).
+    # Collect DNP field entries (no stat OR SC=0 from a started game = DNP,
+    # or confirmed out of a named side before the bounce).
     # A bye player counts as DNP only once the round is fully locked.
     dnp_field_entries = []
     for entry in on_field:
@@ -800,6 +820,9 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
             dnp_field_entries.append(entry)
         elif stat is not None and stat.supercoach_score == 0 and game_started:
             # SC=0 from a completed/live game = late out / DNP
+            dnp_field_entries.append(entry)
+        elif _confirmed_out(entry, player_team, stat):
+            # Named team is out, player omitted — out before the bounce
             dnp_field_entries.append(entry)
         # else: player scored > 0, or game hasn't started — not DNP
 

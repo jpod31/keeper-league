@@ -9,6 +9,31 @@ from models.database import (
 FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
 
 
+def get_named_team_status(afl_round, year):
+    """Confirmed AFL team-selection state for a round.
+
+    Returns (named_teams, named_player_ids):
+      - named_teams: set of afl_team names that have a published lineup this round.
+      - named_player_ids: set of player_ids named in the actual side (position
+        is not EMERG — a listed emergency is NOT counted as selected, matching
+        the squad-page convention).
+
+    A field player whose afl_team IS named but whose id is NOT in named_player_ids
+    has been omitted / withdrawn — they're confirmed out and their fantasy
+    emergency can come on immediately, before the AFL game starts.
+    """
+    from models.database import AflTeamSelection
+
+    sels = AflTeamSelection.query.filter_by(year=year, afl_round=afl_round).all()
+    named_teams = set()
+    named_pids = set()
+    for s in sels:
+        named_teams.add(s.afl_team)
+        if s.player_id is not None and (s.position or "").upper() != "EMERG":
+            named_pids.add(s.player_id)
+    return named_teams, named_pids
+
+
 def _round_fully_locked(round_games):
     """True once every game in the round has started (live/complete).
 
