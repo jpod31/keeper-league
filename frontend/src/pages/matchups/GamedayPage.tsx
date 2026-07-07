@@ -141,7 +141,7 @@ const GAMEDAY_CSS = `
 .gd-hero-band-l { background: linear-gradient(90deg, var(--gd-left-accent, rgba(110,130,180,.5)) 0%, var(--gd-left-accent, rgba(110,130,180,.5)) 60%, color-mix(in srgb, var(--gd-left-accent, rgba(110,130,180,.5)) 60%, transparent) 100%); }
 .gd-hero-band-r { background: linear-gradient(90deg, color-mix(in srgb, var(--gd-right-accent, rgba(110,130,180,.5)) 60%, transparent) 0%, var(--gd-right-accent, rgba(110,130,180,.5)) 40%, var(--gd-right-accent, rgba(110,130,180,.5)) 100%); }
 
-.gd-hero-split { display: grid; grid-template-columns: 1fr 1fr; position: relative; }
+.gd-hero-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); position: relative; }
 .gd-hero-split::after { content: ''; position: absolute; top: 26px; bottom: 26px; left: 50%; width: 1px; background: linear-gradient(to bottom, transparent, rgba(110,130,180,.22), transparent); }
 
 .gd-hero-side { padding: 26px 28px 22px; color: #f0f4fc; position: relative; min-height: 208px; display: flex; flex-direction: column; }
@@ -414,7 +414,8 @@ const GAMEDAY_CSS = `
   .gd-hero-name { font-size: .82rem; letter-spacing: .03em; }
   .gd-hero-score-wrap { padding: 10px 0 8px; }
   .gd-hero-score { font-size: 3rem; letter-spacing: -.04em; }
-  .gd-hero-meta { font-size: .58rem; gap: 5px; }
+  .gd-hero-meta { font-size: .58rem; gap: 5px; flex-wrap: wrap; row-gap: 4px; }
+  .gd-hero-side.right .gd-hero-meta { justify-content: flex-end; }
   .gd-cap-bonus { font-size: .56rem; }
   .gd-hero-strip { padding: 10px 14px; gap: 8px; font-size: .68rem; }
   .gd-margin-chip { font-size: .7rem; padding: 4px 11px; }
