@@ -9,6 +9,31 @@ import { useLeague } from '../../contexts/LeagueContext'
 import { useDensity } from '../../hooks/useDensity'
 import { DensityToggle } from '../../components/ui/DensityToggle'
 
+/**
+ * Render a long list in chunks instead of all at once. Mounts `step` rows, then
+ * appends another `step` whenever a sentinel near the list end scrolls into view.
+ * Keeps the initial DOM small (the pool is 800+ rows) without a virtualization dep.
+ * Resets to the first chunk when the source list changes (filter/sort). A sentinel
+ * inside a display:none subtree never intersects, so the off-viewport list (the
+ * hidden desktop table on mobile, or vice-versa) stays capped at one chunk.
+ */
+function useIncremental<T>(items: T[], step = 50) {
+  const [count, setCount] = useState(step)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => { setCount(step) }, [items, step])
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || count >= items.length) return
+    const io = new IntersectionObserver(
+      e => { if (e[0].isIntersecting) setCount(c => Math.min(c + step, items.length)) },
+      { rootMargin: '800px 0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [items, count, step])
+  return { visible: items.slice(0, count), hasMore: count < items.length, sentinelRef }
+}
+
 interface Acquired {
   coach: string | null
   team?: string | null
@@ -376,6 +401,10 @@ export function PlayerPoolPage() {
     return out
   }, [filtered, mobSort])
 
+  // Chunked rendering so the 800+ row pool doesn't all mount at once (mobile perf).
+  const desk = useIncremental(sorted)
+  const mob = useIncremental(mobileSorted)
+
   const teamOptions = useMemo(() => {
     if (!data) return []
     const s = new Set<string>()
@@ -568,7 +597,7 @@ export function PlayerPoolPage() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map(p => {
+              {desk.visible.map(p => {
                 const positions = (p.position || 'MID').split('/')
                 const tc = p.owner_team ? team_colours[p.owner_team] : null
                 const l3Base = p.sc_avg || p.l3 || 0
@@ -696,6 +725,13 @@ export function PlayerPoolPage() {
                   </tr>
                 )
               })}
+              {desk.hasMore && (
+                <tr>
+                  <td colSpan={20} style={{ padding: 0, border: 0 }}>
+                    <div ref={desk.sentinelRef} style={{ height: 1 }} />
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -756,7 +792,7 @@ export function PlayerPoolPage() {
 
           {/* Player list — new card design */}
           <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            {mobileSorted.map(p => {
+            {mob.visible.map(p => {
               const positions = (p.position || 'MID').split('/')
               const tc = p.owner_team ? team_colours[p.owner_team] : null
               const l3Base = p.sc_avg || p.l3 || 0
@@ -837,6 +873,7 @@ export function PlayerPoolPage() {
                 </div>
               )
             })}
+            {mob.hasMore && <div ref={mob.sentinelRef} style={{ height: 1 }} />}
             {mobileSorted.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px', color: '#484f58' }}>
                 <i className="bi bi-search" style={{ fontSize: '1.5rem', display: 'block', marginBottom: 8 }}></i>
