@@ -918,6 +918,7 @@ def get_player_score_breakdown(team_id: int, afl_round: int, year: int,
                 "is_emergency": False,
                 "is_dnp": False,
                 "game_started": (player.afl_team if player else "") in started_teams,
+                "game_kickoff": team_kickoff.get(player.afl_team if player else "", ""),
                 "replaced_by": None,
                 "lineup_type": "reserve",
             })

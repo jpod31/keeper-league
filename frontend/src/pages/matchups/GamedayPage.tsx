@@ -12,6 +12,7 @@ interface GDPlayer {
   score: number; is_captain: boolean; is_vice_captain: boolean
   is_emergency: boolean; is_dnp: boolean; is_live: boolean
   lineup_type: string; game_started: boolean; subbed_on: boolean; replaces: string | null
+  game_kickoff?: string
 }
 interface AflGame { game_id: number; home_team: string; away_team: string; status: string; home_score: number | null; away_score: number | null; scheduled_display: string | null; scheduled_start: string | null }
 interface Projections { my_projected: number; opp_projected: number; my_win_pct: number; opp_win_pct: number }
@@ -723,6 +724,20 @@ export function GamedayPage() {
     prevScores.current = { left: heroLeftScore, right: heroRightScore }
   }
 
+  // Sort within a section by AFL game kickoff → team → name, so the display order
+  // is stable regardless of which backend path (gameday/fixtures/socket/scheduler)
+  // produced the array. Live pushes used to arrive unsorted, scrambling other matchups.
+  function sortPlayers(players: GDPlayer[]): GDPlayer[] {
+    return [...players].sort((a, b) => {
+      const ak = a.game_kickoff || 'zzzz'
+      const bk = b.game_kickoff || 'zzzz'
+      if (ak !== bk) return ak < bk ? -1 : 1
+      const at = a.afl_team || '', bt = b.afl_team || ''
+      if (at !== bt) return at.localeCompare(bt)
+      return (a.name || '').localeCompare(b.name || '')
+    })
+  }
+
   function PlayerRow({ p }: { p: GDPlayer }) {
     const ytp = !p.game_started && gs === 'live'
     const isSubbedOn = p.subbed_on
@@ -788,15 +803,15 @@ export function GamedayPage() {
     // Field section: field players (not DNP) PLUS subbed-on emergencies — both must have a game
     const fieldStarters = players.filter(p => p.lineup_type === 'field' && !p.is_dnp && hasGame(p))
     const subbedOnEmgs = players.filter(p => p.lineup_type === 'emergency' && p.subbed_on && hasGame(p))
-    const field = [...fieldStarters, ...subbedOnEmgs]
+    const field = sortPlayers([...fieldStarters, ...subbedOnEmgs])
     // Bench: lineup_type 'reserve' (backend uses 'reserve', original Jinja used 'bench' which was a Jinja bug)
-    const bench = players.filter(p => p.lineup_type === 'reserve' && hasGame(p))
+    const bench = sortPlayers(players.filter(p => p.lineup_type === 'reserve' && hasGame(p)))
     // Emergency standby: emergency players that are NOT subbed on
-    const emgStandby = players.filter(p => p.lineup_type === 'emergency' && !p.subbed_on && hasGame(p))
+    const emgStandby = sortPlayers(players.filter(p => p.lineup_type === 'emergency' && !p.subbed_on && hasGame(p)))
     // DNPs
-    const dnps = players.filter(p => p.is_dnp && hasGame(p))
+    const dnps = sortPlayers(players.filter(p => p.is_dnp && hasGame(p)))
     // No game this round (any lineup type whose AFL team has no game)
-    const noGame = players.filter(p => !hasGame(p))
+    const noGame = sortPlayers(players.filter(p => !hasGame(p)))
 
     return (
       <div className="gd-pcard">
@@ -1080,10 +1095,10 @@ export function GamedayPage() {
             <div className="gd-mob-section-hdr"><i className="bi bi-people-fill me-1"></i>Field</div>
             {(() => {
               // Field = field starters (not DNP) + subbed-on emergencies (matches Jinja lines 247-253)
-              const buildField = (players: GDPlayer[]) => [
+              const buildField = (players: GDPlayer[]) => sortPlayers([
                 ...players.filter(p => p.lineup_type === 'field' && !p.is_dnp),
                 ...players.filter(p => p.lineup_type === 'emergency' && p.subbed_on),
-              ]
+              ])
               const lp = buildField(heroLeftPlayers)
               const rp = buildField(heroRightPlayers)
               const maxLen = Math.max(lp.length, rp.length)
