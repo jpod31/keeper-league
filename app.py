@@ -435,6 +435,9 @@ def create_app():
             cursor = dbapi_conn.cursor()
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute("PRAGMA busy_timeout=30000")
+            # Without this the WAL keeps its high-water mark forever: a single
+            # bulk import leaves a 50MB+ file that is mostly reused free space.
+            cursor.execute("PRAGMA journal_size_limit=33554432")
             cursor.close()
 
     # Sync CSV players into SQLite, then ratings from XLSX

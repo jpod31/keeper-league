@@ -1,0 +1,21 @@
+# Keeper League app logs. Install to /etc/logrotate.d/keeper-league (root:root 644).
+#
+# Why copytruncate: gunicorn has no pidfile here and holds these fds for the life
+# of the worker, so there is nothing safe to signal. It opens them O_APPEND, which
+# means truncation is handled gracefully (no sparse file, no lost offset) and the
+# running app never notices. Cost is a few log lines possibly lost mid-rotation.
+#
+# Installed 2026-07-17 after access.log reached 127MB unrotated.
+/opt/keeper-league/data/access.log
+/opt/keeper-league/data/error.log
+/opt/keeper-league/data/fetch_stats.log {
+    daily
+    rotate 7
+    maxsize 20M
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su keeper keeper
+}
