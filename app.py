@@ -93,8 +93,13 @@ def _name_variants(name: str):
     return variants
 
 
-def _sync_ratings_to_db(app):
-    """Import rating & potential from AFL 2025.1.xlsx into the afl_player table."""
+def _sync_ratings_to_db(app, force=False):
+    """Import rating, potential & age from the ratings XLSX into afl_player.
+
+    force=True skips the "XLSX not newer than DB" short-circuit — needed when
+    backfilling a field the sync previously ignored, since the DB timestamps
+    already look fresher than the spreadsheet.
+    """
     from models.database import AflPlayer, RatingLog
 
     if not os.path.exists(_XLSX_PATH):
@@ -129,7 +134,7 @@ def _sync_ratings_to_db(app):
             newest = AflPlayer.query.filter(AflPlayer.rating.isnot(None)).order_by(
                 AflPlayer.updated_at.desc()
             ).first()
-            if newest and newest.updated_at:
+            if newest and newest.updated_at and not force:
                 db_time = newest.updated_at.replace(tzinfo=None)
                 if db_time >= xlsx_mtime:
                     app.logger.info("Ratings sync: XLSX not newer than DB, skipping")
@@ -199,6 +204,7 @@ def _sync_ratings_to_db(app):
 
             matched = 0
             created = 0
+            ages_updated = 0
             unmatched = []
             # XLSX position codes → app DEF/MID/FWD/RUC (used when creating new players)
             _POS_MAP = {"MID": "MID", "RUC": "RUC", "GD": "DEF", "KD": "DEF",
@@ -251,6 +257,13 @@ def _sync_ratings_to_db(app):
                     ap.potential = potential
                     if rating_start is not None:
                         ap.rating_start = rating_start
+                    # The XLSX owns age. Nothing else refreshes it — the
+                    # footywire roster scrape writes it once at import, so
+                    # skipping it here freezes every age at that snapshot and
+                    # silently rots the Reserve 7s eligibility check.
+                    if age_val is not None and ap.age != age_val:
+                        ap.age = age_val
+                        ages_updated += 1
                     matched += 1
                 else:
                     # Genuinely new player (e.g. a debutant the user added to
@@ -281,7 +294,7 @@ def _sync_ratings_to_db(app):
             db.session.commit()
             app.logger.info(
                 f"Ratings sync: {matched} players updated, {created} created, "
-                f"{len(unmatched)} unmatched from XLSX"
+                f"{ages_updated} ages changed, {len(unmatched)} unmatched from XLSX"
             )
             if unmatched and len(unmatched) <= 30:
                 for n, t in unmatched:
