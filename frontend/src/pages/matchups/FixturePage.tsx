@@ -117,8 +117,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
   const isSevens = mode === 'sevens'
   const basePath = isSevens ? `/leagues/${leagueId}/reserve7s/fixture` : `/leagues/${leagueId}/fixture`
   const gamedayPath = isSevens ? `/leagues/${leagueId}/reserve7s/gameday` : `/leagues/${leagueId}/gameday`
-  const matchupPathFor = (fid: number) =>
-    isSevens ? `/leagues/${leagueId}/reserve7s/matchup/${fid}` : `/leagues/${leagueId}/matchup/${fid}`
+  const matchupPathFor = (fid: number) => `/leagues/${leagueId}/matchup/${fid}`
   const apiUrl = isSevens
     ? `/leagues/${leagueId}/reserve7s/fixture?format=json${urlRound ? `&round=${urlRound}` : ''}`
     : `/leagues/${leagueId}/fixture?format=json${urlRound ? `&round=${urlRound}` : ''}`
@@ -236,7 +235,10 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
               const homeWon = f.status === 'completed' && (f.home_score || 0) > (f.away_score || 0)
               const awayWon = f.status === 'completed' && (f.away_score || 0) > (f.home_score || 0)
               const isLiveRound = rs === 'live' || rs === 'partial'
-              const to = isLiveRound
+              // The 7s has no standalone matchup-detail page — its gameday view
+              // already renders both squads' breakdowns, so it handles past
+              // rounds too. Sending 7s rows to /reserve7s/matchup/<id> 404s.
+              const to = isLiveRound || isSevens
                 ? `${gamedayPath}?round=${selected_round}&fixture=${f.id}`
                 : matchupPathFor(f.id)
               const isLive = f.status === 'live' || f.status === 'partial'

@@ -380,7 +380,15 @@ def sevens_gameday(league_id):
         flash("You don't have a team in this league.", "warning")
         return redirect(url_for("leagues.dashboard", league_id=league_id))
 
-    afl_round = _detect_7s_gameday_round(league_id, year)
+    # An explicit ?round= wins (the fixture page links back into past rounds);
+    # otherwise fall back to auto-detection.
+    req_round = request.args.get("round", type=int)
+    if req_round is not None and Reserve7sFixture.query.filter_by(
+        league_id=league_id, year=year, afl_round=req_round,
+    ).first():
+        afl_round = req_round
+    else:
+        afl_round = _detect_7s_gameday_round(league_id, year)
 
     # ── Round dates + first bounce from AFL game schedule ──
     afl_games_for_round = (

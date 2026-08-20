@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router'
+import { useParams, useSearchParams, Link } from 'react-router'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
@@ -197,6 +197,9 @@ const S7_CSS = `
 
 export function Reserve7sGamedayPage() {
   const { leagueId } = useParams()
+  const [searchParams] = useSearchParams()
+  const urlRound = searchParams.get('round')
+  const urlFixture = searchParams.get('fixture')
   const [data, setData] = useState<S7GamedayData | null>(null)
   const [loading, setLoading] = useState(true)
   const [viewedFixtureId, setViewedFixtureId] = useState<number | null>(null)
@@ -206,17 +209,24 @@ export function Reserve7sGamedayPage() {
   const initialLoad = useRef(true)
 
   const fetchData = useCallback(() => {
-    api<S7GamedayData>(`/leagues/${leagueId}/reserve7s/gameday?format=json`)
+    api<S7GamedayData>(
+      `/leagues/${leagueId}/reserve7s/gameday?format=json${urlRound ? `&round=${urlRound}` : ''}`
+    )
       .then(d => {
         setData(d)
-        if (initialLoad.current && d.fixture) {
-          setViewedFixtureId(d.fixture.id)
-          initialLoad.current = false
+        if (initialLoad.current) {
+          // ?fixture= arrives from the fixture page — open that matchup, not
+          // the viewer's own. It renders from the prefetched cache, and the
+          // hero falls back to the own-team view until that lands.
+          const fromUrl = urlFixture ? Number(urlFixture) : null
+          if (fromUrl) setViewedFixtureId(fromUrl)
+          else if (d.fixture) setViewedFixtureId(d.fixture.id)
+          if (fromUrl || d.fixture) initialLoad.current = false
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [leagueId])
+  }, [leagueId, urlRound, urlFixture])
 
   // Fetch per-fixture live details for matchup switching
   const fetchAllFixtures = useCallback((round: number) => {
@@ -229,13 +239,19 @@ export function Reserve7sGamedayPage() {
     }).catch(() => {})
   }, [leagueId])
 
+  // A different ?round=/?fixture= is a fresh view of the same component.
+  useEffect(() => { initialLoad.current = true }, [urlRound, urlFixture])
+
   useEffect(() => { fetchData() }, [fetchData])
 
   // Pre-fetch all fixture breakdowns once data loaded
-  const hasPrefetched = useRef(false)
+  // Keyed by round, not a one-shot flag: navigating between rounds from the
+  // fixture page reuses this component, so a bare boolean would leave the
+  // new round's breakdowns unfetched.
+  const prefetchedRound = useRef<number | null>(null)
   useEffect(() => {
-    if (data && !hasPrefetched.current) {
-      hasPrefetched.current = true
+    if (data && prefetchedRound.current !== data.afl_round) {
+      prefetchedRound.current = data.afl_round
       fetchAllFixtures(data.afl_round)
     }
   }, [data, fetchAllFixtures])
