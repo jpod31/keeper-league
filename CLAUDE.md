@@ -87,7 +87,7 @@ Steps, server details and the four validation gates live in
 | `app.py` | App factory, blueprint registration, SPA intercept, error handlers, socketio + scheduler wiring, a handful of top-level routes (`/`, `/player/<name>`, `/refresh`, `/import/*`, `/push/*`). |
 | `config.py` | Positions, default scoring, team logos, constants. |
 | `blueprints/` | HTTP routes, grouped by feature (see table below). |
-| `models/` | SQLAlchemy models (`database.py`, `auth.py`) + domain/business logic engines (scoring, lineup, draft, trades, fixtures, scheduler, analytics, etc.). Despite the name, most files here are logic, not just ORM. |
+| `models/` | SQLAlchemy models (`database.py`, `auth.py`) + domain/business logic engines (scoring, lineup, draft, trades, fixtures, scheduler, analytics, `season_review.py`, etc.). Despite the name, most files here are logic, not just ORM. |
 | `sockets/` | SocketIO event handlers (draft / matchup / notification). |
 | `scrapers/` | External data ingestion: Squiggle (fixtures), Footywire (SC scores, rosters, live), wheeloratings + dfsaustralia (state leagues), draftguru (AFL list/draft history -> `AflListHistory`), AFL injuries, CSV import. |
 | `scripts/` | One-off + operational scripts. `update_server.sh` / `deploy_server.sh` (deploy), `rescore_all.py`, `precompute_scouting.py`, `smoke_endpoints.py`, `train_scouting_model.py` are operational. `migrate_*.py` are historical one-off migrations (already applied). `debug_*/investigate_*/fix_*/verify_*/check_*` are one-off forensics. |
@@ -133,6 +133,20 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   state-league/reserves team name: a delisted player can play VFL for a
   non-aligned club (e.g. Williamstown). Backfill: `scripts/backfill_list_history.py`
   on the server (creates the table + scrapes draftguru).
+- **SPA CSS splits with its chunk**: a `.css` imported from a lazily-loaded
+  component ships *inside that chunk*. Styles for anything rendered by
+  always-loaded chrome (e.g. the rail's Season Review button) must live in
+  `static/style.css`, or they simply don't exist until someone opens the lazy
+  feature. This bit the Season Review rail entry.
+- **Season Review** (`models/season_review.py`) is built entirely from
+  HISTORICAL tables — `weekly_lineup`/`lineup_slot` for who was named,
+  `round_score.breakdown` for what they contributed, plus fixtures and draft
+  picks. Never read `FantasyRoster` for it: the off-season strips players off
+  lists and would rewrite finished seasons. Memoised per (league, year).
+  `season_review_year(league_id)` is the single gate — non-null only while every
+  fixture of the league's current year is completed, so the review appears when
+  the last round finalises and vanishes at the next rollover. Exposed on the
+  league context as `season_review_year`.
 - **Positional priority for dual-position players**: FWD > DEF > RUC > MID.
 - **Rookie rule**: bench player with `age < 22` AND `rating < 70` → Rookies
   section (field/flex/7s/emergency/injury take precedence). Single source of
@@ -153,7 +167,7 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
 
 ## Test baseline
 
-`python -m pytest -q` → **39 passed, 5 failed** as of 2026-05-31. Pre-existing
+`python -m pytest -q` → **41 passed, 5 failed** as of 2026-08-24. Pre-existing
 failures (NOT regressions — don't chase unless asked):
 - `test_data_validation.py::TestLoginRateLimiting::test_rate_limit_blocks_after_max_attempts`
 - `test_live_scoring.py::TestApiLiveScores::test_api_returns_json`
