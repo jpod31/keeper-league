@@ -14,6 +14,12 @@ export interface PlayerCard {
   team_name?: string
   accent?: string
   selections?: number
+  /** Weeks named in the 23 AND actually played. */
+  played_23?: number
+  /** Rounds his club took the field, i.e. the most weeks he could have played. */
+  available?: number
+  missed_23?: number
+  ever_present?: boolean
   played?: number
   points?: number
   avg?: number
@@ -21,6 +27,10 @@ export interface PlayerCard {
   sub_on?: number
   best?: number
   best_round?: number | null
+  /** Per-round state, aligned to SeasonReviewData.rounds.
+   *  2 played · 1 club bye · 0 named but out · -1 dropped */
+  weeks?: number[]
+  week_pts?: number[]
 }
 
 export interface LadderRow {
@@ -153,16 +163,28 @@ export interface YourSeason {
   ever_present: PlayerCard[]
   arc: ArcTeam | null
   h2h: H2HRow | null
-  bench: { team_id: number; name: string; accent: string; points: number; per_round: number } | null
+  bench: BenchRow | null
   squad_size: number
 }
 
 export interface SevensRow extends LadderRow {}
 
+export interface BenchRow {
+  team_id: number
+  name: string
+  accent: string
+  points: number
+  per_round: number
+  scored: number
+  efficiency: number
+}
+
 export interface SeasonReviewData {
   available: boolean
   year: number
   league: { id: number; name: string; teams: number; rounds: number; scoring: string }
+  /** Round numbers the season ran, in order — the x-axis for presence strips. */
+  rounds: number[]
   cover: {
     total_points: number
     players_used: number
@@ -177,12 +199,18 @@ export interface SeasonReviewData {
     league: PlayerCard[]
     per_team: Record<string, PlayerCard[]>
     perfect: PlayerCard[]
+    perfect_count: number
+    /** Weeks available to a typical player — the honest denominator. */
     max_rounds: number
   }
   best_23: {
     lines: { code: string; players: PlayerCard[] }[]
     reps: { team_id: number; name: string; accent: string; count: number }[]
     mvp: PlayerCard | null
+    min_games: number
+    iron_in_side: number
+    iron_best: PlayerCard | null
+    iron_men: PlayerCard[]
   }
   records: {
     highest: ScoreRow[]
@@ -195,9 +223,12 @@ export interface SeasonReviewData {
   }
   h2h: { matrix: H2HRow[]; lopsided: Rivalry | null; closest: Rivalry | null }
   bench: {
-    table: { team_id: number; name: string; accent: string; points: number; per_round: number }[]
+    table: BenchRow[]
     worst: (PlayerCard & { round: number; score: number; gap: number; team_name: string })[]
     total: number
+    rounds_counted: number
+    rounds_excluded: number[]
+    note: string
   }
   sevens: {
     ladder: SevensRow[]

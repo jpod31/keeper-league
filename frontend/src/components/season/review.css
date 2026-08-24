@@ -734,3 +734,281 @@
   .sr-draw, .sr-bar-grow, .sr-bar-w, .sr-rise, .sr-pop { animation: none !important; }
   .sr-draw { stroke-dashoffset: 0; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   IMMERSION LAYER
+   Staged entrances, kinetic type, rolling digits, presence strips and
+   the oval. Motion is transform/opacity only; everything switches off
+   under prefers-reduced-motion at the bottom of this block.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Staged entrances ────────────────────────────────────────────── */
+.sr-in { animation-duration: .62s; animation-fill-mode: both;
+         animation-timing-function: cubic-bezier(.18,.86,.24,1); }
+.sr-in-rise  { animation-name: srInRise; }
+.sr-in-pop   { animation-name: srInPop; }
+.sr-in-wipe  { animation-name: srInWipe; }
+.sr-in-left  { animation-name: srInLeft; }
+.sr-in-right { animation-name: srInRight; }
+.sr-in-blur  { animation-name: srInBlur; }
+.sr-in-drop  { animation-name: srInDrop; }
+@keyframes srInRise  { from { opacity:0; transform: translate3d(0,26px,0); } }
+@keyframes srInPop   { from { opacity:0; transform: scale(.86); } }
+@keyframes srInWipe  { from { opacity:0; clip-path: inset(0 100% 0 0); }
+                       to   { opacity:1; clip-path: inset(0 0 0 0); } }
+@keyframes srInLeft  { from { opacity:0; transform: translate3d(-34px,0,0); } }
+@keyframes srInRight { from { opacity:0; transform: translate3d(34px,0,0); } }
+@keyframes srInBlur  { from { opacity:0; filter: blur(14px); transform: scale(1.06); } }
+@keyframes srInDrop  { from { opacity:0; transform: translate3d(0,-30px,0) rotate(-2deg); } }
+
+/* ── Kinetic headline ────────────────────────────────────────────── */
+.sr-kin { display: inline; }
+.sr-kin-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* Bottom padding gives descenders room; the right margin is the word space
+     that inline-block would otherwise swallow. */
+  padding: 0 .06em .12em 0;
+  margin-right: .22em;
+}
+.sr-kin-mask:last-child { margin-right: 0; }
+.sr-kin-w {
+  display: inline-block;
+  animation: srKin .78s cubic-bezier(.16,.9,.2,1) both;
+}
+@keyframes srKin {
+  from { opacity: 0; transform: translate3d(0, 108%, 0) rotate(3deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Rolling digits ──────────────────────────────────────────────── */
+.sr-roll { display: inline-flex; align-items: baseline; line-height: 1; }
+/* Digits spin behind overflow:hidden, so background-clip:text has nothing
+   stable to clip to. Never nest a roll inside .sr-grad. */
+.sr-grad .sr-roll { color: inherit; }
+.sr-roll-col {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+  width: .62em;
+  text-align: center;
+}
+.sr-roll-strip {
+  display: flex;
+  flex-direction: column;
+  animation: srRoll 1.5s cubic-bezier(.16,.86,.2,1) both;
+}
+.sr-roll-strip > span { height: 1em; line-height: 1; }
+@keyframes srRoll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc((20 + var(--d)) * -1em)); }
+}
+.sr-roll-sep { display: inline-block; }
+
+/* ── Presence strip ──────────────────────────────────────────────── */
+.sr-pres {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 30px;
+  margin-top: 7px;
+}
+.sr-pres.compact { height: 20px; gap: 1.5px; }
+.sr-pres-cell {
+  flex: 1;
+  min-width: 3px;
+  height: calc(var(--h) * 100%);
+  border-radius: 2px;
+  animation: srPres .5s cubic-bezier(.2,.9,.25,1) both;
+  transform-origin: bottom;
+}
+.sr-pres-cell.played { background: linear-gradient(180deg, var(--pres), color-mix(in srgb, var(--pres) 45%, transparent)); }
+.sr-pres-cell.dnp    { background: rgba(255,140,140,.55); }
+.sr-pres-cell.bye    { background: rgba(255,255,255,.14); }
+.sr-pres-cell.out    { background: rgba(255,255,255,.07); }
+@keyframes srPres { from { opacity: 0; transform: scaleY(0); } }
+
+.sr-pres-key {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  font-size: .58rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.45);
+  margin-top: 10px;
+}
+.sr-pres-key span { display: inline-flex; align-items: center; gap: 5px; }
+.sr-pres-key i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.sr-pres-key i.played { background: var(--sr-a); }
+.sr-pres-key i.dnp { background: rgba(255,140,140,.55); }
+.sr-pres-key i.bye { background: rgba(255,255,255,.14); }
+.sr-pres-key i.out { background: rgba(255,255,255,.07); }
+
+/* ── Ever-present badge ──────────────────────────────────────────── */
+.sr-iron {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 999px;
+  font-size: .52rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase;
+  background: rgba(126,231,135,.16);
+  border: 1px solid rgba(126,231,135,.42);
+  color: #8fe6b4;
+  white-space: nowrap;
+}
+
+/* ── The oval ────────────────────────────────────────────────────── */
+.sr-oval {
+  position: relative;
+  /* Height-led so the whole ground fits the stage without scrolling; width
+     follows the ratio and never exceeds the column. */
+  height: min(58vh, 560px);
+  width: min(100%, calc(min(58vh, 560px) * 1.25));
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: visible;
+}
+/* Ground shadow sits on its own layer. A filter on .sr-oval itself would
+   also catch all 23 chips, smearing a band across every row. */
+.sr-oval::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 34px 80px -30px rgba(0,0,0,.85);
+  pointer-events: none;
+}
+.sr-oval-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sr-oval-bg ellipse, .sr-oval-bg rect, .sr-oval-bg circle,
+.sr-oval-bg path, .sr-oval-bg line { vector-effect: non-scaling-stroke; }
+.sr-oval-chip {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 9px 4px 4px;
+  border-radius: 999px;
+  background: linear-gradient(100deg,
+    color-mix(in srgb, var(--sr-club, #10231b) 72%, rgba(4,10,8,.92)),
+    rgba(4,12,9,.9));
+  border: 1px solid rgba(255,255,255,.28);
+  box-shadow: 0 8px 20px -8px rgba(0,0,0,.9);
+  white-space: nowrap;
+  animation: srChip .6s cubic-bezier(.2,1.05,.3,1) both;
+  max-width: 29%;
+  z-index: 2;
+}
+@keyframes srChip {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.sr-oval-chip .sr-pl-av {
+  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px;
+  background: linear-gradient(150deg,
+    var(--sr-club, #1c2333),
+    color-mix(in srgb, var(--sr-club, #1c2333) 62%, #05070d));
+}
+.sr-oval-chip .sr-pl-av img { width: 19px; height: 19px; }
+.sr-oval-chip .sr-pl-av span { font-size: .54rem; }
+.sr-oval-body { display: flex; flex-direction: column; min-width: 0; }
+.sr-oval-name {
+  font-size: .68rem; font-weight: 800; color: #fff; line-height: 1.1;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.sr-oval-sub {
+  font-size: .52rem; color: rgba(255,255,255,.55); line-height: 1.1; margin-top: 1px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.sr-oval-avg {
+  font-size: .78rem; font-weight: 900; color: #8fe6b4; margin-left: 2px;
+}
+.sr-oval-chip.iron { border-color: rgba(126,231,135,.6); }
+.sr-oval-iron {
+  position: absolute; top: -5px; right: -3px;
+  font-size: .6rem; color: #8fe6b4;
+  filter: drop-shadow(0 0 5px rgba(126,231,135,.9));
+}
+
+/* ── Ticker ──────────────────────────────────────────────────────── */
+.sr-ticker {
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,.1);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  padding: 9px 0;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.sr-ticker-track {
+  display: flex; gap: 34px; width: max-content;
+  animation: srTick 34s linear infinite;
+}
+.sr-ticker-track span {
+  font-size: .68rem; font-weight: 700; letter-spacing: .06em;
+  color: rgba(255,255,255,.55); white-space: nowrap;
+}
+.sr-ticker-track span::before { content: "◆"; margin-right: 12px; opacity: .4; color: var(--sr-a); }
+@keyframes srTick { to { transform: translateX(-50%); } }
+
+/* ── Background depth: parallax planes + slow zoom ───────────────── */
+.sr-blob-1 { transform: translate3d(calc(var(--px, 0) * 26px), calc(var(--py, 0) * 22px), 0); }
+.sr-blob-2 { transform: translate3d(calc(var(--px, 0) * -32px), calc(var(--py, 0) * -26px), 0); }
+.sr-blob-3 { transform: translate3d(calc(var(--px, 0) * 18px), calc(var(--py, 0) * -14px), 0); }
+.sr-field { animation: srBreathe 26s ease-in-out infinite alternate; }
+@keyframes srBreathe { from { transform: scale(1); } to { transform: scale(1.13); } }
+.sr-stage { transform: translate3d(calc(var(--px, 0) * -7px), calc(var(--py, 0) * -5px), 0); }
+
+/* Flash on slide change — a single frame of light, like a shutter. */
+.sr-flash {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  background: radial-gradient(60% 50% at 50% 50%,
+    color-mix(in srgb, var(--sr-a) 40%, transparent), transparent 70%);
+  animation: srFlash .5s ease-out forwards;
+}
+@keyframes srFlash { from { opacity: .8; } to { opacity: 0; } }
+
+/* ── Story chrome: timed progress + tap zones + play control ─────── */
+.sr-seg-fill.timed { width: 0; animation: srSegFill linear forwards; }
+@keyframes srSegFill { from { width: 0; } to { width: 100%; } }
+.sr-zone {
+  position: absolute; top: 0; bottom: 0; width: 13%;
+  z-index: 5; cursor: pointer; border: 0; background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+.sr-zone.prev { left: 0; }
+.sr-zone.next { right: 0; }
+.sr-zone::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(255,255,255,.07), transparent 70%);
+  opacity: 0; transition: opacity .2s;
+}
+.sr-zone:hover::after { opacity: 1; }
+.sr-play {
+  all: unset;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #cfd8ee; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.sr-play:hover { background: rgba(255,255,255,.16); color: #fff; }
+.sr-play.on { color: #fff; border-color: rgba(255,255,255,.3); }
+
+@media (max-width: 900px) {
+  .sr-oval-only { display: none; }
+}
+@media (min-width: 901px) {
+  .sr-grid-only { display: none; }
+}
+@media (max-width: 640px) {
+  .sr-oval { max-height: none; }
+  .sr-ticker-track span { font-size: .62rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-in, .sr-kin-w, .sr-roll-strip, .sr-pres-cell, .sr-oval-chip,
+  .sr-field, .sr-ticker-track, .sr-flash, .sr-seg-fill.timed {
+    animation: none !important;
+  }
+  .sr-in, .sr-kin-w, .sr-pres-cell, .sr-oval-chip { opacity: 1; }
+  .sr-blob-1, .sr-blob-2, .sr-blob-3, .sr-stage { transform: none; }
+  .sr-oval-chip { transform: translate(-50%, -50%); }
+  .sr-seg-fill.timed { width: 100%; }
+}

@@ -125,6 +125,15 @@ class _Season:
         )
 
         self.rounds = sorted({f.afl_round for f in self.fixtures})
+        round_set = set(self.rounds)
+        # Rounds each AFL club actually played. A player can only be a real
+        # selection in a week his club took the field — Opening Round (most
+        # clubs absent) and the mid-season byes are not weeks he was "left out".
+        self.club_rounds = defaultdict(set)
+        for g in AflGame.query.filter_by(year=year).all():
+            if g.afl_round in round_set:
+                self.club_rounds[g.home_team].add(g.afl_round)
+                self.club_rounds[g.away_team].add(g.afl_round)
         peak = max(self.games_per_round.values()) if self.games_per_round else 0
         self.full_rounds = {
             r for r in self.rounds
@@ -194,6 +203,9 @@ def _index(s):
         "sub_on": defaultdict(int),     # rounds their emergency slot was activated
         "pos_use": defaultdict(lambda: defaultdict(int)),  # position they filled
         "best": defaultdict(lambda: (0.0, None)),          # best score, round
+        "sel_rounds": defaultdict(set),   # rounds they were named in the 23
+        "field_pts": defaultdict(dict),   # (team, player) -> round -> on-field score
+        "round_pts": defaultdict(dict),   # ... including emergency call-ups
         # per team
         "team_round": defaultdict(dict),   # team -> round -> score
         "team_field": defaultdict(dict),   # team -> round -> set(player ids)
@@ -212,6 +224,7 @@ def _index(s):
             continue
         if pc in FIELD_POSITIONS:
             idx["sel"][key] += 1
+            idx["sel_rounds"][key].add(rnd)
             idx["pos_use"][sl.player_id][pc] += 1
             idx["team_field"][tid].setdefault(rnd, set()).add(sl.player_id)
         else:
@@ -228,9 +241,12 @@ def _index(s):
             if k.startswith("emergency_"):
                 pid = int(k.split("_", 1)[1])
                 idx["sub_on"][(rs.team_id, pid)] += 1
+                key = (rs.team_id, pid)
             else:
                 pid = int(k)
-            key = (rs.team_id, pid)
+                key = (rs.team_id, pid)
+                idx["field_pts"][key][rs.afl_round] = v
+            idx["round_pts"][key][rs.afl_round] = v
             idx["pts"][key] += v
             if v > 0:
                 idx["played"][key] += 1
@@ -239,17 +255,39 @@ def _index(s):
     return idx
 
 
-def _player_row(s, idx, tid, pid, extra=None):
+def _player_row(s, idx, tid, pid, extra=None, weeks=False):
+    """One player's season for one club.
+
+    `weeks=True` also attaches two arrays aligned to `s.rounds` — a 0/1
+    selection mask and the score they returned each round. That drives the
+    per-player presence strip in the review; it roughly doubles a row, so it
+    is opt-in and only the leaderboards that draw a strip ask for it.
+    """
     m = s.pmeta(pid)
     key = (tid, pid)
     sel = idx["sel"][key]
     played = idx["played"][key]
     pts = idx["pts"][key]
+
+    # A week only counts as a real selection if the club took the field AND he
+    # played. Weeks his club had no game (Opening Round, the bye) were never
+    # his to win or lose, so they come out of both sides of the ratio.
+    named = idx["sel_rounds"][key]
+    field = idx["field_pts"][key]
+    club_on = s.club_rounds.get(m["afl_team"]) or set()
+    available = len([r for r in s.rounds if r in club_on])
+    played_23 = len([r for r in named if r in club_on and field.get(r, 0) > 0])
+    missed_23 = len([r for r in s.rounds if r in club_on and r not in named])
+
     row = {
         **m,
         "team_id": tid,
         "team_name": s.tname.get(tid, ""),
         "selections": sel,
+        "played_23": played_23,
+        "available": available,
+        "missed_23": missed_23,
+        "ever_present": bool(available) and played_23 == available,
         "played": played,
         "points": round(pts),
         "avg": _r1(pts / played) if played else 0.0,
@@ -258,6 +296,17 @@ def _player_row(s, idx, tid, pid, extra=None):
         "best": _r1(idx["best"][pid][0]),
         "best_round": idx["best"][pid][1],
     }
+    if weeks:
+        #  2 named and played · 1 club had no game · 0 named but didn't play
+        # -1 not named
+        def _state(r):
+            if r not in named:
+                return -1
+            if r not in club_on:
+                return 1
+            return 2 if field.get(r, 0) > 0 else 0
+        row["weeks"] = [_state(r) for r in s.rounds]
+        row["week_pts"] = [round(field.get(r, 0)) for r in s.rounds]
     if extra:
         row.update(extra)
     return row
@@ -360,39 +409,56 @@ def _arc(s, idx):
 
 
 def _ever_present(s, idx):
-    """Most times in the 23 — the season's iron men, league-wide and per team.
+    """Weeks in the 23 — the season's iron men, league-wide and per team.
 
-    Selections, not AFL games: this counts how many rounds a manager named the
-    player in their 23, which is the league's own measure of a player being
-    undroppable.
+    A week counts only when the player was named AND actually played. Weeks his
+    club had no game (Opening Round, the bye) are excluded from both the count
+    and the total available to him, so an every-week player reads as 23 of 23
+    rather than a nonsense 25.
     """
     rows = [
-        _player_row(s, idx, tid, pid)
+        _player_row(s, idx, tid, pid, weeks=True)
         for (tid, pid), n in idx["sel"].items() if n > 0
     ]
-    rows.sort(key=lambda r: (-r["selections"], -r["points"]))
+    rows.sort(key=lambda r: (-r["played_23"], -r["points"]))
 
     per_team = {}
     for tid in s.team_ids:
         per_team[str(tid)] = [r for r in rows if r["team_id"] == tid][:6]
 
-    max_r = len(s.rounds)
-    perfect = [r for r in rows if r["selections"] >= max_r]
+    perfect = [r for r in rows if r["ever_present"]]
+    # The most common "every available week" figure — the honest denominator
+    # to quote, since every club plays the same number of games.
+    counts = defaultdict(int)
+    for r in rows:
+        if r["available"]:
+            counts[r["available"]] += 1
+    typical = max(counts.items(), key=lambda kv: kv[1])[0] if counts else len(s.rounds)
 
     return {
         "league": rows[:12],
         "per_team": per_team,
-        "perfect": perfect,
-        "max_rounds": max_r,
+        "perfect": perfect[:10],
+        "perfect_count": len(perfect),
+        "max_rounds": typical,
     }
+
+
+MIN_GAMES_FOR_BEST_23 = 16
 
 
 def _best_23(s, idx):
     """The league's Best 23, built to the league's own field shape.
 
-    A player is ranked on total points delivered while named in a 23, and
-    slotted into the position he actually filled most often this year (falling
-    back to his listed primary position).
+    Ranked on AVERAGE, not season total, behind a 16-game qualification.
+    Ranking on total quietly rewards availability over quality — the list fills
+    with solid players who never missed while genuinely elite players who lost a
+    month to injury drop off it. The qualification keeps out small samples; the
+    average decides who was the better player. Being elite AND never missing
+    still gets its own billing via `ever_present` / `iron_best`.
+
+    Each player is slotted into the position he actually filled most often
+    (falling back to his listed primary position).
     """
     from models.database import LeaguePositionSlot
 
@@ -424,28 +490,36 @@ def _best_23(s, idx):
     for pid, (tid, pts) in best_stint.items():
         pool[slot_pos(pid)].append(_player_row(s, idx, tid, pid))
     for k in pool:
-        pool[k].sort(key=lambda r: (-r["points"], -r["avg"]))
+        pool[k].sort(key=lambda r: (-r["avg"], -r["points"]))
+
+    def _qualified(rows, need, threshold):
+        """Rows meeting the games bar, relaxed only if a line cannot fill."""
+        ok = [r for r in rows if r["played_23"] >= threshold]
+        while len(ok) < need and threshold > 1:
+            threshold -= 2
+            ok = [r for r in rows if r["played_23"] >= threshold]
+        return ok, threshold
 
     picked, used_ids, lines = [], set(), []
+    relaxed_to = MIN_GAMES_FOR_BEST_23
     for code, count in shape:
         if code == "FLEX":
             continue
-        take = []
-        for r in pool.get(code, []):
-            if r["id"] in used_ids:
-                continue
-            take.append(r)
+        avail = [r for r in pool.get(code, []) if r["id"] not in used_ids]
+        ok, threshold = _qualified(avail, count, MIN_GAMES_FOR_BEST_23)
+        relaxed_to = min(relaxed_to, threshold)
+        take = ok[:count]
+        for r in take:
             used_ids.add(r["id"])
-            if len(take) >= count:
-                break
         lines.append({"code": code, "players": take})
         picked.extend(take)
 
     flex_count = sum(c for code, c in shape if code == "FLEX")
     if flex_count:
         rest = [r for lst in pool.values() for r in lst if r["id"] not in used_ids]
-        rest.sort(key=lambda r: (-r["points"], -r["avg"]))
-        take = rest[:flex_count]
+        ok, threshold = _qualified(rest, flex_count, MIN_GAMES_FOR_BEST_23)
+        relaxed_to = min(relaxed_to, threshold)
+        take = sorted(ok, key=lambda r: (-r["avg"], -r["points"]))[:flex_count]
         for r in take:
             used_ids.add(r["id"])
         lines.append({"code": "FLEX", "players": take})
@@ -455,12 +529,25 @@ def _best_23(s, idx):
     for r in picked:
         reps[r["team_id"]] += 1
 
+    # Elite AND available — the best average among players who never missed a
+    # week their club played. "Good and always there" earns its own line.
+    all_iron = [
+        _player_row(s, idx, tid, pid)
+        for (tid, pid), n in idx["sel"].items() if n > 0
+    ]
+    all_iron = [r for r in all_iron if r["ever_present"]]
+    all_iron.sort(key=lambda r: -r["avg"])
+
     return {
         "lines": lines,
         "reps": [{"team_id": tid, "name": s.tname.get(tid, ""),
                   "accent": _accent(tid), "count": n}
                  for tid, n in sorted(reps.items(), key=lambda kv: -kv[1])],
-        "mvp": max(picked, key=lambda r: r["points"]) if picked else None,
+        "mvp": max(picked, key=lambda r: r["avg"]) if picked else None,
+        "min_games": relaxed_to,
+        "iron_in_side": sum(1 for r in picked if r["ever_present"]),
+        "iron_best": all_iron[0] if all_iron else None,
+        "iron_men": all_iron[:6],
     }
 
 
@@ -591,6 +678,26 @@ def _head_to_head(s):
     }
 
 
+def _bench_rounds(s):
+    """Rounds where leaving points on the bench was a real selection failure.
+
+    Two rounds are never a fair test and come out:
+      - Opening Round, where most clubs don't play at all, so nobody can field
+        a full 23 and every bench score reads as "waste".
+      - The final home-and-away round when the league plays no finals. With the
+        ladder already settled, managers load their 7s side instead — that's a
+        deliberate trade, not a mistake.
+    """
+    rounds = [r for r in s.rounds if r in s.full_rounds]
+    dropped = [r for r in s.rounds if r not in s.full_rounds]
+    finals_teams = (s.cfg.finals_teams if s.cfg else 0) or 0
+    if not finals_teams and len(rounds) > 1:
+        dead = rounds[-1]
+        rounds = rounds[:-1]
+        dropped.append(dead)
+    return rounds, sorted(dropped)
+
+
 def _bench(s, idx):
     """Points left on the bench.
 
@@ -598,10 +705,11 @@ def _bench(s, idx):
     WORST scorer actually named in the 23 that round — i.e. the manager had a
     strictly better option sitting there. The gap is the cost of that call.
     """
+    counted, dropped = _bench_rounds(s)
     left = defaultdict(float)
     misses = []
     for tid in s.team_ids:
-        for rnd in s.rounds:
+        for rnd in counted:
             field = idx["team_field"].get(tid, {}).get(rnd)
             bench = idx["team_bench"].get(tid, {}).get(rnd)
             if not field or not bench:
@@ -618,15 +726,41 @@ def _bench(s, idx):
                         "team_name": s.tname.get(tid, ""),
                         "accent": _accent(tid),
                     })
-    table = sorted(
-        ({"team_id": tid, "name": s.tname.get(tid, ""), "accent": _accent(tid),
-          "points": round(v), "per_round": _r1(v / max(len(s.rounds), 1))}
-         for tid, v in left.items()),
-        key=lambda r: -r["points"],
-    )
+    # Efficiency compares like with like — points banked and points wasted are
+    # both measured over the same counted rounds.
+    table = []
+    for tid in s.team_ids:
+        wasted = left.get(tid, 0.0)
+        scored = sum(idx["team_round"].get(tid, {}).get(r, 0) for r in counted)
+        table.append({
+            "team_id": tid, "name": s.tname.get(tid, ""), "accent": _accent(tid),
+            "points": round(wasted),
+            "per_round": _r1(wasted / max(len(counted), 1)),
+            "scored": round(scored),
+            "efficiency": _r1(scored / (scored + wasted) * 100) if (scored + wasted) else 0.0,
+        })
+    table.sort(key=lambda r: -r["points"])
     misses.sort(key=lambda m: -m["gap"])
-    return {"table": table, "worst": misses[:6],
-            "total": round(sum(left.values()))}
+    return {
+        "table": table,
+        "worst": misses[:6],
+        "total": round(sum(left.values())),
+        "rounds_counted": len(counted),
+        "rounds_excluded": dropped,
+        "note": _excluded_note(s, dropped),
+    }
+
+
+def _excluded_note(s, dropped):
+    if not dropped:
+        return ""
+    bits = []
+    if s.rounds and s.rounds[0] in dropped:
+        bits.append(f"Opening Round (R{s.rounds[0]})")
+    tail = [r for r in dropped if not (s.rounds and r == s.rounds[0])]
+    if tail:
+        bits.append(f"the dead final round (R{tail[-1]})")
+    return " and ".join(bits) + " excluded"
 
 
 def _sevens(s):
@@ -949,6 +1083,7 @@ def _coaches(s, idx, bench, sevens, draft):
             "low": round(min(vals)) if vals else 0,
             "churn": _r1(sum(changes) / len(changes)) if changes else 0.0,
             "bench_waste": bench_by.get(tid, {}).get("points", 0),
+            "efficiency": bench_by.get(tid, {}).get("efficiency", 0.0),
             "subs_used": sum(n for (t, _p), n in idx["sub_on"].items() if t == tid),
             "sevens_pos": sevens_by.get(tid, {}).get("pos"),
             "sevens_record": (
@@ -959,13 +1094,6 @@ def _coaches(s, idx, bench, sevens, draft):
             "draft_gem": (draft_by.get(tid) or {}).get("best"),
             "players_used": len(squad),
         })
-
-    # Selection efficiency: share of the manager's available points that
-    # actually made it into the 23 (on-field points / on-field + wasted).
-    for r in rows:
-        scored = r["points_for"]
-        wasted = r["bench_waste"]
-        r["efficiency"] = _r1(scored / (scored + wasted) * 100) if (scored + wasted) else 0.0
 
     rows.sort(key=lambda r: (r["position"] or 99))
     return rows
@@ -982,7 +1110,7 @@ def _your_season(s, idx, team_id, arc, h2h, bench):
     worst = min(full.items(), key=lambda kv: kv[1]) if full else None
 
     squad = [
-        _player_row(s, idx, team_id, pid)
+        _player_row(s, idx, team_id, pid, weeks=True)
         for (tid, pid) in idx["sel"] if tid == team_id and idx["sel"][(tid, pid)] > 0
     ]
     squad.sort(key=lambda r: -r["points"])
@@ -1059,6 +1187,7 @@ def build_season_review(league_id, year, viewer_team_id=None):
                 "teams": len(s.teams), "rounds": len(s.rounds),
                 "scoring": s.league.scoring_type,
             },
+            "rounds": s.rounds,
             "cover": _cover(s, idx),
             "ladder": _ladder(s),
             "arc": arc,

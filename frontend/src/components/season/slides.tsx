@@ -13,6 +13,9 @@ import {
   CountUp, Crest, ClubMark, PlayerRow, Tile, Pos, Head,
   PositionArc, ScoreBars, Ring, CompareBars, Confetti, initials,
 } from './bits'
+import {
+  Beat, Kinetic, Roll, Presence, PresenceKey, Oval, Ticker, IronBadge,
+} from './bits2'
 import type { SeasonReviewData } from './types'
 
 export interface SlideCtx {
@@ -39,27 +42,34 @@ const intro: SlideDef = {
   enabled: () => true,
   render: ({ d }) => (
     <div className="sr-inner" style={{ textAlign: 'center' }}>
-      <div className="sr-eyebrow sr-rise" style={{ marginBottom: 18 }}>{d.league.name}</div>
-      <div className="sr-mega sr-grad sr-pop">{d.year}</div>
-      <h1
-        className="sr-h1 sr-rise"
-        style={{ marginTop: 14, fontSize: 'clamp(1.6rem,4.6vw,3rem)', animationDelay: '160ms' }}
-      >
-        Season in Review
-      </h1>
-      <p
-        className="sr-sub sr-rise"
-        style={{ margin: '14px auto 0', textAlign: 'center', animationDelay: '280ms' }}
-      >
-        {d.league.rounds} rounds. {d.cover.matches} matches. {d.cover.players_used} players named.
-        Every selection, every bench howler, every ton — wrapped up.
-      </p>
-      <div
-        className="sr-pill sr-rise"
-        style={{ marginTop: 26, animationDelay: '400ms' }}
-      >
-        <i className="bi bi-play-fill" /> Press next to begin
-      </div>
+      <Beat at={0} kind="blur" className="sr-eyebrow" style={{ marginBottom: 18 }}>
+        {d.league.name}
+      </Beat>
+      <Beat at={1} kind="pop" as="div" className="sr-mega sr-grad">{d.year}</Beat>
+      <Beat at={4} kind="rise" as="div">
+        <h1 className="sr-h1" style={{ marginTop: 14, fontSize: 'clamp(1.6rem,4.6vw,3rem)' }}>
+          <Kinetic text="Season in Review" at={4} />
+        </h1>
+      </Beat>
+      <Beat at={7} kind="rise" as="div">
+        <p className="sr-sub" style={{ margin: '14px auto 0', textAlign: 'center' }}>
+          {d.league.rounds} rounds. {d.cover.matches} matches. {d.cover.players_used} players named.
+          Every selection, every bench howler, every ton — wrapped up.
+        </p>
+      </Beat>
+      <Beat at={9} kind="pop" as="div" style={{ marginTop: 26 }}>
+        <span className="sr-pill"><i className="bi bi-play-fill" /> Sit back — it plays itself</span>
+      </Beat>
+      <Beat at={11} kind="rise" as="div" style={{ marginTop: 30 }}>
+        <Ticker items={[
+          `Premiers · ${d.ladder[0]?.name ?? ''}`,
+          `Highest round · ${d.cover.top_round?.score ?? 0} by ${d.cover.top_round?.team ?? ''}`,
+          `${d.cover.total_points.toLocaleString()} points scored`,
+          `Best 23 MVP · ${d.best_23.mvp?.name ?? ''}`,
+          `${d.ever_present.perfect_count} players never missed a week`,
+          `${d.bench.total.toLocaleString()} points left on benches`,
+        ]} />
+      </Beat>
     </div>
   ),
 }
@@ -79,7 +89,7 @@ const numbers: SlideDef = {
         sub={`Everything ${d.league.name} put on the board in ${d.year}.`}
       />
       <div className="sr-grid sr-g4">
-        <Tile value={<CountUp to={d.cover.total_points} />} label="Points scored" accent
+        <Tile value={<Roll value={d.cover.total_points} at={1} />} label="Points scored" accent
               sub="across every 23 in the league" delay={0} />
         <Tile value={<CountUp to={d.cover.players_used} />} label="Players named"
               sub="different men picked in a 23" delay={80} />
@@ -287,7 +297,7 @@ const mvp: SlideDef = {
           eyebrow="Your most valuable"
           title={<>Nobody carried you like</>}
           accentWord={top.name}
-          sub={`${(top.points ?? 0).toLocaleString()} points from ${top.played} games at ${top.avg} a week, and you named him in the 23 ${top.selections} weeks out of ${d.league.rounds}.`}
+          sub={`${(top.points ?? 0).toLocaleString()} points at ${top.avg} a week — in your 23 and on the park ${top.played_23} of the ${top.available} weeks his club played.`}
         />
         <div className="sr-hero sr-pop" style={{ '--sr-club': top.club_bg, '--sr-club-fg': top.club_fg } as React.CSSProperties}>
           <ClubMark p={top} size="hero" />
@@ -300,10 +310,18 @@ const mvp: SlideDef = {
             </div>
             <div className="sr-hero-stats">
               <div className="sr-hero-stat"><b>{top.avg}</b><span className="sr-label">Average</span></div>
-              <div className="sr-hero-stat"><b>{top.played}</b><span className="sr-label">Games</span></div>
-              <div className="sr-hero-stat"><b>{top.selections}</b><span className="sr-label">In the 23</span></div>
+              <div className="sr-hero-stat"><b>{top.played_23}/{top.available}</b><span className="sr-label">Weeks in the 23</span></div>
               <div className="sr-hero-stat"><b>{top.best}</b><span className="sr-label">Best (R{top.best_round})</span></div>
+              {top.ever_present && (
+                <div className="sr-hero-stat" style={{ alignSelf: 'center' }}>
+                  <IronBadge played={top.played_23 ?? 0} available={top.available ?? 0} />
+                </div>
+              )}
             </div>
+            {top.weeks && (
+              <Presence weeks={top.weeks} pts={top.week_pts || []} rounds={d.rounds}
+                        accent="var(--sr-a)" at={4} />
+            )}
           </div>
           <div className="sr-hero-big">
             <b><CountUp to={top.points ?? 0} /></b>
@@ -341,13 +359,19 @@ const ironmen: SlideDef = {
   render: ({ d, teamId }) => {
     const lead = d.ever_present.league[0]
     const mine = teamId ? (d.ever_present.per_team[String(teamId)] || []) : []
+    const strip = (p: typeof lead) => (
+      p.weeks
+        ? <Presence weeks={p.weeks} pts={p.week_pts || []} rounds={d.rounds}
+                    accent="var(--sr-a)" compact />
+        : null
+    )
     return (
       <div className="sr-inner">
         <Head
-          eyebrow={`Most times named · ${d.ever_present.max_rounds} rounds`}
+          eyebrow={`Weeks in the 23 · out of ${d.ever_present.max_rounds} possible`}
           title={<>The</>}
           accentWord="undroppables"
-          sub="Not AFL games — selections. How many rounds a coach in this league refused to leave them out of the 23."
+          sub={`Named in the 23 AND actually played. Weeks a player's club had no game — Opening Round, the bye — were never his to win, so they come out of both sides: every club played ${d.ever_present.max_rounds}.`}
         />
         <div className="sr-split">
           <div>
@@ -355,18 +379,21 @@ const ironmen: SlideDef = {
               <i className="bi bi-shield-fill-check" /> League leaders
             </div>
             <div className="sr-stack">
-              {d.ever_present.league.slice(0, 8).map((p, i) => (
-                <PlayerRow
-                  key={`${p.team_id}-${p.id}`}
-                  p={p}
-                  rank={i + 1}
-                  value={p.selections}
-                  valueLabel={`of ${d.ever_present.max_rounds}`}
-                  meta={`${p.afl_team} · picked by ${p.team_name}`}
-                  delay={i * 55}
-                />
+              {d.ever_present.league.slice(0, 7).map((p, i) => (
+                <div key={`${p.team_id}-${p.id}`}>
+                  <PlayerRow
+                    p={p}
+                    rank={i + 1}
+                    value={p.played_23}
+                    valueLabel={`of ${p.available}`}
+                    meta={<>{p.afl_team} · {p.team_name} · {p.avg} avg</>}
+                    delay={i * 55}
+                  />
+                  {strip(p)}
+                </div>
               ))}
             </div>
+            <PresenceKey />
           </div>
           <div>
             {mine.length > 0 && (
@@ -375,32 +402,37 @@ const ironmen: SlideDef = {
                   <i className="bi bi-person-badge-fill" /> Your ever-presents
                 </div>
                 <div className="sr-stack">
-                  {mine.map((p, i) => (
-                    <PlayerRow
-                      key={p.id}
-                      p={p}
-                      rank={i + 1}
-                      value={p.selections}
-                      valueLabel="weeks"
-                      meta={`${p.afl_team} · ${(p.points ?? 0).toLocaleString()} pts`}
-                      delay={i * 55}
-                    />
+                  {mine.slice(0, 5).map((p, i) => (
+                    <div key={p.id}>
+                      <PlayerRow
+                        p={p}
+                        rank={i + 1}
+                        value={p.played_23}
+                        valueLabel={`of ${p.available}`}
+                        meta={<>{p.afl_team} · {(p.points ?? 0).toLocaleString()} pts</>}
+                        delay={i * 55}
+                      />
+                      {strip(p)}
+                    </div>
                   ))}
                 </div>
               </>
             )}
             <div className="sr-card sr-card-hi sr-card-pad sr-rise"
                  style={{ marginTop: mine.length ? 14 : 0, animationDelay: '260ms' }}>
-              <div className="sr-label">Never once left out</div>
+              <div className="sr-label">Played every available week</div>
               <div className="sr-h2" style={{ marginTop: 6 }}>
-                {d.ever_present.perfect.length === 0
+                {d.ever_present.perfect_count === 0
                   ? 'Nobody survived every week'
-                  : `${d.ever_present.perfect.length} ${d.ever_present.perfect.length === 1 ? 'player' : 'players'}`}
+                  : `${d.ever_present.perfect_count} ${d.ever_present.perfect_count === 1 ? 'player' : 'players'}`}
               </div>
               <p className="sr-sub" style={{ fontSize: '.76rem', marginTop: 4 }}>
-                {d.ever_present.perfect.length === 0
-                  ? `${lead.name} came closest — ${lead.selections} of ${d.ever_present.max_rounds} weeks in ${lead.team_name}'s 23.`
-                  : d.ever_present.perfect.map(p => `${p.name} (${p.team_name})`).join(', ')}
+                {d.ever_present.perfect_count === 0
+                  ? `${lead.name} came closest — ${lead.played_23} of ${lead.available} weeks in ${lead.team_name}'s 23.`
+                  : d.ever_present.perfect.map(p => `${p.name} (${p.team_name})`).join(', ')
+                    + (d.ever_present.perfect_count > d.ever_present.perfect.length
+                        ? ` and ${d.ever_present.perfect_count - d.ever_present.perfect.length} more`
+                        : '')}
               </p>
             </div>
           </div>
@@ -429,9 +461,14 @@ const best23: SlideDef = {
         eyebrow={`${d.year} · Team of the year`}
         title={<>The league's</>}
         accentWord="Best 23"
-        sub="Ranked on points delivered while actually named in someone's 23, slotted into the position they filled most often."
+        sub={`Average, not season total, behind a ${d.best_23.min_games}-game qualification — so a month's injury doesn't cost an elite player his spot to someone merely available.`}
       />
-      <div className="sr-field-wrap sr-rise">
+
+      <div className="sr-oval-only">
+        <Oval lines={d.best_23.lines.filter(l => l.players.length > 0)} at={2} />
+      </div>
+
+      <div className="sr-field-wrap sr-grid-only sr-rise">
         {d.best_23.lines.filter(l => l.players.length > 0).map((line, li) => (
           <div className="sr-line" key={line.code} style={{ color: LINE_COLOUR[line.code] || '#fff' }}>
             <div className="sr-line-h">
@@ -444,9 +481,9 @@ const best23: SlideDef = {
                 <PlayerRow
                   key={p.id}
                   p={p}
-                  value={(p.points ?? 0).toLocaleString()}
-                  valueLabel={`${p.avg} avg`}
-                  meta={p.afl_team}
+                  value={p.avg}
+                  valueLabel={`${p.played_23}g avg`}
+                  meta={<>{p.afl_team}{p.ever_present ? ' · ever-present' : ''}</>}
                   delay={li * 90 + i * 40}
                 />
               ))}
@@ -454,16 +491,42 @@ const best23: SlideDef = {
           </div>
         ))}
       </div>
-      <div className="sr-card sr-card-pad sr-rise" style={{ marginTop: 12, animationDelay: '280ms' }}>
-        <div className="sr-label" style={{ marginBottom: 10 }}>Representation by club</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {d.best_23.reps.map(r => (
-            <span key={r.team_id} className="sr-row" style={{ padding: '6px 10px' }}>
-              <Crest name={r.name} accent={r.accent} size="sm" />
-              <span className="sr-row-t" style={{ fontSize: '.74rem' }}>{r.name}</span>
-              <span className="sr-row-v" style={{ color: r.accent }}>{r.count}</span>
-            </span>
-          ))}
+      <div className="sr-grid sr-g2" style={{ marginTop: 12 }}>
+        <div className="sr-card sr-card-pad sr-rise">
+          <div className="sr-label" style={{ marginBottom: 10 }}>Representation by club</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {d.best_23.reps.map(r => (
+              <span key={r.team_id} className="sr-row" style={{ padding: '6px 10px' }}>
+                <Crest name={r.name} accent={r.accent} size="sm" />
+                <span className="sr-row-t" style={{ fontSize: '.74rem' }}>{r.name}</span>
+                <span className="sr-row-v" style={{ color: r.accent }}>{r.count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Average alone can't see availability — this is where the players who
+            were good AND there every single week get their due. */}
+        <div className="sr-card sr-card-hi sr-card-pad sr-rise" style={{ animationDelay: '120ms' }}>
+          <div className="sr-label">
+            <i className="bi bi-shield-fill-check" /> Good and always there
+          </div>
+          {d.best_23.iron_best && (
+            <div className="sr-h2" style={{ marginTop: 6 }}>
+              {d.best_23.iron_best.name} · {d.best_23.iron_best.avg} avg
+            </div>
+          )}
+          <div className="sr-tile-s">
+            Best average among the {d.ever_present.perfect_count} who played every week their club
+            took the field. {d.best_23.iron_in_side} of them made the Best 23.
+          </div>
+          <div className="sr-stack" style={{ marginTop: 10 }}>
+            {d.best_23.iron_men.slice(0, 4).map((p, i) => (
+              <PlayerRow key={p.id} p={p} rank={i + 1}
+                value={p.avg} valueLabel={`${p.played_23}/${p.available}`}
+                meta={<>{p.afl_team} · {p.team_name}</>} delay={i * 55} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -678,7 +741,7 @@ const bench: SlideDef = {
           eyebrow="Selection regrets"
           title={<>Points left on the</>}
           accentWord="bench"
-          sub="Every week a benched player outscored the worst man in your 23, that gap was yours to lose. Here's the bill."
+          sub={`Every week a benched player outscored the worst man in your 23, that gap was yours to lose. Measured over ${d.bench.rounds_counted} rounds — ${d.bench.note.toLowerCase()}, since neither was a fair test of selection.`}
         />
         <div className="sr-split">
           <div className="sr-card sr-card-pad sr-rise">
@@ -691,7 +754,8 @@ const bench: SlideDef = {
             />
             {mine && (
               <div className="sr-tile-s" style={{ marginTop: 12 }}>
-                You averaged <b style={{ color: '#fff' }}>{mine.per_round}</b> wasted points a round.
+                You averaged <b style={{ color: '#fff' }}>{mine.per_round}</b> wasted points a round,
+                banking <b style={{ color: '#fff' }}>{mine.efficiency}%</b> of what was available to you.
               </div>
             )}
           </div>
@@ -933,7 +997,7 @@ const coaches: SlideDef = {
           eyebrow="Coach report card"
           title={<>How everyone actually</>}
           accentWord="coached"
-          sub={`Selection efficiency is the share of a coach's available points that made it into the 23. ${best.name} led the league at ${best.efficiency}%.`}
+          sub={`Selection efficiency is the share of a coach's available points that made it into the 23, over the ${d.bench.rounds_counted} rounds that counted (${d.bench.note.toLowerCase()}). ${best.name} led the league at ${best.efficiency}%.`}
         />
         <div className="sr-card sr-rise" style={{ padding: '4px 6px' }}>
           <div className="sr-tbl-wrap">
