@@ -250,40 +250,6 @@ Can be revisited if richer drill-in becomes valuable.
 
 ---
 
-## BACKLOG — Season Review: rethink "busts" as investment vs return
-
-**Status: not built. Deferred by the owner 2026-08-24 — do not implement
-without an explicit go.**
-
-The draft slide's "One to forget" / "Early picks that didn't land" currently
-ranks purely on season points from an early pick. In a KEEPER league that
-misreads badly:
-
-- **Daniel Curtin surfaced as "One to forget · #72 · 0 pts"** — he spent the
-  season on the owner's LTIL. A young player who misses a year to injury is not
-  a bust; in a keeper league he's still an asset.
-- Low points ≠ bad investment. The real signal is **high investment, low
-  return**, and it's age-shaped:
-  - a **28-year-old** taken early who had a bad year — expensive, declining,
-    little keeper value left;
-  - a **23-year-old who went backwards** on last season — the trajectory broke;
-  - versus a 20-year-old who played 6 games, which is just a normal keeper
-    runway, not a failure.
-
-Directions to weigh when it's picked up:
-- Exclude anyone with an approved `LongTermInjury` for the season outright.
-- Score on return-vs-expectation: pick number and `rating`/`sc_avg_prev` set
-  the expectation; `avg` this year is the return.
-- Weight by age band, and use `sc_avg_prev` → `avg` delta for the
-  "went backwards" case (already on `AflPlayer`).
-- Probably rename away from "bust" — "worst value", "went backwards",
-  "didn't return the investment".
-
-Same reasoning applies to the "Draft Heist" side: cheap late picks who broke
-out are better framed as return-over-expectation than raw points.
-
----
-
 ## Definition of done (every item)
 
 1. **Visual** — matches the pitch; user signs off after live preview
