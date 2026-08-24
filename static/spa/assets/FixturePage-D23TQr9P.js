@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-BwJb0T-f.js";import{t}from"./FixturePage-UKkkZRow.js";var n=e();function r(){return(0,n.jsx)(t,{mode:`sevens`})}export{r as Reserve7sFixturePage};

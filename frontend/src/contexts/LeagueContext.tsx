@@ -27,6 +27,9 @@ export interface LeagueInfo {
   }[]
   current_round: number
   next_lockout_at: string | null
+  /** Non-null once every fixture for the league's current year is completed —
+   *  drives the Season Review takeover + the rail entry. */
+  season_review_year: number | null
   current_matchup: {
     fixture_id: number
     opponent_id: number | null

@@ -1,4 +1,4 @@
-import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-BwJb0T-f.js";import{a as r,c as i,i as a,l as o,n as s,o as c,r as l,s as u,t as d}from"./OrbitControls-DZAQr7kU.js";var f=parseInt(`183`.replace(/\D+/g,``)),p=e(t()),m=class extends u{constructor(){super({uniforms:{time:{value:0},fade:{value:1}},vertexShader:`
+import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-BwJb0T-f.js";import{a as r,c as i,i as a,l as o,n as s,o as c,r as l,s as u,t as d}from"./OrbitControls-DszEtmFU.js";var f=parseInt(`183`.replace(/\D+/g,``)),p=e(t()),m=class extends u{constructor(){super({uniforms:{time:{value:0},fade:{value:1}},vertexShader:`
       uniform float time;
       attribute float size;
       varying vec3 vColor;

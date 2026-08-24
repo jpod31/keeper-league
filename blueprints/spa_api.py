@@ -94,6 +94,16 @@ def league_context(league_id):
     except Exception:
         pass
 
+    # Season Review — non-null once every fixture for the league's current
+    # year is completed. Drives the year-in-review takeover + rail entry, and
+    # falls away by itself when the league rolls into a new season.
+    review_year = None
+    try:
+        from models.season_review import season_review_year
+        review_year = season_review_year(league_id)
+    except Exception:
+        logger.exception("season_review_year failed for league %s", league_id)
+
     # Current matchup — used by the squad page mini fixture strip.
     # Looks up the user's fixture for the current AFL round.
     current_matchup = None
@@ -135,6 +145,7 @@ def league_context(league_id):
         "current_round": current_round,
         "next_lockout_at": next_lockout_at,
         "current_matchup": current_matchup,
+        "season_review_year": review_year,
     })
 
 
@@ -1608,3 +1619,6 @@ def breakout_radar(league_id):
 
 from blueprints.innovation_endpoints import register_innovation_endpoints
 register_innovation_endpoints(spa_api)
+
+from blueprints.season_review_endpoints import register_season_review_endpoints
+register_season_review_endpoints(spa_api)

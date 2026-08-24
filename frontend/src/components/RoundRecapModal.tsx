@@ -23,6 +23,9 @@ export function RoundRecapModal() {
 
   useEffect(() => {
     if (!league || !league.user_team) return
+    // Once the season is over the year-in-review takes over the "first visit"
+    // slot — a stale round-24 recap stacked behind it is just noise.
+    if (league.season_review_year) return
     const lid = league.id
     const tid = league.user_team.id
     fetch(`/api/leagues/${lid}/team/${tid}/round-recap`, { credentials: 'include' })

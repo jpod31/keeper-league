@@ -3,9 +3,12 @@ import { LeagueProvider, useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../ui/Spinner'
 import { LockoutBadge } from '../ui/LockoutBadge'
 import { RoundRecapModal } from '../RoundRecapModal'
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+
+// Heavy, seasonal and rarely mounted — keep it out of the main bundle.
+const SeasonReview = lazy(() => import('../season/SeasonReview').then(m => ({ default: m.SeasonReview })))
 
 type SectionKey = 'team' | 'players' | 'league' | 'settings'
 
@@ -56,8 +59,29 @@ function LeagueShellInner() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [subtabOpen, setSubtabOpen] = useState<SectionKey | null>(null)
   const [selectorOpen, setSelectorOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
 
   const activeTab = useMemo(() => detectActiveTab(pathname), [pathname])
+
+  // Season Review auto-opens once per user per completed season, then lives on
+  // in the rail until the league rolls over to a new season year.
+  const reviewYear = league?.season_review_year ?? null
+  const reviewSeenKey = league && reviewYear
+    ? `kl_wrapped_seen_${league.id}_${reviewYear}`
+    : null
+  useEffect(() => {
+    if (!reviewSeenKey) return
+    let seen = false
+    try { seen = localStorage.getItem(reviewSeenKey) === '1' } catch { /* private mode */ }
+    if (!seen) setReviewOpen(true)
+  }, [reviewSeenKey])
+
+  function closeReview() {
+    if (reviewSeenKey) {
+      try { localStorage.setItem(reviewSeenKey, '1') } catch { /* private mode */ }
+    }
+    setReviewOpen(false)
+  }
 
   useEffect(() => {
     // Close sheets on route change
@@ -154,6 +178,8 @@ function LeagueShellInner() {
         pendingLtilCount={league.pending_ltil_count || 0}
         switcherOpen={selectorOpen}
         setSwitcherOpen={setSelectorOpen}
+        reviewYear={reviewYear}
+        onOpenReview={() => setReviewOpen(true)}
       />
 
       {/* Top-bar lockout badge — portals into AppShell's slot. */}
@@ -178,6 +204,19 @@ function LeagueShellInner() {
 
       {/* Round recap popup — shows once per completed round on first visit */}
       <RoundRecapModal />
+
+      {/* Season Review takeover — auto-opens once when the season finishes,
+          and any time after that from the rail's Wrapped entry. */}
+      {reviewOpen && reviewYear && (
+        <Suspense fallback={null}>
+          <SeasonReview
+            leagueId={lid}
+            year={reviewYear}
+            teamId={t?.id ?? null}
+            onClose={closeReview}
+          />
+        </Suspense>
+      )}
 
       {/* ═══ Mobile bottom nav ═══
           Mobile-native pattern: Team / Players / League buttons open
@@ -238,6 +277,15 @@ function LeagueShellInner() {
           <div className="more-sheet open">
             <div className="more-sheet-handle"></div>
             <div className="more-sheet-grid">
+              {reviewYear && (
+                <div
+                  className="more-sheet-item"
+                  style={{ color: '#c99cff' }}
+                  onClick={() => { setMoreOpen(false); setReviewOpen(true) }}
+                >
+                  <i className="bi bi-stars"></i><span>{reviewYear} Review</span>
+                </div>
+              )}
               {league.active_draft && (
                 <div className="more-sheet-item more-sheet-item-draft" onClick={() => navigate(`/leagues/${lid}/draft`)}>
                   <i className="bi bi-list-check"></i><span>Draft Room</span>
@@ -400,7 +448,7 @@ function subActive(to: string, currentPath: string, currentSearch: string): bool
 function LeagueRail({
   lid, teamId, leagueName, leagueSeason, userLeagues,
   activeTab, activeDraft, isCommissioner, pendingLtilCount,
-  switcherOpen, setSwitcherOpen,
+  switcherOpen, setSwitcherOpen, reviewYear, onOpenReview,
 }: {
   lid: number
   teamId?: number
@@ -413,6 +461,8 @@ function LeagueRail({
   pendingLtilCount: number
   switcherOpen: boolean
   setSwitcherOpen: (v: boolean | ((s: boolean) => boolean)) => void
+  reviewYear: number | null
+  onOpenReview: () => void
 }) {
   // Pinned-state persists across navigations.
   const [pinned, setPinned] = useState<boolean>(() => {
@@ -582,6 +632,27 @@ function LeagueRail({
           )
         })}
       </nav>
+
+      {/* Season Review — pinned to the foot of the rail in its own colour so
+          it reads as an event, not another nav row. Disappears by itself once
+          the league rolls into the next season. */}
+      {reviewYear && (
+        <div className="kl-rail-foot">
+          <button
+            type="button"
+            className="kl-rail-wrapped"
+            onClick={onOpenReview}
+            title={`${reviewYear} Season in Review`}
+          >
+            <span className="kl-rail-icon"><i className="bi bi-stars"></i></span>
+            <span className="kl-rail-wrapped-body">
+              <span className="kl-rail-wrapped-t">{reviewYear} in Review</span>
+              <span className="kl-rail-wrapped-s">Season wrapped</span>
+            </span>
+            <span className="kl-rail-wrapped-dot" aria-hidden="true"></span>
+          </button>
+        </div>
+      )}
     </aside>
     </>
   )

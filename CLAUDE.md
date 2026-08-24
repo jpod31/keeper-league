@@ -40,40 +40,13 @@ status line — all on a page the user was happy with).
 immediately. The flow is always: build (if frontend changed) → commit → push →
 run the server update script.
 
-```
-# 1. If frontend/src changed, rebuild the SPA bundle (CSS-only changes DON'T need this):
-cd frontend && npm run build        # tsc -b && vite build → outputs to ../static/spa/
+Steps, server details and the four validation gates live in
+`.claude/skills/deploy-and-validate`. Two things that must never be unloaded:
 
-# 2. Commit + push (main branch, remote: origin → github.com/jpod31/keeper-league)
-git add <files> && git commit -m "..." && git push origin HEAD
-
-# 3. Deploy to prod (pulls, installs deps, restarts gunicorn, confirms running)
-ssh root@43.224.183.136 'bash /opt/keeper-league/scripts/update_server.sh'
-```
-
-- **Server**: `root@43.224.183.136`, app at `/opt/keeper-league`, service
-  `keeper-league` (gunicorn+eventlet behind nginx). Logs:
-  `journalctl -u keeper-league -f`.
-- **CSV/XLSX data is gitignored** — upload separately via `scp` to
-  `/opt/keeper-league/data/` then `chown keeper:keeper`. Ratings XLSX path is in
-  server `.env` (`RATINGS_XLSX_PATH`).
-
-### Validation before declaring done
-1. **Tests**: `python -m pytest -q`. Baseline = **39 pass / 5 fail**. The 5
-   failures are pre-existing (rate-limit, live-scores fixtures, standings
-   finalize). A change is safe if those 37 stay green and no NEW failures appear.
-2. **Offline simulation**: copy the prod DB to test against real data — you MUST
-   copy all three SQLite files: `keeper_league.db` **+ `.db-wal` + `.db-shm`**
-   (uncommitted WAL pages live in -wal; copying only .db misses recent writes).
-3. **Visual render**: `_mobtest/` holds a puppeteer-core harness driving the
-   installed Chrome (`C:/Program Files/Google/Chrome/Application/chrome.exe`) to
-   screenshot pages/components at given viewports. Use it to confirm layout, no
-   overflow. Type-check/build passing ≠ "looks right".
-4. **Endpoint health (avoid the 404 trap)**: in SPA mode a 404 is served as the
-   React shell with **HTTP 200**. So a bare `200` proves nothing. Test the REAL
-   route with `?format=json` and expect **401** (auth required) — never a 500,
-   never a 200 HTML shell. Example:
-   `curl "https://keeperlg.com/leagues/1/team/1?format=json"` → `{"error":"Authentication required"}` 401.
+- **Never trust a bare HTTP 200 as a health check** — in SPA mode a 404 is served as
+  the React shell with status 200. Test the real route with `?format=json`.
+- **Copy all three SQLite files** (`.db` + `.db-wal` + `.db-shm`) when snapshotting the
+  prod DB; `.db` alone silently misses recent writes.
 
 ---
 
@@ -128,19 +101,10 @@ ssh root@43.224.183.136 'bash /opt/keeper-league/scripts/update_server.sh'
 
 All registered in `app.py::create_app`. Most JSON-API blueprints are
 `csrf.exempt` (SPA sends JSON, not form tokens; all behind `@login_required`).
-
-| Blueprint (name) | url_prefix | File(s) |
-|---|---|---|
-| auth | `/auth` | `auth.py` |
-| leagues | `/leagues` | `leagues.py` + side-effect imports `leagues_settings.py`, `leagues_season.py`, `leagues_players.py`, `leagues_commissioner.py` (each registers more routes onto `leagues_bp`) |
-| draft_live | `/leagues` | `draft.py` |
-| team | `/leagues` | `team.py` |
-| trades | `/leagues` | `trades.py` |
-| matchups | `/leagues` | `matchups.py` |
-| reserve7s | `/leagues` | `reserve7s.py` |
-| comms | `/leagues` | `comms.py` |
-| admin | `/admin` | `admin.py` |
-| spa_api | `/api` | `spa_api.py` (+ side-effect import of `innovation_endpoints.py`) |
+Note the side-effect imports: `leagues.py` pulls in `leagues_settings.py`,
+`leagues_season.py`, `leagues_players.py` and `leagues_commissioner.py`, each of which
+registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
+`innovation_endpoints.py`.
 
 ---
 
@@ -201,3 +165,4 @@ failures (NOT regressions — don't chase unless asked):
 
 Longer-form design/backlog notes live in `docs/` (`REDESIGN_BACKLOG.md`,
 `UX_MODERNISATION.md`) — historical context, not authoritative for current code.
+
