@@ -20,6 +20,8 @@ export interface FieldData {
   emergency_players: Player[]; emergency_ids: number[]
   sevens_players: Player[]; sevens_ids: number[]; sevens_captain_id: number | null
   sevens_captain_enabled: boolean; has_7s_fixture: boolean
+  /** Round the 7s side is being picked for; null once the season is done. */
+  sevens_round?: number | null
   injury_list: Player[]
   ltil_entries: { player_id: number; player_name: string }[]
   ltil_full: { id: number; player_id: number; player_name: string; player_position: string; player_sc_avg: number; replacement_name: string | null }[]
@@ -110,8 +112,12 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     return () => document.removeEventListener('keydown', handler)
   }, [actions])
 
-  function PlayerCard({ p, posClass, isFlex, isReserve }: {
+  function PlayerCard({ p, posClass, isFlex, isReserve, inSevens, slotNo }: {
     p: Player | null; posClass: string; isFlex?: boolean; isReserve?: boolean
+    /** Rendered inside the 7s squad list — the section already says "7s", so
+     *  the card doesn't repeat it. */
+    inSevens?: boolean
+    slotNo?: number
   }) {
     if (!p) {
       return (
@@ -152,6 +158,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       'fv-card', `fv-card-${posClass}`,
       isFlex && 'fv-card-flex', isReserve && 'fv-card-reserve',
       isEmg && 'fv-card-emergency', is7s && 'fv-card-7s',
+      inSevens && 'fv-card-in7s',
       isCap && 'fv-card-captain', isVC && 'fv-card-vc',
       isLocked && 'fv-card-locked',
       isSwapActive && 'fv-swap-active', isSwapEligible && 'fv-swap-eligible',
@@ -177,7 +184,11 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         {isCap && <div className="fv-ribbon fv-ribbon-cap"><span>C</span></div>}
         {isVC && !isCap && <div className="fv-ribbon fv-ribbon-vc"><span>VC</span></div>}
         {isEmg && !isCap && !isVC && <div className="fv-ribbon fv-ribbon-emg"><span>E</span></div>}
-        {is7s && !isEmg && !isCap && !isVC && <div className="fv-ribbon fv-ribbon-7s"><span>{is7c ? '7C' : '7'}</span></div>}
+        {is7c && <div className="fv-ribbon fv-ribbon-7c" title="7s captain"><span>C</span></div>}
+        {is7s && !inSevens && !is7c && !isEmg && !isCap && !isVC && (
+          <div className="fv-ribbon fv-ribbon-7s" title="In the 7s squad"><span>7</span></div>
+        )}
+        {inSevens && slotNo !== undefined && <div className="fv-7s-slotno">{slotNo}</div>}
 
         {/* Status */}
         {isLocked && <div className="fv-selected fv-locked" title="Locked — game started"><i className="bi bi-lock-fill"></i></div>}
@@ -432,17 +443,46 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         </div>
       )}
 
-      {/* 7s */}
-      {fd.has_7s_fixture && (
-        <div className="fv-7s-section">
-          <div className="fv-7s-hdr"><i className="bi bi-7-circle me-1"></i>7s Squad<span className="fv-zone-tally ms-2">{fd.sevens_players.length} / 7</span></div>
-          {fd.sevens_players.length > 0 ? (
-            <div className="fv-reserves-grid">{fd.sevens_players.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
-          ) : (
-            <div className="text-center py-3" style={{ color: '#484f58', fontSize: '.8rem' }}>Tap the <span style={{ color: '#bc8cff', fontWeight: 600 }}>7</span> button on any reserve to add them to your 7s squad</div>
-          )}
-        </div>
-      )}
+      {/* 7s — a seven-slot team sheet rather than seven cards each badged "7".
+          The section header carries the identity; the slots show at a glance
+          how many places are still to fill. */}
+      {fd.has_7s_fixture && (() => {
+        const picked = fd.sevens_players
+        const roundOver = fd.sevens_round == null
+        const empties = Math.max(0, 7 - picked.length)
+        return (
+          <div className={`fv-7s-section${roundOver ? ' fv-7s-closed' : ''}`}>
+            <div className="fv-7s-hdr">
+              <i className="bi bi-7-circle me-1"></i>7s Squad
+              <span className="fv-zone-tally ms-2">{picked.length} / 7</span>
+              {!roundOver && fd.sevens_round != null && (
+                <span className="fv-7s-round">Round {fd.sevens_round}</span>
+              )}
+              {roundOver && <span className="fv-7s-round fv-7s-round-off">Season complete</span>}
+            </div>
+            {picked.length > 0 || !roundOver ? (
+              <div className="fv-reserves-grid fv-7s-grid">
+                {picked.map((p, i) => (
+                  <PlayerCard key={p.id} p={p}
+                    posClass={(p.position || 'MID').split('/')[0].toLowerCase()}
+                    isReserve inSevens slotNo={i + 1} />
+                ))}
+                {!roundOver && Array.from({ length: empties }).map((_, i) => (
+                  <div className="fv-card fv-card-reserve fv-7s-slot-empty" key={`s7-empty-${i}`}>
+                    <span className="fv-7s-slotno">{picked.length + i + 1}</span>
+                    <i className="bi bi-plus-lg"></i>
+                    <span className="fv-7s-slot-hint">Add a reserve</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="fv-7s-empty-note">
+                No 7s side was named for the final round — the season is done.
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Injury list */}
       {fd.injury_list.length > 0 && (

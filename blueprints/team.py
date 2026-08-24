@@ -713,6 +713,7 @@ def squad(league_id, team_id):
                 "emergency_players": [_serialize_player(p) for p in fd.get("emergency_players", [])],
                 "emergency_ids": list(fd.get("emergency_ids", [])),
                 "sevens_players": [_serialize_player(p) for p in fd.get("sevens_players", [])],
+                "sevens_round": fd.get("sevens_round"),
                 "sevens_ids": list(fd.get("sevens_ids", [])),
                 "sevens_captain_id": fd.get("sevens_captain_id"),
                 "sevens_captain_enabled": fd.get("sevens_captain_enabled", False),

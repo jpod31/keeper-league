@@ -1671,10 +1671,12 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   box-shadow: 0 0 10px rgba(56,166,215,.2);
   background: linear-gradient(135deg, rgba(56,166,215,.12), rgba(56,166,215,.04) 70%);
 }
+/* Base 7s tint. The solid surface + jumper stripe live in the 7s squad
+   block further down; this only covers a 7s player rendered outside it. */
 .fv-card-7s {
   border-color: rgba(188,140,255,.45);
   box-shadow: 0 0 10px rgba(188,140,255,.2);
-  background: linear-gradient(135deg, rgba(155,89,182,.12), rgba(155,89,182,.04) 70%);
+  background: linear-gradient(135deg, rgba(155,89,182,.14), var(--kl-bg-card, #161b22) 70%);
 }
 
 /* Locked card — game started, no action bubbles */
@@ -2070,6 +2072,136 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   border-color: rgba(188,140,255,.25);
   background: linear-gradient(135deg, rgba(155,89,182,.1), var(--kl-bg-card) 60%);
 }
+
+/* ═══ 7s squad — card treatment ═══════════════════════════════════════
+   Redesigned 2026-08-24. The old treatment gave every 7s player a
+   translucent purple card plus a floating "7" bubble, so seven cards each
+   shouted the one thing their own section header already said, and you
+   could see the oval through them. Now the section owns the identity: a
+   solid card with a purple jumper stripe down the leading edge, numbered
+   1-7 like a team sheet, with the remaining places shown as open slots.
+   The only per-card badge left is the captain's armband.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Solid surface. The card must never be see-through — the field showing
+   through a player was the single strangest part of the old look. */
+.fv-card-7s,
+.fv-7s-section .fv-card-reserve,
+.fv-card-in7s {
+  opacity: 1;
+  background: linear-gradient(150deg, #221a33 0%, var(--kl-bg-card, #161b22) 62%);
+  border-color: rgba(188,140,255,.34);
+  box-shadow: 0 2px 10px -4px rgba(0,0,0,.6);
+}
+
+/* Jumper stripe — the group mark, carried on every card in the section so
+   they read as one side. Mirrors the section header's left border. */
+.fv-card-in7s { position: relative; overflow: hidden; }
+.fv-card-in7s::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #d4b3ff, #9b59b6);
+  box-shadow: 0 0 8px -1px rgba(188,140,255,.7);
+}
+.fv-card-in7s:hover { border-color: rgba(188,140,255,.6); }
+
+/* Slot number — quiet, bottom-left, so it never competes with the name. */
+.fv-7s-slotno {
+  position: absolute;
+  left: 5px; bottom: 3px;
+  font-size: .5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(212,179,255,.55);
+  letter-spacing: .04em;
+  pointer-events: none;
+}
+
+/* Captain's armband. One card in seven, so it earns a badge. */
+.fv-ribbon-7c span {
+  background: linear-gradient(135deg, #d4b3ff, #9b59b6);
+  color: #1b0f2b;
+  font-size: .5rem;
+}
+
+/* Open slots — a team sheet with places still to fill reads better than a
+   sentence telling you to go and fill them. */
+.fv-7s-slot-empty {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 84px;
+  border: 1px dashed rgba(188,140,255,.28);
+  background: rgba(155,89,182,.05);
+  color: rgba(188,140,255,.5);
+  box-shadow: none;
+}
+.fv-7s-slot-empty i { font-size: .85rem; }
+.fv-7s-slot-hint {
+  font-size: .52rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: rgba(188,140,255,.42);
+}
+
+/* Header gains the round it is picking for — the 7s side is per-round, and
+   not saying which round is half the reason it felt untethered. */
+.fv-7s-round {
+  margin-left: auto;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(212,179,255,.65);
+  background: rgba(155,89,182,.14);
+  border: 1px solid rgba(188,140,255,.28);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.fv-7s-round-off {
+  color: rgba(255,255,255,.42);
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.12);
+}
+.fv-7s-hdr { align-items: center; }
+
+/* Mobile 7s group header — same round pill as the desktop section. */
+.mob-7s-round {
+  margin-left: auto;
+  font-size: .5rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: rgba(212,179,255,.7);
+  background: rgba(155,89,182,.16);
+  border: 1px solid rgba(188,140,255,.3);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.fv-7s-empty-note {
+  text-align: center;
+  padding: 18px 12px;
+  font-size: .78rem;
+  color: #6e7681;
+}
+
+/* Season done: the side is history, so it reads back rather than invites. */
+.fv-7s-closed .fv-card-in7s::before { background: rgba(255,255,255,.16); box-shadow: none; }
+.fv-7s-closed .fv-card-in7s { border-color: rgba(255,255,255,.1); }
+
+@media (max-width: 768px) {
+  .fv-7s-slot-empty { min-height: 68px; }
+  .fv-7s-round { font-size: .5rem; padding: 2px 7px; }
+}
+
 
 /* ═══ Injury List Section ═══ */
 .fv-injury-section {
