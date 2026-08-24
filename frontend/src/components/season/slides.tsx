@@ -886,7 +886,7 @@ const draft: SlideDef = {
           eyebrow={`Draft night · ${d.draft.total_picks} picks`}
           title={<>Who actually</>}
           accentWord="won the draft"
-          sub={`${heist.team_name} took ${heist.name} at pick ${heist.pick}. He finished the year the ${ord(heist.value_rank)} most productive player drafted.`}
+          sub={`${heist.team_name} took ${heist.name} at pick ${heist.pick} — he finished the ${ord(heist.value_rank)} most productive player drafted. Value is judged on what a pick returned against what he was expected to give, not raw points, and players under 22 or on an LTIL are left out of the misses.`}
         />
         <div className="sr-grid sr-g2" style={{ marginBottom: 16 }}>
           <div className="sr-card sr-card-hi sr-card-pad sr-pop">
@@ -909,21 +909,25 @@ const draft: SlideDef = {
           </div>
           {bust && (
             <div className="sr-card sr-card-pad sr-pop" style={{ animationDelay: '90ms' }}>
-              <div className="sr-label"><i className="bi bi-emoji-dizzy" /> Never happened</div>
+              <div className="sr-label"><i className="bi bi-graph-down-arrow" /> Didn't return the investment</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 12 }}>
                 <ClubMark p={bust} size="lg" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="sr-h2">{bust.name}</div>
                   <div className="sr-tile-s">
-                    {bust.afl_team} · {bust.team_name} · pick #{bust.pick}
+                    {bust.afl_team} · {bust.team_name} · {bust.age}yo · pick #{bust.pick}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '1.7rem', fontWeight: 900, color: '#ff9aa4', lineHeight: 1 }}>
-                    {bust.played}
+                    −{Math.round(bust.regression ?? 0)}
                   </div>
-                  <div className="sr-label">games in your 23</div>
+                  <div className="sr-label">on his {bust.expected} expected</div>
                 </div>
+              </div>
+              <div className="sr-tile-s" style={{ marginTop: 10 }}>
+                Averaged {bust.avg} across {bust.played_23} of {bust.available} available weeks
+                {bust.miss_tag ? ` — ${bust.miss_tag}.` : '.'}
               </div>
             </div>
           )}
@@ -944,9 +948,15 @@ const draft: SlideDef = {
                 <div className="sr-row-s">#{mine.top.pick} · {(mine.top.points ?? 0).toLocaleString()} pts</div>
               </div>
               <div>
-                <span className="sr-pill bad">One to forget</span>
-                <div className="sr-row-t" style={{ marginTop: 8 }}>{mine.worst.name}</div>
-                <div className="sr-row-s">#{mine.worst.pick} · {(mine.worst.points ?? 0).toLocaleString()} pts</div>
+                <span className="sr-pill bad">Worst value</span>
+                <div className="sr-row-t" style={{ marginTop: 8 }}>
+                  {mine.worst ? mine.worst.name : 'Nothing to answer for'}
+                </div>
+                <div className="sr-row-s">
+                  {mine.worst
+                    ? <>{mine.worst.age}yo · {mine.worst.avg} v {mine.worst.expected} expected</>
+                    : 'no pick went backwards on you'}
+                </div>
               </div>
             </div>
           </div>
@@ -967,15 +977,24 @@ const draft: SlideDef = {
           </div>
           <div>
             <div className="sr-card-title" style={{ padding: '0 2px 8px' }}>
-              <i className="bi bi-arrow-down-right" /> Early picks that didn't land
+              <i className="bi bi-arrow-down-right" /> Worst value of the year
             </div>
             <div className="sr-stack">
               {d.draft.busts.slice(0, 5).map((p, i) => (
                 <PlayerRow key={p.id} p={p} rank={i + 1}
-                  value={`#${p.pick}`} valueLabel={`${(p.points ?? 0).toLocaleString()} pts`}
-                  meta={`${p.afl_team} · ${p.team_name} · ${p.played} games`} delay={i * 55} />
+                  value={`−${Math.round(p.regression ?? 0)}`} valueLabel="v expected"
+                  meta={<>{p.age}yo · {p.avg} avg · {p.played_23}/{p.available}w · {p.miss_tag}</>}
+                  delay={i * 55} />
               ))}
             </div>
+            {/* A season lost to the LTIL is not a bad pick in a keeper league —
+                say so rather than leaving people wondering who's missing. */}
+            {d.draft.miss_excluded_ltil.length > 0 && (
+              <div className="sr-tile-s" style={{ marginTop: 10 }}>
+                Long-term injuries excluded — {d.draft.miss_excluded_ltil.length} players
+                spent the year on an LTIL and keep their keeper value.
+              </div>
+            )}
           </div>
         </div>
       </div>

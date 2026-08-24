@@ -113,9 +113,13 @@ def commissioner_hub(league_id):
         league_id=league_id, draft_round_type="supplemental", is_mock=False
     ).order_by(DraftSession.id.desc()).first()
     if current_phase == "offseason":
+        from models.season_manager import offseason_draft_done
         if off_supp and off_supp.status == "in_progress":
             off_draft_status = "active"
-        elif off_supp and off_supp.status == "completed":
+        # A supplemental draft completed earlier in the year (the mid-season
+        # one) must not read as THIS off-season's draft — free agents and SSP
+        # signings unlock off the back of this flag.
+        elif offseason_draft_done(league_id, league.season_year):
             off_draft_status = "completed"
         elif off_delist_status == "completed" and off_ssp_status in ("completed", "locked"):
             off_draft_status = "pending"
@@ -197,6 +201,9 @@ def commissioner_hub(league_id):
 
     teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.name).all()
 
+    from models.season_manager import pool_pickup_state
+    _pool_state = pool_pickup_state(league)
+
     if request.args.get("format") == "json":
         def _ltil(l):
             return {
@@ -229,7 +236,14 @@ def commissioner_hub(league_id):
                 "mid_season_delist_required": season_cfg.mid_season_delist_required if season_cfg else None,
                 "offseason_delist_min": season_cfg.offseason_delist_min if season_cfg else None,
                 "ssp_enabled": bool(season_cfg.ssp_enabled) if season_cfg else False,
+                "supplemental_draft_date": (
+                    season_cfg.supplemental_draft_date.strftime("%Y-%m-%d")
+                    if season_cfg and season_cfg.supplemental_draft_date else None
+                ),
             },
+            # Whether the pool is signable right now, and why not if it isn't —
+            # the commissioner is the one who unblocks it by running the draft.
+            "pool": dict(zip(("open", "reason"), _pool_state)),
             "midseason": {
                 "trade_status": mid_trade_status,
                 "delist_status": mid_delist_status,

@@ -332,6 +332,37 @@ def offseason_start_step(league_id):
         db.session.commit()
         flash("Off-season trade window closed.", "info")
 
+    elif step == "set_draft_date":
+        raw = (request.form.get("draft_date") or "").strip()
+        if not raw:
+            season_cfg.supplemental_draft_date = None
+            db.session.commit()
+            flash("Draft date cleared.", "info")
+        else:
+            try:
+                # Accept either a plain date or a full datetime-local value.
+                new_date = datetime.fromisoformat(raw)
+                if new_date.tzinfo is None:
+                    new_date = new_date.replace(tzinfo=timezone.utc)
+                season_cfg.supplemental_draft_date = new_date
+                db.session.commit()
+                flash(f"Draft date set to {new_date.strftime('%d %b %Y')}.", "success")
+
+                from models.database import FantasyTeam
+                from models.notification_manager import create_notification
+                for t in FantasyTeam.query.filter_by(league_id=league_id).all():
+                    if t.owner_id:
+                        create_notification(
+                            user_id=t.owner_id, league_id=league_id,
+                            notif_type="season_transition",
+                            title=f"Draft set for {new_date.strftime('%d %b %Y')}",
+                            body="Free agents and SSP signings open once the draft is done.",
+                            link=f"/leagues/{league_id}/commissioner",
+                        )
+                db.session.commit()
+            except ValueError:
+                flash("Invalid date format.", "warning")
+
     elif step == "finish_offseason":
         now = datetime.now(timezone.utc)
         if season_cfg:

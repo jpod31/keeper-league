@@ -284,6 +284,36 @@ out are better framed as return-over-expectation than raw points.
 
 ---
 
+## BACKLOG — Squad page reads wrong once the H&A season ends
+
+**Status: not built. Deferred by the owner 2026-08-24 — do not implement
+without an explicit go.** Owner's words: "this is a really strange design tbh".
+
+Two symptoms, both on the squad/field view now the season is over:
+
+**1. Every player shows a BYE badge.** The page anchors to the *current AFL
+round*, which is now R25 — finals week. Only four clubs have a game
+(Melbourne v Carlton, Western Bulldogs v Collingwood), so every other player
+correctly has "no game this round" and the UI renders that as BYE. Factually
+right, completely useless: in the off-season there is no next round to plan
+for. Options to weigh — suppress the bye layer entirely once the league is in
+`offseason`, or anchor the squad view to the last completed H&A round instead
+of the live AFL round.
+
+**2. Players appear in the 7s side that the owner never picked.** Harvey
+Thomas and Patrick Cripps show on the field with a "7" badge top-right and a
+transparent card background. Cripps in particular is a senior-side player who
+should never be 7s-eligible. Start at `blueprints/team.py` around
+`sevens_ids` / `_ensure_7s_lineup` (`_get_next_7s_round` returns a round past
+the end of the season, so the "upcoming" 7s lineup is probably being
+auto-seeded from whoever is left rather than from a real selection), then the
+`is7s` badge + transparent-card treatment in the field view.
+
+The transparent-card + corner-badge treatment for 7s players is itself flagged
+as confusing and should be redesigned at the same time, not just re-gated.
+
+---
+
 ## Definition of done (every item)
 
 1. **Visual** — matches the pitch; user signs off after live preview

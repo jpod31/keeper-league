@@ -36,7 +36,9 @@ interface CommissionerData {
     offseason_delist_min: number | null
     ssp_enabled: boolean
     mid_season_trade_enabled?: boolean
+    supplemental_draft_date: string | null
   }
+  pool: { open: boolean; reason: string | null }
   midseason: { trade_status: string; delist_status: string; draft_status: string; lock_status: string }
   offseason: { delist_status: string; ssp_status: string; draft_status: string; trade_status: string }
   delist: { is_open: boolean; min_delists: number; teams: TeamProgress[]; period_id: number | null; period_status: string | null; closes_at: string | null }
@@ -57,6 +59,28 @@ const PHASE_BADGE: Record<PhaseKey, { bg: string; label: string }> = {
 }
 
 const SUMMARY_CSS = `
+.comm-draftdate {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 12px; border-radius: 8px;
+  background: rgba(88,166,255,.06);
+  border: 1px solid rgba(88,166,255,.22);
+}
+.comm-draftdate label {
+  margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; color: #8b949e;
+}
+.comm-draftdate-input {
+  background: #0d1117; border: 1px solid #30363d; color: #e6edf3;
+  border-radius: 6px; padding: .3rem .5rem; font-size: .8rem;
+  color-scheme: dark;
+}
+.comm-poolstate {
+  display: flex; align-items: center; width: 100%;
+  font-size: .76rem; color: #e0a458;
+  background: rgba(210,153,34,.08); border: 1px solid rgba(210,153,34,.25);
+  border-radius: 8px; padding: 7px 12px;
+}
+.comm-poolstate.open { color: #3fb950; background: rgba(63,185,80,.08); border-color: rgba(63,185,80,.25); }
 .comm-summary-card { background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 10px; padding: 14px; text-align: center; }
 .comm-summary-pending { border-color: rgba(210,153,34,.35); background: rgba(210,153,34,.05); }
 .comm-summary-active  { border-color: rgba(63,185,80,.3); background: rgba(63,185,80,.04); }
@@ -82,6 +106,7 @@ export function CommissionerPage() {
   const navigate = useNavigate()
   const { data, loading, refetch } = useFetch<CommissionerData>(`/leagues/${leagueId}/commissioner?format=json`)
   const [busy, setBusy] = useState<string | null>(null)
+  const [draftDate, setDraftDate] = useState<string>('')
   const [flashMsg, setFlashMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
 
   // Delist / Force-Move tool state
@@ -143,12 +168,18 @@ export function CommissionerPage() {
     }
   }
 
-  async function startStep(phase: 'midseason' | 'offseason', step: string, confirmMsg?: string) {
+  async function startStep(
+    phase: 'midseason' | 'offseason',
+    step: string,
+    confirmMsg?: string,
+    extra?: Record<string, string>,
+  ) {
     if (confirmMsg && !confirm(confirmMsg)) return
     setBusy(`${phase}-${step}`)
     try {
       const fd = new FormData()
       fd.set('step', step)
+      if (extra) for (const [k, v] of Object.entries(extra)) fd.set(k, v)
       const res = await fetch(`/leagues/${leagueId}/${phase}/start-step`, {
         method: 'POST', body: fd, credentials: 'same-origin',
       })
@@ -230,6 +261,8 @@ export function CommissionerPage() {
   }
 
   const { current_phase, midseason, offseason, delist, pending_ltil, active_ltil, recent_history, teams, pending_trades_count, season_cfg } = data
+  const pool = data.pool
+  const draftDateValue = draftDate || season_cfg.supplemental_draft_date || ''
   const phaseBadge = PHASE_BADGE[current_phase] ?? PHASE_BADGE.pre_season
 
   // Phase action button logic mirrors commissioner_hub.html
@@ -364,6 +397,47 @@ export function CommissionerPage() {
                     <i className="bi bi-check-circle me-1"></i>Finish Off-Season
                   </button>
                 )}
+
+                {/* Draft date. Free agents and SSP signings stay shut until the
+                    draft is actually run, so this is the date everyone is
+                    waiting on — it belongs on the dash, not buried in settings. */}
+                <div className="comm-draftdate">
+                  <label htmlFor="off-draft-date">
+                    <i className="bi bi-calendar-event me-1"></i>Draft date
+                  </label>
+                  <input
+                    id="off-draft-date"
+                    type="date"
+                    className="comm-draftdate-input"
+                    value={draftDateValue}
+                    onChange={e => setDraftDate(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary"
+                    disabled={busy === 'offseason-set_draft_date' || !draftDateValue}
+                    onClick={() => startStep('offseason', 'set_draft_date', undefined, { draft_date: draftDateValue })}
+                  >
+                    {season_cfg.supplemental_draft_date ? 'Update' : 'Set date'}
+                  </button>
+                  {season_cfg.supplemental_draft_date && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      disabled={busy === 'offseason-set_draft_date'}
+                      onClick={() => { setDraftDate(''); startStep('offseason', 'set_draft_date', 'Clear the draft date?', { draft_date: '' }) }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <div className={`comm-poolstate${pool.open ? ' open' : ''}`}>
+                  <i className={`bi ${pool.open ? 'bi-unlock-fill' : 'bi-lock-fill'} me-1`}></i>
+                  {pool.open
+                    ? 'Player pool open — free agents and SSP signings are live.'
+                    : (pool.reason || 'Player pool closed.')}
+                </div>
               </>
             )}
 

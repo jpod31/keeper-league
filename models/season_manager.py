@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from models.database import (
     db, DelistPeriod, DelistAction, FantasyTeam, FantasyRoster,
     League, SeasonConfig, DraftSession, LongTermInjury, AflPlayer,
-    FutureDraftPick, Fixture,
+    FutureDraftPick, Fixture, AflGame,
 )
 
 
@@ -414,6 +414,14 @@ def ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id):
             if latest_completed >= season_cfg.ssp_cutoff_round:
                 return None, f"SSP window closed after round {season_cfg.ssp_cutoff_round}."
 
+    # An SSP replacement comes out of the unrostered pool, so it obeys exactly
+    # the same window as a free-agent signing — in the off-season that means
+    # after the draft, never before it.
+    league = db.session.get(League, league_id)
+    allowed, reason = pool_pickup_state(league)
+    if not allowed:
+        return None, reason
+
     ltil = db.session.get(LongTermInjury, ltil_id)
     if not ltil or ltil.team_id != team_id or ltil.removed_at is not None:
         return None, "Invalid LTIL entry."
@@ -503,3 +511,105 @@ def reject_ltil(ltil_id):
     ltil.reviewed_at = datetime.now(timezone.utc)
     db.session.commit()
     return ltil, None
+
+
+# ── Player-pool signings (free agents / SSP) ─────────────────────────
+
+
+def offseason_draft_done(league_id, year):
+    """Has THIS off-season's draft actually been held?
+
+    A completed supplemental draft from earlier in the year (the mid-season
+    one) must not count, so the draft has to have finished after the
+    off-season delist period opened.
+    """
+    period = (
+        DelistPeriod.query
+        .filter_by(league_id=league_id, year=year, period_type="offseason")
+        .order_by(DelistPeriod.id.desc())
+        .first()
+    )
+    since = period.opens_at if period else None
+
+    q = DraftSession.query.filter_by(
+        league_id=league_id, is_mock=False, status="completed",
+    ).filter(DraftSession.draft_round_type == "supplemental")
+    for ds in q.order_by(DraftSession.id.desc()).all():
+        if not since:
+            return True
+        done = ds.completed_at
+        if done is None:
+            continue
+        if done.tzinfo is None:
+            done = done.replace(tzinfo=timezone.utc)
+        anchor = since if since.tzinfo else since.replace(tzinfo=timezone.utc)
+        if done >= anchor:
+            return True
+    return False
+
+
+def pool_pickup_state(league):
+    """Can players be signed out of the unrostered pool right now?
+
+    Returns (allowed, reason). The pool is never a free-for-all — squad spots
+    are filled at the draft. It opens in exactly two places:
+
+      - early in the season, as short-term cover before the SSP cutoff round;
+      - in the off-season, ONLY once the draft has actually been held.
+
+    That second rule is the important one: delisting drops every list below
+    the cap, and without this the pool would be open slather the moment the
+    cuts land, before anyone gets to the draft table.
+    """
+    if not league:
+        return False, "League not found."
+
+    if league.status in ("setup", "drafting"):
+        return False, "Squads are built at the draft, not from the pool."
+
+    active_draft = DraftSession.query.filter_by(
+        league_id=league.id, is_mock=False, status="in_progress",
+    ).first()
+    if active_draft:
+        return False, "A draft is in progress."
+
+    cfg = SeasonConfig.query.filter_by(
+        league_id=league.id, year=league.season_year
+    ).first()
+    phase = (cfg.season_phase if cfg else None) or "regular"
+    in_offseason = league.status == "offseason" or phase == "offseason"
+
+    if in_offseason:
+        if offseason_draft_done(league.id, league.season_year):
+            return True, None
+        when = cfg.supplemental_draft_date if cfg else None
+        if when:
+            return False, (
+                "Free agents and SSP signings open after the draft on "
+                f"{when.strftime('%d %b %Y')}."
+            )
+        return False, (
+            "Free agents and SSP signings open after the draft. "
+            "The commissioner hasn't set a draft date yet."
+        )
+
+    # In-season: the pool is short-term injury cover only, and closes once a
+    # trade window opens (spots then fill via the mid-season draft).
+    if league.trade_window_open:
+        return False, (
+            "Free-agent pickups are paused — squad spots fill via the "
+            "upcoming draft, not the player pool."
+        )
+
+    cutoff = (cfg.ssp_cutoff_round if cfg and cfg.ssp_cutoff_round else 4)
+    latest = (
+        AflGame.query
+        .filter_by(year=league.season_year, status="complete")
+        .order_by(AflGame.afl_round.desc())
+        .first()
+    )
+    current_round = latest.afl_round if latest else 0
+    if current_round >= cutoff:
+        return False, f"SSP pickup window closed after Round {cutoff}."
+
+    return True, None

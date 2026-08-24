@@ -264,31 +264,15 @@ def player_pool(league_id):
         effective_count = roster_count - ltil_count
         below_cap = effective_count < (league.squad_size or 0)
 
-        # Check SSP cutoff round from season config
         sc = SeasonConfig.query.filter_by(
             league_id=league_id, year=league.season_year
         ).first()
         ssp_cutoff_round = sc.ssp_cutoff_round if sc and sc.ssp_cutoff_round else 4
 
-        # Current round = highest completed round in the league's season year
-        latest_completed = (
-            AflGame.query
-            .filter_by(year=league.season_year, status="completed")
-            .order_by(AflGame.afl_round.desc())
-            .first()
-        )
-        current_round = latest_completed.afl_round if latest_completed else 0
-
-        # Free-agent pickups are STRICTLY in-season SSP territory. As soon
-        # as a trade window opens (mid-season or off-season), squad spots
-        # get refilled via the upcoming draft — never via the player pool.
-        # This also covers the case where AflGame.status isn't being
-        # marked "completed" reliably (which made the round check pass).
-        can_pickup = (
-            below_cap
-            and current_round < ssp_cutoff_round
-            and not league.trade_window_open
-        )
+        # One gate for every pool signing — see season_manager.pool_pickup_state.
+        from models.season_manager import pool_pickup_state
+        window_open, window_reason = pool_pickup_state(league)
+        can_pickup = below_cap and window_open
 
     # Keeper Value Index for rostered players
     rostered_pids = list(rostered_map.keys())
@@ -476,12 +460,12 @@ def player_pool(league_id):
         # Add button silently.
         pickup_reason = None
         if user_team and not can_pickup:
-            if league.trade_window_open:
-                pickup_reason = "Pickups paused — squad spots fill via the upcoming draft, not the player pool."
-            elif not below_cap:
-                pickup_reason = f"Your roster is full ({effective_count}/{league.squad_size})."
-            elif current_round >= ssp_cutoff_round:
-                pickup_reason = f"SSP pickup window closed after Round {ssp_cutoff_round}."
+            # The window being shut is the more important thing to say; a full
+            # roster only matters once signing is possible at all.
+            pickup_reason = window_reason or (
+                f"Your roster is full ({effective_count}/{league.squad_size})."
+                if not below_cap else None
+            )
 
         from config import TEAM_LOGOS
         return jsonify({
@@ -535,6 +519,13 @@ def player_pickup(league_id):
         return jsonify({"error": "You don't have a team in this league"}), 403
 
     from models.database import SeasonConfig, AflGame, LongTermInjury
+    # Window first: "the pool isn't open yet" is the useful answer, and it
+    # stays true whether or not the roster happens to have a spare spot.
+    from models.season_manager import pool_pickup_state
+    allowed, reason = pool_pickup_state(league)
+    if not allowed:
+        return jsonify({"error": reason}), 409
+
     roster_count = FantasyRoster.query.filter_by(
         team_id=user_team.id, is_active=True
     ).count()
@@ -545,28 +536,6 @@ def player_pickup(league_id):
     effective_count = roster_count - ltil_count
     if effective_count >= (league.squad_size or 0):
         return jsonify({"error": "Your roster is full (%d/%d)" % (effective_count, league.squad_size)}), 409
-
-    # Hard rule: no free-agent pickups while a trade window is open.
-    # Squad spots are filled by the upcoming draft, not the player pool.
-    if league.trade_window_open:
-        return jsonify({
-            "error": "Free-agent pickups are paused — squad spots fill via the upcoming draft, not the player pool."
-        }), 409
-
-    # Check SSP cutoff round (in-season SSP-only window)
-    sc = SeasonConfig.query.filter_by(
-        league_id=league_id, year=league.season_year
-    ).first()
-    cutoff = sc.ssp_cutoff_round if sc and sc.ssp_cutoff_round else 4
-    latest_completed = (
-        AflGame.query
-        .filter_by(year=league.season_year, status="completed")
-        .order_by(AflGame.afl_round.desc())
-        .first()
-    )
-    current_round = latest_completed.afl_round if latest_completed else 0
-    if current_round >= cutoff:
-        return jsonify({"error": "SSP pickup window closed after Round %d" % cutoff}), 409
 
     data = request.get_json(silent=True) or {}
     player_id = data.get("player_id")

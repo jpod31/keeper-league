@@ -828,6 +828,103 @@ def _sevens(s):
     }
 
 
+MISS_MIN_AGE = 22
+
+
+def _ltil_player_ids(league_id, year):
+    """Players a club formally parked on the long-term injury list.
+
+    In a keeper league a season lost to injury is not a bad pick — the asset is
+    still there next year — so these never appear as a poor investment.
+    """
+    from models.database import LongTermInjury
+    return {
+        row[0] for row in
+        LongTermInjury.query
+        .filter_by(league_id=league_id, year=year, status="approved")
+        .with_entities(LongTermInjury.player_id).all()
+    }
+
+
+def _expected_avg(row, s):
+    """What this player was reasonably expected to return.
+
+    Prior-season output is the honest yardstick. Where it's missing (first
+    year, or no prior data), fall back to the pre-season rating, which is the
+    market's own view of him.
+    """
+    p = s.players.get(row["id"])
+    prev = getattr(p, "sc_avg_prev", None) if p else None
+    if prev and prev > 0:
+        return float(prev)
+    rating = (getattr(p, "rating_start", None) or row.get("rating") or 0) if p else 0
+    if rating:
+        # Rough map of the rating scale onto SC output: 70 -> ~65, 90 -> ~115.
+        return max(40.0, (rating - 70) * 2.5 + 65)
+    return 0.0
+
+
+def _age_band(age):
+    """(multiplier, tag) — the same shortfall means different things by age."""
+    if age is None:
+        return 1.0, "underperformed"
+    if age >= 28:
+        return 1.35, "past it"          # expensive, declining, little keeper value left
+    if age >= 25:
+        return 1.15, "went backwards"
+    return 1.0, "went backwards"        # 22-24: prime years, a real miss
+
+
+def _score_misses(rows, s, num_teams):
+    """Rank picks by investment-vs-return rather than raw points.
+
+    Raw points punishes exactly the wrong people: a 20-year-old on six games is
+    a normal keeper runway, while a 28-year-old taken early who averaged 20
+    below his last season is the actual failure. So the score is how far a
+    player fell short of what he was expected to give, weighted up for age and
+    for how early he was taken.
+    """
+    ltil = _ltil_player_ids(s.league_id, s.year)
+    early_cut = max(12, num_teams * 6)
+
+    scored = []
+    for r in rows:
+        r["on_ltil"] = r["id"] in ltil
+        expected = _expected_avg(r, s)
+        r["expected"] = round(expected)
+        r["regression"] = _r1(expected - (r["avg"] or 0)) if expected else 0.0
+
+        age = r.get("age")
+        # Kids get a free year — that IS the keeper plan, not a misfire.
+        if r["on_ltil"] or age is None or age < MISS_MIN_AGE:
+            r["miss"] = None
+            r["miss_tag"] = None
+            continue
+        # Only picks that actually cost something count as an investment.
+        p = s.players.get(r["id"])
+        rating_start = (getattr(p, "rating_start", None) or 0) if p else 0
+        if r["pick"] > early_cut and rating_start < 80:
+            r["miss"] = None
+            r["miss_tag"] = None
+            continue
+
+        mult, tag = _age_band(age)
+        inv = max(0.0, 1 - (r["pick"] - 1) / float(early_cut))
+        shortfall = max(0.0, expected - (r["avg"] or 0))
+        # Weeks he was fit enough to be picked but wasn't in anyone's 23.
+        absent = max(0, (r.get("available") or 0) - (r.get("played_23") or 0))
+        miss = shortfall * mult * (0.55 + 0.45 * inv) + absent * 1.4
+
+        if absent >= 8 and shortfall < 8:
+            tag = "barely sighted"
+        r["miss"] = _r1(miss)
+        r["miss_tag"] = tag
+        scored.append(r)
+
+    scored.sort(key=lambda r: -r["miss"])
+    return scored
+
+
 def _draft(s, idx):
     sessions = DraftSession.query.filter_by(
         league_id=s.league_id, is_mock=False
@@ -852,12 +949,14 @@ def _draft(s, idx):
     for p in picks:
         pts = total_by_player.get(p.player_id, 0.0)
         played = played_by_player.get(p.player_id, 0)
+        base = _player_row(s, idx, p.team_id, p.player_id)
         rows.append({
             **s.pmeta(p.player_id),
             "pick": p.pick_number, "draft_round": p.draft_round,
             "team_id": p.team_id, "team_name": s.tname.get(p.team_id, ""),
             "accent": _accent(p.team_id),
             "points": round(pts), "played": played,
+            "played_23": base["played_23"], "available": base["available"],
             "avg": _r1(pts / played) if played else 0.0,
             "auto": bool(p.is_auto_pick),
         })
@@ -870,18 +969,21 @@ def _draft(s, idx):
 
     steals = sorted([r for r in rows if r["points"] > 0],
                     key=lambda r: -r["surplus"])[:6]
-    early = [r for r in rows if r["pick"] <= max(12, len(s.team_ids) * 4)]
-    busts = sorted(early, key=lambda r: r["points"])[:6]
+
+    # Worst value, not lowest points — see _score_misses.
+    misses = _score_misses(rows, s, len(s.team_ids))
+    busts = misses[:6]
 
     best_by_team = []
     for tid in s.team_ids:
         mine = [r for r in rows if r["team_id"] == tid]
         if not mine:
             continue
+        my_misses = [r for r in misses if r["team_id"] == tid]
         best_by_team.append({
             "team_id": tid, "name": s.tname.get(tid, ""), "accent": _accent(tid),
             "best": max(mine, key=lambda r: r["surplus"]),
-            "worst": min(mine, key=lambda r: r["surplus"]),
+            "worst": my_misses[0] if my_misses else None,
             "top": max(mine, key=lambda r: r["points"]),
         })
 
@@ -890,6 +992,9 @@ def _draft(s, idx):
         "first_round": [r for r in rows if r["pick"] <= len(s.team_ids)],
         "steals": steals,
         "busts": busts,
+        "miss_excluded_ltil": sorted(
+            {r["name"] for r in rows if r.get("on_ltil")}
+        ),
         "best_by_team": best_by_team,
     }
 

@@ -470,8 +470,11 @@ function SquadPageInner() {
                   <span className="squad-cmd-trade open">
                     <i className={`bi ${data.trade_is_open ? 'bi-arrow-left-right' : 'bi-scissors'}`}></i>
                     {data.trade_is_open && data.delist_is_open
-                      ? 'Trades & delists open'
-                      : data.trade_is_open ? 'Trade period open' : 'Delist period open'}
+                      ? `Trades open · delists ${data.team_delist_count}/${data.min_delists || 0}`
+                      : data.trade_is_open ? 'Trade period open'
+                        : data.min_delists
+                          ? `Delists ${data.team_delist_count}/${data.min_delists}`
+                          : 'Delist period open'}
                   </span></>
                 )}
                 {is_owner && !data.trade_is_open && !data.delist_is_open && (
@@ -634,15 +637,36 @@ function SquadPageInner() {
               </div>
             )
           })()}
-          {data.delist_is_open && data.max_delists == null && (
-            <div className="kl-status-pill kl-status-pill-warn" title="Delist period open (no per-team cap)">
-              <span className="kl-status-pill-icon"><i className="bi bi-x-octagon"></i></span>
-              <span className="kl-status-pill-text">
-                <span className="kl-status-pill-title">Delists open</span>
-                <span className="kl-status-pill-sub">hover player → ⊗</span>
-              </span>
-            </div>
-          )}
+          {/* Uncapped period (the off-season one): the number that matters is
+              the MINIMUM you still have to hit, so show progress against it.
+              Goes neutral-green once the quota is met. */}
+          {data.delist_is_open && data.max_delists == null && (() => {
+            const done = data.team_delist_count
+            const need = data.min_delists || 0
+            const met = need === 0 || done >= need
+            return (
+              <div
+                className={`kl-status-pill ${met ? 'kl-status-pill-ok' : 'kl-status-pill-warn'}`}
+                title={need
+                  ? `You have delisted ${done} of a required minimum ${need}`
+                  : 'Delist period open (no minimum)'}
+              >
+                <span className="kl-status-pill-icon">
+                  <i className={`bi ${met && need ? 'bi-check2-circle' : 'bi-x-octagon'}`}></i>
+                </span>
+                <span className="kl-status-pill-text">
+                  <span className="kl-status-pill-title">
+                    {need ? `Delists ${done}/${need}` : 'Delists open'}
+                  </span>
+                  <span className="kl-status-pill-sub">
+                    {!need ? 'hover player → ⊗'
+                      : met ? 'minimum met'
+                        : `${need - done} more required · hover player → ⊗`}
+                  </span>
+                </span>
+              </div>
+            )
+          })()}
           {data.pending_incoming > 0 && (
             <Link to={`/leagues/${leagueId}/trades`} className="kl-status-pill kl-status-pill-info kl-status-pill-link">
               <span className="kl-status-pill-icon"><i className="bi bi-inbox-fill"></i></span>

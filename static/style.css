@@ -2372,6 +2372,14 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
   border-color: rgba(210,153,34,.45);
   box-shadow: 0 0 0 2px rgba(210,153,34,.08), 0 6px 14px -6px rgba(210,153,34,.4);
 }
+/* Quota met — the delist minimum is satisfied. Neutral-positive, not a
+   celebration; it just stops nagging. */
+.kl-status-pill-ok .kl-status-pill-icon {
+  background: radial-gradient(circle at 30% 30%, rgba(126,231,135,.25), rgba(63,185,80,.18));
+  color: #7ee787;
+  border-color: rgba(63,185,80,.45);
+  box-shadow: 0 0 0 2px rgba(63,185,80,.08), 0 6px 14px -6px rgba(63,185,80,.4);
+}
 .kl-status-pill-info .kl-status-pill-icon {
   background: radial-gradient(circle at 30% 30%, rgba(166,206,255,.22), rgba(88,166,255,.16));
   color: #79c0ff;

@@ -128,6 +128,14 @@ export interface DraftPick extends PlayerCard {
   value_rank: number
   surplus: number
   auto: boolean
+  /** What he was expected to average, from prior-season output. */
+  expected?: number
+  /** expected − actual. Positive means he went backwards. */
+  regression?: number
+  /** Investment-vs-return score; null when he doesn't qualify (LTIL, or under 22). */
+  miss?: number | null
+  miss_tag?: string | null
+  on_ltil?: boolean
 }
 
 export interface Award {
@@ -242,7 +250,8 @@ export interface SeasonReviewData {
     first_round: DraftPick[]
     steals: DraftPick[]
     busts: DraftPick[]
-    best_by_team: { team_id: number; name: string; accent: string; best: DraftPick; worst: DraftPick; top: DraftPick }[]
+    miss_excluded_ltil: string[]
+    best_by_team: { team_id: number; name: string; accent: string; best: DraftPick; worst: DraftPick | null; top: DraftPick }[]
   }
   movement: {
     trades: { id: number; date: string | null; period: string; sides: { team_id: number; name: string; accent: string; players: (PlayerCard & { points_after: number })[] }[] }[]
