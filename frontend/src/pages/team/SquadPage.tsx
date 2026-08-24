@@ -465,7 +465,14 @@ function SquadPageInner() {
                 <span>{players.length} players</span>
                 {is_owner && (data.trade_is_open || data.delist_is_open) && (
                   <><span className="dot">·</span>
-                  <span className="squad-cmd-trade open"><i className="bi bi-arrow-left-right"></i>Trade period open</span></>
+                  {/* Delists and trades open independently — a delist-only
+                      window used to announce itself as "Trade period open". */}
+                  <span className="squad-cmd-trade open">
+                    <i className={`bi ${data.trade_is_open ? 'bi-arrow-left-right' : 'bi-scissors'}`}></i>
+                    {data.trade_is_open && data.delist_is_open
+                      ? 'Trades & delists open'
+                      : data.trade_is_open ? 'Trade period open' : 'Delist period open'}
+                  </span></>
                 )}
                 {is_owner && !data.trade_is_open && !data.delist_is_open && (
                   <><span className="dot">·</span>
