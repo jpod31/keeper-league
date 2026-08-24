@@ -131,11 +131,12 @@ def squad(league_id, team_id):
         from models.database import Reserve7sLineup
         from blueprints.reserve7s import _get_next_7s_round
         _7s_round = _get_next_7s_round(league_id, league.season_year)
-        _7s_entries = Reserve7sLineup.query.filter_by(
-            league_id=league_id, team_id=team_id,
-            afl_round=_7s_round, year=league.season_year,
-        ).all()
-        sevens_ids_all = [e.player_id for e in _7s_entries]
+        if _7s_round is not None:
+            _7s_entries = Reserve7sLineup.query.filter_by(
+                league_id=league_id, team_id=team_id,
+                afl_round=_7s_round, year=league.season_year,
+            ).all()
+            sevens_ids_all = [e.player_id for e in _7s_entries]
     except Exception:
         pass
 
@@ -351,8 +352,14 @@ def squad(league_id, team_id):
         current_afl_round = None
         try:
             team_afl_teams = set(p.afl_team for p in players if p and p.afl_team)
+            # Once the league's own season is done there is no round being
+            # selected for, so nobody is "on a bye" and nothing is locked —
+            # the AFL calendar rolling into finals must not paint every
+            # non-finalist BYE.
+            from models.season_manager import league_season_over
+            season_done = league_season_over(league_id, league.season_year)
             # Find the current/next round: first check live games, then scheduled
-            current_round_game = (
+            current_round_game = None if season_done else (
                 AflGame.query
                 .filter(AflGame.year == league.season_year,
                         AflGame.status.in_(["live", "scheduled"]))
@@ -421,7 +428,7 @@ def squad(league_id, team_id):
         sevens_round = _get_next_7s_round(league_id, league.season_year)
         sevens_entries = _ensure_7s_lineup(
             league_id, team_id, sevens_round, league.season_year,
-        )
+        ) if sevens_round is not None else []
         sevens_ids = [e.player_id for e in sevens_entries]
         sevens_captain_id = next((e.player_id for e in sevens_entries if e.is_captain), None)
         # Check if 7s fixture exists (so we know to show the bubbles)
@@ -1804,6 +1811,8 @@ def api_toggle_7s(league_id, team_id):
 
     year = league.season_year
     sevens_round = _get_next_7s_round(league_id, year)
+    if sevens_round is None:
+        return jsonify({"error": "The season is over — there's no 7s round to pick for."}), 409
 
     # Auto-carry lineup from previous round if this round has none yet
     _ensure_7s_lineup(league_id, team_id, sevens_round, year)
@@ -1891,6 +1900,8 @@ def api_set_7s_captain(league_id, team_id):
 
     year = league.season_year
     sevens_round = _get_next_7s_round(league_id, year)
+    if sevens_round is None:
+        return jsonify({"error": "The season is over — there's no 7s round to pick for."}), 409
 
     # Must be in the 7s lineup
     entry = Reserve7sLineup.query.filter_by(

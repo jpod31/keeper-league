@@ -513,6 +513,24 @@ def reject_ltil(ltil_id):
     return ltil, None
 
 
+
+def league_season_over(league_id, year):
+    """True once the league has no round left to play this year.
+
+    The AFL calendar keeps going after a league's home-and-away season ends —
+    finals weeks still have scheduled games — so "is there an upcoming AFL
+    round" is NOT the same question as "is there a round I'm still picking a
+    side for". Anything that asks the user to select for a round (bye badges,
+    lockouts, the 7s side) has to use this one instead.
+    """
+    return not (
+        Fixture.query
+        .filter(Fixture.league_id == league_id, Fixture.year == year)
+        .filter(Fixture.status.in_(("scheduled", "live")))
+        .first()
+    )
+
+
 # ── Player-pool signings (free agents / SSP) ─────────────────────────
 
 

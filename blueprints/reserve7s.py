@@ -86,7 +86,13 @@ def _detect_7s_gameday_round(league_id, year):
 
 
 def _get_next_7s_round(league_id, year):
-    """Get the current/next round that needs a lineup (first live or scheduled)."""
+    """The round the 7s side is currently being picked for, or None.
+
+    Returns None once the season is done. It used to fall back to round 1,
+    which quietly resurrected each team's opening-round 7s side months later —
+    players who'd long since been dropped from the 7s reappeared on the field
+    wearing a 7 badge.
+    """
     # Check for live round first
     live_round = (
         db.session.query(db.func.min(Reserve7sFixture.afl_round))
@@ -119,7 +125,7 @@ def _get_next_7s_round(league_id, year):
         .filter_by(league_id=league_id, year=year, status="scheduled", is_final=False)
         .scalar()
     )
-    return next_main or 1
+    return next_main
 
 
 def _ensure_7s_lineup(league_id, team_id, afl_round, year):
