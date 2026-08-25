@@ -402,6 +402,26 @@ def player_pool(league_id):
         profile_tags = compute_profile_tags(players)
         cache_analytics(0, league.season_year, "profile_tags_all", profile_tags)
 
+    # Players cut in THIS season's delist periods. During the off-season this
+    # is the most interesting slice of the pool — it's who everyone will be
+    # picking over at the draft — and nothing else in the payload exposes it.
+    from models.database import DelistAction, DelistPeriod
+    delisted_map = {}
+    _periods = DelistPeriod.query.filter_by(
+        league_id=league_id, year=league.season_year).all()
+    if _periods:
+        _pmap = {pd.id: pd for pd in _periods}
+        for a in DelistAction.query.filter(
+            DelistAction.delist_period_id.in_(list(_pmap))
+        ).all():
+            t = db.session.get(FantasyTeam, a.team_id)
+            pd = _pmap.get(a.delist_period_id)
+            delisted_map[a.player_id] = {
+                "by": t.name if t else None,
+                "period": pd.period_type if pd else None,
+                "at": a.delisted_at.isoformat() if getattr(a, "delisted_at", None) else None,
+            }
+
     if request.args.get("format") == "json":
         def _ser_history_entry(e):
             """Serialize one tenure row for the stacked history view."""
@@ -453,6 +473,7 @@ def player_pool(league_id):
                     "draft_type": acq.get("draft_type"),
                 } if acq else None,
                 "acquired_history": [_ser_history_entry(e) for e in hist],
+                "delisted": delisted_map.get(p.id),
             }
 
         # Human-readable reason for why pickups might be paused, so the
@@ -477,6 +498,7 @@ def player_pool(league_id):
             "team_colours": team_colours,
             "team_logos": TEAM_LOGOS,
             "user_team_id": user_team.id if user_team else None,
+            "user_team_name": user_team.name if user_team else None,
             "roster_count": roster_count,
             "effective_roster_count": roster_count - ltil_count,
             "ltil_count": ltil_count,

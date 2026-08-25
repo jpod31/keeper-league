@@ -226,11 +226,65 @@ interface PoolPlayer {
   profile_tier: number
   is_selected: boolean
   is_bye: boolean
+  /** Set when this player was cut in one of this season's delist periods. */
+  delisted?: { by: string | null; period: string | null; at: string | null } | null
   acquired: Acquired | null
   acquired_history?: AcquiredHistoryEntry[]
 }
 
 interface TeamColour { fg: string; bg: string }
+
+/* ── Smart filters ───────────────────────────────────────────
+   Each is a one-click answer to a question you'd otherwise have to build out
+   of three dropdowns ("who just got cut?", "who's trending up?"). They stack,
+   and each carries a live count of how many players it would leave. */
+
+interface SmartFilter {
+  key: string
+  label: string
+  icon: string
+  tone: string
+  hint: string
+  test: (p: PoolPlayer, ctx: { myTeam: string | null }) => boolean
+}
+
+const rtgMove = (p: PoolPlayer) =>
+  p.rating != null && p.rating_start != null ? p.rating - p.rating_start : 0
+
+const SMART_FILTERS: SmartFilter[] = [
+  { key: 'delisted', label: 'Delisted', icon: 'bi-scissors', tone: 'red',
+    hint: 'Cut in a delist period this season',
+    test: p => !!p.delisted },
+  { key: 'available', label: 'Free agents', icon: 'bi-unlock-fill', tone: 'green',
+    hint: 'Not on anyone’s list', test: p => !p.owner_team },
+  { key: 'rostered', label: 'Rostered', icon: 'bi-lock-fill', tone: 'slate',
+    hint: 'Already on a squad', test: p => !!p.owner_team },
+  { key: 'mine', label: 'My squad', icon: 'bi-person-badge-fill', tone: 'blue',
+    hint: 'On your list', test: (p, c) => !!c.myTeam && p.owner_team === c.myTeam },
+  { key: 'rising', label: 'Rising', icon: 'bi-graph-up-arrow', tone: 'green',
+    hint: 'Rating up on the start of the year', test: p => rtgMove(p) > 0 },
+  { key: 'falling', label: 'Falling', icon: 'bi-graph-down-arrow', tone: 'red',
+    hint: 'Rating down on the start of the year', test: p => rtgMove(p) < 0 },
+  { key: 'upside', label: 'Upside', icon: 'bi-rocket-takeoff-fill', tone: 'purple',
+    hint: 'Potential at least 8 above current rating',
+    test: p => p.potential != null && p.rating != null && p.potential - p.rating >= 8 },
+  { key: 'hot', label: 'In form', icon: 'bi-fire', tone: 'orange',
+    hint: 'Last 3 at least 10 above season average',
+    test: p => !!p.l3 && !!p.sc_avg && p.l3 - p.sc_avg >= 10 },
+  { key: 'cold', label: 'Out of form', icon: 'bi-snow2', tone: 'blue',
+    hint: 'Last 3 at least 10 below season average',
+    test: p => !!p.l3 && !!p.sc_avg && p.sc_avg - p.l3 >= 10 },
+  { key: 'elite', label: 'Elite', icon: 'bi-star-fill', tone: 'gold',
+    hint: 'Rated 85 or better', test: p => (p.rating || 0) >= 85 },
+  { key: 'kids', label: 'Under 23', icon: 'bi-hourglass-top', tone: 'teal',
+    hint: 'Keeper-age talent', test: p => (p.age || 99) <= 23 },
+  { key: 'vets', label: '30 and over', icon: 'bi-hourglass-bottom', tone: 'slate',
+    hint: 'The back nine', test: p => (p.age || 0) >= 30 },
+  { key: 'injured', label: 'Injured', icon: 'bi-bandaid-fill', tone: 'orange',
+    hint: 'Carrying an injury', test: p => !!p.injury_severity },
+  { key: 'rookie', label: 'Rookies', icon: 'bi-asterisk', tone: 'teal',
+    hint: 'Fewer than 10 career games', test: p => (p.career_games || 0) < 10 },
+]
 
 interface PoolData {
   league: { id: number; name: string; squad_size: number; trade_window_open?: boolean }
@@ -238,6 +292,7 @@ interface PoolData {
   team_colours: Record<string, TeamColour>
   team_logos: Record<string, string>
   user_team_id: number | null
+  user_team_name: string | null
   roster_count: number
   effective_roster_count: number
   ltil_count: number
@@ -248,6 +303,134 @@ interface PoolData {
 
 // CSS from templates/leagues/player_pool.html <style> block (trimmed to essentials)
 const POOL_CSS = `
+/* ═══ Player pool filters ═══════════════════════════════════════════
+   Replaces a row of raw Bootstrap selects. Three bands: what you are
+   looking for (search + position + facets), the one-click questions
+   (smart filters, each with a live count), and what is currently applied.
+   ═══════════════════════════════════════════════════════════════════ */
+.pf {
+  --pf-line: rgba(140,155,185,.16);
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--pf-line);
+  background: linear-gradient(180deg, rgba(255,255,255,.025), transparent);
+}
+.pf-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.pf-search {
+  flex: 1 1 240px; max-width: 340px; min-width: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 11px; border-radius: 10px;
+  background: rgba(255,255,255,.045);
+  border: 1px solid var(--pf-line);
+  transition: border-color .15s, background .15s;
+}
+.pf-search:focus-within { border-color: rgba(120,180,255,.55); background: rgba(255,255,255,.07); }
+.pf-search i { color: #6b7789; font-size: .82rem; }
+.pf-search input { all: unset; flex: 1; min-width: 0; font-size: .82rem; color: #e6edf8; }
+.pf-search input::placeholder { color: #5d6879; }
+.pf-search button { all: unset; cursor: pointer; color: #6b7789; display: grid; place-items: center; }
+.pf-search button:hover { color: #e6edf8; }
+
+/* Position — a segmented control, not a dropdown. Four options should
+   never cost a click to see. */
+.pf-seg {
+  display: inline-flex; padding: 3px; border-radius: 10px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--pf-line);
+}
+.pf-seg-btn {
+  all: unset; cursor: pointer;
+  padding: 5px 12px; border-radius: 7px;
+  font-size: .74rem; font-weight: 750; color: #8b97a8;
+  transition: background .14s, color .14s;
+}
+.pf-seg-btn:hover { color: #dfe7f4; }
+.pf-seg-btn.on { background: rgba(255,255,255,.1); color: #fff; }
+.pf-seg-btn.on.pf-seg-DEF { background: rgba(107,178,255,.2); color: #9fccff; }
+.pf-seg-btn.on.pf-seg-MID { background: rgba(127,224,166,.2); color: #a5e9c1; }
+.pf-seg-btn.on.pf-seg-RUC { background: rgba(255,180,95,.2); color: #ffce93; }
+.pf-seg-btn.on.pf-seg-FWD { background: rgba(255,125,143,.2); color: #ffa6b3; }
+
+.pf-selects { display: flex; gap: 7px; flex-wrap: wrap; }
+.pf-select {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--pf-line);
+  border-radius: 9px;
+  color: #c6d1e2; font-size: .76rem; font-weight: 600;
+  padding: 7px 9px; cursor: pointer; max-width: 160px;
+}
+.pf-select:hover { background: rgba(255,255,255,.08); }
+.pf-select:focus { outline: none; border-color: rgba(120,180,255,.5); }
+.pf-density { margin-left: auto; }
+
+/* Smart filters */
+.pf-smart { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+.pf-chip {
+  all: unset;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px;
+  font-size: .73rem; font-weight: 700; letter-spacing: .005em;
+  color: #93a0b2;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--pf-line);
+  cursor: pointer;
+  transition: background .14s, border-color .14s, color .14s, transform .14s;
+}
+.pf-chip i { font-size: .74rem; opacity: .85; }
+.pf-chip-n {
+  font-size: .64rem; font-weight: 800; color: #66717f;
+  background: rgba(255,255,255,.06);
+  border-radius: 999px; padding: 1px 6px; min-width: 20px; text-align: center;
+}
+.pf-chip:hover:not(:disabled) { background: rgba(255,255,255,.09); color: #e2eaf6; transform: translateY(-1px); }
+.pf-chip:disabled { opacity: .3; cursor: default; }
+
+/* Tone only asserts itself once the chip is on — fourteen permanently
+   coloured pills would be a fruit salad. */
+.pf-chip.on { color: #fff; }
+.pf-chip.on .pf-chip-n { background: rgba(0,0,0,.28); color: #fff; }
+.pf-red.on    { background: rgba(248,81,73,.22);  border-color: rgba(248,81,73,.55);  color: #ffb3ae; }
+.pf-green.on  { background: rgba(63,185,80,.2);   border-color: rgba(63,185,80,.55);  color: #9be8a8; }
+.pf-blue.on   { background: rgba(88,166,255,.2);  border-color: rgba(88,166,255,.55); color: #a8ceff; }
+.pf-purple.on { background: rgba(188,140,255,.2); border-color: rgba(188,140,255,.55);color: #d6b8ff; }
+.pf-orange.on { background: rgba(240,160,80,.22); border-color: rgba(240,160,80,.55); color: #ffc890; }
+.pf-gold.on   { background: rgba(227,179,65,.22); border-color: rgba(227,179,65,.55); color: #f2d489; }
+.pf-teal.on   { background: rgba(45,212,191,.2);  border-color: rgba(45,212,191,.5);  color: #8ce8dc; }
+.pf-slate.on  { background: rgba(139,148,158,.22);border-color: rgba(139,148,158,.5); color: #d3dae4; }
+
+/* Applied row */
+.pf-status {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 11px; padding-top: 9px;
+  border-top: 1px dashed var(--pf-line);
+}
+.pf-count { font-size: .75rem; color: #7c8798; }
+.pf-count b { color: #e6edf8; font-weight: 800; font-size: .82rem; }
+.pf-applied { display: flex; flex-wrap: wrap; gap: 5px; }
+.pf-tag {
+  all: unset;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 999px;
+  font-size: .68rem; font-weight: 700; color: #cfd9e8;
+  background: rgba(120,180,255,.14);
+  border: 1px solid rgba(120,180,255,.3);
+  cursor: pointer;
+}
+.pf-tag i { font-size: .66rem; opacity: .7; }
+.pf-tag:hover { background: rgba(248,81,73,.18); border-color: rgba(248,81,73,.4); color: #ffb3ae; }
+.pf-clear {
+  all: unset; margin-left: auto; cursor: pointer;
+  font-size: .72rem; font-weight: 700; color: #7c8798;
+  padding: 3px 9px; border-radius: 7px; border: 1px solid var(--pf-line);
+}
+.pf-clear:hover { color: #fff; background: rgba(255,255,255,.08); }
+
+.pf-smart-sheet { margin-top: 0; }
+
+@media (max-width: 1200px) {
+  .pf-select { max-width: 128px; }
+  .pf-density { margin-left: 0; }
+}
+
 .pool-table th { padding: .5rem .6rem; font-size: .7rem; border-bottom: 2px solid #30363d; position: relative; cursor: pointer; user-select: none; }
 .pool-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
 .pool-table th.sort-active .sort-icon { opacity: 1; color: #58a6ff; }
@@ -327,6 +510,7 @@ export function PlayerPoolPage() {
   const [ageFilter, setAgeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [ownerFilter, setOwnerFilter] = useState('')
+  const [smart, setSmart] = useState<Set<string>>(new Set())
   const [sortKey, setSortKey] = useState<SortKey>('sc_avg')
   const [sortDir, setSortDir] = useState<1 | -1>(-1)
   const [mobSort, setMobSort] = useState<MobileSortKey>('sc')
@@ -349,7 +533,7 @@ export function PlayerPoolPage() {
   // that already runs tight, so the toggle is desktop-only.
   const { density, setDensity } = useDensity('players.pool.density')
 
-  const filtered = useMemo(() => {
+  const base = useMemo(() => {
     if (!data) return []
     const needle = search.toLowerCase().trim()
     return data.players.filter(p => {
@@ -373,6 +557,41 @@ export function PlayerPoolPage() {
       return true
     })
   }, [data, search, posFilter, teamFilter, ageFilter, statusFilter, ownerFilter])
+
+  const myTeam = data?.user_team_name ?? null
+  const smartCtx = useMemo(() => ({ myTeam }), [myTeam])
+
+  const filtered = useMemo(
+    () => (smart.size === 0
+      ? base
+      : base.filter(p => SMART_FILTERS.every(
+          f => !smart.has(f.key) || f.test(p, smartCtx)))),
+    [base, smart, smartCtx],
+  )
+
+  const smartCounts = useMemo(() => {
+    const out: Record<string, number> = {}
+    for (const f of SMART_FILTERS) {
+      // Count within everything else that's active, so a chip never promises
+      // results the other filters would rule out.
+      const others = SMART_FILTERS.filter(o => o.key !== f.key && smart.has(o.key))
+      out[f.key] = base.reduce((n, p) =>
+        n + (f.test(p, smartCtx) && others.every(o => o.test(p, smartCtx)) ? 1 : 0), 0)
+    }
+    return out
+  }, [base, smart, smartCtx])
+
+  function toggleSmart(key: string) {
+    setSmart(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+  function clearFilters() {
+    setPosFilter(''); setTeamFilter(''); setAgeFilter('')
+    setStatusFilter(''); setOwnerFilter(''); setSmart(new Set())
+  }
 
   const sorted = useMemo(() => {
     const out = [...filtered]
@@ -419,7 +638,8 @@ export function PlayerPoolPage() {
     return [...s].sort()
   }, [data])
 
-  const activeFilterCount = [posFilter, teamFilter, ageFilter, statusFilter, ownerFilter].filter(Boolean).length
+  const activeFilterCount =
+    [posFilter, teamFilter, ageFilter, statusFilter, ownerFilter].filter(Boolean).length + smart.size
 
   async function pickup(playerId: number) {
     if (!confirm('Pick this player up?')) return
@@ -513,48 +733,109 @@ export function PlayerPoolPage() {
       )}
 
       <div className="card d-none d-lg-block" data-density={density}>
-        <div className="card-header py-2">
-          <div className="filter-bar">
-            <div style={{ flex: '1 1 200px', maxWidth: 280 }}>
+        <div className="pf">
+          {/* Row 1 — search, positions, facets, density */}
+          <div className="pf-row">
+            <label className="pf-search">
+              <i className="bi bi-search" />
               <input
                 type="text"
-                className="form-control form-control-sm"
-                placeholder="Search by name..."
+                placeholder="Search players…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
+                aria-label="Search players"
               />
+              {search && (
+                <button type="button" onClick={() => setSearch('')} aria-label="Clear search">
+                  <i className="bi bi-x" />
+                </button>
+              )}
+            </label>
+
+            <div className="pf-seg" role="group" aria-label="Position">
+              {['', 'DEF', 'MID', 'RUC', 'FWD'].map(v => (
+                <button
+                  key={v || 'all'}
+                  type="button"
+                  className={`pf-seg-btn${posFilter === v ? ' on' : ''}${v ? ` pf-seg-${v}` : ''}`}
+                  onClick={() => setPosFilter(v)}
+                >
+                  {v || 'All'}
+                </button>
+              ))}
             </div>
-            <select className="form-select form-select-sm" value={posFilter} onChange={e => setPosFilter(e.target.value)} style={{ width: 'auto' }}>
-              <option value="">All Pos</option>
-              <option value="DEF">DEF</option>
-              <option value="MID">MID</option>
-              <option value="FWD">FWD</option>
-              <option value="RUC">RUC</option>
-            </select>
-            <select className="form-select form-select-sm" value={teamFilter} onChange={e => setTeamFilter(e.target.value)} style={{ width: 'auto' }}>
-              <option value="">All Teams</option>
-              {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <select className="form-select form-select-sm" value={ageFilter} onChange={e => setAgeFilter(e.target.value)} style={{ width: 'auto' }}>
-              <option value="">All Ages</option>
-              <option value="21">U21</option>
-              <option value="23">U23</option>
-              <option value="25">U25</option>
-              <option value="25-30">25-30</option>
-              <option value="30+">30+</option>
-            </select>
-            <select className="form-select form-select-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: 'auto' }}>
-              <option value="">All Status</option>
-              <option value="available">Available</option>
-              <option value="taken">Rostered</option>
-            </select>
-            <select className="form-select form-select-sm" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} style={{ width: 'auto' }}>
-              <option value="">All Coaches</option>
-              {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-            <span style={{ marginLeft: 'auto' }}>
-              <DensityToggle density={density} onChange={setDensity} />
+
+            <div className="pf-selects">
+              <select className="pf-select" value={teamFilter} onChange={e => setTeamFilter(e.target.value)} aria-label="AFL club">
+                <option value="">Any club</option>
+                {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <select className="pf-select" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} aria-label="Coach">
+                <option value="">Any coach</option>
+                {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+              <select className="pf-select" value={ageFilter} onChange={e => setAgeFilter(e.target.value)} aria-label="Age band">
+                <option value="">Any age</option>
+                <option value="21">U21</option>
+                <option value="23">U23</option>
+                <option value="25">U25</option>
+                <option value="25-30">25–30</option>
+                <option value="30+">30+</option>
+              </select>
+            </div>
+
+            <span className="pf-density"><DensityToggle density={density} onChange={setDensity} /></span>
+          </div>
+
+          {/* Row 2 — smart filters, each carrying how many it would leave */}
+          <div className="pf-smart">
+            {SMART_FILTERS.map(f => {
+              if (f.key === 'mine' && !myTeam) return null
+              const n = smartCounts[f.key] ?? 0
+              const on = smart.has(f.key)
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  title={f.hint}
+                  className={`pf-chip pf-${f.tone}${on ? ' on' : ''}`}
+                  onClick={() => toggleSmart(f.key)}
+                  disabled={!on && n === 0}
+                  aria-pressed={on}
+                >
+                  <i className={`bi ${f.icon}`} />
+                  {f.label}
+                  <span className="pf-chip-n">{n}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Row 3 — what is actually applied */}
+          <div className="pf-status">
+            <span className="pf-count">
+              <b>{sorted.length}</b> of {data.players.length} players
             </span>
+            {activeFilterCount > 0 && (
+              <>
+                <span className="pf-applied">
+                  {[...smart].map(k => {
+                    const f = SMART_FILTERS.find(x => x.key === k)
+                    return f ? (
+                      <button key={k} type="button" className="pf-tag" onClick={() => toggleSmart(k)}>
+                        {f.label}<i className="bi bi-x" />
+                      </button>
+                    ) : null
+                  })}
+                  {posFilter && <button type="button" className="pf-tag" onClick={() => setPosFilter('')}>{posFilter}<i className="bi bi-x" /></button>}
+                  {teamFilter && <button type="button" className="pf-tag" onClick={() => setTeamFilter('')}>{teamFilter}<i className="bi bi-x" /></button>}
+                  {ownerFilter && <button type="button" className="pf-tag" onClick={() => setOwnerFilter('')}>{ownerFilter}<i className="bi bi-x" /></button>}
+                  {ageFilter && <button type="button" className="pf-tag" onClick={() => setAgeFilter('')}>{ageFilter}<i className="bi bi-x" /></button>}
+                  {statusFilter && <button type="button" className="pf-tag" onClick={() => setStatusFilter('')}>{statusFilter}<i className="bi bi-x" /></button>}
+                </span>
+                <button type="button" className="pf-clear" onClick={clearFilters}>Clear all</button>
+              </>
+            )}
           </div>
         </div>
 
@@ -886,6 +1167,30 @@ export function PlayerPoolPage() {
       {/* ═══ Filter Bottom Sheet (mobile only) ═══ */}
       <BottomSheet open={filterOpen} onClose={() => setFilterOpen(false)} title="Filters">
         <div className="kl-filter-section">
+          <div className="kl-filter-label">Quick filters</div>
+          <div className="pf-smart pf-smart-sheet">
+            {SMART_FILTERS.map(f => {
+              if (f.key === 'mine' && !myTeam) return null
+              const n = smartCounts[f.key] ?? 0
+              const on = smart.has(f.key)
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  className={`pf-chip pf-${f.tone}${on ? ' on' : ''}`}
+                  onClick={() => toggleSmart(f.key)}
+                  disabled={!on && n === 0}
+                >
+                  <i className={`bi ${f.icon}`} />
+                  {f.label}
+                  <span className="pf-chip-n">{n}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="kl-filter-section">
           <div className="kl-filter-label">Position</div>
           <div className="kl-filter-options">
             {['', 'DEF', 'MID', 'FWD', 'RUC'].map(v => (
@@ -935,7 +1240,7 @@ export function PlayerPoolPage() {
         </div>
 
         <div className="kl-filter-actions">
-          <button type="button" className="kl-filter-btn-clear" onClick={() => { setPosFilter(''); setAgeFilter(''); setStatusFilter(''); setTeamFilter(''); setOwnerFilter('') }}>Clear All</button>
+          <button type="button" className="kl-filter-btn-clear" onClick={clearFilters}>Clear All</button>
           <button type="button" className="kl-filter-btn-apply" onClick={() => setFilterOpen(false)}>Show {mobileSorted.length} Players</button>
         </div>
       </BottomSheet>
