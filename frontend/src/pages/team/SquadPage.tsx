@@ -940,7 +940,7 @@ function SquadPageInner() {
                   <span className="mob-pos-label" style={{ color: '#bc8cff' }}><i className="bi bi-7-circle me-1"></i>7s SQUAD</span>
                   <span className="mob-pos-count">{fd.sevens_players.length} / 7</span>
                   <span className={`mob-7s-round${fd.sevens_is_plan ? ' plan' : ''}`}>
-                    {fd.sevens_is_plan ? `${fd.sevens_year ?? ''} plan` : `Round ${fd.sevens_round}`}
+                    {fd.sevens_is_plan ? `${fd.sevens_year ?? ''}` : `Round ${fd.sevens_round}`}
                   </span>
                 </div>
                 {/* No per-row "7" badge in here — the group header already
@@ -951,7 +951,6 @@ function SquadPageInner() {
                 )) : (
                   <div className="mob-pos-row" style={{ justifyContent: 'center', color: '#484f58', fontSize: '.8rem', padding: 12 }}>
                     Tap the <span style={{ color: '#bc8cff', fontWeight: 600 }}>7</span> button on any reserve to add them
-                    {fd.sevens_is_plan ? <> for {fd.sevens_year ?? 'next season'}</> : null}
                   </div>
                 )}
               </div>

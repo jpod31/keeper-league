@@ -453,36 +453,22 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       {fd.has_7s_fixture && (() => {
         const picked = fd.sevens_players
         const isPlan = !!fd.sevens_is_plan
-        const empties = Math.max(0, 7 - picked.length)
         return (
           <div className={`fv-7s-section${isPlan ? ' fv-7s-plan' : ''}`}>
             <div className="fv-7s-hdr">
               <i className="bi bi-7-circle me-1"></i>7s Squad
               <span className="fv-zone-tally ms-2">{picked.length} / 7</span>
+              {/* Off-season: name the season being picked for. That it's next
+                  year's side needs no label — there's no other round left. */}
               {isPlan
-                ? <span className="fv-7s-round fv-7s-round-plan" title="Shaping next season's side — carries into the new year">
-                    <i className="bi bi-lightbulb me-1"></i>{fd.sevens_year ?? ''} plan
-                  </span>
+                ? <span className="fv-7s-round fv-7s-round-plan">{fd.sevens_year ?? ''}</span>
                 : <span className="fv-7s-round">Round {fd.sevens_round}</span>}
             </div>
-            {isPlan && (
-              <div className="fv-7s-plan-note">
-                The season is done, so this is next year's side. Picks made now carry
-                into {fd.sevens_year ?? 'the new season'}.
-              </div>
-            )}
             <div className="fv-reserves-grid fv-7s-grid">
               {picked.map((p, i) => (
                 <PlayerCard key={p.id} p={p}
                   posClass={(p.position || 'MID').split('/')[0].toLowerCase()}
                   isReserve inSevens slotNo={i + 1} />
-              ))}
-              {Array.from({ length: empties }).map((_, i) => (
-                <div className="fv-card fv-card-reserve fv-7s-slot-empty" key={`s7-empty-${i}`}>
-                  <span className="fv-7s-slotno">{picked.length + i + 1}</span>
-                  <i className="bi bi-plus-lg"></i>
-                  <span className="fv-7s-slot-hint">Add a reserve</span>
-                </div>
               ))}
             </div>
           </div>
