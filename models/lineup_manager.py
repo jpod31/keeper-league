@@ -282,10 +282,10 @@ def optimise_roster(team_id, league_id, year, metric="rating"):
         return None, "No players on roster."
 
     try:
-        from blueprints.reserve7s import _get_next_7s_round
-        s7 = _get_next_7s_round(league_id, year)
+        from blueprints.reserve7s import get_7s_target
+        s7_year, s7, _ = get_7s_target(league_id, year)
         sevens_pids = {e.player_id for e in Reserve7sLineup.query.filter_by(
-            league_id=league_id, team_id=team_id, afl_round=s7, year=year).all()}
+            league_id=league_id, team_id=team_id, afl_round=s7, year=s7_year).all()}
     except Exception:
         sevens_pids = set()
     ltil_pids = {lt.player_id for lt in LongTermInjury.query.filter_by(

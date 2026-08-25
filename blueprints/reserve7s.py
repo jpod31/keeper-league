@@ -128,6 +128,24 @@ def _get_next_7s_round(league_id, year):
     return next_main
 
 
+def get_7s_target(league_id, season_year):
+    """Where a 7s selection should be written: (year, afl_round, is_plan).
+
+    During the season that's simply the next round being played. Once the
+    season is done there is no round left to pick for — but managers are still
+    delisting and trading, and want to shape next year's side while they do it.
+    So selections then land on round 0 of the FOLLOWING season as a plan.
+
+    Round 0 is deliberate: if the new season opens on round 0 the plan is found
+    directly, and if it opens on round 1 `_ensure_7s_lineup` carries the round-0
+    side forward into it. Either way the ideation survives the rollover.
+    """
+    rnd = _get_next_7s_round(league_id, season_year)
+    if rnd is not None:
+        return season_year, rnd, False
+    return season_year + 1, 0, True
+
+
 def _ensure_7s_lineup(league_id, team_id, afl_round, year):
     """Auto-carry 7s lineup from the most recent round if none exists for this round.
 
@@ -214,8 +232,9 @@ def sevens_team(league_id):
         flash("You don't have a team in this league.", "warning")
         return redirect(url_for("leagues.dashboard", league_id=league_id))
 
-    year = league.season_year
-    afl_round = _get_next_7s_round(league_id, year)
+    # Off-season selections plan next year's side — same target the squad
+    # page writes to, so the two views never disagree.
+    year, afl_round, is_plan = get_7s_target(league_id, league.season_year)
 
     # Get all roster players
     roster_entries = FantasyRoster.query.filter_by(
@@ -296,11 +315,14 @@ def sevens_team_set(league_id):
     data = request.get_json(silent=True) or {}
     player_ids = data.get("player_ids", [])
     captain_id = data.get("captain_id")
-    afl_round = data.get("afl_round")
-    year = league.season_year
+    # The target is authoritative, not the round the client happened to render
+    # with — otherwise an off-season plan (round 0 of NEXT year) would be saved
+    # against the current season and vanish. Note round 0 is falsy, so the
+    # missing-round check below has to test for None.
+    year, afl_round, _is_plan = get_7s_target(league_id, league.season_year)
 
-    if not afl_round:
-        return jsonify({"error": "Missing afl_round"}), 400
+    if afl_round is None:
+        return jsonify({"error": "No 7s round to select for"}), 400
 
     # Validate exactly 7 players
     if len(player_ids) != 7:

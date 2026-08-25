@@ -92,17 +92,20 @@ def drop_player_from_future_7s(league_id, team_id, player_id, year):
     """
     from models.database import Reserve7sLineup
     try:
-        from blueprints.reserve7s import _get_next_7s_round
-        next_round = _get_next_7s_round(league_id, year)
+        from blueprints.reserve7s import get_7s_target
+        target_year, next_round, _ = get_7s_target(league_id, year)
     except Exception:
-        next_round = None
+        return
     if next_round is None:
         return
+    # Past rounds keep him for scoring history; everything from the round
+    # currently being picked for onwards loses him. In the off-season that
+    # target is next season's plan, so delisting also clears the ideation.
     Reserve7sLineup.query.filter(
         Reserve7sLineup.league_id == league_id,
         Reserve7sLineup.team_id == team_id,
         Reserve7sLineup.player_id == player_id,
-        Reserve7sLineup.year == year,
+        Reserve7sLineup.year == target_year,
         Reserve7sLineup.afl_round >= next_round,
     ).delete(synchronize_session=False)
 

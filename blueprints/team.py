@@ -129,14 +129,13 @@ def squad(league_id, team_id):
     sevens_ids_all = []
     try:
         from models.database import Reserve7sLineup
-        from blueprints.reserve7s import _get_next_7s_round
-        _7s_round = _get_next_7s_round(league_id, league.season_year)
-        if _7s_round is not None:
-            _7s_entries = Reserve7sLineup.query.filter_by(
-                league_id=league_id, team_id=team_id,
-                afl_round=_7s_round, year=league.season_year,
-            ).all()
-            sevens_ids_all = [e.player_id for e in _7s_entries]
+        from blueprints.reserve7s import get_7s_target
+        _7s_year, _7s_round, _ = get_7s_target(league_id, league.season_year)
+        _7s_entries = Reserve7sLineup.query.filter_by(
+            league_id=league_id, team_id=team_id,
+            afl_round=_7s_round, year=_7s_year,
+        ).all()
+        sevens_ids_all = [e.player_id for e in _7s_entries]
     except Exception:
         pass
 
@@ -424,15 +423,18 @@ def squad(league_id, team_id):
 
         # Reserve 7s lineup IDs for the upcoming round
         from models.database import Reserve7sLineup, Reserve7sFixture
-        from blueprints.reserve7s import _get_next_7s_round, _ensure_7s_lineup, AGE_CUTOFF
-        sevens_round = _get_next_7s_round(league_id, league.season_year)
+        from blueprints.reserve7s import get_7s_target, _ensure_7s_lineup, AGE_CUTOFF
+        sevens_year, sevens_round, sevens_is_plan = get_7s_target(
+            league_id, league.season_year)
         sevens_entries = _ensure_7s_lineup(
-            league_id, team_id, sevens_round, league.season_year,
-        ) if sevens_round is not None else []
+            league_id, team_id, sevens_round, sevens_year,
+        )
         sevens_ids = [e.player_id for e in sevens_entries]
         sevens_captain_id = next((e.player_id for e in sevens_entries if e.is_captain), None)
         # Check if 7s fixture exists (so we know to show the bubbles)
-        has_7s_fixture = Reserve7sFixture.query.filter_by(
+        # Planning next year's side counts as a reason to show the section,
+        # even before that season's fixtures exist.
+        has_7s_fixture = sevens_is_plan or Reserve7sFixture.query.filter_by(
             league_id=league_id, year=league.season_year, is_final=False,
         ).first() is not None
 
@@ -525,6 +527,8 @@ def squad(league_id, team_id):
             "sevens_ids": sevens_ids,
             "sevens_captain_id": sevens_captain_id,
             "sevens_round": sevens_round,
+            "sevens_year": sevens_year,
+            "sevens_is_plan": sevens_is_plan,
             "has_7s_fixture": has_7s_fixture,
             "sevens_captain_enabled": season_cfg.sevens_captain_enabled if season_cfg else False,
             "age_cutoff": AGE_CUTOFF,
@@ -714,6 +718,8 @@ def squad(league_id, team_id):
                 "emergency_ids": list(fd.get("emergency_ids", [])),
                 "sevens_players": [_serialize_player(p) for p in fd.get("sevens_players", [])],
                 "sevens_round": fd.get("sevens_round"),
+                "sevens_year": fd.get("sevens_year"),
+                "sevens_is_plan": bool(fd.get("sevens_is_plan")),
                 "sevens_ids": list(fd.get("sevens_ids", [])),
                 "sevens_captain_id": fd.get("sevens_captain_id"),
                 "sevens_captain_enabled": fd.get("sevens_captain_enabled", False),
@@ -1653,8 +1659,8 @@ def api_swap(league_id, team_id):
     # slot counter also claims them → "7s full" with no way to fix in-app
     # because the action sheet hides both toggles when a player is both).
     from models.database import Reserve7sLineup as _R7s  # local import — avoid cycle
-    from blueprints.reserve7s import _get_next_7s_round as _next_7s_round
-    _s_round = _next_7s_round(league_id, league.season_year)
+    from blueprints.reserve7s import get_7s_target as _7s_target
+    _s_year, _s_round, _ = _7s_target(league_id, league.season_year)
     if _s_round is not None:
         for _entry in (entry1, entry2):
             if _entry.is_emergency and _entry.is_benched:
@@ -1662,7 +1668,7 @@ def api_swap(league_id, team_id):
                     league_id=league_id,
                     team_id=team_id,
                     afl_round=_s_round,
-                    year=league.season_year,
+                    year=_s_year,
                     player_id=_entry.player_id,
                 ).first():
                     _entry.is_emergency = False
@@ -1677,14 +1683,14 @@ def api_swap(league_id, team_id):
 
     # Auto-remove from 7s if a player moved out of reserves (to field)
     from models.database import Reserve7sLineup
-    from blueprints.reserve7s import _get_next_7s_round
-    sevens_round = _get_next_7s_round(league_id, league.season_year)
-    if sevens_round:
+    from blueprints.reserve7s import get_7s_target
+    sevens_year, sevens_round, _ = get_7s_target(league_id, league.season_year)
+    if sevens_round is not None:
         for entry in (entry1, entry2):
             if not entry.is_benched:
                 Reserve7sLineup.query.filter_by(
                     league_id=league_id, team_id=team_id,
-                    afl_round=sevens_round, year=league.season_year,
+                    afl_round=sevens_round, year=sevens_year,
                     player_id=entry.player_id,
                 ).delete()
 
@@ -1727,11 +1733,11 @@ def api_set_emergency(league_id, team_id):
     else:
         # Check mutual exclusivity with 7s
         from models.database import Reserve7sLineup
-        from blueprints.reserve7s import _get_next_7s_round
-        sevens_round = _get_next_7s_round(league_id, league.season_year)
+        from blueprints.reserve7s import get_7s_target
+        sevens_year, sevens_round, _ = get_7s_target(league_id, league.season_year)
         in_7s = Reserve7sLineup.query.filter_by(
             league_id=league_id, team_id=team_id,
-            afl_round=sevens_round, year=league.season_year,
+            afl_round=sevens_round, year=sevens_year,
             player_id=player_id,
         ).first()
         if in_7s:
@@ -1790,7 +1796,7 @@ def api_optimise(league_id, team_id):
 def api_toggle_7s(league_id, team_id):
     """Toggle a reserve player in/out of the Reserve 7s lineup for the upcoming round."""
     from models.database import Reserve7sLineup, Reserve7sFixture
-    from blueprints.reserve7s import _get_next_7s_round, _ensure_7s_lineup, AGE_CUTOFF
+    from blueprints.reserve7s import get_7s_target, _ensure_7s_lineup, AGE_CUTOFF
 
     league = db.session.get(League, league_id)
     team = db.session.get(FantasyTeam, team_id)
@@ -1810,10 +1816,8 @@ def api_toggle_7s(league_id, team_id):
     if not entry.is_benched:
         return jsonify({"error": "Only reserve players can be in the 7s"}), 409
 
-    year = league.season_year
-    sevens_round = _get_next_7s_round(league_id, year)
-    if sevens_round is None:
-        return jsonify({"error": "The season is over — there's no 7s round to pick for."}), 409
+    # Off-season selections are next year's plan — see get_7s_target.
+    year, sevens_round, _is_plan = get_7s_target(league_id, league.season_year)
 
     # Auto-carry lineup from previous round if this round has none yet
     _ensure_7s_lineup(league_id, team_id, sevens_round, year)
@@ -1887,7 +1891,7 @@ def api_toggle_7s(league_id, team_id):
 def api_set_7s_captain(league_id, team_id):
     """Set or unset captain for the 7s lineup."""
     from models.database import Reserve7sLineup
-    from blueprints.reserve7s import _get_next_7s_round
+    from blueprints.reserve7s import get_7s_target
 
     league = db.session.get(League, league_id)
     team = db.session.get(FantasyTeam, team_id)
@@ -1899,10 +1903,7 @@ def api_set_7s_captain(league_id, team_id):
     if not player_id:
         return jsonify({"error": "Missing player_id"}), 400
 
-    year = league.season_year
-    sevens_round = _get_next_7s_round(league_id, year)
-    if sevens_round is None:
-        return jsonify({"error": "The season is over — there's no 7s round to pick for."}), 409
+    year, sevens_round, _is_plan = get_7s_target(league_id, league.season_year)
 
     # Must be in the 7s lineup
     entry = Reserve7sLineup.query.filter_by(

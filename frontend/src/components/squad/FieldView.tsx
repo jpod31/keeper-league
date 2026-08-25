@@ -20,8 +20,12 @@ export interface FieldData {
   emergency_players: Player[]; emergency_ids: number[]
   sevens_players: Player[]; sevens_ids: number[]; sevens_captain_id: number | null
   sevens_captain_enabled: boolean; has_7s_fixture: boolean
-  /** Round the 7s side is being picked for; null once the season is done. */
+  /** Round the 7s side is being picked for. */
   sevens_round?: number | null
+  /** Season that round belongs to — next year's while planning. */
+  sevens_year?: number | null
+  /** True when this is next season's plan rather than a live round. */
+  sevens_is_plan?: boolean
   injury_list: Player[]
   ltil_entries: { player_id: number; player_name: string }[]
   ltil_full: { id: number; player_id: number; player_name: string; player_position: string; player_sc_avg: number; replacement_name: string | null }[]
@@ -448,38 +452,39 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
           how many places are still to fill. */}
       {fd.has_7s_fixture && (() => {
         const picked = fd.sevens_players
-        const roundOver = fd.sevens_round == null
+        const isPlan = !!fd.sevens_is_plan
         const empties = Math.max(0, 7 - picked.length)
         return (
-          <div className={`fv-7s-section${roundOver ? ' fv-7s-closed' : ''}`}>
+          <div className={`fv-7s-section${isPlan ? ' fv-7s-plan' : ''}`}>
             <div className="fv-7s-hdr">
               <i className="bi bi-7-circle me-1"></i>7s Squad
               <span className="fv-zone-tally ms-2">{picked.length} / 7</span>
-              {!roundOver && fd.sevens_round != null && (
-                <span className="fv-7s-round">Round {fd.sevens_round}</span>
-              )}
-              {roundOver && <span className="fv-7s-round fv-7s-round-off">Season complete</span>}
+              {isPlan
+                ? <span className="fv-7s-round fv-7s-round-plan" title="Shaping next season's side — carries into the new year">
+                    <i className="bi bi-lightbulb me-1"></i>{fd.sevens_year ?? ''} plan
+                  </span>
+                : <span className="fv-7s-round">Round {fd.sevens_round}</span>}
             </div>
-            {picked.length > 0 || !roundOver ? (
-              <div className="fv-reserves-grid fv-7s-grid">
-                {picked.map((p, i) => (
-                  <PlayerCard key={p.id} p={p}
-                    posClass={(p.position || 'MID').split('/')[0].toLowerCase()}
-                    isReserve inSevens slotNo={i + 1} />
-                ))}
-                {!roundOver && Array.from({ length: empties }).map((_, i) => (
-                  <div className="fv-card fv-card-reserve fv-7s-slot-empty" key={`s7-empty-${i}`}>
-                    <span className="fv-7s-slotno">{picked.length + i + 1}</span>
-                    <i className="bi bi-plus-lg"></i>
-                    <span className="fv-7s-slot-hint">Add a reserve</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="fv-7s-empty-note">
-                No 7s side was named for the final round — the season is done.
+            {isPlan && (
+              <div className="fv-7s-plan-note">
+                The season is done, so this is next year's side. Picks made now carry
+                into {fd.sevens_year ?? 'the new season'}.
               </div>
             )}
+            <div className="fv-reserves-grid fv-7s-grid">
+              {picked.map((p, i) => (
+                <PlayerCard key={p.id} p={p}
+                  posClass={(p.position || 'MID').split('/')[0].toLowerCase()}
+                  isReserve inSevens slotNo={i + 1} />
+              ))}
+              {Array.from({ length: empties }).map((_, i) => (
+                <div className="fv-card fv-card-reserve fv-7s-slot-empty" key={`s7-empty-${i}`}>
+                  <span className="fv-7s-slotno">{picked.length + i + 1}</span>
+                  <i className="bi bi-plus-lg"></i>
+                  <span className="fv-7s-slot-hint">Add a reserve</span>
+                </div>
+              ))}
+            </div>
           </div>
         )
       })()}
