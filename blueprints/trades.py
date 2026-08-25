@@ -205,31 +205,63 @@ def trade_propose(league_id):
 
     if request.args.get("format") == "json":
         from config import TEAM_LOGOS
-        # Compute trade window close (the new propose UI shows a countdown)
-        trade_close = None
+        from datetime import datetime, timezone
+        from models.database import SeasonStanding
+
+        # Countdown must track the window that is ACTUALLY open. Taking the
+        # first non-null close date meant a long-expired mid-season window won,
+        # so the page said "Trade window open" and "closed" at the same time.
+        def _aware(dt):
+            if dt is None:
+                return None
+            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
         season_cfg = SeasonConfig.query.filter_by(
             league_id=league_id, year=league.season_year
         ).first()
+        now = datetime.now(timezone.utc)
+        trade_close, window_label = None, None
         if season_cfg:
-            for col in (season_cfg.mid_trade_window_close, season_cfg.off_trade_window_close):
-                if col is None:
-                    continue
-                # Naive datetimes coerced to ISO with implied UTC.
-                trade_close = col.isoformat() + ("" if col.tzinfo else "+00:00")
-                break
+            windows = [
+                ("Mid-season window", _aware(season_cfg.mid_trade_window_open),
+                 _aware(season_cfg.mid_trade_window_close)),
+                ("Off-season window", _aware(season_cfg.off_trade_window_open),
+                 _aware(season_cfg.off_trade_window_close)),
+            ]
+            live = [w for w in windows if w[1] and w[2] and w[1] <= now <= w[2]]
+            upcoming = [w for w in windows if w[1] and w[1] > now]
+            chosen = (live or sorted(upcoming, key=lambda w: w[1]) or [])
+            if chosen:
+                window_label, _open, _close = chosen[0]
+                trade_close = _close.isoformat() if _close else None
+
+        standings = {
+            s.team_id: s for s in SeasonStanding.query.filter_by(
+                league_id=league_id, year=league.season_year).all()
+        }
+
+        def _team_card(t):
+            st = standings.get(t.id)
+            return {
+                "id": t.id, "name": t.name,
+                "owner": t.owner.display_name if t.owner else "?",
+                "logo_url": t.logo_url,
+                "roster_count": FantasyRoster.query.filter_by(
+                    team_id=t.id, is_active=True).count(),
+                "record": (f"{st.wins}-{st.losses}" + (f"-{st.draws}" if st.draws else "")
+                           ) if st else None,
+                "percentage": round(st.percentage, 1) if st else None,
+            }
+
         return jsonify({
-            "league": {"id": league.id, "name": league.name},
-            "user_team": {"id": user_team.id, "name": user_team.name,
-                          "logo_url": user_team.logo_url},
+            "league": {"id": league.id, "name": league.name,
+                       "squad_size": league.squad_size},
+            "user_team": {**_team_card(user_team)},
             "trade_window_open": bool(league.trade_window_open),
             "trade_close_at": trade_close,
+            "trade_window_label": window_label,
             "team_logos": TEAM_LOGOS,
-            "other_teams": [
-                {"id": t.id, "name": t.name,
-                 "owner": t.owner.display_name if t.owner else "?",
-                 "logo_url": t.logo_url}
-                for t in other_teams
-            ],
+            "other_teams": [_team_card(t) for t in other_teams],
             "my_players": [
                 {"id": p.id, "name": p.name,
                  "position": p.position or "",
