@@ -45,6 +45,7 @@ interface CommissionerData {
     ssp_enabled: boolean
     mid_season_trade_enabled?: boolean
     supplemental_draft_date: string | null
+    offseason_close_date: string | null
   }
   pool: { open: boolean; reason: string | null }
   midseason: { trade_status: string; delist_status: string; draft_status: string; lock_status: string }
@@ -115,6 +116,7 @@ export function CommissionerPage() {
   const { data, loading, refetch } = useFetch<CommissionerData>(`/leagues/${leagueId}/commissioner?format=json`)
   const [busy, setBusy] = useState<string | null>(null)
   const [draftDate, setDraftDate] = useState<string>('')
+  const [closeDate, setCloseDate] = useState<string>('')
   const [flashMsg, setFlashMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
 
   // Delist / Force-Move tool state
@@ -271,6 +273,7 @@ export function CommissionerPage() {
   const { current_phase, midseason, offseason, delist, pending_ltil, active_ltil, recent_history, teams, pending_trades_count, season_cfg } = data
   const pool = data.pool
   const draftDateValue = draftDate || season_cfg.supplemental_draft_date || ''
+  const closeDateValue = closeDate || season_cfg.offseason_close_date || ''
   const phaseBadge = PHASE_BADGE[current_phase] ?? PHASE_BADGE.pre_season
 
   // Phase action button logic mirrors commissioner_hub.html
@@ -416,9 +419,30 @@ export function CommissionerPage() {
                   </button>
                 )}
 
-                {/* Draft date. Free agents and SSP signings stay shut until the
-                    draft is actually run, so this is the date everyone is
-                    waiting on — it belongs on the dash, not buried in settings. */}
+                {/* One off-season deadline for trades AND delistings. Pinning
+                    it here also stops Open Trade/Delist Window recomputing a
+                    rolling duration over the top of it. */}
+                <div className="comm-draftdate">
+                  <label htmlFor="off-close-date">
+                    <i className="bi bi-hourglass-split me-1"></i>Windows close
+                  </label>
+                  <input
+                    id="off-close-date"
+                    type="date"
+                    className="comm-draftdate-input"
+                    value={closeDateValue}
+                    onChange={e => setCloseDate(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary"
+                    disabled={busy === 'offseason-set_close_date' || !closeDateValue}
+                    onClick={() => startStep('offseason', 'set_close_date', undefined, { close_date: closeDateValue })}
+                  >
+                    {season_cfg.offseason_close_date ? 'Update' : 'Set date'}
+                  </button>
+                </div>
+
                 <div className="comm-draftdate">
                   <label htmlFor="off-draft-date">
                     <i className="bi bi-calendar-event me-1"></i>Draft date

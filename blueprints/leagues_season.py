@@ -8,6 +8,37 @@ from models.database import db, League, FantasyTeam, AflPlayer, UserDraftWeights
 import config
 from blueprints.leagues import leagues_bp
 
+
+def _melb_end_of_day_utc(date_str):
+    """A 'YYYY-MM-DD' deadline -> the UTC instant of 23:59 that day in Melbourne.
+
+    Window datetimes are stored naive and read back as UTC. Storing the raw
+    23:59 would therefore close the window at ~11am Melbourne the FOLLOWING
+    day, which for a deadline pinned to the day before the AFL draft means it
+    would still be open on draft morning.
+    """
+    from zoneinfo import ZoneInfo
+    d = datetime.fromisoformat(date_str)
+    melb = d.replace(hour=23, minute=59, second=0, microsecond=0,
+                     tzinfo=ZoneInfo("Australia/Melbourne"))
+    return melb.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+def _offseason_close(season_cfg, fallback_days):
+    """When the off-season windows should shut.
+
+    An explicitly set deadline always wins. Only fall back to a rolling
+    duration when nobody has pinned a date — otherwise re-opening a window
+    would quietly drag a date that was set against the AFL calendar.
+    """
+    pinned = getattr(season_cfg, "offseason_close_date", None)
+    if pinned:
+        aware = pinned if pinned.tzinfo else pinned.replace(tzinfo=timezone.utc)
+        if aware > datetime.now(timezone.utc):
+            return aware.replace(tzinfo=None), True
+    return (datetime.now(timezone.utc) + timedelta(days=fallback_days or 7)
+            ).replace(tzinfo=None), False
+
 @leagues_bp.route("/<int:league_id>/draft-values", methods=["GET", "POST"])
 @login_required
 def draft_values(league_id):
@@ -278,8 +309,8 @@ def offseason_start_step(league_id):
         season_cfg.season_phase = "offseason"
         league.status = "offseason"
         min_delists = season_cfg.offseason_delist_min or 3
-        delist_days = season_cfg.off_delist_duration_days or 7
-        closes_at = datetime.now(timezone.utc) + timedelta(days=delist_days)
+        closes_at, pinned = _offseason_close(
+            season_cfg, season_cfg.off_delist_duration_days)
         from models.season_manager import open_delist_period
         _, error = open_delist_period(league_id, league.season_year,
                                       min_delists=min_delists, closes_at=closes_at,
@@ -304,10 +335,9 @@ def offseason_start_step(league_id):
 
     elif step == "open_trades":
         now = datetime.now(timezone.utc)
-        trade_days = season_cfg.off_trade_duration_days or 7
-        duration = timedelta(days=trade_days)
-        season_cfg.off_trade_window_open = now
-        season_cfg.off_trade_window_close = now + duration
+        season_cfg.off_trade_window_open = now.replace(tzinfo=None)
+        season_cfg.off_trade_window_close, _pinned = _offseason_close(
+            season_cfg, season_cfg.off_trade_duration_days)
         db.session.commit()
 
         # Auto-execute agreed trades intended for off-season
@@ -331,6 +361,44 @@ def offseason_start_step(league_id):
         season_cfg.off_trade_window_close = datetime.now(timezone.utc)
         db.session.commit()
         flash("Off-season trade window closed.", "info")
+
+    elif step == "set_close_date":
+        raw = (request.form.get("close_date") or "").strip()
+        if not raw:
+            season_cfg.offseason_close_date = None
+            db.session.commit()
+            flash("Off-season deadline cleared — windows fall back to their duration settings.", "info")
+        else:
+            try:
+                when = _melb_end_of_day_utc(raw)
+                season_cfg.offseason_close_date = when
+                # Apply it to whatever is already open, so setting the deadline
+                # takes effect now rather than at the next re-open.
+                if season_cfg.off_trade_window_open:
+                    season_cfg.off_trade_window_close = when
+                from models.database import DelistPeriod
+                period = DelistPeriod.query.filter_by(
+                    league_id=league_id, year=league.season_year, status="open"
+                ).first()
+                if period:
+                    period.closes_at = when
+                db.session.commit()
+                flash(f"Trades and delistings now close {raw}.", "success")
+
+                from models.database import FantasyTeam
+                from models.notification_manager import create_notification
+                for t in FantasyTeam.query.filter_by(league_id=league_id).all():
+                    if t.owner_id:
+                        create_notification(
+                            user_id=t.owner_id, league_id=league_id,
+                            notif_type="season_transition",
+                            title="Off-season deadline updated",
+                            body=f"Trades and delistings now close on {raw}.",
+                            link=f"/leagues/{league_id}/team/{t.id}",
+                        )
+                db.session.commit()
+            except ValueError:
+                flash("Invalid date format.", "warning")
 
     elif step == "set_draft_date":
         raw = (request.form.get("draft_date") or "").strip()

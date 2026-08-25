@@ -852,6 +852,11 @@ class SeasonConfig(db.Model):
     # 47-man list cutting 5 is still 1 over, so what actually matters is the
     # size you finish at.
     offseason_draft_min_picks = db.Column(db.Integer, default=4)
+    # The one off-season deadline: trades AND delistings both close here.
+    # When set it WINS over off_trade_duration_days / off_delist_duration_days,
+    # so re-opening a window from the commissioner hub can't silently drag a
+    # date that was deliberately anchored to the AFL draft calendar.
+    offseason_close_date = db.Column(db.DateTime)
     ssp_enabled = db.Column(db.Boolean, default=True)
     ssp_slots = db.Column(db.Integer, default=1)
     ssp_cutoff_round = db.Column(db.Integer, default=4)  # SSP open post-draft until this round
@@ -1244,6 +1249,7 @@ def _run_migrations(app):
             ("mid_trade_window_close", "DATETIME"),
             ("mid_draft_date", "DATETIME"),
             ("off_trade_window_open", "DATETIME"),
+            ("offseason_close_date", "DATETIME"),
             ("off_trade_window_close", "DATETIME"),
             ("ssp_window_open", "DATETIME"),
             ("ssp_window_close", "DATETIME"),

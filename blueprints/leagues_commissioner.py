@@ -243,6 +243,10 @@ def commissioner_hub(league_id):
                     season_cfg.supplemental_draft_date.strftime("%Y-%m-%d")
                     if season_cfg and season_cfg.supplemental_draft_date else None
                 ),
+                "offseason_close_date": (
+                    season_cfg.offseason_close_date.strftime("%Y-%m-%d")
+                    if season_cfg and getattr(season_cfg, "offseason_close_date", None) else None
+                ),
             },
             # Whether the pool is signable right now, and why not if it isn't —
             # the commissioner is the one who unblocks it by running the draft.
