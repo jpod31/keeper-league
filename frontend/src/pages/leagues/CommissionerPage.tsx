@@ -20,7 +20,15 @@ interface LtilEntry {
   removed_at: string | null
 }
 
-interface TeamProgress { name: string; owner: string; count: number; met: boolean }
+interface TeamProgress {
+  name: string; owner: string; count: number; met: boolean
+  /** Total cuts this team owes — derived from the size it must finish at, so
+   *  it differs per team rather than being one flat league minimum. */
+  required: number
+  remaining: number
+  squad_size: number
+  target_size: number | null
+}
 interface TeamRef { id: number; name: string; owner: string }
 interface RosterPlayer { id: number; name: string; position: string; afl_team: string }
 
@@ -328,8 +336,18 @@ export function CommissionerPage() {
                         }}
                       >
                         <span style={{ color: '#c9d1d9' }}>{tp.name}</span>
-                        <span style={{ color: tp.met ? '#3fb950' : '#f85149', fontWeight: 600 }}>
-                          {tp.count}/{delist.min_delists}
+                        <span
+                          style={{ color: tp.met ? '#3fb950' : '#f85149', fontWeight: 600 }}
+                          title={tp.target_size != null
+                            ? `${tp.squad_size} listed · must finish at ${tp.target_size}`
+                            : undefined}
+                        >
+                          {tp.count}/{tp.required ?? delist.min_delists}
+                          {!tp.met && tp.remaining > 0 && (
+                            <span style={{ color: '#8b949e', fontWeight: 500 }}>
+                              {' '}({tp.squad_size}→{tp.target_size})
+                            </span>
+                          )}
                         </span>
                       </div>
                     </div>

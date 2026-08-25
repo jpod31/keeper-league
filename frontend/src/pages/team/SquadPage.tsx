@@ -56,6 +56,10 @@ interface SquadData {
   eligibility_shortages: { pos: string; short_by: number }[]
   delist_is_open: boolean; delist_period: { closes_at: string | null } | null
   team_delist_count: number; min_delists: number; max_delists: number | null
+  /** Cuts still owed. Derived server-side from the size you must finish at. */
+  delist_remaining: number
+  /** Max list size allowed out of the period, leaving room for the draft. */
+  delist_target_size: number | null
   delisted_player_ids: number[]
   pending_incoming: number; trade_is_open: boolean; trade_close_date: string | null
   next_window_open_at: string | null; next_window_label: string | null
@@ -643,25 +647,29 @@ function SquadPageInner() {
           {data.delist_is_open && data.max_delists == null && (() => {
             const done = data.team_delist_count
             const need = data.min_delists || 0
-            const met = need === 0 || done >= need
+            const left = data.delist_remaining ?? Math.max(0, need - done)
+            const met = left === 0
+            const target = data.delist_target_size
             return (
               <div
                 className={`kl-status-pill ${met ? 'kl-status-pill-ok' : 'kl-status-pill-warn'}`}
-                title={need
-                  ? `You have delisted ${done} of a required minimum ${need}`
-                  : 'Delist period open (no minimum)'}
+                title={target != null
+                  ? `Cut to ${target} players to leave room for the draft — ${players.length} listed, ${done} cut so far`
+                  : `You have delisted ${done} of a required minimum ${need}`}
               >
                 <span className="kl-status-pill-icon">
-                  <i className={`bi ${met && need ? 'bi-check2-circle' : 'bi-x-octagon'}`}></i>
+                  <i className={`bi ${met ? 'bi-check2-circle' : 'bi-x-octagon'}`}></i>
                 </span>
                 <span className="kl-status-pill-text">
                   <span className="kl-status-pill-title">
                     {need ? `Delists ${done}/${need}` : 'Delists open'}
                   </span>
                   <span className="kl-status-pill-sub">
-                    {!need ? 'hover player → ⊗'
-                      : met ? 'minimum met'
-                        : `${need - done} more required · hover player → ⊗`}
+                    {met
+                      ? (target != null ? `list at ${target} — done` : 'minimum met')
+                      : target != null
+                        ? `${left} more to reach ${target} · hover player → ⊗`
+                        : `${left} more required · hover player → ⊗`}
                   </span>
                 </span>
               </div>

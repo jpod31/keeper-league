@@ -57,27 +57,78 @@ def open_delist_period(league_id, year, opens_at=None, closes_at=None,
     return period, None
 
 
+DEFAULT_DRAFT_MIN_PICKS = 4
+
+
+def delist_requirement(period, team_id, league=None, season_cfg=None):
+    """What this team still has to cut, and the shape of the ask.
+
+    An off-season period is not "cut N players" — it's "get your list down to a
+    size that leaves room for the draft". A 47-man squad that cuts five is
+    still one over, and a squad that came in small shouldn't be forced to cut
+    the same five as everyone else. So the requirement is derived from the
+    finishing size: squad_size minus the places reserved for draft picks.
+
+    Mid-season periods keep the flat minimum — nobody is drafting mid-year.
+
+    Returns dict(done, remaining, required, target_size, current_size, basis).
+    """
+    league = league or db.session.get(League, period.league_id)
+    done = DelistAction.query.filter_by(
+        delist_period_id=period.id, team_id=team_id
+    ).count()
+    current = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).count()
+
+    if (period.period_type or "offseason") == "offseason":
+        if season_cfg is None:
+            season_cfg = SeasonConfig.query.filter_by(
+                league_id=period.league_id, year=period.year
+            ).first()
+        reserve = (getattr(season_cfg, "offseason_draft_min_picks", None)
+                   or DEFAULT_DRAFT_MIN_PICKS)
+        target = max(0, (league.squad_size or 0) - reserve)
+        remaining = max(0, current - target)
+        return {
+            "done": done, "remaining": remaining, "required": done + remaining,
+            "target_size": target, "current_size": current,
+            "draft_reserve": reserve, "basis": "squad_size",
+        }
+
+    required = period.min_delists or 0
+    return {
+        "done": done, "remaining": max(0, required - done), "required": required,
+        "target_size": None, "current_size": current,
+        "draft_reserve": 0, "basis": "min_delists",
+    }
+
+
 def close_delist_period(period_id):
-    """Close a delist period. Validates minimum delists have been met."""
+    """Close a delist period. Validates every team has met its requirement."""
     period = db.session.get(DelistPeriod, period_id)
     if not period:
         return None, "Delist period not found."
     if period.status != "open":
         return None, "Delist period is not open."
 
-    # Check all teams have met minimum delists
     league = db.session.get(League, period.league_id)
+    season_cfg = SeasonConfig.query.filter_by(
+        league_id=period.league_id, year=period.year
+    ).first()
     teams = FantasyTeam.query.filter_by(league_id=period.league_id).all()
     violations = []
     for team in teams:
-        count = DelistAction.query.filter_by(
-            delist_period_id=period_id, team_id=team.id
-        ).count()
-        if count < period.min_delists:
-            violations.append(f"{team.name}: {count}/{period.min_delists}")
+        req = delist_requirement(period, team.id, league, season_cfg)
+        if req["remaining"] > 0:
+            if req["basis"] == "squad_size":
+                violations.append(
+                    f"{team.name}: {req['current_size']} listed, needs "
+                    f"{req['target_size']} ({req['remaining']} to go)"
+                )
+            else:
+                violations.append(f"{team.name}: {req['done']}/{req['required']}")
 
     if violations:
-        return None, f"Teams haven't met minimum delists: {', '.join(violations)}"
+        return None, f"Teams haven't finished delisting: {', '.join(violations)}"
 
     period.status = "closed"
     db.session.commit()

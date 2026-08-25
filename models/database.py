@@ -847,6 +847,11 @@ class SeasonConfig(db.Model):
     # Off-season configuration
     offseason_trade_enabled = db.Column(db.Boolean, default=True)
     offseason_delist_min = db.Column(db.Integer, default=3)
+    # Squad places every team must leave open for the off-season draft. The
+    # delist requirement is derived from this, not from a flat cut count: a
+    # 47-man list cutting 5 is still 1 over, so what actually matters is the
+    # size you finish at.
+    offseason_draft_min_picks = db.Column(db.Integer, default=4)
     ssp_enabled = db.Column(db.Boolean, default=True)
     ssp_slots = db.Column(db.Integer, default=1)
     ssp_cutoff_round = db.Column(db.Integer, default=4)  # SSP open post-draft until this round
@@ -1224,6 +1229,7 @@ def _run_migrations(app):
             ("mid_season_trade_until_round", "INTEGER"),
             ("offseason_trade_enabled", "BOOLEAN DEFAULT 1"),
             ("offseason_delist_min", "INTEGER DEFAULT 3"),
+            ("offseason_draft_min_picks", "INTEGER DEFAULT 4"),
             ("ssp_enabled", "BOOLEAN DEFAULT 1"),
             ("ssp_slots", "INTEGER DEFAULT 1"),
         ]

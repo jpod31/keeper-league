@@ -151,16 +151,19 @@ def commissioner_hub(league_id):
     # All-teams delist progress
     all_teams_progress = []
     if delist_is_open:
+        from models.season_manager import delist_requirement
         all_teams = FantasyTeam.query.filter_by(league_id=league_id).all()
         for t in all_teams:
-            count = DelistAction.query.filter_by(
-                delist_period_id=delist_period.id, team_id=t.id
-            ).count()
+            req = delist_requirement(delist_period, t.id, league, season_cfg)
             all_teams_progress.append({
                 "name": t.name,
                 "owner": t.owner.display_name if t.owner else "?",
-                "count": count,
-                "met": count >= min_delists,
+                "count": req["done"],
+                "required": req["required"],
+                "remaining": req["remaining"],
+                "squad_size": req["current_size"],
+                "target_size": req["target_size"],
+                "met": req["remaining"] == 0,
             })
 
     is_midseason = (league.status == "active" and season_cfg

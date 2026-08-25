@@ -70,6 +70,8 @@ def squad(league_id, team_id):
     delist_period = None
     team_delist_count = 0
     min_delists = 0
+    delist_remaining = 0
+    delist_target_size = None
     delisted_player_ids = set()
     next_delist_info = None
     if is_owner:
@@ -79,11 +81,15 @@ def squad(league_id, team_id):
         # period ended).
         delist_period = get_open_delist_period(league_id, league.season_year)
         if delist_period:
+            from models.season_manager import delist_requirement
             delist_is_open = True
-            min_delists = delist_period.min_delists or 0
-            team_delist_count = DelistAction.query.filter_by(
-                delist_period_id=delist_period.id, team_id=team_id
-            ).count()
+            _req = delist_requirement(delist_period, team_id, league)
+            team_delist_count = _req["done"]
+            # In the off-season this is derived from the size you must finish
+            # at, not a flat cut count — see delist_requirement.
+            min_delists = _req["required"]
+            delist_remaining = _req["remaining"]
+            delist_target_size = _req["target_size"]
             delisted_actions = DelistAction.query.filter_by(
                 delist_period_id=delist_period.id, team_id=team_id
             ).all()
@@ -845,6 +851,8 @@ def squad(league_id, team_id):
             "delist_period": {"closes_at": delist_period.closes_at.isoformat() if delist_period and delist_period.closes_at else None} if delist_period else None,
             "team_delist_count": team_delist_count,
             "min_delists": min_delists,
+            "delist_remaining": delist_remaining,
+            "delist_target_size": delist_target_size,
             "max_delists": (delist_period.max_delists if delist_period and delist_period.max_delists is not None else None),
             "delisted_player_ids": list(delisted_player_ids),
             "pending_incoming": pending_incoming,
