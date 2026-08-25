@@ -54,3 +54,33 @@ def is_trade_window_open(league_id, year):
         if o and c and o <= now < c:
             return True
     return False
+
+
+def get_trade_window(league_id, year):
+    """The trade window a countdown should point at: (label, close_iso).
+
+    Returns the window that is open right now, else the next one due to open,
+    else (None, None). Both callers used to take the FIRST non-null close date
+    instead, so a long-expired mid-season window won and the page rendered
+    "Trade window open" beside a "closed" pill.
+    """
+    from models.database import SeasonConfig
+    sc = SeasonConfig.query.filter_by(league_id=league_id, year=year).first()
+    if not sc:
+        return None, None
+    now = datetime.now(timezone.utc)
+    windows = [
+        ("Mid-season window", _aware(sc.mid_trade_window_open),
+         _aware(sc.mid_trade_window_close)),
+        ("Off-season window", _aware(sc.off_trade_window_open),
+         _aware(sc.off_trade_window_close)),
+    ]
+    live = [w for w in windows if w[1] and w[2] and w[1] <= now < w[2]]
+    if live:
+        label, _o, close = live[0]
+        return label, close.isoformat()
+    upcoming = sorted([w for w in windows if w[1] and w[1] > now], key=lambda w: w[1])
+    if upcoming:
+        label, _o, close = upcoming[0]
+        return label, close.isoformat() if close else None
+    return None, None

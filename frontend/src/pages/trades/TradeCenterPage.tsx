@@ -35,6 +35,7 @@ interface TradeCenterData {
     name: string
     trade_window_open: boolean
     trade_close_at: string | null
+    trade_window_label: string | null
   }
   user_team: Team | null
   is_commissioner: boolean
@@ -54,16 +55,16 @@ function teamInitials(name: string): string {
 
 function fmtCountdown(closeAt: string | null): string | null {
   if (!closeAt) return null
-  const close = new Date(closeAt)
-  const now = new Date()
-  const ms = close.getTime() - now.getTime()
-  if (ms <= 0) return 'closed'
+  const ms = new Date(closeAt).getTime() - Date.now()
+  // Expired: render nothing. A "closed" chip beside an "open" banner is worse
+  // than no chip at all.
+  if (ms <= 0) return null
   const days = Math.floor(ms / 86400000)
   const hours = Math.floor((ms % 86400000) / 3600000)
   const mins = Math.floor((ms % 3600000) / 60000)
-  if (days > 0) return `${days}d ${hours}h`
-  if (hours > 0) return `${hours}h ${mins}m`
-  return `${mins}m`
+  if (days > 0) return `${days}d ${hours}h left`
+  if (hours > 0) return `${hours}h ${mins}m left`
+  return `${mins}m left`
 }
 
 function posPrimary(pos?: string): string {
@@ -238,7 +239,9 @@ export function TradeCenterPage() {
         <div className="tr-window-banner">
           <div className="tr-window-banner-icon"><i className="bi bi-unlock-fill"></i></div>
           <div className="tr-window-banner-body">
-            <div className="tr-window-banner-title">Trade window open</div>
+            <div className="tr-window-banner-title">
+              {league.trade_window_label || 'Trade window open'}
+            </div>
             <div className="tr-window-banner-sub">Send and accept proposals freely — even uneven trades.</div>
           </div>
           {countdown && (

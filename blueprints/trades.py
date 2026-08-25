@@ -55,18 +55,9 @@ def trade_center(league_id):
     if request.args.get("format") == "json":
         from config import TEAM_LOGOS
 
-        # Trade window close — same shape as propose, so the center page
-        # can show a countdown banner without a second round-trip.
-        trade_close = None
-        season_cfg = SeasonConfig.query.filter_by(
-            league_id=league_id, year=league.season_year
-        ).first()
-        if season_cfg:
-            for col in (season_cfg.mid_trade_window_close, season_cfg.off_trade_window_close):
-                if col is None:
-                    continue
-                trade_close = col.isoformat() + ("" if col.tzinfo else "+00:00")
-                break
+        # One resolver for both trade pages so their banners can't disagree.
+        from models.window_state import get_trade_window
+        window_label, trade_close = get_trade_window(league_id, league.season_year)
 
         def _ser_team(t):
             return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
@@ -113,7 +104,8 @@ def trade_center(league_id):
         return jsonify({
             "league": {"id": league.id, "name": league.name,
                        "trade_window_open": bool(league.trade_window_open),
-                       "trade_close_at": trade_close},
+                       "trade_close_at": trade_close,
+                       "trade_window_label": window_label},
             "user_team": _ser_team(user_team),
             "is_commissioner": is_commissioner,
             "tab": tab,
@@ -205,35 +197,10 @@ def trade_propose(league_id):
 
     if request.args.get("format") == "json":
         from config import TEAM_LOGOS
-        from datetime import datetime, timezone
         from models.database import SeasonStanding
+        from models.window_state import get_trade_window
 
-        # Countdown must track the window that is ACTUALLY open. Taking the
-        # first non-null close date meant a long-expired mid-season window won,
-        # so the page said "Trade window open" and "closed" at the same time.
-        def _aware(dt):
-            if dt is None:
-                return None
-            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-
-        season_cfg = SeasonConfig.query.filter_by(
-            league_id=league_id, year=league.season_year
-        ).first()
-        now = datetime.now(timezone.utc)
-        trade_close, window_label = None, None
-        if season_cfg:
-            windows = [
-                ("Mid-season window", _aware(season_cfg.mid_trade_window_open),
-                 _aware(season_cfg.mid_trade_window_close)),
-                ("Off-season window", _aware(season_cfg.off_trade_window_open),
-                 _aware(season_cfg.off_trade_window_close)),
-            ]
-            live = [w for w in windows if w[1] and w[2] and w[1] <= now <= w[2]]
-            upcoming = [w for w in windows if w[1] and w[1] > now]
-            chosen = (live or sorted(upcoming, key=lambda w: w[1]) or [])
-            if chosen:
-                window_label, _open, _close = chosen[0]
-                trade_close = _close.isoformat() if _close else None
+        window_label, trade_close = get_trade_window(league_id, league.season_year)
 
         standings = {
             s.team_id: s for s in SeasonStanding.query.filter_by(
