@@ -245,44 +245,54 @@ interface SmartFilter {
   icon: string
   tone: string
   hint: string
+  group: 'avail' | 'form' | 'profile'
   test: (p: PoolPlayer, ctx: { myTeam: string | null }) => boolean
 }
+
+const GROUPS: { key: SmartFilter['group']; label: string }[] = [
+  { key: 'avail', label: 'Availability' },
+  { key: 'form', label: 'Form & trend' },
+  { key: 'profile', label: 'Profile' },
+]
+
+/** The two or three worth surfacing without opening anything. */
+const PINNED = ['delisted', 'available', 'mine']
 
 const rtgMove = (p: PoolPlayer) =>
   p.rating != null && p.rating_start != null ? p.rating - p.rating_start : 0
 
 const SMART_FILTERS: SmartFilter[] = [
-  { key: 'delisted', label: 'Delisted', icon: 'bi-scissors', tone: 'red',
+  { group: 'avail', key: 'delisted', label: 'Delisted', icon: 'bi-scissors', tone: 'red',
     hint: 'Cut in a delist period this season',
     test: p => !!p.delisted },
-  { key: 'available', label: 'Free agents', icon: 'bi-unlock-fill', tone: 'green',
+  { group: 'avail', key: 'available', label: 'Free agents', icon: 'bi-unlock-fill', tone: 'green',
     hint: 'Not on anyone’s list', test: p => !p.owner_team },
-  { key: 'rostered', label: 'Rostered', icon: 'bi-lock-fill', tone: 'slate',
+  { group: 'avail', key: 'rostered', label: 'Rostered', icon: 'bi-lock-fill', tone: 'slate',
     hint: 'Already on a squad', test: p => !!p.owner_team },
-  { key: 'mine', label: 'My squad', icon: 'bi-person-badge-fill', tone: 'blue',
+  { group: 'avail', key: 'mine', label: 'My squad', icon: 'bi-person-badge-fill', tone: 'blue',
     hint: 'On your list', test: (p, c) => !!c.myTeam && p.owner_team === c.myTeam },
-  { key: 'rising', label: 'Rising', icon: 'bi-graph-up-arrow', tone: 'green',
+  { group: 'form', key: 'rising', label: 'Rising', icon: 'bi-graph-up-arrow', tone: 'green',
     hint: 'Rating up on the start of the year', test: p => rtgMove(p) > 0 },
-  { key: 'falling', label: 'Falling', icon: 'bi-graph-down-arrow', tone: 'red',
+  { group: 'form', key: 'falling', label: 'Falling', icon: 'bi-graph-down-arrow', tone: 'red',
     hint: 'Rating down on the start of the year', test: p => rtgMove(p) < 0 },
-  { key: 'upside', label: 'Upside', icon: 'bi-rocket-takeoff-fill', tone: 'purple',
+  { group: 'profile', key: 'upside', label: 'Upside', icon: 'bi-rocket-takeoff-fill', tone: 'purple',
     hint: 'Potential at least 8 above current rating',
     test: p => p.potential != null && p.rating != null && p.potential - p.rating >= 8 },
-  { key: 'hot', label: 'In form', icon: 'bi-fire', tone: 'orange',
+  { group: 'form', key: 'hot', label: 'In form', icon: 'bi-fire', tone: 'orange',
     hint: 'Last 3 at least 10 above season average',
     test: p => !!p.l3 && !!p.sc_avg && p.l3 - p.sc_avg >= 10 },
-  { key: 'cold', label: 'Out of form', icon: 'bi-snow2', tone: 'blue',
+  { group: 'form', key: 'cold', label: 'Out of form', icon: 'bi-snow2', tone: 'blue',
     hint: 'Last 3 at least 10 below season average',
     test: p => !!p.l3 && !!p.sc_avg && p.sc_avg - p.l3 >= 10 },
-  { key: 'elite', label: 'Elite', icon: 'bi-star-fill', tone: 'gold',
+  { group: 'profile', key: 'elite', label: 'Elite', icon: 'bi-star-fill', tone: 'gold',
     hint: 'Rated 85 or better', test: p => (p.rating || 0) >= 85 },
-  { key: 'kids', label: 'Under 23', icon: 'bi-hourglass-top', tone: 'teal',
+  { group: 'profile', key: 'kids', label: 'Under 23', icon: 'bi-hourglass-top', tone: 'teal',
     hint: 'Keeper-age talent', test: p => (p.age || 99) <= 23 },
-  { key: 'vets', label: '30 and over', icon: 'bi-hourglass-bottom', tone: 'slate',
+  { group: 'profile', key: 'vets', label: '30 and over', icon: 'bi-hourglass-bottom', tone: 'slate',
     hint: 'The back nine', test: p => (p.age || 0) >= 30 },
-  { key: 'injured', label: 'Injured', icon: 'bi-bandaid-fill', tone: 'orange',
+  { group: 'profile', key: 'injured', label: 'Injured', icon: 'bi-bandaid-fill', tone: 'orange',
     hint: 'Carrying an injury', test: p => !!p.injury_severity },
-  { key: 'rookie', label: 'Rookies', icon: 'bi-asterisk', tone: 'teal',
+  { group: 'profile', key: 'rookie', label: 'Rookies', icon: 'bi-asterisk', tone: 'teal',
     hint: 'Fewer than 10 career games', test: p => (p.career_games || 0) < 10 },
 ]
 
@@ -363,29 +373,26 @@ const POOL_CSS = `
 .pf-density { margin-left: auto; }
 
 /* Smart filters */
-.pf-smart { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+.pf-pinned { display: flex; gap: 6px; flex-wrap: wrap; }
 .pf-chip {
   all: unset;
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 10px; border-radius: 999px;
-  font-size: .73rem; font-weight: 700; letter-spacing: .005em;
+  padding: 6px 11px; border-radius: 999px;
+  font-size: .74rem; font-weight: 700;
   color: #93a0b2;
   background: rgba(255,255,255,.04);
   border: 1px solid var(--pf-line);
   cursor: pointer;
-  transition: background .14s, border-color .14s, color .14s, transform .14s;
+  transition: background .14s, border-color .14s, color .14s;
 }
-.pf-chip i { font-size: .74rem; opacity: .85; }
+.pf-chip i { font-size: .74rem; opacity: .8; }
 .pf-chip-n {
   font-size: .64rem; font-weight: 800; color: #66717f;
   background: rgba(255,255,255,.06);
   border-radius: 999px; padding: 1px 6px; min-width: 20px; text-align: center;
 }
-.pf-chip:hover:not(:disabled) { background: rgba(255,255,255,.09); color: #e2eaf6; transform: translateY(-1px); }
+.pf-chip:hover:not(:disabled) { background: rgba(255,255,255,.09); color: #e2eaf6; }
 .pf-chip:disabled { opacity: .3; cursor: default; }
-
-/* Tone only asserts itself once the chip is on — fourteen permanently
-   coloured pills would be a fruit salad. */
 .pf-chip.on { color: #fff; }
 .pf-chip.on .pf-chip-n { background: rgba(0,0,0,.28); color: #fff; }
 .pf-red.on    { background: rgba(248,81,73,.22);  border-color: rgba(248,81,73,.55);  color: #ffb3ae; }
@@ -397,10 +404,98 @@ const POOL_CSS = `
 .pf-teal.on   { background: rgba(45,212,191,.2);  border-color: rgba(45,212,191,.5);  color: #8ce8dc; }
 .pf-slate.on  { background: rgba(139,148,158,.22);border-color: rgba(139,148,158,.5); color: #d3dae4; }
 
-/* Applied row */
+/* ── Filters button + panel ──────────────────────────────────────── */
+.pf-more-wrap { position: relative; }
+.pf-more {
+  all: unset;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px; border-radius: 10px;
+  font-size: .76rem; font-weight: 700; color: #b3c0d2;
+  background: rgba(255,255,255,.045);
+  border: 1px solid var(--pf-line);
+  cursor: pointer;
+  transition: background .14s, border-color .14s, color .14s;
+}
+.pf-more:hover, .pf-more.open { background: rgba(255,255,255,.1); color: #fff; }
+.pf-more.open { border-color: rgba(120,180,255,.5); }
+.pf-more.has { border-color: rgba(120,180,255,.45); color: #dbe8ff; }
+.pf-more-n {
+  font-size: .64rem; font-weight: 800; color: #06121f;
+  background: #6fb2ff; border-radius: 999px;
+  padding: 1px 6px; min-width: 18px; text-align: center;
+}
+.pf-more-chev { font-size: .62rem; opacity: .6; }
+
+.pf-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+  width: 460px; max-width: min(92vw, 460px);
+  padding: 14px;
+  border-radius: 14px;
+  background: #10151e;
+  border: 1px solid rgba(140,155,185,.28);
+  box-shadow: 0 26px 60px -22px rgba(0,0,0,.95);
+  animation: pfPanel .14s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes pfPanel { from { opacity: 0; transform: translateY(-6px); } }
+.pf-group + .pf-group { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--pf-line); }
+.pf-group-h {
+  font-size: .58rem; font-weight: 900; letter-spacing: .16em;
+  text-transform: uppercase; color: #616d7d; margin-bottom: 8px;
+}
+.pf-group-items { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+
+/* Rows, not pills. A list reads down in one pass; a pill cloud makes the
+   eye hunt. Colour lives on the icon only, so nothing shouts at rest. */
+.pf-opt {
+  all: unset;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 9px; border-radius: 8px;
+  font-size: .78rem; color: #aab6c6;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.pf-opt:hover:not(:disabled) { background: rgba(255,255,255,.06); color: #fff; }
+.pf-opt:disabled { opacity: .28; cursor: default; }
+.pf-opt-i { font-size: .78rem; width: 15px; text-align: center; }
+.pf-opt-l { flex: 1; min-width: 0; font-weight: 650; }
+.pf-opt-n { font-size: .68rem; font-weight: 700; color: #616d7d; font-variant-numeric: tabular-nums; }
+.pf-opt.on {
+  background: rgba(120,180,255,.14);
+  border-color: rgba(120,180,255,.34);
+  color: #fff;
+}
+.pf-opt.on .pf-opt-n { color: #a8ceff; }
+
+.pf-red-i { color: #ff8a80; }
+.pf-green-i { color: #7ee787; }
+.pf-blue-i { color: #79c0ff; }
+.pf-purple-i { color: #d2a8ff; }
+.pf-orange-i { color: #ffb46b; }
+.pf-gold-i { color: #e3b341; }
+.pf-teal-i { color: #56d4c0; }
+.pf-slate-i { color: #98a3b3; }
+
+.pf-panel-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pf-panel-selects .pf-select { max-width: none; width: 100%; }
+.pf-panel-selects .pf-select:first-child { grid-column: 1 / -1; }
+.pf-panel-foot {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 13px; padding-top: 11px;
+  border-top: 1px solid var(--pf-line);
+}
+.pf-apply {
+  all: unset; margin-left: auto; cursor: pointer;
+  padding: 6px 16px; border-radius: 8px;
+  font-size: .76rem; font-weight: 800; color: #06121f;
+  background: linear-gradient(100deg, #6fb2ff, #4a9bff);
+}
+.pf-apply:hover { filter: brightness(1.08); }
+
+/* ── Applied row ─────────────────────────────────────────────────── */
 .pf-status {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  margin-top: 11px; padding-top: 9px;
+  margin-top: 10px; padding-top: 9px;
   border-top: 1px dashed var(--pf-line);
 }
 .pf-count { font-size: .75rem; color: #7c8798; }
@@ -418,13 +513,23 @@ const POOL_CSS = `
 .pf-tag i { font-size: .66rem; opacity: .7; }
 .pf-tag:hover { background: rgba(248,81,73,.18); border-color: rgba(248,81,73,.4); color: #ffb3ae; }
 .pf-clear {
-  all: unset; margin-left: auto; cursor: pointer;
+  all: unset; cursor: pointer;
   font-size: .72rem; font-weight: 700; color: #7c8798;
-  padding: 3px 9px; border-radius: 7px; border: 1px solid var(--pf-line);
+  padding: 5px 11px; border-radius: 7px;
+  border: 1px solid var(--pf-line);
+  background: rgba(255,255,255,.03);
 }
-.pf-clear:hover { color: #fff; background: rgba(255,255,255,.08); }
+.pf-clear:hover { color: #fff; background: rgba(255,255,255,.1); }
+/* Only the status-row instance floats right; in the panel footer the Show
+   button owns that side. */
+.pf-status .pf-clear { margin-left: auto; }
 
-.pf-smart-sheet { margin-top: 0; }
+@media (max-width: 1200px) {
+  .pf-select { max-width: 128px; }
+  .pf-density { margin-left: 0; }
+}
+
+.pf-smart-sheet { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0; }
 
 @media (max-width: 1200px) {
   .pf-select { max-width: 128px; }
@@ -511,6 +616,8 @@ export function PlayerPoolPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [ownerFilter, setOwnerFilter] = useState('')
   const [smart, setSmart] = useState<Set<string>>(new Set())
+  const [panelOpen, setPanelOpen] = useState(false)
+  const panelRef = useRef<HTMLDivElement>(null)
   const [sortKey, setSortKey] = useState<SortKey>('sc_avg')
   const [sortDir, setSortDir] = useState<1 | -1>(-1)
   const [mobSort, setMobSort] = useState<MobileSortKey>('sc')
@@ -641,6 +748,21 @@ export function PlayerPoolPage() {
   const activeFilterCount =
     [posFilter, teamFilter, ageFilter, statusFilter, ownerFilter].filter(Boolean).length + smart.size
 
+  // Close the filter panel on outside click / Escape.
+  useEffect(() => {
+    if (!panelOpen) return
+    function onDown(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setPanelOpen(false)
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setPanelOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [panelOpen])
+
   async function pickup(playerId: number) {
     if (!confirm('Pick this player up?')) return
     setPickingUp(playerId)
@@ -765,51 +887,107 @@ export function PlayerPoolPage() {
               ))}
             </div>
 
-            <div className="pf-selects">
-              <select className="pf-select" value={teamFilter} onChange={e => setTeamFilter(e.target.value)} aria-label="AFL club">
-                <option value="">Any club</option>
-                {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <select className="pf-select" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} aria-label="Coach">
-                <option value="">Any coach</option>
-                {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-              <select className="pf-select" value={ageFilter} onChange={e => setAgeFilter(e.target.value)} aria-label="Age band">
-                <option value="">Any age</option>
-                <option value="21">U21</option>
-                <option value="23">U23</option>
-                <option value="25">U25</option>
-                <option value="25-30">25–30</option>
-                <option value="30+">30+</option>
-              </select>
+            {/* Only the handful worth seeing without asking. Everything else
+                lives one click away — fourteen equal-weight pills was a wall. */}
+            <div className="pf-pinned">
+              {PINNED.map(k => {
+                const f = SMART_FILTERS.find(x => x.key === k)
+                if (!f || (f.key === 'mine' && !myTeam)) return null
+                const n = smartCounts[f.key] ?? 0
+                const on = smart.has(f.key)
+                return (
+                  <button
+                    key={f.key} type="button" title={f.hint}
+                    className={`pf-chip pf-${f.tone}${on ? ' on' : ''}`}
+                    onClick={() => toggleSmart(f.key)}
+                    disabled={!on && n === 0} aria-pressed={on}
+                  >
+                    <i className={`bi ${f.icon}`} />{f.label}
+                    <span className="pf-chip-n">{n}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="pf-more-wrap" ref={panelRef}>
+              <button
+                type="button"
+                className={`pf-more${panelOpen ? ' open' : ''}${activeFilterCount > 0 ? ' has' : ''}`}
+                onClick={() => setPanelOpen(o => !o)}
+                aria-expanded={panelOpen}
+              >
+                <i className="bi bi-sliders" />
+                Filters
+                {activeFilterCount > 0 && <span className="pf-more-n">{activeFilterCount}</span>}
+                <i className={`bi bi-chevron-${panelOpen ? 'up' : 'down'} pf-more-chev`} />
+              </button>
+
+              {panelOpen && (
+                <div className="pf-panel" role="dialog" aria-label="Filters">
+                  {GROUPS.map(g => {
+                    const items = SMART_FILTERS.filter(
+                      f => f.group === g.key && !(f.key === 'mine' && !myTeam))
+                    if (!items.length) return null
+                    return (
+                      <div className="pf-group" key={g.key}>
+                        <div className="pf-group-h">{g.label}</div>
+                        <div className="pf-group-items">
+                          {items.map(f => {
+                            const n = smartCounts[f.key] ?? 0
+                            const on = smart.has(f.key)
+                            return (
+                              <button
+                                key={f.key} type="button" title={f.hint}
+                                className={`pf-opt${on ? ' on' : ''}`}
+                                onClick={() => toggleSmart(f.key)}
+                                disabled={!on && n === 0} aria-pressed={on}
+                              >
+                                <i className={`bi ${f.icon} pf-opt-i pf-${f.tone}-i`} />
+                                <span className="pf-opt-l">{f.label}</span>
+                                <span className="pf-opt-n">{n}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <div className="pf-group">
+                    <div className="pf-group-h">Narrow it down</div>
+                    <div className="pf-panel-selects">
+                      <select className="pf-select" value={teamFilter} onChange={e => setTeamFilter(e.target.value)} aria-label="AFL club">
+                        <option value="">Any club</option>
+                        {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <select className="pf-select" value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} aria-label="Coach">
+                        <option value="">Any coach</option>
+                        {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                      <select className="pf-select" value={ageFilter} onChange={e => setAgeFilter(e.target.value)} aria-label="Age band">
+                        <option value="">Any age</option>
+                        <option value="21">U21</option>
+                        <option value="23">U23</option>
+                        <option value="25">U25</option>
+                        <option value="25-30">25–30</option>
+                        <option value="30+">30+</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="pf-panel-foot">
+                    <button type="button" className="pf-clear" onClick={clearFilters}>Clear all</button>
+                    <button type="button" className="pf-apply" onClick={() => setPanelOpen(false)}>
+                      Show {sorted.length}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <span className="pf-density"><DensityToggle density={density} onChange={setDensity} /></span>
           </div>
 
-          {/* Row 2 — smart filters, each carrying how many it would leave */}
-          <div className="pf-smart">
-            {SMART_FILTERS.map(f => {
-              if (f.key === 'mine' && !myTeam) return null
-              const n = smartCounts[f.key] ?? 0
-              const on = smart.has(f.key)
-              return (
-                <button
-                  key={f.key}
-                  type="button"
-                  title={f.hint}
-                  className={`pf-chip pf-${f.tone}${on ? ' on' : ''}`}
-                  onClick={() => toggleSmart(f.key)}
-                  disabled={!on && n === 0}
-                  aria-pressed={on}
-                >
-                  <i className={`bi ${f.icon}`} />
-                  {f.label}
-                  <span className="pf-chip-n">{n}</span>
-                </button>
-              )
-            })}
-          </div>
 
           {/* Row 3 — what is actually applied */}
           <div className="pf-status">
