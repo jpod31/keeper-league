@@ -360,8 +360,10 @@ def remove_from_ltil(team_id, player_id, league_id=None, commissioner_override=F
     player as part of squad reshaping). Otherwise blocked unless
     commissioner_override=True.
 
-    If a replacement player was selected via SSP, the replacement is
-    dropped from the team's roster.
+    An SSP signing made while the player was listed is NOT a temporary cover —
+    in this league he is a full member of the squad and stays on the list. So
+    coming off the LTIL only restores the injured player; nobody is dropped for
+    him, and the squad simply runs over the cap until the delist period sorts it.
     Returns (ltil_entry, None) on success or (None, error_msg) on failure.
     """
     if league_id and not commissioner_override:
@@ -383,23 +385,18 @@ def remove_from_ltil(team_id, player_id, league_id=None, commissioner_override=F
         return None, "Player is not on the long-term injury list."
 
     ltil.removed_at = datetime.now(timezone.utc)
-
-    # If a replacement player was picked via SSP, drop them
-    if ltil.replacement_player_id:
-        replacement_roster = FantasyRoster.query.filter_by(
-            team_id=team_id, player_id=ltil.replacement_player_id, is_active=True
-        ).first()
-        if replacement_roster:
-            replacement_roster.is_active = False
-
     db.session.commit()
     return ltil, None
 
 
 def ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id):
-    """SSP: Select a replacement player from the unrostered pool for an LTIL player.
+    """SSP: sign a player from the unrostered pool while someone is on the LTIL.
 
-    Validates SSP window dates if configured.
+    "Replacement" is a misnomer kept for the column name — the signing is a
+    permanent squad member, not cover that expires. He is not dropped when the
+    injured player comes back off the list.
+
+    Validates the SSP window if configured.
     Returns (ltil_entry, None) on success or (None, error_msg) on failure.
     """
     # Check SSP round cutoff
