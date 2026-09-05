@@ -412,15 +412,18 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
                     <div key={lt.player_id} className="fv-ltil-slot">
                       <PlayerCard p={p} posClass={posClass} isLtil />
                       <div className="fv-ltil-slot-foot">
+                        {/* An SSP fills an open squad spot, which an approved LTIL
+                            can create -- it is not a swap-in for this player, so
+                            the slot says nothing when none has been signed. */}
                         {lt.replacement_name ? (
                           <span className="fv-ltil-ssp-name" title={`SSP: ${lt.replacement_name}`}>
-                            <i className="bi bi-arrow-return-right"></i> {lt.replacement_name}
+                            SSP: {lt.replacement_name}
                           </span>
                         ) : isOwner && fd.ssp_window_active && actions ? (
                           <button className="fv-ltil-ssp-btn-sm" onClick={() => actions.onOpenSSP(lt.id)}>
                             <i className="bi bi-plus-circle"></i> Sign SSP
                           </button>
-                        ) : <span className="fv-ltil-ssp-none">No SSP</span>}
+                        ) : <span className="fv-ltil-ssp-none"></span>}
                         {isOwner && fd.can_remove_ltil && actions && (
                           <button className="fv-ltil-remove-btn-sm" onClick={() => actions.removeFromLTIL(lt.player_id)} title="Remove from LTIL">
                             <i className="bi bi-x-lg"></i>
