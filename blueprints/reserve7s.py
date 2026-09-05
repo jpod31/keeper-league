@@ -146,6 +146,20 @@ def get_7s_target(league_id, season_year):
     return season_year + 1, 0, True
 
 
+def _sevens_locked_ids(team_id, afl_round, year):
+    """Players this team can no longer move out of its 7s side.
+
+    Empty unless the team has a 7s match still riding on the round. Once it is
+    out of the 7s finals (or the 7s season is done and the side is next year's
+    plan) an AFL game starting decides nothing for it, so nothing locks.
+    """
+    from models.season_manager import team_7s_round_is_consequential
+
+    if not team_7s_round_is_consequential(team_id, afl_round, year):
+        return set()
+    return get_locked_player_ids(afl_round, year)
+
+
 def _ensure_7s_lineup(league_id, team_id, afl_round, year):
     """Auto-carry 7s lineup from the most recent round if none exists for this round.
 
@@ -251,8 +265,10 @@ def sevens_team(league_id):
     selected_ids = {e.player_id for e in current_lineup}
     captain_id = next((e.player_id for e in current_lineup if e.is_captain), None)
 
-    # Locked players (AFL game has started)
-    locked_ids = get_locked_player_ids(afl_round, year)
+    # Locked players (AFL game has started). The 7s comp runs its own ladder
+    # and finals, so it answers the lockout question for itself: no 7s match
+    # riding on the round means nothing in the side freezes.
+    locked_ids = _sevens_locked_ids(user_team.id, afl_round, year)
 
     # AFL game schedule for round
     afl_games = (
@@ -355,7 +371,7 @@ def sevens_team_set(league_id):
         return jsonify({"error": f"Maximum 2 over-{AGE_CUTOFF} players allowed (have {senior_count})"}), 400
 
     # Check lockouts — can't remove locked players from existing lineup
-    locked_ids = get_locked_player_ids(afl_round, year)
+    locked_ids = _sevens_locked_ids(user_team.id, afl_round, year)
     existing = Reserve7sLineup.query.filter_by(
         league_id=league_id, team_id=user_team.id,
         afl_round=afl_round, year=year,

@@ -379,20 +379,29 @@ def squad(league_id, team_id):
                 for g in round_games:
                     teams_playing.add(g.home_team)
                     teams_playing.add(g.away_team)
+                # A lockout only exists to protect a match that counts. Through
+                # September the AFL keeps playing while most teams have no
+                # fixture left -- knocked out, or never in the finals at all --
+                # and freezing their side would be freezing it for nothing.
+                from models.season_manager import team_round_is_consequential
+                lockout_in_force = team_round_is_consequential(
+                    team_id, current_afl_round, league.season_year
+                )
                 # Build set of teams whose game has started (locked)
                 # Check both status AND scheduled_start time as fallback
                 locked_teams = set()
                 now = datetime.now()
-                for g in round_games:
-                    if g.status in ("live", "complete") or (g.scheduled_start and g.scheduled_start <= now):
-                        locked_teams.add(g.home_team)
-                        locked_teams.add(g.away_team)
-                # Find earliest not-yet-started game for lockout countdown
-                for g in sorted(round_games, key=lambda x: x.scheduled_start or datetime.max):
-                    if g.scheduled_start and g.scheduled_start > now and g.status == "scheduled":
-                        if g.home_team in team_afl_teams or g.away_team in team_afl_teams:
-                            next_lockout_time = g.scheduled_start.isoformat()
-                            break
+                if lockout_in_force:
+                    for g in round_games:
+                        if g.status in ("live", "complete") or (g.scheduled_start and g.scheduled_start <= now):
+                            locked_teams.add(g.home_team)
+                            locked_teams.add(g.away_team)
+                    # Find earliest not-yet-started game for lockout countdown
+                    for g in sorted(round_games, key=lambda x: x.scheduled_start or datetime.max):
+                        if g.scheduled_start and g.scheduled_start > now and g.status == "scheduled":
+                            if g.home_team in team_afl_teams or g.away_team in team_afl_teams:
+                                next_lockout_time = g.scheduled_start.isoformat()
+                                break
         except Exception:
             pass
 
@@ -982,9 +991,12 @@ def lineup(league_id, team_id, afl_round):
     from models.database import LeaguePositionSlot, AflGame
     position_slots = LeaguePositionSlot.query.filter_by(league_id=league_id).all()
 
-    # Get locked player IDs for rolling lockout display
+    # Get locked player IDs for rolling lockout display. Only a round this team
+    # is actually playing for can lock anything -- see team_round_is_consequential.
     from models.live_sync import get_locked_player_ids, get_game_statuses
-    locked_player_ids = get_locked_player_ids(afl_round, year)
+    from models.season_manager import team_round_is_consequential
+    lockout_in_force = team_round_is_consequential(team_id, afl_round, year)
+    locked_player_ids = get_locked_player_ids(afl_round, year) if lockout_in_force else set()
     afl_games = get_game_statuses(afl_round, year)
 
     # Build player→game start time lookup for "Locks at X" display
@@ -993,13 +1005,14 @@ def lineup(league_id, team_id, afl_round):
     for g in afl_games:
         games_by_team[g["home_team"]] = g
         games_by_team[g["away_team"]] = g
-    for p in all_players:
-        game = games_by_team.get(p.afl_team)
-        if game:
-            if game["status"] in ("live", "complete"):
-                player_lock_times[p.id] = "Locked"
-            elif game.get("scheduled_start"):
-                player_lock_times[p.id] = f"Locks at {game['scheduled_start'][11:16]}"
+    if lockout_in_force:
+        for p in all_players:
+            game = games_by_team.get(p.afl_team)
+            if game:
+                if game["status"] in ("live", "complete"):
+                    player_lock_times[p.id] = "Locked"
+                elif game.get("scheduled_start"):
+                    player_lock_times[p.id] = f"Locks at {game['scheduled_start'][11:16]}"
 
     # ── JSON API mode for React SPA ──
     if request.args.get("format") == "json":
@@ -1384,34 +1397,57 @@ def _injury_return_display(player):
 # ── Lineup AJAX helpers ──────────────────────────────────────────────
 
 
-def _check_player_locked(player_id, year):
+def _active_afl_round(year):
+    """The AFL round the rolling lockout is currently being judged against."""
+    from scrapers.squiggle import get_current_round
+
+    active_round = get_current_round(year)
+    if active_round is not None:
+        return active_round
+
+    # Fallback: check DB for any round with live/complete games
+    latest_game = (
+        AflGame.query
+        .filter_by(year=year)
+        .filter(AflGame.status.in_(["live", "complete"]))
+        .order_by(AflGame.afl_round.desc())
+        .first()
+    )
+    return latest_game.afl_round if latest_game else None
+
+
+def _check_player_locked(player_id, year, team, comp="main"):
     """Return True if the player's AFL game has started (rolling lockout).
+
+    Only a match that counts can lock anything. If `team` has no fixture left
+    in the round -- out of the finals, on a bye, or the league season already
+    done -- an AFL bounce decides nothing for them and their side stays open,
+    even through September while the AFL plays on. `comp` picks which
+    competition asks the question: the main side or the Reserve 7s, each of
+    which runs its own ladder and finals.
 
     Uses both DB game status AND scheduled_start time as fallback,
     so lockout works even if game status hasn't been synced yet.
     """
     from datetime import datetime
-    from models.live_sync import get_locked_player_ids
+    from models.season_manager import (
+        team_round_is_consequential, team_7s_round_is_consequential,
+    )
 
     player = db.session.get(AflPlayer, player_id)
     if not player or not player.afl_team:
         return False
 
-    # Find the current/active round
-    from scrapers.squiggle import get_current_round
-    active_round = get_current_round(year)
+    active_round = _active_afl_round(year)
     if active_round is None:
-        # Fallback: check DB for any round with live/complete games
-        latest_game = (
-            AflGame.query
-            .filter_by(year=year)
-            .filter(AflGame.status.in_(["live", "complete"]))
-            .order_by(AflGame.afl_round.desc())
-            .first()
-        )
-        if not latest_game:
-            return False
-        active_round = latest_game.afl_round
+        return False
+
+    consequential = (
+        team_7s_round_is_consequential if comp == "7s"
+        else team_round_is_consequential
+    )
+    if not consequential(team.id if team else None, active_round, year):
+        return False
 
     # Check if player's team has a game this round that has started
     game = AflGame.query.filter(
@@ -1467,14 +1503,14 @@ def api_set_captain(league_id, team_id):
     if err:
         return err
 
-    if _check_player_locked(player_id, league.season_year):
+    if _check_player_locked(player_id, league.season_year, team):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
     # If current captain is locked, can't change captain at all
     current_cap = FantasyRoster.query.filter_by(
         team_id=team_id, is_active=True, is_captain=True
     ).first()
-    if current_cap and current_cap.player_id != player_id and _check_player_locked(current_cap.player_id, league.season_year):
+    if current_cap and current_cap.player_id != player_id and _check_player_locked(current_cap.player_id, league.season_year, team):
         return jsonify({"error": "Captain is locked (game started)"}), 409
 
     # Only on-field/flex players can be captain
@@ -1509,14 +1545,14 @@ def api_set_vc(league_id, team_id):
     if err:
         return err
 
-    if _check_player_locked(player_id, league.season_year):
+    if _check_player_locked(player_id, league.season_year, team):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
     # If current VC is locked, can't change VC at all
     current_vc = FantasyRoster.query.filter_by(
         team_id=team_id, is_active=True, is_vice_captain=True
     ).first()
-    if current_vc and current_vc.player_id != player_id and _check_player_locked(current_vc.player_id, league.season_year):
+    if current_vc and current_vc.player_id != player_id and _check_player_locked(current_vc.player_id, league.season_year, team):
         return jsonify({"error": "Vice Captain is locked (game started)"}), 409
 
     # Only on-field/flex players can be vice-captain
@@ -1552,7 +1588,7 @@ def api_set_position(league_id, team_id):
     if err:
         return err
 
-    if _check_player_locked(player_id, league.season_year):
+    if _check_player_locked(player_id, league.season_year, team):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
     valid_codes = ("DEF", "MID", "FWD", "RUC", "FLEX")
@@ -1619,9 +1655,9 @@ def api_swap(league_id, team_id):
         return err
 
     # Rolling lockout — block swap if either player's game has started
-    if _check_player_locked(pid1, league.season_year):
+    if _check_player_locked(pid1, league.season_year, team):
         return jsonify({"error": f"{entry1.player.name} is locked (game started)"}), 409
-    if _check_player_locked(pid2, league.season_year):
+    if _check_player_locked(pid2, league.season_year, team):
         return jsonify({"error": f"{entry2.player.name} is locked (game started)"}), 409
 
     # Validate position eligibility before swapping
@@ -1726,7 +1762,7 @@ def api_set_emergency(league_id, team_id):
         return err
 
     # Rolling lockout — block if player's game has started
-    if _check_player_locked(player_id, league.season_year):
+    if _check_player_locked(player_id, league.season_year, team):
         return jsonify({"error": "Player is locked (game started)"}), 409
 
     # Must be a reserve (is_benched=True)
@@ -1759,7 +1795,7 @@ def api_set_emergency(league_id, team_id):
             # Find an unlocked emergency to bump (earliest = lowest player_id)
             bumped = None
             for emg_entry in sorted(current_emgs, key=lambda e: e.player_id):
-                if not _check_player_locked(emg_entry.player_id, league.season_year):
+                if not _check_player_locked(emg_entry.player_id, league.season_year, team):
                     bumped = emg_entry
                     break
             if not bumped:
@@ -1853,7 +1889,8 @@ def api_toggle_7s(league_id, team_id):
         if len(current_7s) >= 7:
             bumped = None
             for s_entry in sorted(current_7s, key=lambda e: e.player_id):
-                if not _check_player_locked(s_entry.player_id, league.season_year):
+                if not _check_player_locked(s_entry.player_id,
+                                            league.season_year, team, comp="7s"):
                     bumped = s_entry
                     break
             if not bumped:

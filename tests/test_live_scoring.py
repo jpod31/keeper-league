@@ -633,6 +633,160 @@ class TestLineupLockoutEnforcement:
         assert error is None
 
 
+class TestLockoutNeedsAConsequentialMatch:
+    """A lockout only holds while the team has a match riding on the round.
+
+    The AFL plays on through September after most fantasy sides are done. A
+    team with no fixture left — knocked out of the finals, or never in them —
+    must stay free to move players even once their AFL games have bounced.
+    """
+
+    def _live_round(self, db, afl_round):
+        db.session.add(AflGame(
+            id=2000 + afl_round, year=2026, afl_round=afl_round,
+            home_team="Adelaide", away_team="Carlton", status="live",
+        ))
+        db.session.commit()
+
+    def _lineup_with_dawson_at_def(self, db, team, afl_round, dawson, stewart):
+        lineup = WeeklyLineup(team_id=team.id, afl_round=afl_round, year=2026)
+        db.session.add(lineup)
+        db.session.flush()
+        db.session.add(LineupSlot(
+            lineup_id=lineup.id, player_id=dawson.id, position_code="DEF"
+        ))
+        db.session.add(LineupSlot(
+            lineup_id=lineup.id, player_id=stewart.id, position_code="DEF"
+        ))
+        db.session.commit()
+        return lineup
+
+    def test_no_fixture_means_no_lockout(self, app, db, seed_data):
+        """Round 25 is an AFL final. This team has no fantasy match in it."""
+        from models.lineup_manager import set_lineup
+
+        team_a = seed_data["team_a"]
+        league = seed_data["league"]
+        dawson = seed_data["players"]["Jordan Dawson"]   # ADE, game is live
+        stewart = seed_data["players"]["Tom Stewart"]
+
+        self._live_round(db, 25)
+        self._lineup_with_dawson_at_def(db, team_a, 25, dawson, stewart)
+
+        # Dawson's game has started but nothing is riding on it — he moves.
+        slot_data = [
+            {"player_id": dawson.id, "position_code": "BENCH"},
+            {"player_id": stewart.id, "position_code": "DEF"},
+        ]
+        result, error = set_lineup(team_a.id, 25, 2026, slot_data, league.id)
+        assert error is None
+
+    def test_finals_fixture_still_locks(self, app, db, seed_data):
+        """Same round, but now this team is playing its final in it."""
+        from models.lineup_manager import set_lineup
+
+        team_a = seed_data["team_a"]
+        team_b = seed_data["team_b"]
+        league = seed_data["league"]
+        dawson = seed_data["players"]["Jordan Dawson"]
+        stewart = seed_data["players"]["Tom Stewart"]
+
+        self._live_round(db, 25)
+        self._lineup_with_dawson_at_def(db, team_a, 25, dawson, stewart)
+        db.session.add(Fixture(
+            league_id=league.id, afl_round=25, year=2026,
+            home_team_id=team_a.id, away_team_id=team_b.id,
+            is_final=True, final_type="QF1", status="scheduled",
+        ))
+        db.session.commit()
+
+        slot_data = [
+            {"player_id": dawson.id, "position_code": "BENCH"},
+            {"player_id": stewart.id, "position_code": "DEF"},
+        ]
+        result, error = set_lineup(team_a.id, 25, 2026, slot_data, league.id)
+        assert error is not None
+        assert "locked" in error.lower()
+
+    def test_completed_fixture_releases_the_lockout(self, app, db, seed_data):
+        """Once the match is played and scored there is nothing left to protect."""
+        from models.lineup_manager import set_lineup
+
+        team_a = seed_data["team_a"]
+        team_b = seed_data["team_b"]
+        league = seed_data["league"]
+        dawson = seed_data["players"]["Jordan Dawson"]
+        stewart = seed_data["players"]["Tom Stewart"]
+
+        self._live_round(db, 25)
+        self._lineup_with_dawson_at_def(db, team_a, 25, dawson, stewart)
+        db.session.add(Fixture(
+            league_id=league.id, afl_round=25, year=2026,
+            home_team_id=team_a.id, away_team_id=team_b.id,
+            is_final=True, final_type="QF1", status="completed",
+        ))
+        db.session.commit()
+
+        slot_data = [
+            {"player_id": dawson.id, "position_code": "BENCH"},
+            {"player_id": stewart.id, "position_code": "DEF"},
+        ]
+        result, error = set_lineup(team_a.id, 25, 2026, slot_data, league.id)
+        assert error is None
+
+    def test_stored_lock_flag_does_not_bind_without_a_match(self, app, db, seed_data):
+        """A stale is_locked from an earlier snapshot must not strand the side."""
+        from models.lineup_manager import set_lineup
+
+        team_a = seed_data["team_a"]
+        league = seed_data["league"]
+        dawson = seed_data["players"]["Jordan Dawson"]
+        stewart = seed_data["players"]["Tom Stewart"]
+
+        self._live_round(db, 25)
+        lineup = self._lineup_with_dawson_at_def(db, team_a, 25, dawson, stewart)
+        lineup.is_locked = True
+        db.session.commit()
+
+        slot_data = [
+            {"player_id": dawson.id, "position_code": "BENCH"},
+            {"player_id": stewart.id, "position_code": "DEF"},
+        ]
+        result, error = set_lineup(team_a.id, 25, 2026, slot_data, league.id)
+        assert error is None
+
+    def test_snapshot_leaves_unfixtured_teams_open(self, app, db, seed_data):
+        """The rolling snapshot must not stamp is_locked on a team with no match."""
+        from models.lineup_manager import snapshot_lineups_for_round
+
+        team_a = seed_data["team_a"]
+        team_b = seed_data["team_b"]
+        league = seed_data["league"]
+
+        # Every game in round 25 is done, so the round is "fully locked"...
+        db.session.add(AflGame(
+            id=2125, year=2026, afl_round=25,
+            home_team="Adelaide", away_team="Carlton", status="complete",
+        ))
+        # ...but only team_a is playing a final in it.
+        db.session.add(Fixture(
+            league_id=league.id, afl_round=25, year=2026,
+            home_team_id=team_a.id, away_team_id=-1,
+            is_final=True, final_type="PF", status="scheduled",
+        ))
+        db.session.commit()
+
+        snapshot_lineups_for_round(25, 2026)
+        db.session.commit()
+
+        locked = {
+            wl.team_id: wl.is_locked
+            for wl in WeeklyLineup.query.filter_by(afl_round=25, year=2026).all()
+        }
+        assert locked.get(team_a.id) is True
+        assert not locked.get(team_b.id)
+
+
 # ── Phase 6: Game Status & Breakdown Helpers ─────────────────────────
 
 

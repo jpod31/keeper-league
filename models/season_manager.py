@@ -582,6 +582,80 @@ def league_season_over(league_id, year):
     )
 
 
+LIVE_FIXTURE_STATUSES = ("scheduled", "live")
+
+
+def team_round_is_consequential(team_id, afl_round, year):
+    """Does this team have a match in this round whose result is still open?
+
+    A lockout only exists to protect a match that counts. Once a team has no
+    fixture left in the round -- knocked out of finals, sitting out a bye
+    week, or the whole league season already done -- an AFL game kicking off
+    decides nothing for them, so nothing of theirs should freeze. The AFL
+    calendar rolling into September must not lock the managers who aren't
+    playing that week.
+    """
+    if not team_id or afl_round is None:
+        return False
+    return bool(
+        Fixture.query
+        .filter(Fixture.year == year, Fixture.afl_round == afl_round)
+        .filter(db.or_(Fixture.home_team_id == team_id,
+                       Fixture.away_team_id == team_id))
+        .filter(Fixture.status.in_(LIVE_FIXTURE_STATUSES))
+        .first()
+    )
+
+
+def team_7s_round_is_consequential(team_id, afl_round, year):
+    """The 7s equivalent of team_round_is_consequential.
+
+    The 7s comp runs its own ladder and finals, so a team can be playing a
+    live 7s match in a week its main side has nothing on, and vice versa.
+    Each competition answers the lockout question for itself.
+    """
+    from models.database import Reserve7sFixture
+
+    if not team_id or afl_round is None:
+        return False
+    return bool(
+        Reserve7sFixture.query
+        .filter(Reserve7sFixture.year == year,
+                Reserve7sFixture.afl_round == afl_round)
+        .filter(db.or_(Reserve7sFixture.home_team_id == team_id,
+                       Reserve7sFixture.away_team_id == team_id))
+        .filter(Reserve7sFixture.status.in_(LIVE_FIXTURE_STATUSES))
+        .first()
+    )
+
+
+def teams_with_consequential_round(afl_round, year, statuses=LIVE_FIXTURE_STATUSES):
+    """Every fantasy team with an open main-comp fixture in this AFL round.
+
+    Pass statuses=None to get every team fixtured in the round regardless of
+    result -- the difference between "has a match on" and "was ever down to
+    play", which is what tells a team knocked out of the finals apart from one
+    whose match this round has already been played and scored.
+    """
+    if afl_round is None:
+        return set()
+    q = (
+        Fixture.query
+        .filter(Fixture.year == year, Fixture.afl_round == afl_round)
+    )
+    if statuses is not None:
+        q = q.filter(Fixture.status.in_(statuses))
+    rows = q.all()
+    ids = set()
+    for f in rows:
+        # Finals placeholders carry -1 until the bracket advances.
+        if f.home_team_id and f.home_team_id > 0:
+            ids.add(f.home_team_id)
+        if f.away_team_id and f.away_team_id > 0:
+            ids.add(f.away_team_id)
+    return ids
+
+
 # ── Player-pool signings (free agents / SSP) ─────────────────────────
 
 

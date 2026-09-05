@@ -25,7 +25,8 @@ def get_lineup_with_slots(team_id, afl_round, year):
 
     result = {
         "lineup_id": lineup.id,
-        "is_locked": lineup.is_locked,
+        "is_locked": bool(lineup.is_locked
+                          and lineup_lock_binds(team_id, afl_round, year)),
         "round": afl_round,
         "year": year,
         "slots": [],
@@ -55,7 +56,7 @@ def set_lineup(team_id, afl_round, year, slot_data, league_id):
     Returns (lineup, None) on success or (None, error_msg) on failure.
     """
     lineup = get_or_create_lineup(team_id, afl_round, year)
-    if lineup.is_locked:
+    if lineup.is_locked and lineup_lock_binds(team_id, afl_round, year):
         return None, "Lineup is locked for this round."
 
     # Validate against league position slots
@@ -98,7 +99,7 @@ def set_lineup(team_id, afl_round, year, slot_data, league_id):
     # Rolling per-game lockout: locked players can't be moved from their current slot
     lockout_type = get_lockout_config(league_id)
     if lockout_type == "game_start":
-        locked_ids = get_locked_player_ids_for_round(afl_round, year)
+        locked_ids = get_locked_player_ids_for_round(afl_round, year, team_id)
         if locked_ids:
             # Build current slot mapping for locked players
             old_slots = LineupSlot.query.filter_by(lineup_id=lineup.id).all()
@@ -136,7 +137,7 @@ def auto_fill_lineup(team_id, afl_round, year, league_id):
     Uses a greedy position fill with bench cap based on league position config.
     """
     lineup = get_or_create_lineup(team_id, afl_round, year)
-    if lineup.is_locked:
+    if lineup.is_locked and lineup_lock_binds(team_id, afl_round, year):
         return None, "Lineup is locked."
 
     # Get roster players
@@ -261,7 +262,6 @@ def optimise_roster(team_id, league_id, year, metric="rating"):
     from models.database import (
         FantasyRoster, AflGame, LeaguePositionSlot, LongTermInjury, Reserve7sLineup,
     )
-    from models.live_sync import get_locked_player_ids
 
     metric = "rating" if metric == "rating" else "sc_avg"
 
@@ -274,7 +274,9 @@ def optimise_roster(team_id, league_id, year, metric="rating"):
     if afl_round is not None:
         games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
         round_teams = {t for g in games for t in (g.home_team, g.away_team)}
-        locked_pids = get_locked_player_ids(afl_round, year) or set()
+        # Nothing freezes in a round this team has no match in -- see
+        # get_locked_player_ids_for_round.
+        locked_pids = get_locked_player_ids_for_round(afl_round, year, team_id) or set()
 
     # If the whole round is locked there is nothing to optimise.
     roster = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()
@@ -409,10 +411,20 @@ def snapshot_lineups_for_round(afl_round, year):
     import logging
     from models.live_sync import get_locked_player_ids
     from models.database import AflGame
+    from models.season_manager import teams_with_consequential_round
 
     logger = logging.getLogger(__name__)
 
     locked_player_ids = get_locked_player_ids(afl_round, year)
+
+    # A lockout only protects a match that counts. Teams with no fixture left
+    # in this round -- out of the finals, on a bye, season already done -- keep
+    # a live snapshot and never freeze, however far the AFL round has run.
+    playing_team_ids = teams_with_consequential_round(afl_round, year)
+    # Teams that were down to play this round at all, whatever the result. A
+    # lineup locked for a round the team turns out to have no match in gets
+    # released; one whose match has already been played and scored stays put.
+    fixtured_team_ids = teams_with_consequential_round(afl_round, year, statuses=None)
 
     # Check if ALL games in the round have started (fully locked)
     round_games = AflGame.query.filter_by(year=year, afl_round=afl_round).all()
@@ -424,12 +436,17 @@ def snapshot_lineups_for_round(afl_round, year):
     count = 0
 
     for team in teams:
+        in_force = team.id in playing_team_ids
+        frozen_pids = locked_player_ids if in_force else set()
+
         # Skip if already fully locked
         existing = WeeklyLineup.query.filter_by(
             team_id=team.id, afl_round=afl_round, year=year
         ).first()
         if existing and existing.is_locked:
-            continue
+            if in_force or team.id in fixtured_team_ids:
+                continue
+            existing.is_locked = False
 
         roster = FantasyRoster.query.filter_by(
             team_id=team.id, is_active=True
@@ -461,7 +478,7 @@ def snapshot_lineups_for_round(afl_round, year):
 
             if pid in existing_slots:
                 # Slot already exists — only update if player is NOT locked
-                if pid not in locked_player_ids:
+                if pid not in frozen_pids:
                     slot = existing_slots[pid]
                     slot.position_code = pos
                     slot.is_captain = entry.is_captain
@@ -483,11 +500,12 @@ def snapshot_lineups_for_round(afl_round, year):
         # Remove slots for players no longer on roster
         current_pids = {e.player_id for e in roster}
         for pid, slot in existing_slots.items():
-            if pid not in current_pids and pid not in locked_player_ids:
+            if pid not in current_pids and pid not in frozen_pids:
                 db.session.delete(slot)
 
-        # Only fully lock when all games have started
-        if all_games_started:
+        # Only fully lock when all games have started, and only for a team
+        # whose result this round is still riding on it.
+        if all_games_started and in_force:
             lineup.is_locked = True
 
         count += 1
@@ -580,7 +598,7 @@ def carry_forward_lineup(team_id, afl_round, year, league_id):
         return auto_fill_lineup(team_id, afl_round, year, league_id)
 
     new_lineup = get_or_create_lineup(team_id, afl_round, year)
-    if new_lineup.is_locked:
+    if new_lineup.is_locked and lineup_lock_binds(team_id, afl_round, year):
         return None, "Lineup is locked."
 
     # Clear existing slots
@@ -624,16 +642,35 @@ def get_bye_players(team_id, afl_round, year):
     return [r.player for r in roster if r.player.afl_team in bye_teams]
 
 
+def lineup_lock_binds(team_id, afl_round, year):
+    """Is a stored is_locked flag actually enforceable for this team?
+
+    The flag is a snapshot of the moment the round's games all started. It only
+    means anything while the team still has a match riding on the round -- once
+    it has none, the round decides nothing for it and the side reopens.
+    """
+    from models.season_manager import team_round_is_consequential
+    return team_round_is_consequential(team_id, afl_round, year)
+
+
 def get_lockout_config(league_id):
     """Get lockout configuration for a league."""
     config = LockoutConfig.query.filter_by(league_id=league_id).first()
     return config.lockout_type if config else "round_start"
 
 
-def get_locked_player_ids_for_round(afl_round, year):
+def get_locked_player_ids_for_round(afl_round, year, team_id=None):
     """Return set of AflPlayer IDs whose AFL game has started (live or complete).
+
+    With a team_id, returns nothing unless that team actually has a match
+    riding on the round -- a side with no fixture left has nothing to protect,
+    so an AFL bounce must not freeze it.
 
     Thin wrapper that imports from live_sync to avoid circular imports at module level.
     """
     from models.live_sync import get_locked_player_ids
+    from models.season_manager import team_round_is_consequential
+
+    if team_id is not None and not team_round_is_consequential(team_id, afl_round, year):
+        return set()
     return get_locked_player_ids(afl_round, year)
