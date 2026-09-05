@@ -77,7 +77,16 @@ def delist_requirement(period, team_id, league=None, season_cfg=None):
     done = DelistAction.query.filter_by(
         delist_period_id=period.id, team_id=team_id
     ).count()
-    current = FantasyRoster.query.filter_by(team_id=team_id, is_active=True).count()
+    # Approved LTIL players do not count against squad size -- they free a
+    # slot for an SSP replacement. Pending ones still count, the commissioner
+    # not having ruled yet. Same rule as trade_manager and the squad page, so
+    # putting a player on the LTIL immediately drops what you still owe.
+    approved_ltil = LongTermInjury.query.filter_by(
+        team_id=team_id, removed_at=None, year=period.year, status="approved",
+    ).count()
+    current = max(0, FantasyRoster.query.filter_by(
+        team_id=team_id, is_active=True
+    ).count() - approved_ltil)
 
     if (period.period_type or "offseason") == "offseason":
         if season_cfg is None:

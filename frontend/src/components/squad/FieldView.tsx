@@ -28,8 +28,8 @@ export interface FieldData {
   sevens_is_plan?: boolean
   injury_list: Player[]
   ltil_entries: { player_id: number; player_name: string }[]
-  ltil_full: { id: number; player_id: number; player_name: string; player_position: string; player_sc_avg: number; replacement_name: string | null }[]
-  pending_ltil: { player_id: number; player_name: string }[]
+  ltil_full: { id: number; player_id: number; player_name: string; player_position: string; player_sc_avg: number; replacement_name: string | null; player?: Player | null }[]
+  pending_ltil: { player_id: number; player_name: string; player?: Player | null }[]
   pending_ltil_count: number; ssp_slots: number; ssp_enabled: boolean
   ssp_window_active: boolean; can_remove_ltil: boolean
   locked_teams: string[]; teams_playing: string[]
@@ -116,18 +116,23 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     return () => document.removeEventListener('keydown', handler)
   }, [actions])
 
-  function PlayerCard({ p, posClass, isFlex, isReserve, inSevens, slotNo }: {
+  function PlayerCard({ p, posClass, isFlex, isReserve, inSevens, slotNo, isLtil, isPendingLtil }: {
     p: Player | null; posClass: string; isFlex?: boolean; isReserve?: boolean
     /** Rendered inside the 7s squad list — the section already says "7s", so
      *  the card doesn't repeat it. */
     inSevens?: boolean
     slotNo?: number
+    /** On the long-term injury list: the same card, in red, with none of
+     *  the selection actions — an LTIL player is out of the side. */
+    isLtil?: boolean
+    isPendingLtil?: boolean
   }) {
     if (!p) {
       return (
-        <div className={`fv-card fv-card-empty fv-card-${posClass}${isFlex ? ' fv-card-flex' : ''}`}>
+        <div className={`fv-card fv-card-empty fv-card-${posClass}${isFlex ? ' fv-card-flex' : ''}${isLtil ? ' fv-card-ltil' : ''}`}>
           <div className="fv-empty-slot">
-            {isFlex ? <span style={{ fontSize: '.55rem', fontWeight: 700, color: '#30363d', letterSpacing: '1px' }}>FLEX</span> : <i className="bi bi-person-dash"></i>}
+            {isLtil ? <span className="fv-ltil-empty-label"><i className="bi bi-bandaid"></i> LTIL SLOT</span>
+              : isFlex ? <span style={{ fontSize: '.55rem', fontWeight: 700, color: '#30363d', letterSpacing: '1px' }}>FLEX</span> : <i className="bi bi-person-dash"></i>}
           </div>
         </div>
       )
@@ -151,7 +156,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
 
     const isSwapActive = actions?.swapSource?.pid === p.id
     let isSwapEligible = false
-    if (actions?.swapSource && actions.swapSource.pid !== p.id && !isLocked) {
+    if (actions?.swapSource && actions.swapSource.pid !== p.id && !isLocked && !isLtil) {
       if (actions.actionMode === 'swap') isSwapEligible = checkSwapEligible(actions.swapSource, section, posParts, fieldPosUpper)
       else if (actions.actionMode === 'emg_replace') isSwapEligible = isEmg
       else if (actions.actionMode === '7s_replace') isSwapEligible = is7s
@@ -167,6 +172,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       isLocked && 'fv-card-locked',
       isSwapActive && 'fv-swap-active', isSwapEligible && 'fv-swap-eligible',
       isOnByePreview && 'fv-card-bye',
+      isLtil && 'fv-card-ltil', isPendingLtil && 'fv-card-ltil-pending',
     ].filter(Boolean).join(' ')
 
     const ltilHasRoom = fd.ssp_enabled && (fd.ltil_entries.length + fd.pending_ltil_count) < fd.ssp_slots
@@ -178,6 +184,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         data-emg={isEmg ? '1' : ''} data-sevens={is7s ? '1' : ''} data-age={String(p.age || '')}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest('.fv-actions')) return
+          if (isLtil) { actions?.showPlayer(p.id); return }
           if (actions?.swapSource) {
             if (actions.swapSource.pid === p.id) { actions.cancelAllModes(); return }
             actions.handlePlayerClick(p.id, section, posParts, fieldPosUpper, isLocked, isEmg, is7s)
@@ -185,9 +192,10 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         }}>
 
         {/* Ribbon */}
-        {isCap && <div className="fv-ribbon fv-ribbon-cap"><span>C</span></div>}
-        {isVC && !isCap && <div className="fv-ribbon fv-ribbon-vc"><span>VC</span></div>}
-        {isEmg && !isCap && !isVC && <div className="fv-ribbon fv-ribbon-emg"><span>E</span></div>}
+        {isLtil && <div className="fv-ribbon fv-ribbon-ltil" title={isPendingLtil ? 'LTIL — pending approval' : 'Long-term injury list'}><span>{isPendingLtil ? '?' : 'L'}</span></div>}
+        {!isLtil && isCap && <div className="fv-ribbon fv-ribbon-cap"><span>C</span></div>}
+        {!isLtil && isVC && !isCap && <div className="fv-ribbon fv-ribbon-vc"><span>VC</span></div>}
+        {!isLtil && isEmg && !isCap && !isVC && <div className="fv-ribbon fv-ribbon-emg"><span>E</span></div>}
         {is7c && <div className="fv-ribbon fv-ribbon-7c" title="7s captain"><span>C</span></div>}
         {is7s && !inSevens && !is7c && !isEmg && !isCap && !isVC && (
           <div className="fv-ribbon fv-ribbon-7s" title="In the 7s squad"><span>7</span></div>
@@ -195,15 +203,15 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         {inSevens && slotNo !== undefined && <div className="fv-7s-slotno">{slotNo}</div>}
 
         {/* Status */}
-        {isLocked && <div className="fv-selected fv-locked" title="Locked — game started"><i className="bi bi-lock-fill"></i></div>}
-        {!isLocked && isSelected && <div className="fv-selected" title="Selected to play"><i className="bi bi-check-lg"></i></div>}
-        {!isLocked && !isSelected && p.injury_severity && (
+        {!isLtil && isLocked && <div className="fv-selected fv-locked" title="Locked — game started"><i className="bi bi-lock-fill"></i></div>}
+        {!isLtil && !isLocked && isSelected && <div className="fv-selected" title="Selected to play"><i className="bi bi-check-lg"></i></div>}
+        {(isLtil || (!isLocked && !isSelected)) && p.injury_severity && (
           <div className={`fv-injury fv-injury-${p.injury_severity}`} title={`${p.injury_type || 'Injured'} — ${p.injury_return || ''}`}></div>
         )}
-        {hasBye && <div className={`fv-bye-badge${isSelected || p.injury_severity ? ' fv-bye-shifted' : ''}`} title="No game this round">BYE</div>}
+        {!isLtil && hasBye && <div className={`fv-bye-badge${isSelected || p.injury_severity ? ' fv-bye-shifted' : ''}`} title="No game this round">BYE</div>}
 
         {/* Hover action buttons */}
-        {isOwner && !isLocked && actions && (
+        {isOwner && !isLocked && !isLtil && actions && (
           <div className="fv-actions" onClick={e => e.stopPropagation()}>
             {!isReserve && !fd.cap_locked && (
               <button className={`fv-action-btn fv-act-cap${isCap ? ' active' : ''}`}
@@ -397,40 +405,49 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
                 <span className="fv-zone-tally ms-2">{fd.ltil_entries.length}/{fd.ssp_slots}</span>
               </div>
               <div className="fv-ltil-sidebar-list">
-                {fd.ltil_full.map(lt => (
-                  <div key={lt.player_id} className="fv-ltil-sidebar-card">
-                    <div className="fv-ltil-sidebar-info">
-                      <div className="fv-ltil-sidebar-name">{lt.player_name}</div>
-                      <div className="fv-ltil-sidebar-meta">{lt.player_position || '-'} &bull; {lt.player_sc_avg ? Math.round(lt.player_sc_avg) : '-'}</div>
+                {fd.ltil_full.map(lt => {
+                  const p = lt.player || null
+                  const posClass = ((p?.position || lt.player_position || 'MID').split('/')[0] || 'MID').toLowerCase()
+                  return (
+                    <div key={lt.player_id} className="fv-ltil-slot">
+                      <PlayerCard p={p} posClass={posClass} isLtil />
+                      <div className="fv-ltil-slot-foot">
+                        {lt.replacement_name ? (
+                          <span className="fv-ltil-ssp-name" title={`SSP: ${lt.replacement_name}`}>
+                            <i className="bi bi-arrow-return-right"></i> {lt.replacement_name}
+                          </span>
+                        ) : isOwner && fd.ssp_window_active && actions ? (
+                          <button className="fv-ltil-ssp-btn-sm" onClick={() => actions.onOpenSSP(lt.id)}>
+                            <i className="bi bi-plus-circle"></i> Sign SSP
+                          </button>
+                        ) : <span className="fv-ltil-ssp-none">No SSP</span>}
+                        {isOwner && fd.can_remove_ltil && actions && (
+                          <button className="fv-ltil-remove-btn-sm" onClick={() => actions.removeFromLTIL(lt.player_id)} title="Remove from LTIL">
+                            <i className="bi bi-x-lg"></i>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {lt.replacement_name ? (
-                      <div className="fv-ltil-sidebar-ssp">SSP: {lt.replacement_name}</div>
-                    ) : isOwner && fd.ssp_window_active && actions ? (
-                      <button className="fv-ltil-ssp-btn-sm" onClick={() => actions.onOpenSSP(lt.id)}>
-                        <i className="bi bi-plus-circle"></i>
-                      </button>
-                    ) : null}
-                    {isOwner && fd.can_remove_ltil && actions && (
-                      <button className="fv-ltil-remove-btn-sm" onClick={() => actions.removeFromLTIL(lt.player_id)} title="Remove">
-                        <i className="bi bi-x-lg"></i>
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {fd.pending_ltil.map(lt => (
-                  <div key={lt.player_id} className="fv-ltil-sidebar-card fv-ltil-sidebar-pending">
-                    <div className="fv-ltil-sidebar-info">
-                      <div className="fv-ltil-sidebar-name">{lt.player_name}</div>
-                      <div className="fv-ltil-sidebar-meta" style={{ color: '#d29922' }}>Pending approval</div>
+                  )
+                })}
+                {fd.pending_ltil.map(lt => {
+                  const p = lt.player || null
+                  const posClass = ((p?.position || 'MID').split('/')[0] || 'MID').toLowerCase()
+                  return (
+                    <div key={lt.player_id} className="fv-ltil-slot">
+                      <PlayerCard p={p} posClass={posClass} isLtil isPendingLtil />
+                      <div className="fv-ltil-slot-foot">
+                        <span className="fv-ltil-pending-note">
+                          <i className="bi bi-hourglass-split"></i> Pending approval
+                        </span>
+                      </div>
                     </div>
-                    <i className="bi bi-hourglass-split" style={{ fontSize: '.7rem', color: '#d29922' }}></i>
-                  </div>
-                ))}
+                  )
+                })}
                 {/* Empty slot fillers */}
                 {Array.from({ length: Math.max(0, fd.ssp_slots - fd.ltil_entries.length - fd.pending_ltil.length) }).map((_, i) => (
-                  <div key={`empty-${i}`} className="fv-ltil-sidebar-card fv-ltil-sidebar-empty">
-                    <i className="bi bi-bandaid" style={{ fontSize: '.7rem', color: '#484f58' }}></i>
-                    <span style={{ fontSize: '.6rem', color: '#484f58' }}>LTIL Slot</span>
+                  <div key={`empty-${i}`} className="fv-ltil-slot">
+                    <PlayerCard p={null} posClass="ltil" isLtil />
                   </div>
                 ))}
               </div>

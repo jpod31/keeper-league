@@ -753,7 +753,11 @@ def squad(league_id, team_id):
                 "player_form": fd.get("player_form", {}),
                 "cap_locked": fd.get("cap_locked", False),
                 "vc_locked": fd.get("vc_locked", False),
-                "pending_ltil": [{"player_id": lt.player_id, "player_name": lt.player.name if lt.player else "?"} for lt in fd.get("pending_ltil", [])],
+                "pending_ltil": [{
+                    "player_id": lt.player_id,
+                    "player_name": lt.player.name if lt.player else "?",
+                    "player": _serialize_player(lt.player) if lt.player else None,
+                } for lt in fd.get("pending_ltil", [])],
                 "ssp_window_active": fd.get("ssp_window_active", False),
                 "can_remove_ltil": fd.get("can_remove_ltil", False),
                 "ltil_full": [{
@@ -762,6 +766,8 @@ def squad(league_id, team_id):
                     "player_name": lt.player.name if lt.player else "?",
                     "player_position": lt.player.position if lt.player else "",
                     "player_sc_avg": lt.player.sc_avg if lt.player else 0,
+                    # Full player so the sidebar can render a real card, not a stub.
+                    "player": _serialize_player(lt.player) if lt.player else None,
                     "replacement_name": lt.replacement_player.name if lt.replacement_player else None,
                 } for lt in fd.get("ltil_entries", [])],
             }

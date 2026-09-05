@@ -2004,6 +2004,101 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 .fv-ltil-remove-btn-sm:hover { color: var(--kl-accent-red); }
 
+/* ═══ LTIL cards — the normal player card, in red ═══
+   An LTIL player is still a player: same card, same stats, same profile
+   click. The red is the whole difference. */
+.fv-ltil-slot { position: relative; }
+.fv-ltil-slot .fv-card { width: 100%; }
+.fv-card-ltil {
+  border-color: rgba(248,81,73,.5);
+  border-left: 3px solid var(--kl-accent-red);
+  box-shadow: 0 0 10px rgba(248,81,73,.18);
+  background: linear-gradient(135deg, rgba(248,81,73,.16), rgba(248,81,73,.05) 70%);
+}
+.fv-card-ltil:hover {
+  border-color: rgba(248,81,73,.75);
+  box-shadow: 0 6px 20px rgba(0,0,0,.5), 0 0 14px rgba(248,81,73,.3);
+}
+.fv-card-ltil .fv-logo { width: 26px; height: 26px; }
+.fv-card-ltil .fv-card-top { padding-top: 6px; }
+.fv-card-ltil .fv-stats-bar { border-top-color: rgba(248,81,73,.18); }
+
+/* Pending approval — same card, dashed and amber-lit rather than settled. */
+.fv-card-ltil-pending {
+  border-color: rgba(210,153,34,.55);
+  border-left-color: var(--kl-accent-yellow, #d29922);
+  border-style: dashed;
+  box-shadow: 0 0 10px rgba(210,153,34,.15);
+  background: linear-gradient(135deg, rgba(210,153,34,.14), rgba(210,153,34,.04) 70%);
+}
+.fv-ribbon-ltil span {
+  background: linear-gradient(135deg, #da3633, var(--kl-accent-red));
+  color: #fff;
+}
+.fv-card-ltil-pending .fv-ribbon-ltil span {
+  background: linear-gradient(135deg, #bb8009, var(--kl-accent-yellow, #d29922));
+  color: #000;
+}
+
+/* Empty LTIL slot — a red outline of a card, not a grey strip. */
+.fv-card-empty.fv-card-ltil {
+  background: rgba(248,81,73,.04);
+  border: 1px dashed rgba(248,81,73,.28);
+  border-left: 3px solid rgba(248,81,73,.35);
+  box-shadow: none;
+}
+.fv-card-empty.fv-card-ltil:hover { transform: none; box-shadow: none; }
+/* An empty slot is a placeholder, not a card -- keep the column short. */
+.fv-card-empty.fv-card-ltil .fv-empty-slot { height: 70px; }
+.fv-ltil-empty-label {
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(248,81,73,.55);
+}
+
+/* Footer strip under an LTIL card: the SSP replacement + remove. */
+.fv-ltil-slot-foot {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  margin-top: 4px;
+  padding: 0 2px;
+  min-height: 18px;
+}
+.fv-ltil-ssp-name {
+  flex: 1;
+  min-width: 0;
+  font-size: .55rem;
+  color: #58a6ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fv-ltil-ssp-none {
+  flex: 1;
+  font-size: .55rem;
+  color: var(--kl-text-muted);
+}
+.fv-ltil-pending-note {
+  flex: 1;
+  font-size: .55rem;
+  color: var(--kl-accent-yellow, #d29922);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fv-ltil-slot-foot .fv-ltil-ssp-btn-sm {
+  flex: 1;
+  text-align: center;
+  padding: 2px 4px;
+  font-size: .55rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fv-ltil-slot-foot .fv-ltil-remove-btn-sm { font-size: .6rem; }
+
 /* ═══ Reserves Section ═══ */
 .fv-reserves-section {
   padding: .5rem 0;
