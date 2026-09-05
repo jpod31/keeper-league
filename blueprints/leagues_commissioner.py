@@ -37,6 +37,8 @@ def commissioner_hub(league_id):
         db.session.commit()
 
     now = datetime.now(timezone.utc)
+    # Window columns are stored naive; coerce before comparing against `now`.
+    from models.window_state import _aware
 
     # Current phase
     if league.status in ("setup", "drafting"):
@@ -56,7 +58,7 @@ def commissioner_hub(league_id):
     mid_trade_status = "locked"
     if season_cfg and season_cfg.season_phase == "midseason":
         if season_cfg.mid_trade_window_open and season_cfg.mid_trade_window_close:
-            if now < season_cfg.mid_trade_window_close:
+            if now < _aware(season_cfg.mid_trade_window_close):
                 mid_trade_status = "active"
             else:
                 mid_trade_status = "completed"
@@ -127,7 +129,7 @@ def commissioner_hub(league_id):
     off_trade_status = "locked"
     if current_phase == "offseason":
         if season_cfg.off_trade_window_open and season_cfg.off_trade_window_close:
-            if now < season_cfg.off_trade_window_close:
+            if now < _aware(season_cfg.off_trade_window_close):
                 off_trade_status = "active"
             else:
                 off_trade_status = "completed"
