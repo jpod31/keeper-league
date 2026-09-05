@@ -520,7 +520,7 @@ function LeagueRail({
     ],
   })
   sections.push({
-    to: `/leagues/${lid}/fixture`, key: 'league', icon: 'bi-calendar-week-fill', label: 'League',
+    to: `/leagues/${lid}/standings`, key: 'league', icon: 'bi-calendar-week-fill', label: 'League',
     sub: [
       { to: `/leagues/${lid}/standings`,    key: 'ladder',   label: 'Ladder' },
       { to: `/leagues/${lid}/fixture`,      key: 'fixture',  label: 'Fixtures' },
