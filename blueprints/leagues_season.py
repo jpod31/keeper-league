@@ -436,6 +436,12 @@ def offseason_start_step(league_id):
         # off-season now ends by starting the next season.
         flash("Start the next season from Commissioner Hub > Start new season.", "info")
 
+    if request.args.get("format") == "json":
+        # The new-season page runs these steps inline and shows the outcome.
+        from flask import get_flashed_messages
+        msgs = get_flashed_messages(with_categories=True)
+        ok = not any(cat in ("warning", "danger") for cat, _ in msgs)
+        return jsonify({"success": ok, "messages": [m for _, m in msgs]}), (200 if ok else 400)
     return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
 
 
@@ -578,7 +584,7 @@ def draft_plan(league_id):
     """This year's supplemental draft plan: order basis, linear/snake, custom
     order, added picks. GET reads it with a preview; POST saves it."""
     from models.database import SeasonConfig
-    from models.draft_picks import read_plan, clean_plan, write_plan, plan_preview
+    from models.draft_picks import read_plan, clean_plan, write_plan, plan_preview, team_cards
 
     league, fail = _new_season_league(league_id)
     if fail:
@@ -601,7 +607,6 @@ def draft_plan(league_id):
     pending = DraftSession.query.filter_by(
         league_id=league_id, draft_round_type="supplemental", is_mock=False,
     ).filter(DraftSession.status.in_(["scheduled", "paused"])).first()
-    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.name).all()
     return jsonify({
         "year": league.season_year,
         "offseason": league.status == "offseason",
@@ -609,6 +614,6 @@ def draft_plan(league_id):
         "saved": read_plan(cfg),
         "errors": errors,
         "preview": plan_preview(league, plan) if not errors else [],
-        "teams": [{"id": t.id, "name": t.name} for t in teams],
+        "teams": list(team_cards(league_id).values()),
         "draft_created": bool(pending),
     }), (400 if errors and request.method == "POST" and (request.get_json(silent=True) or {}).get("save") else 200)

@@ -230,6 +230,17 @@ def build_slots(league_id, year, plan, total_rounds, offseason):
     return slots
 
 
+def team_cards(league_id):
+    """id -> {id, name, logo, accent}: one colour identity per team, the same
+    ramp the dashboard, fixture and Season Review use."""
+    from models.season_review import TEAM_PALETTE
+    return {
+        t.id: {"id": t.id, "name": t.name, "logo": t.logo_url,
+               "accent": TEAM_PALETTE[t.id % len(TEAM_PALETTE)]}
+        for t in FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.name).all()
+    }
+
+
 def plan_preview(league, plan, rounds=2):
     """The first rounds of this year's supplemental draft under ``plan``."""
     offseason = league.status == "offseason"
@@ -240,7 +251,9 @@ def plan_preview(league, plan, rounds=2):
     for n, s in enumerate(build_slots(league.id, league.season_year, plan, shown, offseason), 1):
         out.append({
             "pick": n, "round": s["round"], "team": names.get(s["team_id"], "?"),
+            "team_id": s["team_id"],
             "via": names.get(s["original_team_id"]) if s["original_team_id"] != s["team_id"] else None,
+            "via_id": s["original_team_id"] if s["original_team_id"] != s["team_id"] else None,
             "label": s["label"],
         })
     return out

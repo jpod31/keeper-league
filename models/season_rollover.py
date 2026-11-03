@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 import logging
 
 import config
+from models.draft_picks import team_cards
 from models.database import (
     db, League, FantasyTeam, FantasyRoster, SeasonConfig, Fixture, Trade,
     DelistPeriod, DraftSession, LongTermInjury,
@@ -181,8 +182,9 @@ def _checks(league, settings):
     cfg = _cfg(league.id, year)
     checks = []
 
-    def add(key, level, label, detail=""):
-        checks.append({"key": key, "level": level, "label": label, "detail": detail})
+    def add(key, level, label, detail="", action=None):
+        checks.append({"key": key, "level": level, "label": label, "detail": detail,
+                       "action": action})
 
     if league.status != "offseason":
         add("phase", "block", "League is not in the off-season",
@@ -198,7 +200,9 @@ def _checks(league, settings):
     open_period = DelistPeriod.query.filter_by(
         league_id=league.id, year=year, status="open").first()
     if open_period:
-        add("delists", "block", "Delist period still open", "Close it first.")
+        add("delists", "block", "Delist period still open",
+            "Lists are still being cut. Close it once everyone is done.",
+            {"kind": "step", "step": "close_delists", "label": "Close delists"})
     else:
         add("delists", "ok", "Delist period closed")
 
@@ -209,21 +213,25 @@ def _checks(league, settings):
             close = close.replace(tzinfo=timezone.utc)
         trade_open = trade_open or close > _now()
     if trade_open:
-        add("trades", "block", "Trade window still open", "Close it first.")
+        add("trades", "block", "Trade window still open",
+            "Trades can't be in flight when the year changes.",
+            {"kind": "step", "step": "close_trades", "label": "Close trade window"})
     else:
         add("trades", "ok", "Trade window closed")
 
     live_draft = DraftSession.query.filter_by(league_id=league.id, is_mock=False).filter(
         DraftSession.status.in_(["scheduled", "in_progress", "paused"])).first()
     if live_draft:
-        add("draft", "block", "A draft is scheduled or running", "Finish or delete it first.")
+        add("draft", "block", "A draft is scheduled or running", "Finish or delete it first.",
+            {"kind": "link", "to": "draft/setup", "label": "Draft setup"})
     else:
         from models.season_manager import offseason_draft_done
         if offseason_draft_done(league.id, year):
             add("draft", "ok", "Off-season draft done")
         else:
             add("draft", "warn", "No off-season draft held",
-                "Free agents open as soon as the season starts.")
+                "Free agents open as soon as the season starts.",
+                {"kind": "link", "to": "draft/setup", "label": "Draft setup"})
 
     pending = Trade.query.filter_by(league_id=league.id, status="pending").count()
     if pending:
@@ -240,13 +248,17 @@ def _checks(league, settings):
     for t in FantasyTeam.query.filter_by(league_id=league.id).order_by(FantasyTeam.name).all():
         n = FantasyRoster.query.filter_by(team_id=t.id, is_active=True).count()
         if n > squad:
-            over.append(f"{t.name} {n}")
+            over.append({"team_id": t.id, "count": n})
         elif n < squad:
-            under.append(f"{t.name} {n}")
+            under.append({"team_id": t.id, "count": n})
     if over:
-        add("lists_over", "warn", f"Over the {squad}-man cap", ", ".join(over))
+        add("lists_over", "warn", f"Over the {squad}-man cap",
+            "They start the year over and cut at the mid-season delists.")
+        checks[-1]["teams"] = over
     if under:
-        add("lists_under", "warn", f"Under the {squad}-man cap", ", ".join(under))
+        add("lists_under", "warn", f"Under the {squad}-man cap",
+            "They can fill from the player pool once the season starts.")
+        checks[-1]["teams"] = under
     if not over and not under:
         add("lists", "ok", f"Every list at {squad}")
 
@@ -274,7 +286,7 @@ def fixture_preview(league, settings):
         count = meetings(order, base, n_rounds, extra)
     rows = []
     for pos, t in enumerate(order, 1):
-        row = {"team": t.name, "finish": pos}
+        row = {"team": t.name, "team_id": t.id, "finish": pos}
         if weighted:
             games = {o.id: count.get(frozenset({t.id, o.id}), 0) for o in order if o.id != t.id}
             total = sum(games.values()) or 1
@@ -308,9 +320,26 @@ def rollover_preview(league, raw_settings=None):
         "checks": checks,
         "can_start": not errors and not any(c["level"] == "block" for c in checks),
         "team_count": FantasyTeam.query.filter_by(league_id=league.id).count(),
-        "teams": [{"id": t.id, "name": t.name} for t in
-                  FantasyTeam.query.filter_by(league_id=league.id).order_by(FantasyTeam.name).all()],
+        "teams": list(team_cards(league.id).values()),
+        "ladder": final_ladder(league),
     }
+
+
+def final_ladder(league):
+    """This year's finishing order, best first, for the handover."""
+    from models.draft_picks import ladder
+    from models.database import SeasonStanding
+    rows = {s.team_id: s for s in SeasonStanding.query.filter_by(
+        league_id=league.id, year=league.season_year).all()}
+    cards = team_cards(league.id)
+    out = []
+    for pos, t in enumerate(ladder(league.id, league.season_year), 1):
+        st = rows.get(t.id)
+        out.append({**cards[t.id], "pos": pos,
+                    "wins": st.wins if st else 0, "losses": st.losses if st else 0,
+                    "draws": st.draws if st else 0,
+                    "pct": round(st.percentage or 0, 1) if st else 0})
+    return out
 
 
 def _new_config(league, old, settings, new_year, now):
@@ -408,9 +437,19 @@ def start_new_season(league_id, raw_settings=None, notify=True, force=False):
     from models.draft_picks import ensure_future_picks
     ensure_future_picks(league.id)
 
+    regular = Fixture.query.filter_by(league_id=league.id, year=new_year, is_final=False)
+    first = min((f.afl_round for f in regular.all()), default=None)
+    opening = [
+        {"home_id": f.home_team_id, "away_id": f.away_team_id}
+        for f in regular.filter_by(afl_round=first).order_by(Fixture.id).all()
+    ] if first is not None else []
+
     summary = {
         "year": new_year,
         "fixture_weighting": settings["fixture_weighting"],
+        "first_round": first,
+        "first_matches": opening,
+        "teams": list(team_cards(league.id).values()),
         "rounds": settings["num_regular_rounds"],
         "opening_round": settings["opening_round"],
         "fixtures": Fixture.query.filter_by(league_id=league.id, year=new_year).count(),
