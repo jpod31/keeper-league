@@ -187,13 +187,10 @@ def trade_propose(league_id):
     my_roster = FantasyRoster.query.filter_by(team_id=user_team.id, is_active=True).all()
     my_players = [r.player for r in my_roster]
 
-    # Get future draft picks owned by user's team
-    max_pick_year = league.season_year + 3
-    my_picks = FutureDraftPick.query.filter(
-        FutureDraftPick.league_id == league_id,
-        FutureDraftPick.current_owner_id == user_team.id,
-        FutureDraftPick.year <= max_pick_year,
-    ).order_by(FutureDraftPick.year, FutureDraftPick.round_number).all()
+    # Future draft picks owned by user's team (only years not yet drafted)
+    from models.draft_picks import ensure_future_picks, open_picks_query
+    ensure_future_picks(league_id)
+    my_picks = open_picks_query(league, user_team.id).all()
 
     if request.args.get("format") == "json":
         from config import TEAM_LOGOS
@@ -504,12 +501,9 @@ def api_team_picks(league_id, team_id):
     league, user_team = check_league_access(league_id)
     if not league:
         return jsonify({"error": "Not a league member"}), 403
-    max_year = league.season_year + 3
-    picks = FutureDraftPick.query.filter(
-        FutureDraftPick.league_id == league_id,
-        FutureDraftPick.current_owner_id == team_id,
-        FutureDraftPick.year <= max_year,
-    ).order_by(FutureDraftPick.year, FutureDraftPick.round_number).all()
+    from models.draft_picks import ensure_future_picks, open_picks_query
+    ensure_future_picks(league_id)
+    picks = open_picks_query(league, team_id).all()
     return jsonify([{
         "id": p.id,
         "year": p.year,

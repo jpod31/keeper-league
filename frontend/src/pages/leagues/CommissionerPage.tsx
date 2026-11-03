@@ -283,7 +283,6 @@ export function CommissionerPage() {
   const midLockStatus = midseason.lock_status
   const offDelistStatus = offseason.delist_status
   const offTradeStatus = offseason.trade_status
-  const offDraftStatus = offseason.draft_status
 
   return (
     <div>
@@ -413,11 +412,9 @@ export function CommissionerPage() {
                     <i className="bi bi-stop-fill me-1"></i>Close Trade Window
                   </button>
                 )}
-                {(offTradeStatus === 'completed' || offTradeStatus === 'pending') && offDraftStatus === 'completed' && (
-                  <button type="button" className="btn btn-sm btn-success" disabled={busy === 'offseason-finish_offseason'} onClick={() => startStep('offseason', 'finish_offseason', 'End the off-season?')}>
-                    <i className="bi bi-check-circle me-1"></i>Finish Off-Season
-                  </button>
-                )}
+                <Link to={`/leagues/${leagueId}/new-season`} className="btn btn-sm btn-success">
+                  <i className="bi bi-calendar-plus me-1"></i>Start {data.league.season_year + 1} season
+                </Link>
 
                 {/* One off-season deadline for trades AND delistings. Pinning
                     it here also stops Open Trade/Delist Window recomputing a

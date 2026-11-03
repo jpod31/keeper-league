@@ -529,8 +529,11 @@ class DraftPick(db.Model):
     is_auto_pick = db.Column(db.Boolean, default=False)
     is_pass = db.Column(db.Boolean, default=False)
     picked_at = db.Column(db.DateTime)
+    # Whose pick this was before any trade; team_id is who uses it.
+    original_team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=True)
 
-    team = db.relationship("FantasyTeam", lazy="joined")
+    team = db.relationship("FantasyTeam", lazy="joined", foreign_keys=[team_id])
+    original_team = db.relationship("FantasyTeam", lazy="joined", foreign_keys=[original_team_id])
     player = db.relationship("AflPlayer", lazy="joined")
 
 
@@ -1297,6 +1300,15 @@ def _run_migrations(app):
         if "period_type" not in existing_dp:
             db.session.execute(
                 text('ALTER TABLE delist_period ADD COLUMN period_type VARCHAR(20) DEFAULT "offseason"')
+            )
+            db.session.commit()
+
+    # DraftPick.original_team_id column (traded picks)
+    if "draft_pick" in inspector.get_table_names():
+        existing_pick = {c["name"] for c in inspector.get_columns("draft_pick")}
+        if "original_team_id" not in existing_pick:
+            db.session.execute(
+                text("ALTER TABLE draft_pick ADD COLUMN original_team_id INTEGER REFERENCES fantasy_team(id)")
             )
             db.session.commit()
 

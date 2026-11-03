@@ -16,6 +16,7 @@ import { DashboardPage } from './pages/leagues/DashboardPage'
 import { CreateLeaguePage } from './pages/leagues/CreateLeaguePage'
 import { SettingsPage } from './pages/leagues/SettingsPage'
 import { CommissionerPage } from './pages/leagues/CommissionerPage'
+import { NewSeasonPage } from './pages/leagues/NewSeasonPage'
 import { ScoringPage } from './pages/leagues/ScoringPage'
 import { HistoryPage } from './pages/leagues/HistoryPage'
 import { InvitePage } from './pages/leagues/InvitePage'
@@ -149,6 +150,7 @@ export default function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="scoring" element={<ScoringPage />} />
           <Route path="commissioner" element={<CommissionerPage />} />
+          <Route path="new-season" element={<NewSeasonPage />} />
 
           {/* Reserve 7s */}
           <Route path="reserve7s/team" element={<L><Reserve7sTeamPage /></L>} />

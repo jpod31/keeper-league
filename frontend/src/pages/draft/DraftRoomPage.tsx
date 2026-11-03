@@ -10,6 +10,7 @@ interface PickHistoryEntry {
   round: number
   team_id: number
   team_name: string
+  via_team_name?: string | null
   player_id: number | null
   player_name: string | null
   player_position: string | null
@@ -31,6 +32,7 @@ interface DraftState {
   current_round: number | null
   current_team_id: number | null
   current_team_name: string | null
+  current_via_team_name?: string | null
   total_rounds: number
   total_picks: number
   picks_made: number
@@ -1002,6 +1004,9 @@ function DraftRoomPageInner() {
               </div>
               <div className="draft-banner-team">
                 {bannerCompleted ? 'Draft Complete' : (state.current_team_name || 'TBD')}
+                {!bannerCompleted && state.current_via_team_name && (
+                  <span style={{ fontSize: '.7em', fontWeight: 600, color: '#97a3ba', marginLeft: 8 }}>via {state.current_via_team_name}</span>
+                )}
                 {bannerYourPick && <span className="draft-your-pick-pill">Your Pick</span>}
               </div>
             </div>
@@ -1288,7 +1293,10 @@ function DraftRoomPageInner() {
                         <tr key={pick.pick_number} className={isMine ? 'draft-pick-row-mine' : undefined}>
                           <td style={{ color: '#6c7892' }}>{pick.pick_number}</td>
                           <td style={{ color: '#6c7892' }}>{pick.round}</td>
-                          <td>{pick.team_name}</td>
+                          <td>
+                            {pick.team_name}
+                            {pick.via_team_name && <span style={{ color: '#97a3ba', fontSize: '.85em' }}> via {pick.via_team_name}</span>}
+                          </td>
                           {pick.is_pass ? (
                             <><td><span className="draft-pass-tag">PASS</span></td><td></td><td></td></>
                           ) : (

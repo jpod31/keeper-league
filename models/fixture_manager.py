@@ -43,14 +43,69 @@ def _circle_method_pairings(teams):
     return rounds
 
 
-def generate_preseason(league_id, year):
+def _ladder_cost(pairs, rank):
+    # Squared, so one big mismatch (1st v 6th) outweighs two small ones.
+    return sum((rank[a.id] - rank[b.id]) ** 2 for a, b in pairs)
+
+
+def ladder_weighted_rounds(ladder_teams, num_rounds):
+    """Pick a round-robin whose leftover rounds pair teams close on the ladder.
+
+    Full cycles give everyone the same draw. The rounds left over after the
+    last full cycle are where the draw differs, so those go to the matchings
+    with the smallest ladder gaps: top sides meet each other an extra time,
+    bottom sides likewise, the way the AFL weights its double-ups.
+
+    Deterministic for a given ladder, so the commissioner's preview is the
+    draw that gets built. Returns (base_rounds, extra_round_indices).
+    """
+    import itertools
+
+    rank = {t.id: i for i, t in enumerate(ladder_teams)}
+    n = len(ladder_teams)
+    cycle_len = n - 1 if n % 2 == 0 else n
+    extra = num_rounds % cycle_len if cycle_len else 0
+
+    if n <= 8:
+        arrangements = (list(p) for p in itertools.permutations(ladder_teams))
+    else:
+        rng = random.Random(n * 1000 + num_rounds)
+        arrangements = (rng.sample(ladder_teams, n) for _ in range(3000))
+
+    best = None
+    for arr in arrangements:
+        rounds = _circle_method_pairings(arr)
+        order = sorted(range(len(rounds)), key=lambda i: _ladder_cost(rounds[i], rank))
+        cost = sum(_ladder_cost(rounds[i], rank) for i in order[:extra])
+        if best is None or cost < best[0]:
+            best = (cost, rounds, order[:extra])
+            if cost == 0:
+                break
+    return best[1], best[2]
+
+
+def meetings(teams, base_rounds, num_rounds, extra_idx):
+    """How often each pair meets in a draw of ``num_rounds`` built from
+    ``base_rounds`` with ``extra_idx`` as the leftover rounds."""
+    cycles = num_rounds // len(base_rounds) if base_rounds else 0
+    count = defaultdict(int)
+    for i, rnd in enumerate(base_rounds):
+        times = cycles + (1 if i in extra_idx else 0)
+        for a, b in rnd:
+            count[frozenset({a.id, b.id})] += times
+    return count
+
+
+def generate_preseason(league_id, year, teams=None):
     """Generate pre-season fixtures (afl_round=0) using simple sequential pairings.
 
     Pairs teams by draft order: 1v2, 3v4, 5v6, etc.
     Odd team count → last team gets a bye (no fixture).
     Idempotent: deletes existing round-0 fixtures before creating new ones.
+    ``teams`` overrides the order (e.g. last year's ladder: 1v2, 3v4, ...).
     """
-    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
+    if teams is None:
+        teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
     if len(teams) < 2:
         return [], "Need at least 2 teams."
 
@@ -75,7 +130,7 @@ def generate_preseason(league_id, year):
     return fixtures, None
 
 
-def generate_round_robin(league_id, year, num_rounds=23):
+def generate_round_robin(league_id, year, num_rounds=23, ladder_teams=None):
     """Generate a fair round-robin fixture for the season.
 
     Improvements over a naive circle method:
@@ -83,6 +138,9 @@ def generate_round_robin(league_id, year, num_rounds=23):
       2. Repeat cycles use shuffled round order to spread rematches apart
       3. Home/away assigned per-pairing: alternates between meetings,
          and balances each team's total home games across the season
+
+    ``ladder_teams`` (best to worst) switches the leftover rounds from random
+    to ladder-weighted; see ladder_weighted_rounds.
     """
     teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.draft_order).all()
     if len(teams) < 2:
@@ -91,12 +149,15 @@ def generate_round_robin(league_id, year, num_rounds=23):
     # Delete any existing fixtures for this year
     Fixture.query.filter_by(league_id=league_id, year=year, is_final=False).delete()
 
-    # Shuffle teams so the fixture is different each time it's generated
-    shuffled = list(teams)
-    random.shuffle(shuffled)
-
-    # Generate one full cycle of pairings (no home/away yet)
-    base_rounds = _circle_method_pairings(shuffled)
+    extra_idx = None
+    if ladder_teams:
+        base_rounds, extra_idx = ladder_weighted_rounds(ladder_teams, num_rounds)
+    else:
+        # Shuffle teams so the fixture is different each time it's generated
+        shuffled = list(teams)
+        random.shuffle(shuffled)
+        # Generate one full cycle of pairings (no home/away yet)
+        base_rounds = _circle_method_pairings(shuffled)
     if not base_rounds:
         return [], "Could not generate fixture."
 
@@ -111,6 +172,11 @@ def generate_round_robin(league_id, year, num_rounds=23):
         if c > 0:
             random.shuffle(indices)
         round_schedule.extend(indices)
+    if extra_idx is not None and num_rounds % cycle_len:
+        # The partial last cycle is exactly the chosen leftover rounds.
+        tail = list(extra_idx)
+        random.shuffle(tail)
+        round_schedule = round_schedule[:(num_rounds // cycle_len) * cycle_len] + tail
     round_schedule = round_schedule[:num_rounds]
 
     # Track fairness

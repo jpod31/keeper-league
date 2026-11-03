@@ -432,16 +432,55 @@ def offseason_start_step(league_id):
                 flash("Invalid date format.", "warning")
 
     elif step == "finish_offseason":
-        now = datetime.now(timezone.utc)
-        if season_cfg:
-            season_cfg.season_phase = "regular"
-            # Ensure off-season window is closed
-            if season_cfg.off_trade_window_open and (not season_cfg.off_trade_window_close or season_cfg.off_trade_window_close > now):
-                season_cfg.off_trade_window_close = now
-        db.session.commit()
-        flash("Off-season complete. Season is ready.", "success")
+        # Used to flip the phase to regular without moving the year. The
+        # off-season now ends by starting the next season.
+        flash("Start the next season from Commissioner Hub > Start new season.", "info")
 
     return redirect(url_for("leagues.commissioner_hub", league_id=league_id))
+
+
+def _new_season_league(league_id):
+    league = db.session.get(League, league_id)
+    if not league:
+        return None, (jsonify({"success": False, "error": "League not found."}), 404)
+    if league.commissioner_id != current_user.id:
+        return None, (jsonify({"success": False, "error": "Commissioner access required."}), 403)
+    return league, None
+
+
+@leagues_bp.route("/<int:league_id>/new-season", methods=["GET", "POST"])
+@login_required
+def new_season(league_id):
+    """GET: readiness + next year's settings (prefilled from this year).
+    POST: start the next season with the submitted settings."""
+    from models.season_rollover import rollover_preview, start_new_season
+
+    league, fail = _new_season_league(league_id)
+    if fail:
+        return fail
+
+    if request.method == "GET":
+        return jsonify(rollover_preview(league))
+
+    body = request.get_json(silent=True) or {}
+    summary, error = start_new_season(league_id, body.get("settings"))
+    if error:
+        return jsonify({"success": False, "error": error}), 400
+    return jsonify({"success": True, "summary": summary})
+
+
+@leagues_bp.route("/<int:league_id>/new-season/preview", methods=["POST"])
+@login_required
+def new_season_preview(league_id):
+    """Re-run the checks against edited settings (squad size moves the
+    over/under-cap list) without starting anything."""
+    from models.season_rollover import rollover_preview
+
+    league, fail = _new_season_league(league_id)
+    if fail:
+        return fail
+    body = request.get_json(silent=True) or {}
+    return jsonify(rollover_preview(league, body.get("settings")))
 
 
 @leagues_bp.route("/<int:league_id>/season/delist", methods=["POST"])

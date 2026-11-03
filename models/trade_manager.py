@@ -232,7 +232,15 @@ def check_trade_validity(league_id, proposer_team_id, recipient_team_id,
         if pid not in recipient_roster:
             return f"Player {pid} is not on recipient's roster."
 
-    # Validate future draft pick ownership
+    # Validate future draft pick ownership, and that the pick is still to be used
+    if give_pick_ids or receive_pick_ids:
+        from models.draft_picks import first_open_year
+        _lg = db.session.get(League, league_id) if league_id else None
+        floor = first_open_year(_lg) if _lg else None
+        for pick_id in list(give_pick_ids) + list(receive_pick_ids):
+            pick = db.session.get(FutureDraftPick, pick_id)
+            if pick and floor is not None and pick.year < floor:
+                return f"The {pick.year} R{pick.round_number} pick has already been used."
     for pick_id in give_pick_ids:
         pick = db.session.get(FutureDraftPick, pick_id)
         if not pick or pick.current_owner_id != proposer_team_id:

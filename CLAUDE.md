@@ -147,6 +147,23 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   fixture of the league's current year is completed, so the review appears when
   the last round finalises and vanishes at the next rollover. Exposed on the
   league context as `season_review_year`.
+- **Moving to a new year = `models/season_rollover.py::start_new_season`**, the
+  ONLY path (commissioner page `/leagues/<id>/new-season` and the date-based
+  auto-transition both call it). It copies every SeasonConfig column except the
+  per-year dates/windows (`_RESET_COLUMNS`), applies the commissioner's edits,
+  bumps `league.season_year`, builds main + 7s fixtures (+ Opening Round),
+  releases the LTIL, expires pending trades, tops up future picks. Any new
+  per-year state belongs in there. `config.CURRENT_YEAR` (the AFL data year)
+  is separate and still a manual bump before Opening Round.
+- **Supplemental drafts run reverse ladder, linear** (`models/draft_picks.py`).
+  "<year> R<n>" picks = that year's OFF-SEASON draft; the off-season draft
+  gives each slot to `FutureDraftPick.current_owner_id` and records
+  `DraftPick.original_team_id` ("via X" in the draft room). Picks are created
+  lazily by `ensure_future_picks` (open draft + 2 years, rounds =
+  `offseason_draft_min_picks`); only `open_picks_query` years are tradeable.
+- **Fixture draw**: `generate_round_robin(..., ladder_teams=)` makes the
+  leftover rounds after the full cycles pair sides close on last year's ladder
+  (squared rank gap); without it they are random.
 - **Positional priority for dual-position players**: FWD > DEF > RUC > MID.
 - **Rookie rule**: bench player with `age < 22` AND `rating < 70` → Rookies
   section (field/flex/7s/emergency/injury take precedence). Single source of

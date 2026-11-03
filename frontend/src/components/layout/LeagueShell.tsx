@@ -46,7 +46,7 @@ function detectActiveTab(pathname: string): string {
   if (rest.startsWith('standings') || rest.startsWith('fixture') || rest.startsWith('matchup') || rest.startsWith('finals') || rest.startsWith('history') || rest.startsWith('list-changes') || rest.startsWith('reserve7s')) return 'league'
   if (rest.startsWith('draft')) return 'draft'
   if (rest.startsWith('chat') || rest.startsWith('notifications') || rest.startsWith('activity') || rest.startsWith('messages')) return 'comms'
-  if (rest.startsWith('commissioner')) return 'commissioner'
+  if (rest.startsWith('commissioner') || rest.startsWith('new-season')) return 'commissioner'
   if (rest.startsWith('settings') || rest.startsWith('scoring')) return 'settings'
   if (rest.startsWith('trades')) return 'team' // Trades lives under My Team
   return ''

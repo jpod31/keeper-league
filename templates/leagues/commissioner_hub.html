@@ -99,10 +99,7 @@
             </form>
           {% endif %}
           {% if off_trade_status in ('completed', 'pending') and off_draft_status == 'completed' %}
-            <form method="POST" action="{{ url_for('leagues.offseason_start_step', league_id=league.id) }}" class="d-inline" onsubmit="return confirm('End the off-season?');">
-              <input type="hidden" name="step" value="finish_offseason">
-              <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-circle me-1"></i>Finish Off-Season</button>
-            </form>
+            <a href="/leagues/{{ league.id }}/new-season" class="btn btn-sm btn-success"><i class="bi bi-calendar-plus me-1"></i>Start {{ league.season_year + 1 }} season</a>
           {% endif %}
         {% elif current_phase == 'pre_season' %}
           <span style="font-size:.8rem;color:#8b949e;">Pre-season — set up your draft to get started.</span>

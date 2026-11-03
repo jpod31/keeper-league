@@ -80,9 +80,17 @@ def commissioner_hub(league_id):
 
     mid_draft_status = "locked"
     if season_cfg and season_cfg.mid_season_draft_enabled:
-        mid_supp = DraftSession.query.filter_by(
+        mid_q = DraftSession.query.filter_by(
             league_id=league_id, draft_round_type="supplemental", is_mock=False
-        ).order_by(DraftSession.id.desc()).first()
+        )
+        # Last November's off-season draft is also "supplemental"; only a
+        # draft created after this season started is this year's mid-season one.
+        if season_cfg.season_start_date:
+            mid_q = mid_q.filter(db.or_(
+                DraftSession.started_at.is_(None),
+                DraftSession.started_at >= season_cfg.season_start_date,
+            ))
+        mid_supp = mid_q.order_by(DraftSession.id.desc()).first()
         if mid_supp and mid_supp.status == "in_progress" and current_phase == "midseason":
             mid_draft_status = "active"
         elif mid_supp and mid_supp.status == "completed" and current_phase == "midseason":
