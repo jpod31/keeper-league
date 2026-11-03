@@ -101,3 +101,146 @@ def slot_owner(league_id, year, round_number, original_team_id):
         original_team_id=original_team_id,
     ).first()
     return fp.current_owner_id if fp else original_team_id
+
+
+# ── Draft plan: how a year's supplemental drafts are ordered ─────────────
+
+import json
+
+BASES = ("reverse_ladder", "ladder", "custom")
+STYLES = ("linear", "snake")
+PLACEMENTS = ("start", "end")
+MAX_COMP = 12
+
+
+def _loads(raw, default):
+    try:
+        val = json.loads(raw) if raw else default
+    except (TypeError, ValueError):
+        return default
+    return val if isinstance(val, type(default)) else default
+
+
+def read_plan(cfg):
+    """The plan stored on a SeasonConfig, with defaults filled."""
+    return {
+        "draft_order_basis": (cfg.draft_order_basis if cfg and cfg.draft_order_basis in BASES
+                              else "reverse_ladder"),
+        "draft_style": cfg.draft_style if cfg and cfg.draft_style in STYLES else "linear",
+        "draft_custom_order": _loads(cfg.draft_custom_order if cfg else None, []),
+        "draft_compensation": _loads(cfg.draft_compensation if cfg else None, []),
+    }
+
+
+def clean_plan(league_id, raw, base=None):
+    """Validate a submitted plan over ``base``. Returns (plan, errors)."""
+    plan = dict(base or read_plan(None))
+    errors = []
+    raw = raw or {}
+    team_ids = {t.id for t in FantasyTeam.query.filter_by(league_id=league_id).all()}
+
+    if "draft_order_basis" in raw:
+        if raw["draft_order_basis"] in BASES:
+            plan["draft_order_basis"] = raw["draft_order_basis"]
+        else:
+            errors.append("Draft order must be reverse ladder, ladder or custom.")
+    if "draft_style" in raw:
+        if raw["draft_style"] in STYLES:
+            plan["draft_style"] = raw["draft_style"]
+        else:
+            errors.append("Draft style must be linear or snake.")
+
+    if "draft_custom_order" in raw:
+        try:
+            order = [int(x) for x in (raw["draft_custom_order"] or [])]
+        except (TypeError, ValueError):
+            order = None
+        if order is None or len(set(order)) != len(order) or not set(order) <= team_ids:
+            errors.append("Custom order has an unknown or repeated team.")
+        else:
+            plan["draft_custom_order"] = order
+    if plan["draft_order_basis"] == "custom" and set(plan["draft_custom_order"]) != team_ids:
+        errors.append("A custom order has to list every team once.")
+
+    if "draft_compensation" in raw:
+        comp = []
+        for i, c in enumerate(raw["draft_compensation"] or []):
+            try:
+                tid, rnd = int(c.get("team_id")), int(c.get("round"))
+            except (TypeError, ValueError, AttributeError):
+                errors.append(f"Added pick {i + 1}: pick a team and a round.")
+                continue
+            placement = c.get("placement", "end")
+            if tid not in team_ids:
+                errors.append(f"Added pick {i + 1}: unknown team.")
+            elif not 1 <= rnd <= 20:
+                errors.append(f"Added pick {i + 1}: round must be 1 to 20.")
+            elif placement not in PLACEMENTS:
+                errors.append(f"Added pick {i + 1}: placement must be start or end of the round.")
+            else:
+                comp.append({"team_id": tid, "round": rnd, "placement": placement,
+                             "note": str(c.get("note") or "").strip()[:40]})
+        if len(comp) > MAX_COMP:
+            errors.append(f"At most {MAX_COMP} added picks.")
+        plan["draft_compensation"] = comp[:MAX_COMP]
+    return plan, errors
+
+
+def write_plan(cfg, plan):
+    cfg.draft_order_basis = plan["draft_order_basis"]
+    cfg.draft_style = plan["draft_style"]
+    cfg.draft_custom_order = json.dumps(plan["draft_custom_order"]) if plan["draft_custom_order"] else None
+    cfg.draft_compensation = json.dumps(plan["draft_compensation"]) if plan["draft_compensation"] else None
+
+
+def base_order(league_id, year, plan):
+    """Round-one order before traded or added picks."""
+    if plan["draft_order_basis"] == "ladder":
+        return ladder(league_id, year)
+    teams = reverse_ladder(league_id, year)
+    if plan["draft_order_basis"] == "custom" and plan["draft_custom_order"]:
+        pos = {tid: i for i, tid in enumerate(plan["draft_custom_order"])}
+        teams.sort(key=lambda t: pos.get(t.id, len(pos)))
+    return teams
+
+
+def build_slots(league_id, year, plan, total_rounds, offseason):
+    """Every slot of a supplemental draft, in pick order.
+
+    Each slot: {round, team_id (who uses it), original_team_id, label}.
+    Traded picks and added (compensation) picks only apply to the off-season
+    draft; the "<year> R<n>" picks are that draft's.
+    """
+    teams = base_order(league_id, year, plan)
+    comp = plan["draft_compensation"] if offseason else []
+    slots = []
+    for rnd in range(1, total_rounds + 1):
+        order = list(reversed(teams)) if plan["draft_style"] == "snake" and rnd % 2 == 0 else teams
+        added = [c for c in comp if c["round"] == rnd]
+
+        def extra(c):
+            return {"round": rnd, "team_id": c["team_id"], "original_team_id": c["team_id"],
+                    "label": c["note"] or "Added pick"}
+
+        slots.extend(extra(c) for c in added if c["placement"] == "start")
+        for t in order:
+            owner = slot_owner(league_id, year, rnd, t.id) if offseason else t.id
+            slots.append({"round": rnd, "team_id": owner, "original_team_id": t.id, "label": None})
+        slots.extend(extra(c) for c in added if c["placement"] == "end")
+    return slots
+
+
+def plan_preview(league, plan, rounds=2):
+    """The first rounds of this year's supplemental draft under ``plan``."""
+    offseason = league.status == "offseason"
+    names = {t.id: t.name for t in FantasyTeam.query.filter_by(league_id=league.id).all()}
+    comp_rounds = [c["round"] for c in plan["draft_compensation"]] if offseason else []
+    shown = max([rounds] + [r for r in comp_rounds if r <= 4])
+    out = []
+    for n, s in enumerate(build_slots(league.id, league.season_year, plan, shown, offseason), 1):
+        out.append({
+            "pick": n, "round": s["round"], "team": names.get(s["team_id"], "?"),
+            "via": names.get(s["original_team_id"]) if s["original_team_id"] != s["team_id"] else None,
+            "label": s["label"],
+        })
+    return out

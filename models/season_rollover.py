@@ -104,7 +104,16 @@ def current_settings(league):
         out["offseason_draft_min_picks"] if out["offseason_draft_min_picks"] is not None else 4)
     out["ssp_slots"] = out["ssp_slots"] if out["ssp_slots"] is not None else 1
     out["ssp_cutoff_round"] = out["ssp_cutoff_round"] or 4
+
+    # Draft plan carries across; added (compensation) picks belong to one
+    # year's draft, so next year starts with none.
+    from models.draft_picks import read_plan
+    out.update(read_plan(cfg))
+    out["draft_compensation"] = []
     return out
+
+
+PLAN_KEYS = ("draft_order_basis", "draft_style", "draft_custom_order", "draft_compensation")
 
 
 def clean_settings(league, raw):
@@ -115,7 +124,11 @@ def clean_settings(league, raw):
     commissioner did not see.
     """
     settings = current_settings(league)
-    errors = []
+    from models.draft_picks import clean_plan
+    plan, errors = clean_plan(
+        league.id, {k: v for k, v in (raw or {}).items() if k in PLAN_KEYS},
+        base={k: settings[k] for k in PLAN_KEYS})
+    settings.update(plan)
     for key, val in (raw or {}).items():
         spec = _SPEC.get(key)
         if not spec:
@@ -295,6 +308,8 @@ def rollover_preview(league, raw_settings=None):
         "checks": checks,
         "can_start": not errors and not any(c["level"] == "block" for c in checks),
         "team_count": FantasyTeam.query.filter_by(league_id=league.id).count(),
+        "teams": [{"id": t.id, "name": t.name} for t in
+                  FantasyTeam.query.filter_by(league_id=league.id).order_by(FantasyTeam.name).all()],
     }
 
 
@@ -307,6 +322,8 @@ def _new_config(league, old, settings, new_year, now):
     for key, owner, _kind, _lo, _hi in SETTINGS:
         if owner == "cfg":
             setattr(new, key, settings[key])
+    from models.draft_picks import write_plan
+    write_plan(new, {k: settings[k] for k in PLAN_KEYS})
     # The settings page drives these pairs off one control; keep them in step.
     new.mid_season_trade_enabled = settings["mid_season_draft_enabled"]
     new.mid_season_trade_after_round = settings["mid_season_draft_after_round"]

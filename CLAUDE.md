@@ -155,7 +155,13 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   releases the LTIL, expires pending trades, tops up future picks. Any new
   per-year state belongs in there. `config.CURRENT_YEAR` (the AFL data year)
   is separate and still a manual bump before Opening Round.
-- **Supplemental drafts run reverse ladder, linear** (`models/draft_picks.py`).
+- **Supplemental drafts follow the year's draft plan** on SeasonConfig
+  (`draft_order_basis` reverse_ladder|ladder|custom, `draft_style`
+  linear|snake, `draft_custom_order`, `draft_compensation` = added picks at
+  the start/end of a round, off-season draft only, stored as `DraftPick.label`).
+  `models/draft_picks.py::build_slots` is the one slot builder (the draft AND
+  the previews). Edited for this year on Draft Setup (`/leagues/<id>/draft-plan`)
+  and for next year on the new-season page; added picks reset each rollover.
   "<year> R<n>" picks = that year's OFF-SEASON draft; the off-season draft
   gives each slot to `FutureDraftPick.current_owner_id` and records
   `DraftPick.original_team_id` ("via X" in the draft room). Picks are created

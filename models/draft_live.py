@@ -126,16 +126,23 @@ def create_draft_session(league_id, supplemental=False, total_rounds_override=No
     else:
         total_rounds = total_rounds_override or league.squad_size
 
-    # Supplemental drafts run worst-to-best on the ladder, the same order
-    # every round; the off-season one also honours traded picks.
+    # Supplemental drafts follow the year's draft plan (order basis, linear
+    # or snake, added picks); the off-season one also honours traded picks.
     real_supp = supplemental and not is_mock
     offseason_draft = real_supp and league.status == "offseason"
-    draft_type = "linear" if real_supp else league.draft_type
+    slots = None
+    draft_type = league.draft_type
     if real_supp:
-        from models.draft_picks import reverse_ladder, ensure_future_picks, slot_owner
-        teams = reverse_ladder(league_id, league.season_year)
+        from models.database import SeasonConfig
+        from models.draft_picks import ensure_future_picks, read_plan, build_slots
+        plan = read_plan(SeasonConfig.query.filter_by(
+            league_id=league_id, year=league.season_year).first())
+        draft_type = plan["draft_style"]
         if offseason_draft:
             ensure_future_picks(league_id)
+            comp_rounds = [c["round"] for c in plan["draft_compensation"]]
+            total_rounds = max([total_rounds] + comp_rounds)
+        slots = build_slots(league_id, league.season_year, plan, total_rounds, offseason_draft)
 
     session = DraftSession(
         league_id=league_id,
@@ -148,22 +155,21 @@ def create_draft_session(league_id, supplemental=False, total_rounds_override=No
     db.session.add(session)
     db.session.flush()
 
-    # Pre-generate all pick slots
-    pick_number = 1
-    for rnd in range(1, total_rounds + 1):
-        order = _get_round_order(teams, rnd, draft_type)
-        for team in order:
-            owner_id = (slot_owner(league_id, league.season_year, rnd, team.id)
-                        if offseason_draft else team.id)
-            pick = DraftPick(
-                draft_session_id=session.id,
-                pick_number=pick_number,
-                draft_round=rnd,
-                team_id=owner_id,
-                original_team_id=team.id,
-            )
-            db.session.add(pick)
-            pick_number += 1
+    if slots is None:
+        slots = [
+            {"round": rnd, "team_id": team.id, "original_team_id": team.id, "label": None}
+            for rnd in range(1, total_rounds + 1)
+            for team in _get_round_order(teams, rnd, league.draft_type)
+        ]
+    for pick_number, slot in enumerate(slots, 1):
+        db.session.add(DraftPick(
+            draft_session_id=session.id,
+            pick_number=pick_number,
+            draft_round=slot["round"],
+            team_id=slot["team_id"],
+            original_team_id=slot["original_team_id"],
+            label=slot["label"],
+        ))
 
     db.session.commit()
     return session, None
@@ -191,7 +197,8 @@ def get_draft_state(session_id):
     if session.draft_round_type == "supplemental":
         # Supplemental drafts run in their own (reverse-ladder) order: read it
         # off round one rather than the initial draft's order.
-        first = [p.original_team_id or p.team_id for p in picks if p.draft_round == 1]
+        first = [p.original_team_id or p.team_id for p in picks
+                 if p.draft_round == 1 and not p.label]
         order_of = {tid: i + 1 for i, tid in enumerate(first)}
         teams.sort(key=lambda t: order_of.get(t.id, 99))
 
@@ -224,6 +231,7 @@ def get_draft_state(session_id):
         "current_team_id": current_pick.team_id if current_pick else None,
         "current_team_name": current_pick.team.name if current_pick else None,
         "current_via_team_name": _via(current_pick) if current_pick else None,
+        "current_label": current_pick.label if current_pick else None,
         "total_rounds": session.total_rounds,
         "total_picks": len(picks),
         "picks_made": len([p for p in picks if p.player_id is not None or p.is_pass]),
@@ -236,6 +244,7 @@ def get_draft_state(session_id):
                 "team_id": p.team_id,
                 "team_name": p.team.name,
                 "via_team_name": _via(p),
+                "label": p.label,
                 "player_id": p.player_id,
                 "player_name": p.player.name if p.player else None,
                 "player_position": p.player.position if p.player else None,

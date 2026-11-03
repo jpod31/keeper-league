@@ -570,3 +570,45 @@ def delist_player_action(league_id):
         return redirect(next_url)
     return redirect(team_url)
 
+
+
+@leagues_bp.route("/<int:league_id>/draft-plan", methods=["GET", "POST"])
+@login_required
+def draft_plan(league_id):
+    """This year's supplemental draft plan: order basis, linear/snake, custom
+    order, added picks. GET reads it with a preview; POST saves it."""
+    from models.database import SeasonConfig
+    from models.draft_picks import read_plan, clean_plan, write_plan, plan_preview
+
+    league, fail = _new_season_league(league_id)
+    if fail:
+        return fail
+    cfg = SeasonConfig.query.filter_by(league_id=league_id, year=league.season_year).first()
+    if not cfg:
+        cfg = SeasonConfig(league_id=league_id, year=league.season_year)
+        db.session.add(cfg)
+        db.session.commit()
+
+    plan = read_plan(cfg)
+    errors = []
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        plan, errors = clean_plan(league_id, body.get("plan"), base=plan)
+        if not errors and body.get("save"):
+            write_plan(cfg, plan)
+            db.session.commit()
+
+    pending = DraftSession.query.filter_by(
+        league_id=league_id, draft_round_type="supplemental", is_mock=False,
+    ).filter(DraftSession.status.in_(["scheduled", "paused"])).first()
+    teams = FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.name).all()
+    return jsonify({
+        "year": league.season_year,
+        "offseason": league.status == "offseason",
+        "plan": plan,
+        "saved": read_plan(cfg),
+        "errors": errors,
+        "preview": plan_preview(league, plan) if not errors else [],
+        "teams": [{"id": t.id, "name": t.name} for t in teams],
+        "draft_created": bool(pending),
+    }), (400 if errors and request.method == "POST" and (request.get_json(silent=True) or {}).get("save") else 200)

@@ -531,6 +531,8 @@ class DraftPick(db.Model):
     picked_at = db.Column(db.DateTime)
     # Whose pick this was before any trade; team_id is who uses it.
     original_team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=True)
+    # Set on an added selection (compensation / priority), e.g. "Compensation".
+    label = db.Column(db.String(60))
 
     team = db.relationship("FantasyTeam", lazy="joined", foreign_keys=[team_id])
     original_team = db.relationship("FantasyTeam", lazy="joined", foreign_keys=[original_team_id])
@@ -878,6 +880,15 @@ class SeasonConfig(db.Model):
     offseason_start_date = db.Column(db.DateTime)
     finals_start_round = db.Column(db.Integer)
     supplemental_draft_date = db.Column(db.DateTime)  # e.g. Nov 30 after AFL draft
+
+    # Supplemental drafts held this year (mid-season + off-season):
+    # basis reverse_ladder|ladder|custom, style linear|snake,
+    # custom order = JSON [team_id, ...], compensation = JSON
+    # [{team_id, round, placement: start|end, note}] (off-season draft only).
+    draft_order_basis = db.Column(db.String(20), default="reverse_ladder")
+    draft_style = db.Column(db.String(10), default="linear")
+    draft_custom_order = db.Column(db.Text)
+    draft_compensation = db.Column(db.Text)
 
     __table_args__ = (
         db.UniqueConstraint("league_id", "year", name="uq_season_config_league_year"),
@@ -1240,6 +1251,10 @@ def _run_migrations(app):
             ("offseason_draft_min_picks", "INTEGER DEFAULT 4"),
             ("ssp_enabled", "BOOLEAN DEFAULT 1"),
             ("ssp_slots", "INTEGER DEFAULT 1"),
+            ("draft_order_basis", 'VARCHAR(20) DEFAULT "reverse_ladder"'),
+            ("draft_style", 'VARCHAR(10) DEFAULT "linear"'),
+            ("draft_custom_order", "TEXT"),
+            ("draft_compensation", "TEXT"),
         ]
         for col_name, col_def in migrations:
             if col_name not in existing:
@@ -1310,6 +1325,9 @@ def _run_migrations(app):
             db.session.execute(
                 text("ALTER TABLE draft_pick ADD COLUMN original_team_id INTEGER REFERENCES fantasy_team(id)")
             )
+            db.session.commit()
+        if "label" not in existing_pick:
+            db.session.execute(text("ALTER TABLE draft_pick ADD COLUMN label VARCHAR(60)"))
             db.session.commit()
 
     # Trade.intended_period column

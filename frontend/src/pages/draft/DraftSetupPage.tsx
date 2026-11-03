@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { api } from '../../lib/api'
 import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
+import { DraftPlanCard } from '../../components/draft/DraftPlanCard'
 
 interface Team { id: number; name: string; owner: string; draft_order: number }
 interface DraftSessionSummary {
@@ -497,6 +498,9 @@ export function DraftSetupPage() {
               </div>
             </div>
           )}
+
+          {/* This year's supplemental draft order + added picks */}
+          {initial_completed && <DraftPlanCard leagueId={leagueId!} />}
 
           {/* Create supplemental form */}
           {showCreateSupp && (

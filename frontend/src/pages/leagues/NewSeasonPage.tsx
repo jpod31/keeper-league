@@ -5,10 +5,11 @@ import { Spinner } from '../../components/ui/Spinner'
 import { post } from '../../lib/api'
 import { AdminSubnav } from '../../components/nav/AdminSubnav'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
+import { DraftPlanEditor, type DraftPlan } from '../../components/draft/DraftPlanEditor'
 
 type TradeMode = 'window' | 'until_round' | 'all_year'
 
-interface Settings {
+interface Settings extends DraftPlan {
   num_regular_rounds: number
   opening_round: boolean
   fixture_weighting: 'random' | 'ladder'
@@ -48,6 +49,7 @@ interface Preview {
   checks: Check[]
   can_start: boolean
   team_count: number
+  teams: { id: number; name: string }[]
 }
 
 interface Summary {
@@ -153,7 +155,8 @@ export function NewSeasonPage() {
   const view = live ?? data
   const changed = useMemo(() => {
     if (!form || !data) return 0
-    return (Object.keys(form) as (keyof Settings)[]).filter(k => form[k] !== data.current[k]).length
+    return (Object.keys(form) as (keyof Settings)[])
+      .filter(k => JSON.stringify(form[k]) !== JSON.stringify(data.current[k])).length
   }, [form, data])
 
   if (loading) return <Spinner text="Loading..." />
@@ -164,7 +167,7 @@ export function NewSeasonPage() {
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) => setForm(f => (f ? { ...f, [k]: v } : f))
 
   const was = (k: keyof Settings) =>
-    form[k] !== data.current[k] ? <span className="ns-was">was {fmt(k, data.current[k])}</span> : null
+    JSON.stringify(form[k]) !== JSON.stringify(data.current[k]) ? <span className="ns-was">was {fmt(k, data.current[k])}</span> : null
 
   const num = (k: keyof Settings, min: number, max: number) => (
     <input
@@ -292,6 +295,17 @@ export function NewSeasonPage() {
             {row('SSP (LTIL replacements)', 'ssp_enabled', toggle('ssp_enabled'))}
             {row('LTIL slots per team', 'ssp_slots', num('ssp_slots', 0, 5), !s.ssp_enabled)}
             {row('SSP open until round', 'ssp_cutoff_round', num('ssp_cutoff_round', 1, 24), !s.ssp_enabled)}
+          </div>
+
+          <div className="ns-card">
+            <div className="ns-card-h"><i className="bi bi-list-ol"></i>{view.to_year} drafts</div>
+            <DraftPlanEditor
+              teams={view.teams}
+              year={view.to_year}
+              value={s}
+              onChange={p => setForm(f => (f ? { ...f, ...p } : f))}
+              addedNote={`${view.to_year} off-season draft`}
+            />
           </div>
 
           <div className="ns-card">

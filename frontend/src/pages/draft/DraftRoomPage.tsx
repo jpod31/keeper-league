@@ -11,6 +11,7 @@ interface PickHistoryEntry {
   team_id: number
   team_name: string
   via_team_name?: string | null
+  label?: string | null
   player_id: number | null
   player_name: string | null
   player_position: string | null
@@ -33,6 +34,7 @@ interface DraftState {
   current_team_id: number | null
   current_team_name: string | null
   current_via_team_name?: string | null
+  current_label?: string | null
   total_rounds: number
   total_picks: number
   picks_made: number
@@ -1007,6 +1009,9 @@ function DraftRoomPageInner() {
                 {!bannerCompleted && state.current_via_team_name && (
                   <span style={{ fontSize: '.7em', fontWeight: 600, color: '#97a3ba', marginLeft: 8 }}>via {state.current_via_team_name}</span>
                 )}
+                {!bannerCompleted && state.current_label && (
+                  <span style={{ fontSize: '.6em', fontWeight: 700, color: '#d29922', marginLeft: 8 }}>{state.current_label}</span>
+                )}
                 {bannerYourPick && <span className="draft-your-pick-pill">Your Pick</span>}
               </div>
             </div>
@@ -1296,6 +1301,7 @@ function DraftRoomPageInner() {
                           <td>
                             {pick.team_name}
                             {pick.via_team_name && <span style={{ color: '#97a3ba', fontSize: '.85em' }}> via {pick.via_team_name}</span>}
+                            {pick.label && <span style={{ color: '#d29922', fontSize: '.8em', fontWeight: 600 }}> {pick.label}</span>}
                           </td>
                           {pick.is_pass ? (
                             <><td><span className="draft-pass-tag">PASS</span></td><td></td><td></td></>
