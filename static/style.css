@@ -12183,3 +12183,6 @@ th .sort-icon { opacity: 1 !important; }
 @media (max-width: 600px) { .mx-row { padding: 12px 10px !important; column-gap: 8px !important; } .mx-name { gap: 8px; font-size: .875rem; } .mx-centre { min-width: 0 !important; } }
 @media (max-width: 600px) { .mx-name .tbadge { display: none !important; } .mx-name > span:not(.tbadge) { white-space: normal; line-height: 1.2; } .mx-name-r { text-align: right; } .mx-sc { font-size: 1rem !important; min-width: 0 !important; } }
 @media (max-width: 600px) { .mx-name > span:not(.tbadge) { white-space: normal !important; overflow: visible !important; } .mx-team { white-space: normal !important; } }
+.sn-premier-l i { display: none !important; }
+.sn-premier { background: var(--panel) !important; }
+.sn-pos.first { background: #ffffff !important; color: #050506 !important; border-color: #ffffff !important; }

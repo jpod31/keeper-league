@@ -399,7 +399,7 @@ export function TradeProposePage() {
 
   const {
     league, user_team, other_teams, my_players, my_picks,
-    team_logos, trade_window_open, trade_close_at, trade_window_label,
+    team_logos, trade_window_open, trade_close_at,
   } = data
   const recipientTeam = other_teams.find(t => t.id === recipientId) || null
   const countdown = fmtCountdown(trade_close_at)
@@ -432,17 +432,9 @@ export function TradeProposePage() {
             <h1>Build a trade</h1>
           </div>
         </div>
-        <div className={`tp-window${trade_window_open ? ' open' : ''}`}>
-          <i className={`bi ${trade_window_open ? 'bi-unlock-fill' : 'bi-lock-fill'}`} />
-          <span>
-            <b>{trade_window_label || (trade_window_open ? 'Trade window open' : 'Trade window closed')}</b>
-            <em>
-              {trade_window_open
-                ? (countdown || 'open now')
-                : 'Propose anyway, it executes when the window opens'}
-            </em>
-          </span>
-        </div>
+        <span className={`sq-chip${trade_window_open ? ' ok' : ''}`}>
+          {trade_window_open ? `Window open${countdown ? `, ${countdown}` : ''}` : 'Window closed, runs when it opens'}
+        </span>
       </div>
 
       {error && <div className="alert alert-danger tp-alert">{error}</div>}
