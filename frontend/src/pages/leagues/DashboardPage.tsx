@@ -1,8 +1,9 @@
-import { useParams, useNavigate, Link } from 'react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useParams, Link } from 'react-router'
+import { useEffect, useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton'
 import { TeamCrest } from '../../components/draft/TeamCrest'
+import { TeamBadge } from '../../components/ui/TeamBadge'
 
 /** Days, hours, minutes and seconds to the draft, ticking. */
 function DraftClock({ target }: { target: string }) {
@@ -142,107 +143,32 @@ interface DashboardData {
 }
 
 // ── Helpers ──────────────────────────────────────────────────
-function hexToRgb(hex: string): string {
-  const h = hex.replace('#', '')
-  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
-  if (full.length !== 6) return '236,236,246'
-  return `${parseInt(full.slice(0, 2), 16)},${parseInt(full.slice(2, 4), 16)},${parseInt(full.slice(4, 6), 16)}`
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
-function initials(name: string): string {
-  if (!name) return '·'
-  const words = name.split(/\s+/).filter(Boolean).slice(0, 2)
-  return words.map(w => w[0]).join('').toUpperCase().slice(0, 2)
-}
-
-function fmtCountdown(target: string | null): { value: string; tone: 'soon' | 'live' | 'normal' } | null {
-  if (!target) return null
-  const t = new Date(target).getTime()
-  const now = Date.now()
-  const ms = t - now
-  if (ms <= 0) return { value: 'NOW', tone: 'live' }
-  const days = Math.floor(ms / 86400000)
-  const hours = Math.floor((ms % 86400000) / 3600000)
-  const mins = Math.floor((ms % 3600000) / 60000)
-  let value = ''
-  if (days > 0) value = `${days}d ${hours}h`
-  else if (hours > 0) value = `${hours}h ${mins}m`
-  else value = `${mins}m`
-  const tone = ms < 3600_000 ? 'soon' : 'normal'
-  return { value, tone }
-}
-
-function fmtRelative(iso: string | null): string {
-  if (!iso) return ''
-  const t = new Date(iso).getTime()
-  const ago = Date.now() - t
-  if (ago < 60_000) return 'now'
-  if (ago < 3600_000) return `${Math.floor(ago / 60_000)}m`
-  if (ago < 86400_000) return `${Math.floor(ago / 3600_000)}h`
-  return `${Math.floor(ago / 86400_000)}d`
-}
-
-function activityIconClass(t: string, title: string): string {
-  const lt = (t || '').toLowerCase()
-  const lower = (title || '').toLowerCase()
-  if (lt === 'trade_accepted' || lt === 'trade_received' || lower.includes('trade')) return 'lg-feed-icon-trade'
-  if (lower.includes('delisted')) return 'lg-feed-icon-delist'
-  if (lower.includes('ltil')) return 'lg-feed-icon-ltil'
-  if (lower.includes('draft')) return 'lg-feed-icon-draft'
-  return ''
-}
-
-function activityIcon(t: string, title: string): string {
-  const lt = (t || '').toLowerCase()
-  const lower = (title || '').toLowerCase()
-  if (lt === 'trade_accepted' || lt === 'trade_received' || lower.includes('trade')) return 'bi-arrow-left-right'
-  if (lower.includes('delisted')) return 'bi-x-octagon'
-  if (lower.includes('ltil')) return 'bi-bandaid'
-  if (lower.includes('draft')) return 'bi-trophy'
-  return 'bi-info-circle'
+function when(iso: string): string {
+  return new Date(iso).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 }
 
 // ── Page ─────────────────────────────────────────────────────
+// Home is one thing. Before the draft it is draft night (the dh2 block).
+// In season it is this round: your game, one sentence, then the round's
+// other games and the ladder. Everything else lives on its own page.
 export function DashboardPage() {
   const { leagueId } = useParams()
-  const navigate = useNavigate()
   const { data, loading, refetch } = useFetch<DashboardData>(`/leagues/${leagueId}?format=json`)
   const [copied, setCopied] = useState(false)
   const [joinName, setJoinName] = useState('')
 
-  // Tick every 30s to refresh countdowns
-  const [, setTick] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setTick(v => v + 1), 30_000)
-    return () => clearInterval(t)
-  }, [])
-
-  // CSS variable map for team colours
-  const styleVars = useMemo(() => {
-    const m: Record<string, string> = {}
-    if (data?.this_matchup) {
-      m['--lg-me'] = data.this_matchup.me.colour
-      m['--lg-me-rgb'] = hexToRgb(data.this_matchup.me.colour)
-      m['--lg-opp'] = data.this_matchup.opp.colour
-      m['--lg-opp-rgb'] = hexToRgb(data.this_matchup.opp.colour)
-    } else if (data?.user_team) {
-      const myStanding = data.standings.find(s => s.team.is_mine)
-      const myColour = myStanding?.team.colour || '#ececf6'
-      m['--lg-me'] = myColour
-      m['--lg-me-rgb'] = hexToRgb(myColour)
-    }
-    return m
-  }, [data])
-
   if (loading) return <DashboardSkeleton />
   if (!data) return <p className="text-danger">Failed to load dashboard</p>
 
-  const { league, user_team, teams, scoring_rules, this_matchup, my_rank, standings,
-    league_fixtures, top_performers, recent_activity, current_round, live_games_count,
-    next_lockout_at, pending_incoming, pending_outgoing, delist_open, offseason } = data
-  const draftWhen = offseason?.draft_at
-    ? new Date(offseason.draft_at).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
-    : null
+  const { league, user_team, teams, this_matchup, my_rank, standings, league_fixtures, current_round,
+    live_games_count, next_lockout_at, pending_incoming, delist_open, offseason } = data
+  const draftWhen = offseason?.draft_at ? when(offseason.draft_at) : null
 
   const inviteUrl = league.invite_code ? `${window.location.origin}/leagues/invite/${league.invite_code}` : ''
   function copyInvite() {
@@ -258,11 +184,28 @@ export function DashboardPage() {
     if (res.status < 500) refetch()
   }
 
-  const lockout = fmtCountdown(next_lockout_at)
-  const tradeCountdown = league.trade_window_open ? fmtCountdown(league.trade_close_at) : null
+  const m = this_matchup
+  const played = m && m.status !== 'scheduled'
+  const gap = m ? Math.abs(Math.round(m.margin)) : 0
+  const rank = my_rank ? ` You are ${ordinal(my_rank)} on the ladder.` : ''
+  let line = ''
+  if (m) {
+    if (m.status === 'scheduled') line = next_lockout_at ? `Lockout is ${when(next_lockout_at)}.` : 'Set your lineup before the round starts.'
+    else if (m.status === 'live') {
+      line = m.margin > 0 ? `You lead ${m.opp.name} by ${gap}.` : m.margin < 0 ? `You trail ${m.opp.name} by ${gap}.` : `Level with ${m.opp.name}.`
+      if (live_games_count > 0) line += ` ${live_games_count} AFL game${live_games_count === 1 ? '' : 's'} live.`
+    } else line = m.margin > 0 ? `You beat ${m.opp.name} by ${gap}.` : m.margin < 0 ? `You lost to ${m.opp.name} by ${gap}.` : `You tied with ${m.opp.name}.`
+    line += rank
+  } else if (offseason?.draft_done) {
+    line = `The draft is done. The ${league.season_year + 1} season starts when the commissioner opens it.`
+  } else if (user_team) {
+    line = `No game for you this round.${rank}`
+  }
+  const state = m ? (m.status === 'live' ? ', live' : m.status === 'scheduled' ? '' : ', final') : ''
+  const leagueFull = teams.length >= league.num_teams
 
   return (
-    <div className={`lg-page${offseason && !offseason.draft_done ? ' is-offseason' : ''}`} style={styleVars as React.CSSProperties}>
+    <div className={`lg-page${offseason && !offseason.draft_done ? ' is-offseason' : ''}`}>
 
       {/* ── OFF-SEASON: the draft and the cuts, in place of rounds ── */}
       {offseason && !offseason.draft_done && (
@@ -316,456 +259,106 @@ export function DashboardPage() {
         </section>
       )}
 
-      {/* ── LIVE PULSE BAR ── */}
-      <div className="lg-pulse">
-        <span className="lg-pulse-item">
-          <span className={`lg-pulse-dot ${live_games_count > 0 ? 'lg-pulse-dot-live' : ''}`}></span>
-          {live_games_count > 0 ? (
-            <><b>R{current_round}</b>, <b>{live_games_count}</b> live</>
-          ) : current_round ? (
-            <>Round <b>{current_round}</b></>
+      <section className="hm">
+        <div className="hm-head">
+          <div className="dh2-label">{m ? `Round ${m.round}${state}` : league.name}</div>
+          {m ? (
+            <div className="hm-game">
+              <Link className="hm-side" to={`/leagues/${leagueId}/team/${m.me.id}`}>
+                <TeamBadge name={m.me.id} size={44} showName={false} />
+                <span className="hm-name">{m.me.name}</span>
+                {played && <span className="hm-num">{Math.round(m.me.score).toLocaleString()}</span>}
+              </Link>
+              <span className="hm-v">v</span>
+              <Link className="hm-side" to={`/leagues/${leagueId}/team/${m.opp.id}`}>
+                <TeamBadge name={m.opp.id} size={44} showName={false} />
+                <span className="hm-name">{m.opp.name}</span>
+                {played && <span className="hm-num">{Math.round(m.opp.score).toLocaleString()}</span>}
+              </Link>
+            </div>
           ) : (
-            <>{league.season_year} season</>
+            <h1 className="dh2-when">{user_team ? user_team.name : `Welcome to ${league.name}`}</h1>
           )}
-        </span>
-        {lockout && (
-          <span className="lg-pulse-item">
-            <i className="bi bi-clock" style={{ color: '#d29922', fontSize: '.8125rem' }}></i>
-            Next lockout
-            <span className="lg-pulse-countdown">{lockout.value}</span>
-          </span>
-        )}
-        {league.trade_window_open && (
-          <span className="lg-pulse-item">
-            <span className="lg-pulse-dot lg-pulse-dot-open"></span>
-            Trades open
-            {tradeCountdown && <span className="lg-pulse-countdown">· closes {tradeCountdown.value}</span>}
-          </span>
-        )}
-        {!league.trade_window_open && (
-          <span className="lg-pulse-item" style={{ color: 'var(--pp-text-muted)' }}>
-            <span className="lg-pulse-dot"></span>Trade window closed
-          </span>
-        )}
-        {delist_open && (
-          <span className="lg-pulse-item" style={{ color: '#ff8a82' }}>
-            <i className="bi bi-x-octagon" style={{ fontSize: '.8125rem' }}></i>Delist period open
-          </span>
-        )}
-        <span className="lg-pulse-item" style={{ marginLeft: 'auto', color: 'var(--pp-text-muted)' }}>
-          <span className={`status-pill status-${league.status}`} style={{ fontSize: '.8125rem' }}>{league.status}</span>
-          <span style={{ marginLeft: 8 }}>{league.scoring_label}, {league.num_teams} teams</span>
-        </span>
-      </div>
+        </div>
 
-      {/* ── MATCHUP HERO ── */}
-      {this_matchup && user_team ? (
-        <section className="lg-hero">
-          <div className="lg-hero-grid">
-            {/* MY side */}
-            <div className="lg-hero-side lg-hero-side-me">
-              <div className="lg-hero-team-row">
-                <div className="lg-hero-team-logo">
-                  {this_matchup.me.logo_url
-                    ? <img src={this_matchup.me.logo_url} alt="" />
-                    : <span className="lg-hero-team-logo-fallback" style={{ color: this_matchup.me.colour }}>{initials(this_matchup.me.name)}</span>}
-                </div>
-                <div className="lg-hero-team-meta">
-                  <span className="lg-hero-team-name">
-                    {this_matchup.me.name}
-                    <span className="lg-hero-mine-pill">YOU</span>
-                  </span>
-                  <span className="lg-hero-team-owner">{this_matchup.me.owner}</span>
-                </div>
-              </div>
-              <div>
-                <div className="lg-hero-score-label">Your score</div>
-                <div className="lg-hero-score">{Math.round(this_matchup.me.score)}</div>
-              </div>
-            </div>
-
-            {/* VS centre */}
-            <div className="lg-hero-vs">
-              <div className="lg-hero-round">Round {this_matchup.round}</div>
-              <div className="lg-hero-vs-token">VS</div>
-              <div className={`lg-hero-status-pill lg-hero-status-${this_matchup.status}`}>{this_matchup.status}</div>
-            </div>
-
-            {/* OPP side */}
-            <div className="lg-hero-side lg-hero-side-opp">
-              <div className="lg-hero-team-row">
-                <div className="lg-hero-team-logo">
-                  {this_matchup.opp.logo_url
-                    ? <img src={this_matchup.opp.logo_url} alt="" />
-                    : <span className="lg-hero-team-logo-fallback" style={{ color: this_matchup.opp.colour }}>{initials(this_matchup.opp.name)}</span>}
-                </div>
-                <div className="lg-hero-team-meta">
-                  <span className="lg-hero-team-name">{this_matchup.opp.name}</span>
-                  <span className="lg-hero-team-owner">{this_matchup.opp.owner}</span>
-                </div>
-              </div>
-              <div>
-                <div className="lg-hero-score-label">Their score</div>
-                <div className="lg-hero-score">{Math.round(this_matchup.opp.score)}</div>
-              </div>
+        {user_team ? (
+          <div className="dh2-you">
+            <div className="dh2-you-text">{line}</div>
+            <div className="dh2-actions">
+              {m
+                ? <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/gameday`}>Gameday</Link>
+                : offseason?.draft_done && <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/draft/recap`}>Draft recap</Link>}
+              <Link className="kx-btn" to={`/leagues/${leagueId}/team/${user_team.id}`}>My team</Link>
             </div>
           </div>
+        ) : (
+          <form className="dh2-you" onSubmit={joinLeague}>
+            <input type="text" className="form-control hm-join" placeholder="Your team name" aria-label="Your team name"
+              required maxLength={120} value={joinName} onChange={e => setJoinName(e.target.value)} />
+            <button type="submit" className="kx-btn kx-btn-gold">Join the league</button>
+          </form>
+        )}
 
-          <div className="lg-hero-storyline">
-            {this_matchup.status === 'scheduled' ? (
-              <>This week's matchup tips off when the round begins. Set your lineup before lockout.</>
-            ) : this_matchup.status === 'live' ? (
-              this_matchup.margin > 0
-                ? <>You're <b>up {Math.abs(this_matchup.margin).toFixed(1)}</b> against <b>{this_matchup.opp.name}</b>.</>
-                : this_matchup.margin < 0
-                  ? <>You're <b>down {Math.abs(this_matchup.margin).toFixed(1)}</b> to <b>{this_matchup.opp.name}</b>. Players still to play.</>
-                  : <>Dead level with <b>{this_matchup.opp.name}</b>.</>
-            ) : (
-              this_matchup.margin > 0
-                ? <>You beat <b>{this_matchup.opp.name}</b> by <b>{Math.abs(this_matchup.margin).toFixed(1)}</b>.</>
-                : this_matchup.margin < 0
-                  ? <>You lost to <b>{this_matchup.opp.name}</b> by <b>{Math.abs(this_matchup.margin).toFixed(1)}</b>.</>
-                  : <>Tied with <b>{this_matchup.opp.name}</b>.</>
+        {(pending_incoming > 0 || delist_open) && user_team && (
+          <div className="hm-todo">
+            {pending_incoming > 0 && (
+              <Link className="sq-chip due" to={`/leagues/${leagueId}/trades`}>
+                {pending_incoming} trade offer{pending_incoming === 1 ? '' : 's'} to answer
+              </Link>
             )}
+            {delist_open && <Link className="sq-chip" to={`/leagues/${leagueId}/team/${user_team.id}`}>Delistings are open</Link>}
           </div>
-        </section>
-      ) : !user_team && (
-        <section className="lg-hero" style={{ padding: 24 }}>
-          <div style={{ textAlign: 'center', padding: '12px 0' }}>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--pp-text-strong)', marginBottom: 8 }}>
-              Welcome to {league.name}
-            </div>
-            <div style={{ fontSize: '.9rem', color: 'var(--pp-text-muted)' }}>
-              Join the league below to get your team into the action.
-            </div>
-          </div>
-        </section>
-      )}
+        )}
 
-      {/* ── QUICK ACTIONS ── */}
-      {user_team && (
-        <div className="lg-actions">
-          <Link to={`/leagues/${leagueId}/team/${user_team.id}`} className="lg-action lg-action-myteam">
-            <span className="lg-action-icon"><i className="bi bi-person-bounding-box"></i></span>
-            <span className="lg-action-label">My Team</span>
-            <span className="lg-action-sub">{user_team.name}</span>
-          </Link>
-          <Link to={`/leagues/${leagueId}/player-pool`} className="lg-action lg-action-pool">
-            <span className="lg-action-icon"><i className="bi bi-grid-3x3"></i></span>
-            <span className="lg-action-label">Player Pool</span>
-            <span className="lg-action-sub">Browse + claim</span>
-          </Link>
-          <Link to={`/leagues/${leagueId}/trades`} className="lg-action lg-action-trades">
-            <span className="lg-action-icon"><i className="bi bi-arrow-left-right"></i></span>
-            <span className="lg-action-label">Trades</span>
-            <span className="lg-action-sub">{league.trade_window_open ? 'Window open' : 'Window closed'}</span>
-            {pending_incoming > 0 && <span className="lg-action-badge">{pending_incoming}</span>}
-          </Link>
-          <Link to={`/leagues/${leagueId}/gameday`} className="lg-action lg-action-gameday">
-            <span className="lg-action-icon"><i className="bi bi-broadcast"></i></span>
-            <span className="lg-action-label">Gameday</span>
-            <span className="lg-action-sub">{live_games_count > 0 ? `${live_games_count} live` : 'Round overview'}</span>
-          </Link>
-          <Link to={`/leagues/${leagueId}/standings`} className="lg-action lg-action-ladder">
-            <span className="lg-action-icon"><i className="bi bi-trophy"></i></span>
-            <span className="lg-action-label">Standings</span>
-            <span className="lg-action-sub">{my_rank ? `You're ${ordinal(my_rank)}` : 'Ladder + form'}</span>
-          </Link>
-          <Link to={`/leagues/${leagueId}/analytics`} className="lg-action lg-action-analytics">
-            <span className="lg-action-icon"><i className="bi bi-bar-chart-line"></i></span>
-            <span className="lg-action-label">Analytics</span>
-            <span className="lg-action-sub">Power + projections</span>
-          </Link>
-        </div>
-      )}
-
-      {/* ── BODY GRID ── */}
-      <div className="row g-4">
-        <div className="col-lg-7 lg-stagger">
-
-          {/* Standings ladder mini */}
-          {standings.length > 0 && (
-            <div className="lg-card">
-              <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-trophy" style={{ color: '#d29922' }}></i>Ladder</span>
-                <Link to={`/leagues/${leagueId}/standings`} className="lg-card-action">View all →</Link>
-              </div>
-              <div className="lg-ladder">
-                {standings.slice(0, 6).map(s => {
-                  const rgb = hexToRgb(s.team.colour)
-                  return (
-                    <Link key={s.team.id}
-                      to={`/leagues/${leagueId}/team/${s.team.id}`}
-                      className={`lg-ladder-row ${s.team.is_mine ? 'lg-ladder-row-mine' : ''}`}
-                      style={{ '--lg-row-color': s.team.colour, '--lg-row-rgb': rgb } as React.CSSProperties}>
-                      <span className={`lg-ladder-rank ${s.rank <= 3 ? `lg-ladder-rank-${s.rank}` : ''}`}>{s.rank}</span>
-                      <span className="lg-ladder-name">
-                        <span className="lg-ladder-dot" style={{ background: s.team.colour }}></span>
-                        <span className="lg-ladder-team-name">
-                          {s.team.name}
-                          {s.team.is_mine && <span className="lg-hero-mine-pill" style={{ marginLeft: 6, fontSize: '.8125rem' }}>YOU</span>}
-                        </span>
-                      </span>
-                      <span className="lg-ladder-record">{s.wins}–{s.losses}{s.draws > 0 ? `–${s.draws}` : ''}</span>
-                      <span className="lg-ladder-pts">{s.pts}</span>
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Top performers */}
-          {top_performers.length > 0 && (
-            <div className="lg-card">
-              <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-fire" style={{ color: '#ff8a82' }}></i>Top performers, R{current_round}</span>
-              </div>
-              <div className="lg-perf">
-                {top_performers.slice(0, 6).map((p, i) => {
-                  const colour = p.owner_team?.colour || '#ececf6'
-                  const rgb = hexToRgb(colour)
-                  return (
-                    <Link key={p.player_id}
-                      to={`/player/${encodeURIComponent(p.name)}`}
-                      className="lg-perf-card"
-                      style={{ '--lg-perf-color': colour, '--lg-perf-color-rgb': rgb } as React.CSSProperties}>
-                      <div className="lg-perf-rank">#{i + 1}</div>
-                      <div className="lg-perf-score">{p.sc_score}</div>
-                      <div className="lg-perf-name">{p.name}</div>
-                      <div className="lg-perf-meta">{p.position}, {p.afl_team}</div>
-                      {p.owner_team && <span className="lg-perf-owner">{p.owner_team.name}</span>}
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* League pulse / activity feed */}
-          {recent_activity.length > 0 && (
-            <div className="lg-card">
-              <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-activity" style={{ color: '#79c0ff' }}></i>League pulse</span>
-                <Link to={`/leagues/${leagueId}/list-changes`} className="lg-card-action">All changes →</Link>
-              </div>
-              <div className="lg-feed">
-                {recent_activity.slice(0, 8).map((a, i) => {
-                  const Wrap = ({ children }: { children: React.ReactNode }) => (
-                    a.link
-                      ? <Link to={a.link} className="lg-feed-item">{children}</Link>
-                      : <div className="lg-feed-item">{children}</div>
-                  )
-                  return (
-                    <Wrap key={i}>
-                      <span className={`lg-feed-icon ${activityIconClass(a.type, a.title)}`}>
-                        <i className={`bi ${activityIcon(a.type, a.title)}`}></i>
-                      </span>
-                      <span className="lg-feed-body">
-                        <span className="lg-feed-title">{a.title}</span>
-                        {a.body && <span className="lg-feed-sub">{a.body}</span>}
-                      </span>
-                      <span className="lg-feed-time">{fmtRelative(a.created_at)}</span>
-                    </Wrap>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        <div className="col-lg-5 lg-stagger">
-
-          {/* Round fixtures */}
-          {league_fixtures.length > 0 && (
-            <div className="lg-card">
-              <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-grid" style={{ color: '#79c0ff' }}></i>Round {current_round} fixtures</span>
-              </div>
-              <div>
-                {league_fixtures.map(fx => {
-                  const mineHome = fx.home.is_mine
-                  const mineAway = fx.away.is_mine
-                  return (
-                    <div key={fx.id} className="lg-fix">
-                      <div className={`lg-fix-side ${mineHome ? 'lg-fix-side-mine' : ''}`}>
-                        <div className="lg-fix-logo" style={{ borderColor: fx.home.colour + '88' }}>
-                          {fx.home.logo_url ? <img src={fx.home.logo_url} alt="" /> : <span style={{ color: fx.home.colour }}>{initials(fx.home.name)}</span>}
-                        </div>
-                        <div className="lg-fix-team">
-                          <span className="lg-fix-team-name">{fx.home.name}</span>
-                          {fx.status !== 'scheduled' && <span className="lg-fix-score">{Math.round(fx.home.score)}</span>}
-                        </div>
-                        {mineHome && <span className="lg-fix-mine-indicator" title="Your team"></span>}
-                      </div>
-                      <span className="lg-fix-vs">VS</span>
-                      <div className={`lg-fix-side lg-fix-side-away ${mineAway ? 'lg-fix-side-mine' : ''}`}>
-                        <div className="lg-fix-logo" style={{ borderColor: fx.away.colour + '88' }}>
-                          {fx.away.logo_url ? <img src={fx.away.logo_url} alt="" /> : <span style={{ color: fx.away.colour }}>{initials(fx.away.name)}</span>}
-                        </div>
-                        <div className="lg-fix-team">
-                          <span className="lg-fix-team-name">{fx.away.name}</span>
-                          {fx.status !== 'scheduled' && <span className="lg-fix-score">{Math.round(fx.away.score)}</span>}
-                        </div>
-                        {mineAway && <span className="lg-fix-mine-indicator" title="Your team"></span>}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Trade activity quick card */}
-          {user_team && (pending_incoming > 0 || pending_outgoing > 0 || league.trade_window_open) && (
-            <div className="lg-card">
-              <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-arrow-left-right" style={{ color: '#ffb471' }}></i>Trade activity</span>
-                <Link to={`/leagues/${leagueId}/trades`} className="lg-card-action">Trade center →</Link>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {pending_incoming > 0 && (
-                  <Link to={`/leagues/${leagueId}/trades?tab=incoming`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8,
-                             background: 'rgba(248,81,73,.1)', border: '1px solid rgba(248,81,73,.35)',
-                             textDecoration: 'none', color: '#ffb4ae' }}>
-                    <i className="bi bi-inbox-fill"></i>
-                    <span style={{ flex: 1, fontWeight: 700 }}>{pending_incoming} pending proposal{pending_incoming > 1 ? 's' : ''}</span>
-                    <i className="bi bi-arrow-right" style={{ fontSize: '.8125rem' }}></i>
-                  </Link>
-                )}
-                {pending_outgoing > 0 && (
-                  <Link to={`/leagues/${leagueId}/trades?tab=outgoing`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8,
-                             background: 'rgba(210,153,34,.08)', border: '1px solid rgba(210,153,34,.3)',
-                             textDecoration: 'none', color: '#f0b38a' }}>
-                    <i className="bi bi-send"></i>
-                    <span style={{ flex: 1, fontWeight: 700 }}>{pending_outgoing} awaiting response</span>
-                    <i className="bi bi-arrow-right" style={{ fontSize: '.8125rem' }}></i>
-                  </Link>
-                )}
-                {league.trade_window_open && (
-                  <Link to={`/leagues/${leagueId}/trades/propose`}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 12px', borderRadius: 8,
-                             background: 'linear-gradient(135deg, #514e5f, #dfdde9)', color: '#fff',
-                             textDecoration: 'none', fontWeight: 700 }}>
-                    <i className="bi bi-plus-lg"></i>Propose a trade
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Join form for non-team users */}
-          {!user_team && (
-            <div className="lg-card">
-              <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-box-arrow-in-right" style={{ color: '#3fb950' }}></i>Join the league</span>
-              </div>
-              <form onSubmit={joinLeague}>
-                <div className="mb-3">
-                  <input type="text" className="form-control" placeholder="Your team name"
-                    required maxLength={120} value={joinName} onChange={e => setJoinName(e.target.value)} />
-                </div>
-                <button type="submit" className="btn btn-primary w-100">Join League</button>
-              </form>
-            </div>
-          )}
-
-          {/* Invite */}
-          {league.invite_code && (
-            <div className="lg-card">
-              <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-share" style={{ color: '#d29922' }}></i>Invite players</span>
-              </div>
-              <div className="input-group input-group-sm">
-                <input type="text" className="form-control" readOnly value={inviteUrl}
-                  style={{ fontSize: '.8125rem', background: 'var(--pp-surface-0)', color: 'var(--pp-text)', borderColor: 'var(--pp-surface-edge)' }} />
-                <button className={`btn ${copied ? 'btn-outline-success' : 'btn-outline-secondary'}`} onClick={copyInvite}>
-                  <i className={`bi ${copied ? 'bi-check2' : 'bi-clipboard'}`}></i>
-                </button>
-              </div>
-              <div className="mt-2" style={{ textAlign: 'center' }}>
-                <span style={{ fontSize: '.8125rem', letterSpacing: 1, color: 'var(--pp-text-muted)', fontFamily: 'ui-monospace, monospace' }}>
-                  {league.invite_code}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* League details (collapsed-feeling, compact) */}
-          <div className="lg-card">
-            <div className="lg-card-header">
-              <span className="lg-card-title"><i className="bi bi-info-circle"></i>League info</span>
-            </div>
-            <div className="lg-info-row"><span className="lg-info-label">Commissioner</span><span className="lg-info-value">{league.commissioner_name}</span></div>
-            <div className="lg-info-row"><span className="lg-info-label">Squad size</span><span className="lg-info-value">{league.squad_size}</span></div>
-            <div className="lg-info-row"><span className="lg-info-label">On-field</span><span className="lg-info-value">{league.on_field_count}</span></div>
-            <div className="lg-info-row"><span className="lg-info-label">Draft type</span><span className="lg-info-value" style={{ textTransform: 'capitalize' }}>{league.draft_type}</span></div>
-            <div className="lg-info-row"><span className="lg-info-label">Pick timer</span><span className="lg-info-value">{league.pick_timer_secs}s</span></div>
-            <div className="lg-info-row">
-              <span className="lg-info-label">Trade window</span>
-              <span className="lg-info-value" style={{ color: league.trade_window_open ? '#7ee787' : '#ff8a82' }}>
-                <i className="bi bi-circle-fill me-1" style={{ fontSize: '.8125rem' }}></i>{league.trade_window_open ? 'Open' : 'Closed'}
-              </span>
-            </div>
-            <div className="lg-info-row" style={{ borderBottom: 0, marginTop: 8 }}>
-              <span className="lg-info-label">Positions</span>
-              <span style={{ display: 'flex', gap: 6 }}>
-                {league.position_slots.filter(p => !p.is_bench).map((slot, i) => (
-                  <span key={i} className={`pos-badge pos-${slot.position_code}`} style={{ fontSize: '.8125rem' }}>
-                    {slot.position_code} <b>{slot.count}</b>
-                  </span>
+        {league_fixtures.length > 0 && (
+          <>
+            <h2 className="hm-h">Round {current_round}</h2>
+            <table className="kx-table hm-games">
+              <tbody>
+                {league_fixtures.map(fx => (
+                  <tr key={fx.id} className={fx.home.is_mine || fx.away.is_mine ? 'sn-me' : undefined}>
+                    <td><Link className="dh2-club" to={`/leagues/${leagueId}/matchup/${fx.id}`}><TeamBadge name={fx.home.id} size={30} showName={false} />{fx.home.name}</Link></td>
+                    <td className="num hm-sc">{fx.status !== 'scheduled' ? Math.round(fx.home.score).toLocaleString() : ''}</td>
+                    <td className="hm-vs">v</td>
+                    <td className="hm-sc">{fx.status !== 'scheduled' ? Math.round(fx.away.score).toLocaleString() : ''}</td>
+                    <td><Link className="dh2-club" to={`/leagues/${leagueId}/matchup/${fx.id}`}><TeamBadge name={fx.away.id} size={30} showName={false} />{fx.away.name}</Link></td>
+                  </tr>
                 ))}
-              </span>
-            </div>
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {standings.length > 0 && (
+          <>
+            <h2 className="hm-h">Ladder</h2>
+            <table className="kx-table dh2-table">
+              <thead>
+                <tr><th className="num" style={{ width: 64 }}>Pos</th><th>Club</th><th className="num">W-L</th><th className="num">%</th><th className="num">Pts</th></tr>
+              </thead>
+              <tbody>
+                {standings.map(r => (
+                  <tr key={r.team.id} className={r.team.is_mine ? 'sn-me' : undefined}>
+                    <td className="num">{r.rank}</td>
+                    <td><Link className="dh2-club" to={`/leagues/${leagueId}/team/${r.team.id}`}><TeamBadge name={r.team.id} size={30} showName={false} />{r.team.name}</Link></td>
+                    <td className="num">{r.wins}-{r.losses}{r.draws > 0 ? `-${r.draws}` : ''}</td>
+                    <td className="num">{r.pct.toFixed(1)}</td>
+                    <td className="num">{r.pts}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {league.invite_code && !leagueFull && (
+          <div className="hm-invite">
+            <span>{league.num_teams - teams.length} spot{league.num_teams - teams.length === 1 ? '' : 's'} open. Send this link to bring a coach in.</span>
+            <button type="button" className="kx-btn kx-btn-sm" onClick={copyInvite}>{copied ? 'Copied' : 'Copy invite link'}</button>
           </div>
-
-          {/* Scoring rules (only if custom/uf) */}
-          {league.scoring_type === 'custom' && Object.keys(scoring_rules).length > 0 && (
-            <div className="lg-card">
-              <div className="lg-card-header"><span className="lg-card-title"><i className="bi bi-calculator"></i>Scoring</span></div>
-              {Object.entries(scoring_rules).map(([stat, pts]) => (
-                <div key={stat} className="lg-info-row">
-                  <span className="lg-info-label" style={{ textTransform: 'capitalize' }}>{stat.replace(/_/g, ' ')}</span>
-                  <span className="lg-info-value">{pts} pts</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Teams full list (under everything else; clickable) */}
-          <div className="lg-card">
-            <div className="lg-card-header">
-              <span className="lg-card-title"><i className="bi bi-people"></i>All teams</span>
-              <span style={{ fontSize: '.8125rem', color: 'var(--pp-text-muted)' }}>{teams.length}/{league.num_teams}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {teams.map(t => (
-                <div key={t.id} onClick={() => navigate(`/leagues/${leagueId}/team/${t.id}`)}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                           padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
-                           background: t.is_mine ? 'rgba(var(--lg-me-rgb), .08)' : 'transparent' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: '.85rem', fontWeight: 600, color: 'var(--pp-text-strong)' }}>{t.name}</span>
-                    {t.is_mine && <span className="lg-hero-mine-pill" style={{ fontSize: '.8125rem' }}>YOU</span>}
-                  </span>
-                  <span style={{ fontSize: '.8125rem', color: 'var(--pp-text-muted)' }}>{t.owner}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </div>
+        )}
+      </section>
 
     </div>
   )
-}
-
-function ordinal(n: number): string {
-  const s = ['th', 'st', 'nd', 'rd']
-  const v = n % 100
-  return n + (s[(v - 20) % 10] || s[v] || s[0])
 }

@@ -77,7 +77,7 @@ const S7_CSS = `
 .s7gd-game-pill { display: inline-flex; align-items: center; gap: 6px; background: #151518; border: 1px solid #1e1d21; border-radius: 16px; padding: 4px 10px; font-size: .8125rem; text-decoration: none; color: inherit; }
 .s7gd-game-teams { color: #ebebee; font-weight: 600; }
 .s7gd-game-score { color: var(--kl-text-primary); font-size: .8125rem; font-variant-numeric: tabular-nums; }
-.s7gd-gbadge-live { font-size: .8125rem; background: #e8e6ef; color: #fff; animation: s7gdPulse 2s infinite; }
+.s7gd-gbadge-live { font-size: .8125rem; background: #f85149; color: #050506; }
 .s7gd-gbadge-ft { font-size: .8125rem; background: #a855f7; color: #fff; }
 .s7gd-gbadge-sched { font-size: .8125rem; background: #151518; color: var(--kl-text-primary); }
 .s7-mini-bar { display: flex; gap: 6px; margin-bottom: 8px; padding: 10px 14px; background: #151518; border: 1px solid #1e1d21; border-radius: 10px; }

@@ -480,16 +480,16 @@ function SquadPageInner() {
                     {data.trade_is_open ? 'Trades open' : 'Trades closed'}
                   </span>
                 )}
+                {is_owner && league?.current_matchup && (
+                  <MatchupStrip
+                    round={league.current_round}
+                    matchup={league.current_matchup}
+                    lockoutTime={league.next_lockout_at}
+                    leagueId={leagueId!}
+                  />
+                )}
               </div>
             </div>
-            {is_owner && league?.current_matchup && (
-              <MatchupStrip
-                round={league.current_round}
-                matchup={league.current_matchup}
-                lockoutTime={league.next_lockout_at}
-                leagueId={leagueId!}
-              />
-            )}
           </div>
           {is_owner && (
             <div className="squad-cmd-actions">

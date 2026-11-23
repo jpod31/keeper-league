@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTeamAccent } from './ui/TeamBadge'
 
 interface WinProb {
   fixture_id: number
@@ -25,6 +26,7 @@ interface Props {
 export function WinProbabilityGauge({ leagueId, fixtureId, refreshMs = 45000 }: Props) {
   const [data, setData] = useState<WinProb | null>(null)
   const [loading, setLoading] = useState(true)
+  const accentOf = useTeamAccent()
 
   useEffect(() => {
     let active = true
@@ -43,7 +45,8 @@ export function WinProbabilityGauge({ leagueId, fixtureId, refreshMs = 45000 }: 
 
   const homeWin = data.home_win_pct
   const awayWin = data.away_win_pct
-  const leader = homeWin >= awayWin ? 'home' : 'away'
+  // Each side in its own team colour.
+  const cols = [accentOf(data.home_team.id).hex, accentOf(data.away_team.id).hex]
 
   return (
     <div style={{
@@ -57,10 +60,10 @@ export function WinProbabilityGauge({ leagueId, fixtureId, refreshMs = 45000 }: 
         .wp-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
         .wp-title { font-size:.8125rem; color:var(--kl-text-primary); text-transform:uppercase; letter-spacing:.5px; font-weight:700; margin:0; }
         .wp-meta { font-size:.8125rem; color:var(--kl-text-primary); }
-        .wp-bar-container { position:relative; height:40px; border-radius:10px; overflow:hidden; background:#1e1d21; }
+        .wp-bar-container { position:relative; height:40px; border-radius:6px; overflow:hidden; background:#1e1d21; }
         .wp-bar-home { position:absolute; top:0; bottom:0; left:0; background:linear-gradient(90deg,#3fb950,#238636); transition:width .6s cubic-bezier(.2,.8,.2,1); }
         .wp-bar-away { position:absolute; top:0; bottom:0; right:0; background:linear-gradient(90deg,#514e5f,#514e5f); transition:width .6s cubic-bezier(.2,.8,.2,1); }
-        .wp-label { position:absolute; top:50%; transform:translateY(-50%); font-size:.8125rem; font-weight:800; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5); letter-spacing:.3px; }
+        .wp-label { position:absolute; top:50%; transform:translateY(-50%); font-size:.875rem; font-weight:700; color:#fff; background:#050506; padding:2px 7px; border-radius:4px; }
         .wp-footer { display:flex; justify-content:space-between; margin-top:8px; font-size:.8125rem; color:var(--kl-text-primary); }
         .wp-range { display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid rgba(160,160,172,.1); gap:20px; }
         .wp-side { flex:1; min-width:0; }
@@ -75,24 +78,24 @@ export function WinProbabilityGauge({ leagueId, fixtureId, refreshMs = 45000 }: 
       </div>
 
       <div className="wp-bar-container" title={`${data.home_team.name} ${homeWin}%, ${data.away_team.name} ${awayWin}%`}>
-        <div className="wp-bar-home" style={{ width: `${homeWin}%` }} />
-        <div className="wp-bar-away" style={{ width: `${awayWin}%` }} />
-        <span className="wp-label" style={{ left: 12, opacity: leader === 'home' ? 1 : .8 }}>{homeWin.toFixed(0)}%</span>
-        <span className="wp-label" style={{ right: 12, opacity: leader === 'away' ? 1 : .8 }}>{awayWin.toFixed(0)}%</span>
+        <div className="wp-bar-home" style={{ width: `${homeWin}%`, background: cols[0] }} />
+        <div className="wp-bar-away" style={{ width: `${awayWin}%`, background: cols[1] }} />
+        <span className="wp-label" style={{ left: 12 }}>{homeWin.toFixed(0)}%</span>
+        <span className="wp-label" style={{ right: 12 }}>{awayWin.toFixed(0)}%</span>
       </div>
 
       <div className="wp-footer">
-        <span style={{ color: '#3fb950', fontWeight: 600 }}>{data.home_team.name}</span>
+        <span style={{ fontWeight: 600 }}>{data.home_team.name}</span>
         <span style={{ color: 'var(--kl-text-primary)', fontWeight: 600 }}>{data.away_team.name}</span>
       </div>
 
       <div className="wp-range">
         {[data.home_team, data.away_team].map((t, i) => {
-          const col = i === 0 ? '#3fb950' : '#514e5f'
+          const col = cols[i]
           const fullRange = Math.max(t.p90, 1)
           return (
             <div key={t.id} className="wp-side">
-              <div className="wp-side-name" style={{ color: col }}>{t.name}</div>
+              <div className="wp-side-name">{t.name}</div>
               <div className="wp-side-score">
                 Now <b style={{ color: 'var(--kl-text-primary)' }}>{t.current_score}</b>, Proj mid <b style={{ color: 'var(--kl-text-primary)' }}>{t.p50}</b>
               </div>

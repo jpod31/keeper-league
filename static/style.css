@@ -11831,3 +11831,80 @@ th .sort-icon { opacity: 1 !important; }
   .draft-avail-tbl .player-name .dn-club { max-width: 104px; }
   .draft-avail-tbl th:first-child, .draft-avail-tbl td:first-child { padding-left: 8px !important; }
 }
+
+/* ── Home in season: this round. Your game, one sentence, the round, the ladder. ── */
+.hm { max-width: 980px; margin: 12px auto 0; color: var(--kl-text-primary); }
+.hm-head { padding: 28px 0 26px; border-bottom: 1px solid var(--hair-2); }
+.hm-game { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 24px; margin-top: 16px; }
+.hm-side { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 14px; row-gap: 10px; color: #ffffff; text-decoration: none; min-width: 0; }
+.hm-side:hover { color: #ffffff; }
+.hm-side:hover .hm-name { text-decoration: underline; }
+.hm-name { font-size: 1.5rem; font-weight: 700; letter-spacing: -.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-num { grid-column: 1 / -1; font-family: var(--kl-font-mono); font-size: 4.2rem; font-weight: 500; letter-spacing: -.05em; line-height: 1; }
+.hm-v { font-family: var(--kl-font-mono); font-size: 1rem; padding-bottom: 14px; }
+.hm-todo { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 0; border-bottom: 1px solid var(--hair-2); }
+.hm-todo a { text-decoration: none; }
+.hm-h { font-size: 1rem; font-weight: 600; color: #ffffff; margin: 26px 0 0; }
+.hm-games td { width: 40%; }
+.hm-games td.hm-sc { width: 8%; font-family: var(--kl-font-mono); font-weight: 600; white-space: nowrap; }
+.hm-games td.hm-vs { width: 4%; text-align: center; font-family: var(--kl-font-mono); }
+.hm-join { max-width: 360px; }
+.hm-invite { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 26px;
+  padding: 14px 16px; border: 1px solid var(--hair-2); border-radius: 6px; font-size: .9375rem; }
+@media (max-width: 767px) {
+  .hm-game { gap: 12px; }
+  .hm-side { grid-template-columns: 1fr; }
+  .hm-name { font-size: 1.0625rem; }
+  .hm-num { font-size: 2.4rem; }
+  .hm-games td { width: auto; }
+  .hm-games .dh2-club { font-size: .875rem; gap: 8px; }
+}
+
+/* ── Round recap pop-up: flat rows, one white button. ── */
+.kl-recap-panel { background: #0c0c0e !important; border: 1px solid rgba(255,255,255,.18) !important; border-radius: 8px !important; box-shadow: none !important; }
+.kl-recap-panel::before { display: none !important; }
+.kl-recap-title { font-size: 1.5rem !important; font-weight: 700 !important; letter-spacing: -.03em !important; }
+.kl-recap-outcome { font-family: var(--kl-font) !important; font-weight: 700 !important; letter-spacing: -.03em !important; text-transform: none !important; }
+.kl-recap-outcome.win { color: #56d364 !important; } .kl-recap-outcome.loss { color: #f85149 !important; } .kl-recap-outcome.draw { color: #ffffff !important; }
+.kl-recap-mvp, .kl-recap-row { background: none !important; border: 0 !important; border-bottom: 1px solid var(--hair) !important; border-radius: 0 !important;
+  box-shadow: none !important; margin: 0 !important; padding: 14px 24px !important; }
+.kl-recap-rows { gap: 0 !important; margin: 0 !important; padding: 0 !important; }
+.kl-recap-row:last-child { border-bottom: 0 !important; }
+.kl-recap-mvp-icon, .kl-recap-row-icon { display: none !important; }
+.kl-recap-mvp-label, .kl-recap-row-label { font-family: var(--kl-font-mono); color: #ffffff !important; }
+.kl-recap-mvp-score, .kl-recap-row-chip { font-family: var(--kl-font-mono); font-size: 1.25rem !important; font-weight: 500 !important; color: #ffffff !important;
+  background: none !important; border: 0 !important; padding: 0 !important; }
+.kl-recap-mvp-cap { background: #ffffff !important; color: #050506 !important; border: 0 !important; }
+.kl-recap-btn { border-radius: 6px !important; background: transparent !important; border: 1px solid var(--hair-2) !important; color: #ffffff !important; }
+.kl-recap-btn.primary { background: #ffffff !important; border-color: #ffffff !important; color: #050506 !important; }
+.kl-recap-btn.primary:hover { background: #d9d9e0 !important; }
+.kl-lockbadge-sep { opacity: 1 !important; }
+.kl-lockbadge, .kl-lockbadge * { animation: none !important; opacity: 1 !important; }
+.hm-num { font-family: var(--kl-font) !important; font-variant-numeric: tabular-nums; font-weight: 600 !important; }
+.hm-games { margin-top: 6px; }
+.hm-games td { padding: 14px 12px !important; font-size: .9375rem; }
+@media (max-width: 767px) {
+  .hm-games td { padding: 12px 6px !important; }
+  .hm-games .tbadge { display: none !important; }
+  .hm-games td:first-child { text-align: right; }
+  .hm-games td:first-child .dh2-club { justify-content: flex-end; }
+}
+
+/* A locked player is marked by the padlock, not by fading his card. */
+.fv-card-locked { opacity: 1 !important; }
+.wp-side, .wp-side * { opacity: 1 !important; }
+/* The squad header's matchup line is one line of text. */
+.mstrip { background: none !important; border: 1px solid var(--hair-2) !important; border-radius: 5px !important; padding: 0 10px !important; height: 40px;
+  display: inline-flex !important; align-items: center; gap: 8px; box-shadow: none !important; text-decoration: none !important; }
+.mstrip-icon { display: none !important; }
+.mstrip-text { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 8px; }
+.mstrip-title, .mstrip-sub { font-size: .875rem !important; font-weight: 600 !important; color: #ffffff !important; white-space: nowrap; }
+/* In the squad header the matchup is one more chip in the row. */
+.squad-cmd-meta .mstrip { height: 28px !important; padding: 0 10px !important; margin: 0 !important; max-width: 100%; min-width: 0; opacity: 1 !important; }
+.squad-cmd-meta .mstrip-text { min-width: 0; overflow: hidden; }
+.squad-cmd-meta .mstrip-title, .squad-cmd-meta .mstrip-sub { font-size: .8125rem !important; max-width: none !important; overflow: hidden; text-overflow: ellipsis; }
+.mstrip-done { opacity: 1 !important; }
+.mob-pos-locked, .mob-pos-locked * { opacity: 1 !important; filter: none !important; }
+.fv-7s-round { color: #ffffff !important; }
+.s7-big-score.s7-score-winning { color: rgb(var(--team, 255,255,255)) !important; }
+.mob-7s-round { color: #ffffff !important; opacity: 1 !important; }

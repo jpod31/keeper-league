@@ -85,11 +85,11 @@ const MU_CSS = `
 .mu-tscore.won { color:#3fb950; }
 .mu-tscore.lost { color:var(--kl-text-primary); }
 .mu-tscore.draw { color:var(--kl-text-primary); }
-.mu-tscore.pending { color:#1e1d21; font-size:1.6rem; }
+.mu-tscore.pending { color:#ffffff; font-size:1.6rem; }
 .mu-centre { display:flex; flex-direction:column; align-items:center; gap:4px; }
 .mu-status { font-size:.8125rem; font-weight:600; padding:2px 8px; border-radius:4px; letter-spacing:.3px; text-transform:uppercase; }
 .mu-final { background:rgba(46,160,67,.08); color:#2ea043; }
-.mu-sched { color:#2a292f; font-size:.8125rem; font-weight:600; letter-spacing:1.5px; }
+.mu-sched { color:#ffffff; font-size:.8125rem; font-weight:600; letter-spacing:1.5px; }
 .mu-margin { font-size:.8125rem; color:var(--kl-text-primary); margin-top:2px; }
 .mu-actions { display:flex; gap:8px; margin-top:16px; justify-content:center; padding-top:16px; border-top:1px solid #151518; flex-wrap:wrap; }
 .mu-act { font-size:.8125rem; padding:5px 12px; border-radius:6px; border:1px solid #1e1d21; background:transparent; color:var(--kl-text-primary); text-decoration:none; transition:all .12s; }

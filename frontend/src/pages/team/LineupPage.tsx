@@ -387,8 +387,8 @@ export function LineupPage() {
                           <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.8125rem' }}></i>
                         )}
                         <span>{slot.player_name || 'Empty'}</span>
-                        {slot.is_captain && <span className="badge" style={{ background: '#d29922', fontSize: '.8125rem' }}>C</span>}
-                        {slot.is_vice_captain && <span className="badge" style={{ background: '#ececf6', fontSize: '.8125rem' }}>VC</span>}
+                        {slot.is_captain && <span className="badge" style={{ background: '#ffffff', color: '#050506', fontSize: '.8125rem' }}>C</span>}
+                        {slot.is_vice_captain && <span className="badge" style={{ background: 'transparent', border: '1px solid #ffffff', color: '#ffffff', fontSize: '.8125rem' }}>VC</span>}
                         {slot.player_id != null && player_lock_times[String(slot.player_id)] && (
                           <span style={{ fontSize: '.8125rem', color: player_lock_times[String(slot.player_id)] === 'Locked' ? '#f85149' : '#ececf1' }}>
                             {player_lock_times[String(slot.player_id)]}
