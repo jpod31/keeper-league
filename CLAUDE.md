@@ -216,6 +216,13 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   names survive as roles (`--kl-accent-blue` is the white interactive colour).
   `tools/retheme*.py` are the record of the two passes and are not idempotent.
   New UI: nothing under 13px, no grey copy.
+- **Design system (v4, the last band in style.css)**: Geist for words, Geist
+  Mono for every number and for small tracked capital labels; black panels
+  with 1px hairlines (`--hair`, `--hair-2`) and 5 to 8px corners; primary
+  buttons white, everything else a hairline outline; no glows, no pills, no
+  gradient fills on controls, no Inter, no sparkle / wand / robot icons. A
+  drafting grid lit in the coach's team colour sits behind the top of each
+  page. New components should take their look from this band, not invent one.
 - **Positional priority for dual-position players**: FWD > DEF > RUC > MID.
 - **Rookie rule**: bench player with `age < 22` AND `rating < 70` → Rookies
   section (field/flex/7s/emergency/injury take precedence). Single source of
