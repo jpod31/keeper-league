@@ -412,7 +412,7 @@ export function CommissionerPage() {
                     <i className="bi bi-stop-fill me-1"></i>Close Trade Window
                   </button>
                 )}
-                <Link to={`/leagues/${leagueId}/new-season`} className="btn btn-sm btn-success">
+                <Link to={`/leagues/${leagueId}/new-season`} className="btn btn-sm btn-outline-secondary">
                   <i className="bi bi-calendar-plus me-1"></i>Start {data.league.season_year + 1} season
                 </Link>
 

@@ -11786,3 +11786,20 @@ th .sort-icon { opacity: 1 !important; }
 .pp-poster-rings { padding-bottom: 6px; }
 @media (max-width: 600px) { .pp-stagger { grid-template-columns: 1fr 1fr; } .pp-tile-value { font-size: 1.6rem !important; } .pp-poster { padding-bottom: 22px !important; } }
 #pwaInstallBanner { top: auto !important; bottom: 0 !important; border-bottom: 0 !important; border-top: 1px solid rgba(255,255,255,.18) !important; }
+
+/* ── Squad strips: one sentence and one button. No icon boxes, no captions. ── */
+.sq-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 10px;
+  border: 1px solid var(--hair-2); border-radius: 6px; background: var(--panel); }
+.sq-strip-text { flex: 1 1 320px; font-size: .9375rem; font-weight: 500; color: #ffffff; }
+.sq-strip a.sq-chip { text-decoration: none; }
+.sq-strip .kx-btn { flex: none; text-decoration: none; }
+
+/* Amber is not a button colour. Outline buttons are neutral; a chosen state is filled white. */
+.btn-outline-warning, .btn-outline-danger, .btn-outline-success { background: transparent !important; border-color: var(--hair-2) !important; color: #ffffff !important; }
+.btn-outline-warning:hover, .btn-outline-success:hover { border-color: rgba(255,255,255,.45) !important; background: rgba(255,255,255,.06) !important; }
+.btn-outline-danger:hover { border-color: #f85149 !important; color: #f85149 !important; background: transparent !important; }
+.btn-warning { background: #ffffff !important; border-color: #ffffff !important; color: #050506 !important; }
+
+/* Text on a team colour is dark when the colour is light. */
+.kl-rail-avatar, .lg-switch-avatar, .lg-switch-item-avatar { color: var(--team-ink, #ffffff) !important; }
+.fv-7s-slotno { color: #ffffff !important; opacity: 1 !important; }

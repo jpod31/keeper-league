@@ -69,9 +69,17 @@ function LeagueShellInner() {
   const teamHex = league?.user_team?.accent
   useEffect(() => {
     const root = document.documentElement
-    if (teamHex) root.style.setProperty('--team', rgbOf(teamHex))
-    else root.style.removeProperty('--team')
-    return () => { root.style.removeProperty('--team') }
+    if (teamHex) {
+      const rgb = rgbOf(teamHex)
+      root.style.setProperty('--team', rgb)
+      // Text that sits on the team colour: dark on a light colour, white on a dark one.
+      const [r, g, b] = rgb.split(',').map(Number)
+      root.style.setProperty('--team-ink', (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#050506' : '#ffffff')
+    } else {
+      root.style.removeProperty('--team')
+      root.style.removeProperty('--team-ink')
+    }
+    return () => { root.style.removeProperty('--team'); root.style.removeProperty('--team-ink') }
   }, [teamHex])
 
   // Season Review auto-opens once per user per completed season, then lives on

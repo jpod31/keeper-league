@@ -467,7 +467,8 @@ function SquadPageInner() {
             <div style={{ minWidth: 0 }}>
               <h2 className="squad-cmd-name">{data.team.name}</h2>
               <div className="squad-cmd-meta">
-                <span className="sq-chip">{players.length} on the list</span>
+                <span className="sq-chip">{data.active_count ?? players.length} on the list</span>
+                {data.approved_ltil_count > 0 && <span className="sq-chip">{data.approved_ltil_count} on the LTIL</span>}
                 {statsYr.isLast && <span className="sq-chip">{statsYr.label} averages</span>}
                 {is_owner && data.delist_is_open && (
                   <span className={`sq-chip ${data.delist_remaining > 0 ? 'due' : 'ok'}`}>
@@ -582,116 +583,38 @@ function SquadPageInner() {
               status, delists left, incoming offers, window countdown + a jump
               to the Trade Center. When closed it collapses to the compact
               "next window opens" badge below. */}
-      {is_owner && (data.trade_is_open || data.delist_is_open) && (
-        <div className="kl-status-pills kl-trade-centre">
-          <span className="kl-trade-centre-label"><i className="bi bi-arrow-left-right"></i> Trade period</span>
-          {data.over_squad && (
-            <div className="kl-status-pill kl-status-pill-danger" title={`${data.active_count}/${data.squad_size}${data.approved_ltil_count > 0 ? ` + ${data.approved_ltil_count} LTIL` : ''}`}>
-              <span className="kl-status-pill-icon"><i className="bi bi-exclamation-octagon-fill"></i></span>
-              <span className="kl-status-pill-text">
-                <span className="kl-status-pill-title">{data.squad_excess} over cap</span>
-                <span className="kl-status-pill-sub">{data.active_count}/{data.squad_size}{data.approved_ltil_count > 0 ? ` + ${data.approved_ltil_count} LTIL` : ''}</span>
-              </span>
-            </div>
-          )}
-          {data.under_squad && !data.over_squad && (
-            <div className="kl-status-pill kl-status-pill-warn" title={`${data.active_count}/${data.squad_size}`}>
-              <span className="kl-status-pill-icon"><i className="bi bi-dash-circle"></i></span>
-              <span className="kl-status-pill-text">
-                <span className="kl-status-pill-title">{data.squad_shortfall} open spot{data.squad_shortfall === 1 ? '' : 's'}</span>
-                <span className="kl-status-pill-sub">{data.active_count}/{data.squad_size}</span>
-              </span>
-            </div>
-          )}
-          {data.ineligible_roster && data.trade_is_open && (
-            <div className="kl-status-pill kl-status-pill-danger"
-              title="Roster can't field a valid round-start lineup">
-              <span className="kl-status-pill-icon"><i className="bi bi-shield-fill-exclamation"></i></span>
-              <span className="kl-status-pill-text">
-                <span className="kl-status-pill-title">Ineligible</span>
-                <span className="kl-status-pill-sub">short {data.eligibility_shortages.map(s => `${s.short_by} ${s.pos}`).join(', ')}</span>
-              </span>
-            </div>
-          )}
-          {/* Per Lucas: show how many delists are LEFT, not how many
-              have been done. Frame from the "what can I still do?"
-              perspective. Tone downgrades to neutral once exhausted. */}
-          {data.delist_is_open && data.max_delists != null && (() => {
-            const remaining = Math.max(0, data.max_delists - data.team_delist_count)
-            const exhausted = remaining === 0
-            return (
-              <div className={`kl-status-pill ${exhausted ? '' : 'kl-status-pill-warn'}`} title={`Used ${data.team_delist_count} of ${data.max_delists} this delist period`}>
-                <span className="kl-status-pill-icon"><i className="bi bi-x-octagon"></i></span>
-                <span className="kl-status-pill-text">
-                  <span className="kl-status-pill-title">
-                    {exhausted ? 'No delists left' : `${remaining} delist${remaining === 1 ? '' : 's'} left`}
-                  </span>
-                  <span className="kl-status-pill-sub">{exhausted ? 'period is exhausted' : 'hover player → ⊗'}</span>
-                </span>
-              </div>
-            )
-          })()}
-          {/* Uncapped period (the off-season one): the number that matters is
-              the MINIMUM you still have to hit, so show progress against it.
-              Goes neutral-green once the quota is met. */}
-          {data.delist_is_open && data.max_delists == null && (() => {
-            const done = data.team_delist_count
-            const need = data.min_delists || 0
-            const left = data.delist_remaining ?? Math.max(0, need - done)
-            const met = left === 0
-            const target = data.delist_target_size
-            return (
-              <div
-                className={`kl-status-pill ${met ? 'kl-status-pill-ok' : 'kl-status-pill-warn'}`}
-                title={target != null
-                  ? `Cut to ${target} players to leave room for the draft, ${players.length} listed, ${done} cut so far`
-                  : `You have delisted ${done} of a required minimum ${need}`}
-              >
-                <span className="kl-status-pill-icon">
-                  <i className={`bi ${met ? 'bi-check2-circle' : 'bi-x-octagon'}`}></i>
-                </span>
-                <span className="kl-status-pill-text">
-                  <span className="kl-status-pill-title">
-                    {need ? `Delists ${done}/${need}` : 'Delists open'}
-                  </span>
-                  <span className="kl-status-pill-sub">
-                    {met
-                      ? (target != null ? `list at ${target}, done` : 'minimum met')
-                      : target != null
-                        ? `${left} more to reach ${target}, hover player → ⊗`
-                        : `${left} more required, hover player → ⊗`}
-                  </span>
-                </span>
-              </div>
-            )
-          })()}
-          {data.pending_incoming > 0 && (
-            <Link to={`/leagues/${leagueId}/trades`} className="kl-status-pill kl-status-pill-info kl-status-pill-link">
-              <span className="kl-status-pill-icon"><i className="bi bi-inbox-fill"></i></span>
-              <span className="kl-status-pill-text">
-                <span className="kl-status-pill-title">{data.pending_incoming} incoming</span>
-                <span className="kl-status-pill-sub">trade proposal{data.pending_incoming === 1 ? '' : 's'}</span>
-              </span>
-            </Link>
-          )}
-          {data.trade_is_open && data.trade_close_date && (
-            <div className="kl-status-pill kl-status-pill-warn kl-status-pill-deadline"
-              title={new Date(data.trade_close_date).toLocaleString()}>
-              <span className="kl-status-pill-icon"><i className="bi bi-clock"></i></span>
-              <span className="kl-status-pill-text">
-                <span className="kl-status-pill-title">{new Date(data.trade_close_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
-                <span className="kl-status-pill-sub">window closes</span>
-              </span>
-            </div>
-          )}
-          {data.trade_is_open && (
-            <Link to={`/leagues/${leagueId}/trades`} className="kl-status-pill-cta">
-              Trade Center
-              <i className="bi bi-arrow-right"></i>
-            </Link>
-          )}
-        </div>
-      )}
+      {is_owner && (data.trade_is_open || data.delist_is_open) && (() => {
+        const closes = data.trade_is_open && data.trade_close_date
+          ? new Date(data.trade_close_date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+          : null
+        const capped = data.delist_is_open && data.max_delists != null
+        const cappedLeft = capped ? Math.max(0, (data.max_delists as number) - data.team_delist_count) : 0
+        const toCut = data.delist_is_open && data.max_delists == null
+          ? (data.delist_remaining ?? Math.max(0, (data.min_delists || 0) - data.team_delist_count))
+          : 0
+        const target = data.delist_target_size
+        const parts: string[] = []
+        if (toCut > 0) parts.push(target != null ? `Cut ${toCut} more to get to ${target}.` : `Cut ${toCut} more.`)
+        if (capped) parts.push(cappedLeft > 0 ? `${cappedLeft} delist${cappedLeft === 1 ? '' : 's'} left.` : 'No delists left.')
+        const canCut = toCut > 0 || (capped && cappedLeft > 0)
+        const how = canCut ? <><span className="d-none d-lg-inline"> Hover a player and press the cross to delist him.</span><span className="d-lg-none"> Tap a player to delist him.</span></> : null
+        const closing = closes ? ` ${data.delist_is_open ? 'Trades and cuts close' : 'Trades close'} ${closes}.` : ''
+        return (
+          <div className="sq-strip">
+            <span className="sq-strip-text">{parts.join(' ')}{how}{closing}</span>
+            {data.over_squad && <span className="sq-chip due">{data.squad_excess} over the cap</span>}
+            {data.ineligible_roster && data.trade_is_open && (
+              <span className="sq-chip due">Short {data.eligibility_shortages.map(x => `${x.short_by} ${x.pos}`).join(', ')}</span>
+            )}
+            {data.pending_incoming > 0 && (
+              <Link to={`/leagues/${leagueId}/trades`} className="sq-chip due">
+                {data.pending_incoming} trade offer{data.pending_incoming === 1 ? '' : 's'} to answer
+              </Link>
+            )}
+            {data.trade_is_open && <Link to={`/leagues/${leagueId}/trades`} className="kx-btn kx-btn-sm">Trades</Link>}
+          </div>
+        )
+      })()}
 
       {/* ── Draft strip ──
           Prominent, mobile-visible entry to the draft room so owners can
@@ -705,22 +628,14 @@ function SquadPageInner() {
           ? new Date(data.draft_scheduled_at).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
           : null
         return (
-          <Link to={`/leagues/${leagueId}/draft`} className={`kl-draft-strip${live ? ' live' : ''}`}>
-            <span className="kl-draft-strip-icon"><i className="bi bi-list-check"></i></span>
-            <span className="kl-draft-strip-body">
-              <span className="kl-draft-strip-title">
-                {sched ? 'Draft Room' : `Draft live${data.active_draft_round ? `, Round ${data.active_draft_round}` : ''}`}
-                {sched && <span className="kl-draft-pill-tag">Scheduled</span>}
-                {live && <span className="kl-draft-pill-tag">Live</span>}
-              </span>
-              <span className="kl-draft-strip-sub">
-                {sched
-                  ? (when ? `Starts ${when}, set your pre-draft order now` : 'Set your pre-draft order before it starts')
-                  : 'Make your picks now'}
-              </span>
+          <div className="sq-strip">
+            <span className="sq-strip-text">
+              {sched
+                ? (when ? `Draft night is ${when}. Line up your picks before it starts.` : 'Line up your picks before the draft starts.')
+                : `The draft is live${data.active_draft_round ? `, round ${data.active_draft_round}` : ''}.`}
             </span>
-            <span className="kl-draft-strip-cta"><i className="bi bi-box-arrow-in-right"></i><span>Enter</span></span>
-          </Link>
+            <Link to={`/leagues/${leagueId}/draft`} className={`kx-btn kx-btn-sm${live ? ' kx-btn-gold' : ''}`}>{live ? 'Enter the draft' : 'Draft room'}</Link>
+          </div>
         )
       })()}
       {/* The persistent "Set up a draft" commissioner CTA was removed from My
