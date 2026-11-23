@@ -80,8 +80,8 @@ function formatDiff(diffMs: number): string {
 function formatDateTime(iso: string | null): string {
   if (!iso) return ''
   const d = new Date(iso)
-  return d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
-    ' at ' + d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
+  return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) +
+    ', ' + d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
 }
 
 function toLocalInput(iso: string | null): string {
@@ -248,7 +248,6 @@ export function DraftSetupPage() {
   const canEditOrder = !session || session.status === 'scheduled'
   const totalPicks = league.squad_size * teams.length
 
-  const showSuppScheduled = supp_session && supp_session.status === 'scheduled' && session?.id === supp_session.id
   const showCreateSupp = initial_completed && season_config.mid_season_draft_enabled && (!supp_session || supp_session.status === 'completed')
 
   return (
@@ -264,7 +263,7 @@ export function DraftSetupPage() {
               <Link to={`/leagues/${leagueId}/commissioner`} className="btn btn-sm btn-outline-secondary" style={{ padding: '4px 10px' }}>
                 <i className="bi bi-arrow-left"></i>
               </Link>
-              <h2 className="mb-0">Draft Setup</h2>
+              <h2 className="mb-0">Draft setup</h2>
             </div>
           </div>
 
@@ -272,6 +271,7 @@ export function DraftSetupPage() {
             <div className={`alert alert-${msg.kind === 'success' ? 'success' : 'danger'}`} style={{ fontSize: '.85rem' }}>{msg.text}</div>
           )}
 
+          {!initial_completed && (<>
           {/* Draft Order */}
           <div className="card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
@@ -347,6 +347,8 @@ export function DraftSetupPage() {
             </div>
           </div>
 
+          </>)}
+
           {/* Session state */}
           <div className="card">
             <div className="card-body p-4">
@@ -371,49 +373,25 @@ export function DraftSetupPage() {
               )}
 
               {session && session.status === 'scheduled' && (
-                <div>
-                  <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                    <div className="d-flex align-items-center gap-3">
-                      <span className="status-pill status-setup">Ready</span>
-                      <span className="text-secondary" style={{ fontSize: '.85rem' }}>
-                        {session.draft_round_type === 'supplemental' ? 'Supplemental draft' : 'Session'} created
-                      </span>
+                <div className="ds-next">
+                  <div className="dh2-label">{session.draft_round_type === 'supplemental' ? 'Next draft' : 'Draft'}</div>
+                  <div className="ds-next-row">
+                    <div>
+                      <h3 className="ds-next-when">{session.scheduled_start ? formatDateTime(session.scheduled_start) : 'No time set'}</h3>
+                      <div className="ds-next-meta">
+                        {session.total_rounds} rounds, {teams.length} clubs
+                        {session.scheduled_start && <>, starts in <Countdown target={session.scheduled_start} /></>}
+                      </div>
                     </div>
-                    <div className="d-flex gap-2">
-                      <Link to={`/leagues/${leagueId}/draft`} className="btn btn-outline-primary">
-                        <i className="bi bi-door-open me-1"></i>Enter Lobby
-                      </Link>
-                      <button type="button" className="btn btn-primary" onClick={startDraft}>
-                        <i className="bi bi-play-fill me-1"></i>Start Draft Now
-                      </button>
+                    <div className="ds-next-actions">
+                      <Link to={`/leagues/${leagueId}/draft`} className="kx-btn">Draft room</Link>
+                      <button type="button" className="kx-btn kx-btn-gold" onClick={startDraft}>Start the draft now</button>
                     </div>
                   </div>
-
-                  {session.scheduled_start ? (
-                    <div className="mt-2 p-3" style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8 }}>
-                      <div className="d-flex align-items-center gap-2 mb-2">
-                        <i className="bi bi-calendar-event" style={{ color: '#d29922' }}></i>
-                        <span style={{ fontSize: '.85rem', fontWeight: 600 }}>Scheduled Start</span>
-                      </div>
-                      <div style={{ fontSize: '.9rem', color: 'var(--kl-text-primary)' }}>{formatDateTime(session.scheduled_start)}</div>
-                      <div className="mt-2" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ececf6' }}>
-                        <Countdown target={session.scheduled_start} />
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-secondary mt-2 mb-0" style={{ fontSize: '.8125rem' }}>
-                      <i className="bi bi-info-circle me-1"></i>No scheduled time set, start manually when ready.
-                    </p>
-                  )}
-
-                  <div className="mt-3 d-flex align-items-end gap-2">
-                    <div>
-                      <label className="form-label" style={{ fontSize: '.8125rem' }}>Update Draft Time</label>
-                      <input type="datetime-local" className="form-control form-control-sm" value={updateSched} onChange={e => setUpdateSched(e.target.value)} style={{ maxWidth: 250 }} />
-                    </div>
-                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={setSchedule}>
-                      <i className="bi bi-clock me-1"></i>Set
-                    </button>
+                  <div className="ds-next-time">
+                    <label htmlFor="ds-time">Change the time</label>
+                    <input id="ds-time" type="datetime-local" className="form-control form-control-sm" value={updateSched} onChange={e => setUpdateSched(e.target.value)} />
+                    <button type="button" className="kx-btn kx-btn-sm" onClick={setSchedule}>Save</button>
                   </div>
                 </div>
               )}
@@ -462,42 +440,6 @@ export function DraftSetupPage() {
               )}
             </div>
           </div>
-
-          {/* Supplemental scheduled */}
-          {showSuppScheduled && supp_session && (
-            <div className="card mt-4" style={{ borderColor: '#2dd4bf' }}>
-              <div className="card-header" style={{ background: 'rgba(45,212,191,.08)', borderBottom: '1px solid rgba(45,212,191,.2)' }}>
-                <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-calendar-event me-2" style={{ color: '#2dd4bf' }}></i>Supplemental Draft Scheduled
-                </h5>
-              </div>
-              <div className="card-body">
-                {supp_session.scheduled_start ? (
-                  <div className="p-3 mb-3" style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8 }}>
-                    <div className="d-flex align-items-center gap-2 mb-2">
-                      <i className="bi bi-clock-history" style={{ color: '#d29922', fontSize: '1.1rem' }}></i>
-                      <span style={{ fontSize: '.9rem', fontWeight: 600, color: 'var(--kl-text-primary)' }}>{formatDateTime(supp_session.scheduled_start)}</span>
-                    </div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#2dd4bf' }}>
-                      <Countdown target={supp_session.scheduled_start} />
-                    </div>
-                    <div className="text-secondary mt-1" style={{ fontSize: '.8125rem' }}>
-                      {supp_session.total_rounds} rounds {teams.length} teams
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-secondary mb-2" style={{ fontSize: '.85rem' }}>
-                    <i className="bi bi-info-circle me-1"></i>No scheduled time, start manually when ready.
-                  </p>
-                )}
-                <div className="d-flex gap-2 mt-3">
-                  <button type="button" className="btn btn-primary" onClick={startDraft}>
-                    <i className="bi bi-play-fill me-1"></i>Start Supplemental Draft Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* This year's supplemental draft order + added picks */}
           {initial_completed && <DraftPlanCard leagueId={leagueId!} />}

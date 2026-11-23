@@ -12287,3 +12287,14 @@ body { font-variant-numeric: tabular-nums; }
 }
 .gd-mob-c, .gd-mob-vc { color: #050506 !important; background: #ffffff; border-radius: 3px; padding: 0 4px; margin-right: 4px; font-weight: 700; }
 .gd-mob-vc { background: transparent; color: #ffffff !important; box-shadow: inset 0 0 0 1.5px #ffffff; }
+
+/* ── Draft setup: the next draft, once. ── */
+.ds-next-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+.ds-next-when { font-size: 1.9rem; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; margin: 0; color: #ffffff; }
+.ds-next-meta { margin-top: 8px; font-size: .9375rem; color: #ffffff; }
+.ds-next-actions { display: flex; gap: 8px; }
+.ds-next-actions .kx-btn { height: 44px; padding: 0 18px; font-size: .9375rem; text-decoration: none; }
+.ds-next-time { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--hair); }
+.ds-next-time label { font-size: .875rem; font-weight: 600; color: #ffffff; margin: 0; }
+.ds-next-time input { max-width: 250px; }
+@media (max-width: 600px) { .ds-next-when { font-size: 1.5rem; } .ds-next-actions { width: 100%; } .ds-next-actions .kx-btn { flex: 1; padding: 0 10px; } }
