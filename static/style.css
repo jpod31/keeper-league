@@ -11668,3 +11668,16 @@ th .sort-icon { opacity: 1 !important; }
 /* Page titles are words. No coloured icon in front of them. */
 .page-header h2 > i.bi, .kx-head h2 > i.bi { display: none !important; }
 .card-header h5 > i.bi, .rec-card-header > i.bi { color: #ffffff !important; }
+
+/* Phone: the search icon sits clear of the text, squad tools fit their boxes. */
+.kl-sticky-search input { padding-left: 38px !important; }
+.kl-sticky-search-icon { left: 13px !important; }
+.kl-player-card-meta { gap: 8px !important; flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .squad-cmd-actions > * > button, .squad-cmd-actions > button { padding: 0 8px !important; gap: 6px !important; }
+  .squad-cmd-actions [class$="-label"] { font-size: .8125rem !important; }
+}
+@media (max-width: 600px) {
+  .squad-cmd-actions [class$="-icon"] { display: none !important; }
+  .squad-cmd-actions > * > button, .squad-cmd-actions > button { justify-content: center !important; }
+}

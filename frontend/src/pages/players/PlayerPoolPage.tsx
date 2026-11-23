@@ -1148,9 +1148,8 @@ export function PlayerPoolPage() {
                       {positions.map(pos => (
                         <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`} style={{ fontSize: '.8125rem', padding: '1px 5px', lineHeight: 1.3 }}>{pos}</span>
                       ))}
-                      <span>{p.age}y</span>
-                      <span>·</span>
-                      <span>{p.games_played}gp</span>
+                      <span>Age {p.age}</span>
+                      <span>{p.games_played} games</span>
                       {p.profile_tag && <span className={`profile-tag tag-${p.profile_css}`} style={{ fontSize: '.8125rem', padding: '0 5px' }}>{p.profile_tag}</span>}
                     </div>
                   </div>

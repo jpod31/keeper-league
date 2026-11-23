@@ -772,9 +772,7 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 5, fontSize: '.8125rem', color: 'var(--kl-text-primary)', flexWrap: 'wrap' }}>
                 <span className={`pos-badge badge-${player.position.split('/')[0].toLowerCase()}`} style={{ fontSize: '.8125rem', padding: '2px 6px' }}>{player.position}</span>
                 <span>{roleLabels[player.role_bucket] || player.position}</span>
-                <span>·</span>
                 <span>{player.age}yo</span>
-                <span>·</span>
                 <span>{player.games} games</span>
                 {player.tag && <span className="wr-tag" style={tagStyle(player.tag)}>{player.tag}</span>}
               </div>
