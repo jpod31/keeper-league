@@ -68,7 +68,7 @@ const STYLE = `
 .h2h-vs { font-size:.8125rem; font-weight:700; color:var(--kl-text-primary); text-transform:uppercase; letter-spacing:.5px; }
 .h2h-result-card { background:rgba(236,236,246,.04); border:1px solid rgba(236,236,246,.2); border-radius:8px; padding:20px; margin-top:16px; text-align:center; }
 .h2h-team-name { font-size:1.05rem; font-weight:700; color:#ebebee; }
-.h2h-record { font-size:1.6rem; font-weight:800; color:#ececf6; margin:8px 0; font-family: 'SF Mono', Menlo, monospace; }
+.h2h-record { font-size:1.6rem; font-weight:800; color:#ececf6; margin:8px 0; font-family: var(--kl-font); }
 .h2h-labels { font-size:.8125rem; color:var(--kl-text-primary); letter-spacing:.5px; }
 `
 

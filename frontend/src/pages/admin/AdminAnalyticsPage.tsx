@@ -167,7 +167,7 @@ export function AdminAnalyticsPage() {
                 <tbody>
                   {data.top_pages.slice(0, 10).map((p, i) => (
                     <tr key={i}>
-                      <td style={{ fontFamily: 'monospace', fontSize: '.8125rem' }}>{p.path}</td>
+                      <td style={{ fontFamily: 'var(--kl-font)', fontSize: '.8125rem' }}>{p.path}</td>
                       <td className="text-end"><strong>{p.views}</strong></td>
                     </tr>
                   ))}

@@ -157,7 +157,7 @@ export function PlayerComparePage() {
                     {data.players.map(p => {
                       const val = p[f.key]
                       return (
-                        <td key={p.id} style={{ fontFamily: 'monospace' }}>
+                        <td key={p.id} style={{ fontFamily: 'var(--kl-font)' }}>
                           {f.format ? f.format(val) : (val ?? '-')}
                         </td>
                       )

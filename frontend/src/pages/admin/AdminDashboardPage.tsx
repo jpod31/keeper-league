@@ -98,7 +98,7 @@ export function AdminDashboardPage() {
                   {data.activity.map((a, i) => (
                     <tr key={i}>
                       <td>{a.user}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '.8125rem' }}>{a.path}</td>
+                      <td style={{ fontFamily: 'var(--kl-font)', fontSize: '.8125rem' }}>{a.path}</td>
                       <td><span className="badge bg-secondary">{a.method}</span></td>
                       <td className="text-end">
                         <span className="badge" style={{ background: a.status < 400 ? 'rgba(63,185,80,.15)' : 'rgba(248,81,73,.15)', color: a.status < 400 ? '#3fb950' : '#f85149' }}>

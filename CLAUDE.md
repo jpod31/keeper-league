@@ -280,6 +280,10 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   form arrow), rating chip, age. This is the layout coaches knew before the
   restyle; keep it. New class names were used on purpose so the many older
   `.fv-*` card overrides in `static/style.css` do not apply.
+- **One typeface: Geist.** Geist Mono was dropped on 2026-11-24 (Lucas: "the
+  fonts dont match the style"); `--kl-font-mono` now points at `--kl-font` so
+  older rules keep working, and `body` has tabular numerals. Do not add a
+  second face.
 - **The 13px floor flattens hierarchy if applied blindly.** It made the name,
   numbers and labels on the card all 13px. After the floor, set sizes on
   purpose: the main thing largest (surname 17px bold), numbers next (16px

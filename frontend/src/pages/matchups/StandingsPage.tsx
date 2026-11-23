@@ -210,7 +210,7 @@ const LAD_CSS = `
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-family: var(--kl-font);
   font-variant-numeric: tabular-nums;
   font-size: .82rem;
   font-weight: 700;
@@ -237,7 +237,7 @@ const LAD_CSS = `
   height: 22px;
   padding: 0 9px 0 7px;
   border-radius: 6px;
-  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-family: var(--kl-font);
   font-variant-numeric: tabular-nums;
   font-size: .8125rem;
   font-weight: 800;
@@ -295,7 +295,7 @@ const LAD_CSS = `
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-family: var(--kl-font);
   font-variant-numeric: tabular-nums;
   font-size: .8125rem;
   font-weight: 700;
@@ -311,7 +311,7 @@ const LAD_CSS = `
 
 /* Numeric columns */
 .lad-num {
-  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-family: var(--kl-font);
   font-variant-numeric: tabular-nums;
   font-size: .92rem;
   font-weight: 600;

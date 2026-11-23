@@ -160,7 +160,7 @@ export function DraftRecapPage() {
                       </td>
                       <td className="text-end" style={{ width: 80 }}>
                         {p.draft_score != null && (
-                          <span style={{ fontFamily: 'monospace', fontSize: '.8125rem' }}>
+                          <span style={{ fontFamily: 'var(--kl-font)', fontSize: '.8125rem' }}>
                             {p.draft_score.toFixed(0)}
                           </span>
                         )}
@@ -169,7 +169,7 @@ export function DraftRecapPage() {
                         {p.value_diff != null && (
                           <span style={{
                             fontSize: '.8125rem',
-                            fontFamily: 'monospace',
+                            fontFamily: 'var(--kl-font)',
                             color: p.value_diff >= 0 ? '#3fb950' : '#f85149',
                           }}>
                             {p.value_diff >= 0 ? '+' : ''}{p.value_diff.toFixed(0)}
