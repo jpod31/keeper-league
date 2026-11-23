@@ -418,6 +418,7 @@ class FantasyTeam(db.Model):
     name = db.Column(db.String(120), nullable=False)
     logo_url = db.Column(db.String(300))      # path to AI-generated team logo
     logo_prompt = db.Column(db.String(500))    # prompt used to generate the logo
+    accent = db.Column(db.String(9))           # the team's colour, #rrggbb (see models/team_identity.py)
     draft_order = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -1341,6 +1342,11 @@ def _run_migrations(app):
     from sqlalchemy import inspect, text
 
     inspector = inspect(db.engine)
+
+    if "fantasy_team" in inspector.get_table_names():
+        if "accent" not in {c["name"] for c in inspector.get_columns("fantasy_team")}:
+            db.session.execute(text("ALTER TABLE fantasy_team ADD COLUMN accent VARCHAR(9)"))
+            db.session.commit()
 
     if "fantasy_roster" in inspector.get_table_names():
         uniques = inspector.get_unique_constraints("fantasy_roster")

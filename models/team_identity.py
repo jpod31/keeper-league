@@ -1,8 +1,10 @@
 """A fantasy team's colour.
 
-A team with a crest takes its colour FROM the crest: the most vivid colour in
-the image. A team without one takes a slot on a fixed ramp by id, so it still
-has a colour of its own until its coach uploads a crest. The app uses this for
+A team's colour is saved on the team (fantasy_team.accent). Where none is
+saved, a team with a crest takes it FROM the crest (the most vivid colour in
+the image, when Pillow is installed; the server does not have it, so crest
+colours are computed once and saved), and a team without one takes a slot on
+a fixed ramp by id. The app uses this for
 everything that belongs to a team: the signed-in coach's chrome, team rows on
 the ladder, draft board columns, trade block cards.
 """
@@ -51,7 +53,11 @@ def _vivid(path):
 
 
 def team_accent(team):
-    """#rrggbb for a FantasyTeam."""
+    """#rrggbb for a FantasyTeam: the colour saved on the team, else the
+    crest's (when the image library is installed), else its ramp slot."""
+    saved = getattr(team, "accent", None)
+    if saved:
+        return saved
     path = os.path.join(LOGO_DIR, f"team_{team.id}.png")
     try:
         stamp = os.path.getmtime(path)
