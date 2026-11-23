@@ -99,7 +99,7 @@ const LAD_CSS = `
 /* Grid: # | Team | Status | PR | W-L | Form | Mov | PF | PA | % | Pts */
 .lad-head, .lad-row {
   display: grid;
-  grid-template-columns: 36px 1fr 130px 52px 76px 110px 64px 70px 70px 64px 56px;
+  grid-template-columns: 36px 1fr 150px 52px 76px 110px 64px 70px 70px 68px 56px;
   gap: 10px;
   align-items: center;
 }
@@ -167,10 +167,10 @@ const LAD_CSS = `
   opacity: .65;
 }
 .lad-row.mine {
-  background: linear-gradient(90deg, rgba(var(--lad-accent-rgb, 224,222,234), .14), rgba(var(--lad-accent-rgb, 224,222,234), .04) 60%, transparent);
-  border-color: rgba(var(--lad-accent-rgb, 224,222,234), .35);
+  background: rgba(var(--team, 224,222,234), .14);
+  border-color: rgba(var(--team, 224,222,234), .6);
 }
-.lad-row.mine::before { width: 3px; opacity: 1; }
+.lad-row.mine::before { width: 3px; opacity: 1; background: rgb(var(--team, 224,222,234)); }
 
 /* Rank */
 .lad-rank {
@@ -428,6 +428,9 @@ const LAD_CSS = `
   color: #e6e4ee;
 }
 
+.lad-team { display: flex; align-items: center; min-width: 0; }
+.lad-team .lad-team-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* Mobile, compact 3-column layout */
 @media (max-width: 768px) {
   .lad-head { display: none; }
@@ -438,7 +441,7 @@ const LAD_CSS = `
     padding: 12px 14px;
   }
   .lad-row > .lad-rank { grid-row: 1; grid-column: 1; }
-  .lad-row > .lad-team-name { grid-row: 1; grid-column: 2; }
+  .lad-row > .lad-team { grid-row: 1; grid-column: 2; }
   .lad-row > .lad-num-strong { grid-row: 1; grid-column: 3; }
   .lad-row > .lad-status { grid-row: 2; grid-column: 2 / 4; justify-self: start; }
   .lad-row > .lad-form { grid-row: 2; grid-column: 1; justify-content: flex-start; }
@@ -601,7 +604,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
             <span>Status</span>
             <SortBtn field="pr">PR</SortBtn>
             <SortBtn field="wins">W–L</SortBtn>
-            <span>Form, 5</span>
+            <span>Form</span>
             <SortBtn field="mov">Mov.</SortBtn>
             <SortBtn field="pf">{scoring.for_label}</SortBtn>
             <SortBtn field="pa">{scoring.against_label}</SortBtn>
@@ -634,7 +637,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
                   >
                     <span className={`lad-rank${pos <= 3 ? ` lad-rank-${pos}` : ''}`}>{pos}</span>
 
-                    <TeamBadge name={s.team_id} size={28} showName={false} /><span className="lad-team-name">{s.team?.name}</span>
+                    <span className="lad-team"><TeamBadge name={s.team_id} size={28} showName={false} /><span className="lad-team-name">{s.team?.name}</span></span>
 
                     <span className="lad-status">
                       {headline ? (
@@ -709,7 +712,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
           </div>
 
           <div className="lad-foot">
-            <span>{hasRankings && rankings[0] ? `Round ${rankings[0].afl_round}, Form, momentum & headlines updated weekly` : ''}</span>
+            <span>{hasRankings && rankings[0] ? `After round ${rankings[0].afl_round}` : ''}</span>
             <span className="scoring-tag" data-type={scType}>{scoring.label}</span>
           </div>
         </>
