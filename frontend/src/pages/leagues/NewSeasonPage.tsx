@@ -406,11 +406,14 @@ export function NewSeasonPage() {
   }
 
   const blocks = view.checks.filter(c => c.level === 'block')
+  const draftAhead = blocks.find(c => c.key === 'draft' && c.label.startsWith('The draft has not been held'))
   const warns = view.checks.filter(c => c.level === 'warn')
   const oks = view.checks.filter(c => c.level === 'ok')
   const premier = view.ladder[0]
 
-  const statusLine = blocks.length
+  const statusLine = draftAhead
+    ? { color: '#e3b341', text: `${view.to_year} starts after the draft. Nothing to do here until then.` }
+    : blocks.length
     ? { color: '#f85149', text: `${blocks.length} thing${blocks.length !== 1 ? 's' : ''} to clear before ${view.to_year} can start.` }
     : view.errors.length
       ? { color: '#f85149', text: 'A setting needs fixing before you start.' }
@@ -429,11 +432,11 @@ export function NewSeasonPage() {
 
   const checkRow = (c: Check) => (
     <div className="ns-check" key={c.key}>
-      <i className={`bi ${c.level === 'block' ? 'bi-x-circle-fill' : 'bi-exclamation-circle-fill'}`}
-        style={{ color: c.level === 'block' ? '#f85149' : '#d29922' }}></i>
+      <i className={`bi ${c.level === 'block' && !draftAhead ? 'bi-x-circle-fill' : c.level === 'block' ? 'bi-clock-fill' : 'bi-exclamation-circle-fill'}`}
+        style={{ color: c.level === 'block' && !draftAhead ? '#f85149' : c.level === 'block' ? '#ffffff' : '#d29922' }}></i>
       <div className="ns-check-b">
         <div className="ns-check-t">{c.label}</div>
-        {c.detail && <div className="ns-check-d">{c.detail}</div>}
+        {c.detail && <div className="ns-check-d">{draftAhead && (c.key === 'delists' || c.key === 'trades') ? 'Closes when the draft starts.' : c.detail}</div>}
         {c.action?.kind === 'step' && stepMsg[c.action.step] && (
           <div className="ns-check-err" role="status">{stepMsg[c.action.step]}</div>
         )}
@@ -445,7 +448,7 @@ export function NewSeasonPage() {
           </div>
         )}
       </div>
-      {c.action?.kind === 'step' && (
+      {c.action?.kind === 'step' && !(draftAhead && (c.key === 'delists' || c.key === 'trades')) && (
         <button type="button" className={`ns-act${c.level === 'block' ? ' block' : ''}`} disabled={busy === c.action.step}
           onClick={() => c.action?.kind === 'step' && runStep(c.action.step)}>
           {busy === c.action.step ? 'Working' : c.action.label}
@@ -524,10 +527,10 @@ export function NewSeasonPage() {
             <div className="ns-step-h">
               <span className={`ns-step-n${blocks.length ? '' : ' done'}`}>{blocks.length ? 1 : <i className="bi bi-check-lg"></i>}</span>
               <h2 id="ns-s1">Close out {view.from_year}</h2>
-              <span className="sub">{blocks.length ? `${blocks.length} to clear` : 'All clear'}</span>
+              <span className="sub">{draftAhead ? 'After the draft' : blocks.length ? `${blocks.length} to clear` : 'All clear'}</span>
             </div>
             <div className="ns-panel">
-              {blocks.map(checkRow)}
+              {(draftAhead ? [draftAhead, ...blocks.filter(c => c !== draftAhead)] : blocks).map(checkRow)}
               {warns.map(checkRow)}
               {oks.length > 0 && (
                 <div className="ns-done-line" style={blocks.length + warns.length === 0 ? { borderTop: 0 } : undefined}>

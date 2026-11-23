@@ -223,9 +223,21 @@ def _checks(league, settings):
 
     live_draft = DraftSession.query.filter_by(league_id=league.id, is_mock=False).filter(
         DraftSession.status.in_(["scheduled", "in_progress", "paused"])).first()
-    if live_draft:
-        add("draft", "block", "A draft is scheduled or running", "Finish or delete it first.",
+    if live_draft and live_draft.status == "scheduled":
+        # A draft that has not happened yet is the reason the year is still
+        # open, not a fault. Say when it is and that starting it closes the
+        # trade and delist windows, so nobody closes them (or deletes the
+        # draft) by hand to clear this list.
+        when = ""
+        if live_draft.scheduled_start:
+            ds = live_draft.scheduled_start
+            when = f" on {ds.strftime('%a')} {ds.day} {ds.strftime('%b')}"
+        add("draft", "block", f"The draft has not been held yet{when}",
+            "Come back after it. Starting the draft closes the trade and delist windows for you.",
             {"kind": "link", "to": "draft/setup", "label": "Draft setup"})
+    elif live_draft:
+        add("draft", "block", "The draft is running", "Finish it first.",
+            {"kind": "link", "to": "draft", "label": "Draft room"})
     else:
         from models.season_manager import offseason_draft_done
         if offseason_draft_done(league.id, year):
