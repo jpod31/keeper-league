@@ -37,7 +37,10 @@ def register_innovation_endpoints(spa_api):
                     fx = rx
                     break
 
-        if not fx:
+        # A recap is for a round that has been played. Round 1 of a new season
+        # exists as fixtures long before it is played; without this check every
+        # coach got "Round 1 recap: draw, 0 to 0" the day the season opened.
+        if not fx or not all(f.status == "completed" for f in fx):
             return jsonify({"recap_round": 0, "has_recap": False})
 
         team_fixture = None
@@ -130,6 +133,7 @@ def register_innovation_endpoints(spa_api):
 
         return jsonify({
             "recap_round": recap_round,
+            "year": year,
             "has_recap": True,
             "team_name": team.name,
             "result": result,

@@ -200,7 +200,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
                 <Link key={rnd}
                   to={`${basePath}?round=${rnd}`}
                   className={`rnd-item${rnd === selected_round ? ' active' : ''}${itemCls}`}>
-                  <span className="rnd-num">{rnd === 0 ? 'PS' : rnd}</span>
+                  <span className="rnd-num">{rnd === 0 ? 'OR' : rnd}</span>
                   <span className={`rnd-dot ${dotCls}`}></span>
                 </Link>
               )
@@ -210,7 +210,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
           {/* Round header */}
           <div className="round-hdr">
             <div className="round-hdr-left">
-              <h3>{selected_round === 0 ? 'Pre-Season' : `Round ${selected_round}`}</h3>
+              <h3>{selected_round === 0 ? 'Opening Round' : `Round ${selected_round}`}</h3>
               {rs === 'completed' && <span className="rh-badge rh-complete">Complete</span>}
               {rs === 'live' && (
                 <span className="rh-badge rh-live">

@@ -302,6 +302,16 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   room from tables: pool, former players and the draft table drop columns by
   `nth-child` at 1500, 1300, 1180 and 1080px. Check 1280, 1122 and 1024 wide
   after adding a column.
+- **Rehearse the season start on a copy before the real one.** Take a prod
+  copy, mark the scheduled draft completed, close the delist period and set
+  `off_trade_window_close` to the past, then press Start on `/new-season`
+  locally. The 2026-11-24 rehearsal found a "Round 1 recap, draw 0 to 0"
+  pop-up for an unplayed round, and that the recap's seen marker had no year
+  in it (so nobody would have seen a recap in 2027). Local runs cannot email
+  or push: no MAIL or VAPID credentials, and snapshot emails are rewritten.
+- **Round 0 is the Opening Round**, not "Pre-Season", and it is a real round:
+  test `is not None`, never truthiness, on a round number. Home takes its
+  round from `_detect_gameday_round` so it cannot disagree with Gameday.
 - **One set of position colours**: `--pos-def #58a6ff`, `--pos-mid #bc8cff`,
   `--pos-ruc #3fb950`, `--pos-fwd #f0883e`, solid fill with dark text. Several
   pages carried their own maps; grep `DEF:` and `pos-` before adding another.

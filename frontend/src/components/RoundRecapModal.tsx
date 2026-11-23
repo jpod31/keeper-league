@@ -3,6 +3,7 @@ import { useLeague } from '../contexts/LeagueContext'
 
 interface Recap {
   recap_round: number
+  year?: number
   has_recap: boolean
   team_name: string
   result: { outcome: 'win' | 'loss' | 'draw'; my_score: number; opp_score: number; opp_name: string; margin: number } | null
@@ -32,7 +33,9 @@ export function RoundRecapModal() {
       .then(r => r.json())
       .then((d: Recap) => {
         if (!d.has_recap || d.recap_round < 1) return
-        const key = `kl_recap_seen_${lid}_${tid}`
+        // Keyed by season: rounds restart at 1 each year, so last year's
+        // "seen round 24" must not hide every recap of the new season.
+        const key = `kl_recap_seen_${lid}_${tid}_${d.year ?? ''}`
         const seen = parseInt(localStorage.getItem(key) || '0', 10)
         if (d.recap_round > seen) {
           setRecap(d)
@@ -44,7 +47,7 @@ export function RoundRecapModal() {
 
   function dismiss() {
     if (recap && league && league.user_team) {
-      const key = `kl_recap_seen_${league.id}_${league.user_team.id}`
+      const key = `kl_recap_seen_${league.id}_${league.user_team.id}_${recap.year ?? ''}`
       localStorage.setItem(key, String(recap.recap_round))
     }
     setVisible(false)

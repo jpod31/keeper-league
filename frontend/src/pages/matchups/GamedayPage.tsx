@@ -855,7 +855,7 @@ export function GamedayPage() {
       {/* Round bar, title + TV clock + refresh */}
       <div className="gd-round-bar">
         <div>
-          <div className="gd-round-title">{d.afl_round === 0 ? 'PRE-SEASON' : `ROUND ${d.afl_round}`}</div>
+          <div className="gd-round-title">{d.afl_round === 0 ? 'Opening Round' : `Round ${d.afl_round}`}</div>
           {d.round_dates && <div className="gd-round-dates">{d.round_dates}</div>}
         </div>
         <div className="gd-round-state">

@@ -91,7 +91,7 @@ export function RoundDetailPage() {
       <div className="page-header" style={{ marginTop: 0 }}>
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}/fixture?round=${afl_round}`}>Season</Link>
-          {' / '}{afl_round === 0 ? 'Pre-Season' : `Round ${afl_round}`}
+          {' / '}{afl_round === 0 ? 'Opening Round' : `Round ${afl_round}`}
         </div>
       </div>
 
@@ -102,7 +102,7 @@ export function RoundDetailPage() {
               <i className="bi bi-chevron-left"></i>
             </Link>
           )}
-          <h3>{afl_round === 0 ? 'Pre-Season' : `Round ${afl_round}`}</h3>
+          <h3>{afl_round === 0 ? 'Opening Round' : `Round ${afl_round}`}</h3>
           <span className="scoring-tag ms-2" data-type={scType}>{ctx.label}</span>
           {afl_round < max_round && (
             <Link to={`/leagues/${leagueId}/fixture/${afl_round + 1}`} className="rd-nav">

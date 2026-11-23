@@ -425,12 +425,26 @@ def dashboard(league_id):
             # Once the league has no round left there is nothing to lock or
             # to call live, whatever is still on the AFL calendar.
             from models.season_manager import league_season_over
-            if league_season_over(league_id, league.season_year):
+            season_over = league_season_over(league_id, league.season_year)
+            if season_over:
                 current_round = 0
                 next_lockout_at = None
                 live_games_count = 0
         except Exception:
-            pass
+            season_over = False
+
+        # The round home shows is the round Gameday shows, so the two cannot
+        # disagree (the AFL calendar's "current round" can run ahead of the
+        # league's own, and the Opening Round is round 0, which is not "none").
+        show_round = None
+        if not season_over:
+            try:
+                from blueprints.matchups import _detect_gameday_round
+                show_round = _detect_gameday_round(league_id, league.season_year)
+            except Exception:
+                show_round = current_round or None
+            if show_round is not None:
+                current_round = show_round
 
         # ── Trade window close countdown ──
         trade_close_at = None
@@ -450,7 +464,26 @@ def dashboard(league_id):
 
         # ── This week's matchup for the current user ──
         this_matchup = None
-        if user_team and current_round:
+        # While a round is live the fixture row holds no score yet (it is
+        # written when the round is finalised), so use the running totals.
+        _live_totals = {}
+
+        def _fx_scores(f):
+            if f.status == "live":
+                if not _live_totals:
+                    try:
+                        from models.scoring_engine import get_live_scores
+                        for tid, v in (get_live_scores(league_id, f.afl_round, f.year) or {}).items():
+                            _live_totals[tid] = (v.get("total_score") if isinstance(v, dict)
+                                                 else getattr(v, "total_score", 0)) or 0
+                    except Exception:
+                        pass
+                if _live_totals:
+                    return (_live_totals.get(f.home_team_id, 0) or 0,
+                            _live_totals.get(f.away_team_id, 0) or 0)
+            return f.home_score or 0, f.away_score or 0
+
+        if user_team and show_round is not None:
             fx = (
                 _Fx.query
                 .filter_by(league_id=league_id, year=league.season_year, afl_round=current_round)
@@ -461,8 +494,9 @@ def dashboard(league_id):
                 is_home = fx.home_team_id == user_team.id
                 my_team = fx.home_team if is_home else fx.away_team
                 opp_team = fx.away_team if is_home else fx.home_team
-                my_score = (fx.home_score if is_home else fx.away_score) or 0
-                opp_score = (fx.away_score if is_home else fx.home_score) or 0
+                _hs, _as = _fx_scores(fx)
+                my_score = _hs if is_home else _as
+                opp_score = _as if is_home else _hs
                 this_matchup = {
                     "round": current_round,
                     "status": fx.status,
@@ -498,15 +532,16 @@ def dashboard(league_id):
 
         # ── Round fixtures (all matchups in current round) ──
         league_fixtures = []
-        if current_round:
+        if show_round is not None:
             for fx in _Fx.query.filter_by(
                 league_id=league_id, year=league.season_year, afl_round=current_round,
             ).all():
+                _hs, _as = _fx_scores(fx)
                 league_fixtures.append({
                     "id": fx.id,
                     "status": fx.status,
-                    "home": {**_team_summary(fx.home_team), "score": round(fx.home_score or 0, 1)},
-                    "away": {**_team_summary(fx.away_team), "score": round(fx.away_score or 0, 1)},
+                    "home": {**_team_summary(fx.home_team), "score": round(_hs, 1)},
+                    "away": {**_team_summary(fx.away_team), "score": round(_as, 1)},
                 })
 
         # ── Top performers (best individual player scores this round) ──

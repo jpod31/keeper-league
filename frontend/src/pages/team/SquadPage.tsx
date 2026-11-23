@@ -15,7 +15,7 @@ import { SSPModal } from '../../components/squad/SSPModal'
 import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
 
 interface StandingsLite {
-  standings: { team_id: number }[]   // ordered by ladder position
+  standings: { team_id: number; wins?: number; losses?: number; draws?: number }[]   // ordered by ladder position
   finals_teams: number
   team_form: Record<string, string[]>
 }
@@ -373,7 +373,9 @@ function SquadPageInner() {
   // Ladder position + recent form for THIS team (from the standings endpoint).
   const ladder = standings?.standings ?? []
   const ladderIdx = ladder.findIndex(s => s.team_id === Number(teamId))
-  const ladderPos = ladderIdx >= 0 ? ladderIdx + 1 : null
+  // No position until someone has played: at 0-0 everyone is level.
+  const ladderLive = ladder.some(s => (s.wins || 0) + (s.losses || 0) + (s.draws || 0) > 0)
+  const ladderPos = ladderIdx >= 0 && ladderLive ? ladderIdx + 1 : null
   const nTeams = ladder.length
   const finalsN = standings?.finals_teams ?? 0
   const inFinals = ladderPos != null && finalsN > 0 && ladderPos <= finalsN

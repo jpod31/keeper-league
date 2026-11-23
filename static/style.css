@@ -12298,3 +12298,5 @@ body { font-variant-numeric: tabular-nums; }
 .ds-next-time label { font-size: .875rem; font-weight: 600; color: #ffffff; margin: 0; }
 .ds-next-time input { max-width: 250px; }
 @media (max-width: 600px) { .ds-next-when { font-size: 1.5rem; } .ds-next-actions { width: 100%; } .ds-next-actions .kx-btn { flex: 1; padding: 0 10px; } }
+.gd-round-title { text-transform: none !important; letter-spacing: -.02em !important; font-size: 1.25rem !important; font-weight: 700 !important; }
+.gd-hero-score.pre { color: #ffffff !important; }

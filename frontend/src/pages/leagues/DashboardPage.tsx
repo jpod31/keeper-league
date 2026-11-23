@@ -187,7 +187,9 @@ export function DashboardPage() {
   const m = this_matchup
   const played = m && m.status !== 'scheduled'
   const gap = m ? Math.abs(Math.round(m.margin)) : 0
-  const rank = my_rank ? ` You are ${ordinal(my_rank)} on the ladder.` : ''
+  // Before anyone has played, everyone is level: a ladder position means nothing.
+  const anyPlayed = standings.some(r => r.wins + r.losses + r.draws > 0)
+  const rank = my_rank && anyPlayed ? ` You are ${ordinal(my_rank)} on the ladder.` : ''
   let line = ''
   if (m) {
     if (m.status === 'scheduled') line = next_lockout_at ? `Lockout is ${when(next_lockout_at)}.` : 'Set your lineup before the round starts.'
@@ -261,7 +263,7 @@ export function DashboardPage() {
 
       <section className="hm">
         <div className="hm-head">
-          <div className="dh2-label">{m ? `Round ${m.round}${state}` : league.name}</div>
+          <div className="dh2-label">{m ? `${m.round === 0 ? 'Opening Round' : `Round ${m.round}`}${state}` : league.name}</div>
           {m ? (
             <div className="hm-game">
               <Link className="hm-side" to={`/leagues/${leagueId}/team/${m.me.id}`}>
@@ -312,7 +314,7 @@ export function DashboardPage() {
 
         {league_fixtures.length > 0 && (
           <>
-            <h2 className="hm-h">Round {current_round}</h2>
+            <h2 className="hm-h">{current_round === 0 ? 'Opening Round' : `Round ${current_round}`}</h2>
             <table className="kx-table hm-games">
               <tbody>
                 {league_fixtures.map(fx => (
@@ -329,7 +331,7 @@ export function DashboardPage() {
           </>
         )}
 
-        {standings.length > 0 && (
+        {standings.length > 0 && anyPlayed && (
           <>
             <h2 className="hm-h">Ladder</h2>
             <table className="kx-table dh2-table">

@@ -174,7 +174,7 @@ export function LineupPage() {
               ><i className="bi bi-chevron-left"></i></button>
             )}
             <div>
-              <h2 className="mb-0">{afl_round === 0 ? 'Pre-Season' : `Round ${afl_round}`} Lineup</h2>
+              <h2 className="mb-0">{afl_round === 0 ? 'Opening Round' : `Round ${afl_round}`} Lineup</h2>
               {lineup.is_locked && (
                 <span className="status-pill" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149', fontSize: '.8125rem' }}>Locked</span>
               )}
