@@ -1113,7 +1113,7 @@ export function GamedayPage() {
                           {mp.subbed_on && <span className="gameday-badge-emg-active" style={{ fontSize: '.8125rem', padding: '0 3px' }}>EMG</span>}
                           {mp.name}
                         </span>
-                        <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || 'MID').split('/')[0].toUpperCase()}`}>{(mp.position || 'MID').split('/')[0].substring(0, 3).toUpperCase()}</span>
+                        <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || 'MID').split('/')[0].toUpperCase()}`}>{(mp.position || 'MID').split('/')[0].toUpperCase().replace('FLEX', 'FLX').substring(0, 3)}</span>
                       </>}
                     </div>
                     <div className="gd-mob-vs-mid">
@@ -1128,7 +1128,7 @@ export function GamedayPage() {
                     </div>
                     <div className="gd-mob-vs-right">
                       {op && <>
-                        <span className={`gd-mob-vs-pos pos-badge pos-${(op.position || 'MID').split('/')[0].toUpperCase()}`}>{(op.position || 'MID').split('/')[0].substring(0, 3).toUpperCase()}</span>
+                        <span className={`gd-mob-vs-pos pos-badge pos-${(op.position || 'MID').split('/')[0].toUpperCase()}`}>{(op.position || 'MID').split('/')[0].toUpperCase().replace('FLEX', 'FLX').substring(0, 3)}</span>
                         <span className="gd-mob-vs-name">
                           {op.is_captain && <b className="gd-mob-c">C</b>}
                           {op.is_vice_captain && <b className="gd-mob-vc">VC</b>}

@@ -12285,3 +12285,5 @@ body { font-variant-numeric: tabular-nums; }
   .rm-table th:nth-child(1), .rm-table td:nth-child(1), .rm-table2 th:nth-child(1), .rm-table2 td:nth-child(1) { width: 26px !important; }
   .rm-table .pos-badge, .rm-table2 .pos-badge { padding: 2px 4px !important; }
 }
+.gd-mob-c, .gd-mob-vc { color: #050506 !important; background: #ffffff; border-radius: 3px; padding: 0 4px; margin-right: 4px; font-weight: 700; }
+.gd-mob-vc { background: transparent; color: #ffffff !important; box-shadow: inset 0 0 0 1.5px #ffffff; }
