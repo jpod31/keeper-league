@@ -127,7 +127,7 @@ import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-size: .82rem;
   font-weight: 700;
@@ -154,7 +154,7 @@ import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-
   height: 22px;
   padding: 0 9px 0 7px;
   border-radius: 6px;
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-size: .78rem;
   font-weight: 800;
@@ -212,7 +212,7 @@ import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-size: .72rem;
   font-weight: 700;
@@ -228,7 +228,7 @@ import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-
 
 /* Numeric columns */
 .lad-num {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-size: .92rem;
   font-weight: 600;

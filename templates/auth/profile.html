@@ -129,7 +129,7 @@
                 <div style="font-size:.75rem;color:var(--kl-text-faint);">{{ team.league.name }} &middot; {{ team.league.season_year }}</div>
               </div>
               <button class="prof-logo-btn" onclick="openLogoModal({{ team.id }}, {{ team.league_id }}, {{ team.name|tojson }}, {{ (team.logo_url or '')|tojson }}, {{ (team.logo_prompt or '')|tojson }})">
-                <i class="bi bi-stars me-1"></i>{% if team.logo_url %}Edit Logo{% else %}Create Logo{% endif %}
+                <i class="bi bi-asterisk me-1"></i>{% if team.logo_url %}Edit Logo{% else %}Create Logo{% endif %}
               </button>
             </div>
           </div>
@@ -145,7 +145,7 @@
 <div id="logoModal" class="logo-modal-overlay" style="display:none;" onclick="if(event.target===this)closeLogo()">
   <div class="logo-modal">
     <div class="logo-modal-header">
-      <h3><i class="bi bi-stars me-2" style="color:#d29922;"></i>Team Logo — <span id="logoTeamName"></span></h3>
+      <h3><i class="bi bi-asterisk me-2" style="color:#d29922;"></i>Team Logo — <span id="logoTeamName"></span></h3>
       <button onclick="closeLogo()" class="logo-modal-close"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="logo-modal-body">
@@ -161,7 +161,7 @@
         <div class="logo-modal-hint">Be descriptive! Include colours, animals, symbols, or themes. Max 400 chars.</div>
         <div id="logoError" class="logo-modal-error" style="display:none;"></div>
         <button id="logoGenBtn" onclick="generateLogo()" class="logo-modal-generate">
-          <i class="bi bi-stars me-1"></i>Generate Logo
+          <i class="bi bi-asterisk me-1"></i>Generate Logo
         </button>
       </div>
 
@@ -455,7 +455,7 @@ function acceptLogo() {
   // Update button text to "Edit Logo"
   var btn = document.querySelector('[onclick*="openLogoModal(' + _logoTeamId + ',"]') ||
             document.querySelector('[onclick*="openLogoModal(' + _logoTeamId + ' ,"]');
-  if (btn) btn.innerHTML = '<i class="bi bi-stars me-1"></i>Edit Logo';
+  if (btn) btn.innerHTML = '<i class="bi bi-asterisk me-1"></i>Edit Logo';
   closeLogo();
 }
 

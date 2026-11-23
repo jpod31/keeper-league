@@ -41,7 +41,7 @@ export function stintStyle(e: Stint): { label: string; icon: string; color: stri
     const which = e.draft_label || (e.draft_year ? `${e.draft_year} draft` : 'draft')
     return {
       label: `Pick ${e.pick_number} · ${which}`,
-      icon: e.method === 'draft' ? 'bi-trophy' : 'bi-stars',
+      icon: e.method === 'draft' ? 'bi-trophy' : 'bi-asterisk',
       color: e.method === 'draft' ? '#79c0ff' : '#d2a8ff',
     }
   }

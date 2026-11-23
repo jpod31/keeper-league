@@ -311,7 +311,7 @@ export function Reserve7sTeamPage() {
           <i className="bi bi-check-lg me-1"></i>{saving ? 'Saving...' : 'Save 7s Lineup'}
         </button>
         <button className="sevens-btn sevens-btn-secondary" onClick={autoFill} type="button" style={{ background: 'transparent' }}>
-          <i className="bi bi-magic me-1"></i>Auto-Fill Best 7
+          <i className="bi bi-sliders2 me-1"></i>Auto-Fill Best 7
         </button>
       </div>
       {feedback && (

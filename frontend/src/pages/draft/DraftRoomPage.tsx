@@ -923,7 +923,7 @@ function DraftRoomPageInner() {
             <h2 className="mb-0">Live Draft</h2>
             <div className="d-flex align-items-center gap-3 mt-1">
               <span className={`conn-dot${connState === 'connected' ? '' : ' off'}`} title={connState === 'connected' ? 'Connected' : 'Disconnected'}></span>
-              <span className={`status-pill status-${state.status.replace('_', '-')}`}>{state.status}</span>
+              <span className={`status-pill status-${state.status.replace('_', '-')}`}>{state.status.replace('_', ' ')}</span>
               <span className="draft-header-info">
                 {/* The session's own order, not the league default: an
                     off-season draft runs the same order every round. */}

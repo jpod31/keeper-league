@@ -297,7 +297,7 @@ function LeagueShellInner() {
                   style={{ color: '#c99cff' }}
                   onClick={() => { setMoreOpen(false); setReviewOpen(true) }}
                 >
-                  <i className="bi bi-stars"></i><span>{reviewYear} Review</span>
+                  <i className="bi bi-asterisk"></i><span>{reviewYear} Review</span>
                 </div>
               )}
               {league.active_draft && (
@@ -669,7 +669,7 @@ function LeagueRail({
             onClick={onOpenReview}
             title={`${reviewYear} Season in Review`}
           >
-            <span className="kl-rail-icon"><i className="bi bi-stars"></i></span>
+            <span className="kl-rail-icon"><i className="bi bi-collection-play"></i></span>
             <span className="kl-rail-wrapped-body">
               <span className="kl-rail-wrapped-t">{reviewYear} in Review</span>
               <span className="kl-rail-wrapped-s">Season wrapped</span>

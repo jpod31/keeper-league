@@ -152,7 +152,7 @@
   margin-top: auto;
 }
 .tr-deal-card-sc {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .8rem;
   font-weight: 800;
   color: #f5f5f7;
@@ -227,7 +227,7 @@
 .tr-mini-in  { background: rgba(63,185,80,.12); border-color: rgba(63,185,80,.35); }
 .tr-mini-in:hover { background: rgba(63,185,80,.2); border-color: rgba(63,185,80,.55); }
 .tr-mini-sc {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .68rem;
   color: #a0a0ac;
   font-weight: 600;
@@ -328,7 +328,7 @@
   color: #a0a0ac;
 }
 .tr-card-sc {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .92rem;
   font-weight: 700;
   color: #cfcfd6;
@@ -458,7 +458,7 @@
   font-weight: 500;
 }
 .tr-row-sc {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .9rem;
   font-weight: 800;
   color: #cfcfd6;
@@ -732,7 +732,7 @@
 .tr-window-banner-title { font-size: .92rem; font-weight: 700; color: #f5f5f7; }
 .tr-window-banner-sub { font-size: .78rem; color: #a0a0ac; margin-top: 2px; }
 .tr-window-banner-countdown {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .82rem; font-weight: 700;
   color: #d29922;
   padding: 4px 10px;
@@ -910,7 +910,7 @@
   color: #cfcfd6;
 }
 .tr-asset-chip-sc {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .68rem;
   color: #a0a0ac;
   font-weight: 600;

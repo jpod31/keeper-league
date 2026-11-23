@@ -435,7 +435,7 @@ export function ProfilePage() {
                     </div>
                   </div>
                   <button className="prof-logo-btn" onClick={() => openLogoModal(team)}>
-                    <i className="bi bi-stars me-1"></i>{team.logo_url ? 'Edit Logo' : 'Create Logo'}
+                    <i className="bi bi-asterisk me-1"></i>{team.logo_url ? 'Edit Logo' : 'Create Logo'}
                   </button>
                 </div>
               </div>
@@ -451,7 +451,7 @@ export function ProfilePage() {
         <div className="logo-modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeLogoModal() }}>
           <div className="logo-modal">
             <div className="logo-modal-header">
-              <h3><i className="bi bi-stars me-2" style={{ color: '#d29922' }}></i>Team Logo — {logoModalTeam.name}</h3>
+              <h3><i className="bi bi-asterisk me-2" style={{ color: '#d29922' }}></i>Team Logo — {logoModalTeam.name}</h3>
               <button onClick={closeLogoModal} className="logo-modal-close"><i className="bi bi-x-lg"></i></button>
             </div>
             <div className="logo-modal-body">
@@ -480,7 +480,7 @@ export function ProfilePage() {
                   </div>
                   {logoError && <div className="logo-modal-error">{logoError}</div>}
                   <button className="logo-modal-generate" onClick={generateLogo}>
-                    <i className="bi bi-stars me-1"></i>Generate Logo
+                    <i className="bi bi-asterisk me-1"></i>Generate Logo
                   </button>
                 </div>
               )}

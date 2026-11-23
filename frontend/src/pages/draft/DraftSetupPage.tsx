@@ -548,7 +548,7 @@ export function DraftSetupPage() {
           <div className="card mt-4">
             <div className="card-header">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <i className="bi bi-robot me-2" style={{ color: '#f0883e' }}></i>Mock Draft
+                <i className="bi bi-cpu me-2" style={{ color: '#f0883e' }}></i>Mock Draft
                 <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.6rem', verticalAlign: 'middle' }}>SIMULATION</span>
               </h5>
             </div>
@@ -600,7 +600,7 @@ export function DraftSetupPage() {
                 </div>
               </div>
               <button type="button" className="btn btn-warning" onClick={createMock}>
-                <i className="bi bi-robot me-1"></i>{mock_session ? 'Restart Mock Draft' : 'Start Mock Draft'}
+                <i className="bi bi-cpu me-1"></i>{mock_session ? 'Restart Mock Draft' : 'Start Mock Draft'}
               </button>
             </div>
           </div>

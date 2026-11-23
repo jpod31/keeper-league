@@ -104,7 +104,7 @@ const rtgMove = (p: PoolPlayer) =>
   p.rating != null && p.rating_start != null ? p.rating - p.rating_start : 0
 
 const SMART_FILTERS: SmartFilter[] = [
-  { group: 'avail', key: 'new', label: 'New to the AFL', icon: 'bi-stars', tone: 'gold',
+  { group: 'avail', key: 'new', label: 'New to the AFL', icon: 'bi-asterisk', tone: 'gold',
     hint: 'First season on an AFL list', test: p => !!p.is_new },
   { group: 'avail', key: 'block', label: 'On the trade block', icon: 'bi-megaphone-fill', tone: 'orange',
     hint: 'Put up for trade by their club', test: p => !!p.on_block },

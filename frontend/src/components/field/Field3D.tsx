@@ -281,7 +281,7 @@ export function Field3D({ players, teamColor = '#ececf6', onPlayerClick }: Props
       borderRadius: 8, padding: '8px 12px', minWidth: 160,
       color: '#cfcfd6', fontSize: 12, zIndex: 5,
       boxShadow: '0 4px 20px rgba(0,0,0,.6)',
-      fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
+      fontFamily: 'Geist, sans-serif', whiteSpace: 'nowrap',
     }}>
       <div style={{ fontWeight: 700, fontSize: 13, color: '#ebebee' }}>{hovered.player.name}</div>
       <div style={{ color: '#a0a0ac', fontSize: 11 }}>

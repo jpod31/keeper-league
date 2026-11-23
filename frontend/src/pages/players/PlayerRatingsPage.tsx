@@ -184,7 +184,7 @@ export function PlayerRatingsPage() {
         <div className="card-body p-0" style={{ maxHeight: 420, overflowY: 'auto' }}>
           {data.last_update.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon"><i className="bi bi-stars"></i></div>
+              <div className="empty-icon"><i className="bi bi-asterisk"></i></div>
               <h4>No recent changes</h4>
               <p>Genuine rating changes from the next ratings refresh will show here.</p>
             </div>

@@ -833,7 +833,7 @@ const sevens: SlideDef = {
           </div>
           <div>
             <div className="sr-card-title" style={{ padding: '0 2px 8px' }}>
-              <i className="bi bi-stars" /> Top 7s scorers
+              <i className="bi bi-asterisk" /> Top 7s scorers
             </div>
             <div className="sr-stack">
               {d.sevens.top_scorers.slice(0, 6).map((p2, i) => (

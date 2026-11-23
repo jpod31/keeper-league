@@ -559,7 +559,7 @@ body {
 
 /* ── Typography ── */
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--kl-font);
   font-size: 0.875rem;
   background: var(--kl-bg-body);
   color: var(--kl-text-primary);
@@ -11225,4 +11225,210 @@ body {
   .dh-unit { flex: 1; min-width: 0; }
   .dh-unit b { font-size: 2rem; }
   .dh-clubs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+
+/* ╔═══════════════════════════════════════════════════════════════════╗
+   ║  2027 DESIGN SYSTEM (v4): the skin every page sits in               ║
+   ║  Type: Geist for words, Geist Mono for every number.                ║
+   ║  Surfaces: black, 1px hairlines, 4 to 8px corners.                  ║
+   ║  Nothing glows, nothing is a pill, no gradient fills on controls.   ║
+   ║  Colour is still only for positions, ratings, form, clubs, teams.   ║
+   ╚═══════════════════════════════════════════════════════════════════╝ */
+:root, [data-bs-theme="dark"] {
+  --kl-font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --kl-font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --hair: rgba(255,255,255,.08);
+  --hair-2: rgba(255,255,255,.16);
+  --panel: #0a0a0c;
+  --panel-2: #101013;
+  --kl-bg-body: #050506;
+  --kl-bg-card: #0a0a0c;
+  --kl-bg-elevated: #131316;
+  --kl-bg-hover: #0f0f12;
+  --kl-border: #1f1f24;
+  --kl-border-light: #34343c;
+  --kl-radius-sm: 4px; --kl-radius-md: 6px; --kl-radius-lg: 8px;
+  --bs-border-radius: 6px; --bs-border-radius-sm: 4px; --bs-border-radius-lg: 8px;
+  --bs-border-radius-xl: 8px; --bs-border-radius-pill: 6px;
+  --bs-body-font-family: var(--kl-font);
+  --bs-font-monospace: var(--kl-font-mono);
+  --bs-body-bg: #050506;
+}
+
+body, button, input, select, textarea, .btn, .form-control, .form-select {
+  font-family: var(--kl-font);
+}
+body {
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* A drafting grid at the top of the page, lit faintly in your team's colour,
+     fading to black. No blobs. */
+  background:
+    linear-gradient(180deg, rgba(5,5,6,0) 0, #050506 600px, #050506 100%),
+    linear-gradient(180deg, rgba(var(--team), .17), rgba(var(--team), 0) 340px),
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+    #050506;
+  background-size: 100% 100%, 100% 340px, 56px 56px, 56px 56px, auto;
+  background-repeat: no-repeat, no-repeat, repeat, repeat, repeat;
+}
+h1, h2, h3, h4, h5, .kx-head h2, .squad-cmd-name, .tb-name, .dh-when, .sn-premier-n, .dn-reveal-name {
+  font-family: var(--kl-font); font-weight: 700; letter-spacing: -.035em;
+}
+
+/* Every number is set in mono: scores, ratings, counts, clocks. */
+.num, .rt, .fv-stat-num, .dh-unit b, .tb-num b, .kx-count b, .squad-stat-val, .draft-timer,
+.dn-pickno, .dn-slot b, .stat-cell, .kl-player-card-sc, .sn-pos, .dh-order, .dh-club-nums b,
+.fp-stat-v, .draft-event-countdown, .pool-table td.text-end, .pool-table td.text-center,
+.sn-match .s, .tb-team-n, .pn-count, .pn-note time, .lg-pulse-countdown, .os-value, .kx-table .ctr {
+  font-family: var(--kl-font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+}
+/* Small labels: mono capitals, tracked. The futuristic part is restraint. */
+.dh-kicker, .dn-order-label, .tb-want-label, .sn-premier-l, .os-label, .tb-field-label, .sn-round-h,
+.dn-stage .draft-banner-round, .dn-reveal-top, .fp-stat-l, .dh-unit span, .dh-status {
+  font-family: var(--kl-font-mono); text-transform: uppercase; letter-spacing: .09em;
+  font-size: .8125rem; font-weight: 600;
+}
+
+/* ── Surfaces ── */
+.card, .kx-panel, .fp-stat, .pn, .tb-modal, .lg-pulse, .squad-cmd, .draft-event {
+  background: var(--panel) !important; border: 1px solid var(--hair) !important;
+  border-radius: 8px !important; box-shadow: none !important;
+}
+.card-header, .kx-panel-head, .kx-bar { border-bottom-color: var(--hair) !important; background: transparent !important; }
+.kx-table th { background: var(--panel); border-bottom-color: var(--hair-2); }
+.kx-table td, .table td, .table th { border-color: var(--hair) !important; }
+.table { --bs-table-hover-bg: rgba(255,255,255,.035); }
+
+/* ── Controls: flat, square-ish, no lift, no glow ── */
+.btn, .kx-btn, .pn-save, .kx-chip, .kx-seg, .kx-seg button, .kx-select, .kx-search, .form-control, .form-select,
+.draft-filter-select, .draft-filter-input, .tb-team, .sn-year, .dn-slot, .pos-badge, .draft-pos-chip,
+.status-pill, .badge, .pl-mark, .rt, .tb-crest, .tc-crest, .sn-pos, .dh-order, .kl-season-note {
+  border-radius: 5px !important;
+}
+.btn { font-weight: 600; letter-spacing: 0; box-shadow: none !important; transform: none !important; }
+.btn-primary, .kx-btn-gold { background: #ffffff !important; border-color: #ffffff !important; color: #050506 !important; }
+.btn-primary:hover, .kx-btn-gold:hover { background: #d9d9e0 !important; border-color: #d9d9e0 !important; }
+.btn-success { background: #3fb950 !important; border-color: #3fb950 !important; color: #03170a !important; }
+.btn-danger, .btn-outline-danger { background: transparent !important; border: 1px solid rgba(248,81,73,.6) !important; color: #ff7b72 !important; }
+.btn-danger:hover, .btn-outline-danger:hover { background: rgba(248,81,73,.14) !important; }
+.btn-warning, .btn-outline-warning { background: transparent !important; border: 1px solid rgba(210,153,34,.6) !important; color: #e3b341 !important; }
+.btn-warning:hover, .btn-outline-warning:hover { background: rgba(210,153,34,.14) !important; }
+.btn-info, .btn-outline-info, .btn-outline-primary, .btn-outline-secondary, .btn-secondary, .kx-btn {
+  background: transparent !important; border: 1px solid var(--hair-2) !important; color: #ffffff !important;
+}
+.btn-info:hover, .btn-outline-info:hover, .btn-outline-primary:hover, .btn-outline-secondary:hover, .btn-secondary:hover, .kx-btn:hover {
+  background: rgba(255,255,255,.07) !important; border-color: rgba(255,255,255,.4) !important; color: #ffffff !important;
+}
+.btn-outline-secondary.active { background: #ffffff !important; color: #050506 !important; border-color: #ffffff !important; }
+.form-control, .form-select, .kx-select, .kx-search, .draft-filter-select, .draft-filter-input, .pn-add textarea, .tb-textarea {
+  background-color: #08080a !important; border: 1px solid var(--hair-2) !important; color: #ffffff !important; box-shadow: none !important;
+}
+.form-control:focus, .form-select:focus, .kx-select:focus, .kx-search:focus-within, .draft-filter-select:focus, .draft-filter-input:focus,
+.pn-add textarea:focus, .tb-textarea:focus { border-color: #ffffff !important; box-shadow: none !important; }
+:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+.status-pill { font-family: var(--kl-font-mono); letter-spacing: .08em; }
+
+/* ── Top bar and rail ── */
+.kl-bar { background: rgba(5,5,6,.78) !important; backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid var(--hair) !important; box-shadow: none !important; }
+.kl-bar-home, .kl-bar-user, .lg-switch, .kl-bar-right, .kl-bar-icon-btn {
+  border-radius: 6px !important; box-shadow: none !important; background-image: none !important;
+}
+.kl-bar-home, .lg-switch { background: transparent !important; border: 1px solid var(--hair-2) !important; }
+.kl-bar-user-avatar { border-radius: 5px !important; background: #ffffff !important; color: #050506 !important; background-image: none !important; }
+.kl-rail { background: #050506 !important; border-right: 1px solid var(--hair) !important; box-shadow: none !important; }
+.kl-rail-avatar, .lg-switch-avatar, .lg-switch-item-avatar {
+  border-radius: 5px !important; box-shadow: none !important; color: #ffffff !important;
+  background: rgb(var(--lgs-rgb, 236,236,246)) !important;
+}
+.kl-rail-row { border-radius: 5px !important; }
+.kl-rail-row.active { background: rgba(255,255,255,.07) !important; box-shadow: inset 2px 0 0 rgb(var(--lgs-rgb, 236,236,246)) !important; color: #ffffff !important; }
+.kl-rail-row.active .kl-rail-icon { color: #ffffff !important; }
+.kl-rail-wrapped { background: transparent !important; background-image: none !important; border: 1px solid var(--hair-2) !important;
+  border-radius: 6px !important; box-shadow: none !important; }
+.kl-rail-wrapped * { color: #ffffff !important; }
+
+/* ── Player cards: a ticket in club colours, not a wash ── */
+.fv-card { border-radius: 6px !important; }
+.fv-card:not(.fv-card-empty):not(.fv-card-ltil) {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ca, #2a2a31) 78%, #050506) 0, color-mix(in srgb, var(--ca, #2a2a31) 30%, #08080a) 58%, #08080a 100%) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  box-shadow: inset 0 2px 0 var(--cb, #ececf6) !important;
+}
+.fv-card:not(.fv-card-empty):not(.fv-card-ltil):hover { box-shadow: inset 0 2px 0 var(--cb, #ececf6), 0 0 0 1px rgba(255,255,255,.5) !important; transform: translateY(-2px) !important; }
+.fv-stats-bar { background: rgba(0,0,0,.55) !important; border-top: 1px solid rgba(255,255,255,.10) !important; border-radius: 0 0 5px 5px !important; }
+.fv-stat-num { font-weight: 600 !important; }
+.fv-surname { letter-spacing: -.02em; }
+.fv-ribbon { border-radius: 4px !important; box-shadow: none !important; }
+
+/* ── Home hub ── */
+.dh { position: relative; border-radius: 8px; border: 1px solid var(--hair-2); box-shadow: inset 0 2px 0 rgb(var(--team));
+  background:
+    linear-gradient(100deg, rgba(var(--team), .22), rgba(var(--team), 0) 55%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+    var(--panel);
+  background-size: auto, 28px 28px, 28px 28px, auto; }
+.dh::before, .dh::after { content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none; }
+.dh::before { top: 12px; right: 12px; border-top: 1px solid rgba(255,255,255,.6); border-right: 1px solid rgba(255,255,255,.6); }
+.dh::after { bottom: 12px; left: 12px; border-bottom: 1px solid rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.6); z-index: 2; }
+.dh-top { padding: 26px 28px 24px; }
+.dh-when { font-size: 2.9rem; font-weight: 700; }
+.dh-facts { font-family: var(--kl-font-mono); font-size: .8125rem; letter-spacing: .02em; }
+.dh-clock { gap: 0; }
+.dh-unit { min-width: 96px; padding: 0 20px; background: none; border: 0; border-left: 1px solid var(--hair-2); border-radius: 0; text-align: left; }
+.dh-unit b { font-size: 3.4rem; font-weight: 500; letter-spacing: -.06em; }
+.dh-clubs { gap: 0; background: none; border-top: 1px solid var(--hair-2); }
+.dh-club { border-right: 1px solid var(--hair); background: linear-gradient(180deg, rgba(var(--tm), .16), rgba(var(--tm), 0) 70%), #08080a; }
+.dh-club:hover { background: linear-gradient(180deg, rgba(var(--tm), .30), rgba(var(--tm), .04) 70%), #08080a; }
+.dh-club.mine { box-shadow: inset 0 0 0 1px #ffffff; }
+.dh-order { background: transparent; color: #ffffff; border: 1px solid var(--hair-2); font-weight: 600; }
+.dh-bar { height: 3px; border-radius: 0; margin: 14px 0 10px; }
+.dh-bar span { border-radius: 0; }
+.dh-bar i { top: -5px; height: 13px; width: 1px; }
+.dh-status { color: #56d364; } .dh-status.due { color: #e3b341; }
+
+/* ── Draft night ── */
+.draft-banner.dn-stage { border-radius: 8px !important; border: 1px solid var(--hair-2) !important;
+  box-shadow: inset 3px 0 0 rgb(var(--on, 236,236,246)) !important;
+  background:
+    linear-gradient(100deg, rgba(var(--on, 236,236,246), .26), rgba(var(--on, 236,236,246), 0) 60%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+    var(--panel) !important;
+  background-size: auto, 28px 28px, 28px 28px, auto !important; }
+.dn-stage .draft-banner-team { font-size: 2.2rem; font-weight: 700; letter-spacing: -.04em; }
+.dn-slot { background: var(--panel); border: 1px solid var(--hair); height: 40px; }
+.dn-slot.mine { background: rgba(var(--team), .18); border-color: #ffffff; }
+.dn-reveal { border-radius: 8px; box-shadow: inset 0 3px 0 var(--cb, #ececf6), 0 30px 80px rgba(0,0,0,.8); border: 1px solid rgba(255,255,255,.2); }
+.draft-timer { font-weight: 500 !important; letter-spacing: -.05em !important; }
+
+/* ── Trade block, seasons, notes ── */
+.tb-card { border-radius: 8px; border: 1px solid var(--hair-2);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ca, #2a2a31) 62%, #050506) 0, #0a0a0c 34%); box-shadow: inset 0 2px 0 var(--cb, #ececf6); }
+.tb-card.mine { border-color: #ffffff; }
+.tb-card-top { background: rgba(0,0,0,.42); border-bottom: 1px solid rgba(255,255,255,.10); box-shadow: inset 3px 0 0 rgb(var(--tm, 236,236,246)); }
+.tb-nums { border-radius: 5px; background: rgba(0,0,0,.5); }
+.tb-num b { font-weight: 500; font-size: 1.3rem; }
+.tb-note, .pn-note, .why { border-radius: 5px; }
+.sn-premier { border-radius: 8px; border: 1px solid var(--hair-2); box-shadow: inset 3px 0 0 rgb(var(--tm, 236,236,246));
+  background: linear-gradient(100deg, rgba(var(--tm, 236,236,246), .2), transparent 60%), var(--panel); }
+.sn-tab { font-weight: 600; }
+.sn-tab.on { color: #ffffff; border-bottom-color: #ffffff; }
+.sn-year.on, .kx-seg button.on, .kx-chip.on { background: #ffffff !important; border-color: #ffffff !important; color: #050506 !important; }
+.sn-match { border-radius: 5px; background: #08080a; border-color: var(--hair); }
+.fp-stat-v { font-weight: 500; font-size: 1.9rem; letter-spacing: -.05em; }
+.rt { height: 22px; font-weight: 600; font-size: .8125rem; }
+.pos-badge, .draft-pos-chip { font-family: var(--kl-font-mono); letter-spacing: .02em; }
+
+@media (max-width: 991px) {
+  .dh-top { padding: 18px 16px; }
+  .dh-when { font-size: 1.9rem; }
+  .dh-unit { min-width: 0; padding: 0 12px; }
+  .dh-unit:first-child { border-left: 0; padding-left: 0; }
+  .dh-unit b { font-size: 2.2rem; }
+  .dn-stage .draft-banner-team { font-size: 1.5rem; }
 }

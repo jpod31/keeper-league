@@ -355,7 +355,7 @@ export function LineupPage() {
               <i className="bi bi-check-lg me-1"></i>Save Lineup
             </button>
             <button type="button" className="btn btn-outline-primary" onClick={() => save('auto_fill')} disabled={saving}>
-              <i className="bi bi-magic me-1"></i>Auto-Fill
+              <i className="bi bi-sliders2 me-1"></i>Auto-Fill
             </button>
             <button
               type="button"

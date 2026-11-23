@@ -533,7 +533,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       {/* Rookies — bench players U22 with rating < 70 */}
       {(fd.rookies?.length ?? 0) > 0 && (
         <div className="fv-rookies-section">
-          <div className="fv-rookies-hdr"><i className="bi bi-stars me-1"></i>Rookies<span className="fv-zone-tally ms-2">{fd.rookies!.length}</span></div>
+          <div className="fv-rookies-hdr"><i className="bi bi-asterisk me-1"></i>Rookies<span className="fv-zone-tally ms-2">{fd.rookies!.length}</span></div>
           <div className="fv-reserves-grid">{fd.rookies!.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
         </div>
       )}

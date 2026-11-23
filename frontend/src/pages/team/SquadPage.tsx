@@ -175,7 +175,7 @@ function OptimiseMenu({ optimising, onPick }: {
         <span className="rpick-icon" aria-hidden>
           {busy
             ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: '.85rem', height: '.85rem' }}></span>
-            : <i className="bi bi-magic"></i>}
+            : <i className="bi bi-sliders2"></i>}
         </span>
         <span className="rpick-text">
           <span className="rpick-title">{busy ? 'Optimising…' : 'Optimise'}</span>
@@ -994,7 +994,7 @@ function SquadPageInner() {
             {fd && (fd.rookies?.length ?? 0) > 0 && (
               <div className="mob-pos-group">
                 <div className="mob-pos-header" style={{ background: 'rgba(45,212,191,.12)', borderLeft: '3px solid #2dd4bf' }}>
-                  <span className="mob-pos-label" style={{ color: '#2dd4bf' }}><i className="bi bi-stars me-1"></i>ROOKIES</span>
+                  <span className="mob-pos-label" style={{ color: '#2dd4bf' }}><i className="bi bi-asterisk me-1"></i>ROOKIES</span>
                   <span className="mob-pos-count">{fd.rookies!.length}</span>
                 </div>
                 {fd.rookies!.map(p => (
