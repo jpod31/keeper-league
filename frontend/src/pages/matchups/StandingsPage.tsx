@@ -1,4 +1,4 @@
-import { TeamBadge } from '../../components/ui/TeamBadge'
+import { TeamBadge, useTeamAccent } from '../../components/ui/TeamBadge'
 import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
@@ -65,19 +65,6 @@ interface StandingsData {
 }
 
 // Stable deterministic team accent (matches LeagueShell palette)
-const PALETTE: { hex: string; rgb: string }[] = [
-  { hex: '#514e5f', rgb: '81,78,95' },
-  { hex: '#b87f3d', rgb: '184,127,61' },
-  { hex: '#dddbe8', rgb: '221,219,232' },
-  { hex: '#3d8c63', rgb: '61,140,99' },
-  { hex: '#c2932f', rgb: '194,147,47' },
-  { hex: '#b85a4a', rgb: '184,90,74' },
-  { hex: '#514e5f', rgb: '81,78,95' },
-  { hex: '#9d5878', rgb: '157,88,120' },
-]
-function accentFor(id: number) {
-  return PALETTE[(id || 0) % PALETTE.length]
-}
 
 function headlineSlug(h: string): string {
   return (h || 'Steady').toLowerCase().replace(/\s+/g, '')
@@ -476,6 +463,7 @@ const DEFAULT_DIR: Record<SortField, SortDir> = {
 }
 
 export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
+  const accentFor = useTeamAccent()
   const { leagueId } = useParams()
   const isSevens = mode === 'sevens'
   const apiUrl = isSevens

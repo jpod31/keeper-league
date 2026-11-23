@@ -515,7 +515,7 @@ export function CommissionerPage() {
                 <div className="comm-ltil-info">
                   <div className="comm-ltil-player">{lt.player_name}</div>
                   <div className="comm-ltil-meta">
-                    {lt.team_name} &bull; {lt.player_position || '-'} &bull; {lt.added_at ? formatDate(lt.added_at) : '-'}
+                    {lt.team_name}, {lt.player_position || '-'}, {lt.added_at ? formatDate(lt.added_at) : '-'}
                   </div>
                 </div>
                 <div className="comm-ltil-actions">
@@ -548,7 +548,7 @@ export function CommissionerPage() {
                 <div className="comm-ltil-info">
                   <div className="comm-ltil-player">{lt.player_name}</div>
                   <div className="comm-ltil-meta">
-                    {lt.team_name} &bull; {lt.added_at ? formatDate(lt.added_at) : '-'}
+                    {lt.team_name}, {lt.added_at ? formatDate(lt.added_at) : '-'}
                   </div>
                 </div>
                 <div className="comm-ltil-actions">
@@ -657,13 +657,13 @@ export function CommissionerPage() {
                   <div className="comm-ltil-info">
                     <div className="comm-ltil-player">{lt.player_name}</div>
                     <div className="comm-ltil-meta">
-                      {lt.team_name} &bull;{' '}
+                      {lt.team_name},{' '}
                       {lt.status === 'rejected' ? (
                         <span style={{ color: '#f85149' }}>Rejected</span>
                       ) : lt.removed_at ? (
                         <span style={{ color: 'var(--kl-text-primary)' }}>Removed</span>
                       ) : null}
-                      {' '}&bull; {dateStr ? formatDate(dateStr) : '-'}
+                      {', '}{dateStr ? formatDate(dateStr) : '-'}
                     </div>
                   </div>
                 </div>

@@ -53,7 +53,7 @@ export function MobileActionSheet({
           )}
           <div>
             <div className="fv-as-name">{p.name}</div>
-            <div className="fv-as-meta">{p.position} &bull; {p.afl_team} &bull; Age {p.age} &bull; SC {p.sc_avg ? Math.round(p.sc_avg) : '-'}</div>
+            <div className="fv-as-meta">{p.position}, {p.afl_team}, Age {p.age}, SC {p.sc_avg ? Math.round(p.sc_avg) : '-'}</div>
           </div>
         </div>
         <div className="fv-action-sheet-grid">

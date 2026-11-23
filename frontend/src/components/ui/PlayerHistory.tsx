@@ -63,7 +63,7 @@ export function stintExit(e: Stint): string | null {
 export function StintLine({ e, compact = false }: { e: Stint; compact?: boolean }) {
   const s = stintStyle(e)
   return (
-    <div style={{ fontSize: compact ? '.8125rem' : '.8125rem', lineHeight: 1.3, opacity: e.is_active ? 1 : 0.72 }}>
+    <div style={{ fontSize: compact ? '.8125rem' : '.8125rem', lineHeight: 1.3 }}>
       <div style={{ color: '#ececf1', fontWeight: e.is_active ? 700 : 500 }}>{e.team || e.coach || 'Unlisted'}</div>
       <div style={{ color: s.color }}>
         <i className={`bi ${s.icon}`} style={{ marginRight: 4 }}></i>{s.label}

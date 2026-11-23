@@ -249,7 +249,7 @@ function SortableTh({
       onClick={() => sort.toggle(col)}
       style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
     >
-      {children} {arrow && <span style={{ opacity: .7, marginLeft: 2 }}>{arrow}</span>}
+      {children} {arrow && <span style={{ marginLeft: 2 }}>{arrow}</span>}
     </th>
   )
 }

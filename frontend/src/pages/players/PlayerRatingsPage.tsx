@@ -140,7 +140,7 @@ export function PlayerRatingsPage() {
           {movers.length === 0 ? (
             <div className="rm-empty">No {view === 'all' ? 'movers' : view} match these filters.</div>
           ) : (
-            <table className="table table-sm mb-0">
+            <table className="table table-sm mb-0 rm-table">
               <thead><tr>
                 <th style={{ width: 30 }} aria-label="Watchlist"></th>
                 <th style={{ width: 36 }} className="text-center">#</th>

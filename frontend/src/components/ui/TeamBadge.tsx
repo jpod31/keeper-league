@@ -37,3 +37,14 @@ export function TeamBadge({
     </span>
   )
 }
+
+/** A team's own colour as { hex, rgb }, for pages that paint with it. */
+export function useTeamAccent() {
+  const find = useTeamCard()
+  return (id: number | null | undefined): { hex: string; rgb: string } => {
+    const raw = (find(id)?.accent || '#ececf6').replace('#', '')
+    const h = raw.length === 3 ? raw.split('').map(c => c + c).join('') : raw.slice(0, 6)
+    const n = parseInt(h, 16)
+    return { hex: `#${h}`, rgb: `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}` }
+  }
+}

@@ -11718,3 +11718,26 @@ th .sort-icon { opacity: 1 !important; }
 
 /* No glowing text anywhere. */
 *, *::before, *::after { text-shadow: none !important; }
+
+/* Phone: ratings movers keep the name on one line; gameday drops the YOU tag (your crest says it). */
+@media (max-width: 600px) {
+  .rm-table th:nth-child(2), .rm-table td:nth-child(2), .rm-table th:nth-child(6), .rm-table td:nth-child(6) { display: none !important; }
+  .rm-table td strong { white-space: nowrap; }
+  .rm-table th, .rm-table td { padding-left: 6px !important; padding-right: 6px !important; }
+  .gd-hero-you { display: none !important; }
+}
+
+/* A losing side is not greyed out. The winner is bold. */
+.afl-team-row.lose { opacity: 1 !important; }
+.afl-team-row.lose .afl-team-name { font-weight: 500; }
+.sevens-rule-badge { background: none !important; border: 1px solid var(--hair-2) !important; color: #ffffff !important; border-radius: 5px !important; }
+.sevens-rule-badge i { display: none; }
+@media (max-width: 600px) {
+  .br-table th:nth-child(4), .br-table td:nth-child(4) { display: none !important; }
+  .br-table th, .br-table td { padding-left: 8px !important; padding-right: 8px !important; }
+  .br-table td:first-child { min-width: 170px; }
+}
+
+/* Nothing is faded with opacity. Inactive sort arrows are hidden instead of ghosted. */
+.lad-head .lad-sort:not(.active) .lad-sort-chev { display: none !important; }
+.s7-vs, .s7-score-dash, .hero-vs, .hero-score-dash { opacity: 1 !important; }

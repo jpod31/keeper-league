@@ -61,7 +61,7 @@ export function SSPModal({ leagueId, teamId, ltilId, onClose, onSuccess }: Props
                   <div key={p.id} className="ssp-player-row">
                     <div className="ssp-player-info">
                       <span className="ssp-player-name">{p.name}</span>
-                      <span className="ssp-player-meta">{p.afl_team || ''} &bull; {p.position || '-'} &bull; AVG {p.sc_avg ? Math.round(p.sc_avg) : '-'}</span>
+                      <span className="ssp-player-meta">{p.afl_team || ''}, {p.position || '-'}, AVG {p.sc_avg ? Math.round(p.sc_avg) : '-'}</span>
                     </div>
                     <button className="btn btn-sm btn-outline-danger" disabled={picking}
                       onClick={() => handlePick(p.id)} style={{ fontSize: '.8125rem', padding: '2px 10px' }}>

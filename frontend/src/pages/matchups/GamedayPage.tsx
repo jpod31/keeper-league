@@ -2,6 +2,7 @@ import { useParams, Link, useSearchParams } from 'react-router'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
+import { useTeamAccent } from '../../components/ui/TeamBadge'
 import { GamedaySkeleton } from '../../components/ui/GamedaySkeleton'
 import { AnimatedNumber } from '../../components/ui/AnimatedNumber'
 
@@ -37,23 +38,6 @@ interface GamedayData {
   afl_games: AflGame[]; locked_player_ids: number[]
   teams_playing: string[]; afl_matchup_info: Record<string, string>
   team_logos: Record<string, string>; team_abbr: Record<string, string>
-}
-
-// Stadium jewel-tone palette (same as Ladder/Shell, keeps team accents
-// consistent across every page that paints with a team's colour).
-const PALETTE: { hex: string; rgb: string }[] = [
-  { hex: '#514e5f', rgb: '81,78,95' },
-  { hex: '#b87f3d', rgb: '184,127,61' },
-  { hex: '#dddbe8', rgb: '221,219,232' },
-  { hex: '#3d8c63', rgb: '61,140,99' },
-  { hex: '#c2932f', rgb: '194,147,47' },
-  { hex: '#b85a4a', rgb: '184,90,74' },
-  { hex: '#514e5f', rgb: '81,78,95' },
-  { hex: '#9d5878', rgb: '157,88,120' },
-]
-function accentFor(id: number | undefined | null) {
-  const i = id ?? 0
-  return PALETTE[((i % PALETTE.length) + PALETTE.length) % PALETTE.length]
 }
 
 interface ClockState { tone: 'live' | 'upcoming' | 'done'; label: string; sub: string }
@@ -224,10 +208,10 @@ const GAMEDAY_CSS = `
 .gd-prow:hover { background: rgba(33,32,37,.45); }
 
 .gd-pos { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 22px; border-radius: 5px; font-size: .8125rem; font-weight: 800; letter-spacing: .06em; background: rgba(220,218,231,.1); border: 1px solid rgba(220,218,231,.18); color: #e8e7f0; }
-.gd-pos.def { background: rgba(61,138,156,.14); color: #7ec0d3; border-color: rgba(61,138,156,.3); }
-.gd-pos.mid { background: rgba(81,78,95,.14); color: #e4e3ed; border-color: rgba(81,78,95,.3); }
-.gd-pos.ruc { background: rgba(221,219,232,.14); color: #e6e4ee; border-color: rgba(221,219,232,.3); }
-.gd-pos.fwd { background: rgba(184,90,74,.14); color: #e07a6c; border-color: rgba(184,90,74,.3); }
+.gd-pos.def { background: #58a6ff; color: #050506; border-color: #58a6ff; }
+.gd-pos.mid { background: #bc8cff; color: #050506; border-color: #bc8cff; }
+.gd-pos.ruc { background: #3fb950; color: #050506; border-color: #3fb950; }
+.gd-pos.fwd { background: #f0883e; color: #050506; border-color: #f0883e; }
 
 .gd-pbody { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .gd-prow-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
@@ -250,10 +234,10 @@ const GAMEDAY_CSS = `
 .gd-pscore.muted { color: #38363e; }
 
 .gd-prow.locked .gd-pname { color: var(--kl-text-primary); }
-.gd-prow.dnp { opacity: .65; }
+.gd-prow.dnp { opacity: 1; }
 .gd-prow.dnp .gd-pname { color: var(--kl-text-primary); }
-.gd-prow.reserve { opacity: .55; }
-.gd-prow.emg-standby { opacity: .65; }
+.gd-prow.reserve { opacity: 1; }
+.gd-prow.emg-standby { opacity: 1; }
 .gd-prow.emg-standby .gd-pname { color: #c2932f; }
 .gd-prow.subbed-on { background: rgba(61,140,99,.05); }
 
@@ -307,7 +291,7 @@ const GAMEDAY_CSS = `
 .hero-team-block { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .hero-team-right { justify-content: flex-end; }
 .hero-team-detail { min-width: 0; flex: 1; }
-.hero-vs { font-size: .8125rem; font-weight: 800; color: var(--kl-text-faint); letter-spacing: 2px; padding: 0 14px; opacity: .5; flex-shrink: 0; }
+.hero-vs { font-size: .8125rem; font-weight: 800; color: var(--kl-text-faint); letter-spacing: 2px; padding: 0 14px; opacity: 1; flex-shrink: 0; }
 .hero-crest { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 14px; font-weight: 800; font-size: 1rem; letter-spacing: .5px; flex-shrink: 0; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
 .left-initial { background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; }
 .right-initial { background: linear-gradient(145deg, #2b2a30, #514e5f, #bc8cff); color: #fff; }
@@ -322,7 +306,7 @@ const GAMEDAY_CSS = `
 .hero-score-col { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
 .hero-big-score { font-size: 3.4rem; font-weight: 900; line-height: 1; color: var(--kl-text-secondary); font-variant-numeric: tabular-nums; transition: color .4s, text-shadow .4s; }
 .hero-big-score.score-winning { color: #3fb950; text-shadow: 0 0 28px rgba(63,185,80,.4), 0 0 56px rgba(63,185,80,.15); }
-.hero-score-dash { font-size: 2.2rem; font-weight: 300; color: var(--kl-text-faint); line-height: 1; padding-top: 8px; opacity: .4; }
+.hero-score-dash { font-size: 2.2rem; font-weight: 300; color: var(--kl-text-faint); line-height: 1; padding-top: 8px; opacity: 1; }
 .captain-bonus { color: #d29922; font-size: .8125rem; font-weight: 700; margin-top: 3px; white-space: nowrap; }
 .hero-footer { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid rgba(160,160,172,.06); }
 .hero-margin-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 16px; border-radius: 8px; font-size: .8125rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--kl-text-primary); background: rgba(160,160,172,.08); }
@@ -369,14 +353,14 @@ const GAMEDAY_CSS = `
 .gameday-badge-dnp { display: inline-block; background: var(--kl-text-faint); color: var(--kl-text-primary); font-size: .8125rem; font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3; }
 .gameday-badge-emg-active { background: rgba(222,220,233,.18); color: #e3e1ec; border: 1px solid rgba(222,220,233,.3); font-size: .8125rem; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: .3px; margin-right: 3px; }
 .gameday-sub-note { font-size: .8125rem; color: var(--kl-text-primary); font-style: italic; }
-.player-dnp { opacity: 0.75; }
+.player-dnp { opacity: 1; }
 .player-dnp .gameday-player-name { color: var(--kl-text-primary); }
 .score-dnp { color: var(--kl-text-primary) !important; }
-.player-emergency-standby { opacity: 0.6; }
+.player-emergency-standby { opacity: 1; }
 .player-emergency-standby .gameday-player-name { color: #d29922; }
 .score-emg-standby { color: var(--kl-border) !important; }
 .player-subbed-on { background: rgba(35,134,54,.08); }
-.player-reserve { opacity: 0.5; }
+.player-reserve { opacity: 1; }
 .player-reserve .gameday-player-name { color: var(--kl-text-faint); }
 .score-reserve { color: var(--kl-border) !important; }
 .player-yet-to-play .gameday-player-score { color: var(--kl-text-muted); }
@@ -429,13 +413,13 @@ const GAMEDAY_CSS = `
   .gameday-hero { border-radius: 16px; margin: 0 -4px 8px; }
   .hero-teams-row { padding: 16px 14px 0; }
   .hero-big-score { font-size: 2.8rem; min-width: 55px; letter-spacing: -.04em; }
-  .hero-score-dash { font-size: 1.4rem; padding-top: 8px; opacity: .3; }
+  .hero-score-dash { font-size: 1.4rem; padding-top: 8px; opacity: 1; }
   .hero-scores-area { padding: 16px 14px 14px; }
   .hero-team-name { font-size: .82rem; font-weight: 800; }
   .hero-crest { width: 44px; height: 44px; font-size: .9rem; border-radius: 12px; }
   .hero-crest-img { width: 44px; height: 44px; border-radius: 12px; }
   .hero-team-block { gap: 10px; }
-  .hero-vs { padding: 0 6px; font-size: .8125rem; opacity: .4; }
+  .hero-vs { padding: 0 6px; font-size: .8125rem; opacity: 1; }
   .hero-footer { padding: 10px 14px 14px; gap: 6px; }
   .hero-margin-chip { font-size: .8125rem; padding: 5px 14px; border-radius: 10px; }
   .gameday-player-row { padding: 8px 12px; font-size: .8125rem; border-bottom: 1px solid rgba(42,41,47,.2); }
@@ -466,6 +450,7 @@ interface FixtureDetail {
 }
 
 export function GamedayPage() {
+  const accentFor = useTeamAccent()
   const { leagueId } = useParams()
   const [searchParams] = useSearchParams()
   const urlFixtureId = searchParams.get('fixture')
