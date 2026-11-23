@@ -12280,3 +12280,8 @@ th .sort-icon { opacity: 1 !important; }
 body { font-variant-numeric: tabular-nums; }
 .squad-stat-val, .dh2 .dh-unit b, .dh-unit b, .hm-num, .pp-v-num, .dk-kpi-val, .pp-tile-value { letter-spacing: -.04em !important; font-weight: 600 !important; }
 .squad-stat-label, .dh2-label, .dh-unit span, .pp-v-lbl, .dk-kpi-lbl, .pp-tile-label, .pmod-num > span { letter-spacing: .08em !important; font-weight: 600 !important; }
+@media (max-width: 600px) {
+  .rm-table th, .rm-table td, .rm-table2 th, .rm-table2 td { padding-left: 4px !important; padding-right: 4px !important; }
+  .rm-table th:nth-child(1), .rm-table td:nth-child(1), .rm-table2 th:nth-child(1), .rm-table2 td:nth-child(1) { width: 26px !important; }
+  .rm-table .pos-badge, .rm-table2 .pos-badge { padding: 2px 4px !important; }
+}
