@@ -204,12 +204,18 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   later one by `start_new_season`. `/api/leagues/<id>/seasons[/<year>]` is the
   one endpoint for a past year (ladder, results, squads, drafts, trades,
   delistings).
-- **Colour**: black and gold since 2027. No green or blue anywhere. The old
-  variable names survive as roles (`--kl-accent-blue` is gold, `--kl-accent-green`
-  is pale gold); new code uses `--kl-gold`, `--kl-positive`, `--kl-negative`,
-  `--kl-warning`. `tools/retheme.py` is the record of how it was derived and
-  is NOT idempotent. New UI follows the "2027 ADDITIONS" band in style.css:
-  one text colour, nothing under 13px, no grey copy, no gradients or glows.
+- **Colour**: chrome is black and white; colour is only for things that mean
+  something. Never let one house colour take over (a gold scheme was shipped
+  and rejected the same day, 2026-11-23). The sets, each used everywhere:
+  positions (`--pos-def/mid/ruc/fwd`), rating bands (`.rt .rt-elite` to
+  `.rt-low`, potential as `.rt-line`), form (green up, red down), AFL clubs
+  (`clubVars()` in `frontend/src/lib/clubs.ts` sets `--ca`/`--cb` on anything
+  showing a player), and teams (`models/team_identity.py`: `fantasy_team.accent`,
+  from the crest; the signed-in coach's arrives as `--team` on the root).
+  Show a team as a crest (`TeamBadge`), never as a bare name. The old variable
+  names survive as roles (`--kl-accent-blue` is the white interactive colour).
+  `tools/retheme*.py` are the record of the two passes and are not idempotent.
+  New UI: nothing under 13px, no grey copy.
 - **Positional priority for dual-position players**: FWD > DEF > RUC > MID.
 - **Rookie rule**: bench player with `age < 22` AND `rating < 70` → Rookies
   section (field/flex/7s/emergency/injury take precedence). Single source of

@@ -83,6 +83,37 @@ Status key: `[x]` live on keeperlg.com, `[ ]` not done.
 - [x] Proposals published as an artifact (eleven items to pick from).
       Nothing in it is built until picked.
 
+## Round 2, same evening: Lucas's verdict on the first cut
+
+His words: he hated the gold, and hated that it took over the colour of
+things that should have their own colour. The beautification was weak, the
+proposals were changes and not improvements, trades should be open to the
+draft as well, and the draft should use ratings, potentials, club logos and
+coach crests instead of bare names. "More impressive, more immersive, way
+cooler."
+
+- [x] Trades reopened until the draft starts (7:00pm Wed 2 Dec). Managers
+      told. Starting the draft now closes the trade window as well.
+- [x] Gold removed. Second cut (`tools/retheme2.py`): chrome is black and
+      white, and every other colour went back to what it was, so positions,
+      rating bands, form and team colours are distinct again. Logo is white.
+- [x] Your club's colour: each team has a colour (from its crest where it has
+      one: jpod31 crimson, Reservoir Wogs blue; a default until the other four
+      coaches set one). The signed-in coach's colour lights the page, the rail
+      and the home hub.
+- [x] Players wear their AFL club's colours on squad cards, trade block cards
+      and the draft's pick card.
+- [x] Rating bands: one colour per band, potential as an outline, everywhere
+      a rating shows.
+- [x] Crests in place of team names: pool, seasons, trade block, draft room,
+      home hub.
+- [x] Draft room: the club on the clock with crest and colour, an up-next
+      strip, club logos, rating and potential on the board and on every pick,
+      and a card that announces each pick.
+- [x] Home: a live countdown to draft night and every club's list, picks and
+      what it still owes, in draft order.
+- [x] Proposals rewritten as eight ideas that improve the game (same link).
+
 ## Fixed along the way (would have bitten on draft night)
 
 - A club redrafting a player it had delisted crashed the pick. The roster
