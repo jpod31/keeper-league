@@ -41,8 +41,8 @@
                 <span style="font-size:.85rem;">{{ opponent.name }}</span>
               </div>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.7rem;">{{ d.league.name }}</span>
-                <a href="{{ url_for('matchups.gameday', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">View</a>
+                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.8125rem;">{{ d.league.name }}</span>
+                <a href="{{ url_for('matchups.gameday', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.8125rem;padding:2px 8px;">View</a>
               </div>
             </div>
           {% endfor %}
@@ -75,11 +75,11 @@
             <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #1e1d21;">
               <div class="d-flex align-items-center gap-2">
                 {% if won %}
-                  <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.65rem;">W</span>
+                  <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.8125rem;">W</span>
                 {% elif drew %}
-                  <span class="badge" style="background:rgba(160,160,172,.15);color:#a0a0ac;font-size:.65rem;">D</span>
+                  <span class="badge" style="background:rgba(160,160,172,.15);color:var(--kl-text-primary);font-size:.8125rem;">D</span>
                 {% else %}
-                  <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.65rem;">L</span>
+                  <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.8125rem;">L</span>
                 {% endif %}
                 <span style="font-size:.85rem;">
                   <span class="fw-bold">R{{ f.afl_round }}:</span>
@@ -92,7 +92,7 @@
                   vs {{ opponent.name }}
                 </span>
               </div>
-              <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.7rem;">{{ d.league.name }}</span>
+              <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.8125rem;">{{ d.league.name }}</span>
             </div>
           {% endfor %}
         </div>
@@ -119,8 +119,8 @@
                 <span class="fw-bold">{{ d.pending_trades }}</span> pending proposal{{ 's' if d.pending_trades != 1 }}
               </span>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.7rem;">{{ d.league.name }}</span>
-                <a href="{{ url_for('trades.trade_center', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">View</a>
+                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.8125rem;">{{ d.league.name }}</span>
+                <a href="{{ url_for('trades.trade_center', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.8125rem;padding:2px 8px;">View</a>
               </div>
             </div>
           {% endfor %}
@@ -146,19 +146,19 @@
             <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #1e1d21;">
               <div>
                 {% if d.draft.status == 'in_progress' %}
-                  <span class="status-pill status-active" style="font-size:.65rem;">Live</span>
+                  <span class="status-pill status-active" style="font-size:.8125rem;">Live</span>
                   <span style="font-size:.85rem;margin-left:.5rem;">Round {{ d.draft.current_round }}, Pick {{ d.draft.current_pick }}</span>
                 {% elif d.draft.scheduled_start %}
-                  <span class="status-pill status-setup" style="font-size:.65rem;">Scheduled</span>
+                  <span class="status-pill status-setup" style="font-size:.8125rem;">Scheduled</span>
                   <span style="font-size:.85rem;margin-left:.5rem;">{{ d.draft.scheduled_start.strftime('%d %b %Y %I:%M %p') }}</span>
                 {% else %}
-                  <span class="status-pill status-setup" style="font-size:.65rem;">Ready</span>
+                  <span class="status-pill status-setup" style="font-size:.8125rem;">Ready</span>
                   <span style="font-size:.85rem;margin-left:.5rem;">Waiting to start</span>
                 {% endif %}
               </div>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.7rem;">{{ d.league.name }}</span>
-                <a href="{{ url_for('draft_live.draft_room', league_id=d.league.id) }}" class="btn btn-primary btn-sm" style="font-size:.7rem;padding:2px 8px;">Enter</a>
+                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.8125rem;">{{ d.league.name }}</span>
+                <a href="{{ url_for('draft_live.draft_room', league_id=d.league.id) }}" class="btn btn-primary btn-sm" style="font-size:.8125rem;padding:2px 8px;">Enter</a>
               </div>
             </div>
           {% endfor %}
@@ -170,8 +170,8 @@
       {% if not upcoming and not results and not trade_entries and not draft_entries %}
       <div class="card">
         <div class="card-body text-center py-5">
-          <i class="bi bi-lightning" style="font-size:2rem;color:#63616d;"></i>
-          <p class="mt-2 mb-0" style="color:#a0a0ac;font-size:.9rem;">No recent activity across your leagues. Check back once the season gets going!</p>
+          <i class="bi bi-lightning" style="font-size:2rem;color:var(--kl-text-primary);"></i>
+          <p class="mt-2 mb-0" style="color:var(--kl-text-primary);font-size:.9rem;">No recent activity across your leagues. Check back once the season gets going!</p>
         </div>
       </div>
       {% endif %}
@@ -180,7 +180,7 @@
 
     {# ── My Leagues Sidebar (col-4) ── #}
     <div class="col-lg-4">
-      <h6 class="fw-bold mb-3" style="font-size:.8rem;color:#a0a0ac;text-transform:uppercase;letter-spacing:.5px;">My Leagues</h6>
+      <h6 class="fw-bold mb-3" style="font-size:.8125rem;color:var(--kl-text-primary);text-transform:uppercase;letter-spacing:.5px;">My Leagues</h6>
       {% for d in dashboard_data %}
         <a href="{{ url_for('leagues.dashboard', league_id=d.league.id) }}" class="text-decoration-none">
           <div class="card mb-2" style="transition:border-color .15s;cursor:pointer;">
@@ -188,18 +188,18 @@
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="d-flex align-items-center gap-2">
                   <div class="d-inline-flex align-items-center justify-content-center rounded"
-                       style="width:32px;height:32px;background:linear-gradient(135deg,#238636,#514e5f);font-weight:700;color:#fff;border-radius:8px !important;font-size:.75rem;">
+                       style="width:32px;height:32px;background:linear-gradient(135deg,#238636,#514e5f);font-weight:700;color:#fff;border-radius:8px !important;font-size:.8125rem;">
                     {{ d.league.name[0]|upper }}
                   </div>
                   <div>
-                    <div class="fw-bold" style="font-size:.85rem;color:#cfcfd6;">{{ d.league.name }}</div>
-                    <div style="font-size:.7rem;color:#a0a0ac;">{{ d.league.season_year }} &middot; {{ d.league.teams|length }}/{{ d.league.num_teams }} teams</div>
+                    <div class="fw-bold" style="font-size:.85rem;color:var(--kl-text-primary);">{{ d.league.name }}</div>
+                    <div style="font-size:.8125rem;color:var(--kl-text-primary);">{{ d.league.season_year }} &middot; {{ d.league.teams|length }}/{{ d.league.num_teams }} teams</div>
                   </div>
                 </div>
-                <span class="status-pill status-{{ d.league.status }}" style="font-size:.6rem;">{{ d.league.status }}</span>
+                <span class="status-pill status-{{ d.league.status }}" style="font-size:.8125rem;">{{ d.league.status }}</span>
               </div>
               {% if d.team and d.standing %}
-                <div class="d-flex gap-3" style="font-size:.75rem;color:#a0a0ac;">
+                <div class="d-flex gap-3" style="font-size:.8125rem;color:var(--kl-text-primary);">
                   <span><i class="bi bi-trophy me-1" style="color:#3fb950;"></i>{{ d.standing.wins }}W-{{ d.standing.losses }}L{{ '-' ~ d.standing.draws ~ 'D' if d.standing.draws else '' }}</span>
                   <span>{{ d.standing.ladder_points }} pts</span>
                   {% if d.standing.percentage %}
@@ -207,9 +207,9 @@
                   {% endif %}
                 </div>
               {% elif d.team %}
-                <div style="font-size:.75rem;color:#a0a0ac;">{{ d.team.name }}</div>
+                <div style="font-size:.8125rem;color:var(--kl-text-primary);">{{ d.team.name }}</div>
               {% else %}
-                <div style="font-size:.75rem;color:#d29922;">No team yet</div>
+                <div style="font-size:.8125rem;color:#d29922;">No team yet</div>
               {% endif %}
             </div>
           </div>

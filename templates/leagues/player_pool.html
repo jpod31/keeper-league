@@ -7,46 +7,46 @@
 <style>
   .pool-table th {
     padding: .5rem .6rem;
-    font-size: .7rem;
+    font-size: .8125rem;
     border-bottom: 2px solid #2a292f;
     position: relative;
   }
-  .pool-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
+  .pool-table th .sort-icon { font-size: .8125rem; margin-left: 2px; opacity: .4; }
   .pool-table th.sort-active .sort-icon { opacity: 1; color: #ececf6; }
-  .pool-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
+  .pool-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8125rem; }
   .pool-table tbody tr { transition: background .1s; }
   .pool-table tbody tr:hover { background: rgba(236,236,246,.04) !important; }
 
   .profile-tag {
     display: inline-block; padding: 2px 7px; border-radius: 10px;
-    font-size: .6rem; font-weight: 700; white-space: nowrap; letter-spacing: .3px;
+    font-size: .8125rem; font-weight: 700; white-space: nowrap; letter-spacing: .3px;
   }
   .tag-elite { background: linear-gradient(135deg, rgba(255,215,0,.3), rgba(255,170,0,.25)); color: #ffd700; border: 1px solid rgba(255,215,0,.4); }
   .tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(226,224,235,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
   .tag-premium { background: linear-gradient(135deg, rgba(251,146,60,.2), rgba(245,158,11,.15)); color: #fb923c; }
   .tag-rising { background: rgba(16,185,129,.18); color: #10b981; }
-  .tag-breakout { background: rgba(81,78,95,.18); color: #514e5f; }
+  .tag-breakout { background: rgba(81,78,95,.18); color: var(--kl-text-primary); }
   .tag-proven { background: rgba(222,220,233,.15); color: #dedce9; }
-  .tag-steady { background: rgba(186,185,193,.12); color: #bab9c1; }
+  .tag-steady { background: rgba(186,185,193,.12); color: var(--kl-text-primary); }
   .tag-developing { background: rgba(74,222,128,.1); color: #4ade80; }
   .tag-project { background: rgba(234,179,8,.12); color: #eab308; }
   .tag-declining { background: rgba(239,68,68,.15); color: #ef4444; }
-  .tag-veteran { background: rgba(132,130,144,.12); color: #b7b6be; }
-  .tag-fringe { background: rgba(105,103,116,.1); color: #888693; }
-  .pm-tag-hl { font-size:.58rem; color:#8a8895; display:block; margin-top:1px; line-height:1.2; }
+  .tag-veteran { background: rgba(132,130,144,.12); color: var(--kl-text-primary); }
+  .tag-fringe { background: rgba(105,103,116,.1); color: var(--kl-text-primary); }
+  .pm-tag-hl { font-size:.8125rem; color:var(--kl-text-primary); display:block; margin-top:1px; line-height:1.2; }
   .status-chip {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
-    font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
+    font-size: .8125rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
   }
   .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
   .filter-bar .form-control-sm, .filter-bar .form-select-sm {
-    background: #0e0d0f; border-color: #2a292f; font-size: .78rem;
+    background: #0e0d0f; border-color: #2a292f; font-size: .8125rem;
   }
   .pool-count {
-    font-size: .75rem; color: #a0a0ac; white-space: nowrap;
+    font-size: .8125rem; color: var(--kl-text-primary); white-space: nowrap;
     display: flex; align-items: center; gap: .35rem;
   }
-  .pool-count strong { color: #cfcfd6; }
+  .pool-count strong { color: var(--kl-text-primary); }
 
   /* ── Mobile player cards ── */
   .pm-card {
@@ -64,30 +64,30 @@
     font-weight: 700; font-size: .84rem; color: #ebebee;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .pm-pos-badge { padding: 1px 5px; font-size: .55rem; }
-  .pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #8a8895; }
-  .pm-row2 b { color: #cfcfd6; font-weight: 700; }
+  .pm-pos-badge { padding: 1px 5px; font-size: .8125rem; }
+  .pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .8125rem; color: var(--kl-text-primary); }
+  .pm-row2 b { color: var(--kl-text-primary); font-weight: 700; }
   .pm-sep { width: 1px; height: 9px; background: #1e1d21; flex-shrink: 0; }
-  .pm-l3 { color: #cfcfd6; }
+  .pm-l3 { color: var(--kl-text-primary); }
   .pm-l3 b { font-weight: 700; }
-  .pm-l3-delta { font-size: .58rem; font-weight: 700; margin-left: 2px; }
+  .pm-l3-delta { font-size: .8125rem; font-weight: 700; margin-left: 2px; }
   .pm-l3-delta-up { color: #3fb950; }
   .pm-l3-delta-down { color: #f85149; }
-  .pm-l3-delta-flat { color: #63616d; }
+  .pm-l3-delta-flat { color: var(--kl-text-primary); }
   .pm-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
   .pm-sc { font-size: 1.05rem; font-weight: 800; color: #ebebee; line-height: 1; }
-  .pm-sc-none { color: #63616d; font-size: .85rem; }
+  .pm-sc-none { color: var(--kl-text-primary); font-size: .85rem; }
   .pm-owner {
-    font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 3px;
+    font-size: .8125rem; font-weight: 700; padding: 1px 6px; border-radius: 3px;
     white-space: nowrap;
   }
-  .pm-fa { font-size: .58rem; font-weight: 600; color: #3fb950; }
+  .pm-fa { font-size: .8125rem; font-weight: 600; color: #3fb950; }
   .pm-add {
     background: rgba(63,185,80,.12); border: none;
     color: #3fb950; border-radius: 4px;
-    font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px;
+    font-size: .8125rem; font-weight: 700; cursor: pointer; padding: 2px 8px;
   }
-  .pm-wish { font-size: .72rem; color: #2a292f; cursor: pointer; flex-shrink: 0; }
+  .pm-wish { font-size: .8125rem; color: #2a292f; cursor: pointer; flex-shrink: 0; }
 
   /* Hide legacy mobile cards */
   .pool-mob-card {
@@ -106,9 +106,9 @@
 
   .pool-mob-rank {
     width: 28px;
-    font-size: .62rem;
+    font-size: .8125rem;
     font-weight: 800;
-    color: #63616d;
+    color: var(--kl-text-primary);
     text-align: center;
     flex-shrink: 0;
   }
@@ -133,7 +133,7 @@
   .pool-mob-name {
     font-weight: 700;
     font-size: .82rem;
-    color: #cfcfd6;
+    color: var(--kl-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -147,12 +147,12 @@
     margin-top: 1px;
   }
   .pool-mob-age {
-    font-size: .6rem;
-    color: #8a8895;
+    font-size: .8125rem;
+    color: var(--kl-text-primary);
   }
   .pool-mob-inj {
     color: #f85149;
-    font-size: .6rem;
+    font-size: .8125rem;
   }
   .pool-mob-stats {
     flex-shrink: 0;
@@ -162,13 +162,13 @@
   .pool-mob-sc {
     font-size: .85rem;
     font-weight: 800;
-    color: #cfcfd6;
+    color: var(--kl-text-primary);
     line-height: 1;
   }
   .pool-mob-sc-none { color: #2a292f; }
   .pool-mob-sc-label {
-    font-size: .5rem;
-    color: #63616d;
+    font-size: .8125rem;
+    color: var(--kl-text-primary);
     text-transform: uppercase;
     letter-spacing: .5px;
     font-weight: 600;
@@ -180,7 +180,7 @@
   }
   .pool-mob-owner {
     display: inline-block;
-    font-size: .55rem;
+    font-size: .8125rem;
     font-weight: 700;
     padding: 2px 6px;
     border-radius: 6px;
@@ -190,7 +190,7 @@
     text-overflow: ellipsis;
   }
   .pool-mob-avail {
-    font-size: .6rem;
+    font-size: .8125rem;
     font-weight: 700;
     color: #3fb950;
     background: rgba(63,185,80,.1);
@@ -207,7 +207,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: .8rem;
+    font-size: .8125rem;
     cursor: pointer;
   }
   .pool-mob-sentinel {
@@ -230,7 +230,7 @@
   <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
     <div>
       <h2 class="mb-0">Player Pool</h2>
-      <span style="font-size:.78rem;color:#a0a0ac;">Ranked by draft value</span>
+      <span style="font-size:.8125rem;color:var(--kl-text-primary);">Ranked by draft value</span>
     </div>
     <div class="d-flex align-items-center gap-2">
       <div class="pool-count">
@@ -243,7 +243,7 @@
 {% if can_pickup %}
 <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);border-radius:8px;font-size:.82rem;">
   <i class="bi bi-person-plus-fill" style="color:#3fb950;"></i>
-  <span style="color:#cfcfd6;">SSP pickups open — <strong>{{ effective_roster_count }}/{{ league.squad_size }}</strong> roster spots filled{% if ltil_count %} ({{ ltil_count }} on LTIL){% endif %}. Closes at Round {{ ssp_cutoff_round }}.</span>
+  <span style="color:var(--kl-text-primary);">SSP pickups open — <strong>{{ effective_roster_count }}/{{ league.squad_size }}</strong> roster spots filled{% if ltil_count %} ({{ ltil_count }} on LTIL){% endif %}. Closes at Round {{ ssp_cutoff_round }}.</span>
 </div>
 {% endif %}
 
@@ -316,8 +316,8 @@
   <div class="card-body p-0 d-lg-none" id="poolMobWrap" style="max-height:80vh;overflow-y:auto;">
     {# Mobile sort bar #}
     <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid #1e1d21;background:#151518;">
-      <span style="font-size:.7rem;color:#a0a0ac;white-space:nowrap;">Sort:</span>
-      <select class="form-select form-select-sm" id="pool-mob-sort" onchange="sortMobilePool()" style="background:#0e0d0f;border-color:#2a292f;font-size:.75rem;padding:3px 8px;height:auto;width:auto;flex:1;">
+      <span style="font-size:.8125rem;color:var(--kl-text-primary);white-space:nowrap;">Sort:</span>
+      <select class="form-select form-select-sm" id="pool-mob-sort" onchange="sortMobilePool()" style="background:#0e0d0f;border-color:#2a292f;font-size:.8125rem;padding:3px 8px;height:auto;width:auto;flex:1;">
         <option value="sc" selected>SC Avg</option>
         <option value="name_asc">Name A–Z</option>
         <option value="age">Age</option>
@@ -415,7 +415,7 @@
           <th class="sortable" style="width:120px;" onclick="sortPool('tag',this)">Profile <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th style="width:130px;">Acquired</th>
           <th class="text-center" style="width:110px;">Status</th>
-          <th class="text-center" style="width:40px;"><i class="bi bi-star" style="font-size:.75rem;"></i></th>
+          <th class="text-center" style="width:40px;"><i class="bi bi-star" style="font-size:.8125rem;"></i></th>
         </tr>
       </thead>
       <tbody id="pool-body">
@@ -461,7 +461,7 @@
                   <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="team-icon">
                 {% endif %}
                 <span class="p-name">{{ p.name }}</span>
-                <span style="color:#cfcfd6;font-size:.72rem;margin-left:auto;">{{ p.afl_team or '' }}</span>
+                <span style="color:var(--kl-text-primary);font-size:.8125rem;margin-left:auto;">{{ p.afl_team or '' }}</span>
               </a>
             </td>
             {# Position — ordered FWD > DEF > RUC > MID, displayed side-by-side #}
@@ -470,19 +470,19 @@
               <div style="display:flex;gap:3px;flex-wrap:nowrap;">
                 {% for pos in ['FWD', 'DEF', 'RUC', 'MID'] %}
                   {% if pos in player_positions %}
-                    <span class="pos-badge badge-{{ pos|lower }}" style="padding:2px 5px;font-size:.65rem;">{{ pos }}</span>
+                    <span class="pos-badge badge-{{ pos|lower }}" style="padding:2px 5px;font-size:.8125rem;">{{ pos }}</span>
                   {% endif %}
                 {% endfor %}
               </div>
             </td>
             {# Age #}
-            <td class="text-center" style="color:#a0a0ac;">{{ p.age or '-' }}</td>
+            <td class="text-center" style="color:var(--kl-text-primary);">{{ p.age or '-' }}</td>
             {# SC Average #}
             <td class="text-end">
               {% if sc_display %}
                 <span style="font-weight:600;">{{ '%.1f'|format(sc_display) }}</span>
               {% else %}
-                <span style="color:#63616d;">-</span>
+                <span style="color:var(--kl-text-primary);">-</span>
               {% endif %}
             </td>
             {# L3: last 3 games avg + % change vs season avg #}
@@ -491,38 +491,38 @@
                 {% set l3_base = sc_display or pr.l3 %}
                 {% set l3_diff = pr.l3 - l3_base %}
                 {% set l3_pct = (l3_diff / l3_base * 100) if l3_base else 0 %}
-                <span style="font-weight:600;color:#cfcfd6;">{{ '%.0f'|format(pr.l3) }}</span>
-                {% if l3_pct > 2 %}<span style="font-size:.65rem;font-weight:700;color:#3fb950;margin-left:2px;">+{{ '%.0f'|format(l3_pct) }}%</span>
-                {% elif l3_pct < -2 %}<span style="font-size:.65rem;font-weight:700;color:#f85149;margin-left:2px;">{{ '%.0f'|format(l3_pct) }}%</span>
-                {% else %}<span style="font-size:.65rem;color:#63616d;margin-left:2px;">-</span>{% endif %}
+                <span style="font-weight:600;color:var(--kl-text-primary);">{{ '%.0f'|format(pr.l3) }}</span>
+                {% if l3_pct > 2 %}<span style="font-size:.8125rem;font-weight:700;color:#3fb950;margin-left:2px;">+{{ '%.0f'|format(l3_pct) }}%</span>
+                {% elif l3_pct < -2 %}<span style="font-size:.8125rem;font-weight:700;color:#f85149;margin-left:2px;">{{ '%.0f'|format(l3_pct) }}%</span>
+                {% else %}<span style="font-size:.8125rem;color:var(--kl-text-primary);margin-left:2px;">-</span>{% endif %}
               {% else %}
-                <span style="color:#63616d;">-</span>
+                <span style="color:var(--kl-text-primary);">-</span>
               {% endif %}
             </td>
             {# Rating #}
             <td class="text-end">
               {% if p.rating %}
-                <span style="color:#cfcfd6;font-weight:600;">{{ p.rating }}</span>
-              {% else %}<span style="color:#63616d;">-</span>{% endif %}
+                <span style="color:var(--kl-text-primary);font-weight:600;">{{ p.rating }}</span>
+              {% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
             </td>
             {# Rating Movement (current - start of year) #}
             <td class="text-center">
               {% if p.rating and p.rating_start %}
                 {% set rtg_move = p.rating - p.rating_start %}
                 {% if rtg_move > 0 %}
-                  <span style="color:#3fb950;font-weight:600;font-size:.78rem;">+{{ rtg_move }}</span>
+                  <span style="color:#3fb950;font-weight:600;font-size:.8125rem;">+{{ rtg_move }}</span>
                 {% elif rtg_move < 0 %}
-                  <span style="color:#f85149;font-weight:600;font-size:.78rem;">{{ rtg_move }}</span>
+                  <span style="color:#f85149;font-weight:600;font-size:.8125rem;">{{ rtg_move }}</span>
                 {% else %}
-                  <span style="color:#63616d;font-size:.78rem;">-</span>
+                  <span style="color:var(--kl-text-primary);font-size:.8125rem;">-</span>
                 {% endif %}
-              {% else %}<span style="color:#63616d;">-</span>{% endif %}
+              {% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
             </td>
             {# Potential #}
             <td class="text-end">
               {% if p.potential %}
-                <span style="color:#cfcfd6;font-weight:600;">{{ p.potential }}</span>
-              {% else %}<span style="color:#63616d;">-</span>{% endif %}
+                <span style="color:var(--kl-text-primary);font-weight:600;">{{ p.potential }}</span>
+              {% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
             </td>
             {# Profile tag #}
             <td>
@@ -536,10 +536,10 @@
             <td>
               {% set acq = acquired_map.get(p.id) %}
               {% if acq %}
-                <div style="font-size:.7rem;line-height:1.3;">
-                  <span style="color:#cfcfd6;font-weight:600;">{{ acq.coach }}</span>
+                <div style="font-size:.8125rem;line-height:1.3;">
+                  <span style="color:var(--kl-text-primary);font-weight:600;">{{ acq.coach }}</span>
                   {% if acq.get('pick_number') %}
-                  <div style="color:#63616d;">Pick #{{ acq.pick_number }}{% if acq.get('draft_year') %} · {{ acq.draft_year }}{% endif %}{% if acq.draft_type == 'supplemental' %} <span style="color:#d29922;">mid</span>{% endif %}</div>
+                  <div style="color:var(--kl-text-primary);">Pick #{{ acq.pick_number }}{% if acq.get('draft_year') %} · {{ acq.draft_year }}{% endif %}{% if acq.draft_type == 'supplemental' %} <span style="color:#d29922;">mid</span>{% endif %}</div>
                   {% elif acq.method == 'trade' %}
                   <div style="color:#bc8cff;">Trade</div>
                   {% elif acq.method in ('ssp', 'free_agent') %}
@@ -555,7 +555,7 @@
               {% if owner_team %}
                 <span class="status-chip" style="background:{{ tc.bg }};color:{{ tc.fg }};">{{ owner_team }}</span>
               {% elif can_pickup %}
-                <button class="btn btn-sm btn-outline-success py-0 px-2" style="font-size:.72rem;"
+                <button class="btn btn-sm btn-outline-success py-0 px-2" style="font-size:.8125rem;"
                         onclick="event.preventDefault(); showPickupModal({{ p.id }}, '{{ p.name|e }}')">
                   <i class="bi bi-plus-lg me-1"></i>Add
                 </button>
@@ -566,7 +566,7 @@
             {# Wishlist star #}
             <td class="text-center" style="padding:0;vertical-align:middle;">
               <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}" onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"
-                 style="cursor:pointer;font-size:.9rem;color:#8a8895;transition:color .15s;"></i>
+                 style="cursor:pointer;font-size:.9rem;color:var(--kl-text-primary);transition:color .15s;"></i>
             </td>
           </tr>
         {% endfor %}
@@ -587,10 +587,10 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" style="padding:1rem;">
-        <p style="font-size:.85rem;color:#cfcfd6;margin-bottom:.5rem;">
+        <p style="font-size:.85rem;color:var(--kl-text-primary);margin-bottom:.5rem;">
           Add <strong id="pickup-player-name" style="color:#ececf6;"></strong> to your roster?
         </p>
-        <p style="font-size:.75rem;color:#a0a0ac;margin-bottom:0;">
+        <p style="font-size:.8125rem;color:var(--kl-text-primary);margin-bottom:0;">
           Roster: <span id="pickup-roster-count">{{ effective_roster_count }}</span> / {{ league.squad_size }}{% if ltil_count %} <span style="color:#d29922;">({{ ltil_count }} on LTIL)</span>{% endif %}
         </p>
       </div>

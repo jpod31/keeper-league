@@ -1,5 +1,5 @@
 /**
- * MessagesPage — unified messenger. Left: conversation list with League
+ * MessagesPage, unified messenger. Left: conversation list with League
  * Chat pinned at the top as a group chat, then 1:1 DMs. Right: the active
  * thread (ChatPane). League chat is just the default/pinned conversation.
  *
@@ -113,7 +113,7 @@ export function MessagesPage() {
           </div>
         )}
 
-        {/* League chat — pinned group conversation */}
+        {/* League chat, pinned group conversation */}
         <button
           type="button"
           className={`msgr-convo msgr-convo-league${isLeague ? ' active' : ''}`}
@@ -140,7 +140,7 @@ export function MessagesPage() {
             <span className="msgr-avatar">{initials(c.other_team_name)}</span>
             <span className="msgr-convo-body">
               <span className="msgr-convo-name">{c.other_team_name}</span>
-              <span className="msgr-convo-preview">{c.last_message_body || '—'}</span>
+              <span className="msgr-convo-preview">{c.last_message_body || '-'}</span>
             </span>
             <span className="msgr-convo-meta">
               <span className="msgr-convo-time">{relTime(c.last_message_at)}</span>

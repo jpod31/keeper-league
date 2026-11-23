@@ -1,5 +1,5 @@
 /**
- * DashboardSkeleton — layout-aware placeholder for the league
+ * DashboardSkeleton, layout-aware placeholder for the league
  * landing page. Renders the rough three-band shape: hero (round
  * + lockout strip), this-week matchup card, then a row of
  * summary tiles below.

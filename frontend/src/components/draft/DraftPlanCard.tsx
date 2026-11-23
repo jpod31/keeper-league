@@ -19,12 +19,12 @@ const CSS = `
 .dpc { background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 14px; margin-top: 24px; overflow: hidden; }
 .dpc-h { display: flex; align-items: center; gap: 12px; padding: 16px 18px 12px; border-bottom: 1px solid var(--kl-border); flex-wrap: wrap; }
 .dpc-h h5 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--kl-text-heading); }
-.dpc-h p { margin: 2px 0 0; font-size: .8rem; color: var(--kl-text-secondary); }
+.dpc-h p { margin: 2px 0 0; font-size: .8125rem; color: var(--kl-text-secondary); }
 .dpc-h > div { flex: 1; min-width: 200px; }
 .dpc-save { border: 0; border-radius: 9px; padding: 8px 16px; font-size: .84rem; font-weight: 700; background: #ececf6; color: #0d0d0f; }
 .dpc-save:disabled { background: var(--kl-bg-elevated); color: var(--kl-text-muted); }
 .dpc-save:focus-visible { outline: 2px solid #ececf6; outline-offset: 2px; }
-.dpc-note { margin: 12px 18px 0; padding: 9px 12px; border-radius: 9px; font-size: .8rem; display: flex; gap: 8px; align-items: flex-start; }
+.dpc-note { margin: 12px 18px 0; padding: 9px 12px; border-radius: 9px; font-size: .8125rem; display: flex; gap: 8px; align-items: flex-start; }
 .dpc-note.warn { background: rgba(210,153,34,.08); color: #e3b341; border: 1px solid rgba(210,153,34,.25); }
 .dpc-note.err { background: rgba(248,81,73,.08); color: #ff7b72; border: 1px solid rgba(248,81,73,.25); }
 .dpc-note.ok { background: rgba(63,185,80,.08); color: #56d364; border: 1px solid rgba(63,185,80,.25); }

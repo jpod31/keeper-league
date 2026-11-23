@@ -1,5 +1,5 @@
 /**
- * HistoricalSquadView — read-only render of a past round's lineup using
+ * HistoricalSquadView, read-only render of a past round's lineup using
  * the SAME structure the live squad uses:
  *   - desktop → <FieldView> (field background + positioned cards)
  *   - mobile  → position-grouped list (mirrors SquadPage's mob-squad-list)
@@ -84,13 +84,13 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
           </div>
           <div className="mob-pos-meta">
             {(p.position || 'MID').split('/').map(ps => (
-              <span key={ps} className={`pos-badge pos-${ps}`} style={{ fontSize: '.62rem', padding: '1px 5px' }}>{ps}</span>
+              <span key={ps} className={`pos-badge pos-${ps}`} style={{ fontSize: '.8125rem', padding: '1px 5px' }}>{ps}</span>
             ))}
             <span>{p.afl_team || ''}</span>
           </div>
         </div>
         <div className="mob-pos-sc">
-          {p.sc_avg ? <span style={{ color: '#ebebee', fontWeight: 700 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#63616d' }}>-</span>}
+          {p.sc_avg ? <span style={{ color: '#ebebee', fontWeight: 700 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
         </div>
       </div>
     )
@@ -100,7 +100,7 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
     <div className="hsv">
       <div className="hsv-banner">
         <i className="bi bi-clock-history"></i>
-        Viewing R{data.round} archive — read-only
+        Viewing R{data.round} archive, read-only
       </div>
 
       {/* Desktop: real field. Hidden on mobile by .fv-outer's d-none. */}
@@ -125,7 +125,7 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
         {fd.flex_data.some(s => s.player) && (
           <div className="mob-pos-group">
             <div className="mob-pos-header" style={{ background: 'rgba(160,160,172,.15)', borderLeft: '3px solid #a0a0ac' }}>
-              <span className="mob-pos-label" style={{ color: '#a0a0ac' }}>FLEX</span>
+              <span className="mob-pos-label" style={{ color: 'var(--kl-text-primary)' }}>FLEX</span>
               <span className="mob-pos-count">{fd.flex_data.filter(s => s.player).length}/{fd.flex_count}</span>
             </div>
             {fd.flex_data.filter(s => s.player).map(s => <MobRow key={s.player!.id} p={s.player!} />)}
@@ -134,7 +134,7 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
         {fd.emergency_players.length > 0 && (
           <div className="mob-pos-group">
             <div className="mob-pos-header" style={{ background: 'rgba(81,78,95,.1)', borderLeft: '3px solid #514e5f' }}>
-              <span className="mob-pos-label" style={{ color: '#514e5f' }}><i className="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
+              <span className="mob-pos-label" style={{ color: 'var(--kl-text-primary)' }}><i className="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
               <span className="mob-pos-count">{fd.emergency_players.length}</span>
             </div>
             {fd.emergency_players.map(p => <MobRow key={p.id} p={p} badge="E" />)}
@@ -143,7 +143,7 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
         {fd.reserves.length > 0 && (
           <div className="mob-pos-group mob-reserves-group">
             <div className="mob-pos-header" style={{ background: 'rgba(42,41,47,.4)', borderLeft: '3px solid #63616d' }}>
-              <span className="mob-pos-label" style={{ color: '#8a8895' }}>BENCH</span>
+              <span className="mob-pos-label" style={{ color: 'var(--kl-text-primary)' }}>BENCH</span>
               <span className="mob-pos-count">{fd.reserves.length}</span>
             </div>
             {fd.reserves.map(p => <MobRow key={p.id} p={p} />)}

@@ -1,5 +1,5 @@
 /**
- * SortedByLabel — tiny "Sorted by: SC avg ↓" label that sits next to
+ * SortedByLabel, tiny "Sorted by: SC avg ↓" label that sits next to
  * a list/table so the active sort is visible without inspecting headers.
  *
  * Pair with useListSort. Pass the column→label dictionary so

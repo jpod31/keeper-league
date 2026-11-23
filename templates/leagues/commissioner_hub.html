@@ -13,7 +13,7 @@
   <div class="card mb-4" style="border-color:rgba(210,153,34,.35);">
     <div class="card-header d-flex justify-content-between align-items-center" style="background:rgba(210,153,34,.08);border-bottom:1px solid rgba(210,153,34,.2);">
       <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-calendar-range me-2" style="color:#d29922;"></i>Season Controls</h5>
-      <span class="badge" style="background:{% if current_phase == 'midseason' %}#d29922{% elif current_phase == 'offseason' %}#a0a0ac{% elif current_phase == 'regular' %}#3fb950{% elif current_phase == 'finals' %}#f85149{% else %}#ececf6{% endif %};font-size:.7rem;">{{ current_phase|replace('_',' ')|title }}</span>
+      <span class="badge" style="background:{% if current_phase == 'midseason' %}#d29922{% elif current_phase == 'offseason' %}#a0a0ac{% elif current_phase == 'regular' %}#3fb950{% elif current_phase == 'finals' %}#f85149{% else %}#ececf6{% endif %};font-size:.8125rem;">{{ current_phase|replace('_',' ')|title }}</span>
     </div>
     <div class="card-body">
       {# ── Delist progress (when open) ── #}
@@ -23,15 +23,15 @@
             <i class="bi bi-exclamation-triangle-fill" style="color:#f85149;"></i>
             <span style="font-size:.85rem;font-weight:600;color:#f85149;">Delist Period Open</span>
             {% if delist_period.closes_at %}
-              <span class="ms-auto" style="font-size:.75rem;color:#a0a0ac;">Closes {{ delist_period.closes_at.strftime('%d %b') }}</span>
+              <span class="ms-auto" style="font-size:.8125rem;color:var(--kl-text-primary);">Closes {{ delist_period.closes_at.strftime('%d %b') }}</span>
             {% endif %}
           </div>
           {% if all_teams_progress %}
             <div class="row g-1">
               {% for tp in all_teams_progress %}
                 <div class="col-6 col-md-4">
-                  <div class="d-flex justify-content-between align-items-center px-2 py-1" style="background:{% if tp.met %}rgba(63,185,80,.08){% else %}rgba(160,160,172,.05){% endif %};border:1px solid {% if tp.met %}rgba(63,185,80,.2){% else %}rgba(160,160,172,.1){% endif %};border-radius:6px;font-size:.75rem;">
-                    <span style="color:#cfcfd6;">{{ tp.name }}</span>
+                  <div class="d-flex justify-content-between align-items-center px-2 py-1" style="background:{% if tp.met %}rgba(63,185,80,.08){% else %}rgba(160,160,172,.05){% endif %};border:1px solid {% if tp.met %}rgba(63,185,80,.2){% else %}rgba(160,160,172,.1){% endif %};border-radius:6px;font-size:.8125rem;">
+                    <span style="color:var(--kl-text-primary);">{{ tp.name }}</span>
                     <span style="color:{% if tp.met %}#3fb950{% else %}#f85149{% endif %};font-weight:600;">{{ tp.count }}/{{ min_delists }}</span>
                   </div>
                 </div>
@@ -102,9 +102,9 @@
             <a href="/leagues/{{ league.id }}/new-season" class="btn btn-sm btn-success"><i class="bi bi-calendar-plus me-1"></i>Start {{ league.season_year + 1 }} season</a>
           {% endif %}
         {% elif current_phase == 'pre_season' %}
-          <span style="font-size:.8rem;color:#a0a0ac;">Pre-season — set up your draft to get started.</span>
+          <span style="font-size:.8125rem;color:var(--kl-text-primary);">Pre-season — set up your draft to get started.</span>
         {% elif current_phase == 'regular' %}
-          <span style="font-size:.8rem;color:#a0a0ac;">Regular season in progress. Use settings to trigger midseason or offseason.</span>
+          <span style="font-size:.8125rem;color:var(--kl-text-primary);">Regular season in progress. Use settings to trigger midseason or offseason.</span>
         {% endif %}
       </div>
 
@@ -162,7 +162,7 @@
         </div>
         {% endfor %}
       {% else %}
-        <div class="text-center py-3" style="font-size:.8rem;color:#a0a0ac;">No pending LTIL requests</div>
+        <div class="text-center py-3" style="font-size:.8125rem;color:var(--kl-text-primary);">No pending LTIL requests</div>
       {% endif %}
     </div>
   </div>
@@ -193,7 +193,7 @@
         </div>
         {% endfor %}
       {% else %}
-        <div class="text-center py-3" style="font-size:.8rem;color:#a0a0ac;">No active LTIL entries</div>
+        <div class="text-center py-3" style="font-size:.8125rem;color:var(--kl-text-primary);">No active LTIL entries</div>
       {% endif %}
     </div>
   </div>
@@ -207,10 +207,10 @@
       {# Delist a player #}
       <div class="mb-4 pb-3" style="border-bottom:1px solid #1e1d21;">
         <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#f85149;"><i class="bi bi-person-dash me-2"></i>Delist Player</h6>
-        <p style="font-size:.75rem;color:#a0a0ac;margin-bottom:10px;">Remove a player from a team's roster (e.g. incorrect draft pick). Opens up a roster spot.</p>
+        <p style="font-size:.8125rem;color:var(--kl-text-primary);margin-bottom:10px;">Remove a player from a team's roster (e.g. incorrect draft pick). Opens up a roster spot.</p>
         <div class="row g-2 align-items-end">
           <div class="col-md-5">
-            <label class="form-label" style="font-size:.75rem;">Team</label>
+            <label class="form-label" style="font-size:.8125rem;">Team</label>
             <select class="form-select form-select-sm" id="delist-team" onchange="loadTeamRoster('delist')">
               <option value="">Select team...</option>
               {% for t in teams %}
@@ -219,7 +219,7 @@
             </select>
           </div>
           <div class="col-md-5">
-            <label class="form-label" style="font-size:.75rem;">Player</label>
+            <label class="form-label" style="font-size:.8125rem;">Player</label>
             <select class="form-select form-select-sm" id="delist-player" disabled>
               <option value="">Select team first...</option>
             </select>
@@ -230,16 +230,16 @@
             </button>
           </div>
         </div>
-        <div id="delist-result" class="mt-2" style="font-size:.8rem;"></div>
+        <div id="delist-result" class="mt-2" style="font-size:.8125rem;"></div>
       </div>
 
       {# Force move a player #}
       <div>
         <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#ececf6;"><i class="bi bi-arrow-left-right me-2"></i>Force Move Player</h6>
-        <p style="font-size:.75rem;color:#a0a0ac;margin-bottom:10px;">Move a player between teams (e.g. correcting a misplaced draft pick). No trade history created.</p>
+        <p style="font-size:.8125rem;color:var(--kl-text-primary);margin-bottom:10px;">Move a player between teams (e.g. correcting a misplaced draft pick). No trade history created.</p>
         <div class="row g-2 align-items-end">
           <div class="col-md-4">
-            <label class="form-label" style="font-size:.75rem;">From Team</label>
+            <label class="form-label" style="font-size:.8125rem;">From Team</label>
             <select class="form-select form-select-sm" id="move-from-team" onchange="loadTeamRoster('move')">
               <option value="">Select team...</option>
               {% for t in teams %}
@@ -248,13 +248,13 @@
             </select>
           </div>
           <div class="col-md-4">
-            <label class="form-label" style="font-size:.75rem;">Player</label>
+            <label class="form-label" style="font-size:.8125rem;">Player</label>
             <select class="form-select form-select-sm" id="move-player" disabled>
               <option value="">Select team first...</option>
             </select>
           </div>
           <div class="col-md-4">
-            <label class="form-label" style="font-size:.75rem;">To Team</label>
+            <label class="form-label" style="font-size:.8125rem;">To Team</label>
             <select class="form-select form-select-sm" id="move-to-team" disabled>
               <option value="">Select player first...</option>
               {% for t in teams %}
@@ -268,7 +268,7 @@
             <i class="bi bi-arrow-left-right me-1"></i>Move Player
           </button>
         </div>
-        <div id="move-result" class="mt-2" style="font-size:.8rem;"></div>
+        <div id="move-result" class="mt-2" style="font-size:.8125rem;"></div>
       </div>
     </div>
   </div>
@@ -277,7 +277,7 @@
   {% if recent_history %}
   <div class="card mb-4" style="border-color:var(--kl-border);">
     <div class="card-header" style="background:var(--kl-bg-elevated);border-bottom:1px solid var(--kl-border);">
-      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-clock-history me-2" style="color:#a0a0ac;"></i>Recent LTIL History</h5>
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-clock-history me-2" style="color:var(--kl-text-primary);"></i>Recent LTIL History</h5>
     </div>
     <div class="card-body p-0">
       {% for lt in recent_history %}
@@ -288,7 +288,7 @@
             {% if lt.status == 'rejected' %}
               <span style="color:#f85149;">Rejected</span>
             {% elif lt.removed_at %}
-              <span style="color:#a0a0ac;">Removed</span>
+              <span style="color:var(--kl-text-primary);">Removed</span>
             {% endif %}
             &bull; {{ lt.reviewed_at.strftime('%d %b %Y') if lt.reviewed_at else (lt.removed_at.strftime('%d %b %Y') if lt.removed_at else '-') }}
           </div>
@@ -494,12 +494,12 @@ function confirmDeleteLeague() {
   <h6 style="color:#f85149;font-weight:700;font-size:.85rem;margin-bottom:8px;">
     <i class="bi bi-exclamation-triangle-fill me-1"></i>Danger Zone
   </h6>
-  <p style="color:var(--kl-text-faint);font-size:.75rem;margin-bottom:12px;">
+  <p style="color:var(--kl-text-faint);font-size:.8125rem;margin-bottom:12px;">
     Permanently delete <strong style="color:var(--kl-text-primary);">{{ league.name }}</strong> and all associated data — teams, rosters, fixtures, trades, draft history, standings. This cannot be undone.
   </p>
   <form id="deleteLeagueForm" method="POST" action="{{ url_for('leagues.commissioner_delete_league', league_id=league.id) }}">
     <button type="button" onclick="confirmDeleteLeague()" class="btn btn-sm"
-            style="background:rgba(248,81,73,.12);color:#f85149;border:1px solid rgba(248,81,73,.3);font-size:.75rem;padding:5px 16px;border-radius:6px;font-weight:600;">
+            style="background:rgba(248,81,73,.12);color:#f85149;border:1px solid rgba(248,81,73,.3);font-size:.8125rem;padding:5px 16px;border-radius:6px;font-weight:600;">
       <i class="bi bi-trash3 me-1"></i>Delete League
     </button>
   </form>

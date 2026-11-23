@@ -12,7 +12,7 @@
       <h2>Draft Recap</h2>
       <div class="d-flex align-items-center gap-3 mt-1">
         <span class="status-pill status-completed">completed</span>
-        <span style="font-size:.8rem;color:#a0a0ac;">
+        <span style="font-size:.8125rem;color:var(--kl-text-primary);">
           {{ session.draft_round_type|capitalize }}
           {% if session.completed_at %}
             &middot; {{ session.completed_at.strftime('%d %b %Y') }}
@@ -27,7 +27,7 @@
 <div class="card mb-4">
   <div class="card-header">
     <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-      <i class="bi bi-bar-chart me-2" style="color:#a0a0ac;"></i>Team Grades
+      <i class="bi bi-bar-chart me-2" style="color:var(--kl-text-primary);"></i>Team Grades
     </h5>
   </div>
   <div class="card-body">
@@ -38,23 +38,23 @@
             <div class="d-flex justify-content-between align-items-start mb-3">
               <div>
                 <div style="font-size:1rem;font-weight:700;color:#ebebee;">{{ g.team_name }}</div>
-                <div style="font-size:.75rem;color:#a0a0ac;">{{ g.picks_count }} picks</div>
+                <div style="font-size:.8125rem;color:var(--kl-text-primary);">{{ g.picks_count }} picks</div>
               </div>
               <div style="font-size:2rem;font-weight:800;color:{{ g.grade_color }};line-height:1;">
                 {{ g.grade }}
               </div>
             </div>
 
-            <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
-              <span style="color:#a0a0ac;">Total Value</span>
+            <div class="d-flex justify-content-between mb-1" style="font-size:.8125rem;">
+              <span style="color:var(--kl-text-primary);">Total Value</span>
               <span style="color:#ececf6;font-weight:600;">{{ "%.1f"|format(g.total_value) }}</span>
             </div>
-            <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
-              <span style="color:#a0a0ac;">Expected Value</span>
-              <span style="color:#a0a0ac;">{{ "%.1f"|format(g.expected_value) }}</span>
+            <div class="d-flex justify-content-between mb-1" style="font-size:.8125rem;">
+              <span style="color:var(--kl-text-primary);">Expected Value</span>
+              <span style="color:var(--kl-text-primary);">{{ "%.1f"|format(g.expected_value) }}</span>
             </div>
-            <div class="d-flex justify-content-between mb-2" style="font-size:.78rem;">
-              <span style="color:#a0a0ac;">Value +/-</span>
+            <div class="d-flex justify-content-between mb-2" style="font-size:.8125rem;">
+              <span style="color:var(--kl-text-primary);">Value +/-</span>
               {% set diff = g.total_value - g.expected_value %}
               <span style="color:{{ '#3fb950' if diff >= 0 else '#f85149' }};font-weight:600;">
                 {{ "+" if diff >= 0 }}{{ "%.1f"|format(diff) }}
@@ -68,14 +68,14 @@
             </div>
 
             {% if g.best_pick %}
-              <div style="font-size:.72rem;color:#a0a0ac;margin-bottom:2px;">
+              <div style="font-size:.8125rem;color:var(--kl-text-primary);margin-bottom:2px;">
                 <i class="bi bi-arrow-up-circle-fill me-1" style="color:#3fb950;"></i>Best:
                 <span style="color:#ebebee;">{{ g.best_pick.player_name }}</span>
                 <span style="color:#3fb950;">(+{{ "%.1f"|format(g.best_pick.value_diff) }})</span>
               </div>
             {% endif %}
             {% if g.worst_pick %}
-              <div style="font-size:.72rem;color:#a0a0ac;">
+              <div style="font-size:.8125rem;color:var(--kl-text-primary);">
                 <i class="bi bi-arrow-down-circle-fill me-1" style="color:#f85149;"></i>Worst:
                 <span style="color:#ebebee;">{{ g.worst_pick.player_name }}</span>
                 <span style="color:#f85149;">({{ "%.1f"|format(g.worst_pick.value_diff) }})</span>
@@ -92,9 +92,9 @@
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-      <i class="bi bi-list-ol me-2" style="color:#a0a0ac;"></i>Full Draft Board
+      <i class="bi bi-list-ol me-2" style="color:var(--kl-text-primary);"></i>Full Draft Board
     </h5>
-    <span class="badge" style="background:#1e1d21;color:#a0a0ac;font-size:.75rem;">
+    <span class="badge" style="background:#1e1d21;color:var(--kl-text-primary);font-size:.8125rem;">
       {{ picks|length }} picks
     </span>
   </div>
@@ -102,7 +102,7 @@
   <div class="d-lg-none squad-cards-mobile">
     {% for p in picks %}
       <div class="squad-mob-card" style="gap:.5rem;">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#1e1d21;font-size:.7rem;font-weight:700;border-radius:6px;flex-shrink:0;color:#a0a0ac;">{{ p.pick_number }}</span>
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#1e1d21;font-size:.8125rem;font-weight:700;border-radius:6px;flex-shrink:0;color:var(--kl-text-primary);">{{ p.pick_number }}</span>
         {% if p.is_pass %}
           <div class="squad-mob-info">
             <div class="squad-mob-name" style="color:#d29922;">PASS</div>
@@ -110,9 +110,9 @@
           </div>
         {% else %}
           <div class="squad-mob-info">
-            <div class="squad-mob-name">{{ p.player_name }}{% if p.is_auto_pick %} <span style="color:#a0a0ac;font-size:.65rem;">(auto)</span>{% endif %}</div>
+            <div class="squad-mob-name">{{ p.player_name }}{% if p.is_auto_pick %} <span style="color:var(--kl-text-primary);font-size:.8125rem;">(auto)</span>{% endif %}</div>
             <div class="squad-mob-meta">
-              <span class="pos-badge pos-{{ (p.position or 'mid').split('/')[0] }}" style="font-size:.55rem;">{{ p.position or '' }}</span>
+              <span class="pos-badge pos-{{ (p.position or 'mid').split('/')[0] }}" style="font-size:.8125rem;">{{ p.position or '' }}</span>
               <span>{{ p.team_name }}</span>
               <span>Rd {{ p.draft_round }}</span>
             </div>
@@ -120,9 +120,9 @@
           <div style="text-align:right;flex-shrink:0;">
             {% if p.value_diff is not none %}
               <div style="font-weight:700;font-size:.85rem;color:{{ '#3fb950' if p.value_diff >= 0 else '#f85149' }};">{{ "+" if p.value_diff >= 0 }}{{ "%.1f"|format(p.value_diff) }}</div>
-              <div style="font-size:.6rem;color:#a0a0ac;">{{ "%.0f"|format(p.draft_score) if p.draft_score else '-' }} SC</div>
+              <div style="font-size:.8125rem;color:var(--kl-text-primary);">{{ "%.0f"|format(p.draft_score) if p.draft_score else '-' }} SC</div>
             {% else %}
-              <span style="color:#a0a0ac;">-</span>
+              <span style="color:var(--kl-text-primary);">-</span>
             {% endif %}
           </div>
         {% endif %}
@@ -151,11 +151,11 @@
             <tr>
               <td>
                 <span class="d-inline-flex align-items-center justify-content-center rounded"
-                      style="width:28px;height:28px;background:#1e1d21;font-size:.75rem;font-weight:600;border-radius:6px !important;">
+                      style="width:28px;height:28px;background:#1e1d21;font-size:.8125rem;font-weight:600;border-radius:6px !important;">
                   {{ p.pick_number }}
                 </span>
               </td>
-              <td style="color:#a0a0ac;">{{ p.draft_round }}</td>
+              <td style="color:var(--kl-text-primary);">{{ p.draft_round }}</td>
               <td style="font-weight:600;">{{ p.team_name }}</td>
               {% if p.is_pass %}
                 <td><span style="color:#d29922;font-weight:600;">PASS</span></td>
@@ -168,17 +168,17 @@
                 <td>
                   {{ p.player_name }}
                   {% if p.is_auto_pick %}
-                    <span style="color:#a0a0ac;font-size:.7rem;">(auto)</span>
+                    <span style="color:var(--kl-text-primary);font-size:.8125rem;">(auto)</span>
                   {% endif %}
                 </td>
                 <td>
                   <span class="pos-badge badge-{{ (p.position or 'mid').split('/')[0]|lower }}">{{ p.position or '' }}</span>
                 </td>
-                <td style="color:#a0a0ac;">{{ p.afl_team or '' }}</td>
+                <td style="color:var(--kl-text-primary);">{{ p.afl_team or '' }}</td>
                 <td class="text-end" style="color:#ececf6;font-weight:600;">
                   {{ "%.1f"|format(p.draft_score) if p.draft_score else '-' }}
                 </td>
-                <td class="text-end" style="color:#a0a0ac;">
+                <td class="text-end" style="color:var(--kl-text-primary);">
                   {{ "%.1f"|format(p.expected_value) if p.expected_value else '-' }}
                 </td>
                 <td class="text-end">

@@ -1,5 +1,5 @@
 /**
- * LeagueBreadcrumb — interactive league-name link with a hover popover
+ * LeagueBreadcrumb, interactive league-name link with a hover popover
  * showing quick context (round, lockout, your team).
  *
  * Drop in anywhere a breadcrumb currently does:

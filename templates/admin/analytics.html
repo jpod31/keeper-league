@@ -4,38 +4,38 @@
 <style>
   .an-card { background:#151518; border:1px solid #1e1d21; border-radius:10px; overflow:hidden; }
   .an-card-hdr { background:#0e0d0f; border-bottom:1px solid #1e1d21; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; }
-  .an-card-hdr h6 { margin:0; font-size:.78rem; font-weight:700; color:#ebebee; }
+  .an-card-hdr h6 { margin:0; font-size:.8125rem; font-weight:700; color:#ebebee; }
   .an-card-body { padding:16px; }
   .an-stat { text-align:center; padding:16px 8px; }
   .an-stat-val { font-size:1.6rem; font-weight:800; line-height:1; }
-  .an-stat-lbl { font-size:.65rem; color:#8a8895; text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
-  .an-stat-delta { font-size:.7rem; margin-top:2px; }
+  .an-stat-lbl { font-size:.8125rem; color:var(--kl-text-primary); text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+  .an-stat-delta { font-size:.8125rem; margin-top:2px; }
   .an-stat-up { color:#3fb950; }
   .an-stat-down { color:#f85149; }
   .an-filter-bar { display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
-  .an-filter-btn { padding:4px 12px; border-radius:6px; border:1px solid #2a292f; background:transparent; color:#a0a0ac; font-size:.75rem; font-weight:600; cursor:pointer; transition:all .12s; }
-  .an-filter-btn:hover { border-color:#63616d; color:#cfcfd6; }
+  .an-filter-btn { padding:4px 12px; border-radius:6px; border:1px solid #2a292f; background:transparent; color:var(--kl-text-primary); font-size:.8125rem; font-weight:600; cursor:pointer; transition:all .12s; }
+  .an-filter-btn:hover { border-color:#63616d; color:var(--kl-text-primary); }
   .an-filter-btn.active { border-color:#ececf6; color:#ececf6; background:rgba(236,236,246,.08); }
-  .an-user-row { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid #151518; font-size:.8rem; cursor:pointer; transition:background .1s; }
+  .an-user-row { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid #151518; font-size:.8125rem; cursor:pointer; transition:background .1s; }
   .an-user-row:hover { background:rgba(236,236,246,.04); }
   .an-user-row:last-child { border-bottom:none; }
   .an-user-name { font-weight:600; color:#ebebee; flex:1; min-width:0; }
   .an-user-stat { text-align:right; min-width:55px; }
-  .an-user-stat b { color:#cfcfd6; }
-  .an-user-stat small { display:block; color:#8a8895; font-size:.6rem; }
+  .an-user-stat b { color:var(--kl-text-primary); }
+  .an-user-stat small { display:block; color:var(--kl-text-primary); font-size:.8125rem; }
   .an-spark { display:inline-block; vertical-align:middle; }
-  .an-heatmap { display:grid; grid-template-columns:40px repeat(24,1fr); gap:2px; font-size:.6rem; }
+  .an-heatmap { display:grid; grid-template-columns:40px repeat(24,1fr); gap:2px; font-size:.8125rem; }
   .an-hm-cell { border-radius:2px; aspect-ratio:1; display:flex; align-items:center; justify-content:center; color:transparent; transition:all .15s; }
   .an-hm-cell:hover { color:#fff; transform:scale(1.5); z-index:1; position:relative; }
-  .an-hm-lbl { color:#8a8895; display:flex; align-items:center; font-weight:600; }
+  .an-hm-lbl { color:var(--kl-text-primary); display:flex; align-items:center; font-weight:600; }
   .an-top-bar { height:6px; border-radius:3px; background:#1e1d21; overflow:hidden; margin-top:2px; }
   .an-top-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,#3fb950,#514e5f); }
-  .an-loading { text-align:center; padding:40px; color:#63616d; }
+  .an-loading { text-align:center; padding:40px; color:var(--kl-text-primary); }
 </style>
 
 {# ── Filter bar ── #}
 <div class="an-filter-bar">
-  <span style="font-size:.75rem;color:#8a8895;font-weight:600;">Period:</span>
+  <span style="font-size:.8125rem;color:var(--kl-text-primary);font-weight:600;">Period:</span>
   <button class="an-filter-btn" data-preset="today" onclick="setPreset('today')">Today</button>
   <button class="an-filter-btn" data-preset="yesterday" onclick="setPreset('yesterday')">Yesterday</button>
   <button class="an-filter-btn" data-preset="7" onclick="setPreset(7)">7d</button>
@@ -43,18 +43,18 @@
   <button class="an-filter-btn" data-preset="90" onclick="setPreset(90)">90d</button>
   <button class="an-filter-btn" data-preset="365" onclick="setPreset(365)">All</button>
   <span style="width:1px;height:20px;background:#2a292f;margin:0 4px;"></span>
-  <input type="date" id="rangeStart" style="background:#0e0d0f;border:1px solid #2a292f;color:#cfcfd6;border-radius:6px;font-size:.75rem;padding:4px 8px;color-scheme:dark;">
-  <span style="font-size:.7rem;color:#8a8895;">to</span>
-  <input type="date" id="rangeEnd" style="background:#0e0d0f;border:1px solid #2a292f;color:#cfcfd6;border-radius:6px;font-size:.75rem;padding:4px 8px;color-scheme:dark;">
+  <input type="date" id="rangeStart" style="background:#0e0d0f;border:1px solid #2a292f;color:var(--kl-text-primary);border-radius:6px;font-size:.8125rem;padding:4px 8px;color-scheme:dark;">
+  <span style="font-size:.8125rem;color:var(--kl-text-primary);">to</span>
+  <input type="date" id="rangeEnd" style="background:#0e0d0f;border:1px solid #2a292f;color:var(--kl-text-primary);border-radius:6px;font-size:.8125rem;padding:4px 8px;color-scheme:dark;">
   <button class="an-filter-btn" onclick="applyCustomRange()">Apply</button>
   <span style="width:1px;height:20px;background:#2a292f;margin:0 4px;"></span>
-  <select id="userFilter" onchange="setUser(this.value)" style="background:#0e0d0f;border:1px solid #2a292f;color:#cfcfd6;border-radius:6px;font-size:.75rem;padding:4px 8px;">
+  <select id="userFilter" onchange="setUser(this.value)" style="background:#0e0d0f;border:1px solid #2a292f;color:var(--kl-text-primary);border-radius:6px;font-size:.8125rem;padding:4px 8px;">
     <option value="">All Users</option>
     {% for u in all_users %}
     <option value="{{ u.id }}">{{ u.display_name or u.username }}</option>
     {% endfor %}
   </select>
-  <label style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:#cfcfd6;cursor:pointer;">
+  <label style="display:flex;align-items:center;gap:5px;font-size:.8125rem;color:var(--kl-text-primary);cursor:pointer;">
     <input type="checkbox" id="excludeJpod" onchange="setExcludeJpod(this.checked)" style="cursor:pointer;">
     Exclude jpod31
   </label>
@@ -123,9 +123,9 @@
 <div class="an-card mb-3">
   <div class="an-card-hdr" style="display:flex;align-items:center;gap:12px;">
     <h6 style="margin:0;"><i class="bi bi-stack me-2"></i>Page Coverage</h6>
-    <span style="font-size:.7rem;color:#8a8895;">Every route in the app with its share of traffic. Click a column to sort.</span>
+    <span style="font-size:.8125rem;color:var(--kl-text-primary);">Every route in the app with its share of traffic. Click a column to sort.</span>
     <span style="flex:1;"></span>
-    <label style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#cfcfd6;cursor:pointer;">
+    <label style="display:flex;align-items:center;gap:5px;font-size:.8125rem;color:var(--kl-text-primary);cursor:pointer;">
       <input type="checkbox" id="showLowTrafficOnly" onchange="renderCoverage()" style="cursor:pointer;">
       Show only &lt; 1% of traffic
     </label>
@@ -235,7 +235,7 @@ function render(d) {
   var maxV = 1;
   d.heatmap.forEach(function(row){row.forEach(function(v){if(v>maxV)maxV=v;})});
   var html = '<div class="an-hm-lbl"></div>';
-  for(var h=0;h<24;h++) html += '<div class="an-hm-lbl" style="justify-content:center;font-size:.55rem;">'+(h<10?'0':'')+h+'</div>';
+  for(var h=0;h<24;h++) html += '<div class="an-hm-lbl" style="justify-content:center;font-size:.8125rem;">'+(h<10?'0':'')+h+'</div>';
   for(var i=0;i<7;i++){
     html += '<div class="an-hm-lbl">'+days[i]+'</div>';
     for(var j=0;j<24;j++){
@@ -261,10 +261,10 @@ function render(d) {
   var fl = document.getElementById('feature-list');
   var maxF = d.features.length ? d.features[0][1] : 1;
   fl.innerHTML = d.features.map(function(f){
-    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid #151518;font-size:.78rem;">'
-      +'<span style="flex:1;color:#cfcfd6;">'+f[0]+'</span>'
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid #151518;font-size:.8125rem;">'
+      +'<span style="flex:1;color:var(--kl-text-primary);">'+f[0]+'</span>'
       +'<div style="width:80px;"><div class="an-top-bar"><div class="an-top-fill" style="width:'+(f[1]/maxF*100)+'%"></div></div></div>'
-      +'<span style="min-width:40px;text-align:right;font-weight:600;color:#a0a0ac;">'+f[1]+'</span></div>';
+      +'<span style="min-width:40px;text-align:right;font-weight:600;color:var(--kl-text-primary);">'+f[1]+'</span></div>';
   }).join('');
 
   // User table
@@ -290,7 +290,7 @@ function render(d) {
   // Top pages
   var tp = document.getElementById('top-pages');
   var maxP = d.top_pages.length ? d.top_pages[0].views : 1;
-  tp.innerHTML = '<table class="table table-sm table-dark mb-0" style="font-size:.78rem;"><tbody>'
+  tp.innerHTML = '<table class="table table-sm table-dark mb-0" style="font-size:.8125rem;"><tbody>'
     + d.top_pages.map(function(p){
       return '<tr><td style="padding:6px 16px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.path+'</td>'
         +'<td style="width:120px;padding:6px 8px;"><div class="an-top-bar"><div class="an-top-fill" style="width:'+(p.views/maxP*100)+'%"></div></div></td>'
@@ -333,23 +333,23 @@ function renderCoverage() {
   function arrow(col) {
     return _coverageSort.key === col ? (_coverageSort.dir === 'desc' ? ' ▼' : ' ▲') : '';
   }
-  var hdrStyle = 'padding:6px 12px;cursor:pointer;user-select:none;color:#a0a0ac;font-weight:600;text-transform:uppercase;font-size:.65rem;letter-spacing:.5px;';
-  var html = '<table class="table table-sm table-dark mb-0" style="font-size:.78rem;"><thead><tr>'
+  var hdrStyle = 'padding:6px 12px;cursor:pointer;user-select:none;color:var(--kl-text-primary);font-weight:600;text-transform:uppercase;font-size:.8125rem;letter-spacing:.5px;';
+  var html = '<table class="table table-sm table-dark mb-0" style="font-size:.8125rem;"><thead><tr>'
     + '<th style="'+hdrStyle+'" onclick="sortCoverage(\'path\')">Path'+arrow('path')+'</th>'
     + '<th style="'+hdrStyle+'text-align:right;" onclick="sortCoverage(\'views\')">Views'+arrow('views')+'</th>'
     + '<th style="'+hdrStyle+'text-align:right;" onclick="sortCoverage(\'pct_of_traffic\')">% of Traffic'+arrow('pct_of_traffic')+'</th>'
     + '<th style="'+hdrStyle+'text-align:right;" onclick="sortCoverage(\'last_seen\')">Last Visited'+arrow('last_seen')+'</th>'
     + '</tr></thead><tbody>';
   if (!rows.length) {
-    html += '<tr><td colspan="4" style="padding:20px;text-align:center;color:#8a8895;">No pages match the filter.</td></tr>';
+    html += '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--kl-text-primary);">No pages match the filter.</td></tr>';
   } else {
     rows.forEach(function(r){
       var pctCol = r.views === 0 ? '#8a8895' : (r.pct_of_traffic < 0.5 ? '#d29922' : r.pct_of_traffic < 2 ? '#cfcfd6' : '#3fb950');
-      var viewsStyle = r.views === 0 ? 'color:#8a8895;font-style:italic;' : 'font-weight:600;';
-      html += '<tr><td style="padding:5px 12px;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cfcfd6;">'+r.path+'</td>'
+      var viewsStyle = r.views === 0 ? 'color:var(--kl-text-primary);font-style:italic;' : 'font-weight:600;';
+      html += '<tr><td style="padding:5px 12px;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--kl-text-primary);">'+r.path+'</td>'
         + '<td style="padding:5px 12px;text-align:right;'+viewsStyle+'">'+(r.views === 0 ? 'never' : r.views.toLocaleString())+'</td>'
         + '<td style="padding:5px 12px;text-align:right;font-weight:600;color:'+pctCol+';">'+r.pct_of_traffic.toFixed(2)+'%</td>'
-        + '<td style="padding:5px 12px;text-align:right;color:#8a8895;font-size:.72rem;">'+(r.last_seen || '—')+'</td></tr>';
+        + '<td style="padding:5px 12px;text-align:right;color:var(--kl-text-primary);font-size:.8125rem;">'+(r.last_seen || '—')+'</td></tr>';
     });
   }
   html += '</tbody></table>';

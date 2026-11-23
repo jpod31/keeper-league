@@ -87,7 +87,7 @@
                           <a href="{{ url_for('player_detail', name=pick.player.name) }}" style="color:var(--kl-accent-blue);text-decoration:none;">
                             {{ pick.player.name }}
                           </a>
-                          <span class="text-secondary" style="font-size:.75rem;">{{ pick.player.afl_team }}</span>
+                          <span class="text-secondary" style="font-size:.8125rem;">{{ pick.player.afl_team }}</span>
                         {% else %}
                           <span class="text-secondary">—</span>
                         {% endif %}
@@ -119,7 +119,7 @@
                     <i class="bi bi-arrow-left-right text-secondary" style="margin-top:2px;"></i>
                     <div>
                       <div class="fw-semibold">{{ trade.proposer_team.name }} ↔ {{ trade.target_team.name }}</div>
-                      <div class="text-secondary" style="font-size:.75rem;">
+                      <div class="text-secondary" style="font-size:.8125rem;">
                         {{ trade.created_at.strftime('%d %b %Y') }}
                       </div>
                     </div>

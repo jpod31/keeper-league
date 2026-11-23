@@ -46,19 +46,19 @@ const DRAFT_SETUP_STYLE = `
 .draft-order-row.drag-over-below { box-shadow:inset 0 -2px 0 var(--kl-accent-blue); }
 .draft-order-grip { color:var(--kl-text-faint); font-size:1.1rem; width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .draft-order-row.draggable:hover .draft-order-grip { color:var(--kl-text-secondary); }
-.pick-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#1e1d21; font-size:.75rem; font-weight:700; border-radius:6px; color:var(--kl-text-primary); }
+.pick-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#1e1d21; font-size:.8125rem; font-weight:700; border-radius:6px; color:var(--kl-text-primary); }
 .draft-order-info { flex:1; min-width:0; }
 .draft-order-name { font-weight:600; font-size:.85rem; color:var(--kl-text-heading); }
-.draft-order-owner { font-size:.72rem; color:var(--kl-text-muted); }
+.draft-order-owner { font-size:.8125rem; color:var(--kl-text-muted); }
 .draft-order-arrows { display:flex; flex-direction:column; gap:2px; }
-.arrow-btn { background:none; border:1px solid var(--kl-border); color:var(--kl-text-secondary); border-radius:4px; padding:0; width:24px; height:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.65rem; transition:background .12s, color .12s; }
+.arrow-btn { background:none; border:1px solid var(--kl-border); color:var(--kl-text-secondary); border-radius:4px; padding:0; width:24px; height:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.8125rem; transition:background .12s, color .12s; }
 .arrow-btn:hover:not(:disabled) { background:var(--kl-bg-elevated); color:var(--kl-text-heading); }
 .arrow-btn:disabled { opacity:.25; cursor:default; }
 .draft-order-save { padding:.75rem 1rem; border-top:1px solid var(--kl-border); }
 .draft-order-changed .pick-badge { background:var(--kl-accent-blue); color:#fff; }
 @media (max-width:768px) {
   .draft-order-row { padding:.6rem .75rem; gap:.5rem; }
-  .arrow-btn { width:32px; height:28px; font-size:.75rem; }
+  .arrow-btn { width:32px; height:28px; font-size:.8125rem; }
   .draft-order-grip { font-size:1.3rem; }
 }
 `
@@ -276,7 +276,7 @@ export function DraftSetupPage() {
           <div className="card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <i className="bi bi-sort-numeric-down me-2" style={{ color: '#a0a0ac' }}></i>Draft Order
+                <i className="bi bi-sort-numeric-down me-2" style={{ color: 'var(--kl-text-primary)' }}></i>Draft Order
               </h5>
               <button type="button" className="btn btn-outline-secondary btn-sm" onClick={randomize} disabled={!canEditOrder}>
                 <i className="bi bi-shuffle me-1"></i>Randomize
@@ -328,8 +328,8 @@ export function DraftSetupPage() {
           <div className="card mb-4">
             <div className="card-header">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <i className="bi bi-gear me-2" style={{ color: '#a0a0ac' }}></i>Configuration
-                <span className="text-secondary" style={{ fontSize: '.7rem', fontWeight: 400 }}> (set at league creation)</span>
+                <i className="bi bi-gear me-2" style={{ color: 'var(--kl-text-primary)' }}></i>Configuration
+                <span className="text-secondary" style={{ fontSize: '.8125rem', fontWeight: 400 }}> (set at league creation)</span>
               </h5>
             </div>
             <div className="card-body">
@@ -357,10 +357,10 @@ export function DraftSetupPage() {
                   </p>
                   <div className="mb-3">
                     <label className="form-label">
-                      Draft Start Date &amp; Time <span className="text-secondary" style={{ fontSize: '.75rem' }}>(optional)</span>
+                      Draft Start Date &amp; Time <span className="text-secondary" style={{ fontSize: '.8125rem' }}>(optional)</span>
                     </label>
                     <input type="datetime-local" className="form-control form-control-sm" value={scheduledStart} onChange={e => setScheduledStart(e.target.value)} style={{ maxWidth: 280 }} />
-                    <div className="form-text" style={{ fontSize: '.7rem' }}>
+                    <div className="form-text" style={{ fontSize: '.8125rem' }}>
                       {league.draft_scheduled_date && 'Pre-filled from league creation. '}Leave blank to start manually.
                     </div>
                   </div>
@@ -395,20 +395,20 @@ export function DraftSetupPage() {
                         <i className="bi bi-calendar-event" style={{ color: '#d29922' }}></i>
                         <span style={{ fontSize: '.85rem', fontWeight: 600 }}>Scheduled Start</span>
                       </div>
-                      <div style={{ fontSize: '.9rem', color: '#cfcfd6' }}>{formatDateTime(session.scheduled_start)}</div>
+                      <div style={{ fontSize: '.9rem', color: 'var(--kl-text-primary)' }}>{formatDateTime(session.scheduled_start)}</div>
                       <div className="mt-2" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ececf6' }}>
                         <Countdown target={session.scheduled_start} />
                       </div>
                     </div>
                   ) : (
-                    <p className="text-secondary mt-2 mb-0" style={{ fontSize: '.8rem' }}>
-                      <i className="bi bi-info-circle me-1"></i>No scheduled time set — start manually when ready.
+                    <p className="text-secondary mt-2 mb-0" style={{ fontSize: '.8125rem' }}>
+                      <i className="bi bi-info-circle me-1"></i>No scheduled time set, start manually when ready.
                     </p>
                   )}
 
                   <div className="mt-3 d-flex align-items-end gap-2">
                     <div>
-                      <label className="form-label" style={{ fontSize: '.75rem' }}>Update Draft Time</label>
+                      <label className="form-label" style={{ fontSize: '.8125rem' }}>Update Draft Time</label>
                       <input type="datetime-local" className="form-control form-control-sm" value={updateSched} onChange={e => setUpdateSched(e.target.value)} style={{ maxWidth: 250 }} />
                     </div>
                     <button type="button" className="btn btn-outline-secondary btn-sm" onClick={setSchedule}>
@@ -423,7 +423,7 @@ export function DraftSetupPage() {
                   <div className="d-flex align-items-center gap-3">
                     <span className="status-pill status-active">In Progress</span>
                     {session.draft_round_type === 'supplemental' && (
-                      <span className="badge" style={{ background: 'rgba(45,212,191,.15)', color: '#2dd4bf', fontSize: '.7rem' }}>Supplemental</span>
+                      <span className="badge" style={{ background: 'rgba(45,212,191,.15)', color: '#2dd4bf', fontSize: '.8125rem' }}>Supplemental</span>
                     )}
                   </div>
                   <Link to={`/leagues/${leagueId}/draft`} className="btn btn-primary">
@@ -437,7 +437,7 @@ export function DraftSetupPage() {
                   <div className="d-flex align-items-center gap-3">
                     <span className="status-pill status-pending">Paused</span>
                     {session.draft_round_type === 'supplemental' && (
-                      <span className="badge" style={{ background: 'rgba(45,212,191,.15)', color: '#2dd4bf', fontSize: '.7rem' }}>Supplemental</span>
+                      <span className="badge" style={{ background: 'rgba(45,212,191,.15)', color: '#2dd4bf', fontSize: '.8125rem' }}>Supplemental</span>
                     )}
                   </div>
                   <Link to={`/leagues/${leagueId}/draft`} className="btn btn-primary">
@@ -457,7 +457,7 @@ export function DraftSetupPage() {
                   <button type="button" className="btn btn-outline-danger btn-sm" onClick={restartDraft}>
                     <i className="bi bi-arrow-counterclockwise me-1"></i>Restart Draft
                   </button>
-                  <span className="text-secondary ms-2" style={{ fontSize: '.75rem' }}>Deletes draft, clears rosters, unlocks settings</span>
+                  <span className="text-secondary ms-2" style={{ fontSize: '.8125rem' }}>Deletes draft, clears rosters, unlocks settings</span>
                 </div>
               )}
             </div>
@@ -476,18 +476,18 @@ export function DraftSetupPage() {
                   <div className="p-3 mb-3" style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8 }}>
                     <div className="d-flex align-items-center gap-2 mb-2">
                       <i className="bi bi-clock-history" style={{ color: '#d29922', fontSize: '1.1rem' }}></i>
-                      <span style={{ fontSize: '.9rem', fontWeight: 600, color: '#cfcfd6' }}>{formatDateTime(supp_session.scheduled_start)}</span>
+                      <span style={{ fontSize: '.9rem', fontWeight: 600, color: 'var(--kl-text-primary)' }}>{formatDateTime(supp_session.scheduled_start)}</span>
                     </div>
                     <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#2dd4bf' }}>
                       <Countdown target={supp_session.scheduled_start} />
                     </div>
-                    <div className="text-secondary mt-1" style={{ fontSize: '.75rem' }}>
+                    <div className="text-secondary mt-1" style={{ fontSize: '.8125rem' }}>
                       {supp_session.total_rounds} rounds · {teams.length} teams
                     </div>
                   </div>
                 ) : (
                   <p className="text-secondary mb-2" style={{ fontSize: '.85rem' }}>
-                    <i className="bi bi-info-circle me-1"></i>No scheduled time — start manually when ready.
+                    <i className="bi bi-info-circle me-1"></i>No scheduled time, start manually when ready.
                   </p>
                 )}
                 <div className="d-flex gap-2 mt-3">
@@ -512,20 +512,20 @@ export function DraftSetupPage() {
               </div>
               <div className="card-body">
                 <p className="text-secondary mb-3" style={{ fontSize: '.85rem' }}>
-                  Pick from the open player pool — undrafted players and any newly added draftees.
+                  Pick from the open player pool, undrafted players and any newly added draftees.
                 </p>
                 <div className="row g-3 mb-3">
                   <div className="col-md-6">
                     <label className="form-label">Rounds</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={20} value={suppRounds} onChange={e => setSuppRounds(Number(e.target.value))} />
-                    <div className="form-text" style={{ fontSize: '.7rem' }}>Number of rounds in the supplemental draft</div>
+                    <div className="form-text" style={{ fontSize: '.8125rem' }}>Number of rounds in the supplemental draft</div>
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">
-                      Draft Date &amp; Time <span className="text-secondary" style={{ fontSize: '.75rem' }}>(optional)</span>
+                      Draft Date &amp; Time <span className="text-secondary" style={{ fontSize: '.8125rem' }}>(optional)</span>
                     </label>
                     <input type="datetime-local" className="form-control form-control-sm" value={suppSchedStart} onChange={e => setSuppSchedStart(e.target.value)} />
-                    <div className="form-text" style={{ fontSize: '.7rem' }}>Avoid times during live AFL rounds</div>
+                    <div className="form-text" style={{ fontSize: '.8125rem' }}>Avoid times during live AFL rounds</div>
                   </div>
                 </div>
                 <button type="button" className="btn btn-primary" onClick={createSupplemental}>
@@ -538,8 +538,8 @@ export function DraftSetupPage() {
           {showCreateSupp && supp_session && supp_session.status === 'completed' && (
             <div className="card mt-3">
               <div className="card-body text-center py-3">
-                <span className="status-pill status-completed" style={{ fontSize: '.8rem' }}>Previous Supplemental Draft Complete</span>
-                <span className="text-secondary ms-2" style={{ fontSize: '.8rem' }}>{supp_session.total_rounds} rounds</span>
+                <span className="status-pill status-completed" style={{ fontSize: '.8125rem' }}>Previous Supplemental Draft Complete</span>
+                <span className="text-secondary ms-2" style={{ fontSize: '.8125rem' }}>{supp_session.total_rounds} rounds</span>
               </div>
             </div>
           )}
@@ -549,7 +549,7 @@ export function DraftSetupPage() {
             <div className="card-header">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
                 <i className="bi bi-cpu me-2" style={{ color: '#f0883e' }}></i>Mock Draft
-                <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.6rem', verticalAlign: 'middle' }}>SIMULATION</span>
+                <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.8125rem', verticalAlign: 'middle' }}>SIMULATION</span>
               </h5>
             </div>
             <div className="card-body">
@@ -557,7 +557,7 @@ export function DraftSetupPage() {
                 <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                   <div className="d-flex align-items-center gap-2">
                     <span className="status-pill status-active">In Progress</span>
-                    <span className="text-secondary" style={{ fontSize: '.8rem' }}>
+                    <span className="text-secondary" style={{ fontSize: '.8125rem' }}>
                       Round {mock_session.current_round ?? '-'} · Pick {mock_session.current_pick ?? '-'}
                     </span>
                   </div>
@@ -576,7 +576,7 @@ export function DraftSetupPage() {
                 <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                   <div className="d-flex align-items-center gap-2">
                     <span className="status-pill status-completed">Completed</span>
-                    <span className="text-secondary" style={{ fontSize: '.8rem' }}>{mock_session.total_rounds} rounds</span>
+                    <span className="text-secondary" style={{ fontSize: '.8125rem' }}>{mock_session.total_rounds} rounds</span>
                   </div>
                   <div className="d-flex gap-2">
                     <Link to={`/leagues/${leagueId}/draft/mock`} className="btn btn-outline-secondary btn-sm">
@@ -590,13 +590,13 @@ export function DraftSetupPage() {
               )}
 
               <p className="text-secondary mb-3" style={{ fontSize: '.85rem' }}>
-                Simulate a draft where the computer picks for all other teams. Your roster won't be affected — this is just practice.
+                Simulate a draft where the computer picks for all other teams. Your roster won't be affected, this is just practice.
               </p>
               <div className="row g-3 mb-3">
                 <div className="col-md-6">
                   <label className="form-label">Rounds</label>
                   <input type="number" className="form-control form-control-sm" min={1} max={league.squad_size} value={mockRoundsInput} onChange={e => setMockRoundsInput(Number(e.target.value))} />
-                  <div className="form-text" style={{ fontSize: '.7rem' }}>Number of rounds to simulate</div>
+                  <div className="form-text" style={{ fontSize: '.8125rem' }}>Number of rounds to simulate</div>
                 </div>
               </div>
               <button type="button" className="btn btn-warning" onClick={createMock}>

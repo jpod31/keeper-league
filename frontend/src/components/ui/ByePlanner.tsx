@@ -1,5 +1,5 @@
 /**
- * ByePlanner — pill that opens a round-chip popover. Selecting a round
+ * ByePlanner, pill that opens a round-chip popover. Selecting a round
  * drives a "bye preview" on the field: players on bye that round get a
  * partial grey-out on their cards (handled by FieldView via byeIds).
  *

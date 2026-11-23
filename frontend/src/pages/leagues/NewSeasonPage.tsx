@@ -99,19 +99,19 @@ ${CREST_CSS}
 .ns-years .to { font-size: 3.2rem; font-weight: 800; letter-spacing: -.03em; color: var(--kl-text-heading); }
 .ns-status { margin: 12px 0 0; font-size: .92rem; color: var(--kl-text-primary); display: flex; gap: 8px; align-items: center; }
 .ns-status .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.ns-ladder-h { font-size: .8rem; color: var(--kl-text-secondary); margin: 0 0 8px; }
+.ns-ladder-h { font-size: .8125rem; color: var(--kl-text-secondary); margin: 0 0 8px; }
 .ns-ladder { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 8px; }
 @media (max-width: 991px) { .ns-ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .ns-lad { background: var(--kl-bg-body); border: 1px solid var(--kl-border); border-radius: 12px; padding: 10px 8px 9px;
   display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; min-width: 0;
   animation: ns-in .5s var(--kl-ease-out) both; animation-delay: calc(var(--i) * 70ms); }
 .ns-lad.prem { border-color: rgba(227,179,65,.55); background: linear-gradient(180deg, rgba(227,179,65,.10), var(--kl-bg-body) 70%); }
-.ns-lad-pos { font-size: .74rem; font-weight: 700; color: var(--kl-text-muted); font-variant-numeric: tabular-nums; }
+.ns-lad-pos { font-size: .8125rem; font-weight: 700; color: var(--kl-text-muted); font-variant-numeric: tabular-nums; }
 .ns-lad.prem .ns-lad-pos { color: #e3b341; }
-.ns-lad-name { font-size: .8rem; font-weight: 650; color: var(--kl-text-primary); width: 100%; line-height: 1.25; min-height: 2.5em;
+.ns-lad-name { font-size: .8125rem; font-weight: 650; color: var(--kl-text-primary); width: 100%; line-height: 1.25; min-height: 2.5em;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.ns-lad-rec { font-size: .72rem; color: var(--kl-text-muted); font-variant-numeric: tabular-nums; }
-@media (max-width: 575px) { .ns-lad-name { font-size: .74rem; overflow-wrap: normal; word-break: normal; } }
+.ns-lad-rec { font-size: .8125rem; color: var(--kl-text-muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 575px) { .ns-lad-name { font-size: .8125rem; overflow-wrap: normal; word-break: normal; } }
 @keyframes ns-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ns-lad { animation: none; } }
 
@@ -128,21 +128,21 @@ ${CREST_CSS}
 .ns-panel { background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
 .ns-panel-h { padding: 14px 18px 4px; }
 .ns-panel-h h3 { margin: 0; font-size: .98rem; font-weight: 700; color: var(--kl-text-heading); }
-.ns-panel-h p { margin: 2px 0 0; font-size: .8rem; color: var(--kl-text-secondary); }
+.ns-panel-h p { margin: 2px 0 0; font-size: .8125rem; color: var(--kl-text-secondary); }
 
 .ns-check { display: flex; gap: 12px; padding: 13px 18px; border-top: 1px solid var(--kl-border); align-items: flex-start; }
 .ns-check:first-child { border-top: 0; }
 .ns-check > i { font-size: 1.05rem; margin-top: 1px; }
 .ns-check-b { flex: 1; min-width: 0; }
 .ns-check-t { font-size: .9rem; font-weight: 650; color: var(--kl-text-heading); }
-.ns-check-d { font-size: .8rem; color: var(--kl-text-secondary); margin-top: 2px; }
-.ns-check-err { font-size: .8rem; color: #ff7b72; margin-top: 6px; padding: 7px 10px; border-radius: 8px;
+.ns-check-d { font-size: .8125rem; color: var(--kl-text-secondary); margin-top: 2px; }
+.ns-check-err { font-size: .8125rem; color: #ff7b72; margin-top: 6px; padding: 7px 10px; border-radius: 8px;
   background: rgba(248,81,73,.08); border: 1px solid rgba(248,81,73,.22); }
 .ns-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .ns-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--kl-bg-body); border: 1px solid var(--kl-border);
-  border-radius: 999px; padding: 3px 10px 3px 4px; font-size: .78rem; color: var(--kl-text-primary); }
+  border-radius: 999px; padding: 3px 10px 3px 4px; font-size: .8125rem; color: var(--kl-text-primary); }
 .ns-chip b { font-variant-numeric: tabular-nums; }
-.ns-act { flex: none; border-radius: 8px; padding: 6px 12px; font-size: .8rem; font-weight: 650; text-decoration: none; white-space: nowrap;
+.ns-act { flex: none; border-radius: 8px; padding: 6px 12px; font-size: .8125rem; font-weight: 650; text-decoration: none; white-space: nowrap;
   border: 1px solid var(--kl-border-light); background: var(--kl-bg-elevated); color: var(--kl-text-heading); }
 .ns-act:hover { border-color: #ececf6; color: #fff; }
 .ns-act.block { border-color: rgba(248,81,73,.5); background: rgba(248,81,73,.1); color: #ffa198; }
@@ -158,8 +158,8 @@ ${CREST_CSS}
 .ns-row.off { opacity: .42; }
 .ns-row-l { flex: 1 1 200px; min-width: 0; }
 .ns-row-t { font-size: .88rem; font-weight: 600; color: var(--kl-text-primary); }
-.ns-row-p { font-size: .77rem; color: var(--kl-text-secondary); margin-top: 1px; }
-.ns-row-was { font-size: .74rem; color: #e3b341; margin-top: 2px; }
+.ns-row-p { font-size: .8125rem; color: var(--kl-text-secondary); margin-top: 1px; }
+.ns-row-was { font-size: .8125rem; color: #e3b341; margin-top: 2px; }
 @media (max-width: 575px) { .ns-row { flex-wrap: wrap; row-gap: 10px; } .ns-row .ns-seg { margin-left: auto; } }
 
 .ns-num { display: inline-flex; align-items: center; border: 1px solid var(--kl-border); border-radius: 9px; background: var(--kl-bg-body); }
@@ -171,7 +171,7 @@ ${CREST_CSS}
   font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
 .ns-num input::-webkit-inner-spin-button, .ns-num input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .ns-seg { display: inline-flex; background: var(--kl-bg-body); border: 1px solid var(--kl-border); border-radius: 9px; padding: 3px; }
-.ns-seg button { border: 0; background: transparent; color: var(--kl-text-secondary); font-size: .8rem; font-weight: 650; padding: 6px 12px; border-radius: 7px; white-space: nowrap; }
+.ns-seg button { border: 0; background: transparent; color: var(--kl-text-secondary); font-size: .8125rem; font-weight: 650; padding: 6px 12px; border-radius: 7px; white-space: nowrap; }
 .ns-seg button[aria-pressed="true"] { background: rgba(236,236,246,.16); color: #ececf6; }
 .ns-seg button:focus-visible { outline: 2px solid #ececf6; }
 .ns-switch { position: relative; width: 44px; height: 26px; flex: none; }
@@ -185,18 +185,18 @@ ${CREST_CSS}
 .ns-switch input:focus-visible + span { outline: 2px solid #ececf6; outline-offset: 2px; }
 
 .ns-draw-wrap { padding: 4px 18px 16px; }
-.ns-draw-p { font-size: .8rem; color: var(--kl-text-secondary); margin: 0 0 10px; }
+.ns-draw-p { font-size: .8125rem; color: var(--kl-text-secondary); margin: 0 0 10px; }
 .ns-draw { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-variant-numeric: tabular-nums; }
-.ns-draw th { font-size: .74rem; font-weight: 650; color: var(--kl-text-muted); text-align: center; padding: 0 2px 2px; }
+.ns-draw th { font-size: .8125rem; font-weight: 650; color: var(--kl-text-muted); text-align: center; padding: 0 2px 2px; }
 .ns-draw th:first-child { text-align: left; }
 .ns-draw td { text-align: center; padding: 0 2px; }
 .ns-draw-team { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--kl-text-primary); white-space: nowrap; }
-.ns-draw-team small { color: var(--kl-text-muted); width: 26px; font-size: .74rem; }
+.ns-draw-team small { color: var(--kl-text-muted); width: 26px; font-size: .8125rem; }
 .ns-cell { display: inline-grid; place-items: center; width: 30px; height: 26px; border-radius: 7px; font-size: .82rem; font-weight: 650;
   background: var(--kl-bg-body); color: var(--kl-text-muted); }
 .ns-cell.more { color: #79c0ff; box-shadow: inset 0 0 0 1px rgba(236,236,246,.35); }
 .ns-cell.self { background: transparent; color: var(--kl-text-faint); }
-.ns-pill { display: inline-block; font-size: .74rem; font-weight: 650; border-radius: 999px; padding: 2px 9px; }
+.ns-pill { display: inline-block; font-size: .8125rem; font-weight: 650; border-radius: 999px; padding: 2px 9px; }
 .ns-pill.hard { background: rgba(240,136,62,.12); color: #ffa657; }
 .ns-pill.easy { background: rgba(63,185,80,.12); color: #56d364; }
 .ns-pill.even { background: var(--kl-bg-elevated); color: var(--kl-text-secondary); }
@@ -209,7 +209,7 @@ ${CREST_CSS}
 .ns-g:first-child { border-top: 0; }
 .ns-g dt { color: var(--kl-text-secondary); font-weight: 500; }
 .ns-g dd { margin: 0; text-align: right; color: var(--kl-text-primary); font-weight: 600; }
-.ns-g dd s { display: block; font-size: .72rem; color: var(--kl-text-muted); font-weight: 500; }
+.ns-g dd s { display: block; font-size: .8125rem; color: var(--kl-text-muted); font-weight: 500; }
 .ns-g.changed dd { color: #e3b341; }
 .ns-go { padding: 14px 18px 18px; border-top: 1px solid var(--kl-border); }
 .ns-go-btn { width: 100%; border: 0; border-radius: 11px; padding: 12px 14px; font-size: .95rem; font-weight: 750;
@@ -218,8 +218,8 @@ ${CREST_CSS}
 .ns-go-btn:hover:not(:disabled) { filter: brightness(1.08); }
 .ns-go-btn:disabled { background: var(--kl-bg-elevated); color: var(--kl-text-muted); }
 .ns-go-btn:focus-visible { outline: 2px solid #56d364; outline-offset: 3px; }
-.ns-go-note { font-size: .78rem; color: var(--kl-text-secondary); margin-top: 8px; text-align: center; }
-.ns-go-err { font-size: .8rem; color: #ff7b72; margin-bottom: 10px; }
+.ns-go-note { font-size: .8125rem; color: var(--kl-text-secondary); margin-top: 8px; text-align: center; }
+.ns-go-err { font-size: .8125rem; color: #ff7b72; margin-bottom: 10px; }
 .ns-confirm { background: rgba(63,185,80,.07); border: 1px solid rgba(63,185,80,.3); border-radius: 11px; padding: 12px; }
 .ns-confirm p { font-size: .84rem; color: var(--kl-text-primary); margin: 0 0 10px; }
 .ns-confirm-row { display: flex; gap: 8px; }
@@ -236,7 +236,7 @@ ${CREST_CSS}
 .ns-match span.t { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--kl-text-primary); }
 .ns-match span.t.away { justify-content: flex-end; text-align: right; }
 .ns-match span.t em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ns-match span.v { font-size: .74rem; color: var(--kl-text-muted); }
+.ns-match span.v { font-size: .8125rem; color: var(--kl-text-muted); }
 .ns-btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 9px 16px; font-size: .86rem; font-weight: 700; text-decoration: none; }
 .ns-btn.primary { background: #3fb950; color: #04140a; }
 .ns-btn.ghost { border: 1px solid var(--kl-border-light); color: var(--kl-text-primary); }
@@ -654,7 +654,7 @@ export function NewSeasonPage() {
                 <Num label="round" value={s.mid_season_trade_until_round} min={1} max={24} onChange={n => set('mid_season_trade_until_round', n)} />, !s.mid_season_draft_enabled)}
             </div>
 
-            <p style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)' }}>
+            <p style={{ fontSize: '.8125rem', color: 'var(--kl-text-secondary)' }}>
               Formation, scoring rules and lockouts carry over as they are. Change those in <Link to={`/leagues/${leagueId}/settings`}>League Settings</Link>.
             </p>
           </section>

@@ -14,13 +14,13 @@ interface ConfigData {
 interface ScoringRule { stat: string; points: number }
 
 const CREATE_CSS = `
-.preset-btn { font-size: .75rem; padding: 4px 10px; }
-.wiz-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #514e5f; color: #fff; font-size: .7rem; font-weight: 700; margin-right: .5rem; }
+.preset-btn { font-size: .8125rem; padding: 4px 10px; }
+.wiz-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #514e5f; color: #fff; font-size: .8125rem; font-weight: 700; margin-right: .5rem; }
 .uf-cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 12px; }
-.uf-cat-item { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: #cfcfd6; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background .15s; }
+.uf-cat-item { display: flex; align-items: center; gap: 6px; font-size: .8125rem; color: var(--kl-text-primary); cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background .15s; }
 .uf-cat-item:hover { background: rgba(236,236,246,.06); }
 .uf-cat-item input { margin: 0; }
-.stat-category-header { font-size: .75rem; font-weight: 600; color: #ececf6; text-transform: uppercase; letter-spacing: .5px; margin-top: .75rem; margin-bottom: .5rem; border-bottom: 1px solid #1e1d21; padding-bottom: .25rem; }
+.stat-category-header { font-size: .8125rem; font-weight: 600; color: #ececf6; text-transform: uppercase; letter-spacing: .5px; margin-top: .75rem; margin-bottom: .5rem; border-bottom: 1px solid #1e1d21; padding-bottom: .25rem; }
 `
 
 function titleCase(s: string): string {
@@ -193,7 +193,7 @@ export function CreateLeaguePage() {
         redirect: 'manual',
       })
       if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
-      // The Flask route redirects to dashboard on success — we follow up by navigating to /leagues
+      // The Flask route redirects to dashboard on success, we follow up by navigating to /leagues
       navigate('/leagues')
     } catch (err) {
       setError((err as Error).message)
@@ -212,7 +212,7 @@ export function CreateLeaguePage() {
         <span><span className="wiz-num">{num}</span><span className="fw-bold" style={{ fontSize: '.9rem' }}>{label}</span></span>
         <i
           className="bi bi-chevron-down"
-          style={{ color: '#a0a0ac', transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform .2s' }}
+          style={{ color: 'var(--kl-text-primary)', transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform .2s' }}
         ></i>
       </div>
     )
@@ -431,7 +431,7 @@ export function CreateLeaguePage() {
                               <button
                                 type="button"
                                 className="btn btn-outline-secondary btn-sm"
-                                style={{ fontSize: '.7rem', padding: '2px 8px' }}
+                                style={{ fontSize: '.8125rem', padding: '2px 8px' }}
                                 onClick={() => removeRule(idx)}
                               >
                                 <i className="bi bi-x-lg"></i>
@@ -445,7 +445,7 @@ export function CreateLeaguePage() {
                           type="button"
                           className="btn btn-outline-secondary btn-sm"
                           onClick={addRule}
-                          style={{ fontSize: '.8rem' }}
+                          style={{ fontSize: '.8125rem' }}
                         >
                           <i className="bi bi-plus-lg me-1"></i>Add Rule
                         </button>
@@ -470,7 +470,7 @@ export function CreateLeaguePage() {
                         </div>
                       </div>
                       <div className="card-body">
-                        <p className="text-secondary mb-3" style={{ fontSize: '.8rem' }}>
+                        <p className="text-secondary mb-3" style={{ fontSize: '.8125rem' }}>
                           Each selected stat = 1 point to the team with the higher total.
                         </p>
                         {Object.entries(config.stat_categories)
@@ -523,7 +523,7 @@ export function CreateLeaguePage() {
                         <option value="snake">Snake</option>
                         <option value="linear">Linear</option>
                       </select>
-                      <div className="form-text" style={{ color: '#63616d', fontSize: '.7rem' }}>
+                      <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                         Snake reverses pick order each round. Linear keeps the same order.
                       </div>
                     </div>
@@ -541,7 +541,7 @@ export function CreateLeaguePage() {
                           </option>
                         ))}
                       </select>
-                      <div className="form-text" style={{ color: '#63616d', fontSize: '.7rem' }}>
+                      <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                         Time each manager gets per pick
                       </div>
                     </div>
@@ -549,7 +549,7 @@ export function CreateLeaguePage() {
                   <div className="row g-3 mb-3">
                     <div className="col-6">
                       <label htmlFor="draft_scheduled_date" className="form-label">
-                        Draft Date <span className="text-secondary" style={{ fontSize: '.75rem' }}>(optional)</span>
+                        Draft Date <span className="text-secondary" style={{ fontSize: '.8125rem' }}>(optional)</span>
                       </label>
                       <input
                         type="datetime-local"
@@ -558,7 +558,7 @@ export function CreateLeaguePage() {
                         value={draftScheduledDate}
                         onChange={e => setDraftScheduledDate(e.target.value)}
                       />
-                      <div className="form-text" style={{ color: '#63616d', fontSize: '.7rem' }}>
+                      <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                         Leave blank to schedule later
                       </div>
                     </div>
@@ -574,7 +574,7 @@ export function CreateLeaguePage() {
                         <label className="form-check-label" htmlFor="draft_auto_randomize">
                           Auto-randomize draft order
                         </label>
-                        <div className="form-text" style={{ color: '#63616d', fontSize: '.7rem' }}>
+                        <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                           Randomly assign pick order when session starts
                         </div>
                       </div>
@@ -591,7 +591,7 @@ export function CreateLeaguePage() {
               <SectionHeader id="season" num={4} label="Season Rules" />
               {!collapsed.season && (
                 <div className="card-body">
-                  <h6 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a0a0ac' }}>
+                  <h6 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>
                     <i className="bi bi-arrow-repeat me-2"></i>Mid-Season Rules
                   </h6>
                   <div className="form-check mb-2">
@@ -609,7 +609,7 @@ export function CreateLeaguePage() {
                   {midSeasonDraftEnabled && (
                     <div className="row g-3 mb-3">
                       <div className="col-6">
-                        <label htmlFor="mid_season_draft_after_round" className="form-label" style={{ fontSize: '.75rem' }}>
+                        <label htmlFor="mid_season_draft_after_round" className="form-label" style={{ fontSize: '.8125rem' }}>
                           After AFL Round
                         </label>
                         <input
@@ -623,7 +623,7 @@ export function CreateLeaguePage() {
                         />
                       </div>
                       <div className="col-6">
-                        <label htmlFor="mid_season_draft_picks" className="form-label" style={{ fontSize: '.75rem' }}>
+                        <label htmlFor="mid_season_draft_picks" className="form-label" style={{ fontSize: '.8125rem' }}>
                           Picks per Team
                         </label>
                         <input
@@ -641,12 +641,12 @@ export function CreateLeaguePage() {
 
                   <hr style={{ borderColor: '#1e1d21', margin: '1rem 0' }} />
 
-                  <h6 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a0a0ac' }}>
+                  <h6 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>
                     <i className="bi bi-snow me-2"></i>Off-Season Rules
                   </h6>
                   <div className="row g-3">
                     <div className="col-6">
-                      <label htmlFor="offseason_delist_min" className="form-label" style={{ fontSize: '.75rem' }}>
+                      <label htmlFor="offseason_delist_min" className="form-label" style={{ fontSize: '.8125rem' }}>
                         Min Delists per Team
                       </label>
                       <input
@@ -685,41 +685,41 @@ export function CreateLeaguePage() {
               <SectionHeader id="roster" num={5} label="Roster & Lineup" />
               {!collapsed.roster && (
                 <div className="card-body">
-                  <h6 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a0a0ac' }}>
+                  <h6 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>
                     <i className="bi bi-diagram-3 me-2"></i>On-Field Formation
                   </h6>
                   <div className="row g-2 mb-3">
                     <div className="col">
-                      <label className="form-label" style={{ fontSize: '.75rem', color: '#ececf6' }}>DEF</label>
+                      <label className="form-label" style={{ fontSize: '.8125rem', color: '#ececf6' }}>DEF</label>
                       <input type="number" className="form-control form-control-sm" min={2} max={8}
                         value={defCount} onChange={e => setDefCount(Number(e.target.value))} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontSize: '.75rem', color: '#bc8cff' }}>MID</label>
+                      <label className="form-label" style={{ fontSize: '.8125rem', color: '#bc8cff' }}>MID</label>
                       <input type="number" className="form-control form-control-sm" min={3} max={10}
                         value={midCount} onChange={e => setMidCount(Number(e.target.value))} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontSize: '.75rem', color: '#f0883e' }}>FWD</label>
+                      <label className="form-label" style={{ fontSize: '.8125rem', color: '#f0883e' }}>FWD</label>
                       <input type="number" className="form-control form-control-sm" min={2} max={8}
                         value={fwdCount} onChange={e => setFwdCount(Number(e.target.value))} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontSize: '.75rem', color: '#3fb950' }}>RUC</label>
+                      <label className="form-label" style={{ fontSize: '.8125rem', color: '#3fb950' }}>RUC</label>
                       <input type="number" className="form-control form-control-sm" min={1} max={3}
                         value={rucCount} onChange={e => setRucCount(Number(e.target.value))} />
                     </div>
                   </div>
                   <div className="row g-2 mb-2">
                     <div className="col-4">
-                      <label className="form-label" style={{ fontSize: '.75rem', color: '#d29922' }}>
+                      <label className="form-label" style={{ fontSize: '.8125rem', color: '#d29922' }}>
                         <i className="bi bi-lightning-charge me-1"></i>FLEX
                       </label>
                       <input type="number" className="form-control form-control-sm" min={0} max={5}
                         value={flexCount} onChange={e => setFlexCount(Number(e.target.value))} />
                     </div>
                   </div>
-                  <div className="form-text" style={{ color: '#63616d', fontSize: '.75rem' }}>
+                  <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                     Flex slots appear in the sidebar and score. Any position eligible.
                   </div>
                 </div>

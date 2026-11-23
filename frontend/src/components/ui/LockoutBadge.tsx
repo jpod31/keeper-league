@@ -1,5 +1,5 @@
 /**
- * LockoutBadge — single anchored pill in the top bar showing AFL round
+ * LockoutBadge, single anchored pill in the top bar showing AFL round
  * and the countdown to next lockout. Replaces the old horizontal
  * LockoutBanner strip that sat above the field view.
  *
@@ -59,7 +59,7 @@ export function LockoutBadge({ round, lockoutTime, squadHref }: LockoutBadgeProp
     setSlotEl(document.getElementById('kl-bar-lockout-slot'))
   }, [])
 
-  // Tick every second so the countdown stays live. Cheap — single setInterval.
+  // Tick every second so the countdown stays live. Cheap, single setInterval.
   useEffect(() => {
     if (!lockoutTime) return
     const id = setInterval(() => setTick(t => t + 1), 1000)
@@ -72,7 +72,7 @@ export function LockoutBadge({ round, lockoutTime, squadHref }: LockoutBadgeProp
   const diff = target - Date.now()
   const urgency = urgencyFor(diff)
   const display = formatCountdown(diff)
-  // tick is read so React knows this render depends on it — referencing
+  // tick is read so React knows this render depends on it, referencing
   // it directly here keeps the effect dependency-free.
   void tick
 
@@ -87,8 +87,8 @@ export function LockoutBadge({ round, lockoutTime, squadHref }: LockoutBadgeProp
       onClick={onClick}
       title={
         urgency === 'locked'
-          ? `Round ${round} — lockout active`
-          : `Round ${round} — next lockout at ${new Date(lockoutTime).toLocaleString()}`
+          ? `Round ${round}, lockout active`
+          : `Round ${round}, next lockout at ${new Date(lockoutTime).toLocaleString()}`
       }
       aria-label={`Round ${round}, ${urgency === 'locked' ? 'lockout active' : `next lockout in ${display}`}`}
     >

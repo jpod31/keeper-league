@@ -1,5 +1,5 @@
 /**
- * ChatPane — the right-hand thread of the messenger. Handles BOTH the
+ * ChatPane, the right-hand thread of the messenger. Handles BOTH the
  * league group chat and 1:1 DMs behind one component, since they're the
  * same UI (message list + composer + live socket), only the endpoints
  * and socket rooms differ.
@@ -40,7 +40,7 @@ export function ChatPane({ leagueId, mode, convoId, onSent }: {
   const meRef = useRef<number | null>(null)
 
   // NOTE: the parent keys this component per conversation, so it remounts
-  // on switch — that re-runs the socket effect (joins the right room) and
+  // on switch, that re-runs the socket effect (joins the right room) and
   // refetches. useSocket joins its room in onConnect, which fires on the
   // fresh mount's connect.
   useEffect(() => {
@@ -118,7 +118,7 @@ export function ChatPane({ leagueId, mode, convoId, onSent }: {
           <div className="empty-state">
             <div className="empty-icon"><i className="bi bi-chat-text"></i></div>
             <h4>{mode === 'league' ? 'No messages yet' : 'Start the conversation'}</h4>
-            <p>{mode === 'league' ? 'Kick off the league chat — share a take or rattle a trade partner.' : 'Say hi — propose a trade, ask a question, or shoot the breeze.'}</p>
+            <p>{mode === 'league' ? 'Kick off the league chat, share a take or rattle a trade partner.' : 'Say hi, propose a trade, ask a question, or shoot the breeze.'}</p>
           </div>
         ) : messages.map(m => {
           const mine = m.sender_user_id === meRef.current

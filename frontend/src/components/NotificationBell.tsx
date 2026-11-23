@@ -133,7 +133,7 @@ export function NotificationBell() {
                 onClick={() => setOpen(false)}
               />
 
-              {/* Panel — slides in from right on desktop, up from bottom on mobile */}
+              {/* Panel, slides in from right on desktop, up from bottom on mobile */}
               <motion.aside
                 key="kl-notif-drawer"
                 className="kl-drawer"

@@ -191,7 +191,7 @@ export interface SeasonReviewData {
   available: boolean
   year: number
   league: { id: number; name: string; teams: number; rounds: number; scoring: string }
-  /** Round numbers the season ran, in order — the x-axis for presence strips. */
+  /** Round numbers the season ran, in order, the x-axis for presence strips. */
   rounds: number[]
   cover: {
     total_points: number
@@ -208,7 +208,7 @@ export interface SeasonReviewData {
     per_team: Record<string, PlayerCard[]>
     perfect: PlayerCard[]
     perfect_count: number
-    /** Weeks available to a typical player — the honest denominator. */
+    /** Weeks available to a typical player, the honest denominator. */
     max_rounds: number
   }
   best_23: {

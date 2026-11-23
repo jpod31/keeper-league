@@ -87,16 +87,16 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
   const beats: string[] = []
   if (o?.has_data) {
     const verdict = o.finals_pct >= 75 ? 'firmly in the finals picture' : o.finals_pct >= 45 ? 'on the bubble' : 'facing an uphill run'
-    beats.push(`Across ${o.remaining} simulated rounds you land ${verdict} — **${o.finals_pct}%** of seasons see you play September, most often as the **${ordinal(o.median_seed)} seed**.`)
+    beats.push(`Across ${o.remaining} simulated rounds you land ${verdict}, **${o.finals_pct}%** of seasons see you play September, most often as the **${ordinal(o.median_seed)} seed**.`)
   }
   if (d?.has_data) {
-    const consistency = d.cv <= 7 ? 'remarkably stable week to week' : d.cv <= 11 ? 'fairly steady' : 'high-variance — boom or bust'
-    const reliance = d.top3_share >= 35 ? `top-heavy — **${d.top3_share}%** of output rides on three names` : `well spread (${d.eff_scorers} effective scorers, top-3 just ${d.top3_share}%)`
+    const consistency = d.cv <= 7 ? 'remarkably stable week to week' : d.cv <= 11 ? 'fairly steady' : 'high-variance, boom or bust'
+    const reliance = d.top3_share >= 35 ? `top-heavy, **${d.top3_share}%** of output rides on three names` : `well spread (${d.eff_scorers} effective scorers, top-3 just ${d.top3_share}%)`
     beats.push(`Your weekly score is ${consistency} (±${d.sd}); scoring is ${reliance}. If your gun misses, you shed **${d.fragility}%** of output.`)
   }
   if (mix.length) {
     const top = mix.slice(0, 2).map(x => `${x.n}× ${x.name}`).join(' and ')
-    beats.push(`Style-wise your squad leans on ${top}${u.has_data ? ` — mapped from ${u.n_players} players across ${u.variance_explained}% of league style variance` : ''}.`)
+    beats.push(`Style-wise your squad leans on ${top}${u.has_data ? `, mapped from ${u.n_players} players across ${u.variance_explained}% of league style variance` : ''}.`)
   }
 
   return (
@@ -117,7 +117,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
       </div>
 
       <div className="dk-grid">
-        {/* HERO — style universe */}
+        {/* HERO, style universe */}
         <div className="dk-universe">
           <div className="dk-panel-head"><span className="dk-panel-title">◈ STYLE UNIVERSE</span>
             <span className="dk-panel-meta">{u?.has_data ? `${u.n_players} players · PCA ${u.variance_explained}% · your ${u.owned_count} glow` : 'mapping…'}</span></div>

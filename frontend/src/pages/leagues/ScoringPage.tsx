@@ -128,18 +128,18 @@ export function ScoringPage() {
             <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>Hybrid Configuration</h5></div>
             <div className="card-body">
               <div className="mb-3">
-                <label className="form-label" style={{ fontSize: '.8rem' }}>Base system</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>Base system</label>
                 <select className="form-select form-select-sm" value={hybridBase} onChange={e => setHybridBase(e.target.value)}>
                   <option value="supercoach">SuperCoach</option>
                   <option value="afl_fantasy">AFL Fantasy</option>
                 </select>
               </div>
               <div className="mb-3">
-                <label className="form-label" style={{ fontSize: '.8rem' }}>Base weight: {Math.round(hybridWeight * 100)}%</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>Base weight: {Math.round(hybridWeight * 100)}%</label>
                 <input type="range" className="form-range" min={0} max={1} step={0.05} value={hybridWeight} onChange={e => setHybridWeight(Number(e.target.value))} />
               </div>
               <div className="mb-3">
-                <label className="form-label" style={{ fontSize: '.8rem' }}>Custom mode</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>Custom mode</label>
                 <select className="form-select form-select-sm" value={hybridMode} onChange={e => setHybridMode(e.target.value)}>
                   <option value="points">Points</option>
                   <option value="percentage">Percentage</option>
@@ -153,7 +153,7 @@ export function ScoringPage() {
           <div className="card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>Ultimate Footy Categories</h5>
-              <span className="text-secondary" style={{ fontSize: '.75rem' }}>{ufCats.length} selected</span>
+              <span className="text-secondary" style={{ fontSize: '.8125rem' }}>{ufCats.length} selected</span>
             </div>
             <div className="card-body">
               <div className="d-flex flex-wrap gap-2">

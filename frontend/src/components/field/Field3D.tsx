@@ -141,7 +141,7 @@ function GoalPosts({ z }: { z: number }) {
 }
 
 /**
- * Single PlayerMarker. NO <Html> portals — just three.js primitives.
+ * Single PlayerMarker. NO <Html> portals, just three.js primitives.
  * Tooltip is rendered outside the Canvas in a React overlay.
  */
 function PlayerMarker({
@@ -262,7 +262,7 @@ export function Field3D({ players, teamColor = '#ececf6', onPlayerClick }: Props
       position: 'absolute', inset: 0, display: 'flex',
       alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 8, padding: 20, textAlign: 'center',
-      background: '#0e0d0f', color: '#a0a0ac', fontSize: 14,
+      background: '#0e0d0f', color: 'var(--kl-text-primary)', fontSize: 14,
     }}>
       <i className="bi bi-exclamation-triangle" style={{ fontSize: 28, color: '#d29922' }}></i>
       <div>3D view unavailable. Check the browser console for the specific error.</div>
@@ -279,13 +279,13 @@ export function Field3D({ players, teamColor = '#ececf6', onPlayerClick }: Props
       border: '1px solid ' + (hovered.player.is_captain ? '#d29922'
         : hovered.player.is_vice_captain ? '#bc8cff' : teamColor),
       borderRadius: 8, padding: '8px 12px', minWidth: 160,
-      color: '#cfcfd6', fontSize: 12, zIndex: 5,
+      color: 'var(--kl-text-primary)', fontSize: 13, zIndex: 5,
       boxShadow: '0 4px 20px rgba(0,0,0,.6)',
       fontFamily: 'Geist, sans-serif', whiteSpace: 'nowrap',
     }}>
       <div style={{ fontWeight: 700, fontSize: 13, color: '#ebebee' }}>{hovered.player.name}</div>
-      <div style={{ color: '#a0a0ac', fontSize: 11 }}>
-        {hovered.player.afl_team || '—'} · {hovered.player.position}
+      <div style={{ color: 'var(--kl-text-primary)', fontSize: 13 }}>
+        {hovered.player.afl_team || '-'} · {hovered.player.position}
       </div>
       <div style={{ marginTop: 4, display: 'flex', gap: 10 }}>
         <span>SC <b style={{ color: '#ececf6' }}>{Math.round(hovered.player.sc_avg || 0)}</b></span>
@@ -293,9 +293,9 @@ export function Field3D({ players, teamColor = '#ececf6', onPlayerClick }: Props
           <span>Rd <b style={{ color: '#3fb950' }}>{Math.round(hovered.player.score)}</b></span>}
       </div>
       {hovered.player.is_captain &&
-        <div style={{ marginTop: 4, color: '#d29922', fontWeight: 800, fontSize: 10 }}>CAPTAIN (2×)</div>}
+        <div style={{ marginTop: 4, color: '#d29922', fontWeight: 800, fontSize: 13 }}>CAPTAIN (2×)</div>}
       {hovered.player.is_vice_captain &&
-        <div style={{ marginTop: 4, color: '#bc8cff', fontWeight: 800, fontSize: 10 }}>VICE CAPTAIN</div>}
+        <div style={{ marginTop: 4, color: '#bc8cff', fontWeight: 800, fontSize: 13 }}>VICE CAPTAIN</div>}
     </div>
   )
 
@@ -345,7 +345,7 @@ export function Field3D({ players, teamColor = '#ececf6', onPlayerClick }: Props
       <div style={{
         position: 'absolute', bottom: 10, left: 10,
         background: 'rgba(14,13,15,.6)', border: '1px solid rgba(42,41,47,.6)',
-        borderRadius: 6, padding: '4px 10px', color: '#a0a0ac', fontSize: 11,
+        borderRadius: 6, padding: '4px 10px', color: 'var(--kl-text-primary)', fontSize: 13,
         pointerEvents: 'none',
       }}>
         <i className="bi bi-mouse me-1"></i>drag to rotate · scroll to zoom · tap a player

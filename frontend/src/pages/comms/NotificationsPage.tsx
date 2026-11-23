@@ -93,12 +93,12 @@ export function NotificationsPage() {
                 <div className="flex-grow-1">
                   <div style={{ fontSize: '.85rem', fontWeight: n.is_read ? 400 : 600 }}>{n.title}</div>
                   {n.body && (
-                    <div style={{ fontSize: '.75rem', color: '#a0a0ac', marginTop: 2 }}>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginTop: 2 }}>
                       {n.body.substring(0, 120)}
                     </div>
                   )}
                 </div>
-                <span style={{ fontSize: '.7rem', color: '#63616d', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', whiteSpace: 'nowrap' }}>
                   {n.created_at}
                 </span>
               </a>

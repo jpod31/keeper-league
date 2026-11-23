@@ -31,7 +31,7 @@
     <i class="bi bi-inbox"></i>Incoming
     {% set pending_count = incoming|selectattr('status', 'equalto', 'pending')|list|length %}
     {% if pending_count %}
-      <span class="badge" style="background:#f85149;font-size:.55rem;margin-left:4px;border-radius:8px;">{{ pending_count }}</span>
+      <span class="badge" style="background:#f85149;font-size:.8125rem;margin-left:4px;border-radius:8px;">{{ pending_count }}</span>
     {% endif %}
   </a>
   <a class="league-subtab{{ ' active' if tab == 'outgoing' }}"
@@ -50,10 +50,10 @@
       <div>
         <div class="d-flex align-items-center gap-2 mb-1">
           <strong style="font-size:.9rem;">{{ trade.proposer_team.name }}</strong>
-          <i class="bi bi-arrow-left-right" style="color:#63616d;font-size:.75rem;"></i>
+          <i class="bi bi-arrow-left-right" style="color:var(--kl-text-primary);font-size:.8125rem;"></i>
           <strong style="font-size:.9rem;">{{ trade.recipient_team.name }}</strong>
         </div>
-        <div style="font-size:.75rem;color:#a0a0ac;">
+        <div style="font-size:.8125rem;color:var(--kl-text-primary);">
           {{ trade.assets|length }} player(s) &middot; {{ trade.proposed_at.strftime('%d %b %Y %H:%M') }}
         </div>
       </div>

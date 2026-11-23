@@ -58,27 +58,27 @@ const STYLE = `
 .stat-card:hover { transform: none; }
 .stat-card .card-header { border-bottom: 1px solid rgba(220,218,231,.12); padding: 10px 14px; background: rgba(25,24,28,.55); }
 .stat-card .card-header h6 { margin: 0; font-size: .85rem; font-weight: 700; color: #f5f5f7; display: flex; align-items: center; gap: 6px; }
-.stat-table th { padding: 8px 10px; font-size: .58rem; color: #8c8c98; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; border-bottom: 1px solid rgba(220,218,231,.18); }
-.stat-table td { padding: 7px 10px; font-size: .8rem; vertical-align: middle; color: #ececf1; border-bottom: 1px solid rgba(220,218,231,.06); }
+.stat-table th { padding: 8px 10px; font-size: .8125rem; color: var(--kl-text-primary); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid rgba(220,218,231,.18); }
+.stat-table td { padding: 7px 10px; font-size: .8125rem; vertical-align: middle; color: #ececf1; border-bottom: 1px solid rgba(220,218,231,.06); }
 .stat-table tbody tr:hover { background: rgba(81,78,95,.05); }
-.stat-rank { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:.65rem; font-weight:800; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1, "zero" 0; }
+.stat-rank { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:.8125rem; font-weight:800; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1, "zero" 0; }
 .rank-1 { background:rgba(194,147,47,.18); color:#f0d27a; border:1px solid rgba(194,147,47,.4); }
 .rank-2 { background:rgba(210,209,217,.14); color:#dfdee4; border:1px solid rgba(210,209,217,.3); }
 .rank-3 { background:rgba(184,127,61,.18); color:#d6a779; border:1px solid rgba(184,127,61,.36); }
-.rank-other { background:rgba(220,218,231,.08); color:#8c8c98; }
-.pos-bar-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:.75rem; }
-.pos-bar-label { min-width:40px; color:#a0a0ac; font-weight:600; }
+.rank-other { background:rgba(220,218,231,.08); color:var(--kl-text-primary); }
+.pos-bar-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:.8125rem; }
+.pos-bar-label { min-width:40px; color:var(--kl-text-primary); font-weight:600; }
 .pos-bar-track { flex:1; height:18px; background:#0e0d0f; border-radius:3px; overflow:hidden; }
 .pos-bar-fill { height:100%; border-radius:3px; transition:width .3s; }
-.pos-bar-value { font-size:.72rem; color:#cfcfd6; font-weight:600; min-width:48px; text-align:right; }
-.bye-impact-row { display:flex; align-items:center; gap:.5rem; padding:.4rem 0; border-bottom:1px solid #1e1d21; font-size:.78rem; }
+.pos-bar-value { font-size:.8125rem; color:var(--kl-text-primary); font-weight:600; min-width:48px; text-align:right; }
+.bye-impact-row { display:flex; align-items:center; gap:.5rem; padding:.4rem 0; border-bottom:1px solid #1e1d21; font-size:.8125rem; }
 .bye-impact-row:last-child { border-bottom:none; }
-.bye-round-badge { display:inline-flex; align-items:center; justify-content:center; min-width:28px; padding:2px 8px; border-radius:12px; font-size:.7rem; font-weight:700; background:#1e1d21; color:#a0a0ac; }
+.bye-round-badge { display:inline-flex; align-items:center; justify-content:center; min-width:28px; padding:2px 8px; border-radius:12px; font-size:.8125rem; font-weight:700; background:#1e1d21; color:var(--kl-text-primary); }
 .trend-svg { width:100%; height:260px; }
 .trend-svg .line { fill:none; stroke:#ececf6; stroke-width:2; }
 .trend-svg .dot { fill:#ececf6; }
 .trend-svg .axis { stroke:#2a292f; stroke-width:1; }
-.trend-svg .tick-label { fill:#8a8895; font-size:10px; font-family:system-ui; }
+.trend-svg .tick-label { fill:#8a8895; font-size:.8125rem; font-family:system-ui; }
 `
 
 const POS_COLORS: Record<string, string> = {
@@ -90,7 +90,7 @@ function rankClass(i: number) {
 }
 
 function TrendChart({ rounds }: { rounds: { round: number; score: number }[] }) {
-  if (!rounds.length) return <div className="text-center text-secondary py-3" style={{ fontSize: '.8rem' }}>No round data</div>
+  if (!rounds.length) return <div className="text-center text-secondary py-3" style={{ fontSize: '.8125rem' }}>No round data</div>
   const W = 600, H = 240, P = 32
   const xs = rounds.map(r => r.round)
   const ys = rounds.map(r => r.score)
@@ -144,7 +144,7 @@ export function StatsPage() {
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>
             <h2 className="mb-0">Advanced Stats</h2>
-            <span style={{ fontSize: '.78rem', color: '#a0a0ac' }}>Season Analytics</span>
+            <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Season Analytics</span>
           </div>
         </div>
       </div>
@@ -170,9 +170,9 @@ export function StatsPage() {
                     <tr key={p.id}>
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
-                      <td style={{ color: '#a0a0ac' }}>{p.fantasy_team || '-'}</td>
+                      <td style={{ color: 'var(--kl-text-primary)' }}>{p.fantasy_team || '-'}</td>
                       <td className="text-end"><strong style={{ color: '#ececf6' }}>{p.avg.toFixed(1)}</strong></td>
-                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.games}</td>
+                      <td className="text-end" style={{ color: 'var(--kl-text-primary)' }}>{p.games}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -190,7 +190,7 @@ export function StatsPage() {
                     <tr key={p.id}>
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
-                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.avg.toFixed(1)}</td>
+                      <td className="text-end" style={{ color: 'var(--kl-text-primary)' }}>{p.avg.toFixed(1)}</td>
                       <td className="text-end"><strong style={{ color: '#3fb950' }}>{p.std_dev.toFixed(1)}</strong></td>
                     </tr>
                   ))}
@@ -210,8 +210,8 @@ export function StatsPage() {
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
                       <td className="text-end"><strong style={{ color: '#d29922' }}>{p.ceiling}</strong></td>
-                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.avg.toFixed(1)}</td>
-                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.best_round}</td>
+                      <td className="text-end" style={{ color: 'var(--kl-text-primary)' }}>{p.avg.toFixed(1)}</td>
+                      <td className="text-end" style={{ color: 'var(--kl-text-primary)' }}>{p.best_round}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -229,8 +229,8 @@ export function StatsPage() {
                     <tr key={`${p.name}-${i}`}>
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
-                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.prev_avg.toFixed(1)}</td>
-                      <td className="text-end" style={{ color: '#cfcfd6' }}>{p.curr_avg.toFixed(1)}</td>
+                      <td className="text-end" style={{ color: 'var(--kl-text-primary)' }}>{p.prev_avg.toFixed(1)}</td>
+                      <td className="text-end" style={{ color: 'var(--kl-text-primary)' }}>{p.curr_avg.toFixed(1)}</td>
                       <td className="text-end"><strong style={{ color: '#e4e3ed' }}>+{p.improvement.toFixed(1)}</strong></td>
                     </tr>
                   ))}
@@ -250,7 +250,7 @@ export function StatsPage() {
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
                       <td className="text-end"><strong style={{ color: '#f85149' }}>{p.games}</strong></td>
-                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.avg.toFixed(1)}</td>
+                      <td className="text-end" style={{ color: 'var(--kl-text-primary)' }}>{p.avg.toFixed(1)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -273,7 +273,7 @@ export function StatsPage() {
             <>
               <div className="col-lg-8">
                 <div className="stat-card">
-                  <div className="card-header"><h6>{selectedTeam.name} — Scoring Trend</h6></div>
+                  <div className="card-header"><h6>{selectedTeam.name}, Scoring Trend</h6></div>
                   <div className="card-body">
                     <TrendChart rounds={selectedTeam.round_scores} />
                   </div>
@@ -306,7 +306,7 @@ export function StatsPage() {
                       {selectedTeam.bye_impact.map(b => (
                         <div key={b.round} className="bye-impact-row">
                           <span className="bye-round-badge">R{b.round}</span>
-                          <span style={{ color: '#cfcfd6' }}>{b.players_out} out</span>
+                          <span style={{ color: 'var(--kl-text-primary)' }}>{b.players_out} out</span>
                           <span className="ms-auto" style={{ color: '#f85149', fontWeight: 600 }}>-{b.estimated_loss.toFixed(0)}</span>
                         </div>
                       ))}

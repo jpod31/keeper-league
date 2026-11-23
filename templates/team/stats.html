@@ -61,7 +61,7 @@
 <div class="row g-4 mb-4">
   <div class="col-md-6">
     <div class="card">
-      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-diagram-3 me-2" style="color:#a0a0ac;"></i>Position Breakdown</h5></div>
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-diagram-3 me-2" style="color:var(--kl-text-primary);"></i>Position Breakdown</h5></div>
       <div class="card-body">
         {% for pos, count in position_counts.items()|sort(attribute='1', reverse=true) %}
           <div class="d-flex align-items-center gap-3 mb-3">
@@ -71,7 +71,7 @@
                 <div class="progress-bar" style="width:{{ (count / players|length * 100)|int }}%;background:linear-gradient(90deg,#238636,#514e5f);"></div>
               </div>
             </div>
-            <span class="text-secondary" style="font-size:.8rem;min-width:20px;">{{ count }}</span>
+            <span class="text-secondary" style="font-size:.8125rem;min-width:20px;">{{ count }}</span>
           </div>
         {% endfor %}
       </div>
@@ -85,10 +85,10 @@
         {% for p in players[:10] %}
           {% set primary = (p.position or 'MID').split('/')[0] %}
           <a href="{{ url_for('player_detail', name=p.name) }}" class="squad-mob-card" style="text-decoration:none;color:inherit;">
-            <span style="font-weight:800;font-size:.8rem;color:{% if loop.index <= 3 %}#ffd700{% else %}#63616d{% endif %};min-width:20px;">{{ loop.index }}</span>
+            <span style="font-weight:800;font-size:.8125rem;color:{% if loop.index <= 3 %}#ffd700{% else %}#63616d{% endif %};min-width:20px;">{{ loop.index }}</span>
             <div class="squad-mob-info">
               <div class="squad-mob-name">{{ p.name }}</div>
-              <div class="squad-mob-meta"><span class="pos-badge pos-{{ primary }}" style="font-size:.55rem;">{{ primary }}</span></div>
+              <div class="squad-mob-meta"><span class="pos-badge pos-{{ primary }}" style="font-size:.8125rem;">{{ primary }}</span></div>
             </div>
             <div class="squad-mob-sc" style="color:#3fb950;">{{ '%.1f'|format(p.sc_avg) if p.sc_avg else '-' }}</div>
           </a>
@@ -101,8 +101,8 @@
           <tbody>
             {% for p in players[:10] %}
               <tr>
-                <td style="color:#63616d;">{{ loop.index }}</td>
-                <td><a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:#cfcfd6;">{{ p.name }}</a></td>
+                <td style="color:var(--kl-text-primary);">{{ loop.index }}</td>
+                <td><a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:var(--kl-text-primary);">{{ p.name }}</a></td>
                 <td><span class="pos-badge pos-{{ (p.position or 'MID').split('/')[0] }}">{{ p.position }}</span></td>
                 <td class="text-end fw-bold">{{ '%.1f'|format(p.sc_avg) if p.sc_avg else '-' }}</td>
               </tr>
@@ -115,13 +115,13 @@
 </div>
 
 <div class="card">
-  <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-list-ul me-2" style="color:#a0a0ac;"></i>All Players</h5></div>
+  <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-list-ul me-2" style="color:var(--kl-text-primary);"></i>All Players</h5></div>
   {# ── Mobile card list ── #}
   <div class="d-lg-none squad-cards-mobile">
     {% for p in players %}
       {% set primary = (p.position or 'MID').split('/')[0] %}
       <a href="{{ url_for('player_detail', name=p.name) }}" class="squad-mob-card" style="text-decoration:none;color:inherit;">
-        <span class="pos-badge pos-{{ primary }}" style="min-width:32px;text-align:center;font-size:.65rem;">{{ primary }}</span>
+        <span class="pos-badge pos-{{ primary }}" style="min-width:32px;text-align:center;font-size:.8125rem;">{{ primary }}</span>
         <div class="squad-mob-info">
           <div class="squad-mob-name">{{ p.name }}</div>
           <div class="squad-mob-meta">
@@ -141,10 +141,10 @@
       <tbody>
         {% for p in players %}
           <tr>
-            <td><a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:#cfcfd6;">{{ p.name }}</a></td>
+            <td><a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:var(--kl-text-primary);">{{ p.name }}</a></td>
             <td>{% for pos in (p.position or 'MID').split('/') %}<span class="pos-badge pos-{{ pos }}">{{ pos }}</span> {% endfor %}</td>
             <td class="text-center">{{ p.age or '-' }}</td>
-            <td style="font-size:.8rem;">{{ p.afl_team or '' }}</td>
+            <td style="font-size:.8125rem;">{{ p.afl_team or '' }}</td>
             <td class="text-end">{{ '%.1f'|format(p.sc_avg) if p.sc_avg else '-' }}</td>
             <td class="text-center">{{ p.career_games or '-' }}</td>
             <td class="text-end">{{ '%.1f'|format(p.draft_score) if p.draft_score else '-' }}</td>

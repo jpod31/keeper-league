@@ -16,21 +16,21 @@
         <a href="{{ url_for('leagues.dashboard', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary" style="padding:4px 10px;">
           <i class="bi bi-arrow-left"></i>
         </a>
-        <h2 class="mb-0">League Settings{% if not is_commissioner %} <span class="badge ms-2" style="background:#1e1d21;color:#a0a0ac;font-size:.6rem;vertical-align:middle;">VIEW ONLY</span>{% endif %}</h2>
+        <h2 class="mb-0">League Settings{% if not is_commissioner %} <span class="badge ms-2" style="background:#1e1d21;color:var(--kl-text-primary);font-size:.8125rem;vertical-align:middle;">VIEW ONLY</span>{% endif %}</h2>
       </div>
     </div>
 
     {% if has_active_draft and is_commissioner %}
       <div class="alert d-flex align-items-center gap-2 mb-3" style="background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.2);border-radius:10px;font-size:.85rem;">
         <i class="bi bi-lock-fill" style="color:#d29922;"></i>
-        <span style="color:#cfcfd6;">Some settings are locked while a draft session is active. Delete the draft from <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" style="color:#ececf6;">Draft Setup</a> to unlock.</span>
+        <span style="color:var(--kl-text-primary);">Some settings are locked while a draft session is active. Delete the draft from <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" style="color:#ececf6;">Draft Setup</a> to unlock.</span>
       </div>
     {% endif %}
 
     <form method="POST" novalidate>
       <fieldset {% if not is_commissioner %}disabled{% endif %}>
       <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sliders me-2" style="color:#a0a0ac;"></i>General</h5></div>
+        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sliders me-2" style="color:var(--kl-text-primary);"></i>General</h5></div>
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-6">
@@ -38,12 +38,12 @@
               <input type="text" class="form-control" id="name" name="name" value="{{ league.name }}">
             </div>
             <div class="col-md-3">
-              <label for="num_teams" class="form-label">Max Teams {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
+              <label for="num_teams" class="form-label">Max Teams {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.8125rem;" title="Locked — draft is active"></i>{% endif %}</label>
               <input type="number" class="form-control" id="num_teams" name="num_teams" value="{{ league.num_teams }}" min="2" max="18" {% if has_active_draft %}disabled{% endif %}>
               {% if has_active_draft %}<input type="hidden" name="num_teams" value="{{ league.num_teams }}">{% endif %}
             </div>
             <div class="col-md-3">
-              <label for="squad_size" class="form-label">Squad Size {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
+              <label for="squad_size" class="form-label">Squad Size {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.8125rem;" title="Locked — draft is active"></i>{% endif %}</label>
               <input type="number" class="form-control" id="squad_size" name="squad_size" value="{{ league.squad_size }}" min="5" max="60" {% if has_active_draft %}disabled{% endif %}>
               {% if has_active_draft %}<input type="hidden" name="squad_size" value="{{ league.squad_size }}">{% endif %}
             </div>
@@ -52,12 +52,12 @@
               <div id="pos-total-display" class="form-control" style="background:#1e1d21;font-weight:600;font-size:.85rem;" disabled>
                 —
               </div>
-              <div class="form-text" style="color:#63616d;font-size:.7rem;">On-field + flex must fit within squad size</div>
-              <div id="pos-error-bar" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:6px;color:#f85149;font-size:.75rem;font-weight:600;align-items:center;gap:6px;">
+              <div class="form-text" style="color:var(--kl-text-primary);font-size:.8125rem;">On-field + flex must fit within squad size</div>
+              <div id="pos-error-bar" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:6px;color:#f85149;font-size:.8125rem;font-weight:600;align-items:center;gap:6px;">
               </div>
             </div>
             <div class="col-md-4">
-              <label for="draft_type" class="form-label">Draft Type {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.7rem;" title="Locked — draft is active"></i>{% endif %}</label>
+              <label for="draft_type" class="form-label">Draft Type {% if has_active_draft %}<i class="bi bi-lock-fill" style="color:#d29922;font-size:.8125rem;" title="Locked — draft is active"></i>{% endif %}</label>
               <select class="form-select" id="draft_type" name="draft_type" {% if has_active_draft %}disabled{% endif %}>
                 <option value="snake" {{ 'selected' if league.draft_type == 'snake' }}>Snake</option>
                 <option value="linear" {{ 'selected' if league.draft_type == 'linear' }}>Linear</option>
@@ -76,7 +76,7 @@
                 {% else %}
                   <span class="badge" style="background:#63616d;">Closed</span>
                 {% endif %}
-                <span class="text-secondary" style="font-size:.7rem;display:block;margin-top:4px;">Durations configured below in Mid-Season &amp; Off-Season sections</span>
+                <span class="text-secondary" style="font-size:.8125rem;display:block;margin-top:4px;">Durations configured below in Mid-Season &amp; Off-Season sections</span>
               </div>
             </div>
             <div class="col-md-6">
@@ -88,7 +88,7 @@
       </div>
 
       <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-diagram-3 me-2" style="color:#a0a0ac;"></i>On-Field Formation</h5></div>
+        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-diagram-3 me-2" style="color:var(--kl-text-primary);"></i>On-Field Formation</h5></div>
         <div class="card-body">
           {% set on_field_slots = {} %}
           {% for slot in league.position_slots %}
@@ -98,22 +98,22 @@
           {% endfor %}
           <div class="row g-2 mb-2">
             <div class="col-3">
-              <label class="form-label" style="font-size:.75rem;color:#ececf6;">DEF</label>
+              <label class="form-label" style="font-size:.8125rem;color:#ececf6;">DEF</label>
               <input type="number" class="form-control form-control-sm" name="def_count"
                      value="{{ on_field_slots.get('DEF', 5) }}" min="1" max="10">
             </div>
             <div class="col-3">
-              <label class="form-label" style="font-size:.75rem;color:#bc8cff;">MID</label>
+              <label class="form-label" style="font-size:.8125rem;color:#bc8cff;">MID</label>
               <input type="number" class="form-control form-control-sm" name="mid_count"
                      value="{{ on_field_slots.get('MID', 7) }}" min="1" max="12">
             </div>
             <div class="col-3">
-              <label class="form-label" style="font-size:.75rem;color:#f0883e;">FWD</label>
+              <label class="form-label" style="font-size:.8125rem;color:#f0883e;">FWD</label>
               <input type="number" class="form-control form-control-sm" name="fwd_count"
                      value="{{ on_field_slots.get('FWD', 5) }}" min="1" max="10">
             </div>
             <div class="col-3">
-              <label class="form-label" style="font-size:.75rem;color:#3fb950;">RUC</label>
+              <label class="form-label" style="font-size:.8125rem;color:#3fb950;">RUC</label>
               <input type="number" class="form-control form-control-sm" name="ruc_count"
                      value="{{ on_field_slots.get('RUC', 1) }}" min="1" max="3">
             </div>
@@ -129,15 +129,15 @@
               {% set ns_flex.count = slot.count %}
             {% endif %}
           {% endfor %}
-          <label class="form-label" style="font-size:.75rem;color:#d29922;"><i class="bi bi-lightning-charge me-1"></i>FLEX Slots</label>
+          <label class="form-label" style="font-size:.8125rem;color:#d29922;"><i class="bi bi-lightning-charge me-1"></i>FLEX Slots</label>
           <input type="number" class="form-control form-control-sm" name="flex_count"
                  value="{{ ns_flex.count }}" min="0" max="10">
-          <div class="form-text" style="color:#63616d;font-size:.65rem;">Sidebar scoring slots — any position eligible.</div>
+          <div class="form-text" style="color:var(--kl-text-primary);font-size:.8125rem;">Sidebar scoring slots — any position eligible.</div>
         </div>
       </div>
 
       <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-calendar-week me-2" style="color:#a0a0ac;"></i>Fixtures</h5></div>
+        <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-calendar-week me-2" style="color:var(--kl-text-primary);"></i>Fixtures</h5></div>
         <div class="card-body">
           <div class="row g-3 align-items-end">
             <div class="col-md-4">
@@ -161,11 +161,11 @@
               </button>
             </div>
           </div>
-          <div id="fixture-total-display" class="mt-2" style="font-size:.75rem;font-weight:600;color:#3fb950;">
+          <div id="fixture-total-display" class="mt-2" style="font-size:.8125rem;font-weight:600;color:#3fb950;">
           </div>
-          <div id="fixture-error-bar" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:6px;color:#f85149;font-size:.75rem;font-weight:600;">
+          <div id="fixture-error-bar" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:6px;color:#f85149;font-size:.8125rem;font-weight:600;">
           </div>
-          <div class="form-text mt-1" style="color:#63616d;font-size:.7rem;">AFL season has 24 rounds. Regular season + finals weeks must not exceed this.</div>
+          <div class="form-text mt-1" style="color:var(--kl-text-primary);font-size:.8125rem;">AFL season has 24 rounds. Regular season + finals weeks must not exceed this.</div>
           {% if is_commissioner %}
           <hr style="border-color:#1e1d21;margin:12px 0;">
           <div class="d-flex align-items-center gap-3">
@@ -176,7 +176,7 @@
               </button>
             </form>
             {% if has_preseason %}
-              <span class="badge" style="background:rgba(223,221,233,.15);color:#ececf6;font-size:.7rem;">Pre-season fixtures exist</span>
+              <span class="badge" style="background:rgba(223,221,233,.15);color:#ececf6;font-size:.8125rem;">Pre-season fixtures exist</span>
             {% endif %}
           </div>
           {% endif %}
@@ -192,8 +192,8 @@
         </div>
         <div class="card-body py-3">
           <div class="d-flex align-items-center gap-3">
-            <span class="badge" style="background:rgba(210,153,34,.15);color:#d29922;font-size:.75rem;padding:4px 10px;">{{ league.scoring_type|default('supercoach')|replace('_', ' ')|title }}</span>
-            <span style="font-size:.75rem;color:#a0a0ac;">Scoring type, custom stat weights, and hybrid configuration</span>
+            <span class="badge" style="background:rgba(210,153,34,.15);color:#d29922;font-size:.8125rem;padding:4px 10px;">{{ league.scoring_type|default('supercoach')|replace('_', ' ')|title }}</span>
+            <span style="font-size:.8125rem;color:var(--kl-text-primary);">Scoring type, custom stat weights, and hybrid configuration</span>
           </div>
         </div>
       </div>
@@ -206,7 +206,7 @@
             <i class="bi bi-arrow-repeat me-2" style="color:#2dd4bf;"></i>Mid-Season
             <span class="settings-status {{ 'status-on' if mid_enabled }}" id="midSeasonDot"></span>
           </h5>
-          <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;"
+          <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.8125rem;"
                   onclick="toggleSection('midSeason', !document.getElementById('midSeasonBody').classList.contains('expanded'))">
             <i class="bi bi-chevron-down"></i>
           </button>
@@ -238,8 +238,8 @@
                            {{ 'checked' if trade_mode == 'all_year' }}
                            onchange="updateTradeMode()" style="margin-top:3px;">
                     <div>
-                      <span style="font-size:.8rem;font-weight:600;color:#cfcfd6;">All Season</span>
-                      <div style="font-size:.68rem;color:#8a8895;">Trades open the entire year</div>
+                      <span style="font-size:.8125rem;font-weight:600;color:var(--kl-text-primary);">All Season</span>
+                      <div style="font-size:.8125rem;color:var(--kl-text-primary);">Trades open the entire year</div>
                     </div>
                   </label>
                   <label class="d-flex align-items-start gap-2" style="cursor:pointer;">
@@ -247,8 +247,8 @@
                            {{ 'checked' if trade_mode == 'until_round' }}
                            onchange="updateTradeMode()" style="margin-top:3px;">
                     <div>
-                      <span style="font-size:.8rem;font-weight:600;color:#cfcfd6;">Until Round</span>
-                      <div style="font-size:.68rem;color:#8a8895;">Trades open from start of season until a round</div>
+                      <span style="font-size:.8125rem;font-weight:600;color:var(--kl-text-primary);">Until Round</span>
+                      <div style="font-size:.8125rem;color:var(--kl-text-primary);">Trades open from start of season until a round</div>
                     </div>
                   </label>
                   <label class="d-flex align-items-start gap-2" style="cursor:pointer;">
@@ -256,8 +256,8 @@
                            {{ 'checked' if trade_mode == 'window' }}
                            onchange="updateTradeMode()" style="margin-top:3px;">
                     <div>
-                      <span style="font-size:.8rem;font-weight:600;color:#cfcfd6;">2-Day Window</span>
-                      <div style="font-size:.68rem;color:#8a8895;">Trade window opens for 2 days after a specific round</div>
+                      <span style="font-size:.8125rem;font-weight:600;color:var(--kl-text-primary);">2-Day Window</span>
+                      <div style="font-size:.8125rem;color:var(--kl-text-primary);">Trade window opens for 2 days after a specific round</div>
                     </div>
                   </label>
                 </div>
@@ -265,7 +265,7 @@
               {# Until-round picker (shown for until_round mode) #}
               <div class="row g-3 mb-2" id="trade-until-row" style="{{ 'display:none;' if trade_mode != 'until_round' }}">
                 <div class="col-md-6">
-                  <label class="form-label" style="font-size:.75rem;">Trades Open Until Round</label>
+                  <label class="form-label" style="font-size:.8125rem;">Trades Open Until Round</label>
                   <input type="number" class="form-control form-control-sm" name="mid_season_trade_until_round"
                          value="{{ season_config.mid_season_trade_until_round if season_config and season_config.mid_season_trade_until_round else 18 }}"
                          min="1" max="24" placeholder="18">
@@ -274,7 +274,7 @@
               {# Draft after round picker (always shown — controls when the supplemental draft happens) #}
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.75rem;">Supplemental Draft After Round</label>
+                  <label for="mid_season_draft_after_round" class="form-label" style="font-size:.8125rem;">Supplemental Draft After Round</label>
                   <input type="number" class="form-control form-control-sm" id="mid_season_draft_after_round"
                          name="mid_season_draft_after_round"
                          value="{{ season_config.mid_season_draft_after_round if season_config and season_config.mid_season_draft_after_round else 12 }}"
@@ -289,19 +289,19 @@
               </div>
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label" style="font-size:.75rem;">Delist Period Duration (days)</label>
+                  <label class="form-label" style="font-size:.8125rem;">Delist Period Duration (days)</label>
                   <input type="number" class="form-control form-control-sm" name="mid_delist_duration_days"
                          value="{{ season_config.mid_delist_duration_days if season_config and season_config.mid_delist_duration_days else 2 }}"
                          min="1" max="7">
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" style="font-size:.75rem;">Min Delists Required</label>
+                  <label class="form-label" style="font-size:.8125rem;">Min Delists Required</label>
                   <input type="number" class="form-control form-control-sm" name="mid_season_delist_required"
                          value="{{ season_config.mid_season_delist_required if season_config and season_config.mid_season_delist_required else 1 }}"
                          min="0" max="10">
                 </div>
               </div>
-              <div class="mt-2" style="font-size:.7rem;color:#8a8895;">
+              <div class="mt-2" style="font-size:.8125rem;color:var(--kl-text-primary);">
                 <i class="bi bi-info-circle me-1"></i>
                 <span id="trade-mode-help">
                   {% if trade_mode == 'all_year' %}Trades always open. Delist period + supplemental draft runs after the round above.
@@ -332,18 +332,18 @@
         <div class="settings-expand {{ 'expanded' if not season_config or season_config.ssp_enabled != false }}" id="offSeasonBody">
           <div class="row g-3">
             <div class="col-md-6">
-              <label for="ssp_cutoff_round" class="form-label" style="font-size:.75rem;">Open Until Round</label>
+              <label for="ssp_cutoff_round" class="form-label" style="font-size:.8125rem;">Open Until Round</label>
               <input type="number" class="form-control form-control-sm" id="ssp_cutoff_round" name="ssp_cutoff_round"
                      value="{{ season_config.ssp_cutoff_round if season_config and season_config.ssp_cutoff_round else 4 }}"
                      min="1" max="24">
-              <div class="form-text" style="font-size:.7rem;">SSP is open post-draft until this round begins</div>
+              <div class="form-text" style="font-size:.8125rem;">SSP is open post-draft until this round begins</div>
             </div>
             <div class="col-md-6">
-              <label for="ssp_slots" class="form-label" style="font-size:.75rem;">LTIL Slots</label>
+              <label for="ssp_slots" class="form-label" style="font-size:.8125rem;">LTIL Slots</label>
               <input type="number" class="form-control form-control-sm" id="ssp_slots" name="ssp_slots"
                      value="{{ season_config.ssp_slots if season_config and season_config.ssp_slots else 1 }}"
                      min="0" max="5">
-              <div class="form-text" style="font-size:.7rem;">Max long-term injury replacements per team per season</div>
+              <div class="form-text" style="font-size:.8125rem;">Max long-term injury replacements per team per season</div>
             </div>
           </div>
         </div>
@@ -355,7 +355,7 @@
           <h5 class="mb-0 fw-bold d-flex align-items-center" style="font-size:.95rem;">
             <i class="bi bi-calendar-x me-2" style="color:#f0883e;"></i>Off-Season
           </h5>
-          <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;"
+          <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.8125rem;"
                   onclick="toggleSection('offseason', !document.getElementById('offseasonBody').classList.contains('expanded'))">
             <i class="bi bi-chevron-down"></i>
           </button>
@@ -363,31 +363,31 @@
         <div class="settings-expand expanded" id="offseasonBody">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label" style="font-size:.75rem;">Delist Period Duration (days)</label>
+              <label class="form-label" style="font-size:.8125rem;">Delist Period Duration (days)</label>
               <input type="number" class="form-control form-control-sm" name="off_delist_duration_days"
                      value="{{ season_config.off_delist_duration_days if season_config and season_config.off_delist_duration_days else 14 }}"
                      min="1" max="30">
             </div>
             <div class="col-md-6">
-              <label class="form-label" style="font-size:.75rem;">Min Delists Required</label>
+              <label class="form-label" style="font-size:.8125rem;">Min Delists Required</label>
               <input type="number" class="form-control form-control-sm" name="offseason_delist_min"
                      value="{{ season_config.offseason_delist_min if season_config and season_config.offseason_delist_min else 3 }}"
                      min="0" max="15">
             </div>
             <div class="col-md-6">
-              <label class="form-label" style="font-size:.75rem;">Trade Window Duration (days)</label>
+              <label class="form-label" style="font-size:.8125rem;">Trade Window Duration (days)</label>
               <input type="number" class="form-control form-control-sm" name="off_trade_duration_days"
                      value="{{ season_config.off_trade_duration_days if season_config and season_config.off_trade_duration_days else 14 }}"
                      min="1" max="30">
             </div>
             <div class="col-md-6">
-              <label class="form-label" style="font-size:.75rem;">Supplemental Draft Date</label>
+              <label class="form-label" style="font-size:.8125rem;">Supplemental Draft Date</label>
               <input type="date" class="form-control form-control-sm" name="supplemental_draft_date"
                      value="{{ season_config.supplemental_draft_date.strftime('%Y-%m-%d') if season_config and season_config.supplemental_draft_date else '' }}">
-              <div class="form-text" style="font-size:.65rem;color:#8a8895;">After AFL draft ~Nov 30</div>
+              <div class="form-text" style="font-size:.8125rem;color:var(--kl-text-primary);">After AFL draft ~Nov 30</div>
             </div>
           </div>
-          <div class="mt-2" style="font-size:.7rem;color:#8a8895;">
+          <div class="mt-2" style="font-size:.8125rem;color:var(--kl-text-primary);">
             <i class="bi bi-info-circle me-1"></i>
             Delist period and trade window open in parallel when the season transitions to off-season.
           </div>
@@ -411,18 +411,18 @@
         <div class="settings-expand {{ 'expanded' if live_config and live_config.enabled }}" id="liveScoringBody">
           <div class="row g-3">
             <div class="col-md-6">
-              <label for="lockout_type" class="form-label" style="font-size:.75rem;">Lockout Type</label>
+              <label for="lockout_type" class="form-label" style="font-size:.8125rem;">Lockout Type</label>
               <select class="form-select form-select-sm" id="lockout_type" name="lockout_type">
                 <option value="game_start" {{ 'selected' if not live_config or live_config.lockout_type == 'game_start' }}>Per-Game Rolling</option>
                 <option value="round_start" {{ 'selected' if live_config and live_config.lockout_type == 'round_start' }}>Round Start (all at once)</option>
               </select>
-              <div class="form-text" style="font-size:.7rem;">Per-game: each player locks at their game's first bounce</div>
+              <div class="form-text" style="font-size:.8125rem;">Per-game: each player locks at their game's first bounce</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label" style="font-size:.75rem;">Score Updates</label>
-              <div style="font-size:.75rem;color:#a0a0ac;margin-top:4px;">
+              <label class="form-label" style="font-size:.8125rem;">Score Updates</label>
+              <div style="font-size:.8125rem;color:var(--kl-text-primary);margin-top:4px;">
                 <i class="bi bi-clock me-1"></i>Scores sync automatically Thu-Sun at 11pm and Sat 5pm AEST.
-                Use <strong style="color:#cfcfd6;">Sync Scores</strong> on the Gameday tab for manual updates.
+                Use <strong style="color:var(--kl-text-primary);">Sync Scores</strong> on the Gameday tab for manual updates.
               </div>
             </div>
           </div>
@@ -430,7 +430,7 @@
           <div class="d-flex align-items-center justify-content-between">
             <div>
               <span class="fw-bold" style="font-size:.85rem;">Captain Scoring</span>
-              <div style="font-size:.7rem;color:#8a8895;">Double captain's points (or VC if captain DNP)</div>
+              <div style="font-size:.8125rem;color:var(--kl-text-primary);">Double captain's points (or VC if captain DNP)</div>
             </div>
             <label class="settings-toggle mb-0">
               <input type="checkbox" name="captain_scoring_enabled"
@@ -441,7 +441,7 @@
           <div class="d-flex align-items-center justify-content-between mt-3">
             <div>
               <span>7s Captain Scoring</span>
-              <div style="font-size:.7rem;color:#8a8895;">Double 7s captain's score in reserve 7s comp</div>
+              <div style="font-size:.8125rem;color:var(--kl-text-primary);">Double 7s captain's score in reserve 7s comp</div>
             </div>
             <label class="settings-toggle mb-0">
               <input type="checkbox" name="sevens_captain_enabled"
@@ -451,7 +451,7 @@
           </div>
           <hr class="my-3" style="border-color:#1e1d21;">
           <div class="d-flex align-items-center justify-content-between">
-            <span style="font-size:.75rem;color:#63616d;">Sync AFL game schedule (bounce times + results) from Squiggle</span>
+            <span style="font-size:.8125rem;color:var(--kl-text-primary);">Sync AFL game schedule (bounce times + results) from Squiggle</span>
             <button type="button" class="sync-scores-btn" id="syncBtn" {% if not is_commissioner %}disabled{% endif %}
                     onclick="document.getElementById('syncForm').submit();this.disabled=true;this.innerHTML='<span class=\'spinner-border\'></span> Syncing...';">
               <i class="bi bi-cloud-download"></i>Sync Schedule

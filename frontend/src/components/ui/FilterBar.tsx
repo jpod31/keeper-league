@@ -1,5 +1,5 @@
 /**
- * FilterBar — standardised filter row for list pages.
+ * FilterBar, standardised filter row for list pages.
  *
  * Three slots:
  *   - search  → left  (typically an <input type="search">)

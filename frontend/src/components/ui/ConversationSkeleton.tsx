@@ -1,5 +1,5 @@
 /**
- * ConversationSkeleton — chat-shaped placeholder. Header silhouette
+ * ConversationSkeleton, chat-shaped placeholder. Header silhouette
  * + an alternating-sides message stack + input-bar silhouette.
  *
  * Reuses .kl-skel shimmer.

@@ -1,5 +1,5 @@
 /**
- * GamedaySkeleton — layout-aware loading placeholder for GamedayPage.
+ * GamedaySkeleton, layout-aware loading placeholder for GamedayPage.
  *
  * Renders the rough shape of a matchup view: hero with two team
  * blocks + score, then two columns of player rows.

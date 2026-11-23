@@ -8,20 +8,20 @@
 .draft-chat-card #chat-messages { max-height: 180px; }
 .chat-msg {
   padding: .3rem .6rem;
-  font-size: .78rem;
+  font-size: .8125rem;
   border-bottom: 1px solid rgba(42,41,47,.4);
 }
 .chat-msg:last-child { border-bottom: none; }
 .chat-msg-name {
   font-weight: 700;
-  font-size: .72rem;
+  font-size: .8125rem;
   margin-right: .4rem;
 }
 .chat-msg-text { color: var(--kl-text-primary); word-break: break-word; }
 .chat-msg-system {
   text-align: center;
-  font-size: .7rem;
-  color: #63616d;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
   font-style: italic;
   padding: .25rem .6rem;
 }
@@ -39,18 +39,18 @@
 
 /* ── Sortable table headers ── */
 .sortable-th { cursor: pointer; user-select: none; white-space: nowrap; }
-.sortable-th:hover { color: #cfcfd6 !important; }
-.sortable-th .sort-icon { font-size: .55rem; opacity: .4; margin-left: 1px; }
+.sortable-th:hover { color: var(--kl-text-primary) !important; }
+.sortable-th .sort-icon { font-size: .8125rem; opacity: .4; margin-left: 1px; }
 .sortable-th.active-sort .sort-icon { opacity: 1; color: #ececf6; }
 .sortable-th.active-sort { color: #ececf6 !important; }
 
 /* ── Available Players table — prominent styling ── */
 .draft-avail-tbl { font-size: .82rem; }
 .draft-avail-tbl thead th {
-  font-size: .68rem;
+  font-size: .8125rem;
   text-transform: uppercase;
   letter-spacing: .4px;
-  color: #a0a0ac;
+  color: var(--kl-text-primary);
   padding: .5rem .45rem;
   border-bottom: 2px solid var(--kl-border);
 }
@@ -62,12 +62,12 @@
 /* ── Mobile-responsive draft room ──────────────────────────────── */
 @media (max-width: 991.98px) {
   .draft-banner { flex-direction: column; gap: .5rem; text-align: center; padding: .75rem; }
-  #schedule-input { font-size: .7rem !important; max-width: 180px; }
+  #schedule-input { font-size: .8125rem !important; max-width: 180px; }
   .draft-banner .draft-pick-badge { width: 36px; height: 36px; font-size: .85rem; }
   .draft-timer-block { margin-top: .25rem; }
   .draft-timer { font-size: 1.5rem !important; }
   #commissioner-controls { flex-wrap: wrap; justify-content: center !important; }
-  #commissioner-controls .btn { font-size: .65rem !important; padding: 2px 6px !important; }
+  #commissioner-controls .btn { font-size: .8125rem !important; padding: 2px 6px !important; }
   /* Columns: Player, Pos, Team, Age, SC, Rtg, Pot, Value, Pick */
   /* Hide Team (3), Rtg (6) on tablet */
   .draft-avail-tbl th:nth-child(3),
@@ -84,7 +84,7 @@
   .col-lg-7 > .card { max-height: 50vh !important; }
   .draft-chat-card { max-height: none !important; } /* chat keeps its own sizing */
   #chat-messages { height: 150px !important; }
-  .table td, .table th { padding: .25rem .35rem; font-size: .75rem; }
+  .table td, .table th { padding: .25rem .35rem; font-size: .8125rem; }
   .card-header .row.g-2 { flex-wrap: wrap; }
   .card-header .row.g-2 .col { min-width: 100%; margin-bottom: .25rem; }
   .card-header .row.g-2 .col-auto { min-width: auto; }
@@ -93,16 +93,16 @@
 }
 @media (max-width: 575.98px) {
   .page-header h2 { font-size: 1.1rem; }
-  .draft-pick-badge { width: 30px; height: 30px; font-size: .75rem; }
+  .draft-pick-badge { width: 30px; height: 30px; font-size: .8125rem; }
   .draft-hist-tbl th:nth-child(2), .draft-hist-tbl td:nth-child(2) { display: none; }
-  #weight-panel .d-flex.align-items-center.gap-2 span:first-child { width: 45px !important; font-size: .65rem !important; }
+  #weight-panel .d-flex.align-items-center.gap-2 span:first-child { width: 45px !important; font-size: .8125rem !important; }
   .col-lg-5, .col-lg-7 { padding-left: 0; padding-right: 0; }
   /* Also hide Pot (7) on small phones to save space */
   .draft-avail-tbl th:nth-child(7),
   .draft-avail-tbl td:nth-child(7) { display: none; }
 }
 @media (hover: none) and (pointer: coarse) {
-  .draft-avail-tbl .btn { min-width: 44px; min-height: 36px; font-size: .75rem !important; }
+  .draft-avail-tbl .btn { min-width: 44px; min-height: 36px; font-size: .8125rem !important; }
   #pos-filter, #age-filter, #player-search { font-size: .85rem; min-height: 38px; }
 }
 </style>
@@ -116,12 +116,12 @@
       <div class="d-flex align-items-center gap-3 mt-1">
         <span id="conn-status" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f85149;" title="Connecting..."></span>
         <span id="draft-status" class="status-pill status-{{ session.status }}">{{ session.status }}</span>
-        <span style="font-size:.8rem;color:#a0a0ac;">{{ league.draft_type|capitalize }} &middot; {{ session.pick_timer_secs }}s timer</span>
+        <span style="font-size:.8125rem;color:var(--kl-text-primary);">{{ league.draft_type|capitalize }} &middot; {{ session.pick_timer_secs }}s timer</span>
       </div>
     </div>
     {% if is_commissioner %}
       <div id="commissioner-controls" class="d-flex gap-2 align-items-center">
-        <button id="comm-override-btn" class="btn btn-outline-warning btn-sm" onclick="toggleCommOverride()" style="font-size:.7rem;" title="Pick on behalf of other teams">
+        <button id="comm-override-btn" class="btn btn-outline-warning btn-sm" onclick="toggleCommOverride()" style="font-size:.8125rem;" title="Pick on behalf of other teams">
           <i class="bi bi-shield me-1"></i>Override
         </button>
         {% if session.status == 'scheduled' %}
@@ -132,12 +132,12 @@
           <button class="btn btn-primary btn-sm" onclick="resumeDraft()"><i class="bi bi-play-fill me-1"></i>Resume</button>
         {% endif %}
         {% if session.status in ('in_progress', 'paused') %}
-          <button class="btn btn-outline-danger btn-sm" onclick="showEndDraftModal()" style="font-size:.7rem;" title="End draft early — remaining picks become passes">
+          <button class="btn btn-outline-danger btn-sm" onclick="showEndDraftModal()" style="font-size:.8125rem;" title="End draft early — remaining picks become passes">
             <i class="bi bi-stop-fill me-1"></i>End Draft
           </button>
         {% endif %}
         {% if can_restart %}
-          <button class="btn btn-outline-danger btn-sm" onclick="confirmRestart()" style="font-size:.7rem;" title="Delete draft and return to settings">
+          <button class="btn btn-outline-danger btn-sm" onclick="confirmRestart()" style="font-size:.8125rem;" title="Delete draft and return to settings">
             <i class="bi bi-arrow-counterclockwise me-1"></i>Restart
           </button>
         {% endif %}
@@ -159,7 +159,7 @@
       <i class="bi bi-hourglass-split" style="font-size:1rem;"></i>
     </div>
     <div>
-      <div style="font-size:.75rem;color:#a0a0ac;text-transform:uppercase;letter-spacing:.5px;">Draft Starts In</div>
+      <div style="font-size:.8125rem;color:var(--kl-text-primary);text-transform:uppercase;letter-spacing:.5px;">Draft Starts In</div>
       <div id="countdown-text" style="font-size:1.1rem;font-weight:700;color:#d29922;">
         {% if session.scheduled_start %}
           Loading...
@@ -174,13 +174,13 @@
       <div class="d-flex align-items-center gap-2">
         <input type="datetime-local" id="schedule-input" class="form-control form-control-sm"
                value="{{ session.scheduled_start.strftime('%Y-%m-%dT%H:%M') if session.scheduled_start else '' }}"
-               style="font-size:.75rem;background:#0e0d0f;border-color:#2a292f;color:#cfcfd6;width:auto;">
-        <button class="btn btn-outline-warning btn-sm" onclick="updateSchedule()" style="font-size:.7rem;white-space:nowrap;">
+               style="font-size:.8125rem;background:#0e0d0f;border-color:#2a292f;color:var(--kl-text-primary);width:auto;">
+        <button class="btn btn-outline-warning btn-sm" onclick="updateSchedule()" style="font-size:.8125rem;white-space:nowrap;">
           <i class="bi bi-clock me-1"></i>Set Time
         </button>
       </div>
     {% else %}
-      <div id="countdown-date-display" style="font-size:.8rem;color:#a0a0ac;">
+      <div id="countdown-date-display" style="font-size:.8125rem;color:var(--kl-text-primary);">
         {% if session.scheduled_start %}
           {{ session.scheduled_start.strftime('%a %d %b, %I:%M %p') }}
         {% endif %}
@@ -196,13 +196,13 @@
       <span id="current-pick-num">{{ state.current_pick or '-' }}</span>
     </div>
     <div>
-      <div style="font-size:.75rem;color:#a0a0ac;text-transform:uppercase;letter-spacing:.5px;">
+      <div style="font-size:.8125rem;color:var(--kl-text-primary);text-transform:uppercase;letter-spacing:.5px;">
         Round <span id="current-round">{{ state.current_round or '-' }}</span>
       </div>
       <div style="font-size:1.1rem;font-weight:600;">
         <span id="current-team">{{ state.current_team_name or 'TBD' }}</span>
         {% if user_team and state.current_team_id == user_team.id %}
-          <span class="badge ms-2" style="background:rgba(210,153,34,.2);color:#d29922;font-size:.7rem;">YOUR PICK</span>
+          <span class="badge ms-2" style="background:rgba(210,153,34,.2);color:#d29922;font-size:.8125rem;">YOUR PICK</span>
         {% endif %}
       </div>
     </div>
@@ -220,16 +220,16 @@
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <i class="bi bi-people me-2" style="color:#a0a0ac;"></i>Available Players
+            <i class="bi bi-people me-2" style="color:var(--kl-text-primary);"></i>Available Players
           </h5>
           <div class="d-flex gap-1 align-items-center">
             <button id="pass-btn" class="btn btn-outline-warning py-0 px-2" onclick="showPassModal()"
-                    style="font-size:.7rem;display:none;" title="Pass on this pick">
+                    style="font-size:.8125rem;display:none;" title="Pass on this pick">
               <i class="bi bi-skip-forward me-1"></i>Pass
             </button>
             <button class="btn btn-outline-secondary py-0 px-2" type="button"
                     data-bs-toggle="collapse" data-bs-target="#weight-panel"
-                    title="Adjust your draft value weights" style="font-size:.7rem;">
+                    title="Adjust your draft value weights" style="font-size:.8125rem;">
               <i class="bi bi-sliders me-1"></i>Values
             </button>
           </div>
@@ -247,17 +247,17 @@
             ] %}
             {% for key, label in inline_factors %}
               <div class="d-flex align-items-center gap-2 {% if not loop.last %}mb-2{% endif %}">
-                <span style="font-size:.7rem;color:#a0a0ac;width:60px;flex-shrink:0;">{{ label }}</span>
+                <span style="font-size:.8125rem;color:var(--kl-text-primary);width:60px;flex-shrink:0;">{{ label }}</span>
                 <input type="range" class="form-range flex-grow-1" id="dv-{{ key }}"
                        min="0" max="1" step="0.01" value="{{ user_weights.get(key, 0.2) }}"
                        oninput="onWeightSliderChange()" style="height:16px;">
-                <span class="dv-badge" id="dvb-{{ key }}" style="font-size:.7rem;color:#ececf6;width:32px;text-align:right;">
+                <span class="dv-badge" id="dvb-{{ key }}" style="font-size:.8125rem;color:#ececf6;width:32px;text-align:right;">
                   {{ "%.0f"|format((user_weights.get(key, 0.2)) * 100) }}%
                 </span>
               </div>
             {% endfor %}
             <div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #2a292f;">
-              <span style="font-size:.7rem;color:#a0a0ac;">
+              <span style="font-size:.8125rem;color:var(--kl-text-primary);">
                 {% if has_custom_weights %}
                   <span style="color:#3fb950;">Custom</span>
                 {% else %}
@@ -265,10 +265,10 @@
                 {% endif %}
               </span>
               <div class="d-flex gap-1">
-                <button class="btn btn-outline-secondary py-0 px-2" onclick="applyWeights()" style="font-size:.7rem;">
+                <button class="btn btn-outline-secondary py-0 px-2" onclick="applyWeights()" style="font-size:.8125rem;">
                   Apply
                 </button>
-                <button class="btn btn-primary py-0 px-2" onclick="saveWeights()" style="font-size:.7rem;">
+                <button class="btn btn-primary py-0 px-2" onclick="saveWeights()" style="font-size:.8125rem;">
                   Save
                 </button>
               </div>
@@ -343,16 +343,16 @@
       <div class="card-header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <i class="bi bi-clock-history me-2" style="color:#a0a0ac;"></i>Pick History
+            <i class="bi bi-clock-history me-2" style="color:var(--kl-text-primary);"></i>Pick History
           </h5>
           {% if user_team %}
             <div class="btn-group btn-group-sm" role="group">
-              <button type="button" class="btn btn-sm btn-outline-secondary active" id="filter-all" onclick="filterPicks('all')" style="font-size:.7rem;padding:2px 8px;">All</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-mine" onclick="filterPicks('mine')" style="font-size:.7rem;padding:2px 8px;">Mine</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary active" id="filter-all" onclick="filterPicks('all')" style="font-size:.8125rem;padding:2px 8px;">All</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-mine" onclick="filterPicks('mine')" style="font-size:.8125rem;padding:2px 8px;">Mine</button>
             </div>
           {% endif %}
         </div>
-        <span class="badge" style="background:#1e1d21;color:#a0a0ac;font-size:.75rem;">
+        <span class="badge" style="background:#1e1d21;color:var(--kl-text-primary);font-size:.8125rem;">
           <span id="picks-count">{{ state.picks_made }}</span>/{{ state.total_picks }}
         </span>
       </div>
@@ -379,7 +379,7 @@
                   <td></td>
                   <td></td>
                 {% else %}
-                  <td>{{ pick.player_name }}{% if pick.is_auto_pick %} <span style="color:#a0a0ac;font-size:.7rem;">(auto)</span>{% endif %}</td>
+                  <td>{{ pick.player_name }}{% if pick.is_auto_pick %} <span style="color:var(--kl-text-primary);font-size:.8125rem;">(auto)</span>{% endif %}</td>
                   <td><span class="pos-badge badge-{{ (pick.player_position or 'mid').split('/')[0]|lower }}">{{ pick.player_position }}</span></td>
                   <td>{{ pick.player_afl_team }}</td>
                 {% endif %}
@@ -397,7 +397,7 @@
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
             <i class="bi bi-person-badge me-2" style="color:#ececf6;"></i>{{ user_team.name }}
           </h5>
-          <span class="badge" style="background:#1e1d21;color:#a0a0ac;font-size:.75rem;" id="your-picks-count"></span>
+          <span class="badge" style="background:#1e1d21;color:var(--kl-text-primary);font-size:.8125rem;" id="your-picks-count"></span>
         </div>
         <div class="card-body p-0" style="overflow-y:auto;">
           <table class="table table-sm mb-0">
@@ -419,13 +419,13 @@
           <i class="bi bi-chat-dots me-2" style="color:#d29922;"></i>Draft Chat
         </h5>
         <div class="d-flex align-items-center gap-2">
-          <span class="badge d-none" id="chat-unread" style="background:#f85149;font-size:.6rem;border-radius:8px;">0</span>
-          <i class="bi bi-chevron-down" id="chat-toggle-icon" style="color:#a0a0ac;font-size:.75rem;transition:transform .2s;"></i>
+          <span class="badge d-none" id="chat-unread" style="background:#f85149;font-size:.8125rem;border-radius:8px;">0</span>
+          <i class="bi bi-chevron-down" id="chat-toggle-icon" style="color:var(--kl-text-primary);font-size:.8125rem;transition:transform .2s;"></i>
         </div>
       </div>
       <div id="chat-body" style="display:flex;flex-direction:column;">
         <div class="card-body p-0" id="chat-messages" style="overflow-y:auto;padding:.5rem !important;">
-          <div class="text-center py-3" style="color:#63616d;font-size:.75rem;">
+          <div class="text-center py-3" style="color:var(--kl-text-primary);font-size:.8125rem;">
             <i class="bi bi-chat-dots" style="font-size:1.2rem;"></i>
           </div>
         </div>
@@ -433,7 +433,7 @@
           <input type="text" class="form-control form-control-sm" id="chat-input"
                  placeholder="Say something..." maxlength="500"
                  onkeydown="if(event.key==='Enter')sendChat()"
-                 style="font-size:.8rem;background:#0e0d0f;border-color:#2a292f;color:#cfcfd6;">
+                 style="font-size:.8125rem;background:#0e0d0f;border-color:#2a292f;color:var(--kl-text-primary);">
           <button class="btn btn-sm btn-primary" onclick="sendChat()" style="padding:4px 12px;white-space:nowrap;">
             <i class="bi bi-send"></i>
           </button>
@@ -454,10 +454,10 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center" style="padding:1rem;">
-        <div id="confirm-player-name" style="font-size:1.1rem;font-weight:700;color:#cfcfd6;"></div>
+        <div id="confirm-player-name" style="font-size:1.1rem;font-weight:700;color:var(--kl-text-primary);"></div>
         <div class="d-flex justify-content-center gap-2 mt-1">
           <span id="confirm-player-pos" class="pos-badge"></span>
-          <span id="confirm-player-team" style="font-size:.8rem;color:#a0a0ac;"></span>
+          <span id="confirm-player-team" style="font-size:.8125rem;color:var(--kl-text-primary);"></span>
         </div>
       </div>
       <div class="modal-footer d-flex gap-2" style="border-top:1px solid #2a292f;padding:.75rem 1rem;">
@@ -477,7 +477,7 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center" style="padding:1rem;">
-        <div style="font-size:.85rem;color:#a0a0ac;">Are you sure you want to pass on this pick? You won't draft a player this round.</div>
+        <div style="font-size:.85rem;color:var(--kl-text-primary);">Are you sure you want to pass on this pick? You won't draft a player this round.</div>
       </div>
       <div class="modal-footer d-flex gap-2" style="border-top:1px solid #2a292f;padding:.75rem 1rem;">
         <button type="button" class="btn btn-outline-secondary btn-sm flex-fill" data-bs-dismiss="modal">Cancel</button>
@@ -497,7 +497,7 @@
       </div>
       <form method="POST" action="{{ url_for('draft_live.api_end_draft', league_id=league.id) }}" id="end-draft-form">
         <div class="modal-body text-center" style="padding:1rem;">
-          <div style="font-size:.85rem;color:#a0a0ac;">All remaining picks will be marked as <strong style="color:#d29922;">PASS</strong> and the draft will be completed immediately.</div>
+          <div style="font-size:.85rem;color:var(--kl-text-primary);">All remaining picks will be marked as <strong style="color:#d29922;">PASS</strong> and the draft will be completed immediately.</div>
         </div>
         <div class="modal-footer d-flex gap-2" style="border-top:1px solid #2a292f;padding:.75rem 1rem;">
           <button type="button" class="btn btn-outline-secondary btn-sm flex-fill" data-bs-dismiss="modal">Cancel</button>
@@ -692,11 +692,11 @@ function updateUI() {
   // Update commissioner controls — only swap the status button, keep Override + End + Restart
   const controls = document.getElementById('commissioner-controls');
   if (controls && IS_COMMISSIONER) {
-    const overrideBtn = `<button id="comm-override-btn" class="btn btn-outline-warning btn-sm${commOverride ? ' active' : ''}" onclick="toggleCommOverride()" style="font-size:.7rem;" title="Pick on behalf of other teams"><i class="bi bi-shield${commOverride ? '-fill-check' : ''} me-1"></i>${commOverride ? 'Override ON' : 'Override'}</button>`;
-    const undoBtn = (draftState.picks_made > 0) ? `<button class="btn btn-outline-info btn-sm" onclick="undoPick()" style="font-size:.7rem;" title="Undo the last pick"><i class="bi bi-arrow-counterclockwise me-1"></i>Undo</button>` : '';
-    const restartBtn = CAN_RESTART ? `<button class="btn btn-outline-danger btn-sm" onclick="confirmRestart()" style="font-size:.7rem;" title="Delete draft and return to settings"><i class="bi bi-arrow-counterclockwise me-1"></i>Restart</button>` : '';
+    const overrideBtn = `<button id="comm-override-btn" class="btn btn-outline-warning btn-sm${commOverride ? ' active' : ''}" onclick="toggleCommOverride()" style="font-size:.8125rem;" title="Pick on behalf of other teams"><i class="bi bi-shield${commOverride ? '-fill-check' : ''} me-1"></i>${commOverride ? 'Override ON' : 'Override'}</button>`;
+    const undoBtn = (draftState.picks_made > 0) ? `<button class="btn btn-outline-info btn-sm" onclick="undoPick()" style="font-size:.8125rem;" title="Undo the last pick"><i class="bi bi-arrow-counterclockwise me-1"></i>Undo</button>` : '';
+    const restartBtn = CAN_RESTART ? `<button class="btn btn-outline-danger btn-sm" onclick="confirmRestart()" style="font-size:.8125rem;" title="Delete draft and return to settings"><i class="bi bi-arrow-counterclockwise me-1"></i>Restart</button>` : '';
     const endBtn = (draftState.status === 'in_progress' || draftState.status === 'paused')
-      ? `<button class="btn btn-outline-danger btn-sm" onclick="showEndDraftModal()" style="font-size:.7rem;" title="End draft early — remaining picks become passes"><i class="bi bi-stop-fill me-1"></i>End Draft</button>` : '';
+      ? `<button class="btn btn-outline-danger btn-sm" onclick="showEndDraftModal()" style="font-size:.8125rem;" title="End draft early — remaining picks become passes"><i class="bi bi-stop-fill me-1"></i>End Draft</button>` : '';
     let statusBtn = '';
     if (draftState.status === 'scheduled') {
       statusBtn = '<button class="btn btn-primary btn-sm" onclick="startDraft()"><i class="bi bi-play-fill me-1"></i>Start Draft</button>';
@@ -748,14 +748,14 @@ function renderPositionBar() {
     const isBlocked = blocked.has(pos);
     const color = isBlocked ? '#f85149' : need > 0 ? '#d29922' : '#3fb950';
     const bg = isBlocked ? 'rgba(248,81,73,.12)' : need > 0 ? 'rgba(210,153,34,.12)' : 'rgba(63,185,80,.12)';
-    return `<span style="font-size:.7rem;padding:2px 8px;border-radius:8px;background:${bg};color:${color};font-weight:600;"
+    return `<span style="font-size:.8125rem;padding:2px 8px;border-radius:8px;background:${bg};color:${color};font-weight:600;"
                   title="${isBlocked ? 'BLOCKED - must draft other positions' : need > 0 ? need + ' more needed' : 'Requirement met'}">
       ${pos} ${drafted}/${required}${isBlocked ? ' <i class="bi bi-lock-fill"></i>' : ''}
     </span>`;
   }).join('');
   // North Melbourne count
   const northCount = positionNeeds.north_count || 0;
-  const northHtml = `<span style="font-size:.7rem;padding:2px 8px;border-radius:8px;background:rgba(74,72,88,.15);color:#ececf6;font-weight:600;"
+  const northHtml = `<span style="font-size:.8125rem;padding:2px 8px;border-radius:8px;background:rgba(74,72,88,.15);color:#ececf6;font-weight:600;"
                            title="North Melbourne players drafted">
     NM ${northCount}
   </span>`;
@@ -850,7 +850,7 @@ function searchPlayers() {
           <td class="player-name">${p.name}</td>
           <td><span class="pos-badge badge-${posClass}">${p.position || ''}</span></td>
           <td>${p.afl_team || ''}</td>
-          <td style="color:#a0a0ac;">${p.age || '-'}</td>
+          <td style="color:var(--kl-text-primary);">${p.age || '-'}</td>
           <td class="stat-cell">${p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
           <td class="stat-cell"><span style="color:${rtgColor}">${rtg}</span></td>
           <td class="stat-cell"><span style="color:${potColor}">${pot}</span></td>
@@ -949,7 +949,7 @@ function addPickToHistory(pick) {
   const tbody = document.getElementById('pick-history');
   const isPass = pick.is_pass;
   const posClass = isPass ? 'mid' : (pick.player_position || 'mid').split('/')[0].toLowerCase();
-  const autoTag = pick.is_auto_pick ? ' <span style="color:#a0a0ac;font-size:.7rem;">(auto)</span>' : '';
+  const autoTag = pick.is_auto_pick ? ' <span style="color:var(--kl-text-primary);font-size:.8125rem;">(auto)</span>' : '';
   const playerDisplay = isPass
     ? '<span style="color:#d29922;font-weight:600;">PASS</span>'
     : `${pick.player_name}${autoTag}`;

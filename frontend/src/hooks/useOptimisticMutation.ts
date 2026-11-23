@@ -1,17 +1,17 @@
 /**
- * useOptimisticMutation — thin coordinator for optimistic UI updates.
+ * useOptimisticMutation, thin coordinator for optimistic UI updates.
  *
  * The app's existing pattern (see useFieldActions) fires the API, waits
  * for the response, then calls onRefresh() to re-fetch. The UI feels
  * laggy because every action blocks on a roundtrip.
  *
  * This hook flips that:
- *   1. apply(args)   — caller's local state mutation, runs immediately.
- *   2. request(args) — caller's async API call.
- *   3a. On success — onSuccess fires (typically: toast + onRefresh).
- *   3b. On error   — rollback(args) reverts state, then onError fires.
+ *   1. apply(args)  , caller's local state mutation, runs immediately.
+ *   2. request(args), caller's async API call.
+ *   3a. On success, onSuccess fires (typically: toast + onRefresh).
+ *   3b. On error  , rollback(args) reverts state, then onError fires.
  *
- * The hook itself does NOT own the underlying state — that stays in the
+ * The hook itself does NOT own the underlying state, that stays in the
  * component or context. It tracks per-key status so <SavingChip>s can
  * render next to the affected element ("Saving…" → ✓ → fade).
  *

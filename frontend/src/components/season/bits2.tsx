@@ -1,5 +1,5 @@
 /**
- * Season Review — the immersive layer.
+ * Season Review, the immersive layer.
  *
  * Everything here exists to make the deck feel staged rather than rendered:
  * headlines that arrive word by word, counters whose digits physically roll,
@@ -47,7 +47,7 @@ export function Beat({
 }
 
 /* ── Kinetic headline ────────────────────────────────────────────
-   Splits on words (never characters — long AFL surnames turn to soup) and
+   Splits on words (never characters, long AFL surnames turn to soup) and
    lifts each from behind a mask. */
 
 export function Kinetic({
@@ -103,7 +103,7 @@ export function Roll({
 
 /* ── Presence strip ──────────────────────────────────────────────
    One cell per round of the season. Height carries the score, colour carries
-   the state — so a glance shows both "was he in?" and "did he deliver?".
+   the state, so a glance shows both "was he in?" and "did he deliver?".
 
      2  named and played      1  club had no game (Opening Round / bye)
      0  named but didn't play  -1  left out of the 23
@@ -177,7 +177,7 @@ const OVAL_ROWS: Record<string, number[]> = {
   DEF: [0.845, 0.93],
 }
 
-/** Rows near the ends of the ground are narrower — the boundary curves in,
+/** Rows near the ends of the ground are narrower, the boundary curves in,
  *  and a chip hanging off the turf looks broken. */
 function ovalSpan(y: number): number {
   const fromCentre = Math.abs(y - 0.5) * 2      // 0 at centre, 1 at the ends
@@ -213,7 +213,7 @@ export function Oval({
       const posInRow = idx - rowIdx * perRow
       const y = rows[rowIdx]
       let x = ovalX(inRow.length, posInRow, y)
-      // Ruck and flex share the centre bounce — push them wide of the circle
+      // Ruck and flex share the centre bounce, push them wide of the circle
       // and of each other so neither chip sits on top of the other.
       if (line.code === 'RUC') x = 0.245
       if (line.code === 'FLEX') x = 0.755

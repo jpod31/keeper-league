@@ -17,9 +17,9 @@
           <span class="info-value">
             {{ league.teams|length }}/{{ league.num_teams }}
             {% if league.teams|length >= league.num_teams %}
-              <span class="badge ms-1" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.65rem;">Full</span>
+              <span class="badge ms-1" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.8125rem;">Full</span>
             {% else %}
-              <span class="badge ms-1" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.65rem;">Open</span>
+              <span class="badge ms-1" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.8125rem;">Open</span>
             {% endif %}
           </span>
         </div>
@@ -52,7 +52,7 @@
     {% endif %}
 
     <div class="text-center mt-3">
-      <span class="text-secondary" style="font-size:.8rem;">
+      <span class="text-secondary" style="font-size:.8125rem;">
         Don't have an account? <a href="{{ url_for('auth.register', next=url_for('leagues.league_invite', code=code)) }}">Sign up</a>
       </span>
     </div>

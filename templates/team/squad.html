@@ -90,9 +90,9 @@
 </div>
 
 {% if not is_owner %}
-<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(160,160,172,.08);border:1px solid #2a292f;border-radius:8px;font-size:.85rem;color:#a0a0ac;">
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(160,160,172,.08);border:1px solid #2a292f;border-radius:8px;font-size:.85rem;color:var(--kl-text-primary);">
   <i class="bi bi-eye"></i>
-  <span>Viewing <strong style="color:#cfcfd6;">{{ team.name }}</strong>'s squad (read-only)</span>
+  <span>Viewing <strong style="color:var(--kl-text-primary);">{{ team.name }}</strong>'s squad (read-only)</span>
 </div>
 {% endif %}
 
@@ -104,14 +104,14 @@
         <i class="bi bi-arrow-left-right" style="color:var(--kl-accent-orange);"></i>
         <span>Trade window open{% if trade_close_date %} — closes {{ trade_close_date.strftime('%d %b') }}{% endif %}</span>
         {% if pending_incoming %}<span class="lm-alert-badge">{{ pending_incoming }} incoming</span>{% endif %}
-        <i class="bi bi-arrow-right ms-auto" style="color:var(--kl-accent-blue);font-size:.7rem;"></i>
+        <i class="bi bi-arrow-right ms-auto" style="color:var(--kl-accent-blue);font-size:.8125rem;"></i>
       </a>
     {% endif %}
     {% if has_active_draft %}
       <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="lm-alert-row">
         <i class="bi bi-list-check" style="color:var(--kl-accent-blue);"></i>
         <span>Draft live{% if active_draft_round %} — Rd {{ active_draft_round }}{% endif %}</span>
-        <i class="bi bi-arrow-right ms-auto" style="color:var(--kl-accent-blue);font-size:.7rem;"></i>
+        <i class="bi bi-arrow-right ms-auto" style="color:var(--kl-accent-blue);font-size:.8125rem;"></i>
       </a>
     {% endif %}
   </div>
@@ -168,7 +168,7 @@
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <span class="fw-bold" style="font-size:.9rem;"><i class="bi bi-star me-1" style="color:#d29922;"></i>My Wishlist</span>
-      <span style="font-size:.75rem;color:#a0a0ac;">{{ wishlist_players|length }} player{{ 's' if wishlist_players|length != 1 }}</span>
+      <span style="font-size:.8125rem;color:var(--kl-text-primary);">{{ wishlist_players|length }} player{{ 's' if wishlist_players|length != 1 }}</span>
     </div>
     {% if wishlist_players %}
     <div class="card-body p-0" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
@@ -197,7 +197,7 @@
                    title="Remove from wishlist"></i>
               </td>
               <td>
-                <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:#cfcfd6;">
+                <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:var(--kl-text-primary);">
                   {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
                     <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" height="18" class="me-1" style="vertical-align:middle;">
                   {% endif %}
@@ -206,16 +206,16 @@
               </td>
               <td>
                 {% for pos in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge pos-{{ pos }}" style="font-size:.65rem;padding:1px 5px;">{{ pos }}</span>
+                  <span class="pos-badge pos-{{ pos }}" style="font-size:.8125rem;padding:1px 5px;">{{ pos }}</span>
                 {% endfor %}
               </td>
-              <td style="color:#a0a0ac;font-size:.78rem;">{{ p.afl_team or '-' }}</td>
-              <td class="text-center" style="color:#a0a0ac;">{{ p.age or '-' }}</td>
+              <td style="color:var(--kl-text-primary);font-size:.8125rem;">{{ p.afl_team or '-' }}</td>
+              <td class="text-center" style="color:var(--kl-text-primary);">{{ p.age or '-' }}</td>
               <td class="text-end">
                 {% if wp.sc_avg %}
                   <span style="font-weight:600;">{{ wp.sc_avg }}</span>
                 {% else %}
-                  <span style="color:#63616d;">-</span>
+                  <span style="color:var(--kl-text-primary);">-</span>
                 {% endif %}
               </td>
               <td class="text-center">
@@ -228,15 +228,15 @@
                     <i class="bi bi-caret-down-fill"></i>{{ '%.0f'|format(wp.trend) }}
                   </span>
                 {% else %}
-                  <span class="trend-flat" style="font-size:.7rem;">{{ '%+.0f'|format(wp.trend) if wp.trend else '-' }}</span>
+                  <span class="trend-flat" style="font-size:.8125rem;">{{ '%+.0f'|format(wp.trend) if wp.trend else '-' }}</span>
                 {% endif %}
               </td>
-              <td class="text-center" style="color:#a0a0ac;">{{ wp.games or '-' }}</td>
+              <td class="text-center" style="color:var(--kl-text-primary);">{{ wp.games or '-' }}</td>
               <td class="text-center">
                 {% if wp.owner %}
-                  <span class="status-chip" style="background:rgba(248,81,73,.1);color:#f85149;font-size:.65rem;">{{ wp.owner }}</span>
+                  <span class="status-chip" style="background:rgba(248,81,73,.1);color:#f85149;font-size:.8125rem;">{{ wp.owner }}</span>
                 {% else %}
-                  <span class="status-chip" style="background:rgba(63,185,80,.1);color:#3fb950;font-size:.65rem;">Available</span>
+                  <span class="status-chip" style="background:rgba(63,185,80,.1);color:#3fb950;font-size:.8125rem;">Available</span>
                 {% endif %}
               </td>
             </tr>
@@ -246,8 +246,8 @@
     </div>
     {% else %}
     <div class="card-body text-center py-5">
-      <i class="bi bi-star" style="font-size:2rem;color:#63616d;"></i>
-      <p class="mt-2 mb-1" style="color:#a0a0ac;font-size:.88rem;">No players on your wishlist yet.</p>
+      <i class="bi bi-star" style="font-size:2rem;color:var(--kl-text-primary);"></i>
+      <p class="mt-2 mb-1" style="color:var(--kl-text-primary);font-size:.88rem;">No players on your wishlist yet.</p>
       <a href="{{ url_for('leagues.player_pool', league_id=league.id) }}" class="btn btn-sm btn-outline-primary mt-1">
         <i class="bi bi-search me-1"></i>Browse Player Pool
       </a>
@@ -322,21 +322,21 @@
                 <div class="mob-pos-info">
                   <div class="mob-pos-name">
                     {{ p.name }}
-                    {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% elif is_selected %}<i class="bi bi-check-circle-fill" style="font-size:.6rem;color:#3fb950;margin-left:4px;vertical-align:middle;"></i>{% endif %}
+                    {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% elif is_selected %}<i class="bi bi-check-circle-fill" style="font-size:.8125rem;color:#3fb950;margin-left:4px;vertical-align:middle;"></i>{% endif %}
                     {% if fd.cap_id == p.id %}<span class="mob-pos-badge mob-badge-cap">C</span>{% endif %}
                     {% if fd.vc_id == p.id %}<span class="mob-pos-badge mob-badge-vc">VC</span>{% endif %}
                     {% if fd.emergency_ids is defined and p.id in fd.emergency_ids %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
                   </div>
                   <div class="mob-pos-meta">
                     {% for ps in (p.position or 'MID').split('/') %}
-                      <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                      <span class="pos-badge pos-{{ ps }}" style="font-size:.8125rem;padding:1px 5px;">{{ ps }}</span>
                     {% endfor %}
                     <span>{{ p.afl_team or '' }}</span>
                     {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
                   </div>
                 </div>
                 <div class="mob-pos-sc">
-                  {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#63616d;">-</span>{% endif %}
+                  {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
                 </div>
               </div>
             {% endif %}
@@ -351,7 +351,7 @@
         {% if flex_players %}
         <div class="mob-pos-group">
           <div class="mob-pos-header" style="background:rgba(160,160,172,.15);border-left:3px solid #a0a0ac;">
-            <span class="mob-pos-label" style="color:#a0a0ac;">FLEX</span>
+            <span class="mob-pos-label" style="color:var(--kl-text-primary);">FLEX</span>
             <span class="mob-pos-count">{{ flex_players|length }}/{{ fd.flex_count }}</span>
           </div>
           {% for slot in fd.flex_data %}
@@ -382,14 +382,14 @@
                   </div>
                   <div class="mob-pos-meta">
                     {% for ps in (p.position or 'MID').split('/') %}
-                      <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                      <span class="pos-badge pos-{{ ps }}" style="font-size:.8125rem;padding:1px 5px;">{{ ps }}</span>
                     {% endfor %}
                     <span>{{ p.afl_team or '' }}</span>
                     {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
                   </div>
                 </div>
                 <div class="mob-pos-sc">
-                  {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#63616d;">-</span>{% endif %}
+                  {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
                 </div>
               </div>
             {% endif %}
@@ -402,7 +402,7 @@
       {% if fd.emergency_players %}
       <div class="mob-pos-group">
         <div class="mob-pos-header" style="background:rgba(81,78,95,.1);border-left:3px solid #514e5f;">
-          <span class="mob-pos-label" style="color:#514e5f;"><i class="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
+          <span class="mob-pos-label" style="color:var(--kl-text-primary);"><i class="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
           <span class="mob-pos-count">{{ fd.emergency_players|length }} / 4</span>
         </div>
         {% for p in fd.emergency_players %}
@@ -430,14 +430,14 @@
               </div>
               <div class="mob-pos-meta">
                 {% for ps in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.8125rem;padding:1px 5px;">{{ ps }}</span>
                 {% endfor %}
                 <span>{{ p.afl_team or '' }}</span>
                 {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
               </div>
             </div>
             <div class="mob-pos-sc">
-              {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#63616d;">-</span>{% endif %}
+              {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
             </div>
           </div>
         {% endfor %}
@@ -479,19 +479,19 @@
               </div>
               <div class="mob-pos-meta">
                 {% for ps in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.8125rem;padding:1px 5px;">{{ ps }}</span>
                 {% endfor %}
                 <span>{{ p.afl_team or '' }}</span>
                 {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
               </div>
             </div>
             <div class="mob-pos-sc">
-              {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#63616d;">-</span>{% endif %}
+              {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
             </div>
           </div>
         {% endfor %}
         {% else %}
-        <div class="mob-pos-row" style="justify-content:center;color:#63616d;font-size:.8rem;padding:12px;">
+        <div class="mob-pos-row" style="justify-content:center;color:var(--kl-text-primary);font-size:.8125rem;padding:12px;">
           Tap the <span style="color:#bc8cff;font-weight:600;">7</span> button on any reserve to add them
         </div>
         {% endif %}
@@ -522,21 +522,21 @@
               <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
             {% endif %}
             <div class="mob-pos-info">
-              <div class="mob-pos-name" style="color:#a0a0ac;">
+              <div class="mob-pos-name" style="color:var(--kl-text-primary);">
                 {{ p.name }}
                 {% if is_emg %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
                 {% if is_7s %}<span class="mob-pos-badge mob-badge-7s">7</span>{% endif %}
               </div>
               <div class="mob-pos-meta">
                 {% for ps in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.8125rem;padding:1px 5px;">{{ ps }}</span>
                 {% endfor %}
                 <span>{{ p.afl_team or '' }}</span>
                 <span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>
               </div>
             </div>
             <div class="mob-pos-sc">
-              {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;opacity:.7;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#63616d;">-</span>{% endif %}
+              {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;opacity:.7;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
             </div>
           </div>
         {% endfor %}
@@ -547,7 +547,7 @@
       {% if fd.reserves %}
       <div class="mob-pos-group mob-reserves-group">
         <div class="mob-pos-header" style="background:rgba(42,41,47,.4);border-left:3px solid #63616d;">
-          <span class="mob-pos-label" style="color:#8a8895;">BENCH</span>
+          <span class="mob-pos-label" style="color:var(--kl-text-primary);">BENCH</span>
           <span class="mob-pos-count">{{ fd.reserves|length }}</span>
         </div>
         {% for p in fd.reserves %}
@@ -570,7 +570,7 @@
               <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
             {% endif %}
             <div class="mob-pos-info">
-              <div class="mob-pos-name" style="color:#a0a0ac;">
+              <div class="mob-pos-name" style="color:var(--kl-text-primary);">
                 {{ p.name }}
                 {% if is_locked %}<i class="bi bi-lock-fill mob-lock-icon"></i>{% endif %}
                 {% if is_emg %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
@@ -578,14 +578,14 @@
               </div>
               <div class="mob-pos-meta">
                 {% for ps in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge pos-{{ ps }}" style="font-size:.62rem;padding:1px 5px;">{{ ps }}</span>
+                  <span class="pos-badge pos-{{ ps }}" style="font-size:.8125rem;padding:1px 5px;">{{ ps }}</span>
                 {% endfor %}
                 <span>{{ p.afl_team or '' }}</span>
                 {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
               </div>
             </div>
             <div class="mob-pos-sc">
-              {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;opacity:.7;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:#63616d;">-</span>{% endif %}
+              {% if p.sc_avg %}<span style="color:#ebebee;font-weight:700;opacity:.7;">{{ '%.1f'|format(p.sc_avg) }}</span>{% else %}<span style="color:var(--kl-text-primary);">-</span>{% endif %}
             </div>
           </div>
         {% endfor %}
@@ -609,9 +609,9 @@
               <div class="mob-pos-logo" style="width:26px;height:26px;"></div>
             {% endif %}
             <div class="mob-pos-info">
-              <div class="mob-pos-name" style="color:#a0a0ac;">{{ p.name }}</div>
+              <div class="mob-pos-name" style="color:var(--kl-text-primary);">{{ p.name }}</div>
               <div class="mob-pos-meta">
-                <span style="color:#f85149;font-size:.65rem;"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>
+                <span style="color:#f85149;font-size:.8125rem;"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>
               </div>
             </div>
           </div>
@@ -627,7 +627,7 @@
     <i class="bi bi-exclamation-triangle-fill" style="color:#f85149;font-size:1.2rem;"></i>
     <div style="flex:1;">
       <div style="font-size:.85rem;font-weight:600;color:#f85149;">Delist Period Open</div>
-      <div style="font-size:.78rem;color:#a0a0ac;">
+      <div style="font-size:.8125rem;color:var(--kl-text-primary);">
         {{ team_delist_count }}/{{ min_delists }} delisted{% if team_delist_count < min_delists %} &mdash; <strong style="color:#f85149;">{{ min_delists - team_delist_count }} more required</strong>{% else %} &mdash; <span style="color:#3fb950;">requirement met</span>{% endif %}
         {% if delist_period.closes_at %}
           &nbsp;&middot;&nbsp; <span class="delist-countdown" data-target="{{ delist_period.closes_at.strftime('%Y-%m-%dT%H:%M:%SZ') }}">Closes {{ delist_period.closes_at.strftime('%d %b %Y') }}</span>
@@ -637,17 +637,17 @@
   </div>
   {% elif next_delist_info %}
   <div class="d-flex align-items-center gap-3 mb-3 px-3 py-3" style="background:rgba(160,160,172,.06);border:1px solid #2a292f;border-radius:10px;">
-    <i class="bi bi-clock" style="color:#a0a0ac;font-size:1.2rem;"></i>
+    <i class="bi bi-clock" style="color:var(--kl-text-primary);font-size:1.2rem;"></i>
     <div style="flex:1;">
-      <div style="font-size:.85rem;font-weight:600;color:#a0a0ac;">Next Delist Period</div>
-      <div style="font-size:.78rem;color:#8a8895;">{{ next_delist_info }}</div>
+      <div style="font-size:.85rem;font-weight:600;color:var(--kl-text-primary);">Next Delist Period</div>
+      <div style="font-size:.8125rem;color:var(--kl-text-primary);">{{ next_delist_info }}</div>
     </div>
   </div>
   {% else %}
   <div class="d-flex align-items-center gap-3 mb-3 px-3 py-3" style="background:rgba(160,160,172,.04);border:1px solid #1e1d21;border-radius:10px;">
-    <i class="bi bi-clock" style="color:#63616d;font-size:1.2rem;"></i>
+    <i class="bi bi-clock" style="color:var(--kl-text-primary);font-size:1.2rem;"></i>
     <div style="flex:1;">
-      <div style="font-size:.85rem;color:#63616d;">No upcoming delist period</div>
+      <div style="font-size:.85rem;color:var(--kl-text-primary);">No upcoming delist period</div>
     </div>
   </div>
   {% endif %}
@@ -681,18 +681,18 @@
         {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
           <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="squad-mob-logo">
         {% else %}
-          <div class="squad-mob-logo" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:#63616d;"><i class="bi bi-shield-fill" style="font-size:.7rem;"></i></div>
+          <div class="squad-mob-logo" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--kl-text-primary);"><i class="bi bi-shield-fill" style="font-size:.8125rem;"></i></div>
         {% endif %}
         <div class="squad-mob-info">
           <div class="squad-mob-name">
-            <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:#cfcfd6;">{{ p.name }}</a>
+            <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none" style="color:var(--kl-text-primary);">{{ p.name }}</a>
             {% if r and r.is_captain %}<span class="squad-badge squad-badge-cap">C</span>{% endif %}
             {% if r and r.is_vice_captain %}<span class="squad-badge squad-badge-vc">VC</span>{% endif %}
             {% if r and r.is_emergency %}<span class="mob-pos-badge mob-badge-emg">E</span>{% endif %}
             {% if p.id in sevens_ids_all %}<span class="mob-pos-badge mob-badge-7s">7</span>{% endif %}
           </div>
           <div class="squad-mob-meta">
-            <span class="pos-badge pos-{{ primary }}" style="font-size:.6rem;padding:0 4px;">{{ primary }}</span>
+            <span class="pos-badge pos-{{ primary }}" style="font-size:.8125rem;padding:0 4px;">{{ primary }}</span>
             <span>{{ p.afl_team or '-' }}</span>
             {% if p.age %}<span>Age {{ p.age }}</span>{% endif %}
             {% if p.injury_severity %}<span class="squad-mob-injury"><i class="bi bi-bandaid-fill"></i> {{ p.injury_type or 'Injured' }}</span>{% endif %}
@@ -752,9 +752,9 @@
                   <span class="status-dot status-dot-available"></span>
                 {% endif %}
               </td>
-              <td style="color:#63616d;">{{ loop.index }}</td>
+              <td style="color:var(--kl-text-primary);">{{ loop.index }}</td>
               <td>
-                <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:#cfcfd6;">{{ p.name }}</a>
+                <a href="{{ url_for('player_detail', name=p.name) }}" class="text-decoration-none fw-bold" style="color:var(--kl-text-primary);">{{ p.name }}</a>
                 {% if r and r.is_captain %}<span class="squad-badge squad-badge-cap">C</span>{% endif %}
                 {% if r and r.is_vice_captain %}<span class="squad-badge squad-badge-vc">VC</span>{% endif %}
               </td>
@@ -767,7 +767,7 @@
                 {% if p.afl_team and p.afl_team in TEAM_LOGOS %}
                   <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" height="18" class="me-1">
                 {% endif %}
-                <span style="font-size:.8rem;">{{ p.afl_team or '' }}</span>
+                <span style="font-size:.8125rem;">{{ p.afl_team or '' }}</span>
               </td>
               <td class="text-center stat-games">{{ st.get('games', '-') }}</td>
               <td class="text-center stat-goals squad-hide-mobile">{{ st.get('goals', '-') }}</td>
@@ -788,16 +788,16 @@
               {% if is_owner %}
               <td class="text-center">
                 {% if p.id in delisted_player_ids %}
-                  <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.7rem;">Delisted</span>
+                  <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.8125rem;">Delisted</span>
                 {% elif delist_is_open %}
                   <button type="button" class="btn btn-sm btn-outline-danger"
-                          style="font-size:.7rem;padding:2px 8px;border-radius:4px;"
+                          style="font-size:.8125rem;padding:2px 8px;border-radius:4px;"
                           onclick="showDelistModal({{ p.id }}, '{{ p.name|e }}')">
                     <i class="bi bi-x-circle me-1"></i>Delist
                   </button>
                 {% else %}
                   <button type="button" class="btn btn-sm btn-outline-secondary" disabled
-                          style="font-size:.7rem;padding:2px 8px;border-radius:4px;opacity:.4;">
+                          style="font-size:.8125rem;padding:2px 8px;border-radius:4px;opacity:.4;">
                     <i class="bi bi-x-circle me-1"></i>Delist
                   </button>
                 {% endif %}
@@ -1002,7 +1002,7 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" style="padding:20px;">
-          <p style="color:#cfcfd6;font-size:.88rem;margin-bottom:0;">
+          <p style="color:var(--kl-text-primary);font-size:.88rem;margin-bottom:0;">
             Are you sure you want to delist <strong id="delistPlayerName" style="color:#f85149;"></strong>?
             This action cannot be undone.
           </p>

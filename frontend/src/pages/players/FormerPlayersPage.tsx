@@ -113,7 +113,7 @@ export function FormerPlayersPage() {
   const stillListed = data.players.filter(p => p.still_listed_by).length
   const th = (key: SortKey, label: string, cls = '') => (
     <th className={`sortable ${cls}${sortKey === key ? ' sorted' : ''}`} onClick={() => sortBy(key)}>
-      {label}{sortKey === key && <i className={`bi ${asc ? 'bi-caret-up-fill' : 'bi-caret-down-fill'}`} style={{ marginLeft: 5, fontSize: '.6875rem' }}></i>}
+      {label}{sortKey === key && <i className={`bi ${asc ? 'bi-caret-up-fill' : 'bi-caret-down-fill'}`} style={{ marginLeft: 5, fontSize: '.8125rem' }}></i>}
     </th>
   )
   const open = (p: FormerPlayer) => { window.location.href = `/player/${encodeURIComponent(p.name)}` }

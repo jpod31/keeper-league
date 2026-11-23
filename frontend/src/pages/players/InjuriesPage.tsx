@@ -69,7 +69,7 @@ export function InjuriesPage() {
   const [teamFilter, setTeamFilter] = useState('')
   const [sevFilter, setSevFilter] = useState('')
 
-  // Default: severity desc — most-severe injuries surface first.
+  // Default: severity desc, most-severe injuries surface first.
   // Name and AFL team default to ascending on first click; everything
   // else (severity, sort by rostered) defaults to descending per the
   // project rule (see feedback_sort_descending.md).
@@ -114,7 +114,7 @@ export function InjuriesPage() {
         </div>
         <h2><i className="bi bi-bandaid me-2" style={{ color: '#f85149' }}></i>Injuries</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
-          {filtered.length} players · Round {data.current_round ?? '—'}
+          {filtered.length} players · Round {data.current_round ?? '-'}
         </div>
       </div>
 
@@ -170,19 +170,19 @@ export function InjuriesPage() {
                     <WishlistStar wishlist={wishlist} playerId={p.id} playerName={p.name} />
                   </td>
                   <td><strong>{p.name}</strong></td>
-                  <td className="mob-hide"><span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.afl_team}</span></td>
+                  <td className="mob-hide"><span className="text-secondary" style={{ fontSize: '.8125rem' }}>{p.afl_team}</span></td>
                   <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
                   <td>
-                    <span className="badge" style={{ background: (SEV_COLOR[p.injury_severity] || '#8a8895') + '20', color: SEV_COLOR[p.injury_severity] || '#a0a0ac', fontSize: '.7rem' }}>
+                    <span className="badge" style={{ background: (SEV_COLOR[p.injury_severity] || '#8a8895') + '20', color: SEV_COLOR[p.injury_severity] || '#a0a0ac', fontSize: '.8125rem' }}>
                       {p.injury_severity.toUpperCase()}
                     </span>
                   </td>
-                  <td className="mob-hide text-secondary" style={{ fontSize: '.75rem' }}>{p.injury_type}</td>
-                  <td className="mob-hide text-secondary" style={{ fontSize: '.75rem' }}>{p.injury_return || '—'}</td>
+                  <td className="mob-hide text-secondary" style={{ fontSize: '.8125rem' }}>{p.injury_type}</td>
+                  <td className="mob-hide text-secondary" style={{ fontSize: '.8125rem' }}>{p.injury_return || '-'}</td>
                   <td>
                     {p.rostered_by ? (
                       <span className="d-inline-flex align-items-center gap-1">
-                        <span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.rostered_by}</span>
+                        <span className="text-secondary" style={{ fontSize: '.8125rem' }}>{p.rostered_by}</span>
                         {p.rostered_by !== leagueCtx?.user_team?.name && ownerNameToId.has(p.rostered_by) && (
                           <Link
                             to={`/leagues/${leagueId}/trades/propose?with=${p.id}&from=${ownerNameToId.get(p.rostered_by)}`}
@@ -195,7 +195,7 @@ export function InjuriesPage() {
                         )}
                       </span>
                     ) : (
-                      <span className="badge" style={{ background: 'rgba(63,185,80,.12)', color: '#3fb950', fontSize: '.65rem' }}>FREE</span>
+                      <span className="badge" style={{ background: 'rgba(63,185,80,.12)', color: '#3fb950', fontSize: '.8125rem' }}>FREE</span>
                     )}
                   </td>
                 </tr>
@@ -230,7 +230,7 @@ export function InjuriesPage() {
   )
 }
 
-// Small inline component — keeps the table-header markup readable.
+// Small inline component, keeps the table-header markup readable.
 // Clicking the header toggles via useListSort, which handles the
 // "first-click is the column's default direction" rule.
 function SortableTh({

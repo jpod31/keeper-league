@@ -1,5 +1,5 @@
 /**
- * useListSort — opinionated default + persistence for list-page sorts.
+ * useListSort, opinionated default + persistence for list-page sorts.
  *
  * Per the project's UX direction:
  *   - Each list page has an explicit default sort (e.g. Squad → sc_avg desc).
@@ -66,7 +66,7 @@ function readStored(key: string): SortState | null {
       return { column: parsed.column, direction: parsed.direction }
     }
   } catch {
-    // Corrupt entry — fall through to defaults.
+    // Corrupt entry, fall through to defaults.
   }
   return null
 }
@@ -75,7 +75,7 @@ function writeStored(key: string, state: SortState) {
   try {
     localStorage.setItem(key, JSON.stringify(state))
   } catch {
-    // Quota / private mode — silently ignore; sort still works in-session.
+    // Quota / private mode, silently ignore; sort still works in-session.
   }
 }
 

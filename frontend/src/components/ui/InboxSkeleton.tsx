@@ -1,5 +1,5 @@
 /**
- * InboxSkeleton — placeholder for the DM inbox list. Header + 6
+ * InboxSkeleton, placeholder for the DM inbox list. Header + 6
  * conversation-row silhouettes + a side card for "new message".
  *
  * Reuses .kl-skel shimmer.

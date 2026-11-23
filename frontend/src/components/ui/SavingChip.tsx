@@ -1,5 +1,5 @@
 /**
- * SavingChip — tiny inline status indicator for optimistic mutations.
+ * SavingChip, tiny inline status indicator for optimistic mutations.
  *
  * Pairs with useOptimisticMutation. Renders "Saving…" while a request
  * is in flight, a check mark on success, an exclamation on error.

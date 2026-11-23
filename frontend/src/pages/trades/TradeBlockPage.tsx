@@ -66,7 +66,7 @@ function PositionChips({ p }: { p: BlockPlayer }) {
       {(p.position || 'MID').split('/').filter(Boolean).map(x => (
         <span key={x} className={`pos-badge badge-${x.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}
           style={{ padding: '2px 7px', fontSize: '.8125rem' }}>
-          {x}{p.position_expected ? ' exp' : ''}
+          {x}
         </span>
       ))}
     </>

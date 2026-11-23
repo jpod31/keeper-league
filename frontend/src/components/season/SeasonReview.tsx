@@ -1,10 +1,10 @@
 /**
- * Season Review — the full-screen, slide-by-slide year in review.
+ * Season Review, the full-screen, slide-by-slide year in review.
  *
  * Runs as a story: slides advance on a timer with the progress segments
  * filling in real time, and pause the moment the viewer looks like they're
  * reading (pointer over the content, or they've just scrolled). Manual
- * controls always win — buttons, arrow keys, the edge tap zones, or the
+ * controls always win, buttons, arrow keys, the edge tap zones, or the
  * progress segments themselves.
  *
  * Slides live in slides.tsx and only draw; this file owns ordering, theming,
@@ -82,7 +82,7 @@ export function SeasonReview({
     setDone(false)
   }, [deck.length, i])
 
-  // Autoplay. One timeout per slide rather than a ticking interval — the bar
+  // Autoplay. One timeout per slide rather than a ticking interval, the bar
   // is a pure CSS animation, so nothing needs to re-render while it runs.
   const held = deck[i] ? (HOLD_MS[deck[i].key] ?? DEFAULT_HOLD) : DEFAULT_HOLD
   const paused = !playing || reading || !data
@@ -223,7 +223,7 @@ export function SeasonReview({
           )}
         </AnimatePresence>
 
-        {/* Edge tap zones — narrow so scrolling and reading the middle of a
+        {/* Edge tap zones, narrow so scrolling and reading the middle of a
             dense slide is never hijacked. */}
         {data && deck.length > 0 && (
           <>

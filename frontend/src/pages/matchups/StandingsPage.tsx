@@ -1,3 +1,4 @@
+import { TeamBadge } from '../../components/ui/TeamBadge'
 import { useParams, Link } from 'react-router'
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
@@ -91,7 +92,7 @@ function scoringTagType(label: string): string {
   return 'custom'
 }
 
-// CSS — unified ladder + glass rows, equal weight across all positions.
+// CSS, unified ladder + glass rows, equal weight across all positions.
 // Mobile cards inherit the same row layout, just compacter.
 const LAD_CSS = `
 .lad-wrap { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
@@ -104,11 +105,11 @@ const LAD_CSS = `
 }
 .lad-head {
   padding: 0 16px;
-  font-size: .58rem;
+  font-size: .8125rem;
   font-weight: 800;
-  letter-spacing: .14em;
+  letter-spacing: .06em;
   text-transform: uppercase;
-  color: #8c8c98;
+  color: var(--kl-text-primary);
   margin-bottom: 4px;
 }
 .lad-head > * { text-align: right; }
@@ -128,7 +129,7 @@ const LAD_CSS = `
 }
 .lad-head button.lad-sort:hover { color: #e8e7f0; }
 .lad-head .lad-sort-chev {
-  font-size: .55rem;
+  font-size: .8125rem;
   opacity: .25;
   transition: opacity .14s ease, color .14s ease;
 }
@@ -180,16 +181,16 @@ const LAD_CSS = `
   border-radius: 8px;
   font-size: .82rem;
   font-weight: 800;
-  color: #c6c5cf;
+  color: var(--kl-text-primary);
   background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.06);
   font-variant-numeric: tabular-nums;
 }
 .lad-rank-1 { color: #e8c25b; border-color: rgba(232,194,91,.4); background: rgba(232,194,91,.08); }
-.lad-rank-2 { color: #bdbbc7; border-color: rgba(189,187,199,.35); background: rgba(189,187,199,.06); }
+.lad-rank-2 { color: var(--kl-text-primary); border-color: rgba(189,187,199,.35); background: rgba(189,187,199,.06); }
 .lad-rank-3 { color: #b8855d; border-color: rgba(184,133,93,.35); background: rgba(184,133,93,.06); }
 
-/* Team column — just the name. Nothing else. */
+/* Team column, just the name. Nothing else. */
 .lad-team-name {
   font-size: .92rem;
   font-weight: 700;
@@ -202,9 +203,9 @@ const LAD_CSS = `
 .lad-pill {
   display: inline-flex;
   align-items: center;
-  font-size: .54rem;
+  font-size: .8125rem;
   font-weight: 800;
-  letter-spacing: .14em;
+  letter-spacing: .06em;
   text-transform: uppercase;
   padding: 2px 7px;
   border-radius: 999px;
@@ -213,7 +214,7 @@ const LAD_CSS = `
 }
 .lad-pill-onfire, .lad-pill-dominant { color: #6db38a; border-color: rgba(109,179,138,.4); background: rgba(109,179,138,.1); }
 .lad-pill-surging, .lad-pill-strong { color: #e4e3ed; border-color: rgba(228,227,237,.4); background: rgba(228,227,237,.1); }
-.lad-pill-steady { color: #bfbec5; border-color: rgba(191,190,197,.3); background: rgba(191,190,197,.06); }
+.lad-pill-steady { color: var(--kl-text-primary); border-color: rgba(191,190,197,.3); background: rgba(191,190,197,.06); }
 .lad-pill-underperforming, .lad-pill-struggling { color: #d68a7e; border-color: rgba(214,138,126,.35); background: rgba(214,138,126,.08); }
 .lad-pill-sliding, .lad-pill-infreefall { color: #e07a6c; border-color: rgba(224,122,108,.45); background: rgba(224,122,108,.12); }
 
@@ -230,13 +231,13 @@ const LAD_CSS = `
 .lad-wl .w { color: #6db38a; }
 .lad-wl .l { color: #d68a7e; }
 .lad-wl .d { color: #c2932f; }
-.lad-wl .sep { color: #686874; font-weight: 400; }
+.lad-wl .sep { color: var(--kl-text-primary); font-weight: 400; }
 
-/* Status column — empty when no headline */
+/* Status column, empty when no headline */
 .lad-status { display: flex; align-items: center; }
-.lad-status-empty { color: #686874; font-size: .68rem; }
+.lad-status-empty { color: var(--kl-text-primary); font-size: .8125rem; }
 
-/* Power-rank chip — distinct from the ladder rank cell. Top 3 get medal
+/* Power-rank chip, distinct from the ladder rank cell. Top 3 get medal
    gradient + glow, everyone else gets a neutral chip. The small left-edge
    accent strip gives the chip its own identity vs a plain rounded box. */
 .lad-pr { text-align: right; display: flex; justify-content: flex-end; align-items: center; }
@@ -251,7 +252,7 @@ const LAD_CSS = `
   border-radius: 6px;
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: .78rem;
+  font-size: .8125rem;
   font-weight: 800;
   letter-spacing: -.02em;
   background: linear-gradient(135deg, rgba(220,218,231,.10), rgba(220,218,231,.02));
@@ -283,7 +284,7 @@ const LAD_CSS = `
   border-color: rgba(199,152,112,.5);
   color: #e0b48a;
 }
-.lad-pr-empty { color: #686874; font-size: .82rem; }
+.lad-pr-empty { color: var(--kl-text-primary); font-size: .82rem; }
 
 /* Form sparkline (last N results) */
 .lad-form {
@@ -309,9 +310,9 @@ const LAD_CSS = `
   gap: 4px;
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: .72rem;
+  font-size: .8125rem;
   font-weight: 700;
-  color: #b0b0bc;
+  color: var(--kl-text-primary);
   padding: 4px 9px;
   border-radius: 999px;
   background: rgba(255,255,255,.03);
@@ -319,7 +320,7 @@ const LAD_CSS = `
 }
 .lad-momentum.up { color: #6db38a; background: rgba(61,140,99,.1); }
 .lad-momentum.down { color: #d68a7e; background: rgba(184,90,74,.1); }
-.lad-momentum.flat { color: #8c8c98; }
+.lad-momentum.flat { color: var(--kl-text-primary); }
 
 /* Numeric columns */
 .lad-num {
@@ -331,11 +332,11 @@ const LAD_CSS = `
   text-align: right;
 }
 .lad-num-strong { font-size: 1rem; font-weight: 800; color: #f5f5f7; }
-.lad-num-muted { color: #b0b0bc; }
+.lad-num-muted { color: var(--kl-text-primary); }
 .lad-num .unit {
-  font-size: .68rem;
+  font-size: .8125rem;
   font-weight: 500;
-  color: #8c8c98;
+  color: var(--kl-text-primary);
   margin-left: 2px;
 }
 
@@ -350,9 +351,9 @@ const LAD_CSS = `
   align-items: center;
   gap: 12px;
   margin: 4px 8px;
-  font-size: .58rem;
+  font-size: .8125rem;
   font-weight: 800;
-  letter-spacing: .14em;
+  letter-spacing: .06em;
   text-transform: uppercase;
   color: rgba(109,179,138,.65);
 }
@@ -376,13 +377,13 @@ const LAD_CSS = `
 .lad-foot {
   display: flex; justify-content: space-between; align-items: center;
   padding: 12px 16px 4px;
-  font-size: .68rem;
-  color: #8c8c98;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
 }
 .lad-foot .scoring-tag {
-  font-size: .58rem;
+  font-size: .8125rem;
   font-weight: 800;
-  letter-spacing: .14em;
+  letter-spacing: .06em;
   text-transform: uppercase;
   padding: 3px 9px;
   border-radius: 999px;
@@ -392,9 +393,9 @@ const LAD_CSS = `
 }
 
 /* Empty state */
-.lad-empty { text-align: center; padding: 60px 20px; color: #686874; }
+.lad-empty { text-align: center; padding: 60px 20px; color: var(--kl-text-primary); }
 .lad-empty i { font-size: 2rem; display: block; margin-bottom: 12px; color: #38363e; }
-.lad-empty h4 { color: #b0b0bc; font-size: 1rem; font-weight: 600; margin: 0 0 4px; }
+.lad-empty h4 { color: var(--kl-text-primary); font-size: 1rem; font-weight: 600; margin: 0 0 4px; }
 .lad-empty p { font-size: .82rem; margin: 0; }
 
 /* Competition toggle */
@@ -409,9 +410,9 @@ const LAD_CSS = `
 .lad-comp-btn {
   padding: 6px 14px;
   border-radius: 999px;
-  font-size: .74rem;
+  font-size: .8125rem;
   font-weight: 700;
-  color: #b0b0bc;
+  color: var(--kl-text-primary);
   text-decoration: none;
   border: 0;
   background: transparent;
@@ -427,7 +428,7 @@ const LAD_CSS = `
   color: #e6e4ee;
 }
 
-/* Mobile — compact 3-column layout */
+/* Mobile, compact 3-column layout */
 @media (max-width: 768px) {
   .lad-head { display: none; }
   .lad-row {
@@ -447,7 +448,7 @@ const LAD_CSS = `
   .lad-row > .lad-momentum { display: none; }
 }
 
-/* Sevens mode — purple accent palette */
+/* Sevens mode, purple accent palette */
 .lad-sevens .lad-form-dot.W { background: #dddbe8; }
 .lad-sevens .lad-num-strong { color: #e6e4ee; }
 `
@@ -633,13 +634,13 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
                   >
                     <span className={`lad-rank${pos <= 3 ? ` lad-rank-${pos}` : ''}`}>{pos}</span>
 
-                    <span className="lad-team-name">{s.team?.name}</span>
+                    <TeamBadge name={s.team_id} size={28} showName={false} /><span className="lad-team-name">{s.team?.name}</span>
 
                     <span className="lad-status">
                       {headline ? (
                         <span className={`lad-pill lad-pill-${headlineCls}`}>{headline}</span>
                       ) : (
-                        <span className="lad-status-empty">—</span>
+                        <span className="lad-status-empty">-</span>
                       )}
                     </span>
 
@@ -649,7 +650,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
                           {rk.rank}
                         </span>
                       ) : (
-                        <span className="lad-pr-empty">—</span>
+                        <span className="lad-pr-empty">-</span>
                       )}
                     </span>
 
@@ -667,9 +668,9 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
                     </div>
 
                     <span className={`lad-momentum ${movement > 0 ? 'up' : movement < 0 ? 'down' : 'flat'}`}>
-                      {movement > 0 && <><i className="bi bi-caret-up-fill" style={{ fontSize: '.6rem' }}></i>{movement}</>}
-                      {movement < 0 && <><i className="bi bi-caret-down-fill" style={{ fontSize: '.6rem' }}></i>{Math.abs(movement)}</>}
-                      {movement === 0 && <>—</>}
+                      {movement > 0 && <><i className="bi bi-caret-up-fill" style={{ fontSize: '.8125rem' }}></i>{movement}</>}
+                      {movement < 0 && <><i className="bi bi-caret-down-fill" style={{ fontSize: '.8125rem' }}></i>{Math.abs(movement)}</>}
+                      {movement === 0 && <>-</>}
                     </span>
 
                     <span className="lad-num">

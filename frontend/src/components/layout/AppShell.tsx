@@ -4,7 +4,7 @@ import { NotificationBell } from '../NotificationBell'
 import { useState, useRef, useEffect } from 'react'
 
 /**
- * Top-level app shell — glass-blur sticky header.
+ * Top-level app shell, glass-blur sticky header.
  * Brand mark + home pill on the left, right-side glass cluster of
  * admin / bell / user-pill on the right. User dropdown styled to
  * match the league switcher.
@@ -138,9 +138,9 @@ export function AppShell() {
           border-radius: 999px;
           background: rgba(255,255,255,.05);
           border: 1px solid rgba(255,255,255,.08);
-          color: #cfcfd6;
+          color: var(--kl-text-primary);
           text-decoration: none;
-          font-size: .78rem;
+          font-size: .8125rem;
           font-weight: 600;
           transition: background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
         }
@@ -172,7 +172,7 @@ export function AppShell() {
           background: transparent !important;
           border: 0 !important;
           padding: 0 !important;
-          color: #cfcfd6 !important;
+          color: var(--kl-text-primary) !important;
           font-size: 1.05rem;
           cursor: pointer;
           text-decoration: none;
@@ -207,7 +207,7 @@ export function AppShell() {
           border-radius: 999px;
           background: transparent;
           border: 0;
-          color: #cfcfd6;
+          color: var(--kl-text-primary);
           cursor: pointer;
           transition: background .14s ease, color .14s ease;
         }
@@ -216,7 +216,7 @@ export function AppShell() {
           width: 30px; height: 30px;
           border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
-          font-size: .78rem;
+          font-size: .8125rem;
           font-weight: 800;
           color: #080709;
           background: linear-gradient(135deg, #b5ff3c 0%, #4ade80 100%);
@@ -227,15 +227,15 @@ export function AppShell() {
         .kl-bar-user-name {
           font-size: .82rem;
           font-weight: 600;
-          color: #cfcfd6;
+          color: var(--kl-text-primary);
           max-width: 140px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
         .kl-bar-user-chev {
-          font-size: .64rem;
-          color: #8a8895;
+          font-size: .8125rem;
+          color: var(--kl-text-primary);
           transition: transform .2s ease, color .15s ease;
         }
         .kl-bar-user.open .kl-bar-user-chev { transform: rotate(180deg); color: #f5f5f7; }
@@ -266,7 +266,7 @@ export function AppShell() {
           margin-bottom: 8px;
         }
         .kl-bar-menu-head-name { font-size: .92rem; font-weight: 700; color: #f5f5f7; }
-        .kl-bar-menu-head-sub  { font-size: .68rem; color: #a0a0ac; }
+        .kl-bar-menu-head-sub  { font-size: .8125rem; color: var(--kl-text-primary); }
         .kl-bar-menu-item {
           display: flex; align-items: center; gap: 10px;
           width: 100%;
@@ -274,7 +274,7 @@ export function AppShell() {
           border-radius: 10px;
           background: transparent;
           border: 0;
-          color: #cfcfd6;
+          color: var(--kl-text-primary);
           font-size: .82rem;
           font-weight: 600;
           text-decoration: none;
@@ -288,7 +288,7 @@ export function AppShell() {
           transform: translateX(2px);
           text-decoration: none;
         }
-        .kl-bar-menu-item i { font-size: .9rem; color: #a0a0ac; transition: color .14s ease; }
+        .kl-bar-menu-item i { font-size: .9rem; color: var(--kl-text-primary); transition: color .14s ease; }
         .kl-bar-menu-item:hover i { color: #f5f5f7; }
         .kl-bar-menu-item-danger { color: #ff8a82; }
         .kl-bar-menu-item-danger:hover { background: rgba(248,81,73,.1); color: #ff8a82; }
@@ -299,7 +299,7 @@ export function AppShell() {
           background: rgba(42,41,47,.6);
         }
 
-        /* Mobile (<992px) — bar still visible but compact, no name */
+        /* Mobile (<992px), bar still visible but compact, no name */
         @media (max-width: 991.98px) {
           .kl-bar-inner { padding: 8px 12px; }
           .kl-bar-wordmark { display: none; }
@@ -324,10 +324,10 @@ export function AppShell() {
             </Link>
           )}
 
-          {/* Portal slot — LeagueShell injects its switcher here when mounted */}
+          {/* Portal slot, LeagueShell injects its switcher here when mounted */}
           <div id="kl-bar-league-slot" className="kl-bar-league-slot" />
 
-          {/* Portal slot — LeagueShell injects LockoutBadge here. Lives
+          {/* Portal slot, LeagueShell injects LockoutBadge here. Lives
               next to the switcher so round/lockout context is always glanceable. */}
           <div id="kl-bar-lockout-slot" className="kl-bar-lockout-slot" />
 
@@ -413,7 +413,7 @@ export function AppShell() {
             </div>
             <form onSubmit={submitJoin} style={{ padding: '1rem' }}>
               <div className="mb-3">
-                <label className="form-label" style={{ fontSize: '.8rem' }}>League Invite Code</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>League Invite Code</label>
                 <input
                   type="text" className="form-control" placeholder="e.g. A3K9MZ2P"
                   maxLength={12} required autoFocus

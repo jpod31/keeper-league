@@ -16,7 +16,7 @@
 
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sort-numeric-down me-2" style="color:#a0a0ac;"></i>Draft Order</h5>
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sort-numeric-down me-2" style="color:var(--kl-text-primary);"></i>Draft Order</h5>
         <div class="d-flex gap-2">
           <form method="POST" class="d-inline">
             <input type="hidden" name="action" value="randomize">
@@ -65,7 +65,7 @@
     </div>
 
     <div class="card mb-4">
-      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-gear me-2" style="color:#a0a0ac;"></i>Configuration <span class="text-secondary" style="font-size:.7rem;font-weight:400;">(set at league creation)</span></h5></div>
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-gear me-2" style="color:var(--kl-text-primary);"></i>Configuration <span class="text-secondary" style="font-size:.8125rem;font-weight:400;">(set at league creation)</span></h5></div>
       <div class="card-body">
         <div class="info-row"><span class="info-label">Draft Type</span><span class="info-value text-capitalize">{{ league.draft_type }}</span></div>
         <div class="info-row"><span class="info-label">Rounds</span><span class="info-value">{{ league.squad_size }}</span></div>
@@ -86,11 +86,11 @@
             <form method="POST">
               <input type="hidden" name="action" value="create_session">
               <div class="mb-3">
-                <label class="form-label">Draft Start Date &amp; Time <span class="text-secondary" style="font-size:.75rem;">(optional)</span></label>
+                <label class="form-label">Draft Start Date &amp; Time <span class="text-secondary" style="font-size:.8125rem;">(optional)</span></label>
                 <input type="datetime-local" class="form-control form-control-sm" name="scheduled_start"
                        {% if league.draft_scheduled_date %}value="{{ league.draft_scheduled_date.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}
                        style="max-width:280px;">
-                <div class="form-text" style="font-size:.7rem;">{% if league.draft_scheduled_date %}Pre-filled from league creation. {% endif %}Leave blank to start manually.</div>
+                <div class="form-text" style="font-size:.8125rem;">{% if league.draft_scheduled_date %}Pre-filled from league creation. {% endif %}Leave blank to start manually.</div>
               </div>
               <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Draft Session</button>
             </form>
@@ -118,7 +118,7 @@
                   <i class="bi bi-calendar-event" style="color:#d29922;"></i>
                   <span style="font-size:.85rem;font-weight:600;">Scheduled Start</span>
                 </div>
-                <div style="font-size:.9rem;color:#cfcfd6;" id="scheduled-time">
+                <div style="font-size:.9rem;color:var(--kl-text-primary);" id="scheduled-time">
                   {{ session.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') if session.scheduled_start else 'Not set' }}
                 </div>
                 <div id="countdown-display" class="mt-2" style="font-size:1.5rem;font-weight:700;color:#ececf6;"></div>
@@ -150,7 +150,7 @@
                 })();
               </script>
             {% else %}
-              <p class="text-secondary mt-2 mb-0" style="font-size:.8rem;">
+              <p class="text-secondary mt-2 mb-0" style="font-size:.8125rem;">
                 <i class="bi bi-info-circle me-1"></i>No scheduled time set — start manually when ready.
               </p>
             {% endif %}
@@ -159,7 +159,7 @@
               <input type="hidden" name="action" value="set_schedule">
               <div class="d-flex align-items-end gap-2">
                 <div>
-                  <label class="form-label" style="font-size:.75rem;">Update Draft Time</label>
+                  <label class="form-label" style="font-size:.8125rem;">Update Draft Time</label>
                   <input type="datetime-local" class="form-control form-control-sm" name="scheduled_start"
                          {% if session.scheduled_start %}value="{{ session.scheduled_start.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}
                          style="max-width:250px;">
@@ -173,7 +173,7 @@
             <div class="d-flex align-items-center gap-3">
               <span class="status-pill status-active">In Progress</span>
               {% if session.draft_round_type == 'supplemental' %}
-                <span class="badge" style="background:rgba(45,212,191,.15);color:#2dd4bf;font-size:.7rem;">Supplemental</span>
+                <span class="badge" style="background:rgba(45,212,191,.15);color:#2dd4bf;font-size:.8125rem;">Supplemental</span>
               {% endif %}
             </div>
             <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i>Enter Draft Room</a>
@@ -183,7 +183,7 @@
             <div class="d-flex align-items-center gap-3">
               <span class="status-pill status-pending">Paused</span>
               {% if session.draft_round_type == 'supplemental' %}
-                <span class="badge" style="background:rgba(45,212,191,.15);color:#2dd4bf;font-size:.7rem;">Supplemental</span>
+                <span class="badge" style="background:rgba(45,212,191,.15);color:#2dd4bf;font-size:.8125rem;">Supplemental</span>
               {% endif %}
             </div>
             <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i>Enter Draft Room</a>
@@ -201,7 +201,7 @@
               <button type="submit" class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-arrow-counterclockwise me-1"></i>Restart Draft
               </button>
-              <span class="text-secondary ms-2" style="font-size:.75rem;">Deletes draft, clears rosters, unlocks settings</span>
+              <span class="text-secondary ms-2" style="font-size:.8125rem;">Deletes draft, clears rosters, unlocks settings</span>
             </form>
           </div>
         {% endif %}
@@ -223,12 +223,12 @@
               <div class="p-3 mb-3" style="background:#0e0d0f;border:1px solid #2a292f;border-radius:8px;">
                 <div class="d-flex align-items-center gap-2 mb-2">
                   <i class="bi bi-clock-history" style="color:#d29922;font-size:1.1rem;"></i>
-                  <span style="font-size:.9rem;font-weight:600;color:#cfcfd6;">
+                  <span style="font-size:.9rem;font-weight:600;color:var(--kl-text-primary);">
                     {{ supp_session.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') }}
                   </span>
                 </div>
                 <div id="supp-countdown" style="font-size:1.8rem;font-weight:700;color:#2dd4bf;"></div>
-                <div class="text-secondary mt-1" style="font-size:.75rem;">{{ supp_session.total_rounds }} rounds &middot; {{ league.teams|length }} teams</div>
+                <div class="text-secondary mt-1" style="font-size:.8125rem;">{{ supp_session.total_rounds }} rounds &middot; {{ league.teams|length }} teams</div>
               </div>
               <script>
                 (function() {
@@ -290,12 +290,12 @@
                   <label class="form-label">Rounds</label>
                   <input type="number" class="form-control form-control-sm" name="supp_rounds"
                          value="5" min="1" max="20">
-                  <div class="form-text" style="font-size:.7rem;">Number of rounds in the supplemental draft</div>
+                  <div class="form-text" style="font-size:.8125rem;">Number of rounds in the supplemental draft</div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Draft Date &amp; Time <span class="text-secondary" style="font-size:.75rem;">(optional)</span></label>
+                  <label class="form-label">Draft Date &amp; Time <span class="text-secondary" style="font-size:.8125rem;">(optional)</span></label>
                   <input type="datetime-local" class="form-control form-control-sm" name="supp_scheduled_start">
-                  <div class="form-text" style="font-size:.7rem;">Avoid times during live AFL rounds</div>
+                  <div class="form-text" style="font-size:.8125rem;">Avoid times during live AFL rounds</div>
                 </div>
               </div>
               <button type="submit" class="btn btn-primary">
@@ -308,8 +308,8 @@
         {% if supp_session and supp_session.status == 'completed' %}
           <div class="card mt-3">
             <div class="card-body text-center py-3">
-              <span class="status-pill status-completed" style="font-size:.8rem;">Previous Supplemental Draft Complete</span>
-              <span class="text-secondary ms-2" style="font-size:.8rem;">{{ supp_session.total_rounds }} rounds</span>
+              <span class="status-pill status-completed" style="font-size:.8125rem;">Previous Supplemental Draft Complete</span>
+              <span class="text-secondary ms-2" style="font-size:.8125rem;">{{ supp_session.total_rounds }} rounds</span>
             </div>
           </div>
         {% endif %}
@@ -320,7 +320,7 @@
       <div class="card-header">
         <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
           <i class="bi bi-cpu me-2" style="color:#f0883e;"></i>Mock Draft
-          <span class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.6rem;vertical-align:middle;">SIMULATION</span>
+          <span class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.8125rem;vertical-align:middle;">SIMULATION</span>
         </h5>
       </div>
       <div class="card-body">
@@ -328,7 +328,7 @@
           <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center gap-2">
               <span class="status-pill status-active">In Progress</span>
-              <span class="text-secondary" style="font-size:.8rem;">
+              <span class="text-secondary" style="font-size:.8125rem;">
                 Round {{ mock_session.current_round }} &middot; Pick {{ mock_session.current_pick }}
               </span>
             </div>
@@ -347,7 +347,7 @@
           <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center gap-2">
               <span class="status-pill status-completed">Completed</span>
-              <span class="text-secondary" style="font-size:.8rem;">{{ mock_session.total_rounds }} rounds</span>
+              <span class="text-secondary" style="font-size:.8125rem;">{{ mock_session.total_rounds }} rounds</span>
             </div>
             <div class="d-flex gap-2">
               <a href="{{ url_for('draft_live.mock_draft_room', league_id=league.id) }}" class="btn btn-outline-secondary btn-sm">
@@ -372,7 +372,7 @@
               <label class="form-label">Rounds</label>
               <input type="number" class="form-control form-control-sm" name="mock_rounds"
                      value="{{ league.squad_size }}" min="1" max="{{ league.squad_size }}">
-              <div class="form-text" style="font-size:.7rem;">Number of rounds to simulate</div>
+              <div class="form-text" style="font-size:.8125rem;">Number of rounds to simulate</div>
             </div>
           </div>
           <button type="submit" class="btn btn-warning">
@@ -423,14 +423,14 @@
   justify-content: center;
   width: 28px; height: 28px;
   background: #1e1d21;
-  font-size: .75rem;
+  font-size: .8125rem;
   font-weight: 700;
   border-radius: 6px;
   color: var(--kl-text-primary);
 }
 .draft-order-info { flex: 1; min-width: 0; }
 .draft-order-name { font-weight: 600; font-size: .85rem; color: var(--kl-text-heading); }
-.draft-order-owner { font-size: .72rem; color: var(--kl-text-muted); }
+.draft-order-owner { font-size: .8125rem; color: var(--kl-text-muted); }
 .draft-order-arrows { display: flex; flex-direction: column; gap: 2px; }
 .arrow-btn {
   background: none;
@@ -443,7 +443,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: .65rem;
+  font-size: .8125rem;
   transition: background .12s, color .12s;
 }
 .arrow-btn:hover:not(:disabled) { background: var(--kl-bg-elevated); color: var(--kl-text-heading); }
@@ -452,7 +452,7 @@
 .draft-order-changed .pick-badge { background: var(--kl-accent-blue); color: #fff; }
 @media (max-width: 768px) {
   .draft-order-row { padding: .6rem .75rem; gap: .5rem; }
-  .arrow-btn { width: 32px; height: 28px; font-size: .75rem; }
+  .arrow-btn { width: 32px; height: 28px; font-size: .8125rem; }
   .draft-order-grip { font-size: 1.3rem; }
 }
 </style>

@@ -1,5 +1,5 @@
 /**
- * RoundPicker — pill button + chip-grid popover for jumping between
+ * RoundPicker, pill button + chip-grid popover for jumping between
  * the live squad view and a historical round snapshot.
  *
  * Replaces the legacy <select> dropdown that read as 2002. Click the

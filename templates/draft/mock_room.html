@@ -11,11 +11,11 @@
     <div>
       <h2>
         Mock Draft
-        <span class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.55rem;vertical-align:middle;">SIMULATION</span>
+        <span class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.8125rem;vertical-align:middle;">SIMULATION</span>
       </h2>
       <div class="d-flex align-items-center gap-3 mt-1">
         <span id="draft-status" class="status-pill status-{{ session.status }}">{{ session.status }}</span>
-        <span style="font-size:.8rem;color:#a0a0ac;">{{ league.draft_type|capitalize }} &middot; Computer picks for other teams</span>
+        <span style="font-size:.8125rem;color:var(--kl-text-primary);">{{ league.draft_type|capitalize }} &middot; Computer picks for other teams</span>
       </div>
     </div>
     <div class="d-flex gap-2">
@@ -36,20 +36,20 @@
       <span id="current-pick-num">{{ state.current_pick or '-' }}</span>
     </div>
     <div>
-      <div style="font-size:.75rem;color:#a0a0ac;text-transform:uppercase;letter-spacing:.5px;">
+      <div style="font-size:.8125rem;color:var(--kl-text-primary);text-transform:uppercase;letter-spacing:.5px;">
         Round <span id="current-round">{{ state.current_round or '-' }}</span>
       </div>
       <div style="font-size:1.1rem;font-weight:600;">
         <span id="current-team">{{ state.current_team_name or 'TBD' }}</span>
-        <span id="your-pick-badge" class="badge ms-2" style="background:rgba(210,153,34,.2);color:#d29922;font-size:.7rem;{% if not (user_team and state.current_team_id == user_team.id) %}display:none;{% endif %}">YOUR PICK</span>
-        <span id="cpu-pick-badge" class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.7rem;{% if user_team and state.current_team_id == user_team.id %}display:none;{% endif %}">CPU</span>
+        <span id="your-pick-badge" class="badge ms-2" style="background:rgba(210,153,34,.2);color:#d29922;font-size:.8125rem;{% if not (user_team and state.current_team_id == user_team.id) %}display:none;{% endif %}">YOUR PICK</span>
+        <span id="cpu-pick-badge" class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.8125rem;{% if user_team and state.current_team_id == user_team.id %}display:none;{% endif %}">CPU</span>
       </div>
     </div>
   </div>
   <div id="auto-pick-spinner" style="display:none;">
     <div class="d-flex align-items-center gap-2">
       <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
-      <span style="font-size:.8rem;color:#f0883e;">Computer picking...</span>
+      <span style="font-size:.8125rem;color:#f0883e;">Computer picking...</span>
     </div>
   </div>
 </div>
@@ -61,11 +61,11 @@
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <i class="bi bi-people me-2" style="color:#a0a0ac;"></i>Available Players
+            <i class="bi bi-people me-2" style="color:var(--kl-text-primary);"></i>Available Players
           </h5>
           <button class="btn btn-outline-secondary py-0 px-2" type="button"
                   data-bs-toggle="collapse" data-bs-target="#weight-panel"
-                  title="Adjust your draft value weights" style="font-size:.7rem;">
+                  title="Adjust your draft value weights" style="font-size:.8125rem;">
             <i class="bi bi-sliders me-1"></i>Values
           </button>
         </div>
@@ -82,17 +82,17 @@
             ] %}
             {% for key, label in inline_factors %}
               <div class="d-flex align-items-center gap-2 {% if not loop.last %}mb-2{% endif %}">
-                <span style="font-size:.7rem;color:#a0a0ac;width:60px;flex-shrink:0;">{{ label }}</span>
+                <span style="font-size:.8125rem;color:var(--kl-text-primary);width:60px;flex-shrink:0;">{{ label }}</span>
                 <input type="range" class="form-range flex-grow-1" id="dv-{{ key }}"
                        min="0" max="1" step="0.01" value="{{ user_weights.get(key, 0.2) }}"
                        oninput="onWeightSliderChange()" style="height:16px;">
-                <span class="dv-badge" id="dvb-{{ key }}" style="font-size:.7rem;color:#ececf6;width:32px;text-align:right;">
+                <span class="dv-badge" id="dvb-{{ key }}" style="font-size:.8125rem;color:#ececf6;width:32px;text-align:right;">
                   {{ "%.0f"|format((user_weights.get(key, 0.2)) * 100) }}%
                 </span>
               </div>
             {% endfor %}
             <div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #2a292f;">
-              <span style="font-size:.7rem;color:#a0a0ac;">
+              <span style="font-size:.8125rem;color:var(--kl-text-primary);">
                 {% if has_custom_weights %}
                   <span style="color:#3fb950;">Custom</span>
                 {% else %}
@@ -100,10 +100,10 @@
                 {% endif %}
               </span>
               <div class="d-flex gap-1">
-                <button class="btn btn-outline-secondary py-0 px-2" onclick="applyWeights()" style="font-size:.7rem;">
+                <button class="btn btn-outline-secondary py-0 px-2" onclick="applyWeights()" style="font-size:.8125rem;">
                   Apply
                 </button>
-                <button class="btn btn-primary py-0 px-2" onclick="saveWeights()" style="font-size:.7rem;">
+                <button class="btn btn-primary py-0 px-2" onclick="saveWeights()" style="font-size:.8125rem;">
                   Save
                 </button>
               </div>
@@ -153,16 +153,16 @@
       <div class="card-header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <i class="bi bi-clock-history me-2" style="color:#a0a0ac;"></i>Pick History
+            <i class="bi bi-clock-history me-2" style="color:var(--kl-text-primary);"></i>Pick History
           </h5>
           {% if user_team %}
             <div class="btn-group btn-group-sm" role="group">
-              <button type="button" class="btn btn-sm btn-outline-secondary active" id="filter-all" onclick="filterPicks('all')" style="font-size:.7rem;padding:2px 8px;">All</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-mine" onclick="filterPicks('mine')" style="font-size:.7rem;padding:2px 8px;">Mine</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary active" id="filter-all" onclick="filterPicks('all')" style="font-size:.8125rem;padding:2px 8px;">All</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-mine" onclick="filterPicks('mine')" style="font-size:.8125rem;padding:2px 8px;">Mine</button>
             </div>
           {% endif %}
         </div>
-        <span class="badge" style="background:#1e1d21;color:#a0a0ac;font-size:.75rem;">
+        <span class="badge" style="background:#1e1d21;color:var(--kl-text-primary);font-size:.8125rem;">
           <span id="picks-count">{{ state.picks_made }}</span>/{{ state.total_picks }}
         </span>
       </div>
@@ -184,7 +184,7 @@
                 <td>{{ pick.pick_number }}</td>
                 <td>{{ pick.round }}</td>
                 <td>{{ pick.team_name }}</td>
-                <td>{{ pick.player_name }}{% if pick.is_auto_pick %} <span style="color:#f0883e;font-size:.7rem;">(cpu)</span>{% endif %}</td>
+                <td>{{ pick.player_name }}{% if pick.is_auto_pick %} <span style="color:#f0883e;font-size:.8125rem;">(cpu)</span>{% endif %}</td>
                 <td><span class="pos-badge badge-{{ (pick.player_position or 'mid').split('/')[0]|lower }}">{{ pick.player_position }}</span></td>
                 <td>{{ pick.player_afl_team }}</td>
               </tr>
@@ -201,7 +201,7 @@
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
             <i class="bi bi-person-badge me-2" style="color:#ececf6;"></i>{{ user_team.name }}
           </h5>
-          <span class="badge" style="background:#1e1d21;color:#a0a0ac;font-size:.75rem;" id="your-picks-count"></span>
+          <span class="badge" style="background:#1e1d21;color:var(--kl-text-primary);font-size:.8125rem;" id="your-picks-count"></span>
         </div>
         <div class="card-body p-0" style="overflow-y:auto;">
           <table class="table table-sm mb-0">
@@ -385,7 +385,7 @@ function filterPicks(mode) {
 function addPickToHistory(pick) {
   const tbody = document.getElementById('pick-history');
   const posClass = (pick.player_position || 'mid').split('/')[0].toLowerCase();
-  const cpuTag = pick.is_auto_pick ? ' <span style="color:#f0883e;font-size:.7rem;">(cpu)</span>' : '';
+  const cpuTag = pick.is_auto_pick ? ' <span style="color:#f0883e;font-size:.8125rem;">(cpu)</span>' : '';
   const hidden = (pickFilterMode === 'mine' && pick.team_name !== USER_TEAM_NAME) ? ' style="display:none"' : '';
   const row = `<tr${hidden}>
     <td>${pick.pick_number}</td>

@@ -1,5 +1,5 @@
 /**
- * TradeCenterSkeleton — layout-aware placeholder for the TradeCenter
+ * TradeCenterSkeleton, layout-aware placeholder for the TradeCenter
  * page. Renders page header + tab bar + a few trade-card silhouettes.
  *
  * Reuses .kl-skel shimmer. Trade-card placeholder is roughly the

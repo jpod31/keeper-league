@@ -1,5 +1,5 @@
 /**
- * useDensity — per-page comfortable/compact preference, persisted to
+ * useDensity, per-page comfortable/compact preference, persisted to
  * localStorage. Apply the returned `density` value to a container as
  * a `data-density="..."` attribute, and add the matching CSS in
  * style.css (e.g. .table[data-density="compact"] td { padding: ... }).
@@ -23,7 +23,7 @@ export function useDensity(storageKey: string, defaultDensity: Density = 'comfor
       const raw = localStorage.getItem(storageKey)
       if (raw === 'comfortable' || raw === 'compact') return raw
     } catch {
-      // quota / private mode — fall through to default
+      // quota / private mode, fall through to default
     }
     return defaultDensity
   })

@@ -1,4 +1,4 @@
-"""Season Review ("Wrapped") — end-of-season aggregation for one league year.
+"""Season Review ("Wrapped"), end-of-season aggregation for one league year.
 
 Builds the full payload behind the year-in-review takeover: ladder, personal
 season arc, ever-presents ("most times in the 23"), the league's Best 23,
@@ -71,7 +71,7 @@ def season_review_year(league_id):
 
 
 class _Season:
-    """Bulk-loaded season slice — every table read exactly once."""
+    """Bulk-loaded season slice, every table read exactly once."""
 
     def __init__(self, league_id, year):
         self.league_id = league_id
@@ -117,7 +117,7 @@ class _Season:
         ).filter(PlayerStat.year == year).all():
             self.sc[(pid, rnd)] = sc or 0
 
-        # AFL games per round — used to spot partial rounds (Opening Round,
+        # AFL games per round, used to spot partial rounds (Opening Round,
         # bye weeks) so they don't pollute "lowest score" records.
         self.games_per_round = dict(
             db.session.query(AflGame.afl_round, db.func.count(AflGame.id))
@@ -127,7 +127,7 @@ class _Season:
         self.rounds = sorted({f.afl_round for f in self.fixtures})
         round_set = set(self.rounds)
         # Rounds each AFL club actually played. A player can only be a real
-        # selection in a week his club took the field — Opening Round (most
+        # selection in a week his club took the field, Opening Round (most
         # clubs absent) and the mid-season byes are not weeks he was "left out".
         self.club_rounds = defaultdict(set)
         for g in AflGame.query.filter_by(year=year).all():
@@ -258,7 +258,7 @@ def _index(s):
 def _player_row(s, idx, tid, pid, extra=None, weeks=False):
     """One player's season for one club.
 
-    `weeks=True` also attaches two arrays aligned to `s.rounds` — a 0/1
+    `weeks=True` also attaches two arrays aligned to `s.rounds`, a 0/1
     selection mask and the score they returned each round. That drives the
     per-player presence strip in the review; it roughly doubles a row, so it
     is opt-in and only the leaderboards that draw a strip ask for it.
@@ -409,7 +409,7 @@ def _arc(s, idx):
 
 
 def _ever_present(s, idx):
-    """Weeks in the 23 — the season's iron men, league-wide and per team.
+    """Weeks in the 23, the season's iron men, league-wide and per team.
 
     A week counts only when the player was named AND actually played. Weeks his
     club had no game (Opening Round, the bye) are excluded from both the count
@@ -427,7 +427,7 @@ def _ever_present(s, idx):
         per_team[str(tid)] = [r for r in rows if r["team_id"] == tid][:6]
 
     perfect = [r for r in rows if r["ever_present"]]
-    # The most common "every available week" figure — the honest denominator
+    # The most common "every available week" figure, the honest denominator
     # to quote, since every club plays the same number of games.
     counts = defaultdict(int)
     for r in rows:
@@ -451,7 +451,7 @@ def _best_23(s, idx):
     """The league's Best 23, built to the league's own field shape.
 
     Ranked on AVERAGE, not season total, behind a 16-game qualification.
-    Ranking on total quietly rewards availability over quality — the list fills
+    Ranking on total quietly rewards availability over quality, the list fills
     with solid players who never missed while genuinely elite players who lost a
     month to injury drop off it. The qualification keeps out small samples; the
     average decides who was the better player. Being elite AND never missing
@@ -529,7 +529,7 @@ def _best_23(s, idx):
     for r in picked:
         reps[r["team_id"]] += 1
 
-    # Elite AND available — the best average among players who never missed a
+    # Elite AND available, the best average among players who never missed a
     # week their club played. "Good and always there" earns its own line.
     all_iron = [
         _player_row(s, idx, tid, pid)
@@ -685,7 +685,7 @@ def _bench_rounds(s):
       - Opening Round, where most clubs don't play at all, so nobody can field
         a full 23 and every bench score reads as "waste".
       - The final home-and-away round when the league plays no finals. With the
-        ladder already settled, managers load their 7s side instead — that's a
+        ladder already settled, managers load their 7s side instead, that's a
         deliberate trade, not a mistake.
     """
     rounds = [r for r in s.rounds if r in s.full_rounds]
@@ -702,7 +702,7 @@ def _bench(s, idx):
     """Points left on the bench.
 
     For each round a benched player only counts as a miss if he outscored the
-    WORST scorer actually named in the 23 that round — i.e. the manager had a
+    WORST scorer actually named in the 23 that round, i.e. the manager had a
     strictly better option sitting there. The gap is the cost of that call.
     """
     counted, dropped = _bench_rounds(s)
@@ -726,7 +726,7 @@ def _bench(s, idx):
                         "team_name": s.tname.get(tid, ""),
                         "accent": _accent(tid),
                     })
-    # Efficiency compares like with like — points banked and points wasted are
+    # Efficiency compares like with like, points banked and points wasted are
     # both measured over the same counted rounds.
     table = []
     for tid in s.team_ids:
@@ -834,8 +834,8 @@ MISS_MIN_AGE = 22
 def _ltil_player_ids(league_id, year):
     """Players a club formally parked on the long-term injury list.
 
-    In a keeper league a season lost to injury is not a bad pick — the asset is
-    still there next year — so these never appear as a poor investment.
+    In a keeper league a season lost to injury is not a bad pick, the asset is
+    still there next year, so these never appear as a poor investment.
     """
     from models.database import LongTermInjury
     return {
@@ -865,7 +865,7 @@ def _expected_avg(row, s):
 
 
 def _age_band(age):
-    """(multiplier, tag) — the same shortfall means different things by age."""
+    """(multiplier, tag), the same shortfall means different things by age."""
     if age is None:
         return 1.0, "underperformed"
     if age >= 28:
@@ -895,7 +895,7 @@ def _score_misses(rows, s, num_teams):
         r["regression"] = _r1(expected - (r["avg"] or 0)) if expected else 0.0
 
         age = r.get("age")
-        # Kids get a free year — that IS the keeper plan, not a misfire.
+        # Kids get a free year, that IS the keeper plan, not a misfire.
         if r["on_ltil"] or age is None or age < MISS_MIN_AGE:
             r["miss"] = None
             r["miss_tag"] = None
@@ -936,7 +936,7 @@ def _draft(s, idx):
     picks = DraftPick.query.filter(
         DraftPick.draft_session_id == initial.id,
         DraftPick.player_id.isnot(None),
-        DraftPick.is_pass == False,  # noqa: E712 — SQL boolean, not identity
+        DraftPick.is_pass == False,  # noqa: E712, SQL boolean, not identity
     ).order_by(DraftPick.pick_number).all()
 
     total_by_player = defaultdict(float)
@@ -970,7 +970,7 @@ def _draft(s, idx):
     steals = sorted([r for r in rows if r["points"] > 0],
                     key=lambda r: -r["surplus"])[:6]
 
-    # Worst value, not lowest points — see _score_misses.
+    # Worst value, not lowest points, see _score_misses.
     misses = _score_misses(rows, s, len(s.team_ids))
     busts = misses[:6]
 
@@ -1038,7 +1038,7 @@ def _movement(s, idx):
 
 
 def _awards(s, idx, bench, sevens, draft):
-    """Season awards. Every one is a real, computed extreme — no filler."""
+    """Season awards. Every one is a real, computed extreme, no filler."""
     out = []
 
     def add(key, title, sub, tid, value, detail, icon):
@@ -1126,7 +1126,7 @@ def _awards(s, idx, bench, sevens, draft):
         st = draft["steals"][0]
         add("draftsteal", "Draft Heist", "Biggest value beat at the draft",
             st["team_id"], f"#{st['pick']}",
-            f"{st['name']} — {st['points']:,} pts", "bi-gem")
+            f"{st['name']}, {st['points']:,} pts", "bi-gem")
 
     if s.standings:
         champ = s.standings[0]
@@ -1142,7 +1142,7 @@ def _awards(s, idx, bench, sevens, draft):
 
 
 def _coaches(s, idx, bench, sevens, draft):
-    """One row per manager — the season judged on how they actually coached,
+    """One row per manager, the season judged on how they actually coached,
     not just where the ladder left them."""
     bench_by = {r["team_id"]: r for r in bench["table"]}
     sevens_by = {r["team_id"]: r for r in sevens["ladder"]}
@@ -1271,7 +1271,7 @@ def _your_season(s, idx, team_id, arc, h2h, bench):
 
 
 def build_season_review(league_id, year, viewer_team_id=None):
-    """Full year-in-review payload. Memoised per (league, year) — the season is
+    """Full year-in-review payload. Memoised per (league, year), the season is
     finished, so nothing behind it can change until the league rolls over."""
     cache_key = (league_id, year)
     shared = _CACHE.get(cache_key)
@@ -1320,7 +1320,7 @@ def build_season_review(league_id, year, viewer_team_id=None):
 
 
 def invalidate(league_id=None, year=None):
-    """Drop memoised reviews — call after a rescore or standings rebuild."""
+    """Drop memoised reviews, call after a rescore or standings rebuild."""
     if league_id is None:
         _CACHE.clear()
     else:

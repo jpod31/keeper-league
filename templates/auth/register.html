@@ -22,7 +22,7 @@
         <input type="email" class="form-control" id="email" name="email" required placeholder="you@example.com" value="{{ form.get('email', '') }}">
       </div>
       <div class="mb-3">
-        <label for="display_name" class="form-label">Display Name <span class="text-secondary" style="font-size:.75rem;">(optional)</span></label>
+        <label for="display_name" class="form-label">Display Name <span class="text-secondary" style="font-size:.8125rem;">(optional)</span></label>
         <input type="text" class="form-control" id="display_name" name="display_name" placeholder="What others see" maxlength="80" value="{{ form.get('display_name', '') }}">
       </div>
       <div class="row g-3 mb-4">
@@ -37,7 +37,7 @@
       </div>
       <button type="submit" class="btn btn-primary w-100">Create Account</button>
     </form>
-    <p class="text-center mt-4 mb-0" style="font-size:.85rem;color:#a0a0ac;">
+    <p class="text-center mt-4 mb-0" style="font-size:.85rem;color:var(--kl-text-primary);">
       Already have an account? <a href="{{ url_for('auth.login') }}" style="color:#ececf6;text-decoration:none;">Sign in</a>
     </p>
   </div>

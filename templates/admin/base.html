@@ -5,7 +5,7 @@
   <div class="col-lg-2 mb-3">
     <div class="card" style="background:#151518;border:1px solid #2a292f;">
       <div class="card-body p-2">
-        <h6 class="fw-bold px-2 pt-1 mb-2" style="color:#a0a0ac;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;">Admin</h6>
+        <h6 class="fw-bold px-2 pt-1 mb-2" style="color:var(--kl-text-primary);font-size:.8125rem;text-transform:uppercase;letter-spacing:1px;">Admin</h6>
         <nav class="nav flex-column">
           <a class="nav-link px-2 py-1 rounded {% if request.endpoint == 'admin.dashboard' %}active{% endif %}"
              href="{{ url_for('admin.dashboard') }}" style="font-size:.85rem;">

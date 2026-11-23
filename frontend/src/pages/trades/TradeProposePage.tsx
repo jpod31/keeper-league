@@ -3,7 +3,7 @@
  *
  * Structured as the three decisions you actually make, in order: who you're
  * trading with, what moves, then send it. The deal itself lives in a sticky
- * bar at the FOOT of the page — a cart, not a billboard — so an empty deal
+ * bar at the FOOT of the page, a cart, not a billboard, so an empty deal
  * costs one line instead of half the screen, and the rosters (the part you
  * came to read) sit above the fold.
  *
@@ -57,7 +57,7 @@ function posPrimary(pos: string): string {
   return (pos || 'MID').split('/')[0].toUpperCase()
 }
 function fmtSc(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return '—'
+  if (n == null || !Number.isFinite(n)) return '-'
   return String(Math.round(n))
 }
 function teamInitials(name: string): string {
@@ -144,8 +144,8 @@ function AssetRow({
       {!isPick && (
         <span className="tp-row-stats">
           <span className="tp-stat"><b>{fmtSc(player!.sc_avg)}</b><i>SC</i></span>
-          <span className="tp-stat"><b>{player!.rating ?? '—'}</b><i>RTG</i></span>
-          <span className="tp-stat"><b>{player!.age || '—'}</b><i>AGE</i></span>
+          <span className="tp-stat"><b>{player!.rating ?? '-'}</b><i>RTG</i></span>
+          <span className="tp-stat"><b>{player!.age || '-'}</b><i>AGE</i></span>
         </span>
       )}
 
@@ -439,7 +439,7 @@ export function TradeProposePage() {
             <em>
               {trade_window_open
                 ? (countdown || 'open now')
-                : 'Propose anyway — it executes when the window opens'}
+                : 'Propose anyway, it executes when the window opens'}
             </em>
           </span>
         </div>
@@ -464,7 +464,7 @@ export function TradeProposePage() {
                 </span>
                 <span className="tp-partner-stats">
                   {t.record && <span><b>{t.record}</b><i>W–L</i></span>}
-                  <span><b>{t.roster_count ?? '—'}</b><i>LIST</i></span>
+                  <span><b>{t.roster_count ?? '-'}</b><i>LIST</i></span>
                 </span>
                 <i className="bi bi-chevron-right tp-partner-go" />
               </button>

@@ -47,35 +47,35 @@ const PROFILE_CSS = `
 .prof-team-logo { flex-shrink: 0; }
 .prof-team-logo-img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; border: 2px solid var(--kl-border); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
 .prof-team-logo-ph { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; font-weight: 800; font-size: .95rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,.3); letter-spacing: .5px; }
-.prof-logo-btn { background: rgba(210,153,34,.1); border: 1px solid rgba(210,153,34,.3); color: #d29922; font-size: .72rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.prof-logo-btn { background: rgba(210,153,34,.1); border: 1px solid rgba(210,153,34,.3); color: #d29922; font-size: .8125rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
 .prof-logo-btn:hover { background: rgba(210,153,34,.2); }
 .logo-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
 .logo-modal { background: #151518; border: 1px solid #2a292f; border-radius: 12px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
 .logo-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #2a292f; }
 .logo-modal-header h3 { margin: 0; font-size: 1rem; color: #ebebee; font-weight: 700; }
-.logo-modal-close { background: transparent; border: none; color: #a0a0ac; font-size: 1.2rem; cursor: pointer; }
+.logo-modal-close { background: transparent; border: none; color: var(--kl-text-primary); font-size: 1.2rem; cursor: pointer; }
 .logo-modal-close:hover { color: #ebebee; }
 .logo-modal-body { padding: 20px; }
 .logo-modal-current { text-align: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #1e1d21; }
 .logo-modal-preview { width: 96px; height: 96px; border-radius: 14px; object-fit: cover; }
-.logo-modal-prev-prompt { font-size: .7rem; color: #8a8895; margin-top: 6px; font-style: italic; }
-.logo-modal-label { display: block; font-size: .85rem; font-weight: 600; color: #cfcfd6; margin-bottom: 6px; }
-.logo-modal-input { width: 100%; background: #0e0d0f; border: 1px solid #2a292f; border-radius: 6px; padding: 8px 10px; font-size: .85rem; color: #cfcfd6; resize: vertical; }
+.logo-modal-prev-prompt { font-size: .8125rem; color: var(--kl-text-primary); margin-top: 6px; font-style: italic; }
+.logo-modal-label { display: block; font-size: .85rem; font-weight: 600; color: var(--kl-text-primary); margin-bottom: 6px; }
+.logo-modal-input { width: 100%; background: #0e0d0f; border: 1px solid #2a292f; border-radius: 6px; padding: 8px 10px; font-size: .85rem; color: var(--kl-text-primary); resize: vertical; }
 .logo-modal-input:focus { outline: none; border-color: #ececf6; }
-.logo-modal-hint { font-size: .7rem; color: #8a8895; margin-top: 6px; }
-.logo-modal-error { background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); color: #f85149; padding: 8px 12px; border-radius: 6px; font-size: .78rem; margin-top: 10px; }
+.logo-modal-hint { font-size: .8125rem; color: var(--kl-text-primary); margin-top: 6px; }
+.logo-modal-error { background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); color: #f85149; padding: 8px 12px; border-radius: 6px; font-size: .8125rem; margin-top: 10px; }
 .logo-modal-generate { width: 100%; margin-top: 12px; padding: 10px; background: linear-gradient(135deg, #d29922, #f0883e); color: #fff; border: none; border-radius: 6px; font-size: .85rem; font-weight: 700; cursor: pointer; }
 .logo-modal-generate:hover { opacity: .9; }
 .logo-modal-generate:disabled { opacity: .5; cursor: not-allowed; }
-.logo-modal-loading { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 30px 0; color: #a0a0ac; font-size: .85rem; }
+.logo-modal-loading { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 30px 0; color: var(--kl-text-primary); font-size: .85rem; }
 .logo-spinner { width: 36px; height: 36px; border: 3px solid #2a292f; border-top-color: #d29922; border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .logo-modal-result-img { width: 100%; max-width: 280px; border-radius: 14px; display: block; margin: 0 auto 14px; }
 .logo-result-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.logo-btn-accept, .logo-btn-regen, .logo-btn-close { padding: 8px 14px; font-size: .78rem; font-weight: 600; border-radius: 6px; cursor: pointer; border: 1px solid; }
+.logo-btn-accept, .logo-btn-regen, .logo-btn-close { padding: 8px 14px; font-size: .8125rem; font-weight: 600; border-radius: 6px; cursor: pointer; border: 1px solid; }
 .logo-btn-accept { background: rgba(63,185,80,.15); color: #3fb950; border-color: rgba(63,185,80,.3); }
 .logo-btn-regen { background: rgba(210,153,34,.15); color: #d29922; border-color: rgba(210,153,34,.3); }
-.logo-btn-close { background: transparent; color: #a0a0ac; border-color: #2a292f; }
+.logo-btn-close { background: transparent; color: var(--kl-text-primary); border-color: #2a292f; }
 `
 
 export function ProfilePage() {
@@ -178,7 +178,7 @@ export function ProfilePage() {
       if (!d.publicKey) { alert('Push not configured on server.'); return }
       const reg = await navigator.serviceWorker.ready
       const key = urlBase64ToUint8Array(d.publicKey)
-      // Cast to BufferSource — Uint8Array is valid but TS lib expects ArrayBuffer-backed view
+      // Cast to BufferSource, Uint8Array is valid but TS lib expects ArrayBuffer-backed view
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key as unknown as BufferSource })
       await fetch('/push/subscribe', {
         method: 'POST',
@@ -273,7 +273,7 @@ export function ProfilePage() {
                 {initial}
               </span>
               <div className="fw-bold">{u.display_name || u.username}</div>
-              <div className="text-secondary" style={{ fontSize: '.8rem' }}>
+              <div className="text-secondary" style={{ fontSize: '.8125rem' }}>
                 @{u.username} · Joined {u.created_at}
               </div>
             </div>
@@ -323,7 +323,7 @@ export function ProfilePage() {
             >
               <div>
                 <div className="fw-semibold" style={{ fontSize: '.85rem' }}>Weekly Email Digest</div>
-                <div className="text-secondary" style={{ fontSize: '.75rem' }}>
+                <div className="text-secondary" style={{ fontSize: '.8125rem' }}>
                   Receive a summary of the week's activity every Monday
                 </div>
               </div>
@@ -344,24 +344,24 @@ export function ProfilePage() {
             >
               <div>
                 <div className="fw-semibold" style={{ fontSize: '.85rem' }}>Push Notifications</div>
-                <div className="text-secondary" style={{ fontSize: '.75rem' }}>
+                <div className="text-secondary" style={{ fontSize: '.8125rem' }}>
                   Browser notifications when events happen
                 </div>
               </div>
               <button
                 className="btn btn-outline-primary btn-sm"
                 onClick={enablePush}
-                style={{ fontSize: '.75rem' }}
+                style={{ fontSize: '.8125rem' }}
               >
                 {pushBtnText}
               </button>
             </div>
 
             {/* Per-type matrix */}
-            <div style={{ fontSize: '.8rem', color: 'var(--kl-text-secondary)', marginBottom: 8 }}>
+            <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-secondary)', marginBottom: 8 }}>
               Choose channels for each notification type:
             </div>
-            <table className="table table-sm mb-0" style={{ fontSize: '.8rem' }}>
+            <table className="table table-sm mb-0" style={{ fontSize: '.8125rem' }}>
               <thead>
                 <tr>
                   <th style={{ border: 0 }}>Type</th>
@@ -430,7 +430,7 @@ export function ProfilePage() {
                     >
                       {team.name}
                     </Link>
-                    <div style={{ fontSize: '.75rem', color: 'var(--kl-text-faint)' }}>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-faint)' }}>
                       {team.league_name} · {team.league_year}
                     </div>
                   </div>
@@ -451,7 +451,7 @@ export function ProfilePage() {
         <div className="logo-modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeLogoModal() }}>
           <div className="logo-modal">
             <div className="logo-modal-header">
-              <h3><i className="bi bi-asterisk me-2" style={{ color: '#d29922' }}></i>Team Logo — {logoModalTeam.name}</h3>
+              <h3><i className="bi bi-asterisk me-2" style={{ color: '#d29922' }}></i>Team Logo, {logoModalTeam.name}</h3>
               <button onClick={closeLogoModal} className="logo-modal-close"><i className="bi bi-x-lg"></i></button>
             </div>
             <div className="logo-modal-body">

@@ -22,18 +22,18 @@
   margin-bottom: 14px;
 }
 .tr-deal-title {
-  font-size: .68rem;
+  font-size: .8125rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .14em;
-  color: #a0a0ac;
+  letter-spacing: .06em;
+  color: var(--kl-text-primary);
 }
 .tr-deal-balance {
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: .82rem;
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
 }
 .tr-deal-balance b { color: #ffffff; font-weight: 700; }
 .tr-bal-pos { color: #7ee787; }
@@ -60,18 +60,18 @@
   position: absolute;
   top: 8px;
   right: 12px;
-  font-size: .62rem;
+  font-size: .8125rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .12em;
-  color: #8a8895;
+  letter-spacing: .06em;
+  color: var(--kl-text-primary);
 }
 .tr-deal-side-out .tr-deal-side-label { color: #ff8a82; }
 .tr-deal-side-in  .tr-deal-side-label { color: #7ee787; }
 .tr-deal-side-team {
-  font-size: .78rem;
+  font-size: .8125rem;
   font-weight: 600;
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
   margin-bottom: 10px;
   padding-right: 80px;
 }
@@ -128,18 +128,18 @@
   background: rgba(42,41,47,.55);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
-  font-size: .5rem; font-weight: 800; color: #a0a0ac;
+  font-size: .8125rem; font-weight: 800; color: var(--kl-text-primary);
 }
 .tr-deal-card-logo img { width: 100%; height: 100%; object-fit: contain; }
 .tr-deal-card-pos {
-  font-size: .54rem;
+  font-size: .8125rem;
   font-weight: 800;
   letter-spacing: .04em;
   padding: 1px 5px;
   border-radius: 3px;
 }
 .tr-deal-card-name {
-  font-size: .76rem;
+  font-size: .8125rem;
   font-weight: 700;
   color: #f5f5f7;
   line-height: 1.12;
@@ -153,7 +153,7 @@
 }
 .tr-deal-card-sc {
   font-family: 'Geist Mono', ui-monospace, monospace;
-  font-size: .8rem;
+  font-size: .8125rem;
   font-weight: 800;
   color: #f5f5f7;
 }
@@ -163,10 +163,10 @@
   width: 18px; height: 18px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: .6rem;
+  font-size: .8125rem;
   font-weight: 800;
   background: rgba(14,13,15,.7);
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
   border: 1px solid rgba(138,136,149,.4);
   transition: background .12s ease;
 }
@@ -187,10 +187,10 @@
 }
 .tr-deal-card-pick.tr-deal-card-out { background: linear-gradient(135deg, rgba(248,81,73,.22), rgba(21,21,24,.92) 65%); border-color: rgba(248,81,73,.5); }
 .tr-deal-card-pick.tr-deal-card-in  { background: linear-gradient(135deg, rgba(63,185,80,.22), rgba(21,21,24,.92) 65%); border-color: rgba(63,185,80,.5); }
-.tr-deal-card-pick-year { font-size: .58rem; font-weight: 800; color: #79c0ff; letter-spacing: .06em; text-transform: uppercase; }
+.tr-deal-card-pick-year { font-size: .8125rem; font-weight: 800; color: #79c0ff; letter-spacing: .06em; text-transform: uppercase; }
 .tr-deal-card-pick-round { font-size: .9rem; font-weight: 800; color: #f5f5f7; line-height: 1.1; }
 .tr-deal-empty {
-  color: #63616d;
+  color: var(--kl-text-primary);
   font-size: .82rem;
   font-style: italic;
   margin-top: 6px;
@@ -214,10 +214,10 @@
   gap: 6px;
   padding: 4px 8px;
   border-radius: 6px;
-  font-size: .78rem;
+  font-size: .8125rem;
   background: rgba(42,41,47,.45);
   border: 1px solid rgba(42,41,47,.7);
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
   cursor: pointer;
   transition: background .12s ease, border-color .12s ease;
 }
@@ -228,8 +228,8 @@
 .tr-mini-in:hover { background: rgba(63,185,80,.2); border-color: rgba(63,185,80,.55); }
 .tr-mini-sc {
   font-family: 'Geist Mono', ui-monospace, monospace;
-  font-size: .68rem;
-  color: #a0a0ac;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
   font-weight: 600;
 }
 .tr-mini-x {
@@ -239,8 +239,8 @@
   width: 14px; height: 14px;
   border-radius: 50%;
   background: rgba(14,13,15,.6);
-  color: #a0a0ac;
-  font-size: .55rem;
+  color: var(--kl-text-primary);
+  font-size: .8125rem;
 }
 
 /* ── Player card (selectable) ─────────────────────────────── */
@@ -297,9 +297,9 @@
 }
 .tr-card-logo img { width: 100%; height: 100%; object-fit: contain; }
 .tr-card-logo-placeholder {
-  font-size: .55rem;
+  font-size: .8125rem;
   font-weight: 800;
-  color: #a0a0ac;
+  color: var(--kl-text-primary);
   letter-spacing: .05em;
 }
 .tr-card-pos {
@@ -307,7 +307,7 @@
   gap: 3px;
 }
 .tr-card-pos .pos-badge {
-  font-size: .58rem;
+  font-size: .8125rem;
   padding: 2px 5px;
   letter-spacing: .04em;
 }
@@ -324,14 +324,14 @@
   justify-content: space-between;
   gap: 6px;
   margin-top: auto;
-  font-size: .68rem;
-  color: #a0a0ac;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
 }
 .tr-card-sc {
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .92rem;
   font-weight: 700;
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
 }
 .tr-card-out .tr-card-sc { color: #ffd6d2; }
 .tr-card-in  .tr-card-sc { color: #c8f0c5; }
@@ -347,7 +347,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .6rem;
+  font-size: .8125rem;
   font-weight: 800;
   color: #0e0d0f;
   background: rgba(255,255,255,.85);
@@ -377,9 +377,9 @@
 }
 .tr-pick-out { background: linear-gradient(135deg, rgba(248,81,73,.16), rgba(21,21,24,.9) 60%); border-color: rgba(248,81,73,.55); }
 .tr-pick-in  { background: linear-gradient(135deg, rgba(63,185,80,.16), rgba(21,21,24,.9) 60%); border-color: rgba(63,185,80,.55); }
-.tr-pick-year { font-size: .68rem; font-weight: 700; color: #79c0ff; letter-spacing: .06em; }
+.tr-pick-year { font-size: .8125rem; font-weight: 700; color: #79c0ff; letter-spacing: .06em; }
 .tr-pick-round { font-size: .85rem; font-weight: 700; color: #f5f5f7; }
-.tr-pick-orig { font-size: .62rem; color: #8a8895; }
+.tr-pick-orig { font-size: .8125rem; color: var(--kl-text-primary); }
 
 /* ── Deck (grid of cards) — still used by trade-detail static view ── */
 .tr-deck {
@@ -410,7 +410,7 @@
   border: 1px solid rgba(42,41,47,.4);
   cursor: pointer;
   transition: background .12s ease, border-color .12s ease, transform .12s ease;
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
 }
 .tr-row:hover {
   background: rgba(42,41,47,.35);
@@ -427,7 +427,7 @@
   box-shadow: inset 3px 0 0 #3fb950;
 }
 .tr-row-pos {
-  font-size: .58rem;
+  font-size: .8125rem;
   font-weight: 800;
   letter-spacing: .04em;
   padding: 2px 5px;
@@ -453,15 +453,15 @@
   white-space: nowrap;
 }
 .tr-row-team {
-  font-size: .68rem;
-  color: #8a8895;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
   font-weight: 500;
 }
 .tr-row-sc {
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .9rem;
   font-weight: 800;
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
   font-variant-numeric: tabular-nums;
   min-width: 32px;
   text-align: right;
@@ -475,11 +475,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .58rem;
+  font-size: .8125rem;
   font-weight: 800;
   background: transparent;
   border: 1px solid rgba(138,136,149,.35);
-  color: #8a8895;
+  color: var(--kl-text-primary);
 }
 .tr-row-out .tr-row-state { background: #f85149; border-color: #f85149; color: #ffffff; }
 .tr-row-in  .tr-row-state { background: #3fb950; border-color: #3fb950; color: #ffffff; }
@@ -491,7 +491,7 @@
 }
 .tr-row-pick.tr-row-out { background: linear-gradient(90deg, rgba(248,81,73,.18), transparent 80%); border-color: rgba(248,81,73,.55); }
 .tr-row-pick.tr-row-in  { background: linear-gradient(90deg, rgba(63,185,80,.18), transparent 80%); border-color: rgba(63,185,80,.55); }
-.tr-row-pick-meta { font-size: .68rem; color: #79c0ff; font-weight: 600; }
+.tr-row-pick-meta { font-size: .8125rem; color: #79c0ff; font-weight: 600; }
 
 /* ── Section header within a deck ─────────────────────────── */
 .tr-section-h {
@@ -506,15 +506,15 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: .65rem;
+  font-size: .8125rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .12em;
-  color: #a0a0ac;
+  letter-spacing: .06em;
+  color: var(--kl-text-primary);
 }
 .tr-section-h-count {
-  font-size: .62rem;
-  color: #8a8895;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
   font-weight: 600;
 }
 .tr-section-h-bar {
@@ -545,7 +545,7 @@
   font-weight: 700;
   color: #f5f5f7;
 }
-.tr-panel-sub { font-size: .76rem; color: #a0a0ac; margin-top: 2px; }
+.tr-panel-sub { font-size: .8125rem; color: var(--kl-text-primary); margin-top: 2px; }
 .tr-panel-body { padding: 12px 14px 16px; max-height: 60vh; overflow-y: auto; }
 
 /* ── Team picker (cards, not dropdown) ────────────────────── */
@@ -565,7 +565,7 @@
   cursor: pointer;
   transition: transform .12s ease, border-color .12s, box-shadow .12s, background .12s;
   text-align: left;
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
 }
 .tr-team-pick:hover {
   transform: translateY(-1px);
@@ -582,14 +582,14 @@
   border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   background: rgba(42,41,47,.5);
-  font-size: .65rem; font-weight: 800; letter-spacing: .04em;
-  color: #cfcfd6;
+  font-size: .8125rem; font-weight: 800; letter-spacing: .04em;
+  color: var(--kl-text-primary);
   flex: 0 0 32px;
   overflow: hidden;
 }
 .tr-team-pick-logo img { width: 100%; height: 100%; object-fit: cover; }
 .tr-team-pick-name { font-size: .9rem; font-weight: 600; line-height: 1.15; }
-.tr-team-pick-owner { font-size: .72rem; color: #a0a0ac; }
+.tr-team-pick-owner { font-size: .8125rem; color: var(--kl-text-primary); }
 
 /* ── Trade Center tabs — accent-identity pill cards ──
    Three tabs, each with its own colour identity. Inactive = tinted
@@ -664,15 +664,15 @@
 .tr-tab-label {
   font-size: .88rem;
   font-weight: 700;
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
   white-space: nowrap;
 }
 .tr-tab.active .tr-tab-label { color: #ffffff; }
 .tr-tab-sub {
-  font-size: .64rem;
+  font-size: .8125rem;
   font-weight: 600;
   letter-spacing: .02em;
-  color: #8a8895;
+  color: var(--kl-text-primary);
   white-space: nowrap;
 }
 .tr-tab.active .tr-tab-sub { color: var(--tab-hex); }
@@ -681,7 +681,7 @@
   .tr-tabs { gap: 6px; }
   .tr-tab { flex-direction: column; align-items: center; text-align: center; gap: 5px; padding: 10px 6px; }
   .tr-tab-body { align-items: center; }
-  .tr-tab-label { font-size: .76rem; }
+  .tr-tab-label { font-size: .8125rem; }
   .tr-tab-sub { display: none; }
 }
 
@@ -691,11 +691,11 @@
   align-items: center;
   gap: 8px;
   margin: 18px 2px 8px;
-  font-size: .68rem;
+  font-size: .8125rem;
   font-weight: 800;
-  letter-spacing: .12em;
+  letter-spacing: .06em;
   text-transform: uppercase;
-  color: #a0a0ac;
+  color: var(--kl-text-primary);
 }
 .tr-section-head:first-of-type { margin-top: 4px; }
 .tr-section-head i { font-size: .85rem; color: #ececf6; }
@@ -710,7 +710,7 @@
   margin-bottom: 16px;
   background: linear-gradient(135deg, rgba(63,185,80,.08), rgba(21,21,24,.6));
   border: 1px solid rgba(63,185,80,.3);
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
 }
 .tr-window-banner-closed {
   background: linear-gradient(135deg, rgba(236,236,246,.06), rgba(21,21,24,.6));
@@ -730,7 +730,7 @@
 }
 .tr-window-banner-body { flex: 1; }
 .tr-window-banner-title { font-size: .92rem; font-weight: 700; color: #f5f5f7; }
-.tr-window-banner-sub { font-size: .78rem; color: #a0a0ac; margin-top: 2px; }
+.tr-window-banner-sub { font-size: .8125rem; color: var(--kl-text-primary); margin-top: 2px; }
 .tr-window-banner-countdown {
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: .82rem; font-weight: 700;
@@ -751,7 +751,7 @@
   padding: 14px 16px 14px 20px;
   display: block;
   text-decoration: none;
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
   overflow: hidden;
   transition: transform .15s ease, border-color .15s, box-shadow .15s;
   margin-bottom: 10px;
@@ -771,19 +771,19 @@
 .tr-card-vetoed .tr-card-stripe,
 .tr-card-expired .tr-card-stripe { background: #8a8895; }
 .tr-side-sc {
-  font-size: .62rem;
+  font-size: .8125rem;
   font-weight: 800;
-  color: #a0a0ac;
+  color: var(--kl-text-primary);
   font-variant-numeric: tabular-nums;
 }
-.tr-net { color: #8a8895; }
+.tr-net { color: var(--kl-text-primary); }
 .tr-net-pos { color: #7ee787; }
 .tr-net-neg { color: #ffb471; }
 .tr-center-card:hover {
   transform: translateY(-1px);
   border-color: rgba(138,136,149,.6);
   box-shadow: 0 14px 28px -16px rgba(0,0,0,.55);
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
   text-decoration: none;
 }
 .tr-center-card-top {
@@ -804,10 +804,10 @@
   flex: 1 1 auto;
 }
 .tr-center-card-status {
-  font-size: .68rem;
+  font-size: .8125rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .1em;
+  letter-spacing: .06em;
   padding: 3px 9px;
   border-radius: 999px;
   border: 1px solid;
@@ -818,7 +818,7 @@
 .tr-status-agreed   { color: #79c0ff; border-color: rgba(236,236,246,.45); background: rgba(236,236,246,.08); }
 .tr-status-accepted { color: #7ee787; border-color: rgba(63,185,80,.45); background: rgba(63,185,80,.08); }
 .tr-status-rejected, .tr-status-cancelled, .tr-status-vetoed, .tr-status-expired {
-  color: #a0a0ac; border-color: rgba(138,136,149,.4); background: rgba(138,136,149,.08);
+  color: var(--kl-text-primary); border-color: rgba(138,136,149,.4); background: rgba(138,136,149,.08);
 }
 .tr-center-card-grid {
   display: grid;
@@ -835,8 +835,8 @@
 }
 .tr-center-card-meta {
   margin-top: 10px;
-  font-size: .72rem;
-  color: #8a8895;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
   display: flex;
   gap: 12px;
   align-items: center;
@@ -859,14 +859,14 @@
   border-radius: 6px;
   background: rgba(42,41,47,.5);
   display: flex; align-items: center; justify-content: center;
-  font-size: .58rem; font-weight: 800; color: #cfcfd6; letter-spacing: .04em;
+  font-size: .8125rem; font-weight: 800; color: var(--kl-text-primary); letter-spacing: .04em;
   flex: 0 0 26px;
   overflow: hidden;
 }
 .tr-team-chip-logo img { width: 100%; height: 100%; object-fit: cover; }
 .tr-center-card-arrow {
   display: flex; align-items: center; justify-content: center;
-  color: #63616d;
+  color: var(--kl-text-primary);
   font-size: 1.1rem;
 }
 @media (max-width: 600px) {
@@ -888,12 +888,12 @@
   border-radius: 6px;
   background: rgba(42,41,47,.45);
   border: 1px solid rgba(42,41,47,.6);
-  font-size: .76rem;
+  font-size: .8125rem;
   color: #f5f5f7;
   line-height: 1.1;
 }
 .tr-asset-chip-pos {
-  font-size: .55rem;
+  font-size: .8125rem;
   padding: 1px 4px;
   border-radius: 3px;
   font-weight: 800;
@@ -907,12 +907,12 @@
 .tr-asset-chip-pick {
   background: linear-gradient(135deg, rgba(236,236,246,.16), rgba(21,21,24,.6));
   border-color: rgba(236,236,246,.35);
-  color: #cfcfd6;
+  color: var(--kl-text-primary);
 }
 .tr-asset-chip-sc {
   font-family: 'Geist Mono', ui-monospace, monospace;
-  font-size: .68rem;
-  color: #a0a0ac;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
   font-weight: 600;
 }
 .tr-side-label {
@@ -920,11 +920,11 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 6px;
-  font-size: .6rem;
+  font-size: .8125rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .12em;
-  color: #8a8895;
+  letter-spacing: .06em;
+  color: var(--kl-text-primary);
   margin-bottom: 6px;
 }
 
@@ -964,14 +964,14 @@
   line-height: 1;
 }
 .tr-hero-tile-label {
-  font-size: .68rem;
+  font-size: .8125rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .1em;
-  color: #a0a0ac;
+  letter-spacing: .06em;
+  color: var(--kl-text-primary);
 }
 .tr-hero-tile-sub {
-  font-size: .7rem;
-  color: #8a8895;
+  font-size: .8125rem;
+  color: var(--kl-text-primary);
   margin-top: 2px;
 }

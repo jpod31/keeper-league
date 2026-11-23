@@ -27,7 +27,7 @@ export function checkSwapEligible(
   src: SwapSourceInfo,
   tgtSection: string, tgtPositions: string[], tgtFieldPos: string,
 ): boolean {
-  // Don't offer to swap two on-field players in the same zone — pointless, both already playing
+  // Don't offer to swap two on-field players in the same zone, pointless, both already playing
   if (src.section === 'field' && tgtSection === 'field' && src.fieldPos === tgtFieldPos) return false
 
   function canFillSlot(playerPositions: string[], slotSection: string, slotFieldPos: string) {
@@ -47,7 +47,7 @@ export function useFieldActions(
   const [actionMode, setActionMode] = useState<ActionMode>(null)
   const [playerModal, setPlayerModal] = useState<PlayerDetail | null>(null)
 
-  // Route through the GLOBAL ToastProvider — no more local fv-toast
+  // Route through the GLOBAL ToastProvider, no more local fv-toast
   // pill rendering in SquadPage. The old local implementation is what
   // the user was seeing as a "small green pill bottom middle near
   // transparent"; my new redesigned glass toasts never fired because
@@ -76,7 +76,7 @@ export function useFieldActions(
           const parsed = JSON.parse(e.message)
           if (parsed && typeof parsed.error === 'string') msg = parsed.error
         } catch {
-          // Body wasn't JSON — fall back to whatever we got, trimmed
+          // Body wasn't JSON, fall back to whatever we got, trimmed
           msg = e.message.length > 160 ? e.message.slice(0, 160) + '…' : e.message
         }
       }
@@ -86,7 +86,7 @@ export function useFieldActions(
   }, [API, toast])
 
   const setCaptain = useCallback(async (pid: number) => {
-    // Fire API, then silently refresh in background — no flash
+    // Fire API, then silently refresh in background, no flash
     fvApi('/set-captain', { player_id: pid }).then(data => {
       if (!data.error) { toast('Captain updated', 'success'); onRefresh() }
     })
@@ -124,7 +124,7 @@ export function useFieldActions(
     if (swapSource?.pid === pid) { cancelAllModes(); return }
     setSwapSource({ pid, section, positions, fieldPos })
     setActionMode('swap')
-    // Tactile handshake on mobile — without this, tapping "Swap" in the
+    // Tactile handshake on mobile, without this, tapping "Swap" in the
     // action sheet just closes it silently and reads as "nothing happened".
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try { navigator.vibrate(15) } catch { /* ignore */ }
@@ -190,10 +190,10 @@ export function useFieldActions(
         else onRefresh()
       })
     } else {
-      // Full — enter replacement mode
+      // Full, enter replacement mode
       setSwapSource({ pid, section: 'reserve', positions: [], fieldPos: '' })
       setActionMode('emg_replace')
-      toast('Emergency slots full — select one to replace', 'info')
+      toast('Emergency slots full, select one to replace', 'info')
     }
   }, [swapSource, actionMode, fvApi, onRefresh, toast, cancelAllModes])
 
@@ -242,10 +242,10 @@ export function useFieldActions(
       }
       fvApi('/toggle-7s', { player_id: pid }).then(d => { if (!d.error) onRefresh() })
     } else {
-      // Full — enter replacement mode
+      // Full, enter replacement mode
       setSwapSource({ pid, section: 'reserve', positions: [], fieldPos: '' })
       setActionMode('7s_replace')
-      toast('7s squad full — select one to replace', 'info')
+      toast('7s squad full, select one to replace', 'info')
     }
   }, [swapSource, actionMode, fvApi, onRefresh, toast, cancelAllModes, ageCutoff, maxSenior7s])
 

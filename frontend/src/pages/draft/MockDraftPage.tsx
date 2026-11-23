@@ -284,11 +284,11 @@ export function MockDraftPage() {
           <div>
             <h2 className="mb-0">
               Mock Draft
-              <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.55rem', verticalAlign: 'middle' }}>SIMULATION</span>
+              <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.8125rem', verticalAlign: 'middle' }}>SIMULATION</span>
             </h2>
             <div className="d-flex align-items-center gap-3 mt-1">
               <span className={`status-pill status-${state.status.replace('_', '-')}`}>{state.status}</span>
-              <span style={{ fontSize: '.8rem', color: '#a0a0ac' }}>Computer picks for other teams</span>
+              <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Computer picks for other teams</span>
             </div>
           </div>
           <div className="d-flex gap-2">
@@ -309,16 +309,16 @@ export function MockDraftPage() {
             <span>{displayPickNum}</span>
           </div>
           <div>
-            <div style={{ fontSize: '.75rem', color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
               Round <span>{displayRound}</span>
             </div>
             <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
               <span>{displayTeam}</span>
               {!bannerCompleted && isYourPick && !cpuPicking && (
-                <span className="badge ms-2" style={{ background: 'rgba(210,153,34,.2)', color: '#d29922', fontSize: '.7rem' }}>YOUR PICK</span>
+                <span className="badge ms-2" style={{ background: 'rgba(210,153,34,.2)', color: '#d29922', fontSize: '.8125rem' }}>YOUR PICK</span>
               )}
               {!bannerCompleted && (!isYourPick || cpuPicking) && (
-                <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.7rem' }}>CPU</span>
+                <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.8125rem' }}>CPU</span>
               )}
             </div>
           </div>
@@ -326,7 +326,7 @@ export function MockDraftPage() {
         {cpuPicking && (
           <div className="d-flex align-items-center gap-2">
             <div className="spinner-border spinner-border-sm text-warning" role="status"></div>
-            <span style={{ fontSize: '.8rem', color: '#f0883e' }}>Computer picking...</span>
+            <span style={{ fontSize: '.8125rem', color: '#f0883e' }}>Computer picking...</span>
           </div>
         )}
       </div>
@@ -338,9 +338,9 @@ export function MockDraftPage() {
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-people me-2" style={{ color: '#a0a0ac' }}></i>Available Players
+                  <i className="bi bi-people me-2" style={{ color: 'var(--kl-text-primary)' }}></i>Available Players
                 </h5>
-                <button className="btn btn-outline-secondary py-0 px-2" type="button" onClick={() => setWeightsOpen(o => !o)} style={{ fontSize: '.7rem' }}>
+                <button className="btn btn-outline-secondary py-0 px-2" type="button" onClick={() => setWeightsOpen(o => !o)} style={{ fontSize: '.8125rem' }}>
                   <i className="bi bi-sliders me-1"></i>Values
                 </button>
               </div>
@@ -349,7 +349,7 @@ export function MockDraftPage() {
                 <div className="mb-2" style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8, padding: '.75rem' }}>
                   {WEIGHT_KEYS.map(({ key, label }) => (
                     <div key={key} className="d-flex align-items-center gap-2 mb-2">
-                      <span style={{ fontSize: '.7rem', color: '#a0a0ac', width: 60, flexShrink: 0 }}>{label}</span>
+                      <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', width: 60, flexShrink: 0 }}>{label}</span>
                       <input
                         type="range"
                         className="form-range flex-grow-1"
@@ -358,18 +358,18 @@ export function MockDraftPage() {
                         onChange={e => onWeightChange(key, parseFloat(e.target.value))}
                         style={{ height: 16 }}
                       />
-                      <span style={{ fontSize: '.7rem', color: '#ececf6', width: 32, textAlign: 'right' }}>
+                      <span style={{ fontSize: '.8125rem', color: '#ececf6', width: 32, textAlign: 'right' }}>
                         {Math.round((weights[key] ?? 0.2) * 100)}%
                       </span>
                     </div>
                   ))}
                   <div className="d-flex justify-content-between align-items-center mt-2 pt-2" style={{ borderTop: '1px solid #2a292f' }}>
-                    <span style={{ fontSize: '.7rem', color: '#a0a0ac' }}>
+                    <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                       {hasCustomWeights ? <span style={{ color: '#3fb950' }}>Custom</span> : 'League defaults'}
                     </span>
                     <div className="d-flex gap-1">
-                      <button className="btn btn-outline-secondary py-0 px-2" onClick={applyWeights} style={{ fontSize: '.7rem' }}>Apply</button>
-                      <button className="btn btn-primary py-0 px-2" onClick={saveWeights} style={{ fontSize: '.7rem' }}>Save</button>
+                      <button className="btn btn-outline-secondary py-0 px-2" onClick={applyWeights} style={{ fontSize: '.8125rem' }}>Apply</button>
+                      <button className="btn btn-primary py-0 px-2" onClick={saveWeights} style={{ fontSize: '.8125rem' }}>Save</button>
                     </div>
                   </div>
                 </div>
@@ -435,16 +435,16 @@ export function MockDraftPage() {
             <div className="card-header d-flex justify-content-between align-items-center">
               <div className="d-flex align-items-center gap-2">
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-clock-history me-2" style={{ color: '#a0a0ac' }}></i>Pick History
+                  <i className="bi bi-clock-history me-2" style={{ color: 'var(--kl-text-primary)' }}></i>Pick History
                 </h5>
                 {user_team && (
                   <div className="btn-group btn-group-sm" role="group">
-                    <button type="button" className={`btn btn-sm btn-outline-secondary${pickFilterMode === 'all' ? ' active' : ''}`} onClick={() => setPickFilterMode('all')} style={{ fontSize: '.7rem', padding: '2px 8px' }}>All</button>
-                    <button type="button" className={`btn btn-sm btn-outline-secondary${pickFilterMode === 'mine' ? ' active' : ''}`} onClick={() => setPickFilterMode('mine')} style={{ fontSize: '.7rem', padding: '2px 8px' }}>Mine</button>
+                    <button type="button" className={`btn btn-sm btn-outline-secondary${pickFilterMode === 'all' ? ' active' : ''}`} onClick={() => setPickFilterMode('all')} style={{ fontSize: '.8125rem', padding: '2px 8px' }}>All</button>
+                    <button type="button" className={`btn btn-sm btn-outline-secondary${pickFilterMode === 'mine' ? ' active' : ''}`} onClick={() => setPickFilterMode('mine')} style={{ fontSize: '.8125rem', padding: '2px 8px' }}>Mine</button>
                   </div>
                 )}
               </div>
-              <span className="badge" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.75rem' }}>
+              <span className="badge" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                 {state.picks_made}/{state.total_picks}
               </span>
             </div>
@@ -461,7 +461,7 @@ export function MockDraftPage() {
                       <td>{pick.team_name}</td>
                       <td>
                         {pick.player_name}
-                        {pick.is_auto_pick && <span style={{ color: '#f0883e', fontSize: '.7rem' }}> (cpu)</span>}
+                        {pick.is_auto_pick && <span style={{ color: '#f0883e', fontSize: '.8125rem' }}> (cpu)</span>}
                       </td>
                       <td><span className={`pos-badge badge-${posClass(pick.player_position)}`}>{pick.player_position}</span></td>
                       <td>{pick.player_afl_team}</td>
@@ -478,7 +478,7 @@ export function MockDraftPage() {
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
                   <i className="bi bi-person-badge me-2" style={{ color: '#ececf6' }}></i>{user_team.name}
                 </h5>
-                <span className="badge" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.75rem' }}>
+                <span className="badge" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                   {yourTeamPicks.length} players
                 </span>
               </div>

@@ -39,19 +39,19 @@ interface RatingsData {
 const RM_CSS = `
 .rm-controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding:12px 16px; border-bottom:1px solid var(--kl-border); }
 .rm-seg { display:inline-flex; background:rgba(19,19,22,.6); border:1px solid var(--kl-border); border-radius:999px; padding:3px; }
-.rm-seg-btn { padding:5px 14px; border:0; background:transparent; color:var(--kl-text-secondary); font-size:.76rem; font-weight:700; border-radius:999px; cursor:pointer; transition:background .12s,color .12s; }
+.rm-seg-btn { padding:5px 14px; border:0; background:transparent; color:var(--kl-text-secondary); font-size:.8125rem; font-weight:700; border-radius:999px; cursor:pointer; transition:background .12s,color .12s; }
 .rm-seg-btn.active.up { background:rgba(63,185,80,.16); color:#3fb950; }
 .rm-seg-btn.active.down { background:rgba(248,81,73,.16); color:#f85149; }
 .rm-seg-btn.active.all { background:rgba(236,236,246,.16); color:#ececf6; }
 .rm-pos { display:inline-flex; gap:4px; flex-wrap:wrap; }
-.rm-chip { padding:4px 9px; border:1px solid var(--kl-border); background:transparent; color:var(--kl-text-secondary); font-size:.7rem; font-weight:700; border-radius:8px; cursor:pointer; transition:all .12s; }
+.rm-chip { padding:4px 9px; border:1px solid var(--kl-border); background:transparent; color:var(--kl-text-secondary); font-size:.8125rem; font-weight:700; border-radius:8px; cursor:pointer; transition:all .12s; }
 .rm-chip:hover { border-color:var(--kl-border-light,#605e6a); color:var(--kl-text-primary); }
 .rm-chip.active { background:rgba(236,236,246,.14); border-color:rgba(236,236,246,.5); color:#ececf6; }
-.rm-toggle { display:inline-flex; align-items:center; gap:7px; margin-left:auto; font-size:.76rem; color:var(--kl-text-secondary); cursor:pointer; user-select:none; }
+.rm-toggle { display:inline-flex; align-items:center; gap:7px; margin-left:auto; font-size:.8125rem; color:var(--kl-text-secondary); cursor:pointer; user-select:none; }
 .rm-toggle input { accent-color:#ececf6; width:15px; height:15px; }
-.rm-debut { display:inline-block; font-size:.56rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:1px 5px; border-radius:4px; margin-left:6px; background:rgba(210,153,34,.16); color:#d29922; vertical-align:middle; }
-.rm-arrow { color:var(--kl-text-muted); font-size:.7rem; margin:0 4px; }
-.rm-count { font-size:.72rem; color:var(--kl-text-muted); }
+.rm-debut { display:inline-block; font-size:.8125rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:1px 5px; border-radius:4px; margin-left:6px; background:rgba(210,153,34,.16); color:#d29922; vertical-align:middle; }
+.rm-arrow { color:var(--kl-text-muted); font-size:.8125rem; margin:0 4px; }
+.rm-count { font-size:.8125rem; color:var(--kl-text-muted); }
 .rm-empty { padding:28px 16px; text-align:center; color:var(--kl-text-muted); font-size:.85rem; }
 @media (max-width:600px){ .rm-controls{ gap:8px; } .rm-toggle{ margin-left:0; width:100%; } }
 `
@@ -59,7 +59,7 @@ const RM_CSS = `
 function deltaBadge(delta: number) {
   if (delta > 0) return <span className="badge" style={{ background: 'rgba(63,185,80,.15)', color: '#3fb950' }}>+{delta}</span>
   if (delta < 0) return <span className="badge" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149' }}>{delta}</span>
-  return <span className="text-secondary">—</span>
+  return <span className="text-secondary">-</span>
 }
 
 type MoverView = 'risers' | 'fallers' | 'all'
@@ -109,7 +109,7 @@ export function PlayerRatingsPage() {
         </div>
       </div>
 
-      {/* ── Season Movers — the hero: who's moved since start of year ── */}
+      {/* ── Season Movers, the hero: who's moved since start of year ── */}
       <div className="card">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
@@ -154,13 +154,13 @@ export function PlayerRatingsPage() {
                     <td className="text-center" style={{ padding: 0, verticalAlign: 'middle' }}>
                       <WishlistStar wishlist={wishlist} playerId={p.id} playerName={p.name} />
                     </td>
-                    <td className="text-center text-secondary" style={{ fontSize: '.78rem' }}>{i + 1}</td>
+                    <td className="text-center text-secondary" style={{ fontSize: '.8125rem' }}>{i + 1}</td>
                     <td>
                       <strong>{p.name}</strong>
                       {p.is_debutant && <span className="rm-debut" title="Debuted this year">1st yr</span>}
-                      <div className="text-secondary" style={{ fontSize: '.7rem' }}>{p.afl_team}</div>
+                      <div className="text-secondary" style={{ fontSize: '.8125rem' }}>{p.afl_team}</div>
                     </td>
-                    <td>{(p.position || 'MID').split('/').map(ps => <span key={ps} className={`pos-badge pos-${ps}`} style={{ fontSize: '.62rem', padding: '1px 5px' }}>{ps}</span>)}</td>
+                    <td>{(p.position || 'MID').split('/').map(ps => <span key={ps} className={`pos-badge pos-${ps}`} style={{ fontSize: '.8125rem', padding: '1px 5px' }}>{ps}</span>)}</td>
                     <td className="text-end text-secondary">{p.rating_start}</td>
                     <td className="text-center"><i className="bi bi-arrow-right rm-arrow"></i></td>
                     <td className="text-end"><strong>{p.rating}</strong></td>
@@ -173,7 +173,7 @@ export function PlayerRatingsPage() {
         </div>
       </div>
 
-      {/* ── Latest Update — genuine changes from the most recent sync ── */}
+      {/* ── Latest Update, genuine changes from the most recent sync ── */}
       <div className="card mt-4">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
@@ -197,7 +197,7 @@ export function PlayerRatingsPage() {
                     <td className="text-center" style={{ padding: 0, verticalAlign: 'middle' }}>
                       <WishlistStar wishlist={wishlist} playerId={r.player_id} playerName={r.player_name} />
                     </td>
-                    <td><strong>{r.player_name}</strong><div className="text-secondary" style={{ fontSize: '.7rem' }}>{r.afl_team}</div></td>
+                    <td><strong>{r.player_name}</strong><div className="text-secondary" style={{ fontSize: '.8125rem' }}>{r.afl_team}</div></td>
                     <td><span className={`pos-badge pos-${r.position}`}>{r.position}</span></td>
                     <td className="text-end text-secondary">{r.old_rating}</td>
                     <td className="text-end"><strong>{r.new_rating}</strong></td>

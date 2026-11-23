@@ -22,7 +22,7 @@ interface LtilEntry {
 
 interface TeamProgress {
   name: string; owner: string; count: number; met: boolean
-  /** Total cuts this team owes — derived from the size it must finish at, so
+  /** Total cuts this team owes, derived from the size it must finish at, so
    *  it differs per team rather than being one flat league minimum. */
   required: number
   remaining: number
@@ -75,17 +75,17 @@ const SUMMARY_CSS = `
   border: 1px solid rgba(236,236,246,.22);
 }
 .comm-draftdate label {
-  margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
-  text-transform: uppercase; color: #a0a0ac;
+  margin: 0; font-size: .8125rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--kl-text-primary);
 }
 .comm-draftdate-input {
   background: #0e0d0f; border: 1px solid #2a292f; color: #ebebee;
-  border-radius: 6px; padding: .3rem .5rem; font-size: .8rem;
+  border-radius: 6px; padding: .3rem .5rem; font-size: .8125rem;
   color-scheme: dark;
 }
 .comm-poolstate {
   display: flex; align-items: center; width: 100%;
-  font-size: .76rem; color: #e0a458;
+  font-size: .8125rem; color: #e0a458;
   background: rgba(210,153,34,.08); border: 1px solid rgba(210,153,34,.25);
   border-radius: 8px; padding: 7px 12px;
 }
@@ -95,12 +95,12 @@ const SUMMARY_CSS = `
 .comm-summary-active  { border-color: rgba(63,185,80,.3); background: rgba(63,185,80,.04); }
 .comm-summary-trades  { border-color: rgba(236,236,246,.3); background: rgba(236,236,246,.04); }
 .comm-summary-num { font-size: 1.5rem; font-weight: 800; color: #ebebee; line-height: 1; }
-.comm-summary-label { font-size: .7rem; color: #a0a0ac; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.comm-summary-label { font-size: .8125rem; color: var(--kl-text-primary); margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
 .comm-ltil-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #1e1d21; }
 .comm-ltil-row:last-child { border-bottom: none; }
 .comm-ltil-info { flex: 1; min-width: 0; }
 .comm-ltil-player { font-size: .85rem; font-weight: 600; color: #ebebee; }
-.comm-ltil-meta { font-size: .72rem; color: #a0a0ac; margin-top: 2px; }
+.comm-ltil-meta { font-size: .8125rem; color: var(--kl-text-primary); margin-top: 2px; }
 .comm-ltil-actions { display: flex; gap: 6px; flex-shrink: 0; }
 `
 
@@ -310,7 +310,7 @@ export function CommissionerPage() {
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
             <i className="bi bi-calendar-range me-2" style={{ color: '#d29922' }}></i>Season Controls
           </h5>
-          <span className="badge" style={{ background: phaseBadge.bg, fontSize: '.7rem' }}>{phaseBadge.label}</span>
+          <span className="badge" style={{ background: phaseBadge.bg, fontSize: '.8125rem' }}>{phaseBadge.label}</span>
         </div>
         <div className="card-body">
           {delist.is_open && (
@@ -319,7 +319,7 @@ export function CommissionerPage() {
                 <i className="bi bi-exclamation-triangle-fill" style={{ color: '#f85149' }}></i>
                 <span style={{ fontSize: '.85rem', fontWeight: 600, color: '#f85149' }}>Delist Period Open</span>
                 {delist.closes_at && (
-                  <span className="ms-auto" style={{ fontSize: '.75rem', color: '#a0a0ac' }}>
+                  <span className="ms-auto" style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                     Closes {formatDate(delist.closes_at)}
                   </span>
                 )}
@@ -334,10 +334,10 @@ export function CommissionerPage() {
                           background: tp.met ? 'rgba(63,185,80,.08)' : 'rgba(160,160,172,.05)',
                           border: `1px solid ${tp.met ? 'rgba(63,185,80,.2)' : 'rgba(160,160,172,.1)'}`,
                           borderRadius: 6,
-                          fontSize: '.75rem',
+                          fontSize: '.8125rem',
                         }}
                       >
-                        <span style={{ color: '#cfcfd6' }}>{tp.name}</span>
+                        <span style={{ color: 'var(--kl-text-primary)' }}>{tp.name}</span>
                         <span
                           style={{ color: tp.met ? '#3fb950' : '#f85149', fontWeight: 600 }}
                           title={tp.target_size != null
@@ -346,7 +346,7 @@ export function CommissionerPage() {
                         >
                           {tp.count}/{tp.required ?? delist.min_delists}
                           {!tp.met && tp.remaining > 0 && (
-                            <span style={{ color: '#a0a0ac', fontWeight: 500 }}>
+                            <span style={{ color: 'var(--kl-text-primary)', fontWeight: 500 }}>
                               {' '}({tp.squad_size}→{tp.target_size})
                             </span>
                           )}
@@ -474,17 +474,17 @@ export function CommissionerPage() {
                 <div className={`comm-poolstate${pool.open ? ' open' : ''}`}>
                   <i className={`bi ${pool.open ? 'bi-unlock-fill' : 'bi-lock-fill'} me-1`}></i>
                   {pool.open
-                    ? 'Player pool open — free agents and SSP signings are live.'
+                    ? 'Player pool open, free agents and SSP signings are live.'
                     : (pool.reason || 'Player pool closed.')}
                 </div>
               </>
             )}
 
             {current_phase === 'pre_season' && (
-              <span style={{ fontSize: '.8rem', color: '#a0a0ac' }}>Pre-season — set up your draft to get started.</span>
+              <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Pre-season, set up your draft to get started.</span>
             )}
             {current_phase === 'regular' && (
-              <span style={{ fontSize: '.8rem', color: '#a0a0ac' }}>Regular season in progress. Use settings to trigger midseason or offseason.</span>
+              <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Regular season in progress. Use settings to trigger midseason or offseason.</span>
             )}
           </div>
 
@@ -530,7 +530,7 @@ export function CommissionerPage() {
         </div>
         <div className="card-body p-0">
           {pending_ltil.length === 0 ? (
-            <div className="text-center py-3" style={{ fontSize: '.8rem', color: '#a0a0ac' }}>No pending LTIL requests</div>
+            <div className="text-center py-3" style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>No pending LTIL requests</div>
           ) : (
             pending_ltil.map(lt => (
               <div key={lt.id} className="comm-ltil-row">
@@ -563,7 +563,7 @@ export function CommissionerPage() {
         </div>
         <div className="card-body p-0">
           {active_ltil.length === 0 ? (
-            <div className="text-center py-3" style={{ fontSize: '.8rem', color: '#a0a0ac' }}>No active LTIL entries</div>
+            <div className="text-center py-3" style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>No active LTIL entries</div>
           ) : (
             active_ltil.map(lt => (
               <div key={lt.id} className="comm-ltil-row">
@@ -597,19 +597,19 @@ export function CommissionerPage() {
             <h6 className="fw-bold mb-2" style={{ fontSize: '.85rem', color: '#f85149' }}>
               <i className="bi bi-person-dash me-2"></i>Delist Player
             </h6>
-            <p style={{ fontSize: '.75rem', color: '#a0a0ac', marginBottom: 10 }}>
+            <p style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 10 }}>
               Remove a player from a team's roster (e.g. incorrect draft pick). Opens up a roster spot.
             </p>
             <div className="row g-2 align-items-end">
               <div className="col-md-5">
-                <label className="form-label" style={{ fontSize: '.75rem' }}>Team</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>Team</label>
                 <select className="form-select form-select-sm" value={delistTeamId ?? ''} onChange={e => onDelistTeamChange(e.target.value ? Number(e.target.value) : null)}>
                   <option value="">Select team...</option>
                   {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div className="col-md-5">
-                <label className="form-label" style={{ fontSize: '.75rem' }}>Player</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>Player</label>
                 <select className="form-select form-select-sm" value={delistPlayerId ?? ''} disabled={!delistTeamId} onChange={e => setDelistPlayerId(e.target.value ? Number(e.target.value) : null)}>
                   <option value="">{delistTeamId ? 'Select player...' : 'Select team first...'}</option>
                   {delistRoster.map(p => <option key={p.id} value={p.id}>{p.name} ({p.position} - {p.afl_team})</option>)}
@@ -628,26 +628,26 @@ export function CommissionerPage() {
             <h6 className="fw-bold mb-2" style={{ fontSize: '.85rem', color: '#ececf6' }}>
               <i className="bi bi-arrow-left-right me-2"></i>Force Move Player
             </h6>
-            <p style={{ fontSize: '.75rem', color: '#a0a0ac', marginBottom: 10 }}>
+            <p style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 10 }}>
               Move a player between teams (e.g. correcting a misplaced draft pick). No trade history created.
             </p>
             <div className="row g-2 align-items-end">
               <div className="col-md-4">
-                <label className="form-label" style={{ fontSize: '.75rem' }}>From Team</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>From Team</label>
                 <select className="form-select form-select-sm" value={moveFrom ?? ''} onChange={e => onMoveFromChange(e.target.value ? Number(e.target.value) : null)}>
                   <option value="">Select team...</option>
                   {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div className="col-md-4">
-                <label className="form-label" style={{ fontSize: '.75rem' }}>Player</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>Player</label>
                 <select className="form-select form-select-sm" value={movePlayer ?? ''} disabled={!moveFrom} onChange={e => setMovePlayer(e.target.value ? Number(e.target.value) : null)}>
                   <option value="">{moveFrom ? 'Select player...' : 'Select team first...'}</option>
                   {moveRoster.map(p => <option key={p.id} value={p.id}>{p.name} ({p.position} - {p.afl_team})</option>)}
                 </select>
               </div>
               <div className="col-md-4">
-                <label className="form-label" style={{ fontSize: '.75rem' }}>To Team</label>
+                <label className="form-label" style={{ fontSize: '.8125rem' }}>To Team</label>
                 <select className="form-select form-select-sm" value={moveTo ?? ''} disabled={!movePlayer} onChange={e => setMoveTo(e.target.value ? Number(e.target.value) : null)}>
                   <option value="">Select team...</option>
                   {teams.filter(t => t.id !== moveFrom).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -668,7 +668,7 @@ export function CommissionerPage() {
         <div className="card mb-4">
           <div className="card-header" style={{ background: 'var(--kl-bg-elevated)', borderBottom: '1px solid var(--kl-border)' }}>
             <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-              <i className="bi bi-clock-history me-2" style={{ color: '#a0a0ac' }}></i>Recent LTIL History
+              <i className="bi bi-clock-history me-2" style={{ color: 'var(--kl-text-primary)' }}></i>Recent LTIL History
             </h5>
           </div>
           <div className="card-body p-0">
@@ -683,7 +683,7 @@ export function CommissionerPage() {
                       {lt.status === 'rejected' ? (
                         <span style={{ color: '#f85149' }}>Rejected</span>
                       ) : lt.removed_at ? (
-                        <span style={{ color: '#a0a0ac' }}>Removed</span>
+                        <span style={{ color: 'var(--kl-text-primary)' }}>Removed</span>
                       ) : null}
                       {' '}&bull; {dateStr ? formatDate(dateStr) : '-'}
                     </div>
@@ -700,14 +700,14 @@ export function CommissionerPage() {
         <h6 style={{ color: '#f85149', fontWeight: 700, fontSize: '.85rem', marginBottom: 8 }}>
           <i className="bi bi-exclamation-triangle-fill me-1"></i>Danger Zone
         </h6>
-        <p style={{ color: 'var(--kl-text-faint)', fontSize: '.75rem', marginBottom: 12 }}>
-          Permanently delete <strong style={{ color: 'var(--kl-text-primary)' }}>{data.league.name}</strong> and all associated data — teams, rosters, fixtures, trades, draft history, standings. This cannot be undone.
+        <p style={{ color: 'var(--kl-text-faint)', fontSize: '.8125rem', marginBottom: 12 }}>
+          Permanently delete <strong style={{ color: 'var(--kl-text-primary)' }}>{data.league.name}</strong> and all associated data, teams, rosters, fixtures, trades, draft history, standings. This cannot be undone.
         </p>
         <button
           type="button"
           className="btn btn-sm"
           onClick={deleteLeague}
-          style={{ background: 'rgba(248,81,73,.12)', color: '#f85149', border: '1px solid rgba(248,81,73,.3)', fontSize: '.75rem', padding: '5px 16px', borderRadius: 6, fontWeight: 600 }}
+          style={{ background: 'rgba(248,81,73,.12)', color: '#f85149', border: '1px solid rgba(248,81,73,.3)', fontSize: '.8125rem', padding: '5px 16px', borderRadius: 6, fontWeight: 600 }}
         >
           <i className="bi bi-trash3 me-1"></i>Delete League
         </button>

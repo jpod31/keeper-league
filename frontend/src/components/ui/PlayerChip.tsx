@@ -1,5 +1,5 @@
 /**
- * PlayerChip — the single reusable player primitive.
+ * PlayerChip, the single reusable player primitive.
  *
  * Three variants:
  *   - compact  (36px)  → tight list rows, sticky trays, condensed tables
@@ -30,7 +30,7 @@ export interface PlayerChipProps {
   // Score / meta
   sc?: number | null                // displayed in the right slot
   scLabel?: string                  // tiny caption under the sc (e.g. "avg", "R14")
-  metaLine?: ReactNode              // for detailed variant — line beneath name (age, games, opponent…)
+  metaLine?: ReactNode              // for detailed variant, line beneath name (age, games, opponent…)
 
   // Badges (rendered as a compact group)
   isCaptain?: boolean
@@ -46,7 +46,7 @@ export interface PlayerChipProps {
   onClick?: () => void
   ariaLabel?: string                // overrides the default "<name>, <position>"
   className?: string
-  rightSlot?: ReactNode             // escape hatch — replaces sc/trend on the right
+  rightSlot?: ReactNode             // escape hatch, replaces sc/trend on the right
 }
 
 function Badge({ kind, title }: { kind: 'C' | 'VC' | 'E' | '7' | 'L'; title: string }) {

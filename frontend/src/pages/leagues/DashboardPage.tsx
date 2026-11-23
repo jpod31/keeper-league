@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton'
 import { TeamCrest } from '../../components/draft/TeamCrest'
-import { rgbOf } from '../../lib/clubs'
 
 /** Days, hours, minutes and seconds to the draft, ticking. */
 function DraftClock({ target }: { target: string }) {
@@ -263,58 +262,56 @@ export function DashboardPage() {
   const tradeCountdown = league.trade_window_open ? fmtCountdown(league.trade_close_at) : null
 
   return (
-    <div className="lg-page" style={styleVars as React.CSSProperties}>
+    <div className={`lg-page${offseason && !offseason.draft_done ? ' is-offseason' : ''}`} style={styleVars as React.CSSProperties}>
 
       {/* ── OFF-SEASON: the draft and the cuts, in place of rounds ── */}
       {offseason && !offseason.draft_done && (
-        <section className="dh">
-          <div className="dh-top">
-            <div className="dh-lead">
-              <div className="dh-kicker">Draft night</div>
-              <div className="dh-when">{draftWhen ?? 'Date to be set'}</div>
-              <div className="dh-facts">
-                <span>{offseason.delist_open ? 'Delistings and trades close when it starts' : 'Delistings are closed'}</span>
-                <span>Free agents open once it is done</span>
-              </div>
-              <div className="dh-actions">
-                {user_team && <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/team/${user_team.id}`}>My list</Link>}
-                <Link className="kx-btn" to={`/leagues/${leagueId}/draft`}>Draft room</Link>
-                <Link className="kx-btn" to={`/leagues/${leagueId}/player-pool`}>Scout the pool</Link>
-                <Link className="kx-btn" to={`/leagues/${leagueId}/trade-block`}>Trade block</Link>
-              </div>
+        <section className="dh2">
+          <div className="dh2-head">
+            <div>
+              <div className="dh2-label">Draft night</div>
+              <h1 className="dh2-when">{draftWhen ?? 'Date to be set'}</h1>
             </div>
             {offseason.draft_at && <DraftClock target={offseason.draft_at} />}
           </div>
-
+          {(() => {
+            const mine = user_team ? offseason.clubs?.find(c => c.id === user_team.id) : undefined
+            if (!user_team || !mine) return null
+            return (
+              <div className="dh2-you">
+                <div className="dh2-you-text">
+                  {mine.to_cut > 0
+                    ? `You have ${mine.list_size} on your list. Cut ${mine.to_cut} before the draft.`
+                    : `Your list is ready: ${mine.list_size} players and ${mine.picks} picks.`}
+                </div>
+                <div className="dh2-actions">
+                  <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/team/${user_team.id}`}>{mine.to_cut > 0 ? 'Make cuts' : 'My list'}</Link>
+                  <Link className="kx-btn" to={`/leagues/${leagueId}/draft`}>Draft room</Link>
+                </div>
+              </div>
+            )
+          })()}
           {offseason.clubs && offseason.clubs.length > 0 && (
-            <div className="dh-clubs">
-              {offseason.clubs.map(c => {
-                const cap = offseason.squad_size || 45
-                const mine = user_team && c.id === user_team.id
-                return (
-                  <Link key={c.id} to={`/leagues/${leagueId}/team/${c.id}`}
-                    className={`dh-club${mine ? ' mine' : ''}`}
-                    style={{ ['--tm' as string]: rgbOf(c.accent) } as React.CSSProperties}>
-                    <div className="dh-club-top">
-                      <span className="dh-order">{c.order}</span>
-                      <TeamCrest team={c} size={44} />
-                      <span className="dh-club-name">{c.name}</span>
-                    </div>
-                    <div className="dh-bar" aria-hidden="true">
-                      <span style={{ width: `${Math.min(100, (c.list_size / cap) * 100)}%` }}></span>
-                      {offseason.target_size != null && <i style={{ left: `${(offseason.target_size / cap) * 100}%` }}></i>}
-                    </div>
-                    <div className="dh-club-nums">
-                      <span><b>{c.list_size}</b> on the list</span>
-                      <span><b>{c.picks}</b> pick{c.picks === 1 ? '' : 's'}</span>
-                    </div>
-                    <div className={`dh-status${c.to_cut > 0 ? ' due' : ''}`}>
-                      {c.to_cut > 0 ? `${c.to_cut} to cut` : `Ready, ${c.spots} spot${c.spots === 1 ? '' : 's'} open`}
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
+            <table className="kx-table dh2-table">
+              <thead>
+                <tr><th className="num" style={{ width: 64 }}>Pick</th><th>Club</th><th className="num">List</th><th className="num">Picks</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {offseason.clubs.map(c => (
+                  <tr key={c.id} className={user_team && c.id === user_team.id ? 'sn-me' : undefined}>
+                    <td className="num">{c.order}</td>
+                    <td>
+                      <Link className="dh2-club" to={`/leagues/${leagueId}/team/${c.id}`}>
+                        <TeamCrest team={c} size={30} />{c.name}
+                      </Link>
+                    </td>
+                    <td className="num">{c.list_size}</td>
+                    <td className="num">{c.picks}</td>
+                    <td className={c.to_cut > 0 ? 'dh2-due' : 'dh2-ok'}>{c.to_cut > 0 ? `${c.to_cut} to cut` : 'Ready'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </section>
       )}
@@ -333,7 +330,7 @@ export function DashboardPage() {
         </span>
         {lockout && (
           <span className="lg-pulse-item">
-            <i className="bi bi-clock" style={{ color: '#d29922', fontSize: '.78rem' }}></i>
+            <i className="bi bi-clock" style={{ color: '#d29922', fontSize: '.8125rem' }}></i>
             Next lockout
             <span className="lg-pulse-countdown">{lockout.value}</span>
           </span>
@@ -352,11 +349,11 @@ export function DashboardPage() {
         )}
         {delist_open && (
           <span className="lg-pulse-item" style={{ color: '#ff8a82' }}>
-            <i className="bi bi-x-octagon" style={{ fontSize: '.78rem' }}></i>Delist period open
+            <i className="bi bi-x-octagon" style={{ fontSize: '.8125rem' }}></i>Delist period open
           </span>
         )}
         <span className="lg-pulse-item" style={{ marginLeft: 'auto', color: 'var(--pp-text-muted)' }}>
-          <span className={`status-pill status-${league.status}`} style={{ fontSize: '.6rem' }}>{league.status}</span>
+          <span className={`status-pill status-${league.status}`} style={{ fontSize: '.8125rem' }}>{league.status}</span>
           <span style={{ marginLeft: 8 }}>{league.scoring_label} · {league.num_teams} teams</span>
         </span>
       </div>
@@ -506,7 +503,7 @@ export function DashboardPage() {
                         <span className="lg-ladder-dot" style={{ background: s.team.colour }}></span>
                         <span className="lg-ladder-team-name">
                           {s.team.name}
-                          {s.team.is_mine && <span className="lg-hero-mine-pill" style={{ marginLeft: 6, fontSize: '.5rem' }}>YOU</span>}
+                          {s.team.is_mine && <span className="lg-hero-mine-pill" style={{ marginLeft: 6, fontSize: '.8125rem' }}>YOU</span>}
                         </span>
                       </span>
                       <span className="lg-ladder-record">{s.wins}–{s.losses}{s.draws > 0 ? `–${s.draws}` : ''}</span>
@@ -635,7 +632,7 @@ export function DashboardPage() {
                              textDecoration: 'none', color: '#ffb4ae' }}>
                     <i className="bi bi-inbox-fill"></i>
                     <span style={{ flex: 1, fontWeight: 700 }}>{pending_incoming} pending proposal{pending_incoming > 1 ? 's' : ''}</span>
-                    <i className="bi bi-arrow-right" style={{ fontSize: '.8rem' }}></i>
+                    <i className="bi bi-arrow-right" style={{ fontSize: '.8125rem' }}></i>
                   </Link>
                 )}
                 {pending_outgoing > 0 && (
@@ -645,7 +642,7 @@ export function DashboardPage() {
                              textDecoration: 'none', color: '#f0b38a' }}>
                     <i className="bi bi-send"></i>
                     <span style={{ flex: 1, fontWeight: 700 }}>{pending_outgoing} awaiting response</span>
-                    <i className="bi bi-arrow-right" style={{ fontSize: '.8rem' }}></i>
+                    <i className="bi bi-arrow-right" style={{ fontSize: '.8125rem' }}></i>
                   </Link>
                 )}
                 {league.trade_window_open && (
@@ -684,13 +681,13 @@ export function DashboardPage() {
               </div>
               <div className="input-group input-group-sm">
                 <input type="text" className="form-control" readOnly value={inviteUrl}
-                  style={{ fontSize: '.75rem', background: 'var(--pp-surface-0)', color: 'var(--pp-text)', borderColor: 'var(--pp-surface-edge)' }} />
+                  style={{ fontSize: '.8125rem', background: 'var(--pp-surface-0)', color: 'var(--pp-text)', borderColor: 'var(--pp-surface-edge)' }} />
                 <button className={`btn ${copied ? 'btn-outline-success' : 'btn-outline-secondary'}`} onClick={copyInvite}>
                   <i className={`bi ${copied ? 'bi-check2' : 'bi-clipboard'}`}></i>
                 </button>
               </div>
               <div className="mt-2" style={{ textAlign: 'center' }}>
-                <span style={{ fontSize: '.7rem', letterSpacing: 1, color: 'var(--pp-text-muted)', fontFamily: 'ui-monospace, monospace' }}>
+                <span style={{ fontSize: '.8125rem', letterSpacing: 1, color: 'var(--pp-text-muted)', fontFamily: 'ui-monospace, monospace' }}>
                   {league.invite_code}
                 </span>
               </div>
@@ -710,14 +707,14 @@ export function DashboardPage() {
             <div className="lg-info-row">
               <span className="lg-info-label">Trade window</span>
               <span className="lg-info-value" style={{ color: league.trade_window_open ? '#7ee787' : '#ff8a82' }}>
-                <i className="bi bi-circle-fill me-1" style={{ fontSize: '.5rem' }}></i>{league.trade_window_open ? 'Open' : 'Closed'}
+                <i className="bi bi-circle-fill me-1" style={{ fontSize: '.8125rem' }}></i>{league.trade_window_open ? 'Open' : 'Closed'}
               </span>
             </div>
             <div className="lg-info-row" style={{ borderBottom: 0, marginTop: 8 }}>
               <span className="lg-info-label">Positions</span>
               <span style={{ display: 'flex', gap: 6 }}>
                 {league.position_slots.filter(p => !p.is_bench).map((slot, i) => (
-                  <span key={i} className={`pos-badge pos-${slot.position_code}`} style={{ fontSize: '.65rem' }}>
+                  <span key={i} className={`pos-badge pos-${slot.position_code}`} style={{ fontSize: '.8125rem' }}>
                     {slot.position_code} <b>{slot.count}</b>
                   </span>
                 ))}
@@ -742,7 +739,7 @@ export function DashboardPage() {
           <div className="lg-card">
             <div className="lg-card-header">
               <span className="lg-card-title"><i className="bi bi-people"></i>All teams</span>
-              <span style={{ fontSize: '.7rem', color: 'var(--pp-text-muted)' }}>{teams.length}/{league.num_teams}</span>
+              <span style={{ fontSize: '.8125rem', color: 'var(--pp-text-muted)' }}>{teams.length}/{league.num_teams}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {teams.map(t => (
@@ -752,9 +749,9 @@ export function DashboardPage() {
                            background: t.is_mine ? 'rgba(var(--lg-me-rgb), .08)' : 'transparent' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: '.85rem', fontWeight: 600, color: 'var(--pp-text-strong)' }}>{t.name}</span>
-                    {t.is_mine && <span className="lg-hero-mine-pill" style={{ fontSize: '.5rem' }}>YOU</span>}
+                    {t.is_mine && <span className="lg-hero-mine-pill" style={{ fontSize: '.8125rem' }}>YOU</span>}
                   </span>
-                  <span style={{ fontSize: '.7rem', color: 'var(--pp-text-muted)' }}>{t.owner}</span>
+                  <span style={{ fontSize: '.8125rem', color: 'var(--pp-text-muted)' }}>{t.owner}</span>
                 </div>
               ))}
             </div>

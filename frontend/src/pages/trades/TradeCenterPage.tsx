@@ -87,7 +87,7 @@ function AssetChip({ asset }: { asset: TradeAsset }) {
   if (asset.kind === 'pick') {
     return (
       <span className="tr-asset-chip tr-asset-chip-pick">
-        <i className="bi bi-ticket-perforated" style={{ fontSize: '.7rem', color: '#79c0ff' }}></i>
+        <i className="bi bi-ticket-perforated" style={{ fontSize: '.8125rem', color: '#79c0ff' }}></i>
         {asset.name}
       </span>
     )
@@ -127,7 +127,7 @@ function TradeCard({ trade, leagueId, teamLogos }: {
       <div className="tr-center-card-top">
         <div className="tr-center-card-teams">
           <TeamChip team={trade.proposer_team} teamLogos={teamLogos} />
-          <i className="bi bi-arrow-left-right" style={{ color: '#63616d', fontSize: '.85rem' }}></i>
+          <i className="bi bi-arrow-left-right" style={{ color: 'var(--kl-text-primary)', fontSize: '.85rem' }}></i>
           <TeamChip team={trade.recipient_team} teamLogos={teamLogos} />
         </div>
         <span className={`tr-center-card-status tr-status-${status}`}>{STATUS_LABEL[status] || status}</span>
@@ -139,7 +139,7 @@ function TradeCard({ trade, leagueId, teamLogos }: {
             {propSc > 0 && <span className="tr-side-sc">{propSc} SC</span>}
           </div>
           {trade.from_proposer.length === 0 ? (
-            <span className="text-secondary" style={{ fontSize: '.78rem', fontStyle: 'italic' }}>nothing</span>
+            <span className="text-secondary" style={{ fontSize: '.8125rem', fontStyle: 'italic' }}>nothing</span>
           ) : (
             <div className="tr-asset-list">
               {trade.from_proposer.map((a, i) => <AssetChip key={i} asset={a} />)}
@@ -153,7 +153,7 @@ function TradeCard({ trade, leagueId, teamLogos }: {
             {recSc > 0 && <span className="tr-side-sc">{recSc} SC</span>}
           </div>
           {trade.from_recipient.length === 0 ? (
-            <span className="text-secondary" style={{ fontSize: '.78rem', fontStyle: 'italic' }}>nothing</span>
+            <span className="text-secondary" style={{ fontSize: '.8125rem', fontStyle: 'italic' }}>nothing</span>
           ) : (
             <div className="tr-asset-list">
               {trade.from_recipient.map((a, i) => <AssetChip key={i} asset={a} />)}
@@ -162,7 +162,7 @@ function TradeCard({ trade, leagueId, teamLogos }: {
         </div>
       </div>
       <div className="tr-center-card-meta">
-        <span><i className="bi bi-clock me-1"></i>{trade.proposed_at || '—'}</span>
+        <span><i className="bi bi-clock me-1"></i>{trade.proposed_at || '-'}</span>
         <span>·</span>
         <span><i className="bi bi-box-seam me-1"></i>{trade.asset_count} asset{trade.asset_count === 1 ? '' : 's'}</span>
         {(propSc > 0 || recSc > 0) && (
@@ -242,7 +242,7 @@ export function TradeCenterPage() {
             <div className="tr-window-banner-title">
               {league.trade_window_label || 'Trade window open'}
             </div>
-            <div className="tr-window-banner-sub">Send and accept proposals freely — even uneven trades.</div>
+            <div className="tr-window-banner-sub">Send and accept proposals freely, even uneven trades.</div>
           </div>
           {countdown && (
             <div className="tr-window-banner-countdown" title={`Closes ${new Date(league.trade_close_at!).toLocaleString()}`}>
@@ -255,7 +255,7 @@ export function TradeCenterPage() {
           <div className="tr-window-banner-icon"><i className="bi bi-info-circle-fill"></i></div>
           <div className="tr-window-banner-body">
             <div className="tr-window-banner-title">Trade window closed</div>
-            <div className="tr-window-banner-sub">Proposals are paused — they'll resume when the window reopens.</div>
+            <div className="tr-window-banner-sub">Proposals are paused, they'll resume when the window reopens.</div>
           </div>
         </div>
       )}
@@ -279,7 +279,7 @@ export function TradeCenterPage() {
         </div>
       </div>
 
-      {/* Dedicated tab class (.tr-tabs) — NOT .league-subnav, which is
+      {/* Dedicated tab class (.tr-tabs), NOT .league-subnav, which is
           hidden on desktop as duplicate section nav. These are in-page
           content tabs and must stay visible everywhere. Each tab carries
           its own accent identity (amber / green / sapphire). */}

@@ -1,5 +1,5 @@
 /**
- * RowsSkeleton — generic "title + N rows" placeholder for simple
+ * RowsSkeleton, generic "title + N rows" placeholder for simple
  * list / table pages. Reuses .kl-skel shimmer.
  *
  * Reach for this when a page is a single linear list and doesn't need

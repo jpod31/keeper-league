@@ -42,9 +42,9 @@
       <div class="flex-grow-1">
         <div style="font-size:.85rem;font-weight:500;">{{ entry.title }}</div>
         {% if entry.body %}
-        <div style="font-size:.75rem;color:var(--kl-text-secondary);margin-top:2px;">{{ entry.body[:120] }}</div>
+        <div style="font-size:.8125rem;color:var(--kl-text-secondary);margin-top:2px;">{{ entry.body[:120] }}</div>
         {% endif %}
-        <div style="font-size:.65rem;color:var(--kl-text-muted);margin-top:3px;">
+        <div style="font-size:.8125rem;color:var(--kl-text-muted);margin-top:3px;">
           {{ entry.created_at.strftime('%d %b %Y, %H:%M') }}
         </div>
       </div>

@@ -7,20 +7,20 @@
 <style>
   .inj-table th {
     padding: .5rem .6rem;
-    font-size: .7rem;
+    font-size: .8125rem;
     border-bottom: 2px solid #2a292f;
     position: relative;
   }
   .inj-table th.sortable { cursor: pointer; user-select: none; }
   .inj-table th.sortable:hover { color: #ececf6; }
-  .inj-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
+  .inj-table th .sort-icon { font-size: .8125rem; margin-left: 2px; opacity: .4; }
   .inj-table th.sort-active .sort-icon { opacity: 1; color: #ececf6; }
-  .inj-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
+  .inj-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8125rem; }
   .inj-table tbody tr { transition: background .1s; }
   .inj-table tbody tr:hover { background: rgba(236,236,246,.04) !important; }
   .sev-badge {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
-    font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
+    font-size: .8125rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
   }
   .sev-test       { background: rgba(236,236,246,.15);  color: #79c0ff; }
   .sev-short      { background: rgba(63,185,80,.15);    color: #7ee787; }
@@ -29,13 +29,13 @@
   .sev-suspension { background: rgba(227,179,65,.15);   color: #e3b341; }
   .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
   .filter-bar .form-control-sm, .filter-bar .form-select-sm {
-    background: #0e0d0f; border-color: #2a292f; font-size: .78rem;
+    background: #0e0d0f; border-color: #2a292f; font-size: .8125rem;
   }
   .inj-count {
-    font-size: .75rem; color: #a0a0ac; white-space: nowrap;
+    font-size: .8125rem; color: var(--kl-text-primary); white-space: nowrap;
     display: flex; align-items: center; gap: .35rem;
   }
-  .inj-count strong { color: #cfcfd6; }
+  .inj-count strong { color: var(--kl-text-primary); }
 </style>
 
 <div class="page-header">
@@ -43,7 +43,7 @@
   <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
     <div>
       <h2 class="mb-0">Injury List</h2>
-      <span style="font-size:.78rem;color:#a0a0ac;">All currently injured &amp; suspended players</span>
+      <span style="font-size:.8125rem;color:var(--kl-text-primary);">All currently injured &amp; suspended players</span>
     </div>
     <div class="inj-count">
       <span id="visible-count"><strong>{{ players|length }}</strong> players</span>
@@ -132,7 +132,7 @@
             <td>{{ p.afl_team or '' }}</td>
             <td>
               {% for pos in (p.position or 'MID').split('/') %}
-                <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.6rem;">{{ pos }}</span>
+                <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.8125rem;">{{ pos }}</span>
               {% endfor %}
             </td>
             <td class="text-end">{% if sc_display %}{{ '%.1f'|format(sc_display) }}{% else %}&mdash;{% endif %}</td>
@@ -140,12 +140,12 @@
             <td class="text-center">
               <span class="sev-badge sev-{{ p.injury_severity or 'long' }}">{{ (p.injury_severity or 'long')|capitalize }}</span>
             </td>
-            <td style="font-size:.75rem;color:#a0a0ac;">{{ p._return_display or '' }}</td>
+            <td style="font-size:.8125rem;color:var(--kl-text-primary);">{{ p._return_display or '' }}</td>
             <td>
               {% if owner_team %}
-                <span style="font-weight:600;color:#cfcfd6;">{{ owner_team }}</span>
+                <span style="font-weight:600;color:var(--kl-text-primary);">{{ owner_team }}</span>
               {% else %}
-                <span style="color:#63616d;">&mdash;</span>
+                <span style="color:var(--kl-text-primary);">&mdash;</span>
               {% endif %}
             </td>
           </tr>
@@ -186,21 +186,21 @@
           <div class="pool-card-name">{{ p.name }}</div>
           <div class="pool-card-meta">
             {% for pos in (p.position or 'MID').split('/') %}
-              <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.6rem;">{{ pos }}</span>
+              <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 5px;font-size:.8125rem;">{{ pos }}</span>
             {% endfor %}
             <span>{{ p.afl_team or '' }}</span>
           </div>
           <div class="pool-card-stats">
             <span>{{ p.injury_type or 'Injured' }}</span>
-            <span class="sev-badge sev-{{ p.injury_severity or 'long' }}" style="font-size:.55rem;padding:1px 6px;">{{ (p.injury_severity or 'long')|capitalize }}</span>
+            <span class="sev-badge sev-{{ p.injury_severity or 'long' }}" style="font-size:.8125rem;padding:1px 6px;">{{ (p.injury_severity or 'long')|capitalize }}</span>
             {% if sc_display %}<span>AVG: <strong>{{ '%.1f'|format(sc_display) }}</strong></span>{% endif %}
           </div>
         </div>
-        <div class="pool-card-rank" style="font-size:.65rem;">
+        <div class="pool-card-rank" style="font-size:.8125rem;">
           {% if owner_team %}
-            <span style="color:#cfcfd6;font-weight:600;">{{ owner_team }}</span>
+            <span style="color:var(--kl-text-primary);font-weight:600;">{{ owner_team }}</span>
           {% else %}
-            <span style="color:#63616d;">&mdash;</span>
+            <span style="color:var(--kl-text-primary);">&mdash;</span>
           {% endif %}
         </div>
       </a>

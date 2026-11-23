@@ -47,8 +47,8 @@ export function stintStyle(e: Stint): { label: string; icon: string; color: stri
   }
   if (e.method === 'trade') return { label: `Traded in${when}`, icon: 'bi-arrow-left-right', color: '#ffb471' }
   if (e.method === 'ssp') return { label: `SSP signing${when}`, icon: 'bi-bandaid', color: '#f0b38a' }
-  if (e.method === 'commissioner') return { label: `Commissioner move${when}`, icon: 'bi-shield', color: '#cfcfd6' }
-  return { label: e.method || 'Listed', icon: 'bi-person-plus', color: '#cfcfd6' }
+  if (e.method === 'commissioner') return { label: `Commissioner move${when}`, icon: 'bi-shield', color: 'var(--kl-text-primary)' }
+  return { label: e.method || 'Listed', icon: 'bi-person-plus', color: 'var(--kl-text-primary)' }
 }
 
 /** How the stint ended, when it has. */

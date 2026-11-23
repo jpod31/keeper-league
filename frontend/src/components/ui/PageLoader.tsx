@@ -1,6 +1,6 @@
 /**
  * Big inline loader with the pulsing KL logo and an ambient halo that
- * fades naturally via radial gradients — no rectangular clipping box.
+ * fades naturally via radial gradients, no rectangular clipping box.
  */
 export function PageLoader({ text }: { text?: string } = {}) {
   return (
@@ -13,7 +13,7 @@ export function PageLoader({ text }: { text?: string } = {}) {
         justifyContent: 'center',
       }}
     >
-      {/* Radial halo — green and blue, centered on the logo, fades to nothing */}
+      {/* Radial halo, green and blue, centered on the logo, fades to nothing */}
       <div
         aria-hidden
         style={{
@@ -51,7 +51,7 @@ export function PageLoader({ text }: { text?: string } = {}) {
           }}
         />
         {text && (
-          <p style={{ fontSize: '.8rem', color: '#a0a0ac', margin: 0, fontWeight: 500 }}>{text}</p>
+          <p style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', margin: 0, fontWeight: 500 }}>{text}</p>
         )}
       </div>
 

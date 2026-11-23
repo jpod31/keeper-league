@@ -6,14 +6,14 @@ import { api, ApiError } from '../lib/api'
  *
  * When the user navigates away from a page and back (common SPA flow),
  * the component re-mounts and re-fetches. If the underlying request
- * trips a transient failure — gunicorn worker just got SIGHUP'd, a
- * brief network hiccup, the ratings-sync flock briefly locked the DB —
+ * trips a transient failure, gunicorn worker just got SIGHUP'd, a
+ * brief network hiccup, the ratings-sync flock briefly locked the DB,
  * we used to drop straight into the empty-state "Failed to load X"
  * dead-end. Now we retry once after a short delay before surfacing the
  * error, which makes most of those one-off failures invisible.
  *
  * 4xx errors don't retry (a 401 means re-auth, a 404 means the row
- * isn't coming back) — only network/transport errors and 5xx retry.
+ * isn't coming back), only network/transport errors and 5xx retry.
  */
 export function useFetch<T>(url: string | null) {
   const [data, setData] = useState<T | null>(null)
@@ -35,14 +35,14 @@ export function useFetch<T>(url: string | null) {
       .catch(async (e: unknown) => {
         // Retry once for transient errors. Network errors (fetch failed
         // entirely) are NOT ApiError. Server 5xx ARE ApiError with
-        // status >= 500. 4xx are real client errors — don't retry.
+        // status >= 500. 4xx are real client errors, don't retry.
         const isTransient =
           !(e instanceof ApiError) ||
           (e instanceof ApiError && e.status >= 500)
         if (isTransient) {
           await new Promise(r => setTimeout(r, 400))
           // If the URL changed underneath us (user navigated away
-          // mid-flight), drop the retry — they're on another page now.
+          // mid-flight), drop the retry, they're on another page now.
           if (urlRef.current !== currentUrl) return
           try {
             const d = await api<T>(currentUrl)

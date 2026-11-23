@@ -61,9 +61,9 @@ export function AdminAnalyticsPage() {
         <div className="col-md-3">
           <div className="card">
             <div className="card-body">
-              <div className="text-secondary" style={{ fontSize: '.7rem' }}>TOTAL VIEWS</div>
+              <div className="text-secondary" style={{ fontSize: '.8125rem' }}>TOTAL VIEWS</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{data.summary.total_views.toLocaleString()}</div>
-              <div style={{ fontSize: '.75rem', color: data.summary.change_pct >= 0 ? '#3fb950' : '#f85149' }}>
+              <div style={{ fontSize: '.8125rem', color: data.summary.change_pct >= 0 ? '#3fb950' : '#f85149' }}>
                 {data.summary.change_pct >= 0 ? '▲' : '▼'} {Math.abs(data.summary.change_pct)}% vs prior
               </div>
             </div>
@@ -72,7 +72,7 @@ export function AdminAnalyticsPage() {
         <div className="col-md-3">
           <div className="card">
             <div className="card-body">
-              <div className="text-secondary" style={{ fontSize: '.7rem' }}>UNIQUE USERS</div>
+              <div className="text-secondary" style={{ fontSize: '.8125rem' }}>UNIQUE USERS</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{data.summary.unique_users}</div>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function AdminAnalyticsPage() {
         <div className="col-md-3">
           <div className="card">
             <div className="card-body">
-              <div className="text-secondary" style={{ fontSize: '.7rem' }}>AVG DAILY</div>
+              <div className="text-secondary" style={{ fontSize: '.8125rem' }}>AVG DAILY</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{data.summary.avg_daily}</div>
             </div>
           </div>
@@ -88,7 +88,7 @@ export function AdminAnalyticsPage() {
         <div className="col-md-3">
           <div className="card">
             <div className="card-body">
-              <div className="text-secondary" style={{ fontSize: '.7rem' }}>MOBILE</div>
+              <div className="text-secondary" style={{ fontSize: '.8125rem' }}>MOBILE</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{mobilePct.toFixed(0)}%</div>
             </div>
           </div>
@@ -130,7 +130,7 @@ export function AdminAnalyticsPage() {
                       <td className="text-end">{u.views}</td>
                       <td className="text-end">{u.active_days}</td>
                       <td className="text-end">{u.avg_per_day}</td>
-                      <td className="text-secondary" style={{ fontSize: '.7rem' }}>{u.last_seen}</td>
+                      <td className="text-secondary" style={{ fontSize: '.8125rem' }}>{u.last_seen}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -147,7 +147,7 @@ export function AdminAnalyticsPage() {
                 const max = data.features[0]?.[1] || 1
                 return (
                   <div key={feat} className="mb-2">
-                    <div className="d-flex justify-content-between" style={{ fontSize: '.75rem' }}>
+                    <div className="d-flex justify-content-between" style={{ fontSize: '.8125rem' }}>
                       <span>{feat}</span>
                       <strong>{count}</strong>
                     </div>
@@ -167,7 +167,7 @@ export function AdminAnalyticsPage() {
                 <tbody>
                   {data.top_pages.slice(0, 10).map((p, i) => (
                     <tr key={i}>
-                      <td style={{ fontFamily: 'monospace', fontSize: '.7rem' }}>{p.path}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '.8125rem' }}>{p.path}</td>
                       <td className="text-end"><strong>{p.views}</strong></td>
                     </tr>
                   ))}

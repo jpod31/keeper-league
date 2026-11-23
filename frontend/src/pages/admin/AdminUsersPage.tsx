@@ -41,16 +41,16 @@ export function AdminUsersPage() {
             <tbody>
               {data.users.map(u => (
                 <tr key={u.id}>
-                  <td style={{ color: '#63616d' }}>{u.id}</td>
+                  <td style={{ color: 'var(--kl-text-primary)' }}>{u.id}</td>
                   <td><strong>{u.username}</strong></td>
                   <td>{u.display_name}</td>
-                  <td className="text-secondary" style={{ fontSize: '.75rem' }}>{u.email}</td>
+                  <td className="text-secondary" style={{ fontSize: '.8125rem' }}>{u.email}</td>
                   <td className="text-end">{u.team_count}</td>
-                  <td className="text-secondary" style={{ fontSize: '.75rem' }}>
-                    {u.leagues.map(lg => lg.name).join(', ') || '—'}
+                  <td className="text-secondary" style={{ fontSize: '.8125rem' }}>
+                    {u.leagues.map(lg => lg.name).join(', ') || '-'}
                   </td>
-                  <td className="text-secondary" style={{ fontSize: '.7rem' }}>
-                    {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
+                  <td className="text-secondary" style={{ fontSize: '.8125rem' }}>
+                    {u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}
                   </td>
                   <td>
                     {u.is_admin && <span className="badge bg-warning text-dark">admin</span>}

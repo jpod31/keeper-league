@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// Heavy, seasonal and rarely mounted — keep it out of the main bundle.
+// Heavy, seasonal and rarely mounted, keep it out of the main bundle.
 const SeasonReview = lazy(() => import('../season/SeasonReview').then(m => ({ default: m.SeasonReview })))
 
 type SectionKey = 'team' | 'players' | 'league' | 'settings'
@@ -103,7 +103,7 @@ function LeagueShellInner() {
 
   // During loading, render the rail's silhouette (collapsed-width
   // shell with skeleton rows) so the content area's left offset is
-  // reserved from first paint — no layout shift when data arrives.
+  // reserved from first paint, no layout shift when data arrives.
   if (loading) {
     return (
       <>
@@ -196,14 +196,14 @@ function LeagueShellInner() {
         onOpenReview={() => setReviewOpen(true)}
       />
 
-      {/* Top-bar lockout badge — portals into AppShell's slot. */}
+      {/* Top-bar lockout badge, portals into AppShell's slot. */}
       <LockoutBadge
         round={league.current_round}
         lockoutTime={league.next_lockout_at}
         squadHref={t ? `/leagues/${lid}/team/${t.id}` : undefined}
       />
 
-      {/* Page content — wrapped in a keyed motion div so route changes fade+slide */}
+      {/* Page content, wrapped in a keyed motion div so route changes fade+slide */}
       <AnimatePresence mode="wait">
         <motion.div
           key={pathname}
@@ -216,10 +216,10 @@ function LeagueShellInner() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Round recap popup — shows once per completed round on first visit */}
+      {/* Round recap popup, shows once per completed round on first visit */}
       <RoundRecapModal />
 
-      {/* Season Review takeover — auto-opens once when the season finishes,
+      {/* Season Review takeover, auto-opens once when the season finishes,
           and any time after that from the rail's Wrapped entry. */}
       {reviewOpen && reviewYear && (
         <Suspense fallback={null}>
@@ -318,7 +318,7 @@ function LeagueShellInner() {
                   <span>
                     Admin
                     {league.pending_ltil_count > 0 && (
-                      <span className="badge rounded-pill ms-1" style={{ background: '#d29922', color: '#000', fontSize: '.55rem' }}>
+                      <span className="badge rounded-pill ms-1" style={{ background: '#d29922', color: '#000', fontSize: '.8125rem' }}>
                         {league.pending_ltil_count}
                       </span>
                     )}
@@ -384,7 +384,7 @@ function LeagueShellInner() {
 // the avatar / glow stays consistent across renders. Click-outside +
 // Escape both close it.
 
-// Jewel-tone palette — saturated at mid-luminance rather than pulled
+// Jewel-tone palette, saturated at mid-luminance rather than pulled
 // pastel. Reads as deep / confident / expensive rather than gamey OR
 // washed-out. Each entry was chosen so it works as: an avatar gradient
 // stop, a 17% opacity active-row fill, a 2px solid edge stripe, and
@@ -414,7 +414,7 @@ function accentFor(id: number) {
 
 function leagueInitials(name: string): string {
   if (!name) return '·'
-  // Two-letter monogram from the league name — e.g. "Charlies Demons" → "CD"
+  // Two-letter monogram from the league name, e.g. "Charlies Demons" → "CD"
   const words = name.replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).filter(Boolean)
   if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
   return (words[0] || '·').slice(0, 2).toUpperCase()
@@ -446,7 +446,7 @@ interface RailSection {
 
 /**
  * Match a sub-row `to` against the current location.
- * - Paths must match exactly (no prefix matching — fixes the issue where
+ * - Paths must match exactly (no prefix matching, fixes the issue where
  *   /team/X/stats highlights BOTH "Field" and "Stats").
  * - If `to` carries a query string (e.g. `?view=wishlist`), every key/value
  *   in `to`'s query must also be present in the current search. If `to`
@@ -592,7 +592,7 @@ function LeagueRail({
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
-        {/* Rail head — static identity badge + pin button.
+        {/* Rail head, static identity badge + pin button.
             Switcher is in the top bar (portalled). */}
         <div className="kl-rail-head">
           <div className="kl-rail-id" title={`${leagueName} · ${leagueSeason}`}>
@@ -658,7 +658,7 @@ function LeagueRail({
         })}
       </nav>
 
-      {/* Season Review — pinned to the foot of the rail in its own colour so
+      {/* Season Review, pinned to the foot of the rail in its own colour so
           it reads as an event, not another nav row. Disappears by itself once
           the league rolls into the next season. */}
       {reviewYear && (

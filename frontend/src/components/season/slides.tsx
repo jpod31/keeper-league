@@ -54,11 +54,11 @@ const intro: SlideDef = {
       <Beat at={7} kind="rise" as="div">
         <p className="sr-sub" style={{ margin: '14px auto 0', textAlign: 'center' }}>
           {d.league.rounds} rounds. {d.cover.matches} matches. {d.cover.players_used} players named.
-          Every selection, every bench howler, every ton — wrapped up.
+          Every selection, every bench howler, every ton, wrapped up.
         </p>
       </Beat>
       <Beat at={9} kind="pop" as="div" style={{ marginTop: 26 }}>
-        <span className="sr-pill"><i className="bi bi-play-fill" /> Sit back — it plays itself</span>
+        <span className="sr-pill"><i className="bi bi-play-fill" /> Sit back, it plays itself</span>
       </Beat>
       <Beat at={11} kind="rise" as="div" style={{ marginTop: 30 }}>
         <Ticker items={[
@@ -185,7 +185,7 @@ const you: SlideDef = {
           eyebrow="Your season"
           title={<>{y.name} finished</>}
           accentWord={`${ord(y.position ?? 0)}`}
-          sub={`${y.wins} wins from ${played} games, ${y.percentage}% percentage, ${y.points_for.toLocaleString()} points for — ${y.pf_rank === 1 ? 'the most in the league' : `${ord(y.pf_rank ?? 0)} for scoring`}.`}
+          sub={`${y.wins} wins from ${played} games, ${y.percentage}% percentage, ${y.points_for.toLocaleString()} points for, ${y.pf_rank === 1 ? 'the most in the league' : `${ord(y.pf_rank ?? 0)} for scoring`}.`}
         />
         <div className="sr-split">
           <div className="sr-grid sr-g2">
@@ -210,7 +210,7 @@ const you: SlideDef = {
               accent={y.accent}
             />
             <div style={{ textAlign: 'center', marginTop: 6 }}>
-              <div style={{ fontSize: '.78rem', color: 'rgba(255,255,255,.66)' }}>
+              <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                 <b style={{ color: '#fff' }}>{y.points_for.toLocaleString()}</b> for
                 {' · '}
                 <b style={{ color: '#fff' }}>{y.points_against.toLocaleString()}</b> against
@@ -244,7 +244,7 @@ const arc: SlideDef = {
           title={<>The</>}
           accentWord="climb"
           sub={mine
-            ? `You sat ${ord(start!)} after round ${d.arc.rounds[0]} and finished ${ord(end!)}${moved > 0 ? ` — up ${moved} ${moved === 1 ? 'spot' : 'spots'}` : moved < 0 ? ` — down ${Math.abs(moved)}` : ' — never moved'}.`
+            ? `You sat ${ord(start!)} after round ${d.arc.rounds[0]} and finished ${ord(end!)}${moved > 0 ? `, up ${moved} ${moved === 1 ? 'spot' : 'spots'}` : moved < 0 ? `, down ${Math.abs(moved)}` : ', never moved'}.`
             : 'Every team’s ladder position, week by week.'}
         />
         <div className="sr-card sr-card-pad sr-rise" style={{ padding: '14px 16px 6px' }}>
@@ -297,7 +297,7 @@ const mvp: SlideDef = {
           eyebrow="Your most valuable"
           title={<>Nobody carried you like</>}
           accentWord={top.name}
-          sub={`${(top.points ?? 0).toLocaleString()} points at ${top.avg} a week — in your 23 and on the park ${top.played_23} of the ${top.available} weeks his club played.`}
+          sub={`${(top.points ?? 0).toLocaleString()} points at ${top.avg} a week, in your 23 and on the park ${top.played_23} of the ${top.available} weeks his club played.`}
         />
         <div className="sr-hero sr-pop" style={{ '--sr-club': top.club_bg, '--sr-club-fg': top.club_fg } as React.CSSProperties}>
           <ClubMark p={top} size="hero" />
@@ -371,7 +371,7 @@ const ironmen: SlideDef = {
           eyebrow={`Weeks in the 23 · out of ${d.ever_present.max_rounds} possible`}
           title={<>The</>}
           accentWord="undroppables"
-          sub={`Named in the 23 AND actually played. Weeks a player's club had no game — Opening Round, the bye — were never his to win, so they come out of both sides: every club played ${d.ever_present.max_rounds}.`}
+          sub={`Named in the 23 AND actually played. Weeks a player's club had no game, Opening Round, the bye, were never his to win, so they come out of both sides: every club played ${d.ever_present.max_rounds}.`}
         />
         <div className="sr-split">
           <div>
@@ -426,9 +426,9 @@ const ironmen: SlideDef = {
                   ? 'Nobody survived every week'
                   : `${d.ever_present.perfect_count} ${d.ever_present.perfect_count === 1 ? 'player' : 'players'}`}
               </div>
-              <p className="sr-sub" style={{ fontSize: '.76rem', marginTop: 4 }}>
+              <p className="sr-sub" style={{ fontSize: '.8125rem', marginTop: 4 }}>
                 {d.ever_present.perfect_count === 0
-                  ? `${lead.name} came closest — ${lead.played_23} of ${lead.available} weeks in ${lead.team_name}'s 23.`
+                  ? `${lead.name} came closest, ${lead.played_23} of ${lead.available} weeks in ${lead.team_name}'s 23.`
                   : d.ever_present.perfect.map(p => `${p.name} (${p.team_name})`).join(', ')
                     + (d.ever_present.perfect_count > d.ever_present.perfect.length
                         ? ` and ${d.ever_present.perfect_count - d.ever_present.perfect.length} more`
@@ -461,7 +461,7 @@ const best23: SlideDef = {
         eyebrow={`${d.year} · Team of the year`}
         title={<>The league's</>}
         accentWord="Best 23"
-        sub={`Average, not season total, behind a ${d.best_23.min_games}-game qualification — so a month's injury doesn't cost an elite player his spot to someone merely available.`}
+        sub={`Average, not season total, behind a ${d.best_23.min_games}-game qualification, so a month's injury doesn't cost an elite player his spot to someone merely available.`}
       />
 
       <div className="sr-oval-only">
@@ -498,14 +498,14 @@ const best23: SlideDef = {
             {d.best_23.reps.map(r => (
               <span key={r.team_id} className="sr-row" style={{ padding: '6px 10px' }}>
                 <Crest name={r.name} accent={r.accent} size="sm" />
-                <span className="sr-row-t" style={{ fontSize: '.74rem' }}>{r.name}</span>
+                <span className="sr-row-t" style={{ fontSize: '.8125rem' }}>{r.name}</span>
                 <span className="sr-row-v" style={{ color: r.accent }}>{r.count}</span>
               </span>
             ))}
           </div>
         </div>
 
-        {/* Average alone can't see availability — this is where the players who
+        {/* Average alone can't see availability, this is where the players who
             were good AND there every single week get their due. */}
         <div className="sr-card sr-card-hi sr-card-pad sr-rise" style={{ animationDelay: '120ms' }}>
           <div className="sr-label">
@@ -550,7 +550,7 @@ const records: SlideDef = {
           eyebrow="Record book"
           title={<>The season's</>}
           accentWord="extremes"
-          sub={`${hi.name} put up ${hi.score.toLocaleString()} in round ${hi.round} — the biggest week anyone had.`}
+          sub={`${hi.name} put up ${hi.score.toLocaleString()} in round ${hi.round}, the biggest week anyone had.`}
         />
         <div className="sr-grid sr-g4">
           <Tile value={<CountUp to={hi.score} />} label="Highest team score" accent
@@ -636,7 +636,7 @@ const h2h: SlideDef = {
           title={<>Head to</>}
           accentWord="head"
           sub={d.h2h.closest
-            ? `${d.h2h.closest.a} and ${d.h2h.closest.b} could not be split — ${d.h2h.closest.a_wins}–${d.h2h.closest.b_wins} at an average margin of ${d.h2h.closest.avg_margin}.`
+            ? `${d.h2h.closest.a} and ${d.h2h.closest.b} could not be split, ${d.h2h.closest.a_wins}–${d.h2h.closest.b_wins} at an average margin of ${d.h2h.closest.avg_margin}.`
             : undefined}
         />
 
@@ -683,7 +683,7 @@ const h2h: SlideDef = {
                       <td key={i} className={
                         !c ? 'self' : c.w > c.l ? 'win' : c.w < c.l ? 'loss' : 'even'
                       }>
-                        {c ? `${c.w}–${c.l}` : '—'}
+                        {c ? `${c.w}–${c.l}` : '-'}
                       </td>
                     ))}
                   </tr>
@@ -741,7 +741,7 @@ const bench: SlideDef = {
           eyebrow="Selection regrets"
           title={<>Points left on the</>}
           accentWord="bench"
-          sub={`Every week a benched player outscored the worst man in your 23, that gap was yours to lose. Measured over ${d.bench.rounds_counted} rounds — ${d.bench.note.toLowerCase()}, since neither was a fair test of selection.`}
+          sub={`Every week a benched player outscored the worst man in your 23, that gap was yours to lose. Measured over ${d.bench.rounds_counted} rounds, ${d.bench.note.toLowerCase()}, since neither was a fair test of selection.`}
         />
         <div className="sr-split">
           <div className="sr-card sr-card-pad sr-rise">
@@ -886,7 +886,7 @@ const draft: SlideDef = {
           eyebrow={`Draft night · ${d.draft.total_picks} picks`}
           title={<>Who actually</>}
           accentWord="won the draft"
-          sub={`${heist.team_name} took ${heist.name} at pick ${heist.pick} — he finished the ${ord(heist.value_rank)} most productive player drafted. Value is judged on what a pick returned against what he was expected to give, not raw points, and players under 22 or on an LTIL are left out of the misses.`}
+          sub={`${heist.team_name} took ${heist.name} at pick ${heist.pick}, he finished the ${ord(heist.value_rank)} most productive player drafted. Value is judged on what a pick returned against what he was expected to give, not raw points, and players under 22 or on an LTIL are left out of the misses.`}
         />
         <div className="sr-grid sr-g2" style={{ marginBottom: 16 }}>
           <div className="sr-card sr-card-hi sr-card-pad sr-pop">
@@ -927,7 +927,7 @@ const draft: SlideDef = {
               </div>
               <div className="sr-tile-s" style={{ marginTop: 10 }}>
                 Averaged {bust.avg} across {bust.played_23} of {bust.available} available weeks
-                {bust.miss_tag ? ` — ${bust.miss_tag}.` : '.'}
+                {bust.miss_tag ? `, ${bust.miss_tag}.` : '.'}
               </div>
             </div>
           )}
@@ -987,11 +987,11 @@ const draft: SlideDef = {
                   delay={i * 55} />
               ))}
             </div>
-            {/* A season lost to the LTIL is not a bad pick in a keeper league —
+            {/* A season lost to the LTIL is not a bad pick in a keeper league,
                 say so rather than leaving people wondering who's missing. */}
             {d.draft.miss_excluded_ltil.length > 0 && (
               <div className="sr-tile-s" style={{ marginTop: 10 }}>
-                Long-term injuries excluded — {d.draft.miss_excluded_ltil.length} players
+                Long-term injuries excluded, {d.draft.miss_excluded_ltil.length} players
                 spent the year on an LTIL and keep their keeper value.
               </div>
             )}
@@ -1044,7 +1044,7 @@ const coaches: SlideDef = {
                         <Crest name={c.name} logo={c.logo_url} accent={c.accent} size="sm" />
                         <span>
                           <b>{c.position}. {c.name}</b>
-                          <span style={{ display: 'block', fontSize: '.6rem', color: 'rgba(255,255,255,.45)' }}>
+                          <span style={{ display: 'block', fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                             {c.owner}
                           </span>
                         </span>
@@ -1061,7 +1061,7 @@ const coaches: SlideDef = {
                       <b>{c.efficiency}%</b>
                     </td>
                     <td>{c.subs_used}</td>
-                    <td>{c.sevens_pos ? `${ord(c.sevens_pos)}` : '—'}</td>
+                    <td>{c.sevens_pos ? `${ord(c.sevens_pos)}` : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1106,7 +1106,7 @@ const awards: SlideDef = {
         eyebrow={`${d.year} · Night of nights`}
         title={<>The season</>}
         accentWord="awards"
-        sub="Every one of these is a real extreme, computed from the season — no participation trophies."
+        sub="Every one of these is a real extreme, computed from the season, no participation trophies."
       />
       <div className="sr-grid sr-g3">
         {d.awards.map((a, i) => (
@@ -1145,13 +1145,13 @@ const outro: SlideDef = {
         </h2>
         <p className="sr-sub sr-rise" style={{ margin: '12px auto 0', textAlign: 'center', animationDelay: '200ms' }}>
           {d.cover.total_points.toLocaleString()} points, {d.cover.matches} matches and{' '}
-          {d.bench.total.toLocaleString()} points left on benches later — the {d.year} season is done.
+          {d.bench.total.toLocaleString()} points left on benches later, the {d.year} season is done.
         </p>
         <div className="sr-card sr-card-hi sr-card-pad sr-pop"
              style={{ maxWidth: 460, margin: '26px auto 0', textAlign: 'left' }}>
           <div className="sr-label">Next up</div>
           <div className="sr-h2" style={{ marginTop: 6 }}>Delistings and the off-season</div>
-          <p className="sr-sub" style={{ fontSize: '.78rem', marginTop: 6 }}>
+          <p className="sr-sub" style={{ fontSize: '.8125rem', marginTop: 6 }}>
             Lists get cut, trades reopen and the {d.year + 1} draft order gets set.
             You can replay this review any time from the bottom of the league nav.
           </p>

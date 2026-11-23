@@ -1,5 +1,5 @@
 /**
- * SquadSkeleton — layout-aware loading placeholder for SquadPage.
+ * SquadSkeleton, layout-aware loading placeholder for SquadPage.
  *
  * Replaces the generic centred Spinner so the page outlines itself
  * while data loads. Sets expectations about what's coming

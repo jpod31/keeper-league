@@ -8,7 +8,7 @@
   <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
     <div>
       <h2 class="mb-0">Finals Series</h2>
-      <span style="font-size:.78rem;color:#a0a0ac;">{{ league.season_year }} finals bracket</span>
+      <span style="font-size:.8125rem;color:var(--kl-text-primary);">{{ league.season_year }} finals bracket</span>
     </div>
     {% if is_commissioner and not finals %}
       <form method="POST" action="{{ url_for('matchups.generate_finals_view', league_id=league.id) }}">
@@ -23,13 +23,13 @@
 {% if finals %}
   <div class="row g-4">
     <div class="col-md-4">
-      <h5 class="fw-bold mb-3" style="font-size:.85rem;color:#a0a0ac;text-transform:uppercase;letter-spacing:.5px;">Qualifying Finals</h5>
+      <h5 class="fw-bold mb-3" style="font-size:.85rem;color:var(--kl-text-primary);text-transform:uppercase;letter-spacing:.5px;">Qualifying Finals</h5>
       {% for f in finals if f.final_type in ('QF1', 'QF2') %}
         <div class="fixture-card mb-3">
           <div class="p-3">
-            <div class="d-flex justify-content-between align-items-center" style="font-size:.7rem;color:#63616d;margin-bottom:.5rem;">
+            <div class="d-flex justify-content-between align-items-center" style="font-size:.8125rem;color:var(--kl-text-primary);margin-bottom:.5rem;">
               <span>{{ f.final_type }}</span>
-              {% if f.status == 'completed' %}<span class="status-pill status-completed" style="font-size:.6rem;">Final</span>{% endif %}
+              {% if f.status == 'completed' %}<span class="status-pill status-completed" style="font-size:.8125rem;">Final</span>{% endif %}
             </div>
             <div class="d-flex justify-content-between align-items-center mb-2">
               <span class="fixture-team" style="font-size:.85rem;">{{ f.home_team.name }}</span>
@@ -49,20 +49,20 @@
     </div>
 
     <div class="col-md-4">
-      <h5 class="fw-bold mb-3" style="font-size:.85rem;color:#a0a0ac;text-transform:uppercase;letter-spacing:.5px;">Preliminary Final</h5>
+      <h5 class="fw-bold mb-3" style="font-size:.85rem;color:var(--kl-text-primary);text-transform:uppercase;letter-spacing:.5px;">Preliminary Final</h5>
       {% for f in finals if f.final_type == 'PF' %}
         <div class="fixture-card mb-3">
           <div class="p-3">
-            <div class="d-flex justify-content-between align-items-center" style="font-size:.7rem;color:#63616d;margin-bottom:.5rem;">
+            <div class="d-flex justify-content-between align-items-center" style="font-size:.8125rem;color:var(--kl-text-primary);margin-bottom:.5rem;">
               <span>Loser QF1 vs Winner QF2</span>
             </div>
             <div class="d-flex justify-content-between align-items-center mb-2">
               <span class="fixture-team" style="font-size:.85rem;">{{ f.home_team.name }}</span>
-              <span class="fw-bold" style="{% if f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}color:#3fb950;{% elif f.status == 'completed' and (f.home_score or 0) < (f.away_score or 0) %}color:#8a8895;{% endif %}">{{ '%.0f'|format(f.home_score or 0) if f.status == 'completed' else '-' }}</span>
+              <span class="fw-bold" style="{% if f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}color:#3fb950;{% elif f.status == 'completed' and (f.home_score or 0) < (f.away_score or 0) %}color:var(--kl-text-primary);{% endif %}">{{ '%.0f'|format(f.home_score or 0) if f.status == 'completed' else '-' }}</span>
             </div>
             <div class="d-flex justify-content-between align-items-center">
               <span class="fixture-team" style="font-size:.85rem;">{{ f.away_team.name }}</span>
-              <span class="fw-bold" style="{% if f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}color:#3fb950;{% elif f.status == 'completed' and (f.away_score or 0) < (f.home_score or 0) %}color:#8a8895;{% endif %}">{{ '%.0f'|format(f.away_score or 0) if f.status == 'completed' else '-' }}</span>
+              <span class="fw-bold" style="{% if f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}color:#3fb950;{% elif f.status == 'completed' and (f.away_score or 0) < (f.home_score or 0) %}color:var(--kl-text-primary);{% endif %}">{{ '%.0f'|format(f.away_score or 0) if f.status == 'completed' else '-' }}</span>
             </div>
           </div>
         </div>
@@ -74,19 +74,19 @@
       {% for f in finals if f.final_type == 'GF' %}
         <div class="fixture-card" style="border-color:#ffd700;border-width:2px;box-shadow:0 0 12px rgba(255,215,0,.15);">
           <div class="p-3">
-            <div class="d-flex justify-content-between align-items-center" style="font-size:.7rem;color:#ffd700;margin-bottom:.5rem;">
+            <div class="d-flex justify-content-between align-items-center" style="font-size:.8125rem;color:#ffd700;margin-bottom:.5rem;">
               <span>Grand Final</span>
-              {% if f.status == 'completed' %}<span class="status-pill status-completed" style="font-size:.6rem;">Final</span>{% endif %}
+              {% if f.status == 'completed' %}<span class="status-pill status-completed" style="font-size:.8125rem;">Final</span>{% endif %}
             </div>
             <div class="d-flex justify-content-between align-items-center mb-2">
               <span class="fixture-team" style="font-size:.85rem;">{{ f.home_team.name }}</span>
-              <span class="fw-bold" style="{% if f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}color:#3fb950;font-size:1.1rem;{% elif f.status == 'completed' and (f.home_score or 0) < (f.away_score or 0) %}color:#8a8895;{% endif %}">
+              <span class="fw-bold" style="{% if f.status == 'completed' and (f.home_score or 0) > (f.away_score or 0) %}color:#3fb950;font-size:1.1rem;{% elif f.status == 'completed' and (f.home_score or 0) < (f.away_score or 0) %}color:var(--kl-text-primary);{% endif %}">
                 {{ '%.0f'|format(f.home_score or 0) if f.status == 'completed' else '-' }}
               </span>
             </div>
             <div class="d-flex justify-content-between align-items-center">
               <span class="fixture-team" style="font-size:.85rem;">{{ f.away_team.name }}</span>
-              <span class="fw-bold" style="{% if f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}color:#3fb950;font-size:1.1rem;{% elif f.status == 'completed' and (f.away_score or 0) < (f.home_score or 0) %}color:#8a8895;{% endif %}">
+              <span class="fw-bold" style="{% if f.status == 'completed' and (f.away_score or 0) > (f.home_score or 0) %}color:#3fb950;font-size:1.1rem;{% elif f.status == 'completed' and (f.away_score or 0) < (f.home_score or 0) %}color:var(--kl-text-primary);{% endif %}">
                 {{ '%.0f'|format(f.away_score or 0) if f.status == 'completed' else '-' }}
               </span>
             </div>

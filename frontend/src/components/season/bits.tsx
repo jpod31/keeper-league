@@ -1,5 +1,5 @@
 /**
- * Season Review primitives — the small visual pieces every slide composes
+ * Season Review primitives, the small visual pieces every slide composes
  * from. Kept dependency-light: hand-rolled inline SVG rather than a chart
  * library, so each mark can carry the slide's theme colour and animate on
  * mount without a second bundle.
@@ -32,7 +32,7 @@ export function CountUp({
     const start = performance.now()
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / dur)
-      // easeOutExpo — fast out of the gate, long settle
+      // easeOutExpo, fast out of the gate, long settle
       const e = t === 1 ? 1 : 1 - Math.pow(2, -10 * t)
       setV(to * e)
       if (t < 1) raf.current = requestAnimationFrame(tick)
@@ -56,7 +56,7 @@ export function initials(name?: string | null): string {
   return (words[0] || '?').slice(0, 2).toUpperCase()
 }
 
-/** Fantasy-team crest — the AI logo when one exists, otherwise a monogram
+/** Fantasy-team crest, the AI logo when one exists, otherwise a monogram
  *  in the team's stable accent colour. */
 export function Crest({
   name, logo, accent, size = 'md',
@@ -71,7 +71,7 @@ export function Crest({
   )
 }
 
-/** AFL club mark for a player — club logo on the club's own colour.
+/** AFL club mark for a player, club logo on the club's own colour.
  *  (We hold no player headshots, so the club crest is the identity.) */
 export function ClubMark({ p, size = 'md' }: { p: PlayerCard; size?: 'md' | 'lg' | 'hero' }) {
   const cls = size === 'hero' ? 'sr-hero-av' : size === 'lg' ? 'sr-pl-av lg' : 'sr-pl-av'
@@ -299,12 +299,12 @@ export function CompareBars({
         <div key={r.id} className="sr-rise" style={{ animationDelay: `${i * 55}ms` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
             <span style={{
-              fontSize: '.74rem', fontWeight: 750,
+              fontSize: '.8125rem', fontWeight: 750,
               color: highlight === r.id ? '#fff' : 'rgba(255,255,255,.75)',
             }}>
               {r.name}
             </span>
-            <span style={{ fontSize: '.74rem', fontWeight: 900, color: r.accent }}>
+            <span style={{ fontSize: '.8125rem', fontWeight: 900, color: r.accent }}>
               {r.value.toLocaleString()}{unit}
             </span>
           </div>

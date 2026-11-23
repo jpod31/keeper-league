@@ -45,7 +45,7 @@ interface LineupData {
   player_lock_times: Record<string, string>
 }
 
-// Draft state — per-slot player selection, captain, vc, bench
+// Draft state, per-slot player selection, captain, vc, bench
 interface SlotAssignment { player_id: number | null; position_code: string }
 
 function fmtSc(n: number | null | undefined): string {
@@ -176,7 +176,7 @@ export function LineupPage() {
             <div>
               <h2 className="mb-0">{afl_round === 0 ? 'Pre-Season' : `Round ${afl_round}`} Lineup</h2>
               {lineup.is_locked && (
-                <span className="status-pill" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149', fontSize: '.7rem' }}>Locked</span>
+                <span className="status-pill" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149', fontSize: '.8125rem' }}>Locked</span>
               )}
             </div>
             {afl_round < max_round && (
@@ -221,7 +221,7 @@ export function LineupPage() {
                 <div key={ps.position_code} className="col-md-6 col-lg-3">
                   <div className="card">
                     <div className="card-header" style={{ padding: '.6rem 1rem' }}>
-                      <h6 className="mb-0 fw-bold" style={{ fontSize: '.8rem' }}>
+                      <h6 className="mb-0 fw-bold" style={{ fontSize: '.8125rem' }}>
                         <span className={`pos-badge pos-${ps.position_code} me-1`}>{ps.position_code}</span>
                         <span className="text-secondary fw-normal">({ps.count})</span>
                       </h6>
@@ -233,11 +233,11 @@ export function LineupPage() {
                         return (
                           <div key={idx} className="mb-1 d-flex align-items-center gap-1">
                             {isLockedPlayer && (
-                              <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.7rem', flexShrink: 0 }} title="Game started — locked"></i>
+                              <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.8125rem', flexShrink: 0 }} title="Game started, locked"></i>
                             )}
                             <select
                               className="form-select form-select-sm"
-                              style={{ fontSize: '.78rem' }}
+                              style={{ fontSize: '.8125rem' }}
                               disabled={isLockedPlayer}
                               value={slot.player_id || ''}
                               onChange={e => {
@@ -249,7 +249,7 @@ export function LineupPage() {
                               <option value="">-- Empty --</option>
                               {all_players.map(p => (
                                 <option key={p.id} value={p.id}>
-                                  {p.name} ({p.position}) — {fmtSc(p.sc_avg)}
+                                  {p.name} ({p.position}), {fmtSc(p.sc_avg)}
                                   {player_lock_times[String(p.id)] && ` [${player_lock_times[String(p.id)]}]`}
                                 </option>
                               ))}
@@ -268,14 +268,14 @@ export function LineupPage() {
             <div className="col-md-6">
               <div className="card">
                 <div className="card-header" style={{ padding: '.6rem 1rem' }}>
-                  <h6 className="mb-0 fw-bold" style={{ fontSize: '.8rem' }}>
+                  <h6 className="mb-0 fw-bold" style={{ fontSize: '.8125rem' }}>
                     <i className="bi bi-star me-1" style={{ color: '#d29922' }}></i>Captain & Vice-Captain
                   </h6>
                 </div>
                 <div className="card-body">
                   <div className="mb-3">
                     <label className="form-label">
-                      Captain <span className="text-secondary" style={{ fontSize: '.7rem' }}>(score doubled)</span>
+                      Captain <span className="text-secondary" style={{ fontSize: '.8125rem' }}>(score doubled)</span>
                     </label>
                     <select
                       className="form-select form-select-sm"
@@ -290,7 +290,7 @@ export function LineupPage() {
                   </div>
                   <div>
                     <label className="form-label">
-                      Vice-Captain <span className="text-secondary" style={{ fontSize: '.7rem' }}>(backup if captain DNP)</span>
+                      Vice-Captain <span className="text-secondary" style={{ fontSize: '.8125rem' }}>(backup if captain DNP)</span>
                     </label>
                     <select
                       className="form-select form-select-sm"
@@ -309,8 +309,8 @@ export function LineupPage() {
             <div className="col-md-6">
               <div className="card">
                 <div className="card-header" style={{ padding: '.6rem 1rem' }}>
-                  <h6 className="mb-0 fw-bold" style={{ fontSize: '.8rem' }}>
-                    <i className="bi bi-bench me-1" style={{ color: '#a0a0ac' }}></i>Bench
+                  <h6 className="mb-0 fw-bold" style={{ fontSize: '.8125rem' }}>
+                    <i className="bi bi-bench me-1" style={{ color: 'var(--kl-text-primary)' }}></i>Bench
                   </h6>
                 </div>
                 <div className="card-body scroll-body" style={{ maxHeight: 200, overflowY: 'auto' }}>
@@ -320,7 +320,7 @@ export function LineupPage() {
                     return (
                       <div key={p.id} className="form-check mb-1 d-flex align-items-center gap-1">
                         {isLocked && (
-                          <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.6rem' }} title="Game started — locked"></i>
+                          <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.8125rem' }} title="Game started, locked"></i>
                         )}
                         <input
                           type="checkbox"
@@ -334,10 +334,10 @@ export function LineupPage() {
                             setBenchIds(next)
                           }}
                         />
-                        <label className="form-check-label" style={{ fontSize: '.8rem' }}>
+                        <label className="form-check-label" style={{ fontSize: '.8125rem' }}>
                           {p.name} <span className="text-secondary">({p.position})</span>
                           {player_lock_times[String(p.id)] && (
-                            <span style={{ fontSize: '.65rem', color: player_lock_times[String(p.id)] === 'Locked' ? '#f85149' : '#a0a0ac' }}>
+                            <span style={{ fontSize: '.8125rem', color: player_lock_times[String(p.id)] === 'Locked' ? '#f85149' : '#a0a0ac' }}>
                               {' '}{player_lock_times[String(p.id)]}
                             </span>
                           )}
@@ -376,7 +376,7 @@ export function LineupPage() {
               <div key={ps.position_code} className="col-md-6 col-lg-3">
                 <div className="card">
                   <div className="card-header" style={{ padding: '.6rem 1rem' }}>
-                    <h6 className="mb-0 fw-bold" style={{ fontSize: '.8rem' }}>
+                    <h6 className="mb-0 fw-bold" style={{ fontSize: '.8125rem' }}>
                       <span className={`pos-badge pos-${ps.position_code}`}>{ps.position_code}</span>
                     </h6>
                   </div>
@@ -384,13 +384,13 @@ export function LineupPage() {
                     {filled.map((slot, i) => (
                       <div key={i} className="mb-1 d-flex align-items-center gap-2" style={{ fontSize: '.85rem' }}>
                         {slot.player_id != null && lockedSet.has(slot.player_id) && (
-                          <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.6rem' }}></i>
+                          <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.8125rem' }}></i>
                         )}
                         <span>{slot.player_name || 'Empty'}</span>
-                        {slot.is_captain && <span className="badge" style={{ background: '#d29922', fontSize: '.6rem' }}>C</span>}
-                        {slot.is_vice_captain && <span className="badge" style={{ background: '#ececf6', fontSize: '.6rem' }}>VC</span>}
+                        {slot.is_captain && <span className="badge" style={{ background: '#d29922', fontSize: '.8125rem' }}>C</span>}
+                        {slot.is_vice_captain && <span className="badge" style={{ background: '#ececf6', fontSize: '.8125rem' }}>VC</span>}
                         {slot.player_id != null && player_lock_times[String(slot.player_id)] && (
-                          <span style={{ fontSize: '.6rem', color: player_lock_times[String(slot.player_id)] === 'Locked' ? '#f85149' : '#a0a0ac' }}>
+                          <span style={{ fontSize: '.8125rem', color: player_lock_times[String(slot.player_id)] === 'Locked' ? '#f85149' : '#a0a0ac' }}>
                             {player_lock_times[String(slot.player_id)]}
                           </span>
                         )}

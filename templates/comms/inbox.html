@@ -21,18 +21,18 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center" style="padding:.6rem 1rem;">
           <span class="fw-bold" style="font-size:.85rem;">Choose a team to message</span>
-          <button type="button" class="btn-close btn-close-white" style="font-size:.55rem;" data-bs-toggle="collapse" data-bs-target="#newMsgPicker"></button>
+          <button type="button" class="btn-close btn-close-white" style="font-size:.8125rem;" data-bs-toggle="collapse" data-bs-target="#newMsgPicker"></button>
         </div>
         <div class="card-body p-0">
           {% for t in all_teams %}
             <a href="{{ url_for('comms.inbox', league_id=league.id) }}?new={{ t.id }}"
                class="d-flex align-items-center gap-2 px-3 py-2"
-               style="border-bottom:1px solid #1e1d21;text-decoration:none;color:#cfcfd6;font-size:.85rem;">
-              <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:#1e1d21;font-size:.7rem;font-weight:600;flex-shrink:0;">
+               style="border-bottom:1px solid #1e1d21;text-decoration:none;color:var(--kl-text-primary);font-size:.85rem;">
+              <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:#1e1d21;font-size:.8125rem;font-weight:600;flex-shrink:0;">
                 {{ t.name[0]|upper }}
               </div>
               {{ t.name }}
-              <span class="text-secondary" style="font-size:.7rem;">{{ t.owner.display_name or t.owner.username }}</span>
+              <span class="text-secondary" style="font-size:.8125rem;">{{ t.owner.display_name or t.owner.username }}</span>
             </a>
           {% endfor %}
         </div>
@@ -47,7 +47,7 @@
         <div class="card mb-3">
           <div class="card-header d-flex justify-content-between align-items-center">
             <span class="fw-bold" style="font-size:.9rem;">New message to {{ recipient.name }}</span>
-            <a href="{{ url_for('comms.inbox', league_id=league.id) }}" class="btn-close btn-close-white" style="font-size:.6rem;"></a>
+            <a href="{{ url_for('comms.inbox', league_id=league.id) }}" class="btn-close btn-close-white" style="font-size:.8125rem;"></a>
           </div>
           <div class="card-body">
             <form method="POST" action="{{ url_for('comms.send_message', league_id=league.id) }}">
@@ -76,25 +76,25 @@
         {% for item in convo_data %}
           <a href="{{ url_for('comms.conversation', league_id=league.id, convo_id=item.convo.id) }}"
              class="d-flex align-items-center gap-3 px-3 py-3"
-             style="border-bottom:1px solid #1e1d21;text-decoration:none;color:#cfcfd6;{% if item.unread %}background:rgba(81,78,95,.05);{% endif %}">
-            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:#1e1d21;font-size:.8rem;font-weight:600;flex-shrink:0;">
+             style="border-bottom:1px solid #1e1d21;text-decoration:none;color:var(--kl-text-primary);{% if item.unread %}background:rgba(81,78,95,.05);{% endif %}">
+            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:#1e1d21;font-size:.8125rem;font-weight:600;flex-shrink:0;">
               {{ item.other_team.name[0]|upper }}
             </div>
             <div class="flex-grow-1 overflow-hidden">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="fw-bold" style="font-size:.85rem;">{{ item.other_team.name }}</span>
                 {% if item.last_msg %}
-                  <span style="font-size:.65rem;color:#63616d;">{{ item.last_msg.created_at.strftime('%d %b %H:%M') }}</span>
+                  <span style="font-size:.8125rem;color:var(--kl-text-primary);">{{ item.last_msg.created_at.strftime('%d %b %H:%M') }}</span>
                 {% endif %}
               </div>
               {% if item.last_msg %}
-                <div style="font-size:.78rem;color:#a0a0ac;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                <div style="font-size:.8125rem;color:var(--kl-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                   {{ item.last_msg.body[:80] }}
                 </div>
               {% endif %}
             </div>
             {% if item.unread %}
-              <span class="badge rounded-pill bg-primary" style="font-size:.65rem;">{{ item.unread }}</span>
+              <span class="badge rounded-pill bg-primary" style="font-size:.8125rem;">{{ item.unread }}</span>
             {% endif %}
           </a>
         {% endfor %}

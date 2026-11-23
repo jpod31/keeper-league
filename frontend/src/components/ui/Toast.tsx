@@ -57,7 +57,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       onClick: normalised.onClick,
     }
     setToasts(prev => {
-      // Cap at 4 visible — drop oldest if pushing a 5th
+      // Cap at 4 visible, drop oldest if pushing a 5th
       const next = prev.length >= 4 ? prev.slice(prev.length - 3) : prev
       return [...next, item]
     })

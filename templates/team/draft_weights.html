@@ -31,8 +31,8 @@
             </div>
           {% endfor %}
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="form-text" style="color:#63616d;font-size:.75rem;">
-              Total: <strong id="weight_total" style="color:#cfcfd6;">{{ '%.2f'|format(weights.values()|sum) }}</strong> — weights auto-normalise to sum to 1.0 on save
+            <div class="form-text" style="color:var(--kl-text-primary);font-size:.8125rem;">
+              Total: <strong id="weight_total" style="color:var(--kl-text-primary);">{{ '%.2f'|format(weights.values()|sum) }}</strong> — weights auto-normalise to sum to 1.0 on save
             </div>
             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetDefaults()">
               <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Defaults
@@ -48,7 +48,7 @@
       <div class="card-body">
         <div class="d-flex align-items-start gap-3">
           <i class="bi bi-info-circle" style="color:#ececf6;font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
-          <div style="font-size:.8rem;color:#a0a0ac;">
+          <div style="font-size:.8125rem;color:var(--kl-text-primary);">
             <p class="mb-1">These weights determine how the draft ranking algorithm scores available players <em>for you</em>.</p>
             <p class="mb-0">Other managers in your league can set their own weights independently. The draft room's "Available Players" list will be sorted based on your personal weights.</p>
           </div>

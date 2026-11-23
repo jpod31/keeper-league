@@ -32,11 +32,11 @@ function FinalCard({ f, highlight, hideStatusPill, label }: { f: Final; highligh
       <div className="p-3">
         <div
           className="d-flex justify-content-between align-items-center"
-          style={{ fontSize: '.7rem', color: highlight ? '#ffd700' : '#63616d', marginBottom: '.5rem' }}
+          style={{ fontSize: '.8125rem', color: highlight ? '#ffd700' : '#63616d', marginBottom: '.5rem' }}
         >
           <span>{label || (f.final_type === 'GF' ? 'Grand Final' : f.final_type)}</span>
           {!hideStatusPill && f.status === 'completed' && (
-            <span className="status-pill status-completed" style={{ fontSize: '.6rem' }}>Final</span>
+            <span className="status-pill status-completed" style={{ fontSize: '.8125rem' }}>Final</span>
           )}
         </div>
         <div className="d-flex justify-content-between align-items-center mb-2">
@@ -44,7 +44,7 @@ function FinalCard({ f, highlight, hideStatusPill, label }: { f: Final; highligh
           <span
             className="fw-bold"
             style={homeWon ? { color: '#3fb950', fontSize: highlight ? '1.1rem' : undefined }
-              : f.status === 'completed' && awayWon ? { color: '#8a8895' }
+              : f.status === 'completed' && awayWon ? { color: 'var(--kl-text-primary)' }
               : undefined}
           >
             {f.status === 'completed' ? Math.round(f.home_score || 0) : '-'}
@@ -55,7 +55,7 @@ function FinalCard({ f, highlight, hideStatusPill, label }: { f: Final; highligh
           <span
             className="fw-bold"
             style={awayWon ? { color: '#3fb950', fontSize: highlight ? '1.1rem' : undefined }
-              : f.status === 'completed' && homeWon ? { color: '#8a8895' }
+              : f.status === 'completed' && homeWon ? { color: 'var(--kl-text-primary)' }
               : undefined}
           >
             {f.status === 'completed' ? Math.round(f.away_score || 0) : '-'}
@@ -92,7 +92,7 @@ export function FinalsPage() {
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>
             <h2 className="mb-0">Finals Series</h2>
-            <span style={{ fontSize: '.78rem', color: '#a0a0ac' }}>{league.season_year} finals bracket</span>
+            <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{league.season_year} finals bracket</span>
           </div>
           {is_commissioner && finals.length === 0 && (
             <button type="button" className="btn btn-primary btn-sm" onClick={generate}>
@@ -105,13 +105,13 @@ export function FinalsPage() {
       {finals.length > 0 ? (
         <div className="row g-4">
           <div className="col-md-4">
-            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
               Qualifying Finals
             </h5>
             {qfs.map(f => <FinalCard key={f.id} f={f} />)}
           </div>
           <div className="col-md-4">
-            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
               Preliminary Final
             </h5>
             {pfs.map(f => <FinalCard key={f.id} f={f} hideStatusPill label="Loser QF1 vs Winner QF2" />)}

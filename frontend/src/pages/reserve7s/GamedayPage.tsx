@@ -61,31 +61,31 @@ interface S7FixtureDetail {
   home_players: S7Player[]; away_players: S7Player[]
 }
 
-// All inline CSS from templates/reserve7s/gameday.html — mirrors the Jinja <style> block exactly.
+// All inline CSS from templates/reserve7s/gameday.html, mirrors the Jinja <style> block exactly.
 const S7_CSS = `
 .s7gd-round-header { margin-bottom: 10px; }
 .s7gd-round-title { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; color: #ebebee; }
-.s7gd-round-dates { color: #a0a0ac; font-size: .8rem; }
-.s7gd-state-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; padding: 5px 12px; border-radius: 14px; text-transform: uppercase; letter-spacing: .5px; }
+.s7gd-round-dates { color: var(--kl-text-primary); font-size: .8125rem; }
+.s7gd-state-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .8125rem; font-weight: 700; padding: 5px 12px; border-radius: 14px; text-transform: uppercase; letter-spacing: .5px; }
 .s7gd-badge-upcoming { background: rgba(188,140,255,.12); color: #a855f7; border: 1px solid rgba(188,140,255,.25); }
 .s7gd-badge-live { background: rgba(188,140,255,.15); color: #a855f7; border: 1px solid rgba(188,140,255,.3); }
 .s7gd-badge-final { background: #151518; color: #ebebee; }
-.s7gd-badge-bye { background: #151518; color: #a0a0ac; }
+.s7gd-badge-bye { background: #151518; color: var(--kl-text-primary); }
 .s7gd-pulse-dot { display: inline-block; width: 7px; height: 7px; background: #a855f7; border-radius: 50%; animation: s7gdPulse 2s ease-in-out infinite; }
 @keyframes s7gdPulse { 0%,100% { opacity: 1; box-shadow: 0 0 4px rgba(188,140,255,.4); } 50% { opacity: .4; box-shadow: 0 0 10px rgba(188,140,255,.8), 0 0 20px rgba(188,140,255,.3); } }
 .s7gd-afl-bar { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 12px; padding: 10px 14px; background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 10px; }
-.s7gd-game-pill { display: inline-flex; align-items: center; gap: 6px; background: #151518; border: 1px solid #1e1d21; border-radius: 16px; padding: 4px 10px; font-size: .72rem; text-decoration: none; color: inherit; }
+.s7gd-game-pill { display: inline-flex; align-items: center; gap: 6px; background: #151518; border: 1px solid #1e1d21; border-radius: 16px; padding: 4px 10px; font-size: .8125rem; text-decoration: none; color: inherit; }
 .s7gd-game-teams { color: #ebebee; font-weight: 600; }
-.s7gd-game-score { color: #a0a0ac; font-size: .7rem; font-variant-numeric: tabular-nums; }
-.s7gd-gbadge-live { font-size: .6rem; background: #e8e6ef; color: #fff; animation: s7gdPulse 2s infinite; }
-.s7gd-gbadge-ft { font-size: .6rem; background: #a855f7; color: #fff; }
-.s7gd-gbadge-sched { font-size: .6rem; background: #151518; color: #a0a0ac; }
+.s7gd-game-score { color: var(--kl-text-primary); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.s7gd-gbadge-live { font-size: .8125rem; background: #e8e6ef; color: #fff; animation: s7gdPulse 2s infinite; }
+.s7gd-gbadge-ft { font-size: .8125rem; background: #a855f7; color: #fff; }
+.s7gd-gbadge-sched { font-size: .8125rem; background: #151518; color: var(--kl-text-primary); }
 .s7-mini-bar { display: flex; gap: 6px; margin-bottom: 8px; padding: 10px 14px; background: #151518; border: 1px solid #1e1d21; border-radius: 10px; }
 .s7-mini-pill { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 10px; cursor: pointer; transition: border-color .15s, background .15s; text-align: center; }
 .s7-mini-pill:hover { background: #151518; border-color: #2a292f; }
 .s7-mini-yours { border-color: #a855f7; }
-.s7-mini-teams { font-weight: 600; font-size: .72rem; color: #cfcfd6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.s7-mini-score { font-size: .68rem; color: #a0a0ac; font-variant-numeric: tabular-nums; }
+.s7-mini-teams { font-weight: 600; font-size: .8125rem; color: var(--kl-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.s7-mini-score { font-size: .8125rem; color: var(--kl-text-primary); font-variant-numeric: tabular-nums; }
 .s7gd-hero { background: radial-gradient(ellipse at 50% 0%, rgba(21,21,24,.95) 0%, var(--kl-bg-card, #151518) 70%); border: 1px solid var(--kl-border, #1e1d21); border-radius: 16px; padding: 0; margin-bottom: 4px; position: relative; overflow: hidden; }
 .s7gd-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 2; }
 .s7gd-hero-live { border-color: rgba(35,134,54,.35); animation: s7gdGlow 4s ease-in-out infinite; }
@@ -100,33 +100,33 @@ const S7_CSS = `
 .s7-team-block { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .s7-team-right { justify-content: flex-end; }
 .s7-team-detail { min-width: 0; flex: 1; }
-.s7-vs { font-size: .6rem; font-weight: 800; color: var(--kl-text-faint, #63616d); letter-spacing: 2px; padding: 0 14px; opacity: .5; flex-shrink: 0; }
+.s7-vs { font-size: .8125rem; font-weight: 800; color: var(--kl-text-faint, #63616d); letter-spacing: 2px; padding: 0 14px; opacity: .5; flex-shrink: 0; }
 .s7-crest { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 14px; font-weight: 800; font-size: 1rem; letter-spacing: .5px; flex-shrink: 0; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
 .s7-crest-left { background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; }
 .s7-crest-right { background: linear-gradient(145deg, #2b2a30, #514e5f, #a855f7); color: #fff; }
 .s7-crest-img { width: 50px; height: 50px; border-radius: 14px; object-fit: cover; flex-shrink: 0; box-shadow: 0 6px 20px rgba(0,0,0,.4); border: 2px solid rgba(255,255,255,.08); }
 .s7-team-name { color: var(--kl-text-heading, #ebebee); font-weight: 700; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 .s7-team-meta { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-.s7-players-count { font-size: .64rem; color: var(--kl-text-faint, #63616d); font-weight: 500; font-variant-numeric: tabular-nums; }
-.s7-role-badge { font-size: .5rem; padding: 1px 4px; border-radius: 3px; font-weight: 700; background: rgba(160,160,172,.12); color: #8a8895; line-height: 1.3; }
+.s7-players-count { font-size: .8125rem; color: var(--kl-text-faint, #63616d); font-weight: 500; font-variant-numeric: tabular-nums; }
+.s7-role-badge { font-size: .8125rem; padding: 1px 4px; border-radius: 3px; font-weight: 700; background: rgba(160,160,172,.12); color: var(--kl-text-primary); line-height: 1.3; }
 .s7-role-badge.s7-role-active { background: rgba(188,140,255,.2); color: #a855f7; }
 .s7-scores-area { display: flex; align-items: flex-start; justify-content: center; gap: 10px; padding: 18px 20px 16px; }
 .s7-score-col { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
 .s7-big-score { font-size: 3.4rem; font-weight: 900; line-height: 1; color: var(--kl-text-secondary, #a0a0ac); font-variant-numeric: tabular-nums; transition: color .4s, text-shadow .4s; }
 .s7-big-score.s7-score-winning { color: #a855f7; text-shadow: 0 0 28px rgba(188,140,255,.4), 0 0 56px rgba(188,140,255,.15); }
 .s7-score-dash { font-size: 2.2rem; font-weight: 300; color: var(--kl-text-faint, #63616d); line-height: 1; padding-top: 8px; opacity: .4; }
-.s7-cap-bonus { color: #a855f7; font-size: .65rem; font-weight: 700; margin-top: 3px; white-space: nowrap; }
+.s7-cap-bonus { color: #a855f7; font-size: .8125rem; font-weight: 700; margin-top: 3px; white-space: nowrap; }
 .s7-footer { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid rgba(160,160,172,.06); }
-.s7-margin-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 16px; border-radius: 8px; font-size: .72rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--kl-text-primary, #ebebee); background: rgba(160,160,172,.08); }
-.s7-margin-chip i { font-size: .6rem; }
-.s7-first-bounce { text-align: center; padding: 0 20px 12px; color: var(--kl-text-secondary, #a0a0ac); font-size: .8rem; }
+.s7-margin-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 16px; border-radius: 8px; font-size: .8125rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--kl-text-primary, #ebebee); background: rgba(160,160,172,.08); }
+.s7-margin-chip i { font-size: .8125rem; }
+.s7-first-bounce { text-align: center; padding: 0 20px 12px; color: var(--kl-text-secondary, #a0a0ac); font-size: .8125rem; }
 .s7gd-player-card { background: #0e0d0f; border: 1px solid #151518; border-radius: 10px; overflow: hidden; }
 .s7gd-card-left { border-left: 3px solid #3fb950; }
 .s7gd-card-right { border-left: 3px solid #a855f7; }
 .s7gd-card-header { background: #151518; padding: 10px 14px; font-weight: 600; font-size: .85rem; color: #ebebee; border-bottom: 1px solid #151518; display: flex; justify-content: space-between; align-items: center; }
 .s7gd-card-score { font-weight: 800; font-size: .95rem; color: #ebebee; font-variant-numeric: tabular-nums; }
 .s7gd-player-list { max-height: 600px; overflow-y: auto; }
-.s7gd-player-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-bottom: 1px solid #151518; font-size: .8rem; transition: background .15s; }
+.s7gd-player-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-bottom: 1px solid #151518; font-size: .8125rem; transition: background .15s; }
 .s7gd-player-row:last-child { border-bottom: none; }
 .s7gd-player-row:hover { background: #151518; }
 .s7gd-player-row:hover .s7gd-player-name { color: #a855f7; }
@@ -139,57 +139,57 @@ const S7_CSS = `
   border-radius: 0 2px 2px 0;
   background: linear-gradient(to bottom, rgba(160,160,172,.15), rgba(160,160,172,.45), rgba(160,160,172,.15));
 }
-.s7gd-player-row.p-locked .s7gd-player-name { color: #a0a0ac; }
-.s7gd-player-row.p-ytp .s7gd-player-score { color: #8a8895; animation: s7gdYtp 2s ease-in-out infinite; }
+.s7gd-player-row.p-locked .s7gd-player-name { color: var(--kl-text-primary); }
+.s7gd-player-row.p-ytp .s7gd-player-score { color: var(--kl-text-primary); animation: s7gdYtp 2s ease-in-out infinite; }
 @keyframes s7gdYtp { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 .s7gd-player-info { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
-.s7gd-player-name { color: #cfcfd6; white-space: nowrap; }
-.s7gd-player-meta { color: #63616d; font-size: .7rem; white-space: nowrap; }
-.s7gd-player-score { font-weight: 600; white-space: nowrap; color: #cfcfd6; font-variant-numeric: tabular-nums; }
-.s7gd-live-dot { font-size: .35rem; color: #a855f7; vertical-align: middle; margin-left: 3px; animation: s7gdPulse 2s infinite; }
+.s7gd-player-name { color: var(--kl-text-primary); white-space: nowrap; }
+.s7gd-player-meta { color: var(--kl-text-primary); font-size: .8125rem; white-space: nowrap; }
+.s7gd-player-score { font-weight: 600; white-space: nowrap; color: var(--kl-text-primary); font-variant-numeric: tabular-nums; }
+.s7gd-live-dot { font-size: .8125rem; color: #a855f7; vertical-align: middle; margin-left: 3px; animation: s7gdPulse 2s infinite; }
 .s7gd-player-score.text-success { color: #a855f7 !important; }
 .s7gd-team-logo { width: 16px; height: 16px; vertical-align: middle; margin-right: 2px; }
-.s7gd-pos-badge { padding: 1px 5px !important; font-size: .55rem !important; border-radius: 3px !important; line-height: 1.4; }
-.s7gd-badge-c { display: inline-block; background: #a855f7; color: #000; font-size: .55rem; font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3; }
-.s7gd-section-hdr { padding: 6px 14px; font-size: .65rem; font-weight: 700; color: #a0a0ac; text-transform: uppercase; letter-spacing: .5px; background: #151518; border-bottom: 1px solid #151518; }
-.score-ytp { color: #8a8895 !important; }
+.s7gd-pos-badge { padding: 1px 5px !important; font-size: .8125rem !important; border-radius: 3px !important; line-height: 1.4; }
+.s7gd-badge-c { display: inline-block; background: #a855f7; color: #000; font-size: .8125rem; font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3; }
+.s7gd-section-hdr { padding: 6px 14px; font-size: .8125rem; font-weight: 700; color: var(--kl-text-primary); text-transform: uppercase; letter-spacing: .5px; background: #151518; border-bottom: 1px solid #151518; }
+.score-ytp { color: var(--kl-text-primary) !important; }
 .s7-score-flash { animation: s7gdFlash 1.5s ease-out; }
 @keyframes s7gdFlash { 0% { transform: scale(1.15); color: #a855f7; text-shadow: 0 0 8px rgba(188,140,255,.5); } 40% { transform: scale(.97); } 100% { transform: scale(1); color: inherit; text-shadow: none; } }
 .s7gd-all-matchups { background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 12px; overflow: hidden; }
-.s7gd-matchups-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; font-size: .75rem; font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: .8px; background: #0e0d0f; border-bottom: 1px solid #1e1d21; }
-.s7gd-matchups-dates { font-size: .7rem; font-weight: 500; color: #63616d; text-transform: none; letter-spacing: normal; }
+.s7gd-matchups-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; font-size: .8125rem; font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: .8px; background: #0e0d0f; border-bottom: 1px solid #1e1d21; }
+.s7gd-matchups-dates { font-size: .8125rem; font-weight: 500; color: var(--kl-text-primary); text-transform: none; letter-spacing: normal; }
 .s7gd-matchups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; padding: 14px; }
 .s7gd-matchup-card { display: block; text-decoration: none; color: inherit; cursor: pointer; background: #151518; border: 1px solid #1e1d21; border-radius: 8px; padding: 12px 14px; position: relative; transition: transform .15s, border-color .15s, box-shadow .15s; }
 .s7gd-matchup-card:hover { transform: translateY(-2px); border-color: #2a292f; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
 .s7gd-matchup-yours { border-color: #a855f7 !important; background: rgba(188,140,255,.04); }
 .s7gd-matchup-active { box-shadow: 0 0 0 2px #a855f7, 0 4px 12px rgba(0,0,0,.2) !important; border-color: #a855f7 !important; background: rgba(188,140,255,.08); }
 .s7gd-matchup-active:hover { box-shadow: 0 0 0 2px #a855f7, 0 4px 12px rgba(0,0,0,.3) !important; }
-.s7gd-your-tag { position: absolute; top: -1px; right: 10px; font-size: .55rem; font-weight: 700; text-transform: uppercase; color: #a855f7; background: rgba(188,140,255,.15); padding: 2px 8px; border-radius: 0 0 6px 6px; letter-spacing: .3px; }
-.s7gd-mx-team-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: .8rem; }
-.s7gd-mx-name { color: #cfcfd6; font-weight: 500; }
+.s7gd-your-tag { position: absolute; top: -1px; right: 10px; font-size: .8125rem; font-weight: 700; text-transform: uppercase; color: #a855f7; background: rgba(188,140,255,.15); padding: 2px 8px; border-radius: 0 0 6px 6px; letter-spacing: .3px; }
+.s7gd-mx-team-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: .8125rem; }
+.s7gd-mx-name { color: var(--kl-text-primary); font-weight: 500; }
 .s7gd-mx-winner { color: #ebebee; font-weight: 700; }
-.s7gd-mx-score { font-weight: 700; font-size: .85rem; color: #a0a0ac; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 3px; }
+.s7gd-mx-score { font-weight: 700; font-size: .85rem; color: var(--kl-text-primary); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 3px; }
 .s7gd-mini-bar { height: 4px; background: #f85149; border-radius: 2px; overflow: hidden; margin-top: 8px; opacity: 0.6; }
 .s7gd-mini-fill { height: 100%; background: #3fb950; border-radius: 2px; transition: width .6s ease; }
-.s7gd-mx-margin { font-size: .65rem; color: #8a8895; text-align: center; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.s7gd-mx-status { font-size: .65rem; color: #63616d; text-align: center; margin-top: 8px; }
+.s7gd-mx-margin { font-size: .8125rem; color: var(--kl-text-primary); text-align: center; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.s7gd-mx-status { font-size: .8125rem; color: var(--kl-text-primary); text-align: center; margin-top: 8px; }
 @media (max-width: 767.98px) {
   .s7-teams-row { padding: 14px 12px 0; }
   .s7-big-score { font-size: 2.4rem; min-width: 50px; }
   .s7-score-dash { font-size: 1.6rem; padding-top: 5px; }
   .s7-scores-area { padding: 14px 12px 12px; }
-  .s7-team-name { font-size: .78rem; }
+  .s7-team-name { font-size: .8125rem; }
   .s7-crest { width: 40px; height: 40px; font-size: .85rem; border-radius: 11px; }
   .s7-crest-img { width: 40px; height: 40px; border-radius: 11px; }
   .s7-team-block { gap: 8px; }
-  .s7-vs { padding: 0 8px; font-size: .55rem; }
+  .s7-vs { padding: 0 8px; font-size: .8125rem; }
   .s7-footer { padding: 10px 12px 14px; gap: 6px; }
-  .s7-margin-chip { font-size: .65rem; padding: 4px 12px; }
-  .s7gd-player-row { padding: 6px 10px; font-size: .75rem; }
+  .s7-margin-chip { font-size: .8125rem; padding: 4px 12px; }
+  .s7gd-player-row { padding: 6px 10px; font-size: .8125rem; }
   .s7gd-player-meta { display: none; }
   .s7gd-round-title { font-size: .95rem; }
   .s7gd-afl-bar { gap: 4px; padding: 8px 10px; }
-  .s7gd-game-pill { font-size: .65rem; padding: 3px 8px; }
+  .s7gd-game-pill { font-size: .8125rem; padding: 3px 8px; }
   .s7gd-matchups-grid { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
   .s7gd-pos-badge { display: none !important; }
 }
@@ -215,7 +215,7 @@ export function Reserve7sGamedayPage() {
       .then(d => {
         setData(d)
         if (initialLoad.current) {
-          // ?fixture= arrives from the fixture page — open that matchup, not
+          // ?fixture= arrives from the fixture page, open that matchup, not
           // the viewer's own. It renders from the prefetched cache, and the
           // hero falls back to the own-team view until that lands.
           const fromUrl = urlFixture ? Number(urlFixture) : null
@@ -256,7 +256,7 @@ export function Reserve7sGamedayPage() {
     }
   }, [data, fetchAllFixtures])
 
-  // Live polling (30s) — matches Jinja inline script behavior
+  // Live polling (30s), matches Jinja inline script behavior
   useEffect(() => {
     if (data?.gameday_state !== 'live') return
     const t = setInterval(() => {
@@ -394,8 +394,8 @@ export function Reserve7sGamedayPage() {
           </span>
         </span>
         <span className={scoreClass}>
-          {ytp ? <><i className="bi bi-clock" style={{ fontSize: '.65rem', marginRight: 2 }}></i>&mdash;</>
-            : p.has_played ? <>{Math.round(p.score || 0)}{p.is_captain && <span style={{ fontSize: '.6rem', color: '#a855f7' }}> x2</span>}</>
+          {ytp ? <><i className="bi bi-clock" style={{ fontSize: '.8125rem', marginRight: 2 }}></i>&mdash;</>
+            : p.has_played ? <>{Math.round(p.score || 0)}{p.is_captain && <span style={{ fontSize: '.8125rem', color: '#a855f7' }}> x2</span>}</>
             : <>&ndash;</>}
           {p.is_live && !ytp && <i className="bi bi-circle-fill s7gd-live-dot"></i>}
         </span>
@@ -419,7 +419,7 @@ export function Reserve7sGamedayPage() {
             {noGame.map((p, i) => <PlayerRow key={`ng${i}`} p={p} />)}
           </>}
           {players.length === 0 && (
-            <div className="text-center py-3" style={{ color: '#63616d', fontSize: '.8rem' }}>No lineup submitted</div>
+            <div className="text-center py-3" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>No lineup submitted</div>
           )}
         </div>
       </div>
@@ -430,10 +430,10 @@ export function Reserve7sGamedayPage() {
     <div>
       <style>{S7_CSS}</style>
 
-      {/* Competition toggle — matches main gameday (active side uses blue accent) */}
+      {/* Competition toggle, matches main gameday (active side uses blue accent) */}
       <div className="comp-toggle">
         <Link to={`/leagues/${leagueId}/gameday`} className="comp-toggle-btn text-decoration-none"
-          style={{ borderColor: '#2a292f', color: '#a0a0ac', borderRadius: '8px 0 0 8px' }}>Main</Link>
+          style={{ borderColor: '#2a292f', color: 'var(--kl-text-primary)', borderRadius: '8px 0 0 8px' }}>Main</Link>
         <span className="comp-toggle-btn"
           style={{ borderColor: 'rgba(236,236,246,.3)', color: '#ececf6', background: 'rgba(236,236,246,.08)', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
       </div>
@@ -443,7 +443,7 @@ export function Reserve7sGamedayPage() {
         <div className="d-flex justify-content-between align-items-center">
           <h2 className="s7gd-round-title mb-0">
             <i className="bi bi-7-circle me-1" style={{ color: '#a855f7' }}></i>
-            RESERVE 7s — {d.afl_round === 0 ? 'PRE-SEASON' : `ROUND ${d.afl_round}`}
+            RESERVE 7s, {d.afl_round === 0 ? 'PRE-SEASON' : `ROUND ${d.afl_round}`}
           </h2>
           <div className="d-flex align-items-center gap-2">
             {gs === 'live' && <span className="s7gd-state-badge s7gd-badge-live"><i className="bi bi-broadcast me-1"></i><span className="s7gd-pulse-dot"></span> LIVE</span>}
@@ -457,7 +457,7 @@ export function Reserve7sGamedayPage() {
                 background: 'rgba(188,140,255,.1)',
                 color: '#a855f7',
                 border: '1px solid rgba(188,140,255,.25)',
-                fontSize: '.7rem',
+                fontSize: '.8125rem',
                 padding: '3px 10px',
                 borderRadius: 6,
               }}
@@ -489,7 +489,7 @@ export function Reserve7sGamedayPage() {
         </div>
       )}
 
-      {/* Mini bar — horizontal matchup switcher at top (matches main gameday layout) */}
+      {/* Mini bar, horizontal matchup switcher at top (matches main gameday layout) */}
       {d.round_fixtures && d.round_fixtures.length > 0 && (
         <div className="s7-mini-bar">
           {d.round_fixtures.map(f => {
@@ -530,7 +530,7 @@ export function Reserve7sGamedayPage() {
         <div className="s7gd-hero s7gd-hero-upcoming" style={{ textAlign: 'center', padding: '24px 20px' }}>
           <span className="s7gd-state-badge s7gd-badge-bye" style={{ marginBottom: 12 }}><i className="bi bi-dash-circle me-1"></i>BYE</span>
           <p style={{ color: '#ebebee', fontSize: '.95rem', marginBottom: 6 }}>You have a bye this round in Reserve 7s.</p>
-          <p style={{ color: '#63616d', fontSize: '.85rem', marginBottom: 0 }}>Click any matchup below to view it.</p>
+          <p style={{ color: 'var(--kl-text-primary)', fontSize: '.85rem', marginBottom: 0 }}>Click any matchup below to view it.</p>
         </div>
       ) : (
         <>
@@ -601,11 +601,11 @@ export function Reserve7sGamedayPage() {
               </div>
               {heroProjLeft != null && heroProjRight != null && gs !== 'completed' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
-                  <span style={{ fontSize: '.66rem', color: '#a0a0ac', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                    Proj <b style={{ fontWeight: 700, color: '#cfcfd6' }}>{Math.round(heroProjLeft)}</b>&ndash;<b style={{ fontWeight: 700, color: '#cfcfd6' }}>{Math.round(heroProjRight)}</b>
+                  <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    Proj <b style={{ fontWeight: 700, color: 'var(--kl-text-primary)' }}>{Math.round(heroProjLeft)}</b>&ndash;<b style={{ fontWeight: 700, color: 'var(--kl-text-primary)' }}>{Math.round(heroProjRight)}</b>
                   </span>
                   <span style={{ width: 1, height: 12, background: 'rgba(160,160,172,.2)' }}></span>
-                  <span style={{ fontSize: '.66rem', color: '#a0a0ac', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                     Win <b style={{ fontWeight: 700, color: '#bc8cff' }}>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b style={{ fontWeight: 700, color: '#bc8cff' }}>{Math.round(heroWinRight || 0)}%</b>
                   </span>
                 </div>
@@ -623,7 +623,7 @@ export function Reserve7sGamedayPage() {
               <span className="gd-mob-vs-team">{heroLeftName}</span>
               <span className="gd-mob-vs-scores">
                 <span className={`gd-mob-vs-sc${heroLeftScore > heroRightScore ? ' gd-mob-sc-win' : ''}`}>{Math.round(heroLeftScore)}</span>
-                <span style={{ color: '#63616d', fontSize: '.7rem' }}>v</span>
+                <span style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>v</span>
                 <span className={`gd-mob-vs-sc${heroRightScore > heroLeftScore ? ' gd-mob-sc-win' : ''}`}>{Math.round(heroRightScore)}</span>
               </span>
               <span className="gd-mob-vs-team" style={{ textAlign: 'right' }}>{heroRightName}</span>
@@ -673,14 +673,14 @@ export function Reserve7sGamedayPage() {
                 )
               })
             })()}
-            {/* No Game section — mobile */}
+            {/* No Game section, mobile */}
             {(() => {
               const lno = heroLeftPlayers.filter(p => !teamsPlayingSet.has(p.afl_team))
               const rno = heroRightPlayers.filter(p => !teamsPlayingSet.has(p.afl_team))
               const maxLen = Math.max(lno.length, rno.length)
               if (maxLen === 0) return null
               return <>
-                <div className="gd-mob-section-hdr" style={{ color: '#8a8895' }}>
+                <div className="gd-mob-section-hdr" style={{ color: 'var(--kl-text-primary)' }}>
                   <i className="bi bi-calendar-x me-1"></i>No Game
                 </div>
                 {Array.from({ length: maxLen }).map((_, i) => {
@@ -719,12 +719,12 @@ export function Reserve7sGamedayPage() {
       )}
 
       {/* Footer */}
-      <div className="mt-3 d-flex align-items-center justify-content-between" style={{ fontSize: '.75rem', color: '#63616d' }}>
+      <div className="mt-3 d-flex align-items-center justify-content-between" style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
         <span>
           {gs === 'live' ? <><i className="bi bi-broadcast me-1" style={{ color: '#3fb950' }}></i>Live updates active</>
             : gs === 'completed' ? 'Final results' : <>&nbsp;</>}
         </span>
-        <Link to={`/leagues/${leagueId}/reserve7s/fixture`} style={{ color: '#a0a0ac', textDecoration: 'none', fontSize: '.7rem' }}>
+        <Link to={`/leagues/${leagueId}/reserve7s/fixture`} style={{ color: 'var(--kl-text-primary)', textDecoration: 'none', fontSize: '.8125rem' }}>
           7s Season Fixture &rarr;
         </Link>
       </div>

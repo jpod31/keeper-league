@@ -96,7 +96,7 @@ const STYLE = `
 .settings-toggle .toggle-track::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#cfcfd6; border-radius:50%; transition:transform .2s; }
 .settings-toggle input:checked + .toggle-track { background:#238636; }
 .settings-toggle input:checked + .toggle-track::before { transform:translateX(16px); background:#fff; }
-.sync-scores-btn { background:#0e0d0f; border:1px solid #2a292f; color:#cfcfd6; border-radius:6px; padding:5px 12px; font-size:.75rem; display:flex; align-items:center; gap:6px; }
+.sync-scores-btn { background:#0e0d0f; border:1px solid #2a292f; color:var(--kl-text-primary); border-radius:6px; padding:5px 12px; font-size:.8125rem; display:flex; align-items:center; gap:6px; }
 .sync-scores-btn:hover:not(:disabled) { border-color:#ececf6; color:#ececf6; }
 `
 
@@ -317,7 +317,7 @@ export function SettingsPage() {
               <h2 className="mb-0">
                 League Settings
                 {!is_commissioner && (
-                  <span className="badge ms-2" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.6rem', verticalAlign: 'middle' }}>
+                  <span className="badge ms-2" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem', verticalAlign: 'middle' }}>
                     VIEW ONLY
                   </span>
                 )}
@@ -328,7 +328,7 @@ export function SettingsPage() {
           {has_active_draft && is_commissioner && (
             <div className="alert d-flex align-items-center gap-2 mb-3" style={{ background: 'rgba(210,153,34,.1)', border: '1px solid rgba(210,153,34,.2)', borderRadius: 10, fontSize: '.85rem' }}>
               <i className="bi bi-lock-fill" style={{ color: '#d29922' }}></i>
-              <span style={{ color: '#cfcfd6' }}>
+              <span style={{ color: 'var(--kl-text-primary)' }}>
                 Some settings are locked while a draft session is active. Delete the draft from{' '}
                 <Link to={`/leagues/${leagueId}/draft/setup`} style={{ color: '#ececf6' }}>Draft Setup</Link> to unlock.
               </span>
@@ -344,7 +344,7 @@ export function SettingsPage() {
           <fieldset disabled={disabled}>
             {/* General */}
             <div className="card mb-4">
-              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-sliders me-2" style={{ color: '#a0a0ac' }}></i>General</h5></div>
+              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-sliders me-2" style={{ color: 'var(--kl-text-primary)' }}></i>General</h5></div>
               <div className="card-body">
                 <div className="row g-3">
                   <div className="col-md-6">
@@ -353,13 +353,13 @@ export function SettingsPage() {
                   </div>
                   <div className="col-md-3">
                     <label className="form-label">
-                      Max Teams {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.7rem' }} title="Locked — draft is active"></i>}
+                      Max Teams {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.8125rem' }} title="Locked, draft is active"></i>}
                     </label>
                     <input type="number" className="form-control" min={2} max={18} value={form.num_teams} onChange={e => setField('num_teams', Number(e.target.value))} disabled={has_active_draft} />
                   </div>
                   <div className="col-md-3">
                     <label className="form-label">
-                      Squad Size {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.7rem' }}></i>}
+                      Squad Size {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.8125rem' }}></i>}
                     </label>
                     <input type="number" className="form-control" min={5} max={60} value={form.squad_size} onChange={e => setField('squad_size', Number(e.target.value))} disabled={has_active_draft} />
                   </div>
@@ -368,16 +368,16 @@ export function SettingsPage() {
                     <div className="form-control" style={{ background: '#1e1d21', fontWeight: 600, fontSize: '.85rem', color: posOk ? '#3fb950' : '#f85149' }}>
                       {totals.onField} field + {totals.flex} flex = {totals.total} / {form.squad_size}
                     </div>
-                    <div className="form-text" style={{ color: '#63616d', fontSize: '.7rem' }}>On-field + flex must fit within squad size</div>
+                    <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>On-field + flex must fit within squad size</div>
                     {!posOk && (
-                      <div style={{ marginTop: 6, padding: '6px 10px', background: 'rgba(248,81,73,.12)', border: '1px solid rgba(248,81,73,.4)', borderRadius: 6, color: '#f85149', fontSize: '.75rem', fontWeight: 600 }}>
+                      <div style={{ marginTop: 6, padding: '6px 10px', background: 'rgba(248,81,73,.12)', border: '1px solid rgba(248,81,73,.4)', borderRadius: 6, color: '#f85149', fontSize: '.8125rem', fontWeight: 600 }}>
                         Total positions ({totals.total}) exceed squad size ({form.squad_size}). Reduce positions or increase squad size.
                       </div>
                     )}
                   </div>
                   <div className="col-md-4">
                     <label className="form-label">
-                      Draft Type {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.7rem' }}></i>}
+                      Draft Type {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.8125rem' }}></i>}
                     </label>
                     <select className="form-select" value={form.draft_type} onChange={e => setField('draft_type', e.target.value)} disabled={has_active_draft}>
                       <option value="snake">Snake</option>
@@ -394,7 +394,7 @@ export function SettingsPage() {
                       <span className="badge" style={{ background: league.trade_window_open ? '#238636' : '#63616d' }}>
                         {league.trade_window_open ? 'Open' : 'Closed'}
                       </span>
-                      <span className="text-secondary" style={{ fontSize: '.7rem', display: 'block', marginTop: 4 }}>
+                      <span className="text-secondary" style={{ fontSize: '.8125rem', display: 'block', marginTop: 4 }}>
                         Durations configured below in Mid-Season &amp; Off-Season sections
                       </span>
                     </div>
@@ -409,23 +409,23 @@ export function SettingsPage() {
 
             {/* On-Field Formation */}
             <div className="card mb-4">
-              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-diagram-3 me-2" style={{ color: '#a0a0ac' }}></i>On-Field Formation</h5></div>
+              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-diagram-3 me-2" style={{ color: 'var(--kl-text-primary)' }}></i>On-Field Formation</h5></div>
               <div className="card-body">
                 <div className="row g-2 mb-2">
                   <div className="col-3">
-                    <label className="form-label" style={{ fontSize: '.75rem', color: '#ececf6' }}>DEF</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem', color: '#ececf6' }}>DEF</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={10} value={form.def_count} onChange={e => setField('def_count', Number(e.target.value))} />
                   </div>
                   <div className="col-3">
-                    <label className="form-label" style={{ fontSize: '.75rem', color: '#bc8cff' }}>MID</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem', color: '#bc8cff' }}>MID</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={12} value={form.mid_count} onChange={e => setField('mid_count', Number(e.target.value))} />
                   </div>
                   <div className="col-3">
-                    <label className="form-label" style={{ fontSize: '.75rem', color: '#f0883e' }}>FWD</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem', color: '#f0883e' }}>FWD</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={10} value={form.fwd_count} onChange={e => setField('fwd_count', Number(e.target.value))} />
                   </div>
                   <div className="col-3">
-                    <label className="form-label" style={{ fontSize: '.75rem', color: '#3fb950' }}>RUC</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem', color: '#3fb950' }}>RUC</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={3} value={form.ruc_count} onChange={e => setField('ruc_count', Number(e.target.value))} />
                   </div>
                 </div>
@@ -434,17 +434,17 @@ export function SettingsPage() {
 
             <div className="row g-2 mb-4">
               <div className="col-4">
-                <label className="form-label" style={{ fontSize: '.75rem', color: '#d29922' }}>
+                <label className="form-label" style={{ fontSize: '.8125rem', color: '#d29922' }}>
                   <i className="bi bi-lightning-charge me-1"></i>FLEX Slots
                 </label>
                 <input type="number" className="form-control form-control-sm" min={0} max={10} value={form.flex_count} onChange={e => setField('flex_count', Number(e.target.value))} />
-                <div className="form-text" style={{ color: '#63616d', fontSize: '.65rem' }}>Sidebar scoring slots — any position eligible.</div>
+                <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>Sidebar scoring slots, any position eligible.</div>
               </div>
             </div>
 
             {/* Fixtures */}
             <div className="card mb-4">
-              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-calendar-week me-2" style={{ color: '#a0a0ac' }}></i>Fixtures</h5></div>
+              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-calendar-week me-2" style={{ color: 'var(--kl-text-primary)' }}></i>Fixtures</h5></div>
               <div className="card-body">
                 <div className="row g-3 align-items-end">
                   <div className="col-md-4">
@@ -466,20 +466,20 @@ export function SettingsPage() {
                     </button>
                   </div>
                 </div>
-                <div className="mt-2" style={{ fontSize: '.75rem', fontWeight: 600, color: fixtureOk ? '#3fb950' : '#f85149' }}>
+                <div className="mt-2" style={{ fontSize: '.8125rem', fontWeight: 600, color: fixtureOk ? '#3fb950' : '#f85149' }}>
                   {form.num_fixture_rounds} regular + {FINALS_WEEKS[form.finals_teams] ?? 0} finals weeks = {fixtureTotal} / {AFL_SEASON_ROUNDS} AFL rounds
                 </div>
                 {!fixtureOk && (
-                  <div style={{ marginTop: 6, padding: '6px 10px', background: 'rgba(248,81,73,.12)', border: '1px solid rgba(248,81,73,.4)', borderRadius: 6, color: '#f85149', fontSize: '.75rem', fontWeight: 600 }}>
+                  <div style={{ marginTop: 6, padding: '6px 10px', background: 'rgba(248,81,73,.12)', border: '1px solid rgba(248,81,73,.4)', borderRadius: 6, color: '#f85149', fontSize: '.8125rem', fontWeight: 600 }}>
                     Total season ({fixtureTotal} weeks) exceeds AFL season ({AFL_SEASON_ROUNDS} rounds).
                   </div>
                 )}
                 {genStatus && (
-                  <div className="mt-2" style={{ fontSize: '.75rem', color: genStatus.kind === 'success' ? '#3fb950' : '#f85149' }}>
+                  <div className="mt-2" style={{ fontSize: '.8125rem', color: genStatus.kind === 'success' ? '#3fb950' : '#f85149' }}>
                     {genStatus.text}
                   </div>
                 )}
-                <div className="form-text mt-1" style={{ color: '#63616d', fontSize: '.7rem' }}>
+                <div className="form-text mt-1" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                   AFL season has 24 rounds. Regular season + finals weeks must not exceed this.
                 </div>
                 {is_commissioner && (
@@ -490,7 +490,7 @@ export function SettingsPage() {
                         <i className="bi bi-trophy me-1"></i>{data.has_preseason ? 'Regenerate' : 'Generate'} Pre-Season Match
                       </button>
                       {data.has_preseason && (
-                        <span className="badge" style={{ background: 'rgba(223,221,233,.15)', color: '#ececf6', fontSize: '.7rem' }}>Pre-season fixtures exist</span>
+                        <span className="badge" style={{ background: 'rgba(223,221,233,.15)', color: '#ececf6', fontSize: '.8125rem' }}>Pre-season fixtures exist</span>
                       )}
                     </div>
                   </>
@@ -508,10 +508,10 @@ export function SettingsPage() {
               </div>
               <div className="card-body py-3">
                 <div className="d-flex align-items-center gap-3">
-                  <span className="badge" style={{ background: 'rgba(210,153,34,.15)', color: '#d29922', fontSize: '.75rem', padding: '4px 10px' }}>
+                  <span className="badge" style={{ background: 'rgba(210,153,34,.15)', color: '#d29922', fontSize: '.8125rem', padding: '4px 10px' }}>
                     {(league.scoring_type || 'supercoach').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                   </span>
-                  <span style={{ fontSize: '.75rem', color: '#a0a0ac' }}>Scoring type, custom stat weights, and hybrid configuration</span>
+                  <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Scoring type, custom stat weights, and hybrid configuration</span>
                 </div>
               </div>
             </div>
@@ -523,7 +523,7 @@ export function SettingsPage() {
                   <i className="bi bi-arrow-repeat me-2" style={{ color: '#2dd4bf' }}></i>Mid-Season
                   <span className={`settings-status${expanded.mid ? ' status-on' : ''}`}></span>
                 </h5>
-                <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: '.7rem' }} onClick={() => setExpanded(e => ({ ...e, mid: !e.mid }))}>
+                <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: '.8125rem' }} onClick={() => setExpanded(e => ({ ...e, mid: !e.mid }))}>
                   <i className={`bi bi-chevron-${expanded.mid ? 'up' : 'down'}`}></i>
                 </button>
               </div>
@@ -556,8 +556,8 @@ export function SettingsPage() {
                           onChange={() => setField('mid_season_trade_mode', opt.value)}
                           style={{ marginTop: 3 }} />
                         <div>
-                          <span style={{ fontSize: '.8rem', fontWeight: 600, color: '#cfcfd6' }}>{opt.label}</span>
-                          <div style={{ fontSize: '.68rem', color: '#8a8895' }}>{opt.help}</div>
+                          <span style={{ fontSize: '.8125rem', fontWeight: 600, color: 'var(--kl-text-primary)' }}>{opt.label}</span>
+                          <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{opt.help}</div>
                         </div>
                       </label>
                     ))}
@@ -567,7 +567,7 @@ export function SettingsPage() {
                 {form.mid_season_trade_mode === 'until_round' && (
                   <div className="row g-3 mb-2">
                     <div className="col-md-6">
-                      <label className="form-label" style={{ fontSize: '.75rem' }}>Trades Open Until Round</label>
+                      <label className="form-label" style={{ fontSize: '.8125rem' }}>Trades Open Until Round</label>
                       <input type="number" className="form-control form-control-sm" min={1} max={24} value={form.mid_season_trade_until_round} onChange={e => setField('mid_season_trade_until_round', Number(e.target.value))} />
                     </div>
                   </div>
@@ -575,7 +575,7 @@ export function SettingsPage() {
 
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Supplemental Draft After Round</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Supplemental Draft After Round</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={24} value={form.mid_season_draft_after_round} onChange={e => setField('mid_season_draft_after_round', Number(e.target.value))} />
                   </div>
                 </div>
@@ -587,15 +587,15 @@ export function SettingsPage() {
                 </div>
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Delist Period Duration (days)</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Delist Period Duration (days)</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={7} value={form.mid_delist_duration_days} onChange={e => setField('mid_delist_duration_days', Number(e.target.value))} />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Min Delists Required</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Min Delists Required</label>
                     <input type="number" className="form-control form-control-sm" min={0} max={10} value={form.mid_season_delist_required} onChange={e => setField('mid_season_delist_required', Number(e.target.value))} />
                   </div>
                 </div>
-                <div className="mt-2" style={{ fontSize: '.7rem', color: '#8a8895' }}>
+                <div className="mt-2" style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                   <i className="bi bi-info-circle me-1"></i>{tradeModeHelp}
                 </div>
               </div>
@@ -616,14 +616,14 @@ export function SettingsPage() {
               <div className={`settings-expand${expanded.ssp ? ' expanded' : ''}`}>
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Open Until Round</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Open Until Round</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={24} value={form.ssp_cutoff_round} onChange={e => setField('ssp_cutoff_round', Number(e.target.value))} />
-                    <div className="form-text" style={{ fontSize: '.7rem' }}>SSP is open post-draft until this round begins</div>
+                    <div className="form-text" style={{ fontSize: '.8125rem' }}>SSP is open post-draft until this round begins</div>
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>LTIL Slots</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>LTIL Slots</label>
                     <input type="number" className="form-control form-control-sm" min={0} max={5} value={form.ssp_slots} onChange={e => setField('ssp_slots', Number(e.target.value))} />
-                    <div className="form-text" style={{ fontSize: '.7rem' }}>Max long-term injury replacements per team per season</div>
+                    <div className="form-text" style={{ fontSize: '.8125rem' }}>Max long-term injury replacements per team per season</div>
                   </div>
                 </div>
               </div>
@@ -635,31 +635,31 @@ export function SettingsPage() {
                 <h5 className="mb-0 fw-bold d-flex align-items-center" style={{ fontSize: '.95rem' }}>
                   <i className="bi bi-calendar-x me-2" style={{ color: '#f0883e' }}></i>Off-Season
                 </h5>
-                <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: '.7rem' }} onClick={() => setExpanded(e => ({ ...e, off: !e.off }))}>
+                <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: '.8125rem' }} onClick={() => setExpanded(e => ({ ...e, off: !e.off }))}>
                   <i className={`bi bi-chevron-${expanded.off ? 'up' : 'down'}`}></i>
                 </button>
               </div>
               <div className={`settings-expand${expanded.off ? ' expanded' : ''}`}>
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Delist Period Duration (days)</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Delist Period Duration (days)</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={30} value={form.off_delist_duration_days} onChange={e => setField('off_delist_duration_days', Number(e.target.value))} />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Min Delists Required</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Min Delists Required</label>
                     <input type="number" className="form-control form-control-sm" min={0} max={15} value={form.offseason_delist_min} onChange={e => setField('offseason_delist_min', Number(e.target.value))} />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Trade Window Duration (days)</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Trade Window Duration (days)</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={30} value={form.off_trade_duration_days} onChange={e => setField('off_trade_duration_days', Number(e.target.value))} />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Supplemental Draft Date</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Supplemental Draft Date</label>
                     <input type="date" className="form-control form-control-sm" value={form.supplemental_draft_date} onChange={e => setField('supplemental_draft_date', e.target.value)} />
-                    <div className="form-text" style={{ fontSize: '.65rem', color: '#8a8895' }}>After AFL draft ~Nov 30</div>
+                    <div className="form-text" style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>After AFL draft ~Nov 30</div>
                   </div>
                 </div>
-                <div className="mt-2" style={{ fontSize: '.7rem', color: '#8a8895' }}>
+                <div className="mt-2" style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                   <i className="bi bi-info-circle me-1"></i>Delist period and trade window open in parallel when the season transitions to off-season.
                 </div>
               </div>
@@ -680,16 +680,16 @@ export function SettingsPage() {
               <div className={`settings-expand${expanded.live ? ' expanded' : ''}`}>
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Lockout Type</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Lockout Type</label>
                     <select className="form-select form-select-sm" value={form.lockout_type} onChange={e => setField('lockout_type', e.target.value as 'game_start' | 'round_start')}>
                       <option value="game_start">Per-Game Rolling</option>
                       <option value="round_start">Round Start (all at once)</option>
                     </select>
-                    <div className="form-text" style={{ fontSize: '.7rem' }}>Per-game: each player locks at their game's first bounce</div>
+                    <div className="form-text" style={{ fontSize: '.8125rem' }}>Per-game: each player locks at their game's first bounce</div>
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label" style={{ fontSize: '.75rem' }}>Score Updates</label>
-                    <div style={{ fontSize: '.75rem', color: '#a0a0ac', marginTop: 4 }}>
+                    <label className="form-label" style={{ fontSize: '.8125rem' }}>Score Updates</label>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginTop: 4 }}>
                       <i className="bi bi-clock me-1"></i>Scores sync automatically Thu-Sun at 11pm and Sat 5pm AEST.
                     </div>
                   </div>
@@ -698,7 +698,7 @@ export function SettingsPage() {
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
                     <span className="fw-bold" style={{ fontSize: '.85rem' }}>Captain Scoring</span>
-                    <div style={{ fontSize: '.7rem', color: '#8a8895' }}>Double captain's points (or VC if captain DNP)</div>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Double captain's points (or VC if captain DNP)</div>
                   </div>
                   <label className="settings-toggle mb-0">
                     <input type="checkbox" checked={form.captain_scoring_enabled} onChange={e => setField('captain_scoring_enabled', e.target.checked)} />
@@ -708,7 +708,7 @@ export function SettingsPage() {
                 <div className="d-flex align-items-center justify-content-between mt-3">
                   <div>
                     <span>7s Captain Scoring</span>
-                    <div style={{ fontSize: '.7rem', color: '#8a8895' }}>Double 7s captain's score in reserve 7s comp</div>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Double 7s captain's score in reserve 7s comp</div>
                   </div>
                   <label className="settings-toggle mb-0">
                     <input type="checkbox" checked={form.sevens_captain_enabled} onChange={e => setField('sevens_captain_enabled', e.target.checked)} />
@@ -717,7 +717,7 @@ export function SettingsPage() {
                 </div>
                 <hr className="my-3" style={{ borderColor: '#1e1d21' }} />
                 <div className="d-flex align-items-center justify-content-between">
-                  <span style={{ fontSize: '.75rem', color: '#63616d' }}>Sync AFL game schedule (bounce times + results) from Squiggle</span>
+                  <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Sync AFL game schedule (bounce times + results) from Squiggle</span>
                   <button type="button" className="sync-scores-btn" disabled={!is_commissioner} onClick={syncSchedule}>
                     <i className="bi bi-cloud-download"></i>Sync Schedule
                   </button>

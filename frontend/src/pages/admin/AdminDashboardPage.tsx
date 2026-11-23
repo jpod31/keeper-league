@@ -35,7 +35,7 @@ function Stat({ label, value, icon, color }: { label: string; value: number; ico
               <i className={`bi ${icon}`}></i>
             </div>
             <div>
-              <div className="text-secondary" style={{ fontSize: '.7rem', textTransform: 'uppercase' }}>{label}</div>
+              <div className="text-secondary" style={{ fontSize: '.8125rem', textTransform: 'uppercase' }}>{label}</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{value.toLocaleString()}</div>
             </div>
           </div>
@@ -98,15 +98,15 @@ export function AdminDashboardPage() {
                   {data.activity.map((a, i) => (
                     <tr key={i}>
                       <td>{a.user}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '.7rem' }}>{a.path}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '.8125rem' }}>{a.path}</td>
                       <td><span className="badge bg-secondary">{a.method}</span></td>
                       <td className="text-end">
                         <span className="badge" style={{ background: a.status < 400 ? 'rgba(63,185,80,.15)' : 'rgba(248,81,73,.15)', color: a.status < 400 ? '#3fb950' : '#f85149' }}>
                           {a.status}
                         </span>
                       </td>
-                      <td className="text-secondary" style={{ fontSize: '.7rem' }}>
-                        {a.time ? new Date(a.time).toLocaleTimeString() : '—'}
+                      <td className="text-secondary" style={{ fontSize: '.8125rem' }}>
+                        {a.time ? new Date(a.time).toLocaleTimeString() : '-'}
                       </td>
                     </tr>
                   ))}

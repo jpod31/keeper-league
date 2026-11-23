@@ -73,7 +73,7 @@ export function LeagueListPage() {
     )
   }
 
-  // Aggregate stats across leagues — a personal banner like a sports profile
+  // Aggregate stats across leagues, a personal banner like a sports profile
   const totalLeagues = leagues.length
   const teamsCount = leagues.filter(l => l.user_team).length
   const commishCount = leagues.filter(l => l.is_commissioner).length
@@ -93,7 +93,7 @@ export function LeagueListPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 24, justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.14em',
+            <div style={{ fontSize: '.8125rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em',
                           color: 'var(--pp-text-muted)' }}>Home</div>
             <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, color: 'var(--pp-text-strong)',
                          margin: 0, lineHeight: 1.05 }}>Your leagues</h1>
@@ -141,11 +141,11 @@ export function LeagueListPage() {
                   <div className="lg-lobby-card-stat-label">Teams</div>
                 </div>
                 <div className="lg-lobby-card-stat">
-                  <div className="lg-lobby-card-stat-value">{lg.user_team ? 'Y' : '—'}</div>
+                  <div className="lg-lobby-card-stat-value">{lg.user_team ? 'Y' : '-'}</div>
                   <div className="lg-lobby-card-stat-label">Joined</div>
                 </div>
                 <div className="lg-lobby-card-stat">
-                  <div className="lg-lobby-card-stat-value">{lg.is_commissioner ? 'C' : '—'}</div>
+                  <div className="lg-lobby-card-stat-value">{lg.is_commissioner ? 'C' : '-'}</div>
                   <div className="lg-lobby-card-stat-label">Role</div>
                 </div>
               </div>
@@ -177,7 +177,7 @@ export function LeagueListPage() {
             <i className="bi bi-plus-lg"></i>
           </div>
           <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--pp-text-strong)' }}>Create a league</div>
-          <div style={{ fontSize: '.72rem', color: 'var(--pp-text-muted)', marginTop: 4 }}>Start one with your mates</div>
+          <div style={{ fontSize: '.8125rem', color: 'var(--pp-text-muted)', marginTop: 4 }}>Start one with your mates</div>
         </Link>
       </div>
     </div>
@@ -192,8 +192,8 @@ function Stat({ value, label, colour }: { value: number; label: string; colour: 
         color: colour, fontVariantNumeric: 'tabular-nums', lineHeight: 1,
       }}>{value}</div>
       <div style={{
-        fontSize: '.6rem', fontWeight: 800, textTransform: 'uppercase',
-        letterSpacing: '.14em', color: 'var(--pp-text-muted)', marginTop: 4,
+        fontSize: '.8125rem', fontWeight: 800, textTransform: 'uppercase',
+        letterSpacing: '.06em', color: 'var(--pp-text-muted)', marginTop: 4,
       }}>{label}</div>
     </div>
   )

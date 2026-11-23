@@ -223,6 +223,21 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   gradient fills on controls, no Inter, no sparkle / wand / robot icons. A
   drafting grid lit in the coach's team colour sits behind the top of each
   page. New components should take their look from this band, not invent one.
+- **Type rules are enforced by tools, not by eye.** `python tools/type_floor.py`
+  raises every font-size under 13px and turns grey text into the one text
+  colour (idempotent; run it after adding UI). `_mobtest/kl_audit.mjs` visits
+  pages on the local rig and counts visible text under 13px, grey text and
+  clipped text per page; a page is done when it reports zeros. No captions
+  under buttons or stats, no em dashes in visible text, no pill shapes, no
+  letter-spacing over .06em.
+- **Player cards: club AND position.** The card body is the player's AFL club
+  colours; the position is a solid badge in the position colour plus the
+  card's left edge. Position badges are solid everywhere; an EXPECTED position
+  is the same badge hollow with a dashed edge, never the word "exp". The owner
+  asked for both: do not drop either.
+- **Home in the off-season is one thing**: the draft date, a countdown, one
+  line on where your list stands, and the draft order table. The rest of the
+  dashboard is hidden until the season (`.lg-page.is-offseason`).
 - **Positional priority for dual-position players**: FWD > DEF > RUC > MID.
 - **Rookie rule**: bench player with `age < 22` AND `rating < 70` → Rookies
   section (field/flex/7s/emergency/injury take precedence). Single source of

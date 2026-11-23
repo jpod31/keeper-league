@@ -1,5 +1,5 @@
 /**
- * useWishlist — pin/star players across the app.
+ * useWishlist, pin/star players across the app.
  *
  * Fetches the set of wishlisted player IDs for the current user +
  * league on mount, then exposes a `toggle(playerId)` that hits
@@ -30,7 +30,7 @@ export function useWishlist(leagueId: string | number | undefined): UseWishlistR
       .then(r => r.json())
       .then(d => setIds(new Set<number>(d.player_ids || [])))
       .catch(() => {
-        // Silent — wishlist absence is non-fatal; star renders as "not wishlisted".
+        // Silent, wishlist absence is non-fatal; star renders as "not wishlisted".
       })
   }, [leagueId])
 
@@ -44,7 +44,7 @@ export function useWishlist(leagueId: string | number | undefined): UseWishlistR
       })
     },
     rollback: ({ playerId, wasPinned }) => {
-      // Inverse of apply — restore pre-toggle state.
+      // Inverse of apply, restore pre-toggle state.
       setIds(prev => {
         const next = new Set(prev)
         if (wasPinned) next.add(playerId)
@@ -63,7 +63,7 @@ export function useWishlist(leagueId: string | number | undefined): UseWishlistR
       return res.json() as Promise<{ wishlisted: boolean }>
     },
     onSuccess: (result, { playerId }) => {
-      // Server is the source of truth — reconcile in case the optimistic
+      // Server is the source of truth, reconcile in case the optimistic
       // direction didn't match (rare; e.g. concurrent toggle from another tab).
       setIds(prev => {
         const next = new Set(prev)

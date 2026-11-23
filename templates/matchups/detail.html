@@ -25,22 +25,22 @@
     font-variant-numeric:tabular-nums; letter-spacing:-.02em;
   }
   .mu-tscore.won { color:#3fb950; }
-  .mu-tscore.lost { color:#63616d; }
-  .mu-tscore.draw { color:#a0a0ac; }
+  .mu-tscore.lost { color:var(--kl-text-primary); }
+  .mu-tscore.draw { color:var(--kl-text-primary); }
   .mu-tscore.pending { color:#1e1d21; font-size:1.6rem; }
   .mu-centre {
     display:flex; flex-direction:column; align-items:center; gap:4px;
   }
   .mu-status {
-    font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px;
+    font-size:.8125rem; font-weight:600; padding:2px 8px; border-radius:4px;
     letter-spacing:.3px; text-transform:uppercase;
   }
   .mu-final { background:rgba(46,160,67,.08); color:#2ea043; }
-  .mu-sched { color:#2a292f; font-size:.7rem; font-weight:600; letter-spacing:1.5px; }
+  .mu-sched { color:#2a292f; font-size:.8125rem; font-weight:600; letter-spacing:1.5px; }
   .mu-margin {
-    font-size:.65rem; color:#63616d; margin-top:2px;
+    font-size:.8125rem; color:var(--kl-text-primary); margin-top:2px;
   }
-  .mu-tname.lost { color:#8a8895; }
+  .mu-tname.lost { color:var(--kl-text-primary); }
   .pb-total.pb-won { border-top:2px solid #3fb950; }
   .pb-total.pb-lost { border-top:2px solid rgba(248,81,73,.3); }
 
@@ -49,11 +49,11 @@
     padding-top:16px; border-top:1px solid #151518;
   }
   .mu-act {
-    font-size:.7rem; padding:5px 12px; border-radius:6px;
-    border:1px solid #1e1d21; background:transparent; color:#a0a0ac;
+    font-size:.8125rem; padding:5px 12px; border-radius:6px;
+    border:1px solid #1e1d21; background:transparent; color:var(--kl-text-primary);
     text-decoration:none; transition:all .12s;
   }
-  .mu-act:hover { border-color:#2a292f; color:#cfcfd6; }
+  .mu-act:hover { border-color:#2a292f; color:var(--kl-text-primary); }
 
   /* ── Breakdown tables ── */
   .bd-wrap {
@@ -62,12 +62,12 @@
   }
   .bd-hdr {
     padding:10px 16px; border-bottom:1px solid #1e1d21;
-    font-size:.75rem; font-weight:600; color:#a0a0ac;
+    font-size:.8125rem; font-weight:600; color:var(--kl-text-primary);
     display:flex; justify-content:space-between; align-items:center;
   }
   .bd-row {
     display:grid; grid-template-columns:1fr auto 1fr; padding:8px 16px;
-    border-bottom:1px solid #151518; font-size:.8rem; align-items:center;
+    border-bottom:1px solid #151518; font-size:.8125rem; align-items:center;
   }
   .bd-row:last-child { border-bottom:none; }
   .bd-row:nth-child(even) { background:rgba(21,21,24,.3); }
@@ -76,13 +76,13 @@
   }
   .bd-val { font-variant-numeric:tabular-nums; }
   .bd-val.bd-w { color:#3fb950; font-weight:600; }
-  .bd-val.bd-l { color:#8a8895; }
+  .bd-val.bd-l { color:var(--kl-text-primary); }
   .bd-stat {
-    text-align:center; font-size:.7rem; color:#a0a0ac;
+    text-align:center; font-size:.8125rem; color:var(--kl-text-primary);
     text-transform:capitalize;
   }
   .bd-stat-sub {
-    font-size:.55rem; color:#2a292f; font-weight:400;
+    font-size:.8125rem; color:#2a292f; font-weight:400;
   }
 
   /* ── Player breakdown ── */
@@ -93,27 +93,27 @@
   .pb-side + .pb-side { border-left:1px solid #1e1d21; }
   .pb-side-hdr {
     padding:8px 16px; border-bottom:1px solid #151518;
-    font-size:.7rem; font-weight:600; color:#a0a0ac;
+    font-size:.8125rem; font-weight:600; color:var(--kl-text-primary);
   }
   .pb-player {
     display:flex; justify-content:space-between; align-items:center;
     padding:6px 16px; border-bottom:1px solid #151518;
-    font-size:.78rem; color:#a0a0ac;
+    font-size:.8125rem; color:var(--kl-text-primary);
   }
   .pb-player:last-child { border-bottom:none; }
-  .pb-player-name { color:#cfcfd6; }
-  .pb-player-em { font-style:italic; color:#63616d; }
-  .pb-player-score { font-variant-numeric:tabular-nums; font-weight:600; color:#cfcfd6; }
+  .pb-player-name { color:var(--kl-text-primary); }
+  .pb-player-em { font-style:italic; color:var(--kl-text-primary); }
+  .pb-player-score { font-variant-numeric:tabular-nums; font-weight:600; color:var(--kl-text-primary); }
   .pb-total {
     display:flex; justify-content:space-between; align-items:center;
     padding:8px 16px; border-top:1px solid #1e1d21;
-    background:rgba(21,21,24,.4); font-size:.78rem;
+    background:rgba(21,21,24,.4); font-size:.8125rem;
   }
-  .pb-total-label { color:#a0a0ac; font-weight:600; }
+  .pb-total-label { color:var(--kl-text-primary); font-weight:600; }
   .pb-total-val { color:#ebebee; font-weight:700; font-variant-numeric:tabular-nums; }
   .pb-cap-row {
     display:flex; justify-content:space-between; padding:4px 16px;
-    font-size:.7rem; color:#63616d; border-top:1px solid #151518;
+    font-size:.8125rem; color:var(--kl-text-primary); border-top:1px solid #151518;
   }
 </style>
 
@@ -190,11 +190,11 @@
   {% for row in uf_breakdown %}
     <div class="bd-row">
       <div class="bd-val{{ ' bd-w' if row.winner == 'home' else ' bd-l' }}" style="text-align:left;">
-        {{ row.home }}{% if row.winner == 'home' %} <i class="bi bi-check2" style="font-size:.7rem;"></i>{% endif %}
+        {{ row.home }}{% if row.winner == 'home' %} <i class="bi bi-check2" style="font-size:.8125rem;"></i>{% endif %}
       </div>
       <div class="bd-stat">{{ row.stat.replace('_', ' ') }}</div>
       <div class="bd-val{{ ' bd-w' if row.winner == 'away' else ' bd-l' }}" style="text-align:right;">
-        {% if row.winner == 'away' %}<i class="bi bi-check2" style="font-size:.7rem;"></i> {% endif %}{{ row.away }}
+        {% if row.winner == 'away' %}<i class="bi bi-check2" style="font-size:.8125rem;"></i> {% endif %}{{ row.away }}
       </div>
     </div>
   {% endfor %}
@@ -215,21 +215,21 @@
     <div class="bd-row">
       <div class="bd-val{{ ' bd-w' if row.winner == 'home' else ' bd-l' }}" style="text-align:left;">
         {{ '%.0f'|format(row.home_pts) }}
-        <span style="font-size:.65rem;color:#63616d;margin-left:4px;">({{ '%.0f'|format(row.home_raw) }})</span>
+        <span style="font-size:.8125rem;color:var(--kl-text-primary);margin-left:4px;">({{ '%.0f'|format(row.home_raw) }})</span>
       </div>
       <div class="bd-stat">
         {{ row.stat.replace('_', ' ') }}
         <br><span class="bd-stat-sub">&times;{{ row.points_per }}</span>
       </div>
       <div class="bd-val{{ ' bd-w' if row.winner == 'away' else ' bd-l' }}" style="text-align:right;">
-        <span style="font-size:.65rem;color:#63616d;margin-right:4px;">({{ '%.0f'|format(row.away_raw) }})</span>
+        <span style="font-size:.8125rem;color:var(--kl-text-primary);margin-right:4px;">({{ '%.0f'|format(row.away_raw) }})</span>
         {{ '%.0f'|format(row.away_pts) }}
       </div>
     </div>
   {% endfor %}
   <div class="bd-row bd-row-total">
     <div class="bd-val bd-w" style="text-align:left;">{{ '%.0f'|format(ns.home_total) }}</div>
-    <div class="bd-stat" style="font-weight:600;color:#a0a0ac;">Total</div>
+    <div class="bd-stat" style="font-weight:600;color:var(--kl-text-primary);">Total</div>
     <div class="bd-val bd-w" style="text-align:right;">{{ '%.0f'|format(ns.away_total) }}</div>
   </div>
 </div>

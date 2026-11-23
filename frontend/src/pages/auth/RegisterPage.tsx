@@ -53,7 +53,7 @@ export function RegisterPage() {
           </div>
           <div className="mb-3">
             <label htmlFor="display_name" className="form-label">
-              Display Name <span className="text-secondary" style={{ fontSize: '.75rem' }}>(optional)</span>
+              Display Name <span className="text-secondary" style={{ fontSize: '.8125rem' }}>(optional)</span>
             </label>
             <input type="text" className="form-control" id="display_name"
               value={form.displayName} onChange={set('displayName')}
@@ -77,7 +77,7 @@ export function RegisterPage() {
             {loading ? 'Creating...' : 'Create Account'}
           </button>
         </form>
-        <p className="text-center mt-4 mb-0" style={{ fontSize: '.85rem', color: '#a0a0ac' }}>
+        <p className="text-center mt-4 mb-0" style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>
           Already have an account? <Link to="/auth/login" style={{ color: '#ececf6', textDecoration: 'none' }}>Sign in</Link>
         </p>
       </div>

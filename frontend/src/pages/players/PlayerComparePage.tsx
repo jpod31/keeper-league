@@ -75,9 +75,9 @@ export function PlayerComparePage() {
     { key: 'afl_team', label: 'AFL Team' },
     { key: 'age', label: 'Age' },
     { key: 'games_played', label: 'Games' },
-    { key: 'sc_avg', label: 'SC Avg', format: v => typeof v === 'number' ? v.toFixed(1) : '—' },
-    { key: 'l3', label: 'L3', format: v => typeof v === 'number' ? v.toFixed(0) : '—' },
-    { key: 'l5', label: 'L5', format: v => typeof v === 'number' ? v.toFixed(0) : '—' },
+    { key: 'sc_avg', label: 'SC Avg', format: v => typeof v === 'number' ? v.toFixed(1) : '-' },
+    { key: 'l3', label: 'L3', format: v => typeof v === 'number' ? v.toFixed(0) : '-' },
+    { key: 'l5', label: 'L5', format: v => typeof v === 'number' ? v.toFixed(0) : '-' },
     { key: 'rating', label: 'Rating' },
   ]
 
@@ -140,9 +140,9 @@ export function PlayerComparePage() {
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
                           <strong>{p.name}</strong>
-                          <div className="text-secondary" style={{ fontSize: '.7rem' }}>{p.afl_team}</div>
+                          <div className="text-secondary" style={{ fontSize: '.8125rem' }}>{p.afl_team}</div>
                         </div>
-                        <button className="btn btn-sm btn-link text-danger p-0" onClick={() => removePlayer(p.id)} style={{ fontSize: '.8rem' }}>
+                        <button className="btn btn-sm btn-link text-danger p-0" onClick={() => removePlayer(p.id)} style={{ fontSize: '.8125rem' }}>
                           <i className="bi bi-x"></i>
                         </button>
                       </div>
@@ -153,12 +153,12 @@ export function PlayerComparePage() {
               <tbody>
                 {fields.map(f => (
                   <tr key={f.key}>
-                    <td className="text-secondary" style={{ fontSize: '.75rem' }}>{f.label}</td>
+                    <td className="text-secondary" style={{ fontSize: '.8125rem' }}>{f.label}</td>
                     {data.players.map(p => {
                       const val = p[f.key]
                       return (
                         <td key={p.id} style={{ fontFamily: 'monospace' }}>
-                          {f.format ? f.format(val) : (val ?? '—')}
+                          {f.format ? f.format(val) : (val ?? '-')}
                         </td>
                       )
                     })}

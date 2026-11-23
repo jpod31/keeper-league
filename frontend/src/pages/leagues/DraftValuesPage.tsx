@@ -108,7 +108,7 @@ export function DraftValuesPage() {
             <div className="card-body">
               {Object.entries(weights).map(([key, value]) => (
                 <div key={key} className="mb-3">
-                  <div className="d-flex justify-content-between" style={{ fontSize: '.8rem' }}>
+                  <div className="d-flex justify-content-between" style={{ fontSize: '.8125rem' }}>
                     <label>{WEIGHT_LABELS[key] || key}</label>
                     <strong>{(value * 100).toFixed(0)}%</strong>
                   </div>
@@ -146,11 +146,11 @@ export function DraftValuesPage() {
                 <tbody>
                   {displayPlayers.map((p, i) => (
                     <tr key={`${p.name}-${p.afl_team}`}>
-                      <td style={{ color: '#63616d' }}>{i + 1}</td>
+                      <td style={{ color: 'var(--kl-text-primary)' }}>{i + 1}</td>
                       <td><strong>{p.name}</strong></td>
-                      <td className="text-secondary" style={{ fontSize: '.75rem' }}>{p.afl_team}</td>
+                      <td className="text-secondary" style={{ fontSize: '.8125rem' }}>{p.afl_team}</td>
                       <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
-                      <td className="text-end">{p.sc_avg?.toFixed(0) ?? '—'}</td>
+                      <td className="text-end">{p.sc_avg?.toFixed(0) ?? '-'}</td>
                       <td className="text-end"><strong>{p.draft_score.toFixed(0)}</strong></td>
                     </tr>
                   ))}

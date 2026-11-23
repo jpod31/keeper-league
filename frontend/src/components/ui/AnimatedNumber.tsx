@@ -5,7 +5,7 @@ interface Props {
   value: number
   /** Decimal places (default 0 = integer) */
   decimals?: number
-  /** Formatter override — e.g. n => n.toLocaleString() */
+  /** Formatter override, e.g. n => n.toLocaleString() */
   format?: (n: number) => string
   /** Duration ms (default 550) */
   duration?: number
@@ -15,7 +15,7 @@ interface Props {
 
 /**
  * Smoothly animates a number from its previous value to the new one.
- * Use for live scores, ladder points, percentages — anything a user
+ * Use for live scores, ladder points, percentages, anything a user
  * might watch tick.
  */
 export function AnimatedNumber({ value, decimals = 0, format, duration = 550, className, style }: Props) {

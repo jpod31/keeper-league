@@ -29,46 +29,46 @@ interface TeamData {
 const S7T_CSS = `
 .sevens-hero { padding:24px 20px 16px; margin-bottom:20px; background:linear-gradient(135deg, rgba(81,78,95,.08), rgba(188,140,255,.06)); border:1px solid #1e1d21; border-radius:12px; }
 .sevens-hero-title { font-size:1.3rem; font-weight:700; color:#ebebee; margin:0; }
-.sevens-hero-sub { font-size:.8rem; color:#a0a0ac; margin-top:4px; }
-.sevens-rule-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:.75rem; font-weight:600; background:rgba(188,140,255,.1); color:#bc8cff; border:1px solid rgba(188,140,255,.2); margin-top:10px; }
+.sevens-hero-sub { font-size:.8125rem; color:var(--kl-text-primary); margin-top:4px; }
+.sevens-rule-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:.8125rem; font-weight:600; background:rgba(188,140,255,.1); color:#bc8cff; border:1px solid rgba(188,140,255,.2); margin-top:10px; }
 .sevens-counter { display:flex; gap:16px; margin-top:12px; flex-wrap:wrap; }
-.sevens-counter-item { font-size:.75rem; color:#a0a0ac; }
+.sevens-counter-item { font-size:.8125rem; color:var(--kl-text-primary); }
 .sevens-counter-item strong { color:#ebebee; }
 .sevens-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
 @media (max-width:991px) { .sevens-grid { grid-template-columns:1fr; } }
 .sevens-panel { background:#0e0d0f; border:1px solid #1e1d21; border-radius:10px; overflow:hidden; }
-.sevens-panel-hdr { padding:12px 16px; border-bottom:1px solid #1e1d21; font-size:.8rem; font-weight:600; color:#ebebee; display:flex; justify-content:space-between; align-items:center; }
+.sevens-panel-hdr { padding:12px 16px; border-bottom:1px solid #1e1d21; font-size:.8125rem; font-weight:600; color:#ebebee; display:flex; justify-content:space-between; align-items:center; }
 .sevens-panel-body { padding:0; }
 .sevens-player-row { display:flex; align-items:center; padding:10px 16px; gap:10px; border-bottom:1px solid #151518; cursor:pointer; transition:background .1s; }
 .sevens-player-row:last-child { border-bottom:none; }
 .sevens-player-row:hover { background:#151518; }
 .sevens-player-row.selected { background:rgba(81,78,95,.08); }
 .sevens-player-row.locked { opacity:.5; cursor:not-allowed; }
-.sevens-player-name { flex:1; font-size:.82rem; font-weight:500; color:#cfcfd6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.sevens-player-meta { font-size:.7rem; color:#8a8895; white-space:nowrap; }
-.sevens-age-badge { font-size:.65rem; font-weight:700; padding:2px 6px; border-radius:4px; display:inline-block; min-width:32px; text-align:center; }
+.sevens-player-name { flex:1; font-size:.82rem; font-weight:500; color:var(--kl-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sevens-player-meta { font-size:.8125rem; color:var(--kl-text-primary); white-space:nowrap; }
+.sevens-age-badge { font-size:.8125rem; font-weight:700; padding:2px 6px; border-radius:4px; display:inline-block; min-width:32px; text-align:center; }
 .age-young { background:rgba(63,185,80,.12); color:#3fb950; }
 .age-senior { background:rgba(210,153,34,.12); color:#d29922; }
-.sevens-sc { font-size:.75rem; font-weight:600; min-width:36px; text-align:right; }
+.sevens-sc { font-size:.8125rem; font-weight:600; min-width:36px; text-align:right; }
 .sevens-cap-star { cursor:pointer; font-size:.9rem; color:#2a292f; transition:color .15s; }
 .sevens-cap-star.active { color:#ffd700; text-shadow:0 0 6px rgba(255,215,0,.4); }
 .sevens-cap-star:hover { color:#d29922; }
 .sevens-check { width:18px; height:18px; border-radius:4px; border:2px solid #2a292f; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
 .sevens-check.checked { background:#514e5f; border-color:#514e5f; }
-.sevens-check.checked::after { content:'✓'; color:#fff; font-size:.7rem; font-weight:700; }
-.sevens-lock-icon { color:#63616d; font-size:.75rem; }
+.sevens-check.checked::after { content:'✓'; color:#fff; font-size:.8125rem; font-weight:700; }
+.sevens-lock-icon { color:var(--kl-text-primary); font-size:.8125rem; }
 .sevens-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
-.sevens-btn { padding:8px 20px; border-radius:8px; font-size:.8rem; font-weight:600; border:1px solid; cursor:pointer; transition:all .15s; }
+.sevens-btn { padding:8px 20px; border-radius:8px; font-size:.8125rem; font-weight:600; border:1px solid; cursor:pointer; transition:all .15s; }
 .sevens-btn-primary { background:#514e5f; border-color:#514e5f; color:#fff; }
 .sevens-btn-primary:hover:not(:disabled) { background:#dfdde9; }
 .sevens-btn-primary:disabled { opacity:.4; cursor:not-allowed; }
-.sevens-btn-secondary { background:transparent; border-color:#2a292f; color:#a0a0ac; text-decoration:none; display:inline-flex; align-items:center; }
-.sevens-btn-secondary:hover { border-color:#63616d; color:#cfcfd6; }
-.sevens-feedback { margin-top:10px; padding:8px 14px; border-radius:6px; font-size:.78rem; }
+.sevens-btn-secondary { background:transparent; border-color:#2a292f; color:var(--kl-text-primary); text-decoration:none; display:inline-flex; align-items:center; }
+.sevens-btn-secondary:hover { border-color:#63616d; color:var(--kl-text-primary); }
+.sevens-feedback { margin-top:10px; padding:8px 14px; border-radius:6px; font-size:.8125rem; }
 .sevens-feedback.error { background:rgba(248,81,73,.1); color:#f85149; border:1px solid rgba(248,81,73,.2); }
 .sevens-feedback.success { background:rgba(63,185,80,.1); color:#3fb950; border:1px solid rgba(63,185,80,.2); }
 .sevens-filter-bar { display:flex; gap:8px; padding:8px 16px; border-bottom:1px solid #1e1d21; }
-.sevens-filter-input { flex:1; background:#0e0d0f; border:1px solid #2a292f; border-radius:6px; padding:5px 10px; font-size:.75rem; color:#cfcfd6; outline:none; }
+.sevens-filter-input { flex:1; background:#0e0d0f; border:1px solid #2a292f; border-radius:6px; padding:5px 10px; font-size:.8125rem; color:var(--kl-text-primary); outline:none; }
 .sevens-filter-input:focus { border-color:#63616d; }
 `
 
@@ -175,7 +175,7 @@ export function Reserve7sTeamPage() {
       if (d.ok) setFeedback({ kind: 'success', text: d.message || 'Lineup saved!' })
       else setFeedback({ kind: 'error', text: d.error || 'Failed to save' })
     } catch {
-      setFeedback({ kind: 'error', text: 'Network error — try again' })
+      setFeedback({ kind: 'error', text: 'Network error, try again' })
     } finally {
       setSaving(false)
     }
@@ -191,9 +191,9 @@ export function Reserve7sTeamPage() {
           <div>
             <h2 className="sevens-hero-title">
               <i className="bi bi-7-circle me-2" style={{ color: '#bc8cff' }}></i>
-              Reserve 7s — Round {afl_round}
+              Reserve 7s, Round {afl_round}
             </h2>
-            <div className="sevens-hero-sub">{team.name} — Select your 7 players</div>
+            <div className="sevens-hero-sub">{team.name}, Select your 7 players</div>
             <div className="sevens-rule-badge">
               <i className="bi bi-info-circle"></i>
               Min 5 under-{age_cutoff} • Max 2 over-{age_cutoff}
@@ -210,7 +210,7 @@ export function Reserve7sTeamPage() {
           <div className="sevens-counter-item">Under-{age_cutoff}: <strong>{youngCount}</strong></div>
           <div className="sevens-counter-item">Senior: <strong>{seniorCount}</strong>/2</div>
           <div className="sevens-counter-item">
-            Captain: <strong>{captainId ? (sortedPlayers.find(p => p.id === captainId)?.name || '—') : '—'}</strong>
+            Captain: <strong>{captainId ? (sortedPlayers.find(p => p.id === captainId)?.name || '-') : '-'}</strong>
           </div>
         </div>
       </div>
@@ -220,11 +220,11 @@ export function Reserve7sTeamPage() {
         <div className="sevens-panel">
           <div className="sevens-panel-hdr">
             <span><i className="bi bi-check-circle me-1" style={{ color: '#3fb950' }}></i>Selected 7</span>
-            <span style={{ fontSize: '.7rem', color: '#63616d' }}>{selected.size}/7</span>
+            <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{selected.size}/7</span>
           </div>
           <div className="sevens-panel-body">
             {selectedPlayers.length === 0 ? (
-              <div style={{ padding: '30px 16px', textAlign: 'center', color: '#63616d', fontSize: '.8rem' }}>
+              <div style={{ padding: '30px 16px', textAlign: 'center', color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                 Click players from the available list to add them
               </div>
             ) : (
@@ -236,10 +236,10 @@ export function Reserve7sTeamPage() {
                   <span className="sevens-player-name">{p.name}</span>
                   <span className="sevens-player-meta">{p.afl_team}</span>
                   {p.id === captainId && (
-                    <span style={{ color: '#ffd700', fontSize: '.7rem', fontWeight: 700 }}>CAPTAIN</span>
+                    <span style={{ color: '#ffd700', fontSize: '.8125rem', fontWeight: 700 }}>CAPTAIN</span>
                   )}
-                  <span className="sevens-sc" style={{ color: '#a0a0ac' }}>
-                    {p.sc_avg > 0 ? Math.round(p.sc_avg) : '—'}
+                  <span className="sevens-sc" style={{ color: 'var(--kl-text-primary)' }}>
+                    {p.sc_avg > 0 ? Math.round(p.sc_avg) : '-'}
                   </span>
                 </div>
               ))
@@ -251,7 +251,7 @@ export function Reserve7sTeamPage() {
         <div className="sevens-panel">
           <div className="sevens-panel-hdr">
             <span><i className="bi bi-people me-1"></i>Available Players</span>
-            <span style={{ fontSize: '.7rem', color: '#63616d' }}>{data.players.length} on roster</span>
+            <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{data.players.length} on roster</span>
           </div>
           <div className="sevens-filter-bar">
             <input
@@ -288,7 +288,7 @@ export function Reserve7sTeamPage() {
                         : '#8a8895',
                     }}
                   >
-                    {p.sc_avg ? Math.round(p.sc_avg) : '—'}
+                    {p.sc_avg ? Math.round(p.sc_avg) : '-'}
                   </span>
                   {isLocked && <span className="sevens-lock-icon"><i className="bi bi-lock-fill"></i></span>}
                   <span

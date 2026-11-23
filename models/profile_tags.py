@@ -1,4 +1,4 @@
-"""Player profile tags — deep statistical classification using multi-year SC data.
+"""Player profile tags, deep statistical classification using multi-year SC data.
 
 Factors:
   1. Position-adjusted SC percentile (ruck 90 != mid 90)
@@ -21,7 +21,7 @@ import config
 
 logger = logging.getLogger(__name__)
 
-# Positional peak age ranges (start, end) — when SC output typically peaks
+# Positional peak age ranges (start, end), when SC output typically peaks
 _POS_PEAK = {
     "MID": (25, 29),
     "DEF": (26, 30),
@@ -35,7 +35,7 @@ _POS_PEAK = {
 _POS_SCARCITY = {
     "FWD": 1.20,   # hardest to find premium scorers
     "DEF": 1.10,   # moderately scarce
-    "MID": 1.00,   # baseline — most supply
+    "MID": 1.00,   # baseline, most supply
     "RUC": 1.15,   # tiny pool makes each one more valuable
 }
 
@@ -191,7 +191,7 @@ def _compute_profile_tags_inner(players):
                 yearly_data.append((y, avg, len(scores), std))
                 all_scores.extend(scores)
 
-        # Use current season data — require meaningful sample (8+ games)
+        # Use current season data, require meaningful sample (8+ games)
         # to prevent small-sample inflation driving tag decisions.
         if sc > 0 and games >= 8:
             from models.years import stats_year
@@ -292,7 +292,7 @@ def _compute_profile_tags_inner(players):
         # Elite: top 5% positionally (scarcity-adjusted) AND multi-year production
         if eff_pos_pct >= 95 and years_elite >= 2 and age < 31:
             tag, css, tier = "Elite", "elite", 1
-            headline = f"Top {100-pos_pct:.0f}% {pos} — {years_elite}yr elite"
+            headline = f"Top {100-pos_pct:.0f}% {pos}, {years_elite}yr elite"
             detail = f"Averaging {sc:.0f} (top {100-pct:.0f}% overall). {years_premium} seasons at 90+. Peak {peak_avg:.0f} ({peak_year}). {peak_phase.replace('-', ' ').title()} for {pos}."
 
         elif eff_pos_pct >= 95 and age >= 31:
@@ -303,28 +303,28 @@ def _compute_profile_tags_inner(players):
         elif eff_pos_pct >= 90 or (sc >= 100 and games >= 10) or (sc >= 100 and years_premium >= 1):
             tag, css, tier = "Premium", "premium", 3
             if trajectory > 3:
-                headline = f"Top {100-pos_pct:.0f}% {pos} — trending up"
+                headline = f"Top {100-pos_pct:.0f}% {pos}, trending up"
             elif peak_phase == "pre-peak":
-                headline = f"Top {100-pos_pct:.0f}% {pos} — hasn't peaked yet"
+                headline = f"Top {100-pos_pct:.0f}% {pos}, hasn't peaked yet"
             else:
-                headline = f"Top {100-pos_pct:.0f}% {pos} — {sc:.0f} avg"
+                headline = f"Top {100-pos_pct:.0f}% {pos}, {sc:.0f} avg"
             detail = f"Averaging {sc:.0f} ({100-pct:.0f}th percentile overall). Consistency {consistency:.0%}. {durability:.0f} games/season avg."
             if years_premium >= 2:
                 detail += f" {years_premium} years at 90+."
 
         elif age <= 23 and trajectory > 5 and sc >= 70:
             tag, css, tier = "Emerging Star", "rising", 4
-            headline = f"Avg up {trajectory:+.0f}/yr — {sc:.0f} at {age}"
+            headline = f"Avg up {trajectory:+.0f}/yr, {sc:.0f} at {age}"
             detail = f"SC trending up {trajectory:+.1f} per year. Averaging {sc:.0f} as a {age}yo {pos}. {years_to_peak} years to typical {pos} peak."
 
         elif age <= 22 and sc >= 60 and games >= 3:
             tag, css, tier = "Breakout", "breakout", 5
-            headline = f"{sc:.0f} avg at {age} — {games} games"
+            headline = f"{sc:.0f} avg at {age}, {games} games"
             detail = f"Young {pos} averaging {sc:.0f} from {games} games. {years_to_peak} years before peak window. Consistency {consistency:.0%}."
 
         elif eff_pos_pct >= 65 and age <= 30:
             tag, css, tier = "Proven", "proven", 6
-            headline = f"Top {100-pos_pct:.0f}% {pos} — reliable"
+            headline = f"Top {100-pos_pct:.0f}% {pos}, reliable"
             detail = f"Averaging {sc:.0f} (top {100-pct:.0f}% overall). {years_premium} seasons at 90+. Durability: {durability:.0f} games/yr."
             if trajectory < -3:
                 detail += f" Trending down {trajectory:+.1f}/yr."
@@ -336,12 +336,12 @@ def _compute_profile_tags_inner(players):
 
         elif age <= 22 and sc < 60:
             tag, css, tier = "Developing", "developing", 8
-            headline = f"Age {age} {pos} — early days"
+            headline = f"Age {age} {pos}, early days"
             detail = f"Averaging {sc:.0f} from {games} games. {years_to_peak} years to {pos} peak window."
 
         elif age >= 30 and eff_pos_pct < 65:
             tag, css, tier = "Veteran", "veteran", 11
-            headline = f"{age}yo — {sc:.0f} avg"
+            headline = f"{age}yo, {sc:.0f} avg"
             if peak_avg >= 90:
                 detail = f"Past peak ({peak_avg:.0f} in {peak_year}). Now {sc:.0f}. {years_premium} premium seasons in career."
             else:
@@ -349,18 +349,18 @@ def _compute_profile_tags_inner(players):
 
         elif eff_pos_pct >= 40 and age <= 30:
             tag, css, tier = "Steady", "steady", 7
-            headline = f"Mid-tier {pos} — {sc:.0f} avg"
+            headline = f"Mid-tier {pos}, {sc:.0f} avg"
             detail = f"Positional rank: top {100-pos_pct:.0f}% of {pos}s. Overall: top {100-pct:.0f}%. Consistency {consistency:.0%}."
 
         elif age >= 25 and eff_pos_pct < 40:
             tag, css, tier = "Fringe", "fringe", 12
-            headline = f"Bottom half {pos} — {sc:.0f} avg"
+            headline = f"Bottom half {pos}, {sc:.0f} avg"
             detail = f"Below average for {pos} (bottom {pos_pct:.0f}%). {age}yo. Durability: {durability:.0f} games/yr."
 
         elif age <= 23 and sc < 60:
             tag, css, tier = "Project", "project", 9
-            headline = f"Age {age} — limited output"
-            detail = f"Averaging {sc:.0f}. Young enough to develop — {years_to_peak} years to {pos} peak."
+            headline = f"Age {age}, limited output"
+            detail = f"Averaging {sc:.0f}. Young enough to develop, {years_to_peak} years to {pos} peak."
 
         else:
             tag, css, tier = "Unclassified", "fringe", 13

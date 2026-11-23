@@ -33,9 +33,9 @@ const LC_CSS = `
 .lc-dot-delist { background:#f85149; }
 .lc-dot-ssp { background:#3fb950; }
 .lc-dot-commissioner { background:#d29922; }
-.lc-desc { font-size:.82rem; color:#cfcfd6; }
-.lc-date { font-size:.7rem; color:#63616d; margin-top:2px; }
-.lc-type-badge { display:inline-block; font-size:.65rem; font-weight:600; text-transform:uppercase; padding:2px 6px; border-radius:4px; margin-right:6px; }
+.lc-desc { font-size:.82rem; color:var(--kl-text-primary); }
+.lc-date { font-size:.8125rem; color:var(--kl-text-primary); margin-top:2px; }
+.lc-type-badge { display:inline-block; font-size:.8125rem; font-weight:600; text-transform:uppercase; padding:2px 6px; border-radius:4px; margin-right:6px; }
 .lc-badge-draft { background:rgba(236,236,246,.12); color:#ececf6; }
 .lc-badge-supplemental { background:rgba(240,136,62,.12); color:#f0883e; }
 .lc-badge-trade { background:rgba(188,140,255,.12); color:#bc8cff; }
@@ -43,8 +43,8 @@ const LC_CSS = `
 .lc-badge-ssp { background:rgba(63,185,80,.12); color:#3fb950; }
 .lc-badge-commissioner { background:rgba(210,153,34,.12); color:#d29922; }
 .lc-filter-bar { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-.lc-filter-btn { font-size:.72rem; padding:4px 10px; border-radius:12px; background:transparent; border:1px solid #2a292f; color:#a0a0ac; cursor:pointer; transition:all .15s; }
-.lc-filter-btn:hover { border-color:#ececf6; color:#cfcfd6; }
+.lc-filter-btn { font-size:.8125rem; padding:4px 10px; border-radius:12px; background:transparent; border:1px solid #2a292f; color:var(--kl-text-primary); cursor:pointer; transition:all .15s; }
+.lc-filter-btn:hover { border-color:#ececf6; color:var(--kl-text-primary); }
 .lc-filter-btn.active { background:rgba(236,236,246,.12); border-color:#ececf6; color:#ececf6; }
 .lc-card { background:#0e0d0f; border:1px solid #1e1d21; border-radius:12px; overflow:hidden; }
 .lc-card-header { display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid #1e1d21; }
@@ -52,7 +52,7 @@ const LC_CSS = `
 .lc-card-body { padding:16px 20px; }
 `
 
-// (filter key, display label) — labels match the Jinja buttons exactly
+// (filter key, display label), labels match the Jinja buttons exactly
 const FILTERS: [string, string][] = [
   ['all', 'All'],
   ['draft', 'Draft'],

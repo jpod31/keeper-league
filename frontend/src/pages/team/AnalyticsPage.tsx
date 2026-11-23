@@ -24,9 +24,9 @@ const ANALYTICS_CSS = `
 .wr-chapter:nth-child(9) { animation-delay: .48s; }
 @keyframes wrFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-.wr-label { font-size: .6rem; font-weight: 800; color: #63616d; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+.wr-label { font-size: .8125rem; font-weight: 800; color: var(--kl-text-primary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
 .wr-title { font-size: 1.22rem; font-weight: 800; color: #ebebee; line-height: 1.35; margin-bottom: 8px; letter-spacing: -.01em; }
-.wr-body { font-size: .88rem; color: #cfcfd6; line-height: 1.7; max-width: 720px; }
+.wr-body { font-size: .88rem; color: var(--kl-text-primary); line-height: 1.7; max-width: 720px; }
 
 .wr-card { background: linear-gradient(165deg, #151518 0%, #100f12 100%); border: 1px solid #1e1d21; border-radius: 14px; padding: 22px 22px; box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 20px 60px -20px rgba(0,0,0,.6); }
 .wr-card-tight { padding: 16px 18px; }
@@ -35,11 +35,11 @@ const ANALYTICS_CSS = `
 .wr-hero { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; padding: 26px 26px; background: radial-gradient(circle at 20% 30%, rgba(63,185,80,.08), transparent 50%), radial-gradient(circle at 80% 70%, rgba(81,78,95,.08), transparent 50%), linear-gradient(165deg, #151518, #0e0d0f); border: 1px solid #1e1d21; border-radius: 16px; margin-bottom: 24px; }
 .wr-hero-ring { position: relative; width: 104px; height: 104px; flex-shrink: 0; }
 .wr-hero-ring-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.9rem; font-weight: 900; color: #ebebee; letter-spacing: -.02em; }
-.wr-hero-ring-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: .52rem; font-weight: 800; color: #8a8895; text-transform: uppercase; letter-spacing: 1.2px; white-space: nowrap; }
+.wr-hero-ring-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: .8125rem; font-weight: 800; color: var(--kl-text-primary); text-transform: uppercase; letter-spacing: 1.2px; white-space: nowrap; }
 .wr-hero-title { font-size: 1.45rem; font-weight: 900; color: #ebebee; margin: 0 0 6px; letter-spacing: -.02em; }
-.wr-hero-verdict { font-size: .85rem; color: #cfcfd6; line-height: 1.55; margin: 0 0 12px; }
+.wr-hero-verdict { font-size: .85rem; color: var(--kl-text-primary); line-height: 1.55; margin: 0 0 12px; }
 .wr-hero-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.wr-chip { font-size: .7rem; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,.03); border: 1px solid #1e1d21; color: #a0a0ac; font-weight: 500; }
+.wr-chip { font-size: .8125rem; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,.03); border: 1px solid #1e1d21; color: var(--kl-text-primary); font-weight: 500; }
 .wr-chip b { color: #ebebee; font-weight: 700; margin-right: 2px; }
 .wr-chip-window { border-width: 1px; font-weight: 700; }
 
@@ -48,9 +48,9 @@ const ANALYTICS_CSS = `
 .wr-tl-line { position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, rgba(63,185,80,.6), rgba(236,236,246,.6), rgba(210,168,255,.4)); border-radius: 1px; }
 .wr-tl-node { position: relative; padding-bottom: 18px; padding-left: 10px; }
 .wr-tl-dot { position: absolute; left: -22px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #3fb950; box-shadow: 0 0 0 3px #0e0d0f, 0 0 14px rgba(63,185,80,.5); }
-.wr-tl-year { font-size: .68rem; font-weight: 800; color: #8a8895; letter-spacing: .5px; }
+.wr-tl-year { font-size: .8125rem; font-weight: 800; color: var(--kl-text-primary); letter-spacing: .5px; }
 .wr-tl-event { font-size: .88rem; color: #ebebee; font-weight: 700; margin-top: 1px; }
-.wr-tl-detail { font-size: .72rem; color: #a0a0ac; margin-top: 2px; }
+.wr-tl-detail { font-size: .8125rem; color: var(--kl-text-primary); margin-top: 2px; }
 
 /* Gap */
 .wr-gap { display: flex; align-items: center; gap: 18px; padding: 16px 18px; background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 10px; margin-top: 14px; }
@@ -60,26 +60,26 @@ const ANALYTICS_CSS = `
 .wr-gap-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, #ef4444, #fb923c); transition: width .6s ease; }
 .wr-gap-bar-fill-ok { background: linear-gradient(90deg, #514e5f, #3fb950); }
 .wr-gap-mark { position: absolute; top: -4px; width: 3px; height: 20px; background: #fbbf24; border-radius: 1.5px; box-shadow: 0 0 8px rgba(251,191,36,.6); }
-.wr-gap-labels { display: flex; justify-content: space-between; font-size: .66rem; color: #8a8895; }
+.wr-gap-labels { display: flex; justify-content: space-between; font-size: .8125rem; color: var(--kl-text-primary); }
 
 /* Depth */
 .wr-filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
-.wr-fbtn { padding: 5px 14px; border-radius: 8px; border: 1px solid #2a292f; background: transparent; color: #a0a0ac; font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .12s; }
-.wr-fbtn:hover { border-color: #63616d; color: #cfcfd6; }
+.wr-fbtn { padding: 5px 14px; border-radius: 8px; border: 1px solid #2a292f; background: transparent; color: var(--kl-text-primary); font-size: .8125rem; font-weight: 600; cursor: pointer; transition: all .12s; }
+.wr-fbtn:hover { border-color: #63616d; color: var(--kl-text-primary); }
 .wr-fbtn.active { border-color: #ececf6; color: #ececf6; background: rgba(236,236,246,.08); }
 
 .wr-depth-row { margin-bottom: 20px; }
 .wr-depth-row:last-child { margin-bottom: 0; }
 .wr-depth-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .wr-depth-hdr-left { display: flex; align-items: center; gap: 10px; }
-.wr-depth-pos { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; padding: 3px 10px; border-radius: 6px; font-size: .68rem; font-weight: 800; letter-spacing: .5px; }
+.wr-depth-pos { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; padding: 3px 10px; border-radius: 6px; font-size: .8125rem; font-weight: 800; letter-spacing: .5px; }
 .wr-depth-pos-DEF { background: rgba(88,166,255,.15); color: #58a6ff; }
 .wr-depth-pos-MID { background: rgba(210,168,255,.15); color: #d2a8ff; }
 .wr-depth-pos-RUC { background: rgba(63,185,80,.15); color: #3fb950; }
 .wr-depth-pos-FWD { background: rgba(251,146,60,.15); color: #fb923c; }
-.wr-depth-meta { font-size: .72rem; color: #a0a0ac; }
+.wr-depth-meta { font-size: .8125rem; color: var(--kl-text-primary); }
 .wr-depth-meta b { color: #ebebee; font-weight: 700; }
-.wr-depth-diff { font-size: .68rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
+.wr-depth-diff { font-size: .8125rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
 .wr-depth-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 8px; }
 .wr-pc { position: relative; padding: 12px 14px; background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 10px; cursor: pointer; transition: all .15s; overflow: hidden; }
 .wr-pc::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
@@ -87,37 +87,37 @@ const ANALYTICS_CSS = `
 .wr-pc-down::before { background: linear-gradient(180deg, #ef4444, rgba(239,68,68,.4)); }
 .wr-pc-flat::before { background: #2a292f; }
 .wr-pc:hover { transform: translateY(-2px); border-color: #63616d; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-.wr-pc-name { font-size: .78rem; font-weight: 700; color: #ebebee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wr-pc-name { font-size: .8125rem; font-weight: 700; color: #ebebee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wr-pc-sc { font-size: 1.15rem; font-weight: 900; margin: 2px 0; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-.wr-pc-meta { font-size: .64rem; color: #8a8895; display: flex; align-items: center; gap: 6px; }
-.wr-tag { font-size: .55rem; padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+.wr-pc-meta { font-size: .8125rem; color: var(--kl-text-primary); display: flex; align-items: center; gap: 6px; }
+.wr-tag { font-size: .8125rem; padding: 1px 6px; border-radius: 4px; font-weight: 700; }
 
 .wr-pmodal { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 14px 0 10px; }
 .wr-pmodal-stat { text-align: center; padding: 10px 4px; background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 8px; }
 .wr-pmodal-val { font-size: 1.05rem; font-weight: 800; color: #ebebee; font-variant-numeric: tabular-nums; }
-.wr-pmodal-lbl { font-size: .54rem; color: #8a8895; text-transform: uppercase; margin-top: 3px; letter-spacing: .5px; font-weight: 600; }
+.wr-pmodal-lbl { font-size: .8125rem; color: var(--kl-text-primary); text-transform: uppercase; margin-top: 3px; letter-spacing: .5px; font-weight: 600; }
 
 /* Trade */
 .wr-trade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .wr-trade-panel { background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 12px; padding: 16px 18px; }
-.wr-trade-title { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-.wr-trade-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #151518; font-size: .78rem; }
+.wr-trade-title { font-size: .8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.wr-trade-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #151518; font-size: .8125rem; }
 .wr-trade-row:last-child { border-bottom: none; }
 .wr-trade-row-body { flex: 1; min-width: 0; }
 .wr-trade-row-name { color: #ebebee; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wr-trade-row-sub { font-size: .65rem; color: #8a8895; }
+.wr-trade-row-sub { font-size: .8125rem; color: var(--kl-text-primary); }
 .wr-trade-row-score { font-weight: 800; min-width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
-.wr-trade-row-fills { font-size: .55rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(63,185,80,.14); color: #3fb950; text-transform: uppercase; letter-spacing: .5px; }
-.wr-pos-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; padding: 2px 6px; border-radius: 4px; font-size: .56rem; font-weight: 800; letter-spacing: .3px; }
+.wr-trade-row-fills { font-size: .8125rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(63,185,80,.14); color: #3fb950; text-transform: uppercase; letter-spacing: .5px; }
+.wr-pos-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; padding: 2px 6px; border-radius: 4px; font-size: .8125rem; font-weight: 800; letter-spacing: .3px; }
 .wr-surplus-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.wr-surplus-item { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 8px; font-size: .76rem; }
+.wr-surplus-item { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 8px; font-size: .8125rem; }
 .wr-surplus-name { color: #ebebee; font-weight: 600; }
 .wr-surplus-sc { color: #fb923c; font-weight: 800; }
 
 /* AI sections */
 .wr-ai { padding: 18px 22px; background: #0e0d0f; border: 1px solid #1e1d21; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid; position: relative; }
-.wr-ai-title { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-.wr-ai-body { font-size: .86rem; color: #cfcfd6; line-height: 1.65; }
+.wr-ai-title { font-size: .8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.wr-ai-body { font-size: .86rem; color: var(--kl-text-primary); line-height: 1.65; }
 
 /* Two column health + league */
 .wr-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -125,13 +125,13 @@ const ANALYTICS_CSS = `
 /* League standings inline */
 .wr-ls-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid #151518; }
 .wr-ls-row:last-child { border-bottom: none; }
-.wr-ls-rank { width: 22px; text-align: center; font-size: .72rem; font-weight: 800; color: #63616d; font-variant-numeric: tabular-nums; }
-.wr-ls-name { flex: 1; font-size: .78rem; color: #cfcfd6; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wr-ls-rank { width: 22px; text-align: center; font-size: .8125rem; font-weight: 800; color: var(--kl-text-primary); font-variant-numeric: tabular-nums; }
+.wr-ls-name { flex: 1; font-size: .8125rem; color: var(--kl-text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wr-ls-name-you { color: #ececf6; font-weight: 800; }
 .wr-ls-bar { width: 80px; height: 6px; background: #1e1d21; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
 .wr-ls-bar-fill { height: 100%; background: #2a292f; transition: width .6s ease; }
 .wr-ls-bar-fill-you { background: linear-gradient(90deg, #3fb950, #514e5f); }
-.wr-ls-sc { min-width: 38px; text-align: right; font-size: .78rem; font-weight: 700; color: #a0a0ac; font-variant-numeric: tabular-nums; }
+.wr-ls-sc { min-width: 38px; text-align: right; font-size: .8125rem; font-weight: 700; color: var(--kl-text-primary); font-variant-numeric: tabular-nums; }
 .wr-ls-sc-you { color: #ececf6; }
 
 @media (max-width: 767.98px) {
@@ -298,7 +298,7 @@ function DynastyRace({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>
           const pct = (t.total / maxTotal) * 100
           return (
             <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '22px 1fr 60px', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: '.7rem', fontWeight: 800, color: t.isYou ? '#ececf6' : '#63616d', textAlign: 'center' }}>{i + 1}</span>
+              <span style={{ fontSize: '.8125rem', fontWeight: 800, color: t.isYou ? '#ececf6' : '#63616d', textAlign: 'center' }}>{i + 1}</span>
               <div style={{ position: 'relative', height: 30, background: 'rgba(255,255,255,.02)', borderRadius: 6, overflow: 'hidden' }}>
                 <div
                   style={{
@@ -315,7 +315,7 @@ function DynastyRace({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>
                 <div style={{
                   position: 'absolute', left: 12, top: 0, bottom: 0,
                   display: 'flex', alignItems: 'center',
-                  fontSize: '.78rem', fontWeight: 700,
+                  fontSize: '.8125rem', fontWeight: 700,
                   color: t.isYou ? '#ebebee' : '#cfcfd6',
                   textShadow: '0 1px 2px rgba(0,0,0,.5)',
                 }}>
@@ -327,7 +327,7 @@ function DynastyRace({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>
           )
         })}
       </div>
-      <div style={{ fontSize: '.6rem', color: '#63616d', textAlign: 'center', marginTop: 10 }}>
+      <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textAlign: 'center', marginTop: 10 }}>
         Best 23 auto-selected per year · kids develop and displace veterans over time
       </div>
     </div>
@@ -410,7 +410,7 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
           ['owned', `Your Players' VFL Form (${intel.vfl_form_owned?.length || 0})`],
         ].map(([key, label]) => (
           <button key={key} type="button" className={`wr-fbtn${tab === key ? ' active' : ''}`}
-            onClick={() => setTab(key as any)} style={{ fontSize: '.7rem' }}>
+            onClick={() => setTab(key as any)} style={{ fontSize: '.8125rem' }}>
             {label}
           </button>
         ))}
@@ -418,132 +418,132 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
 
       {tab === 'pickup' && (
         <>
-          <div style={{ fontSize: '.6rem', color: '#8a8895', marginBottom: 8 }}>
-            AFL-listed free agents performing well in state leagues — ML-projected AFL output
+          <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 8 }}>
+            AFL-listed free agents performing well in state leagues, ML-projected AFL output
           </div>
           {(intel.pickup_targets || []).map(p => (
             <div key={p.name} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 50px 50px 50px',
               gap: 6, padding: '6px 8px', borderBottom: '1px solid rgba(42,41,47,.15)',
-              fontSize: '.78rem', alignItems: 'center' }}>
+              fontSize: '.8125rem', alignItems: 'center' }}>
               <div>
                 <div style={{ fontWeight: 700, color: '#ebebee' }}>{p.name}
-                  {p.fills_gap && <span style={{ fontSize: '.55rem', fontWeight: 700, marginLeft: 6,
+                  {p.fills_gap && <span style={{ fontSize: '.8125rem', fontWeight: 700, marginLeft: 6,
                     padding: '1px 5px', borderRadius: 3, background: 'rgba(63,185,80,.12)', color: '#3fb950' }}>
                     FILLS {p.fills_gap} GAP
                   </span>}
                 </div>
-                <div style={{ fontSize: '.65rem', color: '#a0a0ac' }}>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                   {p.position} · {p.afl_team} · {p.age}yo · {p.sl_competition} {p.sl_team}
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 800, color: '#ececf6' }}>{Math.round(p.sl_fantasy_avg)}</div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>SL FAN</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>SL FAN</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 800, color: scColor(p.projected_afl_sc) }}>{Math.round(p.projected_afl_sc)}</div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>AFL PROJ</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>AFL PROJ</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 700, color: p.breakout_pct >= 50 ? '#3fb950' : p.breakout_pct >= 25 ? '#fbbf24' : '#a0a0ac' }}>
                   {p.breakout_pct}%
                 </div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>BRKOUT</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>BRKOUT</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 600, color: '#a0a0ac' }}>{p.sl_matches}gm</div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>SL GM</div>
+                <div style={{ fontWeight: 600, color: 'var(--kl-text-primary)' }}>{p.sl_matches}gm</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>SL GM</div>
               </div>
             </div>
           ))}
           {(!intel.pickup_targets || intel.pickup_targets.length === 0) && (
-            <div style={{ color: '#8a8895', textAlign: 'center', padding: 20, fontSize: '.8rem' }}>No pickup targets found</div>
+            <div style={{ color: 'var(--kl-text-primary)', textAlign: 'center', padding: 20, fontSize: '.8125rem' }}>No pickup targets found</div>
           )}
         </>
       )}
 
       {tab === 'draft' && (
         <>
-          <div style={{ fontSize: '.6rem', color: '#8a8895', marginBottom: 8 }}>
-            Coates Talent League (U18) prospects — ML draft & breakout projections
+          <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 8 }}>
+            Coates Talent League (U18) prospects, ML draft & breakout projections
           </div>
           {(intel.draft_watch || []).map(p => (
             <div key={p.name} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 50px 50px 50px',
               gap: 6, padding: '6px 8px', borderBottom: '1px solid rgba(42,41,47,.15)',
-              fontSize: '.78rem', alignItems: 'center' }}>
+              fontSize: '.8125rem', alignItems: 'center' }}>
               <div>
                 <div style={{ fontWeight: 700, color: '#ebebee' }}>{p.name}
-                  {p.fills_gap && <span style={{ fontSize: '.55rem', fontWeight: 700, marginLeft: 6,
+                  {p.fills_gap && <span style={{ fontSize: '.8125rem', fontWeight: 700, marginLeft: 6,
                     padding: '1px 5px', borderRadius: 3, background: 'rgba(63,185,80,.12)', color: '#3fb950' }}>
                     FILLS {p.fills_gap} GAP
                   </span>}
                 </div>
-                <div style={{ fontSize: '.65rem', color: '#a0a0ac' }}>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                   {p.position_group} · {p.sl_team} · {p.age}yo
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 800, color: '#ececf6' }}>{Math.round(p.sl_fantasy_avg)}</div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>NAB FAN</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>NAB FAN</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 800, color: scColor(p.projected_afl_sc) }}>{Math.round(p.projected_afl_sc)}</div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>AFL PROJ</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>AFL PROJ</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 700, color: p.draft_probability >= 40 ? '#3fb950' : p.draft_probability >= 20 ? '#fbbf24' : '#a0a0ac' }}>
                   {p.draft_probability}%
                 </div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>DRAFT</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>DRAFT</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 700, color: p.breakout_pct >= 50 ? '#3fb950' : p.breakout_pct >= 25 ? '#fbbf24' : '#a0a0ac' }}>
                   {p.breakout_pct}%
                 </div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>BRKOUT</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>BRKOUT</div>
               </div>
             </div>
           ))}
           {(!intel.draft_watch || intel.draft_watch.length === 0) && (
-            <div style={{ color: '#8a8895', textAlign: 'center', padding: 20, fontSize: '.8rem' }}>No draft prospects found</div>
+            <div style={{ color: 'var(--kl-text-primary)', textAlign: 'center', padding: 20, fontSize: '.8125rem' }}>No draft prospects found</div>
           )}
         </>
       )}
 
       {tab === 'owned' && (
         <>
-          <div style={{ fontSize: '.6rem', color: '#8a8895', marginBottom: 8 }}>
+          <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 8 }}>
             How your rostered players are performing in state leagues this season
           </div>
           {(intel.vfl_form_owned || []).map(p => (
             <div key={p.name} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px 50px',
               gap: 6, padding: '6px 8px', borderBottom: '1px solid rgba(42,41,47,.15)',
-              fontSize: '.78rem', alignItems: 'center' }}>
+              fontSize: '.8125rem', alignItems: 'center' }}>
               <div>
                 <div style={{ fontWeight: 700, color: '#ebebee' }}>{p.name}</div>
-                <div style={{ fontSize: '.65rem', color: '#a0a0ac' }}>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                   {p.position} · {p.age}yo · {p.sl_competition} {p.sl_team}
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 800, color: '#ececf6' }}>{Math.round(p.sl_fantasy_avg)}</div>
-                <div style={{ fontSize: '.48rem', color: '#63616d' }}>SL FAN</div>
+                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>SL FAN</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 {p.afl_sc_avg > 0 ? (
                   <>
                     <div style={{ fontWeight: 800, color: scColor(p.afl_sc_avg) }}>{Math.round(p.afl_sc_avg)}</div>
-                    <div style={{ fontSize: '.48rem', color: '#63616d' }}>AFL SC</div>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>AFL SC</div>
                   </>
                 ) : p.predicted_afl_sc ? (
                   <>
                     <div style={{ fontWeight: 800, color: scColor(p.predicted_afl_sc) }}>{Math.round(p.predicted_afl_sc)}</div>
-                    <div style={{ fontSize: '.48rem', color: '#d2a8ff' }}>PROJ AFL</div>
+                    <div style={{ fontSize: '.8125rem', color: '#d2a8ff' }}>PROJ AFL</div>
                   </>
                 ) : (
                   <>
-                    <div style={{ fontWeight: 600, color: '#63616d' }}>—</div>
-                    <div style={{ fontSize: '.48rem', color: '#63616d' }}>NO AFL</div>
+                    <div style={{ fontWeight: 600, color: 'var(--kl-text-primary)' }}>-</div>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>NO AFL</div>
                   </>
                 )}
               </div>
@@ -553,19 +553,19 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
                     <div style={{ fontWeight: 700, color: p.sl_vs_afl > 10 ? '#3fb950' : p.sl_vs_afl < -10 ? '#ef4444' : '#a0a0ac' }}>
                       {p.sl_vs_afl > 0 ? '+' : ''}{Math.round(p.sl_vs_afl)}
                     </div>
-                    <div style={{ fontSize: '.48rem', color: '#63616d' }}>SL vs AFL</div>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>SL vs AFL</div>
                   </>
                 ) : (
                   <>
-                    <div style={{ fontWeight: 600, color: '#d2a8ff', fontSize: '.65rem' }}>Watch</div>
-                    <div style={{ fontSize: '.48rem', color: '#63616d' }}>DEVELOPING</div>
+                    <div style={{ fontWeight: 600, color: '#d2a8ff', fontSize: '.8125rem' }}>Watch</div>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>DEVELOPING</div>
                   </>
                 )}
               </div>
             </div>
           ))}
           {(!intel.vfl_form_owned || intel.vfl_form_owned.length === 0) && (
-            <div style={{ color: '#8a8895', textAlign: 'center', padding: 20, fontSize: '.8rem' }}>No state league data for your players</div>
+            <div style={{ color: 'var(--kl-text-primary)', textAlign: 'center', padding: 20, fontSize: '.8125rem' }}>No state league data for your players</div>
           )}
         </>
       )}
@@ -617,10 +617,10 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
           border: `2px solid ${isNew ? '#3fb950' : c}`,
           boxShadow: isNew ? '0 0 8px rgba(63,185,80,.3)' : 'none',
         }}>
-          <span style={{ fontSize: '.75rem', fontWeight: 900, color: scC(p.sc), lineHeight: 1 }}>{Math.round(p.sc)}</span>
-          <span style={{ fontSize: '.48rem', fontWeight: 600, color: c, lineHeight: 1 }}>{p.age}</span>
+          <span style={{ fontSize: '.8125rem', fontWeight: 900, color: scC(p.sc), lineHeight: 1 }}>{Math.round(p.sc)}</span>
+          <span style={{ fontSize: '.8125rem', fontWeight: 600, color: c, lineHeight: 1 }}>{p.age}</span>
         </div>
-        <span style={{ fontSize: '.5rem', fontWeight: 600, color: '#cfcfd6', marginTop: 2,
+        <span style={{ fontSize: '.8125rem', fontWeight: 600, color: 'var(--kl-text-primary)', marginTop: 2,
           textAlign: 'center', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis',
           whiteSpace: 'nowrap', maxWidth: 56 }}>{label}</span>
       </div>
@@ -644,7 +644,7 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         {years.map((y, i) => (
           <button key={y.year} onClick={() => setYearIdx(i)}
-            style={{ flex: 1, padding: '6px 0', fontSize: '.72rem', fontWeight: i === yearIdx ? 900 : 500,
+            style={{ flex: 1, padding: '6px 0', fontSize: '.8125rem', fontWeight: i === yearIdx ? 900 : 500,
               background: i === yearIdx ? 'rgba(236,236,246,.15)' : 'transparent',
               color: i === yearIdx ? '#ececf6' : '#8a8895',
               border: `1px solid ${i === yearIdx ? '#ececf6' : '#1e1d21'}`, borderRadius: 8, cursor: 'pointer',
@@ -655,11 +655,11 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
       </div>
 
       {/* Summary chips */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, justifyContent: 'center', fontSize: '.72rem' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, justifyContent: 'center', fontSize: '.8125rem' }}>
         <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(236,236,246,.08)', color: '#ececf6', fontWeight: 700 }}>
           {Math.round(totalSc)} SC
         </span>
-        <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(160,160,172,.08)', color: '#cfcfd6', fontWeight: 600 }}>
+        <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(160,160,172,.08)', color: 'var(--kl-text-primary)', fontWeight: 600 }}>
           {avgAge.toFixed(1)} avg age
         </span>
         {delta != null && (
@@ -697,7 +697,7 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
       {/* Emergency bench */}
       {emergencies.length > 0 && (
         <div style={{ marginTop: 12, padding: '10px 0', borderTop: '1px solid #1e1d21' }}>
-          <div style={{ textAlign: 'center', fontSize: '.55rem', fontWeight: 700, color: '#63616d',
+          <div style={{ textAlign: 'center', fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)',
             textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Emergencies</div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
             {emergencies.sort((a, b) => b.sc - a.sc).map(p =>
@@ -736,11 +736,11 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
     const ma = payload.find(p => p.name === 'ma')?.value ?? 0
     return (
       <div style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 10, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
-        <div style={{ fontSize: '.72rem', color: '#a0a0ac', marginBottom: 4 }}>{label}</div>
+        <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 4 }}>{label}</div>
         <div style={{ fontSize: '1.1rem', fontWeight: 900, color: score >= 100 ? '#3fb950' : score >= 70 ? '#ececf6' : '#a0a0ac' }}>
           {score}
         </div>
-        <div style={{ fontSize: '.65rem', color: '#8a8895', marginTop: 2 }}>3-game avg: {ma}</div>
+        <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginTop: 2 }}>3-game avg: {ma}</div>
       </div>
     )
   }
@@ -769,8 +769,8 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#f2f2f4', letterSpacing: '-.02em', lineHeight: 1.2 }}>{player.name}</div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 5, fontSize: '.78rem', color: '#a0a0ac', flexWrap: 'wrap' }}>
-                <span className={`pos-badge badge-${player.position.split('/')[0].toLowerCase()}`} style={{ fontSize: '.6rem', padding: '2px 6px' }}>{player.position}</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 5, fontSize: '.8125rem', color: 'var(--kl-text-primary)', flexWrap: 'wrap' }}>
+                <span className={`pos-badge badge-${player.position.split('/')[0].toLowerCase()}`} style={{ fontSize: '.8125rem', padding: '2px 6px' }}>{player.position}</span>
                 <span>{roleLabels[player.role_bucket] || player.position}</span>
                 <span>·</span>
                 <span>{player.age}yo</span>
@@ -780,7 +780,7 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
               </div>
             </div>
             <button type="button" onClick={onClose}
-              style={{ background: 'rgba(255,255,255,.05)', border: 'none', color: '#a0a0ac', fontSize: '1rem', cursor: 'pointer', padding: '6px 8px', borderRadius: 8, flexShrink: 0 }}>
+              style={{ background: 'rgba(255,255,255,.05)', border: 'none', color: 'var(--kl-text-primary)', fontSize: '1rem', cursor: 'pointer', padding: '6px 8px', borderRadius: 8, flexShrink: 0 }}>
               <i className="bi bi-x-lg"></i>
             </button>
           </div>
@@ -805,10 +805,10 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
             </div>
           </div>
 
-          {/* Season form chart — bar + moving average line */}
+          {/* Season form chart, bar + moving average line */}
           {chartData.length > 0 && (
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>
+              <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>
                 {new Date().getFullYear()} Season Form
               </div>
               <div style={{ height: 180 }}>
@@ -828,8 +828,8 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
                 </ResponsiveContainer>
               </div>
               {/* Moving average summary */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.72rem', color: '#8a8895' }}>
-                <span>Season avg: <b style={{ color: '#cfcfd6' }}>{Math.round(avg)}</b></span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
+                <span>Season avg: <b style={{ color: 'var(--kl-text-primary)' }}>{Math.round(avg)}</b></span>
                 {scores.length >= 3 && (
                   <span>Last 3: <b style={{ color: chartData[chartData.length - 1]?.ma >= avg ? '#3fb950' : '#f85149' }}>
                     {chartData[chartData.length - 1]?.ma}
@@ -847,21 +847,21 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
           {/* Additional insights */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
             <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(42,41,47,.3)', borderRadius: 10, padding: '12px 14px' }}>
-              <div style={{ fontSize: '.62rem', color: '#8a8895', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>Consistency</div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#cfcfd6' }}>
+              <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>Consistency</div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--kl-text-primary)' }}>
                 {scores.length >= 3 ? (() => {
                   const std = Math.sqrt(scores.reduce((sum, s) => sum + (s - avg) ** 2, 0) / scores.length)
                   const cv = avg > 0 ? Math.round((1 - std / avg) * 100) : 0
                   return <><span style={{ color: cv >= 70 ? '#3fb950' : cv >= 50 ? '#d29922' : '#f85149' }}>{cv}%</span></>
-                })() : '—'}
+                })() : '-'}
               </div>
             </div>
             <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(42,41,47,.3)', borderRadius: 10, padding: '12px 14px' }}>
-              <div style={{ fontSize: '.62rem', color: '#8a8895', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>100+ Rate</div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#cfcfd6' }}>
+              <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>100+ Rate</div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--kl-text-primary)' }}>
                 {scores.length > 0 ? (
                   <span style={{ color: '#3fb950' }}>{Math.round(scores.filter(s => s >= 100).length / scores.length * 100)}%</span>
-                ) : '—'}
+                ) : '-'}
               </div>
             </div>
           </div>
@@ -907,7 +907,7 @@ function TradeMarket({ table }: { table: AnalyticsData['trade_table'] }) {
             </div>
           ))}
           {(!table.free_agents || table.free_agents.length === 0) && (
-            <div style={{ fontSize: '.74rem', color: '#63616d', textAlign: 'center', padding: 12 }}>No free agents</div>
+            <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textAlign: 'center', padding: 12 }}>No free agents</div>
           )}
         </div>
 
@@ -927,7 +927,7 @@ function TradeMarket({ table }: { table: AnalyticsData['trade_table'] }) {
             </div>
           ))}
           {(!table.trade_targets || table.trade_targets.length === 0) && (
-            <div style={{ fontSize: '.74rem', color: '#63616d', textAlign: 'center', padding: 12 }}>No trade targets</div>
+            <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textAlign: 'center', padding: 12 }}>No trade targets</div>
           )}
         </div>
       </div>
@@ -966,7 +966,7 @@ function HealthRadar({ components }: { components: Record<string, number> }) {
     <ResponsiveContainer width="100%" height={240}>
       <RadarChart data={data} outerRadius="75%">
         <PolarGrid stroke="#1e1d21" />
-        <PolarAngleAxis dataKey="axis" tick={{ fill: '#a0a0ac', fontSize: 11, fontWeight: 600 }} />
+        <PolarAngleAxis dataKey="axis" tick={{ fill: '#a0a0ac', fontSize: 13, fontWeight: 600 }} />
         <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
         <Radar
           name="Health"
@@ -977,7 +977,7 @@ function HealthRadar({ components }: { components: Record<string, number> }) {
           fillOpacity={0.25}
           dot={{ fill: '#ececf6', strokeWidth: 2, stroke: '#0e0d0f', r: 4 }}
         />
-        <Tooltip contentStyle={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8, fontSize: '.78rem' }} />
+        <Tooltip contentStyle={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8, fontSize: '.8125rem' }} />
       </RadarChart>
     </ResponsiveContainer>
   )
@@ -994,7 +994,7 @@ function LeagueStandings({ landscape, teamId }: { landscape: AnalyticsData['land
           <div key={t.team_id} className="wr-ls-row">
             <span className="wr-ls-rank" style={{ color: you ? '#ececf6' : '#63616d' }}>{i + 1}</span>
             <span className={`wr-ls-name${you ? ' wr-ls-name-you' : ''}`}>
-              {t.name}{you && <span style={{ fontSize: '.6rem', color: '#8a8895', fontWeight: 500, marginLeft: 4 }}>(you)</span>}
+              {t.name}{you && <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', fontWeight: 500, marginLeft: 4 }}>(you)</span>}
             </span>
             <div className="wr-ls-bar">
               <div className={`wr-ls-bar-fill${you ? ' wr-ls-bar-fill-you' : ''}`} style={{ width: `${(t.total_sc / maxSc) * 100}%` }} />
@@ -1060,7 +1060,7 @@ export function AnalyticsPage() {
             onClick={handleRebuild}
             style={{
               background: 'rgba(255,255,255,.04)', border: '1px solid rgba(42,41,47,.4)',
-              color: '#a0a0ac', fontSize: '.72rem', fontWeight: 600,
+              color: 'var(--kl-text-primary)', fontSize: '.8125rem', fontWeight: 600,
               padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 6,
             }}
@@ -1084,7 +1084,7 @@ export function AnalyticsPage() {
           <Chapter
             label="The Next Generation"
             title="When your kids take over"
-            body="Your youth pipeline is your biggest asset. Here's when each young player is projected to break into the best 22 — and who they replace."
+            body="Your youth pipeline is your biggest asset. Here's when each young player is projected to break into the best 22, and who they replace."
           >
             <KidTimeline kids={kids} />
           </Chapter>
@@ -1133,13 +1133,13 @@ export function AnalyticsPage() {
             <div className="wr-duo">
               {hasHealth && (
                 <div className="wr-card wr-card-tight">
-                  <div style={{ fontSize: '.7rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Team Radar</div>
+                  <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Team Radar</div>
                   <HealthRadar components={a.health_components} />
                 </div>
               )}
               {data.landscape?.length > 0 && (
                 <div className="wr-card wr-card-tight">
-                  <div style={{ fontSize: '.7rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>League Standings (by avg)</div>
+                  <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>League Standings (by avg)</div>
                   <LeagueStandings landscape={data.landscape} teamId={Number(teamId)} />
                 </div>
               )}
@@ -1164,7 +1164,7 @@ export function AnalyticsPage() {
         )}
 
         <div style={{ textAlign: 'center', marginTop: 10, paddingBottom: 30 }}>
-          <Link to={`/leagues/${leagueId}/team/${teamId}`} style={{ color: '#8a8895', fontSize: '.78rem', textDecoration: 'none' }}>
+          <Link to={`/leagues/${leagueId}/team/${teamId}`} style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem', textDecoration: 'none' }}>
             <i className="bi bi-arrow-left me-1"></i>Back to squad
           </Link>
         </div>

@@ -80,7 +80,7 @@ export function InvitePage() {
             <div className="col-6">
               <div className="card">
                 <div className="card-body p-3">
-                  <div className="text-secondary" style={{ fontSize: '.7rem', textTransform: 'uppercase' }}>Commissioner</div>
+                  <div className="text-secondary" style={{ fontSize: '.8125rem', textTransform: 'uppercase' }}>Commissioner</div>
                   <div className="fw-bold">{data.league.commissioner}</div>
                 </div>
               </div>
@@ -88,7 +88,7 @@ export function InvitePage() {
             <div className="col-6">
               <div className="card">
                 <div className="card-body p-3">
-                  <div className="text-secondary" style={{ fontSize: '.7rem', textTransform: 'uppercase' }}>Squad Size</div>
+                  <div className="text-secondary" style={{ fontSize: '.8125rem', textTransform: 'uppercase' }}>Squad Size</div>
                   <div className="fw-bold">{data.league.squad_size}</div>
                 </div>
               </div>

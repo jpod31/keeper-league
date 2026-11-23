@@ -47,7 +47,7 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
   return (
     <div className="card mb-4">
       <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>{title}
-        {sub && <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>{sub}</span>}</h5></div>
+        {sub && <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.8125rem' }}>{sub}</span>}</h5></div>
       <div className="card-body">{children}</div>
     </div>
   )
@@ -57,7 +57,7 @@ function SplitList({ title, rows }: { title: string; rows: SplitRow[] }) {
   return (
     <div className="split-col">
       <div className="split-col-title">{title}</div>
-      {rows.length === 0 ? <div className="text-secondary" style={{ fontSize: '.75rem', padding: 6 }}>—</div> : rows.map(r => (
+      {rows.length === 0 ? <div className="text-secondary" style={{ fontSize: '.8125rem', padding: 6 }}>-</div> : rows.map(r => (
         <div key={r.key} className="split-row" title={`${r.key}: ${r.avg} avg over ${r.games} games`}>
           <span className="split-name">{r.key}</span>
           <span className="split-games">{r.games}g</span>
@@ -178,9 +178,9 @@ export function PlayerProfilePage() {
             <div className="usage-section-title">Score distribution</div>
             <ResponsiveContainer width="100%" height={150}>
               <BarChart data={sc.hist} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
-                <XAxis dataKey="bucket" tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
-                <YAxis allowDecimals={false} tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
-                <Tooltip cursor={{ fill: 'rgba(220,218,231,.08)' }} contentStyle={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                <XAxis dataKey="bucket" tick={{ fill: '#a0a0ac', fontSize: 13 }} stroke="#2a292f" />
+                <YAxis allowDecimals={false} tick={{ fill: '#a0a0ac', fontSize: 13 }} stroke="#2a292f" />
+                <Tooltip cursor={{ fill: 'rgba(220,218,231,.08)' }} contentStyle={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, fontSize: '.8125rem' }} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>{sc.hist.map((h, i) => <Cell key={i} fill={HIST_COLOR[h.bucket] || '#e3e1ec'} />)}</Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -223,12 +223,12 @@ export function PlayerProfilePage() {
           </div>
           {pj.season_trend.length > 1 && (
             <div className="usage-timeline-wrap">
-              <div className="usage-section-title">Season SC average — career arc</div>
+              <div className="usage-section-title">Season SC average, career arc</div>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={pj.season_trend} margin={{ top: 8, right: 14, bottom: 0, left: -18 }}>
-                  <XAxis dataKey="year" tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
-                  <YAxis tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
-                  <Tooltip cursor={{ stroke: '#2a292f' }} contentStyle={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                  <XAxis dataKey="year" tick={{ fill: '#a0a0ac', fontSize: 13 }} stroke="#2a292f" />
+                  <YAxis tick={{ fill: '#a0a0ac', fontSize: 13 }} stroke="#2a292f" />
+                  <Tooltip cursor={{ stroke: '#2a292f' }} contentStyle={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, fontSize: '.8125rem' }} />
                   <Line type="monotone" dataKey="avg" stroke="#ececf6" strokeWidth={2} dot={{ r: 3, fill: '#ececf6' }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -248,7 +248,7 @@ export function PlayerProfilePage() {
           </div>
           {u.timeline.length > 0 && (
             <div className="usage-timeline-wrap">
-              <div className="usage-section-title">Season usage — round by round</div>
+              <div className="usage-section-title">Season usage, round by round</div>
               <div className="usage-ribbon">
                 {u.timeline.map(t => {
                   const meta = ROLE_META[t.role] || ROLE_META.out

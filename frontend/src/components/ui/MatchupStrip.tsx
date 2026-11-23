@@ -1,8 +1,8 @@
 /**
- * MatchupStrip — inline status pill for this round's matchup.
+ * MatchupStrip, inline status pill for this round's matchup.
  *
  * Visually matches the existing .kl-status-pill chips on SquadPage
- * (delist / trade / squad-cap pills) — small icon ring + 2-line text,
+ * (delist / trade / squad-cap pills), small icon ring + 2-line text,
  * NOT a full-width banner. Clicks navigate to the matchup detail.
  *
  * Three tones via icon ring:

@@ -13,7 +13,7 @@ interface Recap {
 }
 
 /**
- * Round Recap modal — shown once per user per completed round on first visit
+ * Round Recap modal, shown once per user per completed round on first visit
  * after the round finishes. Triggers based on localStorage key.
  */
 export function RoundRecapModal() {
@@ -24,7 +24,7 @@ export function RoundRecapModal() {
   useEffect(() => {
     if (!league || !league.user_team) return
     // Once the season is over the year-in-review takes over the "first visit"
-    // slot — a stale round-24 recap stacked behind it is just noise.
+    // slot, a stale round-24 recap stacked behind it is just noise.
     if (league.season_review_year) return
     const lid = league.id
     const tid = league.user_team.id
@@ -104,10 +104,10 @@ export function RoundRecapModal() {
           border-bottom: 1px solid rgba(220,218,231,.1);
         }
         .kl-recap-round-lbl {
-          font-size: .58rem;
-          color: #8c8c98;
+          font-size: .8125rem;
+          color: var(--kl-text-primary);
           text-transform: uppercase;
-          letter-spacing: .22em;
+          letter-spacing: .06em;
           font-weight: 800;
         }
         .kl-recap-title {
@@ -140,7 +140,7 @@ export function RoundRecapModal() {
         .kl-recap-score {
           margin-top: 8px;
           font-size: .82rem;
-          color: #b0b0bc;
+          color: var(--kl-text-primary);
           font-variant-numeric: tabular-nums;
           font-feature-settings: "tnum" 1, "zero" 0;
         }
@@ -170,10 +170,10 @@ export function RoundRecapModal() {
         }
         .kl-recap-mvp-body { flex: 1; min-width: 0; }
         .kl-recap-mvp-label {
-          font-size: .54rem;
+          font-size: .8125rem;
           color: #c2932f;
           text-transform: uppercase;
-          letter-spacing: .18em;
+          letter-spacing: .06em;
           font-weight: 800;
         }
         .kl-recap-mvp-name {
@@ -185,12 +185,12 @@ export function RoundRecapModal() {
           line-height: 1.15;
         }
         .kl-recap-mvp-sub {
-          font-size: .72rem;
-          color: #b0b0bc;
+          font-size: .8125rem;
+          color: var(--kl-text-primary);
           margin-top: 2px;
         }
         .kl-recap-mvp-cap {
-          font-size: .54rem;
+          font-size: .8125rem;
           padding: 1px 6px;
           margin-left: 8px;
           background: rgba(194,147,47,.24);
@@ -198,7 +198,7 @@ export function RoundRecapModal() {
           border: 1px solid rgba(194,147,47,.45);
           border-radius: 3px;
           font-weight: 800;
-          letter-spacing: .08em;
+          letter-spacing: .06em;
           vertical-align: middle;
         }
         .kl-recap-mvp-score {
@@ -241,10 +241,10 @@ export function RoundRecapModal() {
         .kl-recap-row-icon.blowout { background: rgba(221,219,232,.14); color: #e6e4ee; border: 1px solid rgba(221,219,232,.32); }
         .kl-recap-row-body { flex: 1; min-width: 0; }
         .kl-recap-row-label {
-          font-size: .54rem;
-          color: #8c8c98;
+          font-size: .8125rem;
+          color: var(--kl-text-primary);
           text-transform: uppercase;
-          letter-spacing: .14em;
+          letter-spacing: .06em;
           font-weight: 800;
         }
         .kl-recap-row-value {
@@ -256,8 +256,8 @@ export function RoundRecapModal() {
           word-break: break-word;
         }
         .kl-recap-row-sub {
-          font-size: .66rem;
-          color: #8c8c98;
+          font-size: .8125rem;
+          color: var(--kl-text-primary);
           margin-top: 1px;
         }
         .kl-recap-row-chip {
@@ -291,7 +291,7 @@ export function RoundRecapModal() {
           border: 1px solid rgba(220,218,231,.22);
           background: rgba(25,24,28,.5);
           color: #e8e7f0;
-          font-size: .76rem;
+          font-size: .8125rem;
           font-weight: 700;
           letter-spacing: .04em;
           cursor: pointer;

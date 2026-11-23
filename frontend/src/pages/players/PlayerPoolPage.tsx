@@ -186,13 +186,13 @@ const POOL_CSS = `
   transition: border-color .15s, background .15s;
 }
 .pf-search:focus-within { border-color: rgba(230,229,238,.55); background: rgba(255,255,255,.07); }
-.pf-search i { color: #8d8a98; font-size: .82rem; }
+.pf-search i { color: var(--kl-text-primary); font-size: .82rem; }
 .pf-search input { all: unset; flex: 1; min-width: 0; font-size: .82rem; color: #eeedf1; }
-.pf-search input::placeholder { color: #7d7a89; }
-.pf-search button { all: unset; cursor: pointer; color: #8d8a98; display: grid; place-items: center; }
+.pf-search input::placeholder { color: var(--kl-text-primary); }
+.pf-search button { all: unset; cursor: pointer; color: var(--kl-text-primary); display: grid; place-items: center; }
 .pf-search button:hover { color: #eeedf1; }
 
-/* Position — a segmented control, not a dropdown. Four options should
+/* Position, a segmented control, not a dropdown. Four options should
    never cost a click to see. */
 .pf-seg {
   display: inline-flex; padding: 3px; border-radius: 10px;
@@ -201,7 +201,7 @@ const POOL_CSS = `
 .pf-seg-btn {
   all: unset; cursor: pointer;
   padding: 5px 12px; border-radius: 7px;
-  font-size: .74rem; font-weight: 750; color: #adacb5;
+  font-size: .8125rem; font-weight: 750; color: var(--kl-text-primary);
   transition: background .14s, color .14s;
 }
 .pf-seg-btn:hover { color: #e8e7ec; }
@@ -216,7 +216,7 @@ const POOL_CSS = `
   background: rgba(255,255,255,.04);
   border: 1px solid var(--pf-line);
   border-radius: 9px;
-  color: #d1d0d8; font-size: .76rem; font-weight: 600;
+  color: var(--kl-text-primary); font-size: .8125rem; font-weight: 600;
   padding: 7px 9px; cursor: pointer; max-width: 160px;
 }
 .pf-select:hover { background: rgba(255,255,255,.08); }
@@ -229,16 +229,16 @@ const POOL_CSS = `
   all: unset;
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 11px; border-radius: 999px;
-  font-size: .74rem; font-weight: 700;
-  color: #b7b5be;
+  font-size: .8125rem; font-weight: 700;
+  color: var(--kl-text-primary);
   background: rgba(255,255,255,.04);
   border: 1px solid var(--pf-line);
   cursor: pointer;
   transition: background .14s, border-color .14s, color .14s;
 }
-.pf-chip i { font-size: .74rem; opacity: .8; }
+.pf-chip i { font-size: .8125rem; opacity: .8; }
 .pf-chip-n {
-  font-size: .64rem; font-weight: 800; color: #858291;
+  font-size: .8125rem; font-weight: 800; color: var(--kl-text-primary);
   background: rgba(255,255,255,.06);
   border-radius: 999px; padding: 1px 6px; min-width: 20px; text-align: center;
 }
@@ -261,7 +261,7 @@ const POOL_CSS = `
   all: unset;
   display: inline-flex; align-items: center; gap: 7px;
   padding: 7px 13px; border-radius: 10px;
-  font-size: .76rem; font-weight: 700; color: #e8e6ef;
+  font-size: .8125rem; font-weight: 700; color: #e8e6ef;
   background: rgba(255,255,255,.045);
   border: 1px solid var(--pf-line);
   cursor: pointer;
@@ -271,11 +271,11 @@ const POOL_CSS = `
 .pf-more.open { border-color: rgba(230,229,238,.5); }
 .pf-more.has { border-color: rgba(230,229,238,.45); color: #ecebef; }
 .pf-more-n {
-  font-size: .64rem; font-weight: 800; color: #0e0e10;
+  font-size: .8125rem; font-weight: 800; color: #0e0e10;
   background: #e5e3ed; border-radius: 999px;
   padding: 1px 6px; min-width: 18px; text-align: center;
 }
-.pf-more-chev { font-size: .62rem; opacity: .6; }
+.pf-more-chev { font-size: .8125rem; opacity: .6; }
 
 .pf-panel {
   position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
@@ -290,8 +290,8 @@ const POOL_CSS = `
 @keyframes pfPanel { from { opacity: 0; transform: translateY(-6px); } }
 .pf-group + .pf-group { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--pf-line); }
 .pf-group-h {
-  font-size: .58rem; font-weight: 900; letter-spacing: .16em;
-  text-transform: uppercase; color: #817f8d; margin-bottom: 8px;
+  font-size: .8125rem; font-weight: 900; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--kl-text-primary); margin-bottom: 8px;
 }
 .pf-group-items { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 
@@ -301,16 +301,16 @@ const POOL_CSS = `
   all: unset;
   display: flex; align-items: center; gap: 8px;
   padding: 6px 9px; border-radius: 8px;
-  font-size: .78rem; color: #b3b1bf;
+  font-size: .8125rem; color: var(--kl-text-primary);
   cursor: pointer;
   border: 1px solid transparent;
   transition: background .12s, color .12s, border-color .12s;
 }
 .pf-opt:hover:not(:disabled) { background: rgba(255,255,255,.06); color: #fff; }
 .pf-opt:disabled { opacity: .28; cursor: default; }
-.pf-opt-i { font-size: .78rem; width: 15px; text-align: center; }
+.pf-opt-i { font-size: .8125rem; width: 15px; text-align: center; }
 .pf-opt-l { flex: 1; min-width: 0; font-weight: 650; }
-.pf-opt-n { font-size: .68rem; font-weight: 700; color: #817f8d; font-variant-numeric: tabular-nums; }
+.pf-opt-n { font-size: .8125rem; font-weight: 700; color: var(--kl-text-primary); font-variant-numeric: tabular-nums; }
 .pf-opt.on {
   background: rgba(230,229,238,.14);
   border-color: rgba(230,229,238,.34);
@@ -325,7 +325,7 @@ const POOL_CSS = `
 .pf-orange-i { color: #ffb46b; }
 .pf-gold-i { color: #e3b341; }
 .pf-teal-i { color: #56d4c0; }
-.pf-slate-i { color: #bab8c0; }
+.pf-slate-i { color: var(--kl-text-primary); }
 
 .pf-panel-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .pf-panel-selects .pf-select { max-width: none; width: 100%; }
@@ -338,7 +338,7 @@ const POOL_CSS = `
 .pf-apply {
   all: unset; margin-left: auto; cursor: pointer;
   padding: 6px 16px; border-radius: 8px;
-  font-size: .76rem; font-weight: 800; color: #0e0e10;
+  font-size: .8125rem; font-weight: 800; color: #0e0e10;
   background: linear-gradient(100deg, #e5e3ed, #e1dfeb);
 }
 .pf-apply:hover { filter: brightness(1.08); }
@@ -349,23 +349,23 @@ const POOL_CSS = `
   margin-top: 10px; padding-top: 9px;
   border-top: 1px dashed var(--pf-line);
 }
-.pf-count { font-size: .75rem; color: #9d9ba7; }
+.pf-count { font-size: .8125rem; color: var(--kl-text-primary); }
 .pf-count b { color: #eeedf1; font-weight: 800; font-size: .82rem; }
 .pf-applied { display: flex; flex-wrap: wrap; gap: 5px; }
 .pf-tag {
   all: unset;
   display: inline-flex; align-items: center; gap: 5px;
   padding: 2px 8px; border-radius: 999px;
-  font-size: .68rem; font-weight: 700; color: #d9d8df;
+  font-size: .8125rem; font-weight: 700; color: #d9d8df;
   background: rgba(230,229,238,.14);
   border: 1px solid rgba(230,229,238,.3);
   cursor: pointer;
 }
-.pf-tag i { font-size: .66rem; opacity: .7; }
+.pf-tag i { font-size: .8125rem; opacity: .7; }
 .pf-tag:hover { background: rgba(248,81,73,.18); border-color: rgba(248,81,73,.4); color: #ffb3ae; }
 .pf-clear {
   all: unset; cursor: pointer;
-  font-size: .72rem; font-weight: 700; color: #9d9ba7;
+  font-size: .8125rem; font-weight: 700; color: var(--kl-text-primary);
   padding: 5px 11px; border-radius: 7px;
   border: 1px solid var(--pf-line);
   background: rgba(255,255,255,.03);
@@ -387,29 +387,29 @@ const POOL_CSS = `
   .pf-density { margin-left: 0; }
 }
 
-.pool-table th { padding: .5rem .6rem; font-size: .7rem; border-bottom: 2px solid #2a292f; position: relative; cursor: pointer; user-select: none; }
-.pool-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
+.pool-table th { padding: .5rem .6rem; font-size: .8125rem; border-bottom: 2px solid #2a292f; position: relative; cursor: pointer; user-select: none; }
+.pool-table th .sort-icon { font-size: .8125rem; margin-left: 2px; opacity: .4; }
 .pool-table th.sort-active .sort-icon { opacity: 1; color: #ececf6; }
-.pool-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
+.pool-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8125rem; }
 .pool-table tbody tr { transition: background .1s; }
 .pool-table tbody tr:hover { background: rgba(236,236,246,.04) !important; }
-.profile-tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: .6rem; font-weight: 700; white-space: nowrap; letter-spacing: .3px; }
+.profile-tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: .8125rem; font-weight: 700; white-space: nowrap; letter-spacing: .3px; }
 .tag-elite { background: linear-gradient(135deg, rgba(255,215,0,.3), rgba(255,170,0,.25)); color: #ffd700; border: 1px solid rgba(255,215,0,.4); }
 .tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(226,224,235,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
 .tag-premium { background: linear-gradient(135deg, rgba(251,146,60,.2), rgba(245,158,11,.15)); color: #fb923c; }
 .tag-rising { background: rgba(16,185,129,.18); color: #10b981; }
-.tag-breakout { background: rgba(81,78,95,.18); color: #514e5f; }
+.tag-breakout { background: rgba(81,78,95,.18); color: var(--kl-text-primary); }
 .tag-proven { background: rgba(222,220,233,.15); color: #dedce9; }
-.tag-steady { background: rgba(186,185,193,.12); color: #bab9c1; }
+.tag-steady { background: rgba(186,185,193,.12); color: var(--kl-text-primary); }
 .tag-developing { background: rgba(74,222,128,.1); color: #4ade80; }
 .tag-project { background: rgba(234,179,8,.12); color: #eab308; }
 .tag-declining { background: rgba(239,68,68,.15); color: #ef4444; }
-.tag-veteran { background: rgba(132,130,144,.12); color: #b7b6be; }
-.tag-fringe { background: rgba(105,103,116,.1); color: #888693; }
+.tag-veteran { background: rgba(132,130,144,.12); color: var(--kl-text-primary); }
+.tag-fringe { background: rgba(105,103,116,.1); color: var(--kl-text-primary); }
 .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-.filter-bar .form-control-sm, .filter-bar .form-select-sm { background: #0e0d0f; border-color: #2a292f; font-size: .78rem; }
-.pool-count { font-size: .75rem; color: #a0a0ac; white-space: nowrap; display: flex; align-items: center; gap: .35rem; }
-.pool-count strong { color: #cfcfd6; }
+.filter-bar .form-control-sm, .filter-bar .form-select-sm { background: #0e0d0f; border-color: #2a292f; font-size: .8125rem; }
+.pool-count { font-size: .8125rem; color: var(--kl-text-primary); white-space: nowrap; display: flex; align-items: center; gap: .35rem; }
+.pool-count strong { color: var(--kl-text-primary); }
 .pm-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #1a191d; cursor: pointer; background: #0e0d0f; }
 .pm-card:active { background: #151518; }
 .pm-taken { opacity: .5; }
@@ -417,23 +417,23 @@ const POOL_CSS = `
 .pm-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .pm-row1 { display: flex; align-items: center; gap: 5px; }
 .pm-name { font-weight: 700; font-size: .84rem; color: #ebebee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pm-pos-badge { padding: 1px 5px; font-size: .55rem; }
-.pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #8a8895; }
-.pm-row2 b { color: #cfcfd6; font-weight: 700; }
+.pm-pos-badge { padding: 1px 5px; font-size: .8125rem; }
+.pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .8125rem; color: var(--kl-text-primary); }
+.pm-row2 b { color: var(--kl-text-primary); font-weight: 700; }
 .pm-sep { width: 1px; height: 9px; background: #1e1d21; flex-shrink: 0; }
 .pm-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 .pm-sc { font-size: 1.05rem; font-weight: 800; color: #ebebee; line-height: 1; }
-.pm-sc-none { color: #63616d; font-size: .85rem; }
-.pm-owner { font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
-.pm-fa { font-size: .58rem; font-weight: 600; color: #3fb950; }
-.pm-add { background: rgba(63,185,80,.12); border: none; color: #3fb950; border-radius: 4px; font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px; }
-.pm-l3 { color: #cfcfd6; }
+.pm-sc-none { color: var(--kl-text-primary); font-size: .85rem; }
+.pm-owner { font-size: .8125rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.pm-fa { font-size: .8125rem; font-weight: 600; color: #3fb950; }
+.pm-add { background: rgba(63,185,80,.12); border: none; color: #3fb950; border-radius: 4px; font-size: .8125rem; font-weight: 700; cursor: pointer; padding: 2px 8px; }
+.pm-l3 { color: var(--kl-text-primary); }
 .pm-l3 b { font-weight: 700; }
-.pm-l3-delta { font-size: .58rem; font-weight: 700; margin-left: 2px; }
+.pm-l3-delta { font-size: .8125rem; font-weight: 700; margin-left: 2px; }
 .pm-l3-delta-up { color: #3fb950; }
 .pm-l3-delta-down { color: #f85149; }
-.pm-l3-delta-flat { color: #63616d; }
-.wishlist-star { cursor: pointer; background: none; border: none; padding: 4px 6px; color: #8a8895; font-size: .95rem; line-height: 1; transition: color .15s, transform .15s; }
+.pm-l3-delta-flat { color: var(--kl-text-primary); }
+.wishlist-star { cursor: pointer; background: none; border: none; padding: 4px 6px; color: var(--kl-text-primary); font-size: .95rem; line-height: 1; transition: color .15s, transform .15s; }
 .wishlist-star:hover { color: #d29922; }
 .wishlist-star.active { color: #d29922; }
 .wishlist-star:active { transform: scale(1.2); }
@@ -475,7 +475,7 @@ export function PlayerPoolPage() {
   const [pickingUp, setPickingUp] = useState<number | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
   const wishlist = useWishlist(leagueId)
-  // LeagueContext (separate from data.league below — that one is the
+  // LeagueContext (separate from data.league below, that one is the
   // PoolData league summary, this one carries the teams[] roster for
   // the trade-from-row deep link).
   const { league: leagueCtx } = useLeague()
@@ -687,8 +687,8 @@ export function PlayerPoolPage() {
           style={{ background: 'rgba(63,185,80,.08)', border: '1px solid rgba(63,185,80,.2)', borderRadius: 8, fontSize: '.82rem' }}
         >
           <i className="bi bi-person-plus-fill" style={{ color: '#3fb950' }}></i>
-          <span style={{ color: '#cfcfd6' }}>
-            SSP pickups open — <strong>{effective_roster_count}/{league.squad_size}</strong> roster spots filled
+          <span style={{ color: 'var(--kl-text-primary)' }}>
+            SSP pickups open, <strong>{effective_roster_count}/{league.squad_size}</strong> roster spots filled
             {ltil_count ? ` (${ltil_count} on LTIL)` : ''}. Closes at Round {ssp_cutoff_round}.
           </span>
         </div>
@@ -707,14 +707,14 @@ export function PlayerPoolPage() {
           <i className="bi bi-info-circle-fill" style={{ color: '#d29922' }}></i>
           <span style={{ color: '#f0b38a' }}>
             <strong>Free-agent pickups paused.</strong>
-            <span style={{ color: '#cfcfd6', marginLeft: 6, fontWeight: 400 }}>{data.pickup_reason}</span>
+            <span style={{ color: 'var(--kl-text-primary)', marginLeft: 6, fontWeight: 400 }}>{data.pickup_reason}</span>
           </span>
         </div>
       )}
 
       <div className="card d-none d-lg-block" data-density={density}>
         <div className="pf">
-          {/* Row 1 — search, positions, facets, density */}
+          {/* Row 1, search, positions, facets, density */}
           <div className="pf-row">
             <label className="pf-search">
               <i className="bi bi-search" />
@@ -746,7 +746,7 @@ export function PlayerPoolPage() {
             </div>
 
             {/* Only the handful worth seeing without asking. Everything else
-                lives one click away — fourteen equal-weight pills was a wall. */}
+                lives one click away, fourteen equal-weight pills was a wall. */}
             <div className="pf-pinned">
               {PINNED.map(k => {
                 const f = SMART_FILTERS.find(x => x.key === k)
@@ -847,7 +847,7 @@ export function PlayerPoolPage() {
           </div>
 
 
-          {/* Row 3 — what is actually applied */}
+          {/* Row 3, what is actually applied */}
           <div className="pf-status">
             <span className="pf-count">
               <b>{sorted.length}</b> of {data.players.length} players
@@ -949,46 +949,46 @@ export function PlayerPoolPage() {
                         {p.is_former && <span className="pl-mark pl-mark-off" title="No longer on an AFL list">OFF AFL LIST</span>}
                         {p.on_block && <i className="bi bi-megaphone-fill pl-ico pl-ico-block" title="On the trade block"></i>}
                         {(p.note_count || 0) > 0 && <i className="bi bi-journal-text pl-ico" title={`${p.note_count} note${p.note_count === 1 ? '' : 's'} of yours`}></i>}
-                        <span style={{ color: '#cfcfd6', fontSize: '.72rem', marginLeft: 'auto' }}>{p.afl_team}</span>
+                        <span style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem', marginLeft: 'auto' }}>{p.afl_team}</span>
                       </span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 3, flexWrap: 'nowrap' }}>
                         {['FWD', 'DEF', 'RUC', 'MID'].filter(pos => positions.includes(pos)).map(pos => (
                           <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}
-                            style={{ padding: '2px 5px', fontSize: '.65rem' }}
+                            style={{ padding: '2px 5px', fontSize: '.8125rem' }}
                             title={p.position_expected ? 'Expected position. He has no SuperCoach position yet.' : undefined}>
-                            {pos}{p.position_expected ? ' exp' : ''}
+                            {pos}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="text-center" style={{ color: '#a0a0ac' }}>{p.age || '-'}</td>
+                    <td className="text-center" style={{ color: 'var(--kl-text-primary)' }}>{p.age || '-'}</td>
                     <td className="text-end">
-                      {p.sc_avg ? <span style={{ fontWeight: 600 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#63616d' }}>-</span>}
+                      {p.sc_avg ? <span style={{ fontWeight: 600 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
                     </td>
                     <td className="text-center">
                       {p.l3 ? (
                         <>
-                          <span style={{ fontWeight: 600, color: '#cfcfd6' }}>{Math.round(p.l3)}</span>
-                          {l3Pct > 2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#3fb950', marginLeft: 2 }}>+{Math.round(l3Pct)}%</span>
-                            : l3Pct < -2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#f85149', marginLeft: 2 }}>{Math.round(l3Pct)}%</span>
-                            : <span style={{ fontSize: '.65rem', color: '#63616d', marginLeft: 2 }}>-</span>}
+                          <span style={{ fontWeight: 600, color: 'var(--kl-text-primary)' }}>{Math.round(p.l3)}</span>
+                          {l3Pct > 2 ? <span style={{ fontSize: '.8125rem', fontWeight: 700, color: '#3fb950', marginLeft: 2 }}>+{Math.round(l3Pct)}%</span>
+                            : l3Pct < -2 ? <span style={{ fontSize: '.8125rem', fontWeight: 700, color: '#f85149', marginLeft: 2 }}>{Math.round(l3Pct)}%</span>
+                            : <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginLeft: 2 }}>-</span>}
                         </>
-                      ) : <span style={{ color: '#63616d' }}>-</span>}
+                      ) : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
                     </td>
                     <td className="text-end">
-                      {p.rating ? <span className={`rt ${ratingTier(p.rating)}`}>{p.rating}</span> : <span style={{ color: '#63616d' }}>-</span>}
+                      {p.rating ? <span className={`rt ${ratingTier(p.rating)}`}>{p.rating}</span> : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
                     </td>
                     <td className="text-center">
                       {p.rating && p.rating_start ? (
-                        rtgMove > 0 ? <span style={{ color: '#3fb950', fontWeight: 600, fontSize: '.78rem' }}>+{rtgMove}</span>
-                          : rtgMove < 0 ? <span style={{ color: '#f85149', fontWeight: 600, fontSize: '.78rem' }}>{rtgMove}</span>
-                          : <span style={{ color: '#63616d', fontSize: '.78rem' }}>-</span>
-                      ) : <span style={{ color: '#63616d' }}>-</span>}
+                        rtgMove > 0 ? <span style={{ color: '#3fb950', fontWeight: 600, fontSize: '.8125rem' }}>+{rtgMove}</span>
+                          : rtgMove < 0 ? <span style={{ color: '#f85149', fontWeight: 600, fontSize: '.8125rem' }}>{rtgMove}</span>
+                          : <span style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>-</span>
+                      ) : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
                     </td>
                     <td className="text-end">
-                      {p.potential ? <span className={`rt rt-line ${ratingTier(p.potential)}`}>{p.potential}</span> : <span style={{ color: '#63616d' }}>-</span>}
+                      {p.potential ? <span className={`rt rt-line ${ratingTier(p.potential)}`}>{p.potential}</span> : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
                     </td>
                     <td>
                       {p.profile_tag && p.profile_css && (
@@ -1096,12 +1096,12 @@ export function PlayerPoolPage() {
 
           {/* Sort + count row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px', borderBottom: '1px solid rgba(42,41,47,.4)' }}>
-            <span style={{ fontSize: '.72rem', color: '#8a8895' }}><b style={{ color: '#a0a0ac' }}>{mobileSorted.length}</b> players</span>
+            <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}><b style={{ color: 'var(--kl-text-primary)' }}>{mobileSorted.length}</b> players</span>
             <select
               className="form-select form-select-sm"
               value={mobSort}
               onChange={e => setMobSort(e.target.value as MobileSortKey)}
-              style={{ background: 'transparent', border: 'none', color: '#ececf6', fontSize: '.72rem', fontWeight: 600, width: 'auto', padding: '2px 24px 2px 4px' }}
+              style={{ background: 'transparent', border: 'none', color: '#ececf6', fontSize: '.8125rem', fontWeight: 600, width: 'auto', padding: '2px 24px 2px 4px' }}
             >
               <option value="sc">SC Avg ↓</option>
               <option value="name_asc">Name A–Z</option>
@@ -1111,7 +1111,7 @@ export function PlayerPoolPage() {
             </select>
           </div>
 
-          {/* Player list — new card design */}
+          {/* Player list, new card design */}
           <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {mob.visible.map(p => {
               const positions = (p.position || 'MID').split('/')
@@ -1142,23 +1142,23 @@ export function PlayerPoolPage() {
                       {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
                       {p.on_block && <i className="bi bi-megaphone-fill pl-ico pl-ico-block"></i>}
                       {(p.note_count || 0) > 0 && <i className="bi bi-journal-text pl-ico"></i>}
-                      {p.injury_severity && <i className="bi bi-bandaid-fill" style={{ color: '#f85149', fontSize: '.65rem', marginLeft: 4 }}></i>}
+                      {p.injury_severity && <i className="bi bi-bandaid-fill" style={{ color: '#f85149', fontSize: '.8125rem', marginLeft: 4 }}></i>}
                     </div>
                     <div className="kl-player-card-meta">
                       {positions.map(pos => (
-                        <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`} style={{ fontSize: '.55rem', padding: '1px 5px', lineHeight: 1.3 }}>{pos}{p.position_expected ? ' exp' : ''}</span>
+                        <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`} style={{ fontSize: '.8125rem', padding: '1px 5px', lineHeight: 1.3 }}>{pos}</span>
                       ))}
                       <span>{p.age}y</span>
                       <span>·</span>
                       <span>{p.games_played}gp</span>
-                      {p.profile_tag && <span className={`profile-tag tag-${p.profile_css}`} style={{ fontSize: '.5rem', padding: '0 5px' }}>{p.profile_tag}</span>}
+                      {p.profile_tag && <span className={`profile-tag tag-${p.profile_css}`} style={{ fontSize: '.8125rem', padding: '0 5px' }}>{p.profile_tag}</span>}
                     </div>
                   </div>
                   <div className="kl-player-card-right">
                     {p.sc_avg ? (
                       <span className="kl-player-card-sc">{Math.round(p.sc_avg)}{stats.tag && <small className="kl-yr-tag">{stats.tag}</small>}</span>
                     ) : (
-                      <span className="kl-player-card-sc kl-player-card-sc-none">—</span>
+                      <span className="kl-player-card-sc kl-player-card-sc-none">-</span>
                     )}
                     {trendUp && <span className="kl-player-card-trend kl-player-card-trend-up">▲ {Math.round(l3Pct)}%</span>}
                     {trendDown && <span className="kl-player-card-trend kl-player-card-trend-down">▼ {Math.round(Math.abs(l3Pct))}%</span>}
@@ -1200,7 +1200,7 @@ export function PlayerPoolPage() {
             })}
             {mob.hasMore && <div ref={mob.sentinelRef} style={{ height: 1 }} />}
             {mobileSorted.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#63616d' }}>
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--kl-text-primary)' }}>
                 <i className="bi bi-search" style={{ fontSize: '1.5rem', display: 'block', marginBottom: 8 }}></i>
                 <p style={{ fontSize: '.82rem', margin: 0 }}>No players match your filters</p>
               </div>

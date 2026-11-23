@@ -44,42 +44,42 @@ export function AflGamePage() {
     <div>
       <style>{`
         .ag-wrap { max-width: 1100px; margin: 0 auto; padding: .5rem; }
-        .ag-back { color: #ececf6; font-size: .75rem; text-decoration: none; display: inline-block; margin-bottom: .5rem; }
+        .ag-back { color: #ececf6; font-size: .8125rem; text-decoration: none; display: inline-block; margin-bottom: .5rem; }
         .ag-back:hover { text-decoration: underline; }
         .ag-hero { display: flex; align-items: center; justify-content: space-between; background: var(--kl-bg-card); border: 1px solid #2a292f; border-radius: 10px; padding: 12px 16px; margin-bottom: .75rem; }
         .ag-hero-team { text-align: center; flex: 1; }
         .ag-hero-logo { width: 36px; height: 36px; margin-bottom: 4px; }
-        .ag-hero-name { font-size: .8rem; font-weight: 700; color: #ebebee; }
+        .ag-hero-name { font-size: .8125rem; font-weight: 700; color: #ebebee; }
         .ag-hero-score { font-size: 1.8rem; font-weight: 800; color: #ebebee; }
         .ag-hero-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .ag-hero-vs { color: #63616d; font-size: .7rem; }
-        .ag-badge { font-size: .55rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+        .ag-hero-vs { color: var(--kl-text-primary); font-size: .8125rem; }
+        .ag-badge { font-size: .8125rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
         .ag-badge-live { background: rgba(86,211,100,.15); color: #56d364; border: 1px solid rgba(86,211,100,.3); }
         .ag-badge-ft { background: rgba(226,224,235,.15); color: #a855f7; }
-        .ag-badge-sched { background: rgba(99,97,109,.3); color: #a0a0ac; }
+        .ag-badge-sched { background: rgba(99,97,109,.3); color: var(--kl-text-primary); }
         .ag-toggle { display: flex; margin-bottom: .5rem; border-radius: 8px; overflow: hidden; border: 1px solid #2a292f; }
-        .ag-toggle-btn { flex: 1; padding: 8px; text-align: center; font-size: .75rem; font-weight: 600; background: transparent; color: #a0a0ac; border: none; cursor: pointer; transition: all .15s; }
+        .ag-toggle-btn { flex: 1; padding: 8px; text-align: center; font-size: .8125rem; font-weight: 600; background: transparent; color: var(--kl-text-primary); border: none; cursor: pointer; transition: all .15s; }
         .ag-toggle-btn.active { background: #1e1d21; color: #ebebee; }
-        .ag-toggle-btn:hover:not(.active) { color: #cfcfd6; }
-        .ag-table { width: 100%; border-collapse: collapse; font-size: .75rem; }
-        .ag-table th { text-align: center; padding: 8px 6px; color: #a0a0ac; font-weight: 600; border-bottom: 1px solid #2a292f; white-space: nowrap; background: #0e0d0f; }
+        .ag-toggle-btn:hover:not(.active) { color: var(--kl-text-primary); }
+        .ag-table { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+        .ag-table th { text-align: center; padding: 8px 6px; color: var(--kl-text-primary); font-weight: 600; border-bottom: 1px solid #2a292f; white-space: nowrap; background: #0e0d0f; }
         .ag-sortable { cursor: pointer; user-select: none; }
         .ag-sortable:hover { color: #ececf6 !important; }
-        .ag-table td { text-align: center; padding: 6px 5px; border-bottom: 1px solid #151518; color: #cfcfd6; white-space: nowrap; }
+        .ag-table td { text-align: center; padding: 6px 5px; border-bottom: 1px solid #151518; color: var(--kl-text-primary); white-space: nowrap; }
         .ag-table th:first-child, .ag-table td:first-child { text-align: left; padding-left: 10px; }
         .ag-player-name { font-weight: 600; color: #ebebee; }
-        .ag-jumper { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; font-size: .6rem; font-weight: 700; color: #a0a0ac; background: #1e1d21; border: 1px solid #2a292f; border-radius: 4px; margin-right: 6px; vertical-align: middle; }
-        .ag-pos { font-size: .6rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; display: inline-block; min-width: 30px; text-align: center; }
+        .ag-jumper { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; font-size: .8125rem; font-weight: 700; color: var(--kl-text-primary); background: #1e1d21; border: 1px solid #2a292f; border-radius: 4px; margin-right: 6px; vertical-align: middle; }
+        .ag-pos { font-size: .8125rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; display: inline-block; min-width: 30px; text-align: center; }
         .ag-pos-fwd { background: rgba(222,220,233,.15); color: #dedce9; }
         .ag-pos-mid { background: rgba(251,191,36,.15); color: #fbbf24; }
         .ag-pos-def { background: rgba(52,211,153,.15); color: #34d399; }
         .ag-pos-ruc { background: rgba(244,114,182,.15); color: #f472b6; }
-        .ag-sc { font-weight: 700; color: #ebebee; font-size: .8rem; }
+        .ag-sc { font-weight: 700; color: #ebebee; font-size: .8125rem; }
         .ag-sc-live { color: #56d364; }
-        .ag-live-dot { font-size: .3rem; color: #56d364; margin-left: 2px; animation: agPulse 2s infinite; }
+        .ag-live-dot { font-size: .8125rem; color: #56d364; margin-left: 2px; animation: agPulse 2s infinite; }
         @keyframes agPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
         .ag-table-wrap { border: 1px solid #2a292f; border-radius: 8px; overflow: hidden; }
-        @media (max-width: 767.98px) { .ag-wrap { padding: .25rem; } .ag-hero-score { font-size: 1.4rem; } .ag-hero-logo { width: 28px; height: 28px; } .ag-table { font-size: .65rem; } .ag-table td, .ag-table th { padding: 5px 3px; } .ag-pos { font-size: .55rem; padding: 1px 4px; min-width: 24px; } }
+        @media (max-width: 767.98px) { .ag-wrap { padding: .25rem; } .ag-hero-score { font-size: 1.4rem; } .ag-hero-logo { width: 28px; height: 28px; } .ag-table { font-size: .8125rem; } .ag-table td, .ag-table th { padding: 5px 3px; } .ag-pos { font-size: .8125rem; padding: 1px 4px; min-width: 24px; } }
       `}</style>
 
       <div className="ag-wrap">
@@ -134,7 +134,7 @@ export function AflGamePage() {
             </thead>
             <tbody>
               {sorted.length === 0 && (
-                <tr><td colSpan={11} style={{ color: '#63616d', textAlign: 'center', padding: '1rem' }}>No scores yet</td></tr>
+                <tr><td colSpan={11} style={{ color: 'var(--kl-text-primary)', textAlign: 'center', padding: '1rem' }}>No scores yet</td></tr>
               )}
               {sorted.map((p, i) => {
                 const posKey = (p.position || '').split('/')[0].substring(0, 3).toUpperCase()

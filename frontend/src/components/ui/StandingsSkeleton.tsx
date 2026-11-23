@@ -1,5 +1,5 @@
 /**
- * StandingsSkeleton — layout-aware placeholder for the StandingsPage.
+ * StandingsSkeleton, layout-aware placeholder for the StandingsPage.
  *
  * Page title + ten ladder rows (most leagues are 8-12 teams).
  * Reuses .kl-skel shimmer.

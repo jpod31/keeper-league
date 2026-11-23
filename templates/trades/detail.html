@@ -16,7 +16,7 @@
 </div>
 
 {% if trade.status == 'agreed' %}
-  <div class="alert" style="background:rgba(236,236,246,.08);border:1px solid rgba(236,236,246,.25);color:#cfcfd6;margin-bottom:1.5rem;">
+  <div class="alert" style="background:rgba(236,236,246,.08);border:1px solid rgba(236,236,246,.25);color:var(--kl-text-primary);margin-bottom:1.5rem;">
     <i class="bi bi-info-circle me-1" style="color:#ececf6;"></i>
     Both teams have agreed to this trade. It will auto-execute when the trade window opens.
   </div>
@@ -45,10 +45,10 @@
                 <i class="bi bi-ticket-perforated me-1" style="color:#ececf6;"></i>
                 {{ asset.future_pick.year }} Round {{ asset.future_pick.round_number }} Pick
                 {% if asset.future_pick.original_team_id != asset.from_team_id %}
-                  <span class="text-secondary" style="font-size:.75rem;">(originally {{ asset.future_pick.original_team.name }}'s)</span>
+                  <span class="text-secondary" style="font-size:.8125rem;">(originally {{ asset.future_pick.original_team.name }}'s)</span>
                 {% endif %}
               </td>
-              <td class="text-end"><span class="badge" style="background:rgba(236,236,246,.15);color:#ececf6;font-size:.65rem;">PICK</span></td>
+              <td class="text-end"><span class="badge" style="background:rgba(236,236,246,.15);color:#ececf6;font-size:.8125rem;">PICK</span></td>
             </tr>
           {% endfor %}
         </table>
@@ -83,10 +83,10 @@
                 <i class="bi bi-ticket-perforated me-1" style="color:#ececf6;"></i>
                 {{ asset.future_pick.year }} Round {{ asset.future_pick.round_number }} Pick
                 {% if asset.future_pick.original_team_id != asset.from_team_id %}
-                  <span class="text-secondary" style="font-size:.75rem;">(originally {{ asset.future_pick.original_team.name }}'s)</span>
+                  <span class="text-secondary" style="font-size:.8125rem;">(originally {{ asset.future_pick.original_team.name }}'s)</span>
                 {% endif %}
               </td>
-              <td class="text-end"><span class="badge" style="background:rgba(236,236,246,.15);color:#ececf6;font-size:.65rem;">PICK</span></td>
+              <td class="text-end"><span class="badge" style="background:rgba(236,236,246,.15);color:#ececf6;font-size:.8125rem;">PICK</span></td>
             </tr>
           {% endfor %}
         </table>
@@ -97,7 +97,7 @@
 
 <div class="card mb-4">
   <div class="card-body">
-    <div class="d-flex flex-wrap gap-4" style="font-size:.8rem;color:#a0a0ac;">
+    <div class="d-flex flex-wrap gap-4" style="font-size:.8125rem;color:var(--kl-text-primary);">
       <span><i class="bi bi-clock me-1"></i>Proposed {{ trade.proposed_at.strftime('%d %b %Y %H:%M') }}</span>
       {% if trade.review_deadline and trade.status == 'pending' %}
         <span><i class="bi bi-hourglass-split me-1"></i>Deadline {{ trade.review_deadline.strftime('%d %b %Y %H:%M') }}</span>
@@ -114,7 +114,7 @@
     </div>
     {% if trade.notes %}
       <div class="mt-3 p-3" style="background:#1e1d21;border-radius:8px;font-size:.85rem;">
-        <i class="bi bi-chat-quote me-1" style="color:#a0a0ac;"></i> "{{ trade.notes }}"
+        <i class="bi bi-chat-quote me-1" style="color:var(--kl-text-primary);"></i> "{{ trade.notes }}"
       </div>
     {% endif %}
     {% if trade.veto_reason %}
@@ -157,16 +157,16 @@
 {% endif %}
 
 <div class="card">
-  <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-chat-dots me-2" style="color:#a0a0ac;"></i>Comments</h5></div>
+  <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-chat-dots me-2" style="color:var(--kl-text-primary);"></i>Comments</h5></div>
   <div class="card-body">
     {% if trade.comments %}
       {% for c in trade.comments %}
         <div class="mb-3 pb-3" style="border-bottom:1px solid #1e1d21;">
           <div class="d-flex align-items-center gap-2 mb-1">
             <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
-                  style="width:24px;height:24px;background:#1e1d21;font-size:.65rem;font-weight:600;">{{ c.user.display_name[0]|upper }}</span>
+                  style="width:24px;height:24px;background:#1e1d21;font-size:.8125rem;font-weight:600;">{{ c.user.display_name[0]|upper }}</span>
             <strong style="font-size:.85rem;">{{ c.user.display_name }}</strong>
-            <small style="color:#63616d;">{{ c.created_at.strftime('%d %b %H:%M') }}</small>
+            <small style="color:var(--kl-text-primary);">{{ c.created_at.strftime('%d %b %H:%M') }}</small>
           </div>
           <p class="mb-0 ms-4" style="font-size:.85rem;">{{ c.comment }}</p>
         </div>

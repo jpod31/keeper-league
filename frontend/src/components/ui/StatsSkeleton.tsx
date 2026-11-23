@@ -1,5 +1,5 @@
 /**
- * StatsSkeleton — layout-aware placeholder for the stats page.
+ * StatsSkeleton, layout-aware placeholder for the stats page.
  *
  * Title + grid of 4 leader-table card placeholders (scoring,
  * consistency, ceiling, ironman). Reuses .kl-skel shimmer.

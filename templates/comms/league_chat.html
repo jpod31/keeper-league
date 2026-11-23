@@ -18,12 +18,12 @@
     <div class="d-flex mb-2 {% if msg.sender_user_id == current_user.id %}justify-content-end{% endif %}">
       <div style="max-width:70%;padding:.5rem .75rem;border-radius:10px;{% if msg.sender_user_id == current_user.id %}background:rgba(236,236,246,.15);{% else %}background:var(--kl-bg-elevated);{% endif %}">
         {% if msg.sender_user_id != current_user.id %}
-        <div style="font-size:.7rem;font-weight:600;color:var(--kl-accent-blue);margin-bottom:2px;">
+        <div style="font-size:.8125rem;font-weight:600;color:var(--kl-accent-blue);margin-bottom:2px;">
           {{ msg.sender.display_name or msg.sender.username }}
         </div>
         {% endif %}
         <div style="font-size:.85rem;">{{ msg.body }}</div>
-        <div style="font-size:.6rem;color:var(--kl-text-muted);margin-top:2px;">
+        <div style="font-size:.8125rem;color:var(--kl-text-muted);margin-top:2px;">
           {{ msg.created_at.strftime('%H:%M') }}
         </div>
       </div>
@@ -79,11 +79,11 @@
     var t = new Date(time + (time.includes('Z') ? '' : 'Z'));
     var timeStr = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
     var bg = isMine ? 'background:rgba(236,236,246,.15);' : 'background:var(--kl-bg-elevated);';
-    var nameHtml = isMine ? '' : '<div style="font-size:.7rem;font-weight:600;color:var(--kl-accent-blue);margin-bottom:2px;">' + name + '</div>';
+    var nameHtml = isMine ? '' : '<div style="font-size:.8125rem;font-weight:600;color:var(--kl-accent-blue);margin-bottom:2px;">' + name + '</div>';
     div.innerHTML = '<div style="max-width:70%;padding:.5rem .75rem;border-radius:10px;' + bg + '">' +
       nameHtml +
       '<div style="font-size:.85rem;">' + body.replace(/</g, '&lt;') + '</div>' +
-      '<div style="font-size:.6rem;color:var(--kl-text-muted);margin-top:2px;">' + timeStr + '</div></div>';
+      '<div style="font-size:.8125rem;color:var(--kl-text-muted);margin-top:2px;">' + timeStr + '</div></div>';
     chatArea.appendChild(div);
     chatArea.scrollTop = chatArea.scrollHeight;
   }

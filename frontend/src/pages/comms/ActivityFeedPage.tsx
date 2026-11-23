@@ -84,11 +84,11 @@ export function ActivityFeedPage() {
                 <div className="flex-grow-1">
                   <div style={{ fontSize: '.85rem', fontWeight: 500 }}>{entry.title}</div>
                   {entry.body && (
-                    <div style={{ fontSize: '.75rem', color: 'var(--kl-text-secondary)', marginTop: 2 }}>
+                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-secondary)', marginTop: 2 }}>
                       {entry.body.substring(0, 120)}
                     </div>
                   )}
-                  <div style={{ fontSize: '.65rem', color: 'var(--kl-text-muted)', marginTop: 3 }}>
+                  <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-muted)', marginTop: 3 }}>
                     {entry.created_at}
                   </div>
                 </div>

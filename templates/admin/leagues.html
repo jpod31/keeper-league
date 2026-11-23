@@ -9,9 +9,9 @@
 <div class="card" style="background:#151518;border:1px solid #2a292f;">
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-sm table-dark mb-0" style="font-size:.8rem;">
+      <table class="table table-sm table-dark mb-0" style="font-size:.8125rem;">
         <thead>
-          <tr style="color:#a0a0ac;">
+          <tr style="color:var(--kl-text-primary);">
             <th>Name</th><th>Commissioner</th><th>Season</th><th>Teams</th><th>Status</th><th>Created</th>
           </tr>
         </thead>
@@ -27,7 +27,7 @@
             <td>{{ lg.season_year }}</td>
             <td>{{ lg.num_teams }}/{{ lg.max_teams }}</td>
             <td><span class="status-pill status-{{ lg.status }}">{{ lg.status }}</span></td>
-            <td style="color:#a0a0ac;">{{ lg.created_at.strftime('%d %b %Y') if lg.created_at else '—' }}</td>
+            <td style="color:var(--kl-text-primary);">{{ lg.created_at.strftime('%d %b %Y') if lg.created_at else '—' }}</td>
           </tr>
           {% endfor %}
           {% if not leagues %}

@@ -1,10 +1,10 @@
 /**
- * AnalyticsSkeleton — layout-aware placeholder for the heavy
+ * AnalyticsSkeleton, layout-aware placeholder for the heavy
  * analytics page. Renders hero stat tiles + a big chart placeholder
  * + two columns of section cards.
  *
  * Optional rebuild banner preserves the original Spinner's context
- * message ("Rebuilding analytics — this may take 20-30s on first
+ * message ("Rebuilding analytics, this may take 20-30s on first
  * load") for the slow cold-cache path.
  */
 
@@ -18,7 +18,7 @@ export function AnalyticsSkeleton({ rebuilding = false }: AnalyticsSkeletonProps
       {rebuilding && (
         <div className="ansk-rebuild" role="status">
           <i className="bi bi-arrow-repeat" aria-hidden></i>
-          Rebuilding analytics — this may take 20-30s on first load.
+          Rebuilding analytics, this may take 20-30s on first load.
         </div>
       )}
       <div className="ansk-tiles">

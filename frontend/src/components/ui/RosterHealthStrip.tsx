@@ -1,5 +1,5 @@
 /**
- * RosterHealthStrip — at-a-glance positional balance above the squad.
+ * RosterHealthStrip, at-a-glance positional balance above the squad.
  *
  * Four chips (DEF · MID · RUC · FWD), each showing this team's
  * roster count and SC average vs the league average for that position.
@@ -7,7 +7,7 @@
  * if below. Helps the user spot positional weak spots at a glance.
  *
  * Fetches /api/leagues/<id>/team/<id>/pos-avgs on mount. Renders nothing
- * until data lands or if the endpoint fails — degrades gracefully.
+ * until data lands or if the endpoint fails, degrades gracefully.
  *
  * Styles live as .rhealth-* in static/style.css. Consumes --space-N tokens.
  */
@@ -42,7 +42,7 @@ export function RosterHealthStrip({ leagueId, teamId }: RosterHealthStripProps) 
     fetch(`/api/leagues/${leagueId}/team/${teamId}/pos-avgs`, { credentials: 'include' })
       .then(r => r.json())
       .then(d => { if (!cancelled) setData(d) })
-      .catch(() => { /* silent — strip stays hidden */ })
+      .catch(() => { /* silent, strip stays hidden */ })
     return () => { cancelled = true }
   }, [leagueId, teamId])
 

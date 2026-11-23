@@ -1,5 +1,5 @@
 /**
- * DensityToggle — small two-icon toggle for table density.
+ * DensityToggle, small two-icon toggle for table density.
  *
  * Renders side-by-side comfortable + compact buttons; the active one
  * is highlighted. Mount in the page header or a FilterBar's actions

@@ -1,4 +1,4 @@
-"""Narrative Engine — extract story-driven insights from dynasty simulation.
+"""Narrative Engine, extract story-driven insights from dynasty simulation.
 
 Turns raw numbers into specific, named, dated narrative events:
 - Crossover points (when teams overtake each other)
@@ -150,7 +150,7 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
         dep_detail = f"{top} is your most irreplaceable player ({max_drop:.0f} point drop)"
     else:
         dep_level = "low"
-        dep_detail = "No single player loss costs more than 15 points — deep, resilient roster"
+        dep_detail = "No single player loss costs more than 15 points, deep, resilient roster"
 
     # ── TRAJECTORY ──
     start = my_years[0]["total"]
@@ -195,18 +195,18 @@ def build_narrative(team_id, league_id, year, dynasty, analytics, trade_table, p
     if trajectory == "dominant":
         verdict = f"The strongest team in the league now and projected to stay that way. Your youth pipeline means you get better while others decline."
     elif trajectory == "rising" and first_now:
-        verdict = f"Ranked #{rank} in the league right now with a young core that's still improving. The best is ahead of you — projected to dominate from {my_years[2]['year'] if len(my_years) > 2 else 'soon'}."
+        verdict = f"Ranked #{rank} in the league right now with a young core that's still improving. The best is ahead of you, projected to dominate from {my_years[2]['year'] if len(my_years) > 2 else 'soon'}."
     elif trajectory == "rising":
         verdict = f"Currently {rank}/{total_teams} but rising fast. Your young core projects to push you toward the top within 2-3 years."
     elif trajectory == "peaking":
         verdict = f"Ranked #{rank} and at your peak. The next 1-2 years are your best window to win it all before age catches up."
     elif trajectory == "steady":
-        verdict = f"Ranked {rank}/{total_teams} and projected to hold steady. Not declining, but not climbing either — a trade or two could tip you over."
+        verdict = f"Ranked {rank}/{total_teams} and projected to hold steady. Not declining, but not climbing either, a trade or two could tip you over."
     else:
         verdict = f"Your roster is trending down. Key players are aging out faster than replacements are developing. Consider trading aging assets for youth."
 
     if biggest_gap:
-        verdict += f" Your biggest weakness is {biggest_gap['position']} — {abs(biggest_gap['gap']):.0f} points below league average."
+        verdict += f" Your biggest weakness is {biggest_gap['position']}, {abs(biggest_gap['gap']):.0f} points below league average."
 
     return {
         "verdict": verdict,

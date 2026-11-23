@@ -41,7 +41,7 @@ export function AdminLeaguesPage() {
             <tbody>
               {data.leagues.map(lg => (
                 <tr key={lg.id}>
-                  <td style={{ color: '#63616d' }}>{lg.id}</td>
+                  <td style={{ color: 'var(--kl-text-primary)' }}>{lg.id}</td>
                   <td>
                     <Link to={`/leagues/${lg.id}`} className="text-decoration-none">
                       <strong>{lg.name}</strong>
@@ -51,8 +51,8 @@ export function AdminLeaguesPage() {
                   <td>{lg.season_year}</td>
                   <td><span className="badge bg-secondary">{lg.status}</span></td>
                   <td className="text-end">{lg.num_teams}/{lg.max_teams}</td>
-                  <td className="text-secondary" style={{ fontSize: '.7rem' }}>
-                    {lg.created_at ? new Date(lg.created_at).toLocaleDateString() : '—'}
+                  <td className="text-secondary" style={{ fontSize: '.8125rem' }}>
+                    {lg.created_at ? new Date(lg.created_at).toLocaleDateString() : '-'}
                   </td>
                 </tr>
               ))}

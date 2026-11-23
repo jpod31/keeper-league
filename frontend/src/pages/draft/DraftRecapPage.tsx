@@ -104,8 +104,8 @@ export function DraftRecapPage() {
                   <td className="text-end" style={{ color: g.ratio >= 1 ? '#3fb950' : '#f85149' }}>
                     {(g.ratio * 100).toFixed(0)}%
                   </td>
-                  <td className="text-secondary" style={{ fontSize: '.75rem' }}>
-                    {g.best_pick ? `${g.best_pick.player_name} (+${g.best_pick.value_diff.toFixed(0)})` : '—'}
+                  <td className="text-secondary" style={{ fontSize: '.8125rem' }}>
+                    {g.best_pick ? `${g.best_pick.player_name} (+${g.best_pick.value_diff.toFixed(0)})` : '-'}
                   </td>
                 </tr>
               ))}
@@ -128,7 +128,7 @@ export function DraftRecapPage() {
                   padding: '.5rem 1rem',
                   background: '#0e0d0f',
                   borderBottom: '1px solid var(--kl-border)',
-                  fontSize: '.75rem',
+                  fontSize: '.8125rem',
                   fontWeight: 700,
                   color: 'var(--kl-text-muted)',
                   textTransform: 'uppercase',
@@ -141,26 +141,26 @@ export function DraftRecapPage() {
                 <tbody>
                   {picks.map(p => (
                     <tr key={p.pick_number}>
-                      <td style={{ width: 40, color: '#63616d' }}>{p.pick_number}</td>
+                      <td style={{ width: 40, color: 'var(--kl-text-primary)' }}>{p.pick_number}</td>
                       <td style={{ width: 140 }}>{p.team_name}</td>
                       <td>
                         {p.is_pass ? (
-                          <span className="text-secondary">— Pass —</span>
+                          <span className="text-secondary">, Pass,</span>
                         ) : (
                           <>
                             <strong>{p.player_name}</strong>
-                            <span className="text-secondary ms-2" style={{ fontSize: '.75rem' }}>
+                            <span className="text-secondary ms-2" style={{ fontSize: '.8125rem' }}>
                               {p.position} · {p.afl_team}
                             </span>
                             {p.is_auto_pick && (
-                              <span className="badge ms-2" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.6rem' }}>auto</span>
+                              <span className="badge ms-2" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>auto</span>
                             )}
                           </>
                         )}
                       </td>
                       <td className="text-end" style={{ width: 80 }}>
                         {p.draft_score != null && (
-                          <span style={{ fontFamily: 'monospace', fontSize: '.75rem' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: '.8125rem' }}>
                             {p.draft_score.toFixed(0)}
                           </span>
                         )}
@@ -168,7 +168,7 @@ export function DraftRecapPage() {
                       <td className="text-end" style={{ width: 70 }}>
                         {p.value_diff != null && (
                           <span style={{
-                            fontSize: '.7rem',
+                            fontSize: '.8125rem',
                             fontFamily: 'monospace',
                             color: p.value_diff >= 0 ? '#3fb950' : '#f85149',
                           }}>
@@ -186,7 +186,7 @@ export function DraftRecapPage() {
       </div>
 
       <div className="text-center mt-3">
-        <Link to={`/leagues/${leagueId}/draft/setup`} className="text-secondary" style={{ fontSize: '.8rem' }}>
+        <Link to={`/leagues/${leagueId}/draft/setup`} className="text-secondary" style={{ fontSize: '.8125rem' }}>
           <i className="bi bi-arrow-left me-1"></i>Back to draft setup
         </Link>
       </div>

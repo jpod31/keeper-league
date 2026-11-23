@@ -7,8 +7,8 @@
 <style>
   .tab-toggle { display: flex; gap: 0; margin-bottom: 1rem; }
   .tab-toggle-btn {
-    padding: .45rem 1.1rem; font-size: .8rem; font-weight: 600; border: 1px solid #2a292f;
-    background: transparent; color: #a0a0ac; cursor: pointer; transition: all .15s;
+    padding: .45rem 1.1rem; font-size: .8125rem; font-weight: 600; border: 1px solid #2a292f;
+    background: transparent; color: var(--kl-text-primary); cursor: pointer; transition: all .15s;
   }
   .tab-toggle-btn:first-child { border-radius: 6px 0 0 6px; }
   .tab-toggle-btn:last-child { border-radius: 0 6px 6px 0; }
@@ -21,29 +21,29 @@
   .rtg-logo { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
   .rtg-info { flex: 1; min-width: 0; }
   .rtg-name { color: #ebebee; font-weight: 600; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rtg-meta { font-size: .7rem; color: #a0a0ac; display: flex; gap: .4rem; align-items: center; margin-top: 1px; }
+  .rtg-meta { font-size: .8125rem; color: var(--kl-text-primary); display: flex; gap: .4rem; align-items: center; margin-top: 1px; }
   .rtg-vals { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
-  .rtg-old { color: #a0a0ac; font-size: .8rem; }
-  .rtg-arrow { color: #63616d; font-size: .7rem; }
+  .rtg-old { color: var(--kl-text-primary); font-size: .8125rem; }
+  .rtg-arrow { color: var(--kl-text-primary); font-size: .8125rem; }
   .rtg-new { font-weight: 700; font-size: .9rem; }
-  .rtg-pot { color: #bc8cff; font-size: .75rem; font-weight: 600; min-width: 22px; text-align: center; }
-  .rtg-diff { font-weight: 700; font-size: .78rem; min-width: 30px; text-align: right; }
+  .rtg-pot { color: #bc8cff; font-size: .8125rem; font-weight: 600; min-width: 22px; text-align: center; }
+  .rtg-diff { font-weight: 700; font-size: .8125rem; min-width: 30px; text-align: right; }
   .rtg-up { color: #3fb950; }
   .rtg-down { color: #f85149; }
-  .empty-state { padding: 3rem 1rem; text-align: center; color: #63616d; }
+  .empty-state { padding: 3rem 1rem; text-align: center; color: var(--kl-text-primary); }
   .empty-state i { font-size: 2.5rem; margin-bottom: .5rem; }
   .section-header {
-    font-size: .75rem; color: #a0a0ac; padding: .4rem .75rem;
+    font-size: .8125rem; color: var(--kl-text-primary); padding: .4rem .75rem;
     background: #151518; border-bottom: 1px solid #1e1d21;
     display: flex; justify-content: space-between; align-items: center;
   }
   .sort-pills { display: flex; gap: .3rem; }
   .sort-pill {
-    padding: 2px 8px; border-radius: 10px; font-size: .65rem; font-weight: 600;
-    background: transparent; border: 1px solid #2a292f; color: #a0a0ac;
+    padding: 2px 8px; border-radius: 10px; font-size: .8125rem; font-weight: 600;
+    background: transparent; border: 1px solid #2a292f; color: var(--kl-text-primary);
     cursor: pointer; transition: all .12s;
   }
-  .sort-pill:hover { border-color: #ececf6; color: #cfcfd6; }
+  .sort-pill:hover { border-color: #ececf6; color: var(--kl-text-primary); }
   .sort-pill.active { background: #1e1d21; border-color: #ececf6; color: #ebebee; }
 </style>
 
@@ -87,7 +87,7 @@
               <div class="rtg-name">{{ pname }}</div>
               <div class="rtg-meta">
                 {% for pos in (ppos or 'MID').split('/') %}
-                  <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.55rem;">{{ pos }}</span>
+                  <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.8125rem;">{{ pos }}</span>
                 {% endfor %}
                 <span>{{ pteam or '' }}</span>
               </div>
@@ -108,7 +108,7 @@
       <div class="empty-state">
         <i class="bi bi-arrow-repeat"></i>
         <div>No rating changes yet</div>
-        <div style="font-size:.75rem;margin-top:.3rem;">Changes will appear here after the next ratings sync.</div>
+        <div style="font-size:.8125rem;margin-top:.3rem;">Changes will appear here after the next ratings sync.</div>
       </div>
     {% endif %}
   </div>
@@ -140,7 +140,7 @@
               <div class="rtg-name">{{ p.name }}</div>
               <div class="rtg-meta">
                 {% for pos in (p.position or 'MID').split('/') %}
-                  <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.55rem;">{{ pos }}</span>
+                  <span class="pos-badge badge-{{ pos|lower }}" style="padding:1px 4px;font-size:.8125rem;">{{ pos }}</span>
                 {% endfor %}
                 <span>{{ p.afl_team or '' }}</span>
               </div>
@@ -161,7 +161,7 @@
       <div class="empty-state">
         <i class="bi bi-dash-circle"></i>
         <div>No rating movement yet</div>
-        <div style="font-size:.75rem;margin-top:.3rem;">Players whose ratings change from their start-of-year values will appear here.</div>
+        <div style="font-size:.8125rem;margin-top:.3rem;">Players whose ratings change from their start-of-year values will appear here.</div>
       </div>
     {% endif %}
   </div>

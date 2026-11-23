@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ player.name }} — Keeper League{% endblock %}
+{% block title %}{{ player.name }}, Keeper League{% endblock %}
 
 {% set team_primary = TEAM_COLOURS.get(player.team, ('#ececf6','#fff'))[0] %}
 {% set team_secondary = TEAM_COLOURS.get(player.team, ('#ececf6','#fff'))[1] %}
@@ -37,7 +37,7 @@
       </div>
 
       <div class="pp-poster-meta">
-        <span><span class="pos-badge pos-{{ player.primary_position }}{% if player_flags.get('position_expected') %} pos-expected{% endif %}">{{ player.position }}{% if player_flags.get('position_expected') %} exp{% endif %}</span></span>
+        <span><span class="pos-badge pos-{{ player.primary_position }}{% if player_flags.get('position_expected') %} pos-expected{% endif %}">{{ player.position }}</span></span>
         {% if player_flags.get('is_new') %}<span><span class="pl-mark pl-mark-new" style="margin-left:0">NEW IN {{ years.afl_year }}</span></span>{% endif %}
         {% if player_flags.get('is_former') %}<span><span class="pl-mark pl-mark-off" style="margin-left:0">OFF AFL LIST</span></span>{% endif %}
         {% if player.age %}<span><i class="bi bi-person"></i><b>{{ player.age }}</b> yrs</span>{% endif %}
@@ -54,7 +54,7 @@
       {% if player_injury and player_injury.severity %}
       <div class="pp-injury">
         <i class="bi bi-bandaid-fill"></i>
-        <span>{{ player_injury.type or 'Injured' }} — {{ player_injury.display or player_injury['return'] or '' }}</span>
+        <span>{{ player_injury.type or 'Injured' }}, {{ player_injury.display or player_injury['return'] or '' }}</span>
       </div>
       {% endif %}
 
@@ -325,7 +325,7 @@
             <td><b style="color: var(--pp-text-strong);">{{ s.year }}</b></td>
             <td class="num pp-mono" style="color: var(--pp-text-muted);">{{ s.games }}</td>
             {% for c in display_cols %}
-            <td class="num pp-mono">{{ s.get('avg_' ~ c, '—') if s.get('avg_' ~ c) is not none else '—' }}</td>
+            <td class="num pp-mono">{{ s.get('avg_' ~ c, '-') if s.get('avg_' ~ c) is not none else '-' }}</td>
             {% endfor %}
           </tr>
           {% endfor %}
@@ -460,7 +460,7 @@
           <tr data-round="{{ r.round }}">
             <td><b style="color: var(--pp-text-strong);">{{ r.round_label|default(r.round) }}</b></td>
             {% for c in detailed.available_cols %}
-            <td class="num pp-mono">{{ r.get(c, '—') if r.get(c) is not none else '—' }}</td>
+            <td class="num pp-mono">{{ r.get(c, '-') if r.get(c) is not none else '-' }}</td>
             {% endfor %}
           </tr>
           {% endfor %}
@@ -483,7 +483,7 @@
       {% if section.rankings %}
       <div class="d-flex flex-wrap gap-2 mb-3">
         {% for key, r in section.rankings.items() %}
-        <span class="badge {% if r.rank <= 3 %}bg-success{% elif r.rank <= 10 %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size:.78rem; padding:5px 10px;">
+        <span class="badge {% if r.rank <= 3 %}bg-success{% elif r.rank <= 10 %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size:.8125rem; padding:5px 10px;">
           {% if key == 'comp' %}#{{ r.rank }}/{{ r.of }} Fantasy Avg ({{ section.latest_comp }} {{ section.latest_season }})
           {% elif key == 'team' %}#{{ r.rank }}/{{ r.of }} in Team
           {% elif key == 'comp_disposals' %}#{{ r.rank }}/{{ r.of }} Disposals
@@ -509,19 +509,19 @@
             {% for s in section.career %}
             <tr>
               <td class="fw-bold">{{ s.season }}</td>
-              <td><span class="badge {{ badge_class }}" style="font-size:.7rem;">{{ s.competition }}</span></td>
+              <td><span class="badge {{ badge_class }}" style="font-size:.8125rem;">{{ s.competition }}</span></td>
               <td>{{ s.team }}</td>
-              <td class="text-center fw-bold">{{ s.matches or '—' }}</td>
-              <td class="text-center">{{ s.age or '—' }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.disposals) if s.disposals else '—' }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.marks) if s.marks else '—' }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.goals) if s.goals else '—' }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.tackles) if s.tackles else '—' }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.hitouts) if s.hitouts and s.hitouts > 0 else '—' }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.contested_possessions) if s.contested_possessions else '—' }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.clearances) if s.clearances else '—' }}</td>
-              <td class="text-end">{{ '%.1f'|format(s.inside_fifties) if s.inside_fifties else '—' }}</td>
-              <td class="text-end fw-bold" style="color:#ececf6;">{{ '%.0f'|format(s.fantasy_avg) if s.fantasy_avg else '—' }}</td>
+              <td class="text-center fw-bold">{{ s.matches or '-' }}</td>
+              <td class="text-center">{{ s.age or '-' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.disposals) if s.disposals else '-' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.marks) if s.marks else '-' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.goals) if s.goals else '-' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.tackles) if s.tackles else '-' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.hitouts) if s.hitouts and s.hitouts > 0 else '-' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.contested_possessions) if s.contested_possessions else '-' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.clearances) if s.clearances else '-' }}</td>
+              <td class="text-end">{{ '%.1f'|format(s.inside_fifties) if s.inside_fifties else '-' }}</td>
+              <td class="text-end fw-bold" style="color:#ececf6;">{{ '%.0f'|format(s.fantasy_avg) if s.fantasy_avg else '-' }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -531,7 +531,7 @@
   </div>
   {% endmacro %}
 
-  {# Career timeline — AFL list years (AFL logo) + senior state-league years
+  {# Career timeline, AFL list years (AFL logo) + senior state-league years
      (VFL/SANFL/WAFL logo) for seasons not on an AFL list. One entry per year. #}
   {% if afl_team_history and afl_team_history|length > 0 %}
   <div class="card bg-dark border-secondary mb-4">
@@ -540,12 +540,12 @@
       <div class="d-flex flex-wrap gap-2 align-items-end">
         {% for th in afl_team_history %}
         <div class="text-center" style="min-width:48px;{% if th.level != 'AFL' %}opacity:.78;{% endif %}">
-          {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }} — {{ th.level }} ({{ th.games }} {{ 'games' if th.level == 'AFL' else 'matches' }})">{% endif %}
-          <div style="font-size:.65rem;color:#cfcfd6;font-weight:700;">{{ th.year }}</div>
-          <div style="font-size:.55rem;font-weight:700;color:{% if th.level == 'AFL' %}#ececf6{% else %}#a0a0ac{% endif %};">{{ th.level }}</div>
+          {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }}, {{ th.level }} ({{ th.games }} {{ 'games' if th.level == 'AFL' else 'matches' }})">{% endif %}
+          <div style="font-size:.8125rem;color:var(--kl-text-primary);font-weight:700;">{{ th.year }}</div>
+          <div style="font-size:.8125rem;font-weight:700;color:{% if th.level == 'AFL' %}#ececf6{% else %}#a0a0ac{% endif %};">{{ th.level }}</div>
         </div>
         {% if not loop.last and afl_team_history[loop.index].team != th.team %}
-        <div style="font-size:.6rem;color:#ececf6;font-weight:700;padding:0 2px;">→</div>
+        <div style="font-size:.8125rem;color:#ececf6;font-weight:700;padding:0 2px;">→</div>
         {% endif %}
         {% endfor %}
       </div>

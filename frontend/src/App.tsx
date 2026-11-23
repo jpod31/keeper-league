@@ -133,7 +133,7 @@ export default function App() {
           <Route path="trade-block" element={<TradeBlockPage />} />
           <Route path="trades/:tradeId" element={<TradeDetailPage />} />
 
-          {/* Comms — unified messenger (league chat = pinned group convo) */}
+          {/* Comms, unified messenger (league chat = pinned group convo) */}
           <Route path="chat" element={<Navigate to="../messages/league" replace />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="activity" element={<ActivityFeedPage />} />

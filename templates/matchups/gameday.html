@@ -6,7 +6,7 @@
 {# ═══════════════════════ COMP TOGGLE ═══════════════════════ #}
 <div class="comp-toggle">
   <a href="{{ url_for('matchups.gameday', league_id=league.id) }}" class="comp-toggle-btn comp-toggle-active" style="border-color:rgba(236,236,246,.3);color:#ececf6;background:rgba(236,236,246,.08);border-radius:8px 0 0 8px;">Main</a>
-  <a href="{{ url_for('reserve7s.sevens_gameday', league_id=league.id) }}" class="comp-toggle-btn" style="border-color:#2a292f;color:#a0a0ac;border-radius:0 8px 8px 0;border-left:0;">7s</a>
+  <a href="{{ url_for('reserve7s.sevens_gameday', league_id=league.id) }}" class="comp-toggle-btn" style="border-color:#2a292f;color:var(--kl-text-primary);border-radius:0 8px 8px 0;border-left:0;">7s</a>
 </div>
 
 {# ═══════════════════════ ROUND HEADER ═══════════════════════ #}
@@ -21,7 +21,7 @@
       {% else %}
         <span class="gameday-state-badge badge-upcoming"><i class="bi bi-calendar-event me-1"></i>UPCOMING</span>
       {% endif %}
-      <button id="btnRefreshScores" onclick="refreshScores()" class="btn btn-sm" style="background:rgba(236,236,246,.1);color:#ececf6;border:1px solid rgba(236,236,246,.25);font-size:.7rem;padding:3px 10px;border-radius:6px;" title="Refresh scores">
+      <button id="btnRefreshScores" onclick="refreshScores()" class="btn btn-sm" style="background:rgba(236,236,246,.1);color:#ececf6;border:1px solid rgba(236,236,246,.25);font-size:.8125rem;padding:3px 10px;border-radius:6px;" title="Refresh scores">
         <i class="bi bi-arrow-clockwise"></i>
       </button>
     </div>
@@ -217,16 +217,16 @@
       {% elif is_dnp %}<span class="gameday-badge-dnp">DNP</span>
       {% elif is_emg_standby %}<span class="gameday-badge-emg">EMG</span>
       {% endif %}
-      {% if p.player_id in locked_ids %}<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.6rem;"></i> {% endif %}
+      {% if p.player_id in locked_ids %}<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.8125rem;"></i> {% endif %}
       <span class="gameday-player-name">{{ p.name }}</span>
       <span class="gameday-player-meta">
         {% if p.afl_team and p.afl_team in TEAM_LOGOS %}<img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="{{ p.afl_team }}" title="{{ p.afl_team }}" class="gameday-team-logo">{% else %}{{ p.afl_team }}{% endif %}
-        {% if afl_matchup_info.get(p.afl_team) %}<span style="color:var(--kl-text-faint);font-size:.65rem;margin-left:2px;">{{ afl_matchup_info[p.afl_team] }}</span>{% endif %}
+        {% if afl_matchup_info.get(p.afl_team) %}<span style="color:var(--kl-text-faint);font-size:.8125rem;margin-left:2px;">{{ afl_matchup_info[p.afl_team] }}</span>{% endif %}
         {% if p.get('replaces') %}<span class="gameday-sub-note">&rarr; replacing {{ p.replaces }}</span>{% endif %}
       </span>
     </span>
     <span class="gameday-player-score {{ 'score-dnp' if p.get('is_dnp') else ('score-reserve' if p.get('lineup_type') == 'reserve' else ('score-emg-standby' if is_emg_standby else ('score-ytp' if yet_to_play else ('text-success' if p.is_live else '')))) }}">
-      {% if p.get('lineup_type') == 'reserve' %}&ndash;{% elif is_emg_standby %}&ndash;{% elif yet_to_play %}<i class="bi bi-clock" style="font-size:.65rem;margin-right:2px;"></i>&mdash;{% else %}{{ p.score or 0 }}{% endif %}
+      {% if p.get('lineup_type') == 'reserve' %}&ndash;{% elif is_emg_standby %}&ndash;{% elif yet_to_play %}<i class="bi bi-clock" style="font-size:.8125rem;margin-right:2px;"></i>&mdash;{% else %}{{ p.score or 0 }}{% endif %}
       {% if p.is_live and not yet_to_play and not is_emg_standby %}<i class="bi bi-circle-fill gameday-live-dot"></i>{% endif %}
     </span>
   </div>
@@ -239,7 +239,7 @@
       <span class="gd-mob-vs-team">{{ my_team.name }}</span>
       <span class="gd-mob-vs-scores">
         <span class="gd-mob-vs-sc {% if my_score > opp_score %}gd-mob-sc-win{% endif %}">{{ '%.0f'|format(my_score) }}</span>
-        <span style="color:#63616d;font-size:.7rem;">v</span>
+        <span style="color:var(--kl-text-primary);font-size:.8125rem;">v</span>
         <span class="gd-mob-vs-sc {% if opp_score > my_score %}gd-mob-sc-win{% endif %}">{{ '%.0f'|format(opp_score) }}</span>
       </span>
       <span class="gd-mob-vs-team" style="text-align:right;">{{ opp_team.name }}</span>
@@ -259,7 +259,7 @@
       <div class="gd-mob-vs-row">
         <div class="gd-mob-vs-left">
           {% if mp %}
-            <span class="gd-mob-vs-name">{% if mp.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if mp.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{% if mp.get('subbed_on') %}<span class="gameday-badge-emg-active" style="font-size:.5rem;padding:0 3px;">EMG</span> {% endif %}{{ mp.name }}</span>
+            <span class="gd-mob-vs-name">{% if mp.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if mp.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{% if mp.get('subbed_on') %}<span class="gameday-badge-emg-active" style="font-size:.8125rem;padding:0 3px;">EMG</span> {% endif %}{{ mp.name }}</span>
             <span class="gd-mob-vs-pos pos-badge pos-{{ mp.position.split('/')[0]|upper }}">{{ mp.position.split('/')[0][:3] }}</span>
           {% endif %}
         </div>
@@ -270,7 +270,7 @@
         <div class="gd-mob-vs-right">
           {% if op %}
             <span class="gd-mob-vs-pos pos-badge pos-{{ op.position.split('/')[0]|upper }}">{{ op.position.split('/')[0][:3] }}</span>
-            <span class="gd-mob-vs-name">{% if op.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if op.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{% if op.get('subbed_on') %}<span class="gameday-badge-emg-active" style="font-size:.5rem;padding:0 3px;">EMG</span> {% endif %}{{ op.name }}</span>
+            <span class="gd-mob-vs-name">{% if op.is_captain %}<b class="gd-mob-c">C</b>{% endif %}{% if op.is_vice_captain %}<b class="gd-mob-vc">VC</b>{% endif %}{% if op.get('subbed_on') %}<span class="gameday-badge-emg-active" style="font-size:.8125rem;padding:0 3px;">EMG</span> {% endif %}{{ op.name }}</span>
           {% endif %}
         </div>
       </div>
@@ -334,14 +334,14 @@
       {% set op = opp_dnp[i] if i < opp_dnp|length else None %}
       <div class="gd-mob-vs-row" style="opacity:.75;">
         <div class="gd-mob-vs-left">
-          {% if mp %}<span class="gd-mob-vs-name" style="color:#a0a0ac;">{{ mp.name }}</span>{% endif %}
+          {% if mp %}<span class="gd-mob-vs-name" style="color:var(--kl-text-primary);">{{ mp.name }}</span>{% endif %}
         </div>
         <div class="gd-mob-vs-mid">
-          <span class="gd-mob-sc-l" style="color:#8a8895;">0</span>
-          <span class="gd-mob-sc-r" style="color:#8a8895;">0</span>
+          <span class="gd-mob-sc-l" style="color:var(--kl-text-primary);">0</span>
+          <span class="gd-mob-sc-r" style="color:var(--kl-text-primary);">0</span>
         </div>
         <div class="gd-mob-vs-right">
-          {% if op %}<span class="gd-mob-vs-name" style="color:#a0a0ac;">{{ op.name }}</span>{% endif %}
+          {% if op %}<span class="gd-mob-vs-name" style="color:var(--kl-text-primary);">{{ op.name }}</span>{% endif %}
         </div>
       </div>
     {% endfor %}
@@ -414,7 +414,7 @@
               {% endfor %}
             {% endif %}
           {% elif not is_bye %}
-            <div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">No lineup submitted</div>
+            <div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8125rem;">No lineup submitted</div>
           {% endif %}
         </div>
       </div>
@@ -476,7 +476,7 @@
               {% endfor %}
             {% endif %}
           {% elif not is_bye %}
-            <div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">No lineup submitted</div>
+            <div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8125rem;">No lineup submitted</div>
           {% endif %}
         </div>
       </div>
@@ -520,7 +520,7 @@
           </span>
           <span class="matchup-team-score" data-side="home">
             {% if f.status != 'scheduled' %}{{ '%.0f'|format(h_score) }}{% endif %}
-            {% if h_score > a_score and f.status != 'scheduled' %}<i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.7rem;"></i>{% endif %}
+            {% if h_score > a_score and f.status != 'scheduled' %}<i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.8125rem;"></i>{% endif %}
           </span>
         </div>
         <div class="matchup-team-row">
@@ -529,7 +529,7 @@
           </span>
           <span class="matchup-team-score" data-side="away">
             {% if f.status != 'scheduled' %}{{ '%.0f'|format(a_score) }}{% endif %}
-            {% if a_score > h_score and f.status != 'scheduled' %}<i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.7rem;"></i>{% endif %}
+            {% if a_score > h_score and f.status != 'scheduled' %}<i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.8125rem;"></i>{% endif %}
           </span>
         </div>
         {% if f.status != 'scheduled' %}
@@ -537,26 +537,26 @@
             <div class="matchup-mini-fill" style="width:{{ h_pct }}%;"></div>
           </div>
           <div class="d-flex justify-content-between align-items-center" style="margin-top:2px;">
-            <span class="matchup-players-count" data-side="home" style="font-size:.6rem;color:var(--kl-text-faint);">
+            <span class="matchup-players-count" data-side="home" style="font-size:.8125rem;color:var(--kl-text-faint);">
               {% if h_total %}{{ h_played }}/{{ h_total }} played{% endif %}
             </span>
-            <span class="matchup-cap-badges" data-side="home" style="font-size:.55rem;">
+            <span class="matchup-cap-badges" data-side="home" style="font-size:.8125rem;">
               {% if h_data.get('has_captain') %}
-                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if h_data.get('captain_played') else 'background:rgba(160,160,172,.15);color:#8a8895;' }}">C</span>
+                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if h_data.get('captain_played') else 'background:rgba(160,160,172,.15);color:var(--kl-text-primary);' }}">C</span>
               {% endif %}
               {% if h_data.get('has_vc') %}
-                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if h_data.get('vc_played') else 'background:rgba(160,160,172,.15);color:#8a8895;' }}">VC</span>
+                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if h_data.get('vc_played') else 'background:rgba(160,160,172,.15);color:var(--kl-text-primary);' }}">VC</span>
               {% endif %}
             </span>
-            <span class="matchup-cap-badges" data-side="away" style="font-size:.55rem;">
+            <span class="matchup-cap-badges" data-side="away" style="font-size:.8125rem;">
               {% if a_data.get('has_captain') %}
-                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if a_data.get('captain_played') else 'background:rgba(160,160,172,.15);color:#8a8895;' }}">C</span>
+                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if a_data.get('captain_played') else 'background:rgba(160,160,172,.15);color:var(--kl-text-primary);' }}">C</span>
               {% endif %}
               {% if a_data.get('has_vc') %}
-                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if a_data.get('vc_played') else 'background:rgba(160,160,172,.15);color:#8a8895;' }}">VC</span>
+                <span style="padding:1px 3px;border-radius:3px;font-weight:700;{{ 'background:rgba(63,185,80,.2);color:#3fb950;' if a_data.get('vc_played') else 'background:rgba(160,160,172,.15);color:var(--kl-text-primary);' }}">VC</span>
               {% endif %}
             </span>
-            <span class="matchup-players-count" data-side="away" style="font-size:.6rem;color:var(--kl-text-faint);">
+            <span class="matchup-players-count" data-side="away" style="font-size:.8125rem;color:var(--kl-text-faint);">
               {% if a_total %}{{ a_played }}/{{ a_total }} played{% endif %}
             </span>
           </div>
@@ -566,7 +566,7 @@
           </div>
         {% else %}
           <div class="matchup-status-text">
-            <i class="bi bi-calendar-event" style="font-size:.6rem;"></i> Upcoming
+            <i class="bi bi-calendar-event" style="font-size:.8125rem;"></i> Upcoming
           </div>
         {% endif %}
       </div>
@@ -576,7 +576,7 @@
 {% endif %}
 
 {# ── Footer ── #}
-<div class="mt-3 d-flex align-items-center justify-content-between" style="font-size:.75rem;color:var(--kl-text-faint);">
+<div class="mt-3 d-flex align-items-center justify-content-between" style="font-size:.8125rem;color:var(--kl-text-faint);">
   <span>
     {% if gameday_state == 'live' %}
       <i class="bi bi-broadcast me-1" style="color:var(--kl-accent-green);"></i>Live updates via WebSocket
@@ -586,7 +586,7 @@
       &nbsp;
     {% endif %}
   </span>
-  <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" style="color:var(--kl-text-secondary);text-decoration:none;font-size:.7rem;">
+  <a href="{{ url_for('matchups.fixture_view', league_id=league.id) }}" style="color:var(--kl-text-secondary);text-decoration:none;font-size:.8125rem;">
     Season Fixture &rarr;
   </a>
 </div>
@@ -601,12 +601,12 @@
   .gameday-round-title {
     font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; color: var(--kl-text-heading);
   }
-  .gameday-round-dates { color: var(--kl-text-secondary); font-size: .8rem; }
+  .gameday-round-dates { color: var(--kl-text-secondary); font-size: .8125rem; }
 
   /* ── State badges ── */
   .gameday-state-badge {
     display: inline-flex; align-items: center; gap: 4px;
-    font-size: .72rem; font-weight: 700; padding: 5px 12px;
+    font-size: .8125rem; font-weight: 700; padding: 5px 12px;
     border-radius: 14px; text-transform: uppercase; letter-spacing: .5px;
   }
   .badge-upcoming { background: rgba(81,78,95,.12); color: var(--kl-accent-blue); border: 1px solid rgba(81,78,95,.25); }
@@ -634,13 +634,13 @@
   .game-status-pill {
     display: inline-flex; align-items: center; gap: 6px;
     background: var(--kl-bg-body); border: 1px solid var(--kl-border); border-radius: 16px;
-    padding: 4px 10px; font-size: .72rem;
+    padding: 4px 10px; font-size: .8125rem;
   }
   .game-teams { color: var(--kl-text-primary); font-weight: 600; }
-  .game-afl-score { color: var(--kl-text-secondary); font-size: .7rem; font-variant-numeric: tabular-nums; }
-  .game-badge-live { font-size: .6rem; background: #238636; color: #fff; animation: pulse 2s infinite; }
-  .game-badge-ft { font-size: .6rem; background: #238636; color: #fff; }
-  .game-badge-sched { font-size: .6rem; background: var(--kl-bg-elevated); color: var(--kl-text-secondary); }
+  .game-afl-score { color: var(--kl-text-secondary); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+  .game-badge-live { font-size: .8125rem; background: #238636; color: #fff; animation: pulse 2s infinite; }
+  .game-badge-ft { font-size: .8125rem; background: #238636; color: #fff; }
+  .game-badge-sched { font-size: .8125rem; background: var(--kl-bg-elevated); color: var(--kl-text-secondary); }
 
   /* ── KL Matchup Mini-bar ── */
   .kl-mini-bar {
@@ -659,12 +659,12 @@
   .kl-mini-pill:hover { background: var(--kl-bg-elevated); border-color: var(--kl-border-light); }
   .kl-mini-yours { border-color: var(--kl-accent-blue); }
   .kl-mini-teams {
-    font-weight: 600; font-size: .72rem; color: var(--kl-text-primary);
+    font-weight: 600; font-size: .8125rem; color: var(--kl-text-primary);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     max-width: 100%;
   }
   .kl-mini-score {
-    font-size: .68rem; color: var(--kl-text-secondary);
+    font-size: .8125rem; color: var(--kl-text-secondary);
     font-variant-numeric: tabular-nums;
   }
 
@@ -705,7 +705,7 @@
   .hero-team-right { justify-content: flex-end; }
   .hero-team-detail { min-width: 0; flex: 1; }
   .hero-vs {
-    font-size: .6rem; font-weight: 800; color: var(--kl-text-faint);
+    font-size: .8125rem; font-weight: 800; color: var(--kl-text-faint);
     letter-spacing: 2px; padding: 0 14px; opacity: .5;
     flex-shrink: 0;
   }
@@ -733,13 +733,13 @@
     display: flex; align-items: center; gap: 4px; margin-top: 2px;
   }
   .hero-players-count {
-    font-size: .64rem; color: var(--kl-text-faint); font-weight: 500;
+    font-size: .8125rem; color: var(--kl-text-faint); font-weight: 500;
     font-variant-numeric: tabular-nums;
   }
   .hero-cap-badges { display: flex; gap: 2px; }
   .hero-role-badge {
-    font-size: .5rem; padding: 1px 4px; border-radius: 3px; font-weight: 700;
-    background: rgba(160,160,172,.12); color: #8a8895; line-height: 1.3;
+    font-size: .8125rem; padding: 1px 4px; border-radius: 3px; font-weight: 700;
+    background: rgba(160,160,172,.12); color: var(--kl-text-primary); line-height: 1.3;
   }
   .hero-role-badge.role-active { background: rgba(63,185,80,.18); color: #3fb950; }
 
@@ -766,7 +766,7 @@
     line-height: 1; padding-top: 8px; opacity: .4;
   }
   .captain-bonus {
-    color: #d29922; font-size: .65rem; font-weight: 700; margin-top: 3px;
+    color: #d29922; font-size: .8125rem; font-weight: 700; margin-top: 3px;
     white-space: nowrap;
   }
 
@@ -779,17 +779,17 @@
   .hero-margin-chip {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 5px 16px; border-radius: 8px;
-    font-size: .72rem; font-weight: 800; letter-spacing: 1px;
+    font-size: .8125rem; font-weight: 800; letter-spacing: 1px;
     text-transform: uppercase; color: var(--kl-text-primary);
     background: rgba(160,160,172,.08);
   }
-  .hero-margin-chip i { font-size: .6rem; }
+  .hero-margin-chip i { font-size: .8125rem; }
 
   .hero-proj-row {
     display: flex; align-items: center; gap: 10px;
   }
   .hero-proj-item {
-    font-size: .66rem; color: var(--kl-text-faint); font-weight: 500;
+    font-size: .8125rem; color: var(--kl-text-faint); font-weight: 500;
     font-variant-numeric: tabular-nums; white-space: nowrap;
   }
   .hero-proj-item b {
@@ -801,14 +801,14 @@
 
   .hero-first-bounce {
     text-align: center; padding: 0 20px 12px;
-    color: var(--kl-text-secondary); font-size: .8rem;
+    color: var(--kl-text-secondary); font-size: .8125rem;
   }
   .hero-breakdown-wrap {
     text-align: center; padding: 0 20px 14px;
   }
   .hero-breakdown-link {
     display: inline-flex; align-items: center; gap: 4px;
-    font-size: .72rem; font-weight: 600; color: var(--kl-accent-blue);
+    font-size: .8125rem; font-weight: 600; color: var(--kl-accent-blue);
     text-decoration: none; padding: 5px 14px; border-radius: 8px;
     border: 1px solid rgba(236,236,246,.2); background: rgba(236,236,246,.06);
     transition: background .15s;
@@ -835,7 +835,7 @@
   .gameday-player-list { max-height: 600px; overflow-y: auto; }
   .gameday-player-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 7px 14px; border-bottom: 1px solid var(--kl-bg-card); font-size: .8rem;
+    padding: 7px 14px; border-bottom: 1px solid var(--kl-bg-card); font-size: .8125rem;
     transition: background .15s;
   }
   .gameday-player-row:last-child { border-bottom: none; }
@@ -844,54 +844,54 @@
   .player-locked { opacity: 0.7; }
   .gameday-player-info { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
   .gameday-player-name { color: var(--kl-text-primary); white-space: nowrap; }
-  .gameday-player-meta { color: var(--kl-text-faint); font-size: .7rem; white-space: nowrap; }
+  .gameday-player-meta { color: var(--kl-text-faint); font-size: .8125rem; white-space: nowrap; }
   .gameday-player-score {
     font-weight: 600; white-space: nowrap; color: var(--kl-text-primary);
     font-variant-numeric: tabular-nums;
   }
-  .gameday-live-dot { font-size: .35rem; color: #56d364; vertical-align: middle; margin-left: 3px; animation: pulse 2s infinite; }
+  .gameday-live-dot { font-size: .8125rem; color: #56d364; vertical-align: middle; margin-left: 3px; animation: pulse 2s infinite; }
   .gameday-player-score.text-success { color: #56d364 !important; }
   .gameday-team-logo { width: 16px; height: 16px; vertical-align: middle; margin-right: 2px; }
   .gameday-pos-badge {
-    padding: 1px 5px !important; font-size: .55rem !important; border-radius: 3px !important;
+    padding: 1px 5px !important; font-size: .8125rem !important; border-radius: 3px !important;
     line-height: 1.4;
   }
 
   /* ── Player badges ── */
   .gameday-badge-c {
-    display: inline-block; background: var(--kl-accent-yellow); color: #000; font-size: .55rem;
+    display: inline-block; background: var(--kl-accent-yellow); color: #000; font-size: .8125rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-vc {
-    display: inline-block; background: var(--kl-accent-blue); color: #000; font-size: .55rem;
+    display: inline-block; background: var(--kl-accent-blue); color: #000; font-size: .8125rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-emg {
-    display: inline-block; background: var(--kl-accent-red); color: #fff; font-size: .55rem;
+    display: inline-block; background: var(--kl-accent-red); color: #fff; font-size: .8125rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-dnp {
-    display: inline-block; background: var(--kl-text-faint); color: var(--kl-text-primary); font-size: .55rem;
+    display: inline-block; background: var(--kl-text-faint); color: var(--kl-text-primary); font-size: .8125rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
   .gameday-badge-sub {
-    display: inline-block; background: #238636; color: #fff; font-size: .55rem;
+    display: inline-block; background: #238636; color: #fff; font-size: .8125rem;
     font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3;
   }
-  .gameday-badge-sub i { font-size: .6rem; vertical-align: middle; }
-  .gameday-sub-note { color: var(--kl-accent-green); font-size: .65rem; font-style: italic; }
+  .gameday-badge-sub i { font-size: .8125rem; vertical-align: middle; }
+  .gameday-sub-note { color: var(--kl-accent-green); font-size: .8125rem; font-style: italic; }
 
   /* ── Player states ── */
   .player-dnp { opacity: 0.75; }
-  .player-dnp .gameday-player-name { color: #a0a0ac; }
-  .score-dnp { color: #8a8895 !important; }
+  .player-dnp .gameday-player-name { color: var(--kl-text-primary); }
+  .score-dnp { color: var(--kl-text-primary) !important; }
   .gameday-badge-emg-active {
     background: rgba(222,220,233,.18); color: #e3e1ec; border: 1px solid rgba(222,220,233,.3);
-    font-size: .55rem; font-weight: 800; padding: 1px 5px; border-radius: 3px;
+    font-size: .8125rem; font-weight: 800; padding: 1px 5px; border-radius: 3px;
     letter-spacing: .3px; margin-right: 3px; vertical-align: middle;
   }
-  .gameday-sub-note { font-size: .62rem; color: #a0a0ac; font-style: italic; }
-  .section-dnp { color: #f85149; font-size: .7rem; }
+  .gameday-sub-note { font-size: .8125rem; color: var(--kl-text-primary); font-style: italic; }
+  .section-dnp { color: #f85149; font-size: .8125rem; }
   .player-emergency-standby { opacity: 0.7; }
   .player-subbed-on { background: rgba(35,134,54,.08); }
   .player-reserve { opacity: 0.5; }
@@ -904,7 +904,7 @@
 
   /* ── Section headers ── */
   .gameday-section-hdr {
-    padding: 6px 14px; font-size: .65rem; font-weight: 700;
+    padding: 6px 14px; font-size: .8125rem; font-weight: 700;
     color: var(--kl-text-secondary); text-transform: uppercase; letter-spacing: .5px;
     background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-bg-elevated);
     border-left: 3px solid transparent;
@@ -930,12 +930,12 @@
   }
   .gameday-matchups-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px; font-size: .75rem; font-weight: 700; color: var(--kl-text-secondary);
+    padding: 12px 16px; font-size: .8125rem; font-weight: 700; color: var(--kl-text-secondary);
     text-transform: uppercase; letter-spacing: .8px;
     background: var(--kl-bg-card); border-bottom: 1px solid var(--kl-border);
   }
   .matchups-header-dates {
-    font-size: .7rem; font-weight: 500; color: var(--kl-text-faint);
+    font-size: .8125rem; font-weight: 500; color: var(--kl-text-faint);
     text-transform: none; letter-spacing: normal;
   }
   .gameday-matchups-grid {
@@ -964,13 +964,13 @@
   }
   .matchup-your-tag {
     position: absolute; top: -1px; right: 10px;
-    font-size: .55rem; font-weight: 700; text-transform: uppercase;
+    font-size: .8125rem; font-weight: 700; text-transform: uppercase;
     color: var(--kl-accent-blue); background: rgba(81,78,95,.15);
     padding: 2px 8px; border-radius: 0 0 6px 6px; letter-spacing: .3px;
   }
   .matchup-team-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 3px 0; font-size: .8rem;
+    padding: 3px 0; font-size: .8125rem;
   }
   .matchup-team-name { color: var(--kl-text-primary); font-weight: 500; }
   .matchup-winner { color: var(--kl-text-heading); font-weight: 700; }
@@ -987,11 +987,11 @@
     transition: width .6s ease;
   }
   .matchup-margin {
-    font-size: .65rem; color: var(--kl-text-muted); text-align: center; margin-top: 4px;
+    font-size: .8125rem; color: var(--kl-text-muted); text-align: center; margin-top: 4px;
     font-variant-numeric: tabular-nums;
   }
   .matchup-status-text {
-    font-size: .65rem; color: var(--kl-text-faint); text-align: center; margin-top: 8px;
+    font-size: .8125rem; color: var(--kl-text-faint); text-align: center; margin-top: 8px;
   }
 
   /* ════════════════════════════════════════════════
@@ -1021,22 +1021,22 @@
     .hero-big-score { font-size: 2.4rem; min-width: 50px; }
     .hero-score-dash { font-size: 1.6rem; padding-top: 5px; }
     .hero-scores-area { padding: 14px 12px 12px; }
-    .hero-team-name { font-size: .78rem; }
+    .hero-team-name { font-size: .8125rem; }
     .hero-crest { width: 40px; height: 40px; font-size: .85rem; border-radius: 11px; }
     .hero-crest-img { width: 40px; height: 40px; border-radius: 11px; }
     .hero-team-block { gap: 8px; }
-    .hero-vs { padding: 0 8px; font-size: .55rem; }
+    .hero-vs { padding: 0 8px; font-size: .8125rem; }
     .hero-footer { padding: 10px 12px 14px; gap: 6px; }
-    .hero-margin-chip { font-size: .65rem; padding: 4px 12px; }
-    .gameday-player-row { padding: 6px 10px; font-size: .75rem; }
+    .hero-margin-chip { font-size: .8125rem; padding: 4px 12px; }
+    .gameday-player-row { padding: 6px 10px; font-size: .8125rem; }
     .gameday-player-meta { display: none; }
     .gameday-round-title { font-size: 1.1rem; }
     .gameday-afl-bar { gap: 4px; padding: 8px 10px; }
-    .game-status-pill { font-size: .65rem; padding: 3px 8px; }
+    .game-status-pill { font-size: .8125rem; padding: 3px 8px; }
     .kl-mini-bar { gap: 4px; padding: 8px 10px; }
     .kl-mini-pill { padding: 5px 3px; }
-    .kl-mini-teams { font-size: .62rem; }
-    .kl-mini-score { font-size: .58rem; }
+    .kl-mini-teams { font-size: .8125rem; }
+    .kl-mini-score { font-size: .8125rem; }
     .gameday-matchups-grid { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
     .gameday-pos-badge { display: none !important; }
   }
@@ -1166,8 +1166,8 @@ function showLoadingState(meta) {
     document.getElementById('left-initial').textContent = meta.home_team_name.substring(0,2).toUpperCase();
     document.getElementById('right-initial').textContent = meta.away_team_name.substring(0,2).toUpperCase();
 
-    document.getElementById('left-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">Loading...</div>';
-    document.getElementById('right-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">Loading...</div>';
+    document.getElementById('left-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8125rem;">Loading...</div>';
+    document.getElementById('right-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8125rem;">Loading...</div>';
 }
 
 function renderViewedMatchup(fixtureId) {
@@ -1372,9 +1372,9 @@ function renderViewedMatchup(fixtureId) {
 
     var lockedIds = cachedFixtureData._lockedIds || [];
     if (leftPlayers) renderPlayerList('left-players', leftPlayers, lockedIds);
-    else document.getElementById('left-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">No lineup submitted</div>';
+    else document.getElementById('left-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8125rem;">No lineup submitted</div>';
     if (rightPlayers) renderPlayerList('right-players', rightPlayers, lockedIds);
-    else document.getElementById('right-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">No lineup submitted</div>';
+    else document.getElementById('right-players').innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8125rem;">No lineup submitted</div>';
 
     // Mobile view update
     renderMobileView(leftName, rightName, leftScore, rightScore, leftPlayers, rightPlayers);
@@ -1437,7 +1437,7 @@ function renderPlayerRow(p, lockedIds) {
     if (isSubOn) badges += '<span class="gameday-badge-emg-active">EMG</span> ';
     else if (isDnp) badges += '<span class="gameday-badge-dnp">DNP</span> ';
     else if (isEmgStandby) badges += '<span class="gameday-badge-emg">EMG</span> ';
-    if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.6rem;"></i> ';
+    if (isLocked) badges += '<i class="bi bi-lock-fill" style="color:var(--kl-accent-red);font-size:.8125rem;"></i> ';
 
     var liveDot = (p.is_live && !yetToPlay && !isEmgStandby) ? ' <i class="bi bi-circle-fill gameday-live-dot"></i>' : '';
     var subNote = p.replaces ? '<span class="gameday-sub-note">&rarr; replacing ' + p.replaces + '</span>' : '';
@@ -1445,7 +1445,7 @@ function renderPlayerRow(p, lockedIds) {
     var scoreText;
     if (isReserve) scoreText = '&ndash;';
     else if (isEmgStandby) scoreText = '&ndash;';
-    else if (yetToPlay) scoreText = '<i class="bi bi-clock" style="font-size:.65rem;margin-right:2px;"></i>&mdash;';
+    else if (yetToPlay) scoreText = '<i class="bi bi-clock" style="font-size:.8125rem;margin-right:2px;"></i>&mdash;';
     else scoreText = (p.score || 0);
 
     return '<div class="' + rowClass + '">'
@@ -1478,7 +1478,7 @@ function renderPlayerList(containerId, players, lockedIds) {
     var container = document.getElementById(containerId);
     if (!container) return;
     if (!players || !players.length) {
-        container.innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8rem;">No lineup submitted</div>';
+        container.innerHTML = '<div class="text-center py-3" style="color:var(--kl-text-faint);font-size:.8125rem;">No lineup submitted</div>';
         return;
     }
 
@@ -1627,7 +1627,7 @@ function _capVcStatus(players) {
 function _renderCapBadges(status) {
     var html = '';
     var playedStyle = 'background:rgba(63,185,80,.2);color:#3fb950;';
-    var pendingStyle = 'background:rgba(160,160,172,.15);color:#8a8895;';
+    var pendingStyle = 'background:rgba(160,160,172,.15);color:var(--kl-text-primary);';
     var baseStyle = 'padding:1px 3px;border-radius:3px;font-weight:700;';
     if (status.hasCap) {
         html += '<span style="' + baseStyle + (status.capPlayed ? playedStyle : pendingStyle) + '">C</span> ';
@@ -1662,8 +1662,8 @@ function updateMatchupCards(data) {
 
         var scoreEls = card.querySelectorAll('.matchup-team-score');
         if (scoreEls.length >= 2) {
-            scoreEls[0].innerHTML = Math.round(hScore) + (hScore > aScore ? ' <i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.7rem;"></i>' : '');
-            scoreEls[1].innerHTML = Math.round(aScore) + (aScore > hScore ? ' <i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.7rem;"></i>' : '');
+            scoreEls[0].innerHTML = Math.round(hScore) + (hScore > aScore ? ' <i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.8125rem;"></i>' : '');
+            scoreEls[1].innerHTML = Math.round(aScore) + (aScore > hScore ? ' <i class="bi bi-check-lg" style="color:var(--kl-accent-green);font-size:.8125rem;"></i>' : '');
         }
 
         var nameEls = card.querySelectorAll('.matchup-team-name');

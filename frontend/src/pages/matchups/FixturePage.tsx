@@ -48,10 +48,10 @@ const FX_CSS = `
 .rnd-item:hover { background:#151518; }
 .rnd-item.active { background:#151518; }
 .rnd-item.active::after { content:''; position:absolute; bottom:0; left:20%; right:20%; height:2px; background:#ececf6; border-radius:1px 1px 0 0; box-shadow:0 0 6px rgba(236,236,246,.5); }
-.rnd-num { font-size:.78rem; font-weight:600; color:#63616d; line-height:1; transition:color .12s; }
-.rnd-item:hover .rnd-num { color:#a0a0ac; }
+.rnd-num { font-size:.8125rem; font-weight:600; color:var(--kl-text-primary); line-height:1; transition:color .12s; }
+.rnd-item:hover .rnd-num { color:var(--kl-text-primary); }
 .rnd-item.active .rnd-num { color:#ebebee; }
-.rnd-item.rnd-done .rnd-num { color:#a0a0ac; }
+.rnd-item.rnd-done .rnd-num { color:var(--kl-text-primary); }
 .rnd-item.rnd-live .rnd-num { color:#3fb950; }
 .rnd-dot { width:5px; height:5px; border-radius:50%; margin-top:4px; }
 .rnd-dot-done { background:#63616d; }
@@ -62,20 +62,20 @@ const FX_CSS = `
 .round-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #1e1d21; }
 .round-hdr-left { display:flex; align-items:baseline; gap:10px; }
 .round-hdr h3 { font-size:1.05rem; font-weight:700; color:#ebebee; margin:0; letter-spacing:-.01em; }
-.round-hdr .rh-badge { font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px; letter-spacing:.3px; text-transform:uppercase; }
+.round-hdr .rh-badge { font-size:.8125rem; font-weight:600; padding:2px 8px; border-radius:4px; letter-spacing:.3px; text-transform:uppercase; }
 .rh-complete { background:rgba(46,160,67,.1); color:#2ea043; }
 .rh-live { background:rgba(63,185,80,.12); color:#3fb950; }
 .rh-progress { background:rgba(158,106,3,.1); color:#d29922; }
 .rh-actions { display:flex; gap:6px; align-items:center; }
-.rh-btn { font-size:.7rem; padding:4px 10px; border-radius:6px; border:1px solid #2a292f; background:transparent; color:#a0a0ac; text-decoration:none; transition:all .12s; cursor:pointer; }
-.rh-btn:hover { border-color:#63616d; color:#cfcfd6; }
+.rh-btn { font-size:.8125rem; padding:4px 10px; border-radius:6px; border:1px solid #2a292f; background:transparent; color:var(--kl-text-primary); text-decoration:none; transition:all .12s; cursor:pointer; }
+.rh-btn:hover { border-color:#63616d; color:var(--kl-text-primary); }
 .rh-btn-primary { border-color:rgba(236,236,246,.3); color:#ececf6; }
 .rh-btn-primary:hover { border-color:#ececf6; background:rgba(236,236,246,.06); }
 .mx-list { background:#0e0d0f; border:1px solid #1e1d21; border-radius:10px; overflow:hidden; }
 .mx-row { display:grid; grid-template-columns:1fr auto 1fr auto; align-items:center; padding:14px 20px; gap:0; border-bottom:1px solid #151518; transition:background .1s; text-decoration:none; color:inherit; cursor:pointer; }
 .mx-row:last-child { border-bottom:none; }
 .mx-row:hover { background:rgba(21,21,24,.6); }
-.mx-team { font-size:.85rem; font-weight:500; color:#cfcfd6; text-decoration:none; transition:color .1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mx-team { font-size:.85rem; font-weight:500; color:var(--kl-text-primary); text-decoration:none; transition:color .1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .mx-team:hover { color:#ececf6; }
 .mx-team-home { text-align:left; padding-right:12px; }
 .mx-team-away { text-align:right; padding-left:12px; }
@@ -83,17 +83,17 @@ const FX_CSS = `
 .mx-centre { display:flex; align-items:center; justify-content:center; min-width:100px; gap:0; }
 .mx-sc { font-size:.95rem; font-weight:700; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }
 .mx-sc.won { color:#3fb950; }
-.mx-sc.lost { color:#8a8895; }
-.mx-sc.draw { color:#a0a0ac; }
-.mx-sep { color:#1e1d21; margin:0 4px; font-weight:300; font-size:.8rem; }
-.mx-vs { font-size:.65rem; font-weight:700; color:#2a292f; letter-spacing:1.5px; text-transform:uppercase; }
-.mx-live-tag { font-size:.55rem; font-weight:700; color:#3fb950; letter-spacing:.5px; background:rgba(63,185,80,.08); padding:2px 6px; border-radius:3px; }
+.mx-sc.lost { color:var(--kl-text-primary); }
+.mx-sc.draw { color:var(--kl-text-primary); }
+.mx-sep { color:#1e1d21; margin:0 4px; font-weight:300; font-size:.8125rem; }
+.mx-vs { font-size:.8125rem; font-weight:700; color:#2a292f; letter-spacing:1.5px; text-transform:uppercase; }
+.mx-live-tag { font-size:.8125rem; font-weight:700; color:#3fb950; letter-spacing:.5px; background:rgba(63,185,80,.08); padding:2px 6px; border-radius:3px; }
 .mx-arrow { display:flex; align-items:center; justify-content:center; width:28px; color:#1e1d21; transition:color .1s; }
-.mx-row:hover .mx-arrow { color:#63616d; }
-.season-empty { text-align:center; padding:60px 20px; color:#63616d; }
+.mx-row:hover .mx-arrow { color:var(--kl-text-primary); }
+.season-empty { text-align:center; padding:60px 20px; color:var(--kl-text-primary); }
 .season-empty i { font-size:2rem; margin-bottom:12px; display:block; color:#2a292f; }
-.season-empty h4 { color:#a0a0ac; font-size:1rem; font-weight:600; margin-bottom:4px; }
-.season-empty p { font-size:.8rem; }
+.season-empty h4 { color:var(--kl-text-primary); font-size:1rem; font-weight:600; margin-bottom:4px; }
+.season-empty p { font-size:.8125rem; }
 .season-empty a { color:#ececf6; }
 `
 
@@ -151,7 +151,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
   const activeBg = isSevens ? 'rgba(188,140,255,.08)' : 'rgba(236,236,246,.08)'
   const activeBorder = isSevens ? 'rgba(188,140,255,.3)' : 'rgba(236,236,246,.3)'
 
-  // 7s theme override — every green accent becomes 7s purple (#bc8cff)
+  // 7s theme override, every green accent becomes 7s purple (#bc8cff)
   const SEVENS_OVERRIDE = `
     .fx-sevens .mx-sc.won { color: #bc8cff !important; }
     .fx-sevens .mx-live-tag { color: #bc8cff !important; background: rgba(188,140,255,.1) !important; }
@@ -173,14 +173,14 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
       {/* Competition toggle: Main ↔ 7s */}
       <div className="comp-toggle">
         {isSevens ? (
-          <Link to={`/leagues/${leagueId}/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#2a292f', color: '#a0a0ac', borderRadius: '8px 0 0 8px' }}>Main</Link>
+          <Link to={`/leagues/${leagueId}/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#2a292f', color: 'var(--kl-text-primary)', borderRadius: '8px 0 0 8px' }}>Main</Link>
         ) : (
           <span className="comp-toggle-btn" style={{ borderColor: activeBorder, color: activeColor, background: activeBg, borderRadius: '8px 0 0 8px' }}>Main</span>
         )}
         {isSevens ? (
           <span className="comp-toggle-btn" style={{ borderColor: activeBorder, color: activeColor, background: activeBg, borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
         ) : (
-          <Link to={`/leagues/${leagueId}/reserve7s/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#2a292f', color: '#a0a0ac', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
+          <Link to={`/leagues/${leagueId}/reserve7s/fixture`} className="comp-toggle-btn text-decoration-none" style={{ borderColor: '#2a292f', color: 'var(--kl-text-primary)', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</Link>
         )}
       </div>
 
@@ -213,7 +213,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
               {rs === 'completed' && <span className="rh-badge rh-complete">Complete</span>}
               {rs === 'live' && (
                 <span className="rh-badge rh-live">
-                  <i className="bi bi-broadcast me-1" style={{ fontSize: '.5rem' }}></i>Live
+                  <i className="bi bi-broadcast me-1" style={{ fontSize: '.8125rem' }}></i>Live
                 </span>
               )}
               {rs === 'partial' && <span className="rh-badge rh-progress">In Progress</span>}
@@ -228,14 +228,14 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
             </div>
           </div>
 
-          {/* Matchup list — live/current round rows go to gameday (live scores),
+          {/* Matchup list, live/current round rows go to gameday (live scores),
               completed rounds go to the matchup detail breakdown. */}
           <div className="mx-list">
             {current_fixtures.map(f => {
               const homeWon = f.status === 'completed' && (f.home_score || 0) > (f.away_score || 0)
               const awayWon = f.status === 'completed' && (f.away_score || 0) > (f.home_score || 0)
               const isLiveRound = rs === 'live' || rs === 'partial'
-              // The 7s has no standalone matchup-detail page — its gameday view
+              // The 7s has no standalone matchup-detail page, its gameday view
               // already renders both squads' breakdowns, so it handles past
               // rounds too. Sending 7s rows to /reserve7s/matchup/<id> 404s.
               const to = isLiveRound || isSevens
@@ -262,7 +262,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
                       {f.home_team?.name}
                     </span>
                     {showProgress && homeCount && (
-                      <span style={{ fontSize: '.62rem', color: '#8a8895', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
+                      <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                         {homeCount} played
                       </span>
                     )}
@@ -287,13 +287,13 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
                       {f.away_team?.name}
                     </span>
                     {showProgress && awayCount && (
-                      <span style={{ fontSize: '.62rem', color: '#8a8895', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
+                      <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                         {awayCount} played
                       </span>
                     )}
                   </div>
                   <div className="mx-arrow">
-                    <i className="bi bi-chevron-right" style={{ fontSize: '.65rem' }}></i>
+                    <i className="bi bi-chevron-right" style={{ fontSize: '.8125rem' }}></i>
                   </div>
                 </Link>
               )

@@ -1,5 +1,5 @@
 /**
- * DraftSkeleton — layout-aware loading placeholder for DraftRoomPage.
+ * DraftSkeleton, layout-aware loading placeholder for DraftRoomPage.
  *
  * Renders the room's three-band shape: pick clock header (timer +
  * "on the clock" banner), then a two-column main area (available

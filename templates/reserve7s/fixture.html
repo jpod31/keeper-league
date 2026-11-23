@@ -15,7 +15,7 @@
     font-size:1.1rem; font-weight:700; color:#ebebee; margin:0;
   }
   .s7f-title-badge {
-    font-size:.6rem; font-weight:700; padding:3px 8px; border-radius:4px;
+    font-size:.8125rem; font-weight:700; padding:3px 8px; border-radius:4px;
     background:rgba(188,140,255,.1); color:#bc8cff; letter-spacing:.5px;
   }
 
@@ -40,12 +40,12 @@
     box-shadow:0 0 6px rgba(188,140,255,.5);
   }
   .s7f-num {
-    font-size:.78rem; font-weight:600; color:#63616d; line-height:1;
+    font-size:.8125rem; font-weight:600; color:var(--kl-text-primary); line-height:1;
     transition:color .12s;
   }
-  .s7f-item:hover .s7f-num { color:#a0a0ac; }
+  .s7f-item:hover .s7f-num { color:var(--kl-text-primary); }
   .s7f-item.active .s7f-num { color:#ebebee; }
-  .s7f-item.s7f-done .s7f-num { color:#a0a0ac; }
+  .s7f-item.s7f-done .s7f-num { color:var(--kl-text-primary); }
   .s7f-item.s7f-live .s7f-num { color:#3fb950; }
   .s7f-dot {
     width:5px; height:5px; border-radius:50%; margin-top:4px;
@@ -67,7 +67,7 @@
   .s7f-row:last-child { border-bottom:none; }
   .s7f-row:hover { background:rgba(21,21,24,.6); }
   .s7f-team {
-    font-size:.85rem; font-weight:500; color:#cfcfd6;
+    font-size:.85rem; font-weight:500; color:var(--kl-text-primary);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .s7f-team-home { text-align:left; padding-right:12px; }
@@ -82,10 +82,10 @@
     font-variant-numeric:tabular-nums;
   }
   .s7f-sc.won { color:#3fb950; }
-  .s7f-sc.lost { color:#8a8895; }
-  .s7f-sep { color:#1e1d21; margin:0 4px; font-weight:300; font-size:.8rem; }
+  .s7f-sc.lost { color:var(--kl-text-primary); }
+  .s7f-sep { color:#1e1d21; margin:0 4px; font-weight:300; font-size:.8125rem; }
   .s7f-vs {
-    font-size:.65rem; font-weight:700; color:#2a292f; letter-spacing:1.5px;
+    font-size:.8125rem; font-weight:700; color:#2a292f; letter-spacing:1.5px;
     text-transform:uppercase;
   }
 
@@ -98,20 +98,20 @@
     font-size:1.05rem; font-weight:700; color:#ebebee; margin:0;
   }
   .s7f-rh-badge {
-    font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px;
+    font-size:.8125rem; font-weight:600; padding:2px 8px; border-radius:4px;
     letter-spacing:.3px; text-transform:uppercase;
   }
   .s7f-rh-complete { background:rgba(188,140,255,.1); color:#bc8cff; }
   .s7f-rh-live { background:rgba(63,185,80,.12); color:#3fb950; }
 
   .s7f-empty {
-    text-align:center; padding:60px 20px; color:#63616d;
+    text-align:center; padding:60px 20px; color:var(--kl-text-primary);
   }
   .s7f-empty i { font-size:2rem; margin-bottom:12px; display:block; color:#2a292f; }
-  .s7f-empty h4 { color:#a0a0ac; font-size:1rem; font-weight:600; }
+  .s7f-empty h4 { color:var(--kl-text-primary); font-size:1rem; font-weight:600; }
   .s7f-generate-btn {
     display:inline-block; margin-top:12px; padding:8px 20px; border-radius:8px;
-    font-size:.8rem; font-weight:600; color:#bc8cff;
+    font-size:.8125rem; font-weight:600; color:#bc8cff;
     background:rgba(188,140,255,.08); border:1px solid rgba(188,140,255,.2);
     text-decoration:none; transition:all .15s;
   }
@@ -176,9 +176,9 @@
   <div class="s7f-empty">
     <i class="bi bi-calendar-week"></i>
     <h4>No Reserve 7s fixture yet</h4>
-    <p style="font-size:.8rem;">The 7s fixture auto-generates when the main season fixture is created.</p>
+    <p style="font-size:.8125rem;">The 7s fixture auto-generates when the main season fixture is created.</p>
     {% if is_commissioner %}
-      <p style="font-size:.75rem;color:#63616d;margin-top:8px;">Or generate manually:</p>
+      <p style="font-size:.8125rem;color:var(--kl-text-primary);margin-top:8px;">Or generate manually:</p>
       <form method="POST" action="{{ url_for('reserve7s.sevens_generate_fixture', league_id=league.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="s7f-generate-btn">

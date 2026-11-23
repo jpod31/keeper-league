@@ -109,14 +109,14 @@ const WEIGHT_KEYS: { key: string; label: string }[] = [
   { key: 'rating_potential', label: 'Growth' },
 ]
 
-// Jewel-tone chat author palette — replaces the legacy GitHub-themed
+// Jewel-tone chat author palette, replaces the legacy GitHub-themed
 // list so chat messages match the rest of the app.
 const CHAT_COLORS = ['#e4e3ed', '#7dc99a', '#c2932f', '#e07a6c', '#e6e4ee', '#e2e0eb', '#d68a7e', '#f0d27a']
 
 const DRAFT_STYLE = `
 /* === Draft room · Stadium ====================================== */
 
-/* Banner — current pick + timer. Overrides the legacy GitHub-toned
+/* Banner, current pick + timer. Overrides the legacy GitHub-toned
    rules in global style.css. */
 .draft-banner {
   background: rgba(19,19,22,.7) !important;
@@ -174,21 +174,21 @@ const DRAFT_STYLE = `
 }
 @keyframes draftPulse { 0%, 100% { opacity: 1; } 50% { opacity: .65; } }
 .draft-timer-label {
-  font-size: .58rem !important;
-  letter-spacing: .16em !important;
+  font-size: .8125rem !important;
+  letter-spacing: .06em !important;
   text-transform: uppercase;
-  color: #8c8c98 !important;
+  color: var(--kl-text-primary) !important;
   font-weight: 700 !important;
   margin-top: 4px !important;
 }
-.draft-banner-round { font-size: .56rem; color: #8c8c98; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+.draft-banner-round { font-size: .8125rem; color: var(--kl-text-primary); letter-spacing: .06em; text-transform: uppercase; font-weight: 800; }
 .draft-banner-team { font-size: 1.15rem; font-weight: 800; color: #f5f5f7; letter-spacing: -.005em; }
 .draft-your-pick-pill {
   display: inline-flex;
   align-items: center;
-  font-size: .56rem;
+  font-size: .8125rem;
   font-weight: 800;
-  letter-spacing: .18em;
+  letter-spacing: .06em;
   padding: 3px 9px;
   border-radius: 4px;
   background: rgba(81,78,95,.2);
@@ -233,7 +233,7 @@ const DRAFT_STYLE = `
   margin-top: 4px;
 }
 .draft-event-countdown.soon { color: #7dc99a; }
-.draft-event-time { font-size: .82rem; color: #b0b0bc; }
+.draft-event-time { font-size: .82rem; color: var(--kl-text-primary); }
 
 /* Status pill on page header */
 .conn-dot {
@@ -245,15 +245,15 @@ const DRAFT_STYLE = `
   box-shadow: 0 0 6px rgba(109,179,138,.5);
 }
 .conn-dot.off { background: #e07a6c; box-shadow: 0 0 6px rgba(224,122,108,.5); }
-.draft-header-info { font-size: .78rem; color: #b0b0bc; letter-spacing: .02em; }
+.draft-header-info { font-size: .8125rem; color: var(--kl-text-primary); letter-spacing: .02em; }
 
 /* Available players card */
 .draft-avail-tbl { width: 100%; font-size: .82rem; }
 .draft-avail-tbl thead th {
-  font-size: .58rem !important;
+  font-size: .8125rem !important;
   font-weight: 800 !important;
-  letter-spacing: .14em !important;
-  color: #8c8c98 !important;
+  letter-spacing: .06em !important;
+  color: var(--kl-text-primary) !important;
   background: rgba(15,15,17,.7) !important;
   padding: 10px 12px !important;
   border-bottom: 1px solid rgba(220,218,231,.18) !important;
@@ -279,15 +279,15 @@ const DRAFT_STYLE = `
 /* Sortable headers */
 .sortable-th { cursor: pointer; user-select: none; white-space: nowrap; transition: color .14s; }
 .sortable-th:hover { color: #e8e7f0 !important; }
-.sortable-th .sort-icon { display: inline-block; margin-left: 4px; font-size: .55rem; opacity: .25; transition: opacity .14s, color .14s; }
+.sortable-th .sort-icon { display: inline-block; margin-left: 4px; font-size: .8125rem; opacity: .25; transition: opacity .14s, color .14s; }
 .sortable-th.active-sort { color: #ececf1 !important; }
 .sortable-th.active-sort .sort-icon { opacity: 1; color: #e4e3ed; }
 
-/* Position chips — match Gameday DEF/MID/RUC/FWD palette */
+/* Position chips, match Gameday DEF/MID/RUC/FWD palette */
 .draft-pos-chip {
   display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 22px; border-radius: 5px;
-  font-size: .56rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  font-size: .8125rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
   background: rgba(220,218,231,.1); border: 1px solid rgba(220,218,231,.18); color: #e8e7f0;
 }
 .draft-pos-chip.def { background: rgba(61,138,156,.14); color: #7ec0d3; border-color: rgba(61,138,156,.3); }
@@ -299,20 +299,20 @@ const DRAFT_STYLE = `
 .draft-stat-chip {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 34px; height: 22px; padding: 0 7px; border-radius: 5px;
-  font-size: .74rem; font-weight: 800; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0;
+  font-size: .8125rem; font-weight: 800; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0;
   background: rgba(220,218,231,.1); border: 1px solid rgba(220,218,231,.18); color: #e8e7f0;
 }
 .draft-stat-chip.tier-elite { background: rgba(194,147,47,.2); color: #f0d27a; border-color: rgba(194,147,47,.45); box-shadow: 0 0 10px -2px rgba(194,147,47,.3); }
 .draft-stat-chip.tier-good { background: rgba(81,78,95,.16); color: #e4e3ed; border-color: rgba(81,78,95,.35); }
 .draft-stat-chip.tier-ok { background: rgba(221,219,232,.12); color: #e6e4ee; border-color: rgba(221,219,232,.3); }
 .draft-stat-chip.tier-low { background: rgba(184,90,74,.1); color: #d68a7e; border-color: rgba(184,90,74,.25); }
-.draft-stat-chip.tier-empty { color: #7e7c8a; background: transparent; border-color: transparent; }
+.draft-stat-chip.tier-empty { color: var(--kl-text-primary); background: transparent; border-color: transparent; }
 .draft-stat-chip.draft-score { background: rgba(81,78,95,.18); color: #eae8f0; border-color: rgba(81,78,95,.4); }
 
 /* Position-need chips (sit above filter row) */
 .draft-need-chip {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: .66rem; padding: 3px 9px; border-radius: 6px;
+  font-size: .8125rem; padding: 3px 9px; border-radius: 6px;
   font-weight: 700; letter-spacing: .04em;
   background: rgba(220,218,231,.1); border: 1px solid rgba(220,218,231,.18); color: #e8e7f0;
   font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0;
@@ -329,11 +329,11 @@ const DRAFT_STYLE = `
   color: #ececf1 !important;
   border-radius: 8px !important;
   padding: 7px 12px !important;
-  font-size: .78rem !important;
+  font-size: .8125rem !important;
   height: auto !important;
 }
 .draft-filter-input:focus, .draft-filter-select:focus { border-color: rgba(81,78,95,.55) !important; outline: 0 !important; box-shadow: 0 0 0 2px rgba(81,78,95,.15) !important; }
-.draft-filter-input::placeholder { color: #8c8c98; }
+.draft-filter-input::placeholder { color: var(--kl-text-primary); }
 
 /* Values panel (weight sliders) */
 .draft-values-panel {
@@ -345,10 +345,10 @@ const DRAFT_STYLE = `
 }
 .draft-values-row { display: flex; align-items: center; gap: 12px; margin-bottom: 9px; }
 .draft-values-row:last-of-type { margin-bottom: 4px; }
-.draft-values-label { font-size: .68rem; color: #b0b0bc; font-weight: 700; letter-spacing: .04em; width: 68px; flex-shrink: 0; }
-.draft-values-value { font-size: .72rem; color: #e4e3ed; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; min-width: 36px; text-align: right; font-weight: 700; }
+.draft-values-label { font-size: .8125rem; color: var(--kl-text-primary); font-weight: 700; letter-spacing: .04em; width: 68px; flex-shrink: 0; }
+.draft-values-value { font-size: .8125rem; color: #e4e3ed; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; min-width: 36px; text-align: right; font-weight: 700; }
 .draft-values-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(220,218,231,.12); }
-.draft-values-foot-meta { font-size: .68rem; color: #8c8c98; }
+.draft-values-foot-meta { font-size: .8125rem; color: var(--kl-text-primary); }
 .draft-values-foot-meta .custom { color: #7dc99a; font-weight: 700; }
 
 input[type="range"].draft-slider {
@@ -377,7 +377,7 @@ input[type="range"].draft-slider::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* Right column — pick history / your team / chat cards */
+/* Right column, pick history / your team / chat cards */
 .draft-right-col { display: flex; flex-direction: column; max-height: calc(100vh - 160px); gap: 14px; }
 .draft-right-col > .card {
   flex-shrink: 1;
@@ -400,7 +400,7 @@ input[type="range"].draft-slider::-moz-range-thumb {
 .draft-right-col .card-header .badge {
   background: rgba(220,218,231,.16) !important;
   color: #e8e7f0 !important;
-  font-size: .66rem !important;
+  font-size: .8125rem !important;
   font-weight: 700 !important;
   padding: 3px 8px !important;
   font-variant-numeric: tabular-nums;
@@ -410,10 +410,10 @@ input[type="range"].draft-slider::-moz-range-thumb {
 /* Tables inside right-col cards */
 .draft-right-col table { color: #ececf1; margin: 0; }
 .draft-right-col table thead th {
-  font-size: .56rem !important;
+  font-size: .8125rem !important;
   font-weight: 800 !important;
-  letter-spacing: .14em !important;
-  color: #8c8c98 !important;
+  letter-spacing: .06em !important;
+  color: var(--kl-text-primary) !important;
   background: rgba(15,15,17,.75) !important;
   padding: 8px 10px !important;
   border-bottom: 1px solid rgba(220,218,231,.18) !important;
@@ -422,7 +422,7 @@ input[type="range"].draft-slider::-moz-range-thumb {
 .draft-right-col table tbody td {
   padding: 6px 10px !important;
   border-bottom: 1px solid rgba(220,218,231,.06) !important;
-  font-size: .76rem;
+  font-size: .8125rem;
   color: #ececf1;
   vertical-align: middle;
 }
@@ -430,16 +430,16 @@ input[type="range"].draft-slider::-moz-range-thumb {
 .draft-right-col table tbody tr:hover { background: rgba(81,78,95,.05); }
 .draft-pick-row-mine td { background: rgba(81,78,95,.08); color: #eae8f0 !important; }
 .draft-pick-row-mine .player-name { color: #eae8f0 !important; }
-.draft-auto-tag { color: #8c8c98; font-size: .62rem; letter-spacing: .02em; }
-.draft-pass-tag { color: #f0d27a; font-weight: 800; font-size: .68rem; letter-spacing: .12em; }
+.draft-auto-tag { color: var(--kl-text-primary); font-size: .8125rem; letter-spacing: .02em; }
+.draft-pass-tag { color: #f0d27a; font-weight: 800; font-size: .8125rem; letter-spacing: .06em; }
 
 /* Your-team grouping section */
 .draft-yt-section {
-  font-size: .56rem;
+  font-size: .8125rem;
   font-weight: 800;
-  letter-spacing: .16em;
+  letter-spacing: .06em;
   text-transform: uppercase;
-  color: #8c8c98;
+  color: var(--kl-text-primary);
   background: rgba(15,15,17,.6);
   padding: 6px 12px;
   border-left: 2px solid rgba(220,218,231,.3);
@@ -449,14 +449,14 @@ input[type="range"].draft-slider::-moz-range-thumb {
 .draft-yt-section.ruc { color: #e6e4ee; border-left-color: rgba(221,219,232,.5); }
 .draft-yt-section.fwd { color: #e07a6c; border-left-color: rgba(184,90,74,.45); }
 
-/* Chat — wider re-skin */
+/* Chat, wider re-skin */
 .draft-chat-card { flex-shrink: 0; flex-grow: 0; min-height: auto !important; }
 .draft-chat-card #chat-messages { max-height: 180px; }
-.chat-msg { padding: 5px 12px; font-size: .76rem; border-bottom: 1px solid rgba(220,218,231,.06); }
+.chat-msg { padding: 5px 12px; font-size: .8125rem; border-bottom: 1px solid rgba(220,218,231,.06); }
 .chat-msg:last-child { border-bottom: none; }
-.chat-msg-name { font-weight: 800; font-size: .68rem; margin-right: 6px; letter-spacing: .02em; }
+.chat-msg-name { font-weight: 800; font-size: .8125rem; margin-right: 6px; letter-spacing: .02em; }
 .chat-msg-text { color: #ececf1; word-break: break-word; }
-.chat-msg-system { text-align: center; font-size: .66rem; color: #8c8c98; font-style: italic; padding: 4px 12px; }
+.chat-msg-system { text-align: center; font-size: .8125rem; color: var(--kl-text-primary); font-style: italic; padding: 4px 12px; }
 .chat-toggle-collapsed { transform: rotate(-90deg); }
 
 /* Mobile */
@@ -546,7 +546,7 @@ function DraftRoomPageInner() {
       .then(d => {
         if ('empty_state' in d) {
           // Per #35: no upcoming draft. Surface a stub state via setEmptyState
-          // and skip the data wiring — the render path will branch.
+          // and skip the data wiring, the render path will branch.
           setEmptyState(d)
           return
         }
@@ -773,7 +773,7 @@ function DraftRoomPageInner() {
   }
 
   function pickPlayer(playerId: number) {
-    if (!socket?.connected) { alert('Not connected — refresh the page.'); return }
+    if (!socket?.connected) { alert('Not connected, refresh the page.'); return }
     setPendingPickId(playerId)
   }
 
@@ -936,7 +936,7 @@ function DraftRoomPageInner() {
               <button
                 className={`btn btn-outline-warning btn-sm${commOverride ? ' active' : ''}`}
                 onClick={() => setCommOverride(o => !o)}
-                style={{ fontSize: '.7rem' }}
+                style={{ fontSize: '.8125rem' }}
                 title="Pick on behalf of other teams"
               >
                 <i className={`bi bi-shield${commOverride ? '-fill-check' : ''} me-1`}></i>
@@ -958,17 +958,17 @@ function DraftRoomPageInner() {
                 </button>
               )}
               {state.picks_made > 0 && (state.status === 'in_progress' || state.status === 'paused') && (
-                <button className="btn btn-outline-info btn-sm" onClick={undoPick} style={{ fontSize: '.7rem' }}>
+                <button className="btn btn-outline-info btn-sm" onClick={undoPick} style={{ fontSize: '.8125rem' }}>
                   <i className="bi bi-arrow-counterclockwise me-1"></i>Undo
                 </button>
               )}
               {(state.status === 'in_progress' || state.status === 'paused') && (
-                <button className="btn btn-outline-danger btn-sm" onClick={() => setShowEndDraftModal(true)} style={{ fontSize: '.7rem' }}>
+                <button className="btn btn-outline-danger btn-sm" onClick={() => setShowEndDraftModal(true)} style={{ fontSize: '.8125rem' }}>
                   <i className="bi bi-stop-fill me-1"></i>End Draft
                 </button>
               )}
               {can_restart && (
-                <button className="btn btn-outline-danger btn-sm" onClick={confirmRestart} style={{ fontSize: '.7rem' }}>
+                <button className="btn btn-outline-danger btn-sm" onClick={confirmRestart} style={{ fontSize: '.8125rem' }}>
                   <i className="bi bi-arrow-counterclockwise me-1"></i>Restart
                 </button>
               )}
@@ -1000,7 +1000,7 @@ function DraftRoomPageInner() {
                 onChange={e => setScheduleInput(e.target.value)}
                 style={{ width: 'auto' }}
               />
-              <button className="btn btn-outline-warning btn-sm" onClick={updateSchedule} style={{ fontSize: '.7rem', whiteSpace: 'nowrap' }}>
+              <button className="btn btn-outline-warning btn-sm" onClick={updateSchedule} style={{ fontSize: '.8125rem', whiteSpace: 'nowrap' }}>
                 <i className="bi bi-clock me-1"></i>Set Time
               </button>
             </div>
@@ -1018,7 +1018,7 @@ function DraftRoomPageInner() {
               <div className="draft-banner-team">
                 {bannerCompleted ? 'Draft Complete' : (state.current_team_name || 'TBD')}
                 {!bannerCompleted && state.current_via_team_name && (
-                  <span style={{ fontSize: '.7em', fontWeight: 600, color: '#b0b0bc', marginLeft: 8 }}>via {state.current_via_team_name}</span>
+                  <span style={{ fontSize: '.7em', fontWeight: 600, color: 'var(--kl-text-primary)', marginLeft: 8 }}>via {state.current_via_team_name}</span>
                 )}
                 {!bannerCompleted && state.current_label && (
                   <span style={{ fontSize: '.6em', fontWeight: 700, color: '#d29922', marginLeft: 8 }}>{state.current_label}</span>
@@ -1094,15 +1094,15 @@ function DraftRoomPageInner() {
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-people me-2" style={{ color: '#a0a0ac' }}></i>Available Players
+                  <i className="bi bi-people me-2" style={{ color: 'var(--kl-text-primary)' }}></i>Available Players
                 </h5>
                 <div className="d-flex gap-1 align-items-center">
                   {state.status === 'in_progress' && (
-                    <button className="btn btn-outline-warning py-0 px-2" onClick={() => setShowPassModal(true)} disabled={!canPick} style={{ fontSize: '.7rem' }} title={canPick ? 'Pass on this pick' : 'You can pass when it’s your turn'}>
+                    <button className="btn btn-outline-warning py-0 px-2" onClick={() => setShowPassModal(true)} disabled={!canPick} style={{ fontSize: '.8125rem' }} title={canPick ? 'Pass on this pick' : 'You can pass when it’s your turn'}>
                       <i className="bi bi-skip-forward me-1"></i>Pass
                     </button>
                   )}
-                  <button className="btn btn-outline-secondary py-0 px-2" type="button" onClick={() => setWeightsOpen(o => !o)} style={{ fontSize: '.7rem' }} title="Adjust your draft value weights">
+                  <button className="btn btn-outline-secondary py-0 px-2" type="button" onClick={() => setWeightsOpen(o => !o)} style={{ fontSize: '.8125rem' }} title="Adjust your draft value weights">
                     <i className="bi bi-sliders me-1"></i>Values
                   </button>
                 </div>
@@ -1130,8 +1130,8 @@ function DraftRoomPageInner() {
                       {hasCustomWeights ? <span className="custom">Custom</span> : 'League defaults'}
                     </span>
                     <div className="d-flex gap-1">
-                      <button className="btn btn-outline-secondary py-0 px-2" onClick={applyWeights} style={{ fontSize: '.7rem' }}>Apply</button>
-                      <button className="btn btn-primary py-0 px-2" onClick={saveWeights} style={{ fontSize: '.7rem' }}>Save</button>
+                      <button className="btn btn-outline-secondary py-0 px-2" onClick={applyWeights} style={{ fontSize: '.8125rem' }}>Apply</button>
+                      <button className="btn btn-primary py-0 px-2" onClick={saveWeights} style={{ fontSize: '.8125rem' }}>Save</button>
                     </div>
                   </div>
                 </div>
@@ -1147,7 +1147,7 @@ function DraftRoomPageInner() {
                     const cls = isBlocked ? 'blocked' : need > 0 ? 'short' : 'met'
                     return (
                       <span key={pos} className={`draft-need-chip ${cls}`} title={isBlocked ? 'BLOCKED' : need > 0 ? `${need} more needed` : 'Requirement met'}>
-                        {pos} {drafted}/{required}{isBlocked && <i className="bi bi-lock-fill" style={{ fontSize: '.6rem' }}></i>}
+                        {pos} {drafted}/{required}{isBlocked && <i className="bi bi-lock-fill" style={{ fontSize: '.8125rem' }}></i>}
                       </span>
                     )
                   })}
@@ -1216,9 +1216,9 @@ function DraftRoomPageInner() {
                     return (
                       <tr key={p.id} className={blocked ? 'blocked' : undefined}>
                         <td className="player-name">{p.name}{p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}</td>
-                        <td>{p.position && <span className={`draft-pos-chip ${posClass(p.position)}`} title={p.position_expected ? 'Expected position. He has no SuperCoach position yet.' : undefined}>{p.position.split('/')[0]}{p.position_expected ? ' exp' : ''}</span>}</td>
+                        <td>{p.position && <span className={`draft-pos-chip ${posClass(p.position)}${p.position_expected ? ' pos-expected' : ''}`} title={p.position_expected ? 'Expected position. He has no SuperCoach position yet.' : undefined}>{p.position.split('/')[0]}</span>}</td>
                         <td><span className="dn-club">{p.afl_team && clubLogos[p.afl_team] && <img src={clubLogos[p.afl_team]} alt="" />}{p.afl_team || ''}</span></td>
-                        <td style={{ color: '#8c8c98' }}>{p.age ?? '-'}</td>
+                        <td style={{ color: 'var(--kl-text-primary)' }}>{p.age ?? '-'}</td>
                         <td className="stat-cell" style={{ color: '#e8e7f0' }}>{p.sc_avg != null ? p.sc_avg.toFixed(1) : '-'}</td>
                         <td className="stat-cell"><span className={`rt ${rtBand(p.rating)}`}>{p.rating ?? '–'}</span></td>
                         <td className="stat-cell"><span className={`rt rt-line ${rtBand(p.potential)}`}>{p.potential ?? '–'}</span></td>
@@ -1229,7 +1229,7 @@ function DraftRoomPageInner() {
                               className={`btn btn-sm py-0 px-2 ${queuedIds.has(p.id) ? 'btn-warning' : 'btn-outline-secondary'}`}
                               onClick={() => queuedIds.has(p.id) ? removeFromQueue(p.id) : addToQueue(p.id)}
                               title={queuedIds.has(p.id) ? 'Remove from your queue' : 'Add to your pre-draft queue'}
-                              style={{ fontSize: '.7rem' }}
+                              style={{ fontSize: '.8125rem' }}
                             >
                               <i className={`bi ${queuedIds.has(p.id) ? 'bi-bookmark-check-fill' : 'bi-bookmark-plus'}`}></i>
                             </button>
@@ -1237,8 +1237,8 @@ function DraftRoomPageInner() {
                               className="btn btn-outline-primary btn-sm py-0 px-2"
                               onClick={() => canPick && pickPlayer(p.id)}
                               disabled={!canPick}
-                              title={blocked ? 'Position blocked — draft other positions first' : ''}
-                              style={{ fontSize: '.7rem' }}
+                              title={blocked ? 'Position blocked, draft other positions first' : ''}
+                              style={{ fontSize: '.8125rem' }}
                             >
                               {blocked ? <i className="bi bi-lock-fill"></i> : 'Pick'}
                             </button>
@@ -1256,40 +1256,40 @@ function DraftRoomPageInner() {
         {/* Right column */}
         <div className="col-lg-5">
           <div className="draft-right-col">
-            {/* Draft board — your pre-draft queue + wishlist */}
+            {/* Draft board, your pre-draft queue + wishlist */}
             {user_team && (() => {
               const wishlistAvail = available.filter(p => wishlist.ids.has(p.id))
               return (
                 <div className="card" style={{ flexShrink: 0 }}>
                   <div className="card-header d-flex justify-content-between align-items-center">
                     <div className="btn-group btn-group-sm" role="group">
-                      <button type="button" className={`btn btn-sm btn-outline-secondary${boardTab === 'queue' ? ' active' : ''}`} onClick={() => setBoardTab('queue')} style={{ fontSize: '.72rem', padding: '2px 10px' }}>
+                      <button type="button" className={`btn btn-sm btn-outline-secondary${boardTab === 'queue' ? ' active' : ''}`} onClick={() => setBoardTab('queue')} style={{ fontSize: '.8125rem', padding: '2px 10px' }}>
                         <i className="bi bi-bookmark-star me-1"></i>Queue{queue.length > 0 ? ` (${queue.length})` : ''}
                       </button>
-                      <button type="button" className={`btn btn-sm btn-outline-secondary${boardTab === 'wishlist' ? ' active' : ''}`} onClick={() => setBoardTab('wishlist')} style={{ fontSize: '.72rem', padding: '2px 10px' }}>
+                      <button type="button" className={`btn btn-sm btn-outline-secondary${boardTab === 'wishlist' ? ' active' : ''}`} onClick={() => setBoardTab('wishlist')} style={{ fontSize: '.8125rem', padding: '2px 10px' }}>
                         <i className="bi bi-star me-1"></i>Wishlist{wishlistAvail.length > 0 ? ` (${wishlistAvail.length})` : ''}
                       </button>
                     </div>
                     {boardTab === 'queue' && queue.length > 0 && (
-                      <span className="badge" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.68rem' }}>auto-pick order</span>
+                      <span className="badge" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>auto-pick order</span>
                     )}
                   </div>
                   <div className="card-body p-0" style={{ overflowY: 'auto', maxHeight: 240 }}>
                     {boardTab === 'queue' ? (
                       queue.length === 0 ? (
-                        <div className="text-center" style={{ color: '#8c8c98', fontSize: '.76rem', padding: '14px 16px', lineHeight: 1.5 }}>
-                          Tap <i className="bi bi-bookmark-plus"></i> on players to line up your picks. When it's your turn just hit <strong>Pick</strong> here — and if your timer runs out, the top available player in this list is auto-drafted.
+                        <div className="text-center" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem', padding: '14px 16px', lineHeight: 1.5 }}>
+                          Tap <i className="bi bi-bookmark-plus"></i> on players to line up your picks. When it's your turn just hit <strong>Pick</strong> here, and if your timer runs out, the top available player in this list is auto-drafted.
                         </div>
                       ) : (
                         <table className="table table-sm mb-0">
                           <tbody>
                             {queue.map((q, i) => (
                               <tr key={q.player_id}>
-                                <td style={{ color: '#8c8c98', width: 22 }}>{i + 1}</td>
+                                <td style={{ color: 'var(--kl-text-primary)', width: 22 }}>{i + 1}</td>
                                 <td className="player-name">{q.player_name}</td>
                                 <td className="text-end" style={{ width: 96, whiteSpace: 'nowrap' }}>
-                                  <button className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!canPick} onClick={() => canPick && pickPlayer(q.player_id)} style={{ fontSize: '.68rem' }}>Pick</button>
-                                  <button className="btn btn-link p-0 ms-2" onClick={() => removeFromQueue(q.player_id)} title="Remove" style={{ color: '#f85149', fontSize: '.8rem' }}><i className="bi bi-x-lg"></i></button>
+                                  <button className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!canPick} onClick={() => canPick && pickPlayer(q.player_id)} style={{ fontSize: '.8125rem' }}>Pick</button>
+                                  <button className="btn btn-link p-0 ms-2" onClick={() => removeFromQueue(q.player_id)} title="Remove" style={{ color: '#f85149', fontSize: '.8125rem' }}><i className="bi bi-x-lg"></i></button>
                                 </td>
                               </tr>
                             ))}
@@ -1298,8 +1298,8 @@ function DraftRoomPageInner() {
                       )
                     ) : (
                       wishlistAvail.length === 0 ? (
-                        <div className="text-center" style={{ color: '#8c8c98', fontSize: '.76rem', padding: '14px 16px', lineHeight: 1.5 }}>
-                          Star players (★) anywhere in the app to build your wishlist — the available ones show here, ready to queue or draft.
+                        <div className="text-center" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem', padding: '14px 16px', lineHeight: 1.5 }}>
+                          Star players (★) anywhere in the app to build your wishlist, the available ones show here, ready to queue or draft.
                         </div>
                       ) : (
                         <table className="table table-sm mb-0">
@@ -1309,10 +1309,10 @@ function DraftRoomPageInner() {
                                 <td className="player-name">{p.name}</td>
                                 <td style={{ width: 48 }}>{p.position && <span className={`draft-pos-chip ${posClass(p.position)}`}>{p.position.split('/')[0]}</span>}</td>
                                 <td className="text-end" style={{ width: 110, whiteSpace: 'nowrap' }}>
-                                  <button className={`btn btn-sm py-0 px-2 ${queuedIds.has(p.id) ? 'btn-warning' : 'btn-outline-secondary'}`} onClick={() => queuedIds.has(p.id) ? removeFromQueue(p.id) : addToQueue(p.id)} title={queuedIds.has(p.id) ? 'Queued' : 'Add to queue'} style={{ fontSize: '.68rem' }}>
+                                  <button className={`btn btn-sm py-0 px-2 ${queuedIds.has(p.id) ? 'btn-warning' : 'btn-outline-secondary'}`} onClick={() => queuedIds.has(p.id) ? removeFromQueue(p.id) : addToQueue(p.id)} title={queuedIds.has(p.id) ? 'Queued' : 'Add to queue'} style={{ fontSize: '.8125rem' }}>
                                     <i className={`bi ${queuedIds.has(p.id) ? 'bi-bookmark-check-fill' : 'bi-bookmark-plus'}`}></i>
                                   </button>
-                                  <button className="btn btn-outline-primary btn-sm py-0 px-2 ms-1" disabled={!canPick} onClick={() => canPick && pickPlayer(p.id)} style={{ fontSize: '.68rem' }}>Pick</button>
+                                  <button className="btn btn-outline-primary btn-sm py-0 px-2 ms-1" disabled={!canPick} onClick={() => canPick && pickPlayer(p.id)} style={{ fontSize: '.8125rem' }}>Pick</button>
                                 </td>
                               </tr>
                             ))}
@@ -1330,16 +1330,16 @@ function DraftRoomPageInner() {
               <div className="card-header d-flex justify-content-between align-items-center">
                 <div className="d-flex align-items-center gap-2">
                   <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                    <i className="bi bi-clock-history me-2" style={{ color: '#a0a0ac' }}></i>Pick History
+                    <i className="bi bi-clock-history me-2" style={{ color: 'var(--kl-text-primary)' }}></i>Pick History
                   </h5>
                   {user_team && (
                     <div className="btn-group btn-group-sm" role="group">
-                      <button type="button" className={`btn btn-sm btn-outline-secondary${pickFilterMode === 'all' ? ' active' : ''}`} onClick={() => setPickFilterMode('all')} style={{ fontSize: '.7rem', padding: '2px 8px' }}>All</button>
-                      <button type="button" className={`btn btn-sm btn-outline-secondary${pickFilterMode === 'mine' ? ' active' : ''}`} onClick={() => setPickFilterMode('mine')} style={{ fontSize: '.7rem', padding: '2px 8px' }}>Mine</button>
+                      <button type="button" className={`btn btn-sm btn-outline-secondary${pickFilterMode === 'all' ? ' active' : ''}`} onClick={() => setPickFilterMode('all')} style={{ fontSize: '.8125rem', padding: '2px 8px' }}>All</button>
+                      <button type="button" className={`btn btn-sm btn-outline-secondary${pickFilterMode === 'mine' ? ' active' : ''}`} onClick={() => setPickFilterMode('mine')} style={{ fontSize: '.8125rem', padding: '2px 8px' }}>Mine</button>
                     </div>
                   )}
                 </div>
-                <span className="badge" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.75rem' }}>
+                <span className="badge" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                   {state.picks_made}/{state.total_picks}
                 </span>
               </div>
@@ -1356,7 +1356,7 @@ function DraftRoomPageInner() {
                           <td className="dn-pickno" title={`Round ${pick.round}`}>{pick.pick_number}</td>
                           <td>
                             <span className="dn-teamcell"><TeamCrest team={teamOf(pick.team_id)} size={24} />{pick.team_name}</span>
-                            {pick.via_team_name && <span style={{ color: '#b0b0bc', fontSize: '.85em' }}> via {pick.via_team_name}</span>}
+                            {pick.via_team_name && <span style={{ color: 'var(--kl-text-primary)', fontSize: '.85em' }}> via {pick.via_team_name}</span>}
                             {pick.label && <span style={{ color: '#d29922', fontSize: '.8em', fontWeight: 600 }}> {pick.label}</span>}
                           </td>
                           {pick.is_pass ? (
@@ -1389,7 +1389,7 @@ function DraftRoomPageInner() {
                   <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
                     <i className="bi bi-person-badge me-2" style={{ color: '#ececf6' }}></i>{user_team.name}
                   </h5>
-                  <span className="badge" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.75rem' }}>
+                  <span className="badge" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                     {yourTeamPicks.length} players
                   </span>
                 </div>
@@ -1411,10 +1411,10 @@ function DraftRoomPageInner() {
                             <tbody>
                               {groups[k].map(p => (
                                 <tr key={p.pick_number}>
-                                  <td style={{ color: '#8c8c98', width: 30 }}>{p.pick_number}</td>
+                                  <td style={{ color: 'var(--kl-text-primary)', width: 30 }}>{p.pick_number}</td>
                                   <td className="player-name">{p.player_name}</td>
                                   <td style={{ width: 50 }}>{p.player_position && <span className={`draft-pos-chip ${posClass(p.player_position)}`}>{p.player_position.split('/')[0]}</span>}</td>
-                                  <td style={{ color: '#b0b0bc', width: 60 }}>{p.player_afl_team}</td>
+                                  <td style={{ color: 'var(--kl-text-primary)', width: 60 }}>{p.player_afl_team}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1434,15 +1434,15 @@ function DraftRoomPageInner() {
                   <i className="bi bi-chat-dots me-2" style={{ color: '#d29922' }}></i>Draft Chat
                 </h5>
                 <div className="d-flex align-items-center gap-2">
-                  {chatUnread > 0 && <span className="badge" style={{ background: '#f85149', fontSize: '.6rem', borderRadius: 8 }}>{chatUnread}</span>}
-                  <i className={`bi bi-chevron-down${chatOpen ? '' : ' chat-toggle-collapsed'}`} style={{ color: '#a0a0ac', fontSize: '.75rem', transition: 'transform .2s' }}></i>
+                  {chatUnread > 0 && <span className="badge" style={{ background: '#f85149', fontSize: '.8125rem', borderRadius: 8 }}>{chatUnread}</span>}
+                  <i className={`bi bi-chevron-down${chatOpen ? '' : ' chat-toggle-collapsed'}`} style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem', transition: 'transform .2s' }}></i>
                 </div>
               </div>
               {chatOpen && (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div ref={chatScrollRef} id="chat-messages" className="card-body p-0" style={{ overflowY: 'auto', padding: '.5rem !important', maxHeight: 180 }}>
                     {chatMessages.length === 0 ? (
-                      <div className="text-center py-3" style={{ color: '#63616d', fontSize: '.75rem' }}>
+                      <div className="text-center py-3" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>
                         <i className="bi bi-chat-dots" style={{ fontSize: '1.2rem' }}></i>
                       </div>
                     ) : (
@@ -1487,10 +1487,10 @@ function DraftRoomPageInner() {
               <button type="button" className="btn-close btn-close-white" onClick={() => setPendingPickId(null)}></button>
             </div>
             <div className="text-center" style={{ padding: '1rem' }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#cfcfd6' }}>{pendingPickPlayer.name}</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--kl-text-primary)' }}>{pendingPickPlayer.name}</div>
               <div className="d-flex justify-content-center gap-2 mt-1">
                 <span className={`pos-badge badge-${posClass(pendingPickPlayer.position)}`}>{pendingPickPlayer.position}</span>
-                <span style={{ fontSize: '.8rem', color: '#a0a0ac' }}>{pendingPickPlayer.afl_team}</span>
+                <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{pendingPickPlayer.afl_team}</span>
               </div>
             </div>
             <div style={{ borderTop: '1px solid #2a292f', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
@@ -1511,7 +1511,7 @@ function DraftRoomPageInner() {
               <button type="button" className="btn-close btn-close-white" onClick={() => setShowPassModal(false)}></button>
             </div>
             <div className="text-center" style={{ padding: '1rem' }}>
-              <div style={{ fontSize: '.85rem', color: '#a0a0ac' }}>Are you sure you want to pass on this pick? You won't draft a player this round.</div>
+              <div style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>Are you sure you want to pass on this pick? You won't draft a player this round.</div>
             </div>
             <div style={{ borderTop: '1px solid #2a292f', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
               <button type="button" className="btn btn-outline-secondary btn-sm flex-fill" onClick={() => setShowPassModal(false)}>Cancel</button>
@@ -1531,7 +1531,7 @@ function DraftRoomPageInner() {
               <button type="button" className="btn-close btn-close-white" onClick={() => setShowEndDraftModal(false)}></button>
             </div>
             <div className="text-center" style={{ padding: '1rem' }}>
-              <div style={{ fontSize: '.85rem', color: '#a0a0ac' }}>
+              <div style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>
                 All remaining picks will be marked as <strong style={{ color: '#d29922' }}>PASS</strong> and the draft will be completed immediately.
               </div>
             </div>
@@ -1557,8 +1557,8 @@ class DraftRoomErrorBoundary extends Component<{ children: ReactNode }, { error:
       return (
         <div className="card mt-4"><div className="card-body">
           <h5 style={{ color: '#f85149' }}><i className="bi bi-exclamation-triangle me-2"></i>Draft room hit an error</h5>
-          <p style={{ fontSize: '.85rem', color: '#a0a0ac' }}>The draft data still loaded — this is a display glitch, not lost picks. Reload to try again.</p>
-          <pre style={{ fontSize: '.72rem', color: '#a0a0ac', whiteSpace: 'pre-wrap', maxHeight: 220, overflow: 'auto' }}>{this.state.error.message}{'\n'}{this.state.error.stack}</pre>
+          <p style={{ fontSize: '.85rem', color: 'var(--kl-text-primary)' }}>The draft data still loaded, this is a display glitch, not lost picks. Reload to try again.</p>
+          <pre style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', whiteSpace: 'pre-wrap', maxHeight: 220, overflow: 'auto' }}>{this.state.error.message}{'\n'}{this.state.error.stack}</pre>
           <button className="btn btn-sm btn-outline-primary mt-2" onClick={() => window.location.reload()}>Reload</button>
         </div></div>
       )

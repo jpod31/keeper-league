@@ -1,10 +1,9 @@
 /**
- * AFL Field View — React port of team/field_view.html
- * Desktop only (d-none d-lg-block) — mobile uses mob-squad-list.
+ * AFL Field View, React port of team/field_view.html
+ * Desktop only (d-none d-lg-block), mobile uses mob-squad-list.
  */
 import { checkSwapEligible, type SwapSourceInfo, type ActionMode } from '../../hooks/useFieldActions'
 import { useEffect, useRef } from 'react'
-import { useStatsYear } from '../../contexts/LeagueContext'
 import { clubVars } from '../../lib/clubs'
 
 interface Player {
@@ -25,7 +24,7 @@ export interface FieldData {
   sevens_captain_enabled: boolean; has_7s_fixture: boolean
   /** Round the 7s side is being picked for. */
   sevens_round?: number | null
-  /** Season that round belongs to — next year's while planning. */
+  /** Season that round belongs to, next year's while planning. */
   sevens_year?: number | null
   /** True when this is next season's plan rather than a live round. */
   sevens_is_plan?: boolean
@@ -80,8 +79,6 @@ interface Props {
 }
 
 export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContext, byeIds, byeRound }: Props) {
-  // "'26" while the averages on the cards are still last season's.
-  const statsTag = useStatsYear().tag
   // Defensive defaults for fields that may not exist in older API responses
   const fd = {
     ...rawFd,
@@ -123,12 +120,12 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
 
   function PlayerCard({ p, posClass, isFlex, isReserve, inSevens, slotNo, isLtil, isPendingLtil }: {
     p: Player | null; posClass: string; isFlex?: boolean; isReserve?: boolean
-    /** Rendered inside the 7s squad list — the section already says "7s", so
+    /** Rendered inside the 7s squad list, the section already says "7s", so
      *  the card doesn't repeat it. */
     inSevens?: boolean
     slotNo?: number
     /** On the long-term injury list: the same card, in red, with none of
-     *  the selection actions — an LTIL player is out of the side. */
+     *  the selection actions, an LTIL player is out of the side. */
     isLtil?: boolean
     isPendingLtil?: boolean
   }) {
@@ -137,7 +134,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         <div className={`fv-card fv-card-empty fv-card-${posClass}${isFlex ? ' fv-card-flex' : ''}${isLtil ? ' fv-card-ltil' : ''}`}>
           <div className="fv-empty-slot">
             {isLtil ? <span className="fv-ltil-empty-label"><i className="bi bi-bandaid"></i> LTIL SLOT</span>
-              : isFlex ? <span style={{ fontSize: '.55rem', fontWeight: 700, color: '#2a292f', letterSpacing: '1px' }}>FLEX</span> : <i className="bi bi-person-dash"></i>}
+              : isFlex ? <span style={{ fontSize: '.8125rem', fontWeight: 700, color: '#2a292f', letterSpacing: '1px' }}>FLEX</span> : <i className="bi bi-person-dash"></i>}
           </div>
         </div>
       )
@@ -197,7 +194,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         }}>
 
         {/* Ribbon */}
-        {isLtil && <div className="fv-ribbon fv-ribbon-ltil" title={isPendingLtil ? 'LTIL — pending approval' : 'Long-term injury list'}><span>{isPendingLtil ? '?' : 'L'}</span></div>}
+        {isLtil && <div className="fv-ribbon fv-ribbon-ltil" title={isPendingLtil ? 'LTIL, pending approval' : 'Long-term injury list'}><span>{isPendingLtil ? '?' : 'L'}</span></div>}
         {!isLtil && isCap && <div className="fv-ribbon fv-ribbon-cap"><span>C</span></div>}
         {!isLtil && isVC && !isCap && <div className="fv-ribbon fv-ribbon-vc"><span>VC</span></div>}
         {!isLtil && isEmg && !isCap && !isVC && <div className="fv-ribbon fv-ribbon-emg"><span>E</span></div>}
@@ -208,10 +205,10 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         {inSevens && slotNo !== undefined && <div className="fv-7s-slotno">{slotNo}</div>}
 
         {/* Status */}
-        {!isLtil && isLocked && <div className="fv-selected fv-locked" title="Locked — game started"><i className="bi bi-lock-fill"></i></div>}
+        {!isLtil && isLocked && <div className="fv-selected fv-locked" title="Locked, game started"><i className="bi bi-lock-fill"></i></div>}
         {!isLtil && !isLocked && isSelected && <div className="fv-selected" title="Selected to play"><i className="bi bi-check-lg"></i></div>}
         {(isLtil || (!isLocked && !isSelected)) && p.injury_severity && (
-          <div className={`fv-injury fv-injury-${p.injury_severity}`} title={`${p.injury_type || 'Injured'} — ${p.injury_return || ''}`}></div>
+          <div className={`fv-injury fv-injury-${p.injury_severity}`} title={`${p.injury_type || 'Injured'}, ${p.injury_return || ''}`}></div>
         )}
         {!isLtil && hasBye && <div className={`fv-bye-badge${isSelected || p.injury_severity ? ' fv-bye-shifted' : ''}`} title="No game this round">BYE</div>}
         {p.is_former && <div className="fv-off-list" title="No longer on an AFL list. He will not score.">OFF AFL LIST</div>}
@@ -257,7 +254,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
               if (alreadyGone) {
                 return (
                   <button className="fv-action-btn fv-act-delist active"
-                    title="Already delisted — click to undo via commish" disabled
+                    title="Already delisted, click to undo via commish" disabled
                     onClick={e => e.stopPropagation()}>
                     <i className="bi bi-x-octagon-fill"></i>
                   </button>
@@ -310,7 +307,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         <div className="fv-stats-bar">
           <div className="fv-stat fv-stat-primary">
             <span className="fv-stat-num">{p.sc_avg ? Math.round(p.sc_avg) : '-'}</span>
-            <span className="fv-stat-label">{statsTag ? `${statsTag} AVG` : 'AVG'}</span>
+            <span className="fv-stat-label">AVG</span>
           </div>
           <div className="fv-stat-sep"></div>
           <div className="fv-stat">
@@ -366,7 +363,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       {byeIds && byeRound != null && (
         <div className="fv-bye-banner">
           <i className="bi bi-calendar-x"></i>
-          Bye preview · Round {byeRound} — {byeIds.size} player{byeIds.size === 1 ? '' : 's'} out (greyed)
+          Bye preview · Round {byeRound}, {byeIds.size} player{byeIds.size === 1 ? '' : 's'} out (greyed)
         </div>
       )}
       <div className="fv-wrapper">
@@ -403,7 +400,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
             </div>
           </div>
 
-          {/* LTIL sidebar — full version */}
+          {/* LTIL sidebar, full version */}
           {fd.ssp_enabled && (
             <div className="fv-ltil-sidebar">
               <div className="fv-ltil-hdr">
@@ -473,7 +470,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         </div>
       )}
 
-      {/* 7s — a seven-slot team sheet rather than seven cards each badged "7".
+      {/* 7s, a seven-slot team sheet rather than seven cards each badged "7".
           The section header carries the identity; the slots show at a glance
           how many places are still to fill. */}
       {fd.has_7s_fixture && (() => {
@@ -485,7 +482,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
               <i className="bi bi-7-circle me-1"></i>7s Squad
               <span className="fv-zone-tally ms-2">{picked.length} / 7</span>
               {/* Off-season: name the season being picked for. That it's next
-                  year's side needs no label — there's no other round left. */}
+                  year's side needs no label, there's no other round left. */}
               {isPlan
                 ? <span className="fv-7s-round fv-7s-round-plan">{fd.sevens_year ?? ''}</span>
                 : <span className="fv-7s-round">Round {fd.sevens_round}</span>}
@@ -530,7 +527,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         </div>
       )}
 
-      {/* Rookies — bench players U22 with rating < 70 */}
+      {/* Rookies, bench players U22 with rating < 70 */}
       {(fd.rookies?.length ?? 0) > 0 && (
         <div className="fv-rookies-section">
           <div className="fv-rookies-hdr"><i className="bi bi-asterisk me-1"></i>Rookies<span className="fv-zone-tally ms-2">{fd.rookies!.length}</span></div>

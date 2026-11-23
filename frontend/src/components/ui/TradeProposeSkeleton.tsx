@@ -1,5 +1,5 @@
 /**
- * TradeProposeSkeleton — placeholder for the trade builder.
+ * TradeProposeSkeleton, placeholder for the trade builder.
  *
  * Three bands: header (recipient select + period toggle) + sticky
  * deal-poster (two team blocks separated by arrow) + roster columns

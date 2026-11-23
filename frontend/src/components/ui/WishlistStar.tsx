@@ -1,5 +1,5 @@
 /**
- * WishlistStar — the canonical "pin this player" star button.
+ * WishlistStar, the canonical "pin this player" star button.
  *
  * Renders a Bootstrap-icon star (outline when unpinned, filled-gold
  * when pinned). Wires straight into useWishlist via the playerId.

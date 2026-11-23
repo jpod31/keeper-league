@@ -9,7 +9,7 @@
       <button class="btn btn-sm dropdown-toggle league-selector-btn" type="button" data-bs-toggle="dropdown">
         <i class="bi bi-trophy-fill me-1"></i>{{ league.name }}
         {% if league.invite_code %}
-          <span class="text-secondary ms-1" style="font-size:.65rem;letter-spacing:1px;">{{ league.invite_code }}</span>
+          <span class="text-secondary ms-1" style="font-size:.8125rem;letter-spacing:1px;">{{ league.invite_code }}</span>
         {% endif %}
       </button>
       <ul class="dropdown-menu" style="background:var(--kl-bg-card);border-color:var(--kl-border);">
@@ -19,9 +19,9 @@
                href="{{ url_for('leagues.dashboard', league_id=lg.id) }}">
               {{ lg.name }}
               {% if lg.invite_code %}
-                <span class="text-secondary ms-1" style="font-size:.65rem;letter-spacing:1px;">{{ lg.invite_code }}</span>
+                <span class="text-secondary ms-1" style="font-size:.8125rem;letter-spacing:1px;">{{ lg.invite_code }}</span>
               {% endif %}
-              <span class="text-secondary ms-1" style="font-size:.7rem;">{{ lg.season_year }}</span>
+              <span class="text-secondary ms-1" style="font-size:.8125rem;">{{ lg.season_year }}</span>
             </a>
             <button type="button" class="btn-leave-league"
                     onclick="event.stopPropagation();confirmLeaveLeague({{ lg.id }}, '{{ lg.name|e }}', {{ 'true' if lg.commissioner_id == current_user.id else 'false' }})"
@@ -78,7 +78,7 @@
       {% if nav_is_commissioner|default(false) %}
       <a class="league-tab{% if active_tab|default('') == 'commissioner' or active_tab|default('') == 'settings' %} active{% endif %}"
          href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}" style="color:#d29922;">
-        <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.55rem;vertical-align:middle;">{{ pending_ltil_count }}</span>{% endif %}</span>
+        <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.8125rem;vertical-align:middle;">{{ pending_ltil_count }}</span>{% endif %}</span>
       </a>
       {% else %}
       <a class="league-tab{% if active_tab|default('') == 'settings' %} active{% endif %}"
@@ -137,7 +137,7 @@
     </a>
     {% if nav_is_commissioner|default(false) %}
     <a class="more-sheet-item" href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}" style="color:#d29922;">
-      <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.55rem;">{{ pending_ltil_count }}</span>{% endif %}</span>
+      <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.8125rem;">{{ pending_ltil_count }}</span>{% endif %}</span>
     </a>
     {% else %}
     <a class="more-sheet-item" href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
@@ -301,20 +301,20 @@ function confirmLeaveLeague(leagueId, leagueName, isCommissioner) {
         <h6 class="modal-title" style="color:var(--kl-accent-red);font-weight:700;font-size:.9rem;">
           <i class="bi bi-exclamation-triangle-fill me-1"></i>Leave League
         </h6>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="font-size:.6rem;"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="font-size:.8125rem;"></button>
       </div>
       <div class="modal-body" style="padding:16px 20px;font-size:.85rem;color:var(--kl-text-primary);">
         <p style="margin-bottom:8px;">Are you sure you want to leave <strong id="leaveLeagueName"></strong>?</p>
-        <p style="color:var(--kl-text-faint);font-size:.75rem;margin-bottom:0;">Your team, roster, and all history will be permanently removed.</p>
+        <p style="color:var(--kl-text-faint);font-size:.8125rem;margin-bottom:0;">Your team, roster, and all history will be permanently removed.</p>
       </div>
       <div class="modal-footer" style="border-top:1px solid var(--kl-border);padding:12px 20px;gap:8px;">
         <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
-                style="background:var(--kl-bg-elevated);color:var(--kl-text-secondary);border:1px solid var(--kl-border);font-size:.75rem;padding:5px 14px;border-radius:6px;">
+                style="background:var(--kl-bg-elevated);color:var(--kl-text-secondary);border:1px solid var(--kl-border);font-size:.8125rem;padding:5px 14px;border-radius:6px;">
           Cancel
         </button>
         <form id="leaveLeagueForm" method="POST" style="margin:0;">
           <button type="submit" class="btn btn-sm"
-                  style="background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.3);font-size:.75rem;padding:5px 14px;border-radius:6px;font-weight:600;">
+                  style="background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.3);font-size:.8125rem;padding:5px 14px;border-radius:6px;font-weight:600;">
             Leave League
           </button>
         </form>
@@ -327,7 +327,7 @@ function confirmLeaveLeague(leagueId, leagueName, isCommissioner) {
 .btn-leave-league {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   background: none; border: none; color: var(--kl-text-faint); cursor: pointer;
-  padding: 4px 6px; font-size: .6rem; line-height: 1; border-radius: 4px;
+  padding: 4px 6px; font-size: .8125rem; line-height: 1; border-radius: 4px;
   transition: color .15s, background .15s;
 }
 .btn-leave-league:hover {

@@ -34,9 +34,9 @@
                style="font-size:1.1rem;color:#ececf6;margin-top:2px;"></i>
             <div class="flex-grow-1">
               <div style="font-size:.85rem;font-weight:{% if not n.is_read %}600{% else %}400{% endif %};">{{ n.title }}</div>
-              {% if n.body %}<div style="font-size:.75rem;color:#a0a0ac;margin-top:2px;">{{ n.body[:120] }}</div>{% endif %}
+              {% if n.body %}<div style="font-size:.8125rem;color:var(--kl-text-primary);margin-top:2px;">{{ n.body[:120] }}</div>{% endif %}
             </div>
-            <span style="font-size:.7rem;color:#63616d;white-space:nowrap;">
+            <span style="font-size:.8125rem;color:var(--kl-text-primary);white-space:nowrap;">
               {{ n.created_at.strftime('%d %b %H:%M') }}
             </span>
           </a>

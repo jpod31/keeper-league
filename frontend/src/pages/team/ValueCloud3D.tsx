@@ -27,7 +27,7 @@ function Bubble({ pos, color, radius, label, onClick }: { pos: [number, number, 
       <meshStandardMaterial color={color} emissive={color} emissiveIntensity={hov ? 0.7 : 0.22} roughness={0.35} metalness={0.1} />
       {hov && (
         <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-          <div style={{ background: '#16161a', border: '1px solid rgba(220,218,231,.35)', color: '#ebebee', padding: '4px 8px', borderRadius: 6, fontSize: 11, whiteSpace: 'nowrap', transform: 'translateY(-22px)', boxShadow: '0 4px 14px rgba(0,0,0,.5)' }}>{label}</div>
+          <div style={{ background: '#16161a', border: '1px solid rgba(220,218,231,.35)', color: '#ebebee', padding: '4px 8px', borderRadius: 6, fontSize: 13, whiteSpace: 'nowrap', transform: 'translateY(-22px)', boxShadow: '0 4px 14px rgba(0,0,0,.5)' }}>{label}</div>
         </Html>
       )}
     </mesh>
@@ -79,15 +79,15 @@ export default function ValueCloud3D({ players, onSelect }: { players: CloudPlay
       <Canvas camera={{ position: [10, 8, 13], fov: 48 }} style={{ background: '#0b0b0c', borderRadius: 8 }} dpr={[1, 2]}>
         <Scene players={players} onSelect={onSelect} />
       </Canvas>
-      <div style={{ position: 'absolute', top: 10, right: 12, display: 'flex', gap: 12, fontSize: 11, color: '#a0a0ac', pointerEvents: 'none' }}>
+      <div style={{ position: 'absolute', top: 10, right: 12, display: 'flex', gap: 12, fontSize: 13, color: 'var(--kl-text-primary)', pointerEvents: 'none' }}>
         {LEGEND.map(([k, c]) => (
           <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block' }} />{k}
           </span>
         ))}
       </div>
-      <div style={{ position: 'absolute', bottom: 10, left: 14, fontSize: 10.5, color: '#8a8895', pointerEvents: 'none', lineHeight: 1.5 }}>
-        <div><b style={{ color: '#a0a0ac' }}>↑ height & size</b> = VORP</div>
+      <div style={{ position: 'absolute', bottom: 10, left: 14, fontSize: 13, color: 'var(--kl-text-primary)', pointerEvents: 'none', lineHeight: 1.5 }}>
+        <div><b style={{ color: 'var(--kl-text-primary)' }}>↑ height & size</b> = VORP</div>
         <div>X = SC output · Z = reliability · drag to orbit</div>
       </div>
     </div>

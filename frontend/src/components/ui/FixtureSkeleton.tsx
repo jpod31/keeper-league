@@ -1,5 +1,5 @@
 /**
- * FixtureSkeleton — layout-aware loading placeholder for FixturePage.
+ * FixtureSkeleton, layout-aware loading placeholder for FixturePage.
  *
  * Round picker tabs + a stack of matchup-row placeholders. Reuses
  * the existing .kl-skel shimmer rule.

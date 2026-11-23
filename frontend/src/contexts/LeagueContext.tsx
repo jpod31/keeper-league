@@ -37,7 +37,7 @@ export interface LeagueInfo {
   /** True between the AFL draft and Opening Round, when those numbers are
    *  last season's and have to say so. */
   stats_are_last_season?: boolean
-  /** Non-null once every fixture for the league's current year is completed —
+  /** Non-null once every fixture for the league's current year is completed,
    *  drives the Season Review takeover + the rail entry. */
   season_review_year: number | null
   current_matchup: {

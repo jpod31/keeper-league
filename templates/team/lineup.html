@@ -11,7 +11,7 @@
       {% endif %}
       <div>
         <h2 class="mb-0">{% if afl_round == 0 %}Pre-Season{% else %}Round {{ afl_round }}{% endif %} Lineup</h2>
-        {% if lineup.is_locked %}<span class="status-pill" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.7rem;">Locked</span>{% endif %}
+        {% if lineup.is_locked %}<span class="status-pill" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.8125rem;">Locked</span>{% endif %}
       </div>
       {% if afl_round < max_round %}
         <a href="{{ url_for('team.lineup', league_id=league.id, team_id=team.id, afl_round=afl_round+1) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-right"></i></a>
@@ -45,7 +45,7 @@
         <div class="col-md-6 col-lg-3">
           <div class="card">
             <div class="card-header" style="padding:.6rem 1rem;">
-              <h6 class="mb-0 fw-bold" style="font-size:.8rem;">
+              <h6 class="mb-0 fw-bold" style="font-size:.8125rem;">
                 <span class="pos-badge pos-{{ slot_config.position_code }} me-1">{{ slot_config.position_code }}</span>
                 <span class="text-secondary fw-normal">({{ slot_config.count }})</span>
               </h6>
@@ -57,9 +57,9 @@
                 {% set is_locked_player = existing and existing.player_id in locked_player_ids %}
                 <div class="mb-1 d-flex align-items-center gap-1">
                   {% if is_locked_player %}
-                    <i class="bi bi-lock-fill" style="color:#f85149;font-size:.7rem;flex-shrink:0;" title="Game started — locked"></i>
+                    <i class="bi bi-lock-fill" style="color:#f85149;font-size:.8125rem;flex-shrink:0;" title="Game started — locked"></i>
                   {% endif %}
-                  <select name="player_id" class="form-select form-select-sm" style="font-size:.78rem;" {{ 'disabled' if is_locked_player }}>
+                  <select name="player_id" class="form-select form-select-sm" style="font-size:.8125rem;" {{ 'disabled' if is_locked_player }}>
                     <option value="">-- Empty --</option>
                     {% for p in all_players %}
                       <option value="{{ p.id }}" {{ 'selected' if existing and existing.player_id == p.id else '' }}>
@@ -84,13 +84,13 @@
       <div class="col-md-6">
         <div class="card">
           <div class="card-header" style="padding:.6rem 1rem;">
-            <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-star me-1" style="color:#d29922;"></i>Captain & Vice-Captain</h6>
+            <h6 class="mb-0 fw-bold" style="font-size:.8125rem;"><i class="bi bi-star me-1" style="color:#d29922;"></i>Captain & Vice-Captain</h6>
           </div>
           <div class="card-body">
             {% set cap = lineup.slots|selectattr('is_captain')|first %}
             {% set vc = lineup.slots|selectattr('is_vice_captain')|first %}
             <div class="mb-3">
-              <label class="form-label">Captain <span class="text-secondary" style="font-size:.7rem;">(score doubled)</span></label>
+              <label class="form-label">Captain <span class="text-secondary" style="font-size:.8125rem;">(score doubled)</span></label>
               <select name="captain_id" class="form-select form-select-sm">
                 <option value="">-- None --</option>
                 {% for p in all_players %}
@@ -99,7 +99,7 @@
               </select>
             </div>
             <div>
-              <label class="form-label">Vice-Captain <span class="text-secondary" style="font-size:.7rem;">(backup if captain DNP)</span></label>
+              <label class="form-label">Vice-Captain <span class="text-secondary" style="font-size:.8125rem;">(backup if captain DNP)</span></label>
               <select name="vc_id" class="form-select form-select-sm">
                 <option value="">-- None --</option>
                 {% for p in all_players %}
@@ -113,7 +113,7 @@
       <div class="col-md-6">
         <div class="card">
           <div class="card-header" style="padding:.6rem 1rem;">
-            <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-bench me-1" style="color:#a0a0ac;"></i>Bench</h6>
+            <h6 class="mb-0 fw-bold" style="font-size:.8125rem;"><i class="bi bi-bench me-1" style="color:var(--kl-text-primary);"></i>Bench</h6>
           </div>
           <div class="card-body scroll-body" style="max-height:200px;">
             {% set bench_players = lineup.slots|selectattr('position_code', 'equalto', 'BENCH')|list %}
@@ -121,13 +121,13 @@
               {% set on_bench = bench_players|selectattr('player_id', 'equalto', p.id)|list %}
               <div class="form-check mb-1 d-flex align-items-center gap-1">
                 {% if p.id in locked_player_ids %}
-                  <i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;" title="Game started — locked"></i>
+                  <i class="bi bi-lock-fill" style="color:#f85149;font-size:.8125rem;" title="Game started — locked"></i>
                 {% endif %}
                 <input type="checkbox" class="form-check-input bench-check" value="{{ p.id }}" {{ 'checked' if on_bench else '' }} {{ 'disabled' if p.id in locked_player_ids }}>
-                <label class="form-check-label" style="font-size:.8rem;">
+                <label class="form-check-label" style="font-size:.8125rem;">
                   {{ p.name }} <span class="text-secondary">({{ p.position }})</span>
                   {% if player_lock_times.get(p.id) %}
-                    <span style="font-size:.65rem;color:{% if player_lock_times[p.id] == 'Locked' %}#f85149{% else %}#a0a0ac{% endif %};">{{ player_lock_times[p.id] }}</span>
+                    <span style="font-size:.8125rem;color:{% if player_lock_times[p.id] == 'Locked' %}#f85149{% else %}#a0a0ac{% endif %};">{{ player_lock_times[p.id] }}</span>
                   {% endif %}
                 </label>
               </div>
@@ -150,7 +150,7 @@
       <div class="col-md-6 col-lg-3">
         <div class="card">
           <div class="card-header" style="padding:.6rem 1rem;">
-            <h6 class="mb-0 fw-bold" style="font-size:.8rem;">
+            <h6 class="mb-0 fw-bold" style="font-size:.8125rem;">
               <span class="pos-badge pos-{{ slot_config.position_code }}">{{ slot_config.position_code }}</span>
             </h6>
           </div>
@@ -159,13 +159,13 @@
             {% for slot in filled %}
               <div class="mb-1 d-flex align-items-center gap-2" style="font-size:.85rem;">
                 {% if slot.player_id in locked_player_ids %}
-                  <i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i>
+                  <i class="bi bi-lock-fill" style="color:#f85149;font-size:.8125rem;"></i>
                 {% endif %}
                 <span>{{ slot.player_name or 'Empty' }}</span>
-                {% if slot.is_captain %}<span class="badge" style="background:#d29922;font-size:.6rem;">C</span>{% endif %}
-                {% if slot.is_vice_captain %}<span class="badge" style="background:#ececf6;font-size:.6rem;">VC</span>{% endif %}
+                {% if slot.is_captain %}<span class="badge" style="background:#d29922;font-size:.8125rem;">C</span>{% endif %}
+                {% if slot.is_vice_captain %}<span class="badge" style="background:#ececf6;font-size:.8125rem;">VC</span>{% endif %}
                 {% if player_lock_times.get(slot.player_id) %}
-                  <span style="font-size:.6rem;color:{% if player_lock_times[slot.player_id] == 'Locked' %}#f85149{% else %}#a0a0ac{% endif %};">{{ player_lock_times[slot.player_id] }}</span>
+                  <span style="font-size:.8125rem;color:{% if player_lock_times[slot.player_id] == 'Locked' %}#f85149{% else %}#a0a0ac{% endif %};">{{ player_lock_times[slot.player_id] }}</span>
                 {% endif %}
               </div>
             {% endfor %}

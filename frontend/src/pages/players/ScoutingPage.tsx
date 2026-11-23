@@ -56,19 +56,19 @@ const CSS = `
 .scout-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
 .scout-title { color: #f2f2f4; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
 .scout-title i { color: #ececf6; }
-.scout-count { font-size: .72rem; color: #63616d; font-weight: 400; }
+.scout-count { font-size: .8125rem; color: var(--kl-text-primary); font-weight: 400; }
 .scout-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
 .scout-filters select, .scout-filters input {
-  background: #0e0d0f; border: 1px solid #2a292f; color: #cfcfd6; border-radius: 8px;
+  background: #0e0d0f; border: 1px solid #2a292f; color: var(--kl-text-primary); border-radius: 8px;
   padding: 8px 12px; font-size: .82rem; outline: none; transition: border-color .15s;
 }
 .scout-filters select:focus, .scout-filters input:focus { border-color: #ececf6; }
-.scout-toggle { display: flex; align-items: center; gap: 6px; font-size: .75rem; color: #a0a0ac; cursor: pointer; }
+.scout-toggle { display: flex; align-items: center; gap: 6px; font-size: .8125rem; color: var(--kl-text-primary); cursor: pointer; }
 .scout-toggle input { accent-color: #ececf6; }
 
 .scout-tbl-wrap { overflow-x: auto; border: 1px solid #1e1d21; border-radius: 12px; background: #0e0d0f; }
-.scout-tbl { width: 100%; border-collapse: collapse; font-size: .78rem; }
-.scout-tbl th { background: #151518; color: #a0a0ac; font-size: .62rem;
+.scout-tbl { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+.scout-tbl th { background: #151518; color: var(--kl-text-primary); font-size: .8125rem;
   text-transform: uppercase; letter-spacing: .5px; padding: 10px 8px; text-align: right;
   cursor: pointer; user-select: none; white-space: nowrap; border-bottom: 1px solid #1e1d21; }
 .scout-tbl th:first-child { text-align: left; padding-left: 14px; border-radius: 12px 0 0 0; }
@@ -76,8 +76,8 @@ const CSS = `
 .scout-tbl th:last-child { border-radius: 0 12px 0 0; }
 .scout-tbl th:hover { color: #f2f2f4; }
 .scout-tbl th.sorted { color: #ececf6; }
-.scout-tbl th .sort-arrow { font-size: .55rem; margin-left: 2px; }
-.scout-tbl td { padding: 8px 8px; border-bottom: 1px solid rgba(42,41,47,.25); color: #cfcfd6;
+.scout-tbl th .sort-arrow { font-size: .8125rem; margin-left: 2px; }
+.scout-tbl td { padding: 8px 8px; border-bottom: 1px solid rgba(42,41,47,.25); color: var(--kl-text-primary);
   text-align: right; font-variant-numeric: tabular-nums; }
 .scout-tbl td:first-child { text-align: left; padding-left: 14px; }
 .scout-tbl td:nth-child(2) { text-align: center; }
@@ -91,30 +91,30 @@ const CSS = `
 .scout-player-info .scout-text { display: flex; flex-direction: column; gap: 2px; }
 .scout-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; border-radius: 4px; }
 .scout-logo-placeholder { width: 28px; height: 28px; flex-shrink: 0; border-radius: 4px;
-  background: #1e1d21; display: flex; align-items: center; justify-content: center; color: #63616d; font-size: .6rem; }
+  background: #1e1d21; display: flex; align-items: center; justify-content: center; color: var(--kl-text-primary); font-size: .8125rem; }
 .scout-name { font-weight: 700; color: #f2f2f4; font-size: .82rem; }
 .scout-meta { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-.scout-afl-badge { font-size: .62rem; color: #ececf6; font-weight: 600; }
-.scout-comp-badge { font-size: .58rem; color: #a0a0ac; text-transform: uppercase; background: rgba(160,160,172,.1);
+.scout-afl-badge { font-size: .8125rem; color: #ececf6; font-weight: 600; }
+.scout-comp-badge { font-size: .8125rem; color: var(--kl-text-primary); text-transform: uppercase; background: rgba(160,160,172,.1);
   padding: 1px 5px; border-radius: 3px; font-weight: 600; }
-.pos-pill { font-size: .58rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; }
+.pos-pill { font-size: .8125rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; }
 .pos-pill.def { background: rgba(88,166,255,.12); color: #58a6ff; }
 .pos-pill.mid { background: rgba(188,140,255,.12); color: #bc8cff; }
 .pos-pill.fwd { background: rgba(210,153,34,.12); color: #d29922; }
 .pos-pill.ruc { background: rgba(63,185,80,.12); color: #3fb950; }
-.unlisted-badge { font-size: .58rem; padding: 1px 5px; border-radius: 4px; font-weight: 600;
-  background: rgba(160,160,172,.1); color: #8a8895; }
-.listed-badge { font-size: .58rem; padding: 1px 5px; border-radius: 4px; font-weight: 600;
+.unlisted-badge { font-size: .8125rem; padding: 1px 5px; border-radius: 4px; font-weight: 600;
+  background: rgba(160,160,172,.1); color: var(--kl-text-primary); }
+.listed-badge { font-size: .8125rem; padding: 1px 5px; border-radius: 4px; font-weight: 600;
   background: rgba(63,185,80,.1); color: #3fb950; }
 
 .scout-gp { display: inline-flex; align-items: center; justify-content: center;
-  min-width: 28px; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: .75rem;
-  background: rgba(236,236,246,.08); color: #a0a0ac; }
+  min-width: 28px; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: .8125rem;
+  background: rgba(236,236,246,.08); color: var(--kl-text-primary); }
 
 .scout-pagination { display: flex; justify-content: center; gap: 4px; margin-top: 14px; }
-.scout-pagination button { background: #151518; border: 1px solid #2a292f; color: #a0a0ac;
-  border-radius: 6px; padding: 5px 10px; font-size: .75rem; cursor: pointer; transition: all .15s; }
-.scout-pagination button:hover:not(:disabled) { border-color: #ececf6; color: #cfcfd6; }
+.scout-pagination button { background: #151518; border: 1px solid #2a292f; color: var(--kl-text-primary);
+  border-radius: 6px; padding: 5px 10px; font-size: .8125rem; cursor: pointer; transition: all .15s; }
+.scout-pagination button:hover:not(:disabled) { border-color: #ececf6; color: var(--kl-text-primary); }
 .scout-pagination button:disabled { opacity: .3; cursor: default; }
 .scout-pagination button.active { background: #ececf6; color: #0e0d0f; border-color: #ececf6; font-weight: 700; }
 
@@ -129,27 +129,27 @@ const CSS = `
 .scout-detail-inner { padding: 20px; }
 .scout-detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 .scout-detail-name { font-size: 1.25rem; font-weight: 900; color: #f2f2f4; letter-spacing: -.02em; }
-.scout-detail-sub { font-size: .78rem; color: #a0a0ac; margin-top: 3px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.scout-detail-close { background: rgba(255,255,255,.05); border: none; color: #a0a0ac; font-size: 1rem;
+.scout-detail-sub { font-size: .8125rem; color: var(--kl-text-primary); margin-top: 3px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.scout-detail-close { background: rgba(255,255,255,.05); border: none; color: var(--kl-text-primary); font-size: 1rem;
   cursor: pointer; padding: 6px 8px; border-radius: 8px; }
-.scout-detail-section { font-size: .68rem; font-weight: 700; color: #a0a0ac; text-transform: uppercase;
+.scout-detail-section { font-size: .8125rem; font-weight: 700; color: var(--kl-text-primary); text-transform: uppercase;
   letter-spacing: .5px; margin-bottom: 8px; margin-top: 18px; }
 .scout-detail-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 5px; }
 .scout-stat-cell { text-align: center; padding: 6px 3px; background: rgba(255,255,255,.02);
   border-radius: 6px; border: 1px solid rgba(42,41,47,.25); }
 .scout-stat-val { font-size: .85rem; font-weight: 800; color: #d3d2da; }
-.scout-stat-label { font-size: .48rem; color: #63616d; text-transform: uppercase; letter-spacing: .3px; margin-top: 1px; }
+.scout-stat-label { font-size: .8125rem; color: var(--kl-text-primary); text-transform: uppercase; letter-spacing: .3px; margin-top: 1px; }
 .scout-history-row { display: grid; grid-template-columns: 80px 1fr 50px; gap: 8px; align-items: center;
-  padding: 8px 0; border-bottom: 1px solid rgba(42,41,47,.2); font-size: .78rem; }
+  padding: 8px 0; border-bottom: 1px solid rgba(42,41,47,.2); font-size: .8125rem; }
 .scout-history-season { font-weight: 700; color: #f2f2f4; }
-.scout-history-team { color: #a0a0ac; font-size: .72rem; }
+.scout-history-team { color: var(--kl-text-primary); font-size: .8125rem; }
 .scout-history-disp { font-weight: 700; color: #ececf6; text-align: right; }
 .scout-trend-up { color: #3fb950; }
 .scout-trend-down { color: #f85149; }
 
-.scout-tag { font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.scout-tag { font-size: .8125rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
 @media(max-width:768px) {
-  .scout-tbl { font-size: .72rem; }
+  .scout-tbl { font-size: .8125rem; }
   .scout-tbl th, .scout-tbl td { padding: 6px 5px; }
   .scout-hide-mob { display: none; }
   .scout-detail { max-width: 100%; width: 100%; max-height: 92vh; border-radius: 16px 16px 0 0;
@@ -184,14 +184,14 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
   const [prediction, setPrediction] = useState<Prediction | null>(null)
 
   useEffect(() => {
-    // Career by name — works for ALL players, not just AFL-linked ones
+    // Career by name, works for ALL players, not just AFL-linked ones
     fetch(`/api/leagues/${leagueId}/state-league-stats/career-by-name?name=${encodeURIComponent(player.player_name)}`)
       .then(r => r.json()).then(setCareer).catch(() => {})
     fetch(`/api/leagues/${leagueId}/scouting/predict/${player.id}`)
       .then(r => r.ok ? r.json() : null).then(setPrediction).catch(() => {})
   }, [player.player_name, player.id, leagueId])
 
-  const fmt = (v: number | null | undefined) => v == null ? '—' : typeof v === 'number' ? (v % 1 ? v.toFixed(1) : String(Math.round(v))) : '—'
+  const fmt = (v: number | null | undefined) => v == null ? '-' : typeof v === 'number' ? (v % 1 ? v.toFixed(1) : String(Math.round(v))) : '-'
   const tagCol = prediction ? (TAG_COLORS[prediction.tag_css] || TAG_COLORS['tag-depth']) : ['', '']
 
   return (
@@ -205,7 +205,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
               {logos[player.team] ? (
                 <img src={logos[player.team]} alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 6, flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 36, height: 36, borderRadius: 6, background: '#1e1d21', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#63616d', flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 6, background: '#1e1d21', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--kl-text-primary)', flexShrink: 0 }}>
                   <i className="bi bi-shield-fill"></i>
                 </div>
               )}
@@ -213,7 +213,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span className="scout-detail-name">{player.player_name}</span>
                   {prediction && (
-                    <span style={{ fontSize: '.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                    <span style={{ fontSize: '.8125rem', fontWeight: 700, padding: '2px 8px', borderRadius: 4,
                       background: tagCol[0], color: tagCol[1] }}>
                       {prediction.tag}
                     </span>
@@ -232,15 +232,15 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
             <button className="scout-detail-close" onClick={onClose}><i className="bi bi-x-lg"></i></button>
           </div>
 
-          {/* Projected AFL output — the hero section */}
+          {/* Projected AFL output, the hero section */}
           {prediction && (
             <div style={{ background: 'rgba(236,236,246,.04)', border: '1px solid rgba(236,236,246,.12)',
               borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span style={{ fontSize: '.7rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                <span style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
                   Projected AFL Output
                 </span>
-                <span style={{ fontSize: '.65rem', color: '#8a8895' }}>
+                <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                   {prediction.breakout_probability > 0 && `${prediction.breakout_probability}% breakout`}
                   {prediction.draft_probability != null && prediction.draft_probability > 0 && ` · ${prediction.draft_probability}% draft chance`}
                 </span>
@@ -255,7 +255,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                   return (
                     <div key={key} style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '1rem', fontWeight: 800, color: key === 'afl_sc_avg' ? '#ececf6' : '#cfcfd6' }}>{fmt(val)}</div>
-                      <div style={{ fontSize: '.48rem', color: '#63616d', textTransform: 'uppercase' }}>{label}</div>
+                      <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase' }}>{label}</div>
                     </div>
                   )
                 })}
@@ -263,22 +263,22 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
             </div>
           )}
 
-          {/* 3-year outlook — compact row */}
+          {/* 3-year outlook, compact row */}
           {prediction && Object.keys(prediction.projections).length > 0 && (
             <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
               {Object.entries(prediction.projections).map(([key, proj]) => (
                 <div key={key} style={{ flex: 1, textAlign: 'center', padding: '8px 4px',
                   background: 'rgba(255,255,255,.02)', border: '1px solid rgba(42,41,47,.2)', borderRadius: 8 }}>
-                  <div style={{ fontSize: '.55rem', color: '#8a8895', marginBottom: 2 }}>{proj.year} · age {proj.age}</div>
+                  <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 2 }}>{proj.year} · age {proj.age}</div>
                   <div style={{ fontSize: '.9rem', fontWeight: 800, color: '#ececf6' }}>{Math.round(proj.afl_sc_avg)}</div>
-                  <div style={{ fontSize: '.48rem', color: '#63616d' }}>SC AVG</div>
+                  <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>SC AVG</div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* State league stats — compact grid */}
-          <div style={{ fontSize: '.68rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase',
+          {/* State league stats, compact grid */}
+          <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase',
             letterSpacing: '.5px', marginBottom: 6 }}>
             {player.competition.toUpperCase()} {player.season} Averages
           </div>
@@ -288,8 +288,8 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
               if (val == null) return null
               return (
                 <div key={key as string} style={{ textAlign: 'center', padding: '4px 2px' }}>
-                  <div style={{ fontSize: '.8rem', fontWeight: 700, color: '#cfcfd6' }}>{typeof val === 'number' && val % 1 ? val.toFixed(1) : val}</div>
-                  <div style={{ fontSize: '.45rem', color: '#63616d', textTransform: 'uppercase' }}>{label}</div>
+                  <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)' }}>{typeof val === 'number' && val % 1 ? val.toFixed(1) : val}</div>
+                  <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase' }}>{label}</div>
                 </div>
               )
             })}
@@ -308,7 +308,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
             const chartWidth = chartData.length <= 3 ? Math.max(chartData.length * 80, 180) : undefined
             return (
               <>
-                <div style={{ fontSize: '.68rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase',
+                <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase',
                   letterSpacing: '.5px', marginBottom: 6 }}>Career</div>
                 {chartData.length > 1 && (
                   <>
@@ -322,7 +322,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                             const d = payload[0]?.payload
                             if (!d) return null
                             return (
-                              <div style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8, padding: '8px 12px', fontSize: '.72rem' }}>
+                              <div style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8, padding: '8px 12px', fontSize: '.8125rem' }}>
                                 <div style={{ fontWeight: 800, color: '#f2f2f4', marginBottom: 4 }}>{d.season}</div>
                                 {d.afl_fan != null && <div style={{ color: '#bc8cff' }}>AFL: {Math.round(d.afl_fan)} fantasy · {d.afl_gm}gm</div>}
                                 {d.sl_fan != null && <div style={{ color: '#ececf6' }}>{d.sl_level || 'VFL'}: {Math.round(d.sl_fan)} fantasy · {d.sl_gm}gm</div>}
@@ -334,7 +334,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
-                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 4, marginBottom: 10, fontSize: '.6rem', color: '#8a8895' }}>
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 4, marginBottom: 10, fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                         <span style={{ width: 8, height: 8, borderRadius: 2, background: '#ececf6', opacity: .7 }}></span> State League
                       </span>
@@ -345,9 +345,9 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                   </>
                 )}
                 {/* Season-by-season breakdown */}
-                <div style={{ fontSize: '.7rem', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(42,41,47,.3)' }}>
+                <div style={{ fontSize: '.8125rem', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(42,41,47,.3)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '62px 1fr 32px 38px 32px 32px 32px 32px 38px', gap: 0,
-                    padding: '5px 8px', background: '#151518', color: '#8a8895', fontSize: '.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.3px' }}>
+                    padding: '5px 8px', background: '#151518', color: 'var(--kl-text-primary)', fontSize: '.8125rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.3px' }}>
                     <span>Year</span><span>Team</span><span style={{ textAlign: 'right' }}>GM</span>
                     <span style={{ textAlign: 'right' }}>DIS</span><span style={{ textAlign: 'right' }}>MRK</span>
                     <span style={{ textAlign: 'right' }}>TKL</span><span style={{ textAlign: 'right' }}>GLS</span>
@@ -360,20 +360,20 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                       <div key={i} style={{ display: 'grid', gridTemplateColumns: '62px 1fr 32px 38px 32px 32px 32px 32px 38px', gap: 0,
                         padding: '4px 8px', borderTop: '1px solid rgba(42,41,47,.15)',
                         background: isAfl ? 'rgba(188,140,255,.04)' : 'transparent' }}>
-                        <span style={{ fontWeight: 700, color: isAfl ? '#bc8cff' : '#ececf6', fontSize: '.65rem' }}>
+                        <span style={{ fontWeight: 700, color: isAfl ? '#bc8cff' : '#ececf6', fontSize: '.8125rem' }}>
                           {s.level} {s.season}
                         </span>
-                        <span style={{ color: '#a0a0ac', fontSize: '.65rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {s.team}
                         </span>
-                        <span style={{ textAlign: 'right', color: '#cfcfd6', fontWeight: 600 }}>{s.matches}</span>
-                        <span style={{ textAlign: 'right', color: '#cfcfd6' }}>{s.disposals != null ? (typeof s.disposals === 'number' && s.disposals % 1 ? s.disposals.toFixed(1) : s.disposals) : '—'}</span>
-                        <span style={{ textAlign: 'right', color: '#cfcfd6' }}>{s.marks != null ? (typeof s.marks === 'number' && s.marks % 1 ? s.marks.toFixed(1) : s.marks) : '—'}</span>
-                        <span style={{ textAlign: 'right', color: '#cfcfd6' }}>{s.tackles != null ? (typeof s.tackles === 'number' && s.tackles % 1 ? s.tackles.toFixed(1) : s.tackles) : '—'}</span>
-                        <span style={{ textAlign: 'right', color: '#cfcfd6' }}>{s.goals != null ? (typeof s.goals === 'number' && s.goals % 1 ? s.goals.toFixed(1) : s.goals) : '—'}</span>
-                        <span style={{ textAlign: 'right', color: '#cfcfd6' }}>{s.hitouts != null && s.hitouts > 0 ? (typeof s.hitouts === 'number' && s.hitouts % 1 ? s.hitouts.toFixed(1) : s.hitouts) : '—'}</span>
+                        <span style={{ textAlign: 'right', color: 'var(--kl-text-primary)', fontWeight: 600 }}>{s.matches}</span>
+                        <span style={{ textAlign: 'right', color: 'var(--kl-text-primary)' }}>{s.disposals != null ? (typeof s.disposals === 'number' && s.disposals % 1 ? s.disposals.toFixed(1) : s.disposals) : '-'}</span>
+                        <span style={{ textAlign: 'right', color: 'var(--kl-text-primary)' }}>{s.marks != null ? (typeof s.marks === 'number' && s.marks % 1 ? s.marks.toFixed(1) : s.marks) : '-'}</span>
+                        <span style={{ textAlign: 'right', color: 'var(--kl-text-primary)' }}>{s.tackles != null ? (typeof s.tackles === 'number' && s.tackles % 1 ? s.tackles.toFixed(1) : s.tackles) : '-'}</span>
+                        <span style={{ textAlign: 'right', color: 'var(--kl-text-primary)' }}>{s.goals != null ? (typeof s.goals === 'number' && s.goals % 1 ? s.goals.toFixed(1) : s.goals) : '-'}</span>
+                        <span style={{ textAlign: 'right', color: 'var(--kl-text-primary)' }}>{s.hitouts != null && s.hitouts > 0 ? (typeof s.hitouts === 'number' && s.hitouts % 1 ? s.hitouts.toFixed(1) : s.hitouts) : '-'}</span>
                         <span style={{ textAlign: 'right', fontWeight: 800, color: isAfl ? '#bc8cff' : '#ececf6' }}>
-                          {fan != null ? Math.round(fan as number) : '—'}
+                          {fan != null ? Math.round(fan as number) : '-'}
                         </span>
                       </div>
                     )
@@ -389,7 +389,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 padding: 10, borderRadius: 10, marginTop: 14,
                 background: 'rgba(236,236,246,.06)', border: '1px solid rgba(236,236,246,.15)',
-                color: '#ececf6', fontSize: '.78rem', fontWeight: 700, textDecoration: 'none' }}>
+                color: '#ececf6', fontSize: '.8125rem', fontWeight: 700, textDecoration: 'none' }}>
               <i className="bi bi-person-lines-fill"></i>Full Profile
             </a>
           )}
@@ -456,7 +456,7 @@ export function ScoutingPage() {
     setPage(1)
   }
 
-  const fmt = (v: number | null, dec: number) => v == null ? '—' : dec ? v.toFixed(dec) : Math.round(v).toString()
+  const fmt = (v: number | null, dec: number) => v == null ? '-' : dec ? v.toFixed(dec) : Math.round(v).toString()
 
   return (
     <>
@@ -503,12 +503,12 @@ export function ScoutingPage() {
           </label>
           <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #2a292f', overflow: 'hidden', marginLeft: 'auto' }}>
             <button onClick={() => setMode('avg')}
-              style={{ padding: '6px 12px', fontSize: '.75rem', fontWeight: 600, border: 'none', cursor: 'pointer',
+              style={{ padding: '6px 12px', fontSize: '.8125rem', fontWeight: 600, border: 'none', cursor: 'pointer',
                 background: mode === 'avg' ? '#ececf6' : '#0e0d0f', color: mode === 'avg' ? '#0e0d0f' : '#a0a0ac' }}>
               AVG
             </button>
             <button onClick={() => setMode('total')}
-              style={{ padding: '6px 12px', fontSize: '.75rem', fontWeight: 600, border: 'none', cursor: 'pointer',
+              style={{ padding: '6px 12px', fontSize: '.8125rem', fontWeight: 600, border: 'none', cursor: 'pointer',
                 borderLeft: '1px solid #2a292f',
                 background: mode === 'total' ? '#ececf6' : '#0e0d0f', color: mode === 'total' ? '#0e0d0f' : '#a0a0ac' }}>
               TOT
@@ -517,7 +517,7 @@ export function ScoutingPage() {
         </div>
 
         {loading ? <Spinner text="Loading state league stats..." /> : !data?.players.length ? (
-          <p style={{ color: '#a0a0ac', textAlign: 'center', padding: 40 }}>No data found.</p>
+          <p style={{ color: 'var(--kl-text-primary)', textAlign: 'center', padding: 40 }}>No data found.</p>
         ) : (
           <>
             <div className="scout-tbl-wrap">
@@ -559,29 +559,29 @@ export function ScoutingPage() {
                               {p.is_afl_listed && p.afl_team && <span className="scout-afl-badge">{p.afl_team}</span>}
                               {!p.is_afl_listed && <span className="unlisted-badge">Unlisted</span>}
                               <span className="scout-comp-badge">{p.team} · {p.competition.toUpperCase()}</span>
-                              {p.age && <span style={{ fontSize: '.65rem', color: '#8a8895' }}>{p.age}yo</span>}
+                              {p.age && <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{p.age}yo</span>}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="scout-hide-mob" style={{ textAlign: 'right' }}>
-                        {p.rating ? <span style={{ color: '#cfcfd6', fontWeight: 600 }}>{p.rating}</span> : <span style={{ color: '#63616d' }}>-</span>}
+                        {p.rating ? <span style={{ color: 'var(--kl-text-primary)', fontWeight: 600 }}>{p.rating}</span> : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
                       </td>
                       <td className="scout-hide-mob" style={{ textAlign: 'right' }}>
-                        {p.potential ? <span style={{ color: '#cfcfd6', fontWeight: 600 }}>{p.potential}</span> : <span style={{ color: '#63616d' }}>-</span>}
+                        {p.potential ? <span style={{ color: 'var(--kl-text-primary)', fontWeight: 600 }}>{p.potential}</span> : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
                       </td>
-                      <td><span className="scout-gp">{p.matches ?? '—'}</span></td>
+                      <td><span className="scout-gp">{p.matches ?? '-'}</span></td>
                       {STAT_COLS.map(([key, , dec]) => (
                         <td key={key as string} className="scout-hide-mob">{fmt(p[key] as number, dec)}</td>
                       ))}
                       <td className="scout-hide-mob" style={{ textAlign: 'center' }}>
                         {p.fantasy_team ? (
-                          <span style={{ fontSize: '.58rem', fontWeight: 700, padding: '1px 6px', borderRadius: 3,
+                          <span style={{ fontSize: '.8125rem', fontWeight: 700, padding: '1px 6px', borderRadius: 3,
                             whiteSpace: 'nowrap', background: tc?.bg || '#1e1d21', color: tc?.fg || '#cfcfd6' }}>
                             {p.fantasy_team}
                           </span>
                         ) : (
-                          <span style={{ fontSize: '.58rem', fontWeight: 600, color: '#3fb950' }}>FA</span>
+                          <span style={{ fontSize: '.8125rem', fontWeight: 600, color: '#3fb950' }}>FA</span>
                         )}
                       </td>
                     </tr>
