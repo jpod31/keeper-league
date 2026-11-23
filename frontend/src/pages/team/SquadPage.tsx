@@ -1,3 +1,4 @@
+import { clubVars, ratingTier } from '../../lib/clubs'
 import { useParams, Link, useSearchParams } from 'react-router'
 import { useState, useMemo, useCallback, useRef, useEffect, Component, type ErrorInfo, type ReactNode } from 'react'
 import { useFetch } from '../../hooks/useFetch'
@@ -424,7 +425,7 @@ function SquadPageInner() {
           } else if (is_owner) { setMobileActionPlayer(player) }
           else { fieldActions.showPlayer(player.id) }
         }}
-        style={{ cursor: 'pointer', ...style }}>
+        style={{ cursor: 'pointer', ...clubVars(player.afl_team), ['--pc' as string]: `var(--pos-${(player.position || 'MID').split('/')[0].toLowerCase()})`, ...style } as React.CSSProperties}>
         <StatusDot player={player} />
         {player.afl_team && team_logos[player.afl_team] ? (
           <img src={team_logos[player.afl_team]} alt="" className="mob-pos-logo" />
@@ -448,7 +449,8 @@ function SquadPageInner() {
           </div>
         </div>
         <div className="mob-pos-sc">
-          {player.sc_avg ? <span style={{ color: '#ebebee', fontWeight: 700 }}>{player.sc_avg.toFixed(1)}</span> : <span style={{ color: 'var(--kl-text-primary)' }}>-</span>}
+          <span className={`rt ${ratingTier(player.rating)}`} title="Rating">{player.rating ?? '-'}</span>
+          <span className="mob-pos-avg">{player.sc_avg ? Math.round(player.sc_avg) : '-'}</span>
         </div>
       </div>
     )
