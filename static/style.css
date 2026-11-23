@@ -12017,3 +12017,29 @@ th .sort-icon { opacity: 1 !important; }
   color: #ffffff !important; border: 0 !important; box-shadow: inset 0 0 0 1.5px #ffffff; }
 .mob-pos-badge.mob-badge-cap { background: #ffffff !important; color: #050506 !important; box-shadow: none; }
 .mob-pos-name .bi-check-circle-fill { display: none !important; }
+
+/* ── Player pop-up header: the same face as his card, at full size. ── */
+.pmod-face { position: relative; isolation: isolate; overflow: hidden; padding: 20px 20px 0; border-bottom: 1px solid rgba(255,255,255,.14);
+  background:
+    linear-gradient(140deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.03) 22%, rgba(255,255,255,0) 40%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ca, #2a2a31) 88%, #ffffff 12%) 0%, var(--ca, #2a2a31) 34%,
+      color-mix(in srgb, var(--ca, #2a2a31) 40%, #07070a) 76%, #0b0b0e 100%); }
+.pmod-face::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--cb, #ececf6); }
+.pmod-face::after { content: ""; position: absolute; right: -60px; top: -10px; width: 300px; height: 300px; z-index: -1;
+  background: var(--logo) center / contain no-repeat; opacity: .13; filter: grayscale(1) brightness(1.9) contrast(.9); }
+.pmod-close { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 6px; border: 1px solid rgba(255,255,255,.4);
+  background: rgba(5,5,6,.55); color: #ffffff; font-size: .9375rem; cursor: pointer; z-index: 2; }
+.pmod-close:hover { background: #ffffff; color: #050506; }
+.pmod-face-top { display: flex; gap: 5px; align-items: center; min-height: 24px; padding-right: 44px; }
+.pmod-face-id { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+.pmod-crest { width: 52px; height: 52px; object-fit: contain; flex: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+.pmod-first { font-size: 1rem; font-weight: 500; line-height: 1.2; color: #ffffff; }
+.pmod-sur { font-size: 2rem; font-weight: 700; letter-spacing: -.04em; line-height: 1.05; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,.45) !important;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pmod-face-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: .9375rem; color: #ffffff; }
+.pmod-nums { display: grid; grid-template-columns: repeat(4, 1fr); margin: 18px -20px 0; background: rgba(0,0,0,.46); border-top: 1px solid rgba(255,255,255,.14); }
+.pmod-num { padding: 12px 8px 13px 20px; border-left: 1px solid rgba(255,255,255,.1); }
+.pmod-num:first-child { border-left: 0; }
+.pmod-num b { display: flex; align-items: center; height: 28px; font-family: var(--kl-font-mono); font-size: 1.5rem; font-weight: 600; color: #ffffff; line-height: 1; }
+.pmod-num b .rt { height: 26px; min-width: 38px; font-size: 1rem; }
+.pmod-num > span { display: block; margin-top: 6px; font-family: var(--kl-font-mono); font-size: .8125rem; letter-spacing: .04em; text-transform: uppercase; color: #ffffff; }

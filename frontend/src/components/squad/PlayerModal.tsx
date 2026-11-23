@@ -1,3 +1,4 @@
+import { clubVars, ratingTier } from '../../lib/clubs'
 import {
   Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ComposedChart,
@@ -76,63 +77,48 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
     <>
       <div onClick={onClose} className="pmod-backdrop" />
       <div role="dialog" aria-modal="true" className="pmod-shell">
-        <div style={{ padding: '18px 20px 24px' }}>
-          {/* Header row */}
-          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
-            <div style={{ width: 44, height: 44, flexShrink: 0 }}>
-              {logoUrl ? (
-                <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }} />
-              ) : (
-                <div style={{ width: 44, height: 44, borderRadius: 8, background: '#1e1d21', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--kl-text-primary)' }}>
-                  <i className="bi bi-shield-fill"></i>
-                </div>
-              )}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#f2f2f4', letterSpacing: '-.02em', lineHeight: 1.2 }}>{p.name}</div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6, fontSize: '.9375rem', color: 'var(--kl-text-primary)', flexWrap: 'wrap' }}>
-                <span className={`pos-badge badge-${(p.position || 'MID').split('/')[0].toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`} style={{ fontSize: '.8125rem', padding: '2px 6px' }}>{p.position}</span>
-                {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
-                {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
-                <span>{p.afl_team}</span>
-                <span>Age {p.age}</span>
-                <span>{p.career_games || 0} games</span>
-              </div>
-              {p.position_expected && (
-                <div className="pmod-flag">Expected position. He has no SuperCoach position yet.</div>
-              )}
-              {p.is_former && (
-                <div className="pmod-flag pmod-flag-off">
-                  No longer on an AFL list{p.left_afl_year ? ` (last listed ${p.left_afl_year})` : ''}. He will not score.
-                </div>
-              )}
-              {p.injury_severity && (
-                <div style={{ marginTop: 5, fontSize: '.8125rem', color: '#f85149', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <i className="bi bi-bandaid-fill" style={{ fontSize: '.8125rem' }}></i>
-                  {p.injury_type || 'Injured'}, {p.injury_return || 'TBC'}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose}
-              style={{ background: 'rgba(255,255,255,.05)', border: 'none', color: 'var(--kl-text-primary)', fontSize: '1rem', cursor: 'pointer', padding: '6px 8px', borderRadius: 8, flexShrink: 0 }}>
-              <i className="bi bi-x-lg"></i>
-            </button>
-          </div>
-
-          {/* Key numbers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 18 }}>
-            {[
-              { val: p.sc_avg ? Math.round(p.sc_avg) : '-', label: `${yrLabel} avg`, color: '#ececf6' },
-              { val: p.sc_avg_prev ? Math.round(p.sc_avg_prev) : '-', label: `${prevLabel} avg`, color: 'var(--kl-text-primary)' },
-              { val: p.rating || '-', label: 'Rating', color: '#3fb950' },
-              { val: p.potential || '-', label: 'Potential', color: '#bc8cff' },
-            ].map((s, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: '10px 4px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(42,41,47,.3)', borderRadius: 10 }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.val}</div>
-                <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 2 }}>{s.label}</div>
-              </div>
+        {/* Header: the same club-coloured face as his card. */}
+        <div className="pmod-face" style={{ ...clubVars(p.afl_team), ['--logo' as string]: logoUrl ? `url("${logoUrl}")` : 'none' } as React.CSSProperties}>
+          <button type="button" onClick={onClose} className="pmod-close" aria-label="Close"><i className="bi bi-x-lg"></i></button>
+          <div className="pmod-face-top">
+            {(p.position || 'MID').split('/').map(ps => (
+              <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{ps}</span>
             ))}
+            {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
+            {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
           </div>
+          <div className="pmod-face-id">
+            {logoUrl && <img className="pmod-crest" src={logoUrl} alt="" />}
+            <div style={{ minWidth: 0 }}>
+              <div className="pmod-first">{p.name.split(' ')[0]}</div>
+              <div className="pmod-sur">{p.name.split(' ').slice(1).join(' ') || p.name}</div>
+            </div>
+          </div>
+          <div className="pmod-face-meta">
+            <span>{p.afl_team}</span>
+            <span>Age {p.age}</span>
+            <span>{p.career_games || 0} games</span>
+          </div>
+          <div className="pmod-nums">
+            <div className="pmod-num"><b>{p.sc_avg ? Math.round(p.sc_avg) : '-'}</b><span>{yrLabel} avg</span></div>
+            <div className="pmod-num"><b>{p.sc_avg_prev ? Math.round(p.sc_avg_prev) : '-'}</b><span>{prevLabel} avg</span></div>
+            <div className="pmod-num"><b><span className={`rt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</span></b><span>Rating</span></div>
+            <div className="pmod-num"><b><span className={`rt rt-line ${ratingTier(p.potential)}`}>{p.potential ?? '-'}</span></b><span>Potential</span></div>
+          </div>
+        </div>
+
+        <div style={{ padding: '18px 20px 24px' }}>
+          {p.position_expected && (
+            <div className="pmod-flag">Expected position. He has no SuperCoach position yet.</div>
+          )}
+          {p.is_former && (
+            <div className="pmod-flag pmod-flag-off">
+              No longer on an AFL list{p.left_afl_year ? ` (last listed ${p.left_afl_year})` : ''}. He will not score.
+            </div>
+          )}
+          {p.injury_severity && (
+            <div className="pmod-flag pmod-flag-off">{p.injury_type || 'Injured'}, {p.injury_return || 'TBC'}</div>
+          )}
 
           {/* Season form chart */}
           {chartData.length > 0 && (
