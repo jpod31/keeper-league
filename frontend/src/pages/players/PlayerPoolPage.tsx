@@ -175,7 +175,7 @@ const POOL_CSS = `
   border-bottom: 1px solid var(--pf-line);
   background: linear-gradient(180deg, rgba(255,255,255,.025), transparent);
 }
-.pf-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pf-row { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .pf-search {
   flex: 1 1 240px; max-width: 340px; min-width: 0;
@@ -256,7 +256,7 @@ const POOL_CSS = `
 .pf-slate.on  { background: rgba(160,160,172,.22);border-color: rgba(160,160,172,.5); color: #d9d8df; }
 
 /* ── Filters button + panel ──────────────────────────────────────── */
-.pf-more-wrap { position: relative; }
+.pf-more-wrap { position: static; }
 .pf-more {
   all: unset;
   display: inline-flex; align-items: center; gap: 7px;
@@ -278,7 +278,7 @@ const POOL_CSS = `
 .pf-more-chev { font-size: .8125rem; opacity: .6; }
 
 .pf-panel {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 60;
   width: 460px; max-width: min(92vw, 460px);
   padding: 14px;
   border-radius: 14px;

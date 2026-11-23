@@ -671,8 +671,7 @@ function LeagueRail({
           >
             <span className="kl-rail-icon"><i className="bi bi-collection-play"></i></span>
             <span className="kl-rail-wrapped-body">
-              <span className="kl-rail-wrapped-t">{reviewYear} in Review</span>
-              <span className="kl-rail-wrapped-s">Season wrapped</span>
+              <span className="kl-rail-wrapped-t">{reviewYear} season review</span>
             </span>
             <span className="kl-rail-wrapped-dot" aria-hidden="true"></span>
           </button>

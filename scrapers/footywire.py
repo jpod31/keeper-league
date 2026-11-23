@@ -506,7 +506,7 @@ def sync_player_positions() -> List[dict]:
     if changes:
         db.session.commit()
         _sync_logger.info(
-            "Position sync complete: %d changes — %s",
+            "Position sync complete: %d changes, %s",
             len(changes),
             ", ".join(f"{c['name']} ({c['team']}): {c['old_pos']} -> {c['new_pos']}" for c in changes),
         )

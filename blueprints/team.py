@@ -1794,7 +1794,7 @@ def api_set_emergency(league_id, team_id):
             player_id=player_id,
         ).first()
         if in_7s:
-            return jsonify({"error": "Player is in 7s lineup — remove from 7s first"}), 409
+            return jsonify({"error": "Player is in 7s lineup, remove from 7s first"}), 409
 
         # Check limit — if full, bump the earliest unlocked emergency player
         current_emgs = FantasyRoster.query.filter_by(

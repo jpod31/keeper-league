@@ -146,7 +146,6 @@ export function NotificationBell() {
               >
                 <header className="kl-drawer-head">
                   <div>
-                    <div className="kl-drawer-eyebrow">Inbox</div>
                     <h2 className="kl-drawer-title">
                       Notifications
                       {unreadCount > 0 && <span className="kl-drawer-unread-chip">{unreadCount} unread</span>}

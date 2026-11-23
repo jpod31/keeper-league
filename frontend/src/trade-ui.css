@@ -614,7 +614,7 @@
   overflow: hidden;
   transition: transform .16s cubic-bezier(.2,.7,.2,1), box-shadow .16s, background .16s, border-color .16s;
   --tab-rgb: 138,136,149;
-  --tab-hex: #a0a0ac;
+  --tab-hex: #ececf1;
   border-color: rgba(var(--tab-rgb), .28);
 }
 .tr-tab-pending   { --tab-rgb: 210,153,34;  --tab-hex: #f0b38a; }

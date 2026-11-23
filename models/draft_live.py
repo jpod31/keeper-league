@@ -210,7 +210,7 @@ def create_draft_session(league_id, supplemental=False, total_rounds_override=No
         free = [max(0, cap - team_list_size(league, t.id)) for t in teams]
         total_rounds = max(free) if free else 0
         if total_rounds <= 0:
-            return None, "Every team is already at the squad cap — no supplemental picks available."
+            return None, "Every team is already at the squad cap, no supplemental picks available."
     else:
         total_rounds = total_rounds_override or league.squad_size
 
@@ -444,7 +444,7 @@ def make_pick(session_id, player_id, is_auto=False):
         if not session.is_mock and session.draft_round_type == "supplemental":
             _lg = db.session.get(League, session.league_id)
             if _lg and team_is_full(_lg, current_pick.team_id):
-                return None, "This team's list is full (45) — pass instead."
+                return None, "This team's list is full (45), pass instead."
 
         # Verify player is available
         already_picked = db.session.query(DraftPick.player_id).filter(
@@ -944,7 +944,7 @@ def restart_draft(league_id):
         Fixture.status == "completed"
     ).first()
     if played:
-        return False, "Cannot restart draft — fixtures have already been played."
+        return False, "Cannot restart draft, fixtures have already been played."
 
     # Find the initial draft session
     session = DraftSession.query.filter_by(

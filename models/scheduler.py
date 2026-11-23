@@ -675,7 +675,7 @@ def _send_weekly_digest():
 
                 try:
                     msg = MailMessage(
-                        subject="Keeper League — Weekly Digest",
+                        subject="Keeper League, Weekly Digest",
                         recipients=[user.email],
                         html=render_template("email/digest.html",
                                              user=user, notifications=notifs),

@@ -12,7 +12,7 @@ DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
 _default_key = "keeper-league-dev-key-CHANGE-ME"
 SECRET_KEY = os.environ.get("SECRET_KEY", _default_key)
 if SECRET_KEY == _default_key and os.environ.get("FLASK_ENV") == "production":
-    raise RuntimeError("SECRET_KEY must be set in production — do not use the default dev key")
+    raise RuntimeError("SECRET_KEY must be set in production, do not use the default dev key")
 SQLALCHEMY_DATABASE_URI = os.environ.get(
     "DATABASE_URL",
     "sqlite:///" + os.path.join(DATA_DIR, "keeper_league.db"),

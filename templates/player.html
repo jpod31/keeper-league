@@ -40,9 +40,9 @@
         <span><span class="pos-badge pos-{{ player.primary_position }}{% if player_flags.get('position_expected') %} pos-expected{% endif %}">{{ player.position }}</span></span>
         {% if player_flags.get('is_new') %}<span><span class="pl-mark pl-mark-new" style="margin-left:0">NEW IN {{ years.afl_year }}</span></span>{% endif %}
         {% if player_flags.get('is_former') %}<span><span class="pl-mark pl-mark-off" style="margin-left:0">OFF AFL LIST</span></span>{% endif %}
-        {% if player.age %}<span><i class="bi bi-person"></i><b>{{ player.age }}</b> yrs</span>{% endif %}
-        {% if player.height %}<span><i class="bi bi-arrows-vertical"></i><b>{{ player.height }}</b> cm</span>{% endif %}
-        {% if player.games %}<span><i class="bi bi-controller"></i><b>{{ player.games }}</b> career games</span>{% endif %}
+        {% if player.age %}<span>Age <b>{{ player.age }}</b></span>{% endif %}
+        {% if player.height %}<span><b>{{ player.height }}</b> cm</span>{% endif %}
+        {% if player.games %}<span><b>{{ player.games }}</b> games</span>{% endif %}
       </div>
 
       {% if player_flags.get('position_expected') %}
@@ -63,7 +63,7 @@
         {% for acq in acquisition_info %}
         <span class="pp-acq-chip">
           <i class="bi {% if acq.method == 'trade' %}bi-arrow-left-right{% elif acq.method == 'free_agent' %}bi-person-plus{% else %}bi-trophy{% endif %}"></i>
-          Acquired by <b style="margin-left:2px;">{{ acq.coach }}</b>{% if acq.get('pick_number') %} · pick #{{ acq.pick_number }} {{ acq.draft_year }}{% if acq.draft_type == 'supplemental' %} midseason{% endif %} draft{% elif acq.method == 'trade' %} via trade{% elif acq.method == 'free_agent' %} as a free agent{% endif %}
+          Acquired by <b style="margin-left:2px;">{{ acq.coach }}</b>{% if acq.get('pick_number') %}, pick #{{ acq.pick_number }} {{ acq.draft_year }}{% if acq.draft_type == 'supplemental' %} midseason{% endif %} draft{% elif acq.method == 'trade' %} via trade{% elif acq.method == 'free_agent' %} as a free agent{% endif %}
         </span>
         {% endfor %}
       </div>
@@ -116,34 +116,38 @@
 
 {# ══════════════ STAT TILES (signature row) ══════════════ #}
 {% if has_detailed and detailed.last_3_avg %}
+{% set yr = years.stats_year if years.stats_are_last_season else '' %}
 <div class="row g-3 mb-4 pp-stagger">
-  {% if player_ratings.get('rating') %}
+  {% if has_sc %}
   <div class="col-6 col-md">
-    <div class="pp-tile pp-tile-accent-rating">
-      <div class="pp-tile-value">{{ player_ratings.rating }}</div>
-      <div class="pp-tile-label">Rating</div>
-      {% if player_ratings.get('potential') %}
-      <div class="pp-tile-sub">Pot {{ player_ratings.potential }}</div>
-      {% endif %}
+    <div class="pp-tile">
+      <div class="pp-tile-value">{{ player.sc_avg }}</div>
+      <div class="pp-tile-label">{{ yr }} average</div>
     </div>
   </div>
   {% endif %}
-  {% set card_stats = [
-    ('disposals', 'Disposals', 'rating'),
-    ('marks', 'Marks', 'pot'),
-    ('tackles', 'Tackles', 'form-up'),
-    ('goals', 'Goals', 'form-up'),
-    ('supercoach_score', 'SC', 'sc'),
-  ] %}
-  {% for key, label, accent in card_stats %}
-    {% if detailed.last_3_avg.get(key) is not none %}
+  {% if detailed.last_3_avg.get('supercoach_score') is not none %}
+  <div class="col-6 col-md">
+    <div class="pp-tile">
+      <div class="pp-tile-value">{{ detailed.last_3_avg['supercoach_score'] }}</div>
+      <div class="pp-tile-label">Last 3</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if detailed.last_5_avg.get('supercoach_score') is not none %}
+  <div class="col-6 col-md">
+    <div class="pp-tile">
+      <div class="pp-tile-value">{{ detailed.last_5_avg['supercoach_score'] }}</div>
+      <div class="pp-tile-label">Last 5</div>
+    </div>
+  </div>
+  {% endif %}
+  {% for key, label in [('disposals', 'Disposals'), ('marks', 'Marks'), ('tackles', 'Tackles'), ('goals', 'Goals')] %}
+    {% if detailed.last_5_avg.get(key) is not none %}
     <div class="col-6 col-md">
-      <div class="pp-tile pp-tile-accent-{{ accent }}">
-        <div class="pp-tile-value">{{ detailed.last_3_avg[key] }}</div>
-        <div class="pp-tile-label">{{ label }}</div>
-        <div class="pp-tile-sub">
-          Last 3{% if years.stats_are_last_season %} of {{ years.stats_year }}{% endif %}{% if detailed.last_5_avg.get(key) is not none %} · last 5 {{ detailed.last_5_avg[key] }}{% endif %}
-        </div>
+      <div class="pp-tile">
+        <div class="pp-tile-value">{{ detailed.last_5_avg[key] }}</div>
+        <div class="pp-tile-label">{{ label }}, last 5</div>
       </div>
     </div>
     {% endif %}
@@ -280,6 +284,14 @@
               <td class="num pp-mono" style="color: var(--pp-text-muted);">{{ y.games_played }}</td>
             </tr>
             {% endfor %}
+            {% if years.stats_are_last_season and has_sc and not (sc_history.yearly_averages | selectattr('year', 'equalto', years.stats_year) | list)
+                  and not (sc_history.yearly_averages | selectattr('year', 'equalto', years.stats_year | string) | list) %}
+            <tr>
+              <td><b style="color: var(--pp-text-strong);">{{ years.stats_year }}</b></td>
+              <td class="num pp-mono"><b>{{ player.sc_avg }}</b></td>
+              <td class="num pp-mono">{{ player.games_played if player.games_played is defined and player.games_played else '' }}</td>
+            </tr>
+            {% endif %}
           </tbody>
         </table>
       </div>

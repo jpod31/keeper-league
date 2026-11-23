@@ -207,7 +207,7 @@ def compute_trade_table(team_id, league_id, year, profile_tags):
 
         reason = f"Surplus {pos} depth"
         if buyers:
-            reason += f" — would upgrade {buyers[0]}" + (f" and {len(buyers)-1} others" if len(buyers) > 1 else "")
+            reason += f", would upgrade {buyers[0]}" + (f" and {len(buyers)-1} others" if len(buyers) > 1 else "")
 
         surplus.append({
             "name": p.name,

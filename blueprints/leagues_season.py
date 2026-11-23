@@ -367,7 +367,7 @@ def offseason_start_step(league_id):
         if not raw:
             season_cfg.offseason_close_date = None
             db.session.commit()
-            flash("Off-season deadline cleared — windows fall back to their duration settings.", "info")
+            flash("Off-season deadline cleared, windows fall back to their duration settings.", "info")
         else:
             try:
                 when = _melb_end_of_day_utc(raw)

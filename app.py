@@ -182,7 +182,7 @@ def _cba_backfill_if_empty(app):
             return
 
     if not total or populated > 0:
-        print(f"[cba] skip backfill — {populated}/{total} players already have CBA%",
+        print(f"[cba] skip backfill, {populated}/{total} players already have CBA%",
               file=sys.stderr, flush=True)
         return
 
@@ -977,7 +977,7 @@ def create_app():
         except Exception as e:
             steps.append(f"Schema migration: {e}")
 
-        flash("Refresh complete — " + " | ".join(steps), "success")
+        flash("Refresh complete, " + " | ".join(steps), "success")
         return redirect(url_for("admin.dashboard"))
 
     @app.route("/push/vapid-key")
@@ -1014,7 +1014,7 @@ def create_app():
         f.save(path)
         try:
             players = import_players_csv(path, merge=True)
-            flash(f"Imported/merged — master list now has {len(players)} players.", "success")
+            flash(f"Imported/merged, master list now has {len(players)} players.", "success")
         except Exception as e:
             app.logger.exception("Player import failed")
             flash("Import failed. Check the CSV format and try again.", "danger")

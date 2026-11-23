@@ -1051,7 +1051,7 @@ def league_history(league_id):
             if dominance >= 75:
                 rivalry_facts.append({
                     "type": "dominance",
-                    "text": f"{team_map.get(t1, '?')} dominates {team_map.get(t2, '?')} — {rec['wins']}-{rec['draws']}-{rec['losses']} all-time ({dominance:.0f}% win rate)",
+                    "text": f"{team_map.get(t1, '?')} dominates {team_map.get(t2, '?')}, {rec['wins']}-{rec['draws']}-{rec['losses']} all-time ({dominance:.0f}% win rate)",
                     "value": dominance,
                 })
             if rec["losses"] == 0 and rec["wins"] >= 2:

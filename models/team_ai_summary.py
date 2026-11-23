@@ -164,10 +164,10 @@ def _build_prompt(team_name, analytics, league_comparison, narrative=None,
     prompt = f"""You are an elite fantasy AFL keeper league analyst writing a deep-dive report for "{team_name}".
 
 TEAM TRAJECTORY: {n.get('trajectory', 'unknown')}. {n.get('verdict', '')}
-WINDOW: {a.get('window', 'Unknown')} — {a.get('window_detail', '')}
+WINDOW: {a.get('window', 'Unknown')}, {a.get('window_detail', '')}
 
 ## MATHEMATICALLY COMPUTED INSIGHTS
-The following facts have been computed from league-wide data analysis. Use them as the backbone of your report — cite specific players, positions, and numbers. Do NOT just list them back — weave them into analytical narrative.
+The following facts have been computed from league-wide data analysis. Use them as the backbone of your report, cite specific players, positions, and numbers. Do NOT just list them back, weave them into analytical narrative.
 
 """
     for category, label in [
@@ -203,9 +203,9 @@ The following facts have been computed from league-wide data analysis. Use them 
     prompt += """
 ## INSTRUCTIONS
 
-Write a 400-500 word analytical report. This is NOT a stat summary — it's a strategic assessment. Think like a GM evaluating a franchise, not a journalist recapping a game.
+Write a 400-500 word analytical report. This is NOT a stat summary, it's a strategic assessment. Think like a GM evaluating a franchise, not a journalist recapping a game.
 
-For each section, LEAD with the comparative insight (e.g. "You own 4 of the top 5 defenders"), THEN explain what that means strategically. Connect insights to each other — e.g. if positional dominance + age cliff exist at the same position, that's the story.
+For each section, LEAD with the comparative insight (e.g. "You own 4 of the top 5 defenders"), THEN explain what that means strategically. Connect insights to each other, e.g. if positional dominance + age cliff exist at the same position, that's the story.
 
 REQUIRED SECTIONS (separated by "---" on its own line):
 
@@ -213,13 +213,13 @@ THE VERDICT: 2-3 sentences. Are they a dynasty, contender, pretender, or rebuild
 ---
 THE EDGE: What gives this team its competitive advantage? Which positions dominate? How sustainable is it? Name the players that make the difference and WHY they matter to the structure.
 ---
-THE CRACKS: What breaks first? Age cliffs, single-player dependency, positional weakness — identify the structural risk, not just "Player X is old". Explain what happens when the risk materialises (e.g. "losing X drops you from 1st to 4th").
+THE CRACKS: What breaks first? Age cliffs, single-player dependency, positional weakness, identify the structural risk, not just "Player X is old". Explain what happens when the risk materialises (e.g. "losing X drops you from 1st to 4th").
 ---
 THE TRAJECTORY: Where is this team in 2 years? 4 years? Use the dynasty projections and crossover data. Be specific about WHEN windows open and close. Name the teams that will overtake or be overtaken.
 ---
-THE PLAYBOOK: 3 specific, high-impact moves. Not generic advice — use the computed trade targets, free agents, and gap analysis. Each recommendation should reference the insight that justifies it.
+THE PLAYBOOK: 3 specific, high-impact moves. Not generic advice, use the computed trade targets, free agents, and gap analysis. Each recommendation should reference the insight that justifies it.
 
-TONE: Confident, analytical, direct. Like a front-office memo, not a blog post. Use player names throughout. No bullet points — flowing paragraphs. Each section 3-5 sentences."""
+TONE: Confident, analytical, direct. Like a front-office memo, not a blog post. Use player names throughout. No bullet points, flowing paragraphs. Each section 3-5 sentences."""
 
     return prompt
 
@@ -246,7 +246,7 @@ def generate_team_summary(team_id, team_name, year, analytics, league_comparison
     # Generate new summary
     api_key = os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
-        logger.warning("OPENAI_API_KEY not set — cannot generate team summary")
+        logger.warning("OPENAI_API_KEY not set, cannot generate team summary")
         return None
 
     prompt = _build_prompt(team_name, analytics, league_comparison, narrative,
@@ -259,7 +259,7 @@ def generate_team_summary(team_id, team_name, year, analytics, league_comparison
             json={
                 "model": "gpt-4o",
                 "messages": [
-                    {"role": "system", "content": "You are an elite fantasy AFL keeper league analyst. You write like a front-office executive — direct, analytical, opinionated. You never summarise raw stats; you interpret what they mean strategically."},
+                    {"role": "system", "content": "You are an elite fantasy AFL keeper league analyst. You write like a front-office executive, direct, analytical, opinionated. You never summarise raw stats; you interpret what they mean strategically."},
                     {"role": "user", "content": prompt},
                 ],
                 "max_tokens": 1200,

@@ -22,9 +22,9 @@
       "date": "9 Apr 2026",
       "title": "Deep Team Analytics",
       "items": [
-        "AI-powered team intelligence reports — personalised analysis for each squad",
-        "Bayesian player projections that account for sample size (no more misleading 4-game averages)",
-        "Monte Carlo score simulations with weekly floor/ceiling confidence intervals",
+        "A team report for each squad",
+        "Player projections that allow for small samples (no more misleading 4-game averages)",
+        "Simulated scores with a weekly floor and ceiling",
         "Team Health Score (0-100) with component breakdown",
         "3-year roster outlook with aging-in and aging-out projections",
         "What-if scenario analysis (captain down, key injuries)",
@@ -38,7 +38,7 @@
       "items": [
         "New KL logo with football accent throughout the app",
         "Data-driven player profile tags (Elite, Premium, Emerging Star etc) using 8 years of historical data",
-        "Positional scarcity factored into player valuations — a good forward is worth more than a good mid",
+        "Positional scarcity factored into player valuations, a good forward is worth more than a good mid",
         "Animated PWA splash screen on app launch",
         "Team abbreviation fixes (WCE, WB, NM, BL)"
       ]
@@ -48,7 +48,7 @@
       "date": "4 Apr 2026",
       "title": "Scoring & Emergency Fixes",
       "items": [
-        "Fixed emergency substitutions — players scoring 0 (late outs) now correctly trigger emergency subs",
+        "Fixed emergency substitutions, players scoring 0 (late outs) now correctly trigger emergency subs",
         "Fixed player name matching for live scores (MacDonald, O'Brien etc no longer missed)",
         "All rounds rescored to correct historical results",
         "DNP players now shown in a separate section with emergency subs clearly labelled"

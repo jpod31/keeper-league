@@ -143,7 +143,7 @@ def compute_keeper_board(players):
             why = f"Age {age} · {round(pot - rating)} ratings of upside to grow into"
         elif old and declining and sc >= 75:
             bucket = "Sell-high"
-            why = f"Age {age} · projects {round(proj)} next yr ({round(proj - sc):+d}) — move while value holds"
+            why = f"Age {age} · projects {round(proj)} next yr ({round(proj - sc):+d}), move while value holds"
         elif below_repl and not young:
             bucket = "Replaceable"
             why = "Below replacement" + (f" (VORP {round(vorp):+d})" if vorp is not None else "") + f" at {age if age is not None else '?'}"
@@ -254,7 +254,7 @@ def compute_this_round(league_id, team_id, year):
         "risks_n": sum(1 for s in starters if s["bye"] or s["injury"]),
     })
     if not opp_id:
-        out["note"] = "No fantasy opponent this round (bye or finals) — projection only."
+        out["note"] = "No fantasy opponent this round (bye or finals), projection only."
     return out
 
 

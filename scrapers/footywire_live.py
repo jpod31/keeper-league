@@ -54,7 +54,7 @@ def _get_cached(url: str, retries: int = 3) -> BeautifulSoup:
             last_err = e
             if attempt < retries - 1:
                 wait = 2 ** attempt  # 1s, 2s backoff
-                logger.warning("Fetch attempt %d/%d failed for %s: %s — retrying in %ds",
+                logger.warning("Fetch attempt %d/%d failed for %s: %s, retrying in %ds",
                                attempt + 1, retries, url, e, wait)
                 time.sleep(wait)
     # All retries exhausted — return stale cache if available
@@ -135,7 +135,7 @@ def normalise_team(raw: str) -> str:
     key = raw.strip()
     canonical = _FW_TEAM_MAP.get(key)
     if canonical is None:
-        logger.warning("Unknown Footywire team name: '%s' — passing through unchanged", key)
+        logger.warning("Unknown Footywire team name: '%s', passing through unchanged", key)
         return key
     return canonical
 

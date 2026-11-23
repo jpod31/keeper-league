@@ -37,7 +37,7 @@ except ImportError:
     import random as _random
     np = None
     _HAS_NUMPY = False
-    logger.info("numpy not available — Monte Carlo will use stdlib random")
+    logger.info("numpy not available, Monte Carlo will use stdlib random")
 
 try:
     import pandas as pd
@@ -45,7 +45,7 @@ try:
 except ImportError:
     pd = None
     _HAS_PANDAS = False
-    logger.warning("pandas not available — age curve model will be limited")
+    logger.warning("pandas not available, age curve model will be limited")
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -1048,7 +1048,7 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
                 "type": "strength",
                 "title": f"{p.name} is better than their current average",
                 "detail": (f"Raw avg {raw:.0f} but Bayesian estimate {tt:.0f} "
-                           f"(only {est.get('games', 0)} games — small sample regressed to prior). "
+                           f"(only {est.get('games', 0)} games, small sample regressed to prior). "
                            f"Expect improvement toward {tt:.0f}."),
                 "impact": round(tt - raw, 1),
             })
@@ -1119,7 +1119,7 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
         names = ", ".join(p.name for p, _ in low_dur[:3])
         insights.append({
             "type": "warning",
-            "title": f"Durability risk — avg {avg_dur:.0f} games/season",
+            "title": f"Durability risk, avg {avg_dur:.0f} games/season",
             "detail": f"Your players average {avg_dur:.0f} games per year (ideal: 20+). "
                       f"Most injury-prone: {names}." if names else f"Several players have low durability.",
             "impact": round((20 - avg_dur) * 2, 1),
@@ -1133,7 +1133,7 @@ def _generate_insights(field_players, bench_players, bayesian_map, profile_tags,
     if _top5_pct > 35:
         insights.append({
             "type": "warning",
-            "title": f"Top-heavy roster — top 5 account for {_top5_pct:.0f}% of scoring",
+            "title": f"Top-heavy roster, top 5 account for {_top5_pct:.0f}% of scoring",
             "detail": "If your best players miss games, your score drops significantly. Build depth.",
             "impact": round(_top5_pct - 30, 1),
         })
@@ -1185,7 +1185,7 @@ def compute_league_squad_health(league_id):
         if not rated:
             rows.append({"team_id": t.id, "health": 0, "rating": 0, "avg_age": 0,
                          "young_guns": 0, "elite_vets": 0, "youth_upside": 0,
-                         "aging_drag": 0, "descriptor": "—"})
+                         "aging_drag": 0, "descriptor": "-"})
             continue
 
         base = sum(p.rating for p in rated) / len(rated)
@@ -1617,10 +1617,10 @@ def _compute_deep_analytics_inner(team_id, league_id, year, profile_tags):
         window_detail = f"Top scorer with {pre_peak_count}/{total_field} field players still to peak"
     elif is_top_scorer and peak_count >= total_field * 0.4:
         window = "Win Now"
-        window_detail = f"Top scorer, {peak_count}/{total_field} in peak window — compete immediately"
+        window_detail = f"Top scorer, {peak_count}/{total_field} in peak window, compete immediately"
     elif pre_peak_count >= total_field * 0.4 and _proj_improving:
         window = "Building"
-        window_detail = f"{pre_peak_count}/{total_field} field players haven't peaked yet — future looks bright"
+        window_detail = f"{pre_peak_count}/{total_field} field players haven't peaked yet, future looks bright"
     elif post_peak_count >= total_field * 0.35 and not _proj_improving:
         window = "Declining"
         window_detail = f"{post_peak_count}/{total_field} field players past their peak, projected to drop"
@@ -2266,7 +2266,7 @@ def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
         top5_names = [p["name"] for p in (a.get("player_vorp") or [])[:5]]
         insights["vulnerabilities"].append(
             f"{top5_pct:.0f}% of your scoring comes from just 5 players "
-            f"({', '.join(top5_names)}) — high concentration risk")
+            f"({', '.join(top5_names)}), high concentration risk")
 
     # Key injury vulnerability — compute rank drop
     scenarios = a.get("scenarios", {})
@@ -2311,7 +2311,7 @@ def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
                     f"Your {pos} depth stays above league average for {years_above_avg}+ years")
             elif years_above_avg <= 1 and league_players_by_pos.get(pos):
                 insights["depth_longevity"].append(
-                    f"Your {pos} line falls below league average within 2 years — needs reinforcement")
+                    f"Your {pos} line falls below league average within 2 years, needs reinforcement")
 
     # ── SCORING COMPARISON ──
     league_context = a.get("league_context", {})
@@ -2337,14 +2337,14 @@ def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
     if total_sc_rank and total_sc_rank.get("rank") == 1:
         gap = total_sc_rank.get("value", 0) - total_sc_rank.get("leader", 0)
         insights["scoring_comparison"].append(
-            f"Highest total SC in the league — you outscore every other team")
+            f"Highest total SC in the league, you outscore every other team")
 
     # Form vs season
     form = a.get("form_vs_season", 0)
     if abs(form) >= 5:
         direction = "up" if form > 0 else "down"
         insights["scoring_comparison"].append(
-            f"Recent form is {direction} — last 3 rounds averaging "
+            f"Recent form is {direction}, last 3 rounds averaging "
             f"{a.get('form_avg', 0):.0f}/round vs {a.get('season_avg', 0):.0f} season average "
             f"({'+' if form > 0 else ''}{form:.0f})")
 
@@ -2362,13 +2362,13 @@ def compute_comparative_insights(team_id, league_id, year, analytics, dynasty,
             fa = fas[0]
             insights["actionable"].append(
                 f"Best free agent pickup: {fa['name']} ({fa['position']}, SC {fa['sc_avg']:.0f}) "
-                f"— would fill your {fa.get('fills_gap', 'biggest')} gap")
+                f"- would fill your {fa.get('fills_gap', 'biggest')} gap")
 
         surplus = trade_table.get("surplus", [])
         if surplus:
             s = surplus[0]
             insights["actionable"].append(
-                f"Trade asset: {s['name']} ({s['position']}, SC {s['sc_avg']:.0f}) — "
+                f"Trade asset: {s['name']} ({s['position']}, SC {s['sc_avg']:.0f}), "
                 f"{s.get('reason', 'surplus to requirements')}")
 
     # Kid timeline from narrative

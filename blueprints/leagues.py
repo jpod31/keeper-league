@@ -693,7 +693,7 @@ def league_leave(league_id):
 
     # Commissioners can't leave their own league — they must delete it
     if league.commissioner_id == current_user.id:
-        flash("You're the commissioner — transfer ownership first or delete the league.", "warning")
+        flash("You're the commissioner, transfer ownership first or delete the league.", "warning")
         return redirect(url_for("leagues.dashboard", league_id=league_id))
 
     team_id = team.id

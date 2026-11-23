@@ -44,7 +44,7 @@
       </ul>
     </div>
 
-    {# Tab bar — visible on desktop only #}
+    {# Tab bar, visible on desktop only #}
     {# Stats/Keepers live under Players subnav, Records under League subnav #}
     <nav class="league-tabs d-none d-lg-flex" id="league-tabs">
       {% if nav_user_team|default(none) %}
@@ -92,7 +92,7 @@
 
 {% block league_content %}{% endblock %}
 
-{# ═══ Mobile bottom nav — hidden on desktop ═══ #}
+{# ═══ Mobile bottom nav, hidden on desktop ═══ #}
 <nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav">
   {% if nav_user_team|default(none) %}
     <button class="mob-nav-item{% if active_tab|default('') == 'team' %} active{% endif %}" type="button"

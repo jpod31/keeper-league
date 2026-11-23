@@ -382,11 +382,11 @@
   </script>
   {% endif %}
   {# PWA Install Banner #}
-  <div id="pwaInstallBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:1030;background:linear-gradient(135deg,#238636,#514e5f);padding:10px 16px;font-size:.82rem;color:#fff;text-align:center;">
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
-      <span>Install <strong>Keeper League</strong> for a better experience</span>
-      <button id="pwaInstallBtn" style="background:#fff;color:var(--kl-text-primary);border:none;border-radius:6px;padding:4px 14px;font-size:.8125rem;font-weight:600;cursor:pointer;">Install</button>
-      <button id="pwaInstallDismiss" style="background:none;border:none;color:var(--kl-text-primary);font-size:1.1rem;cursor:pointer;padding:2px 6px;line-height:1;">&times;</button>
+  <div id="pwaInstallBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:1030;background:#0c0c0e;border-bottom:1px solid rgba(255,255,255,.18);padding:10px 16px;font-size:.9375rem;color:#ffffff;text-align:center;">
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+      <span>Add Keeper League to your home screen</span>
+      <button id="pwaInstallBtn" style="background:#ffffff;color:#050506;border:none;border-radius:5px;height:32px;padding:0 14px;font-size:.875rem;font-weight:600;cursor:pointer;">Install</button>
+      <button id="pwaInstallDismiss" aria-label="Dismiss" style="background:none;border:none;color:#ffffff;font-size:1.2rem;cursor:pointer;padding:2px 6px;line-height:1;">&times;</button>
     </div>
   </div>
   <script>
@@ -448,25 +448,23 @@
   {# ── What's New popup ── #}
   {% if current_user.is_authenticated %}
   <style>
-    .wn-overlay { position:fixed; inset:0; z-index:99990; background:rgba(0,0,0,.6); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .3s; }
+    .wn-overlay { position:fixed; inset:0; z-index:99990; background:rgba(0,0,0,.72); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .2s; }
     .wn-overlay.open { opacity:1; }
-    .wn-card { background:#151518; border:1px solid #2a292f; border-radius:14px; max-width:420px; width:90%; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; transform:translateY(20px); transition:transform .3s; }
-    .wn-overlay.open .wn-card { transform:translateY(0); }
-    .wn-hdr { padding:18px 22px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #1e1d21; }
-    .wn-hdr h3 { margin:0; font-size:1rem; font-weight:800; color:#ebebee; }
-    .wn-ver { font-size:.8125rem; color:var(--kl-text-primary); background:#0e0d0f; padding:2px 8px; border-radius:6px; }
-    .wn-close { background:none; border:none; color:var(--kl-text-primary); font-size:1.2rem; cursor:pointer; padding:4px; }
-    .wn-close:hover { color:#ebebee; }
-    .wn-body { padding:16px 22px; overflow-y:auto; flex:1; }
-    .wn-section { margin-bottom:16px; }
+    .wn-card { background:#0c0c0e; border:1px solid rgba(255,255,255,.18); border-radius:8px; max-width:520px; width:92%; max-height:82vh; overflow:hidden; display:flex; flex-direction:column; }
+    .wn-hdr { padding:20px 24px 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(255,255,255,.09); }
+    .wn-hdr h3 { margin:0; font-size:1.5rem; font-weight:700; letter-spacing:-.03em; color:#ffffff; flex:1; }
+    .wn-ver { font-family:var(--kl-font-mono, monospace); font-size:.8125rem; color:#ffffff; border:1px solid rgba(255,255,255,.18); padding:3px 8px; border-radius:5px; }
+    .wn-close { background:none; border:none; color:#ffffff; font-size:1.1rem; cursor:pointer; padding:4px; }
+    .wn-body { padding:18px 24px; overflow-y:auto; flex:1; }
+    .wn-section { margin-bottom:22px; }
     .wn-section:last-child { margin-bottom:0; }
-    .wn-section-title { font-size:.8125rem; font-weight:700; color:#ebebee; margin-bottom:6px; }
-    .wn-section-date { font-size:.8125rem; color:var(--kl-text-primary); margin-left:6px; }
-    .wn-item { display:flex; gap:8px; padding:4px 0; font-size:.8125rem; color:var(--kl-text-primary); line-height:1.4; }
-    .wn-item::before { content:''; width:5px; height:5px; border-radius:50%; background:linear-gradient(135deg,#3fb950,#514e5f); flex-shrink:0; margin-top:6px; }
-    .wn-footer { padding:12px 22px; border-top:1px solid #1e1d21; text-align:center; }
-    .wn-btn { background:linear-gradient(135deg,#3fb950,#514e5f); color:#fff; border:none; border-radius:8px; padding:8px 28px; font-size:.8125rem; font-weight:700; cursor:pointer; }
-    .wn-btn:hover { opacity:.9; }
+    .wn-section-title { font-size:1.0625rem; font-weight:600; color:#ffffff; margin-bottom:10px; }
+    .wn-section-date { font-family:var(--kl-font-mono, monospace); font-size:.8125rem; font-weight:500; color:#ffffff; margin-left:10px; }
+    .wn-item { display:flex; gap:12px; padding:6px 0; font-size:.9375rem; color:var(--kl-text-primary); line-height:1.45; }
+    .wn-item::before { content:''; width:5px; height:5px; background:#ffffff; flex-shrink:0; margin-top:9px; }
+    .wn-footer { padding:14px 24px; border-top:1px solid rgba(255,255,255,.09); display:flex; justify-content:flex-end; }
+    .wn-btn { background:#ffffff; color:#050506; border:none; border-radius:6px; height:40px; padding:0 22px; font-size:.9375rem; font-weight:600; cursor:pointer; }
+    .wn-btn:hover { background:#d9d9e0; }
   </style>
   <div id="wnOverlay" class="wn-overlay" style="display:none;" onclick="if(event.target===this)closeWhatsNew()">
     <div class="wn-card">

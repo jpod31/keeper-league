@@ -100,7 +100,7 @@ def fetch_team_lineups(year: int, afl_round: int) -> list[dict]:
             capture_output=True, text=True, timeout=120,
         )
     except FileNotFoundError:
-        logger.error("Rscript not found — R is not installed or not on PATH")
+        logger.error("Rscript not found, R is not installed or not on PATH")
         return []
     except subprocess.TimeoutExpired:
         logger.error("Rscript timed out fetching lineups for %d R%d", year, afl_round)

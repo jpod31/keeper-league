@@ -517,7 +517,7 @@ def snapshot_lineups_for_round(afl_round, year):
                 logger.info("Fully locked %d team lineups for R%d %d", count, afl_round, year)
         except Exception:
             db.session.rollback()
-            logger.exception("Lineup snapshot commit failed for R%d %d — rolled back", afl_round, year)
+            logger.exception("Lineup snapshot commit failed for R%d %d, rolled back", afl_round, year)
             return 0
 
     return count

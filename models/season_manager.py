@@ -822,7 +822,7 @@ def pool_pickup_state(league):
     # trade window opens (spots then fill via the mid-season draft).
     if league.trade_window_open:
         return False, (
-            "Free-agent pickups are paused — squad spots fill via the "
+            "Free-agent pickups are paused, squad spots fill via the "
             "upcoming draft, not the player pool."
         )
 
