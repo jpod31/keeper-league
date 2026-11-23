@@ -308,13 +308,13 @@
 .tp-pos {
   font-size: .8125rem; font-weight: 800; letter-spacing: .04em;
   padding: 1px 5px; border-radius: 4px;
-  border: 1px solid currentColor;
+  border: 0; color: #050506; font-family: var(--kl-font-mono);
   flex: 0 0 auto;
 }
-.tp-pos-DEF { color: #6bb2ff; }
-.tp-pos-MID { color: #7fe0a6; }
-.tp-pos-RUC { color: #ffb45f; }
-.tp-pos-FWD { color: #ff7d8f; }
+.tp-pos-DEF { background: #58a6ff; }
+.tp-pos-MID { background: #bc8cff; }
+.tp-pos-RUC { background: #3fb950; }
+.tp-pos-FWD { background: #f0883e; }
 
 .tp-row-stats { display: flex; gap: 13px; flex: 0 0 auto; }
 .tp-stat { display: flex; flex-direction: column; align-items: center; min-width: 26px; }

@@ -337,7 +337,7 @@ export function LineupPage() {
                         <label className="form-check-label" style={{ fontSize: '.8125rem' }}>
                           {p.name} <span className="text-secondary">({p.position})</span>
                           {player_lock_times[String(p.id)] && (
-                            <span style={{ fontSize: '.8125rem', color: player_lock_times[String(p.id)] === 'Locked' ? '#f85149' : '#a0a0ac' }}>
+                            <span style={{ fontSize: '.8125rem', color: player_lock_times[String(p.id)] === 'Locked' ? '#f85149' : '#ececf1' }}>
                               {' '}{player_lock_times[String(p.id)]}
                             </span>
                           )}
@@ -390,7 +390,7 @@ export function LineupPage() {
                         {slot.is_captain && <span className="badge" style={{ background: '#d29922', fontSize: '.8125rem' }}>C</span>}
                         {slot.is_vice_captain && <span className="badge" style={{ background: '#ececf6', fontSize: '.8125rem' }}>VC</span>}
                         {slot.player_id != null && player_lock_times[String(slot.player_id)] && (
-                          <span style={{ fontSize: '.8125rem', color: player_lock_times[String(slot.player_id)] === 'Locked' ? '#f85149' : '#a0a0ac' }}>
+                          <span style={{ fontSize: '.8125rem', color: player_lock_times[String(slot.player_id)] === 'Locked' ? '#f85149' : '#ececf1' }}>
                             {player_lock_times[String(slot.player_id)]}
                           </span>
                         )}

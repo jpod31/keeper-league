@@ -42,13 +42,13 @@ interface HistoryData {
 }
 
 const STYLE = `
-.rec-card { background:#151518; border:1px solid #2a292f; border-radius:8px; margin-bottom:16px; overflow:hidden; }
+.rec-card { display:block; padding:0; background:#0c0c0e; border:1px solid rgba(255,255,255,.14); border-radius:6px; margin-bottom:16px; overflow:hidden; }
 .rec-card-header { display:flex; align-items:center; gap:.5rem; padding:.6rem .9rem; border-bottom:1px solid #2a292f; background:#0e0d0f; }
-.rec-card-header h5 { margin:0; font-size:.85rem; font-weight:600; color:#ebebee; }
+.rec-card-header h5 { margin:0; font-size:1rem; font-weight:600; color:#ffffff; }
 .rec-card-header i { color:var(--kl-text-primary); }
 .rec-card-body { padding:0; }
 .rec-card-body-padded { padding:16px; }
-.rec-table { width:100%; margin:0; font-size:.8125rem; }
+.rec-table { width:100%; margin:0; font-size:.9375rem; }
 .rec-table th { padding:.5rem .8rem; font-size:.8125rem; color:var(--kl-text-primary); text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid #2a292f; background:#0e0d0f; text-align:left; }
 .rec-table td { padding:.5rem .8rem; color:var(--kl-text-primary); border-bottom:1px solid #1e1d21; }
 .rec-table tbody tr:hover { background:rgba(236,236,246,.03); }

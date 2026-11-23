@@ -73,7 +73,7 @@ export function InvitePage() {
           </div>
           <h3 className="fw-bold mb-1">{data.league.name}</h3>
           <div className="text-secondary mb-4" style={{ fontSize: '.85rem' }}>
-            {data.league.season_year} · {data.league.scoring_type} · {data.league.team_count}/{data.league.num_teams} teams
+            {data.league.season_year}, {data.league.scoring_type}, {data.league.team_count}/{data.league.num_teams} teams
           </div>
 
           <div className="row g-2 mb-4">

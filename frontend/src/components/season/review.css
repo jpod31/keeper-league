@@ -377,10 +377,10 @@
   border: 1px solid currentColor;
   vertical-align: middle;
 }
-.sr-pos.DEF { color: #6bb2ff; }
-.sr-pos.MID { color: #7fe0a6; }
-.sr-pos.RUC { color: #ffb45f; }
-.sr-pos.FWD { color: #ff7d8f; }
+.sr-pos.DEF { color: #58a6ff; }
+.sr-pos.MID { color: #bc8cff; }
+.sr-pos.RUC { color: #3fb950; }
+.sr-pos.FWD { color: #f0883e; }
 .sr-pos.FLEX { color: #c99cff; }
 
 /* ── Hero player (MVP) ───────────────────────────────────────────── */

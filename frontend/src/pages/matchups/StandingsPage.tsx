@@ -601,7 +601,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
             <span>Status</span>
             <SortBtn field="pr">PR</SortBtn>
             <SortBtn field="wins">W–L</SortBtn>
-            <span>Form · 5</span>
+            <span>Form, 5</span>
             <SortBtn field="mov">Mov.</SortBtn>
             <SortBtn field="pf">{scoring.for_label}</SortBtn>
             <SortBtn field="pa">{scoring.against_label}</SortBtn>
@@ -700,7 +700,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
 
                   {isFinalsCut && (
                     <div className="lad-cut" key={`cut-${s.team_id}`}>
-                      <span><i className="bi bi-trophy-fill"></i>Finals cut · top {finals_teams}</span>
+                      <span><i className="bi bi-trophy-fill"></i>Finals cut, top {finals_teams}</span>
                     </div>
                   )}
                 </div>
@@ -709,7 +709,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
           </div>
 
           <div className="lad-foot">
-            <span>{hasRankings && rankings[0] ? `Round ${rankings[0].afl_round} · Form, momentum & headlines updated weekly` : ''}</span>
+            <span>{hasRankings && rankings[0] ? `Round ${rankings[0].afl_round}, Form, momentum & headlines updated weekly` : ''}</span>
             <span className="scoring-tag" data-type={scType}>{scoring.label}</span>
           </div>
         </>

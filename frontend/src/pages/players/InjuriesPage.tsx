@@ -36,7 +36,7 @@ const SEV_COLOR: Record<string, string> = {
   test: '#d29922',
   major: '#f85149',
   minor: '#d29922',
-  tbc: '#a0a0ac',
+  tbc: '#ececf1',
 }
 
 const SORT_LABELS = {
@@ -114,7 +114,7 @@ export function InjuriesPage() {
         </div>
         <h2><i className="bi bi-bandaid me-2" style={{ color: '#f85149' }}></i>Injuries</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
-          {filtered.length} players · Round {data.current_round ?? '-'}
+          {filtered.length} {filtered.length === 1 ? 'player' : 'players'} out
         </div>
       </div>
 
@@ -173,7 +173,7 @@ export function InjuriesPage() {
                   <td className="mob-hide"><span className="text-secondary" style={{ fontSize: '.8125rem' }}>{p.afl_team}</span></td>
                   <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
                   <td>
-                    <span className="badge" style={{ background: (SEV_COLOR[p.injury_severity] || '#8a8895') + '20', color: SEV_COLOR[p.injury_severity] || '#a0a0ac', fontSize: '.8125rem' }}>
+                    <span className="badge" style={{ background: (SEV_COLOR[p.injury_severity] || '#ececf1') + '20', color: SEV_COLOR[p.injury_severity] || '#ececf1', fontSize: '.8125rem' }}>
                       {p.injury_severity.toUpperCase()}
                     </span>
                   </td>

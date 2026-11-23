@@ -285,7 +285,7 @@ export function SeasonsPage() {
                 <div key={d.id} className="kx-panel" style={{ marginBottom: 14 }}>
                   <div className="kx-panel-head">
                     <h3>{d.label}</h3>
-                    <span className="kx-count">{day(d.date)} · <b>{picks.length}</b> picks</span>
+                    <span className="kx-count">{day(d.date)}, <b>{picks.length}</b> picks</span>
                   </div>
                   <div className="kx-scroll" style={{ maxHeight: '60vh' }}>
                     <table className="kx-table">

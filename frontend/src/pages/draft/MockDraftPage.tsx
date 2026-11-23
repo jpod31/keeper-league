@@ -64,7 +64,7 @@ function posClass(position: string | null | undefined): string {
 }
 
 function ratingColor(r: number | null): string {
-  if (r == null) return '#a0a0ac'
+  if (r == null) return '#ececf1'
   if (r >= 80) return '#3fb950'
   if (r >= 70) return '#d29922'
   if (r >= 60) return '#f0883e'
@@ -259,7 +259,15 @@ export function MockDraftPage() {
   }
 
   if (loading) return <RowsSkeleton rows={14} />
-  if (!data || !state) return <p className="text-danger">Failed to load mock draft</p>
+  if (!data || !state) {
+    return (
+      <div className="kx-page tx-page">
+        <div className="kx-head"><h2>Mock draft</h2></div>
+        <p className="tx-none">There is no mock draft running. The commissioner starts one from draft setup.</p>
+        <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/draft`}>Draft room</Link>
+      </div>
+    )
+  }
 
   const { league, user_team } = data
   const isYourPick = !!(user_team && state.current_team_id === user_team.id)

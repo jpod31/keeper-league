@@ -74,13 +74,13 @@ export function LeagueBreadcrumb({ leagueId, fallbackName }: LeagueBreadcrumbPro
         <span className="lbc-pop" role="tooltip">
           <span className="lbc-pop-head">
             <strong>{name}</strong>
-            {league.season_year && <span className="lbc-pop-season"> · {league.season_year}</span>}
+            {league.season_year && <span className="lbc-pop-season">, {league.season_year}</span>}
           </span>
           {round != null && round > 0 && (
             <span className="lbc-pop-row">
               <i className="bi bi-calendar-week"></i>
               Round {round}
-              {lockout && <span className="lbc-pop-cd"> · {fmtCountdown(lockout)}</span>}
+              {lockout && <span className="lbc-pop-cd">, {fmtCountdown(lockout)}</span>}
             </span>
           )}
           {myTeamName && (

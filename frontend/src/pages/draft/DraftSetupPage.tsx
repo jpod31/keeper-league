@@ -482,7 +482,7 @@ export function DraftSetupPage() {
                       <Countdown target={supp_session.scheduled_start} />
                     </div>
                     <div className="text-secondary mt-1" style={{ fontSize: '.8125rem' }}>
-                      {supp_session.total_rounds} rounds · {teams.length} teams
+                      {supp_session.total_rounds} rounds {teams.length} teams
                     </div>
                   </div>
                 ) : (
@@ -558,7 +558,7 @@ export function DraftSetupPage() {
                   <div className="d-flex align-items-center gap-2">
                     <span className="status-pill status-active">In Progress</span>
                     <span className="text-secondary" style={{ fontSize: '.8125rem' }}>
-                      Round {mock_session.current_round ?? '-'} · Pick {mock_session.current_pick ?? '-'}
+                      Round {mock_session.current_round ?? '-'}, Pick {mock_session.current_pick ?? '-'}
                     </span>
                   </div>
                   <div className="d-flex gap-2">

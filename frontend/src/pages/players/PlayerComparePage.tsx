@@ -112,7 +112,7 @@ export function PlayerComparePage() {
                     className="list-group-item list-group-item-action"
                     onClick={() => addPlayer(p.id)}
                   >
-                    <strong>{p.name}</strong> <span className="text-secondary">· {p.position} · {p.afl_team} · {p.sc_avg?.toFixed(0)}</span>
+                    <strong>{p.name}</strong> <span className="text-secondary">{p.position}, {p.afl_team}, {p.sc_avg?.toFixed(0)}</span>
                   </button>
                 ))}
               </div>

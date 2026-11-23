@@ -129,7 +129,7 @@ function AssetRow({
 
       <span className="tp-row-body">
         <span className="tp-row-name">
-          {isPick ? `${pick!.year} · Round ${pick!.round_number}` : player!.name}
+          {isPick ? `${pick!.year}, Round ${pick!.round_number}` : player!.name}
         </span>
         <span className="tp-row-meta">
           {isPick
@@ -490,7 +490,7 @@ export function TradeProposePage() {
       {/* ── Step 2: the boards ── */}
       <div className="tp-boards">
         <AssetBoard
-          title="You send" sub={`${user_team.name} · click to add`}
+          title="You send" sub={`${user_team.name}, click to add`}
           side="out" team={user_team}
           players={my_players} picks={my_picks}
           pickedPlayers={givePlayerIds} pickedPicks={givePickIds}
@@ -500,7 +500,7 @@ export function TradeProposePage() {
         />
         <AssetBoard
           title="You receive"
-          sub={recipientTeam ? `${recipientTeam.name} · click to add` : 'Choose a club first'}
+          sub={recipientTeam ? `${recipientTeam.name}, click to add` : 'Choose a club first'}
           side="in" team={recipientTeam}
           players={theirAssets?.players || []} picks={theirAssets?.picks || []}
           pickedPlayers={receivePlayerIds} pickedPicks={receivePickIds}

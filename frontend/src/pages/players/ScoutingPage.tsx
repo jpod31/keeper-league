@@ -98,10 +98,10 @@ const CSS = `
 .scout-comp-badge { font-size: .8125rem; color: var(--kl-text-primary); text-transform: uppercase; background: rgba(160,160,172,.1);
   padding: 1px 5px; border-radius: 3px; font-weight: 600; }
 .pos-pill { font-size: .8125rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; }
-.pos-pill.def { background: rgba(88,166,255,.12); color: #58a6ff; }
-.pos-pill.mid { background: rgba(188,140,255,.12); color: #bc8cff; }
-.pos-pill.fwd { background: rgba(210,153,34,.12); color: #d29922; }
-.pos-pill.ruc { background: rgba(63,185,80,.12); color: #3fb950; }
+.pos-pill.def { background: #58a6ff; color: #050506; }
+.pos-pill.mid { background: #bc8cff; color: #050506; }
+.pos-pill.fwd { background: #f0883e; color: #050506; }
+.pos-pill.ruc { background: #3fb950; color: #050506; }
 .unlisted-badge { font-size: .8125rem; padding: 1px 5px; border-radius: 4px; font-weight: 600;
   background: rgba(160,160,172,.1); color: var(--kl-text-primary); }
 .listed-badge { font-size: .8125rem; padding: 1px 5px; border-radius: 4px; font-weight: 600;
@@ -173,10 +173,10 @@ const TAG_COLORS: Record<string, [string, string]> = {
   'tag-developing': ['rgba(236,236,246,.1)', '#ececf6'],
   'tag-watch': ['rgba(210,153,34,.15)', '#d29922'],
   'tag-radar': ['rgba(210,153,34,.1)', '#d29922'],
-  'tag-veteran': ['rgba(160,160,172,.08)', '#8a8895'],
-  'tag-depth': ['rgba(160,160,172,.1)', '#a0a0ac'],
-  'tag-fringe': ['rgba(160,160,172,.08)', '#8a8895'],
-  'tag-dev': ['rgba(160,160,172,.08)', '#8a8895'],
+  'tag-veteran': ['rgba(160,160,172,.08)', '#ececf1'],
+  'tag-depth': ['rgba(160,160,172,.1)', '#ececf1'],
+  'tag-fringe': ['rgba(160,160,172,.08)', '#ececf1'],
+  'tag-dev': ['rgba(160,160,172,.08)', '#ececf1'],
 }
 
 function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; leagueId: string; onClose: () => void; logos: Record<string, string> }) {
@@ -221,7 +221,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                 </div>
                 <div className="scout-detail-sub">
                   {player.position && <span className={`pos-pill ${(player.position.split('/')[0] || '').toLowerCase()}`}>{player.position}</span>}
-                  <span>{player.team} · {player.competition.toUpperCase()}</span>
+                  <span>{player.team}, {player.competition.toUpperCase()}</span>
                   {player.afl_team && <span style={{ color: '#ececf6' }}>{player.afl_team}</span>}
                   {player.age && <span>{player.age}yo</span>}
                   <span>{player.matches}gm</span>
@@ -242,7 +242,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                 </span>
                 <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                   {prediction.breakout_probability > 0 && `${prediction.breakout_probability}% breakout`}
-                  {prediction.draft_probability != null && prediction.draft_probability > 0 && ` · ${prediction.draft_probability}% draft chance`}
+                  {prediction.draft_probability != null && prediction.draft_probability > 0 && `, ${prediction.draft_probability}% draft chance`}
                 </span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
@@ -254,7 +254,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                   if (val == null || (Math.round(val) === 0 && !['afl_goals'].includes(key))) return null
                   return (
                     <div key={key} style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '1rem', fontWeight: 800, color: key === 'afl_sc_avg' ? '#ececf6' : '#cfcfd6' }}>{fmt(val)}</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 800, color: key === 'afl_sc_avg' ? '#ececf6' : '#ececf1' }}>{fmt(val)}</div>
                       <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase' }}>{label}</div>
                     </div>
                   )
@@ -269,7 +269,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
               {Object.entries(prediction.projections).map(([key, proj]) => (
                 <div key={key} style={{ flex: 1, textAlign: 'center', padding: '8px 4px',
                   background: 'rgba(255,255,255,.02)', border: '1px solid rgba(42,41,47,.2)', borderRadius: 8 }}>
-                  <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 2 }}>{proj.year} · age {proj.age}</div>
+                  <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 2 }}>{proj.year}, age {proj.age}</div>
                   <div style={{ fontSize: '.9rem', fontWeight: 800, color: '#ececf6' }}>{Math.round(proj.afl_sc_avg)}</div>
                   <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>SC AVG</div>
                 </div>
@@ -315,8 +315,8 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                     <div style={{ height: 150, display: 'flex', justifyContent: chartWidth ? 'center' : undefined }}>
                       <ResponsiveContainer width={chartWidth ?? '100%'} height="100%">
                         <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }} barGap={2} barCategoryGap="30%">
-                          <XAxis dataKey="season" stroke="#63616d" fontSize={10} tickLine={false} axisLine={{ stroke: '#1e1d21' }} />
-                          <YAxis stroke="#63616d" fontSize={9} tickLine={false} axisLine={false} />
+                          <XAxis dataKey="season" stroke="#63616d" fontSize={13} tickLine={false} axisLine={{ stroke: '#1e1d21' }} />
+                          <YAxis stroke="#63616d" fontSize={13} tickLine={false} axisLine={false} />
                           <Tooltip cursor={{ fill: 'rgba(236,236,246,.08)', radius: 4 }} content={({ active, payload }) => {
                             if (!active || !payload?.length) return null
                             const d = payload[0]?.payload
@@ -324,8 +324,8 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                             return (
                               <div style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8, padding: '8px 12px', fontSize: '.8125rem' }}>
                                 <div style={{ fontWeight: 800, color: '#f2f2f4', marginBottom: 4 }}>{d.season}</div>
-                                {d.afl_fan != null && <div style={{ color: '#bc8cff' }}>AFL: {Math.round(d.afl_fan)} fantasy · {d.afl_gm}gm</div>}
-                                {d.sl_fan != null && <div style={{ color: '#ececf6' }}>{d.sl_level || 'VFL'}: {Math.round(d.sl_fan)} fantasy · {d.sl_gm}gm</div>}
+                                {d.afl_fan != null && <div style={{ color: '#bc8cff' }}>AFL: {Math.round(d.afl_fan)} fantasy, {d.afl_gm}gm</div>}
+                                {d.sl_fan != null && <div style={{ color: '#ececf6' }}>{d.sl_level || 'VFL'}: {Math.round(d.sl_fan)} fantasy, {d.sl_gm}gm</div>}
                               </div>
                             )
                           }} />
@@ -504,13 +504,13 @@ export function ScoutingPage() {
           <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #2a292f', overflow: 'hidden', marginLeft: 'auto' }}>
             <button onClick={() => setMode('avg')}
               style={{ padding: '6px 12px', fontSize: '.8125rem', fontWeight: 600, border: 'none', cursor: 'pointer',
-                background: mode === 'avg' ? '#ececf6' : '#0e0d0f', color: mode === 'avg' ? '#0e0d0f' : '#a0a0ac' }}>
+                background: mode === 'avg' ? '#ececf6' : '#0e0d0f', color: mode === 'avg' ? '#0e0d0f' : '#ececf1' }}>
               AVG
             </button>
             <button onClick={() => setMode('total')}
               style={{ padding: '6px 12px', fontSize: '.8125rem', fontWeight: 600, border: 'none', cursor: 'pointer',
                 borderLeft: '1px solid #2a292f',
-                background: mode === 'total' ? '#ececf6' : '#0e0d0f', color: mode === 'total' ? '#0e0d0f' : '#a0a0ac' }}>
+                background: mode === 'total' ? '#ececf6' : '#0e0d0f', color: mode === 'total' ? '#0e0d0f' : '#ececf1' }}>
               TOT
             </button>
           </div>
@@ -558,7 +558,7 @@ export function ScoutingPage() {
                               {p.position && <span className={`pos-pill ${(p.position.split('/')[0] || '').toLowerCase()}`}>{p.position}</span>}
                               {p.is_afl_listed && p.afl_team && <span className="scout-afl-badge">{p.afl_team}</span>}
                               {!p.is_afl_listed && <span className="unlisted-badge">Unlisted</span>}
-                              <span className="scout-comp-badge">{p.team} · {p.competition.toUpperCase()}</span>
+                              <span className="scout-comp-badge">{p.team}, {p.competition.toUpperCase()}</span>
                               {p.age && <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{p.age}yo</span>}
                             </div>
                           </div>
@@ -577,7 +577,7 @@ export function ScoutingPage() {
                       <td className="scout-hide-mob" style={{ textAlign: 'center' }}>
                         {p.fantasy_team ? (
                           <span style={{ fontSize: '.8125rem', fontWeight: 700, padding: '1px 6px', borderRadius: 3,
-                            whiteSpace: 'nowrap', background: tc?.bg || '#1e1d21', color: tc?.fg || '#cfcfd6' }}>
+                            whiteSpace: 'nowrap', background: tc?.bg || '#1e1d21', color: tc?.fg || '#ececf1' }}>
                             {p.fantasy_team}
                           </span>
                         ) : (

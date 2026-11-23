@@ -595,7 +595,7 @@ function LeagueRail({
         {/* Rail head, static identity badge + pin button.
             Switcher is in the top bar (portalled). */}
         <div className="kl-rail-head">
-          <div className="kl-rail-id" title={`${leagueName} · ${leagueSeason}`}>
+          <div className="kl-rail-id" title={`${leagueName}, ${leagueSeason}`}>
             <span className="kl-rail-avatar">{leagueInitials(leagueName)}</span>
             <span className="kl-rail-id-body">
               <span className="kl-rail-id-name">{leagueName}</span>
@@ -760,7 +760,7 @@ function TopBarSwitcher({
             exit={{ opacity: 0, y: -6, scale: .98 }}
             transition={{ duration: .14, ease: [.2, .7, .2, 1] }}
           >
-            <div className="lg-switch-menu-head">Your leagues · {userLeagues.length}</div>
+            <div className="lg-switch-menu-head">Your leagues {userLeagues.length}</div>
             {ordered.map(lg => {
               const a = accentFor(lg.id)
               const isCurrent = lg.id === lid

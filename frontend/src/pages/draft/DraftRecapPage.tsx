@@ -58,7 +58,7 @@ export function DraftRecapPage() {
         <h2><i className="bi bi-list-check me-2" style={{ color: '#ececf6' }}></i>Draft Recap</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
           {data.league.season_year} {data.session.draft_round_type} draft
-          {data.session.completed_at && ` · ${new Date(data.session.completed_at).toLocaleDateString()}`}
+          {data.session.completed_at && `, ${new Date(data.session.completed_at).toLocaleDateString()}`}
         </div>
       </div>
 
@@ -150,7 +150,7 @@ export function DraftRecapPage() {
                           <>
                             <strong>{p.player_name}</strong>
                             <span className="text-secondary ms-2" style={{ fontSize: '.8125rem' }}>
-                              {p.position} · {p.afl_team}
+                              {p.position}, {p.afl_team}
                             </span>
                             {p.is_auto_pick && (
                               <span className="badge ms-2" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>auto</span>

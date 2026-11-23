@@ -363,7 +363,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       {byeIds && byeRound != null && (
         <div className="fv-bye-banner">
           <i className="bi bi-calendar-x"></i>
-          Bye preview · Round {byeRound}, {byeIds.size} player{byeIds.size === 1 ? '' : 's'} out (greyed)
+          Bye preview, Round {byeRound}, {byeIds.size} player{byeIds.size === 1 ? '' : 's'} out (greyed)
         </div>
       )}
       <div className="fv-wrapper">

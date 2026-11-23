@@ -288,9 +288,9 @@ export function StatsPage() {
                       const pct = posTotal > 0 ? (pts / posTotal) * 100 : 0
                       return (
                         <div key={pos} className="pos-bar-row">
-                          <span className="pos-bar-label" style={{ color: POS_COLORS[pos] || '#a0a0ac' }}>{pos}</span>
+                          <span className="pos-bar-label" style={{ color: POS_COLORS[pos] || '#ececf1' }}>{pos}</span>
                           <div className="pos-bar-track">
-                            <div className="pos-bar-fill" style={{ width: `${pct}%`, background: POS_COLORS[pos] || '#a0a0ac' }}></div>
+                            <div className="pos-bar-fill" style={{ width: `${pct}%`, background: POS_COLORS[pos] || '#ececf1' }}></div>
                           </div>
                           <span className="pos-bar-value">{pts.toFixed(0)} ({pct.toFixed(0)}%)</span>
                         </div>

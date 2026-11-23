@@ -36,11 +36,11 @@ const day = (iso: string | null | undefined) =>
 
 /** How a club got him: the label, icon and colour for one stint. */
 export function stintStyle(e: Stint): { label: string; icon: string; color: string } {
-  const when = e.acquired_at ? ` · ${day(e.acquired_at)}` : ''
+  const when = e.acquired_at ? `, ${day(e.acquired_at)}` : ''
   if ((e.method === 'draft' || e.method === 'supplemental') && e.pick_number) {
     const which = e.draft_label || (e.draft_year ? `${e.draft_year} draft` : 'draft')
     return {
-      label: `Pick ${e.pick_number} · ${which}`,
+      label: `Pick ${e.pick_number}, ${which}`,
       icon: e.method === 'draft' ? 'bi-trophy' : 'bi-asterisk',
       color: e.method === 'draft' ? '#79c0ff' : '#d2a8ff',
     }
@@ -157,7 +157,7 @@ export function AcquiredHistory({
       {fallback.coach && <div style={{ color: '#ececf1' }}>{fallback.coach}</div>}
       <div style={{ fontSize: '.8125rem' }}>
         {(fallback.method === 'draft' || fallback.method === 'supplemental') && fallback.pick_number
-          ? `Pick ${fallback.pick_number}${fallback.draft_label ? ` · ${fallback.draft_label}` : fallback.draft_year ? ` · ${fallback.draft_year}` : ''}`
+          ? `Pick ${fallback.pick_number}${fallback.draft_label ? `, ${fallback.draft_label}` : fallback.draft_year ? `, ${fallback.draft_year}` : ''}`
           : fallback.method === 'trade' ? 'Trade'
             : fallback.method === 'ssp' ? 'SSP'
               : fallback.method || '-'}

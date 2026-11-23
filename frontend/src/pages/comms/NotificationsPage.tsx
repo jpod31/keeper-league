@@ -84,14 +84,14 @@ export function NotificationsPage() {
                 style={{
                   borderBottom: '1px solid #1e1d21',
                   textDecoration: 'none',
-                  color: n.is_read ? '#a0a0ac' : '#cfcfd6',
-                  background: n.is_read ? undefined : 'rgba(81,78,95,.05)',
+                  color: n.is_read ? '#ececf1' : '#ececf1',
+                  borderLeft: n.is_read ? '3px solid transparent' : '3px solid #ffffff',
                 }}
               >
                 <i className={`bi ${iconForType(n.type)}`}
                   style={{ fontSize: '1.1rem', color: '#ececf6', marginTop: 2 }}></i>
                 <div className="flex-grow-1">
-                  <div style={{ fontSize: '.85rem', fontWeight: n.is_read ? 400 : 600 }}>{n.title}</div>
+                  <div style={{ fontSize: '.9375rem', fontWeight: n.is_read ? 400 : 700 }}>{n.title}</div>
                   {n.body && (
                     <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginTop: 2 }}>
                       {n.body.substring(0, 120)}

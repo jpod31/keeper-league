@@ -62,10 +62,10 @@ const intro: SlideDef = {
       </Beat>
       <Beat at={11} kind="rise" as="div" style={{ marginTop: 30 }}>
         <Ticker items={[
-          `Premiers · ${d.ladder[0]?.name ?? ''}`,
-          `Highest round · ${d.cover.top_round?.score ?? 0} by ${d.cover.top_round?.team ?? ''}`,
+          `Premiers, ${d.ladder[0]?.name ?? ''}`,
+          `Highest round, ${d.cover.top_round?.score ?? 0} by ${d.cover.top_round?.team ?? ''}`,
           `${d.cover.total_points.toLocaleString()} points scored`,
-          `Best 23 MVP · ${d.best_23.mvp?.name ?? ''}`,
+          `Best 23 MVP, ${d.best_23.mvp?.name ?? ''}`,
           `${d.ever_present.perfect_count} players never missed a week`,
           `${d.bench.total.toLocaleString()} points left on benches`,
         ]} />
@@ -96,7 +96,7 @@ const numbers: SlideDef = {
         <Tile value={<CountUp to={d.cover.matches} />} label="Matches played"
               sub={`${d.cover.rounds} rounds of football`} delay={160} />
         <Tile value={<CountUp to={d.cover.top_round?.score ?? 0} />} label="Highest round"
-              sub={d.cover.top_round ? `${d.cover.top_round.team} · R${d.cover.top_round.round}` : ''}
+              sub={d.cover.top_round ? `${d.cover.top_round.team}, R${d.cover.top_round.round}` : ''}
               delay={240} />
       </div>
 
@@ -114,7 +114,7 @@ const numbers: SlideDef = {
         <div className="sr-card sr-tile sr-rise" style={{ animationDelay: '440ms' }}>
           <div className="sr-tile-v"><CountUp to={d.movement.trades.length + d.movement.delists.length} /></div>
           <div className="sr-label sr-tile-l">List changes</div>
-          <div className="sr-tile-s">{d.movement.trades.length} trades · {d.movement.delists.length} delistings</div>
+          <div className="sr-tile-s">{d.movement.trades.length} trades {d.movement.delists.length} delistings</div>
         </div>
       </div>
     </div>
@@ -133,7 +133,7 @@ const ladder: SlideDef = {
       <div className="sr-inner">
         <Confetti count={60} />
         <Head
-          eyebrow={`${d.year} · Final standings`}
+          eyebrow={`${d.year}, Final standings`}
           title={<>{champ.name}</>}
           accentWord="took it"
           sub={`${champ.wins}–${champ.losses}${champ.draws ? `–${champ.draws}` : ''} with ${champ.percentage}% and ${champ.points_for.toLocaleString()} points for.`}
@@ -212,7 +212,7 @@ const you: SlideDef = {
             <div style={{ textAlign: 'center', marginTop: 6 }}>
               <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
                 <b style={{ color: '#fff' }}>{y.points_for.toLocaleString()}</b> for
-                {' · '}
+                {', '}
                 <b style={{ color: '#fff' }}>{y.points_against.toLocaleString()}</b> against
               </div>
               <div className="sr-label" style={{ marginTop: 8 }}>
@@ -305,8 +305,8 @@ const mvp: SlideDef = {
             <div className="sr-hero-name">{top.name}</div>
             <div className="sr-hero-meta">
               <Pos code={top.position} /> {top.afl_team}
-              {top.age ? ` · ${top.age}yo` : ''}
-              {top.rating ? ` · ${top.rating} rated` : ''}
+              {top.age ? `, ${top.age}yo` : ''}
+              {top.rating ? `, ${top.rating} rated` : ''}
             </div>
             <div className="sr-hero-stats">
               <div className="sr-hero-stat"><b>{top.avg}</b><span className="sr-label">Average</span></div>
@@ -340,7 +340,7 @@ const mvp: SlideDef = {
               rank={i + 2}
               value={(p.points ?? 0).toLocaleString()}
               valueLabel="points"
-              meta={`${p.afl_team} · ${p.avg} avg · ${p.played} games`}
+              meta={`${p.afl_team}, ${p.avg} avg, ${p.played} games`}
               delay={i * 60}
             />
           ))}
@@ -368,7 +368,7 @@ const ironmen: SlideDef = {
     return (
       <div className="sr-inner">
         <Head
-          eyebrow={`Weeks in the 23 · out of ${d.ever_present.max_rounds} possible`}
+          eyebrow={`Weeks in the 23, out of ${d.ever_present.max_rounds} possible`}
           title={<>The</>}
           accentWord="undroppables"
           sub={`Named in the 23 AND actually played. Weeks a player's club had no game, Opening Round, the bye, were never his to win, so they come out of both sides: every club played ${d.ever_present.max_rounds}.`}
@@ -386,7 +386,7 @@ const ironmen: SlideDef = {
                     rank={i + 1}
                     value={p.played_23}
                     valueLabel={`of ${p.available}`}
-                    meta={<>{p.afl_team} · {p.team_name} · {p.avg} avg</>}
+                    meta={<>{p.afl_team}, {p.team_name}, {p.avg} avg</>}
                     delay={i * 55}
                   />
                   {strip(p)}
@@ -409,7 +409,7 @@ const ironmen: SlideDef = {
                         rank={i + 1}
                         value={p.played_23}
                         valueLabel={`of ${p.available}`}
-                        meta={<>{p.afl_team} · {(p.points ?? 0).toLocaleString()} pts</>}
+                        meta={<>{p.afl_team}, {(p.points ?? 0).toLocaleString()} pts</>}
                         delay={i * 55}
                       />
                       {strip(p)}
@@ -445,7 +445,7 @@ const ironmen: SlideDef = {
 /* ═══ 8 · The Best 23 ═════════════════════════════════════════════ */
 
 const LINE_COLOUR: Record<string, string> = {
-  DEF: '#6bb2ff', MID: '#7fe0a6', RUC: '#ffb45f', FWD: '#ff7d8f', FLEX: '#c99cff',
+  DEF: '#58a6ff', MID: '#bc8cff', RUC: '#3fb950', FWD: '#f0883e', FLEX: '#e3b341',
 }
 const LINE_NAME: Record<string, string> = {
   DEF: 'Backline', MID: 'Midfield', RUC: 'Ruck', FWD: 'Forwards', FLEX: 'Flex',
@@ -458,7 +458,7 @@ const best23: SlideDef = {
   render: ({ d }) => (
     <div className="sr-inner">
       <Head
-        eyebrow={`${d.year} · Team of the year`}
+        eyebrow={`${d.year}, Team of the year`}
         title={<>The league's</>}
         accentWord="Best 23"
         sub={`Average, not season total, behind a ${d.best_23.min_games}-game qualification, so a month's injury doesn't cost an elite player his spot to someone merely available.`}
@@ -483,7 +483,7 @@ const best23: SlideDef = {
                   p={p}
                   value={p.avg}
                   valueLabel={`${p.played_23}g avg`}
-                  meta={<>{p.afl_team}{p.ever_present ? ' · ever-present' : ''}</>}
+                  meta={<>{p.afl_team}{p.ever_present ? ', ever-present' : ''}</>}
                   delay={li * 90 + i * 40}
                 />
               ))}
@@ -513,7 +513,7 @@ const best23: SlideDef = {
           </div>
           {d.best_23.iron_best && (
             <div className="sr-h2" style={{ marginTop: 6 }}>
-              {d.best_23.iron_best.name} · {d.best_23.iron_best.avg} avg
+              {d.best_23.iron_best.name}, {d.best_23.iron_best.avg} avg
             </div>
           )}
           <div className="sr-tile-s">
@@ -524,7 +524,7 @@ const best23: SlideDef = {
             {d.best_23.iron_men.slice(0, 4).map((p, i) => (
               <PlayerRow key={p.id} p={p} rank={i + 1}
                 value={p.avg} valueLabel={`${p.played_23}/${p.available}`}
-                meta={<>{p.afl_team} · {p.team_name}</>} delay={i * 55} />
+                meta={<>{p.afl_team}, {p.team_name}</>} delay={i * 55} />
             ))}
           </div>
         </div>
@@ -554,13 +554,13 @@ const records: SlideDef = {
         />
         <div className="sr-grid sr-g4">
           <Tile value={<CountUp to={hi.score} />} label="Highest team score" accent
-                sub={`${hi.name} · R${hi.round}`} />
+                sub={`${hi.name}, R${hi.round}`} />
           <Tile value={<CountUp to={lo.score} />} label="Lowest team score"
-                sub={`${lo.name} · R${lo.round}`} delay={70} />
+                sub={`${lo.name}, R${lo.round}`} delay={70} />
           <Tile value={<CountUp to={blow?.margin ?? 0} />} label="Biggest margin"
-                sub={blow ? `${blow.winner} d. ${blow.loser} · R${blow.round}` : ''} delay={140} />
+                sub={blow ? `${blow.winner} d. ${blow.loser}, R${blow.round}` : ''} delay={140} />
           <Tile value={<CountUp to={close?.margin ?? 0} />} label="Closest game"
-                sub={close ? `${close.winner} d. ${close.loser} · R${close.round}` : ''} delay={210} />
+                sub={close ? `${close.winner} d. ${close.loser}, R${close.round}` : ''} delay={210} />
         </div>
 
         <div className="sr-split" style={{ marginTop: 16 }}>
@@ -576,7 +576,7 @@ const records: SlideDef = {
                   rank={i + 1}
                   value={p.score}
                   valueLabel={`R${p.round}`}
-                  meta={`${p.afl_team} · named by ${p.team_name}`}
+                  meta={`${p.afl_team}, named by ${p.team_name}`}
                   delay={i * 55}
                 />
               ))}
@@ -594,7 +594,7 @@ const records: SlideDef = {
                   rank={i + 1}
                   value={p.tons}
                   valueLabel="tons"
-                  meta={`${p.afl_team}${p.monsters ? ` · ${p.monsters} × 150+` : ''}`}
+                  meta={`${p.afl_team}${p.monsters ? `, ${p.monsters} × 150+` : ''}`}
                   delay={i * 55}
                 />
               ))}
@@ -611,7 +611,7 @@ const records: SlideDef = {
               {d.records.shootouts[0].away_score.toLocaleString()} {d.records.shootouts[0].away}
             </div>
             <div className="sr-tile-s">
-              Round {d.records.shootouts[0].round} · {d.records.shootouts[0].combined.toLocaleString()} points combined
+              Round {d.records.shootouts[0].round}, {d.records.shootouts[0].combined.toLocaleString()} points combined
             </div>
           </div>
         )}
@@ -654,14 +654,14 @@ const h2h: SlideDef = {
                 }}>
                   {c.w}–{c.l}{c.d ? `–${c.d}` : ''}
                 </div>
-                <div className="sr-tile-s">{c.for.toLocaleString()} for · {c.against.toLocaleString()} against</div>
+                <div className="sr-tile-s">{c.for.toLocaleString()} for, {c.against.toLocaleString()} against</div>
               </div>
             ))}
           </div>
         )}
 
         <div className="sr-card sr-card-pad sr-rise" style={{ animationDelay: '200ms' }}>
-          <div className="sr-label" style={{ marginBottom: 10 }}>Every rivalry · row team's record</div>
+          <div className="sr-label" style={{ marginBottom: 10 }}>Every rivalry, row team's record</div>
           <div className="sr-tbl-wrap">
             <table className="sr-mx">
               <thead>
@@ -704,7 +704,7 @@ const h2h: SlideDef = {
               </div>
               <div className="sr-tile-s">
                 {Math.max(d.h2h.lopsided.a_wins, d.h2h.lopsided.b_wins)}–
-                {Math.min(d.h2h.lopsided.a_wins, d.h2h.lopsided.b_wins)} · avg margin {d.h2h.lopsided.avg_margin}
+                {Math.min(d.h2h.lopsided.a_wins, d.h2h.lopsided.b_wins)}, avg margin {d.h2h.lopsided.avg_margin}
               </div>
             </div>
           )}
@@ -716,7 +716,7 @@ const h2h: SlideDef = {
               </div>
               <div className="sr-tile-s">
                 {d.h2h.closest.a_wins}–{d.h2h.closest.b_wins}
-                {d.h2h.closest.draws ? `–${d.h2h.closest.draws}` : ''} · avg margin {d.h2h.closest.avg_margin}
+                {d.h2h.closest.draws ? `–${d.h2h.closest.draws}` : ''}, avg margin {d.h2h.closest.avg_margin}
               </div>
             </div>
           )}
@@ -771,7 +771,7 @@ const bench: SlideDef = {
                   rank={i + 1}
                   value={`+${m.gap}`}
                   valueLabel="left out"
-                  meta={`R${m.round} · ${m.score} on ${m.team_name}'s bench`}
+                  meta={`R${m.round}, ${m.score} on ${m.team_name}'s bench`}
                   delay={i * 60}
                 />
               ))}
@@ -782,7 +782,7 @@ const bench: SlideDef = {
                 <div className="sr-h2" style={{ marginTop: 6 }}>
                   {worst.team_name} benched {worst.name} for {worst.score}
                 </div>
-                <div className="sr-tile-s">Round {worst.round} · {worst.gap} points better than their worst starter</div>
+                <div className="sr-tile-s">Round {worst.round}, {worst.gap} points better than their worst starter</div>
               </div>
             )}
           </div>
@@ -843,7 +843,7 @@ const sevens: SlideDef = {
                   rank={i + 1}
                   value={(p2.points ?? 0).toLocaleString()}
                   valueLabel={`${p2.avg} avg`}
-                  meta={`${p2.afl_team} · ${p2.team_name} · ${p2.played} games`}
+                  meta={`${p2.afl_team}, ${p2.team_name}, ${p2.played} games`}
                   delay={i * 55}
                 />
               ))}
@@ -858,7 +858,7 @@ const sevens: SlideDef = {
                   p={p2}
                   value={p2.selections}
                   valueLabel="weeks"
-                  meta={`${p2.afl_team} · ${p2.team_name}`}
+                  meta={`${p2.afl_team}, ${p2.team_name}`}
                   delay={i * 55}
                 />
               ))}
@@ -883,7 +883,7 @@ const draft: SlideDef = {
     return (
       <div className="sr-inner">
         <Head
-          eyebrow={`Draft night · ${d.draft.total_picks} picks`}
+          eyebrow={`Draft night, ${d.draft.total_picks} picks`}
           title={<>Who actually</>}
           accentWord="won the draft"
           sub={`${heist.team_name} took ${heist.name} at pick ${heist.pick}, he finished the ${ord(heist.value_rank)} most productive player drafted. Value is judged on what a pick returned against what he was expected to give, not raw points, and players under 22 or on an LTIL are left out of the misses.`}
@@ -896,7 +896,7 @@ const draft: SlideDef = {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="sr-h2">{heist.name}</div>
                 <div className="sr-tile-s">
-                  {heist.afl_team} · {heist.team_name} · pick #{heist.pick}
+                  {heist.afl_team}, {heist.team_name}, pick #{heist.pick}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -915,7 +915,7 @@ const draft: SlideDef = {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="sr-h2">{bust.name}</div>
                   <div className="sr-tile-s">
-                    {bust.afl_team} · {bust.team_name} · {bust.age}yo · pick #{bust.pick}
+                    {bust.afl_team}, {bust.team_name}, {bust.age}yo, pick #{bust.pick}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -940,12 +940,12 @@ const draft: SlideDef = {
               <div>
                 <span className="sr-pill gold">Best pick</span>
                 <div className="sr-row-t" style={{ marginTop: 8 }}>{mine.best.name}</div>
-                <div className="sr-row-s">#{mine.best.pick} · {(mine.best.points ?? 0).toLocaleString()} pts</div>
+                <div className="sr-row-s">#{mine.best.pick}, {(mine.best.points ?? 0).toLocaleString()} pts</div>
               </div>
               <div>
                 <span className="sr-pill good">Biggest producer</span>
                 <div className="sr-row-t" style={{ marginTop: 8 }}>{mine.top.name}</div>
-                <div className="sr-row-s">#{mine.top.pick} · {(mine.top.points ?? 0).toLocaleString()} pts</div>
+                <div className="sr-row-s">#{mine.top.pick}, {(mine.top.points ?? 0).toLocaleString()} pts</div>
               </div>
               <div>
                 <span className="sr-pill bad">Worst value</span>
@@ -954,7 +954,7 @@ const draft: SlideDef = {
                 </div>
                 <div className="sr-row-s">
                   {mine.worst
-                    ? <>{mine.worst.age}yo · {mine.worst.avg} v {mine.worst.expected} expected</>
+                    ? <>{mine.worst.age}yo, {mine.worst.avg} v {mine.worst.expected} expected</>
                     : 'no pick went backwards on you'}
                 </div>
               </div>
@@ -971,7 +971,7 @@ const draft: SlideDef = {
               {d.draft.steals.slice(0, 5).map((p, i) => (
                 <PlayerRow key={p.id} p={p} rank={i + 1}
                   value={`#${p.pick}`} valueLabel={`${(p.points ?? 0).toLocaleString()} pts`}
-                  meta={`${p.afl_team} · ${p.team_name}`} delay={i * 55} />
+                  meta={`${p.afl_team}, ${p.team_name}`} delay={i * 55} />
               ))}
             </div>
           </div>
@@ -983,7 +983,7 @@ const draft: SlideDef = {
               {d.draft.busts.slice(0, 5).map((p, i) => (
                 <PlayerRow key={p.id} p={p} rank={i + 1}
                   value={`−${Math.round(p.regression ?? 0)}`} valueLabel="v expected"
-                  meta={<>{p.age}yo · {p.avg} avg · {p.played_23}/{p.available}w · {p.miss_tag}</>}
+                  meta={<>{p.age}yo, {p.avg} avg, {p.played_23}/{p.available}w, {p.miss_tag}</>}
                   delay={i * 55} />
               ))}
             </div>
@@ -1080,7 +1080,7 @@ const coaches: SlideDef = {
                 <ClubMark p={c.best_player} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="sr-row-t">{c.best_player.name}</div>
-                  <div className="sr-row-s">{c.best_player.afl_team} · {c.best_player.avg} avg</div>
+                  <div className="sr-row-s">{c.best_player.afl_team}, {c.best_player.avg} avg</div>
                 </div>
                 <div className="sr-row-v" style={{ color: c.accent }}>
                   {(c.best_player.points ?? 0).toLocaleString()}
@@ -1103,7 +1103,7 @@ const awards: SlideDef = {
   render: ({ d }) => (
     <div className="sr-inner">
       <Head
-        eyebrow={`${d.year} · Night of nights`}
+        eyebrow={`${d.year}, Night of nights`}
         title={<>The season</>}
         accentWord="awards"
         sub="Every one of these is a real extreme, computed from the season, no participation trophies."

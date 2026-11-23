@@ -32,7 +32,7 @@ function FinalCard({ f, highlight, hideStatusPill, label }: { f: Final; highligh
       <div className="p-3">
         <div
           className="d-flex justify-content-between align-items-center"
-          style={{ fontSize: '.8125rem', color: highlight ? '#ffd700' : '#63616d', marginBottom: '.5rem' }}
+          style={{ fontSize: '.8125rem', color: highlight ? '#ffd700' : '#ececf1', marginBottom: '.5rem' }}
         >
           <span>{label || (f.final_type === 'GF' ? 'Grand Final' : f.final_type)}</span>
           {!hideStatusPill && f.status === 'completed' && (

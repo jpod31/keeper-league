@@ -274,7 +274,7 @@ export function ProfilePage() {
               </span>
               <div className="fw-bold">{u.display_name || u.username}</div>
               <div className="text-secondary" style={{ fontSize: '.8125rem' }}>
-                @{u.username} · Joined {u.created_at}
+                @{u.username}, Joined {u.created_at}
               </div>
             </div>
             {msg && (
@@ -431,7 +431,7 @@ export function ProfilePage() {
                       {team.name}
                     </Link>
                     <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-faint)' }}>
-                      {team.league_name} · {team.league_year}
+                      {team.league_name}, {team.league_year}
                     </div>
                   </div>
                   <button className="prof-logo-btn" onClick={() => openLogoModal(team)}>

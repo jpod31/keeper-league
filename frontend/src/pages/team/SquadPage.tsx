@@ -512,8 +512,8 @@ function SquadPageInner() {
               <div className="squad-stat-label">Ladder</div>
               <div className="squad-stat-sub">
                 {ladderPos == null ? 'not started'
-                  : inFinals ? `of ${nTeams} · finals spot`
-                  : finalsN > 0 ? `of ${nTeams} · ${ladderPos - finalsN} out of finals`
+                  : inFinals ? `of ${nTeams}, finals spot`
+                  : finalsN > 0 ? `of ${nTeams}, ${ladderPos - finalsN} out of finals`
                   : `of ${nTeams}`}
               </div>
             </div>
@@ -658,8 +658,8 @@ function SquadPageInner() {
                     {met
                       ? (target != null ? `list at ${target}, done` : 'minimum met')
                       : target != null
-                        ? `${left} more to reach ${target} · hover player → ⊗`
-                        : `${left} more required · hover player → ⊗`}
+                        ? `${left} more to reach ${target}, hover player → ⊗`
+                        : `${left} more required, hover player → ⊗`}
                   </span>
                 </span>
               </div>
@@ -715,7 +715,7 @@ function SquadPageInner() {
               </span>
               <span className="kl-draft-strip-sub">
                 {sched
-                  ? (when ? `Starts ${when} · set your pre-draft order now` : 'Set your pre-draft order before it starts')
+                  ? (when ? `Starts ${when}, set your pre-draft order now` : 'Set your pre-draft order before it starts')
                   : 'Make your picks now'}
               </span>
             </span>

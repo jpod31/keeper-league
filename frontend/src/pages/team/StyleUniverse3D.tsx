@@ -30,7 +30,7 @@ function OwnedNode({ p, color, onSelect }: { p: UniNode; color: string; onSelect
       {hov && (
         <Html center distanceFactor={16} style={{ pointerEvents: 'none' }}>
           <div style={{ background: 'rgba(13,13,15,.92)', border: `1px solid ${color}`, color: '#ebebee', padding: '4px 9px', borderRadius: 6, fontSize: 13, whiteSpace: 'nowrap', transform: 'translateY(-26px)', boxShadow: `0 0 14px ${color}66` }}>
-            <b>{p.name}</b> · {p.archetype} · {p.sc} SC
+            <b>{p.name}</b>, {p.archetype}, {p.sc} SC
           </div>
         </Html>
       )}

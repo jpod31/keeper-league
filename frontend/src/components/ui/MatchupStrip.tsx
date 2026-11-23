@@ -51,10 +51,10 @@ export function MatchupStrip({ round, matchup, lockoutTime, leagueId }: MatchupS
     ? `${user_score ?? 0} – ${opponent_score ?? 0}`
     : null
   const sub = isDone && score
-    ? `R${round} · ${score}`
+    ? `R${round}, ${score}`
     : isLive && score
-    ? `R${round} · LIVE ${score}`
-    : `R${round}${lockoutTime ? ` · ${fmtLockout(lockoutTime)}` : ''}`
+    ? `R${round}, LIVE ${score}`
+    : `R${round}${lockoutTime ? `, ${fmtLockout(lockoutTime)}` : ''}`
   const tone = isLive ? 'mstrip-live' : isDone ? 'mstrip-done' : ''
   const icon = isLive ? 'bi-broadcast' : isDone ? 'bi-flag-fill' : 'bi-calendar-event'
 

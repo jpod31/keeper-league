@@ -324,7 +324,7 @@ export function RoundRecapModal() {
       <div className="kl-recap-overlay" onClick={dismiss}>
         <div className={`kl-recap-panel ${outcomeTone}`} onClick={e => e.stopPropagation()}>
           <div className="kl-recap-header">
-            <div className="kl-recap-round-lbl">Round {recap.recap_round} · Recap</div>
+            <div className="kl-recap-round-lbl">Round {recap.recap_round}, Recap</div>
             <h2 className="kl-recap-title">{recap.team_name}</h2>
           </div>
 
@@ -332,7 +332,7 @@ export function RoundRecapModal() {
             <div className="kl-recap-headline">
               <span className={`kl-recap-outcome ${outcomeTone}`}>{outcomeHeadline}</span>
               <div className="kl-recap-score">
-                <b>{recap.result.my_score}</b> – <b>{recap.result.opp_score}</b> · vs {recap.result.opp_name}
+                <b>{recap.result.my_score}</b> – <b>{recap.result.opp_score}</b>, vs {recap.result.opp_name}
               </div>
             </div>
           )}

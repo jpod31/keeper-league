@@ -140,10 +140,10 @@ export function Presence({
               animationDelay: `${at * BEAT + i * 22}ms`,
             } as React.CSSProperties}
             title={
-              w === 2 ? `R${rounds[i]} · ${score}`
-                : w === 1 ? `R${rounds[i]} · club bye`
-                  : w === 0 ? `R${rounds[i]} · named, didn't play`
-                    : `R${rounds[i]} · left out`
+              w === 2 ? `R${rounds[i]}, ${score}`
+                : w === 1 ? `R${rounds[i]}, club bye`
+                  : w === 0 ? `R${rounds[i]}, named, didn't play`
+                    : `R${rounds[i]}, left out`
             }
           />
         )

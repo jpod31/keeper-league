@@ -47,9 +47,9 @@ function Scene({ players, onSelect }: { players: CloudPlayer[]; onSelect: (id: n
       return {
         id: p.id,
         pos: [norm(p.sc_avg, scLo, scHi), norm(v, 0, vHi), norm(p.consistency as number, cLo, cHi)] as [number, number, number],
-        color: POS_COLOR[p.primary] || '#a0a0ac',
+        color: POS_COLOR[p.primary] || '#ececf1',
         radius: 0.14 + (v / vHi) * 0.36,
-        label: `${p.name} · SC ${p.sc_avg} · cons ${p.consistency} · VORP +${Math.round(v)}`,
+        label: `${p.name}, SC ${p.sc_avg}, cons ${p.consistency}, VORP +${Math.round(v)}`,
       }
     })
   }, [players])
@@ -88,7 +88,7 @@ export default function ValueCloud3D({ players, onSelect }: { players: CloudPlay
       </div>
       <div style={{ position: 'absolute', bottom: 10, left: 14, fontSize: 13, color: 'var(--kl-text-primary)', pointerEvents: 'none', lineHeight: 1.5 }}>
         <div><b style={{ color: 'var(--kl-text-primary)' }}>↑ height & size</b> = VORP</div>
-        <div>X = SC output · Z = reliability · drag to orbit</div>
+        <div>X = SC output, Z = reliability, drag to orbit</div>
       </div>
     </div>
   )

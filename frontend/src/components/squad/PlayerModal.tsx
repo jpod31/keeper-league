@@ -90,15 +90,13 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#f2f2f4', letterSpacing: '-.02em', lineHeight: 1.2 }}>{p.name}</div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, fontSize: '.8125rem', color: 'var(--kl-text-primary)', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6, fontSize: '.9375rem', color: 'var(--kl-text-primary)', flexWrap: 'wrap' }}>
                 <span className={`pos-badge badge-${(p.position || 'MID').split('/')[0].toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`} style={{ fontSize: '.8125rem', padding: '2px 6px' }}>{p.position}</span>
                 {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
                 {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
                 <span>{p.afl_team}</span>
-                <span>·</span>
-                <span>{p.age}yo</span>
-                <span>·</span>
-                <span>{p.career_games || 0} career</span>
+                <span>Age {p.age}</span>
+                <span>{p.career_games || 0} games</span>
               </div>
               {p.position_expected && (
                 <div className="pmod-flag">Expected position. He has no SuperCoach position yet.</div>
@@ -146,8 +144,8 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e1d21" vertical={false} />
-                    <XAxis dataKey="label" stroke="#63616d" fontSize={10} tickLine={false} axisLine={{ stroke: '#1e1d21' }} />
-                    <YAxis stroke="#63616d" fontSize={10} tickLine={false} axisLine={false}
+                    <XAxis dataKey="label" stroke="#63616d" fontSize={13} tickLine={false} axisLine={{ stroke: '#1e1d21' }} />
+                    <YAxis stroke="#63616d" fontSize={13} tickLine={false} axisLine={false}
                       domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin * 0.8)), 'auto']} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(236,236,246,.04)' }} />
                     <Bar dataKey="sc" fill="#ececf6" radius={[4, 4, 0, 0]} maxBarSize={28} fillOpacity={0.85} />
@@ -171,13 +169,13 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
           {p.last_game && (
             <div style={{ marginBottom: 18 }}>
               <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>Last Game</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(55px, 1fr))', gap: 5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
                 {STAT_KEYS.map(([key, label]) => {
                   const val = p.last_game?.[key]
                   if (val == null) return null
                   return (
                     <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(42,41,47,.25)' }}>
-                      <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#d3d2da' }}>{val}</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>{val}</div>
                       <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
                     </div>
                   )
@@ -190,15 +188,15 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
           {p.season_avg && (
             <div style={{ marginBottom: 18 }}>
               <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>
-                {yrLabel} averages · {p.season_games} games
+                {yrLabel} averages, {p.season_games} games
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(55px, 1fr))', gap: 5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
                 {STAT_KEYS.map(([key, label]) => {
                   const val = p.season_avg?.[key]
                   if (val == null) return null
                   return (
                     <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(42,41,47,.25)' }}>
-                      <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#d3d2da' }}>{typeof val === 'number' ? val.toFixed(1) : val}</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>{typeof val === 'number' ? val.toFixed(1) : val}</div>
                       <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
                     </div>
                   )

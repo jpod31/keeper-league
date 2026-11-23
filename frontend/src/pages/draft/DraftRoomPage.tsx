@@ -927,7 +927,7 @@ function DraftRoomPageInner() {
               <span className="draft-header-info">
                 {/* The session's own order, not the league default: an
                     off-season draft runs the same order every round. */}
-                {(state.draft_type || league.draft_type) === 'snake' ? 'Snake' : 'Same order every round'} · {session.pick_timer_secs ? `${session.pick_timer_secs}s timer` : 'No timer'}
+                {(state.draft_type || league.draft_type) === 'snake' ? 'Snake' : 'Same order every round'}, {session.pick_timer_secs ? `${session.pick_timer_secs}s timer` : 'No timer'}
               </span>
             </div>
           </div>
@@ -1013,7 +1013,7 @@ function DraftRoomPageInner() {
             {!bannerCompleted && <TeamCrest team={teamOf(state.current_team_id)} size={68} />}
             <div>
               <div className="draft-banner-round">
-                {bannerCompleted ? 'All picks made' : `On the clock · Pick ${state.current_pick || '-'} · Round ${state.current_round || '-'}`}
+                {bannerCompleted ? 'All picks made' : `On the clock, Pick ${state.current_pick || '-'}, Round ${state.current_round || '-'}`}
               </div>
               <div className="draft-banner-team">
                 {bannerCompleted ? 'Draft Complete' : (state.current_team_name || 'TBD')}
@@ -1067,7 +1067,7 @@ function DraftRoomPageInner() {
         <div className="dn-reveal" style={clubVars(reveal.player_afl_team)} onClick={() => setReveal(null)} role="status">
           <div className="dn-reveal-top">
             <TeamCrest team={teamOf(reveal.team_id)} size={34} />
-            <span>Pick {reveal.pick_number} · {reveal.team_name}</span>
+            <span>Pick {reveal.pick_number}, {reveal.team_name}</span>
           </div>
           <div className="dn-reveal-body">
             {reveal.player_afl_team && clubLogos[reveal.player_afl_team] && <img src={clubLogos[reveal.player_afl_team]} alt="" />}
@@ -1406,7 +1406,7 @@ function DraftRoomPageInner() {
                       const cls = k === 'OTHER' ? '' : k.toLowerCase()
                       return (
                         <div key={k}>
-                          <div className={`draft-yt-section ${cls}`}>{k} · {groups[k].length}</div>
+                          <div className={`draft-yt-section ${cls}`}>{k} {groups[k].length}</div>
                           <table className="table table-sm mb-0">
                             <tbody>
                               {groups[k].map(p => (

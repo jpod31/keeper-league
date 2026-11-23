@@ -114,7 +114,7 @@ export function PlayerRow({
       <div className="sr-pl-body">
         <div className="sr-pl-name">{p.name}</div>
         <div className="sr-pl-meta">
-          <Pos code={p.position} /> {meta ?? <>{p.afl_team}{p.team_name ? ` · ${p.team_name}` : ''}</>}
+          <Pos code={p.position} /> {meta ?? <>{p.afl_team}{p.team_name ? `, ${p.team_name}` : ''}</>}
         </div>
       </div>
       <div className="sr-pl-right">
@@ -163,13 +163,13 @@ export function PositionArc({
       {Array.from({ length: maxPos }, (_, i) => i + 1).map(p => (
         <g key={p}>
           <line x1={PL} x2={W - PR} y1={y(p)} y2={y(p)} stroke="rgba(255,255,255,.09)" strokeWidth="1" />
-          <text x={PL - 9} y={y(p) + 3.5} textAnchor="end" fontSize="9" fill="rgba(255,255,255,.4)"
+          <text x={PL - 9} y={y(p) + 3.5} textAnchor="end" fontSize="10.5" fill="#ececf1"
                 fontWeight="800">{p}</text>
         </g>
       ))}
       {rounds.map((r, i) => (
         i % 4 === 0 ? (
-          <text key={r} x={x(i)} y={H - 6} textAnchor="middle" fontSize="8.5"
+          <text key={r} x={x(i)} y={H - 6} textAnchor="middle" fontSize="10"
                 fill="rgba(255,255,255,.35)" fontWeight="700">R{r}</text>
         ) : null
       ))}
@@ -240,7 +240,7 @@ export function ScoreBars({
             strokeDasharray="4 3" />
       {rounds.map((r, i) => (
         i % 4 === 0
-          ? <text key={r} x={PL + bw * i + bw / 2} y={H - 5} textAnchor="middle" fontSize="8.5"
+          ? <text key={r} x={PL + bw * i + bw / 2} y={H - 5} textAnchor="middle" fontSize="10"
                   fill="rgba(255,255,255,.34)" fontWeight="700">R{r}</text>
           : null
       ))}
@@ -276,7 +276,7 @@ export function Ring({
       />
       <text x="80" y="76" textAnchor="middle" fontSize="30" fontWeight="900" fill="#fff"
             letterSpacing="-1">{value}</text>
-      <text x="80" y="98" textAnchor="middle" fontSize="9" fontWeight="800" fill="rgba(255,255,255,.5)"
+      <text x="80" y="98" textAnchor="middle" fontSize="10.5" fontWeight="800" fill="#ececf1"
             letterSpacing="2.2">{label.toUpperCase()}</text>
     </svg>
   )

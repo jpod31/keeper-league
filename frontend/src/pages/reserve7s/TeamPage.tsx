@@ -196,7 +196,7 @@ export function Reserve7sTeamPage() {
             <div className="sevens-hero-sub">{team.name}, Select your 7 players</div>
             <div className="sevens-rule-badge">
               <i className="bi bi-info-circle"></i>
-              Min 5 under-{age_cutoff} • Max 2 over-{age_cutoff}
+              Min 5 under-{age_cutoff}, Max 2 over-{age_cutoff}
             </div>
           </div>
           <div>
@@ -285,7 +285,7 @@ export function Reserve7sTeamPage() {
                     style={{
                       color: (p.sc_avg || 0) >= 80 ? '#3fb950'
                         : (p.sc_avg || 0) >= 60 ? '#ececf6'
-                        : '#8a8895',
+                        : '#ececf1',
                     }}
                   >
                     {p.sc_avg ? Math.round(p.sc_avg) : '-'}

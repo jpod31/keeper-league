@@ -26,7 +26,7 @@ interface RoundScoreEntry {
   vc_played?: boolean
 }
 interface GamedayData {
-  is_bye: boolean; afl_round: number; round_dates: string | null; first_bounce: string | null
+  is_bye: boolean; in_season?: boolean; afl_round: number; round_dates: string | null; first_bounce: string | null
   gameday_state: string; live_enabled: boolean; is_home: boolean
   fixture: GDFixture; my_team: Team; opp_team: Team
   my_players: GDPlayer[]; opp_players: GDPlayer[]
@@ -68,7 +68,7 @@ function deriveClock(d: GamedayData): ClockState {
   if (d.gameday_state === 'live') {
     return {
       tone: 'live',
-      label: liveCount > 0 ? `LIVE · ${liveCount} ON` : 'BETWEEN GAMES',
+      label: liveCount > 0 ? `LIVE, ${liveCount} ON` : 'BETWEEN GAMES',
       sub: `${doneCount}/${total} games done`,
     }
   }
@@ -820,24 +820,37 @@ export function GamedayPage() {
           {gs !== 'upcoming' && <span className="gd-pcard-total">{Math.round(score)}</span>}
         </div>
         <div>
-          <div className="gd-section field"><i className="bi bi-broadcast"></i>Field · {field.length}</div>
+          <div className="gd-section field"><i className="bi bi-broadcast"></i>Field {field.length}</div>
           {field.map((p, i) => <PlayerRow key={i} p={p} />)}
           {bench.length > 0 && <>
-            <div className="gd-section bench"><i className="bi bi-arrow-left-right"></i>Bench · {bench.length}</div>
+            <div className="gd-section bench"><i className="bi bi-arrow-left-right"></i>Bench {bench.length}</div>
             {bench.map((p, i) => <PlayerRow key={`b${i}`} p={p} />)}
           </>}
           {emgStandby.length > 0 && <>
-            <div className="gd-section emergency"><i className="bi bi-shield-exclamation"></i>Emergency · {emgStandby.length}</div>
+            <div className="gd-section emergency"><i className="bi bi-shield-exclamation"></i>Emergency {emgStandby.length}</div>
             {emgStandby.map((p, i) => <PlayerRow key={`e${i}`} p={p} />)}
           </>}
           {dnps.length > 0 && <>
-            <div className="gd-section dnp"><i className="bi bi-x-circle"></i>Did Not Play · {dnps.length}</div>
+            <div className="gd-section dnp"><i className="bi bi-x-circle"></i>Did Not Play {dnps.length}</div>
             {dnps.map((p, i) => <PlayerRow key={`d${i}`} p={p} />)}
           </>}
           {noGame.length > 0 && <>
-            <div className="gd-section nogame"><i className="bi bi-calendar-x"></i>No Game · {noGame.length}</div>
+            <div className="gd-section nogame"><i className="bi bi-calendar-x"></i>No Game {noGame.length}</div>
             {noGame.map((p, i) => <PlayerRow key={`ng${i}`} p={p} />)}
           </>}
+        </div>
+      </div>
+    )
+  }
+
+  if (d.is_bye && d.in_season === false) {
+    return (
+      <div className="kx-page tx-page">
+        <div className="kx-head"><h2>Gameday</h2></div>
+        <p className="tx-none">No games on. The season is finished and the next one starts after the draft.</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}`}>Home</Link>
+          <Link className="kx-btn" to={`/leagues/${leagueId}/seasons`}>Last season</Link>
         </div>
       </div>
     )
@@ -1163,7 +1176,7 @@ export function GamedayPage() {
       {/* Footer */}
       <div className="gd-foot">
         <span>
-          {gs === 'live' ? <><i className="bi bi-broadcast me-1" style={{ color: '#7dc99a' }}></i>Live · WebSocket sync</>
+          {gs === 'live' ? <><i className="bi bi-broadcast me-1" style={{ color: '#7dc99a' }}></i>Live, WebSocket sync</>
             : gs === 'completed' ? 'Final results'
             : <>&nbsp;</>}
         </span>

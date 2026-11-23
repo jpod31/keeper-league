@@ -125,7 +125,7 @@ export function BreakoutRadarPage() {
           Min breakout prob:
           <input type="range" min={0} max={90} step={10} value={minProb}
             onChange={e => setMinProb(Number(e.target.value))} style={{ width: 120 }} />
-          <b style={{ minWidth: 30, color: minProb > 0 ? '#3fb950' : '#8a8895' }}>{minProb}%</b>
+          <b style={{ minWidth: 30, color: minProb > 0 ? '#3fb950' : '#ececf1' }}>{minProb}%</b>
         </label>
       </div>
 
@@ -155,8 +155,8 @@ export function BreakoutRadarPage() {
                   <td>
                     <div className="br-name">{p.name}</div>
                     <div className="br-sub">
-                      {p.comp} · {p.sl_team || '-'} · {p.matches} matches
-                      {p.afl_team && <> · <b style={{ color: '#ececf6' }}>{p.afl_team}</b></>}
+                      {p.comp}, {p.sl_team || '-'}, {p.matches} matches
+                      {p.afl_team && <>, <b style={{ color: '#ececf6' }}>{p.afl_team}</b></>}
                     </div>
                   </td>
                   <td>{p.age ?? '-'}</td>

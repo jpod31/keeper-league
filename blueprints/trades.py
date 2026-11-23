@@ -60,7 +60,10 @@ def trade_center(league_id):
         window_label, trade_close = get_trade_window(league_id, league.season_year)
 
         def _ser_team(t):
-            return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
+            if not t:
+                return None
+            from models.team_identity import team_card
+            return {**team_card(t), "logo_url": t.logo_url}
 
         def _ser_asset(a, t):
             if a.player_id and a.player:

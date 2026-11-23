@@ -115,7 +115,7 @@ export function PlayerRatingsPage() {
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
             <i className="bi bi-graph-up-arrow me-2" style={{ color: '#3fb950' }}></i>Season Movers
           </h5>
-          <span className="rm-count">{movers.length} shown · since start of year</span>
+          <span className="rm-count">{movers.length} shown, since start of year</span>
         </div>
 
         <div className="rm-controls">

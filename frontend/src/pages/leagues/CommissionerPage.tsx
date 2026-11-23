@@ -61,7 +61,7 @@ interface CommissionerData {
 
 const PHASE_BADGE: Record<PhaseKey, { bg: string; label: string }> = {
   midseason: { bg: '#d29922', label: 'Midseason' },
-  offseason: { bg: '#a0a0ac', label: 'Offseason' },
+  offseason: { bg: '#ececf1', label: 'Offseason' },
   regular: { bg: '#3fb950', label: 'Regular' },
   finals: { bg: '#f85149', label: 'Finals' },
   pre_season: { bg: '#ececf6', label: 'Pre Season' },
@@ -270,7 +270,7 @@ export function CommissionerPage() {
     )
   }
 
-  const { current_phase, midseason, offseason, delist, pending_ltil, active_ltil, recent_history, teams, pending_trades_count, season_cfg } = data
+  const { current_phase, midseason, offseason, delist, pending_ltil, active_ltil, recent_history, teams, season_cfg } = data
   const pool = data.pool
   const draftDateValue = draftDate || season_cfg.supplemental_draft_date || ''
   const closeDateValue = closeDate || season_cfg.offseason_close_date || ''
@@ -310,7 +310,7 @@ export function CommissionerPage() {
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
             <i className="bi bi-calendar-range me-2" style={{ color: '#d29922' }}></i>Season Controls
           </h5>
-          <span className="badge" style={{ background: phaseBadge.bg, fontSize: '.8125rem' }}>{phaseBadge.label}</span>
+          <span className="badge" style={{ background: phaseBadge.bg, color: '#050506', fontSize: '.8125rem' }}>{phaseBadge.label}</span>
         </div>
         <div className="card-body">
           {delist.is_open && (
@@ -341,7 +341,7 @@ export function CommissionerPage() {
                         <span
                           style={{ color: tp.met ? '#3fb950' : '#f85149', fontWeight: 600 }}
                           title={tp.target_size != null
-                            ? `${tp.squad_size} listed · must finish at ${tp.target_size}`
+                            ? `${tp.squad_size} listed, must finish at ${tp.target_size}`
                             : undefined}
                         >
                           {tp.count}/{tp.required ?? delist.min_delists}
@@ -495,28 +495,6 @@ export function CommissionerPage() {
             <Link to={`/leagues/${leagueId}/settings`} className="btn btn-sm btn-outline-secondary">
               <i className="bi bi-gear me-1"></i>League Settings
             </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Summary cards */}
-      <div className="row g-2 mb-4">
-        <div className="col-4">
-          <div className="comm-summary-card comm-summary-pending">
-            <div className="comm-summary-num">{pending_ltil.length}</div>
-            <div className="comm-summary-label">Pending LTIL</div>
-          </div>
-        </div>
-        <div className="col-4">
-          <div className="comm-summary-card comm-summary-active">
-            <div className="comm-summary-num">{active_ltil.length}</div>
-            <div className="comm-summary-label">Active LTIL</div>
-          </div>
-        </div>
-        <div className="col-4">
-          <div className="comm-summary-card comm-summary-trades">
-            <div className="comm-summary-num">{pending_trades_count}</div>
-            <div className="comm-summary-label">Pending Trades</div>
           </div>
         </div>
       </div>

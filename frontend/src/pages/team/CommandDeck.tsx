@@ -105,14 +105,14 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
       <div className="dk-headline">
         <div className="dk-headline-tag">SQUAD INTELLIGENCE</div>
         <div className="dk-headline-desc">{desc}</div>
-        {o?.has_data && <div className="dk-headline-sub">{o.finals_pct}% finals probability · projected {o.current_wins + Math.round(o.proj_wins - o.current_wins)}-win season · {o.n_teams}-team league</div>}
+        {o?.has_data && <div className="dk-headline-sub">{o.finals_pct}% finals probability, projected {o.current_wins + Math.round(o.proj_wins - o.current_wins)}-win season, {o.n_teams}-team league</div>}
       </div>
 
       {/* KPI strip */}
       <div className="dk-kpis">
         {o?.has_data && <Kpi value={o.finals_pct} suffix="%" label="Finals probability" sub={`${o.finals_n} of ${o.n_teams} make it`} color="#e0deea" />}
-        {o?.has_data && <Kpi value={o.proj_wins} label="Projected wins" sub={`now on ${o.current_wins} · ${o.remaining} to play`} color="#3fb950" decimals={1} />}
-        {d?.has_data && <Kpi value={d.ceiling} label="Weekly ceiling" sub={`floor ${d.floor} · median ${d.median}`} color="#bc8cff" />}
+        {o?.has_data && <Kpi value={o.proj_wins} label="Projected wins" sub={`now on ${o.current_wins}, ${o.remaining} to play`} color="#3fb950" decimals={1} />}
+        {d?.has_data && <Kpi value={d.ceiling} label="Weekly ceiling" sub={`floor ${d.floor}, median ${d.median}`} color="#bc8cff" />}
         {d?.has_data && <Kpi value={d.cv} suffix="%" label="Volatility (CV)" sub={d.cv <= 7 ? 'elite consistency' : d.cv <= 11 ? 'steady' : 'swingy'} color="#f0883e" decimals={1} />}
       </div>
 
@@ -120,7 +120,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
         {/* HERO, style universe */}
         <div className="dk-universe">
           <div className="dk-panel-head"><span className="dk-panel-title">◈ STYLE UNIVERSE</span>
-            <span className="dk-panel-meta">{u?.has_data ? `${u.n_players} players · PCA ${u.variance_explained}% · your ${u.owned_count} glow` : 'mapping…'}</span></div>
+            <span className="dk-panel-meta">{u?.has_data ? `${u.n_players} players, PCA ${u.variance_explained}%, your ${u.owned_count} glow` : 'mapping…'}</span></div>
           <div className="dk-universe-canvas">
             {u?.has_data
               ? <Suspense fallback={<div className="dk-loading"><Spinner /></div>}><StyleUniverse3D nodes={u.nodes} onSelect={open} /></Suspense>
@@ -136,7 +136,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
         {/* Season outlook */}
         {o?.has_data && (
           <div className="dk-panel dk-outlook">
-            <div className="dk-panel-head"><span className="dk-panel-title">⬡ SEASON OUTLOOK</span><span className="dk-panel-meta">{o.remaining} rounds · {(4000).toLocaleString()} sims</span></div>
+            <div className="dk-panel-head"><span className="dk-panel-title">⬡ SEASON OUTLOOK</span><span className="dk-panel-meta">{o.remaining} rounds, {(4000).toLocaleString()} sims</span></div>
             <div className="dk-outlook-body">
               <Gauge pct={o.finals_pct} color="#e0deea" label="FINALS" />
               <div className="dk-seed">
@@ -151,7 +151,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
                     </div>
                   })}
                 </div>
-                <div className="dk-seed-foot">premiership odds <b style={{ color: '#ffd23f' }}>{o.top_seed_pct}%</b> · median seed <b>{ordinal(o.median_seed)}</b></div>
+                <div className="dk-seed-foot">premiership odds <b style={{ color: '#ffd23f' }}>{o.top_seed_pct}%</b>, median seed <b>{ordinal(o.median_seed)}</b></div>
               </div>
             </div>
           </div>

@@ -699,6 +699,7 @@ def gameday(league_id):
     if not fixture:
         if request.args.get("format") == "json":
             return jsonify({"is_bye": True, "afl_round": afl_round, "round_dates": round_dates,
+                "in_season": league.status in ("active", "finals"),
                 "gameday_state": gameday_state, "round_fixtures": [], "round_scores": {},
                 "afl_games": [], "teams_playing": list(teams_playing), "team_logos": TEAM_LOGOS, "team_abbr": config.TEAM_ABBR})
         return render_template(

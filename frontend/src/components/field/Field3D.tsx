@@ -285,7 +285,7 @@ export function Field3D({ players, teamColor = '#ececf6', onPlayerClick }: Props
     }}>
       <div style={{ fontWeight: 700, fontSize: 13, color: '#ebebee' }}>{hovered.player.name}</div>
       <div style={{ color: 'var(--kl-text-primary)', fontSize: 13 }}>
-        {hovered.player.afl_team || '-'} · {hovered.player.position}
+        {hovered.player.afl_team || '-'}, {hovered.player.position}
       </div>
       <div style={{ marginTop: 4, display: 'flex', gap: 10 }}>
         <span>SC <b style={{ color: '#ececf6' }}>{Math.round(hovered.player.sc_avg || 0)}</b></span>
@@ -348,7 +348,7 @@ export function Field3D({ players, teamColor = '#ececf6', onPlayerClick }: Props
         borderRadius: 6, padding: '4px 10px', color: 'var(--kl-text-primary)', fontSize: 13,
         pointerEvents: 'none',
       }}>
-        <i className="bi bi-mouse me-1"></i>drag to rotate · scroll to zoom · tap a player
+        <i className="bi bi-mouse me-1"></i>drag to rotate, scroll to zoom, tap a player
       </div>
     </div>
   )

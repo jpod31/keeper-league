@@ -321,7 +321,7 @@ export function DashboardPage() {
         <span className="lg-pulse-item">
           <span className={`lg-pulse-dot ${live_games_count > 0 ? 'lg-pulse-dot-live' : ''}`}></span>
           {live_games_count > 0 ? (
-            <><b>R{current_round}</b> · <b>{live_games_count}</b> live</>
+            <><b>R{current_round}</b>, <b>{live_games_count}</b> live</>
           ) : current_round ? (
             <>Round <b>{current_round}</b></>
           ) : (
@@ -354,7 +354,7 @@ export function DashboardPage() {
         )}
         <span className="lg-pulse-item" style={{ marginLeft: 'auto', color: 'var(--pp-text-muted)' }}>
           <span className={`status-pill status-${league.status}`} style={{ fontSize: '.8125rem' }}>{league.status}</span>
-          <span style={{ marginLeft: 8 }}>{league.scoring_label} · {league.num_teams} teams</span>
+          <span style={{ marginLeft: 8 }}>{league.scoring_label}, {league.num_teams} teams</span>
         </span>
       </div>
 
@@ -519,7 +519,7 @@ export function DashboardPage() {
           {top_performers.length > 0 && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-fire" style={{ color: '#ff8a82' }}></i>Top performers · R{current_round}</span>
+                <span className="lg-card-title"><i className="bi bi-fire" style={{ color: '#ff8a82' }}></i>Top performers, R{current_round}</span>
               </div>
               <div className="lg-perf">
                 {top_performers.slice(0, 6).map((p, i) => {
@@ -533,7 +533,7 @@ export function DashboardPage() {
                       <div className="lg-perf-rank">#{i + 1}</div>
                       <div className="lg-perf-score">{p.sc_score}</div>
                       <div className="lg-perf-name">{p.name}</div>
-                      <div className="lg-perf-meta">{p.position} · {p.afl_team}</div>
+                      <div className="lg-perf-meta">{p.position}, {p.afl_team}</div>
                       {p.owner_team && <span className="lg-perf-owner">{p.owner_team.name}</span>}
                     </Link>
                   )

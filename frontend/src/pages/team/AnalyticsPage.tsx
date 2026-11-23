@@ -146,7 +146,7 @@ const ANALYTICS_CSS = `
 
 const windowColors: Record<string, string> = {
   'Win Now': '#fbbf24', 'Building': '#ececf6', 'Declining': '#ef4444',
-  'Balanced': '#a0a0ac', 'Dominant & Improving': '#3fb950',
+  'Balanced': '#ececf1', 'Dominant & Improving': '#3fb950',
 }
 
 const tagColors: Record<string, string> = {
@@ -157,7 +157,7 @@ const tagColors: Record<string, string> = {
 }
 
 function tagStyle(tag: string): React.CSSProperties {
-  const c = tagColors[tag] || '#a0a0ac'
+  const c = tagColors[tag] || '#ececf1'
   return { color: c, background: `${c}20`, border: `1px solid ${c}40` }
 }
 
@@ -196,7 +196,7 @@ function HealthRing({ score }: { score: number }) {
 function Hero({ data }: { data: AnalyticsData }) {
   const a = data.analytics
   const n = data.narrative
-  const wColor = a.window ? (windowColors[a.window] || '#a0a0ac') : undefined
+  const wColor = a.window ? (windowColors[a.window] || '#ececf1') : undefined
   const rank = a.league_context?.avg_sc_rank
 
   return (
@@ -298,7 +298,7 @@ function DynastyRace({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>
           const pct = (t.total / maxTotal) * 100
           return (
             <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '22px 1fr 60px', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: '.8125rem', fontWeight: 800, color: t.isYou ? '#ececf6' : '#63616d', textAlign: 'center' }}>{i + 1}</span>
+              <span style={{ fontSize: '.8125rem', fontWeight: 800, color: '#ececf1', textAlign: 'center' }}>{i + 1}</span>
               <div style={{ position: 'relative', height: 30, background: 'rgba(255,255,255,.02)', borderRadius: 6, overflow: 'hidden' }}>
                 <div
                   style={{
@@ -316,19 +316,19 @@ function DynastyRace({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>
                   position: 'absolute', left: 12, top: 0, bottom: 0,
                   display: 'flex', alignItems: 'center',
                   fontSize: '.8125rem', fontWeight: 700,
-                  color: t.isYou ? '#ebebee' : '#cfcfd6',
+                  color: t.isYou ? '#ebebee' : '#ececf1',
                   textShadow: '0 1px 2px rgba(0,0,0,.5)',
                 }}>
                   {t.name}
                 </div>
               </div>
-              <span style={{ textAlign: 'right', fontSize: '.82rem', fontWeight: 800, color: t.isYou ? '#ececf6' : '#a0a0ac', fontVariantNumeric: 'tabular-nums' }}>{t.total.toLocaleString()}</span>
+              <span style={{ textAlign: 'right', fontSize: '.82rem', fontWeight: 800, color: t.isYou ? '#ececf6' : '#ececf1', fontVariantNumeric: 'tabular-nums' }}>{t.total.toLocaleString()}</span>
             </div>
           )
         })}
       </div>
       <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textAlign: 'center', marginTop: 10 }}>
-        Best 23 auto-selected per year · kids develop and displace veterans over time
+        Best 23 auto-selected per year, kids develop and displace veterans over time
       </div>
     </div>
   )
@@ -345,7 +345,7 @@ function KidTimeline({ kids }: { kids: { year: number; enters: string; replaces:
             <div className="wr-tl-dot"></div>
             <div className="wr-tl-year">{k.year}</div>
             <div className="wr-tl-event">{k.enters} enters the lineup</div>
-            <div className="wr-tl-detail">Replaces {k.replaces} · Projected SC {Math.round(k.enters_sc)} · age {k.enters_age}</div>
+            <div className="wr-tl-detail">Replaces {k.replaces}, Projected SC {Math.round(k.enters_sc)}, age {k.enters_age}</div>
           </div>
         ))}
       </div>
@@ -399,7 +399,7 @@ interface SLOwnedForm {
 
 function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draft_watch: SLDraftWatch[]; vfl_form_owned: SLOwnedForm[] } }) {
   const [tab, setTab] = useState<'pickup' | 'draft' | 'owned'>('pickup')
-  const scColor = (sc: number) => sc >= 100 ? '#3fb950' : sc >= 80 ? '#ebebee' : sc >= 60 ? '#a0a0ac' : '#8a8895'
+  const scColor = (sc: number) => sc >= 100 ? '#3fb950' : sc >= 80 ? '#ebebee' : sc >= 60 ? '#ececf1' : '#ececf1'
 
   return (
     <div className="wr-card wr-card-tight">
@@ -433,7 +433,7 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
                   </span>}
                 </div>
                 <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
-                  {p.position} · {p.afl_team} · {p.age}yo · {p.sl_competition} {p.sl_team}
+                  {p.position}, {p.afl_team}, {p.age}yo, {p.sl_competition} {p.sl_team}
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
@@ -445,7 +445,7 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
                 <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>AFL PROJ</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, color: p.breakout_pct >= 50 ? '#3fb950' : p.breakout_pct >= 25 ? '#fbbf24' : '#a0a0ac' }}>
+                <div style={{ fontWeight: 700, color: p.breakout_pct >= 50 ? '#3fb950' : p.breakout_pct >= 25 ? '#fbbf24' : '#ececf1' }}>
                   {p.breakout_pct}%
                 </div>
                 <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>BRKOUT</div>
@@ -479,7 +479,7 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
                   </span>}
                 </div>
                 <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
-                  {p.position_group} · {p.sl_team} · {p.age}yo
+                  {p.position_group}, {p.sl_team}, {p.age}yo
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
@@ -491,13 +491,13 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
                 <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>AFL PROJ</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, color: p.draft_probability >= 40 ? '#3fb950' : p.draft_probability >= 20 ? '#fbbf24' : '#a0a0ac' }}>
+                <div style={{ fontWeight: 700, color: p.draft_probability >= 40 ? '#3fb950' : p.draft_probability >= 20 ? '#fbbf24' : '#ececf1' }}>
                   {p.draft_probability}%
                 </div>
                 <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>DRAFT</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, color: p.breakout_pct >= 50 ? '#3fb950' : p.breakout_pct >= 25 ? '#fbbf24' : '#a0a0ac' }}>
+                <div style={{ fontWeight: 700, color: p.breakout_pct >= 50 ? '#3fb950' : p.breakout_pct >= 25 ? '#fbbf24' : '#ececf1' }}>
                   {p.breakout_pct}%
                 </div>
                 <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>BRKOUT</div>
@@ -522,7 +522,7 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
               <div>
                 <div style={{ fontWeight: 700, color: '#ebebee' }}>{p.name}</div>
                 <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
-                  {p.position} · {p.age}yo · {p.sl_competition} {p.sl_team}
+                  {p.position}, {p.age}yo, {p.sl_competition} {p.sl_team}
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
@@ -550,7 +550,7 @@ function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draf
               <div style={{ textAlign: 'center' }}>
                 {p.sl_vs_afl != null ? (
                   <>
-                    <div style={{ fontWeight: 700, color: p.sl_vs_afl > 10 ? '#3fb950' : p.sl_vs_afl < -10 ? '#ef4444' : '#a0a0ac' }}>
+                    <div style={{ fontWeight: 700, color: p.sl_vs_afl > 10 ? '#3fb950' : p.sl_vs_afl < -10 ? '#ef4444' : '#ececf1' }}>
                       {p.sl_vs_afl > 0 ? '+' : ''}{Math.round(p.sl_vs_afl)}
                     </div>
                     <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>SL vs AFL</div>
@@ -601,7 +601,7 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
   const mainN = new Set([...defs, ...mids, ...rucs, ...fwds].map(p => p.name))
   const flex = starters.filter(p => !mainN.has(p.name))
 
-  const scC = (sc: number) => sc >= 110 ? '#3fb950' : sc >= 90 ? '#ebebee' : sc >= 70 ? '#cfcfd6' : '#a0a0ac'
+  const scC = (sc: number) => sc >= 110 ? '#3fb950' : sc >= 90 ? '#ebebee' : sc >= 70 ? '#ececf1' : '#ececf1'
 
   type SP = { name: string; sc: number; age: number; position?: string; is_emergency?: boolean }
   const Dot = ({ p, c }: { p: SP; c: string }) => {
@@ -646,7 +646,7 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
           <button key={y.year} onClick={() => setYearIdx(i)}
             style={{ flex: 1, padding: '6px 0', fontSize: '.8125rem', fontWeight: i === yearIdx ? 900 : 500,
               background: i === yearIdx ? 'rgba(236,236,246,.15)' : 'transparent',
-              color: i === yearIdx ? '#ececf6' : '#8a8895',
+              color: i === yearIdx ? '#ececf6' : '#ececf1',
               border: `1px solid ${i === yearIdx ? '#ececf6' : '#1e1d21'}`, borderRadius: 8, cursor: 'pointer',
               transition: 'all .2s' }}>
             {y.year}
@@ -701,7 +701,7 @@ function Best23Timeline({ dynasty, teamId }: { dynasty: Record<string, DynastyTe
             textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Emergencies</div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
             {emergencies.sort((a, b) => b.sc - a.sc).map(p =>
-              <Dot key={p.name} p={p} c={PC[p.position] || '#8a8895'} />
+              <Dot key={p.name} p={p} c={PC[p.position] || '#ececf1'} />
             )}
           </div>
         </div>
@@ -737,7 +737,7 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
     return (
       <div style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 10, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
         <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginBottom: 4 }}>{label}</div>
-        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: score >= 100 ? '#3fb950' : score >= 70 ? '#ececf6' : '#a0a0ac' }}>
+        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: score >= 100 ? '#3fb950' : score >= 70 ? '#ececf6' : '#ececf1' }}>
           {score}
         </div>
         <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginTop: 2 }}>3-game avg: {ma}</div>
@@ -815,8 +815,8 @@ function PlayerDetailModal({ player, onClose }: { player: PlayerBayesian | null;
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e1d21" vertical={false} />
-                    <XAxis dataKey="round" stroke="#63616d" fontSize={10} tickLine={false} axisLine={{ stroke: '#1e1d21' }} />
-                    <YAxis stroke="#63616d" fontSize={10} tickLine={false} axisLine={false}
+                    <XAxis dataKey="round" stroke="#63616d" fontSize={13} tickLine={false} axisLine={{ stroke: '#1e1d21' }} />
+                    <YAxis stroke="#63616d" fontSize={13} tickLine={false} axisLine={false}
                       domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin * 0.8)), 'auto']} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(236,236,246,.04)' }} />
                     <Bar dataKey="score" radius={[4, 4, 0, 0]} maxBarSize={32}>
@@ -900,7 +900,7 @@ function TradeMarket({ table }: { table: AnalyticsData['trade_table'] }) {
               <span className="wr-pos-pill" style={{ background: 'rgba(63,185,80,.15)', color: '#3fb950' }}>{fa.position}</span>
               <div className="wr-trade-row-body">
                 <div className="wr-trade-row-name">{fa.name}</div>
-                <div className="wr-trade-row-sub">{fa.age}y{fa.tag ? ` · ${fa.tag}` : ''}</div>
+                <div className="wr-trade-row-sub">{fa.age}y{fa.tag ? `, ${fa.tag}` : ''}</div>
               </div>
               {fa.fills_gap && <span className="wr-trade-row-fills">fills gap</span>}
               <span className="wr-trade-row-score" style={{ color: '#3fb950' }}>{Math.round(fa.sc_avg)}</span>
@@ -966,7 +966,7 @@ function HealthRadar({ components }: { components: Record<string, number> }) {
     <ResponsiveContainer width="100%" height={240}>
       <RadarChart data={data} outerRadius="75%">
         <PolarGrid stroke="#1e1d21" />
-        <PolarAngleAxis dataKey="axis" tick={{ fill: '#a0a0ac', fontSize: 13, fontWeight: 600 }} />
+        <PolarAngleAxis dataKey="axis" tick={{ fill: '#ececf1', fontSize: 13, fontWeight: 600 }} />
         <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
         <Radar
           name="Health"
@@ -992,7 +992,7 @@ function LeagueStandings({ landscape, teamId }: { landscape: AnalyticsData['land
         const you = t.team_id === teamId
         return (
           <div key={t.team_id} className="wr-ls-row">
-            <span className="wr-ls-rank" style={{ color: you ? '#ececf6' : '#63616d' }}>{i + 1}</span>
+            <span className="wr-ls-rank" style={{ color: '#ececf1' }}>{i + 1}</span>
             <span className={`wr-ls-name${you ? ' wr-ls-name-you' : ''}`}>
               {t.name}{you && <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', fontWeight: 500, marginLeft: 4 }}>(you)</span>}
             </span>

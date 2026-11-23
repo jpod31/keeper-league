@@ -86,7 +86,7 @@ export function MessagesPage() {
   }
 
   const activeConvo = !isLeague ? data.conversations.find(c => String(c.id) === convoId) : null
-  const threadTitle = isLeague ? `${data.league.name} · League Chat` : (activeConvo?.other_team_name || 'Conversation')
+  const threadTitle = isLeague ? `${data.league.name}, League Chat` : (activeConvo?.other_team_name || 'Conversation')
   const threadSub = isLeague ? 'Everyone in the league' : (activeConvo?.other_team_owner || '')
 
   return (

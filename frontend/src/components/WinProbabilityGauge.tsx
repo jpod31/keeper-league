@@ -74,7 +74,7 @@ export function WinProbabilityGauge({ leagueId, fixtureId, refreshMs = 45000 }: 
         <span className="wp-meta">{data.simulations.toLocaleString()} sims</span>
       </div>
 
-      <div className="wp-bar-container" title={`${data.home_team.name} ${homeWin}% · ${data.away_team.name} ${awayWin}%`}>
+      <div className="wp-bar-container" title={`${data.home_team.name} ${homeWin}%, ${data.away_team.name} ${awayWin}%`}>
         <div className="wp-bar-home" style={{ width: `${homeWin}%` }} />
         <div className="wp-bar-away" style={{ width: `${awayWin}%` }} />
         <span className="wp-label" style={{ left: 12, opacity: leader === 'home' ? 1 : .8 }}>{homeWin.toFixed(0)}%</span>
@@ -94,10 +94,10 @@ export function WinProbabilityGauge({ leagueId, fixtureId, refreshMs = 45000 }: 
             <div key={t.id} className="wp-side">
               <div className="wp-side-name" style={{ color: col }}>{t.name}</div>
               <div className="wp-side-score">
-                Now <b style={{ color: 'var(--kl-text-primary)' }}>{t.current_score}</b> · Proj mid <b style={{ color: 'var(--kl-text-primary)' }}>{t.p50}</b>
+                Now <b style={{ color: 'var(--kl-text-primary)' }}>{t.current_score}</b>, Proj mid <b style={{ color: 'var(--kl-text-primary)' }}>{t.p50}</b>
               </div>
               <div className="wp-side-score" style={{ fontSize: '.8125rem' }}>
-                Range: {t.p10} – {t.p90} · {t.remaining_players} left
+                Range: {t.p10} – {t.p90}, {t.remaining_players} left
               </div>
               <div className="wp-dist-bar">
                 <div className="wp-dist-fill" style={{
