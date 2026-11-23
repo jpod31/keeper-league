@@ -12139,3 +12139,32 @@ th .sort-icon { opacity: 1 !important; }
   box-shadow: inset 0 0 0 1.5px #ffffff; padding: 2px 5px !important; }
 .gd-role-badge.active:not(.vc) { background: #ffffff !important; color: #050506 !important; box-shadow: none; }
 .gd-cap-bonus { color: #ffffff !important; }
+
+/* ── Left rail: every icon has its word under it. Hover still opens the full
+      rail with the sub-pages. ── */
+:root { --kl-rail-w-collapsed: 84px; }
+.kl-rail:not(.expanded) { padding-left: 6px !important; padding-right: 6px !important; }
+.kl-rail:not(.expanded) .kl-rail-row { flex-direction: column !important; justify-content: center !important; gap: 3px !important; height: 60px !important;
+  padding: 0 2px !important; border-radius: 8px !important; }
+.kl-rail:not(.expanded) .kl-rail-label { flex: none !important; opacity: 1 !important; transform: none !important; font-size: .8125rem !important; font-weight: 600 !important;
+  line-height: 1.1 !important; text-align: center; max-width: 100%; }
+.kl-rail:not(.expanded) .kl-rail-icon { width: auto !important; height: 22px !important; flex: none !important; font-size: 1.15rem !important; }
+.kl-rail:not(.expanded) .kl-rail-badge, .kl-rail:not(.expanded) .kl-rail-pulse { position: absolute !important; top: 6px !important; right: 12px !important; }
+.kl-rail-row { color: #ffffff !important; }
+.kl-rail-row.active { background: rgba(255,255,255,.1) !important; box-shadow: inset 3px 0 0 rgb(var(--team, 255,255,255)) !important; }
+.kl-rail:not(.expanded) .kl-rail-wrapped { flex-direction: column !important; height: 60px !important; gap: 3px !important; padding: 0 2px !important; justify-content: center !important; }
+.kl-rail:not(.expanded) .kl-rail-wrapped-body { display: block !important; opacity: 1 !important; }
+.kl-rail:not(.expanded) .kl-rail-wrapped-t { font-size: .8125rem !important; white-space: nowrap; }
+.kl-rail-short { display: none; }
+.kl-rail:not(.expanded) .kl-rail-long { display: none; }
+.kl-rail:not(.expanded) .kl-rail-short { display: inline; }
+.kl-rail-row.pulse, .kl-rail-row.pulse .kl-rail-icon, .kl-rail-row.pulse i { color: #ffffff !important; }
+
+/* Tables keep to their box on narrower desktop windows. */
+@media (max-width: 1500px) { .fp-table th:nth-child(4), .fp-table td:nth-child(4) { display: none !important; } }
+@media (max-width: 1300px) { .fp-table th:nth-child(8), .fp-table td:nth-child(8), .fp-table th:nth-child(9), .fp-table td:nth-child(9) { display: none !important; }
+  .pool-table th:nth-child(8), .pool-table td:nth-child(8) { display: none !important; } }
+@media (max-width: 1180px) { .pool-table th:nth-child(11), .pool-table td:nth-child(11), .fp-table th:nth-child(7), .fp-table td:nth-child(7) { display: none !important; }
+  .draft-avail-tbl th:nth-child(3), .draft-avail-tbl td:nth-child(3) { display: none !important; } }
+@media (max-width: 1080px) { .pool-table th:nth-child(6), .pool-table td:nth-child(6), .fp-table th:nth-child(3), .fp-table td:nth-child(3) { display: none !important; } }
+@media (max-width: 1080px) { .draft-avail-tbl th:nth-child(4), .draft-avail-tbl td:nth-child(4) { display: none !important; } }

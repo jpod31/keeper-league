@@ -526,7 +526,7 @@ function LeagueRail({
   const sections: RailSection[] = []
   if (teamId) {
     sections.push({
-      to: `/leagues/${lid}/team/${teamId}`, key: 'team', icon: 'bi-person-fill-gear', label: 'My Team',
+      to: `/leagues/${lid}/team/${teamId}`, key: 'team', icon: 'bi-person-fill-gear', label: 'Team',
       sub: [
         { to: `/leagues/${lid}/team/${teamId}`,                   key: 'field',     label: 'Field' },
         { to: `/leagues/${lid}/team/${teamId}/stats`,             key: 'stats',     label: 'Stats' },
@@ -562,10 +562,10 @@ function LeagueRail({
     ],
   })
   if (activeDraft) {
-    sections.push({ to: `/leagues/${lid}/draft`, key: 'draft', icon: 'bi-list-check', label: 'Draft Room', pulse: true })
+    sections.push({ to: `/leagues/${lid}/draft`, key: 'draft', icon: 'bi-list-check', label: 'Draft', pulse: true })
   }
   sections.push({
-    to: `/leagues/${lid}/messages`, key: 'comms', icon: 'bi-megaphone-fill', label: 'Comms',
+    to: `/leagues/${lid}/messages`, key: 'comms', icon: 'bi-megaphone-fill', label: 'Messages',
     sub: [
       { to: `/leagues/${lid}/messages`, key: 'messages', label: 'Messages' },
       { to: `/leagues/${lid}/activity`, key: 'activity',  label: 'Activity' },
@@ -679,7 +679,7 @@ function LeagueRail({
           >
             <span className="kl-rail-icon"><i className="bi bi-collection-play"></i></span>
             <span className="kl-rail-wrapped-body">
-              <span className="kl-rail-wrapped-t">{reviewYear} season review</span>
+              <span className="kl-rail-wrapped-t"><span className="kl-rail-long">{reviewYear} season review</span><span className="kl-rail-short">Review</span></span>
             </span>
             <span className="kl-rail-wrapped-dot" aria-hidden="true"></span>
           </button>

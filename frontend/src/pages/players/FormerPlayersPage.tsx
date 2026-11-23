@@ -176,7 +176,7 @@ export function FormerPlayersPage() {
           <>
             {/* Desktop */}
             <div className="kx-scroll d-none d-lg-block">
-              <table className="kx-table">
+              <table className="kx-table fp-table">
                 <thead>
                   <tr>
                     {th('name', 'Player')}
