@@ -309,6 +309,14 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   pop-up for an unplayed round, and that the recap's seen marker had no year
   in it (so nobody would have seen a recap in 2027). Local runs cannot email
   or push: no MAIL or VAPID credentials, and snapshot emails are rewritten.
+- **`python tools/rehearse_draft.py`** runs draft night on a copy: starts the
+  scheduled draft, makes every pick (auto picks and passes), and prints the
+  state it leaves. Run 2026-11-24: start closed delistings and trades, 22
+  picks and 3 passes went through, the league went back to its off-season
+  state and the new season could be started.
+- **A club drafts until its list is full**, so the number that matters before
+  the draft is spots to fill (`squad_size` minus list), not the count of
+  tradeable round 1 to 4 picks. Home shows spots.
 - **Round 0 is the Opening Round**, not "Pre-Season", and it is a real round:
   test `is not None`, never truthiness, on a round number. Home takes its
   round from `_detect_gameday_round` so it cannot disagree with Gameday.

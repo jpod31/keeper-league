@@ -1,5 +1,11 @@
 """Rehearse draft night on a COPY of the live data. Local only.
 
+Needs data/snap/now.db, a read-only backup of the production database with
+emails rewritten (see CLAUDE.md). It never touches production: it copies that
+file to data/snap/draftnight.db and works on the copy.
+
+    python tools/rehearse_draft.py
+
 Starts the scheduled supplemental draft, makes every pick (a mix of real
 picks, auto picks and passes), and reports what state the league is left in.
 """
@@ -8,7 +14,7 @@ import shutil
 import sqlite3
 import sys
 
-REPO = r"C:\Users\Lucas\OneDrive\Desktop\Repos\Personal\Keeper League"
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(REPO, "data", "snap", "now.db")
 DST = os.path.join(REPO, "data", "snap", "draftnight.db")
 
