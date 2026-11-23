@@ -36,6 +36,16 @@ class AflPlayer(db.Model):
     keeper_value = db.Column(db.Float)           # 0-99 Keeper Value Index
     cba_pct = db.Column(db.Float)                # season centre-bounce attendance % (dfsaustralia)
     cba_trend = db.Column(db.Float)              # recent-vs-season CBA% trend (+ = midfield role rising)
+    # AFL list membership. The player workbook is the list of record: a player
+    # it no longer names has left the AFL and becomes "former". The row stays
+    # (every draft pick, lineup and score still points at it); afl_team is then
+    # his last club and left_afl_year the last season he was listed.
+    list_status = db.Column(db.String(10), default="listed", index=True)  # listed|former
+    left_afl_year = db.Column(db.Integer)
+    joined_year = db.Column(db.Integer)          # first season in the workbook (new draftees)
+    # True while `position` is our estimate (from the workbook's role) rather
+    # than an official SuperCoach position. Cleared by the footywire position sync.
+    position_expected = db.Column(db.Boolean, default=False)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))
 
@@ -45,6 +55,15 @@ class AflPlayer(db.Model):
     __table_args__ = (
         db.UniqueConstraint("name", "afl_team", name="uq_player_name_team"),
     )
+
+    @classmethod
+    def listed(cls):
+        """Filter clause: players on an AFL list (NULL = pre-migration rows)."""
+        return db.or_(cls.list_status.is_(None), cls.list_status != "former")
+
+    @property
+    def is_former(self):
+        return self.list_status == "former"
 
     def __repr__(self):
         return f"<AflPlayer {self.name} ({self.afl_team})>"
@@ -432,8 +451,10 @@ class FantasyRoster(db.Model):
 
     player = db.relationship("AflPlayer", lazy="joined")
 
+    # One row per TENURE, not per (team, player): a team that redrafts a
+    # player it delisted, or trades one back, gets a second row and the first
+    # stays as history. At most one row per (team, player) is active.
     __table_args__ = (
-        db.UniqueConstraint("team_id", "player_id", name="uq_roster_team_player"),
         db.Index("ix_roster_team_active", "team_id", "is_active"),
     )
 
@@ -1163,6 +1184,75 @@ class PageView(db.Model):
     ip_hash = db.Column(db.String(64))
 
 
+class PlayerNote(db.Model):
+    """A manager's private note on a player. Many per player, newest first."""
+    __tablename__ = "player_note"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    player = db.relationship("AflPlayer", lazy="joined")
+
+    __table_args__ = (
+        db.Index("ix_player_note_user_player", "user_id", "player_id"),
+    )
+
+
+class TradeBlockEntry(db.Model):
+    """A player a team has put up for trade. One live entry per team-player;
+    it is removed when the team takes him down or he leaves the list."""
+    __tablename__ = "trade_block_entry"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False, index=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=False)
+    seeking = db.Column(db.String(40))     # what the team wants back: see trade_block.SEEKING
+    note = db.Column(db.String(240))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    player = db.relationship("AflPlayer", lazy="joined")
+    team = db.relationship("FantasyTeam", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("team_id", "player_id", name="uq_trade_block_team_player"),
+    )
+
+
+class SeasonSquad(db.Model):
+    """Who was on each list when a season began. Written once per league-year
+    (by the season rollover; 2026 is rebuilt from the initial draft) and never
+    edited, so "my squad at the start of 2026" stays true however the list
+    changes afterwards."""
+    __tablename__ = "season_squad"
+
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("fantasy_team.id"), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=False)
+    # The player as he was on the day, so the page doesn't drift with him.
+    afl_team = db.Column(db.String(60))
+    position = db.Column(db.String(20))
+    age = db.Column(db.Integer)
+    rating = db.Column(db.Integer)
+    prev_avg = db.Column(db.Float)        # average for the season before `year`
+    acquired_via = db.Column(db.String(20))
+    draft_pick = db.Column(db.Integer)    # overall pick, when he arrived by draft
+    draft_round = db.Column(db.Integer)
+
+    player = db.relationship("AflPlayer", lazy="joined")
+
+    __table_args__ = (
+        db.UniqueConstraint("league_id", "year", "team_id", "player_id",
+                            name="uq_season_squad_row"),
+        db.Index("ix_season_squad_league_year", "league_id", "year"),
+    )
+
+
 # ── Power Rankings ────────────────────────────────────────────────────
 
 
@@ -1200,11 +1290,63 @@ def init_db(app):
         _run_migrations(app)
 
 
+def _rebuild_fantasy_roster():
+    """Drop UNIQUE(team_id, player_id) from fantasy_roster.
+
+    The constraint made a team re-acquiring a player it had once held
+    (redrafting someone it delisted, trading a player back) an IntegrityError,
+    and it collapsed two stints into one row. SQLite can't drop a constraint,
+    so the table is rebuilt once: same columns, same ids, same rows.
+    """
+    import logging
+    from sqlalchemy.schema import CreateTable
+
+    log = logging.getLogger(__name__)
+    ddl = str(CreateTable(FantasyRoster.__table__).compile(db.engine))
+    ddl = ddl.replace("CREATE TABLE fantasy_roster", "CREATE TABLE fantasy_roster_new", 1)
+    model_cols = [c.name for c in FantasyRoster.__table__.columns]
+
+    conn = db.engine.raw_connection()
+    try:
+        cur = conn.cursor()
+        have = [r[1] for r in cur.execute("PRAGMA table_info(fantasy_roster)").fetchall()]
+        cols = ", ".join(c for c in model_cols if c in have)
+        before = cur.execute("SELECT COUNT(*) FROM fantasy_roster").fetchone()[0]
+        cur.execute("PRAGMA foreign_keys=OFF")
+        cur.execute("BEGIN IMMEDIATE")
+        try:
+            cur.execute("DROP TABLE IF EXISTS fantasy_roster_new")
+            cur.execute(ddl)
+            cur.execute(f"INSERT INTO fantasy_roster_new ({cols}) SELECT {cols} FROM fantasy_roster")
+            after = cur.execute("SELECT COUNT(*) FROM fantasy_roster_new").fetchone()[0]
+            if after != before:
+                raise RuntimeError(f"row count changed {before} -> {after}")
+            cur.execute("DROP TABLE fantasy_roster")
+            cur.execute("ALTER TABLE fantasy_roster_new RENAME TO fantasy_roster")
+            cur.execute("CREATE INDEX IF NOT EXISTS ix_roster_team_active "
+                        "ON fantasy_roster (team_id, is_active)")
+            cur.execute("COMMIT")
+            log.warning("fantasy_roster rebuilt without UNIQUE(team_id, player_id): %d rows", after)
+        except Exception:
+            cur.execute("ROLLBACK")
+            log.exception("fantasy_roster rebuild failed; table left as it was")
+        finally:
+            cur.execute("PRAGMA foreign_keys=ON")
+    finally:
+        conn.close()
+
+
 def _run_migrations(app):
     """Idempotent column additions for existing databases."""
     from sqlalchemy import inspect, text
 
     inspector = inspect(db.engine)
+
+    if "fantasy_roster" in inspector.get_table_names():
+        uniques = inspector.get_unique_constraints("fantasy_roster")
+        if any(set(u.get("column_names") or []) == {"team_id", "player_id"} for u in uniques):
+            _rebuild_fantasy_roster()
+            inspector = inspect(db.engine)
 
     # User columns
     if "user" in inspector.get_table_names():
@@ -1388,6 +1530,10 @@ def _run_migrations(app):
             ("keeper_value", "FLOAT"),
             ("cba_pct", "FLOAT"),
             ("cba_trend", "FLOAT"),
+            ("list_status", "VARCHAR(10) DEFAULT 'listed'"),
+            ("left_afl_year", "INTEGER"),
+            ("joined_year", "INTEGER"),
+            ("position_expected", "BOOLEAN DEFAULT 0"),
         ]:
             if col_name not in existing_ap:
                 db.session.execute(

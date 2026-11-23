@@ -7,11 +7,11 @@ import { Spinner } from '../../components/ui/Spinner'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 
 const posCode = (pos: string) => (pos || 'MID').split('/')[0].toUpperCase()
-const HIST_COLOR: Record<string, string> = { '<60': '#ef6b5e', '60–79': '#d2884f', '80–99': '#5aa0ff', '100–119': '#4ec77a', '120+': '#a98bff' }
+const HIST_COLOR: Record<string, string> = { '<60': '#ef6b5e', '60–79': '#d27b4f', '80–99': '#f5b941', '100–119': '#ddd093', '120+': '#f7c96b' }
 const ROLE_META: Record<string, { c: string; label: string }> = {
-  field: { c: '#4ec77a', label: 'On field' }, bench: { c: '#6e7681', label: 'Benched' },
-  emg: { c: '#e0a93f', label: 'Emergency (named)' }, emg_in: { c: '#a98bff', label: 'Emergency (subbed in)' },
-  out: { c: '#30363d', label: 'Out / not selected' },
+  field: { c: '#ddd093', label: 'On field' }, bench: { c: '#80786f', label: 'Benched' },
+  emg: { c: '#e07f3f', label: 'Emergency (named)' }, emg_in: { c: '#f7c96b', label: 'Emergency (subbed in)' },
+  out: { c: '#373330', label: 'Out / not selected' },
 }
 const consistencyLabel = (c: number) => c >= 80 ? 'Metronomic' : c >= 65 ? 'Reliable' : c >= 45 ? 'Streaky' : 'Volatile'
 
@@ -62,11 +62,11 @@ function SplitList({ title, rows }: { title: string; rows: SplitRow[] }) {
           <span className="split-name">{r.key}</span>
           <span className="split-games">{r.games}g</span>
           <div className="split-track">
-            <div className="split-fill" style={{ width: `${Math.abs(r.diff) / maxAbs * 50}%`, background: r.diff >= 0 ? '#4ec77a' : '#ef6b5e', marginLeft: r.diff >= 0 ? '50%' : `${50 - Math.abs(r.diff) / maxAbs * 50}%` }}></div>
+            <div className="split-fill" style={{ width: `${Math.abs(r.diff) / maxAbs * 50}%`, background: r.diff >= 0 ? '#ddd093' : '#ef6b5e', marginLeft: r.diff >= 0 ? '50%' : `${50 - Math.abs(r.diff) / maxAbs * 50}%` }}></div>
             <div className="split-mid"></div>
           </div>
           <span className="split-avg">{r.avg}</span>
-          <span className="split-diff" style={{ color: r.diff >= 0 ? '#4ec77a' : '#ef6b5e' }}>{r.diff >= 0 ? '+' : ''}{r.diff}</span>
+          <span className="split-diff" style={{ color: r.diff >= 0 ? '#ddd093' : '#ef6b5e' }}>{r.diff >= 0 ? '+' : ''}{r.diff}</span>
         </div>
       ))}
     </div>
@@ -77,7 +77,7 @@ function MiniForm({ form }: { form: { sc: number }[] }) {
   const vals = form.map(f => f.sc), min = Math.min(...vals), max = Math.max(...vals), rng = max - min || 1
   const W = 84, H = 26
   const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - ((v - min) / rng) * H}`).join(' ')
-  return <svg width={W} height={H}><polyline points={pts} fill="none" stroke="#58a6ff" strokeWidth="2" strokeLinejoin="round" /></svg>
+  return <svg width={W} height={H}><polyline points={pts} fill="none" stroke="#f5b940" strokeWidth="2" strokeLinejoin="round" /></svg>
 }
 
 export function PlayerProfilePage() {
@@ -126,7 +126,7 @@ export function PlayerProfilePage() {
         <div className="pp-verdict">
           <div className="pp-v">
             <div className="pp-v-num">{id.sc_avg != null ? id.sc_avg : '–'}</div>
-            <div className="pp-v-lbl">SC avg{trend != null && <span style={{ color: trend >= 0 ? '#4ec77a' : '#ef6b5e', marginLeft: 4 }}>{trend >= 0 ? '+' : ''}{Math.round(trend)}</span>}</div>
+            <div className="pp-v-lbl">SC avg{trend != null && <span style={{ color: trend >= 0 ? '#ddd093' : '#ef6b5e', marginLeft: 4 }}>{trend >= 0 ? '+' : ''}{Math.round(trend)}</span>}</div>
           </div>
           <div className="pp-v">
             <div className="pp-v-num">{id.rating ?? '–'}<span className="pp-v-arrow">→{id.potential ?? '–'}</span></div>
@@ -154,11 +154,11 @@ export function PlayerProfilePage() {
       {sc?.has_data && (
         <Section title="Scoring profile" sub={`${sc.games} games · median ${Math.round(sc.median)}`}>
           <div className="usage-tiles">
-            <div className="usage-tile" style={{ ['--uc' as string]: '#a98bff' } as React.CSSProperties}><div className="usage-tile-val">{Math.round(sc.ceiling)}</div><div className="usage-tile-lbl">Ceiling</div><div className="usage-tile-sub">90th-pct game</div></div>
+            <div className="usage-tile" style={{ ['--uc' as string]: '#f7c96b' } as React.CSSProperties}><div className="usage-tile-val">{Math.round(sc.ceiling)}</div><div className="usage-tile-lbl">Ceiling</div><div className="usage-tile-sub">90th-pct game</div></div>
             <div className="usage-tile" style={{ ['--uc' as string]: '#ef6b5e' } as React.CSSProperties}><div className="usage-tile-val">{Math.round(sc.floor)}</div><div className="usage-tile-lbl">Floor</div><div className="usage-tile-sub">10th-pct game</div></div>
-            <div className="usage-tile" style={{ ['--uc' as string]: '#4ec77a' } as React.CSSProperties}><div className="usage-tile-val">{sc.consistency}</div><div className="usage-tile-lbl">Consistency</div><div className="usage-tile-sub">{consistencyLabel(sc.consistency)}</div></div>
-            <div className="usage-tile" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}><div className="usage-tile-val">{sc.boom_pct}<span className="usage-tile-unit">%</span></div><div className="usage-tile-lbl">Boom rate</div><div className="usage-tile-sub">{sc.boom} games 120+</div></div>
-            <div className="usage-tile" style={{ ['--uc' as string]: '#d2884f' } as React.CSSProperties}><div className="usage-tile-val">{sc.bust_pct}<span className="usage-tile-unit">%</span></div><div className="usage-tile-lbl">Bust rate</div><div className="usage-tile-sub">{sc.bust} games ≤60</div></div>
+            <div className="usage-tile" style={{ ['--uc' as string]: '#ddd093' } as React.CSSProperties}><div className="usage-tile-val">{sc.consistency}</div><div className="usage-tile-lbl">Consistency</div><div className="usage-tile-sub">{consistencyLabel(sc.consistency)}</div></div>
+            <div className="usage-tile" style={{ ['--uc' as string]: '#f5b941' } as React.CSSProperties}><div className="usage-tile-val">{sc.boom_pct}<span className="usage-tile-unit">%</span></div><div className="usage-tile-lbl">Boom rate</div><div className="usage-tile-sub">{sc.boom} games 120+</div></div>
+            <div className="usage-tile" style={{ ['--uc' as string]: '#d27b4f' } as React.CSSProperties}><div className="usage-tile-val">{sc.bust_pct}<span className="usage-tile-unit">%</span></div><div className="usage-tile-lbl">Bust rate</div><div className="usage-tile-sub">{sc.bust} games ≤60</div></div>
           </div>
           <div className="usage-timeline-wrap">
             <div className="usage-section-title">Scoring range</div>
@@ -170,7 +170,7 @@ export function PlayerProfilePage() {
             {sc.last5.length > 0 && (
               <div className="scoring-last5">
                 <span className="usage-section-title" style={{ margin: 0 }}>Last 5</span>
-                {sc.last5.map((v, i) => <span key={i} className="scoring-last5-chip" style={{ background: v >= 120 ? '#a98bff' : v >= 100 ? '#4ec77a' : v >= 80 ? '#5aa0ff' : v >= 60 ? '#d2884f' : '#ef6b5e' }}>{v}</span>)}
+                {sc.last5.map((v, i) => <span key={i} className="scoring-last5-chip" style={{ background: v >= 120 ? '#f7c96b' : v >= 100 ? '#ddd093' : v >= 80 ? '#f5b941' : v >= 60 ? '#d27b4f' : '#ef6b5e' }}>{v}</span>)}
               </div>
             )}
           </div>
@@ -178,10 +178,10 @@ export function PlayerProfilePage() {
             <div className="usage-section-title">Score distribution</div>
             <ResponsiveContainer width="100%" height={150}>
               <BarChart data={sc.hist} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
-                <XAxis dataKey="bucket" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-                <YAxis allowDecimals={false} tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-                <Tooltip cursor={{ fill: 'rgba(110,130,180,.08)' }} contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>{sc.hist.map((h, i) => <Cell key={i} fill={HIST_COLOR[h.bucket] || '#5aa0ff'} />)}</Bar>
+                <XAxis dataKey="bucket" tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
+                <YAxis allowDecimals={false} tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
+                <Tooltip cursor={{ fill: 'rgba(170,144,91,.08)' }} contentStyle={{ background: '#1f1d1b', border: '1px solid rgba(170,144,91,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>{sc.hist.map((h, i) => <Cell key={i} fill={HIST_COLOR[h.bucket] || '#f5b941'} />)}</Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -212,13 +212,13 @@ export function PlayerProfilePage() {
       {pj?.has_data && (
         <Section title="Projection" sub="form-weighted + age curve">
           <div className="proj-cards">
-            <div className="proj-card" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}>
+            <div className="proj-card" style={{ ['--uc' as string]: '#f5b941' } as React.CSSProperties}>
               <div className="proj-card-lbl">Next round</div><div className="proj-card-val">~{pj.next_round}</div>
               <div className="proj-card-sub">L3 {pj.next_round_inputs.last3} · Szn {pj.next_round_inputs.season} · Career {pj.next_round_inputs.career}</div>
             </div>
-            <div className="proj-card" style={{ ['--uc' as string]: '#a98bff' } as React.CSSProperties}>
+            <div className="proj-card" style={{ ['--uc' as string]: '#f7c96b' } as React.CSSProperties}>
               <div className="proj-card-lbl">Next season</div><div className="proj-card-val">~{pj.next_season} <span className="proj-band">{pj.next_season_low}–{pj.next_season_high}</span></div>
-              <div className="proj-card-sub">{pj.next_age ? `age ${pj.next_age} → ` : ''}<span style={{ color: pj.age_delta_pct > 0 ? '#4ec77a' : pj.age_delta_pct < 0 ? '#ef6b5e' : '#8b949e' }}>{pj.age_delta_pct > 0 ? '+' : ''}{pj.age_delta_pct}% age curve</span></div>
+              <div className="proj-card-sub">{pj.next_age ? `age ${pj.next_age} → ` : ''}<span style={{ color: pj.age_delta_pct > 0 ? '#ddd093' : pj.age_delta_pct < 0 ? '#ef6b5e' : '#a39586' }}>{pj.age_delta_pct > 0 ? '+' : ''}{pj.age_delta_pct}% age curve</span></div>
             </div>
           </div>
           {pj.season_trend.length > 1 && (
@@ -226,10 +226,10 @@ export function PlayerProfilePage() {
               <div className="usage-section-title">Season SC average — career arc</div>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={pj.season_trend} margin={{ top: 8, right: 14, bottom: 0, left: -18 }}>
-                  <XAxis dataKey="year" tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-                  <YAxis tick={{ fill: '#8b949e', fontSize: 11 }} stroke="#30363d" />
-                  <Tooltip cursor={{ stroke: '#30363d' }} contentStyle={{ background: '#161d27', border: '1px solid rgba(110,130,180,.3)', borderRadius: 8, fontSize: '.78rem' }} />
-                  <Line type="monotone" dataKey="avg" stroke="#58a6ff" strokeWidth={2} dot={{ r: 3, fill: '#58a6ff' }} />
+                  <XAxis dataKey="year" tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
+                  <YAxis tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
+                  <Tooltip cursor={{ stroke: '#373330' }} contentStyle={{ background: '#1f1d1b', border: '1px solid rgba(170,144,91,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                  <Line type="monotone" dataKey="avg" stroke="#f5b940" strokeWidth={2} dot={{ r: 3, fill: '#f5b940' }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -241,9 +241,9 @@ export function PlayerProfilePage() {
       {u && (u.team_games > 0 || u.timeline.length > 0) && (
         <Section title="Your usage" sub="how this team has deployed them">
           <div className="usage-tiles">
-            <div className="usage-tile" style={{ ['--uc' as string]: '#4ec77a' } as React.CSSProperties}><div className="usage-tile-val">{u.team_games}</div><div className="usage-tile-lbl">Games for you</div><div className="usage-tile-sub">{u.bench_rounds} benched · {u.out_rounds} out</div></div>
-            <div className="usage-tile" style={{ ['--uc' as string]: '#5aa0ff' } as React.CSSProperties}><div className="usage-tile-val">{Math.round(u.points_banked)}</div><div className="usage-tile-lbl">Points banked</div><div className="usage-tile-sub">{u.contribution_pct}% of your total</div></div>
-            <div className="usage-tile" style={{ ['--uc' as string]: '#e0a93f' } as React.CSSProperties}><div className="usage-tile-val">{u.captain_games}<span className="usage-tile-unit">×C</span></div><div className="usage-tile-lbl">Captained</div><div className="usage-tile-sub">{u.captain_games > 0 ? `+${Math.round(u.captain_points)} bonus` : `${u.vc_games}× VC`}</div></div>
+            <div className="usage-tile" style={{ ['--uc' as string]: '#ddd093' } as React.CSSProperties}><div className="usage-tile-val">{u.team_games}</div><div className="usage-tile-lbl">Games for you</div><div className="usage-tile-sub">{u.bench_rounds} benched · {u.out_rounds} out</div></div>
+            <div className="usage-tile" style={{ ['--uc' as string]: '#f5b941' } as React.CSSProperties}><div className="usage-tile-val">{Math.round(u.points_banked)}</div><div className="usage-tile-lbl">Points banked</div><div className="usage-tile-sub">{u.contribution_pct}% of your total</div></div>
+            <div className="usage-tile" style={{ ['--uc' as string]: '#e07f3f' } as React.CSSProperties}><div className="usage-tile-val">{u.captain_games}<span className="usage-tile-unit">×C</span></div><div className="usage-tile-lbl">Captained</div><div className="usage-tile-sub">{u.captain_games > 0 ? `+${Math.round(u.captain_points)} bonus` : `${u.vc_games}× VC`}</div></div>
             {u.sevens_games > 0 && <div className="usage-tile" style={{ ['--uc' as string]: '#bc8cff' } as React.CSSProperties}><div className="usage-tile-val">{u.sevens_games}</div><div className="usage-tile-lbl">7s games</div><div className="usage-tile-sub">{u.sevens_captain}× C · {Math.round(u.sevens_points)} pts</div></div>}
           </div>
           {u.timeline.length > 0 && (
@@ -272,7 +272,7 @@ export function PlayerProfilePage() {
       {bm?.has_data && (
         <Section title={`vs other ${bm.position}s`} sub={`${bm.cohort} in pool · percentile`}>
           {bm.metrics.map(m => {
-            const c = m.percentile >= 80 ? '#4ec77a' : m.percentile >= 55 ? '#5aa0ff' : m.percentile >= 30 ? '#d2884f' : '#ef6b5e'
+            const c = m.percentile >= 80 ? '#ddd093' : m.percentile >= 55 ? '#f5b941' : m.percentile >= 30 ? '#d27b4f' : '#ef6b5e'
             return (
               <div key={m.key} className="bm-row">
                 <div className="bm-label">{m.label}</div>

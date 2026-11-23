@@ -18,37 +18,37 @@ interface ListChangesData {
 
 const LC_CSS = `
 .lc-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
-.lc-header h2 { font-size:1.4rem; font-weight:700; color:#e6edf3; margin:0; }
-.lc-header .lc-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; background:rgba(88,166,255,.12); color:#58a6ff; }
-.lc-year-header { font-size:1.1rem; font-weight:700; color:#e6edf3; margin:20px 0 10px; padding-bottom:6px; border-bottom:1px solid #21262d; }
+.lc-header h2 { font-size:1.4rem; font-weight:700; color:#efedea; margin:0; }
+.lc-header .lc-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; background:rgba(245,185,64,.12); color:#f5b940; }
+.lc-year-header { font-size:1.1rem; font-weight:700; color:#efedea; margin:20px 0 10px; padding-bottom:6px; border-bottom:1px solid #272522; }
 .lc-year-header:first-child { margin-top:0; }
 .lc-timeline { position:relative; padding-left:28px; }
-.lc-timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background:#21262d; }
-.lc-entry { position:relative; padding:8px 0; border-bottom:1px solid rgba(33,38,45,.5); }
+.lc-timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background:#272522; }
+.lc-entry { position:relative; padding:8px 0; border-bottom:1px solid rgba(39,37,34,.5); }
 .lc-entry:last-child { border-bottom:none; }
 .lc-dot { position:absolute; left:-22px; top:14px; width:10px; height:10px; border-radius:50%; }
-.lc-dot-draft { background:#58a6ff; }
-.lc-dot-supplemental { background:#f0883e; }
+.lc-dot-draft { background:#f5b940; }
+.lc-dot-supplemental { background:#f0763e; }
 .lc-dot-trade { background:#bc8cff; }
 .lc-dot-delist { background:#f85149; }
-.lc-dot-ssp { background:#3fb950; }
-.lc-dot-commissioner { background:#d29922; }
-.lc-desc { font-size:.82rem; color:#c9d1d9; }
-.lc-date { font-size:.7rem; color:#484f58; margin-top:2px; }
+.lc-dot-ssp { background:#dbcf94; }
+.lc-dot-commissioner { background:#d26822; }
+.lc-desc { font-size:.82rem; color:#d7d1cb; }
+.lc-date { font-size:.7rem; color:#56504a; margin-top:2px; }
 .lc-type-badge { display:inline-block; font-size:.65rem; font-weight:600; text-transform:uppercase; padding:2px 6px; border-radius:4px; margin-right:6px; }
-.lc-badge-draft { background:rgba(88,166,255,.12); color:#58a6ff; }
-.lc-badge-supplemental { background:rgba(240,136,62,.12); color:#f0883e; }
+.lc-badge-draft { background:rgba(245,185,64,.12); color:#f5b940; }
+.lc-badge-supplemental { background:rgba(240,118,62,.12); color:#f0763e; }
 .lc-badge-trade { background:rgba(188,140,255,.12); color:#bc8cff; }
 .lc-badge-delist { background:rgba(248,81,73,.12); color:#f85149; }
-.lc-badge-ssp { background:rgba(63,185,80,.12); color:#3fb950; }
-.lc-badge-commissioner { background:rgba(210,153,34,.12); color:#d29922; }
+.lc-badge-ssp { background:rgba(219,207,148,.12); color:#dbcf94; }
+.lc-badge-commissioner { background:rgba(210,104,34,.12); color:#d26822; }
 .lc-filter-bar { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-.lc-filter-btn { font-size:.72rem; padding:4px 10px; border-radius:12px; background:transparent; border:1px solid #30363d; color:#8b949e; cursor:pointer; transition:all .15s; }
-.lc-filter-btn:hover { border-color:#58a6ff; color:#c9d1d9; }
-.lc-filter-btn.active { background:rgba(88,166,255,.12); border-color:#58a6ff; color:#58a6ff; }
-.lc-card { background:#0d1117; border:1px solid #21262d; border-radius:12px; overflow:hidden; }
-.lc-card-header { display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid #21262d; }
-.lc-card-header h5 { margin:0; font-size:1rem; font-weight:600; color:#e6edf3; }
+.lc-filter-btn { font-size:.72rem; padding:4px 10px; border-radius:12px; background:transparent; border:1px solid #373330; color:#a39586; cursor:pointer; transition:all .15s; }
+.lc-filter-btn:hover { border-color:#f5b940; color:#d7d1cb; }
+.lc-filter-btn.active { background:rgba(245,185,64,.12); border-color:#f5b940; color:#f5b940; }
+.lc-card { background:#121110; border:1px solid #272522; border-radius:12px; overflow:hidden; }
+.lc-card-header { display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid #272522; }
+.lc-card-header h5 { margin:0; font-size:1rem; font-weight:600; color:#efedea; }
 .lc-card-body { padding:16px 20px; }
 `
 
@@ -101,7 +101,7 @@ export function ListChangesPage() {
 
       <div className="lc-card">
         <div className="lc-card-header">
-          <i className="bi bi-clock-history" style={{ color: '#58a6ff' }}></i>
+          <i className="bi bi-clock-history" style={{ color: '#f5b940' }}></i>
           <h5>Transaction History</h5>
         </div>
         <div className="lc-card-body">

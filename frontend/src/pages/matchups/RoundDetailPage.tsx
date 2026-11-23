@@ -32,35 +32,35 @@ interface RoundData {
 
 // CSS from templates/matchups/round.html <style> block
 const RD_CSS = `
-.rd-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #21262d; }
+.rd-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #272522; }
 .rd-hdr-left { display:flex; align-items:center; gap:10px; }
-.rd-hdr h3 { font-size:1.05rem; font-weight:700; color:#e6edf3; margin:0; }
-.rd-nav { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; border:1px solid #21262d; background:transparent; color:#484f58; text-decoration:none; transition:all .12s; font-size:.7rem; }
-.rd-nav:hover { border-color:#30363d; color:#c9d1d9; }
+.rd-hdr h3 { font-size:1.05rem; font-weight:700; color:#efedea; margin:0; }
+.rd-nav { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; border:1px solid #272522; background:transparent; color:#56504a; text-decoration:none; transition:all .12s; font-size:.7rem; }
+.rd-nav:hover { border-color:#373330; color:#d7d1cb; }
 .rd-actions { display:flex; gap:6px; }
-.rd-btn { font-size:.7rem; padding:4px 10px; border-radius:6px; border:1px solid #21262d; background:transparent; color:#8b949e; text-decoration:none; transition:all .12s; cursor:pointer; }
-.rd-btn:hover { border-color:#30363d; color:#c9d1d9; }
-.rd-btn-primary { border-color:rgba(88,166,255,.3); color:#58a6ff; }
-.rd-btn-primary:hover { border-color:#58a6ff; background:rgba(88,166,255,.06); }
-.rd-list { background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden; }
-.rd-row { display:grid; grid-template-columns:1fr auto 1fr auto; align-items:center; padding:14px 20px; border-bottom:1px solid #161b22; transition:background .1s; position:relative; }
+.rd-btn { font-size:.7rem; padding:4px 10px; border-radius:6px; border:1px solid #272522; background:transparent; color:#a39586; text-decoration:none; transition:all .12s; cursor:pointer; }
+.rd-btn:hover { border-color:#373330; color:#d7d1cb; }
+.rd-btn-primary { border-color:rgba(245,185,64,.3); color:#f5b940; }
+.rd-btn-primary:hover { border-color:#f5b940; background:rgba(245,185,64,.06); }
+.rd-list { background:#121110; border:1px solid #272522; border-radius:10px; overflow:hidden; }
+.rd-row { display:grid; grid-template-columns:1fr auto 1fr auto; align-items:center; padding:14px 20px; border-bottom:1px solid #1c1a18; transition:background .1s; position:relative; }
 .rd-row:last-child { border-bottom:none; }
-.rd-row:hover { background:rgba(22,27,34,.5); }
-.rd-team { font-size:.85rem; font-weight:500; color:#c9d1d9; text-decoration:none; transition:color .1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rd-team:hover { color:#58a6ff; }
+.rd-row:hover { background:rgba(28,26,24,.5); }
+.rd-team { font-size:.85rem; font-weight:500; color:#d7d1cb; text-decoration:none; transition:color .1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rd-team:hover { color:#f5b940; }
 .rd-team-home { text-align:left; padding-right:12px; }
 .rd-team-away { text-align:right; padding-left:12px; }
-.rd-team.won { color:#e6edf3; font-weight:700; }
+.rd-team.won { color:#efedea; font-weight:700; }
 .rd-centre { display:flex; align-items:center; justify-content:center; min-width:100px; }
 .rd-sc { font-size:.95rem; font-weight:700; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }
-.rd-sc.won { color:#3fb950; }
-.rd-sc.lost { color:#6e7681; }
-.rd-sep { color:#21262d; margin:0 4px; font-weight:300; font-size:.8rem; }
-.rd-vs { font-size:.65rem; font-weight:700; color:#30363d; letter-spacing:1.5px; }
-.rd-arrow { display:flex; align-items:center; justify-content:center; width:28px; color:#21262d; transition:color .1s; }
-.rd-row:hover .rd-arrow { color:#484f58; }
+.rd-sc.won { color:#dbcf94; }
+.rd-sc.lost { color:#80786f; }
+.rd-sep { color:#272522; margin:0 4px; font-weight:300; font-size:.8rem; }
+.rd-vs { font-size:.65rem; font-weight:700; color:#373330; letter-spacing:1.5px; }
+.rd-arrow { display:flex; align-items:center; justify-content:center; width:28px; color:#272522; transition:color .1s; }
+.rd-row:hover .rd-arrow { color:#56504a; }
 .rd-arrow a { color:inherit; text-decoration:none; display:flex; }
-.rd-win-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 2px 2px 0; background:#3fb950; }
+.rd-win-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 2px 2px 0; background:#dbcf94; }
 .rd-loss-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 2px 2px 0; background:rgba(248,81,73,.4); }
 `
 
@@ -153,7 +153,7 @@ export function RoundDetailPage() {
           })}
         </div>
       ) : (
-        <p style={{ color: '#484f58', fontSize: '.85rem' }}>No fixtures for this round.</p>
+        <p style={{ color: '#56504a', fontSize: '.85rem' }}>No fixtures for this round.</p>
       )}
     </div>
   )

@@ -192,7 +192,7 @@ export function PositionArc({
       })}
       {teams.filter(t => highlight != null && t.team_id === highlight).map(t => (
         <circle key={t.team_id} cx={x(n - 1)} cy={y(t.positions[n - 1])} r="5.5"
-                fill={t.accent} stroke="#04060d" strokeWidth="2" />
+                fill={t.accent} stroke="#090807" strokeWidth="2" />
       ))}
     </svg>
   )
@@ -333,7 +333,7 @@ export function CompareBars({
 
 /* ── Confetti burst ─────────────────────────────────────────────── */
 
-const CONFETTI_COLOURS = ['#ffd666', '#7c5cff', '#ff5fa2', '#4ade80', '#38bdf8', '#fb923c']
+const CONFETTI_COLOURS = ['#f9a46c', '#f5ba43', '#ff5fa2', '#e4d58b', '#f3ac1e', '#fb7f3c']
 
 export function Confetti({ count = 90 }: { count?: number }) {
   const pieces = useRef(

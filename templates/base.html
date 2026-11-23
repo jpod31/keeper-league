@@ -11,7 +11,7 @@
   <link href="{{ url_for('static', filename='style.css') }}?v={{ ASSET_V }}" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
-  <meta name="theme-color" content="#0d1117">
+  <meta name="theme-color" content="#0c0b0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -86,7 +86,7 @@
           <div class="dropdown-menu dropdown-menu-end p-0 notif-panel" id="notifPanelMobile">
             <div class="d-flex justify-content-between align-items-center px-3 py-2 notif-panel-header">
               <span class="fw-bold" style="font-size:.85rem;">Notifications</span>
-              <a href="#" class="mark-all-read-btn" id="markAllReadBtnMobile" style="font-size:.72rem;color:#58a6ff;text-decoration:none;">Mark all read</a>
+              <a href="#" class="mark-all-read-btn" id="markAllReadBtnMobile" style="font-size:.72rem;color:#f5b940;text-decoration:none;">Mark all read</a>
             </div>
             <div class="notif-list-container" id="notifListMobile" style="font-size:.82rem;">
               <div class="text-center text-secondary py-3" style="font-size:.8rem;">Loading...</div>
@@ -135,7 +135,7 @@
               <div class="dropdown-menu dropdown-menu-end p-0 notif-panel" id="notifPanel">
                 <div class="d-flex justify-content-between align-items-center px-3 py-2 notif-panel-header">
                   <span class="fw-bold" style="font-size:.85rem;">Notifications</span>
-                  <a href="#" id="markAllReadBtn" style="font-size:.72rem;color:#58a6ff;text-decoration:none;">Mark all read</a>
+                  <a href="#" id="markAllReadBtn" style="font-size:.72rem;color:#f5b940;text-decoration:none;">Mark all read</a>
                 </div>
                 <div id="notifList" style="font-size:.82rem;">
                   <div class="text-center text-secondary py-3" style="font-size:.8rem;">Loading...</div>
@@ -382,10 +382,10 @@
   </script>
   {% endif %}
   {# PWA Install Banner #}
-  <div id="pwaInstallBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:1030;background:linear-gradient(135deg,#238636,#1f6feb);padding:10px 16px;font-size:.82rem;color:#fff;text-align:center;">
+  <div id="pwaInstallBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:1030;background:linear-gradient(135deg,#71602b,#b77a10);padding:10px 16px;font-size:.82rem;color:#fff;text-align:center;">
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
       <span>Install <strong>Keeper League</strong> for a better experience</span>
-      <button id="pwaInstallBtn" style="background:#fff;color:#1f6feb;border:none;border-radius:6px;padding:4px 14px;font-size:.78rem;font-weight:600;cursor:pointer;">Install</button>
+      <button id="pwaInstallBtn" style="background:#fff;color:#b77a10;border:none;border-radius:6px;padding:4px 14px;font-size:.78rem;font-weight:600;cursor:pointer;">Install</button>
       <button id="pwaInstallDismiss" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:1.1rem;cursor:pointer;padding:2px 6px;line-height:1;">&times;</button>
     </div>
   </div>
@@ -450,22 +450,22 @@
   <style>
     .wn-overlay { position:fixed; inset:0; z-index:99990; background:rgba(0,0,0,.6); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .3s; }
     .wn-overlay.open { opacity:1; }
-    .wn-card { background:#161b22; border:1px solid #30363d; border-radius:14px; max-width:420px; width:90%; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; transform:translateY(20px); transition:transform .3s; }
+    .wn-card { background:#1c1a18; border:1px solid #373330; border-radius:14px; max-width:420px; width:90%; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; transform:translateY(20px); transition:transform .3s; }
     .wn-overlay.open .wn-card { transform:translateY(0); }
-    .wn-hdr { padding:18px 22px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #21262d; }
-    .wn-hdr h3 { margin:0; font-size:1rem; font-weight:800; color:#e6edf3; }
-    .wn-ver { font-size:.65rem; color:#8b949e; background:#0d1117; padding:2px 8px; border-radius:6px; }
-    .wn-close { background:none; border:none; color:#6e7681; font-size:1.2rem; cursor:pointer; padding:4px; }
-    .wn-close:hover { color:#e6edf3; }
+    .wn-hdr { padding:18px 22px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #272522; }
+    .wn-hdr h3 { margin:0; font-size:1rem; font-weight:800; color:#efedea; }
+    .wn-ver { font-size:.65rem; color:#a39586; background:#121110; padding:2px 8px; border-radius:6px; }
+    .wn-close { background:none; border:none; color:#80786f; font-size:1.2rem; cursor:pointer; padding:4px; }
+    .wn-close:hover { color:#efedea; }
     .wn-body { padding:16px 22px; overflow-y:auto; flex:1; }
     .wn-section { margin-bottom:16px; }
     .wn-section:last-child { margin-bottom:0; }
-    .wn-section-title { font-size:.78rem; font-weight:700; color:#e6edf3; margin-bottom:6px; }
-    .wn-section-date { font-size:.6rem; color:#6e7681; margin-left:6px; }
-    .wn-item { display:flex; gap:8px; padding:4px 0; font-size:.76rem; color:#c9d1d9; line-height:1.4; }
-    .wn-item::before { content:''; width:5px; height:5px; border-radius:50%; background:linear-gradient(135deg,#3fb950,#1f6feb); flex-shrink:0; margin-top:6px; }
-    .wn-footer { padding:12px 22px; border-top:1px solid #21262d; text-align:center; }
-    .wn-btn { background:linear-gradient(135deg,#3fb950,#1f6feb); color:#fff; border:none; border-radius:8px; padding:8px 28px; font-size:.8rem; font-weight:700; cursor:pointer; }
+    .wn-section-title { font-size:.78rem; font-weight:700; color:#efedea; margin-bottom:6px; }
+    .wn-section-date { font-size:.6rem; color:#80786f; margin-left:6px; }
+    .wn-item { display:flex; gap:8px; padding:4px 0; font-size:.76rem; color:#d7d1cb; line-height:1.4; }
+    .wn-item::before { content:''; width:5px; height:5px; border-radius:50%; background:linear-gradient(135deg,#dbcf94,#b77a10); flex-shrink:0; margin-top:6px; }
+    .wn-footer { padding:12px 22px; border-top:1px solid #272522; text-align:center; }
+    .wn-btn { background:linear-gradient(135deg,#dbcf94,#b77a10); color:#fff; border:none; border-radius:8px; padding:8px 28px; font-size:.8rem; font-weight:700; cursor:pointer; }
     .wn-btn:hover { opacity:.9; }
   </style>
   <div id="wnOverlay" class="wn-overlay" style="display:none;" onclick="if(event.target===this)closeWhatsNew()">

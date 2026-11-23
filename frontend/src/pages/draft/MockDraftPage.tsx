@@ -64,10 +64,10 @@ function posClass(position: string | null | undefined): string {
 }
 
 function ratingColor(r: number | null): string {
-  if (r == null) return '#8b949e'
-  if (r >= 80) return '#3fb950'
-  if (r >= 70) return '#d29922'
-  if (r >= 60) return '#f0883e'
+  if (r == null) return '#a39586'
+  if (r >= 80) return '#ffc94d'
+  if (r >= 70) return '#e4d8a6'
+  if (r >= 60) return '#f08a4b'
   return '#f85149'
 }
 
@@ -284,11 +284,11 @@ export function MockDraftPage() {
           <div>
             <h2 className="mb-0">
               Mock Draft
-              <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.55rem', verticalAlign: 'middle' }}>SIMULATION</span>
+              <span className="badge ms-2" style={{ background: 'rgba(240,118,62,.15)', color: '#f0763e', fontSize: '.55rem', verticalAlign: 'middle' }}>SIMULATION</span>
             </h2>
             <div className="d-flex align-items-center gap-3 mt-1">
               <span className={`status-pill status-${state.status.replace('_', '-')}`}>{state.status}</span>
-              <span style={{ fontSize: '.8rem', color: '#8b949e' }}>Computer picks for other teams</span>
+              <span style={{ fontSize: '.8rem', color: '#a39586' }}>Computer picks for other teams</span>
             </div>
           </div>
           <div className="d-flex gap-2">
@@ -309,16 +309,16 @@ export function MockDraftPage() {
             <span>{displayPickNum}</span>
           </div>
           <div>
-            <div style={{ fontSize: '.75rem', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <div style={{ fontSize: '.75rem', color: '#a39586', textTransform: 'uppercase', letterSpacing: '.5px' }}>
               Round <span>{displayRound}</span>
             </div>
             <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
               <span>{displayTeam}</span>
               {!bannerCompleted && isYourPick && !cpuPicking && (
-                <span className="badge ms-2" style={{ background: 'rgba(210,153,34,.2)', color: '#d29922', fontSize: '.7rem' }}>YOUR PICK</span>
+                <span className="badge ms-2" style={{ background: 'rgba(210,104,34,.2)', color: '#d26822', fontSize: '.7rem' }}>YOUR PICK</span>
               )}
               {!bannerCompleted && (!isYourPick || cpuPicking) && (
-                <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.7rem' }}>CPU</span>
+                <span className="badge ms-2" style={{ background: 'rgba(240,118,62,.15)', color: '#f0763e', fontSize: '.7rem' }}>CPU</span>
               )}
             </div>
           </div>
@@ -326,7 +326,7 @@ export function MockDraftPage() {
         {cpuPicking && (
           <div className="d-flex align-items-center gap-2">
             <div className="spinner-border spinner-border-sm text-warning" role="status"></div>
-            <span style={{ fontSize: '.8rem', color: '#f0883e' }}>Computer picking...</span>
+            <span style={{ fontSize: '.8rem', color: '#f0763e' }}>Computer picking...</span>
           </div>
         )}
       </div>
@@ -338,7 +338,7 @@ export function MockDraftPage() {
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-people me-2" style={{ color: '#8b949e' }}></i>Available Players
+                  <i className="bi bi-people me-2" style={{ color: '#a39586' }}></i>Available Players
                 </h5>
                 <button className="btn btn-outline-secondary py-0 px-2" type="button" onClick={() => setWeightsOpen(o => !o)} style={{ fontSize: '.7rem' }}>
                   <i className="bi bi-sliders me-1"></i>Values
@@ -346,10 +346,10 @@ export function MockDraftPage() {
               </div>
 
               {weightsOpen && (
-                <div className="mb-2" style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 8, padding: '.75rem' }}>
+                <div className="mb-2" style={{ background: '#121110', border: '1px solid #373330', borderRadius: 8, padding: '.75rem' }}>
                   {WEIGHT_KEYS.map(({ key, label }) => (
                     <div key={key} className="d-flex align-items-center gap-2 mb-2">
-                      <span style={{ fontSize: '.7rem', color: '#8b949e', width: 60, flexShrink: 0 }}>{label}</span>
+                      <span style={{ fontSize: '.7rem', color: '#a39586', width: 60, flexShrink: 0 }}>{label}</span>
                       <input
                         type="range"
                         className="form-range flex-grow-1"
@@ -358,14 +358,14 @@ export function MockDraftPage() {
                         onChange={e => onWeightChange(key, parseFloat(e.target.value))}
                         style={{ height: 16 }}
                       />
-                      <span style={{ fontSize: '.7rem', color: '#58a6ff', width: 32, textAlign: 'right' }}>
+                      <span style={{ fontSize: '.7rem', color: '#f5b940', width: 32, textAlign: 'right' }}>
                         {Math.round((weights[key] ?? 0.2) * 100)}%
                       </span>
                     </div>
                   ))}
-                  <div className="d-flex justify-content-between align-items-center mt-2 pt-2" style={{ borderTop: '1px solid #30363d' }}>
-                    <span style={{ fontSize: '.7rem', color: '#8b949e' }}>
-                      {hasCustomWeights ? <span style={{ color: '#3fb950' }}>Custom</span> : 'League defaults'}
+                  <div className="d-flex justify-content-between align-items-center mt-2 pt-2" style={{ borderTop: '1px solid #373330' }}>
+                    <span style={{ fontSize: '.7rem', color: '#a39586' }}>
+                      {hasCustomWeights ? <span style={{ color: '#dbcf94' }}>Custom</span> : 'League defaults'}
                     </span>
                     <div className="d-flex gap-1">
                       <button className="btn btn-outline-secondary py-0 px-2" onClick={applyWeights} style={{ fontSize: '.7rem' }}>Apply</button>
@@ -392,7 +392,7 @@ export function MockDraftPage() {
             </div>
             <div className="card-body p-0" style={{ overflowY: 'auto' }}>
               <table className="table table-hover table-sm mb-0">
-                <thead className="sticky-top" style={{ background: '#161b22' }}>
+                <thead className="sticky-top" style={{ background: '#1c1a18' }}>
                   <tr>
                     <th>Player</th>
                     <th>Pos</th>
@@ -411,7 +411,7 @@ export function MockDraftPage() {
                       <td>{p.afl_team || ''}</td>
                       <td>{p.sc_avg != null ? p.sc_avg.toFixed(1) : '-'}</td>
                       <td><span style={{ color: ratingColor(p.rating), fontWeight: 600 }}>{p.rating ?? '-'}</span></td>
-                      <td><span style={{ color: '#58a6ff', fontWeight: 600 }}>{p.draft_score != null ? p.draft_score.toFixed(1) : '-'}</span></td>
+                      <td><span style={{ color: '#f5b940', fontWeight: 600 }}>{p.draft_score != null ? p.draft_score.toFixed(1) : '-'}</span></td>
                       <td>
                         <button
                           className="btn btn-outline-primary btn-sm py-0 px-2"
@@ -435,7 +435,7 @@ export function MockDraftPage() {
             <div className="card-header d-flex justify-content-between align-items-center">
               <div className="d-flex align-items-center gap-2">
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-clock-history me-2" style={{ color: '#8b949e' }}></i>Pick History
+                  <i className="bi bi-clock-history me-2" style={{ color: '#a39586' }}></i>Pick History
                 </h5>
                 {user_team && (
                   <div className="btn-group btn-group-sm" role="group">
@@ -444,13 +444,13 @@ export function MockDraftPage() {
                   </div>
                 )}
               </div>
-              <span className="badge" style={{ background: '#21262d', color: '#8b949e', fontSize: '.75rem' }}>
+              <span className="badge" style={{ background: '#272522', color: '#a39586', fontSize: '.75rem' }}>
                 {state.picks_made}/{state.total_picks}
               </span>
             </div>
             <div className="card-body p-0" style={{ overflowY: 'auto' }}>
               <table className="table table-hover table-sm mb-0">
-                <thead className="sticky-top" style={{ background: '#161b22' }}>
+                <thead className="sticky-top" style={{ background: '#1c1a18' }}>
                   <tr><th>#</th><th>Rd</th><th>Team</th><th>Player</th><th>Pos</th><th>AFL Team</th></tr>
                 </thead>
                 <tbody>
@@ -461,7 +461,7 @@ export function MockDraftPage() {
                       <td>{pick.team_name}</td>
                       <td>
                         {pick.player_name}
-                        {pick.is_auto_pick && <span style={{ color: '#f0883e', fontSize: '.7rem' }}> (cpu)</span>}
+                        {pick.is_auto_pick && <span style={{ color: '#f0763e', fontSize: '.7rem' }}> (cpu)</span>}
                       </td>
                       <td><span className={`pos-badge badge-${posClass(pick.player_position)}`}>{pick.player_position}</span></td>
                       <td>{pick.player_afl_team}</td>
@@ -476,15 +476,15 @@ export function MockDraftPage() {
             <div className="card" style={{ maxHeight: '30vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-person-badge me-2" style={{ color: '#58a6ff' }}></i>{user_team.name}
+                  <i className="bi bi-person-badge me-2" style={{ color: '#f5b940' }}></i>{user_team.name}
                 </h5>
-                <span className="badge" style={{ background: '#21262d', color: '#8b949e', fontSize: '.75rem' }}>
+                <span className="badge" style={{ background: '#272522', color: '#a39586', fontSize: '.75rem' }}>
                   {yourTeamPicks.length} players
                 </span>
               </div>
               <div className="card-body p-0" style={{ overflowY: 'auto' }}>
                 <table className="table table-sm mb-0">
-                  <thead className="sticky-top" style={{ background: '#161b22' }}>
+                  <thead className="sticky-top" style={{ background: '#1c1a18' }}>
                     <tr><th>#</th><th>Player</th><th>Pos</th><th>AFL Team</th></tr>
                   </thead>
                   <tbody>

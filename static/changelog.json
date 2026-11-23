@@ -1,7 +1,22 @@
 {
-  "version": "2.4.0",
-  "date": "9 Apr 2026",
+  "version": "3.0.0",
+  "date": "23 Nov 2026",
   "entries": [
+    {
+      "version": "3.0.0",
+      "date": "23 Nov 2026",
+      "title": "The 2027 season",
+      "items": [
+        "Every player is on 2027: new clubs, new ages, new ratings, and the latest draftees are in the pool",
+        "Draftees have an expected position until SuperCoach publishes one, marked exp",
+        "Averages, last 3 and last 5 are from 2026 until the new season starts, and say so",
+        "Former players: everyone who has left the AFL, with their record and who had them here",
+        "Trade block: put a player up, say what you want back, and see who else is shopping",
+        "My notes: private, timestamped notes on any player",
+        "Seasons: the ladder, results, opening squads, drafts, trades and delistings for every year",
+        "A new look: black and gold"
+      ]
+    },
     {
       "version": "2.4.0",
       "date": "9 Apr 2026",

@@ -13,26 +13,26 @@ export type StatTileAccent =
   | 'neutral'
 
 const ACCENT_HEX: Record<StatTileAccent, string> = {
-  forest: '#7dc99a',
-  sapphire: '#82b3e4',
-  ochre: '#f0d27a',
+  forest: '#dcd4ab',
+  sapphire: '#deb565',
+  ochre: '#f0a97a',
   rust: '#e07a6c',
-  amethyst: '#b39ed4',
-  teal: '#7ec0d3',
+  amethyst: '#c9b284',
+  teal: '#caa965',
   garnet: '#d68aa3',
-  cognac: '#d6a779',
-  neutral: '#dde4f1',
+  cognac: '#d69e79',
+  neutral: '#eae7e4',
 }
 const ACCENT_RGB: Record<StatTileAccent, string> = {
-  forest: '61,140,99',
-  sapphire: '58,125,196',
-  ochre: '194,147,47',
+  forest: '135,110,59',
+  sapphire: '153,114,45',
+  ochre: '194,106,47',
   rust: '184,90,74',
-  amethyst: '138,109,184',
-  teal: '61,138,156',
+  amethyst: '174,146,89',
+  teal: '143,111,56',
   garnet: '157,88,120',
-  cognac: '184,127,61',
-  neutral: '110,130,180',
+  cognac: '184,115,61',
+  neutral: '170,144,91',
 }
 
 interface Props {

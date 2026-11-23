@@ -10,47 +10,47 @@
     display:flex; align-items:center; gap:12px; margin-bottom:24px;
   }
   .rec-header h2 {
-    font-size:1.4rem; font-weight:700; color:#e6edf3; margin:0;
+    font-size:1.4rem; font-weight:700; color:#efedea; margin:0;
   }
   .rec-header .rec-icon {
     width:44px; height:44px; border-radius:10px;
     display:flex; align-items:center; justify-content:center;
     font-size:1.3rem;
-    background:rgba(210,153,34,.12); color:#d29922;
+    background:rgba(210,104,34,.12); color:#d26822;
   }
 
   /* Tabs */
   .rec-tabs {
     display:flex; gap:4px; margin-bottom:24px;
-    border-bottom:1px solid #21262d; padding-bottom:0;
+    border-bottom:1px solid #272522; padding-bottom:0;
     overflow-x:auto; -webkit-overflow-scrolling:touch;
     scrollbar-width:none;
   }
   .rec-tabs::-webkit-scrollbar { display:none; }
   .rec-tab {
     padding:8px 16px; font-size:.82rem; font-weight:500;
-    color:#8b949e; cursor:pointer; border-bottom:2px solid transparent;
+    color:#a39586; cursor:pointer; border-bottom:2px solid transparent;
     transition:all .15s; text-decoration:none; background:none; border:none;
     border-radius:0; white-space:nowrap; flex-shrink:0;
   }
-  .rec-tab:hover { color:#e6edf3; }
+  .rec-tab:hover { color:#efedea; }
   .rec-tab.active {
-    color:#58a6ff; border-bottom-color:#58a6ff;
+    color:#f5b940; border-bottom-color:#f5b940;
   }
 
   /* Cards */
   .rec-card {
-    background:#161b22; border:1px solid #21262d; border-radius:10px;
+    background:#1c1a18; border:1px solid #272522; border-radius:10px;
     overflow:hidden; margin-bottom:20px;
   }
   .rec-card-header {
-    padding:14px 18px; border-bottom:1px solid #21262d;
+    padding:14px 18px; border-bottom:1px solid #272522;
     display:flex; align-items:center; gap:8px;
   }
   .rec-card-header h5 {
-    margin:0; font-size:.9rem; font-weight:600; color:#e6edf3;
+    margin:0; font-size:.9rem; font-weight:600; color:#efedea;
   }
-  .rec-card-header i { color:#8b949e; }
+  .rec-card-header i { color:#a39586; }
   .rec-card-body { padding:0; }
   .rec-card-body-padded { padding:16px 18px; }
 
@@ -59,60 +59,60 @@
     width:100%; border-collapse:collapse; font-size:.82rem;
   }
   .rec-table th {
-    font-size:.65rem; font-weight:600; color:#484f58; text-transform:uppercase;
-    letter-spacing:.5px; padding:10px 14px; border-bottom:1px solid #21262d;
+    font-size:.65rem; font-weight:600; color:#56504a; text-transform:uppercase;
+    letter-spacing:.5px; padding:10px 14px; border-bottom:1px solid #272522;
     white-space:nowrap;
   }
   .rec-table td {
-    padding:10px 14px; border-bottom:1px solid rgba(33,38,45,.6);
-    color:#8b949e; font-variant-numeric:tabular-nums;
+    padding:10px 14px; border-bottom:1px solid rgba(39,37,34,.6);
+    color:#a39586; font-variant-numeric:tabular-nums;
   }
   .rec-table tbody tr { transition:background .1s; }
-  .rec-table tbody tr:hover { background:rgba(22,27,34,.5); }
+  .rec-table tbody tr:hover { background:rgba(28,26,24,.5); }
   .rec-table tbody tr:last-child td { border-bottom:none; }
 
-  .rec-name { color:#e6edf3; font-weight:600; }
-  .rec-year { color:#484f58; font-size:.75rem; }
-  .rec-score { color:#58a6ff; font-weight:700; }
-  .rec-win { color:#3fb950; font-weight:600; }
+  .rec-name { color:#efedea; font-weight:600; }
+  .rec-year { color:#56504a; font-size:.75rem; }
+  .rec-score { color:#f5b940; font-weight:700; }
+  .rec-win { color:#dbcf94; font-weight:600; }
   .rec-loss { color:#f85149; font-weight:600; }
-  .rec-draw { color:#d29922; font-weight:600; }
+  .rec-draw { color:#d26822; font-weight:600; }
 
   /* Champion row highlight */
   .champ-row td:first-child { position:relative; }
   .champ-badge {
     display:inline-flex; align-items:center; justify-content:center;
     width:28px; height:28px; border-radius:6px; font-size:.75rem; font-weight:700;
-    background:rgba(255,215,0,.15); color:#FFD700;
+    background:rgba(249,192,6,.15); color:#f9c006;
   }
 
   /* H2H selectors */
   .h2h-select {
-    background:#0d1117; color:#e6edf3; border:1px solid #30363d;
+    background:#121110; color:#efedea; border:1px solid #373330;
     border-radius:6px; padding:6px 12px; font-size:.85rem;
     appearance:auto;
   }
-  .h2h-select:focus { outline:none; border-color:#58a6ff; }
+  .h2h-select:focus { outline:none; border-color:#f5b940; }
 
   .h2h-result-card {
-    background:#0d1117; border:1px solid #30363d; border-radius:10px;
+    background:#121110; border:1px solid #373330; border-radius:10px;
     padding:24px; text-align:center; margin-top:16px;
   }
-  .h2h-vs { color:#484f58; font-size:.85rem; font-weight:600; margin:0 16px; }
-  .h2h-team-name { color:#e6edf3; font-size:1.1rem; font-weight:700; }
-  .h2h-record { font-size:2rem; font-weight:800; color:#e6edf3; margin-top:12px; letter-spacing:2px; }
-  .h2h-labels { font-size:.7rem; color:#484f58; letter-spacing:1px; margin-top:4px; }
+  .h2h-vs { color:#56504a; font-size:.85rem; font-weight:600; margin:0 16px; }
+  .h2h-team-name { color:#efedea; font-size:1.1rem; font-weight:700; }
+  .h2h-record { font-size:2rem; font-weight:800; color:#efedea; margin-top:12px; letter-spacing:2px; }
+  .h2h-labels { font-size:.7rem; color:#56504a; letter-spacing:1px; margin-top:4px; }
 
   .rec-empty {
-    text-align:center; padding:40px 20px; color:#484f58;
+    text-align:center; padding:40px 20px; color:#56504a;
   }
-  .rec-empty i { font-size:2rem; display:block; margin-bottom:12px; color:#30363d; }
+  .rec-empty i { font-size:2rem; display:block; margin-bottom:12px; color:#373330; }
 
   /* Streak badge */
   .streak-badge {
     display:inline-flex; align-items:center; gap:4px;
     padding:2px 8px; border-radius:4px; font-size:.75rem; font-weight:700;
-    background:rgba(63,185,80,.12); color:#3fb950;
+    background:rgba(219,207,148,.12); color:#dbcf94;
   }
 
   /* Panel visibility */
@@ -121,10 +121,10 @@
 
   /* Win pct bar */
   .winpct-bar {
-    height:6px; border-radius:3px; background:#21262d; overflow:hidden;
+    height:6px; border-radius:3px; background:#272522; overflow:hidden;
     width:80px; display:inline-block; vertical-align:middle; margin-left:6px;
   }
-  .winpct-fill { height:100%; border-radius:3px; background:#3fb950; }
+  .winpct-fill { height:100%; border-radius:3px; background:#dbcf94; }
 
 </style>
 
@@ -132,7 +132,7 @@
   <div class="rec-icon"><i class="bi bi-trophy"></i></div>
   <div>
     <h2>League Records</h2>
-    <span style="font-size:.8rem;color:#8b949e;">All-time records for {{ league.name }}</span>
+    <span style="font-size:.8rem;color:#a39586;">All-time records for {{ league.name }}</span>
   </div>
 </div>
 
@@ -140,7 +140,7 @@
 {% if milestones %}
 <div style="margin-bottom:16px;">
   {% for m in milestones %}
-  <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:6px;background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.2);border-radius:8px;font-size:.8rem;color:#e3b341;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:6px;background:rgba(210,104,34,.08);border:1px solid rgba(210,104,34,.2);border-radius:8px;font-size:.8rem;color:#e38241;">
     <i class="bi bi-stars"></i>
     <span>{{ m }}</span>
   </div>
@@ -173,7 +173,7 @@
 <div class="rec-panel active" id="panel-champions">
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-trophy-fill" style="color:#d29922;"></i>
+      <i class="bi bi-trophy-fill" style="color:#d26822;"></i>
       <h5>Season Champions</h5>
     </div>
     <div class="rec-card-body">
@@ -194,7 +194,7 @@
           <tbody>
             {% for c in champions %}
             <tr class="champ-row">
-              <td><span class="rec-year" style="font-size:.85rem;color:#e6edf3;font-weight:600;">{{ c.year }}</span></td>
+              <td><span class="rec-year" style="font-size:.85rem;color:#efedea;font-weight:600;">{{ c.year }}</span></td>
               <td>
                 <span class="rec-name">{{ c.team_name }}</span>
               </td>
@@ -226,7 +226,7 @@
   {# Highest single-round scores #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-lightning-fill" style="color:#58a6ff;"></i>
+      <i class="bi bi-lightning-fill" style="color:#f5b940;"></i>
       <h5>Highest Single-Round Scores</h5>
     </div>
     <div class="rec-card-body">
@@ -248,7 +248,7 @@
                 {% if loop.index == 1 %}
                   <span class="champ-badge">1</span>
                 {% else %}
-                  <span style="color:#484f58;">{{ loop.index }}</span>
+                  <span style="color:#56504a;">{{ loop.index }}</span>
                 {% endif %}
               </td>
               <td class="rec-name">{{ s.team_name }}</td>
@@ -271,7 +271,7 @@
   {# Highest season points for #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-graph-up-arrow" style="color:#3fb950;"></i>
+      <i class="bi bi-graph-up-arrow" style="color:#dbcf94;"></i>
       <h5>Highest Season Points For</h5>
     </div>
     <div class="rec-card-body">
@@ -293,7 +293,7 @@
                 {% if loop.index == 1 %}
                   <span class="champ-badge">1</span>
                 {% else %}
-                  <span style="color:#484f58;">{{ loop.index }}</span>
+                  <span style="color:#56504a;">{{ loop.index }}</span>
                 {% endif %}
               </td>
               <td class="rec-name">{{ s.team_name }}</td>
@@ -318,7 +318,7 @@
   {# Longest win streaks #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-fire" style="color:#f0883e;"></i>
+      <i class="bi bi-fire" style="color:#f0763e;"></i>
       <h5>Longest Win Streaks</h5>
     </div>
     <div class="rec-card-body">
@@ -337,9 +337,9 @@
             <tr>
               <td>
                 {% if loop.index == 1 %}
-                  <span class="champ-badge" style="background:rgba(240,136,62,.15);color:#f0883e;">1</span>
+                  <span class="champ-badge" style="background:rgba(240,118,62,.15);color:#f0763e;">1</span>
                 {% else %}
-                  <span style="color:#484f58;">{{ loop.index }}</span>
+                  <span style="color:#56504a;">{{ loop.index }}</span>
                 {% endif %}
               </td>
               <td class="rec-name">{{ ws.team_name }}</td>
@@ -347,7 +347,7 @@
                 <span class="streak-badge">{{ ws.streak }}W</span>
               </td>
               <td>
-                <span style="color:#8b949e;font-size:.78rem;">
+                <span style="color:#a39586;font-size:.78rem;">
                   {% if ws.start_year == ws.end_year %}
                     {{ ws.start_year }} R{{ ws.start_round }}&ndash;R{{ ws.end_round }}
                   {% else %}
@@ -395,12 +395,12 @@
                 {% if loop.index == 1 %}
                   <span class="champ-badge" style="background:rgba(248,81,73,.15);color:#f85149;">1</span>
                 {% else %}
-                  <span style="color:#484f58;">{{ loop.index }}</span>
+                  <span style="color:#56504a;">{{ loop.index }}</span>
                 {% endif %}
               </td>
               <td class="rec-name">{{ b.winner }}</td>
               <td class="text-center rec-win d-none d-md-table-cell">{{ '%.0f'|format(b.winner_score) }}</td>
-              <td style="color:#8b949e;">{{ b.loser }}</td>
+              <td style="color:#a39586;">{{ b.loser }}</td>
               <td class="text-center rec-loss d-none d-md-table-cell">{{ '%.0f'|format(b.loser_score) }}</td>
               <td class="text-center rec-score">{{ '%.0f'|format(b.margin) }}</td>
               <td class="text-center rec-year d-none d-md-table-cell">{{ b.year }} R{{ b.round }}</td>
@@ -438,7 +438,7 @@
           <tbody>
             {% for s in lowest_scores %}
             <tr>
-              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td><span style="color:#56504a;">{{ loop.index }}</span></td>
               <td class="rec-name">{{ s.team_name }}</td>
               <td class="text-center">R{{ s.round }}</td>
               <td class="text-center rec-year">{{ s.year }}</td>
@@ -456,7 +456,7 @@
   {# Closest matches #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-bullseye" style="color:#d29922;"></i>
+      <i class="bi bi-bullseye" style="color:#d26822;"></i>
       <h5>Closest Matches</h5>
     </div>
     <div class="rec-card-body">
@@ -476,12 +476,12 @@
           <tbody>
             {% for m in close_matches %}
             <tr>
-              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td><span style="color:#56504a;">{{ loop.index }}</span></td>
               <td class="rec-name">{{ m.home }}</td>
               <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(m.home_score) }}</td>
               <td class="rec-name">{{ m.away }}</td>
               <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(m.away_score) }}</td>
-              <td class="text-center" style="color:#d29922;font-weight:700;">{{ '%.0f'|format(m.margin) }}</td>
+              <td class="text-center" style="color:#d26822;font-weight:700;">{{ '%.0f'|format(m.margin) }}</td>
               <td class="text-center rec-year d-none d-md-table-cell">{{ m.year }} R{{ m.round }}</td>
             </tr>
             {% endfor %}
@@ -496,7 +496,7 @@
   {# Highest combined scores #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-arrow-up-circle" style="color:#3fb950;"></i>
+      <i class="bi bi-arrow-up-circle" style="color:#dbcf94;"></i>
       <h5>Highest Combined Scores</h5>
     </div>
     <div class="rec-card-body">
@@ -516,7 +516,7 @@
           <tbody>
             {% for c in highest_combined %}
             <tr>
-              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td><span style="color:#56504a;">{{ loop.index }}</span></td>
               <td class="rec-name">{{ c.home }}</td>
               <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(c.home_score) }}</td>
               <td class="rec-name">{{ c.away }}</td>
@@ -536,7 +536,7 @@
   {# Lowest combined scores #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-arrow-down-circle" style="color:#484f58;"></i>
+      <i class="bi bi-arrow-down-circle" style="color:#56504a;"></i>
       <h5>Lowest Combined Scores</h5>
     </div>
     <div class="rec-card-body">
@@ -556,7 +556,7 @@
           <tbody>
             {% for c in lowest_combined %}
             <tr>
-              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td><span style="color:#56504a;">{{ loop.index }}</span></td>
               <td class="rec-name">{{ c.home }}</td>
               <td class="text-center d-none d-md-table-cell">{{ '%.0f'|format(c.home_score) }}</td>
               <td class="rec-name">{{ c.away }}</td>
@@ -593,13 +593,13 @@
           <tbody>
             {% for ls in loss_streaks %}
             <tr>
-              <td><span style="color:#484f58;">{{ loop.index }}</span></td>
+              <td><span style="color:#56504a;">{{ loop.index }}</span></td>
               <td class="rec-name">{{ ls.team_name }}</td>
               <td class="text-center">
                 <span class="streak-badge" style="background:rgba(248,81,73,.12);color:#f85149;">{{ ls.streak }}L</span>
               </td>
               <td>
-                <span style="color:#8b949e;font-size:.78rem;">
+                <span style="color:#a39586;font-size:.78rem;">
                   {% if ls.start_year == ls.end_year %}
                     {{ ls.start_year }} R{{ ls.start_round }}&ndash;R{{ ls.end_round }}
                   {% else %}
@@ -626,7 +626,7 @@
   {# Highest individual player scores #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-person-fill" style="color:#58a6ff;"></i>
+      <i class="bi bi-person-fill" style="color:#f5b940;"></i>
       <h5>Highest Individual Scores</h5>
     </div>
     <div class="rec-card-body">
@@ -649,11 +649,11 @@
                 {% if loop.index == 1 %}
                   <span class="champ-badge">1</span>
                 {% else %}
-                  <span style="color:#484f58;">{{ loop.index }}</span>
+                  <span style="color:#56504a;">{{ loop.index }}</span>
                 {% endif %}
               </td>
               <td class="rec-name">{{ s.player_name }}</td>
-              <td style="color:#8b949e;">{{ s.team_name }}</td>
+              <td style="color:#a39586;">{{ s.team_name }}</td>
               <td class="text-center">R{{ s.round }}</td>
               <td class="text-center rec-year">{{ s.year }}</td>
               <td class="text-end rec-score" style="font-size:.95rem;">{{ '%.0f'|format(s.score) }}</td>
@@ -670,7 +670,7 @@
   {# Most 100+ scores in a season #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-1-circle-fill" style="color:#3fb950;"></i>
+      <i class="bi bi-1-circle-fill" style="color:#dbcf94;"></i>
       <h5>Most 100+ Scores in a Season</h5>
     </div>
     <div class="rec-card-body">
@@ -690,9 +690,9 @@
             <tr>
               <td>
                 {% if loop.index == 1 %}
-                  <span class="champ-badge" style="background:rgba(63,185,80,.15);color:#3fb950;">1</span>
+                  <span class="champ-badge" style="background:rgba(219,207,148,.15);color:#dbcf94;">1</span>
                 {% else %}
-                  <span style="color:#484f58;">{{ loop.index }}</span>
+                  <span style="color:#56504a;">{{ loop.index }}</span>
                 {% endif %}
               </td>
               <td class="rec-name">{{ h.player_name }}</td>
@@ -712,7 +712,7 @@
   {# Highest season average (min 10 games) #}
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-graph-up" style="color:#f0883e;"></i>
+      <i class="bi bi-graph-up" style="color:#f0763e;"></i>
       <h5>Highest Season Average (min 10 games)</h5>
     </div>
     <div class="rec-card-body">
@@ -732,9 +732,9 @@
             <tr>
               <td>
                 {% if loop.index == 1 %}
-                  <span class="champ-badge" style="background:rgba(240,136,62,.15);color:#f0883e;">1</span>
+                  <span class="champ-badge" style="background:rgba(240,118,62,.15);color:#f0763e;">1</span>
                 {% else %}
-                  <span style="color:#484f58;">{{ loop.index }}</span>
+                  <span style="color:#56504a;">{{ loop.index }}</span>
                 {% endif %}
               </td>
               <td class="rec-name">{{ a.player_name }}</td>
@@ -802,31 +802,31 @@
 
         <div id="h2h-same" style="display:none;">
           <div class="rec-empty" style="padding:24px;">
-            <p style="color:#8b949e;">Please select two different teams.</p>
+            <p style="color:#a39586;">Please select two different teams.</p>
           </div>
         </div>
 
         {# Rivalry fun facts #}
         {% if rivalry_facts or closest_rivalry %}
         <div class="mt-4" style="margin-bottom:20px;">
-          <h6 style="font-size:.82rem;font-weight:600;color:#8b949e;margin-bottom:12px;">
+          <h6 style="font-size:.82rem;font-weight:600;color:#a39586;margin-bottom:12px;">
             <i class="bi bi-fire me-1"></i>Rivalry Fun Facts
           </h6>
           {% if closest_rivalry %}
           <div style="background:rgba(188,140,255,.06);border:1px solid rgba(188,140,255,.15);border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
             <i class="bi bi-people-fill" style="color:#bc8cff;font-size:1.1rem;"></i>
             <div>
-              <div style="font-size:.8rem;font-weight:600;color:#e6edf3;">Closest Rivalry</div>
-              <div style="font-size:.75rem;color:#8b949e;">
+              <div style="font-size:.8rem;font-weight:600;color:#efedea;">Closest Rivalry</div>
+              <div style="font-size:.75rem;color:#a39586;">
                 {{ closest_rivalry.team1 }} vs {{ closest_rivalry.team2 }} — {{ closest_rivalry.record }} across {{ closest_rivalry.total }} games
               </div>
             </div>
           </div>
           {% endif %}
           {% for fact in rivalry_facts %}
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:6px;background:{% if fact.type == 'dominance' %}rgba(63,185,80,.05);border:1px solid rgba(63,185,80,.12){% elif fact.type == 'unbeaten' %}rgba(210,153,34,.06);border:1px solid rgba(210,153,34,.15){% else %}rgba(88,166,255,.05);border:1px solid rgba(88,166,255,.12){% endif %};border-radius:8px;font-size:.78rem;">
-            <i class="bi {% if fact.type == 'dominance' %}bi-trophy-fill{% elif fact.type == 'unbeaten' %}bi-shield-fill-check{% else %}bi-lightning-fill{% endif %}" style="color:{% if fact.type == 'dominance' %}#3fb950{% elif fact.type == 'unbeaten' %}#d29922{% else %}#58a6ff{% endif %};"></i>
-            <span style="color:#c9d1d9;">{{ fact.text }}</span>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:6px;background:{% if fact.type == 'dominance' %}rgba(219,207,148,.05);border:1px solid rgba(219,207,148,.12){% elif fact.type == 'unbeaten' %}rgba(210,104,34,.06);border:1px solid rgba(210,104,34,.15){% else %}rgba(245,185,64,.05);border:1px solid rgba(245,185,64,.12){% endif %};border-radius:8px;font-size:.78rem;">
+            <i class="bi {% if fact.type == 'dominance' %}bi-trophy-fill{% elif fact.type == 'unbeaten' %}bi-shield-fill-check{% else %}bi-lightning-fill{% endif %}" style="color:{% if fact.type == 'dominance' %}#dbcf94{% elif fact.type == 'unbeaten' %}#d26822{% else %}#f5b940{% endif %};"></i>
+            <span style="color:#d7d1cb;">{{ fact.text }}</span>
           </div>
           {% endfor %}
         </div>
@@ -834,7 +834,7 @@
 
         {# Full H2H matrix table (desktop only — too wide for phones) #}
         <div class="mt-4 d-none d-lg-block">
-          <h6 style="font-size:.82rem;font-weight:600;color:#8b949e;margin-bottom:12px;">
+          <h6 style="font-size:.82rem;font-weight:600;color:#a39586;margin-bottom:12px;">
             <i class="bi bi-grid-3x3-gap me-1"></i>Full Head-to-Head Matrix
           </h6>
           <div class="table-responsive">
@@ -853,16 +853,16 @@
                   <td class="rec-name" style="white-space:nowrap;">{{ t1.name }}</td>
                   {% for t2 in teams|sort(attribute='name') %}
                     {% if t1.id == t2.id %}
-                      <td class="text-center" style="background:rgba(33,38,45,.5);color:#30363d;">&mdash;</td>
+                      <td class="text-center" style="background:rgba(39,37,34,.5);color:#373330;">&mdash;</td>
                     {% else %}
                       {% set key = '%d-%d'|format(t1.id, t2.id) %}
                       {% if key in h2h_data %}
                         {% set rec = h2h_data[key] %}
-                        <td class="text-center" style="font-weight:600;{% if rec.wins > rec.losses %}color:#3fb950;{% elif rec.losses > rec.wins %}color:#f85149;{% else %}color:#d29922;{% endif %}">
+                        <td class="text-center" style="font-weight:600;{% if rec.wins > rec.losses %}color:#dbcf94;{% elif rec.losses > rec.wins %}color:#f85149;{% else %}color:#d26822;{% endif %}">
                           {{ rec.wins }}-{{ rec.draws }}-{{ rec.losses }}
                         </td>
                       {% else %}
-                        <td class="text-center" style="color:#30363d;">0-0-0</td>
+                        <td class="text-center" style="color:#373330;">0-0-0</td>
                       {% endif %}
                     {% endif %}
                   {% endfor %}
@@ -871,7 +871,7 @@
               </tbody>
             </table>
           </div>
-          <p style="font-size:.68rem;color:#30363d;margin-top:8px;">Format: W-D-L (from row team's perspective)</p>
+          <p style="font-size:.68rem;color:#373330;margin-top:8px;">Format: W-D-L (from row team's perspective)</p>
         </div>
       {% else %}
         <div class="rec-empty">
@@ -889,7 +889,7 @@
 <div class="rec-panel" id="panel-alltime">
   <div class="rec-card">
     <div class="rec-card-header">
-      <i class="bi bi-bar-chart-fill" style="color:#58a6ff;"></i>
+      <i class="bi bi-bar-chart-fill" style="color:#f5b940;"></i>
       <h5>All-Time Standings</h5>
     </div>
     <div class="rec-card-body">
@@ -897,18 +897,18 @@
         {# ── Mobile: compact cards ── #}
         <div class="d-lg-none" style="padding:0;">
           {% for s in alltime_standings %}
-            <div style="display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid rgba(48,54,61,.5);">
-              <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-weight:800;font-size:.8rem;flex-shrink:0;{% if loop.index == 1 %}background:rgba(255,215,0,.15);color:#FFD700;{% elif loop.index == 2 %}background:rgba(192,192,192,.1);color:#C0C0C0;{% elif loop.index == 3 %}background:rgba(205,127,50,.1);color:#CD7F32;{% else %}color:#484f58;{% endif %}">{{ loop.index }}</span>
+            <div style="display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid rgba(55,51,48,.5);">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-weight:800;font-size:.8rem;flex-shrink:0;{% if loop.index == 1 %}background:rgba(249,192,6,.15);color:#f9c006;{% elif loop.index == 2 %}background:rgba(192,192,192,.1);color:#c0c0c0;{% elif loop.index == 3 %}background:rgba(205,112,50,.1);color:#cd7032;{% else %}color:#56504a;{% endif %}">{{ loop.index }}</span>
               <div style="flex:1;min-width:0;">
-                <div style="font-weight:700;font-size:.85rem;color:#e6edf3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.team_name }}</div>
-                <div style="font-size:.68rem;color:#8b949e;display:flex;gap:.5rem;align-items:center;margin-top:1px;">
+                <div style="font-weight:700;font-size:.85rem;color:#efedea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.team_name }}</div>
+                <div style="font-size:.68rem;color:#a39586;display:flex;gap:.5rem;align-items:center;margin-top:1px;">
                   <span>{{ s.wins }}-{{ s.losses }}{% if s.draws %}-{{ s.draws }}{% endif %}</span>
                   <span>{{ s.seasons }} szn{{ 's' if s.seasons != 1 }}</span>
                 </div>
               </div>
               <div style="text-align:right;flex-shrink:0;">
-                <div style="font-weight:700;font-size:.88rem;{% if s.win_pct >= 60 %}color:#3fb950;{% elif s.win_pct < 40 %}color:#f85149;{% else %}color:#e6edf3;{% endif %}">{{ '%.1f'|format(s.win_pct) }}%</div>
-                <div style="font-size:.6rem;color:#484f58;">win rate</div>
+                <div style="font-weight:700;font-size:.88rem;{% if s.win_pct >= 60 %}color:#dbcf94;{% elif s.win_pct < 40 %}color:#f85149;{% else %}color:#efedea;{% endif %}">{{ '%.1f'|format(s.win_pct) }}%</div>
+                <div style="font-size:.6rem;color:#56504a;">win rate</div>
               </div>
             </div>
           {% endfor %}
@@ -938,11 +938,11 @@
                 {% if loop.index == 1 %}
                   <span class="champ-badge">1</span>
                 {% elif loop.index == 2 %}
-                  <span class="champ-badge" style="background:rgba(192,192,192,.1);color:#C0C0C0;">2</span>
+                  <span class="champ-badge" style="background:rgba(192,192,192,.1);color:#c0c0c0;">2</span>
                 {% elif loop.index == 3 %}
-                  <span class="champ-badge" style="background:rgba(205,127,50,.1);color:#CD7F32;">3</span>
+                  <span class="champ-badge" style="background:rgba(205,112,50,.1);color:#cd7032;">3</span>
                 {% else %}
-                  <span style="color:#484f58;">{{ loop.index }}</span>
+                  <span style="color:#56504a;">{{ loop.index }}</span>
                 {% endif %}
               </td>
               <td class="rec-name">{{ s.team_name }}</td>
@@ -952,17 +952,17 @@
               <td class="text-center rec-loss">{{ s.losses }}</td>
               <td class="text-center">{{ s.draws }}</td>
               <td class="text-center">
-                <span style="{% if s.win_pct >= 60 %}color:#3fb950;{% elif s.win_pct < 40 %}color:#f85149;{% else %}color:#e6edf3;{% endif %}font-weight:600;">
+                <span style="{% if s.win_pct >= 60 %}color:#dbcf94;{% elif s.win_pct < 40 %}color:#f85149;{% else %}color:#efedea;{% endif %}font-weight:600;">
                   {{ '%.1f'|format(s.win_pct) }}%
                 </span>
                 <span class="winpct-bar">
-                  <span class="winpct-fill" style="width:{{ s.win_pct }}%;{% if s.win_pct >= 60 %}background:#3fb950;{% elif s.win_pct < 40 %}background:#f85149;{% else %}background:#58a6ff;{% endif %}"></span>
+                  <span class="winpct-fill" style="width:{{ s.win_pct }}%;{% if s.win_pct >= 60 %}background:#dbcf94;{% elif s.win_pct < 40 %}background:#f85149;{% else %}background:#f5b940;{% endif %}"></span>
                 </span>
               </td>
               <td class="text-end">{{ '%.0f'|format(s.points_for) }}</td>
               <td class="text-end">{{ '%.0f'|format(s.points_against) }}</td>
               <td class="text-end">
-                <span style="{% if s.percentage >= 110 %}color:#3fb950;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}font-weight:500;">
+                <span style="{% if s.percentage >= 110 %}color:#dbcf94;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}font-weight:500;">
                   {% if s.percentage > 0 %}{{ '%.1f'|format(s.percentage) }}%{% else %}&ndash;{% endif %}
                 </span>
               </td>

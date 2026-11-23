@@ -21,13 +21,13 @@ const CSS = `
 .dpc-h h5 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--kl-text-heading); }
 .dpc-h p { margin: 2px 0 0; font-size: .8rem; color: var(--kl-text-secondary); }
 .dpc-h > div { flex: 1; min-width: 200px; }
-.dpc-save { border: 0; border-radius: 9px; padding: 8px 16px; font-size: .84rem; font-weight: 700; background: #58a6ff; color: #04111f; }
+.dpc-save { border: 0; border-radius: 9px; padding: 8px 16px; font-size: .84rem; font-weight: 700; background: #f5b940; color: #12110f; }
 .dpc-save:disabled { background: var(--kl-bg-elevated); color: var(--kl-text-muted); }
-.dpc-save:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
+.dpc-save:focus-visible { outline: 2px solid #f5b940; outline-offset: 2px; }
 .dpc-note { margin: 12px 18px 0; padding: 9px 12px; border-radius: 9px; font-size: .8rem; display: flex; gap: 8px; align-items: flex-start; }
-.dpc-note.warn { background: rgba(210,153,34,.08); color: #e3b341; border: 1px solid rgba(210,153,34,.25); }
+.dpc-note.warn { background: rgba(210,104,34,.08); color: #e38241; border: 1px solid rgba(210,104,34,.25); }
 .dpc-note.err { background: rgba(248,81,73,.08); color: #ff7b72; border: 1px solid rgba(248,81,73,.25); }
-.dpc-note.ok { background: rgba(63,185,80,.08); color: #56d364; border: 1px solid rgba(63,185,80,.25); }
+.dpc-note.ok { background: rgba(219,207,148,.08); color: #e2d48e; border: 1px solid rgba(219,207,148,.25); }
 `
 
 /** This year's supplemental draft plan, edited where the draft is created. */

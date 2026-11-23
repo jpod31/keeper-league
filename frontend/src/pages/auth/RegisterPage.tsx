@@ -77,8 +77,8 @@ export function RegisterPage() {
             {loading ? 'Creating...' : 'Create Account'}
           </button>
         </form>
-        <p className="text-center mt-4 mb-0" style={{ fontSize: '.85rem', color: '#8b949e' }}>
-          Already have an account? <Link to="/auth/login" style={{ color: '#58a6ff', textDecoration: 'none' }}>Sign in</Link>
+        <p className="text-center mt-4 mb-0" style={{ fontSize: '.85rem', color: '#a39586' }}>
+          Already have an account? <Link to="/auth/login" style={{ color: '#f5b940', textDecoration: 'none' }}>Sign in</Link>
         </p>
       </div>
     </div>

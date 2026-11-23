@@ -194,7 +194,8 @@ def _compute_profile_tags_inner(players):
         # Use current season data — require meaningful sample (8+ games)
         # to prevent small-sample inflation driving tag decisions.
         if sc > 0 and games >= 8:
-            cur_year = config.CURRENT_YEAR
+            from models.years import stats_year
+            cur_year = stats_year()
             if not any(y == cur_year for y, _, _, _ in yearly_data):
                 yearly_data.append((cur_year, sc, games, 0))
 

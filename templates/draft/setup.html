@@ -16,7 +16,7 @@
 
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sort-numeric-down me-2" style="color:#8b949e;"></i>Draft Order</h5>
+        <h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-sort-numeric-down me-2" style="color:#a39586;"></i>Draft Order</h5>
         <div class="d-flex gap-2">
           <form method="POST" class="d-inline">
             <input type="hidden" name="action" value="randomize">
@@ -65,7 +65,7 @@
     </div>
 
     <div class="card mb-4">
-      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-gear me-2" style="color:#8b949e;"></i>Configuration <span class="text-secondary" style="font-size:.7rem;font-weight:400;">(set at league creation)</span></h5></div>
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-gear me-2" style="color:#a39586;"></i>Configuration <span class="text-secondary" style="font-size:.7rem;font-weight:400;">(set at league creation)</span></h5></div>
       <div class="card-body">
         <div class="info-row"><span class="info-label">Draft Type</span><span class="info-value text-capitalize">{{ league.draft_type }}</span></div>
         <div class="info-row"><span class="info-label">Rounds</span><span class="info-value">{{ league.squad_size }}</span></div>
@@ -113,15 +113,15 @@
               </div>
             </div>
             {% if session.scheduled_start %}
-              <div class="mt-2 p-3" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;">
+              <div class="mt-2 p-3" style="background:#121110;border:1px solid #373330;border-radius:8px;">
                 <div class="d-flex align-items-center gap-2 mb-2">
-                  <i class="bi bi-calendar-event" style="color:#d29922;"></i>
+                  <i class="bi bi-calendar-event" style="color:#d26822;"></i>
                   <span style="font-size:.85rem;font-weight:600;">Scheduled Start</span>
                 </div>
-                <div style="font-size:.9rem;color:#c9d1d9;" id="scheduled-time">
+                <div style="font-size:.9rem;color:#d7d1cb;" id="scheduled-time">
                   {{ session.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') if session.scheduled_start else 'Not set' }}
                 </div>
-                <div id="countdown-display" class="mt-2" style="font-size:1.5rem;font-weight:700;color:#58a6ff;"></div>
+                <div id="countdown-display" class="mt-2" style="font-size:1.5rem;font-weight:700;color:#f5b940;"></div>
               </div>
               <script>
                 (function() {
@@ -131,7 +131,7 @@
                     const now = new Date();
                     const diff = target - now;
                     if (diff <= 0) {
-                      el.innerHTML = '<span style="color:#3fb950;">Draft time has arrived!</span>';
+                      el.innerHTML = '<span style="color:#dbcf94;">Draft time has arrived!</span>';
                       return;
                     }
                     const d = Math.floor(diff / 86400000);
@@ -173,7 +173,7 @@
             <div class="d-flex align-items-center gap-3">
               <span class="status-pill status-active">In Progress</span>
               {% if session.draft_round_type == 'supplemental' %}
-                <span class="badge" style="background:rgba(45,212,191,.15);color:#2dd4bf;font-size:.7rem;">Supplemental</span>
+                <span class="badge" style="background:rgba(185,145,84,.15);color:#b99154;font-size:.7rem;">Supplemental</span>
               {% endif %}
             </div>
             <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i>Enter Draft Room</a>
@@ -183,7 +183,7 @@
             <div class="d-flex align-items-center gap-3">
               <span class="status-pill status-pending">Paused</span>
               {% if session.draft_round_type == 'supplemental' %}
-                <span class="badge" style="background:rgba(45,212,191,.15);color:#2dd4bf;font-size:.7rem;">Supplemental</span>
+                <span class="badge" style="background:rgba(185,145,84,.15);color:#b99154;font-size:.7rem;">Supplemental</span>
               {% endif %}
             </div>
             <a href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i>Enter Draft Room</a>
@@ -195,7 +195,7 @@
         {% endif %}
 
         {% if can_restart %}
-          <div class="mt-3 pt-3" style="border-top:1px solid #21262d;">
+          <div class="mt-3 pt-3" style="border-top:1px solid #272522;">
             <form method="POST" onsubmit="return confirm('Are you sure you want to restart the draft?\n\nThis will DELETE the current draft session, remove all drafted players from rosters, and take you to settings where you can make changes before re-drafting.\n\nThis cannot be undone.');">
               <input type="hidden" name="action" value="restart_draft">
               <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -212,22 +212,22 @@
     {% if initial_completed and season_config and season_config.mid_season_draft_enabled %}
       {# Active supplemental draft — scheduled or ready #}
       {% if supp_session and supp_session.status == 'scheduled' and session and session.id == supp_session.id %}
-        <div class="card mt-4" style="border-color:#2dd4bf;">
-          <div class="card-header" style="background:rgba(45,212,191,.08);border-bottom:1px solid rgba(45,212,191,.2);">
+        <div class="card mt-4" style="border-color:#b99154;">
+          <div class="card-header" style="background:rgba(185,145,84,.08);border-bottom:1px solid rgba(185,145,84,.2);">
             <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-              <i class="bi bi-calendar-event me-2" style="color:#2dd4bf;"></i>Supplemental Draft Scheduled
+              <i class="bi bi-calendar-event me-2" style="color:#b99154;"></i>Supplemental Draft Scheduled
             </h5>
           </div>
           <div class="card-body">
             {% if supp_session.scheduled_start %}
-              <div class="p-3 mb-3" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;">
+              <div class="p-3 mb-3" style="background:#121110;border:1px solid #373330;border-radius:8px;">
                 <div class="d-flex align-items-center gap-2 mb-2">
-                  <i class="bi bi-clock-history" style="color:#d29922;font-size:1.1rem;"></i>
-                  <span style="font-size:.9rem;font-weight:600;color:#c9d1d9;">
+                  <i class="bi bi-clock-history" style="color:#d26822;font-size:1.1rem;"></i>
+                  <span style="font-size:.9rem;font-weight:600;color:#d7d1cb;">
                     {{ supp_session.scheduled_start.strftime('%A, %d %B %Y at %I:%M %p') }}
                   </span>
                 </div>
-                <div id="supp-countdown" style="font-size:1.8rem;font-weight:700;color:#2dd4bf;"></div>
+                <div id="supp-countdown" style="font-size:1.8rem;font-weight:700;color:#b99154;"></div>
                 <div class="text-secondary mt-1" style="font-size:.75rem;">{{ supp_session.total_rounds }} rounds &middot; {{ league.teams|length }} teams</div>
               </div>
               <script>
@@ -238,7 +238,7 @@
                     const now = new Date();
                     const diff = target - now;
                     if (diff <= 0) {
-                      el.innerHTML = '<span style="color:#3fb950;">Draft time has arrived!</span>';
+                      el.innerHTML = '<span style="color:#dbcf94;">Draft time has arrived!</span>';
                       return;
                     }
                     const d = Math.floor(diff / 86400000);
@@ -276,7 +276,7 @@
         <div class="card mt-4">
           <div class="card-header">
             <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-              <i class="bi bi-plus-circle me-2" style="color:#2dd4bf;"></i>Schedule Supplemental Draft
+              <i class="bi bi-plus-circle me-2" style="color:#b99154;"></i>Schedule Supplemental Draft
             </h5>
           </div>
           <div class="card-body">
@@ -319,8 +319,8 @@
     <div class="card mt-4">
       <div class="card-header">
         <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-          <i class="bi bi-robot me-2" style="color:#f0883e;"></i>Mock Draft
-          <span class="badge ms-2" style="background:rgba(240,136,62,.15);color:#f0883e;font-size:.6rem;vertical-align:middle;">SIMULATION</span>
+          <i class="bi bi-robot me-2" style="color:#f0763e;"></i>Mock Draft
+          <span class="badge ms-2" style="background:rgba(240,118,62,.15);color:#f0763e;font-size:.6rem;vertical-align:middle;">SIMULATION</span>
         </h5>
       </div>
       <div class="card-body">
@@ -422,7 +422,7 @@
   align-items: center;
   justify-content: center;
   width: 28px; height: 28px;
-  background: #21262d;
+  background: #272522;
   font-size: .75rem;
   font-weight: 700;
   border-radius: 6px;

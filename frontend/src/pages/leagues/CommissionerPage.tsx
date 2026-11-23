@@ -60,47 +60,47 @@ interface CommissionerData {
 }
 
 const PHASE_BADGE: Record<PhaseKey, { bg: string; label: string }> = {
-  midseason: { bg: '#d29922', label: 'Midseason' },
-  offseason: { bg: '#8b949e', label: 'Offseason' },
-  regular: { bg: '#3fb950', label: 'Regular' },
+  midseason: { bg: '#d26822', label: 'Midseason' },
+  offseason: { bg: '#a39586', label: 'Offseason' },
+  regular: { bg: '#dbcf94', label: 'Regular' },
   finals: { bg: '#f85149', label: 'Finals' },
-  pre_season: { bg: '#58a6ff', label: 'Pre Season' },
+  pre_season: { bg: '#f5b940', label: 'Pre Season' },
 }
 
 const SUMMARY_CSS = `
 .comm-draftdate {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 8px 12px; border-radius: 8px;
-  background: rgba(88,166,255,.06);
-  border: 1px solid rgba(88,166,255,.22);
+  background: rgba(245,185,64,.06);
+  border: 1px solid rgba(245,185,64,.22);
 }
 .comm-draftdate label {
   margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
-  text-transform: uppercase; color: #8b949e;
+  text-transform: uppercase; color: #a39586;
 }
 .comm-draftdate-input {
-  background: #0d1117; border: 1px solid #30363d; color: #e6edf3;
+  background: #121110; border: 1px solid #373330; color: #efedea;
   border-radius: 6px; padding: .3rem .5rem; font-size: .8rem;
   color-scheme: dark;
 }
 .comm-poolstate {
   display: flex; align-items: center; width: 100%;
-  font-size: .76rem; color: #e0a458;
-  background: rgba(210,153,34,.08); border: 1px solid rgba(210,153,34,.25);
+  font-size: .76rem; color: #e09658;
+  background: rgba(210,104,34,.08); border: 1px solid rgba(210,104,34,.25);
   border-radius: 8px; padding: 7px 12px;
 }
-.comm-poolstate.open { color: #3fb950; background: rgba(63,185,80,.08); border-color: rgba(63,185,80,.25); }
+.comm-poolstate.open { color: #dbcf94; background: rgba(219,207,148,.08); border-color: rgba(219,207,148,.25); }
 .comm-summary-card { background: var(--kl-bg-card); border: 1px solid var(--kl-border); border-radius: 10px; padding: 14px; text-align: center; }
-.comm-summary-pending { border-color: rgba(210,153,34,.35); background: rgba(210,153,34,.05); }
-.comm-summary-active  { border-color: rgba(63,185,80,.3); background: rgba(63,185,80,.04); }
-.comm-summary-trades  { border-color: rgba(88,166,255,.3); background: rgba(88,166,255,.04); }
-.comm-summary-num { font-size: 1.5rem; font-weight: 800; color: #e6edf3; line-height: 1; }
-.comm-summary-label { font-size: .7rem; color: #8b949e; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
-.comm-ltil-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #21262d; }
+.comm-summary-pending { border-color: rgba(210,104,34,.35); background: rgba(210,104,34,.05); }
+.comm-summary-active  { border-color: rgba(219,207,148,.3); background: rgba(219,207,148,.04); }
+.comm-summary-trades  { border-color: rgba(245,185,64,.3); background: rgba(245,185,64,.04); }
+.comm-summary-num { font-size: 1.5rem; font-weight: 800; color: #efedea; line-height: 1; }
+.comm-summary-label { font-size: .7rem; color: #a39586; margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.comm-ltil-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #272522; }
 .comm-ltil-row:last-child { border-bottom: none; }
 .comm-ltil-info { flex: 1; min-width: 0; }
-.comm-ltil-player { font-size: .85rem; font-weight: 600; color: #e6edf3; }
-.comm-ltil-meta { font-size: .72rem; color: #8b949e; margin-top: 2px; }
+.comm-ltil-player { font-size: .85rem; font-weight: 600; color: #efedea; }
+.comm-ltil-meta { font-size: .72rem; color: #a39586; margin-top: 2px; }
 .comm-ltil-actions { display: flex; gap: 6px; flex-shrink: 0; }
 `
 
@@ -293,7 +293,7 @@ export function CommissionerPage() {
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Admin / Commissioner
         </div>
         <div className="d-flex align-items-center mb-0">
-          <i className="bi bi-shield-lock me-2" style={{ fontSize: '1.4rem', color: '#d29922' }}></i>
+          <i className="bi bi-shield-lock me-2" style={{ fontSize: '1.4rem', color: '#d26822' }}></i>
           <h4 className="mb-0 fw-bold" style={{ fontSize: '1.15rem' }}>Commissioner Hub</h4>
         </div>
       </div>
@@ -305,10 +305,10 @@ export function CommissionerPage() {
       )}
 
       {/* Season Controls */}
-      <div className="card mb-4" style={{ borderColor: 'rgba(210,153,34,.35)' }}>
-        <div className="card-header d-flex justify-content-between align-items-center" style={{ background: 'rgba(210,153,34,.08)', borderBottom: '1px solid rgba(210,153,34,.2)' }}>
+      <div className="card mb-4" style={{ borderColor: 'rgba(210,104,34,.35)' }}>
+        <div className="card-header d-flex justify-content-between align-items-center" style={{ background: 'rgba(210,104,34,.08)', borderBottom: '1px solid rgba(210,104,34,.2)' }}>
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-            <i className="bi bi-calendar-range me-2" style={{ color: '#d29922' }}></i>Season Controls
+            <i className="bi bi-calendar-range me-2" style={{ color: '#d26822' }}></i>Season Controls
           </h5>
           <span className="badge" style={{ background: phaseBadge.bg, fontSize: '.7rem' }}>{phaseBadge.label}</span>
         </div>
@@ -319,7 +319,7 @@ export function CommissionerPage() {
                 <i className="bi bi-exclamation-triangle-fill" style={{ color: '#f85149' }}></i>
                 <span style={{ fontSize: '.85rem', fontWeight: 600, color: '#f85149' }}>Delist Period Open</span>
                 {delist.closes_at && (
-                  <span className="ms-auto" style={{ fontSize: '.75rem', color: '#8b949e' }}>
+                  <span className="ms-auto" style={{ fontSize: '.75rem', color: '#a39586' }}>
                     Closes {formatDate(delist.closes_at)}
                   </span>
                 )}
@@ -331,22 +331,22 @@ export function CommissionerPage() {
                       <div
                         className="d-flex justify-content-between align-items-center px-2 py-1"
                         style={{
-                          background: tp.met ? 'rgba(63,185,80,.08)' : 'rgba(139,148,158,.05)',
-                          border: `1px solid ${tp.met ? 'rgba(63,185,80,.2)' : 'rgba(139,148,158,.1)'}`,
+                          background: tp.met ? 'rgba(219,207,148,.08)' : 'rgba(163,149,134,.05)',
+                          border: `1px solid ${tp.met ? 'rgba(219,207,148,.2)' : 'rgba(163,149,134,.1)'}`,
                           borderRadius: 6,
                           fontSize: '.75rem',
                         }}
                       >
-                        <span style={{ color: '#c9d1d9' }}>{tp.name}</span>
+                        <span style={{ color: '#d7d1cb' }}>{tp.name}</span>
                         <span
-                          style={{ color: tp.met ? '#3fb950' : '#f85149', fontWeight: 600 }}
+                          style={{ color: tp.met ? '#dbcf94' : '#f85149', fontWeight: 600 }}
                           title={tp.target_size != null
                             ? `${tp.squad_size} listed · must finish at ${tp.target_size}`
                             : undefined}
                         >
                           {tp.count}/{tp.required ?? delist.min_delists}
                           {!tp.met && tp.remaining > 0 && (
-                            <span style={{ color: '#8b949e', fontWeight: 500 }}>
+                            <span style={{ color: '#a39586', fontWeight: 500 }}>
                               {' '}({tp.squad_size}→{tp.target_size})
                             </span>
                           )}
@@ -481,14 +481,14 @@ export function CommissionerPage() {
             )}
 
             {current_phase === 'pre_season' && (
-              <span style={{ fontSize: '.8rem', color: '#8b949e' }}>Pre-season — set up your draft to get started.</span>
+              <span style={{ fontSize: '.8rem', color: '#a39586' }}>Pre-season — set up your draft to get started.</span>
             )}
             {current_phase === 'regular' && (
-              <span style={{ fontSize: '.8rem', color: '#8b949e' }}>Regular season in progress. Use settings to trigger midseason or offseason.</span>
+              <span style={{ fontSize: '.8rem', color: '#a39586' }}>Regular season in progress. Use settings to trigger midseason or offseason.</span>
             )}
           </div>
 
-          <div className="d-flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #21262d' }}>
+          <div className="d-flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #272522' }}>
             <Link to={`/leagues/${leagueId}/draft/setup`} className="btn btn-sm btn-outline-secondary">
               <i className="bi bi-list-check me-1"></i>Draft Setup
             </Link>
@@ -522,15 +522,15 @@ export function CommissionerPage() {
       </div>
 
       {/* Pending LTIL */}
-      <div className="card mb-4" style={{ borderColor: 'rgba(210,153,34,.35)' }}>
-        <div className="card-header" style={{ background: 'rgba(210,153,34,.08)', borderBottom: '1px solid rgba(210,153,34,.2)' }}>
+      <div className="card mb-4" style={{ borderColor: 'rgba(210,104,34,.35)' }}>
+        <div className="card-header" style={{ background: 'rgba(210,104,34,.08)', borderBottom: '1px solid rgba(210,104,34,.2)' }}>
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-            <i className="bi bi-hourglass-split me-2" style={{ color: '#d29922' }}></i>Pending LTIL Requests
+            <i className="bi bi-hourglass-split me-2" style={{ color: '#d26822' }}></i>Pending LTIL Requests
           </h5>
         </div>
         <div className="card-body p-0">
           {pending_ltil.length === 0 ? (
-            <div className="text-center py-3" style={{ fontSize: '.8rem', color: '#8b949e' }}>No pending LTIL requests</div>
+            <div className="text-center py-3" style={{ fontSize: '.8rem', color: '#a39586' }}>No pending LTIL requests</div>
           ) : (
             pending_ltil.map(lt => (
               <div key={lt.id} className="comm-ltil-row">
@@ -555,15 +555,15 @@ export function CommissionerPage() {
       </div>
 
       {/* Active LTIL */}
-      <div className="card mb-4" style={{ borderColor: 'rgba(63,185,80,.2)' }}>
-        <div className="card-header" style={{ background: 'rgba(63,185,80,.06)', borderBottom: '1px solid rgba(63,185,80,.15)' }}>
+      <div className="card mb-4" style={{ borderColor: 'rgba(219,207,148,.2)' }}>
+        <div className="card-header" style={{ background: 'rgba(219,207,148,.06)', borderBottom: '1px solid rgba(219,207,148,.15)' }}>
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-            <i className="bi bi-bandaid me-2" style={{ color: '#3fb950' }}></i>Active LTIL Entries
+            <i className="bi bi-bandaid me-2" style={{ color: '#dbcf94' }}></i>Active LTIL Entries
           </h5>
         </div>
         <div className="card-body p-0">
           {active_ltil.length === 0 ? (
-            <div className="text-center py-3" style={{ fontSize: '.8rem', color: '#8b949e' }}>No active LTIL entries</div>
+            <div className="text-center py-3" style={{ fontSize: '.8rem', color: '#a39586' }}>No active LTIL entries</div>
           ) : (
             active_ltil.map(lt => (
               <div key={lt.id} className="comm-ltil-row">
@@ -585,19 +585,19 @@ export function CommissionerPage() {
       </div>
 
       {/* Commissioner Tools */}
-      <div className="card mb-4" style={{ borderColor: 'rgba(210,153,34,.3)' }}>
-        <div className="card-header" style={{ background: 'rgba(210,153,34,.08)', borderBottom: '1px solid rgba(210,153,34,.2)' }}>
+      <div className="card mb-4" style={{ borderColor: 'rgba(210,104,34,.3)' }}>
+        <div className="card-header" style={{ background: 'rgba(210,104,34,.08)', borderBottom: '1px solid rgba(210,104,34,.2)' }}>
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-            <i className="bi bi-tools me-2" style={{ color: '#d29922' }}></i>Commissioner Tools
+            <i className="bi bi-tools me-2" style={{ color: '#d26822' }}></i>Commissioner Tools
           </h5>
         </div>
         <div className="card-body">
           {/* Delist a player */}
-          <div className="mb-4 pb-3" style={{ borderBottom: '1px solid #21262d' }}>
+          <div className="mb-4 pb-3" style={{ borderBottom: '1px solid #272522' }}>
             <h6 className="fw-bold mb-2" style={{ fontSize: '.85rem', color: '#f85149' }}>
               <i className="bi bi-person-dash me-2"></i>Delist Player
             </h6>
-            <p style={{ fontSize: '.75rem', color: '#8b949e', marginBottom: 10 }}>
+            <p style={{ fontSize: '.75rem', color: '#a39586', marginBottom: 10 }}>
               Remove a player from a team's roster (e.g. incorrect draft pick). Opens up a roster spot.
             </p>
             <div className="row g-2 align-items-end">
@@ -625,10 +625,10 @@ export function CommissionerPage() {
 
           {/* Force move */}
           <div>
-            <h6 className="fw-bold mb-2" style={{ fontSize: '.85rem', color: '#58a6ff' }}>
+            <h6 className="fw-bold mb-2" style={{ fontSize: '.85rem', color: '#f5b940' }}>
               <i className="bi bi-arrow-left-right me-2"></i>Force Move Player
             </h6>
-            <p style={{ fontSize: '.75rem', color: '#8b949e', marginBottom: 10 }}>
+            <p style={{ fontSize: '.75rem', color: '#a39586', marginBottom: 10 }}>
               Move a player between teams (e.g. correcting a misplaced draft pick). No trade history created.
             </p>
             <div className="row g-2 align-items-end">
@@ -668,7 +668,7 @@ export function CommissionerPage() {
         <div className="card mb-4">
           <div className="card-header" style={{ background: 'var(--kl-bg-elevated)', borderBottom: '1px solid var(--kl-border)' }}>
             <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-              <i className="bi bi-clock-history me-2" style={{ color: '#8b949e' }}></i>Recent LTIL History
+              <i className="bi bi-clock-history me-2" style={{ color: '#a39586' }}></i>Recent LTIL History
             </h5>
           </div>
           <div className="card-body p-0">
@@ -683,7 +683,7 @@ export function CommissionerPage() {
                       {lt.status === 'rejected' ? (
                         <span style={{ color: '#f85149' }}>Rejected</span>
                       ) : lt.removed_at ? (
-                        <span style={{ color: '#8b949e' }}>Removed</span>
+                        <span style={{ color: '#a39586' }}>Removed</span>
                       ) : null}
                       {' '}&bull; {dateStr ? formatDate(dateStr) : '-'}
                     </div>

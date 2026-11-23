@@ -34,73 +34,15 @@ _XLSX_PATH = os.environ.get("RATINGS_XLSX_PATH",
     os.path.join(os.path.expanduser("~"), "OneDrive", "Documents", "AFL 2025.1.xlsx")
 )
 
-# Team name mapping: Excel name -> DB name
-_XLSX_TEAM_MAP = {
-    "Brisbane": "Brisbane Lions",
-    "Greater Western Sydney": "GWS",
-    "St. Kilda": "St Kilda",
-}
-
-# Exact name overrides: DB name -> XLSX name (when names are just different)
-_NAME_OVERRIDES = {
-    ("Michael Frederick", "Fremantle"): "Minairo Frederick",
-    ("Max King", "Sydney"): "Maxy King",
-    ("Nikolas Cox", "Essendon"): "Nik Cox",
-    ("Jacob Farrow", "Essendon"): "Jackson Farrow",
-    ("Indy Cotton", "Adelaide"): "Indi Cotton",
-    ("Hussien El Achkar", "Essendon"): "Hussein El Achkar",
-    ("Jack Hutchinson", "West Coast"): "Jack Hutchison",
-    ("Maurice Rioli", "Richmond"): "Maurice Rioli Jr",
-    ("Robert Hansen", "North Melbourne"): "Robert Hansen Jr",
-}
-
-# Bidirectional nickname map for fuzzy player matching
-_NICKNAME_MAP = {
-    "brad": "bradley", "cam": "cameron", "dan": "daniel",
-    "ed": "edward", "harry": "harrison", "josh": "joshua",
-    "jake": "jacob", "tom": "thomas", "will": "william",
-    "matt": "matthew", "ben": "benjamin", "sam": "samuel",
-    "nick": "nicholas", "mitch": "mitchell", "alex": "alexander",
-    "tim": "timothy", "rob": "robert", "pat": "patrick",
-    "joe": "joseph", "charlie": "charles", "liam": "william",
-    "zac": "zachary", "zach": "zachary", "nat": "nathan",
-    "nic": "nicholas", "mike": "michael", "chris": "christopher",
-    "jim": "james", "jon": "jonathan", "dave": "david",
-    "lachlan": "lachie", "ollie": "oliver", "wil": "will",
-    "willem": "will", "jack": "jackson", "jaime": "jamie",
-}
-# Build reverse map (long -> short)
-_NICKNAME_MAP_REV = {}
-for short, long in _NICKNAME_MAP.items():
-    _NICKNAME_MAP_REV.setdefault(long, []).append(short)
-
-
-def _name_variants(name: str):
-    """Generate plausible first-name variants for a full name."""
-    parts = name.strip().split()
-    if len(parts) < 2:
-        return []
-    first = parts[0].lower()
-    rest = " ".join(parts[1:])
-    variants = []
-    # short -> long
-    if first in _NICKNAME_MAP:
-        variants.append(f"{_NICKNAME_MAP[first].title()} {rest}")
-    # long -> short(s)
-    if first in _NICKNAME_MAP_REV:
-        for short in _NICKNAME_MAP_REV[first]:
-            variants.append(f"{short.title()} {rest}")
-    return variants
-
-
 def _sync_ratings_to_db(app, force=False):
-    """Import rating, potential & age from the ratings XLSX into afl_player.
+    """Bring afl_player into line with the player workbook: ratings, ages,
+    clubs, new players and departures. The rules live in models/player_sync.py.
 
     force=True skips the "XLSX not newer than DB" short-circuit — needed when
     backfilling a field the sync previously ignored, since the DB timestamps
     already look fresher than the spreadsheet.
     """
-    from models.database import AflPlayer, RatingLog
+    from models.database import AflPlayer
 
     if not os.path.exists(_XLSX_PATH):
         app.logger.info("Ratings sync: XLSX not found, skipping")
@@ -130,7 +72,8 @@ def _sync_ratings_to_db(app, force=False):
         with app.app_context():
             # Staleness check
             import datetime as _dt
-            xlsx_mtime = _dt.datetime.fromtimestamp(os.path.getmtime(_XLSX_PATH))
+            # updated_at is naive UTC, so compare the file's mtime in UTC too.
+            xlsx_mtime = _dt.datetime.utcfromtimestamp(os.path.getmtime(_XLSX_PATH))
             newest = AflPlayer.query.filter(AflPlayer.rating.isnot(None)).order_by(
                 AflPlayer.updated_at.desc()
             ).first()
@@ -140,165 +83,13 @@ def _sync_ratings_to_db(app, force=False):
                     app.logger.info("Ratings sync: XLSX not newer than DB, skipping")
                     return
 
-            import openpyxl
-            wb = openpyxl.load_workbook(_XLSX_PATH, read_only=True, data_only=True)
-            ws = wb["Player Database"]
-
-            # Find the current-year column for start-of-year rating
-            # After Dec 1 use next year's column; before Dec 1 use current year
-            from datetime import date
-            today = date.today()
-            target_year = today.year + 1 if today.month == 12 else today.year
-            headers = next(ws.iter_rows(min_row=1, max_row=1, values_only=True))
-            year_col_idx = None
-            for ci, h in enumerate(headers):
-                if h and str(h).strip().isdigit() and int(str(h)) == target_year:
-                    year_col_idx = ci
-                    break
-
-            # Read rows: col 0=Player, 2=Rating, 3=Potential, 4=Team, year_col_idx=start-of-year
-            xlsx_players = []
-            for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
-                name = row[0]
-                if not name or not isinstance(name, str):
-                    continue
-                team_raw = row[4] or ""
-                team = _XLSX_TEAM_MAP.get(team_raw, team_raw)
-                rating = row[2] if isinstance(row[2], (int, float)) else None
-                potential = row[3] if isinstance(row[3], (int, float)) else None
-                rating_start = None
-                if year_col_idx is not None and len(row) > year_col_idx:
-                    val = row[year_col_idx]
-                    if isinstance(val, (int, float)):
-                        rating_start = int(val)
-                if rating is not None:
-                    rating = int(rating)
-                    if rating < 0 or rating > 100:
-                        logger.warning("Rating %d out of range for %s — skipping", rating, name)
-                        continue
-                if potential is not None:
-                    potential = int(potential)
-                    if potential < 0 or potential > 100:
-                        logger.warning("Potential %d out of range for %s — skipping", potential, name)
-                        continue
-                pos_raw = row[5] if len(row) > 5 else None
-                age_val = int(row[1]) if isinstance(row[1], (int, float)) else None
-                xlsx_players.append((name.strip(), team.strip(), rating, potential, rating_start, pos_raw, age_val))
-            wb.close()
-
-            # Build DB lookup: (lowercase name, team) -> AflPlayer
-            all_db = AflPlayer.query.all()
-            db_lookup = {}
-            name_lookup = {}
-            for ap in all_db:
-                key = (ap.name.lower(), ap.afl_team)
-                db_lookup[key] = ap
-                name_lookup.setdefault(ap.name.lower(), []).append(ap)
-
-            # Build reverse override map: (xlsx_name_lower, team) -> db AflPlayer
-            override_lookup = {}
-            for (db_name, db_team), xlsx_name in _NAME_OVERRIDES.items():
-                ap = db_lookup.get((db_name.lower(), db_team))
-                if ap:
-                    override_lookup[(xlsx_name.lower(), db_team)] = ap
-
-            matched = 0
-            created = 0
-            ages_updated = 0
-            unmatched = []
-            # XLSX position codes → app DEF/MID/FWD/RUC (used when creating new players)
-            _POS_MAP = {"MID": "MID", "RUC": "RUC", "GD": "DEF", "KD": "DEF",
-                        "GF": "FWD", "KF": "FWD"}
-
-            for xlsx_name, xlsx_team, rating, potential, rating_start, pos_raw, age_val in xlsx_players:
-                # Pass 1: exact match on (name, team)
-                key = (xlsx_name.lower(), xlsx_team)
-                ap = db_lookup.get(key)
-
-                # Pass 2: explicit overrides
-                if ap is None:
-                    ap = override_lookup.get(key)
-
-                # Pass 3: nickname variants (both directions)
-                if ap is None:
-                    for variant in _name_variants(xlsx_name):
-                        key2 = (variant.lower(), xlsx_team)
-                        ap = db_lookup.get(key2)
-                        if ap:
-                            break
-
-                # Pass 4: single existing player with this exact name but a
-                # different team (mid-year trade / team mismatch) — update them
-                # rather than creating a duplicate. Skip if the name is ambiguous.
-                if ap is None:
-                    same_name = name_lookup.get(xlsx_name.lower())
-                    if same_name and len(same_name) == 1:
-                        ap = same_name[0]
-
-                if ap:
-                    # Only log GENUINE rating changes — a known prior rating
-                    # that actually differs. Skip first-time None→rating sets
-                    # (e.g. after a player-table rebuild) which otherwise flood
-                    # the "Latest Update" with every player at "+<full rating>".
-                    rating_changed = (
-                        ap.rating is not None and rating is not None and ap.rating != rating
-                    )
-                    if rating_changed:
-                        log = RatingLog(
-                            player_id=ap.id,
-                            old_rating=ap.rating,
-                            new_rating=rating,
-                            old_potential=ap.potential,
-                            new_potential=potential,
-                            rating_start=rating_start if rating_start is not None else ap.rating_start,
-                        )
-                        db.session.add(log)
-                    ap.rating = rating
-                    ap.potential = potential
-                    if rating_start is not None:
-                        ap.rating_start = rating_start
-                    # The XLSX owns age. Nothing else refreshes it — the
-                    # footywire roster scrape writes it once at import, so
-                    # skipping it here freezes every age at that snapshot and
-                    # silently rots the Reserve 7s eligibility check.
-                    if age_val is not None and ap.age != age_val:
-                        ap.age = age_val
-                        ages_updated += 1
-                    matched += 1
-                else:
-                    # Genuinely new player (e.g. a debutant the user added to
-                    # the XLSX) — create them so they hit the pool / draft.
-                    # Needs a rating to be useful; career_games=0 marks a
-                    # first-year player (debuted this year).
-                    if rating is None:
-                        unmatched.append((xlsx_name, xlsx_team))
-                        continue
-                    new_player = AflPlayer(
-                        name=xlsx_name,
-                        afl_team=xlsx_team,
-                        position=_POS_MAP.get(pos_raw, "MID"),
-                        age=age_val,
-                        rating=rating,
-                        potential=potential,
-                        rating_start=rating_start if rating_start is not None else rating,
-                        games_played=0,
-                        career_games=0,
-                    )
-                    db.session.add(new_player)
-                    db.session.flush()
-                    # Register so a later XLSX row with the same name/team in
-                    # this run matches instead of creating a duplicate.
-                    db_lookup[(xlsx_name.lower(), xlsx_team)] = new_player
-                    created += 1
-
-            db.session.commit()
-            app.logger.info(
-                f"Ratings sync: {matched} players updated, {created} created, "
-                f"{ages_updated} ages changed, {len(unmatched)} unmatched from XLSX"
-            )
-            if unmatched and len(unmatched) <= 30:
-                for n, t in unmatched:
-                    app.logger.debug(f"  Unmatched: {n} ({t})")
+            from models.player_sync import sync_players
+            plan, changed = sync_players(_XLSX_PATH, config.CURRENT_YEAR)
+            if plan.retire_refused:
+                app.logger.error("Ratings sync: nobody marked former: %s", plan.retire_refused)
+            for w in plan.warnings:
+                app.logger.warning("Ratings sync: %s", w)
+            app.logger.info("Ratings sync: %s %s", plan.counts(), changed)
     finally:
         if lock_file is not None:
             try:
@@ -1020,8 +811,24 @@ def create_app():
                     "games": 0, "level": "AFL",
                 })
 
+        # Which season the form numbers are from, and what we know about his
+        # list status, so the page can say "2026" instead of "season" and
+        # flag an expected position or a player who has left the AFL.
+        from models.years import year_context
+        player_flags = {}
+        if afl_row:
+            player_flags = {
+                "id": afl_row.id,
+                "position_expected": bool(afl_row.position_expected),
+                "is_new": afl_row.joined_year == config.CURRENT_YEAR,
+                "is_former": afl_row.is_former,
+                "left_afl_year": afl_row.left_afl_year,
+            }
+
         return render_template("player.html",
                                player=player,
+                               years=year_context(),
+                               player_flags=player_flags,
                                breakdown=breakdown,
                                sc_history=sc_history,
                                detailed=detailed,

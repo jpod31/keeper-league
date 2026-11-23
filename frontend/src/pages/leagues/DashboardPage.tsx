@@ -86,6 +86,17 @@ interface DashboardData {
   current_round: number
   live_games_count: number
   next_lockout_at: string | null
+  /** Set once the league has no round left to play: what the off-season
+   *  still asks (the draft, delistings) in place of rounds and lockouts. */
+  offseason?: {
+    draft_at: string | null
+    draft_done: boolean
+    delist_open: boolean
+    delist_closes_at: string | null
+    list_size: number | null
+    target_size: number | null
+    to_cut: number | null
+  } | null
   this_matchup: ThisMatchup | null
   my_rank: number | null
   standings: StandingsRow[]
@@ -101,7 +112,7 @@ interface DashboardData {
 function hexToRgb(hex: string): string {
   const h = hex.replace('#', '')
   const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
-  if (full.length !== 6) return '88,166,255'
+  if (full.length !== 6) return '245,185,64'
   return `${parseInt(full.slice(0, 2), 16)},${parseInt(full.slice(2, 4), 16)},${parseInt(full.slice(4, 6), 16)}`
 }
 
@@ -183,7 +194,7 @@ export function DashboardPage() {
       m['--lg-opp-rgb'] = hexToRgb(data.this_matchup.opp.colour)
     } else if (data?.user_team) {
       const myStanding = data.standings.find(s => s.team.is_mine)
-      const myColour = myStanding?.team.colour || '#58a6ff'
+      const myColour = myStanding?.team.colour || '#f5b940'
       m['--lg-me'] = myColour
       m['--lg-me-rgb'] = hexToRgb(myColour)
     }
@@ -195,7 +206,11 @@ export function DashboardPage() {
 
   const { league, user_team, teams, scoring_rules, this_matchup, my_rank, standings,
     league_fixtures, top_performers, recent_activity, current_round, live_games_count,
-    next_lockout_at, pending_incoming, pending_outgoing, delist_open } = data
+    next_lockout_at, pending_incoming, pending_outgoing, delist_open, offseason } = data
+  const draftIn = offseason?.draft_at ? fmtCountdown(offseason.draft_at) : null
+  const draftWhen = offseason?.draft_at
+    ? new Date(offseason.draft_at).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+    : null
 
   const inviteUrl = league.invite_code ? `${window.location.origin}/leagues/invite/${league.invite_code}` : ''
   function copyInvite() {
@@ -217,6 +232,39 @@ export function DashboardPage() {
   return (
     <div className="lg-page" style={styleVars as React.CSSProperties}>
 
+      {/* ── OFF-SEASON: the draft and the cuts, in place of rounds ── */}
+      {offseason && !offseason.draft_done && (
+        <div className="os-strip">
+          <div className="os-cell">
+            <div className="os-label">Draft night</div>
+            <div className="os-value">{draftWhen ?? 'Date to be set'}</div>
+            {draftIn && <div className="os-sub">in {draftIn.value}</div>}
+          </div>
+          <div className="os-cell">
+            <div className="os-label">Delistings</div>
+            <div className="os-value">{offseason.delist_open ? 'Open until the draft' : 'Closed'}</div>
+            {offseason.delist_open && offseason.to_cut != null && (
+              <div className="os-sub">
+                {offseason.to_cut > 0
+                  ? `You are at ${offseason.list_size}. Cut ${offseason.to_cut} to reach ${offseason.target_size}.`
+                  : `You are at ${offseason.list_size}. Nothing more to cut.`}
+              </div>
+            )}
+          </div>
+          <div className="os-cell">
+            <div className="os-label">Player pool</div>
+            <div className="os-value">Locked until the draft</div>
+            <div className="os-sub">Free agents open once it is done</div>
+          </div>
+          {user_team && (
+            <div className="os-actions">
+              <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/team/${user_team.id}`}>My list</Link>
+              <Link className="kx-btn" to={`/leagues/${leagueId}/player-pool`}>Scout the pool</Link>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── LIVE PULSE BAR ── */}
       <div className="lg-pulse">
         <span className="lg-pulse-item">
@@ -231,7 +279,7 @@ export function DashboardPage() {
         </span>
         {lockout && (
           <span className="lg-pulse-item">
-            <i className="bi bi-clock" style={{ color: '#d29922', fontSize: '.78rem' }}></i>
+            <i className="bi bi-clock" style={{ color: '#d26822', fontSize: '.78rem' }}></i>
             Next lockout
             <span className="lg-pulse-countdown">{lockout.value}</span>
           </span>
@@ -388,7 +436,7 @@ export function DashboardPage() {
           {standings.length > 0 && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-trophy" style={{ color: '#d29922' }}></i>Ladder</span>
+                <span className="lg-card-title"><i className="bi bi-trophy" style={{ color: '#d26822' }}></i>Ladder</span>
                 <Link to={`/leagues/${leagueId}/standings`} className="lg-card-action">View all →</Link>
               </div>
               <div className="lg-ladder">
@@ -424,7 +472,7 @@ export function DashboardPage() {
               </div>
               <div className="lg-perf">
                 {top_performers.slice(0, 6).map((p, i) => {
-                  const colour = p.owner_team?.colour || '#58a6ff'
+                  const colour = p.owner_team?.colour || '#f5b940'
                   const rgb = hexToRgb(colour)
                   return (
                     <Link key={p.player_id}
@@ -447,7 +495,7 @@ export function DashboardPage() {
           {recent_activity.length > 0 && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-activity" style={{ color: '#79c0ff' }}></i>League pulse</span>
+                <span className="lg-card-title"><i className="bi bi-activity" style={{ color: '#f6c35c' }}></i>League pulse</span>
                 <Link to={`/leagues/${leagueId}/list-changes`} className="lg-card-action">All changes →</Link>
               </div>
               <div className="lg-feed">
@@ -482,7 +530,7 @@ export function DashboardPage() {
           {league_fixtures.length > 0 && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-grid" style={{ color: '#79c0ff' }}></i>Round {current_round} fixtures</span>
+                <span className="lg-card-title"><i className="bi bi-grid" style={{ color: '#f6c35c' }}></i>Round {current_round} fixtures</span>
               </div>
               <div>
                 {league_fixtures.map(fx => {
@@ -522,7 +570,7 @@ export function DashboardPage() {
           {user_team && (pending_incoming > 0 || pending_outgoing > 0 || league.trade_window_open) && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-arrow-left-right" style={{ color: '#ffb471' }}></i>Trade activity</span>
+                <span className="lg-card-title"><i className="bi bi-arrow-left-right" style={{ color: '#ffa671' }}></i>Trade activity</span>
                 <Link to={`/leagues/${leagueId}/trades`} className="lg-card-action">Trade center →</Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -539,8 +587,8 @@ export function DashboardPage() {
                 {pending_outgoing > 0 && (
                   <Link to={`/leagues/${leagueId}/trades?tab=outgoing`}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8,
-                             background: 'rgba(210,153,34,.08)', border: '1px solid rgba(210,153,34,.3)',
-                             textDecoration: 'none', color: '#f0d18a' }}>
+                             background: 'rgba(210,104,34,.08)', border: '1px solid rgba(210,104,34,.3)',
+                             textDecoration: 'none', color: '#f0b38a' }}>
                     <i className="bi bi-send"></i>
                     <span style={{ flex: 1, fontWeight: 700 }}>{pending_outgoing} awaiting response</span>
                     <i className="bi bi-arrow-right" style={{ fontSize: '.8rem' }}></i>
@@ -549,7 +597,7 @@ export function DashboardPage() {
                 {league.trade_window_open && (
                   <Link to={`/leagues/${leagueId}/trades/propose`}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 12px', borderRadius: 8,
-                             background: 'linear-gradient(135deg, #1f6feb, #388bfd)', color: '#fff',
+                             background: 'linear-gradient(135deg, #b77a10, #f3ae23)', color: '#fff',
                              textDecoration: 'none', fontWeight: 700 }}>
                     <i className="bi bi-plus-lg"></i>Propose a trade
                   </Link>
@@ -562,7 +610,7 @@ export function DashboardPage() {
           {!user_team && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-box-arrow-in-right" style={{ color: '#3fb950' }}></i>Join the league</span>
+                <span className="lg-card-title"><i className="bi bi-box-arrow-in-right" style={{ color: '#dbcf94' }}></i>Join the league</span>
               </div>
               <form onSubmit={joinLeague}>
                 <div className="mb-3">
@@ -578,7 +626,7 @@ export function DashboardPage() {
           {league.invite_code && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-share" style={{ color: '#d29922' }}></i>Invite players</span>
+                <span className="lg-card-title"><i className="bi bi-share" style={{ color: '#d26822' }}></i>Invite players</span>
               </div>
               <div className="input-group input-group-sm">
                 <input type="text" className="form-control" readOnly value={inviteUrl}
@@ -607,7 +655,7 @@ export function DashboardPage() {
             <div className="lg-info-row"><span className="lg-info-label">Pick timer</span><span className="lg-info-value">{league.pick_timer_secs}s</span></div>
             <div className="lg-info-row">
               <span className="lg-info-label">Trade window</span>
-              <span className="lg-info-value" style={{ color: league.trade_window_open ? '#7ee787' : '#ff8a82' }}>
+              <span className="lg-info-value" style={{ color: league.trade_window_open ? '#efe7bd' : '#ff8a82' }}>
                 <i className="bi bi-circle-fill me-1" style={{ fontSize: '.5rem' }}></i>{league.trade_window_open ? 'Open' : 'Closed'}
               </span>
             </div>

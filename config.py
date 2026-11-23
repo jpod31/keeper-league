@@ -86,9 +86,13 @@ TEAM_ABBR = {
 }
 
 # ---------- Supercoach scraping ----------
-CURRENT_YEAR = 2026
+# The AFL season the site is in or heading into: fixtures, live scoring, ages
+# and ratings all follow it. Bump it when the player workbook moves to the
+# next year (after the AFL draft). Averages do NOT follow it blindly: until
+# the new season has a game played they come from models.years.stats_year().
+CURRENT_YEAR = 2027
 SC_ROUNDS = 24          # max rounds in a regular season
-SC_HISTORY_YEARS = list(range(2013, 2027))  # historical years for SC data
+SC_HISTORY_YEARS = list(range(2013, CURRENT_YEAR + 1))  # historical years for SC data
 
 # ---------- Footywire team slugs ----------
 TEAM_SLUGS = {

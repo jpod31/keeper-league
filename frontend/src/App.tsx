@@ -58,6 +58,7 @@ import { ListChangesPage } from './pages/leagues/ListChangesPage'
 import { TradeCenterPage } from './pages/trades/TradeCenterPage'
 import { TradeProposePage } from './pages/trades/TradeProposePage'
 import { TradeDetailPage } from './pages/trades/TradeDetailPage'
+import { TradeBlockPage } from './pages/trades/TradeBlockPage'
 
 // Comms pages
 import { NotificationsPage } from './pages/comms/NotificationsPage'
@@ -72,6 +73,8 @@ import { PlayerComparePage } from './pages/players/PlayerComparePage'
 import { StatsPage } from './pages/players/StatsPage'
 import { ScoutingPage } from './pages/players/ScoutingPage'
 import { BreakoutRadarPage } from './pages/players/BreakoutRadarPage'
+import { FormerPlayersPage } from './pages/players/FormerPlayersPage'
+import { SeasonsPage } from './pages/leagues/SeasonsPage'
 
 
 export default function App() {
@@ -127,6 +130,7 @@ export default function App() {
           {/* Trades */}
           <Route path="trades" element={<TradeCenterPage />} />
           <Route path="trades/propose" element={<TradeProposePage />} />
+          <Route path="trade-block" element={<TradeBlockPage />} />
           <Route path="trades/:tradeId" element={<TradeDetailPage />} />
 
           {/* Comms — unified messenger (league chat = pinned group convo) */}
@@ -145,6 +149,9 @@ export default function App() {
           <Route path="stats" element={<StatsPage />} />
           <Route path="scouting" element={<ScoutingPage />} />
           <Route path="breakout-radar" element={<BreakoutRadarPage />} />
+          <Route path="former-players" element={<FormerPlayersPage />} />
+          <Route path="seasons" element={<SeasonsPage />} />
+          <Route path="seasons/:year" element={<SeasonsPage />} />
 
           {/* Settings & Admin */}
           <Route path="settings" element={<SettingsPage />} />
@@ -162,10 +169,10 @@ export default function App() {
 
       {/* 404 */}
       <Route path="*" element={
-        <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+        <div className="min-h-screen bg-[#121110] flex items-center justify-center">
           <div className="text-center">
-            <p className="text-4xl font-black text-[#21262d]">404</p>
-            <p className="text-sm text-[#484f58] mt-2">Page not found</p>
+            <p className="text-4xl font-black text-[#272522]">404</p>
+            <p className="text-sm text-[#56504a] mt-2">Page not found</p>
           </div>
         </div>
       } />

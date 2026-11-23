@@ -64,71 +64,71 @@ interface S7FixtureDetail {
 // All inline CSS from templates/reserve7s/gameday.html — mirrors the Jinja <style> block exactly.
 const S7_CSS = `
 .s7gd-round-header { margin-bottom: 10px; }
-.s7gd-round-title { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; color: #e6edf3; }
-.s7gd-round-dates { color: #8b949e; font-size: .8rem; }
+.s7gd-round-title { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; color: #efedea; }
+.s7gd-round-dates { color: #a39586; font-size: .8rem; }
 .s7gd-state-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; padding: 5px 12px; border-radius: 14px; text-transform: uppercase; letter-spacing: .5px; }
 .s7gd-badge-upcoming { background: rgba(188,140,255,.12); color: #a855f7; border: 1px solid rgba(188,140,255,.25); }
 .s7gd-badge-live { background: rgba(188,140,255,.15); color: #a855f7; border: 1px solid rgba(188,140,255,.3); }
-.s7gd-badge-final { background: #161b22; color: #e6edf3; }
-.s7gd-badge-bye { background: #161b22; color: #8b949e; }
+.s7gd-badge-final { background: #1c1a18; color: #efedea; }
+.s7gd-badge-bye { background: #1c1a18; color: #a39586; }
 .s7gd-pulse-dot { display: inline-block; width: 7px; height: 7px; background: #a855f7; border-radius: 50%; animation: s7gdPulse 2s ease-in-out infinite; }
 @keyframes s7gdPulse { 0%,100% { opacity: 1; box-shadow: 0 0 4px rgba(188,140,255,.4); } 50% { opacity: .4; box-shadow: 0 0 10px rgba(188,140,255,.8), 0 0 20px rgba(188,140,255,.3); } }
-.s7gd-afl-bar { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 12px; padding: 10px 14px; background: #0d1117; border: 1px solid #21262d; border-radius: 10px; }
-.s7gd-game-pill { display: inline-flex; align-items: center; gap: 6px; background: #161b22; border: 1px solid #21262d; border-radius: 16px; padding: 4px 10px; font-size: .72rem; text-decoration: none; color: inherit; }
-.s7gd-game-teams { color: #e6edf3; font-weight: 600; }
-.s7gd-game-score { color: #8b949e; font-size: .7rem; font-variant-numeric: tabular-nums; }
-.s7gd-gbadge-live { font-size: .6rem; background: #a78bfa; color: #fff; animation: s7gdPulse 2s infinite; }
+.s7gd-afl-bar { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 12px; padding: 10px 14px; background: #121110; border: 1px solid #272522; border-radius: 10px; }
+.s7gd-game-pill { display: inline-flex; align-items: center; gap: 6px; background: #1c1a18; border: 1px solid #272522; border-radius: 16px; padding: 4px 10px; font-size: .72rem; text-decoration: none; color: inherit; }
+.s7gd-game-teams { color: #efedea; font-weight: 600; }
+.s7gd-game-score { color: #a39586; font-size: .7rem; font-variant-numeric: tabular-nums; }
+.s7gd-gbadge-live { font-size: .6rem; background: #f7c767; color: #fff; animation: s7gdPulse 2s infinite; }
 .s7gd-gbadge-ft { font-size: .6rem; background: #a855f7; color: #fff; }
-.s7gd-gbadge-sched { font-size: .6rem; background: #161b22; color: #8b949e; }
-.s7-mini-bar { display: flex; gap: 6px; margin-bottom: 8px; padding: 10px 14px; background: #161b22; border: 1px solid #21262d; border-radius: 10px; }
-.s7-mini-pill { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; background: #0d1117; border: 1px solid #21262d; border-radius: 10px; cursor: pointer; transition: border-color .15s, background .15s; text-align: center; }
-.s7-mini-pill:hover { background: #161b22; border-color: #30363d; }
+.s7gd-gbadge-sched { font-size: .6rem; background: #1c1a18; color: #a39586; }
+.s7-mini-bar { display: flex; gap: 6px; margin-bottom: 8px; padding: 10px 14px; background: #1c1a18; border: 1px solid #272522; border-radius: 10px; }
+.s7-mini-pill { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; background: #121110; border: 1px solid #272522; border-radius: 10px; cursor: pointer; transition: border-color .15s, background .15s; text-align: center; }
+.s7-mini-pill:hover { background: #1c1a18; border-color: #373330; }
 .s7-mini-yours { border-color: #a855f7; }
-.s7-mini-teams { font-weight: 600; font-size: .72rem; color: #c9d1d9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.s7-mini-score { font-size: .68rem; color: #8b949e; font-variant-numeric: tabular-nums; }
-.s7gd-hero { background: radial-gradient(ellipse at 50% 0%, rgba(22,27,34,.95) 0%, var(--kl-bg-card, #161b22) 70%); border: 1px solid var(--kl-border, #21262d); border-radius: 16px; padding: 0; margin-bottom: 4px; position: relative; overflow: hidden; }
+.s7-mini-teams { font-weight: 600; font-size: .72rem; color: #d7d1cb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.s7-mini-score { font-size: .68rem; color: #a39586; font-variant-numeric: tabular-nums; }
+.s7gd-hero { background: radial-gradient(ellipse at 50% 0%, rgba(28,26,24,.95) 0%, var(--kl-bg-card, #1c1a18) 70%); border: 1px solid var(--kl-border, #272522); border-radius: 16px; padding: 0; margin-bottom: 4px; position: relative; overflow: hidden; }
 .s7gd-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 2; }
-.s7gd-hero-live { border-color: rgba(35,134,54,.35); animation: s7gdGlow 4s ease-in-out infinite; }
-.s7gd-hero-live::before { background: linear-gradient(90deg, #238636, #3fb950, #238636); background-size: 200% 100%; animation: s7Shimmer 3s linear infinite; }
-.s7gd-hero-completed { border-color: rgba(139,148,158,.2); }
-.s7gd-hero-completed::before { background: linear-gradient(90deg, rgba(139,148,158,.3), rgba(139,148,158,.6), rgba(139,148,158,.3)); }
-.s7gd-hero-upcoming { border-color: rgba(110,64,201,.3); }
-.s7gd-hero-upcoming::before { background: linear-gradient(90deg, #6e40c9, #a855f7, #6e40c9); background-size: 200% 100%; animation: s7Shimmer 4s linear infinite; }
+.s7gd-hero-live { border-color: rgba(113,96,43,.35); animation: s7gdGlow 4s ease-in-out infinite; }
+.s7gd-hero-live::before { background: linear-gradient(90deg, #71602b, #dbcf94, #71602b); background-size: 200% 100%; animation: s7Shimmer 3s linear infinite; }
+.s7gd-hero-completed { border-color: rgba(163,149,134,.2); }
+.s7gd-hero-completed::before { background: linear-gradient(90deg, rgba(163,149,134,.3), rgba(163,149,134,.6), rgba(163,149,134,.3)); }
+.s7gd-hero-upcoming { border-color: rgba(155,114,44,.3); }
+.s7gd-hero-upcoming::before { background: linear-gradient(90deg, #9b722c, #a855f7, #9b722c); background-size: 200% 100%; animation: s7Shimmer 4s linear infinite; }
 @keyframes s7Shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-@keyframes s7gdGlow { 0%,100% { box-shadow: 0 0 20px rgba(110,64,201,.1), 0 0 40px rgba(110,64,201,.05); } 50% { box-shadow: 0 0 30px rgba(110,64,201,.15), 0 0 60px rgba(110,64,201,.08); } }
+@keyframes s7gdGlow { 0%,100% { box-shadow: 0 0 20px rgba(155,114,44,.1), 0 0 40px rgba(155,114,44,.05); } 50% { box-shadow: 0 0 30px rgba(155,114,44,.15), 0 0 60px rgba(155,114,44,.08); } }
 .s7-teams-row { display: flex; align-items: center; justify-content: center; padding: 20px 20px 0; gap: 0; }
 .s7-team-block { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .s7-team-right { justify-content: flex-end; }
 .s7-team-detail { min-width: 0; flex: 1; }
-.s7-vs { font-size: .6rem; font-weight: 800; color: var(--kl-text-faint, #484f58); letter-spacing: 2px; padding: 0 14px; opacity: .5; flex-shrink: 0; }
+.s7-vs { font-size: .6rem; font-weight: 800; color: var(--kl-text-faint, #56504a); letter-spacing: 2px; padding: 0 14px; opacity: .5; flex-shrink: 0; }
 .s7-crest { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 14px; font-weight: 800; font-size: 1rem; letter-spacing: .5px; flex-shrink: 0; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
-.s7-crest-left { background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; }
-.s7-crest-right { background: linear-gradient(145deg, #2d1060, #6e40c9, #a855f7); color: #fff; }
+.s7-crest-left { background: linear-gradient(145deg, #2d2611, #71602b, #dbcf94); color: #fff; }
+.s7-crest-right { background: linear-gradient(145deg, #383531, #9b722c, #a855f7); color: #fff; }
 .s7-crest-img { width: 50px; height: 50px; border-radius: 14px; object-fit: cover; flex-shrink: 0; box-shadow: 0 6px 20px rgba(0,0,0,.4); border: 2px solid rgba(255,255,255,.08); }
-.s7-team-name { color: var(--kl-text-heading, #e6edf3); font-weight: 700; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.s7-team-name { color: var(--kl-text-heading, #efedea); font-weight: 700; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 .s7-team-meta { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-.s7-players-count { font-size: .64rem; color: var(--kl-text-faint, #484f58); font-weight: 500; font-variant-numeric: tabular-nums; }
-.s7-role-badge { font-size: .5rem; padding: 1px 4px; border-radius: 3px; font-weight: 700; background: rgba(139,148,158,.12); color: #6e7681; line-height: 1.3; }
+.s7-players-count { font-size: .64rem; color: var(--kl-text-faint, #56504a); font-weight: 500; font-variant-numeric: tabular-nums; }
+.s7-role-badge { font-size: .5rem; padding: 1px 4px; border-radius: 3px; font-weight: 700; background: rgba(163,149,134,.12); color: #80786f; line-height: 1.3; }
 .s7-role-badge.s7-role-active { background: rgba(188,140,255,.2); color: #a855f7; }
 .s7-scores-area { display: flex; align-items: flex-start; justify-content: center; gap: 10px; padding: 18px 20px 16px; }
 .s7-score-col { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
-.s7-big-score { font-size: 3.4rem; font-weight: 900; line-height: 1; color: var(--kl-text-secondary, #8b949e); font-variant-numeric: tabular-nums; transition: color .4s, text-shadow .4s; }
+.s7-big-score { font-size: 3.4rem; font-weight: 900; line-height: 1; color: var(--kl-text-secondary, #a39586); font-variant-numeric: tabular-nums; transition: color .4s, text-shadow .4s; }
 .s7-big-score.s7-score-winning { color: #a855f7; text-shadow: 0 0 28px rgba(188,140,255,.4), 0 0 56px rgba(188,140,255,.15); }
-.s7-score-dash { font-size: 2.2rem; font-weight: 300; color: var(--kl-text-faint, #484f58); line-height: 1; padding-top: 8px; opacity: .4; }
+.s7-score-dash { font-size: 2.2rem; font-weight: 300; color: var(--kl-text-faint, #56504a); line-height: 1; padding-top: 8px; opacity: .4; }
 .s7-cap-bonus { color: #a855f7; font-size: .65rem; font-weight: 700; margin-top: 3px; white-space: nowrap; }
-.s7-footer { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid rgba(139,148,158,.06); }
-.s7-margin-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 16px; border-radius: 8px; font-size: .72rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--kl-text-primary, #e6edf3); background: rgba(139,148,158,.08); }
+.s7-footer { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid rgba(163,149,134,.06); }
+.s7-margin-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 16px; border-radius: 8px; font-size: .72rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--kl-text-primary, #efedea); background: rgba(163,149,134,.08); }
 .s7-margin-chip i { font-size: .6rem; }
-.s7-first-bounce { text-align: center; padding: 0 20px 12px; color: var(--kl-text-secondary, #8b949e); font-size: .8rem; }
-.s7gd-player-card { background: #0d1117; border: 1px solid #161b22; border-radius: 10px; overflow: hidden; }
-.s7gd-card-left { border-left: 3px solid #3fb950; }
+.s7-first-bounce { text-align: center; padding: 0 20px 12px; color: var(--kl-text-secondary, #a39586); font-size: .8rem; }
+.s7gd-player-card { background: #121110; border: 1px solid #1c1a18; border-radius: 10px; overflow: hidden; }
+.s7gd-card-left { border-left: 3px solid #dbcf94; }
 .s7gd-card-right { border-left: 3px solid #a855f7; }
-.s7gd-card-header { background: #161b22; padding: 10px 14px; font-weight: 600; font-size: .85rem; color: #e6edf3; border-bottom: 1px solid #161b22; display: flex; justify-content: space-between; align-items: center; }
-.s7gd-card-score { font-weight: 800; font-size: .95rem; color: #e6edf3; font-variant-numeric: tabular-nums; }
+.s7gd-card-header { background: #1c1a18; padding: 10px 14px; font-weight: 600; font-size: .85rem; color: #efedea; border-bottom: 1px solid #1c1a18; display: flex; justify-content: space-between; align-items: center; }
+.s7gd-card-score { font-weight: 800; font-size: .95rem; color: #efedea; font-variant-numeric: tabular-nums; }
 .s7gd-player-list { max-height: 600px; overflow-y: auto; }
-.s7gd-player-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-bottom: 1px solid #161b22; font-size: .8rem; transition: background .15s; }
+.s7gd-player-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-bottom: 1px solid #1c1a18; font-size: .8rem; transition: background .15s; }
 .s7gd-player-row:last-child { border-bottom: none; }
-.s7gd-player-row:hover { background: #161b22; }
+.s7gd-player-row:hover { background: #1c1a18; }
 .s7gd-player-row:hover .s7gd-player-name { color: #a855f7; }
 .s7gd-player-row.p-locked { position: relative; }
 .s7gd-player-row.p-locked::before {
@@ -137,42 +137,42 @@ const S7_CSS = `
   left: 0; top: 10%; bottom: 10%;
   width: 3px;
   border-radius: 0 2px 2px 0;
-  background: linear-gradient(to bottom, rgba(139,148,158,.15), rgba(139,148,158,.45), rgba(139,148,158,.15));
+  background: linear-gradient(to bottom, rgba(163,149,134,.15), rgba(163,149,134,.45), rgba(163,149,134,.15));
 }
-.s7gd-player-row.p-locked .s7gd-player-name { color: #8b949e; }
-.s7gd-player-row.p-ytp .s7gd-player-score { color: #6e7681; animation: s7gdYtp 2s ease-in-out infinite; }
+.s7gd-player-row.p-locked .s7gd-player-name { color: #a39586; }
+.s7gd-player-row.p-ytp .s7gd-player-score { color: #80786f; animation: s7gdYtp 2s ease-in-out infinite; }
 @keyframes s7gdYtp { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 .s7gd-player-info { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
-.s7gd-player-name { color: #c9d1d9; white-space: nowrap; }
-.s7gd-player-meta { color: #484f58; font-size: .7rem; white-space: nowrap; }
-.s7gd-player-score { font-weight: 600; white-space: nowrap; color: #c9d1d9; font-variant-numeric: tabular-nums; }
+.s7gd-player-name { color: #d7d1cb; white-space: nowrap; }
+.s7gd-player-meta { color: #56504a; font-size: .7rem; white-space: nowrap; }
+.s7gd-player-score { font-weight: 600; white-space: nowrap; color: #d7d1cb; font-variant-numeric: tabular-nums; }
 .s7gd-live-dot { font-size: .35rem; color: #a855f7; vertical-align: middle; margin-left: 3px; animation: s7gdPulse 2s infinite; }
 .s7gd-player-score.text-success { color: #a855f7 !important; }
 .s7gd-team-logo { width: 16px; height: 16px; vertical-align: middle; margin-right: 2px; }
 .s7gd-pos-badge { padding: 1px 5px !important; font-size: .55rem !important; border-radius: 3px !important; line-height: 1.4; }
 .s7gd-badge-c { display: inline-block; background: #a855f7; color: #000; font-size: .55rem; font-weight: 700; padding: 1px 4px; border-radius: 3px; line-height: 1.3; }
-.s7gd-section-hdr { padding: 6px 14px; font-size: .65rem; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: .5px; background: #161b22; border-bottom: 1px solid #161b22; }
-.score-ytp { color: #6e7681 !important; }
+.s7gd-section-hdr { padding: 6px 14px; font-size: .65rem; font-weight: 700; color: #a39586; text-transform: uppercase; letter-spacing: .5px; background: #1c1a18; border-bottom: 1px solid #1c1a18; }
+.score-ytp { color: #80786f !important; }
 .s7-score-flash { animation: s7gdFlash 1.5s ease-out; }
 @keyframes s7gdFlash { 0% { transform: scale(1.15); color: #a855f7; text-shadow: 0 0 8px rgba(188,140,255,.5); } 40% { transform: scale(.97); } 100% { transform: scale(1); color: inherit; text-shadow: none; } }
-.s7gd-all-matchups { background: #0d1117; border: 1px solid #21262d; border-radius: 12px; overflow: hidden; }
-.s7gd-matchups-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; font-size: .75rem; font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: .8px; background: #0d1117; border-bottom: 1px solid #21262d; }
-.s7gd-matchups-dates { font-size: .7rem; font-weight: 500; color: #484f58; text-transform: none; letter-spacing: normal; }
+.s7gd-all-matchups { background: #121110; border: 1px solid #272522; border-radius: 12px; overflow: hidden; }
+.s7gd-matchups-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; font-size: .75rem; font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: .8px; background: #121110; border-bottom: 1px solid #272522; }
+.s7gd-matchups-dates { font-size: .7rem; font-weight: 500; color: #56504a; text-transform: none; letter-spacing: normal; }
 .s7gd-matchups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; padding: 14px; }
-.s7gd-matchup-card { display: block; text-decoration: none; color: inherit; cursor: pointer; background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 12px 14px; position: relative; transition: transform .15s, border-color .15s, box-shadow .15s; }
-.s7gd-matchup-card:hover { transform: translateY(-2px); border-color: #30363d; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+.s7gd-matchup-card { display: block; text-decoration: none; color: inherit; cursor: pointer; background: #1c1a18; border: 1px solid #272522; border-radius: 8px; padding: 12px 14px; position: relative; transition: transform .15s, border-color .15s, box-shadow .15s; }
+.s7gd-matchup-card:hover { transform: translateY(-2px); border-color: #373330; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
 .s7gd-matchup-yours { border-color: #a855f7 !important; background: rgba(188,140,255,.04); }
 .s7gd-matchup-active { box-shadow: 0 0 0 2px #a855f7, 0 4px 12px rgba(0,0,0,.2) !important; border-color: #a855f7 !important; background: rgba(188,140,255,.08); }
 .s7gd-matchup-active:hover { box-shadow: 0 0 0 2px #a855f7, 0 4px 12px rgba(0,0,0,.3) !important; }
 .s7gd-your-tag { position: absolute; top: -1px; right: 10px; font-size: .55rem; font-weight: 700; text-transform: uppercase; color: #a855f7; background: rgba(188,140,255,.15); padding: 2px 8px; border-radius: 0 0 6px 6px; letter-spacing: .3px; }
 .s7gd-mx-team-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: .8rem; }
-.s7gd-mx-name { color: #c9d1d9; font-weight: 500; }
-.s7gd-mx-winner { color: #e6edf3; font-weight: 700; }
-.s7gd-mx-score { font-weight: 700; font-size: .85rem; color: #8b949e; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 3px; }
+.s7gd-mx-name { color: #d7d1cb; font-weight: 500; }
+.s7gd-mx-winner { color: #efedea; font-weight: 700; }
+.s7gd-mx-score { font-weight: 700; font-size: .85rem; color: #a39586; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 3px; }
 .s7gd-mini-bar { height: 4px; background: #f85149; border-radius: 2px; overflow: hidden; margin-top: 8px; opacity: 0.6; }
-.s7gd-mini-fill { height: 100%; background: #3fb950; border-radius: 2px; transition: width .6s ease; }
-.s7gd-mx-margin { font-size: .65rem; color: #6e7681; text-align: center; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.s7gd-mx-status { font-size: .65rem; color: #484f58; text-align: center; margin-top: 8px; }
+.s7gd-mini-fill { height: 100%; background: #dbcf94; border-radius: 2px; transition: width .6s ease; }
+.s7gd-mx-margin { font-size: .65rem; color: #80786f; text-align: center; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.s7gd-mx-status { font-size: .65rem; color: #56504a; text-align: center; margin-top: 8px; }
 @media (max-width: 767.98px) {
   .s7-teams-row { padding: 14px 12px 0; }
   .s7-big-score { font-size: 2.4rem; min-width: 50px; }
@@ -419,7 +419,7 @@ export function Reserve7sGamedayPage() {
             {noGame.map((p, i) => <PlayerRow key={`ng${i}`} p={p} />)}
           </>}
           {players.length === 0 && (
-            <div className="text-center py-3" style={{ color: '#484f58', fontSize: '.8rem' }}>No lineup submitted</div>
+            <div className="text-center py-3" style={{ color: '#56504a', fontSize: '.8rem' }}>No lineup submitted</div>
           )}
         </div>
       </div>
@@ -433,9 +433,9 @@ export function Reserve7sGamedayPage() {
       {/* Competition toggle — matches main gameday (active side uses blue accent) */}
       <div className="comp-toggle">
         <Link to={`/leagues/${leagueId}/gameday`} className="comp-toggle-btn text-decoration-none"
-          style={{ borderColor: '#30363d', color: '#8b949e', borderRadius: '8px 0 0 8px' }}>Main</Link>
+          style={{ borderColor: '#373330', color: '#a39586', borderRadius: '8px 0 0 8px' }}>Main</Link>
         <span className="comp-toggle-btn"
-          style={{ borderColor: 'rgba(88,166,255,.3)', color: '#58a6ff', background: 'rgba(88,166,255,.08)', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
+          style={{ borderColor: 'rgba(245,185,64,.3)', color: '#f5b940', background: 'rgba(245,185,64,.08)', borderRadius: '0 8px 8px 0', borderLeft: 0 }}>7s</span>
       </div>
 
       {/* Round header */}
@@ -529,8 +529,8 @@ export function Reserve7sGamedayPage() {
       {d.is_bye ? (
         <div className="s7gd-hero s7gd-hero-upcoming" style={{ textAlign: 'center', padding: '24px 20px' }}>
           <span className="s7gd-state-badge s7gd-badge-bye" style={{ marginBottom: 12 }}><i className="bi bi-dash-circle me-1"></i>BYE</span>
-          <p style={{ color: '#e6edf3', fontSize: '.95rem', marginBottom: 6 }}>You have a bye this round in Reserve 7s.</p>
-          <p style={{ color: '#484f58', fontSize: '.85rem', marginBottom: 0 }}>Click any matchup below to view it.</p>
+          <p style={{ color: '#efedea', fontSize: '.95rem', marginBottom: 6 }}>You have a bye this round in Reserve 7s.</p>
+          <p style={{ color: '#56504a', fontSize: '.85rem', marginBottom: 0 }}>Click any matchup below to view it.</p>
         </div>
       ) : (
         <>
@@ -601,11 +601,11 @@ export function Reserve7sGamedayPage() {
               </div>
               {heroProjLeft != null && heroProjRight != null && gs !== 'completed' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
-                  <span style={{ fontSize: '.66rem', color: '#8b949e', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                    Proj <b style={{ fontWeight: 700, color: '#c9d1d9' }}>{Math.round(heroProjLeft)}</b>&ndash;<b style={{ fontWeight: 700, color: '#c9d1d9' }}>{Math.round(heroProjRight)}</b>
+                  <span style={{ fontSize: '.66rem', color: '#a39586', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    Proj <b style={{ fontWeight: 700, color: '#d7d1cb' }}>{Math.round(heroProjLeft)}</b>&ndash;<b style={{ fontWeight: 700, color: '#d7d1cb' }}>{Math.round(heroProjRight)}</b>
                   </span>
-                  <span style={{ width: 1, height: 12, background: 'rgba(139,148,158,.2)' }}></span>
-                  <span style={{ fontSize: '.66rem', color: '#8b949e', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                  <span style={{ width: 1, height: 12, background: 'rgba(163,149,134,.2)' }}></span>
+                  <span style={{ fontSize: '.66rem', color: '#a39586', fontWeight: 500, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                     Win <b style={{ fontWeight: 700, color: '#bc8cff' }}>{Math.round(heroWinLeft || 0)}%</b>&ndash;<b style={{ fontWeight: 700, color: '#bc8cff' }}>{Math.round(heroWinRight || 0)}%</b>
                   </span>
                 </div>
@@ -623,7 +623,7 @@ export function Reserve7sGamedayPage() {
               <span className="gd-mob-vs-team">{heroLeftName}</span>
               <span className="gd-mob-vs-scores">
                 <span className={`gd-mob-vs-sc${heroLeftScore > heroRightScore ? ' gd-mob-sc-win' : ''}`}>{Math.round(heroLeftScore)}</span>
-                <span style={{ color: '#484f58', fontSize: '.7rem' }}>v</span>
+                <span style={{ color: '#56504a', fontSize: '.7rem' }}>v</span>
                 <span className={`gd-mob-vs-sc${heroRightScore > heroLeftScore ? ' gd-mob-sc-win' : ''}`}>{Math.round(heroRightScore)}</span>
               </span>
               <span className="gd-mob-vs-team" style={{ textAlign: 'right' }}>{heroRightName}</span>
@@ -680,7 +680,7 @@ export function Reserve7sGamedayPage() {
               const maxLen = Math.max(lno.length, rno.length)
               if (maxLen === 0) return null
               return <>
-                <div className="gd-mob-section-hdr" style={{ color: '#6e7681' }}>
+                <div className="gd-mob-section-hdr" style={{ color: '#80786f' }}>
                   <i className="bi bi-calendar-x me-1"></i>No Game
                 </div>
                 {Array.from({ length: maxLen }).map((_, i) => {
@@ -719,12 +719,12 @@ export function Reserve7sGamedayPage() {
       )}
 
       {/* Footer */}
-      <div className="mt-3 d-flex align-items-center justify-content-between" style={{ fontSize: '.75rem', color: '#484f58' }}>
+      <div className="mt-3 d-flex align-items-center justify-content-between" style={{ fontSize: '.75rem', color: '#56504a' }}>
         <span>
-          {gs === 'live' ? <><i className="bi bi-broadcast me-1" style={{ color: '#3fb950' }}></i>Live updates active</>
+          {gs === 'live' ? <><i className="bi bi-broadcast me-1" style={{ color: '#dbcf94' }}></i>Live updates active</>
             : gs === 'completed' ? 'Final results' : <>&nbsp;</>}
         </span>
-        <Link to={`/leagues/${leagueId}/reserve7s/fixture`} style={{ color: '#8b949e', textDecoration: 'none', fontSize: '.7rem' }}>
+        <Link to={`/leagues/${leagueId}/reserve7s/fixture`} style={{ color: '#a39586', textDecoration: 'none', fontSize: '.7rem' }}>
           7s Season Fixture &rarr;
         </Link>
       </div>

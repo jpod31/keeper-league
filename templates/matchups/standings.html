@@ -6,99 +6,99 @@
 {% include "matchups/_league_subnav.html" %}
 <style>
   .ldr-wrap {
-    background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden;
+    background:#121110; border:1px solid #272522; border-radius:10px; overflow:hidden;
   }
   .ldr-table { width:100%; border-collapse:collapse; }
   .ldr-table th {
-    font-size:.65rem; font-weight:600; color:#484f58; text-transform:uppercase;
-    letter-spacing:.5px; padding:10px 12px; border-bottom:1px solid #21262d;
+    font-size:.65rem; font-weight:600; color:#56504a; text-transform:uppercase;
+    letter-spacing:.5px; padding:10px 12px; border-bottom:1px solid #272522;
     white-space:nowrap;
   }
   .ldr-table td {
-    font-size:.8rem; padding:10px 12px; border-bottom:1px solid #161b22;
-    color:#8b949e; font-variant-numeric:tabular-nums;
+    font-size:.8rem; padding:10px 12px; border-bottom:1px solid #1c1a18;
+    color:#a39586; font-variant-numeric:tabular-nums;
   }
   .ldr-table tbody tr { transition:background .1s; }
-  .ldr-table tbody tr:hover { background:rgba(22,27,34,.5); }
+  .ldr-table tbody tr:hover { background:rgba(28,26,24,.5); }
   .ldr-table tbody tr:last-child td { border-bottom:none; }
-  .ldr-finals-line td { border-bottom:2px solid rgba(63,185,80,.5) !important; }
+  .ldr-finals-line td { border-bottom:2px solid rgba(219,207,148,.5) !important; }
 
   .ldr-pos {
     display:inline-flex; align-items:center; justify-content:center;
     width:24px; height:24px; border-radius:6px; font-size:.7rem; font-weight:700;
   }
-  .ldr-pos-finals { background:rgba(46,160,67,.08); color:#2ea043; }
-  .ldr-pos-out { color:#484f58; }
-  .ldr-pos-1 { background:rgba(255,215,0,.15); color:#FFD700; text-shadow:0 0 6px rgba(255,215,0,.4); }
-  .ldr-pos-2 { background:rgba(192,192,192,.1); color:#C0C0C0; }
-  .ldr-pos-3 { background:rgba(205,127,50,.1); color:#CD7F32; }
+  .ldr-pos-finals { background:rgba(151,115,43,.08); color:#97732b; }
+  .ldr-pos-out { color:#56504a; }
+  .ldr-pos-1 { background:rgba(249,192,6,.15); color:#f9c006; text-shadow:0 0 6px rgba(249,192,6,.4); }
+  .ldr-pos-2 { background:rgba(192,192,192,.1); color:#c0c0c0; }
+  .ldr-pos-3 { background:rgba(205,112,50,.1); color:#cd7032; }
 
   .ldr-name {
-    color:#e6edf3; font-weight:600; text-decoration:none; transition:color .1s;
+    color:#efedea; font-weight:600; text-decoration:none; transition:color .1s;
   }
-  .ldr-name:hover { color:#58a6ff; }
-  .ldr-pts { color:#58a6ff; font-weight:700; }
+  .ldr-name:hover { color:#f5b940; }
+  .ldr-pts { color:#f5b940; font-weight:700; }
   .ldr-pct { font-weight:500; }
   .ldr-footer {
-    padding:8px 16px; font-size:.68rem; color:#30363d;
-    border-top:1px solid #161b22;
+    padding:8px 16px; font-size:.68rem; color:#373330;
+    border-top:1px solid #1c1a18;
     display:flex; justify-content:space-between; align-items:center;
   }
 
   /* View toggle */
   .ldr-toggle {
-    display:inline-flex; border:1px solid #30363d; border-radius:6px; overflow:hidden;
+    display:inline-flex; border:1px solid #373330; border-radius:6px; overflow:hidden;
     margin-bottom:16px;
   }
   .ldr-toggle-btn {
     padding:6px 16px; font-size:.78rem; font-weight:600; cursor:pointer;
-    background:transparent; color:#8b949e; border:none; transition:all .15s;
+    background:transparent; color:#a39586; border:none; transition:all .15s;
   }
-  .ldr-toggle-btn.active { background:rgba(88,166,255,.12); color:#58a6ff; }
-  .ldr-toggle-btn:hover:not(.active) { color:#c9d1d9; }
+  .ldr-toggle-btn.active { background:rgba(245,185,64,.12); color:#f5b940; }
+  .ldr-toggle-btn:hover:not(.active) { color:#d7d1cb; }
 
   /* Rankings inline */
-  .pr-row { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid #161b22; transition:background .1s; }
-  .pr-row:hover { background:rgba(22,27,34,.5); }
+  .pr-row { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid #1c1a18; transition:background .1s; }
+  .pr-row:hover { background:rgba(28,26,24,.5); }
   .pr-row:last-child { border-bottom:none; }
   .pr-rank-num { font-size:1.1rem; font-weight:800; min-width:28px; text-align:center; }
-  .pr-rank-1 { color:#FFD700; }
-  .pr-rank-2 { color:#C0C0C0; }
-  .pr-rank-3 { color:#CD7F32; }
-  .pr-rank-other { color:#484f58; }
+  .pr-rank-1 { color:#f9c006; }
+  .pr-rank-2 { color:#c0c0c0; }
+  .pr-rank-3 { color:#cd7032; }
+  .pr-rank-other { color:#56504a; }
   .pr-move { font-size:.72rem; font-weight:700; min-width:32px; text-align:center; }
-  .pr-move-up { color:#3fb950; }
+  .pr-move-up { color:#dbcf94; }
   .pr-move-down { color:#f85149; }
-  .pr-move-same { color:#30363d; }
+  .pr-move-same { color:#373330; }
   .pr-info { flex:1; min-width:0; }
-  .pr-team { color:#e6edf3; font-weight:600; font-size:.88rem; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .pr-team { color:#efedea; font-weight:600; font-size:.88rem; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .pr-headline {
     font-size:.6rem; font-weight:700; letter-spacing:.3px; padding:1px 6px; border-radius:3px;
     text-transform:uppercase;
   }
-  .pr-hl-onfire, .pr-hl-dominant { background:rgba(63,185,80,.15); color:#3fb950; }
-  .pr-hl-surging, .pr-hl-strong { background:rgba(88,166,255,.12); color:#58a6ff; }
-  .pr-hl-steady { background:rgba(139,148,158,.1); color:#8b949e; }
+  .pr-hl-onfire, .pr-hl-dominant { background:rgba(219,207,148,.15); color:#dbcf94; }
+  .pr-hl-surging, .pr-hl-strong { background:rgba(245,185,64,.12); color:#f5b940; }
+  .pr-hl-steady { background:rgba(163,149,134,.1); color:#a39586; }
   .pr-hl-underperforming, .pr-hl-struggling { background:rgba(248,81,73,.1); color:#f85149; }
   .pr-hl-sliding, .pr-hl-infreefall { background:rgba(248,81,73,.15); color:#f85149; }
   .pr-detail-row {
     display:flex; align-items:center; gap:6px; margin-top:2px;
-    font-size:.7rem; color:#8b949e;
+    font-size:.7rem; color:#a39586;
   }
-  .pr-detail-item b { color:#c9d1d9; }
-  .pr-detail-sep { width:1px; height:10px; background:#30363d; }
-  .pr-detail-pos { color:#3fb950; }
+  .pr-detail-item b { color:#d7d1cb; }
+  .pr-detail-sep { width:1px; height:10px; background:#373330; }
+  .pr-detail-pos { color:#dbcf94; }
   .pr-detail-neg { color:#f85149; }
   .pr-right { display:flex; align-items:center; gap:12px; }
-  .pr-score-badge { color:#58a6ff; font-weight:700; font-size:.85rem; }
+  .pr-score-badge { color:#f5b940; font-weight:700; font-size:.85rem; }
   .pr-form-dots { display:flex; gap:2px; }
   .pr-dot {
     width:16px; height:16px; border-radius:3px; font-size:.55rem; font-weight:800;
     display:flex; align-items:center; justify-content:center;
   }
-  .pr-dot-W { background:rgba(63,185,80,.15); color:#3fb950; }
+  .pr-dot-W { background:rgba(219,207,148,.15); color:#dbcf94; }
   .pr-dot-L { background:rgba(248,81,73,.12); color:#f85149; }
-  .pr-dot-D { background:rgba(210,153,34,.12); color:#d29922; }
+  .pr-dot-D { background:rgba(210,104,34,.12); color:#d26822; }
 </style>
 
 {% set _st = scoring.label|lower %}
@@ -122,16 +122,16 @@
       {% set in_finals = finals_teams > 0 and pos <= finals_teams %}
       {% set is_finals_line = in_finals and pos == finals_teams %}
       {% set is_mine = nav_user_team is defined and nav_user_team and s.team_id == nav_user_team.id %}
-      <div class="ldr-mob-card{% if is_mine %} ldr-mob-mine{% endif %}{% if in_finals %} ldr-mob-finals{% endif %}"{% if is_finals_line %} style="border-bottom:2px solid rgba(63,185,80,.5);"{% endif %}>
+      <div class="ldr-mob-card{% if is_mine %} ldr-mob-mine{% endif %}{% if in_finals %} ldr-mob-finals{% endif %}"{% if is_finals_line %} style="border-bottom:2px solid rgba(219,207,148,.5);"{% endif %}>
         <span class="ldr-mob-rank{% if pos == 1 %} ldr-pos-1{% elif pos == 2 %} ldr-pos-2{% elif pos == 3 %} ldr-pos-3{% elif in_finals %} ldr-pos-finals{% else %} ldr-pos-out{% endif %}">{{ pos }}</span>
         <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}" class="ldr-mob-name">{{ s.team.name }}</a>
         <span class="ldr-mob-record">{{ s.wins }}-{{ s.losses }}{% if s.draws %}-{{ s.draws }}{% endif %}</span>
-        <span class="ldr-mob-pts">{{ s.ladder_points }}<span style="font-size:.65rem;font-weight:500;color:#8b949e;"> pts</span></span>
+        <span class="ldr-mob-pts">{{ s.ladder_points }}<span style="font-size:.65rem;font-weight:500;color:#a39586;"> pts</span></span>
       </div>
     {% endfor %}
     {% if finals_teams > 0 %}
-    <div style="font-size:.65rem;color:#484f58;padding:8px 12px;text-align:center;background:rgba(63,185,80,.03);">
-      <i class="bi bi-trophy-fill" style="color:#2ea043;margin-right:4px;"></i>Top {{ finals_teams }} qualify for finals
+    <div style="font-size:.65rem;color:#56504a;padding:8px 12px;text-align:center;background:rgba(219,207,148,.03);">
+      <i class="bi bi-trophy-fill" style="color:#97732b;margin-right:4px;"></i>Top {{ finals_teams }} qualify for finals
     </div>
     {% endif %}
   </div>
@@ -157,7 +157,7 @@
         {% for s in standings %}
           {% set pos = loop.index %}
           {% set in_finals = finals_teams > 0 and pos <= finals_teams %}
-          <tr{% if in_finals and pos == finals_teams %} class="ldr-finals-line"{% endif %}{% if in_finals %} style="background:rgba(63,185,80,.03);"{% endif %}>
+          <tr{% if in_finals and pos == finals_teams %} class="ldr-finals-line"{% endif %}{% if in_finals %} style="background:rgba(219,207,148,.03);"{% endif %}>
             <td style="text-align:center;">
               <span class="ldr-pos{% if pos == 1 %} ldr-pos-1{% elif pos == 2 %} ldr-pos-2{% elif pos == 3 %} ldr-pos-3{% elif in_finals %} ldr-pos-finals{% else %} ldr-pos-out{% endif %}">
                 {{ pos }}
@@ -169,7 +169,7 @@
               </a>
             </td>
             <td style="text-align:center;">{{ s.wins + s.losses + s.draws }}</td>
-            <td style="text-align:center;{% if s.wins > 0 %}color:#3fb950;font-weight:600;{% endif %}">{{ s.wins }}</td>
+            <td style="text-align:center;{% if s.wins > 0 %}color:#dbcf94;font-weight:600;{% endif %}">{{ s.wins }}</td>
             <td style="text-align:center;{% if s.losses > 0 %}color:#f85149;font-weight:600;{% endif %}">{{ s.losses }}</td>
             <td class="ldr-hide-mobile" style="text-align:center;">{{ s.draws }}</td>
             <td style="text-align:center;"><span class="ldr-pts">{{ s.ladder_points }}</span></td>
@@ -180,7 +180,7 @@
               {{ '%.0f'|format(s.points_against) if s.points_against > 0 else '–' }}
             </td>
             <td class="ldr-hide-mobile" style="text-align:right;">
-              <span class="ldr-pct" style="{% if s.percentage >= 110 %}color:#3fb950;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '–' }}{% if s.percentage > 0 %}%{% endif %}</span>
+              <span class="ldr-pct" style="{% if s.percentage >= 110 %}color:#dbcf94;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}">{{ '%.1f'|format(s.percentage) if s.percentage > 0 else '–' }}{% if s.percentage > 0 %}%{% endif %}</span>
             </td>
           </tr>
         {% endfor %}
@@ -192,9 +192,9 @@
     </div>
   </div>
 {% else %}
-  <div style="text-align:center;padding:60px 20px;color:#484f58;">
-    <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
-    <h4 style="color:#8b949e;font-size:1rem;font-weight:600;">No teams yet</h4>
+  <div style="text-align:center;padding:60px 20px;color:#56504a;">
+    <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#373330;"></i>
+    <h4 style="color:#a39586;font-size:1rem;font-weight:600;">No teams yet</h4>
     <p style="font-size:.8rem;">Teams will appear here once they join the league.</p>
   </div>
 {% endif %}
@@ -204,8 +204,8 @@
 <div id="view-rankings" style="display:none;">
 {% if rankings %}
   <div class="ldr-wrap">
-    <div style="padding:12px 16px;border-bottom:1px solid #21262d;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:.72rem;color:#8b949e;">
+    <div style="padding:12px 16px;border-bottom:1px solid #272522;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:.72rem;color:#a39586;">
         <i class="bi bi-graph-up-arrow me-1"></i>Round {{ rankings[0].afl_round }} — Based on form, scoring power &amp; strength of wins
       </span>
     </div>
@@ -250,8 +250,8 @@
     {% endfor %}
   </div>
 {% else %}
-  <div class="ldr-wrap" style="text-align:center;padding:48px 20px;color:#484f58;">
-    <i class="bi bi-graph-up-arrow" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
+  <div class="ldr-wrap" style="text-align:center;padding:48px 20px;color:#56504a;">
+    <i class="bi bi-graph-up-arrow" style="font-size:2rem;display:block;margin-bottom:12px;color:#373330;"></i>
     <p style="font-size:.85rem;">Power rankings will appear after the first round is finalised.</p>
   </div>
 {% endif %}

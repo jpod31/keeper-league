@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ player.name }} — Keeper League{% endblock %}
 
-{% set team_primary = TEAM_COLOURS.get(player.team, ('#58a6ff','#fff'))[0] %}
-{% set team_secondary = TEAM_COLOURS.get(player.team, ('#58a6ff','#fff'))[1] %}
+{% set team_primary = TEAM_COLOURS.get(player.team, ('#f5b940','#fff'))[0] %}
+{% set team_secondary = TEAM_COLOURS.get(player.team, ('#f5b940','#fff'))[1] %}
 {% set team_primary_rgb = team_primary|hex_to_rgb %}
 {% set has_sc = player.sc_avg is not none %}
 {% set has_detailed = detailed.has_data %}
@@ -37,12 +37,20 @@
       </div>
 
       <div class="pp-poster-meta">
-        <span><span class="pos-badge pos-{{ player.primary_position }}">{{ player.position }}</span></span>
+        <span><span class="pos-badge pos-{{ player.primary_position }}{% if player_flags.get('position_expected') %} pos-expected{% endif %}">{{ player.position }}{% if player_flags.get('position_expected') %} exp{% endif %}</span></span>
+        {% if player_flags.get('is_new') %}<span><span class="pl-mark pl-mark-new" style="margin-left:0">NEW IN {{ years.afl_year }}</span></span>{% endif %}
+        {% if player_flags.get('is_former') %}<span><span class="pl-mark pl-mark-off" style="margin-left:0">OFF AFL LIST</span></span>{% endif %}
         {% if player.age %}<span><i class="bi bi-person"></i><b>{{ player.age }}</b> yrs</span>{% endif %}
         {% if player.height %}<span><i class="bi bi-arrows-vertical"></i><b>{{ player.height }}</b> cm</span>{% endif %}
         {% if player.games %}<span><i class="bi bi-controller"></i><b>{{ player.games }}</b> career games</span>{% endif %}
       </div>
 
+      {% if player_flags.get('position_expected') %}
+      <div class="pmod-flag">Expected position. He has no SuperCoach position yet.</div>
+      {% endif %}
+      {% if player_flags.get('is_former') %}
+      <div class="pmod-flag pmod-flag-off">No longer on an AFL list{% if player_flags.get('left_afl_year') %} (last listed {{ player_flags.left_afl_year }}){% endif %}.</div>
+      {% endif %}
       {% if player_injury and player_injury.severity %}
       <div class="pp-injury">
         <i class="bi bi-bandaid-fill"></i>
@@ -65,7 +73,7 @@
     <div class="pp-poster-rings">
       {% if player.draft_score %}
       {% set ds = player.draft_score %}
-      {% set ds_color = '#f0883e' if ds >= 70 else '#d29922' if ds >= 50 else '#da6d42' if ds >= 30 else '#8b6c32' %}
+      {% set ds_color = '#f0763e' if ds >= 70 else '#d26822' if ds >= 50 else '#da6542' if ds >= 30 else '#8b5632' %}
       {% set ds_arc = (ds / 100 * 220)|round %}
       <div class="pp-ring">
         <svg viewBox="0 0 80 80">
@@ -78,7 +86,7 @@
       {% endif %}
       {% if player_ratings.get('rating') %}
       {% set rtg = player_ratings.rating %}
-      {% set rtg_color = '#3fb950' if rtg >= 80 else '#56d364' if rtg >= 70 else '#7ee787' if rtg >= 60 else '#2ea043' %}
+      {% set rtg_color = '#dbcf94' if rtg >= 80 else '#e2d48e' if rtg >= 70 else '#efe7bd' if rtg >= 60 else '#97732b' %}
       {% set rtg_arc = (rtg / 100 * 220)|round %}
       <div class="pp-ring">
         <svg viewBox="0 0 80 80">
@@ -91,7 +99,7 @@
       {% endif %}
       {% if player_ratings.get('potential') %}
       {% set pot = player_ratings.potential %}
-      {% set pot_color = '#58a6ff' if pot >= 85 else '#79c0ff' if pot >= 75 else '#a5d6ff' if pot >= 65 else '#388bfd' %}
+      {% set pot_color = '#f5b940' if pot >= 85 else '#f6c35c' if pot >= 75 else '#f8d182' if pot >= 65 else '#f3ae23' %}
       {% set pot_arc = (pot / 100 * 220)|round %}
       <div class="pp-ring">
         <svg viewBox="0 0 80 80">
@@ -134,7 +142,7 @@
         <div class="pp-tile-value">{{ detailed.last_3_avg[key] }}</div>
         <div class="pp-tile-label">{{ label }}</div>
         <div class="pp-tile-sub">
-          L3{% if detailed.last_5_avg.get(key) is not none %} · L5 {{ detailed.last_5_avg[key] }}{% endif %}
+          Last 3{% if years.stats_are_last_season %} of {{ years.stats_year }}{% endif %}{% if detailed.last_5_avg.get(key) is not none %} · last 5 {{ detailed.last_5_avg[key] }}{% endif %}
         </div>
       </div>
     </div>
@@ -146,7 +154,7 @@
   <div class="col-6 col-md-3">
     <div class="pp-tile pp-tile-accent-sc">
       <div class="pp-tile-value">{{ player.sc_avg }}</div>
-      <div class="pp-tile-label">SC Average</div>
+      <div class="pp-tile-label">{% if years.stats_are_last_season %}{{ years.stats_year }} SC average{% else %}SC Average{% endif %}</div>
     </div>
   </div>
   {% if player_ratings.get('rating') %}
@@ -192,6 +200,24 @@
   </div>
   {% endif %}
 </div>
+{% endif %}
+
+{# ══════════════ MY NOTES ══════════════ #}
+{% if current_user.is_authenticated and player_flags.get('id') %}
+<section class="pn" id="playerNotes" data-player-id="{{ player_flags.id }}">
+  <div class="pn-head">
+    <h3>My notes</h3>
+    <span class="pn-count" id="pnCount" hidden></span>
+    <span class="pn-private"><i class="bi bi-lock-fill"></i> Only you see these</span>
+  </div>
+  <div class="pn-add">
+    <textarea id="pnDraft" rows="2" maxlength="2000" placeholder="Write a note on this player" aria-label="New note"></textarea>
+    <button type="button" class="pn-save" id="pnSave" disabled>Add note</button>
+  </div>
+  <div class="pn-error" id="pnError" role="alert" hidden></div>
+  <div class="pn-empty" id="pnEmpty">Loading notes</div>
+  <ul class="pn-list" id="pnList" hidden></ul>
+</section>
 {% endif %}
 
 {# ══════════════ TABS ══════════════ #}
@@ -476,7 +502,7 @@
               <th class="text-end">DIS</th><th class="text-end">MRK</th><th class="text-end">GLS</th>
               <th class="text-end">TKL</th><th class="text-end">HO</th><th class="text-end">CP</th>
               <th class="text-end">CLR</th><th class="text-end">I50</th>
-              <th class="text-end fw-bold" style="color:#58a6ff;">FAN</th>
+              <th class="text-end fw-bold" style="color:#f5b940;">FAN</th>
             </tr>
           </thead>
           <tbody>
@@ -495,7 +521,7 @@
               <td class="text-end">{{ '%.1f'|format(s.contested_possessions) if s.contested_possessions else '—' }}</td>
               <td class="text-end">{{ '%.1f'|format(s.clearances) if s.clearances else '—' }}</td>
               <td class="text-end">{{ '%.1f'|format(s.inside_fifties) if s.inside_fifties else '—' }}</td>
-              <td class="text-end fw-bold" style="color:#58a6ff;">{{ '%.0f'|format(s.fantasy_avg) if s.fantasy_avg else '—' }}</td>
+              <td class="text-end fw-bold" style="color:#f5b940;">{{ '%.0f'|format(s.fantasy_avg) if s.fantasy_avg else '—' }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -515,11 +541,11 @@
         {% for th in afl_team_history %}
         <div class="text-center" style="min-width:48px;{% if th.level != 'AFL' %}opacity:.78;{% endif %}">
           {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }} — {{ th.level }} ({{ th.games }} {{ 'games' if th.level == 'AFL' else 'matches' }})">{% endif %}
-          <div style="font-size:.65rem;color:#c9d1d9;font-weight:700;">{{ th.year }}</div>
-          <div style="font-size:.55rem;font-weight:700;color:{% if th.level == 'AFL' %}#58a6ff{% else %}#8b949e{% endif %};">{{ th.level }}</div>
+          <div style="font-size:.65rem;color:#d7d1cb;font-weight:700;">{{ th.year }}</div>
+          <div style="font-size:.55rem;font-weight:700;color:{% if th.level == 'AFL' %}#f5b940{% else %}#a39586{% endif %};">{{ th.level }}</div>
         </div>
         {% if not loop.last and afl_team_history[loop.index].team != th.team %}
-        <div style="font-size:.6rem;color:#58a6ff;font-weight:700;padding:0 2px;">→</div>
+        <div style="font-size:.6rem;color:#f5b940;font-weight:700;padding:0 2px;">→</div>
         {% endif %}
         {% endfor %}
       </div>
@@ -547,6 +573,80 @@
 
 {% block scripts %}
 <script>
+/* My notes: private, timestamped, as many as you like, each deletable. */
+(function () {
+  var root = document.getElementById('playerNotes');
+  if (!root) return;
+  var pid = root.dataset.playerId;
+  var list = document.getElementById('pnList'), empty = document.getElementById('pnEmpty');
+  var draft = document.getElementById('pnDraft'), save = document.getElementById('pnSave');
+  var count = document.getElementById('pnCount'), err = document.getElementById('pnError');
+  var notes = [];
+
+  function stamp(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) +
+      ', ' + d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+  }
+  function fail(msg) { err.textContent = msg; err.hidden = !msg; }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function render() {
+    list.innerHTML = '';
+    count.hidden = !notes.length; count.textContent = notes.length;
+    empty.hidden = notes.length > 0; empty.textContent = 'No notes yet.';
+    list.hidden = !notes.length;
+    notes.forEach(function (n) {
+      var li = el('li', 'pn-note'), top = el('div', 'pn-note-top');
+      var t = el('time', null, stamp(n.created_at)); t.dateTime = n.created_at;
+      var del = el('button', 'pn-del'); del.type = 'button'; del.setAttribute('aria-label', 'Delete this note');
+      del.innerHTML = '<i class="bi bi-trash3"></i>';
+      del.onclick = function () {
+        var box = el('span', 'pn-confirm');
+        var yes = el('button', 'pn-del-yes', 'Delete'), no = el('button', 'pn-del-no', 'Keep');
+        yes.type = no.type = 'button';
+        yes.onclick = function () { remove(n.id); };
+        no.onclick = render;
+        box.appendChild(yes); box.appendChild(no);
+        top.replaceChild(box, del);
+      };
+      top.appendChild(t); top.appendChild(del);
+      li.appendChild(top); li.appendChild(el('p', null, n.body));
+      list.appendChild(li);
+    });
+  }
+  function remove(id) {
+    var before = notes.slice();
+    notes = notes.filter(function (n) { return n.id !== id; }); render();
+    fetch('/api/players/notes/' + id, { method: 'DELETE', credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw 0; })
+      .catch(function () { notes = before; render(); fail('That note was not deleted. Try again.'); });
+  }
+  function add() {
+    var body = draft.value.trim();
+    if (!body) return;
+    save.disabled = true; fail('');
+    fetch('/api/players/' + pid + '/notes', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: body }),
+    }).then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (d) { notes.unshift(d.note); draft.value = ''; render(); })
+      .catch(function () { fail('That note was not saved. Try again.'); save.disabled = false; });
+  }
+  draft.addEventListener('input', function () { save.disabled = !draft.value.trim(); });
+  draft.addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add(); });
+  save.addEventListener('click', add);
+  fetch('/api/players/' + pid + '/notes', { credentials: 'same-origin' })
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (d) { notes = d.notes; render(); })
+    .catch(function () { empty.textContent = 'Your notes could not be loaded.'; });
+})();
+</script>
+<script>
 (function() {
   const scHistory = {{ sc_history | tojson }};
   const detailed = {{ detailed | tojson }};
@@ -554,8 +654,8 @@
   const teamColour = '{{ team_primary }}';
 
   const chartScales = {
-    x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
-    y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+    x: { ticks: { color: '#a39586' }, grid: { color: '#272522' } },
+    y: { ticks: { color: '#a39586' }, grid: { color: '#272522' } },
   };
 
   // ── Chart 1: SC Career Trajectory ──
@@ -594,10 +694,10 @@
     const ctx2 = document.getElementById('keyStatsChart');
     if (ctx2) {
       const statDefs = [
-        { key: 'avg_disposals', label: 'Disposals', colour: '#58a6ff' },
+        { key: 'avg_disposals', label: 'Disposals', colour: '#f5b940' },
         { key: 'avg_marks', label: 'Marks', colour: '#bc8cff' },
-        { key: 'avg_tackles', label: 'Tackles', colour: '#f0883e' },
-        { key: 'avg_goals', label: 'Goals', colour: '#3fb950' },
+        { key: 'avg_tackles', label: 'Tackles', colour: '#f0763e' },
+        { key: 'avg_goals', label: 'Goals', colour: '#dbcf94' },
       ];
       const datasets = statDefs
         .filter(s => seasons.some(y => y[s.key] != null))
@@ -619,7 +719,7 @@
           },
           options: {
             responsive: true,
-            plugins: { legend: { labels: { color: '#8b949e', boxWidth: 12, usePointStyle: true } } },
+            plugins: { legend: { labels: { color: '#a39586', boxWidth: 12, usePointStyle: true } } },
             scales: {
               x: chartScales.x,
               y: { ...chartScales.y, suggestedMin: 0 },
@@ -689,19 +789,19 @@
               { label: '{{ player.name }}', data: pv.map((v, i) => Math.round(v / mx[i] * 100)),
                 borderColor: teamColour, backgroundColor: teamColour + '20', pointBackgroundColor: teamColour },
               { label: 'League Avg', data: lv.map((v, i) => Math.round(v / mx[i] * 100)),
-                borderColor: '#484f58', backgroundColor: '#484f5810', pointBackgroundColor: '#484f58', borderDash: [4,4] },
+                borderColor: '#56504a', backgroundColor: '#56504a10', pointBackgroundColor: '#56504a', borderDash: [4,4] },
             ]
           },
           options: {
             responsive: true,
             plugins: {
-              legend: { labels: { color: '#8b949e', boxWidth: 12 } },
+              legend: { labels: { color: '#a39586', boxWidth: 12 } },
               tooltip: { callbacks: { label: function(ctx) {
                 const s = avail[ctx.dataIndex];
                 return ctx.datasetIndex === 0 ? s.label + ': ' + pv[ctx.dataIndex] : s.label + ': ' + lv[ctx.dataIndex] + ' (league)';
               }}}
             },
-            scales: { r: { angleLines: { color: '#30363d' }, grid: { color: '#21262d' }, pointLabels: { color: '#8b949e' }, ticks: { display: false }, suggestedMin: 0, suggestedMax: 100 } }
+            scales: { r: { angleLines: { color: '#373330' }, grid: { color: '#272522' }, pointLabels: { color: '#a39586' }, ticks: { display: false }, suggestedMin: 0, suggestedMax: 100 } }
           }
         });
       }

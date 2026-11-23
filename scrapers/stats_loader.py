@@ -337,8 +337,9 @@ def compute_scoring_profile(player_name: str) -> dict:
     order = ["<60", "60–79", "80–99", "100–119", "120+"]
     cnt = Counter(bucket(v) for v in vals)
 
+    latest = max((yy for (yy, _rs, _v) in games), default=CURRENT_YEAR)
     current_rounds = [{"round": int(rs), "sc": round(v, 1)}
-                      for (yy, rs, v) in games if yy == CURRENT_YEAR]
+                      for (yy, rs, v) in games if yy == latest]
 
     return {
         "has_data": True,
@@ -603,7 +604,8 @@ def load_player_detailed_stats(player_name: str) -> dict:
 
     # ── Current-year round-by-round ──
     current_rounds = []
-    current_df = combined[combined["year"] == CURRENT_YEAR].copy()
+    from models.years import stats_year
+    current_df = combined[combined["year"] == stats_year()].copy()
     if not current_df.empty:
         # Parse round strings into sortable keys + labels
         if "round" in current_df.columns:
@@ -750,6 +752,8 @@ def load_player_sc_history_fitzroy(player_name: str) -> dict:
     yearly_averages = []
     current_rounds = []
 
+    from models.years import stats_year
+    _stats_year = stats_year()
     needle = player_name.lower()
     for year in SC_HISTORY_YEARS:
         df = _load_year_csv(year)
@@ -770,7 +774,7 @@ def load_player_sc_history_fitzroy(player_name: str) -> dict:
         gp = len(sc_vals)
         yearly_averages.append({"year": year, "avg": avg, "games_played": gp})
 
-        if year == CURRENT_YEAR and "round" in pdata.columns:
+        if year == _stats_year and "round" in pdata.columns:
             parsed = pdata["round"].apply(_parse_round)
             pdata = pdata.copy()
             pdata["_round_sort"] = parsed.apply(lambda x: x[0])

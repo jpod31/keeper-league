@@ -700,6 +700,9 @@ def squad(league_id, team_id):
                 "career_games": p.career_games or 0, "rating": p.rating,
                 "injury_type": p.injury_type, "injury_return": p.injury_return,
                 "injury_severity": p.injury_severity,
+                # Off the AFL lists but still on this one: he cannot score.
+                "is_former": p.is_former,
+                "position_expected": bool(p.position_expected),
             }
 
         def _serialize_roster(r):
@@ -1996,8 +1999,12 @@ def api_player_detail(league_id, team_id, player_id):
     if not player:
         return jsonify({"error": "Player not found"}), 404
 
-    # All scores this season (for bar chart)
-    current_year = league.season_year
+    # The season the chart, averages and last-3/last-5 come from: the league's
+    # year once it has games, the season before until then (the months
+    # between the AFL draft and Opening Round). The modal labels it.
+    from models.years import stats_year
+    stats_y = min(league.season_year, stats_year())
+    current_year = stats_y
     all_scores = (
         ScScore.query
         .filter_by(player_id=player_id, year=current_year)
@@ -2033,7 +2040,6 @@ def api_player_detail(league_id, team_id, player_id):
         }
 
     # Season averages
-    current_year = league.season_year
     season_avgs = db.session.query(
         func.count(PlayerStat.id).label("games"),
         func.avg(PlayerStat.disposals).label("disposals"),
@@ -2094,6 +2100,12 @@ def api_player_detail(league_id, team_id, player_id):
         "last_game": last_game,
         "season_avg": season_avg,
         "season_games": (season_avg or {}).get("games", 0),
+        "stats_year": stats_y,
+        "stats_are_last_season": stats_y < config.CURRENT_YEAR,
+        "position_expected": bool(player.position_expected),
+        "is_new": player.joined_year == config.CURRENT_YEAR,
+        "is_former": player.is_former,
+        "left_afl_year": player.left_afl_year,
     })
 
 
@@ -2373,6 +2385,7 @@ def api_ssp_available(league_id, team_id):
     # Get unrostered players with SC data
     available = (
         AflPlayer.query
+        .filter(AflPlayer.listed())
         .filter(AflPlayer.id.notin_(rostered_ids))
         .filter(AflPlayer.sc_avg.isnot(None))
         .order_by(AflPlayer.sc_avg.desc())

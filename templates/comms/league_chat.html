@@ -16,7 +16,7 @@
   <div id="chatMessages" class="card-body" style="flex:1;overflow-y:auto;padding:1rem;">
     {% for msg in messages %}
     <div class="d-flex mb-2 {% if msg.sender_user_id == current_user.id %}justify-content-end{% endif %}">
-      <div style="max-width:70%;padding:.5rem .75rem;border-radius:10px;{% if msg.sender_user_id == current_user.id %}background:rgba(88,166,255,.15);{% else %}background:var(--kl-bg-elevated);{% endif %}">
+      <div style="max-width:70%;padding:.5rem .75rem;border-radius:10px;{% if msg.sender_user_id == current_user.id %}background:rgba(245,185,64,.15);{% else %}background:var(--kl-bg-elevated);{% endif %}">
         {% if msg.sender_user_id != current_user.id %}
         <div style="font-size:.7rem;font-weight:600;color:var(--kl-accent-blue);margin-bottom:2px;">
           {{ msg.sender.display_name or msg.sender.username }}
@@ -78,7 +78,7 @@
     div.className = 'd-flex mb-2 ' + (isMine ? 'justify-content-end' : '');
     var t = new Date(time + (time.includes('Z') ? '' : 'Z'));
     var timeStr = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
-    var bg = isMine ? 'background:rgba(88,166,255,.15);' : 'background:var(--kl-bg-elevated);';
+    var bg = isMine ? 'background:rgba(245,185,64,.15);' : 'background:var(--kl-bg-elevated);';
     var nameHtml = isMine ? '' : '<div style="font-size:.7rem;font-weight:600;color:var(--kl-accent-blue);margin-bottom:2px;">' + name + '</div>';
     div.innerHTML = '<div style="max-width:70%;padding:.5rem .75rem;border-radius:10px;' + bg + '">' +
       nameHtml +

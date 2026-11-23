@@ -11,7 +11,7 @@ import { PlayerModal } from '../../components/squad/PlayerModal'
 import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
 import { useFieldActions, checkSwapEligible } from '../../hooks/useFieldActions'
 import { SSPModal } from '../../components/squad/SSPModal'
-import { useLeague } from '../../contexts/LeagueContext'
+import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
 
 interface StandingsLite {
   standings: { team_id: number }[]   // ordered by ladder position
@@ -78,7 +78,7 @@ class SquadErrorBoundary extends Component<{ children: ReactNode }, { error: Err
     if (this.state.error) return (
       <div className="card mt-4"><div className="card-body">
         <h5 style={{ color: '#f85149' }}>Something went wrong</h5>
-        <pre style={{ fontSize: '.75rem', color: '#8b949e', whiteSpace: 'pre-wrap' }}>{this.state.error.message}{'\n'}{this.state.error.stack}</pre>
+        <pre style={{ fontSize: '.75rem', color: '#a39586', whiteSpace: 'pre-wrap' }}>{this.state.error.message}{'\n'}{this.state.error.stack}</pre>
         <button className="btn btn-sm btn-outline-primary mt-2" onClick={() => window.location.reload()}>Reload</button>
       </div></div>
     )
@@ -104,7 +104,7 @@ function HealthCell({ h, nTeams }: { h: SquadHealthTeam | undefined; nTeams: num
 
   if (!h || h.health === 0) {
     return (
-      <div className="squad-stat" style={{ ['--c' as string]: '#8a6db8' } as React.CSSProperties}>
+      <div className="squad-stat" style={{ ['--c' as string]: '#ae9259' } as React.CSSProperties}>
         <div className="squad-stat-val">—</div>
         <div className="squad-stat-meta">
           <div className="squad-stat-label">Health</div>
@@ -113,7 +113,7 @@ function HealthCell({ h, nTeams }: { h: SquadHealthTeam | undefined; nTeams: num
       </div>
     )
   }
-  const color = h.health >= 85 ? '#a98bff' : h.health >= 78 ? '#4ec77a' : h.health >= 70 ? '#5aa0ff' : '#cf9f6a'
+  const color = h.health >= 85 ? '#f7c96b' : h.health >= 78 ? '#ddd093' : h.health >= 70 ? '#f5b941' : '#cf956a'
   const pct = Math.max(4, Math.min(100, (h.health - 40) / 59 * 100))   // 40..99 → bar fill
   return (
     <div ref={ref} className={`squad-stat squad-stat-health${open ? ' open' : ''}`}
@@ -202,10 +202,10 @@ export function SquadPageWrapper() {
 }
 
 const POS_COLORS: Record<string, { bg: string; text: string; row: string }> = {
-  DEF: { bg: 'rgba(26,63,102,.35)', text: '#79c0ff', row: 'rgba(26,63,102,.08)' },
-  MID: { bg: 'rgba(53,29,74,.35)', text: '#d2a8ff', row: 'rgba(53,29,74,.08)' },
-  RUC: { bg: 'rgba(29,61,46,.35)', text: '#7ee787', row: 'rgba(29,61,46,.08)' },
-  FWD: { bg: 'rgba(70,41,10,.35)', text: '#ffb471', row: 'rgba(70,41,10,.08)' },
+  DEF: { bg: 'rgba(90,67,19,.45)', text: '#f8c552', row: 'rgba(90,67,19,.10)' },
+  MID: { bg: 'rgba(58,33,82,.45)', text: '#d6b0ff', row: 'rgba(58,33,82,.10)' },
+  RUC: { bg: 'rgba(70,66,59,.45)', text: '#f1ebdd', row: 'rgba(70,66,59,.10)' },
+  FWD: { bg: 'rgba(92,31,24,.45)', text: '#ff9484', row: 'rgba(92,31,24,.10)' },
 }
 
 export { SquadPageWrapper as SquadPage }
@@ -213,6 +213,7 @@ export { SquadPageWrapper as SquadPage }
 function SquadPageInner() {
   const { leagueId, teamId } = useParams()
   const { league } = useLeague()
+  const statsYr = useStatsYear()
   // Past-round browsing (#21). null = current (live FieldView), number = snapshot.
   const [archiveRound, setArchiveRound] = useState<number | null>(null)
   // Bye preview (#14). When set, the field greys out players on bye that round.
@@ -328,11 +329,11 @@ function SquadPageInner() {
     // give a retry button instead of a dead-end message.
     return (
       <div className="card mt-4"><div className="card-body text-center" style={{ padding: '32px 20px' }}>
-        <div style={{ fontSize: '2rem', color: '#484f58', marginBottom: 8 }}>
+        <div style={{ fontSize: '2rem', color: '#56504a', marginBottom: 8 }}>
           <i className="bi bi-cloud-slash"></i>
         </div>
-        <h5 style={{ color: '#c9d1d9' }}>Couldn't load your squad</h5>
-        <p style={{ fontSize: '.85rem', color: '#8b949e', maxWidth: 420, margin: '8px auto 16px' }}>
+        <h5 style={{ color: '#d7d1cb' }}>Couldn't load your squad</h5>
+        <p style={{ fontSize: '.85rem', color: '#a39586', maxWidth: 420, margin: '8px auto 16px' }}>
           {error
             ? `Server said: ${error.length > 200 ? error.slice(0, 200) + '...' : error}`
             : 'Network seems quiet. The app server may be restarting after a deploy.'}
@@ -366,7 +367,7 @@ function SquadPageInner() {
   const capScoring = data.captain_scoring_enabled   // league toggle — many leagues run it off
   const capOnField = !!(capP && onfieldIds.has(capP.id))
   if (capScoring && capOnField) projScore += (capP!.sc_avg || 0)  // captain scores double (only if enabled)
-  const projSub = !capScoring ? 'on-field SC avg'
+  const projSub = !capScoring ? (statsYr.isLast ? `on-field ${statsYr.label} avg` : 'on-field SC avg')
     : capOnField ? 'incl. captain ×2' : 'set a captain for ×2'
   // Ladder position + recent form for THIS team (from the standings endpoint).
   const ladder = standings?.standings ?? []
@@ -432,7 +433,7 @@ function SquadPageInner() {
           <div className="mob-pos-name">
             {player.name}
             {isLocked && <i className="bi bi-lock-fill mob-lock-icon"></i>}
-            {!isLocked && selectedSet.has(player.id) && <i className="bi bi-check-circle-fill" style={{ fontSize: '.6rem', color: '#3fb950', marginLeft: 4, verticalAlign: 'middle' }}></i>}
+            {!isLocked && selectedSet.has(player.id) && <i className="bi bi-check-circle-fill" style={{ fontSize: '.6rem', color: '#dbcf94', marginLeft: 4, verticalAlign: 'middle' }}></i>}
             {fd?.cap_id === player.id && <span className="mob-pos-badge mob-badge-cap">C</span>}
             {fd?.vc_id === player.id && <span className="mob-pos-badge mob-badge-vc">VC</span>}
             {showEmg && <span className="mob-pos-badge mob-badge-emg">E</span>}
@@ -447,7 +448,7 @@ function SquadPageInner() {
           </div>
         </div>
         <div className="mob-pos-sc">
-          {player.sc_avg ? <span style={{ color: '#e6edf3', fontWeight: 700 }}>{player.sc_avg.toFixed(1)}</span> : <span style={{ color: '#484f58' }}>-</span>}
+          {player.sc_avg ? <span style={{ color: '#efedea', fontWeight: 700 }}>{player.sc_avg.toFixed(1)}</span> : <span style={{ color: '#56504a' }}>-</span>}
         </div>
       </div>
     )
@@ -516,7 +517,7 @@ function SquadPageInner() {
           )}
         </div>
         <div className={`squad-cmd-stats squad-cmd-stats-4${view === 'field' ? ' fv-stats-hide-mob' : ''}`}>
-          <div className="squad-stat" style={{ ['--c' as string]: inFinals ? '#4ec77a' : '#ef6b5e' } as React.CSSProperties}>
+          <div className="squad-stat" style={{ ['--c' as string]: inFinals ? '#ddd093' : '#ef6b5e' } as React.CSSProperties}>
             <div className="squad-stat-val">{ladderPos != null ? ordinal(ladderPos) : '—'}</div>
             <div className="squad-stat-meta">
               <div className="squad-stat-label">Ladder</div>
@@ -528,7 +529,7 @@ function SquadPageInner() {
               </div>
             </div>
           </div>
-          <div className="squad-stat" style={{ ['--c' as string]: lastResult === 'L' ? '#ef6b5e' : '#4ec77a' } as React.CSSProperties}>
+          <div className="squad-stat" style={{ ['--c' as string]: lastResult === 'L' ? '#ef6b5e' : '#ddd093' } as React.CSSProperties}>
             <div className="squad-stat-val squad-stat-form">
               {recentForm.length === 0
                 ? <span className="squad-stat-form-empty">—</span>
@@ -539,7 +540,7 @@ function SquadPageInner() {
               <div className="squad-stat-sub">{formSub}</div>
             </div>
           </div>
-          <div className="squad-stat" style={{ ['--c' as string]: '#5aa0ff' } as React.CSSProperties}>
+          <div className="squad-stat" style={{ ['--c' as string]: '#f5b941' } as React.CSSProperties}>
             <div className="squad-stat-val">{Math.round(projScore).toLocaleString()}</div>
             <div className="squad-stat-meta">
               <div className="squad-stat-label">Projected</div>
@@ -565,7 +566,7 @@ function SquadPageInner() {
           <i className="bi bi-arrow-left-right"></i>Trades
         </Link>
         {is_owner && (
-          <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`league-subtab${view === 'wishlist' ? ' active' : ''}`} style={view === 'wishlist' ? { color: '#d29922', borderBottomColor: '#d29922' } : undefined}>
+          <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`league-subtab${view === 'wishlist' ? ' active' : ''}`} style={view === 'wishlist' ? { color: '#d26822', borderBottomColor: '#d26822' } : undefined}>
             <i className="bi bi-star"></i>Wishlist
           </Link>
         )}
@@ -576,14 +577,14 @@ function SquadPageInner() {
         <Link to={`/leagues/${leagueId}/team/${teamId}/analytics`} className="mob-subnav-item text-decoration-none"><i className="bi bi-bar-chart-line"></i><span>Analytics</span></Link>
         <Link to={`/leagues/${leagueId}/trades`} className="mob-subnav-item text-decoration-none"><i className="bi bi-arrow-left-right"></i><span>Trades</span></Link>
         {is_owner && (
-          <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`mob-subnav-item text-decoration-none${view === 'wishlist' ? ' active' : ''}`} style={{ color: '#d29922' }}><i className="bi bi-star"></i><span>Wishlist</span></Link>
+          <Link to={`/leagues/${leagueId}/team/${teamId}?view=wishlist`} className={`mob-subnav-item text-decoration-none${view === 'wishlist' ? ' active' : ''}`} style={{ color: '#d26822' }}><i className="bi bi-star"></i><span>Wishlist</span></Link>
         )}
       </div>
 
       {/* ── Non-owner notice ── */}
       {!is_owner && (
-        <div className="d-flex align-items-center gap-2 mb-3 px-3 py-2" style={{ background: 'rgba(139,148,158,.08)', border: '1px solid #30363d', borderRadius: 8, fontSize: '.85rem', color: '#8b949e' }}>
-          <i className="bi bi-eye"></i><span>Viewing <strong style={{ color: '#c9d1d9' }}>{data.team.name}</strong>'s squad (read-only)</span>
+        <div className="d-flex align-items-center gap-2 mb-3 px-3 py-2" style={{ background: 'rgba(163,149,134,.08)', border: '1px solid #373330', borderRadius: 8, fontSize: '.85rem', color: '#a39586' }}>
+          <i className="bi bi-eye"></i><span>Viewing <strong style={{ color: '#d7d1cb' }}>{data.team.name}</strong>'s squad (read-only)</span>
         </div>
       )}
 
@@ -742,8 +743,8 @@ function SquadPageInner() {
       {view === 'wishlist' && is_owner && (
         <div className="card">
           <div className="card-header d-flex justify-content-between align-items-center">
-            <span className="fw-bold" style={{ fontSize: '.9rem' }}><i className="bi bi-star me-1" style={{ color: '#d29922' }}></i>My Wishlist</span>
-            <span style={{ fontSize: '.75rem', color: '#8b949e' }}>{data.wishlist_players.length} player{data.wishlist_players.length !== 1 ? 's' : ''}</span>
+            <span className="fw-bold" style={{ fontSize: '.9rem' }}><i className="bi bi-star me-1" style={{ color: '#d26822' }}></i>My Wishlist</span>
+            <span style={{ fontSize: '.75rem', color: '#a39586' }}>{data.wishlist_players.length} player{data.wishlist_players.length !== 1 ? 's' : ''}</span>
           </div>
           {data.wishlist_players.length > 0 ? (
             <div className="card-body p-0" style={{ overflowX: 'auto' }}>
@@ -757,26 +758,26 @@ function SquadPageInner() {
                         <td className="text-center" style={{ padding: 0, verticalAlign: 'middle' }}>
                           <i
                             className="bi bi-star-fill"
-                            style={{ cursor: 'pointer', fontSize: '.85rem', color: '#d29922' }}
+                            style={{ cursor: 'pointer', fontSize: '.85rem', color: '#d26822' }}
                             title="Remove from wishlist"
                             onClick={() => removeFromWishlist(p.id)}
                           ></i>
                         </td>
                         <td>
-                          <span className="fw-bold" style={{color:"#c9d1d9"}}>
+                          <span className="fw-bold" style={{color:"#d7d1cb"}}>
                             {p.name}
                           </span>
                         </td>
                         <td>{(p.position || 'MID').split('/').map(pos => <span key={pos} className={`pos-badge pos-${pos}`} style={{ fontSize: '.65rem', padding: '1px 5px' }}>{pos}</span>)}</td>
-                        <td style={{ color: '#8b949e', fontSize: '.78rem' }}>{p.afl_team || '-'}</td>
-                        <td className="text-center" style={{ color: '#8b949e' }}>{p.age || '-'}</td>
-                        <td className="text-end">{wp.sc_avg ? <span style={{ fontWeight: 600 }}>{wp.sc_avg}</span> : <span style={{ color: '#484f58' }}>-</span>}</td>
+                        <td style={{ color: '#a39586', fontSize: '.78rem' }}>{p.afl_team || '-'}</td>
+                        <td className="text-center" style={{ color: '#a39586' }}>{p.age || '-'}</td>
+                        <td className="text-end">{wp.sc_avg ? <span style={{ fontWeight: 600 }}>{wp.sc_avg}</span> : <span style={{ color: '#56504a' }}>-</span>}</td>
                         <td className="text-center">
                           {wp.trend > 5 ? <span className="trend-pill trend-up"><i className="bi bi-caret-up-fill"></i>+{Math.round(wp.trend)}</span>
                             : wp.trend < -5 ? <span className="trend-pill trend-down"><i className="bi bi-caret-down-fill"></i>{Math.round(wp.trend)}</span>
                             : <span className="trend-flat" style={{ fontSize: '.7rem' }}>{wp.trend ? `${wp.trend > 0 ? '+' : ''}${Math.round(wp.trend)}` : '-'}</span>}
                         </td>
-                        <td className="text-center" style={{ color: '#8b949e' }}>{wp.games || '-'}</td>
+                        <td className="text-center" style={{ color: '#a39586' }}>{wp.games || '-'}</td>
                         <td className="text-center">
                           {wp.owner ? (
                             <span className="d-inline-flex align-items-center gap-1">
@@ -793,7 +794,7 @@ function SquadPageInner() {
                               )}
                             </span>
                           ) : (
-                            <span className="status-chip" style={{ background: 'rgba(63,185,80,.1)', color: '#3fb950', fontSize: '.65rem' }}>Available</span>
+                            <span className="status-chip" style={{ background: 'rgba(219,207,148,.1)', color: '#dbcf94', fontSize: '.65rem' }}>Available</span>
                           )}
                         </td>
                       </tr>
@@ -875,7 +876,7 @@ function SquadPageInner() {
             return (
               <div className="d-lg-none" style={{
                 position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1080,
-                background: 'linear-gradient(135deg, #1f6feb, #8957e5)',
+                background: 'linear-gradient(135deg, #b77a10, #e1aa3c)',
                 borderBottom: '2px solid rgba(255,255,255,0.18)',
                 padding: '10px 14px',
                 display: 'flex', alignItems: 'center', gap: 10,
@@ -923,8 +924,8 @@ function SquadPageInner() {
             })}
             {fd && fd.flex_data.some(s => s.player) && (
               <div className="mob-pos-group">
-                <div className="mob-pos-header" style={{ background: 'rgba(139,148,158,.15)', borderLeft: '3px solid #8b949e' }}>
-                  <span className="mob-pos-label" style={{ color: '#8b949e' }}>FLEX</span>
+                <div className="mob-pos-header" style={{ background: 'rgba(163,149,134,.15)', borderLeft: '3px solid #a39586' }}>
+                  <span className="mob-pos-label" style={{ color: '#a39586' }}>FLEX</span>
                   <span className="mob-pos-count">{fd.flex_data.filter(s => s.player).length}/{fd.flex_count}</span>
                 </div>
                 {fd.flex_data.filter(s => s.player).map(s => {
@@ -935,11 +936,11 @@ function SquadPageInner() {
             )}
             {fd && fd.emergency_players.length > 0 && (
               <div className="mob-pos-group">
-                <div className="mob-pos-header" style={{ background: 'rgba(56,166,215,.1)', borderLeft: '3px solid #38a6d7' }}>
-                  <span className="mob-pos-label" style={{ color: '#38a6d7' }}><i className="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
+                <div className="mob-pos-header" style={{ background: 'rgba(166,117,33,.1)', borderLeft: '3px solid #a67521' }}>
+                  <span className="mob-pos-label" style={{ color: '#a67521' }}><i className="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
                   <span className="mob-pos-count">{fd.emergency_players.length} / 4</span>
                 </div>
-                {fd.emergency_players.map(p => <MobPlayerRow key={p.id} player={p} section="reserve" showEmg style={{ borderLeft: '3px solid rgba(56,166,215,.3)' }} />)}
+                {fd.emergency_players.map(p => <MobPlayerRow key={p.id} player={p} section="reserve" showEmg style={{ borderLeft: '3px solid rgba(166,117,33,.3)' }} />)}
               </div>
             )}
             {fd && fd.has_7s_fixture && (
@@ -957,7 +958,7 @@ function SquadPageInner() {
                   <MobPlayerRow key={p.id} player={p} section="reserve"
                     style={{ borderLeft: '3px solid rgba(188,140,255,.35)' }} />
                 )) : (
-                  <div className="mob-pos-row" style={{ justifyContent: 'center', color: '#484f58', fontSize: '.8rem', padding: 12 }}>
+                  <div className="mob-pos-row" style={{ justifyContent: 'center', color: '#56504a', fontSize: '.8rem', padding: 12 }}>
                     Tap the <span style={{ color: '#bc8cff', fontWeight: 600 }}>7</span> button on any reserve to add them
                   </div>
                 )}
@@ -974,8 +975,8 @@ function SquadPageInner() {
             )}
             {fd && fd.reserves.length > 0 && (
               <div className="mob-pos-group mob-reserves-group">
-                <div className="mob-pos-header" style={{ background: 'rgba(48,54,61,.4)', borderLeft: '3px solid #484f58' }}>
-                  <span className="mob-pos-label" style={{ color: '#6e7681' }}>BENCH</span>
+                <div className="mob-pos-header" style={{ background: 'rgba(55,51,48,.4)', borderLeft: '3px solid #56504a' }}>
+                  <span className="mob-pos-label" style={{ color: '#80786f' }}>BENCH</span>
                   <span className="mob-pos-count">{fd.reserves.length}</span>
                 </div>
                 {fd.reserves.map(p => {
@@ -987,12 +988,12 @@ function SquadPageInner() {
             )}
             {fd && (fd.rookies?.length ?? 0) > 0 && (
               <div className="mob-pos-group">
-                <div className="mob-pos-header" style={{ background: 'rgba(45,212,191,.12)', borderLeft: '3px solid #2dd4bf' }}>
-                  <span className="mob-pos-label" style={{ color: '#2dd4bf' }}><i className="bi bi-stars me-1"></i>ROOKIES</span>
+                <div className="mob-pos-header" style={{ background: 'rgba(185,145,84,.12)', borderLeft: '3px solid #b99154' }}>
+                  <span className="mob-pos-label" style={{ color: '#b99154' }}><i className="bi bi-stars me-1"></i>ROOKIES</span>
                   <span className="mob-pos-count">{fd.rookies!.length}</span>
                 </div>
                 {fd.rookies!.map(p => (
-                  <MobPlayerRow key={p.id} player={p} section="reserve" style={{ borderLeft: '3px solid rgba(45,212,191,.35)' }} />
+                  <MobPlayerRow key={p.id} player={p} section="reserve" style={{ borderLeft: '3px solid rgba(185,145,84,.35)' }} />
                 ))}
               </div>
             )}
@@ -1019,9 +1020,9 @@ function SquadPageInner() {
           onClick={() => !delisting && setDelistTarget(null)}
         >
           <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
-            <div className="modal-content" style={{ background: '#161b22', border: '1px solid #30363d' }}>
-              <div className="modal-header" style={{ borderBottom: '1px solid #30363d' }}>
-                <h5 className="modal-title" style={{ color: '#e6edf3', fontSize: '1rem' }}>
+            <div className="modal-content" style={{ background: '#1c1a18', border: '1px solid #373330' }}>
+              <div className="modal-header" style={{ borderBottom: '1px solid #373330' }}>
+                <h5 className="modal-title" style={{ color: '#efedea', fontSize: '1rem' }}>
                   <i className="bi bi-x-circle me-2" style={{ color: '#f85149' }}></i>
                   Delist Player
                 </h5>
@@ -1033,14 +1034,14 @@ function SquadPageInner() {
                 ></button>
               </div>
               <div className="modal-body">
-                <p style={{ color: '#c9d1d9', fontSize: '.9rem' }}>
+                <p style={{ color: '#d7d1cb', fontSize: '.9rem' }}>
                   Are you sure you want to delist <strong>{delistTarget.name}</strong>?
                 </p>
-                <p style={{ color: '#8b949e', fontSize: '.8rem' }}>
+                <p style={{ color: '#a39586', fontSize: '.8rem' }}>
                   Once delisted, this player will be removed from your roster at the end of the delist period.
                 </p>
               </div>
-              <div className="modal-footer" style={{ borderTop: '1px solid #30363d' }}>
+              <div className="modal-footer" style={{ borderTop: '1px solid #373330' }}>
                 <button
                   type="button"
                   className="btn btn-outline-secondary"

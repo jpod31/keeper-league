@@ -3,6 +3,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, make_response
 from flask_login import login_required, current_user
 
+import config
 from models.database import db, League, FantasyTeam, DraftSession, AflPlayer, UserDraftWeights, LeagueDraftWeights, DraftChatMessage
 from blueprints import check_league_access
 from models.draft_live import (
@@ -558,6 +559,10 @@ def api_available_players(league_id):
                 "draft_score": score_lookup.get((p.name, p.afl_team), p.draft_score),
                 "rating": p.rating,
                 "potential": p.potential,
+                # New to the AFL this year, and whether his position is our
+                # estimate: the draft board is where both matter most.
+                "is_new": p.joined_year == config.CURRENT_YEAR,
+                "position_expected": bool(p.position_expected),
             })
         result.sort(key=lambda x: x["draft_score"] or 0, reverse=True)
         return jsonify(result[:limit])

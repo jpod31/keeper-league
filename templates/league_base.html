@@ -33,12 +33,12 @@
         <li><hr class="dropdown-divider" style="border-color:var(--kl-border);"></li>
         <li>
           <a class="dropdown-item" href="{{ url_for('leagues.league_create') }}">
-            <i class="bi bi-plus-circle me-2" style="color:#3fb950;"></i>Create League
+            <i class="bi bi-plus-circle me-2" style="color:#dbcf94;"></i>Create League
           </a>
         </li>
         <li>
           <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#joinLeagueModal">
-            <i class="bi bi-box-arrow-in-right me-2" style="color:#58a6ff;"></i>Join League
+            <i class="bi bi-box-arrow-in-right me-2" style="color:#f5b940;"></i>Join League
           </a>
         </li>
       </ul>
@@ -67,7 +67,7 @@
       </a>
       {% if nav_active_draft|default(false) %}
         <a class="league-tab{% if active_tab|default('') == 'draft' %} active{% endif %}"
-           href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" style="color:#d29922;">
+           href="{{ url_for('draft_live.draft_room', league_id=league.id) }}" style="color:#d26822;">
           <i class="bi bi-list-check"></i><span>Draft Room</span>
         </a>
       {% endif %}
@@ -77,8 +77,8 @@
       </a>
       {% if nav_is_commissioner|default(false) %}
       <a class="league-tab{% if active_tab|default('') == 'commissioner' or active_tab|default('') == 'settings' %} active{% endif %}"
-         href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}" style="color:#d29922;">
-        <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.55rem;vertical-align:middle;">{{ pending_ltil_count }}</span>{% endif %}</span>
+         href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}" style="color:#d26822;">
+        <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d26822;color:#000;font-size:.55rem;vertical-align:middle;">{{ pending_ltil_count }}</span>{% endif %}</span>
       </a>
       {% else %}
       <a class="league-tab{% if active_tab|default('') == 'settings' %} active{% endif %}"
@@ -136,15 +136,15 @@
       <i class="bi bi-megaphone"></i><span>Comms</span>
     </a>
     {% if nav_is_commissioner|default(false) %}
-    <a class="more-sheet-item" href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}" style="color:#d29922;">
-      <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d29922;color:#000;font-size:.55rem;">{{ pending_ltil_count }}</span>{% endif %}</span>
+    <a class="more-sheet-item" href="{{ url_for('leagues.commissioner_hub', league_id=league.id) }}" style="color:#d26822;">
+      <i class="bi bi-shield-lock"></i><span>Admin{% if pending_ltil_count|default(0) > 0 %} <span class="badge rounded-pill" style="background:#d26822;color:#000;font-size:.55rem;">{{ pending_ltil_count }}</span>{% endif %}</span>
     </a>
     {% else %}
     <a class="more-sheet-item" href="{{ url_for('leagues.league_settings', league_id=league.id) }}">
       <i class="bi bi-gear"></i><span>Settings</span>
     </a>
     {% endif %}
-    <a class="more-sheet-item" href="#" id="moreSheetInstall" style="display:none;color:#3fb950;" onclick="event.preventDefault();triggerPwaInstall();">
+    <a class="more-sheet-item" href="#" id="moreSheetInstall" style="display:none;color:#dbcf94;" onclick="event.preventDefault();triggerPwaInstall();">
       <i class="bi bi-download"></i><span>Install App</span>
     </a>
   </div>
@@ -157,10 +157,10 @@
       </a>
       {% endif %}
     {% endfor %}
-    <a class="more-sheet-item" href="{{ url_for('leagues.league_create') }}" style="color:#3fb950;">
+    <a class="more-sheet-item" href="{{ url_for('leagues.league_create') }}" style="color:#dbcf94;">
       <i class="bi bi-plus-circle"></i><span>Create League</span>
     </a>
-    <a class="more-sheet-item" href="#" style="color:#58a6ff;" onclick="event.preventDefault();toggleMoreSheet();var m=new bootstrap.Modal(document.getElementById('joinLeagueModal'));m.show();">
+    <a class="more-sheet-item" href="#" style="color:#f5b940;" onclick="event.preventDefault();toggleMoreSheet();var m=new bootstrap.Modal(document.getElementById('joinLeagueModal'));m.show();">
       <i class="bi bi-box-arrow-in-right"></i><span>Join League</span>
     </a>
   </div>
@@ -200,7 +200,7 @@ var _subtabData = {
       {label:'Analytics', icon:'bi-bar-chart-line', url:'{{ url_for("team.team_analytics", league_id=league.id, team_id=nav_user_team.id) }}', key:'analytics'},
       {% if is_owner|default(false) %}
       {label:'7s', icon:'bi-7-circle', url:'{{ url_for("reserve7s.sevens_team", league_id=league.id) }}', key:'7s', style:'color:#bc8cff'},
-      {label:'Wishlist', icon:'bi-star', url:'{{ url_for("team.squad", league_id=league.id, team_id=nav_user_team.id, view="wishlist") }}', key:'wishlist', style:'color:#d29922'},
+      {label:'Wishlist', icon:'bi-star', url:'{{ url_for("team.squad", league_id=league.id, team_id=nav_user_team.id, view="wishlist") }}', key:'wishlist', style:'color:#d26822'},
       {% endif %}
       {label:'Trades', icon:'bi-arrow-left-right', url:'{{ url_for("trades.trade_center", league_id=league.id) }}', key:'trades'}
     ]

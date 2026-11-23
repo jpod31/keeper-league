@@ -27,6 +27,14 @@ export interface LeagueInfo {
   }[]
   current_round: number
   next_lockout_at: string | null
+  /** The AFL season the site is in (ages, ratings, clubs). */
+  afl_year?: number
+  /** The latest AFL season with a game played: every average, last-3 and
+   *  last-5 on the site comes from this year. */
+  stats_year?: number
+  /** True between the AFL draft and Opening Round, when those numbers are
+   *  last season's and have to say so. */
+  stats_are_last_season?: boolean
   /** Non-null once every fixture for the league's current year is completed —
    *  drives the Season Review takeover + the rail entry. */
   season_review_year: number | null
@@ -82,3 +90,19 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useLeague() { return useContext(LeagueContext) }
+
+/** Which season the scores on screen are from, and how to label them.
+ *  `tag` is the short form for tight spots ("'26"); both are empty while the
+ *  numbers are this season's, so labels simply fall away once it starts. */
+export function useStatsYear() {
+  const { league } = useContext(LeagueContext)
+  const year = league?.stats_year ?? null
+  const isLast = !!league?.stats_are_last_season && year != null
+  return {
+    year,
+    isLast,
+    tag: isLast ? `'${String(year).slice(2)}` : '',
+    label: isLast ? String(year) : '',
+    aflYear: league?.afl_year ?? null,
+  }
+}

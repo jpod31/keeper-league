@@ -34,11 +34,8 @@ _R0_ID_OFFSET = 10_000_000  # Offset added to AflGame IDs for round 0 copies
 # ── SC average recompute ─────────────────────────────────────────────
 
 
-def recompute_sc_averages(year: int) -> int:
-    """Recompute AflPlayer.sc_avg from PlayerStat for the given year.
-
-    Returns the number of players updated with a 2026 average.
-    """
+def _season_averages(year: int) -> dict:
+    """player_id -> (avg, games) from PlayerStat for one season."""
     rows = db.session.query(
         PlayerStat.player_id,
         sa_func.avg(PlayerStat.supercoach_score).label("avg_sc"),
@@ -47,8 +44,29 @@ def recompute_sc_averages(year: int) -> int:
         PlayerStat.year == year,
         PlayerStat.supercoach_score.isnot(None),
     ).group_by(PlayerStat.player_id).all()
+    return {r.player_id: (r.avg_sc, r.games) for r in rows}
 
-    avg_map = {r.player_id: (r.avg_sc, r.games) for r in rows}
+
+def recompute_sc_averages(year: int) -> int:
+    """Recompute AflPlayer.sc_avg / games_played / sc_avg_prev from PlayerStat.
+
+    ``sc_avg`` is the average for the latest season WITH games, which is
+    ``year`` once it has started and the season before until then. Asked to
+    recompute a season nobody has played yet (the months between the AFL
+    draft and Opening Round), it falls back a year rather than blanking every
+    average on the site. ``sc_avg_prev`` is always the season before the one
+    ``sc_avg`` came from.
+
+    Returns the number of players with an average.
+    """
+    avg_map = _season_averages(year)
+    if not avg_map:
+        year -= 1
+        avg_map = _season_averages(year)
+        if not avg_map:
+            logger.info("Recompute sc_avg: no scores for %d or %d, left as is", year + 1, year)
+            return 0
+    prev_map = _season_averages(year - 1)
 
     updated = 0
     for p in AflPlayer.query.all():
@@ -58,13 +76,18 @@ def recompute_sc_averages(year: int) -> int:
             p.games_played = int(games)
             updated += 1
         else:
-            # No 2026 data — clear sc_avg so it shows as "-"
-            # sc_avg_prev retains their previous season average for reference
+            # Didn't play that season: shows as "-".
             p.sc_avg = None
             p.games_played = 0
+        if p.id in prev_map:
+            p.sc_avg_prev = round(float(prev_map[p.id][0]), 1)
+        elif prev_map:
+            p.sc_avg_prev = None
 
     db.session.commit()
-    logger.info("Recomputed sc_avg for year %d: %d players with data", year, updated)
+    from models.years import reset_cache
+    reset_cache()
+    logger.info("Recomputed sc_avg from %d: %d players with data", year, updated)
     return updated
 
 

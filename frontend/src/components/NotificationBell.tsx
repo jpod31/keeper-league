@@ -10,6 +10,7 @@ const ICONS: Record<string, string> = {
   trade_accepted:    'bi-check-circle-fill',
   trade_rejected:    'bi-x-circle-fill',
   trade_vetoed:      'bi-shield-exclamation',
+  trade_block:       'bi-megaphone-fill',
   player_delisted:   'bi-person-dash-fill',
   list_change:       'bi-clock-history',
   message_received:  'bi-chat-dots-fill',

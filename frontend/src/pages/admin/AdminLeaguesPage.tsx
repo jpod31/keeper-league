@@ -41,7 +41,7 @@ export function AdminLeaguesPage() {
             <tbody>
               {data.leagues.map(lg => (
                 <tr key={lg.id}>
-                  <td style={{ color: '#484f58' }}>{lg.id}</td>
+                  <td style={{ color: '#56504a' }}>{lg.id}</td>
                   <td>
                     <Link to={`/leagues/${lg.id}`} className="text-decoration-none">
                       <strong>{lg.name}</strong>

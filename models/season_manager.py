@@ -496,6 +496,8 @@ def ssp_select_replacement(team_id, ltil_id, replacement_player_id, league_id):
     player = db.session.get(AflPlayer, replacement_player_id)
     if not player:
         return None, "Player not found."
+    if player.is_former:
+        return None, f"{player.name} is no longer on an AFL list."
 
     rostered = (
         FantasyRoster.query
@@ -663,6 +665,50 @@ def teams_with_consequential_round(afl_round, year, statuses=LIVE_FIXTURE_STATUS
         if f.away_team_id and f.away_team_id > 0:
             ids.add(f.away_team_id)
     return ids
+
+
+def offseason_summary(league, team_id=None):
+    """What the off-season still asks of a league, for the dashboard.
+
+    None while a season is being played. Otherwise the draft time (as an ISO
+    string that carries its zone), whether delistings are open and until when,
+    and, for ``team_id``, how many cuts that club still owes.
+    """
+    from zoneinfo import ZoneInfo
+    from models.window_state import get_open_delist_period
+
+    if not league_season_over(league.id, league.season_year):
+        return None
+    cfg = SeasonConfig.query.filter_by(league_id=league.id, year=league.season_year).first()
+    done = offseason_draft_done(league.id, league.season_year)
+
+    draft_at = None
+    if not done:
+        sess = (DraftSession.query
+                .filter_by(league_id=league.id, is_mock=False, draft_round_type="supplemental")
+                .filter(DraftSession.status.in_(("scheduled", "paused", "in_progress")))
+                .order_by(DraftSession.id.desc()).first())
+        if sess and sess.scheduled_start:
+            # Draft sessions hold naive Melbourne wall-clock.
+            draft_at = sess.scheduled_start.replace(tzinfo=ZoneInfo("Australia/Melbourne")).isoformat()
+        elif cfg and cfg.supplemental_draft_date:
+            # The season config holds the naive UTC instant.
+            draft_at = cfg.supplemental_draft_date.replace(tzinfo=timezone.utc).isoformat()
+
+    period = get_open_delist_period(league.id, league.season_year)
+    out = {
+        "draft_at": draft_at,
+        "draft_done": done,
+        "delist_open": bool(period),
+        "delist_closes_at": (period.closes_at.replace(tzinfo=timezone.utc).isoformat()
+                             if period and period.closes_at else None),
+        "list_size": None, "target_size": None, "to_cut": None,
+    }
+    if period and team_id:
+        req = delist_requirement(period, team_id, league, cfg)
+        out.update(list_size=req["current_size"], target_size=req["target_size"],
+                   to_cut=req["remaining"])
+    return out
 
 
 # ── Player-pool signings (free agents / SSP) ─────────────────────────

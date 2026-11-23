@@ -29,7 +29,7 @@ export function InvitePage() {
   if (loading) return <Spinner text="Loading league..." />
   if (!data) return (
     <div className="py-5 text-center">
-      <i className="bi bi-exclamation-triangle" style={{ fontSize: '2rem', color: '#d29922' }}></i>
+      <i className="bi bi-exclamation-triangle" style={{ fontSize: '2rem', color: '#d26822' }}></i>
       <p className="mt-2">Invalid or expired invite link.</p>
     </div>
   )
@@ -64,7 +64,7 @@ export function InvitePage() {
           <div
             style={{
               width: 64, height: 64, borderRadius: 16,
-              background: 'rgba(88,166,255,.1)', color: '#58a6ff',
+              background: 'rgba(245,185,64,.1)', color: '#f5b940',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '1.8rem', marginBottom: 16,
             }}

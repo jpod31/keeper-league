@@ -18,7 +18,7 @@ import config
 from models.draft_picks import team_cards
 from models.database import (
     db, League, FantasyTeam, FantasyRoster, SeasonConfig, Fixture, Trade,
-    DelistPeriod, DraftSession, LongTermInjury,
+    DelistPeriod, DraftSession, LongTermInjury, AflPlayer,
 )
 
 logger = logging.getLogger(__name__)
@@ -197,8 +197,10 @@ def _checks(league, settings):
         add("next_year", "block", f"{year + 1} already has data",
             f"A {year + 1} season config or fixture already exists.")
 
-    open_period = DelistPeriod.query.filter_by(
-        league_id=league.id, year=year, status="open").first()
+    # Open means open NOW: a period whose deadline has passed is shut even if
+    # nobody has flipped its status yet (the daily job does that).
+    from models.window_state import get_open_delist_period
+    open_period = get_open_delist_period(league.id, year)
     if open_period:
         add("delists", "block", "Delist period still open",
             "Lists are still being cut. Close it once everyone is done.",
@@ -266,6 +268,18 @@ def _checks(league, settings):
         add("afl_year", "warn", f"AFL data still on {config.CURRENT_YEAR}",
             f"Live scores and the player pool follow config.CURRENT_YEAR. "
             f"Move it to {year + 1} before Opening Round.")
+
+    former = (
+        db.session.query(FantasyRoster, FantasyTeam)
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .join(AflPlayer, FantasyRoster.player_id == AflPlayer.id)
+        .filter(FantasyTeam.league_id == league.id, FantasyRoster.is_active == True,
+                AflPlayer.list_status == "former").all())
+    if former:
+        names = ", ".join(sorted(f"{fr.player.name} ({t.name})" for fr, t in former))
+        add("former_listed", "warn",
+            f"{len(former)} listed player{'s' if len(former) != 1 else ''} no longer on an AFL list",
+            f"{names}. They can't score; their clubs can delist them.")
     return checks
 
 
@@ -436,6 +450,22 @@ def start_new_season(league_id, raw_settings=None, notify=True, force=False):
 
     from models.draft_picks import ensure_future_picks
     ensure_future_picks(league.id)
+
+    # The lists as they stand are the squads that start the new year.
+    try:
+        from models.season_squads import snapshot_season
+        snapshot_season(league.id, new_year)
+    except Exception:
+        logger.exception("League %d: %d squad snapshot failed", league.id, new_year)
+
+    # Nobody is on the block in a new year until they are put there again.
+    try:
+        from models.database import TradeBlockEntry
+        TradeBlockEntry.query.filter_by(league_id=league.id).delete()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception("League %d: trade block reset failed", league.id)
 
     regular = Fixture.query.filter_by(league_id=league.id, year=new_year, is_final=False)
     first = min((f.afl_round for f in regular.all()), default=None)

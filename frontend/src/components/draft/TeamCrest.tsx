@@ -12,13 +12,13 @@ function initials(name: string) {
 /** A fantasy team's crest on its own accent, or its initials when it has none. */
 export function TeamCrest({ team, size = 24 }: { team: TeamCard | undefined; size?: number }) {
   const [failed, setFailed] = useState(false)
-  const accent = team?.accent ?? '#58a6ff'
+  const accent = team?.accent ?? '#f5b940'
   return (
     <span
       className="tc-crest"
       style={{
         width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.38)),
-        background: `color-mix(in srgb, ${accent} 22%, #0f1626)`,
+        background: `color-mix(in srgb, ${accent} 22%, #1b1917)`,
         boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accent} 55%, transparent)`,
         color: accent,
       }}

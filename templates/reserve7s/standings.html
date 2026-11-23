@@ -12,7 +12,7 @@
     display:flex; align-items:center; gap:10px; margin-bottom:16px;
   }
   .s7-title h3 {
-    font-size:1.1rem; font-weight:700; color:#e6edf3; margin:0;
+    font-size:1.1rem; font-weight:700; color:#efedea; margin:0;
   }
   .s7-title-badge {
     font-size:.6rem; font-weight:700; padding:3px 8px; border-radius:4px;
@@ -20,20 +20,20 @@
   }
 
   .s7-wrap {
-    background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden;
+    background:#121110; border:1px solid #272522; border-radius:10px; overflow:hidden;
   }
   .s7-table { width:100%; border-collapse:collapse; }
   .s7-table th {
-    font-size:.65rem; font-weight:600; color:#484f58; text-transform:uppercase;
-    letter-spacing:.5px; padding:10px 12px; border-bottom:1px solid #21262d;
+    font-size:.65rem; font-weight:600; color:#56504a; text-transform:uppercase;
+    letter-spacing:.5px; padding:10px 12px; border-bottom:1px solid #272522;
     white-space:nowrap;
   }
   .s7-table td {
-    font-size:.8rem; padding:10px 12px; border-bottom:1px solid #161b22;
-    color:#8b949e; font-variant-numeric:tabular-nums;
+    font-size:.8rem; padding:10px 12px; border-bottom:1px solid #1c1a18;
+    color:#a39586; font-variant-numeric:tabular-nums;
   }
   .s7-table tbody tr { transition:background .1s; }
-  .s7-table tbody tr:hover { background:rgba(22,27,34,.5); }
+  .s7-table tbody tr:hover { background:rgba(28,26,24,.5); }
   .s7-table tbody tr:last-child td { border-bottom:none; }
   .s7-finals-line td { border-bottom:2px solid rgba(188,140,255,.4) !important; }
 
@@ -41,19 +41,19 @@
     display:inline-flex; align-items:center; justify-content:center;
     width:24px; height:24px; border-radius:6px; font-size:.7rem; font-weight:700;
   }
-  .s7-pos-1 { background:rgba(255,215,0,.15); color:#FFD700; text-shadow:0 0 6px rgba(255,215,0,.4); }
-  .s7-pos-2 { background:rgba(192,192,192,.1); color:#C0C0C0; }
+  .s7-pos-1 { background:rgba(249,192,6,.15); color:#f9c006; text-shadow:0 0 6px rgba(249,192,6,.4); }
+  .s7-pos-2 { background:rgba(192,192,192,.1); color:#c0c0c0; }
   .s7-pos-finals { background:rgba(188,140,255,.08); color:#bc8cff; }
-  .s7-pos-out { color:#484f58; }
+  .s7-pos-out { color:#56504a; }
 
-  .s7-name { color:#e6edf3; font-weight:600; text-decoration:none; transition:color .1s; }
+  .s7-name { color:#efedea; font-weight:600; text-decoration:none; transition:color .1s; }
   .s7-name:hover { color:#bc8cff; }
   .s7-pts { color:#bc8cff; font-weight:700; }
   .s7-pct { font-weight:500; }
 
   .s7-footer {
-    padding:8px 16px; font-size:.68rem; color:#30363d;
-    border-top:1px solid #161b22;
+    padding:8px 16px; font-size:.68rem; color:#373330;
+    border-top:1px solid #1c1a18;
     display:flex; justify-content:space-between; align-items:center;
   }
 </style>
@@ -72,14 +72,14 @@
       {% set is_finals_line = in_finals and pos == finals_teams %}
       {% set is_mine = nav_user_team is defined and nav_user_team and s.team_id == nav_user_team.id %}
       <div class="ldr-mob-card{% if is_mine %} ldr-mob-mine{% endif %}"{% if in_finals %} style="background:rgba(188,140,255,.04);{% if is_finals_line %}border-bottom:2px solid rgba(188,140,255,.4);{% endif %}"{% endif %}>
-        <span class="ldr-mob-rank" style="{% if pos == 1 %}background:rgba(255,215,0,.15);color:#FFD700;{% elif pos == 2 %}background:rgba(192,192,192,.1);color:#C0C0C0;{% elif in_finals %}background:rgba(188,140,255,.08);color:#bc8cff;{% else %}color:#484f58;{% endif %}">{{ pos }}</span>
+        <span class="ldr-mob-rank" style="{% if pos == 1 %}background:rgba(249,192,6,.15);color:#f9c006;{% elif pos == 2 %}background:rgba(192,192,192,.1);color:#c0c0c0;{% elif in_finals %}background:rgba(188,140,255,.08);color:#bc8cff;{% else %}color:#56504a;{% endif %}">{{ pos }}</span>
         <a href="{{ url_for('team.squad', league_id=league.id, team_id=s.team_id) }}" class="ldr-mob-name">{{ s.team.name }}</a>
         <span class="ldr-mob-record">{{ s.wins }}-{{ s.losses }}{% if s.draws %}-{{ s.draws }}{% endif %}</span>
-        <span class="ldr-mob-pts" style="color:#bc8cff;">{{ s.ladder_points }}<span style="font-size:.65rem;font-weight:500;color:#8b949e;"> pts</span></span>
+        <span class="ldr-mob-pts" style="color:#bc8cff;">{{ s.ladder_points }}<span style="font-size:.65rem;font-weight:500;color:#a39586;"> pts</span></span>
       </div>
     {% endfor %}
     {% if finals_teams > 0 %}
-    <div style="font-size:.65rem;color:#484f58;padding:8px 12px;text-align:center;background:rgba(188,140,255,.03);">
+    <div style="font-size:.65rem;color:#56504a;padding:8px 12px;text-align:center;background:rgba(188,140,255,.03);">
       <i class="bi bi-trophy-fill" style="color:#bc8cff;margin-right:4px;"></i>Top {{ finals_teams }} qualify for 7s Finals
     </div>
     {% endif %}
@@ -118,14 +118,14 @@
               </a>
             </td>
             <td style="text-align:center;">{{ s.wins + s.losses + s.draws }}</td>
-            <td style="text-align:center;{% if s.wins > 0 %}color:#3fb950;font-weight:600;{% endif %}">{{ s.wins }}</td>
+            <td style="text-align:center;{% if s.wins > 0 %}color:#dbcf94;font-weight:600;{% endif %}">{{ s.wins }}</td>
             <td style="text-align:center;{% if s.losses > 0 %}color:#f85149;font-weight:600;{% endif %}">{{ s.losses }}</td>
             <td style="text-align:center;">{{ s.draws }}</td>
             <td style="text-align:center;"><span class="s7-pts">{{ s.ladder_points }}</span></td>
             <td style="text-align:right;">{{ '%.0f'|format(s.points_for) if s.points_for > 0 else '&ndash;'|safe }}</td>
             <td style="text-align:right;">{{ '%.0f'|format(s.points_against) if s.points_against > 0 else '&ndash;'|safe }}</td>
             <td style="text-align:right;">
-              <span class="s7-pct" style="{% if s.percentage >= 110 %}color:#3fb950;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}">
+              <span class="s7-pct" style="{% if s.percentage >= 110 %}color:#dbcf94;{% elif s.percentage > 0 and s.percentage < 90 %}color:#f85149;{% endif %}">
                 {{ '%.1f'|format(s.percentage) if s.percentage > 0 else '&ndash;'|safe }}{% if s.percentage > 0 %}%{% endif %}
               </span>
             </td>
@@ -143,9 +143,9 @@
     </div>
   </div>
 {% else %}
-  <div style="text-align:center;padding:60px 20px;color:#484f58;">
-    <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#30363d;"></i>
-    <h4 style="color:#8b949e;font-size:1rem;font-weight:600;">No teams yet</h4>
+  <div style="text-align:center;padding:60px 20px;color:#56504a;">
+    <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:12px;color:#373330;"></i>
+    <h4 style="color:#a39586;font-size:1rem;font-weight:600;">No teams yet</h4>
     <p style="font-size:.8rem;">Teams will appear here once they join the league.</p>
   </div>
 {% endif %}

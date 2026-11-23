@@ -5,15 +5,15 @@
 <div class="container py-3" style="max-width:960px;">
   {# ── Header ── #}
   <div class="d-flex align-items-center mb-3">
-    <i class="bi bi-shield-lock me-2" style="font-size:1.4rem;color:#d29922;"></i>
+    <i class="bi bi-shield-lock me-2" style="font-size:1.4rem;color:#d26822;"></i>
     <h4 class="mb-0 fw-bold" style="font-size:1.15rem;">Commissioner Hub</h4>
   </div>
 
   {# ── Season Controls ── #}
-  <div class="card mb-4" style="border-color:rgba(210,153,34,.35);">
-    <div class="card-header d-flex justify-content-between align-items-center" style="background:rgba(210,153,34,.08);border-bottom:1px solid rgba(210,153,34,.2);">
-      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-calendar-range me-2" style="color:#d29922;"></i>Season Controls</h5>
-      <span class="badge" style="background:{% if current_phase == 'midseason' %}#d29922{% elif current_phase == 'offseason' %}#8b949e{% elif current_phase == 'regular' %}#3fb950{% elif current_phase == 'finals' %}#f85149{% else %}#58a6ff{% endif %};font-size:.7rem;">{{ current_phase|replace('_',' ')|title }}</span>
+  <div class="card mb-4" style="border-color:rgba(210,104,34,.35);">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background:rgba(210,104,34,.08);border-bottom:1px solid rgba(210,104,34,.2);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-calendar-range me-2" style="color:#d26822;"></i>Season Controls</h5>
+      <span class="badge" style="background:{% if current_phase == 'midseason' %}#d26822{% elif current_phase == 'offseason' %}#a39586{% elif current_phase == 'regular' %}#dbcf94{% elif current_phase == 'finals' %}#f85149{% else %}#f5b940{% endif %};font-size:.7rem;">{{ current_phase|replace('_',' ')|title }}</span>
     </div>
     <div class="card-body">
       {# ── Delist progress (when open) ── #}
@@ -23,16 +23,16 @@
             <i class="bi bi-exclamation-triangle-fill" style="color:#f85149;"></i>
             <span style="font-size:.85rem;font-weight:600;color:#f85149;">Delist Period Open</span>
             {% if delist_period.closes_at %}
-              <span class="ms-auto" style="font-size:.75rem;color:#8b949e;">Closes {{ delist_period.closes_at.strftime('%d %b') }}</span>
+              <span class="ms-auto" style="font-size:.75rem;color:#a39586;">Closes {{ delist_period.closes_at.strftime('%d %b') }}</span>
             {% endif %}
           </div>
           {% if all_teams_progress %}
             <div class="row g-1">
               {% for tp in all_teams_progress %}
                 <div class="col-6 col-md-4">
-                  <div class="d-flex justify-content-between align-items-center px-2 py-1" style="background:{% if tp.met %}rgba(63,185,80,.08){% else %}rgba(139,148,158,.05){% endif %};border:1px solid {% if tp.met %}rgba(63,185,80,.2){% else %}rgba(139,148,158,.1){% endif %};border-radius:6px;font-size:.75rem;">
-                    <span style="color:#c9d1d9;">{{ tp.name }}</span>
-                    <span style="color:{% if tp.met %}#3fb950{% else %}#f85149{% endif %};font-weight:600;">{{ tp.count }}/{{ min_delists }}</span>
+                  <div class="d-flex justify-content-between align-items-center px-2 py-1" style="background:{% if tp.met %}rgba(219,207,148,.08){% else %}rgba(163,149,134,.05){% endif %};border:1px solid {% if tp.met %}rgba(219,207,148,.2){% else %}rgba(163,149,134,.1){% endif %};border-radius:6px;font-size:.75rem;">
+                    <span style="color:#d7d1cb;">{{ tp.name }}</span>
+                    <span style="color:{% if tp.met %}#dbcf94{% else %}#f85149{% endif %};font-weight:600;">{{ tp.count }}/{{ min_delists }}</span>
                   </div>
                 </div>
               {% endfor %}
@@ -102,14 +102,14 @@
             <a href="/leagues/{{ league.id }}/new-season" class="btn btn-sm btn-success"><i class="bi bi-calendar-plus me-1"></i>Start {{ league.season_year + 1 }} season</a>
           {% endif %}
         {% elif current_phase == 'pre_season' %}
-          <span style="font-size:.8rem;color:#8b949e;">Pre-season — set up your draft to get started.</span>
+          <span style="font-size:.8rem;color:#a39586;">Pre-season — set up your draft to get started.</span>
         {% elif current_phase == 'regular' %}
-          <span style="font-size:.8rem;color:#8b949e;">Regular season in progress. Use settings to trigger midseason or offseason.</span>
+          <span style="font-size:.8rem;color:#a39586;">Regular season in progress. Use settings to trigger midseason or offseason.</span>
         {% endif %}
       </div>
 
       {# ── Quick links ── #}
-      <div class="d-flex gap-2 mt-3 pt-3" style="border-top:1px solid #21262d;">
+      <div class="d-flex gap-2 mt-3 pt-3" style="border-top:1px solid #272522;">
         <a href="{{ url_for('draft_live.draft_setup', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-list-check me-1"></i>Draft Setup</a>
         <a href="{{ url_for('leagues.league_settings', league_id=league.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear me-1"></i>League Settings</a>
       </div>
@@ -139,9 +139,9 @@
   </div>
 
   {# ── Pending LTIL Requests ── #}
-  <div class="card mb-4" style="border-color:rgba(210,153,34,.35);">
-    <div class="card-header" style="background:rgba(210,153,34,.08);border-bottom:1px solid rgba(210,153,34,.2);">
-      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-hourglass-split me-2" style="color:#d29922;"></i>Pending LTIL Requests</h5>
+  <div class="card mb-4" style="border-color:rgba(210,104,34,.35);">
+    <div class="card-header" style="background:rgba(210,104,34,.08);border-bottom:1px solid rgba(210,104,34,.2);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-hourglass-split me-2" style="color:#d26822;"></i>Pending LTIL Requests</h5>
     </div>
     <div class="card-body p-0">
       {% if pending_ltil %}
@@ -162,15 +162,15 @@
         </div>
         {% endfor %}
       {% else %}
-        <div class="text-center py-3" style="font-size:.8rem;color:#8b949e;">No pending LTIL requests</div>
+        <div class="text-center py-3" style="font-size:.8rem;color:#a39586;">No pending LTIL requests</div>
       {% endif %}
     </div>
   </div>
 
   {# ── Active LTIL Entries ── #}
-  <div class="card mb-4" style="border-color:rgba(63,185,80,.2);">
-    <div class="card-header" style="background:rgba(63,185,80,.06);border-bottom:1px solid rgba(63,185,80,.15);">
-      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-bandaid me-2" style="color:#3fb950;"></i>Active LTIL Entries</h5>
+  <div class="card mb-4" style="border-color:rgba(219,207,148,.2);">
+    <div class="card-header" style="background:rgba(219,207,148,.06);border-bottom:1px solid rgba(219,207,148,.15);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-bandaid me-2" style="color:#dbcf94;"></i>Active LTIL Entries</h5>
     </div>
     <div class="card-body p-0">
       {% if active_ltil %}
@@ -181,7 +181,7 @@
             <div class="comm-ltil-meta">
               {{ lt.team.name }} &bull; {{ lt.added_at.strftime('%d %b %Y') if lt.added_at else '-' }}
               {% if lt.replacement_player %}
-                &bull; <span style="color:#58a6ff;">SSP: {{ lt.replacement_player.name }}</span>
+                &bull; <span style="color:#f5b940;">SSP: {{ lt.replacement_player.name }}</span>
               {% endif %}
             </div>
           </div>
@@ -193,21 +193,21 @@
         </div>
         {% endfor %}
       {% else %}
-        <div class="text-center py-3" style="font-size:.8rem;color:#8b949e;">No active LTIL entries</div>
+        <div class="text-center py-3" style="font-size:.8rem;color:#a39586;">No active LTIL entries</div>
       {% endif %}
     </div>
   </div>
 
   {# ── Commissioner Tools ── #}
-  <div class="card mb-4" style="border-color:rgba(210,153,34,.3);">
-    <div class="card-header" style="background:rgba(210,153,34,.08);border-bottom:1px solid rgba(210,153,34,.2);">
-      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-tools me-2" style="color:#d29922;"></i>Commissioner Tools</h5>
+  <div class="card mb-4" style="border-color:rgba(210,104,34,.3);">
+    <div class="card-header" style="background:rgba(210,104,34,.08);border-bottom:1px solid rgba(210,104,34,.2);">
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-tools me-2" style="color:#d26822;"></i>Commissioner Tools</h5>
     </div>
     <div class="card-body">
       {# Delist a player #}
-      <div class="mb-4 pb-3" style="border-bottom:1px solid #21262d;">
+      <div class="mb-4 pb-3" style="border-bottom:1px solid #272522;">
         <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#f85149;"><i class="bi bi-person-dash me-2"></i>Delist Player</h6>
-        <p style="font-size:.75rem;color:#8b949e;margin-bottom:10px;">Remove a player from a team's roster (e.g. incorrect draft pick). Opens up a roster spot.</p>
+        <p style="font-size:.75rem;color:#a39586;margin-bottom:10px;">Remove a player from a team's roster (e.g. incorrect draft pick). Opens up a roster spot.</p>
         <div class="row g-2 align-items-end">
           <div class="col-md-5">
             <label class="form-label" style="font-size:.75rem;">Team</label>
@@ -235,8 +235,8 @@
 
       {# Force move a player #}
       <div>
-        <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#58a6ff;"><i class="bi bi-arrow-left-right me-2"></i>Force Move Player</h6>
-        <p style="font-size:.75rem;color:#8b949e;margin-bottom:10px;">Move a player between teams (e.g. correcting a misplaced draft pick). No trade history created.</p>
+        <h6 class="fw-bold mb-2" style="font-size:.85rem;color:#f5b940;"><i class="bi bi-arrow-left-right me-2"></i>Force Move Player</h6>
+        <p style="font-size:.75rem;color:#a39586;margin-bottom:10px;">Move a player between teams (e.g. correcting a misplaced draft pick). No trade history created.</p>
         <div class="row g-2 align-items-end">
           <div class="col-md-4">
             <label class="form-label" style="font-size:.75rem;">From Team</label>
@@ -277,7 +277,7 @@
   {% if recent_history %}
   <div class="card mb-4" style="border-color:var(--kl-border);">
     <div class="card-header" style="background:var(--kl-bg-elevated);border-bottom:1px solid var(--kl-border);">
-      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-clock-history me-2" style="color:#8b949e;"></i>Recent LTIL History</h5>
+      <h5 class="mb-0 fw-bold" style="font-size:.9rem;"><i class="bi bi-clock-history me-2" style="color:#a39586;"></i>Recent LTIL History</h5>
     </div>
     <div class="card-body p-0">
       {% for lt in recent_history %}
@@ -288,7 +288,7 @@
             {% if lt.status == 'rejected' %}
               <span style="color:#f85149;">Rejected</span>
             {% elif lt.removed_at %}
-              <span style="color:#8b949e;">Removed</span>
+              <span style="color:#a39586;">Removed</span>
             {% endif %}
             &bull; {{ lt.reviewed_at.strftime('%d %b %Y') if lt.reviewed_at else (lt.removed_at.strftime('%d %b %Y') if lt.removed_at else '-') }}
           </div>
@@ -427,7 +427,7 @@ function commissionerDelist() {
   .then(function(data) {
     var result = document.getElementById('delist-result');
     if (data.ok) {
-      result.innerHTML = '<span style="color:#3fb950;"><i class="bi bi-check-circle me-1"></i>' + data.message + '</span>';
+      result.innerHTML = '<span style="color:#dbcf94;"><i class="bi bi-check-circle me-1"></i>' + data.message + '</span>';
       loadTeamRoster('delist');
     } else {
       result.innerHTML = '<span style="color:#f85149;"><i class="bi bi-x-circle me-1"></i>' + data.error + '</span>';
@@ -463,7 +463,7 @@ function commissionerMove() {
   .then(function(data) {
     var result = document.getElementById('move-result');
     if (data.ok) {
-      result.innerHTML = '<span style="color:#3fb950;"><i class="bi bi-check-circle me-1"></i>' + data.message + '</span>';
+      result.innerHTML = '<span style="color:#dbcf94;"><i class="bi bi-check-circle me-1"></i>' + data.message + '</span>';
       loadTeamRoster('move');
     } else {
       result.innerHTML = '<span style="color:#f85149;"><i class="bi bi-x-circle me-1"></i>' + data.error + '</span>';

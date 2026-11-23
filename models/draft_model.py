@@ -373,8 +373,9 @@ def rank_players_for_user(league_id, user_id):
         league_weights = LeagueDraftWeights.query.filter_by(league_id=league_id).first()
         weights = league_weights.to_dict() if league_weights else DRAFT_WEIGHTS
 
-    # Load all players and convert to Player dataclass for factor functions
-    afl_players = AflPlayer.query.all()
+    # Load every player on an AFL list and convert to Player dataclass for
+    # factor functions. Former players are not draftable, so they are not ranked.
+    afl_players = AflPlayer.query.filter(AflPlayer.listed()).all()
     if not afl_players:
         return []
 

@@ -170,6 +170,46 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
 - **Fixture draw**: `generate_round_robin(..., ladder_teams=)` makes the
   leftover rounds after the full cycles pair sides close on last year's ladder
   (squared rank gap); without it they are random.
+- **Two years, never one**: `config.CURRENT_YEAR` is the AFL season the site
+  is in (ages, ratings, fixtures, live scoring). `models/years.py::stats_year()`
+  is the latest season WITH games, and every average, last-3 and last-5 comes
+  from it. Between the AFL draft and Opening Round they differ, and the UI
+  labels the numbers with the year (`useStatsYear()` in LeagueContext, the
+  `afl_year` / `stats_year` / `stats_are_last_season` keys on the league
+  context, pool and player-detail payloads). Anything new that shows a score
+  must use `stats_year`, never `CURRENT_YEAR`, or it blanks every November.
+  `recompute_sc_averages` falls back a year rather than wiping averages.
+- **The player workbook is the AFL list of record** (`models/player_sync.py`,
+  run by `scripts/sync_players.py --dry-run` then for real, or the whole
+  November sequence by `scripts/cutover_season.py`). It updates rating, age
+  AND club, creates new players with an EXPECTED position
+  (`afl_player.position_expected`, shown as "exp", cleared by the footywire
+  position sync), and marks players it no longer names as former
+  (`list_status='former'`, `left_afl_year`). Former players are never
+  deleted; `AflPlayer.listed()` is the filter for anything draftable or
+  signable. Matching is one-to-one, strictest rule first; read the dry run's
+  "new" and "off AFL lists" lists after every refresh.
+- **`fantasy_roster` is one row per STINT**, not per (team, player). A club
+  that redrafts a player it delisted gets a second row. Never add a unique
+  constraint back; `models/player_history.py::league_stints` is the one
+  reader for "how did this club get this player" (pool, former players,
+  season squads).
+- **Off-season draft**: starting it closes any open delist period and
+  rebuilds the board from the lists and pick ownership as they stand
+  (`draft_live.refresh_supplemental_slots`), so it can be scheduled days
+  ahead. When it ends the league goes back to `offseason`
+  (`status_after_draft`), which is what `start_new_season` requires.
+- **Season squads** (`models/season_squads.py`, table `season_squad`) are
+  written once per league-year: the first season from the initial draft, every
+  later one by `start_new_season`. `/api/leagues/<id>/seasons[/<year>]` is the
+  one endpoint for a past year (ladder, results, squads, drafts, trades,
+  delistings).
+- **Colour**: black and gold since 2027. No green or blue anywhere. The old
+  variable names survive as roles (`--kl-accent-blue` is gold, `--kl-accent-green`
+  is pale gold); new code uses `--kl-gold`, `--kl-positive`, `--kl-negative`,
+  `--kl-warning`. `tools/retheme.py` is the record of how it was derived and
+  is NOT idempotent. New UI follows the "2027 ADDITIONS" band in style.css:
+  one text colour, nothing under 13px, no grey copy, no gradients or glows.
 - **Positional priority for dual-position players**: FWD > DEF > RUC > MID.
 - **Rookie rule**: bench player with `age < 22` AND `rating < 70` → Rookies
   section (field/flex/7s/emergency/injury take precedence). Single source of
@@ -190,7 +230,7 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
 
 ## Test baseline
 
-`python -m pytest -q` → **41 passed, 5 failed** as of 2026-08-24. Pre-existing
+`python -m pytest -q` → **56 passed, 5 failed** as of 2026-11-23. Pre-existing
 failures (NOT regressions — don't chase unless asked):
 - `test_data_validation.py::TestLoginRateLimiting::test_rate_limit_blocks_after_max_attempts`
 - `test_live_scoring.py::TestApiLiveScores::test_api_returns_json`

@@ -5,9 +5,12 @@ import { Spinner } from '../../components/ui/Spinner'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { useWishlist } from '../../hooks/useWishlist'
-import { useLeague } from '../../contexts/LeagueContext'
+import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
 import { useDensity } from '../../hooks/useDensity'
 import { DensityToggle } from '../../components/ui/DensityToggle'
+import { AcquiredHistory, type Acquired, type Stint } from '../../components/ui/PlayerHistory'
+
+type AcquiredHistoryEntry = Stint
 
 /**
  * Render a long list in chunks instead of all at once. Mounts `step` rows, then
@@ -32,177 +35,6 @@ function useIncremental<T>(items: T[], step = 50) {
     return () => io.disconnect()
   }, [items, count, step])
   return { visible: items.slice(0, count), hasMore: count < items.length, sentinelRef }
-}
-
-interface Acquired {
-  coach: string | null
-  team?: string | null
-  method: string | null
-  pick_number: number | null
-  draft_year: number | null
-  draft_type: string | null
-}
-
-interface AcquiredHistoryEntry {
-  coach: string | null
-  team: string | null
-  method: string | null
-  acquired_at: string | null
-  is_active: boolean
-  delisted: boolean
-  pick_number: number | null
-  draft_year: number | null
-  draft_type: string | null
-}
-
-/** Decoration for a single tenure entry. */
-function entryStyle(e: AcquiredHistoryEntry): { label: string; icon: string; color: string } {
-  // Always frame by how THIS team got the player (their origin event for
-  // this tenure), regardless of whether the tenure is active or past.
-  // The is_active / delisted flags only drive dim/opacity in HistoryLine.
-  // Per Lucas (#36): the previous behaviour read past tenures as the
-  // EXIT event ("Traded away") which mismatched the present-tense entry
-  // events shown for active tenures.
-  const dateSuffix = e.acquired_at
-    ? ` · ${new Date(e.acquired_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
-    : ''
-  if (e.method === 'draft' && e.pick_number) {
-    return { label: `Pick #${e.pick_number}${e.draft_year ? ` · ${e.draft_year} draft` : ''}`, icon: 'bi-trophy', color: '#79c0ff' }
-  }
-  if (e.method === 'supplemental' && e.pick_number) {
-    return { label: `Supp pick #${e.pick_number}${e.draft_year ? ` · ${e.draft_year}` : ''}`, icon: 'bi-stars', color: '#d2a8ff' }
-  }
-  if (e.method === 'trade') {
-    return { label: `Acquired by trade${dateSuffix}`, icon: 'bi-arrow-left-right', color: '#ffb471' }
-  }
-  if (e.method === 'ssp') {
-    return { label: `SSP signing${dateSuffix}`, icon: 'bi-bandaid', color: '#f0d18a' }
-  }
-  return { label: e.method || '—', icon: 'bi-person-plus', color: '#c9d1d9' }
-}
-
-/** Single inline render of a tenure. */
-function HistoryLine({ e, compact = false }: { e: AcquiredHistoryEntry; compact?: boolean }) {
-  const s = entryStyle(e)
-  const dimmed = !e.is_active
-  return (
-    <div style={{
-      fontSize: compact ? '.66rem' : '.7rem',
-      lineHeight: 1.25,
-      opacity: dimmed ? 0.6 : 1,
-    }}>
-      <div style={{ color: dimmed ? '#8b949e' : '#c9d1d9', fontWeight: e.is_active ? 600 : 400 }}>
-        {e.team || e.coach || '—'}
-      </div>
-      <div style={{ color: s.color, fontSize: compact ? '.6rem' : '.64rem' }}>
-        <i className={`bi ${s.icon}`} style={{ marginRight: 3 }}></i>{s.label}
-      </div>
-    </div>
-  )
-}
-
-/** Tenure history rendered as: current row + a "+N more ▾" pill if
- *  there were prior tenures. The pill opens a popover with the full
- *  stack (oldest → newest). Players with a single tenure render
- *  identically to before. */
-function AcquiredHistory({
-  history, fallback,
-}: { history: AcquiredHistoryEntry[] | undefined; fallback: Acquired | null }) {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
-
-  if (history && history.length > 0) {
-    if (history.length === 1) {
-      return <HistoryLine e={history[0]} />
-    }
-    // Multiple — show the most recent at the top + summary chip
-    const ordered = [...history].sort((a, b) => {
-      const at = a.acquired_at ? new Date(a.acquired_at).getTime() : 0
-      const bt = b.acquired_at ? new Date(b.acquired_at).getTime() : 0
-      return bt - at
-    })
-    const headline = ordered.find(e => e.is_active) || ordered[0]
-    const olderCount = history.length - 1
-    return (
-      <div ref={rootRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <HistoryLine e={headline} />
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setOpen(o => !o) }}
-          className={`pp-acq-toggle${open ? ' open' : ''}`}
-          aria-haspopup="menu"
-          aria-expanded={open}
-        >
-          <i className="bi bi-clock-history"></i>
-          <span>+{olderCount} prior</span>
-          <i className="bi bi-chevron-down" style={{ marginLeft: 2, transition: 'transform .15s ease', transform: open ? 'rotate(180deg)' : 'none' }}></i>
-        </button>
-        {open && (
-          <div
-            className="pp-acq-popover"
-            onClick={(e) => e.stopPropagation()}
-            role="menu"
-          >
-            <div className="pp-acq-popover-head">Full history · {history.length} entries</div>
-            <div className="pp-acq-popover-list">
-              {/* oldest → newest, with timeline dot trail */}
-              {[...ordered].reverse().map((e, i) => {
-                const s = entryStyle(e)
-                const isLast = i === ordered.length - 1
-                return (
-                  <div key={i} className="pp-acq-popover-item">
-                    <div className="pp-acq-popover-rail">
-                      <span className="pp-acq-popover-dot" style={{ background: s.color }}></span>
-                      {!isLast && <span className="pp-acq-popover-line"></span>}
-                    </div>
-                    <div className="pp-acq-popover-body">
-                      <div className="pp-acq-popover-team">
-                        {e.team || e.coach || '—'}
-                        {e.is_active && <span className="pp-acq-popover-current">CURRENT</span>}
-                      </div>
-                      <div className="pp-acq-popover-meta" style={{ color: s.color }}>
-                        <i className={`bi ${s.icon}`}></i>{s.label}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
-  // Old API shape (or player never on a roster) — render legacy single row
-  if (!fallback) return <span style={{ color: '#484f58' }}>—</span>
-  return (
-    <>
-      {fallback.coach && <div style={{ color: '#c9d1d9' }}>{fallback.coach}</div>}
-      <div style={{ fontSize: '.65rem' }}>
-        {fallback.method === 'draft' && fallback.pick_number
-          ? `Pick #${fallback.pick_number}${fallback.draft_year ? ` (${fallback.draft_year})` : ''}`
-          : fallback.method === 'supplemental' && fallback.pick_number
-            ? `Supp #${fallback.pick_number}${fallback.draft_year ? ` (${fallback.draft_year})` : ''}`
-            : fallback.method === 'trade' ? 'Trade'
-              : fallback.method === 'ssp' ? 'SSP'
-                : fallback.method || '—'}
-      </div>
-    </>
-  )
 }
 
 interface PoolPlayer {
@@ -230,6 +62,14 @@ interface PoolPlayer {
   delisted?: { by: string | null; period: string | null; at: string | null } | null
   acquired: Acquired | null
   acquired_history?: AcquiredHistoryEntry[]
+  /** Position is our estimate until SuperCoach publishes one. */
+  position_expected?: boolean
+  /** In his first season on an AFL list. */
+  is_new?: boolean
+  /** On a keeper list here but no longer on an AFL one. */
+  is_former?: boolean
+  on_block?: boolean
+  note_count?: number
 }
 
 interface TeamColour { fg: string; bg: string }
@@ -255,13 +95,19 @@ const GROUPS: { key: SmartFilter['group']; label: string }[] = [
   { key: 'profile', label: 'Profile' },
 ]
 
-/** The two or three worth surfacing without opening anything. */
-const PINNED = ['delisted', 'available', 'mine']
+/** The few worth surfacing without opening anything. */
+const PINNED = ['new', 'delisted', 'available', 'mine']
 
 const rtgMove = (p: PoolPlayer) =>
   p.rating != null && p.rating_start != null ? p.rating - p.rating_start : 0
 
 const SMART_FILTERS: SmartFilter[] = [
+  { group: 'avail', key: 'new', label: 'New to the AFL', icon: 'bi-stars', tone: 'gold',
+    hint: 'First season on an AFL list', test: p => !!p.is_new },
+  { group: 'avail', key: 'block', label: 'On the trade block', icon: 'bi-megaphone-fill', tone: 'orange',
+    hint: 'Put up for trade by their club', test: p => !!p.on_block },
+  { group: 'avail', key: 'noted', label: 'My notes', icon: 'bi-journal-text', tone: 'slate',
+    hint: 'Players you have written a note on', test: p => (p.note_count || 0) > 0 },
   { group: 'avail', key: 'delisted', label: 'Delisted', icon: 'bi-scissors', tone: 'red',
     hint: 'Cut in a delist period this season',
     test: p => !!p.delisted },
@@ -309,6 +155,9 @@ interface PoolData {
   can_pickup: boolean
   pickup_reason?: string | null
   ssp_cutoff_round: number
+  stats_year?: number
+  stats_are_last_season?: boolean
+  afl_year?: number
 }
 
 // CSS from templates/leagues/player_pool.html <style> block (trimmed to essentials)
@@ -319,7 +168,7 @@ const POOL_CSS = `
    (smart filters, each with a live count), and what is currently applied.
    ═══════════════════════════════════════════════════════════════════ */
 .pf {
-  --pf-line: rgba(140,155,185,.16);
+  --pf-line: rgba(173,155,120,.16);
   padding: 12px 14px 10px;
   border-bottom: 1px solid var(--pf-line);
   background: linear-gradient(180deg, rgba(255,255,255,.025), transparent);
@@ -334,12 +183,12 @@ const POOL_CSS = `
   border: 1px solid var(--pf-line);
   transition: border-color .15s, background .15s;
 }
-.pf-search:focus-within { border-color: rgba(120,180,255,.55); background: rgba(255,255,255,.07); }
-.pf-search i { color: #6b7789; font-size: .82rem; }
-.pf-search input { all: unset; flex: 1; min-width: 0; font-size: .82rem; color: #e6edf8; }
-.pf-search input::placeholder { color: #5d6879; }
-.pf-search button { all: unset; cursor: pointer; color: #6b7789; display: grid; place-items: center; }
-.pf-search button:hover { color: #e6edf8; }
+.pf-search:focus-within { border-color: rgba(246,195,91,.55); background: rgba(255,255,255,.07); }
+.pf-search i { color: #837b71; font-size: .82rem; }
+.pf-search input { all: unset; flex: 1; min-width: 0; font-size: .82rem; color: #f1efed; }
+.pf-search input::placeholder { color: #726b64; }
+.pf-search button { all: unset; cursor: pointer; color: #837b71; display: grid; place-items: center; }
+.pf-search button:hover { color: #f1efed; }
 
 /* Position — a segmented control, not a dropdown. Four options should
    never cost a click to see. */
@@ -350,14 +199,14 @@ const POOL_CSS = `
 .pf-seg-btn {
   all: unset; cursor: pointer;
   padding: 5px 12px; border-radius: 7px;
-  font-size: .74rem; font-weight: 750; color: #8b97a8;
+  font-size: .74rem; font-weight: 750; color: #a89a8b;
   transition: background .14s, color .14s;
 }
-.pf-seg-btn:hover { color: #dfe7f4; }
+.pf-seg-btn:hover { color: #edeae6; }
 .pf-seg-btn.on { background: rgba(255,255,255,.1); color: #fff; }
-.pf-seg-btn.on.pf-seg-DEF { background: rgba(107,178,255,.2); color: #9fccff; }
-.pf-seg-btn.on.pf-seg-MID { background: rgba(127,224,166,.2); color: #a5e9c1; }
-.pf-seg-btn.on.pf-seg-RUC { background: rgba(255,180,95,.2); color: #ffce93; }
+.pf-seg-btn.on.pf-seg-DEF { background: rgba(246,191,80,.2); color: #f8cf7c; }
+.pf-seg-btn.on.pf-seg-MID { background: rgba(238,229,184,.2); color: #f7f3de; }
+.pf-seg-btn.on.pf-seg-RUC { background: rgba(255,164,95,.2); color: #ffc393; }
 .pf-seg-btn.on.pf-seg-FWD { background: rgba(255,125,143,.2); color: #ffa6b3; }
 
 .pf-selects { display: flex; gap: 7px; flex-wrap: wrap; }
@@ -365,11 +214,11 @@ const POOL_CSS = `
   background: rgba(255,255,255,.04);
   border: 1px solid var(--pf-line);
   border-radius: 9px;
-  color: #c6d1e2; font-size: .76rem; font-weight: 600;
+  color: #dad4ce; font-size: .76rem; font-weight: 600;
   padding: 7px 9px; cursor: pointer; max-width: 160px;
 }
 .pf-select:hover { background: rgba(255,255,255,.08); }
-.pf-select:focus { outline: none; border-color: rgba(120,180,255,.5); }
+.pf-select:focus { outline: none; border-color: rgba(246,195,91,.5); }
 .pf-density { margin-left: auto; }
 
 /* Smart filters */
@@ -379,7 +228,7 @@ const POOL_CSS = `
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 11px; border-radius: 999px;
   font-size: .74rem; font-weight: 700;
-  color: #93a0b2;
+  color: #afa396;
   background: rgba(255,255,255,.04);
   border: 1px solid var(--pf-line);
   cursor: pointer;
@@ -387,22 +236,22 @@ const POOL_CSS = `
 }
 .pf-chip i { font-size: .74rem; opacity: .8; }
 .pf-chip-n {
-  font-size: .64rem; font-weight: 800; color: #66717f;
+  font-size: .64rem; font-weight: 800; color: #7b736a;
   background: rgba(255,255,255,.06);
   border-radius: 999px; padding: 1px 6px; min-width: 20px; text-align: center;
 }
-.pf-chip:hover:not(:disabled) { background: rgba(255,255,255,.09); color: #e2eaf6; }
+.pf-chip:hover:not(:disabled) { background: rgba(255,255,255,.09); color: #efece9; }
 .pf-chip:disabled { opacity: .3; cursor: default; }
 .pf-chip.on { color: #fff; }
 .pf-chip.on .pf-chip-n { background: rgba(0,0,0,.28); color: #fff; }
 .pf-red.on    { background: rgba(248,81,73,.22);  border-color: rgba(248,81,73,.55);  color: #ffb3ae; }
-.pf-green.on  { background: rgba(63,185,80,.2);   border-color: rgba(63,185,80,.55);  color: #9be8a8; }
-.pf-blue.on   { background: rgba(88,166,255,.2);  border-color: rgba(88,166,255,.55); color: #a8ceff; }
+.pf-green.on  { background: rgba(219,207,148,.2);   border-color: rgba(219,207,148,.55);  color: #f6f2da; }
+.pf-blue.on   { background: rgba(245,185,64,.2);  border-color: rgba(245,185,64,.55); color: #f9d284; }
 .pf-purple.on { background: rgba(188,140,255,.2); border-color: rgba(188,140,255,.55);color: #d6b8ff; }
-.pf-orange.on { background: rgba(240,160,80,.22); border-color: rgba(240,160,80,.55); color: #ffc890; }
-.pf-gold.on   { background: rgba(227,179,65,.22); border-color: rgba(227,179,65,.55); color: #f2d489; }
-.pf-teal.on   { background: rgba(45,212,191,.2);  border-color: rgba(45,212,191,.5);  color: #8ce8dc; }
-.pf-slate.on  { background: rgba(139,148,158,.22);border-color: rgba(139,148,158,.5); color: #d3dae4; }
+.pf-orange.on { background: rgba(240,144,80,.22); border-color: rgba(240,144,80,.55); color: #ffbd90; }
+.pf-gold.on   { background: rgba(227,130,65,.22); border-color: rgba(227,130,65,.55); color: #f2b389; }
+.pf-teal.on   { background: rgba(185,145,84,.2);  border-color: rgba(185,145,84,.5);  color: #dcc8aa; }
+.pf-slate.on  { background: rgba(163,149,134,.22);border-color: rgba(163,149,134,.5); color: #e0dcd7; }
 
 /* ── Filters button + panel ──────────────────────────────────────── */
 .pf-more-wrap { position: relative; }
@@ -410,18 +259,18 @@ const POOL_CSS = `
   all: unset;
   display: inline-flex; align-items: center; gap: 7px;
   padding: 7px 13px; border-radius: 10px;
-  font-size: .76rem; font-weight: 700; color: #b3c0d2;
+  font-size: .76rem; font-weight: 700; color: #c4b69b;
   background: rgba(255,255,255,.045);
   border: 1px solid var(--pf-line);
   cursor: pointer;
   transition: background .14s, border-color .14s, color .14s;
 }
 .pf-more:hover, .pf-more.open { background: rgba(255,255,255,.1); color: #fff; }
-.pf-more.open { border-color: rgba(120,180,255,.5); }
-.pf-more.has { border-color: rgba(120,180,255,.45); color: #dbe8ff; }
+.pf-more.open { border-color: rgba(246,195,91,.5); }
+.pf-more.has { border-color: rgba(246,195,91,.45); color: #f0edea; }
 .pf-more-n {
-  font-size: .64rem; font-weight: 800; color: #06121f;
-  background: #6fb2ff; border-radius: 999px;
+  font-size: .64rem; font-weight: 800; color: #131110;
+  background: #f6c053; border-radius: 999px;
   padding: 1px 6px; min-width: 18px; text-align: center;
 }
 .pf-more-chev { font-size: .62rem; opacity: .6; }
@@ -431,8 +280,8 @@ const POOL_CSS = `
   width: 460px; max-width: min(92vw, 460px);
   padding: 14px;
   border-radius: 14px;
-  background: #10151e;
-  border: 1px solid rgba(140,155,185,.28);
+  background: #171614;
+  border: 1px solid rgba(173,155,120,.28);
   box-shadow: 0 26px 60px -22px rgba(0,0,0,.95);
   animation: pfPanel .14s cubic-bezier(.2,.8,.2,1);
 }
@@ -440,7 +289,7 @@ const POOL_CSS = `
 .pf-group + .pf-group { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--pf-line); }
 .pf-group-h {
   font-size: .58rem; font-weight: 900; letter-spacing: .16em;
-  text-transform: uppercase; color: #616d7d; margin-bottom: 8px;
+  text-transform: uppercase; color: #777067; margin-bottom: 8px;
 }
 .pf-group-items { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 
@@ -450,7 +299,7 @@ const POOL_CSS = `
   all: unset;
   display: flex; align-items: center; gap: 8px;
   padding: 6px 9px; border-radius: 8px;
-  font-size: .78rem; color: #aab6c6;
+  font-size: .78rem; color: #c2b9ae;
   cursor: pointer;
   border: 1px solid transparent;
   transition: background .12s, color .12s, border-color .12s;
@@ -459,22 +308,22 @@ const POOL_CSS = `
 .pf-opt:disabled { opacity: .28; cursor: default; }
 .pf-opt-i { font-size: .78rem; width: 15px; text-align: center; }
 .pf-opt-l { flex: 1; min-width: 0; font-weight: 650; }
-.pf-opt-n { font-size: .68rem; font-weight: 700; color: #616d7d; font-variant-numeric: tabular-nums; }
+.pf-opt-n { font-size: .68rem; font-weight: 700; color: #777067; font-variant-numeric: tabular-nums; }
 .pf-opt.on {
-  background: rgba(120,180,255,.14);
-  border-color: rgba(120,180,255,.34);
+  background: rgba(246,195,91,.14);
+  border-color: rgba(246,195,91,.34);
   color: #fff;
 }
-.pf-opt.on .pf-opt-n { color: #a8ceff; }
+.pf-opt.on .pf-opt-n { color: #f9d284; }
 
 .pf-red-i { color: #ff8a80; }
-.pf-green-i { color: #7ee787; }
-.pf-blue-i { color: #79c0ff; }
+.pf-green-i { color: #efe7bd; }
+.pf-blue-i { color: #f6c35c; }
 .pf-purple-i { color: #d2a8ff; }
-.pf-orange-i { color: #ffb46b; }
-.pf-gold-i { color: #e3b341; }
-.pf-teal-i { color: #56d4c0; }
-.pf-slate-i { color: #98a3b3; }
+.pf-orange-i { color: #ffa56b; }
+.pf-gold-i { color: #e38241; }
+.pf-teal-i { color: #c6a573; }
+.pf-slate-i { color: #b2a699; }
 
 .pf-panel-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .pf-panel-selects .pf-select { max-width: none; width: 100%; }
@@ -487,8 +336,8 @@ const POOL_CSS = `
 .pf-apply {
   all: unset; margin-left: auto; cursor: pointer;
   padding: 6px 16px; border-radius: 8px;
-  font-size: .76rem; font-weight: 800; color: #06121f;
-  background: linear-gradient(100deg, #6fb2ff, #4a9bff);
+  font-size: .76rem; font-weight: 800; color: #131110;
+  background: linear-gradient(100deg, #f6c053, #f4b434);
 }
 .pf-apply:hover { filter: brightness(1.08); }
 
@@ -498,23 +347,23 @@ const POOL_CSS = `
   margin-top: 10px; padding-top: 9px;
   border-top: 1px dashed var(--pf-line);
 }
-.pf-count { font-size: .75rem; color: #7c8798; }
-.pf-count b { color: #e6edf8; font-weight: 800; font-size: .82rem; }
+.pf-count { font-size: .75rem; color: #9a8b7a; }
+.pf-count b { color: #f1efed; font-weight: 800; font-size: .82rem; }
 .pf-applied { display: flex; flex-wrap: wrap; gap: 5px; }
 .pf-tag {
   all: unset;
   display: inline-flex; align-items: center; gap: 5px;
   padding: 2px 8px; border-radius: 999px;
-  font-size: .68rem; font-weight: 700; color: #cfd9e8;
-  background: rgba(120,180,255,.14);
-  border: 1px solid rgba(120,180,255,.3);
+  font-size: .68rem; font-weight: 700; color: #e0dcd7;
+  background: rgba(246,195,91,.14);
+  border: 1px solid rgba(246,195,91,.3);
   cursor: pointer;
 }
 .pf-tag i { font-size: .66rem; opacity: .7; }
 .pf-tag:hover { background: rgba(248,81,73,.18); border-color: rgba(248,81,73,.4); color: #ffb3ae; }
 .pf-clear {
   all: unset; cursor: pointer;
-  font-size: .72rem; font-weight: 700; color: #7c8798;
+  font-size: .72rem; font-weight: 700; color: #9a8b7a;
   padding: 5px 11px; border-radius: 7px;
   border: 1px solid var(--pf-line);
   background: rgba(255,255,255,.03);
@@ -536,55 +385,55 @@ const POOL_CSS = `
   .pf-density { margin-left: 0; }
 }
 
-.pool-table th { padding: .5rem .6rem; font-size: .7rem; border-bottom: 2px solid #30363d; position: relative; cursor: pointer; user-select: none; }
+.pool-table th { padding: .5rem .6rem; font-size: .7rem; border-bottom: 2px solid #373330; position: relative; cursor: pointer; user-select: none; }
 .pool-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
-.pool-table th.sort-active .sort-icon { opacity: 1; color: #58a6ff; }
+.pool-table th.sort-active .sort-icon { opacity: 1; color: #f5b940; }
 .pool-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
 .pool-table tbody tr { transition: background .1s; }
-.pool-table tbody tr:hover { background: rgba(88,166,255,.04) !important; }
+.pool-table tbody tr:hover { background: rgba(245,185,64,.04) !important; }
 .profile-tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: .6rem; font-weight: 700; white-space: nowrap; letter-spacing: .3px; }
-.tag-elite { background: linear-gradient(135deg, rgba(255,215,0,.3), rgba(255,170,0,.25)); color: #ffd700; border: 1px solid rgba(255,215,0,.4); }
-.tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(139,92,246,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
-.tag-premium { background: linear-gradient(135deg, rgba(251,146,60,.2), rgba(245,158,11,.15)); color: #fb923c; }
-.tag-rising { background: rgba(16,185,129,.18); color: #10b981; }
-.tag-breakout { background: rgba(6,182,212,.18); color: #06b6d4; }
-.tag-proven { background: rgba(59,130,246,.15); color: #3b82f6; }
-.tag-steady { background: rgba(148,163,184,.12); color: #94a3b8; }
-.tag-developing { background: rgba(74,222,128,.1); color: #4ade80; }
-.tag-project { background: rgba(234,179,8,.12); color: #eab308; }
+.tag-elite { background: linear-gradient(135deg, rgba(249,192,6,.3), rgba(245,104,10,.25)); color: #f9c006; border: 1px solid rgba(249,192,6,.4); }
+.tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(244,183,60,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
+.tag-premium { background: linear-gradient(135deg, rgba(251,127,60,.2), rgba(245,105,11,.15)); color: #fb7f3c; }
+.tag-rising { background: rgba(165,120,29,.18); color: #a5781d; }
+.tag-breakout { background: rgba(185,122,14,.18); color: #b97a0e; }
+.tag-proven { background: rgba(243,173,31,.15); color: #f3ad1f; }
+.tag-steady { background: rgba(178,167,154,.12); color: #b2a79a; }
+.tag-developing { background: rgba(228,213,139,.1); color: #e4d58b; }
+.tag-project { background: rgba(232,99,10,.12); color: #e8630a; }
 .tag-declining { background: rgba(239,68,68,.15); color: #ef4444; }
-.tag-veteran { background: rgba(120,113,108,.12); color: #a8a29e; }
-.tag-fringe { background: rgba(82,82,91,.1); color: #71717a; }
+.tag-veteran { background: rgba(122,115,106,.12); color: #b0a496; }
+.tag-fringe { background: rgba(93,87,80,.1); color: #7e766d; }
 .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-.filter-bar .form-control-sm, .filter-bar .form-select-sm { background: #0d1117; border-color: #30363d; font-size: .78rem; }
-.pool-count { font-size: .75rem; color: #8b949e; white-space: nowrap; display: flex; align-items: center; gap: .35rem; }
-.pool-count strong { color: #c9d1d9; }
-.pm-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #1c2128; cursor: pointer; background: #0d1117; }
-.pm-card:active { background: #161b22; }
+.filter-bar .form-control-sm, .filter-bar .form-select-sm { background: #121110; border-color: #373330; font-size: .78rem; }
+.pool-count { font-size: .75rem; color: #a39586; white-space: nowrap; display: flex; align-items: center; gap: .35rem; }
+.pool-count strong { color: #d7d1cb; }
+.pm-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #22201e; cursor: pointer; background: #121110; }
+.pm-card:active { background: #1c1a18; }
 .pm-taken { opacity: .5; }
 .pm-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; border-radius: 4px; }
 .pm-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .pm-row1 { display: flex; align-items: center; gap: 5px; }
-.pm-name { font-weight: 700; font-size: .84rem; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-name { font-weight: 700; font-size: .84rem; color: #efedea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm-pos-badge { padding: 1px 5px; font-size: .55rem; }
-.pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #6e7681; }
-.pm-row2 b { color: #c9d1d9; font-weight: 700; }
-.pm-sep { width: 1px; height: 9px; background: #21262d; flex-shrink: 0; }
+.pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #80786f; }
+.pm-row2 b { color: #d7d1cb; font-weight: 700; }
+.pm-sep { width: 1px; height: 9px; background: #272522; flex-shrink: 0; }
 .pm-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-.pm-sc { font-size: 1.05rem; font-weight: 800; color: #e6edf3; line-height: 1; }
-.pm-sc-none { color: #484f58; font-size: .85rem; }
+.pm-sc { font-size: 1.05rem; font-weight: 800; color: #efedea; line-height: 1; }
+.pm-sc-none { color: #56504a; font-size: .85rem; }
 .pm-owner { font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
-.pm-fa { font-size: .58rem; font-weight: 600; color: #3fb950; }
-.pm-add { background: rgba(63,185,80,.12); border: none; color: #3fb950; border-radius: 4px; font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px; }
-.pm-l3 { color: #c9d1d9; }
+.pm-fa { font-size: .58rem; font-weight: 600; color: #dbcf94; }
+.pm-add { background: rgba(219,207,148,.12); border: none; color: #dbcf94; border-radius: 4px; font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px; }
+.pm-l3 { color: #d7d1cb; }
 .pm-l3 b { font-weight: 700; }
 .pm-l3-delta { font-size: .58rem; font-weight: 700; margin-left: 2px; }
-.pm-l3-delta-up { color: #3fb950; }
+.pm-l3-delta-up { color: #dbcf94; }
 .pm-l3-delta-down { color: #f85149; }
-.pm-l3-delta-flat { color: #484f58; }
-.wishlist-star { cursor: pointer; background: none; border: none; padding: 4px 6px; color: #6e7681; font-size: .95rem; line-height: 1; transition: color .15s, transform .15s; }
-.wishlist-star:hover { color: #d29922; }
-.wishlist-star.active { color: #d29922; }
+.pm-l3-delta-flat { color: #56504a; }
+.wishlist-star { cursor: pointer; background: none; border: none; padding: 4px 6px; color: #80786f; font-size: .95rem; line-height: 1; transition: color .15s, transform .15s; }
+.wishlist-star:hover { color: #d26822; }
+.wishlist-star.active { color: #d26822; }
 .wishlist-star:active { transform: scale(1.2); }
 `
 
@@ -628,6 +477,9 @@ export function PlayerPoolPage() {
   // PoolData league summary, this one carries the teams[] roster for
   // the trade-from-row deep link).
   const { league: leagueCtx } = useLeague()
+  // Until the new season has a game played, every average on this page is
+  // last season's, and the column headers say which.
+  const stats = useStatsYear()
   // Owner name → team_id lookup. PoolData.players.owner_team is a name
   // string; we resolve it against LeagueContext.teams to build the
   // trade-propose URL.
@@ -813,7 +665,11 @@ export function PlayerPoolPage() {
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>
             <h2 className="mb-0">Player Pool</h2>
-            <span style={{ fontSize: '.78rem', color: '#8b949e' }}>Ranked by draft value</span>
+            {stats.isLast && (
+              <span className="kl-season-note">
+                <i className="bi bi-calendar3"></i> Averages, L3 and L5 are from the {stats.label} season
+              </span>
+            )}
           </div>
           <div className="d-flex align-items-center gap-2">
             <div className="pool-count">
@@ -826,10 +682,10 @@ export function PlayerPoolPage() {
       {can_pickup && (
         <div
           className="d-flex align-items-center gap-2 mb-3 px-3 py-2 d-none d-lg-flex"
-          style={{ background: 'rgba(63,185,80,.08)', border: '1px solid rgba(63,185,80,.2)', borderRadius: 8, fontSize: '.82rem' }}
+          style={{ background: 'rgba(219,207,148,.08)', border: '1px solid rgba(219,207,148,.2)', borderRadius: 8, fontSize: '.82rem' }}
         >
-          <i className="bi bi-person-plus-fill" style={{ color: '#3fb950' }}></i>
-          <span style={{ color: '#c9d1d9' }}>
+          <i className="bi bi-person-plus-fill" style={{ color: '#dbcf94' }}></i>
+          <span style={{ color: '#d7d1cb' }}>
             SSP pickups open — <strong>{effective_roster_count}/{league.squad_size}</strong> roster spots filled
             {ltil_count ? ` (${ltil_count} on LTIL)` : ''}. Closes at Round {ssp_cutoff_round}.
           </span>
@@ -840,16 +696,16 @@ export function PlayerPoolPage() {
         <div
           className="d-flex align-items-center gap-2 mb-3 px-3 py-2"
           style={{
-            background: 'rgba(210,153,34,.08)',
-            border: '1px solid rgba(210,153,34,.3)',
+            background: 'rgba(210,104,34,.08)',
+            border: '1px solid rgba(210,104,34,.3)',
             borderRadius: 8,
             fontSize: '.82rem',
           }}
         >
-          <i className="bi bi-info-circle-fill" style={{ color: '#d29922' }}></i>
-          <span style={{ color: '#f0d18a' }}>
+          <i className="bi bi-info-circle-fill" style={{ color: '#d26822' }}></i>
+          <span style={{ color: '#f0b38a' }}>
             <strong>Free-agent pickups paused.</strong>
-            <span style={{ color: '#c9d1d9', marginLeft: 6, fontWeight: 400 }}>{data.pickup_reason}</span>
+            <span style={{ color: '#d7d1cb', marginLeft: 6, fontWeight: 400 }}>{data.pickup_reason}</span>
           </span>
         </div>
       )}
@@ -1020,7 +876,7 @@ export function PlayerPoolPage() {
         {/* Desktop table */}
         <div className="card-body p-0 d-none d-lg-block" style={{ maxHeight: '78vh', overflow: 'auto' }}>
           <table className="table table-sm mb-0 pool-table">
-            <thead className="sticky-top" style={{ background: '#161b22', zIndex: 2 }}>
+            <thead className="sticky-top" style={{ background: '#1c1a18', zIndex: 2 }}>
               <tr>
                 <th style={{ width: 18 }}></th>
                 <th className={sortKey === 'name' ? 'sort-active' : ''} onClick={() => toggleSort('name')}>
@@ -1032,11 +888,13 @@ export function PlayerPoolPage() {
                 <th className={`${sortKey === 'age' ? 'sort-active ' : ''}text-center`} style={{ width: 45 }} onClick={() => toggleSort('age')}>
                   Age <i className={`bi ${sortIcon('age')} sort-icon`}></i>
                 </th>
-                <th className={`${sortKey === 'sc_avg' ? 'sort-active ' : ''}text-end`} style={{ width: 65 }} onClick={() => toggleSort('sc_avg')}>
-                  SC <i className={`bi ${sortIcon('sc_avg')} sort-icon`}></i>
+                <th className={`${sortKey === 'sc_avg' ? 'sort-active ' : ''}text-end`} style={{ width: 78 }} onClick={() => toggleSort('sc_avg')}
+                  title={stats.isLast ? `SuperCoach average for the ${stats.label} season` : 'SuperCoach average this season'}>
+                  {stats.tag ? `SC ${stats.tag}` : 'SC'} <i className={`bi ${sortIcon('sc_avg')} sort-icon`}></i>
                 </th>
-                <th className={`${sortKey === 'trend' ? 'sort-active ' : ''}text-center`} style={{ width: 75 }} onClick={() => toggleSort('trend')}>
-                  L3 <i className={`bi ${sortIcon('trend')} sort-icon`}></i>
+                <th className={`${sortKey === 'trend' ? 'sort-active ' : ''}text-center`} style={{ width: 88 }} onClick={() => toggleSort('trend')}
+                  title={stats.isLast ? `Average of his last 3 games of ${stats.label}` : 'Average of his last 3 games'}>
+                  {stats.tag ? `L3 ${stats.tag}` : 'L3'} <i className={`bi ${sortIcon('trend')} sort-icon`}></i>
                 </th>
                 <th className={`${sortKey === 'rating' ? 'sort-active ' : ''}text-end`} style={{ width: 50 }} onClick={() => toggleSort('rating')}>
                   Rtg <i className={`bi ${sortIcon('rating')} sort-icon`}></i>
@@ -1050,7 +908,7 @@ export function PlayerPoolPage() {
                 <th className={sortKey === 'tag' ? 'sort-active' : ''} style={{ width: 120 }} onClick={() => toggleSort('tag')}>
                   Profile <i className={`bi ${sortIcon('tag')} sort-icon`}></i>
                 </th>
-                <th style={{ width: 130 }}>Acquired</th>
+                <th style={{ width: 196 }}>Acquired</th>
                 <th className="text-center" style={{ width: 110 }}>Status</th>
                 <th className="text-center" style={{ width: 34 }}></th>
               </tr>
@@ -1086,49 +944,57 @@ export function PlayerPoolPage() {
                           />
                         )}
                         <span className="p-name">{p.name}</span>
-                        <span style={{ color: '#c9d1d9', fontSize: '.72rem', marginLeft: 'auto' }}>{p.afl_team}</span>
+                        {p.is_new && <span className="pl-mark pl-mark-new" title={`New to the AFL in ${data.afl_year ?? ''}`}>NEW</span>}
+                        {p.is_former && <span className="pl-mark pl-mark-off" title="No longer on an AFL list">OFF AFL LIST</span>}
+                        {p.on_block && <i className="bi bi-megaphone-fill pl-ico pl-ico-block" title="On the trade block"></i>}
+                        {(p.note_count || 0) > 0 && <i className="bi bi-journal-text pl-ico" title={`${p.note_count} note${p.note_count === 1 ? '' : 's'} of yours`}></i>}
+                        <span style={{ color: '#d7d1cb', fontSize: '.72rem', marginLeft: 'auto' }}>{p.afl_team}</span>
                       </span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 3, flexWrap: 'nowrap' }}>
                         {['FWD', 'DEF', 'RUC', 'MID'].filter(pos => positions.includes(pos)).map(pos => (
-                          <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}`} style={{ padding: '2px 5px', fontSize: '.65rem' }}>{pos}</span>
+                          <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}
+                            style={{ padding: '2px 5px', fontSize: '.65rem' }}
+                            title={p.position_expected ? 'Expected position. He has no SuperCoach position yet.' : undefined}>
+                            {pos}{p.position_expected ? ' exp' : ''}
+                          </span>
                         ))}
                       </div>
                     </td>
-                    <td className="text-center" style={{ color: '#8b949e' }}>{p.age || '-'}</td>
+                    <td className="text-center" style={{ color: '#a39586' }}>{p.age || '-'}</td>
                     <td className="text-end">
-                      {p.sc_avg ? <span style={{ fontWeight: 600 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#484f58' }}>-</span>}
+                      {p.sc_avg ? <span style={{ fontWeight: 600 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#56504a' }}>-</span>}
                     </td>
                     <td className="text-center">
                       {p.l3 ? (
                         <>
-                          <span style={{ fontWeight: 600, color: '#c9d1d9' }}>{Math.round(p.l3)}</span>
-                          {l3Pct > 2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#3fb950', marginLeft: 2 }}>+{Math.round(l3Pct)}%</span>
+                          <span style={{ fontWeight: 600, color: '#d7d1cb' }}>{Math.round(p.l3)}</span>
+                          {l3Pct > 2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#dbcf94', marginLeft: 2 }}>+{Math.round(l3Pct)}%</span>
                             : l3Pct < -2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#f85149', marginLeft: 2 }}>{Math.round(l3Pct)}%</span>
-                            : <span style={{ fontSize: '.65rem', color: '#484f58', marginLeft: 2 }}>-</span>}
+                            : <span style={{ fontSize: '.65rem', color: '#56504a', marginLeft: 2 }}>-</span>}
                         </>
-                      ) : <span style={{ color: '#484f58' }}>-</span>}
+                      ) : <span style={{ color: '#56504a' }}>-</span>}
                     </td>
                     <td className="text-end">
-                      {p.rating ? <span style={{ color: '#c9d1d9', fontWeight: 600 }}>{p.rating}</span> : <span style={{ color: '#484f58' }}>-</span>}
+                      {p.rating ? <span style={{ color: '#d7d1cb', fontWeight: 600 }}>{p.rating}</span> : <span style={{ color: '#56504a' }}>-</span>}
                     </td>
                     <td className="text-center">
                       {p.rating && p.rating_start ? (
-                        rtgMove > 0 ? <span style={{ color: '#3fb950', fontWeight: 600, fontSize: '.78rem' }}>+{rtgMove}</span>
+                        rtgMove > 0 ? <span style={{ color: '#dbcf94', fontWeight: 600, fontSize: '.78rem' }}>+{rtgMove}</span>
                           : rtgMove < 0 ? <span style={{ color: '#f85149', fontWeight: 600, fontSize: '.78rem' }}>{rtgMove}</span>
-                          : <span style={{ color: '#484f58', fontSize: '.78rem' }}>-</span>
-                      ) : <span style={{ color: '#484f58' }}>-</span>}
+                          : <span style={{ color: '#56504a', fontSize: '.78rem' }}>-</span>
+                      ) : <span style={{ color: '#56504a' }}>-</span>}
                     </td>
                     <td className="text-end">
-                      {p.potential ? <span style={{ color: '#c9d1d9', fontWeight: 600 }}>{p.potential}</span> : <span style={{ color: '#484f58' }}>-</span>}
+                      {p.potential ? <span style={{ color: '#d7d1cb', fontWeight: 600 }}>{p.potential}</span> : <span style={{ color: '#56504a' }}>-</span>}
                     </td>
                     <td>
                       {p.profile_tag && p.profile_css && (
                         <span className={`profile-tag tag-${p.profile_css}`}>{p.profile_tag}</span>
                       )}
                     </td>
-                    <td style={{ fontSize: '.7rem', color: '#8b949e' }}>
+                    <td style={{ whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                       <AcquiredHistory history={p.acquired_history} fallback={p.acquired} />
                     </td>
                     <td className="text-center">
@@ -1233,13 +1099,13 @@ export function PlayerPoolPage() {
           )}
 
           {/* Sort + count row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px', borderBottom: '1px solid rgba(48,54,61,.4)' }}>
-            <span style={{ fontSize: '.72rem', color: '#6e7681' }}><b style={{ color: '#8b949e' }}>{mobileSorted.length}</b> players</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px', borderBottom: '1px solid rgba(55,51,48,.4)' }}>
+            <span style={{ fontSize: '.72rem', color: '#80786f' }}><b style={{ color: '#a39586' }}>{mobileSorted.length}</b> players</span>
             <select
               className="form-select form-select-sm"
               value={mobSort}
               onChange={e => setMobSort(e.target.value as MobileSortKey)}
-              style={{ background: 'transparent', border: 'none', color: '#58a6ff', fontSize: '.72rem', fontWeight: 600, width: 'auto', padding: '2px 24px 2px 4px' }}
+              style={{ background: 'transparent', border: 'none', color: '#f5b940', fontSize: '.72rem', fontWeight: 600, width: 'auto', padding: '2px 24px 2px 4px' }}
             >
               <option value="sc">SC Avg ↓</option>
               <option value="name_asc">Name A–Z</option>
@@ -1276,11 +1142,15 @@ export function PlayerPoolPage() {
                   <div className="kl-player-card-body">
                     <div className="kl-player-card-name">
                       {p.name}
+                      {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
+                      {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
+                      {p.on_block && <i className="bi bi-megaphone-fill pl-ico pl-ico-block"></i>}
+                      {(p.note_count || 0) > 0 && <i className="bi bi-journal-text pl-ico"></i>}
                       {p.injury_severity && <i className="bi bi-bandaid-fill" style={{ color: '#f85149', fontSize: '.65rem', marginLeft: 4 }}></i>}
                     </div>
                     <div className="kl-player-card-meta">
                       {positions.map(pos => (
-                        <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}`} style={{ fontSize: '.55rem', padding: '1px 5px', lineHeight: 1.3 }}>{pos}</span>
+                        <span key={pos} className={`pos-badge badge-${pos.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`} style={{ fontSize: '.55rem', padding: '1px 5px', lineHeight: 1.3 }}>{pos}{p.position_expected ? ' exp' : ''}</span>
                       ))}
                       <span>{p.age}y</span>
                       <span>·</span>
@@ -1290,7 +1160,7 @@ export function PlayerPoolPage() {
                   </div>
                   <div className="kl-player-card-right">
                     {p.sc_avg ? (
-                      <span className="kl-player-card-sc">{Math.round(p.sc_avg)}</span>
+                      <span className="kl-player-card-sc">{Math.round(p.sc_avg)}{stats.tag && <small className="kl-yr-tag">{stats.tag}</small>}</span>
                     ) : (
                       <span className="kl-player-card-sc kl-player-card-sc-none">—</span>
                     )}
@@ -1334,7 +1204,7 @@ export function PlayerPoolPage() {
             })}
             {mob.hasMore && <div ref={mob.sentinelRef} style={{ height: 1 }} />}
             {mobileSorted.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#484f58' }}>
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#56504a' }}>
                 <i className="bi bi-search" style={{ fontSize: '1.5rem', display: 'block', marginBottom: 8 }}></i>
                 <p style={{ fontSize: '.82rem', margin: 0 }}>No players match your filters</p>
               </div>

@@ -68,7 +68,7 @@ export function AdminDashboardPage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-bar-chart-line me-2" style={{ color: '#d29922' }}></i>Admin Dashboard</h2>
+        <h2><i className="bi bi-bar-chart-line me-2" style={{ color: '#d26822' }}></i>Admin Dashboard</h2>
         <div className="d-flex gap-2">
           <Link to="/admin/users" className="btn btn-sm btn-outline-secondary">Users</Link>
           <Link to="/admin/leagues" className="btn btn-sm btn-outline-secondary">Leagues</Link>
@@ -77,9 +77,9 @@ export function AdminDashboardPage() {
       </div>
 
       <div className="row g-3 mb-4">
-        <Stat label="Users" value={data.total_users} icon="bi-people" color="#58a6ff" />
-        <Stat label="Leagues" value={data.total_leagues} icon="bi-trophy" color="#d29922" />
-        <Stat label="Teams" value={data.total_teams} icon="bi-shield" color="#3fb950" />
+        <Stat label="Users" value={data.total_users} icon="bi-people" color="#f5b940" />
+        <Stat label="Leagues" value={data.total_leagues} icon="bi-trophy" color="#d26822" />
+        <Stat label="Teams" value={data.total_teams} icon="bi-shield" color="#dbcf94" />
         <Stat label="Views Today" value={data.views_today} icon="bi-eye" color="#bc8cff" />
       </div>
 
@@ -101,7 +101,7 @@ export function AdminDashboardPage() {
                       <td style={{ fontFamily: 'monospace', fontSize: '.7rem' }}>{a.path}</td>
                       <td><span className="badge bg-secondary">{a.method}</span></td>
                       <td className="text-end">
-                        <span className="badge" style={{ background: a.status < 400 ? 'rgba(63,185,80,.15)' : 'rgba(248,81,73,.15)', color: a.status < 400 ? '#3fb950' : '#f85149' }}>
+                        <span className="badge" style={{ background: a.status < 400 ? 'rgba(219,207,148,.15)' : 'rgba(248,81,73,.15)', color: a.status < 400 ? '#dbcf94' : '#f85149' }}>
                           {a.status}
                         </span>
                       </td>

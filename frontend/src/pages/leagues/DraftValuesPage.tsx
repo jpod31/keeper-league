@@ -93,7 +93,7 @@ export function DraftValuesPage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-sliders me-2" style={{ color: '#58a6ff' }}></i>Draft Values</h2>
+        <h2><i className="bi bi-sliders me-2" style={{ color: '#f5b940' }}></i>Draft Values</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
           Tune the weights used to compute draft scores. {data.has_custom ? 'Using custom weights.' : 'Using league defaults.'}
         </div>
@@ -146,7 +146,7 @@ export function DraftValuesPage() {
                 <tbody>
                   {displayPlayers.map((p, i) => (
                     <tr key={`${p.name}-${p.afl_team}`}>
-                      <td style={{ color: '#484f58' }}>{i + 1}</td>
+                      <td style={{ color: '#56504a' }}>{i + 1}</td>
                       <td><strong>{p.name}</strong></td>
                       <td className="text-secondary" style={{ fontSize: '.75rem' }}>{p.afl_team}</td>
                       <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>

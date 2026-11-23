@@ -87,7 +87,7 @@ function AssetChip({ asset }: { asset: TradeAsset }) {
   if (asset.kind === 'pick') {
     return (
       <span className="tr-asset-chip tr-asset-chip-pick">
-        <i className="bi bi-ticket-perforated" style={{ fontSize: '.7rem', color: '#79c0ff' }}></i>
+        <i className="bi bi-ticket-perforated" style={{ fontSize: '.7rem', color: '#f6c35c' }}></i>
         {asset.name}
       </span>
     )
@@ -127,7 +127,7 @@ function TradeCard({ trade, leagueId, teamLogos }: {
       <div className="tr-center-card-top">
         <div className="tr-center-card-teams">
           <TeamChip team={trade.proposer_team} teamLogos={teamLogos} />
-          <i className="bi bi-arrow-left-right" style={{ color: '#484f58', fontSize: '.85rem' }}></i>
+          <i className="bi bi-arrow-left-right" style={{ color: '#56504a', fontSize: '.85rem' }}></i>
           <TeamChip team={trade.recipient_team} teamLogos={teamLogos} />
         </div>
         <span className={`tr-center-card-status tr-status-${status}`}>{STATUS_LABEL[status] || status}</span>

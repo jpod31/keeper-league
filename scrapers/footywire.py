@@ -412,8 +412,9 @@ def load_player_sc_history(player_name: str) -> dict:
         gp = len(pdata)
         yearly_averages.append({"year": year, "avg": avg, "games_played": gp})
 
-        if year == CURRENT_YEAR:
-            current_rounds = pdata.sort_values("round")[["round", "sc_score"]].to_dict(orient="records")
+        # Latest season on file wins, so the round-by-round list is never
+        # empty just because the new season hasn't started.
+        current_rounds = pdata.sort_values("round")[["round", "sc_score"]].to_dict(orient="records")
 
     # Derived stats
     career_avg = None

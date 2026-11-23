@@ -194,9 +194,9 @@ export function LineupPage() {
       </div>
 
       {bye_players.length > 0 && (
-        <div className="alert" style={{ background: 'rgba(210,153,34,.1)', border: '1px solid rgba(210,153,34,.2)', borderRadius: 10, fontSize: '.85rem' }}>
-          <i className="bi bi-exclamation-triangle me-1" style={{ color: '#d29922' }}></i>
-          <strong style={{ color: '#d29922' }}>Bye players:</strong>{' '}
+        <div className="alert" style={{ background: 'rgba(210,104,34,.1)', border: '1px solid rgba(210,104,34,.2)', borderRadius: 10, fontSize: '.85rem' }}>
+          <i className="bi bi-exclamation-triangle me-1" style={{ color: '#d26822' }}></i>
+          <strong style={{ color: '#d26822' }}>Bye players:</strong>{' '}
           {bye_players.map((p, i) => (
             <span key={i}>{p.name} ({p.afl_team}){i < bye_players.length - 1 ? ', ' : ''}</span>
           ))}
@@ -269,7 +269,7 @@ export function LineupPage() {
               <div className="card">
                 <div className="card-header" style={{ padding: '.6rem 1rem' }}>
                   <h6 className="mb-0 fw-bold" style={{ fontSize: '.8rem' }}>
-                    <i className="bi bi-star me-1" style={{ color: '#d29922' }}></i>Captain & Vice-Captain
+                    <i className="bi bi-star me-1" style={{ color: '#d26822' }}></i>Captain & Vice-Captain
                   </h6>
                 </div>
                 <div className="card-body">
@@ -310,7 +310,7 @@ export function LineupPage() {
               <div className="card">
                 <div className="card-header" style={{ padding: '.6rem 1rem' }}>
                   <h6 className="mb-0 fw-bold" style={{ fontSize: '.8rem' }}>
-                    <i className="bi bi-bench me-1" style={{ color: '#8b949e' }}></i>Bench
+                    <i className="bi bi-bench me-1" style={{ color: '#a39586' }}></i>Bench
                   </h6>
                 </div>
                 <div className="card-body scroll-body" style={{ maxHeight: 200, overflowY: 'auto' }}>
@@ -337,7 +337,7 @@ export function LineupPage() {
                         <label className="form-check-label" style={{ fontSize: '.8rem' }}>
                           {p.name} <span className="text-secondary">({p.position})</span>
                           {player_lock_times[String(p.id)] && (
-                            <span style={{ fontSize: '.65rem', color: player_lock_times[String(p.id)] === 'Locked' ? '#f85149' : '#8b949e' }}>
+                            <span style={{ fontSize: '.65rem', color: player_lock_times[String(p.id)] === 'Locked' ? '#f85149' : '#a39586' }}>
                               {' '}{player_lock_times[String(p.id)]}
                             </span>
                           )}
@@ -387,10 +387,10 @@ export function LineupPage() {
                           <i className="bi bi-lock-fill" style={{ color: '#f85149', fontSize: '.6rem' }}></i>
                         )}
                         <span>{slot.player_name || 'Empty'}</span>
-                        {slot.is_captain && <span className="badge" style={{ background: '#d29922', fontSize: '.6rem' }}>C</span>}
-                        {slot.is_vice_captain && <span className="badge" style={{ background: '#58a6ff', fontSize: '.6rem' }}>VC</span>}
+                        {slot.is_captain && <span className="badge" style={{ background: '#d26822', fontSize: '.6rem' }}>C</span>}
+                        {slot.is_vice_captain && <span className="badge" style={{ background: '#f5b940', fontSize: '.6rem' }}>VC</span>}
                         {slot.player_id != null && player_lock_times[String(slot.player_id)] && (
-                          <span style={{ fontSize: '.6rem', color: player_lock_times[String(slot.player_id)] === 'Locked' ? '#f85149' : '#8b949e' }}>
+                          <span style={{ fontSize: '.6rem', color: player_lock_times[String(slot.player_id)] === 'Locked' ? '#f85149' : '#a39586' }}>
                             {player_lock_times[String(slot.player_id)]}
                           </span>
                         )}

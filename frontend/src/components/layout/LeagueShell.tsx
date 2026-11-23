@@ -127,8 +127,9 @@ function LeagueShellInner() {
         { label: 'Stats', icon: 'bi-graph-up', to: `/leagues/${lid}/team/${t.id}/stats`, key: 'stats' },
         { label: 'Analytics', icon: 'bi-bar-chart-line', to: `/leagues/${lid}/team/${t.id}/analytics`, key: 'analytics' },
         { label: 'Trades', icon: 'bi-arrow-left-right', to: `/leagues/${lid}/trades`, key: 'trades' },
+        { label: 'Trade block', icon: 'bi-megaphone', to: `/leagues/${lid}/trade-block`, key: 'block' },
         ...(league.is_owner ? [
-          { label: 'Wishlist', icon: 'bi-star', to: `/leagues/${lid}/team/${t.id}?view=wishlist`, key: 'wishlist', style: { color: '#d29922' } as React.CSSProperties },
+          { label: 'Wishlist', icon: 'bi-star', to: `/leagues/${lid}/team/${t.id}?view=wishlist`, key: 'wishlist', style: { color: '#d26822' } as React.CSSProperties },
         ] : []),
       ] : [],
     },
@@ -142,6 +143,7 @@ function LeagueShellInner() {
         { label: 'Ratings', icon: 'bi-star-fill', to: `/leagues/${lid}/player-ratings`, key: 'ratings' },
         { label: 'Scouting', icon: 'bi-binoculars', to: `/leagues/${lid}/scouting`, key: 'scouting' },
         { label: 'Breakout', icon: 'bi-broadcast-pin', to: `/leagues/${lid}/breakout-radar`, key: 'breakout' },
+        { label: 'Former', icon: 'bi-person-dash', to: `/leagues/${lid}/former-players`, key: 'former' },
       ],
     },
     league: {
@@ -150,6 +152,7 @@ function LeagueShellInner() {
         { label: 'Ladder', icon: 'bi-bar-chart', to: `/leagues/${lid}/standings`, key: 'ladder' },
         { label: 'Fixtures', icon: 'bi-calendar-week', to: `/leagues/${lid}/fixture`, key: 'fixture' },
         ...(league.finals_teams > 0 ? [{ label: 'Finals', icon: 'bi-trophy', to: `/leagues/${lid}/finals`, key: 'finals' }] : []),
+        { label: 'Seasons', icon: 'bi-calendar3', to: `/leagues/${lid}/seasons`, key: 'seasons' },
         { label: 'Records', icon: 'bi-trophy', to: `/leagues/${lid}/history`, key: 'records' },
         { label: 'Changes', icon: 'bi-clock-history', to: `/leagues/${lid}/list-changes`, key: 'changes' },
       ],
@@ -297,14 +300,14 @@ function LeagueShellInner() {
               {league.is_commissioner ? (
                 <div
                   className="more-sheet-item"
-                  style={{ color: '#d29922' }}
+                  style={{ color: '#d26822' }}
                   onClick={() => navigate(`/leagues/${lid}/commissioner`)}
                 >
                   <i className="bi bi-shield-lock"></i>
                   <span>
                     Admin
                     {league.pending_ltil_count > 0 && (
-                      <span className="badge rounded-pill ms-1" style={{ background: '#d29922', color: '#000', fontSize: '.55rem' }}>
+                      <span className="badge rounded-pill ms-1" style={{ background: '#d26822', color: '#000', fontSize: '.55rem' }}>
                         {league.pending_ltil_count}
                       </span>
                     )}
@@ -329,7 +332,7 @@ function LeagueShellInner() {
                   <i className="bi bi-trophy"></i><span>{lg.name}</span>
                 </div>
               ))}
-              <div className="more-sheet-item" style={{ color: '#3fb950' }} onClick={() => navigate('/leagues/create')}>
+              <div className="more-sheet-item" style={{ color: '#dbcf94' }} onClick={() => navigate('/leagues/create')}>
                 <i className="bi bi-plus-circle"></i><span>Create League</span>
               </div>
             </div>
@@ -376,14 +379,14 @@ function LeagueShellInner() {
 // stop, a 17% opacity active-row fill, a 2px solid edge stripe, and
 // a solid icon colour, with white-on-fill text still readable.
 const SWITCH_PALETTE: { hex: string; rgb: string }[] = [
-  { hex: '#3a7dc4', rgb: '58,125,196' },    // sapphire
-  { hex: '#b87f3d', rgb: '184,127,61' },    // cognac
-  { hex: '#8a6db8', rgb: '138,109,184' },   // amethyst
-  { hex: '#3d8c63', rgb: '61,140,99' },     // forest green
-  { hex: '#c2932f', rgb: '194,147,47' },    // deep gold / ochre
+  { hex: '#b8733d', rgb: '184,115,61' },    // cognac
   { hex: '#b85a4a', rgb: '184,90,74' },     // rust
-  { hex: '#3d8a9c', rgb: '61,138,156' },    // teal
+  { hex: '#8e63b8', rgb: '142,99,184' },    // plum
+  { hex: '#d39a22', rgb: '211,154,34' },    // gold
+  { hex: '#c26a2f', rgb: '194,106,47' },    // ochre
   { hex: '#9d5878', rgb: '157,88,120' },    // garnet
+  { hex: '#a89468', rgb: '168,148,104' },   // sand
+  { hex: '#c94f4f', rgb: '201,79,79' },     // red
 ]
 
 function accentFor(id: number) {
@@ -502,6 +505,7 @@ function LeagueRail({
         { to: `/leagues/${lid}/team/${teamId}/stats`,             key: 'stats',     label: 'Stats' },
         { to: `/leagues/${lid}/team/${teamId}/analytics`,         key: 'analytics', label: 'Analytics' },
         { to: `/leagues/${lid}/trades`,                           key: 'trades',    label: 'Trades' },
+        { to: `/leagues/${lid}/trade-block`,                      key: 'block',     label: 'Trade block' },
         { to: `/leagues/${lid}/team/${teamId}?view=wishlist`,     key: 'wishlist',  label: 'Wishlist' },
       ],
     })
@@ -517,6 +521,7 @@ function LeagueRail({
       { to: `/leagues/${lid}/player-ratings`,    key: 'ratings',   label: 'Ratings' },
       { to: `/leagues/${lid}/scouting`,          key: 'scouting',  label: 'Scouting' },
       { to: `/leagues/${lid}/breakout-radar`,    key: 'breakout',  label: 'Breakout' },
+      { to: `/leagues/${lid}/former-players`,    key: 'former',    label: 'Former' },
     ],
   })
   sections.push({
@@ -524,6 +529,7 @@ function LeagueRail({
     sub: [
       { to: `/leagues/${lid}/standings`,    key: 'ladder',   label: 'Ladder' },
       { to: `/leagues/${lid}/fixture`,      key: 'fixture',  label: 'Fixtures' },
+      { to: `/leagues/${lid}/seasons`,      key: 'seasons',  label: 'Seasons' },
       { to: `/leagues/${lid}/history`,      key: 'records',  label: 'Records' },
       { to: `/leagues/${lid}/list-changes`, key: 'changes',  label: 'Changes' },
     ],

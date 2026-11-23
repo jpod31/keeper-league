@@ -41,7 +41,7 @@ export function AdminUsersPage() {
             <tbody>
               {data.users.map(u => (
                 <tr key={u.id}>
-                  <td style={{ color: '#484f58' }}>{u.id}</td>
+                  <td style={{ color: '#56504a' }}>{u.id}</td>
                   <td><strong>{u.username}</strong></td>
                   <td>{u.display_name}</td>
                   <td className="text-secondary" style={{ fontSize: '.75rem' }}>{u.email}</td>

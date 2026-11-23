@@ -7,44 +7,44 @@
 <style>
   .tab-toggle { display: flex; gap: 0; margin-bottom: 1rem; }
   .tab-toggle-btn {
-    padding: .45rem 1.1rem; font-size: .8rem; font-weight: 600; border: 1px solid #30363d;
-    background: transparent; color: #8b949e; cursor: pointer; transition: all .15s;
+    padding: .45rem 1.1rem; font-size: .8rem; font-weight: 600; border: 1px solid #373330;
+    background: transparent; color: #a39586; cursor: pointer; transition: all .15s;
   }
   .tab-toggle-btn:first-child { border-radius: 6px 0 0 6px; }
   .tab-toggle-btn:last-child { border-radius: 0 6px 6px 0; }
-  .tab-toggle-btn.active { background: #21262d; color: #e6edf3; border-color: #58a6ff; }
+  .tab-toggle-btn.active { background: #272522; color: #efedea; border-color: #f5b940; }
   .rtg-row {
     display: flex; align-items: center; gap: .65rem; padding: .6rem .75rem;
-    border-bottom: 1px solid #21262d; text-decoration: none; transition: background .1s;
+    border-bottom: 1px solid #272522; text-decoration: none; transition: background .1s;
   }
-  .rtg-row:hover { background: rgba(88,166,255,.04); }
+  .rtg-row:hover { background: rgba(245,185,64,.04); }
   .rtg-logo { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
   .rtg-info { flex: 1; min-width: 0; }
-  .rtg-name { color: #e6edf3; font-weight: 600; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rtg-meta { font-size: .7rem; color: #8b949e; display: flex; gap: .4rem; align-items: center; margin-top: 1px; }
+  .rtg-name { color: #efedea; font-weight: 600; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rtg-meta { font-size: .7rem; color: #a39586; display: flex; gap: .4rem; align-items: center; margin-top: 1px; }
   .rtg-vals { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
-  .rtg-old { color: #8b949e; font-size: .8rem; }
-  .rtg-arrow { color: #484f58; font-size: .7rem; }
+  .rtg-old { color: #a39586; font-size: .8rem; }
+  .rtg-arrow { color: #56504a; font-size: .7rem; }
   .rtg-new { font-weight: 700; font-size: .9rem; }
   .rtg-pot { color: #bc8cff; font-size: .75rem; font-weight: 600; min-width: 22px; text-align: center; }
   .rtg-diff { font-weight: 700; font-size: .78rem; min-width: 30px; text-align: right; }
-  .rtg-up { color: #3fb950; }
+  .rtg-up { color: #dbcf94; }
   .rtg-down { color: #f85149; }
-  .empty-state { padding: 3rem 1rem; text-align: center; color: #484f58; }
+  .empty-state { padding: 3rem 1rem; text-align: center; color: #56504a; }
   .empty-state i { font-size: 2.5rem; margin-bottom: .5rem; }
   .section-header {
-    font-size: .75rem; color: #8b949e; padding: .4rem .75rem;
-    background: #161b22; border-bottom: 1px solid #21262d;
+    font-size: .75rem; color: #a39586; padding: .4rem .75rem;
+    background: #1c1a18; border-bottom: 1px solid #272522;
     display: flex; justify-content: space-between; align-items: center;
   }
   .sort-pills { display: flex; gap: .3rem; }
   .sort-pill {
     padding: 2px 8px; border-radius: 10px; font-size: .65rem; font-weight: 600;
-    background: transparent; border: 1px solid #30363d; color: #8b949e;
+    background: transparent; border: 1px solid #373330; color: #a39586;
     cursor: pointer; transition: all .12s;
   }
-  .sort-pill:hover { border-color: #58a6ff; color: #c9d1d9; }
-  .sort-pill.active { background: #21262d; border-color: #58a6ff; color: #e6edf3; }
+  .sort-pill:hover { border-color: #f5b940; color: #d7d1cb; }
+  .sort-pill.active { background: #272522; border-color: #f5b940; color: #efedea; }
 </style>
 
 <div class="page-header">

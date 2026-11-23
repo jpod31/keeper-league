@@ -4,6 +4,7 @@ import { api } from '../../lib/api'
 import { DraftSkeleton } from '../../components/ui/DraftSkeleton'
 import { useSocket } from '../../hooks/useSocket'
 import { useWishlist } from '../../hooks/useWishlist'
+import { useStatsYear } from '../../contexts/LeagueContext'
 
 interface PickHistoryEntry {
   pick_number: number
@@ -72,6 +73,8 @@ interface AvailablePlayer {
   rating: number | null
   potential: number | null
   draft_score: number | null
+  is_new?: boolean
+  position_expected?: boolean
 }
 
 interface PositionNeeds {
@@ -101,7 +104,7 @@ const WEIGHT_KEYS: { key: string; label: string }[] = [
 
 // Jewel-tone chat author palette — replaces the legacy GitHub-themed
 // list so chat messages match the rest of the app.
-const CHAT_COLORS = ['#82b3e4', '#7dc99a', '#c2932f', '#e07a6c', '#b39ed4', '#7ec0d3', '#d68a7e', '#f0d27a']
+const CHAT_COLORS = ['#deb565', '#dcd4ab', '#c26a2f', '#e07a6c', '#c9b284', '#caa965', '#d68a7e', '#f0a97a']
 
 const DRAFT_STYLE = `
 /* === Draft room · Stadium ====================================== */
@@ -109,8 +112,8 @@ const DRAFT_STYLE = `
 /* Banner — current pick + timer. Overrides the legacy GitHub-toned
    rules in global style.css. */
 .draft-banner {
-  background: rgba(15,22,36,.7) !important;
-  border: 1px solid rgba(110,130,180,.18) !important;
+  background: rgba(26,24,22,.7) !important;
+  border: 1px solid rgba(170,144,91,.18) !important;
   border-radius: 14px !important;
   padding: 16px 22px !important;
   backdrop-filter: blur(12px);
@@ -119,21 +122,21 @@ const DRAFT_STYLE = `
   transition: border-color .2s, background .2s, box-shadow .2s;
 }
 .draft-banner-your-pick {
-  border-color: rgba(58,125,196,.55) !important;
-  background: linear-gradient(135deg, rgba(58,125,196,.14), rgba(58,125,196,.02)) !important;
-  box-shadow: 0 0 32px -10px rgba(58,125,196,.4);
+  border-color: rgba(153,114,45,.55) !important;
+  background: linear-gradient(135deg, rgba(153,114,45,.14), rgba(153,114,45,.02)) !important;
+  box-shadow: 0 0 32px -10px rgba(153,114,45,.4);
 }
 .draft-banner-complete {
-  border-color: rgba(61,140,99,.5) !important;
-  background: linear-gradient(135deg, rgba(61,140,99,.1), transparent) !important;
+  border-color: rgba(135,110,59,.5) !important;
+  background: linear-gradient(135deg, rgba(135,110,59,.1), transparent) !important;
 }
 .draft-pick-badge {
   width: 52px !important;
   height: 52px !important;
   border-radius: 12px !important;
-  background: rgba(20,28,45,.85) !important;
-  border: 1px solid rgba(110,130,180,.3) !important;
-  color: #f0f4fc !important;
+  background: rgba(33,31,28,.85) !important;
+  border: 1px solid rgba(170,144,91,.3) !important;
+  color: #f7f6f5 !important;
   font-size: 1.2rem !important;
   font-weight: 800 !important;
   font-variant-numeric: tabular-nums;
@@ -141,16 +144,16 @@ const DRAFT_STYLE = `
   letter-spacing: -.02em;
 }
 .draft-banner-your-pick .draft-pick-badge {
-  background: rgba(58,125,196,.18) !important;
-  border-color: rgba(58,125,196,.5) !important;
-  color: #a8c8ed !important;
+  background: rgba(153,114,45,.18) !important;
+  border-color: rgba(153,114,45,.5) !important;
+  color: #e6c686 !important;
 }
-.draft-pick-badge.scheduled { background: rgba(58,125,196,.12) !important; border-color: rgba(58,125,196,.32) !important; color: #82b3e4 !important; }
+.draft-pick-badge.scheduled { background: rgba(153,114,45,.12) !important; border-color: rgba(153,114,45,.32) !important; color: #deb565 !important; }
 .draft-timer {
   font-size: 2.4rem !important;
   font-weight: 900 !important;
   font-family: inherit !important;
-  color: #f5f8ff !important;
+  color: #fbfaf9 !important;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1, "zero" 0;
   letter-spacing: -.03em;
@@ -167,12 +170,12 @@ const DRAFT_STYLE = `
   font-size: .58rem !important;
   letter-spacing: .16em !important;
   text-transform: uppercase;
-  color: #6c7892 !important;
+  color: #888076 !important;
   font-weight: 700 !important;
   margin-top: 4px !important;
 }
-.draft-banner-round { font-size: .56rem; color: #6c7892; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
-.draft-banner-team { font-size: 1.15rem; font-weight: 800; color: #f0f4fc; letter-spacing: -.005em; }
+.draft-banner-round { font-size: .56rem; color: #888076; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+.draft-banner-team { font-size: 1.15rem; font-weight: 800; color: #f7f6f5; letter-spacing: -.005em; }
 .draft-your-pick-pill {
   display: inline-flex;
   align-items: center;
@@ -181,9 +184,9 @@ const DRAFT_STYLE = `
   letter-spacing: .18em;
   padding: 3px 9px;
   border-radius: 4px;
-  background: rgba(58,125,196,.2);
-  color: #a8c8ed;
-  border: 1px solid rgba(58,125,196,.5);
+  background: rgba(153,114,45,.2);
+  color: #e6c686;
+  border: 1px solid rgba(153,114,45,.5);
   text-transform: uppercase;
   margin-left: 10px;
 }
@@ -197,8 +200,8 @@ const DRAFT_STYLE = `
   gap: 14px;
   padding: 18px 22px;
   border-radius: 14px;
-  background: rgba(15,22,36,.7);
-  border: 1px solid rgba(110,130,180,.18);
+  background: rgba(26,24,22,.7);
+  border: 1px solid rgba(170,144,91,.18);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   margin-bottom: 14px;
@@ -210,20 +213,20 @@ const DRAFT_STYLE = `
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: linear-gradient(90deg, rgba(58,125,196,.6) 0%, rgba(138,109,184,.6) 50%, rgba(184,127,61,.6) 100%);
+  background: linear-gradient(90deg, rgba(153,114,45,.6) 0%, rgba(174,146,89,.6) 50%, rgba(184,115,61,.6) 100%);
 }
 .draft-event-countdown {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #f0f4fc;
+  color: #f7f6f5;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1, "zero" 0;
   letter-spacing: -.01em;
   line-height: 1.1;
   margin-top: 4px;
 }
-.draft-event-countdown.soon { color: #7dc99a; }
-.draft-event-time { font-size: .82rem; color: #97a3ba; }
+.draft-event-countdown.soon { color: #dcd4ab; }
+.draft-event-time { font-size: .82rem; color: #b5a99c; }
 
 /* Status pill on page header */
 .conn-dot {
@@ -231,11 +234,11 @@ const DRAFT_STYLE = `
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #6db38a;
-  box-shadow: 0 0 6px rgba(109,179,138,.5);
+  background: #cec7a1;
+  box-shadow: 0 0 6px rgba(206,199,161,.5);
 }
 .conn-dot.off { background: #e07a6c; box-shadow: 0 0 6px rgba(224,122,108,.5); }
-.draft-header-info { font-size: .78rem; color: #97a3ba; letter-spacing: .02em; }
+.draft-header-info { font-size: .78rem; color: #b5a99c; letter-spacing: .02em; }
 
 /* Available players card */
 .draft-avail-tbl { width: 100%; font-size: .82rem; }
@@ -243,10 +246,10 @@ const DRAFT_STYLE = `
   font-size: .58rem !important;
   font-weight: 800 !important;
   letter-spacing: .14em !important;
-  color: #6c7892 !important;
-  background: rgba(11,16,28,.7) !important;
+  color: #888076 !important;
+  background: rgba(20,18,17,.7) !important;
   padding: 10px 12px !important;
-  border-bottom: 1px solid rgba(110,130,180,.18) !important;
+  border-bottom: 1px solid rgba(170,144,91,.18) !important;
   text-transform: uppercase;
   position: sticky;
   top: 0;
@@ -255,34 +258,34 @@ const DRAFT_STYLE = `
 .draft-avail-tbl tbody td {
   padding: 8px 12px;
   font-size: .82rem;
-  border-bottom: 1px solid rgba(110,130,180,.06);
-  color: #dde4f1;
+  border-bottom: 1px solid rgba(170,144,91,.06);
+  color: #eae7e4;
   vertical-align: middle;
 }
 .draft-avail-tbl tbody tr { transition: background .14s; }
-.draft-avail-tbl tbody tr:hover { background: rgba(58,125,196,.06); }
-.draft-avail-tbl tbody tr:hover .player-name { color: #a8c8ed; }
-.draft-avail-tbl .player-name { font-weight: 600; color: #f0f4fc; white-space: nowrap; }
+.draft-avail-tbl tbody tr:hover { background: rgba(153,114,45,.06); }
+.draft-avail-tbl tbody tr:hover .player-name { color: #e6c686; }
+.draft-avail-tbl .player-name { font-weight: 600; color: #f7f6f5; white-space: nowrap; }
 .draft-avail-tbl .stat-cell { font-weight: 700; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; text-align: right; }
 .draft-avail-tbl tbody tr.blocked { opacity: .45; }
 
 /* Sortable headers */
 .sortable-th { cursor: pointer; user-select: none; white-space: nowrap; transition: color .14s; }
-.sortable-th:hover { color: #b6c0d3 !important; }
+.sortable-th:hover { color: #c4b79d !important; }
 .sortable-th .sort-icon { display: inline-block; margin-left: 4px; font-size: .55rem; opacity: .25; transition: opacity .14s, color .14s; }
-.sortable-th.active-sort { color: #dde4f1 !important; }
-.sortable-th.active-sort .sort-icon { opacity: 1; color: #82b3e4; }
+.sortable-th.active-sort { color: #eae7e4 !important; }
+.sortable-th.active-sort .sort-icon { opacity: 1; color: #deb565; }
 
 /* Position chips — match Gameday DEF/MID/RUC/FWD palette */
 .draft-pos-chip {
   display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 22px; border-radius: 5px;
   font-size: .56rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
-  background: rgba(110,130,180,.1); border: 1px solid rgba(110,130,180,.18); color: #b6c0d3;
+  background: rgba(170,144,91,.1); border: 1px solid rgba(170,144,91,.18); color: #c4b79d;
 }
-.draft-pos-chip.def { background: rgba(61,138,156,.14); color: #7ec0d3; border-color: rgba(61,138,156,.3); }
-.draft-pos-chip.mid { background: rgba(58,125,196,.14); color: #82b3e4; border-color: rgba(58,125,196,.3); }
-.draft-pos-chip.ruc { background: rgba(138,109,184,.14); color: #b39ed4; border-color: rgba(138,109,184,.3); }
+.draft-pos-chip.def { background: rgba(143,111,56,.14); color: #caa965; border-color: rgba(143,111,56,.3); }
+.draft-pos-chip.mid { background: rgba(153,114,45,.14); color: #deb565; border-color: rgba(153,114,45,.3); }
+.draft-pos-chip.ruc { background: rgba(174,146,89,.14); color: #c9b284; border-color: rgba(174,146,89,.3); }
 .draft-pos-chip.fwd { background: rgba(184,90,74,.14); color: #e07a6c; border-color: rgba(184,90,74,.3); }
 
 /* Rating / potential / draft-score numeric chips */
@@ -290,63 +293,63 @@ const DRAFT_STYLE = `
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 34px; height: 22px; padding: 0 7px; border-radius: 5px;
   font-size: .74rem; font-weight: 800; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0;
-  background: rgba(110,130,180,.1); border: 1px solid rgba(110,130,180,.18); color: #b6c0d3;
+  background: rgba(170,144,91,.1); border: 1px solid rgba(170,144,91,.18); color: #c4b79d;
 }
-.draft-stat-chip.tier-elite { background: rgba(194,147,47,.2); color: #f0d27a; border-color: rgba(194,147,47,.45); box-shadow: 0 0 10px -2px rgba(194,147,47,.3); }
-.draft-stat-chip.tier-good { background: rgba(58,125,196,.16); color: #82b3e4; border-color: rgba(58,125,196,.35); }
-.draft-stat-chip.tier-ok { background: rgba(138,109,184,.12); color: #b39ed4; border-color: rgba(138,109,184,.3); }
+.draft-stat-chip.tier-elite { background: rgba(194,106,47,.2); color: #f0a97a; border-color: rgba(194,106,47,.45); box-shadow: 0 0 10px -2px rgba(194,106,47,.3); }
+.draft-stat-chip.tier-good { background: rgba(153,114,45,.16); color: #deb565; border-color: rgba(153,114,45,.35); }
+.draft-stat-chip.tier-ok { background: rgba(174,146,89,.12); color: #c9b284; border-color: rgba(174,146,89,.3); }
 .draft-stat-chip.tier-low { background: rgba(184,90,74,.1); color: #d68a7e; border-color: rgba(184,90,74,.25); }
-.draft-stat-chip.tier-empty { color: #5a677e; background: transparent; border-color: transparent; }
-.draft-stat-chip.draft-score { background: rgba(58,125,196,.18); color: #a8c8ed; border-color: rgba(58,125,196,.4); }
+.draft-stat-chip.tier-empty { color: #746d64; background: transparent; border-color: transparent; }
+.draft-stat-chip.draft-score { background: rgba(153,114,45,.18); color: #e6c686; border-color: rgba(153,114,45,.4); }
 
 /* Position-need chips (sit above filter row) */
 .draft-need-chip {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .66rem; padding: 3px 9px; border-radius: 6px;
   font-weight: 700; letter-spacing: .04em;
-  background: rgba(110,130,180,.1); border: 1px solid rgba(110,130,180,.18); color: #b6c0d3;
+  background: rgba(170,144,91,.1); border: 1px solid rgba(170,144,91,.18); color: #c4b79d;
   font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0;
 }
-.draft-need-chip.met { background: rgba(61,140,99,.12); color: #7dc99a; border-color: rgba(61,140,99,.3); }
-.draft-need-chip.short { background: rgba(194,147,47,.12); color: #f0d27a; border-color: rgba(194,147,47,.3); }
+.draft-need-chip.met { background: rgba(135,110,59,.12); color: #dcd4ab; border-color: rgba(135,110,59,.3); }
+.draft-need-chip.short { background: rgba(194,106,47,.12); color: #f0a97a; border-color: rgba(194,106,47,.3); }
 .draft-need-chip.blocked { background: rgba(184,90,74,.14); color: #e07a6c; border-color: rgba(184,90,74,.36); }
-.draft-need-chip.north { background: rgba(58,125,196,.12); color: #82b3e4; border-color: rgba(58,125,196,.32); }
+.draft-need-chip.north { background: rgba(153,114,45,.12); color: #deb565; border-color: rgba(153,114,45,.32); }
 
 /* Filter row */
 .draft-filter-input, .draft-filter-select {
-  background: rgba(15,22,36,.55) !important;
-  border: 1px solid rgba(110,130,180,.2) !important;
-  color: #dde4f1 !important;
+  background: rgba(26,24,22,.55) !important;
+  border: 1px solid rgba(170,144,91,.2) !important;
+  color: #eae7e4 !important;
   border-radius: 8px !important;
   padding: 7px 12px !important;
   font-size: .78rem !important;
   height: auto !important;
 }
-.draft-filter-input:focus, .draft-filter-select:focus { border-color: rgba(58,125,196,.55) !important; outline: 0 !important; box-shadow: 0 0 0 2px rgba(58,125,196,.15) !important; }
-.draft-filter-input::placeholder { color: #6c7892; }
+.draft-filter-input:focus, .draft-filter-select:focus { border-color: rgba(153,114,45,.55) !important; outline: 0 !important; box-shadow: 0 0 0 2px rgba(153,114,45,.15) !important; }
+.draft-filter-input::placeholder { color: #888076; }
 
 /* Values panel (weight sliders) */
 .draft-values-panel {
-  background: rgba(11,16,28,.6);
-  border: 1px solid rgba(110,130,180,.16);
+  background: rgba(20,18,17,.6);
+  border: 1px solid rgba(170,144,91,.16);
   border-radius: 10px;
   padding: 14px 16px;
   margin-bottom: 10px;
 }
 .draft-values-row { display: flex; align-items: center; gap: 12px; margin-bottom: 9px; }
 .draft-values-row:last-of-type { margin-bottom: 4px; }
-.draft-values-label { font-size: .68rem; color: #97a3ba; font-weight: 700; letter-spacing: .04em; width: 68px; flex-shrink: 0; }
-.draft-values-value { font-size: .72rem; color: #82b3e4; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; min-width: 36px; text-align: right; font-weight: 700; }
-.draft-values-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(110,130,180,.12); }
-.draft-values-foot-meta { font-size: .68rem; color: #6c7892; }
-.draft-values-foot-meta .custom { color: #7dc99a; font-weight: 700; }
+.draft-values-label { font-size: .68rem; color: #b5a99c; font-weight: 700; letter-spacing: .04em; width: 68px; flex-shrink: 0; }
+.draft-values-value { font-size: .72rem; color: #deb565; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 0; min-width: 36px; text-align: right; font-weight: 700; }
+.draft-values-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(170,144,91,.12); }
+.draft-values-foot-meta { font-size: .68rem; color: #888076; }
+.draft-values-foot-meta .custom { color: #dcd4ab; font-weight: 700; }
 
 input[type="range"].draft-slider {
   appearance: none;
   -webkit-appearance: none;
   flex: 1;
   height: 4px;
-  background: rgba(110,130,180,.2);
+  background: rgba(170,144,91,.2);
   border-radius: 2px;
   outline: none;
 }
@@ -354,16 +357,16 @@ input[type="range"].draft-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 16px; height: 16px;
   border-radius: 50%;
-  background: #3a7dc4;
-  border: 2px solid #f0f4fc;
+  background: #99722d;
+  border: 2px solid #f7f6f5;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0,0,0,.4);
 }
 input[type="range"].draft-slider::-moz-range-thumb {
   width: 16px; height: 16px;
   border-radius: 50%;
-  background: #3a7dc4;
-  border: 2px solid #f0f4fc;
+  background: #99722d;
+  border: 2px solid #f7f6f5;
   cursor: pointer;
 }
 
@@ -375,21 +378,21 @@ input[type="range"].draft-slider::-moz-range-thumb {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: rgba(15,22,36,.7) !important;
-  border: 1px solid rgba(110,130,180,.18) !important;
+  background: rgba(26,24,22,.7) !important;
+  border: 1px solid rgba(170,144,91,.18) !important;
   border-radius: 12px !important;
 }
 .draft-right-col > .card > .card-body { overflow-y: auto; flex: 1; min-height: 0; }
 .draft-right-col .card-header {
-  background: rgba(20,28,45,.55) !important;
-  border-bottom: 1px solid rgba(110,130,180,.12) !important;
+  background: rgba(33,31,28,.55) !important;
+  border-bottom: 1px solid rgba(170,144,91,.12) !important;
   padding: 11px 14px !important;
-  color: #dde4f1;
+  color: #eae7e4;
 }
-.draft-right-col .card-header h5 { color: #f0f4fc; font-size: .88rem; font-weight: 800; letter-spacing: -.005em; }
+.draft-right-col .card-header h5 { color: #f7f6f5; font-size: .88rem; font-weight: 800; letter-spacing: -.005em; }
 .draft-right-col .card-header .badge {
-  background: rgba(110,130,180,.16) !important;
-  color: #b6c0d3 !important;
+  background: rgba(170,144,91,.16) !important;
+  color: #c4b79d !important;
   font-size: .66rem !important;
   font-weight: 700 !important;
   padding: 3px 8px !important;
@@ -398,30 +401,30 @@ input[type="range"].draft-slider::-moz-range-thumb {
 }
 
 /* Tables inside right-col cards */
-.draft-right-col table { color: #dde4f1; margin: 0; }
+.draft-right-col table { color: #eae7e4; margin: 0; }
 .draft-right-col table thead th {
   font-size: .56rem !important;
   font-weight: 800 !important;
   letter-spacing: .14em !important;
-  color: #6c7892 !important;
-  background: rgba(11,16,28,.75) !important;
+  color: #888076 !important;
+  background: rgba(20,18,17,.75) !important;
   padding: 8px 10px !important;
-  border-bottom: 1px solid rgba(110,130,180,.18) !important;
+  border-bottom: 1px solid rgba(170,144,91,.18) !important;
   text-transform: uppercase;
 }
 .draft-right-col table tbody td {
   padding: 6px 10px !important;
-  border-bottom: 1px solid rgba(110,130,180,.06) !important;
+  border-bottom: 1px solid rgba(170,144,91,.06) !important;
   font-size: .76rem;
-  color: #dde4f1;
+  color: #eae7e4;
   vertical-align: middle;
 }
 .draft-right-col table tbody tr { transition: background .14s; }
-.draft-right-col table tbody tr:hover { background: rgba(58,125,196,.05); }
-.draft-pick-row-mine td { background: rgba(58,125,196,.08); color: #a8c8ed !important; }
-.draft-pick-row-mine .player-name { color: #a8c8ed !important; }
-.draft-auto-tag { color: #6c7892; font-size: .62rem; letter-spacing: .02em; }
-.draft-pass-tag { color: #f0d27a; font-weight: 800; font-size: .68rem; letter-spacing: .12em; }
+.draft-right-col table tbody tr:hover { background: rgba(153,114,45,.05); }
+.draft-pick-row-mine td { background: rgba(153,114,45,.08); color: #e6c686 !important; }
+.draft-pick-row-mine .player-name { color: #e6c686 !important; }
+.draft-auto-tag { color: #888076; font-size: .62rem; letter-spacing: .02em; }
+.draft-pass-tag { color: #f0a97a; font-weight: 800; font-size: .68rem; letter-spacing: .12em; }
 
 /* Your-team grouping section */
 .draft-yt-section {
@@ -429,24 +432,24 @@ input[type="range"].draft-slider::-moz-range-thumb {
   font-weight: 800;
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: #6c7892;
-  background: rgba(11,16,28,.6);
+  color: #888076;
+  background: rgba(20,18,17,.6);
   padding: 6px 12px;
-  border-left: 2px solid rgba(110,130,180,.3);
+  border-left: 2px solid rgba(170,144,91,.3);
 }
-.draft-yt-section.def { color: #7ec0d3; border-left-color: rgba(61,138,156,.5); }
-.draft-yt-section.mid { color: #82b3e4; border-left-color: rgba(58,125,196,.45); }
-.draft-yt-section.ruc { color: #b39ed4; border-left-color: rgba(138,109,184,.5); }
+.draft-yt-section.def { color: #caa965; border-left-color: rgba(143,111,56,.5); }
+.draft-yt-section.mid { color: #deb565; border-left-color: rgba(153,114,45,.45); }
+.draft-yt-section.ruc { color: #c9b284; border-left-color: rgba(174,146,89,.5); }
 .draft-yt-section.fwd { color: #e07a6c; border-left-color: rgba(184,90,74,.45); }
 
 /* Chat — wider re-skin */
 .draft-chat-card { flex-shrink: 0; flex-grow: 0; min-height: auto !important; }
 .draft-chat-card #chat-messages { max-height: 180px; }
-.chat-msg { padding: 5px 12px; font-size: .76rem; border-bottom: 1px solid rgba(110,130,180,.06); }
+.chat-msg { padding: 5px 12px; font-size: .76rem; border-bottom: 1px solid rgba(170,144,91,.06); }
 .chat-msg:last-child { border-bottom: none; }
 .chat-msg-name { font-weight: 800; font-size: .68rem; margin-right: 6px; letter-spacing: .02em; }
-.chat-msg-text { color: #dde4f1; word-break: break-word; }
-.chat-msg-system { text-align: center; font-size: .66rem; color: #6c7892; font-style: italic; padding: 4px 12px; }
+.chat-msg-text { color: #eae7e4; word-break: break-word; }
+.chat-msg-system { text-align: center; font-size: .66rem; color: #888076; font-style: italic; padding: 4px 12px; }
 .chat-toggle-collapsed { transform: rotate(-90deg); }
 
 /* Mobile */
@@ -499,6 +502,7 @@ function potentialTier(p: number | null): string {
 
 function DraftRoomPageInner() {
   const { leagueId } = useParams()
+  const statsYr = useStatsYear()
   const navigate = useNavigate()
   const [data, setData] = useState<DraftRoomData | null>(null)
   const [emptyState, setEmptyState] = useState<DraftEmptyState | null>(null)
@@ -602,7 +606,9 @@ function DraftRoomPageInner() {
   // Fetch available players
   const fetchAvailable = useCallback(() => {
     const wParams = WEIGHT_KEYS.map(w => `w_${w.key}=${weights[w.key] ?? 0.2}`).join('&')
-    const fetchLimit = clubFilter ? 800 : 200
+    // The board is fetched best-value first. Draftees have no scoring
+    // history, so they sit low; asking for them (or one club) widens the net.
+    const fetchLimit = clubFilter || ageFilter === 'new' ? 800 : 200
     const params = new URLSearchParams()
     params.set('q', search)
     if (posFilter) params.set('pos', posFilter)
@@ -611,7 +617,7 @@ function DraftRoomPageInner() {
       .then(r => r.json())
       .then((players: AvailablePlayer[]) => setAvailable(Array.isArray(players) ? players : []))
       .catch(() => setAvailable([]))
-  }, [leagueId, search, posFilter, clubFilter, weights])
+  }, [leagueId, search, posFilter, clubFilter, ageFilter === 'new', weights])
 
   // Pre-draft queue
   const fetchQueue = useCallback(() => {
@@ -714,7 +720,9 @@ function DraftRoomPageInner() {
       if (state && p.id != null && state.picked_player_ids.includes(p.id)) return false
       return true
     })
-    if (ageFilter) {
+    if (ageFilter === 'new') {
+      filtered = filtered.filter(p => !!p.is_new)
+    } else if (ageFilter) {
       filtered = filtered.filter(p => {
         if (p.age == null) return false
         if (ageFilter === '30+') return p.age >= 30
@@ -915,7 +923,9 @@ function DraftRoomPageInner() {
               <span className={`conn-dot${connState === 'connected' ? '' : ' off'}`} title={connState === 'connected' ? 'Connected' : 'Disconnected'}></span>
               <span className={`status-pill status-${state.status.replace('_', '-')}`}>{state.status}</span>
               <span className="draft-header-info">
-                {league.draft_type.charAt(0).toUpperCase() + league.draft_type.slice(1)} · {session.pick_timer_secs}s timer
+                {/* The session's own order, not the league default: an
+                    off-season draft runs the same order every round. */}
+                {(state.draft_type || league.draft_type) === 'snake' ? 'Snake' : 'Same order every round'} · {session.pick_timer_secs ? `${session.pick_timer_secs}s timer` : 'No timer'}
               </span>
             </div>
           </div>
@@ -1007,10 +1017,10 @@ function DraftRoomPageInner() {
               <div className="draft-banner-team">
                 {bannerCompleted ? 'Draft Complete' : (state.current_team_name || 'TBD')}
                 {!bannerCompleted && state.current_via_team_name && (
-                  <span style={{ fontSize: '.7em', fontWeight: 600, color: '#97a3ba', marginLeft: 8 }}>via {state.current_via_team_name}</span>
+                  <span style={{ fontSize: '.7em', fontWeight: 600, color: '#b5a99c', marginLeft: 8 }}>via {state.current_via_team_name}</span>
                 )}
                 {!bannerCompleted && state.current_label && (
-                  <span style={{ fontSize: '.6em', fontWeight: 700, color: '#d29922', marginLeft: 8 }}>{state.current_label}</span>
+                  <span style={{ fontSize: '.6em', fontWeight: 700, color: '#d26822', marginLeft: 8 }}>{state.current_label}</span>
                 )}
                 {bannerYourPick && <span className="draft-your-pick-pill">Your Pick</span>}
               </div>
@@ -1038,7 +1048,7 @@ function DraftRoomPageInner() {
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-people me-2" style={{ color: '#8b949e' }}></i>Available Players
+                  <i className="bi bi-people me-2" style={{ color: '#a39586' }}></i>Available Players
                 </h5>
                 <div className="d-flex gap-1 align-items-center">
                   {state.status === 'in_progress' && (
@@ -1117,6 +1127,7 @@ function DraftRoomPageInner() {
                 <div className="col-auto">
                   <select className="draft-filter-select" value={ageFilter} onChange={e => setAgeFilter(e.target.value)} style={{ width: 'auto' }}>
                     <option value="">All Ages</option>
+                    <option value="new">New to the AFL</option>
                     <option value="21">U21</option>
                     <option value="23">U23</option>
                     <option value="25">U25</option>
@@ -1141,7 +1152,7 @@ function DraftRoomPageInner() {
                       ['position', 'Pos'],
                       ['afl_team', 'Team'],
                       ['age', 'Age'],
-                      ['sc_avg', 'SC'],
+                      ['sc_avg', statsYr.tag ? `SC ${statsYr.tag}` : 'SC'],
                       ['rating', 'Rtg'],
                       ['potential', 'Pot'],
                       ['draft_score', 'Value'],
@@ -1158,11 +1169,11 @@ function DraftRoomPageInner() {
                     const blocked = isPositionBlocked(p.position)
                     return (
                       <tr key={p.id} className={blocked ? 'blocked' : undefined}>
-                        <td className="player-name">{p.name}</td>
-                        <td>{p.position && <span className={`draft-pos-chip ${posClass(p.position)}`}>{p.position.split('/')[0]}</span>}</td>
-                        <td style={{ color: '#97a3ba' }}>{p.afl_team || ''}</td>
-                        <td style={{ color: '#6c7892' }}>{p.age ?? '-'}</td>
-                        <td className="stat-cell" style={{ color: '#b6c0d3' }}>{p.sc_avg != null ? p.sc_avg.toFixed(1) : '-'}</td>
+                        <td className="player-name">{p.name}{p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}</td>
+                        <td>{p.position && <span className={`draft-pos-chip ${posClass(p.position)}`} title={p.position_expected ? 'Expected position. He has no SuperCoach position yet.' : undefined}>{p.position.split('/')[0]}{p.position_expected ? ' exp' : ''}</span>}</td>
+                        <td style={{ color: '#b5a99c' }}>{p.afl_team || ''}</td>
+                        <td style={{ color: '#888076' }}>{p.age ?? '-'}</td>
+                        <td className="stat-cell" style={{ color: '#c4b79d' }}>{p.sc_avg != null ? p.sc_avg.toFixed(1) : '-'}</td>
                         <td className="stat-cell"><span className={`draft-stat-chip ${ratingTier(p.rating)}`}>{p.rating ?? '–'}</span></td>
                         <td className="stat-cell"><span className={`draft-stat-chip ${potentialTier(p.potential)}`}>{p.potential ?? '–'}</span></td>
                         <td className="stat-cell"><span className="draft-stat-chip draft-score">{p.draft_score != null ? p.draft_score.toFixed(1) : '–'}</span></td>
@@ -1214,13 +1225,13 @@ function DraftRoomPageInner() {
                       </button>
                     </div>
                     {boardTab === 'queue' && queue.length > 0 && (
-                      <span className="badge" style={{ background: '#21262d', color: '#8b949e', fontSize: '.68rem' }}>auto-pick order</span>
+                      <span className="badge" style={{ background: '#272522', color: '#a39586', fontSize: '.68rem' }}>auto-pick order</span>
                     )}
                   </div>
                   <div className="card-body p-0" style={{ overflowY: 'auto', maxHeight: 240 }}>
                     {boardTab === 'queue' ? (
                       queue.length === 0 ? (
-                        <div className="text-center" style={{ color: '#6c7892', fontSize: '.76rem', padding: '14px 16px', lineHeight: 1.5 }}>
+                        <div className="text-center" style={{ color: '#888076', fontSize: '.76rem', padding: '14px 16px', lineHeight: 1.5 }}>
                           Tap <i className="bi bi-bookmark-plus"></i> on players to line up your picks. When it's your turn just hit <strong>Pick</strong> here — and if your timer runs out, the top available player in this list is auto-drafted.
                         </div>
                       ) : (
@@ -1228,7 +1239,7 @@ function DraftRoomPageInner() {
                           <tbody>
                             {queue.map((q, i) => (
                               <tr key={q.player_id}>
-                                <td style={{ color: '#6c7892', width: 22 }}>{i + 1}</td>
+                                <td style={{ color: '#888076', width: 22 }}>{i + 1}</td>
                                 <td className="player-name">{q.player_name}</td>
                                 <td className="text-end" style={{ width: 96, whiteSpace: 'nowrap' }}>
                                   <button className="btn btn-outline-primary btn-sm py-0 px-2" disabled={!canPick} onClick={() => canPick && pickPlayer(q.player_id)} style={{ fontSize: '.68rem' }}>Pick</button>
@@ -1241,7 +1252,7 @@ function DraftRoomPageInner() {
                       )
                     ) : (
                       wishlistAvail.length === 0 ? (
-                        <div className="text-center" style={{ color: '#6c7892', fontSize: '.76rem', padding: '14px 16px', lineHeight: 1.5 }}>
+                        <div className="text-center" style={{ color: '#888076', fontSize: '.76rem', padding: '14px 16px', lineHeight: 1.5 }}>
                           Star players (★) anywhere in the app to build your wishlist — the available ones show here, ready to queue or draft.
                         </div>
                       ) : (
@@ -1273,7 +1284,7 @@ function DraftRoomPageInner() {
               <div className="card-header d-flex justify-content-between align-items-center">
                 <div className="d-flex align-items-center gap-2">
                   <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                    <i className="bi bi-clock-history me-2" style={{ color: '#8b949e' }}></i>Pick History
+                    <i className="bi bi-clock-history me-2" style={{ color: '#a39586' }}></i>Pick History
                   </h5>
                   {user_team && (
                     <div className="btn-group btn-group-sm" role="group">
@@ -1282,7 +1293,7 @@ function DraftRoomPageInner() {
                     </div>
                   )}
                 </div>
-                <span className="badge" style={{ background: '#21262d', color: '#8b949e', fontSize: '.75rem' }}>
+                <span className="badge" style={{ background: '#272522', color: '#a39586', fontSize: '.75rem' }}>
                   {state.picks_made}/{state.total_picks}
                 </span>
               </div>
@@ -1296,12 +1307,12 @@ function DraftRoomPageInner() {
                       const isMine = !!(user_team && pick.team_id === user_team.id)
                       return (
                         <tr key={pick.pick_number} className={isMine ? 'draft-pick-row-mine' : undefined}>
-                          <td style={{ color: '#6c7892' }}>{pick.pick_number}</td>
-                          <td style={{ color: '#6c7892' }}>{pick.round}</td>
+                          <td style={{ color: '#888076' }}>{pick.pick_number}</td>
+                          <td style={{ color: '#888076' }}>{pick.round}</td>
                           <td>
                             {pick.team_name}
-                            {pick.via_team_name && <span style={{ color: '#97a3ba', fontSize: '.85em' }}> via {pick.via_team_name}</span>}
-                            {pick.label && <span style={{ color: '#d29922', fontSize: '.8em', fontWeight: 600 }}> {pick.label}</span>}
+                            {pick.via_team_name && <span style={{ color: '#b5a99c', fontSize: '.85em' }}> via {pick.via_team_name}</span>}
+                            {pick.label && <span style={{ color: '#d26822', fontSize: '.8em', fontWeight: 600 }}> {pick.label}</span>}
                           </td>
                           {pick.is_pass ? (
                             <><td><span className="draft-pass-tag">PASS</span></td><td></td><td></td></>
@@ -1309,7 +1320,7 @@ function DraftRoomPageInner() {
                             <>
                               <td className="player-name">{pick.player_name}{pick.is_auto_pick && <span className="draft-auto-tag"> (auto)</span>}</td>
                               <td>{pick.player_position && <span className={`draft-pos-chip ${posClass(pick.player_position)}`}>{pick.player_position.split('/')[0]}</span>}</td>
-                              <td style={{ color: '#97a3ba' }}>{pick.player_afl_team}</td>
+                              <td style={{ color: '#b5a99c' }}>{pick.player_afl_team}</td>
                             </>
                           )}
                         </tr>
@@ -1325,9 +1336,9 @@ function DraftRoomPageInner() {
               <div className="card" style={{ flex: 2 }}>
                 <div className="card-header d-flex justify-content-between align-items-center">
                   <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                    <i className="bi bi-person-badge me-2" style={{ color: '#58a6ff' }}></i>{user_team.name}
+                    <i className="bi bi-person-badge me-2" style={{ color: '#f5b940' }}></i>{user_team.name}
                   </h5>
-                  <span className="badge" style={{ background: '#21262d', color: '#8b949e', fontSize: '.75rem' }}>
+                  <span className="badge" style={{ background: '#272522', color: '#a39586', fontSize: '.75rem' }}>
                     {yourTeamPicks.length} players
                   </span>
                 </div>
@@ -1349,10 +1360,10 @@ function DraftRoomPageInner() {
                             <tbody>
                               {groups[k].map(p => (
                                 <tr key={p.pick_number}>
-                                  <td style={{ color: '#6c7892', width: 30 }}>{p.pick_number}</td>
+                                  <td style={{ color: '#888076', width: 30 }}>{p.pick_number}</td>
                                   <td className="player-name">{p.player_name}</td>
                                   <td style={{ width: 50 }}>{p.player_position && <span className={`draft-pos-chip ${posClass(p.player_position)}`}>{p.player_position.split('/')[0]}</span>}</td>
-                                  <td style={{ color: '#97a3ba', width: 60 }}>{p.player_afl_team}</td>
+                                  <td style={{ color: '#b5a99c', width: 60 }}>{p.player_afl_team}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1369,18 +1380,18 @@ function DraftRoomPageInner() {
             <div className="card draft-chat-card">
               <div className="card-header d-flex justify-content-between align-items-center" style={{ cursor: 'pointer' }} onClick={toggleChat}>
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-chat-dots me-2" style={{ color: '#d29922' }}></i>Draft Chat
+                  <i className="bi bi-chat-dots me-2" style={{ color: '#d26822' }}></i>Draft Chat
                 </h5>
                 <div className="d-flex align-items-center gap-2">
                   {chatUnread > 0 && <span className="badge" style={{ background: '#f85149', fontSize: '.6rem', borderRadius: 8 }}>{chatUnread}</span>}
-                  <i className={`bi bi-chevron-down${chatOpen ? '' : ' chat-toggle-collapsed'}`} style={{ color: '#8b949e', fontSize: '.75rem', transition: 'transform .2s' }}></i>
+                  <i className={`bi bi-chevron-down${chatOpen ? '' : ' chat-toggle-collapsed'}`} style={{ color: '#a39586', fontSize: '.75rem', transition: 'transform .2s' }}></i>
                 </div>
               </div>
               {chatOpen && (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div ref={chatScrollRef} id="chat-messages" className="card-body p-0" style={{ overflowY: 'auto', padding: '.5rem !important', maxHeight: 180 }}>
                     {chatMessages.length === 0 ? (
-                      <div className="text-center py-3" style={{ color: '#484f58', fontSize: '.75rem' }}>
+                      <div className="text-center py-3" style={{ color: '#56504a', fontSize: '.75rem' }}>
                         <i className="bi bi-chat-dots" style={{ fontSize: '1.2rem' }}></i>
                       </div>
                     ) : (
@@ -1394,7 +1405,7 @@ function DraftRoomPageInner() {
                       ))
                     )}
                   </div>
-                  <div style={{ borderTop: '1px solid rgba(110,130,180,.12)', padding: '8px 12px', display: 'flex', gap: 6 }}>
+                  <div style={{ borderTop: '1px solid rgba(170,144,91,.12)', padding: '8px 12px', display: 'flex', gap: 6 }}>
                     <input
                       type="text"
                       className="draft-filter-input flex-grow-1"
@@ -1419,19 +1430,19 @@ function DraftRoomPageInner() {
       {pendingPickId != null && pendingPickPlayer && (
         <>
           <div onClick={() => setPendingPickId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 1055 }} />
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1060, width: '90%', maxWidth: 360, background: '#161b22', border: '1px solid #30363d', borderRadius: 12 }}>
-            <div style={{ borderBottom: '1px solid #30363d', padding: '.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div role="dialog" aria-modal="true" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1060, width: '90%', maxWidth: 360, background: '#1c1a18', border: '1px solid #373330', borderRadius: 12 }}>
+            <div style={{ borderBottom: '1px solid #373330', padding: '.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h6 className="fw-bold mb-0" style={{ fontSize: '.9rem' }}>Confirm Pick</h6>
               <button type="button" className="btn-close btn-close-white" onClick={() => setPendingPickId(null)}></button>
             </div>
             <div className="text-center" style={{ padding: '1rem' }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#c9d1d9' }}>{pendingPickPlayer.name}</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#d7d1cb' }}>{pendingPickPlayer.name}</div>
               <div className="d-flex justify-content-center gap-2 mt-1">
                 <span className={`pos-badge badge-${posClass(pendingPickPlayer.position)}`}>{pendingPickPlayer.position}</span>
-                <span style={{ fontSize: '.8rem', color: '#8b949e' }}>{pendingPickPlayer.afl_team}</span>
+                <span style={{ fontSize: '.8rem', color: '#a39586' }}>{pendingPickPlayer.afl_team}</span>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid #30363d', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
+            <div style={{ borderTop: '1px solid #373330', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
               <button type="button" className="btn btn-outline-secondary btn-sm flex-fill" onClick={() => setPendingPickId(null)}>Cancel</button>
               <button type="button" className="btn btn-primary btn-sm flex-fill" onClick={confirmPick}>Confirm</button>
             </div>
@@ -1443,15 +1454,15 @@ function DraftRoomPageInner() {
       {showPassModal && (
         <>
           <div onClick={() => setShowPassModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 1055 }} />
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1060, width: '90%', maxWidth: 360, background: '#161b22', border: '1px solid #30363d', borderRadius: 12 }}>
-            <div style={{ borderBottom: '1px solid #30363d', padding: '.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div role="dialog" aria-modal="true" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1060, width: '90%', maxWidth: 360, background: '#1c1a18', border: '1px solid #373330', borderRadius: 12 }}>
+            <div style={{ borderBottom: '1px solid #373330', padding: '.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h6 className="fw-bold mb-0" style={{ fontSize: '.9rem' }}>Pass Pick?</h6>
               <button type="button" className="btn-close btn-close-white" onClick={() => setShowPassModal(false)}></button>
             </div>
             <div className="text-center" style={{ padding: '1rem' }}>
-              <div style={{ fontSize: '.85rem', color: '#8b949e' }}>Are you sure you want to pass on this pick? You won't draft a player this round.</div>
+              <div style={{ fontSize: '.85rem', color: '#a39586' }}>Are you sure you want to pass on this pick? You won't draft a player this round.</div>
             </div>
-            <div style={{ borderTop: '1px solid #30363d', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
+            <div style={{ borderTop: '1px solid #373330', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
               <button type="button" className="btn btn-outline-secondary btn-sm flex-fill" onClick={() => setShowPassModal(false)}>Cancel</button>
               <button type="button" className="btn btn-warning btn-sm flex-fill" onClick={confirmPass}>Pass</button>
             </div>
@@ -1463,17 +1474,17 @@ function DraftRoomPageInner() {
       {showEndDraftModal && (
         <>
           <div onClick={() => setShowEndDraftModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 1055 }} />
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1060, width: '90%', maxWidth: 360, background: '#161b22', border: '1px solid #30363d', borderRadius: 12 }}>
-            <div style={{ borderBottom: '1px solid #30363d', padding: '.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div role="dialog" aria-modal="true" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1060, width: '90%', maxWidth: 360, background: '#1c1a18', border: '1px solid #373330', borderRadius: 12 }}>
+            <div style={{ borderBottom: '1px solid #373330', padding: '.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h6 className="fw-bold mb-0" style={{ fontSize: '.9rem', color: '#f85149' }}>End Draft Early?</h6>
               <button type="button" className="btn-close btn-close-white" onClick={() => setShowEndDraftModal(false)}></button>
             </div>
             <div className="text-center" style={{ padding: '1rem' }}>
-              <div style={{ fontSize: '.85rem', color: '#8b949e' }}>
-                All remaining picks will be marked as <strong style={{ color: '#d29922' }}>PASS</strong> and the draft will be completed immediately.
+              <div style={{ fontSize: '.85rem', color: '#a39586' }}>
+                All remaining picks will be marked as <strong style={{ color: '#d26822' }}>PASS</strong> and the draft will be completed immediately.
               </div>
             </div>
-            <div style={{ borderTop: '1px solid #30363d', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
+            <div style={{ borderTop: '1px solid #373330', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
               <button type="button" className="btn btn-outline-secondary btn-sm flex-fill" onClick={() => setShowEndDraftModal(false)}>Cancel</button>
               <button type="button" className="btn btn-danger btn-sm flex-fill" onClick={submitEndDraft}>End Draft</button>
             </div>
@@ -1495,8 +1506,8 @@ class DraftRoomErrorBoundary extends Component<{ children: ReactNode }, { error:
       return (
         <div className="card mt-4"><div className="card-body">
           <h5 style={{ color: '#f85149' }}><i className="bi bi-exclamation-triangle me-2"></i>Draft room hit an error</h5>
-          <p style={{ fontSize: '.85rem', color: '#8b949e' }}>The draft data still loaded — this is a display glitch, not lost picks. Reload to try again.</p>
-          <pre style={{ fontSize: '.72rem', color: '#8b949e', whiteSpace: 'pre-wrap', maxHeight: 220, overflow: 'auto' }}>{this.state.error.message}{'\n'}{this.state.error.stack}</pre>
+          <p style={{ fontSize: '.85rem', color: '#a39586' }}>The draft data still loaded — this is a display glitch, not lost picks. Reload to try again.</p>
+          <pre style={{ fontSize: '.72rem', color: '#a39586', whiteSpace: 'pre-wrap', maxHeight: 220, overflow: 'auto' }}>{this.state.error.message}{'\n'}{this.state.error.stack}</pre>
           <button className="btn btn-sm btn-outline-primary mt-2" onClick={() => window.location.reload()}>Reload</button>
         </div></div>
       )

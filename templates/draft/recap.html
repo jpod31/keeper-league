@@ -12,7 +12,7 @@
       <h2>Draft Recap</h2>
       <div class="d-flex align-items-center gap-3 mt-1">
         <span class="status-pill status-completed">completed</span>
-        <span style="font-size:.8rem;color:#8b949e;">
+        <span style="font-size:.8rem;color:#a39586;">
           {{ session.draft_round_type|capitalize }}
           {% if session.completed_at %}
             &middot; {{ session.completed_at.strftime('%d %b %Y') }}
@@ -27,18 +27,18 @@
 <div class="card mb-4">
   <div class="card-header">
     <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-      <i class="bi bi-bar-chart me-2" style="color:#8b949e;"></i>Team Grades
+      <i class="bi bi-bar-chart me-2" style="color:#a39586;"></i>Team Grades
     </h5>
   </div>
   <div class="card-body">
     <div class="row g-3">
       {% for g in grades %}
         <div class="col-md-6 col-lg-4">
-          <div style="background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:1rem;height:100%;">
+          <div style="background:#121110;border:1px solid #373330;border-radius:10px;padding:1rem;height:100%;">
             <div class="d-flex justify-content-between align-items-start mb-3">
               <div>
-                <div style="font-size:1rem;font-weight:700;color:#e6edf3;">{{ g.team_name }}</div>
-                <div style="font-size:.75rem;color:#8b949e;">{{ g.picks_count }} picks</div>
+                <div style="font-size:1rem;font-weight:700;color:#efedea;">{{ g.team_name }}</div>
+                <div style="font-size:.75rem;color:#a39586;">{{ g.picks_count }} picks</div>
               </div>
               <div style="font-size:2rem;font-weight:800;color:{{ g.grade_color }};line-height:1;">
                 {{ g.grade }}
@@ -46,38 +46,38 @@
             </div>
 
             <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
-              <span style="color:#8b949e;">Total Value</span>
-              <span style="color:#58a6ff;font-weight:600;">{{ "%.1f"|format(g.total_value) }}</span>
+              <span style="color:#a39586;">Total Value</span>
+              <span style="color:#f5b940;font-weight:600;">{{ "%.1f"|format(g.total_value) }}</span>
             </div>
             <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
-              <span style="color:#8b949e;">Expected Value</span>
-              <span style="color:#8b949e;">{{ "%.1f"|format(g.expected_value) }}</span>
+              <span style="color:#a39586;">Expected Value</span>
+              <span style="color:#a39586;">{{ "%.1f"|format(g.expected_value) }}</span>
             </div>
             <div class="d-flex justify-content-between mb-2" style="font-size:.78rem;">
-              <span style="color:#8b949e;">Value +/-</span>
+              <span style="color:#a39586;">Value +/-</span>
               {% set diff = g.total_value - g.expected_value %}
-              <span style="color:{{ '#3fb950' if diff >= 0 else '#f85149' }};font-weight:600;">
+              <span style="color:{{ '#dbcf94' if diff >= 0 else '#f85149' }};font-weight:600;">
                 {{ "+" if diff >= 0 }}{{ "%.1f"|format(diff) }}
               </span>
             </div>
 
             <!-- Value bar -->
             {% set pct = (g.total_value / g.expected_value * 100) if g.expected_value > 0 else 100 %}
-            <div style="background:#21262d;border-radius:4px;height:6px;margin-bottom:.75rem;overflow:hidden;">
+            <div style="background:#272522;border-radius:4px;height:6px;margin-bottom:.75rem;overflow:hidden;">
               <div style="background:{{ g.grade_color }};height:100%;width:{{ [pct, 150]|min }}%;border-radius:4px;transition:width .3s;"></div>
             </div>
 
             {% if g.best_pick %}
-              <div style="font-size:.72rem;color:#8b949e;margin-bottom:2px;">
-                <i class="bi bi-arrow-up-circle-fill me-1" style="color:#3fb950;"></i>Best:
-                <span style="color:#e6edf3;">{{ g.best_pick.player_name }}</span>
-                <span style="color:#3fb950;">(+{{ "%.1f"|format(g.best_pick.value_diff) }})</span>
+              <div style="font-size:.72rem;color:#a39586;margin-bottom:2px;">
+                <i class="bi bi-arrow-up-circle-fill me-1" style="color:#dbcf94;"></i>Best:
+                <span style="color:#efedea;">{{ g.best_pick.player_name }}</span>
+                <span style="color:#dbcf94;">(+{{ "%.1f"|format(g.best_pick.value_diff) }})</span>
               </div>
             {% endif %}
             {% if g.worst_pick %}
-              <div style="font-size:.72rem;color:#8b949e;">
+              <div style="font-size:.72rem;color:#a39586;">
                 <i class="bi bi-arrow-down-circle-fill me-1" style="color:#f85149;"></i>Worst:
-                <span style="color:#e6edf3;">{{ g.worst_pick.player_name }}</span>
+                <span style="color:#efedea;">{{ g.worst_pick.player_name }}</span>
                 <span style="color:#f85149;">({{ "%.1f"|format(g.worst_pick.value_diff) }})</span>
               </div>
             {% endif %}
@@ -92,9 +92,9 @@
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-      <i class="bi bi-list-ol me-2" style="color:#8b949e;"></i>Full Draft Board
+      <i class="bi bi-list-ol me-2" style="color:#a39586;"></i>Full Draft Board
     </h5>
-    <span class="badge" style="background:#21262d;color:#8b949e;font-size:.75rem;">
+    <span class="badge" style="background:#272522;color:#a39586;font-size:.75rem;">
       {{ picks|length }} picks
     </span>
   </div>
@@ -102,15 +102,15 @@
   <div class="d-lg-none squad-cards-mobile">
     {% for p in picks %}
       <div class="squad-mob-card" style="gap:.5rem;">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#21262d;font-size:.7rem;font-weight:700;border-radius:6px;flex-shrink:0;color:#8b949e;">{{ p.pick_number }}</span>
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#272522;font-size:.7rem;font-weight:700;border-radius:6px;flex-shrink:0;color:#a39586;">{{ p.pick_number }}</span>
         {% if p.is_pass %}
           <div class="squad-mob-info">
-            <div class="squad-mob-name" style="color:#d29922;">PASS</div>
+            <div class="squad-mob-name" style="color:#d26822;">PASS</div>
             <div class="squad-mob-meta"><span>{{ p.team_name }}</span><span>Rd {{ p.draft_round }}</span></div>
           </div>
         {% else %}
           <div class="squad-mob-info">
-            <div class="squad-mob-name">{{ p.player_name }}{% if p.is_auto_pick %} <span style="color:#8b949e;font-size:.65rem;">(auto)</span>{% endif %}</div>
+            <div class="squad-mob-name">{{ p.player_name }}{% if p.is_auto_pick %} <span style="color:#a39586;font-size:.65rem;">(auto)</span>{% endif %}</div>
             <div class="squad-mob-meta">
               <span class="pos-badge pos-{{ (p.position or 'mid').split('/')[0] }}" style="font-size:.55rem;">{{ p.position or '' }}</span>
               <span>{{ p.team_name }}</span>
@@ -119,10 +119,10 @@
           </div>
           <div style="text-align:right;flex-shrink:0;">
             {% if p.value_diff is not none %}
-              <div style="font-weight:700;font-size:.85rem;color:{{ '#3fb950' if p.value_diff >= 0 else '#f85149' }};">{{ "+" if p.value_diff >= 0 }}{{ "%.1f"|format(p.value_diff) }}</div>
-              <div style="font-size:.6rem;color:#8b949e;">{{ "%.0f"|format(p.draft_score) if p.draft_score else '-' }} SC</div>
+              <div style="font-weight:700;font-size:.85rem;color:{{ '#dbcf94' if p.value_diff >= 0 else '#f85149' }};">{{ "+" if p.value_diff >= 0 }}{{ "%.1f"|format(p.value_diff) }}</div>
+              <div style="font-size:.6rem;color:#a39586;">{{ "%.0f"|format(p.draft_score) if p.draft_score else '-' }} SC</div>
             {% else %}
-              <span style="color:#8b949e;">-</span>
+              <span style="color:#a39586;">-</span>
             {% endif %}
           </div>
         {% endif %}
@@ -133,7 +133,7 @@
   <div class="card-body p-0 d-none d-lg-block">
     <div style="overflow-x:auto;">
       <table class="table table-hover table-sm mb-0">
-        <thead class="sticky-top" style="background:#161b22;">
+        <thead class="sticky-top" style="background:#1c1a18;">
           <tr>
             <th style="width:50px;">#</th>
             <th style="width:50px;">Rd</th>
@@ -151,14 +151,14 @@
             <tr>
               <td>
                 <span class="d-inline-flex align-items-center justify-content-center rounded"
-                      style="width:28px;height:28px;background:#21262d;font-size:.75rem;font-weight:600;border-radius:6px !important;">
+                      style="width:28px;height:28px;background:#272522;font-size:.75rem;font-weight:600;border-radius:6px !important;">
                   {{ p.pick_number }}
                 </span>
               </td>
-              <td style="color:#8b949e;">{{ p.draft_round }}</td>
+              <td style="color:#a39586;">{{ p.draft_round }}</td>
               <td style="font-weight:600;">{{ p.team_name }}</td>
               {% if p.is_pass %}
-                <td><span style="color:#d29922;font-weight:600;">PASS</span></td>
+                <td><span style="color:#d26822;font-weight:600;">PASS</span></td>
                 <td></td>
                 <td></td>
                 <td class="text-end">-</td>
@@ -168,22 +168,22 @@
                 <td>
                   {{ p.player_name }}
                   {% if p.is_auto_pick %}
-                    <span style="color:#8b949e;font-size:.7rem;">(auto)</span>
+                    <span style="color:#a39586;font-size:.7rem;">(auto)</span>
                   {% endif %}
                 </td>
                 <td>
                   <span class="pos-badge badge-{{ (p.position or 'mid').split('/')[0]|lower }}">{{ p.position or '' }}</span>
                 </td>
-                <td style="color:#8b949e;">{{ p.afl_team or '' }}</td>
-                <td class="text-end" style="color:#58a6ff;font-weight:600;">
+                <td style="color:#a39586;">{{ p.afl_team or '' }}</td>
+                <td class="text-end" style="color:#f5b940;font-weight:600;">
                   {{ "%.1f"|format(p.draft_score) if p.draft_score else '-' }}
                 </td>
-                <td class="text-end" style="color:#8b949e;">
+                <td class="text-end" style="color:#a39586;">
                   {{ "%.1f"|format(p.expected_value) if p.expected_value else '-' }}
                 </td>
                 <td class="text-end">
                   {% if p.value_diff is not none %}
-                    <span style="color:{{ '#3fb950' if p.value_diff >= 0 else '#f85149' }};font-weight:600;">
+                    <span style="color:{{ '#dbcf94' if p.value_diff >= 0 else '#f85149' }};font-weight:600;">
                       {{ "+" if p.value_diff >= 0 }}{{ "%.1f"|format(p.value_diff) }}
                     </span>
                   {% else %}

@@ -43,8 +43,8 @@ export function SSPModal({ leagueId, teamId, ltilId, onClose, onSuccess }: Props
       <div className="modal-backdrop fade show" onClick={onClose}></div>
       <div className="modal fade show d-block" tabIndex={-1} onClick={onClose}>
         <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" onClick={e => e.stopPropagation()}>
-          <div className="modal-content" style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: 12 }}>
-            <div className="modal-header" style={{ borderBottom: '1px solid #30363d', padding: '.75rem 1rem' }}>
+          <div className="modal-content" style={{ background: '#1c1a18', border: '1px solid #373330', borderRadius: 12 }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #373330', padding: '.75rem 1rem' }}>
               <h6 className="modal-title fw-bold" style={{ fontSize: '.95rem' }}>
                 <i className="bi bi-bandaid me-1" style={{ color: '#f85149' }}></i>SSP — Select Replacement
               </h6>
@@ -53,7 +53,7 @@ export function SSPModal({ leagueId, teamId, ltilId, onClose, onSuccess }: Props
             <div className="modal-body" style={{ padding: '1rem' }}>
               <input type="text" className="form-control form-control-sm mb-3" placeholder="Search players..."
                 value={search} onChange={e => setSearch(e.target.value)}
-                style={{ background: '#0d1117', borderColor: '#30363d', color: '#c9d1d9' }} />
+                style={{ background: '#121110', borderColor: '#373330', color: '#d7d1cb' }} />
               <div style={{ maxHeight: 350, overflowY: 'auto' }}>
                 {loading && <div className="text-center text-secondary py-3" style={{ fontSize: '.8rem' }}>Loading players...</div>}
                 {!loading && filtered.length === 0 && <div className="text-center text-secondary py-3" style={{ fontSize: '.8rem' }}>No available players</div>}

@@ -8,42 +8,42 @@
 {# Stat cards #}
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
-    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
+    <div class="card text-center" style="background:#1c1a18;border:1px solid #373330;">
       <div class="card-body py-3">
-        <div style="font-size:1.8rem;font-weight:700;color:#58a6ff;">{{ total_users }}</div>
-        <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">Users</div>
+        <div style="font-size:1.8rem;font-weight:700;color:#f5b940;">{{ total_users }}</div>
+        <div style="font-size:.75rem;color:#a39586;text-transform:uppercase;letter-spacing:1px;">Users</div>
       </div>
     </div>
   </div>
   <div class="col-6 col-md-3">
-    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
+    <div class="card text-center" style="background:#1c1a18;border:1px solid #373330;">
       <div class="card-body py-3">
-        <div style="font-size:1.8rem;font-weight:700;color:#3fb950;">{{ total_leagues }}</div>
-        <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">Leagues</div>
+        <div style="font-size:1.8rem;font-weight:700;color:#dbcf94;">{{ total_leagues }}</div>
+        <div style="font-size:.75rem;color:#a39586;text-transform:uppercase;letter-spacing:1px;">Leagues</div>
       </div>
     </div>
   </div>
   <div class="col-6 col-md-3">
-    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
+    <div class="card text-center" style="background:#1c1a18;border:1px solid #373330;">
       <div class="card-body py-3">
         <div style="font-size:1.8rem;font-weight:700;color:#d2a8ff;">{{ total_teams }}</div>
-        <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">Teams</div>
+        <div style="font-size:.75rem;color:#a39586;text-transform:uppercase;letter-spacing:1px;">Teams</div>
       </div>
     </div>
   </div>
   <div class="col-6 col-md-3">
-    <div class="card text-center" style="background:#161b22;border:1px solid #30363d;">
+    <div class="card text-center" style="background:#1c1a18;border:1px solid #373330;">
       <div class="card-body py-3">
-        <div style="font-size:1.8rem;font-weight:700;color:#f0883e;">{{ views_today }}</div>
-        <div style="font-size:.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:1px;">Views Today</div>
+        <div style="font-size:1.8rem;font-weight:700;color:#f0763e;">{{ views_today }}</div>
+        <div style="font-size:.75rem;color:#a39586;text-transform:uppercase;letter-spacing:1px;">Views Today</div>
       </div>
     </div>
   </div>
 </div>
 
 {# Quick actions #}
-<div class="card mb-4" style="background:#161b22;border:1px solid #30363d;">
-  <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
+<div class="card mb-4" style="background:#1c1a18;border:1px solid #373330;">
+  <div class="card-header" style="background:#121110;border-bottom:1px solid #373330;">
     <h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-gear me-2"></i>Quick Actions</h6>
   </div>
   <div class="card-body">
@@ -61,15 +61,15 @@
 </div>
 
 {# Recent activity #}
-<div class="card" style="background:#161b22;border:1px solid #30363d;">
-  <div class="card-header" style="background:#0d1117;border-bottom:1px solid #30363d;">
+<div class="card" style="background:#1c1a18;border:1px solid #373330;">
+  <div class="card-header" style="background:#121110;border-bottom:1px solid #373330;">
     <h6 class="mb-0 fw-bold" style="font-size:.85rem;"><i class="bi bi-activity me-2"></i>Recent Activity</h6>
   </div>
   <div class="card-body p-0">
     <div class="table-responsive">
       <table class="table table-sm table-dark mb-0" style="font-size:.8rem;">
         <thead>
-          <tr style="color:#8b949e;">
+          <tr style="color:#a39586;">
             <th>User</th><th>Path</th><th>Method</th><th>Status</th><th>Time</th>
           </tr>
         </thead>
@@ -80,7 +80,7 @@
             <td class="text-truncate" style="max-width:300px;">{{ a.path }}</td>
             <td><span class="badge {% if a.method == 'POST' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ a.method }}</span></td>
             <td>{{ a.status }}</td>
-            <td style="color:#8b949e;">{{ a.time.strftime('%H:%M:%S') if a.time else '' }}</td>
+            <td style="color:#a39586;">{{ a.time.strftime('%H:%M:%S') if a.time else '' }}</td>
           </tr>
           {% endfor %}
           {% if not activity %}

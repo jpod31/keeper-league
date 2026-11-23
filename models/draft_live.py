@@ -79,6 +79,85 @@ def _resolve_caps_and_completion(session):
     return remaining == 0
 
 
+def status_after_draft(league):
+    """Where the league goes when a draft ends.
+
+    The initial draft opens the season. A draft held in the off-season hands
+    the league back to its off-season: the year only changes through
+    season_rollover.start_new_season, which refuses a league that is not in it.
+    """
+    from models.database import SeasonConfig
+    cfg = SeasonConfig.query.filter_by(
+        league_id=league.id, year=league.season_year).first()
+    if cfg and cfg.season_phase == "offseason":
+        return "offseason"
+    return "active"
+
+
+def close_delists_for_draft(league_id):
+    """Shut any open delist period: the draft has started. The deadline is
+    the draft itself, so this never checks who has or has not finished; a team
+    still over its number simply has fewer picks to use."""
+    from models.database import DelistPeriod
+    closed = 0
+    for period in DelistPeriod.query.filter_by(league_id=league_id, status="open").all():
+        period.status = "closed"
+        closed += 1
+    return closed
+
+
+def supplemental_slots(league):
+    """(draft_type, total_rounds, slots) for a supplemental draft held now."""
+    from models.database import SeasonConfig
+    from models.draft_picks import ensure_future_picks, read_plan, build_slots
+
+    teams = FantasyTeam.query.filter_by(league_id=league.id).all()
+    cap = league.squad_size or 0
+    free = [max(0, cap - team_list_size(league, t.id)) for t in teams]
+    total_rounds = max(free) if free else 0
+
+    plan = read_plan(SeasonConfig.query.filter_by(
+        league_id=league.id, year=league.season_year).first())
+    # "drafting" here means a draft that was scheduled in the off-season and
+    # has just been started, so the phase on the season config decides.
+    offseason = status_after_draft(league) == "offseason"
+    if offseason:
+        ensure_future_picks(league.id)
+        comp_rounds = [c["round"] for c in plan["draft_compensation"]]
+        total_rounds = max([total_rounds] + comp_rounds)
+    slots = []
+    if total_rounds > 0:
+        slots = build_slots(league.id, league.season_year, plan, total_rounds, offseason)
+    return plan["draft_style"], total_rounds, slots
+
+
+def refresh_supplemental_slots(session):
+    """Rebuild a not-yet-started supplemental draft's board from today's lists
+    and pick ownership. No-op once a pick has been made."""
+    made = DraftPick.query.filter_by(draft_session_id=session.id).filter(
+        db.or_(DraftPick.player_id.isnot(None), DraftPick.is_pass == True)).first()
+    if made:
+        return False
+    league = db.session.get(League, session.league_id)
+    draft_type, total_rounds, slots = supplemental_slots(league)
+    if not slots:
+        return False
+    # "fetch" also drops the old slots from the session, so the new ones
+    # (which reuse their ids) don't collide with stale objects.
+    DraftPick.query.filter_by(draft_session_id=session.id).delete(synchronize_session="fetch")
+    db.session.flush()
+    session.draft_type = draft_type
+    session.total_rounds = total_rounds
+    for pick_number, slot in enumerate(slots, 1):
+        db.session.add(DraftPick(
+            draft_session_id=session.id, pick_number=pick_number,
+            draft_round=slot["round"], team_id=slot["team_id"],
+            original_team_id=slot["original_team_id"], label=slot["label"],
+        ))
+    db.session.flush()
+    return True
+
+
 def create_draft_session(league_id, supplemental=False, total_rounds_override=None,
                          is_mock=False):
     """Create a draft session with all pick slots pre-generated.
@@ -266,6 +345,15 @@ def start_draft(session_id):
     if session.status not in ("scheduled", "paused"):
         return None, f"Cannot start draft in '{session.status}' status."
 
+    first_start = session.status == "scheduled"
+    if first_start and not session.is_mock and session.draft_round_type == "supplemental":
+        # The draft may have been scheduled days ago. Lists and pick ownership
+        # have moved since (delists, trades), so the board is rebuilt from how
+        # things stand now, and delistings shut: nobody cuts a player once the
+        # room is open.
+        close_delists_for_draft(session.league_id)
+        refresh_supplemental_slots(session)
+
     session.status = "in_progress"
     session.started_at = session.started_at or datetime.now(timezone.utc)
     # Update league status (skip for mock drafts)
@@ -282,7 +370,7 @@ def start_draft(session_id):
         if not session.is_mock:
             league = db.session.get(League, session.league_id)
             if league:
-                league.status = "active"
+                league.status = status_after_draft(league)
     db.session.commit()
     return session, None
 
@@ -364,6 +452,8 @@ def make_pick(session_id, player_id, is_auto=False):
         player = db.session.get(AflPlayer, player_id)
         if not player:
             return None, "Player not found."
+        if player.is_former:
+            return None, f"{player.name} is no longer on an AFL list."
 
         # Make the pick
         current_pick.player_id = player_id
@@ -392,7 +482,7 @@ def make_pick(session_id, player_id, is_auto=False):
             if not session.is_mock:
                 league = db.session.get(League, session.league_id)
                 if league:
-                    league.status = "active"
+                    league.status = status_after_draft(league)
 
         db.session.commit()
 
@@ -457,9 +547,13 @@ def undo_pick(session_id):
 
         # Remove from roster if it was a real pick (not pass, not mock)
         if player_id and not session.is_mock:
-            FantasyRoster.query.filter_by(
-                team_id=last_pick.team_id, player_id=player_id
-            ).delete()
+            # Only the stint this pick created. An earlier stint with the
+            # same club (drafted, delisted, drafted again) is history.
+            made = (FantasyRoster.query
+                    .filter_by(team_id=last_pick.team_id, player_id=player_id, is_active=True)
+                    .order_by(FantasyRoster.id.desc()).first())
+            if made:
+                db.session.delete(made)
 
         # Reset the pick
         last_pick.player_id = None
@@ -508,7 +602,7 @@ def pass_pick(session_id):
             if not session.is_mock:
                 league = db.session.get(League, session.league_id)
                 if league:
-                    league.status = "active"
+                    league.status = status_after_draft(league)
 
         db.session.commit()
 
@@ -557,7 +651,7 @@ def end_draft(session_id):
         if not session.is_mock:
             league = db.session.get(League, session.league_id)
             if league:
-                league.status = "active"
+                league.status = status_after_draft(league)
 
         # Clean up stale draft queues for all teams in this league
         team_ids = [t.id for t in FantasyTeam.query.filter_by(league_id=session.league_id).all()]
@@ -705,7 +799,7 @@ def auto_pick(session_id, team_id):
                 return make_pick(session_id, queue_entry.player_id, is_auto=True)
 
     # Fallback: highest draft_score available player respecting position limits
-    query = AflPlayer.query
+    query = AflPlayer.query.filter(AflPlayer.listed())
     if unavailable:
         query = query.filter(AflPlayer.id.notin_(unavailable))
     candidates = query.order_by(AflPlayer.draft_score.desc().nullslast()).limit(50).all()
@@ -744,7 +838,7 @@ def get_available_players(session_id, search=None, position=None, limit=100):
         ).all()
         picked_ids.update(row[0] for row in rostered)
 
-    query = AflPlayer.query
+    query = AflPlayer.query.filter(AflPlayer.listed())
     if picked_ids:
         query = query.filter(AflPlayer.id.notin_(picked_ids))
     if search:

@@ -28,7 +28,8 @@ def player_injuries(league_id):
         return redirect(url_for("leagues.league_list"))
 
     # All injured/suspended players
-    players = AflPlayer.query.filter(AflPlayer.injury_severity.isnot(None)).order_by(AflPlayer.name).all()
+    players = (AflPlayer.query.filter(AflPlayer.listed(), AflPlayer.injury_severity.isnot(None))
+               .order_by(AflPlayer.name).all())
 
     # Build rostered lookup: player_id -> team name
     rostered_map = {}
@@ -186,6 +187,12 @@ def player_ratings(league_id):
     )
 
 
+def _year_ctx():
+    """Which season the averages come from, for labelling them."""
+    from models.years import year_context
+    return year_context()
+
+
 @leagues_bp.route("/<int:league_id>/player-pool")
 @login_required
 def player_pool(league_id):
@@ -205,10 +212,6 @@ def player_pool(league_id):
         players.append(ap)
     # Also include unranked players (those with no data) at the end
     ranked_ids = {ap.id for ap, _ in ranked}
-    unranked = AflPlayer.query.filter(~AflPlayer.id.in_(ranked_ids)).all() if ranked_ids else AflPlayer.query.all()
-    for ap in unranked:
-        ap._rank = len(players) + 1
-        players.append(ap)
 
     # Build rostered lookup: player_id -> team name
     rostered_map = {}
@@ -221,16 +224,29 @@ def player_pool(league_id):
     for pid, tname in roster_rows:
         rostered_map[pid] = tname
 
+    # The pool is the players on an AFL list. A player who has left the AFL
+    # lives on the Former players page, unless a club here still lists him,
+    # in which case he stays (flagged) until they delist him.
+    tail = AflPlayer.query.filter(db.or_(
+        AflPlayer.listed(),
+        AflPlayer.id.in_(list(rostered_map)) if rostered_map else db.false(),
+    ))
+    if ranked_ids:
+        tail = tail.filter(~AflPlayer.id.in_(ranked_ids))
+    for ap in tail.all():
+        ap._rank = len(players) + 1
+        players.append(ap)
+
     # Assign a colour to each fantasy team for status badges
     _team_palette = [
-        ("#79c0ff", "rgba(88,166,255,.18)"),    # blue
-        ("#ffb471", "rgba(240,136,62,.18)"),    # orange
-        ("#d2a8ff", "rgba(188,140,255,.18)"),   # purple
-        ("#7ee787", "rgba(63,185,80,.18)"),     # green
-        ("#e3b341", "rgba(210,153,34,.18)"),    # yellow
-        ("#ff7b72", "rgba(248,81,73,.18)"),     # red
-        ("#a5d6ff", "rgba(121,192,255,.18)"),   # light blue
-        ("#f778ba", "rgba(219,97,162,.18)"),    # pink
+        ("#f8c552", "rgba(245,185,64,.18)"),    # gold
+        ("#ff8f7f", "rgba(248,81,73,.18)"),     # red
+        ("#d6b0ff", "rgba(188,140,255,.18)"),   # purple
+        ("#f1ebdd", "rgba(241,235,221,.14)"),   # bone
+        ("#f6a063", "rgba(240,138,75,.18)"),    # orange
+        ("#f98bc4", "rgba(219,97,162,.18)"),    # pink
+        ("#d9c27a", "rgba(217,194,122,.16)"),   # sand
+        ("#b79be0", "rgba(157,123,216,.18)"),   # violet
     ]
     unique_teams = sorted(set(rostered_map.values()))
     team_colours = {}
@@ -281,118 +297,43 @@ def player_pool(league_id):
         from models.keeper_value import compute_keeper_values
         kvi_map = compute_keeper_values(rostered_pids, league.season_year)
 
-    # Acquisition history: player_id -> [history_entries...] sorted
-    # oldest-first. Includes INACTIVE roster rows too (so delisted /
-    # traded-away tenures still show), and stacks the chronology:
-    #
-    #   Jhye Clark:
-    #     1. drafted by Lamb of North Cult (2026 R3 pick 27)
-    #     2. traded to Charlies Demons (2026-05-26)
-    #
-    # `acquired_map[pid]` is kept for backward compat — it's the
-    # most-recent entry (what used to be returned).
+    # Every stint each player has had in this league, oldest first: who had
+    # him, how he arrived (with which pick), how he left. A player drafted,
+    # delisted and drafted again shows both stints. See models/player_history.
+    from models.player_history import league_stints, serialise_stint
+    history_map = league_stints(league_id)
+    # The stint to headline: where he is now, else his most recent one.
     acquired_map = {}
-    history_map = {}
-    acq_rows = (
-        db.session.query(
-            FantasyRoster.player_id,
-            FantasyRoster.acquired_via,
-            FantasyRoster.acquired_at,
-            FantasyRoster.is_active,
-            FantasyTeam.name.label("team_name"),
-            FantasyTeam.owner_id,
-        )
-        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
-        .filter(FantasyTeam.league_id == league_id)
-        .all()
-    )
-    from models.database import User
-    owner_ids = {r.owner_id for r in acq_rows if r.owner_id}
-    owner_names = {}
-    if owner_ids:
-        for u in User.query.filter(User.id.in_(owner_ids)).all():
-            owner_names[u.id] = u.display_name or u.username
-
-    # Draft pick details — keyed by (player_id, draft_session) so
-    # supplemental drafts later in the season also get attached to
-    # their own history row (rather than overwriting the initial pick).
-    draft_pick_map = {}
-    league_drafts = DraftSession.query.filter_by(league_id=league_id, status="completed").all()
-    if league_drafts:
-        ds_ids = [ds.id for ds in league_drafts]
-        draft_picks = DraftPick.query.filter(
-            DraftPick.draft_session_id.in_(ds_ids),
-            DraftPick.player_id.isnot(None),
-        ).all()
-        ds_lookup = {ds.id: ds for ds in league_drafts}
-        for dp in draft_picks:
-            ds = ds_lookup.get(dp.draft_session_id)
-            draft_pick_map[dp.player_id] = {
-                "pick_number": dp.pick_number,
-                "draft_year": ds.started_at.year if ds and ds.started_at else (ds.scheduled_start.year if ds and ds.scheduled_start else ""),
-                "draft_type": ds.draft_round_type if ds else "initial",
-            }
-
-    # Delist actions — to mark final inactive tenure as "delisted"
-    # rather than just "traded away" or generic inactive.
-    from models.database import DelistAction as _DelistAction, DelistPeriod as _DP
-    delist_periods = {p.id for p in _DP.query.filter_by(league_id=league_id).all()}
-    delisted_pids = set()
-    if delist_periods:
-        for da in _DelistAction.query.filter(_DelistAction.delist_period_id.in_(delist_periods)).all():
-            delisted_pids.add(da.player_id)
-
-    # Sort all rows oldest-first so chronology renders top-down
-    acq_rows_sorted = sorted(
-        acq_rows,
-        key=lambda r: (r.acquired_at or datetime.min),
-    )
-    for r in acq_rows_sorted:
-        entry = {
-            "coach": owner_names.get(r.owner_id, ""),
-            "team": r.team_name,
-            "method": r.acquired_via or "draft",
-            "acquired_at": r.acquired_at,
-            "is_active": bool(r.is_active),
-        }
-        # Attach draft-pick details only to the row that represents
-        # the original draft tenure (acquired_via == draft/supplemental).
-        dp = draft_pick_map.get(r.player_id)
-        if dp and (r.acquired_via in ("draft", "supplemental", None)):
-            entry["pick_number"] = dp["pick_number"]
-            entry["draft_year"] = dp["draft_year"]
-            entry["draft_type"] = dp["draft_type"]
-        history_map.setdefault(r.player_id, []).append(entry)
-
-    # Mark the most-recent entry as "delisted" if applicable AND the
-    # tenure is inactive (player isn't currently rostered anywhere).
     for pid, hist in history_map.items():
-        if pid in delisted_pids and not any(e["is_active"] for e in hist):
-            hist[-1]["delisted"] = True
-        # Back-compat acquired_map: pick the active entry if there
-        # is one, else the most recent.
         active = [e for e in hist if e["is_active"]]
-        acquired_map[pid] = (active[-1] if active else hist[-1])
+        acquired_map[pid] = active[-1] if active else hist[-1]
 
     # Build set of player IDs selected to play this round (for status dot)
     from models.database import AflTeamSelection
     from scrapers.squiggle import get_current_round
-    current_afl_round = get_current_round(config.CURRENT_YEAR)
-    if current_afl_round is None:
-        current_afl_round = 0
-    selected_set = set(
-        r[0] for r in db.session.query(AflTeamSelection.player_id)
-        .filter_by(year=config.CURRENT_YEAR, afl_round=current_afl_round)
-        .filter(AflTeamSelection.player_id.isnot(None))
-        .all()
-    )
-
-    # Teams playing this round (for bye indicators)
-    from models.database import AflGame
+    from models.season_manager import league_season_over
+    selected_set = set()
     teams_playing = set()
-    for g in AflGame.query.filter_by(year=config.CURRENT_YEAR, afl_round=current_afl_round).all():
-        teams_playing.add(g.home_team)
-        teams_playing.add(g.away_team)
+    # "Named this week" and "on the bye" only mean something while the league
+    # has a round to pick for. In the off-season next year's Opening Round is
+    # already on the AFL calendar, and without this every player whose club
+    # sits it out would wear a BYE badge for five months.
+    if not league_season_over(league_id, league.season_year):
+        current_afl_round = get_current_round(league.season_year)
+        if current_afl_round is None:
+            current_afl_round = 0
+        selected_set = set(
+            r[0] for r in db.session.query(AflTeamSelection.player_id)
+            .filter_by(year=league.season_year, afl_round=current_afl_round)
+            .filter(AflTeamSelection.player_id.isnot(None))
+            .all()
+        )
+
+        # Teams playing this round (for bye indicators)
+        from models.database import AflGame
+        for g in AflGame.query.filter_by(year=league.season_year, afl_round=current_afl_round).all():
+            teams_playing.add(g.home_team)
+            teams_playing.add(g.away_team)
 
     # Compute rich profile tags with historical data (cached)
     from models.profile_tags import compute_profile_tags
@@ -422,20 +363,20 @@ def player_pool(league_id):
                 "at": a.delisted_at.isoformat() if getattr(a, "delisted_at", None) else None,
             }
 
+    # Trade block + this manager's notes, so the pool can flag both.
+    from models.database import TradeBlockEntry, PlayerNote
+    on_block = {
+        e.player_id for e in TradeBlockEntry.query.filter_by(league_id=league_id).all()
+        if e.player_id in rostered_map
+    }
+    note_counts = dict(
+        db.session.query(PlayerNote.player_id, db.func.count(PlayerNote.id))
+        .filter(PlayerNote.user_id == current_user.id)
+        .group_by(PlayerNote.player_id).all()
+    )
+
     if request.args.get("format") == "json":
-        def _ser_history_entry(e):
-            """Serialize one tenure row for the stacked history view."""
-            return {
-                "coach": e.get("coach"),
-                "team": e.get("team"),
-                "method": e.get("method"),
-                "acquired_at": e["acquired_at"].isoformat() if e.get("acquired_at") else None,
-                "is_active": e.get("is_active", False),
-                "delisted": e.get("delisted", False),
-                "pick_number": e.get("pick_number"),
-                "draft_year": e.get("draft_year"),
-                "draft_type": e.get("draft_type"),
-            }
+        _ser_history_entry = serialise_stint
 
         def _ser_player(p):
             pr = rolling.get(p.name, {}) if isinstance(rolling, dict) else {}
@@ -464,13 +405,22 @@ def player_pool(league_id):
                 "profile_tier": tag.get("tier", 13) if isinstance(tag, dict) else 13,
                 "is_selected": p.id in selected_set,
                 "is_bye": bool(teams_playing and p.afl_team and p.afl_team not in teams_playing),
+                # Position is our estimate until SuperCoach publishes one.
+                "position_expected": bool(p.position_expected),
+                # First season on an AFL list, when that is this season.
+                "is_new": p.joined_year == config.CURRENT_YEAR,
+                # Still on a keeper list here but no longer on an AFL one.
+                "is_former": p.is_former,
+                "on_block": p.id in on_block,
+                "note_count": note_counts.get(p.id, 0),
                 "acquired": {
                     "coach": acq.get("coach"),
                     "team": acq.get("team"),
                     "method": acq.get("method"),
                     "pick_number": acq.get("pick_number"),
-                    "draft_year": acq.get("draft_year"),
+                    "draft_year": acq.get("draft_year") or "",
                     "draft_type": acq.get("draft_type"),
+                    "draft_label": acq.get("draft_label"),
                 } if acq else None,
                 "acquired_history": [_ser_history_entry(e) for e in hist],
                 "delisted": delisted_map.get(p.id),
@@ -505,6 +455,7 @@ def player_pool(league_id):
             "can_pickup": bool(can_pickup),
             "pickup_reason": pickup_reason,
             "ssp_cutoff_round": ssp_cutoff_round,
+            **_year_ctx(),
         })
 
     return render_template("leagues/player_pool.html",
@@ -567,6 +518,8 @@ def player_pickup(league_id):
     player = db.session.get(AflPlayer, player_id)
     if not player:
         return jsonify({"error": "Player not found"}), 404
+    if player.is_former:
+        return jsonify({"error": "%s is no longer on an AFL list" % player.name}), 409
 
     # Check player isn't already rostered in this league
     already = (

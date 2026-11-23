@@ -128,7 +128,7 @@
 <script>
 if (typeof Chart === 'undefined') { /* Chart.js not loaded — skip charts */ } else {
 (function() {
-  var colors = ['#58a6ff', '#3fb950', '#f0883e', '#bc8cff'];
+  var colors = ['#f5b940', '#dbcf94', '#f0763e', '#bc8cff'];
   var playersData = {{ players_data|tojson }};
 
   // Radar Chart
@@ -154,13 +154,13 @@ if (typeof Chart === 'undefined') { /* Chart.js not loaded — skip charts */ } 
       scales: {
         r: {
           beginAtZero: true,
-          grid: { color: 'rgba(48,54,61,.5)' },
-          pointLabels: { color: '#8b949e', font: { size: 11 } },
+          grid: { color: 'rgba(55,51,48,.5)' },
+          pointLabels: { color: '#a39586', font: { size: 11 } },
           ticks: { display: false }
         }
       },
       plugins: {
-        legend: { position: 'bottom', labels: { color: '#c9d1d9', boxWidth: 12 } }
+        legend: { position: 'bottom', labels: { color: '#d7d1cb', boxWidth: 12 } }
       }
     }
   });
@@ -196,10 +196,10 @@ if (typeof Chart === 'undefined') { /* Chart.js not loaded — skip charts */ } 
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom', labels: { color: '#c9d1d9', boxWidth: 12 } }
+        legend: { position: 'bottom', labels: { color: '#d7d1cb', boxWidth: 12 } }
       },
       scales: {
-        y: { beginAtZero: false, grid: { color: 'rgba(48,54,61,.5)' } },
+        y: { beginAtZero: false, grid: { color: 'rgba(55,51,48,.5)' } },
         x: { grid: { display: false } }
       }
     }

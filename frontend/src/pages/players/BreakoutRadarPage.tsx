@@ -29,27 +29,27 @@ interface RadarData { year: number; players: RadarPlayer[]; total: number }
 
 const CSS = `
 .br-wrap { padding: 16px 0; }
-.br-hero { display:flex; align-items:center; gap:16px; margin-bottom:18px; padding:14px 20px; background:linear-gradient(135deg, rgba(63,185,80,.08), rgba(31,111,235,.06)); border:1px solid #21262d; border-radius:12px; }
-.br-hero i { font-size:1.7rem; color:#3fb950; }
-.br-hero-title { font-weight:800; font-size:1.1rem; color:#e6edf3; margin:0; letter-spacing:-.01em; }
-.br-hero-sub { color:#8b949e; font-size:.8rem; margin:2px 0 0; }
+.br-hero { display:flex; align-items:center; gap:16px; margin-bottom:18px; padding:14px 20px; background:linear-gradient(135deg, rgba(219,207,148,.08), rgba(183,122,16,.06)); border:1px solid #272522; border-radius:12px; }
+.br-hero i { font-size:1.7rem; color:#dbcf94; }
+.br-hero-title { font-weight:800; font-size:1.1rem; color:#efedea; margin:0; letter-spacing:-.01em; }
+.br-hero-sub { color:#a39586; font-size:.8rem; margin:2px 0 0; }
 .br-filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
-.br-chip { padding:5px 14px; border-radius:20px; border:1px solid #30363d; color:#8b949e; background:transparent; font-size:.75rem; font-weight:600; cursor:pointer; transition:all .12s; }
-.br-chip:hover { color:#c9d1d9; border-color:#58a6ff; }
-.br-chip.active { color:#58a6ff; border-color:#58a6ff; background:rgba(88,166,255,.1); }
+.br-chip { padding:5px 14px; border-radius:20px; border:1px solid #373330; color:#a39586; background:transparent; font-size:.75rem; font-weight:600; cursor:pointer; transition:all .12s; }
+.br-chip:hover { color:#d7d1cb; border-color:#f5b940; }
+.br-chip.active { color:#f5b940; border-color:#f5b940; background:rgba(245,185,64,.1); }
 .br-chip.active.purple { color:#bc8cff; border-color:#bc8cff; background:rgba(188,140,255,.1); }
 .br-table { width:100%; border-collapse:collapse; font-size:.82rem; }
-.br-table th { text-align:left; padding:10px 12px; color:#8b949e; font-weight:600; font-size:.7rem; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #21262d; cursor:pointer; user-select:none; white-space:nowrap; }
-.br-table th:hover { color:#c9d1d9; }
-.br-table td { padding:10px 12px; border-bottom:1px solid #161b22; color:#c9d1d9; }
-.br-table tr:hover { background:rgba(88,166,255,.04); }
-.br-name { font-weight:600; color:#e6edf3; }
-.br-sub { font-size:.7rem; color:#6e7681; margin-top:2px; }
+.br-table th { text-align:left; padding:10px 12px; color:#a39586; font-weight:600; font-size:.7rem; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #272522; cursor:pointer; user-select:none; white-space:nowrap; }
+.br-table th:hover { color:#d7d1cb; }
+.br-table td { padding:10px 12px; border-bottom:1px solid #1c1a18; color:#d7d1cb; }
+.br-table tr:hover { background:rgba(245,185,64,.04); }
+.br-name { font-weight:600; color:#efedea; }
+.br-sub { font-size:.7rem; color:#80786f; margin-top:2px; }
 .br-tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.65rem; font-weight:700; margin-left:6px; }
-.br-bar { display:inline-block; width:60px; height:6px; border-radius:3px; background:#21262d; vertical-align:middle; overflow:hidden; margin-right:6px; }
-.br-bar-fill { height:100%; background:linear-gradient(90deg,#3fb950,#1f6feb); transition:width .4s; }
-.br-listed { color:#58a6ff; background:rgba(88,166,255,.1); }
-.br-unlisted { color:#d29922; background:rgba(210,153,34,.1); }
+.br-bar { display:inline-block; width:60px; height:6px; border-radius:3px; background:#272522; vertical-align:middle; overflow:hidden; margin-right:6px; }
+.br-bar-fill { height:100%; background:linear-gradient(90deg,#dbcf94,#b77a10); transition:width .4s; }
+.br-listed { color:#f5b940; background:rgba(245,185,64,.1); }
+.br-unlisted { color:#d26822; background:rgba(210,104,34,.1); }
 `
 
 type SortKey = 'predicted_afl_sc' | 'breakout_probability' | 'sl_fantasy_avg' | 'age' | 'rating' | 'potential'
@@ -109,28 +109,28 @@ export function BreakoutRadarPage() {
       </div>
 
       <div className="br-filters">
-        <span style={{ fontSize: '.7rem', color: '#6e7681', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>Comp:</span>
+        <span style={{ fontSize: '.7rem', color: '#80786f', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>Comp:</span>
         {['', 'vfl', 'sanfl', 'wafl', 'nab'].map(c => (
           <button key={c || 'all'} className={`br-chip${comp === c ? ' active' : ''}`} onClick={() => setComp(c)}>
             {c ? c.toUpperCase() : 'All'}
           </button>
         ))}
-        <span style={{ width: 1, height: 20, background: '#30363d', margin: '0 6px' }}></span>
-        <span style={{ fontSize: '.7rem', color: '#6e7681', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>Status:</span>
+        <span style={{ width: 1, height: 20, background: '#373330', margin: '0 6px' }}></span>
+        <span style={{ fontSize: '.7rem', color: '#80786f', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>Status:</span>
         <button className={`br-chip${listed === 'any' ? ' active' : ''}`} onClick={() => setListed('any')}>Any</button>
         <button className={`br-chip${listed === 'afl_only' ? ' active' : ''}`} onClick={() => setListed('afl_only')}>AFL-listed</button>
         <button className={`br-chip${listed === 'unlisted' ? ' active purple' : ''}`} onClick={() => setListed('unlisted')}>Unlisted / Draftable</button>
-        <span style={{ width: 1, height: 20, background: '#30363d', margin: '0 6px' }}></span>
-        <label style={{ fontSize: '.72rem', color: '#c9d1d9', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ width: 1, height: 20, background: '#373330', margin: '0 6px' }}></span>
+        <label style={{ fontSize: '.72rem', color: '#d7d1cb', display: 'flex', alignItems: 'center', gap: 6 }}>
           Min breakout prob:
           <input type="range" min={0} max={90} step={10} value={minProb}
             onChange={e => setMinProb(Number(e.target.value))} style={{ width: 120 }} />
-          <b style={{ minWidth: 30, color: minProb > 0 ? '#3fb950' : '#6e7681' }}>{minProb}%</b>
+          <b style={{ minWidth: 30, color: minProb > 0 ? '#dbcf94' : '#80786f' }}>{minProb}%</b>
         </label>
       </div>
 
       {!sorted.length ? (
-        <p style={{ color: '#6e7681', padding: 40, textAlign: 'center' }}>
+        <p style={{ color: '#80786f', padding: 40, textAlign: 'center' }}>
           No candidates match these filters yet.
         </p>
       ) : (
@@ -143,7 +143,7 @@ export function BreakoutRadarPage() {
                 <th>Status</th>
                 <th>Tag</th>
                 <th onClick={() => toggleSort('sl_fantasy_avg')}>SL Fantasy</th>
-                <th onClick={() => toggleSort('predicted_afl_sc')} style={{ color: '#3fb950' }}>Pred AFL SC ▼</th>
+                <th onClick={() => toggleSort('predicted_afl_sc')} style={{ color: '#dbcf94' }}>Pred AFL SC ▼</th>
                 <th onClick={() => toggleSort('breakout_probability')}>Breakout %</th>
                 <th onClick={() => toggleSort('rating')}>Rating</th>
                 <th onClick={() => toggleSort('potential')}>Pot.</th>
@@ -156,7 +156,7 @@ export function BreakoutRadarPage() {
                     <div className="br-name">{p.name}</div>
                     <div className="br-sub">
                       {p.comp} · {p.sl_team || '—'} · {p.matches} matches
-                      {p.afl_team && <> · <b style={{ color: '#58a6ff' }}>{p.afl_team}</b></>}
+                      {p.afl_team && <> · <b style={{ color: '#f5b940' }}>{p.afl_team}</b></>}
                     </div>
                   </td>
                   <td>{p.age ?? '—'}</td>
@@ -165,9 +165,9 @@ export function BreakoutRadarPage() {
                       {p.is_afl_listed ? 'LISTED' : 'UNLISTED'}
                     </span>
                   </td>
-                  <td style={{ fontSize: '.72rem', color: '#8b949e' }}>{p.scouting_tag || '—'}</td>
+                  <td style={{ fontSize: '.72rem', color: '#a39586' }}>{p.scouting_tag || '—'}</td>
                   <td>{p.sl_fantasy_avg}</td>
-                  <td style={{ fontWeight: 700, color: '#3fb950' }}>{p.predicted_afl_sc}</td>
+                  <td style={{ fontWeight: 700, color: '#dbcf94' }}>{p.predicted_afl_sc}</td>
                   <td>
                     <span className="br-bar">
                       <span className="br-bar-fill" style={{ width: `${p.breakout_probability}%` }} />

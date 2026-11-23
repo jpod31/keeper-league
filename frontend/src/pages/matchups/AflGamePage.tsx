@@ -44,41 +44,41 @@ export function AflGamePage() {
     <div>
       <style>{`
         .ag-wrap { max-width: 1100px; margin: 0 auto; padding: .5rem; }
-        .ag-back { color: #58a6ff; font-size: .75rem; text-decoration: none; display: inline-block; margin-bottom: .5rem; }
+        .ag-back { color: #f5b940; font-size: .75rem; text-decoration: none; display: inline-block; margin-bottom: .5rem; }
         .ag-back:hover { text-decoration: underline; }
-        .ag-hero { display: flex; align-items: center; justify-content: space-between; background: var(--kl-bg-card); border: 1px solid #30363d; border-radius: 10px; padding: 12px 16px; margin-bottom: .75rem; }
+        .ag-hero { display: flex; align-items: center; justify-content: space-between; background: var(--kl-bg-card); border: 1px solid #373330; border-radius: 10px; padding: 12px 16px; margin-bottom: .75rem; }
         .ag-hero-team { text-align: center; flex: 1; }
         .ag-hero-logo { width: 36px; height: 36px; margin-bottom: 4px; }
-        .ag-hero-name { font-size: .8rem; font-weight: 700; color: #e6edf3; }
-        .ag-hero-score { font-size: 1.8rem; font-weight: 800; color: #e6edf3; }
+        .ag-hero-name { font-size: .8rem; font-weight: 700; color: #efedea; }
+        .ag-hero-score { font-size: 1.8rem; font-weight: 800; color: #efedea; }
         .ag-hero-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .ag-hero-vs { color: #484f58; font-size: .7rem; }
+        .ag-hero-vs { color: #56504a; font-size: .7rem; }
         .ag-badge { font-size: .55rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
-        .ag-badge-live { background: rgba(86,211,100,.15); color: #56d364; border: 1px solid rgba(86,211,100,.3); }
-        .ag-badge-ft { background: rgba(139,92,246,.15); color: #a855f7; }
-        .ag-badge-sched { background: rgba(72,79,88,.3); color: #8b949e; }
-        .ag-toggle { display: flex; margin-bottom: .5rem; border-radius: 8px; overflow: hidden; border: 1px solid #30363d; }
-        .ag-toggle-btn { flex: 1; padding: 8px; text-align: center; font-size: .75rem; font-weight: 600; background: transparent; color: #8b949e; border: none; cursor: pointer; transition: all .15s; }
-        .ag-toggle-btn.active { background: #21262d; color: #e6edf3; }
-        .ag-toggle-btn:hover:not(.active) { color: #c9d1d9; }
+        .ag-badge-live { background: rgba(226,212,142,.15); color: #e2d48e; border: 1px solid rgba(226,212,142,.3); }
+        .ag-badge-ft { background: rgba(244,183,60,.15); color: #a855f7; }
+        .ag-badge-sched { background: rgba(86,80,74,.3); color: #a39586; }
+        .ag-toggle { display: flex; margin-bottom: .5rem; border-radius: 8px; overflow: hidden; border: 1px solid #373330; }
+        .ag-toggle-btn { flex: 1; padding: 8px; text-align: center; font-size: .75rem; font-weight: 600; background: transparent; color: #a39586; border: none; cursor: pointer; transition: all .15s; }
+        .ag-toggle-btn.active { background: #272522; color: #efedea; }
+        .ag-toggle-btn:hover:not(.active) { color: #d7d1cb; }
         .ag-table { width: 100%; border-collapse: collapse; font-size: .75rem; }
-        .ag-table th { text-align: center; padding: 8px 6px; color: #8b949e; font-weight: 600; border-bottom: 1px solid #30363d; white-space: nowrap; background: #0d1117; }
+        .ag-table th { text-align: center; padding: 8px 6px; color: #a39586; font-weight: 600; border-bottom: 1px solid #373330; white-space: nowrap; background: #121110; }
         .ag-sortable { cursor: pointer; user-select: none; }
-        .ag-sortable:hover { color: #58a6ff !important; }
-        .ag-table td { text-align: center; padding: 6px 5px; border-bottom: 1px solid #161b22; color: #c9d1d9; white-space: nowrap; }
+        .ag-sortable:hover { color: #f5b940 !important; }
+        .ag-table td { text-align: center; padding: 6px 5px; border-bottom: 1px solid #1c1a18; color: #d7d1cb; white-space: nowrap; }
         .ag-table th:first-child, .ag-table td:first-child { text-align: left; padding-left: 10px; }
-        .ag-player-name { font-weight: 600; color: #e6edf3; }
-        .ag-jumper { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; font-size: .6rem; font-weight: 700; color: #8b949e; background: #21262d; border: 1px solid #30363d; border-radius: 4px; margin-right: 6px; vertical-align: middle; }
+        .ag-player-name { font-weight: 600; color: #efedea; }
+        .ag-jumper { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; font-size: .6rem; font-weight: 700; color: #a39586; background: #272522; border: 1px solid #373330; border-radius: 4px; margin-right: 6px; vertical-align: middle; }
         .ag-pos { font-size: .6rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; display: inline-block; min-width: 30px; text-align: center; }
-        .ag-pos-fwd { background: rgba(56,189,248,.15); color: #38bdf8; }
-        .ag-pos-mid { background: rgba(251,191,36,.15); color: #fbbf24; }
-        .ag-pos-def { background: rgba(52,211,153,.15); color: #34d399; }
+        .ag-pos-fwd { background: rgba(243,172,30,.15); color: #f3ac1e; }
+        .ag-pos-mid { background: rgba(246,123,41,.15); color: #f67b29; }
+        .ag-pos-def { background: rgba(228,213,139,.15); color: #e4d58b; }
         .ag-pos-ruc { background: rgba(244,114,182,.15); color: #f472b6; }
-        .ag-sc { font-weight: 700; color: #e6edf3; font-size: .8rem; }
-        .ag-sc-live { color: #56d364; }
-        .ag-live-dot { font-size: .3rem; color: #56d364; margin-left: 2px; animation: agPulse 2s infinite; }
+        .ag-sc { font-weight: 700; color: #efedea; font-size: .8rem; }
+        .ag-sc-live { color: #e2d48e; }
+        .ag-live-dot { font-size: .3rem; color: #e2d48e; margin-left: 2px; animation: agPulse 2s infinite; }
         @keyframes agPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .ag-table-wrap { border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+        .ag-table-wrap { border: 1px solid #373330; border-radius: 8px; overflow: hidden; }
         @media (max-width: 767.98px) { .ag-wrap { padding: .25rem; } .ag-hero-score { font-size: 1.4rem; } .ag-hero-logo { width: 28px; height: 28px; } .ag-table { font-size: .65rem; } .ag-table td, .ag-table th { padding: 5px 3px; } .ag-pos { font-size: .55rem; padding: 1px 4px; min-width: 24px; } }
       `}</style>
 
@@ -121,20 +121,20 @@ export function AflGamePage() {
               <tr>
                 <th>Player</th>
                 <th>Pos</th>
-                <th className="ag-sortable" onClick={() => toggleSort('sc')} style={sortCol === 'sc' ? { color: '#58a6ff' } : undefined}>SC</th>
-                <th className="ag-sortable" onClick={() => toggleSort('kicks')} style={sortCol === 'kicks' ? { color: '#58a6ff' } : undefined}>K</th>
-                <th className="ag-sortable" onClick={() => toggleSort('handballs')} style={sortCol === 'handballs' ? { color: '#58a6ff' } : undefined}>HB</th>
-                <th className="ag-sortable" onClick={() => toggleSort('disposals')} style={sortCol === 'disposals' ? { color: '#58a6ff' } : undefined}>D</th>
-                <th className="ag-sortable" onClick={() => toggleSort('marks')} style={sortCol === 'marks' ? { color: '#58a6ff' } : undefined}>M</th>
-                <th className="ag-sortable" onClick={() => toggleSort('tackles')} style={sortCol === 'tackles' ? { color: '#58a6ff' } : undefined}>T</th>
-                <th className="ag-sortable" onClick={() => toggleSort('goals')} style={sortCol === 'goals' ? { color: '#58a6ff' } : undefined}>G</th>
-                <th className="ag-sortable" onClick={() => toggleSort('behinds')} style={sortCol === 'behinds' ? { color: '#58a6ff' } : undefined}>B</th>
-                <th className="ag-sortable" onClick={() => toggleSort('hitouts')} style={sortCol === 'hitouts' ? { color: '#58a6ff' } : undefined}>HO</th>
+                <th className="ag-sortable" onClick={() => toggleSort('sc')} style={sortCol === 'sc' ? { color: '#f5b940' } : undefined}>SC</th>
+                <th className="ag-sortable" onClick={() => toggleSort('kicks')} style={sortCol === 'kicks' ? { color: '#f5b940' } : undefined}>K</th>
+                <th className="ag-sortable" onClick={() => toggleSort('handballs')} style={sortCol === 'handballs' ? { color: '#f5b940' } : undefined}>HB</th>
+                <th className="ag-sortable" onClick={() => toggleSort('disposals')} style={sortCol === 'disposals' ? { color: '#f5b940' } : undefined}>D</th>
+                <th className="ag-sortable" onClick={() => toggleSort('marks')} style={sortCol === 'marks' ? { color: '#f5b940' } : undefined}>M</th>
+                <th className="ag-sortable" onClick={() => toggleSort('tackles')} style={sortCol === 'tackles' ? { color: '#f5b940' } : undefined}>T</th>
+                <th className="ag-sortable" onClick={() => toggleSort('goals')} style={sortCol === 'goals' ? { color: '#f5b940' } : undefined}>G</th>
+                <th className="ag-sortable" onClick={() => toggleSort('behinds')} style={sortCol === 'behinds' ? { color: '#f5b940' } : undefined}>B</th>
+                <th className="ag-sortable" onClick={() => toggleSort('hitouts')} style={sortCol === 'hitouts' ? { color: '#f5b940' } : undefined}>HO</th>
               </tr>
             </thead>
             <tbody>
               {sorted.length === 0 && (
-                <tr><td colSpan={11} style={{ color: '#484f58', textAlign: 'center', padding: '1rem' }}>No scores yet</td></tr>
+                <tr><td colSpan={11} style={{ color: '#56504a', textAlign: 'center', padding: '1rem' }}>No scores yet</td></tr>
               )}
               {sorted.map((p, i) => {
                 const posKey = (p.position || '').split('/')[0].substring(0, 3).toUpperCase()

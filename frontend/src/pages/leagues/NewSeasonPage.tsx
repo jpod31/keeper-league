@@ -89,7 +89,7 @@ const CSS = `
 ${CREST_CSS}
 .ns { width: 100%; min-width: 0; --ns-gap: 20px; }
 .ns-hero { position: relative; overflow: hidden; border-radius: 18px; border: 1px solid var(--kl-border);
-  background: radial-gradient(120% 140% at 0% 0%, rgba(88,166,255,.10), transparent 55%), var(--kl-bg-card);
+  background: radial-gradient(120% 140% at 0% 0%, rgba(245,185,64,.10), transparent 55%), var(--kl-bg-card);
   padding: 22px 24px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: center; margin-bottom: var(--ns-gap); }
 @media (max-width: 991px) { .ns-hero { grid-template-columns: 1fr; padding: 18px; } }
 .ns-kicker { font-size: .84rem; color: var(--kl-text-secondary); margin: 0 0 6px; }
@@ -105,9 +105,9 @@ ${CREST_CSS}
 .ns-lad { background: var(--kl-bg-body); border: 1px solid var(--kl-border); border-radius: 12px; padding: 10px 8px 9px;
   display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; min-width: 0;
   animation: ns-in .5s var(--kl-ease-out) both; animation-delay: calc(var(--i) * 70ms); }
-.ns-lad.prem { border-color: rgba(227,179,65,.55); background: linear-gradient(180deg, rgba(227,179,65,.10), var(--kl-bg-body) 70%); }
+.ns-lad.prem { border-color: rgba(227,130,65,.55); background: linear-gradient(180deg, rgba(227,130,65,.10), var(--kl-bg-body) 70%); }
 .ns-lad-pos { font-size: .74rem; font-weight: 700; color: var(--kl-text-muted); font-variant-numeric: tabular-nums; }
-.ns-lad.prem .ns-lad-pos { color: #e3b341; }
+.ns-lad.prem .ns-lad-pos { color: #e38241; }
 .ns-lad-name { font-size: .8rem; font-weight: 650; color: var(--kl-text-primary); width: 100%; line-height: 1.25; min-height: 2.5em;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .ns-lad-rec { font-size: .72rem; color: var(--kl-text-muted); font-variant-numeric: tabular-nums; }
@@ -121,7 +121,7 @@ ${CREST_CSS}
 .ns-step-h { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
 .ns-step-n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .82rem; font-weight: 800;
   background: var(--kl-bg-elevated); color: var(--kl-text-primary); flex: none; font-variant-numeric: tabular-nums; }
-.ns-step-n.done { background: rgba(63,185,80,.16); color: #56d364; }
+.ns-step-n.done { background: rgba(219,207,148,.16); color: #e2d48e; }
 .ns-step-h h2 { margin: 0; font-size: 1.12rem; font-weight: 700; color: var(--kl-text-heading); }
 .ns-step-h span.sub { font-size: .82rem; color: var(--kl-text-secondary); margin-left: auto; }
 
@@ -144,45 +144,45 @@ ${CREST_CSS}
 .ns-chip b { font-variant-numeric: tabular-nums; }
 .ns-act { flex: none; border-radius: 8px; padding: 6px 12px; font-size: .8rem; font-weight: 650; text-decoration: none; white-space: nowrap;
   border: 1px solid var(--kl-border-light); background: var(--kl-bg-elevated); color: var(--kl-text-heading); }
-.ns-act:hover { border-color: #58a6ff; color: #fff; }
+.ns-act:hover { border-color: #f5b940; color: #fff; }
 .ns-act.block { border-color: rgba(248,81,73,.5); background: rgba(248,81,73,.1); color: #ffa198; }
 .ns-act.block:hover { background: rgba(248,81,73,.18); }
-.ns-act:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
+.ns-act:focus-visible { outline: 2px solid #f5b940; outline-offset: 2px; }
 .ns-done-line { display: flex; gap: 8px; align-items: center; padding: 11px 18px; border-top: 1px solid var(--kl-border);
   font-size: .82rem; color: var(--kl-text-secondary); }
-.ns-done-line i { color: #3fb950; }
+.ns-done-line i { color: #dbcf94; }
 
 .ns-row { display: flex; align-items: center; gap: 16px; padding: 12px 18px; border-top: 1px solid var(--kl-border); position: relative; min-height: 60px; }
 .ns-panel-h + .ns-row { border-top: 0; margin-top: 6px; }
-.ns-row.changed { box-shadow: inset 3px 0 0 #d29922; background: rgba(210,153,34,.04); }
+.ns-row.changed { box-shadow: inset 3px 0 0 #d26822; background: rgba(210,104,34,.04); }
 .ns-row.off { opacity: .42; }
 .ns-row-l { flex: 1 1 200px; min-width: 0; }
 .ns-row-t { font-size: .88rem; font-weight: 600; color: var(--kl-text-primary); }
 .ns-row-p { font-size: .77rem; color: var(--kl-text-secondary); margin-top: 1px; }
-.ns-row-was { font-size: .74rem; color: #e3b341; margin-top: 2px; }
+.ns-row-was { font-size: .74rem; color: #e38241; margin-top: 2px; }
 @media (max-width: 575px) { .ns-row { flex-wrap: wrap; row-gap: 10px; } .ns-row .ns-seg { margin-left: auto; } }
 
 .ns-num { display: inline-flex; align-items: center; border: 1px solid var(--kl-border); border-radius: 9px; background: var(--kl-bg-body); }
 .ns-num button { border: 0; background: transparent; color: var(--kl-text-secondary); width: 30px; height: 34px; font-size: 1rem; }
 .ns-num button:hover:not(:disabled) { color: var(--kl-text-heading); }
 .ns-num button:disabled { opacity: .3; }
-.ns-num button:focus-visible, .ns-num input:focus-visible { outline: 2px solid #58a6ff; outline-offset: -2px; border-radius: 8px; }
+.ns-num button:focus-visible, .ns-num input:focus-visible { outline: 2px solid #f5b940; outline-offset: -2px; border-radius: 8px; }
 .ns-num input { width: 40px; border: 0; background: transparent; color: var(--kl-text-heading); text-align: center; font-size: .92rem;
   font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
 .ns-num input::-webkit-inner-spin-button, .ns-num input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .ns-seg { display: inline-flex; background: var(--kl-bg-body); border: 1px solid var(--kl-border); border-radius: 9px; padding: 3px; }
 .ns-seg button { border: 0; background: transparent; color: var(--kl-text-secondary); font-size: .8rem; font-weight: 650; padding: 6px 12px; border-radius: 7px; white-space: nowrap; }
-.ns-seg button[aria-pressed="true"] { background: rgba(88,166,255,.16); color: #58a6ff; }
-.ns-seg button:focus-visible { outline: 2px solid #58a6ff; }
+.ns-seg button[aria-pressed="true"] { background: rgba(245,185,64,.16); color: #f5b940; }
+.ns-seg button:focus-visible { outline: 2px solid #f5b940; }
 .ns-switch { position: relative; width: 44px; height: 26px; flex: none; }
 .ns-switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
 .ns-switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--kl-bg-elevated); border: 1px solid var(--kl-border-light);
   transition: background var(--kl-dur-base) var(--kl-ease); pointer-events: none; }
 .ns-switch span::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
   background: var(--kl-text-muted); transition: transform var(--kl-dur-base) var(--kl-ease-out), background var(--kl-dur-base); }
-.ns-switch input:checked + span { background: rgba(63,185,80,.25); border-color: #3fb950; }
-.ns-switch input:checked + span::after { transform: translateX(18px); background: #56d364; }
-.ns-switch input:focus-visible + span { outline: 2px solid #58a6ff; outline-offset: 2px; }
+.ns-switch input:checked + span { background: rgba(219,207,148,.25); border-color: #dbcf94; }
+.ns-switch input:checked + span::after { transform: translateX(18px); background: #e2d48e; }
+.ns-switch input:focus-visible + span { outline: 2px solid #f5b940; outline-offset: 2px; }
 
 .ns-draw-wrap { padding: 4px 18px 16px; }
 .ns-draw-p { font-size: .8rem; color: var(--kl-text-secondary); margin: 0 0 10px; }
@@ -194,33 +194,33 @@ ${CREST_CSS}
 .ns-draw-team small { color: var(--kl-text-muted); width: 26px; font-size: .74rem; }
 .ns-cell { display: inline-grid; place-items: center; width: 30px; height: 26px; border-radius: 7px; font-size: .82rem; font-weight: 650;
   background: var(--kl-bg-body); color: var(--kl-text-muted); }
-.ns-cell.more { color: #79c0ff; box-shadow: inset 0 0 0 1px rgba(88,166,255,.35); }
+.ns-cell.more { color: #f6c35c; box-shadow: inset 0 0 0 1px rgba(245,185,64,.35); }
 .ns-cell.self { background: transparent; color: var(--kl-text-faint); }
 .ns-pill { display: inline-block; font-size: .74rem; font-weight: 650; border-radius: 999px; padding: 2px 9px; }
-.ns-pill.hard { background: rgba(240,136,62,.12); color: #ffa657; }
-.ns-pill.easy { background: rgba(63,185,80,.12); color: #56d364; }
+.ns-pill.hard { background: rgba(240,118,62,.12); color: #ff9557; }
+.ns-pill.easy { background: rgba(219,207,148,.12); color: #e2d48e; }
 .ns-pill.even { background: var(--kl-bg-elevated); color: var(--kl-text-secondary); }
 .ns-scroll { overflow-x: auto; }
 
 .ns-aside { position: sticky; top: 84px; }
 @media (max-width: 1099px) { .ns-aside { position: static; } }
 .ns-glance { padding: 6px 18px 4px; }
-.ns-g { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(40,50,74,.7); font-size: .82rem; }
+.ns-g { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(57,54,50,.7); font-size: .82rem; }
 .ns-g:first-child { border-top: 0; }
 .ns-g dt { color: var(--kl-text-secondary); font-weight: 500; }
 .ns-g dd { margin: 0; text-align: right; color: var(--kl-text-primary); font-weight: 600; }
 .ns-g dd s { display: block; font-size: .72rem; color: var(--kl-text-muted); font-weight: 500; }
-.ns-g.changed dd { color: #e3b341; }
+.ns-g.changed dd { color: #e38241; }
 .ns-go { padding: 14px 18px 18px; border-top: 1px solid var(--kl-border); }
 .ns-go-btn { width: 100%; border: 0; border-radius: 11px; padding: 12px 14px; font-size: .95rem; font-weight: 750;
-  background: #3fb950; color: #04140a; display: flex; justify-content: center; align-items: center; gap: 8px;
+  background: #dbcf94; color: #100e06; display: flex; justify-content: center; align-items: center; gap: 8px;
   transition: filter var(--kl-dur-fast); }
 .ns-go-btn:hover:not(:disabled) { filter: brightness(1.08); }
 .ns-go-btn:disabled { background: var(--kl-bg-elevated); color: var(--kl-text-muted); }
-.ns-go-btn:focus-visible { outline: 2px solid #56d364; outline-offset: 3px; }
+.ns-go-btn:focus-visible { outline: 2px solid #e2d48e; outline-offset: 3px; }
 .ns-go-note { font-size: .78rem; color: var(--kl-text-secondary); margin-top: 8px; text-align: center; }
 .ns-go-err { font-size: .8rem; color: #ff7b72; margin-bottom: 10px; }
-.ns-confirm { background: rgba(63,185,80,.07); border: 1px solid rgba(63,185,80,.3); border-radius: 11px; padding: 12px; }
+.ns-confirm { background: rgba(219,207,148,.07); border: 1px solid rgba(219,207,148,.3); border-radius: 11px; padding: 12px; }
 .ns-confirm p { font-size: .84rem; color: var(--kl-text-primary); margin: 0 0 10px; }
 .ns-confirm-row { display: flex; gap: 8px; }
 .ns-confirm-row .ns-go-btn { flex: 1; }
@@ -238,7 +238,7 @@ ${CREST_CSS}
 .ns-match span.t em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ns-match span.v { font-size: .74rem; color: var(--kl-text-muted); }
 .ns-btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 9px 16px; font-size: .86rem; font-weight: 700; text-decoration: none; }
-.ns-btn.primary { background: #3fb950; color: #04140a; }
+.ns-btn.primary { background: #dbcf94; color: #100e06; }
 .ns-btn.ghost { border: 1px solid var(--kl-border-light); color: var(--kl-text-primary); }
 `
 
@@ -414,7 +414,7 @@ export function NewSeasonPage() {
     ? { color: '#f85149', text: `${blocks.length} thing${blocks.length !== 1 ? 's' : ''} to clear before ${view.to_year} can start.` }
     : view.errors.length
       ? { color: '#f85149', text: 'A setting needs fixing before you start.' }
-      : { color: '#3fb950', text: `Ready to start. ${premier ? `${premier.name} are the ${view.from_year} premiers.` : ''}` }
+      : { color: '#dbcf94', text: `Ready to start. ${premier ? `${premier.name} are the ${view.from_year} premiers.` : ''}` }
 
   const row = (k: keyof Settings, title: string, help: string, control: React.ReactNode, off = false) => (
     <div className={`ns-row${isChanged(k) ? ' changed' : ''}${off ? ' off' : ''}`} key={k}>
@@ -430,7 +430,7 @@ export function NewSeasonPage() {
   const checkRow = (c: Check) => (
     <div className="ns-check" key={c.key}>
       <i className={`bi ${c.level === 'block' ? 'bi-x-circle-fill' : 'bi-exclamation-circle-fill'}`}
-        style={{ color: c.level === 'block' ? '#f85149' : '#d29922' }}></i>
+        style={{ color: c.level === 'block' ? '#f85149' : '#d26822' }}></i>
       <div className="ns-check-b">
         <div className="ns-check-t">{c.label}</div>
         {c.detail && <div className="ns-check-d">{c.detail}</div>}

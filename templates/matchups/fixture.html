@@ -7,7 +7,7 @@
 <style>
   /* ── Round strip ── */
   .rnd-strip {
-    display:flex; align-items:stretch; background:#0d1117; border:1px solid #21262d;
+    display:flex; align-items:stretch; background:#121110; border:1px solid #272522;
     border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch;
     scrollbar-width:none; margin-bottom:20px;
   }
@@ -15,83 +15,83 @@
   .rnd-item {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     flex:1 1 0; min-width:44px; padding:12px 2px 10px; text-decoration:none;
-    border-right:1px solid #161b22; transition:background .12s; position:relative; cursor:pointer;
+    border-right:1px solid #1c1a18; transition:background .12s; position:relative; cursor:pointer;
   }
   .rnd-item:last-child { border-right:none; }
-  .rnd-item:hover { background:#161b22; }
-  .rnd-item.active { background:#161b22; }
+  .rnd-item:hover { background:#1c1a18; }
+  .rnd-item.active { background:#1c1a18; }
   .rnd-item.active::after {
     content:''; position:absolute; bottom:0; left:20%; right:20%;
-    height:2px; background:#58a6ff; border-radius:1px 1px 0 0;
-    box-shadow:0 0 6px rgba(88,166,255,.5);
+    height:2px; background:#f5b940; border-radius:1px 1px 0 0;
+    box-shadow:0 0 6px rgba(245,185,64,.5);
   }
   .rnd-num {
-    font-size:.78rem; font-weight:600; color:#484f58; line-height:1;
+    font-size:.78rem; font-weight:600; color:#56504a; line-height:1;
     transition:color .12s;
   }
-  .rnd-item:hover .rnd-num { color:#8b949e; }
-  .rnd-item.active .rnd-num { color:#e6edf3; }
-  .rnd-item.rnd-done .rnd-num { color:#8b949e; }
-  .rnd-item.rnd-live .rnd-num { color:#3fb950; }
+  .rnd-item:hover .rnd-num { color:#a39586; }
+  .rnd-item.active .rnd-num { color:#efedea; }
+  .rnd-item.rnd-done .rnd-num { color:#a39586; }
+  .rnd-item.rnd-live .rnd-num { color:#dbcf94; }
   .rnd-dot {
     width:5px; height:5px; border-radius:50%; margin-top:4px;
   }
-  .rnd-dot-done { background:#484f58; }
-  .rnd-dot-live { background:#3fb950; animation:livePulse 1.8s ease-in-out infinite; }
-  .rnd-dot-part { background:#9e6a03; }
+  .rnd-dot-done { background:#56504a; }
+  .rnd-dot-live { background:#dbcf94; animation:livePulse 1.8s ease-in-out infinite; }
+  .rnd-dot-part { background:#9b4206; }
   .rnd-dot-none { background:transparent; }
   @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(1.4);} }
 
   /* ── Round header ── */
   .round-hdr {
     display:flex; justify-content:space-between; align-items:center;
-    margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #21262d;
+    margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #272522;
   }
   .round-hdr-left { display:flex; align-items:baseline; gap:10px; }
   .round-hdr h3 {
-    font-size:1.05rem; font-weight:700; color:#e6edf3; margin:0;
+    font-size:1.05rem; font-weight:700; color:#efedea; margin:0;
     letter-spacing:-.01em;
   }
   .round-hdr .rh-badge {
     font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px;
     letter-spacing:.3px; text-transform:uppercase;
   }
-  .rh-complete { background:rgba(46,160,67,.1); color:#2ea043; }
-  .rh-live { background:rgba(63,185,80,.12); color:#3fb950; }
-  .rh-progress { background:rgba(158,106,3,.1); color:#d29922; }
+  .rh-complete { background:rgba(151,115,43,.1); color:#97732b; }
+  .rh-live { background:rgba(219,207,148,.12); color:#dbcf94; }
+  .rh-progress { background:rgba(155,66,6,.1); color:#d26822; }
   .rh-actions { display:flex; gap:6px; align-items:center; }
   .rh-btn {
     font-size:.7rem; padding:4px 10px; border-radius:6px;
-    border:1px solid #30363d; background:transparent; color:#8b949e;
+    border:1px solid #373330; background:transparent; color:#a39586;
     text-decoration:none; transition:all .12s; cursor:pointer;
   }
-  .rh-btn:hover { border-color:#484f58; color:#c9d1d9; }
+  .rh-btn:hover { border-color:#56504a; color:#d7d1cb; }
   .rh-btn-primary {
-    border-color:rgba(88,166,255,.3); color:#58a6ff;
+    border-color:rgba(245,185,64,.3); color:#f5b940;
   }
-  .rh-btn-primary:hover { border-color:#58a6ff; background:rgba(88,166,255,.06); }
+  .rh-btn-primary:hover { border-color:#f5b940; background:rgba(245,185,64,.06); }
 
   /* ── Matchup list ── */
   .mx-list {
-    background:#0d1117; border:1px solid #21262d; border-radius:10px;
+    background:#121110; border:1px solid #272522; border-radius:10px;
     overflow:hidden;
   }
   .mx-row {
     display:grid; grid-template-columns:1fr auto 1fr auto;
     align-items:center; padding:14px 20px; gap:0;
-    border-bottom:1px solid #161b22; transition:background .1s;
+    border-bottom:1px solid #1c1a18; transition:background .1s;
   }
   .mx-row:last-child { border-bottom:none; }
-  .mx-row:hover { background:rgba(22,27,34,.6); }
+  .mx-row:hover { background:rgba(28,26,24,.6); }
 
   .mx-team {
-    font-size:.85rem; font-weight:500; color:#c9d1d9; text-decoration:none;
+    font-size:.85rem; font-weight:500; color:#d7d1cb; text-decoration:none;
     transition:color .1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  .mx-team:hover { color:#58a6ff; }
+  .mx-team:hover { color:#f5b940; }
   .mx-team-home { text-align:left; padding-right:12px; }
   .mx-team-away { text-align:right; padding-left:12px; }
-  .mx-team.won { color:#e6edf3; font-weight:700; }
+  .mx-team.won { color:#efedea; font-weight:700; }
 
   .mx-centre {
     display:flex; align-items:center; justify-content:center;
@@ -101,24 +101,24 @@
     font-size:.95rem; font-weight:700; min-width:34px; text-align:center;
     font-variant-numeric:tabular-nums;
   }
-  .mx-sc.won { color:#3fb950; }
-  .mx-sc.lost { color:#6e7681; }
-  .mx-sc.draw { color:#8b949e; }
-  .mx-sep { color:#21262d; margin:0 4px; font-weight:300; font-size:.8rem; }
+  .mx-sc.won { color:#dbcf94; }
+  .mx-sc.lost { color:#80786f; }
+  .mx-sc.draw { color:#a39586; }
+  .mx-sep { color:#272522; margin:0 4px; font-weight:300; font-size:.8rem; }
   .mx-vs {
-    font-size:.65rem; font-weight:700; color:#30363d; letter-spacing:1.5px;
+    font-size:.65rem; font-weight:700; color:#373330; letter-spacing:1.5px;
     text-transform:uppercase;
   }
   .mx-live-tag {
-    font-size:.55rem; font-weight:700; color:#3fb950; letter-spacing:.5px;
-    background:rgba(63,185,80,.08); padding:2px 6px; border-radius:3px;
+    font-size:.55rem; font-weight:700; color:#dbcf94; letter-spacing:.5px;
+    background:rgba(219,207,148,.08); padding:2px 6px; border-radius:3px;
   }
 
   .mx-arrow {
     display:flex; align-items:center; justify-content:center;
-    width:28px; color:#21262d; transition:color .1s;
+    width:28px; color:#272522; transition:color .1s;
   }
-  .mx-row:hover .mx-arrow { color:#484f58; }
+  .mx-row:hover .mx-arrow { color:#56504a; }
   .mx-arrow a { color:inherit; text-decoration:none; display:flex; }
 
   /* ── Win indicator bar ── */
@@ -129,12 +129,12 @@
 
   /* ── Empty state ── */
   .season-empty {
-    text-align:center; padding:60px 20px; color:#484f58;
+    text-align:center; padding:60px 20px; color:#56504a;
   }
-  .season-empty i { font-size:2rem; margin-bottom:12px; display:block; color:#30363d; }
-  .season-empty h4 { color:#8b949e; font-size:1rem; font-weight:600; margin-bottom:4px; }
+  .season-empty i { font-size:2rem; margin-bottom:12px; display:block; color:#373330; }
+  .season-empty h4 { color:#a39586; font-size:1rem; font-weight:600; margin-bottom:4px; }
   .season-empty p { font-size:.8rem; }
-  .season-empty a { color:#58a6ff; }
+  .season-empty a { color:#f5b940; }
 </style>
 
 {% set _st = scoring.label|lower %}

@@ -5,7 +5,7 @@ export function ConnectionBanner({ state }: { state: ConnectionState }) {
   const isReconnecting = state === 'connecting' || state === 'disconnected'
   const isError = state === 'error'
   const label = isError ? 'Connection lost — retrying…' : 'Reconnecting…'
-  const color = isError ? '#f85149' : '#d29922'
+  const color = isError ? '#f85149' : '#d26822'
 
   return (
     <div style={{
@@ -17,7 +17,7 @@ export function ConnectionBanner({ state }: { state: ConnectionState }) {
       justifyContent: 'center',
       gap: 8,
       padding: '6px 12px',
-      background: 'rgba(248, 81, 73, .08)',
+      background: 'rgba(248,81,73,.08)',
       borderBottom: `1px solid ${color}`,
       color,
       fontSize: '.75rem',

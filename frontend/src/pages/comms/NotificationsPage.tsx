@@ -70,7 +70,7 @@ export function NotificationsPage() {
         {notifs.length === 0 ? (
           <div className="card">
             <div className="card-body text-center py-5">
-              <i className="bi bi-chat-dots" style={{ fontSize: '2.5rem', color: '#30363d' }}></i>
+              <i className="bi bi-chat-dots" style={{ fontSize: '2.5rem', color: '#373330' }}></i>
               <p className="text-secondary mt-2 mb-0">No notifications yet</p>
             </div>
           </div>
@@ -82,23 +82,23 @@ export function NotificationsPage() {
                 href={n.link || '#'}
                 className="d-flex align-items-start gap-3 px-3 py-3"
                 style={{
-                  borderBottom: '1px solid #21262d',
+                  borderBottom: '1px solid #272522',
                   textDecoration: 'none',
-                  color: n.is_read ? '#8b949e' : '#c9d1d9',
-                  background: n.is_read ? undefined : 'rgba(31,111,235,.05)',
+                  color: n.is_read ? '#a39586' : '#d7d1cb',
+                  background: n.is_read ? undefined : 'rgba(183,122,16,.05)',
                 }}
               >
                 <i className={`bi ${iconForType(n.type)}`}
-                  style={{ fontSize: '1.1rem', color: '#58a6ff', marginTop: 2 }}></i>
+                  style={{ fontSize: '1.1rem', color: '#f5b940', marginTop: 2 }}></i>
                 <div className="flex-grow-1">
                   <div style={{ fontSize: '.85rem', fontWeight: n.is_read ? 400 : 600 }}>{n.title}</div>
                   {n.body && (
-                    <div style={{ fontSize: '.75rem', color: '#8b949e', marginTop: 2 }}>
+                    <div style={{ fontSize: '.75rem', color: '#a39586', marginTop: 2 }}>
                       {n.body.substring(0, 120)}
                     </div>
                   )}
                 </div>
-                <span style={{ fontSize: '.7rem', color: '#484f58', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '.7rem', color: '#56504a', whiteSpace: 'nowrap' }}>
                   {n.created_at}
                 </span>
               </a>

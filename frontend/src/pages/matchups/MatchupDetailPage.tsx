@@ -75,51 +75,51 @@ interface MatchupData {
 
 // CSS from templates/matchups/detail.html <style> block
 const MU_CSS = `
-.mu-hero { background:#0d1117; border:1px solid #21262d; border-radius:10px; padding:28px 24px; margin-bottom:20px; overflow:hidden; }
+.mu-hero { background:#121110; border:1px solid #272522; border-radius:10px; padding:28px 24px; margin-bottom:20px; overflow:hidden; }
 .mu-hero-grid { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; }
 .mu-hero-team { text-decoration:none; transition:color .1s; text-align:center; display:block; color:inherit; }
-.mu-hero-team:hover .mu-tname { color:#58a6ff; }
-.mu-tname { font-size:1rem; font-weight:700; color:#e6edf3; margin-bottom:4px; transition:color .1s; }
-.mu-tname.lost { color:#6e7681; }
+.mu-hero-team:hover .mu-tname { color:#f5b940; }
+.mu-tname { font-size:1rem; font-weight:700; color:#efedea; margin-bottom:4px; transition:color .1s; }
+.mu-tname.lost { color:#80786f; }
 .mu-tscore { font-size:2.2rem; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
-.mu-tscore.won { color:#3fb950; }
-.mu-tscore.lost { color:#484f58; }
-.mu-tscore.draw { color:#8b949e; }
-.mu-tscore.pending { color:#21262d; font-size:1.6rem; }
+.mu-tscore.won { color:#dbcf94; }
+.mu-tscore.lost { color:#56504a; }
+.mu-tscore.draw { color:#a39586; }
+.mu-tscore.pending { color:#272522; font-size:1.6rem; }
 .mu-centre { display:flex; flex-direction:column; align-items:center; gap:4px; }
 .mu-status { font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:4px; letter-spacing:.3px; text-transform:uppercase; }
-.mu-final { background:rgba(46,160,67,.08); color:#2ea043; }
-.mu-sched { color:#30363d; font-size:.7rem; font-weight:600; letter-spacing:1.5px; }
-.mu-margin { font-size:.65rem; color:#484f58; margin-top:2px; }
-.mu-actions { display:flex; gap:8px; margin-top:16px; justify-content:center; padding-top:16px; border-top:1px solid #161b22; flex-wrap:wrap; }
-.mu-act { font-size:.7rem; padding:5px 12px; border-radius:6px; border:1px solid #21262d; background:transparent; color:#8b949e; text-decoration:none; transition:all .12s; }
-.mu-act:hover { border-color:#30363d; color:#c9d1d9; }
-.bd-wrap { background:#0d1117; border:1px solid #21262d; border-radius:10px; overflow:hidden; margin-bottom:20px; }
-.bd-hdr { padding:10px 16px; border-bottom:1px solid #21262d; font-size:.75rem; font-weight:600; color:#8b949e; display:flex; justify-content:space-between; align-items:center; }
-.bd-row { display:grid; grid-template-columns:1fr auto 1fr; padding:8px 16px; border-bottom:1px solid #161b22; font-size:.8rem; align-items:center; }
+.mu-final { background:rgba(151,115,43,.08); color:#97732b; }
+.mu-sched { color:#373330; font-size:.7rem; font-weight:600; letter-spacing:1.5px; }
+.mu-margin { font-size:.65rem; color:#56504a; margin-top:2px; }
+.mu-actions { display:flex; gap:8px; margin-top:16px; justify-content:center; padding-top:16px; border-top:1px solid #1c1a18; flex-wrap:wrap; }
+.mu-act { font-size:.7rem; padding:5px 12px; border-radius:6px; border:1px solid #272522; background:transparent; color:#a39586; text-decoration:none; transition:all .12s; }
+.mu-act:hover { border-color:#373330; color:#d7d1cb; }
+.bd-wrap { background:#121110; border:1px solid #272522; border-radius:10px; overflow:hidden; margin-bottom:20px; }
+.bd-hdr { padding:10px 16px; border-bottom:1px solid #272522; font-size:.75rem; font-weight:600; color:#a39586; display:flex; justify-content:space-between; align-items:center; }
+.bd-row { display:grid; grid-template-columns:1fr auto 1fr; padding:8px 16px; border-bottom:1px solid #1c1a18; font-size:.8rem; align-items:center; }
 .bd-row:last-child { border-bottom:none; }
-.bd-row:nth-child(even) { background:rgba(22,27,34,.3); }
-.bd-row-total { border-top:2px solid #30363d; background:rgba(22,27,34,.6); }
+.bd-row:nth-child(even) { background:rgba(28,26,24,.3); }
+.bd-row-total { border-top:2px solid #373330; background:rgba(28,26,24,.6); }
 .bd-val { font-variant-numeric:tabular-nums; }
-.bd-val.bd-w { color:#3fb950; font-weight:600; }
-.bd-val.bd-l { color:#6e7681; }
-.bd-stat { text-align:center; font-size:.7rem; color:#8b949e; text-transform:capitalize; }
-.bd-stat-sub { font-size:.55rem; color:#30363d; font-weight:400; }
+.bd-val.bd-w { color:#dbcf94; font-weight:600; }
+.bd-val.bd-l { color:#80786f; }
+.bd-stat { text-align:center; font-size:.7rem; color:#a39586; text-transform:capitalize; }
+.bd-stat-sub { font-size:.55rem; color:#373330; font-weight:400; }
 .pb-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
 .pb-side { padding:0; }
-.pb-side + .pb-side { border-left:1px solid #21262d; }
-.pb-side-hdr { padding:8px 16px; border-bottom:1px solid #161b22; font-size:.7rem; font-weight:600; color:#8b949e; }
-.pb-player { display:flex; justify-content:space-between; align-items:center; padding:6px 16px; border-bottom:1px solid #161b22; font-size:.78rem; color:#8b949e; }
+.pb-side + .pb-side { border-left:1px solid #272522; }
+.pb-side-hdr { padding:8px 16px; border-bottom:1px solid #1c1a18; font-size:.7rem; font-weight:600; color:#a39586; }
+.pb-player { display:flex; justify-content:space-between; align-items:center; padding:6px 16px; border-bottom:1px solid #1c1a18; font-size:.78rem; color:#a39586; }
 .pb-player:last-child { border-bottom:none; }
-.pb-player-name { color:#c9d1d9; }
-.pb-player-em { font-style:italic; color:#484f58; }
-.pb-player-score { font-variant-numeric:tabular-nums; font-weight:600; color:#c9d1d9; }
-.pb-total { display:flex; justify-content:space-between; align-items:center; padding:8px 16px; border-top:1px solid #21262d; background:rgba(22,27,34,.4); font-size:.78rem; }
-.pb-total.pb-won { border-top:2px solid #3fb950; }
+.pb-player-name { color:#d7d1cb; }
+.pb-player-em { font-style:italic; color:#56504a; }
+.pb-player-score { font-variant-numeric:tabular-nums; font-weight:600; color:#d7d1cb; }
+.pb-total { display:flex; justify-content:space-between; align-items:center; padding:8px 16px; border-top:1px solid #272522; background:rgba(28,26,24,.4); font-size:.78rem; }
+.pb-total.pb-won { border-top:2px solid #dbcf94; }
 .pb-total.pb-lost { border-top:2px solid rgba(248,81,73,.3); }
-.pb-total-label { color:#8b949e; font-weight:600; }
-.pb-total-val { color:#e6edf3; font-weight:700; font-variant-numeric:tabular-nums; }
-.pb-cap-row { display:flex; justify-content:space-between; padding:4px 16px; font-size:.7rem; color:#484f58; border-top:1px solid #161b22; }
+.pb-total-label { color:#a39586; font-weight:600; }
+.pb-total-val { color:#efedea; font-weight:700; font-variant-numeric:tabular-nums; }
+.pb-cap-row { display:flex; justify-content:space-between; padding:4px 16px; font-size:.7rem; color:#56504a; border-top:1px solid #1c1a18; }
 `
 
 function scoringTagType(label: string): string {
@@ -258,21 +258,21 @@ export function MatchupDetailPage() {
               <div key={i} className="bd-row">
                 <div className={`bd-val${row.winner === 'home' ? ' bd-w' : ' bd-l'}`} style={{ textAlign: 'left' }}>
                   {Math.round(row.home_pts)}
-                  <span style={{ fontSize: '.65rem', color: '#484f58', marginLeft: 4 }}>({Math.round(row.home_raw)})</span>
+                  <span style={{ fontSize: '.65rem', color: '#56504a', marginLeft: 4 }}>({Math.round(row.home_raw)})</span>
                 </div>
                 <div className="bd-stat">
                   {row.stat.replace(/_/g, ' ')}
                   <br /><span className="bd-stat-sub">&times;{row.points_per}</span>
                 </div>
                 <div className={`bd-val${row.winner === 'away' ? ' bd-w' : ' bd-l'}`} style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '.65rem', color: '#484f58', marginRight: 4 }}>({Math.round(row.away_raw)})</span>
+                  <span style={{ fontSize: '.65rem', color: '#56504a', marginRight: 4 }}>({Math.round(row.away_raw)})</span>
                   {Math.round(row.away_pts)}
                 </div>
               </div>
             ))}
             <div className="bd-row bd-row-total">
               <div className="bd-val bd-w" style={{ textAlign: 'left' }}>{Math.round(homeTotal)}</div>
-              <div className="bd-stat" style={{ fontWeight: 600, color: '#8b949e' }}>Total</div>
+              <div className="bd-stat" style={{ fontWeight: 600, color: '#a39586' }}>Total</div>
               <div className="bd-val bd-w" style={{ textAlign: 'right' }}>{Math.round(awayTotal)}</div>
             </div>
           </div>

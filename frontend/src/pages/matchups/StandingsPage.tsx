@@ -65,13 +65,13 @@ interface StandingsData {
 
 // Stable deterministic team accent (matches LeagueShell palette)
 const PALETTE: { hex: string; rgb: string }[] = [
-  { hex: '#3a7dc4', rgb: '58,125,196' },
-  { hex: '#b87f3d', rgb: '184,127,61' },
-  { hex: '#8a6db8', rgb: '138,109,184' },
-  { hex: '#3d8c63', rgb: '61,140,99' },
-  { hex: '#c2932f', rgb: '194,147,47' },
+  { hex: '#99722d', rgb: '153,114,45' },
+  { hex: '#b8733d', rgb: '184,115,61' },
+  { hex: '#ae9259', rgb: '174,146,89' },
+  { hex: '#876e3b', rgb: '135,110,59' },
+  { hex: '#c26a2f', rgb: '194,106,47' },
   { hex: '#b85a4a', rgb: '184,90,74' },
-  { hex: '#3d8a9c', rgb: '61,138,156' },
+  { hex: '#8f6f38', rgb: '143,111,56' },
   { hex: '#9d5878', rgb: '157,88,120' },
 ]
 function accentFor(id: number) {
@@ -108,7 +108,7 @@ const LAD_CSS = `
   font-weight: 800;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: #6c7892;
+  color: #888076;
   margin-bottom: 4px;
 }
 .lad-head > * { text-align: right; }
@@ -126,14 +126,14 @@ const LAD_CSS = `
   font: inherit;
   letter-spacing: inherit;
 }
-.lad-head button.lad-sort:hover { color: #b6c0d3; }
+.lad-head button.lad-sort:hover { color: #c4b79d; }
 .lad-head .lad-sort-chev {
   font-size: .55rem;
   opacity: .25;
   transition: opacity .14s ease, color .14s ease;
 }
-.lad-head .lad-sort.active { color: #dde4f1; }
-.lad-head .lad-sort.active .lad-sort-chev { opacity: 1; color: #82b3e4; }
+.lad-head .lad-sort.active { color: #eae7e4; }
+.lad-head .lad-sort.active .lad-sort-chev { opacity: 1; color: #deb565; }
 .lad-head > :nth-child(n+4) .lad-sort {
   justify-content: flex-end;
   width: 100%;
@@ -143,15 +143,15 @@ const LAD_CSS = `
   position: relative;
   padding: 14px 16px;
   border-radius: 12px;
-  background: rgba(15,22,36,.7);
-  border: 1px solid rgba(110,130,180,.12);
+  background: rgba(26,24,22,.7);
+  border: 1px solid rgba(170,144,91,.12);
   text-decoration: none;
-  color: #dde4f1;
+  color: #eae7e4;
   transition: background .14s ease, border-color .14s ease, transform .14s ease;
 }
 .lad-row:hover {
-  background: rgba(20,28,45,.8);
-  border-color: rgba(110,130,180,.22);
+  background: rgba(33,31,28,.8);
+  border-color: rgba(170,144,91,.22);
   transform: translateX(2px);
   text-decoration: none;
 }
@@ -162,12 +162,12 @@ const LAD_CSS = `
   left: 0; top: 16px; bottom: 16px;
   width: 2px;
   border-radius: 2px;
-  background: var(--lad-accent, #97a3ba);
+  background: var(--lad-accent, #b5a99c);
   opacity: .65;
 }
 .lad-row.mine {
-  background: linear-gradient(90deg, rgba(var(--lad-accent-rgb, 122,155,196), .14), rgba(var(--lad-accent-rgb, 122,155,196), .04) 60%, transparent);
-  border-color: rgba(var(--lad-accent-rgb, 122,155,196), .35);
+  background: linear-gradient(90deg, rgba(var(--lad-accent-rgb, 186,157,100), .14), rgba(var(--lad-accent-rgb, 186,157,100), .04) 60%, transparent);
+  border-color: rgba(var(--lad-accent-rgb, 186,157,100), .35);
 }
 .lad-row.mine::before { width: 3px; opacity: 1; }
 
@@ -180,20 +180,20 @@ const LAD_CSS = `
   border-radius: 8px;
   font-size: .82rem;
   font-weight: 800;
-  color: #c0c7d4;
+  color: #d1cac3;
   background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.06);
   font-variant-numeric: tabular-nums;
 }
-.lad-rank-1 { color: #e8c25b; border-color: rgba(232,194,91,.4); background: rgba(232,194,91,.08); }
-.lad-rank-2 { color: #b6bdcc; border-color: rgba(182,189,204,.35); background: rgba(182,189,204,.06); }
-.lad-rank-3 { color: #b8855d; border-color: rgba(184,133,93,.35); background: rgba(184,133,93,.06); }
+.lad-rank-1 { color: #e8935b; border-color: rgba(232,147,91,.4); background: rgba(232,147,91,.08); }
+.lad-rank-2 { color: #cac2b8; border-color: rgba(202,194,184,.35); background: rgba(202,194,184,.06); }
+.lad-rank-3 { color: #b87c5d; border-color: rgba(184,124,93,.35); background: rgba(184,124,93,.06); }
 
 /* Team column — just the name. Nothing else. */
 .lad-team-name {
   font-size: .92rem;
   font-weight: 700;
-  color: #f0f4fc;
+  color: #f7f6f5;
   letter-spacing: -.005em;
   white-space: nowrap;
   overflow: hidden;
@@ -211,9 +211,9 @@ const LAD_CSS = `
   border: 1px solid;
   white-space: nowrap;
 }
-.lad-pill-onfire, .lad-pill-dominant { color: #6db38a; border-color: rgba(109,179,138,.4); background: rgba(109,179,138,.1); }
-.lad-pill-surging, .lad-pill-strong { color: #82b3e4; border-color: rgba(130,179,228,.4); background: rgba(130,179,228,.1); }
-.lad-pill-steady { color: #9aa6bb; border-color: rgba(154,166,187,.3); background: rgba(154,166,187,.06); }
+.lad-pill-onfire, .lad-pill-dominant { color: #cec7a1; border-color: rgba(206,199,161,.4); background: rgba(206,199,161,.1); }
+.lad-pill-surging, .lad-pill-strong { color: #deb565; border-color: rgba(222,181,101,.4); background: rgba(222,181,101,.1); }
+.lad-pill-steady { color: #b6ab9f; border-color: rgba(182,171,159,.3); background: rgba(182,171,159,.06); }
 .lad-pill-underperforming, .lad-pill-struggling { color: #d68a7e; border-color: rgba(214,138,126,.35); background: rgba(214,138,126,.08); }
 .lad-pill-sliding, .lad-pill-infreefall { color: #e07a6c; border-color: rgba(224,122,108,.45); background: rgba(224,122,108,.12); }
 
@@ -227,14 +227,14 @@ const LAD_CSS = `
   font-size: .82rem;
   font-weight: 700;
 }
-.lad-wl .w { color: #6db38a; }
+.lad-wl .w { color: #cec7a1; }
 .lad-wl .l { color: #d68a7e; }
-.lad-wl .d { color: #c2932f; }
-.lad-wl .sep { color: #4a5471; font-weight: 400; }
+.lad-wl .d { color: #c26a2f; }
+.lad-wl .sep { color: #645e57; font-weight: 400; }
 
 /* Status column — empty when no headline */
 .lad-status { display: flex; align-items: center; }
-.lad-status-empty { color: #4a5471; font-size: .68rem; }
+.lad-status-empty { color: #645e57; font-size: .68rem; }
 
 /* Power-rank chip — distinct from the ladder rank cell. Top 3 get medal
    gradient + glow, everyone else gets a neutral chip. The small left-edge
@@ -254,9 +254,9 @@ const LAD_CSS = `
   font-size: .78rem;
   font-weight: 800;
   letter-spacing: -.02em;
-  background: linear-gradient(135deg, rgba(110,130,180,.10), rgba(110,130,180,.02));
-  border: 1px solid rgba(110,130,180,.22);
-  color: #b6c0d3;
+  background: linear-gradient(135deg, rgba(170,144,91,.10), rgba(170,144,91,.02));
+  border: 1px solid rgba(170,144,91,.22);
+  color: #c4b79d;
   position: relative;
 }
 .lad-pr-chip::before {
@@ -268,22 +268,22 @@ const LAD_CSS = `
   border-radius: 2px;
 }
 .lad-pr-chip.tier-1 {
-  background: linear-gradient(135deg, rgba(232,194,91,.28), rgba(232,194,91,.06));
-  border-color: rgba(232,194,91,.55);
-  color: #f0d27a;
-  box-shadow: 0 0 14px -2px rgba(232,194,91,.4);
+  background: linear-gradient(135deg, rgba(232,147,91,.28), rgba(232,147,91,.06));
+  border-color: rgba(232,147,91,.55);
+  color: #f0a97a;
+  box-shadow: 0 0 14px -2px rgba(232,147,91,.4);
 }
 .lad-pr-chip.tier-2 {
-  background: linear-gradient(135deg, rgba(204,210,222,.22), rgba(204,210,222,.06));
-  border-color: rgba(204,210,222,.48);
-  color: #e0e6f1;
+  background: linear-gradient(135deg, rgba(219,213,207,.22), rgba(219,213,207,.06));
+  border-color: rgba(219,213,207,.48);
+  color: #ece9e5;
 }
 .lad-pr-chip.tier-3 {
-  background: linear-gradient(135deg, rgba(199,152,112,.24), rgba(199,152,112,.06));
-  border-color: rgba(199,152,112,.5);
-  color: #e0b48a;
+  background: linear-gradient(135deg, rgba(199,143,112,.24), rgba(199,143,112,.06));
+  border-color: rgba(199,143,112,.5);
+  color: #e0ab8a;
 }
-.lad-pr-empty { color: #4a5471; font-size: .82rem; }
+.lad-pr-empty { color: #645e57; font-size: .82rem; }
 
 /* Form sparkline (last N results) */
 .lad-form {
@@ -297,9 +297,9 @@ const LAD_CSS = `
   border-radius: 2px;
   background: rgba(255,255,255,.04);
 }
-.lad-form-dot.W { background: #3d8c63; }
+.lad-form-dot.W { background: #876e3b; }
 .lad-form-dot.L { background: #b85a4a; }
-.lad-form-dot.D { background: #c2932f; }
+.lad-form-dot.D { background: #c26a2f; }
 
 /* Momentum chip */
 .lad-momentum {
@@ -311,15 +311,15 @@ const LAD_CSS = `
   font-variant-numeric: tabular-nums;
   font-size: .72rem;
   font-weight: 700;
-  color: #97a3ba;
+  color: #b5a99c;
   padding: 4px 9px;
   border-radius: 999px;
   background: rgba(255,255,255,.03);
   min-width: 56px;
 }
-.lad-momentum.up { color: #6db38a; background: rgba(61,140,99,.1); }
+.lad-momentum.up { color: #cec7a1; background: rgba(135,110,59,.1); }
 .lad-momentum.down { color: #d68a7e; background: rgba(184,90,74,.1); }
-.lad-momentum.flat { color: #6c7892; }
+.lad-momentum.flat { color: #888076; }
 
 /* Numeric columns */
 .lad-num {
@@ -327,22 +327,22 @@ const LAD_CSS = `
   font-variant-numeric: tabular-nums;
   font-size: .92rem;
   font-weight: 600;
-  color: #dde4f1;
+  color: #eae7e4;
   text-align: right;
 }
-.lad-num-strong { font-size: 1rem; font-weight: 800; color: #f0f4fc; }
-.lad-num-muted { color: #97a3ba; }
+.lad-num-strong { font-size: 1rem; font-weight: 800; color: #f7f6f5; }
+.lad-num-muted { color: #b5a99c; }
 .lad-num .unit {
   font-size: .68rem;
   font-weight: 500;
-  color: #6c7892;
+  color: #888076;
   margin-left: 2px;
 }
 
 .lad-record { display: inline-flex; gap: 4px; align-items: baseline; }
-.lad-record .w { color: #6db38a; }
+.lad-record .w { color: #cec7a1; }
 .lad-record .l { color: #d68a7e; }
-.lad-record .d { color: #c2932f; }
+.lad-record .d { color: #c26a2f; }
 
 /* Finals cut divider */
 .lad-cut {
@@ -354,13 +354,13 @@ const LAD_CSS = `
   font-weight: 800;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: rgba(109,179,138,.65);
+  color: rgba(206,199,161,.65);
 }
 .lad-cut::before, .lad-cut::after {
   content: "";
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(109,179,138,.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(206,199,161,.35), transparent);
 }
 .lad-cut span {
   display: inline-flex;
@@ -368,8 +368,8 @@ const LAD_CSS = `
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(61,140,99,.08);
-  border: 1px solid rgba(61,140,99,.25);
+  background: rgba(135,110,59,.08);
+  border: 1px solid rgba(135,110,59,.25);
 }
 
 /* Footer */
@@ -377,7 +377,7 @@ const LAD_CSS = `
   display: flex; justify-content: space-between; align-items: center;
   padding: 12px 16px 4px;
   font-size: .68rem;
-  color: #6c7892;
+  color: #888076;
 }
 .lad-foot .scoring-tag {
   font-size: .58rem;
@@ -386,22 +386,22 @@ const LAD_CSS = `
   text-transform: uppercase;
   padding: 3px 9px;
   border-radius: 999px;
-  border: 1px solid rgba(110,130,180,.25);
-  background: rgba(15,22,36,.5);
-  color: #b8c2d4;
+  border: 1px solid rgba(170,144,91,.25);
+  background: rgba(26,24,22,.5);
+  color: #c5b89f;
 }
 
 /* Empty state */
-.lad-empty { text-align: center; padding: 60px 20px; color: #4a5471; }
-.lad-empty i { font-size: 2rem; display: block; margin-bottom: 12px; color: #38415a; }
-.lad-empty h4 { color: #97a3ba; font-size: 1rem; font-weight: 600; margin: 0 0 4px; }
+.lad-empty { text-align: center; padding: 60px 20px; color: #645e57; }
+.lad-empty i { font-size: 2rem; display: block; margin-bottom: 12px; color: #494540; }
+.lad-empty h4 { color: #b5a99c; font-size: 1rem; font-weight: 600; margin: 0 0 4px; }
 .lad-empty p { font-size: .82rem; margin: 0; }
 
 /* Competition toggle */
 .lad-comp-toggle {
   display: inline-flex;
-  background: rgba(15,22,36,.5);
-  border: 1px solid rgba(110,130,180,.18);
+  background: rgba(26,24,22,.5);
+  border: 1px solid rgba(170,144,91,.18);
   border-radius: 999px;
   padding: 3px;
   margin-bottom: 16px;
@@ -411,20 +411,20 @@ const LAD_CSS = `
   border-radius: 999px;
   font-size: .74rem;
   font-weight: 700;
-  color: #97a3ba;
+  color: #b5a99c;
   text-decoration: none;
   border: 0;
   background: transparent;
   cursor: pointer;
 }
-.lad-comp-btn:hover { color: #dde4f1; text-decoration: none; }
+.lad-comp-btn:hover { color: #eae7e4; text-decoration: none; }
 .lad-comp-btn.active {
-  background: rgba(58,125,196,.18);
-  color: #82b3e4;
+  background: rgba(153,114,45,.18);
+  color: #deb565;
 }
 .lad-sevens .lad-comp-btn.active {
-  background: rgba(138,109,184,.18);
-  color: #b39ed4;
+  background: rgba(174,146,89,.18);
+  color: #c9b284;
 }
 
 /* Mobile — compact 3-column layout */
@@ -448,8 +448,8 @@ const LAD_CSS = `
 }
 
 /* Sevens mode — purple accent palette */
-.lad-sevens .lad-form-dot.W { background: #8a6db8; }
-.lad-sevens .lad-num-strong { color: #b39ed4; }
+.lad-sevens .lad-form-dot.W { background: #ae9259; }
+.lad-sevens .lad-num-strong { color: #c9b284; }
 `
 
 export interface StandingsPageProps {
@@ -684,7 +684,7 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
                       {s.percentage > 0 ? (
                         <span
                           style={
-                            s.percentage >= 110 ? { color: '#6db38a' }
+                            s.percentage >= 110 ? { color: '#cec7a1' }
                               : s.percentage < 90 ? { color: '#d68a7e' }
                                 : undefined
                           }

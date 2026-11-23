@@ -93,6 +93,15 @@ def league_context(league_id):
             next_lockout_at = ga.isoformat()
     except Exception:
         pass
+    # A lockout protects a round the league is still playing. Once its season
+    # is done (or not yet fixtured) an AFL game on the calendar locks nothing,
+    # so the top bar must not count down to it or call it LIVE.
+    try:
+        from models.season_manager import league_season_over
+        if league_season_over(league_id, league.season_year):
+            next_lockout_at = None
+    except Exception:
+        logger.exception("league_season_over failed for league %s", league_id)
 
     # Season Review — non-null once every fixture for the league's current
     # year is completed. Drives the year-in-review takeover + rail entry, and
@@ -146,7 +155,21 @@ def league_context(league_id):
         "next_lockout_at": next_lockout_at,
         "current_matchup": current_matchup,
         "season_review_year": review_year,
+        # Which season the averages on screen come from. Between the AFL
+        # draft and Opening Round that is last season, and the UI says so.
+        **_year_context(),
     })
+
+
+def _year_context():
+    from models.years import year_context
+    try:
+        return year_context()
+    except Exception:
+        logger.exception("year_context failed")
+        import config
+        return {"afl_year": config.CURRENT_YEAR, "stats_year": config.CURRENT_YEAR,
+                "stats_are_last_season": False}
 
 
 # ── League list ───────────────────────────────────────────────────────
@@ -1622,3 +1645,6 @@ register_innovation_endpoints(spa_api)
 
 from blueprints.season_review_endpoints import register_season_review_endpoints
 register_season_review_endpoints(spa_api)
+
+from blueprints.league_extras import register_league_extras
+register_league_extras(spa_api)

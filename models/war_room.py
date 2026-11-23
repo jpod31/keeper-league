@@ -89,6 +89,7 @@ def compute_trade_table(team_id, league_id, year, profile_tags):
 
     # Free agents — not on any team, SC > 50
     all_fa = AflPlayer.query.filter(
+        AflPlayer.listed(),
         AflPlayer.sc_avg.isnot(None),
         AflPlayer.sc_avg > 50,
         ~AflPlayer.id.in_(all_rostered) if all_rostered else True,

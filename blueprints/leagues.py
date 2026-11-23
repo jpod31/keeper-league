@@ -36,11 +36,14 @@ def _round_sort_key(round_str):
 def _compute_rolling_averages():
     """Compute L3 and L5 rolling SC averages for all players.
 
-    Uses current year (CURRENT_YEAR) data first, then fills from previous
-    year so that rolling windows cross seasons seamlessly.
+    Uses the latest season with games (models.years.stats_year) first, then
+    fills from the year before so that rolling windows cross seasons
+    seamlessly. Before a new season's first game that is last season, and the
+    UI says so.
     Returns dict: player_name -> {'l3': float|None, 'l5': float|None}.
     """
-    current_year = config.CURRENT_YEAR
+    from models.years import stats_year
+    current_year = stats_year()
     prev_year = current_year - 1
 
     frames = []
@@ -78,7 +81,6 @@ def _compute_rolling_averages():
     all_scores = all_scores.sort_values(["_year", "_rnd"])
 
     result = {}
-    current_year = config.CURRENT_YEAR
     for name, group in all_scores.groupby("Player"):
         # L3: last 3 games in current year only
         cy_scores = group[group["_year"] == current_year]["SC"].values
@@ -94,6 +96,16 @@ def _compute_rolling_averages():
 
 leagues_bp = Blueprint("leagues", __name__, url_prefix="/leagues",
                        template_folder="../templates")
+
+
+def _offseason_block(league, user_team):
+    try:
+        from models.season_manager import offseason_summary
+        return offseason_summary(league, user_team.id if user_team else None)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("offseason_summary failed for league %s", league.id)
+        return None
 
 
 @leagues_bp.route("/")
@@ -410,6 +422,13 @@ def dashboard(league_id):
             live_games_count = _AG.query.filter_by(
                 year=league.season_year, status="live"
             ).count()
+            # Once the league has no round left there is nothing to lock or
+            # to call live, whatever is still on the AFL calendar.
+            from models.season_manager import league_season_over
+            if league_season_over(league_id, league.season_year):
+                current_round = 0
+                next_lockout_at = None
+                live_games_count = 0
         except Exception:
             pass
 
@@ -619,6 +638,7 @@ def dashboard(league_id):
             "pending_incoming": pending_incoming,
             "pending_outgoing": pending_outgoing,
             "delist_open": delist_open,
+            "offseason": _offseason_block(league, user_team),
         })
 
     # Default to My Team view if user has a team (HTML mode only)

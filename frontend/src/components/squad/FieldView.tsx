@@ -4,11 +4,13 @@
  */
 import { checkSwapEligible, type SwapSourceInfo, type ActionMode } from '../../hooks/useFieldActions'
 import { useEffect, useRef } from 'react'
+import { useStatsYear } from '../../contexts/LeagueContext'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
   sc_avg: number; games_played: number; career_games: number; rating: number | null
   injury_type: string | null; injury_return: string | null; injury_severity: string | null
+  is_former?: boolean; position_expected?: boolean
 }
 
 export interface FieldData {
@@ -77,6 +79,8 @@ interface Props {
 }
 
 export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContext, byeIds, byeRound }: Props) {
+  // "'26" while the averages on the cards are still last season's.
+  const statsTag = useStatsYear().tag
   // Defensive defaults for fields that may not exist in older API responses
   const fd = {
     ...rawFd,
@@ -132,7 +136,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         <div className={`fv-card fv-card-empty fv-card-${posClass}${isFlex ? ' fv-card-flex' : ''}${isLtil ? ' fv-card-ltil' : ''}`}>
           <div className="fv-empty-slot">
             {isLtil ? <span className="fv-ltil-empty-label"><i className="bi bi-bandaid"></i> LTIL SLOT</span>
-              : isFlex ? <span style={{ fontSize: '.55rem', fontWeight: 700, color: '#30363d', letterSpacing: '1px' }}>FLEX</span> : <i className="bi bi-person-dash"></i>}
+              : isFlex ? <span style={{ fontSize: '.55rem', fontWeight: 700, color: '#373330', letterSpacing: '1px' }}>FLEX</span> : <i className="bi bi-person-dash"></i>}
           </div>
         </div>
       )
@@ -209,6 +213,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
           <div className={`fv-injury fv-injury-${p.injury_severity}`} title={`${p.injury_type || 'Injured'} — ${p.injury_return || ''}`}></div>
         )}
         {!isLtil && hasBye && <div className={`fv-bye-badge${isSelected || p.injury_severity ? ' fv-bye-shifted' : ''}`} title="No game this round">BYE</div>}
+        {p.is_former && <div className="fv-off-list" title="No longer on an AFL list. He will not score.">OFF AFL LIST</div>}
 
         {/* Hover action buttons */}
         {isOwner && !isLocked && !isLtil && actions && (
@@ -304,7 +309,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         <div className="fv-stats-bar">
           <div className="fv-stat fv-stat-primary">
             <span className="fv-stat-num">{p.sc_avg ? Math.round(p.sc_avg) : '-'}</span>
-            <span className="fv-stat-label">AVG</span>
+            <span className="fv-stat-label">{statsTag ? `${statsTag} AVG` : 'AVG'}</span>
           </div>
           <div className="fv-stat-sep"></div>
           <div className="fv-stat">

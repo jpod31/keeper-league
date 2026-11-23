@@ -226,9 +226,9 @@ export function Oval({
       <svg className="sr-oval-bg" viewBox="0 0 1000 800" preserveAspectRatio="none" aria-hidden>
         <defs>
           <radialGradient id="srTurf" cx="50%" cy="42%" r="72%">
-            <stop offset="0%" stopColor="#1d6b46" />
-            <stop offset="55%" stopColor="#125437" />
-            <stop offset="100%" stopColor="#07281b" />
+            <stop offset="0%" stopColor="#5b4e22" />
+            <stop offset="55%" stopColor="#443a1a" />
+            <stop offset="100%" stopColor="#1f1b0c" />
           </radialGradient>
           <linearGradient id="srMow" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#ffffff" stopOpacity=".05" />

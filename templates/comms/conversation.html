@@ -13,7 +13,7 @@
         {{ other_team.name }}
       </div>
       <div class="d-flex align-items-center gap-2">
-        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:32px;height:32px;background:#21262d;font-size:.75rem;font-weight:600;">
+        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:32px;height:32px;background:#272522;font-size:.75rem;font-weight:600;">
           {{ other_team.name[0]|upper }}
         </div>
         <h2 class="mb-0">{{ other_team.name }}</h2>
@@ -33,12 +33,12 @@
           {% for msg in messages %}
             {% set is_mine = msg.sender_user_id == current_user.id %}
             <div class="d-flex mb-3 {% if is_mine %}justify-content-end{% endif %}">
-              <div style="max-width:75%;padding:8px 14px;border-radius:{% if is_mine %}14px 14px 4px 14px{% else %}14px 14px 14px 4px{% endif %};background:{% if is_mine %}#1f6feb{% else %}#21262d{% endif %};font-size:.84rem;line-height:1.4;">
+              <div style="max-width:75%;padding:8px 14px;border-radius:{% if is_mine %}14px 14px 4px 14px{% else %}14px 14px 14px 4px{% endif %};background:{% if is_mine %}#b77a10{% else %}#272522{% endif %};font-size:.84rem;line-height:1.4;">
                 {% if not is_mine %}
-                  <div style="font-size:.7rem;color:#8b949e;margin-bottom:2px;font-weight:600;">{{ msg.sender.display_name or msg.sender.username }}</div>
+                  <div style="font-size:.7rem;color:#a39586;margin-bottom:2px;font-weight:600;">{{ msg.sender.display_name or msg.sender.username }}</div>
                 {% endif %}
                 <div>{{ msg.body }}</div>
-                <div style="font-size:.6rem;color:{% if is_mine %}rgba(255,255,255,.5){% else %}#484f58{% endif %};text-align:right;margin-top:3px;">
+                <div style="font-size:.6rem;color:{% if is_mine %}rgba(255,255,255,.5){% else %}#56504a{% endif %};text-align:right;margin-top:3px;">
                   {{ msg.created_at.strftime('%H:%M') }}
                 </div>
               </div>
@@ -48,7 +48,7 @@
       </div>
 
       {# Send form #}
-      <div style="border-top:1px solid #30363d;padding:.75rem 1rem;">
+      <div style="border-top:1px solid #373330;padding:.75rem 1rem;">
         <form method="POST" action="{{ url_for('comms.send_message', league_id=league.id) }}" class="d-flex gap-2" id="chatForm">
           <input type="hidden" name="conversation_id" value="{{ convo.id }}">
           <input type="text" name="body" class="form-control form-control-sm" placeholder="Type a message..." required autocomplete="off" id="chatInput" style="font-size:.85rem;">
@@ -81,10 +81,10 @@
 
       var div = document.createElement('div');
       div.className = 'd-flex mb-3';
-      div.innerHTML = '<div style="max-width:75%;padding:8px 14px;border-radius:14px 14px 14px 4px;background:#21262d;font-size:.84rem;line-height:1.4;">' +
-        '<div style="font-size:.7rem;color:#8b949e;margin-bottom:2px;font-weight:600;">' + data.sender_name + '</div>' +
+      div.innerHTML = '<div style="max-width:75%;padding:8px 14px;border-radius:14px 14px 14px 4px;background:#272522;font-size:.84rem;line-height:1.4;">' +
+        '<div style="font-size:.7rem;color:#a39586;margin-bottom:2px;font-weight:600;">' + data.sender_name + '</div>' +
         '<div>' + data.body.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' +
-        '<div style="font-size:.6rem;color:#484f58;text-align:right;margin-top:3px;">' + new Date(data.created_at + 'Z').toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</div>' +
+        '<div style="font-size:.6rem;color:#56504a;text-align:right;margin-top:3px;">' + new Date(data.created_at + 'Z').toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</div>' +
         '</div>';
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;

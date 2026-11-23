@@ -47,7 +47,7 @@ export function MobileActionSheet({
           {logoUrl ? (
             <img src={logoUrl} alt={p.afl_team} />
           ) : (
-            <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#484f58' }}>
+            <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#56504a' }}>
               <i className="bi bi-shield-fill"></i>
             </div>
           )}
