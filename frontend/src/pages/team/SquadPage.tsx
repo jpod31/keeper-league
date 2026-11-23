@@ -468,6 +468,11 @@ function SquadPageInner() {
               <h2 className="squad-cmd-name">{data.team.name}</h2>
               <div className="squad-cmd-meta">
                 <span>{players.length} players</span>
+                {statsYr.isLast && (
+                  <span className="kl-season-note" style={{ marginTop: 0 }}>
+                    <i className="bi bi-calendar3"></i> Averages are from the {statsYr.label} season
+                  </span>
+                )}
                 {is_owner && (data.trade_is_open || data.delist_is_open) && (
                   <><span className="dot">·</span>
                   {/* Delists and trades open independently — a delist-only

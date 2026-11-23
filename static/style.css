@@ -122,6 +122,35 @@
   --bs-primary-border-subtle: #6b4f14;
   --bs-success-border-subtle: #5a5236;
   --bs-info-border-subtle: #6b4f14;
+  /* Bootstrap's dark theme is cool grey (#212529, #6c757d, #495057). Warm it,
+     so .text-secondary, .bg-secondary, modals, dropdowns and tables that
+     lean on its defaults sit on the same ink as everything else. */
+  --bs-body-color: #eae7e4;
+  --bs-body-color-rgb: 234,231,228;
+  --bs-body-bg: #0c0b0a;
+  --bs-body-bg-rgb: 12,11,10;
+  --bs-emphasis-color: #fbfaf9;
+  --bs-emphasis-color-rgb: 251,250,249;
+  --bs-heading-color: #fbfaf9;
+  --bs-secondary: #b5a99c;
+  --bs-secondary-rgb: 181,169,156;
+  --bs-secondary-color: rgba(234,231,228,.78);
+  --bs-secondary-color-rgb: 234,231,228;
+  --bs-secondary-bg: #282523;
+  --bs-secondary-bg-rgb: 40,37,35;
+  --bs-tertiary-color: rgba(234,231,228,.55);
+  --bs-tertiary-color-rgb: 234,231,228;
+  --bs-tertiary-bg: #1b1917;
+  --bs-tertiary-bg-rgb: 27,25,23;
+  --bs-border-color: #393632;
+  --bs-border-color-translucent: rgba(255,255,255,.12);
+  --bs-dark: #1b1917;
+  --bs-dark-rgb: 27,25,23;
+  --bs-danger: #f85149;
+  --bs-danger-rgb: 248,81,73;
+  --bs-secondary-text-emphasis: #d7d1cb;
+  --bs-secondary-bg-subtle: #1f1d1b;
+  --bs-secondary-border-subtle: #57524c;
   /* ── Spacing scale (canonical) ──
      7-tier numeric scale on 4 / 8 / 12 / 16 / 24 / 40 / 64.
      Use --space-N for all new margins, paddings, and gaps.
@@ -1906,8 +1935,10 @@ th[style*="cursor"]:hover { color: var(--kl-accent-blue); }
 }
 .fv-stat-label {
   display: block;
-  font-size: .4rem;
-  color: var(--kl-border-light);
+  font-size: .5rem;
+  /* Was the border colour at 6px: the "'26" that says whose year the average
+     is from has to be readable. */
+  color: var(--kl-text-secondary);
   text-transform: uppercase;
   letter-spacing: .5px;
   line-height: 1;
