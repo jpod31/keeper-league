@@ -280,6 +280,14 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   fixtures to `live` or `scheduled`, and run the app with the AFL round pinned
   (the home page asks Squiggle for the current round). A launcher that patches
   `scrapers.squiggle.get_current_round` is enough.
+- **Draft room, your pick**: `.draft-banner-your-pick` gets a white frame and
+  the banner says "You are on the clock"; enabled Pick buttons are solid
+  white. Confirming a pick (`.dn-confirm`) and the announcement (`.dn-reveal`)
+  use the player's face. To see it locally, log in as the coach on the clock.
+- **The left rail is labelled** (icon over word, 84px). The wider rail takes
+  room from tables: pool, former players and the draft table drop columns by
+  `nth-child` at 1500, 1300, 1180 and 1080px. Check 1280, 1122 and 1024 wide
+  after adding a column.
 - **One set of position colours**: `--pos-def #58a6ff`, `--pos-mid #bc8cff`,
   `--pos-ruc #3fb950`, `--pos-fwd #f0883e`, solid fill with dark text. Several
   pages carried their own maps; grep `DEF:` and `pos-` before adding another.

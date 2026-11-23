@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { FixtureSkeleton } from '../../components/ui/FixtureSkeleton'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
+import { TeamBadge } from '../../components/ui/TeamBadge'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -86,9 +87,9 @@ const FX_CSS = `
 .mx-sc.lost { color:var(--kl-text-primary); }
 .mx-sc.draw { color:var(--kl-text-primary); }
 .mx-sep { color:#ffffff; margin:0 4px; font-weight:300; font-size:.8125rem; }
-.mx-vs { font-size:.8125rem; font-weight:700; color:#2a292f; letter-spacing:1.5px; text-transform:uppercase; }
+.mx-vs { font-size:.8125rem; font-weight:600; color:#ffffff; }
 .mx-live-tag { font-size:.8125rem; font-weight:700; color:#3fb950; letter-spacing:.5px; background:rgba(63,185,80,.08); padding:2px 6px; border-radius:3px; }
-.mx-arrow { display:flex; align-items:center; justify-content:center; width:28px; color:#1e1d21; transition:color .1s; }
+.mx-arrow { display:none; }
 .mx-row:hover .mx-arrow { color:var(--kl-text-primary); }
 .season-empty { text-align:center; padding:60px 20px; color:var(--kl-text-primary); }
 .season-empty i { font-size:2rem; margin-bottom:12px; display:block; color:#2a292f; }
@@ -258,9 +259,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
                   className="mx-row"
                   style={{ position: 'relative' }}>
                   <div className="mx-team mx-team-home" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, minWidth: 0 }}>
-                    <span className={homeWon || homeLeading ? 'won' : ''} style={{ ...truncStyle, fontWeight: (homeWon || homeLeading) ? 700 : 500 }}>
-                      {f.home_team?.name}
-                    </span>
+                    <span className="mx-name"><TeamBadge name={f.home_team_id} size={30} showName={false} /><span style={truncStyle}>{f.home_team?.name}</span></span>
                     {showProgress && homeCount && (
                       <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                         {homeCount} played
@@ -283,9 +282,7 @@ export function FixturePage({ mode = 'main' }: FixturePageProps = {}) {
                     )}
                   </div>
                   <div className="mx-team mx-team-away" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, minWidth: 0 }}>
-                    <span className={awayWon || awayLeading ? 'won' : ''} style={{ ...truncStyle, fontWeight: (awayWon || awayLeading) ? 700 : 500, textAlign: 'right' }}>
-                      {f.away_team?.name}
-                    </span>
+                    <span className="mx-name mx-name-r"><span style={truncStyle}>{f.away_team?.name}</span><TeamBadge name={f.away_team_id} size={30} showName={false} /></span>
                     {showProgress && awayCount && (
                       <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                         {awayCount} played

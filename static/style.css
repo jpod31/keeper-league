@@ -12168,3 +12168,18 @@ th .sort-icon { opacity: 1 !important; }
   .draft-avail-tbl th:nth-child(3), .draft-avail-tbl td:nth-child(3) { display: none !important; } }
 @media (max-width: 1080px) { .pool-table th:nth-child(6), .pool-table td:nth-child(6), .fp-table th:nth-child(3), .fp-table td:nth-child(3) { display: none !important; } }
 @media (max-width: 1080px) { .draft-avail-tbl th:nth-child(4), .draft-avail-tbl td:nth-child(4) { display: none !important; } }
+
+/* Fixture rows: crest and name each side, mono score in the middle. */
+.mx-row { padding: 14px 16px !important; }
+.mx-name { display: inline-flex; align-items: center; gap: 12px; min-width: 0; font-size: .9375rem; font-weight: 600; color: #ffffff; }
+.mx-name-r { justify-content: flex-end; }
+.mx-sc { font-family: var(--kl-font-mono); font-size: 1.0625rem !important; color: #ffffff !important; }
+.mx-sc.won { color: #56d364 !important; }
+.mx-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important; column-gap: 12px !important; }
+.mx-team { min-width: 0 !important; overflow: hidden; }
+.mx-name { max-width: 100%; }
+.mx-name > span:not(.tbadge) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mx-team-away { align-items: flex-end !important; }
+@media (max-width: 600px) { .mx-row { padding: 12px 10px !important; column-gap: 8px !important; } .mx-name { gap: 8px; font-size: .875rem; } .mx-centre { min-width: 0 !important; } }
+@media (max-width: 600px) { .mx-name .tbadge { display: none !important; } .mx-name > span:not(.tbadge) { white-space: normal; line-height: 1.2; } .mx-name-r { text-align: right; } .mx-sc { font-size: 1rem !important; min-width: 0 !important; } }
+@media (max-width: 600px) { .mx-name > span:not(.tbadge) { white-space: normal !important; overflow: visible !important; } .mx-team { white-space: normal !important; } }
