@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { api } from '../../lib/api'
 import { useTeamAccent } from '../../components/ui/TeamBadge'
+import { clubVars } from '../../lib/clubs'
 import { GamedaySkeleton } from '../../components/ui/GamedaySkeleton'
 import { AnimatedNumber } from '../../components/ui/AnimatedNumber'
 
@@ -751,7 +752,7 @@ export function GamedayPage() {
     const posCls = `gd-pos ${pos.toLowerCase()}`
 
     return (
-      <div className={rowClass}>
+      <div className={rowClass} style={{ ...clubVars(p.afl_team), ['--pc' as string]: pos ? `var(--pos-${pos.toLowerCase()})` : '#5a5a66' } as React.CSSProperties}>
         <span className={posCls}>{pos || '-'}</span>
         <div className="gd-pbody">
           <div className="gd-prow-name">
@@ -965,7 +966,6 @@ export function GamedayPage() {
                 </div>
                 <div className="gd-hero-split">
                   <div className="gd-hero-side" style={leftStyle}>
-                    {isViewingOwn && <span className="gd-hero-you">YOU</span>}
                     <div className="gd-hero-top">
                       <span className="gd-hero-crest">
                         {heroLeftLogo

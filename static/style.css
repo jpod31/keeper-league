@@ -12114,3 +12114,28 @@ th .sort-icon { opacity: 1 !important; }
   font-family: var(--kl-font-mono); font-size: .8125rem !important; }
 .fv-reserves-group-hdr { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px !important; }
 .fv-ltil-slot-empty, .fv-card-empty.fv-card-ltil { border-radius: 8px !important; }
+
+/* ── Gameday rows share the card family: position edge, a wash of the club's
+      colour, mono score. Captain badges match the squad. ── */
+.gd-prow { border-left: 4px solid var(--pc, #5a5a66); padding: 10px 14px 10px 12px !important;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ca, #2a2a31) 46%, #0b0b0e) 0%, #0b0b0e 58%) !important; }
+.gd-prow:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--ca, #2a2a31) 62%, #0b0b0e) 0%, #121216 58%) !important; }
+.gd-pname { font-size: .9375rem !important; font-weight: 700 !important; letter-spacing: -.01em; color: #ffffff !important; }
+.gd-prow.emg-standby .gd-pname { color: #ffffff !important; }
+.gd-pscore { font-family: var(--kl-font-mono) !important; font-size: 1.125rem !important; font-weight: 700 !important; color: #ffffff !important; }
+.gd-pbadge { font-family: var(--kl-font-mono); border-radius: 4px !important; background: transparent !important; color: #ffffff !important; border: 0 !important;
+  box-shadow: inset 0 0 0 1.5px #ffffff; padding: 2px 5px !important; letter-spacing: 0 !important; }
+.gd-pbadge.c { background: #ffffff !important; color: #050506 !important; box-shadow: none; }
+.gd-pbadge.dnp { box-shadow: inset 0 0 0 1.5px #f85149; color: #f85149 !important; }
+.gd-hero-name { text-transform: none !important; letter-spacing: -.03em !important; font-size: 1.5rem !important; font-weight: 700 !important; }
+.gd-hero-score { font-weight: 700 !important; letter-spacing: -.05em !important; }
+.gd-hero-cap, .gd-hero-meta .gd-pbadge { box-shadow: inset 0 0 0 1.5px #ffffff; }
+.gd-pcard { border-radius: 8px !important; overflow: hidden; }
+.gd-pcard-name { font-size: 1rem !important; font-weight: 600 !important; }
+.gd-pcard-total { font-family: var(--kl-font-mono) !important; }
+.gd-section { font-family: var(--kl-font-mono); color: #ffffff !important; background: #101013 !important; border-left: 0 !important; }
+.gd-section i { display: none; }
+.gd-role-badge { font-family: var(--kl-font-mono); border-radius: 4px !important; background: transparent !important; color: #ffffff !important; border: 0 !important;
+  box-shadow: inset 0 0 0 1.5px #ffffff; padding: 2px 5px !important; }
+.gd-role-badge.active:not(.vc) { background: #ffffff !important; color: #050506 !important; box-shadow: none; }
+.gd-cap-bonus { color: #ffffff !important; }
