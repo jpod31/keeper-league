@@ -1011,7 +1011,7 @@ function DraftRoomPageInner() {
             {!bannerCompleted && <TeamCrest team={teamOf(state.current_team_id)} size={68} />}
             <div>
               <div className="draft-banner-round">
-                {bannerCompleted ? 'All picks made' : `On the clock, Pick ${state.current_pick || '-'}, Round ${state.current_round || '-'}`}
+                {bannerCompleted ? 'All picks made' : `${bannerYourPick ? 'You are on the clock' : 'On the clock'}, pick ${state.current_pick || '-'}, round ${state.current_round || '-'}`}
               </div>
               <div className="draft-banner-team">
                 {bannerCompleted ? 'Draft Complete' : (state.current_team_name || 'TBD')}
@@ -1021,7 +1021,6 @@ function DraftRoomPageInner() {
                 {!bannerCompleted && state.current_label && (
                   <span style={{ fontSize: '.6em', fontWeight: 700, color: '#d29922', marginLeft: 8 }}>{state.current_label}</span>
                 )}
-                {bannerYourPick && <span className="draft-your-pick-pill">Your Pick</span>}
               </div>
             </div>
           </div>
@@ -1146,7 +1145,7 @@ function DraftRoomPageInner() {
                     const isBlocked = positionNeeds.blocked_positions.includes(pos)
                     const cls = isBlocked ? 'blocked' : need > 0 ? 'short' : 'met'
                     return (
-                      <span key={pos} className={`draft-need-chip ${cls}`} title={isBlocked ? 'BLOCKED' : need > 0 ? `${need} more needed` : 'Requirement met'}>
+                      <span key={pos} className={`draft-need-chip ${cls} np-${pos.toLowerCase()}`} title={isBlocked ? 'BLOCKED' : need > 0 ? `${need} more needed` : 'Requirement met'}>
                         {pos} {drafted}/{required}{isBlocked && <i className="bi bi-lock-fill" style={{ fontSize: '.8125rem' }}></i>}
                       </span>
                     )
@@ -1276,7 +1275,7 @@ function DraftRoomPageInner() {
                     {boardTab === 'queue' ? (
                       queue.length === 0 ? (
                         <div className="text-center" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem', padding: '14px 16px', lineHeight: 1.5 }}>
-                          Tap <i className="bi bi-bookmark-plus"></i> on players to line up your picks. When it's your turn just hit <strong>Pick</strong> here, and if your timer runs out, the top available player in this list is auto-drafted.
+                          Tap <i className="bi bi-bookmark-plus"></i> on a player to queue him. If your timer runs out, the top of your queue is drafted.
                         </div>
                       ) : (
                         <table className="table table-sm mb-0">
@@ -1297,7 +1296,7 @@ function DraftRoomPageInner() {
                     ) : (
                       wishlistAvail.length === 0 ? (
                         <div className="text-center" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem', padding: '14px 16px', lineHeight: 1.5 }}>
-                          Star players (★) anywhere in the app to build your wishlist, the available ones show here, ready to queue or draft.
+                          Star a player anywhere on the site and he shows here while he is still available.
                         </div>
                       ) : (
                         <table className="table table-sm mb-0">
@@ -1353,7 +1352,7 @@ function DraftRoomPageInner() {
                         <tr key={pick.pick_number} className={isMine ? 'draft-pick-row-mine' : undefined}>
                           <td className="dn-pickno" title={`Round ${pick.round}`}>{pick.pick_number}</td>
                           <td>
-                            <span className="dn-teamcell"><TeamCrest team={teamOf(pick.team_id)} size={24} />{pick.team_name}</span>
+                            <span className="dn-teamcell" title={pick.team_name}><TeamCrest team={teamOf(pick.team_id)} size={24} /><span className="dn-teamname">{pick.team_name}</span></span>
                             {pick.via_team_name && <span style={{ color: 'var(--kl-text-primary)', fontSize: '.85em' }}> via {pick.via_team_name}</span>}
                             {pick.label && <span style={{ color: '#d29922', fontSize: '.8em', fontWeight: 600 }}> {pick.label}</span>}
                           </td>

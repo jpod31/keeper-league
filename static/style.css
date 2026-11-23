@@ -11806,7 +11806,7 @@ th .sort-icon { opacity: 1 !important; }
 
 /* Phone: the last tables that ran wide. */
 @media (max-width: 600px) {
-  .dn-hist-tbl .dn-teamcell { font-size: 0 !important; gap: 0 !important; }
+  .dn-hist-tbl .dn-teamname { display: none !important; }
   .dn-hist-tbl .dn-teamcell + span { display: none; }
   .drc-grades th:nth-child(4), .drc-grades td:nth-child(4), .drc-grades th:nth-child(5), .drc-grades td:nth-child(5),
   .drc-grades th:nth-child(7), .drc-grades td:nth-child(7) { display: none !important; }
@@ -12077,3 +12077,20 @@ th .sort-icon { opacity: 1 !important; }
   background: var(--logo) center / contain no-repeat; opacity: .12; filter: grayscale(1) brightness(1.9) contrast(.9); }
 .dn-reveal-name { font-weight: 700 !important; letter-spacing: -.04em !important; }
 .dn-reveal-top { font-family: var(--kl-font-mono); font-weight: 600 !important; letter-spacing: .04em; text-transform: uppercase; }
+
+/* ── Draft room: your pick is unmistakable. ── */
+.draft-banner.dn-stage.draft-banner-your-pick { border: 2px solid #ffffff !important; box-shadow: 0 0 0 4px rgba(255,255,255,.14) !important;
+  background: linear-gradient(100deg, rgba(var(--on, 236,236,246), .55), rgba(var(--on, 236,236,246), .16) 60%, #0b0b0e) !important; }
+.draft-banner-your-pick .draft-banner-round { color: #ffffff !important; font-size: .9375rem !important; }
+.dn-act .btn-outline-primary:not(:disabled) { background: #ffffff !important; border-color: #ffffff !important; color: #050506 !important; font-weight: 700 !important; }
+.dn-act .btn-outline-primary:not(:disabled):hover { background: #d9d9e0 !important; border-color: #d9d9e0 !important; }
+.dn-act .btn-outline-primary:disabled { opacity: 1 !important; color: #ffffff !important; border-color: var(--hair) !important; background: transparent !important; }
+
+/* What you still need, by position: the position colour is the edge. */
+.draft-need-chip { background: transparent !important; color: #ffffff !important; border: 1px solid var(--hair-2) !important; border-left-width: 4px !important;
+  border-radius: 5px !important; font-family: var(--kl-font-mono); font-weight: 600 !important; }
+.draft-need-chip.np-def { border-left-color: var(--pos-def) !important; } .draft-need-chip.np-mid { border-left-color: var(--pos-mid) !important; }
+.draft-need-chip.np-ruc { border-left-color: var(--pos-ruc) !important; } .draft-need-chip.np-fwd { border-left-color: var(--pos-fwd) !important; }
+.draft-need-chip.met { color: #56d364 !important; }
+.draft-need-chip.blocked { color: #f85149 !important; }
+.draft-pass-tag { color: #ffffff !important; background: none !important; border: 1px solid var(--hair-2) !important; }
