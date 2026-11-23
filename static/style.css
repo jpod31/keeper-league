@@ -12401,3 +12401,22 @@ body { font-variant-numeric: tabular-nums; }
 .mob-pos-badge.mob-badge-vc { background: #1f6feb !important; color: #ffffff !important; }
 .mob-pos-badge.mob-badge-emg { background: #38a6d7 !important; color: #050506 !important; }
 .mob-pos-badge.mob-badge-7s { background: #bc8cff !important; color: #050506 !important; }
+/* Card numbers: big figure, small label under it. Lucas, 2026-11-24: "larger
+   numbers smaller text on Age rating etc. come on... thats 101". The label is
+   the one deliberate exception to the 13px floor; its size is a variable so
+   tools/type_floor.py leaves it alone. */
+.pc7 { --pc7-lab: 10.5px; }
+.pc7-cell { gap: 4px; padding: 7px 0 7px; }
+.pc7-v { height: 23px; font-size: 1.4375rem; font-weight: 700; letter-spacing: -.035em; }
+.pc7-v .rt { height: 23px !important; min-width: 36px !important; padding: 0 6px !important; font-size: 1.0625rem !important; letter-spacing: -.01em; }
+.pc7-l { font-size: var(--pc7-lab); font-weight: 600; letter-spacing: .08em; }
+.pc7-form { font-size: .6875rem; margin-left: 1px; }
+@media (max-width: 1279.98px) {
+  .pc7-v { font-size: 1.1875rem; }
+  .pc7-v .rt { min-width: 30px !important; padding: 0 4px !important; font-size: .9375rem !important; }
+}
+@media (max-width: 1179.98px) {
+  .pc7-v { font-size: 1.0625rem; }
+  .pc7-v .rt { min-width: 28px !important; padding: 0 3px !important; font-size: .875rem !important; height: 21px !important; }
+  .pc7-form { font-size: .5625rem; margin-left: 0; }
+}

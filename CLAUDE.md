@@ -287,6 +287,12 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   `min(168px, (100% - 32px) / 5)` so every row has the same card width on a
   small laptop. New class names on purpose, so older `.fv-*` and `.pc6-*`
   rules do not apply.
+- **Card numbers are big, their labels small** (23px figure over a 10.5px
+  AVG / RTG / AGE label). Lucas, 2026-11-24: "larger numbers smaller text on
+  Age rating etc. come on... thats 101". This label is the one deliberate
+  exception to the 13px floor: its size is the `--pc7-lab` variable so
+  `tools/type_floor.py` does not raise it, and `kl_audit.mjs` skips `.pc7-l`.
+  A label under a number should never be near the number's size.
 - **One typeface: Geist.** Geist Mono was dropped on 2026-11-24 (Lucas: "the
   fonts dont match the style"); `--kl-font-mono` now points at `--kl-font` so
   older rules keep working, and `body` has tabular numerals. Do not add a
