@@ -229,7 +229,19 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   pages on the local rig and counts visible text under 13px, grey text and
   clipped text per page; a page is done when it reports zeros. No captions
   under buttons or stats, no em dashes in visible text, no pill shapes, no
-  letter-spacing over .06em.
+  letter-spacing over .06em. No dot-separated meta lines ("A · B · C"): use a
+  comma, a plain count, or a chip.
+- **The audit also reports boxes that scroll sideways.** Raising the type made
+  the draft room's players table wider than its card and pushed Pick off the
+  edge. Any `side-scroll` line that is not a strip meant to scroll (draft
+  order, round picker, tabs) is a bug: content is hidden. Check 1280 and 390
+  wide. Tables hide columns by `nth-child`, so removing a column shifts every
+  such rule after it (page CSS and `static/style.css` both).
+- **One set of position colours**: `--pos-def #58a6ff`, `--pos-mid #bc8cff`,
+  `--pos-ruc #3fb950`, `--pos-fwd #f0883e`, solid fill with dark text. Several
+  pages carried their own maps; grep `DEF:` and `pos-` before adding another.
+- **Class names are global.** `.rec-card` meant two things (team stats and
+  league records) and one broke the other. Prefix new classes per page.
 - **Player cards: club AND position.** The card body is the player's AFL club
   colours; the position is a solid badge in the position colour plus the
   card's left edge. Position badges are solid everywhere; an EXPECTED position

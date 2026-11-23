@@ -21,8 +21,7 @@ Status key: `[x]` live on keeperlg.com, `[ ]` not done.
       off-season, so moving the league's own year first would have broken all
       four. After the draft, the commissioner presses **Start 2027 season** on
       the hub. That builds the 2027 fixture and saves the 2027 opening squads.
-- Trades were NOT reopened (only delistings were asked for). One click on the
-  hub if wanted.
+- Trades were reopened the same evening, until the draft starts (see Round 2).
 
 ## 1. Move to the 2027 season
 
@@ -75,7 +74,9 @@ Status key: `[x]` live on keeperlg.com, `[ ]` not done.
 
 ## 7. New colour scheme
 
-- [x] Black and gold, no green or blue. Logo and app icons recoloured
+- [x] First cut was black and gold. Lucas rejected it (see Round 2). The
+      site is now black and white, with colour kept for positions, rating
+      bands, form, AFL clubs and fantasy teams. Logo and app icons are white
       (originals kept as `*-2026.*` in `static/icons`).
 
 ## 8. General beautification
@@ -113,6 +114,44 @@ cooler."
 - [x] Home: a live countdown to draft night and every club's list, picks and
       what it still owes, in draft order.
 - [x] Proposals rewritten as eight ideas that improve the game (same link).
+
+## Rounds 3 and 4: the design system and the type rules
+
+Round 3, his words: "even better, more advanced, more modern, clean, sleek,
+no sign of Claude". Round 4: the squad header was "pure claude again, the
+tiny text", the home layout "too much going on, not intuitive", "RUC exp"
+"doesn't even fit in the box", and club-coloured cards were fine as an idea
+but hid the position.
+
+- [x] Design system v4: Geist and Geist Mono, hairlines, 5 to 8px corners,
+      white primary button, no glows, no pills, no gradients on controls.
+- [x] Type rules, enforced by `tools/type_floor.py`: nothing under 13px and
+      one text colour. `_mobtest/kl_audit.mjs` counts what is left per page.
+- [x] Squad header rebuilt: name, three plain facts, three buttons, four
+      numbers. No captions.
+- [x] Home in the off-season is one thing: the draft date, the countdown, one
+      sentence on your list, and the draft order.
+- [x] Cards keep the AFL club's colours. Position is a solid badge and the
+      card's left edge.
+- [x] An expected position is the same badge, hollow with a dashed edge. The
+      word "exp" is gone.
+- [x] No em dashes in visible text. Pills squared. Crests on the ladder.
+
+## Round 5: "keep going"
+
+Went through every page by eye instead of by count.
+
+- [x] Trades page rebuilt: a title, three plain tabs, one row per deal.
+- [x] One set of position colours. The trade builder, season review and
+      scouting had a second set (green mids, pink forwards).
+- [x] Dot-separated lines are commas or plain counts.
+- [x] Player page header, pop-up stat grids and chart labels.
+- [x] Gameday in the off-season says there are no games.
+- [x] League records, notifications, mock draft and commissioner page fixes.
+- [x] The page backdrop is flat black with the grid.
+- [x] Draft room: Pick had scrolled off the edge of the players table after
+      the type went up. The table now fits and the action column is pinned.
+      The audit reports any box that scrolls sideways so this is caught.
 
 ## Fixed along the way (would have bitten on draft night)
 
