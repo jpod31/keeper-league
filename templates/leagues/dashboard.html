@@ -7,7 +7,7 @@
       <h2>{{ league.name }}</h2>
       <div class="d-flex align-items-center gap-3 mt-1">
         <span class="status-pill status-{{ league.status }}">{{ league.status }}</span>
-        <span style="font-size:.8rem;color:#a39586;">{{ league.season_year }} &middot; {{ SCORING_TYPE_LABELS.get(league.scoring_type, league.scoring_type) }} Scoring</span>
+        <span style="font-size:.8rem;color:#a0a0ac;">{{ league.season_year }} &middot; {{ SCORING_TYPE_LABELS.get(league.scoring_type, league.scoring_type) }} Scoring</span>
       </div>
     </div>
   </div>
@@ -19,7 +19,7 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-          <i class="bi bi-people me-2" style="color:#a39586;"></i>Teams
+          <i class="bi bi-people me-2" style="color:#a0a0ac;"></i>Teams
           <span class="text-secondary fw-normal" style="font-size:.8rem;">{{ teams|length }}/{{ league.num_teams }}</span>
         </h5>
       </div>
@@ -40,21 +40,21 @@
                     style="cursor:pointer;">
                   <td>
                     <span class="d-inline-flex align-items-center justify-content-center rounded"
-                          style="width:28px;height:28px;background:#272522;font-size:.75rem;font-weight:600;border-radius:6px !important;">
+                          style="width:28px;height:28px;background:#1e1d21;font-size:.75rem;font-weight:600;border-radius:6px !important;">
                       {{ team.draft_order or loop.index }}
                     </span>
                   </td>
                   <td>
                     <strong>{{ team.name }}</strong>
                     {% if team.owner_id == current_user.id %}
-                      <span class="badge ms-1" style="background:rgba(245,185,64,.15);color:#f5b940;font-size:.65rem;">You</span>
+                      <span class="badge ms-1" style="background:rgba(236,236,246,.15);color:#ececf6;font-size:.65rem;">You</span>
                     {% endif %}
                   </td>
-                  <td style="color:#a39586;">{{ team.owner.display_name }}</td>
+                  <td style="color:#a0a0ac;">{{ team.owner.display_name }}</td>
                   <td class="text-end">
-                    <span class="badge" style="background:#272522;color:#a39586;">{{ team.roster|selectattr('is_active')|list|length }}</span>
+                    <span class="badge" style="background:#1e1d21;color:#a0a0ac;">{{ team.roster|selectattr('is_active')|list|length }}</span>
                   </td>
-                  <td style="width:24px;color:#56504a;"><i class="bi bi-chevron-right"></i></td>
+                  <td style="width:24px;color:#63616d;"><i class="bi bi-chevron-right"></i></td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -75,7 +75,7 @@
       <div class="card mb-3">
         <div class="card-body p-4">
           <h5 class="fw-bold mb-3" style="font-size:.95rem;">
-            <i class="bi bi-box-arrow-in-right me-2" style="color:#dbcf94;"></i>Join League
+            <i class="bi bi-box-arrow-in-right me-2" style="color:#3fb950;"></i>Join League
           </h5>
           <form method="POST" action="{{ url_for('leagues.league_join', league_id=league.id) }}">
             <div class="mb-3">
@@ -130,7 +130,7 @@
       <div class="card mb-3">
         <div class="card-header">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <i class="bi bi-share me-2" style="color:#d26822;"></i>Invite Players
+            <i class="bi bi-share me-2" style="color:#d29922;"></i>Invite Players
           </h5>
         </div>
         <div class="card-body">
@@ -138,13 +138,13 @@
           <div class="input-group input-group-sm">
             <input type="text" class="form-control" id="invite-url" readonly
                    value="{{ url_for('leagues.league_invite', code=league.invite_code, _external=True) }}"
-                   style="font-size:.75rem;background:#121110;color:#d7d1cb;border-color:#373330;">
+                   style="font-size:.75rem;background:#0e0d0f;color:#cfcfd6;border-color:#2a292f;">
             <button class="btn btn-outline-secondary" onclick="copyInvite()" id="copy-btn" title="Copy link">
               <i class="bi bi-clipboard"></i>
             </button>
           </div>
           <div class="mt-2 text-center">
-            <span class="badge" style="background:#272522;color:#a39586;font-size:.7rem;letter-spacing:1px;">{{ league.invite_code }}</span>
+            <span class="badge" style="background:#1e1d21;color:#a0a0ac;font-size:.7rem;letter-spacing:1px;">{{ league.invite_code }}</span>
           </div>
         </div>
       </div>
@@ -169,7 +169,7 @@
     <div class="card mb-3">
       <div class="card-header">
         <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-          <i class="bi bi-info-circle me-2" style="color:#a39586;"></i>Details
+          <i class="bi bi-info-circle me-2" style="color:#a0a0ac;"></i>Details
         </h5>
       </div>
       <div class="card-body">
@@ -181,7 +181,7 @@
         <div class="info-row"><span class="info-label">Trade Window</span>
           <span class="info-value">
             {% if league.trade_window_open %}
-              <span style="color:#dbcf94;"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Open</span>
+              <span style="color:#3fb950;"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Open</span>
             {% else %}
               <span style="color:#f85149;"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Closed</span>
             {% endif %}
@@ -194,7 +194,7 @@
     <div class="card mb-3">
       <div class="card-header">
         <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-          <i class="bi bi-diagram-3 me-2" style="color:#a39586;"></i>Positions
+          <i class="bi bi-diagram-3 me-2" style="color:#a0a0ac;"></i>Positions
         </h5>
       </div>
       <div class="card-body">
@@ -212,7 +212,7 @@
       <div class="card">
         <div class="card-header">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <i class="bi bi-calculator me-2" style="color:#a39586;"></i>Scoring Rules
+            <i class="bi bi-calculator me-2" style="color:#a0a0ac;"></i>Scoring Rules
           </h5>
         </div>
         <div class="card-body">
@@ -228,13 +228,13 @@
       <div class="card">
         <div class="card-header">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <i class="bi bi-trophy me-2" style="color:#d26822;"></i>UF Categories ({{ scoring_rules|length }})
+            <i class="bi bi-trophy me-2" style="color:#d29922;"></i>UF Categories ({{ scoring_rules|length }})
           </h5>
         </div>
         <div class="card-body">
           <div class="d-flex flex-wrap gap-2">
             {% for stat in scoring_rules.keys() %}
-              <span class="badge" style="background:#272522;color:#d7d1cb;font-weight:500;font-size:.75rem;">{{ stat.replace('_', ' ')|title }}</span>
+              <span class="badge" style="background:#1e1d21;color:#cfcfd6;font-weight:500;font-size:.75rem;">{{ stat.replace('_', ' ')|title }}</span>
             {% endfor %}
           </div>
         </div>

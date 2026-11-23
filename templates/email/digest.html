@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
-<body style="margin:0;padding:0;background:#121110;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#121110;padding:40px 20px;">
+<body style="margin:0;padding:0;background:#0e0d0f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e0d0f;padding:40px 20px;">
     <tr>
       <td align="center">
-        <table width="540" cellpadding="0" cellspacing="0" style="background:#1c1a18;border:1px solid #373330;border-radius:12px;overflow:hidden;">
+        <table width="540" cellpadding="0" cellspacing="0" style="background:#151518;border:1px solid #2a292f;border-radius:12px;overflow:hidden;">
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#dbcf94,#e4d58b,#b77a10);padding:20px 30px;">
+            <td style="background:linear-gradient(135deg,#3fb950,#4ade80,#514e5f);padding:20px 30px;">
               <img src="https://keeperlg.com/static/icons/kl-logo.png" alt="KL" width="36" height="36" style="vertical-align:middle;border-radius:8px;">
               <span style="color:#fff;font-size:.95rem;font-weight:700;margin-left:10px;vertical-align:middle;">Weekly Digest</span>
             </td>
@@ -19,7 +19,7 @@
           <!-- Greeting -->
           <tr>
             <td style="padding:24px 30px 8px;">
-              <p style="color:#d7d1cb;font-size:.95rem;margin:0;">
+              <p style="color:#cfcfd6;font-size:.95rem;margin:0;">
                 Hi {{ user.display_name or user.username }}, here's what happened this week:
               </p>
             </td>
@@ -30,15 +30,15 @@
               <table width="100%" cellpadding="0" cellspacing="0">
                 {% for notif in notifications %}
                 <tr>
-                  <td style="padding:10px 0;border-bottom:1px solid #272522;">
-                    <div style="font-size:.85rem;color:#d7d1cb;font-weight:600;">{{ notif.title }}</div>
+                  <td style="padding:10px 0;border-bottom:1px solid #1e1d21;">
+                    <div style="font-size:.85rem;color:#cfcfd6;font-weight:600;">{{ notif.title }}</div>
                     {% if notif.body %}
-                      <div style="font-size:.8rem;color:#a39586;margin-top:2px;">{{ notif.body }}</div>
+                      <div style="font-size:.8rem;color:#a0a0ac;margin-top:2px;">{{ notif.body }}</div>
                     {% endif %}
-                    <div style="font-size:.72rem;color:#80786f;margin-top:4px;">
+                    <div style="font-size:.72rem;color:#8a8895;margin-top:4px;">
                       {{ notif.created_at.strftime('%a %d %b, %I:%M %p') }}
                       {% if notif.link %}
-                        &middot; <a href="{{ notif.link }}" style="color:#f5b940;text-decoration:none;">View</a>
+                        &middot; <a href="{{ notif.link }}" style="color:#ececf6;text-decoration:none;">View</a>
                       {% endif %}
                     </div>
                   </td>
@@ -49,8 +49,8 @@
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="padding:16px 30px;border-top:1px solid #373330;">
-              <p style="color:#80786f;font-size:.75rem;margin:0;">
+            <td style="padding:16px 30px;border-top:1px solid #2a292f;">
+              <p style="color:#8a8895;font-size:.75rem;margin:0;">
                 You're receiving this because you enabled weekly digest emails.
                 Manage your notification preferences in your profile.
               </p>

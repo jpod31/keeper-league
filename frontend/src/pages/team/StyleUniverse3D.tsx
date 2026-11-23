@@ -6,7 +6,7 @@ export interface UniNode {
   id: number; name: string; pos: string; x: number; y: number; z: number
   cluster: number; archetype: string; sc: number; owned: boolean
 }
-const CL_COLORS = ['#f4b12a', '#bc8cff', '#f0763e', '#dbcf94', '#ff6b9d', '#f78d47', '#f5b940', '#ff5e57']
+const CL_COLORS = ['#e0deea', '#bc8cff', '#f0883e', '#3fb950', '#ff6b9d', '#ffd23f', '#ececf6', '#ff5e57']
 
 function OwnedNode({ p, color, onSelect }: { p: UniNode; color: string; onSelect: (id: number) => void }) {
   const [hov, setHov] = useState(false)
@@ -29,7 +29,7 @@ function OwnedNode({ p, color, onSelect }: { p: UniNode; color: string; onSelect
       </mesh>
       {hov && (
         <Html center distanceFactor={16} style={{ pointerEvents: 'none' }}>
-          <div style={{ background: 'rgba(17,16,15,.92)', border: `1px solid ${color}`, color: '#efedea', padding: '4px 9px', borderRadius: 6, fontSize: 11, whiteSpace: 'nowrap', transform: 'translateY(-26px)', boxShadow: `0 0 14px ${color}66` }}>
+          <div style={{ background: 'rgba(13,13,15,.92)', border: `1px solid ${color}`, color: '#ebebee', padding: '4px 9px', borderRadius: 6, fontSize: 11, whiteSpace: 'nowrap', transform: 'translateY(-26px)', boxShadow: `0 0 14px ${color}66` }}>
             <b>{p.name}</b> · {p.archetype} · {p.sc} SC
           </div>
         </Html>
@@ -83,7 +83,7 @@ function Scene({ nodes, onSelect }: { nodes: UniNode[]; onSelect: (id: number) =
 export default function StyleUniverse3D({ nodes, onSelect }: { nodes: UniNode[]; onSelect: (id: number) => void }) {
   return (
     <Canvas camera={{ position: [16, 11, 20], fov: 50 }} dpr={[1, 2]} gl={{ alpha: true, antialias: true }} style={{ width: '100%', height: '100%' }}>
-      <fog attach="fog" args={['#0d0c0b', 30, 70]} />
+      <fog attach="fog" args={['#0a090b', 30, 70]} />
       <Scene nodes={nodes} onSelect={onSelect} />
     </Canvas>
   )

@@ -38,18 +38,18 @@ interface RatingsData {
 
 const RM_CSS = `
 .rm-controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding:12px 16px; border-bottom:1px solid var(--kl-border); }
-.rm-seg { display:inline-flex; background:rgba(26,24,22,.6); border:1px solid var(--kl-border); border-radius:999px; padding:3px; }
+.rm-seg { display:inline-flex; background:rgba(19,19,22,.6); border:1px solid var(--kl-border); border-radius:999px; padding:3px; }
 .rm-seg-btn { padding:5px 14px; border:0; background:transparent; color:var(--kl-text-secondary); font-size:.76rem; font-weight:700; border-radius:999px; cursor:pointer; transition:background .12s,color .12s; }
-.rm-seg-btn.active.up { background:rgba(219,207,148,.16); color:#dbcf94; }
+.rm-seg-btn.active.up { background:rgba(63,185,80,.16); color:#3fb950; }
 .rm-seg-btn.active.down { background:rgba(248,81,73,.16); color:#f85149; }
-.rm-seg-btn.active.all { background:rgba(245,185,64,.16); color:#f5b940; }
+.rm-seg-btn.active.all { background:rgba(236,236,246,.16); color:#ececf6; }
 .rm-pos { display:inline-flex; gap:4px; flex-wrap:wrap; }
 .rm-chip { padding:4px 9px; border:1px solid var(--kl-border); background:transparent; color:var(--kl-text-secondary); font-size:.7rem; font-weight:700; border-radius:8px; cursor:pointer; transition:all .12s; }
-.rm-chip:hover { border-color:var(--kl-border-light,#524d48); color:var(--kl-text-primary); }
-.rm-chip.active { background:rgba(245,185,64,.14); border-color:rgba(245,185,64,.5); color:#f5b940; }
+.rm-chip:hover { border-color:var(--kl-border-light,#605e6a); color:var(--kl-text-primary); }
+.rm-chip.active { background:rgba(236,236,246,.14); border-color:rgba(236,236,246,.5); color:#ececf6; }
 .rm-toggle { display:inline-flex; align-items:center; gap:7px; margin-left:auto; font-size:.76rem; color:var(--kl-text-secondary); cursor:pointer; user-select:none; }
-.rm-toggle input { accent-color:#f5b940; width:15px; height:15px; }
-.rm-debut { display:inline-block; font-size:.56rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:1px 5px; border-radius:4px; margin-left:6px; background:rgba(210,104,34,.16); color:#d26822; vertical-align:middle; }
+.rm-toggle input { accent-color:#ececf6; width:15px; height:15px; }
+.rm-debut { display:inline-block; font-size:.56rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:1px 5px; border-radius:4px; margin-left:6px; background:rgba(210,153,34,.16); color:#d29922; vertical-align:middle; }
 .rm-arrow { color:var(--kl-text-muted); font-size:.7rem; margin:0 4px; }
 .rm-count { font-size:.72rem; color:var(--kl-text-muted); }
 .rm-empty { padding:28px 16px; text-align:center; color:var(--kl-text-muted); font-size:.85rem; }
@@ -57,7 +57,7 @@ const RM_CSS = `
 `
 
 function deltaBadge(delta: number) {
-  if (delta > 0) return <span className="badge" style={{ background: 'rgba(219,207,148,.15)', color: '#dbcf94' }}>+{delta}</span>
+  if (delta > 0) return <span className="badge" style={{ background: 'rgba(63,185,80,.15)', color: '#3fb950' }}>+{delta}</span>
   if (delta < 0) return <span className="badge" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149' }}>{delta}</span>
   return <span className="text-secondary">—</span>
 }
@@ -100,7 +100,7 @@ export function PlayerRatingsPage() {
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Players / Ratings
         </div>
         <div>
-          <h2 className="mb-0"><i className="bi bi-star me-2" style={{ color: '#d26822' }}></i>Player Ratings</h2>
+          <h2 className="mb-0"><i className="bi bi-star me-2" style={{ color: '#d29922' }}></i>Player Ratings</h2>
           {data.last_update_date && (
             <div className="text-secondary" style={{ fontSize: '.85rem' }}>
               Last rating change: {new Date(data.last_update_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -113,7 +113,7 @@ export function PlayerRatingsPage() {
       <div className="card">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-            <i className="bi bi-graph-up-arrow me-2" style={{ color: '#dbcf94' }}></i>Season Movers
+            <i className="bi bi-graph-up-arrow me-2" style={{ color: '#3fb950' }}></i>Season Movers
           </h5>
           <span className="rm-count">{movers.length} shown · since start of year</span>
         </div>
@@ -177,7 +177,7 @@ export function PlayerRatingsPage() {
       <div className="card mt-4">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-            <i className="bi bi-arrow-repeat me-2" style={{ color: '#f5b940' }}></i>Latest Update
+            <i className="bi bi-arrow-repeat me-2" style={{ color: '#ececf6' }}></i>Latest Update
           </h5>
           <span className="rm-count">{data.last_update.length} change{data.last_update.length === 1 ? '' : 's'}</span>
         </div>

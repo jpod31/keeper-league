@@ -1,7 +1,7 @@
-"""Recolour the KL logo and app icons from the green-to-blue gradient to gold.
+"""Recolour the KL logo and app icons from the green-to-blue gradient to chrome white.
 
 Each pixel keeps its alpha and its brightness; only the colour changes, by
-mapping luminance onto a bronze -> gold -> pale-gold ramp. Originals are kept
+mapping luminance onto a grey -> white ramp (it was gold for a day). Originals are kept
 as *-2026.* beside the new files. Run once on 2026-11-23.
 """
 import os
@@ -9,14 +9,12 @@ import shutil
 from PIL import Image
 
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "icons")
-RAMP = [  # (luminance 0-1, rgb)
-    (0.00, (12, 11, 10)),
-    (0.10, (58, 38, 6)),
-    (0.30, (150, 100, 14)),
-    (0.52, (232, 168, 44)),
-    (0.72, (250, 200, 86)),
-    (0.90, (255, 232, 170)),
-    (1.00, (255, 250, 236)),
+RAMP = [  # (luminance 0-1, rgb): a chrome white mark for a black-and-white chrome
+    (0.00, (8, 8, 10)),
+    (0.12, (70, 70, 80)),
+    (0.35, (168, 168, 180)),
+    (0.60, (226, 226, 234)),
+    (1.00, (255, 255, 255)),
 ]
 
 

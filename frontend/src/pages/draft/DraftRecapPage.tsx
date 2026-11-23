@@ -55,7 +55,7 @@ export function DraftRecapPage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-list-check me-2" style={{ color: '#f5b940' }}></i>Draft Recap</h2>
+        <h2><i className="bi bi-list-check me-2" style={{ color: '#ececf6' }}></i>Draft Recap</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
           {data.league.season_year} {data.session.draft_round_type} draft
           {data.session.completed_at && ` · ${new Date(data.session.completed_at).toLocaleDateString()}`}
@@ -65,7 +65,7 @@ export function DraftRecapPage() {
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-            <i className="bi bi-trophy me-2" style={{ color: '#d26822' }}></i>Draft Grades
+            <i className="bi bi-trophy me-2" style={{ color: '#d29922' }}></i>Draft Grades
           </h5>
         </div>
         <div className="card-body p-0">
@@ -101,7 +101,7 @@ export function DraftRecapPage() {
                   </td>
                   <td className="text-end">{g.total_value.toFixed(0)}</td>
                   <td className="text-end text-secondary">{g.expected_value.toFixed(0)}</td>
-                  <td className="text-end" style={{ color: g.ratio >= 1 ? '#dbcf94' : '#f85149' }}>
+                  <td className="text-end" style={{ color: g.ratio >= 1 ? '#3fb950' : '#f85149' }}>
                     {(g.ratio * 100).toFixed(0)}%
                   </td>
                   <td className="text-secondary" style={{ fontSize: '.75rem' }}>
@@ -126,7 +126,7 @@ export function DraftRecapPage() {
               <div
                 style={{
                   padding: '.5rem 1rem',
-                  background: '#121110',
+                  background: '#0e0d0f',
                   borderBottom: '1px solid var(--kl-border)',
                   fontSize: '.75rem',
                   fontWeight: 700,
@@ -141,7 +141,7 @@ export function DraftRecapPage() {
                 <tbody>
                   {picks.map(p => (
                     <tr key={p.pick_number}>
-                      <td style={{ width: 40, color: '#56504a' }}>{p.pick_number}</td>
+                      <td style={{ width: 40, color: '#63616d' }}>{p.pick_number}</td>
                       <td style={{ width: 140 }}>{p.team_name}</td>
                       <td>
                         {p.is_pass ? (
@@ -153,7 +153,7 @@ export function DraftRecapPage() {
                               {p.position} · {p.afl_team}
                             </span>
                             {p.is_auto_pick && (
-                              <span className="badge ms-2" style={{ background: '#272522', color: '#a39586', fontSize: '.6rem' }}>auto</span>
+                              <span className="badge ms-2" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.6rem' }}>auto</span>
                             )}
                           </>
                         )}
@@ -170,7 +170,7 @@ export function DraftRecapPage() {
                           <span style={{
                             fontSize: '.7rem',
                             fontFamily: 'monospace',
-                            color: p.value_diff >= 0 ? '#dbcf94' : '#f85149',
+                            color: p.value_diff >= 0 ? '#3fb950' : '#f85149',
                           }}>
                             {p.value_diff >= 0 ? '+' : ''}{p.value_diff.toFixed(0)}
                           </span>

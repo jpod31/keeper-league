@@ -47,26 +47,26 @@ export function WinProbabilityGauge({ leagueId, fixtureId, refreshMs = 45000 }: 
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #1c1a18, #121110)',
-      border: '1px solid #272522',
+      background: 'linear-gradient(135deg, #151518, #0e0d0f)',
+      border: '1px solid #1e1d21',
       borderRadius: 12,
       padding: 16,
       marginTop: 16,
     }}>
       <style>{`
         .wp-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-        .wp-title { font-size:.72rem; color:#a39586; text-transform:uppercase; letter-spacing:.5px; font-weight:700; margin:0; }
-        .wp-meta { font-size:.66rem; color:#80786f; }
-        .wp-bar-container { position:relative; height:40px; border-radius:10px; overflow:hidden; background:#272522; }
-        .wp-bar-home { position:absolute; top:0; bottom:0; left:0; background:linear-gradient(90deg,#dbcf94,#71602b); transition:width .6s cubic-bezier(.2,.8,.2,1); }
-        .wp-bar-away { position:absolute; top:0; bottom:0; right:0; background:linear-gradient(90deg,#b77a10,#b77a10); transition:width .6s cubic-bezier(.2,.8,.2,1); }
+        .wp-title { font-size:.72rem; color:#a0a0ac; text-transform:uppercase; letter-spacing:.5px; font-weight:700; margin:0; }
+        .wp-meta { font-size:.66rem; color:#8a8895; }
+        .wp-bar-container { position:relative; height:40px; border-radius:10px; overflow:hidden; background:#1e1d21; }
+        .wp-bar-home { position:absolute; top:0; bottom:0; left:0; background:linear-gradient(90deg,#3fb950,#238636); transition:width .6s cubic-bezier(.2,.8,.2,1); }
+        .wp-bar-away { position:absolute; top:0; bottom:0; right:0; background:linear-gradient(90deg,#514e5f,#514e5f); transition:width .6s cubic-bezier(.2,.8,.2,1); }
         .wp-label { position:absolute; top:50%; transform:translateY(-50%); font-size:.78rem; font-weight:800; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5); letter-spacing:.3px; }
-        .wp-footer { display:flex; justify-content:space-between; margin-top:8px; font-size:.7rem; color:#a39586; }
-        .wp-range { display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid rgba(163,149,134,.1); gap:20px; }
+        .wp-footer { display:flex; justify-content:space-between; margin-top:8px; font-size:.7rem; color:#a0a0ac; }
+        .wp-range { display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid rgba(160,160,172,.1); gap:20px; }
         .wp-side { flex:1; min-width:0; }
-        .wp-side-name { font-size:.72rem; font-weight:700; color:#d7d1cb; }
-        .wp-side-score { font-size:.68rem; color:#80786f; margin-top:2px; }
-        .wp-dist-bar { position:relative; height:6px; background:#272522; border-radius:3px; margin-top:6px; }
+        .wp-side-name { font-size:.72rem; font-weight:700; color:#cfcfd6; }
+        .wp-side-score { font-size:.68rem; color:#8a8895; margin-top:2px; }
+        .wp-dist-bar { position:relative; height:6px; background:#1e1d21; border-radius:3px; margin-top:6px; }
         .wp-dist-fill { position:absolute; height:100%; border-radius:3px; }
       `}</style>
       <div className="wp-hdr">
@@ -82,19 +82,19 @@ export function WinProbabilityGauge({ leagueId, fixtureId, refreshMs = 45000 }: 
       </div>
 
       <div className="wp-footer">
-        <span style={{ color: '#dbcf94', fontWeight: 600 }}>{data.home_team.name}</span>
-        <span style={{ color: '#b77a10', fontWeight: 600 }}>{data.away_team.name}</span>
+        <span style={{ color: '#3fb950', fontWeight: 600 }}>{data.home_team.name}</span>
+        <span style={{ color: '#514e5f', fontWeight: 600 }}>{data.away_team.name}</span>
       </div>
 
       <div className="wp-range">
         {[data.home_team, data.away_team].map((t, i) => {
-          const col = i === 0 ? '#dbcf94' : '#b77a10'
+          const col = i === 0 ? '#3fb950' : '#514e5f'
           const fullRange = Math.max(t.p90, 1)
           return (
             <div key={t.id} className="wp-side">
               <div className="wp-side-name" style={{ color: col }}>{t.name}</div>
               <div className="wp-side-score">
-                Now <b style={{ color: '#d7d1cb' }}>{t.current_score}</b> · Proj mid <b style={{ color: '#d7d1cb' }}>{t.p50}</b>
+                Now <b style={{ color: '#cfcfd6' }}>{t.current_score}</b> · Proj mid <b style={{ color: '#cfcfd6' }}>{t.p50}</b>
               </div>
               <div className="wp-side-score" style={{ fontSize: '.62rem' }}>
                 Range: {t.p10} – {t.p90} · {t.remaining_players} left

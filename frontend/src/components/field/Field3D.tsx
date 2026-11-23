@@ -69,11 +69,11 @@ function useOvalTexture(): THREE.Texture | null {
       const ctx = cvs.getContext('2d'); if (!ctx) return null
       const w = cvs.width, h = cvs.height, cx = w / 2, cy = h / 2
       const lenPx = w * 0.95 / 2, widPx = h * 0.67 / 2
-      ctx.fillStyle = '#080707'; ctx.fillRect(0, 0, w, h)
+      ctx.fillStyle = '#060606'; ctx.fillRect(0, 0, w, h)
       ctx.save()
       ctx.beginPath(); ctx.ellipse(cx, cy, lenPx, widPx, 0, 0, Math.PI * 2); ctx.clip()
       const grad = ctx.createRadialGradient(cx, cy, 50, cx, cy, lenPx)
-      grad.addColorStop(0, '#8a6a2b'); grad.addColorStop(0.7, '#51451f'); grad.addColorStop(1, '#3d3417')
+      grad.addColorStop(0, '#2b8a46'); grad.addColorStop(0.7, '#1e5b32'); grad.addColorStop(1, '#174526')
       ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h)
       ctx.globalAlpha = 0.16
       for (let i = 0; i < 16; i++) {
@@ -101,7 +101,7 @@ function Oval() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[OVAL_WIDTH * 1.3, OVAL_LENGTH * 1.3]} />
-      {tex ? <meshStandardMaterial map={tex} /> : <meshStandardMaterial color="#51451f" />}
+      {tex ? <meshStandardMaterial map={tex} /> : <meshStandardMaterial color="#1e5b32" />}
     </mesh>
   )
 }
@@ -111,11 +111,11 @@ function StadiumRing() {
     <>
       <mesh position={[0, 0.8, 0]} scale={[1.13, 1, 1.1]}>
         <cylinderGeometry args={[OVAL_LENGTH / 2 + 1.8, OVAL_LENGTH / 2 + 1.8, 1.6, 64, 1, true]} />
-        <meshStandardMaterial color="#22201e" side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#1a191d" side={THREE.DoubleSide} />
       </mesh>
       <mesh position={[0, 2.2, 0]} scale={[1.2, 1, 1.15]}>
         <cylinderGeometry args={[OVAL_LENGTH / 2 + 3.4, OVAL_LENGTH / 2 + 3.4, 1.2, 64, 1, true]} />
-        <meshStandardMaterial color="#34312d" side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#28272d" side={THREE.DoubleSide} />
       </mesh>
     </>
   )
@@ -161,7 +161,7 @@ function PlayerMarker({
     }
   })
 
-  const color = player.is_captain ? '#d26822' : player.is_vice_captain ? '#bc8cff' : teamColor
+  const color = player.is_captain ? '#d29922' : player.is_vice_captain ? '#bc8cff' : teamColor
   const glow = hovered ? 1.1 : 0.45
 
   return (
@@ -188,14 +188,14 @@ function PlayerMarker({
         </mesh>
         <mesh position={[0, 1.75, 0]}>
           <sphereGeometry args={[0.36, 16, 16]} />
-          <meshStandardMaterial color="#f0d1b8" />
+          <meshStandardMaterial color="#f0d7b8" />
         </mesh>
       </group>
       {(player.is_captain || player.is_vice_captain) && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
           <ringGeometry args={[1, 1.28, 32]} />
           <meshBasicMaterial
-            color={player.is_captain ? '#d26822' : '#bc8cff'}
+            color={player.is_captain ? '#d29922' : '#bc8cff'}
             side={THREE.DoubleSide}
           />
         </mesh>
@@ -218,8 +218,8 @@ function SceneContent({
     <>
       <ambientLight intensity={0.65} />
       <directionalLight position={[15, 30, 10]} intensity={0.95} />
-      <pointLight position={[0, 8, -OVAL_LENGTH / 2]} intensity={0.9} color="#dbcf94" distance={35} />
-      <pointLight position={[0, 8, OVAL_LENGTH / 2]} intensity={0.9} color="#f5b940" distance={35} />
+      <pointLight position={[0, 8, -OVAL_LENGTH / 2]} intensity={0.9} color="#3fb950" distance={35} />
+      <pointLight position={[0, 8, OVAL_LENGTH / 2]} intensity={0.9} color="#ececf6" distance={35} />
       <StadiumRing />
       <Oval />
       <GoalPosts z={-OVAL_LENGTH / 2 + 0.2} />
@@ -245,7 +245,7 @@ class CanvasErrorBoundary extends Component<{ children: ReactNode; fallback: Rea
   render() { return this.state.err ? this.props.fallback : this.props.children }
 }
 
-export function Field3D({ players, teamColor = '#f5b940', onPlayerClick }: Props) {
+export function Field3D({ players, teamColor = '#ececf6', onPlayerClick }: Props) {
   const [hovered, setHovered] = useState<{ player: FieldPlayer; x: number; y: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -262,9 +262,9 @@ export function Field3D({ players, teamColor = '#f5b940', onPlayerClick }: Props
       position: 'absolute', inset: 0, display: 'flex',
       alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 8, padding: 20, textAlign: 'center',
-      background: '#121110', color: '#a39586', fontSize: 14,
+      background: '#0e0d0f', color: '#a0a0ac', fontSize: 14,
     }}>
-      <i className="bi bi-exclamation-triangle" style={{ fontSize: 28, color: '#d26822' }}></i>
+      <i className="bi bi-exclamation-triangle" style={{ fontSize: 28, color: '#d29922' }}></i>
       <div>3D view unavailable. Check the browser console for the specific error.</div>
     </div>
   )
@@ -275,25 +275,25 @@ export function Field3D({ players, teamColor = '#f5b940', onPlayerClick }: Props
       left: hovered.x + 14,
       top: hovered.y - 14,
       pointerEvents: 'none',
-      background: 'rgba(18,17,16,.95)',
-      border: '1px solid ' + (hovered.player.is_captain ? '#d26822'
+      background: 'rgba(14,13,15,.95)',
+      border: '1px solid ' + (hovered.player.is_captain ? '#d29922'
         : hovered.player.is_vice_captain ? '#bc8cff' : teamColor),
       borderRadius: 8, padding: '8px 12px', minWidth: 160,
-      color: '#d7d1cb', fontSize: 12, zIndex: 5,
+      color: '#cfcfd6', fontSize: 12, zIndex: 5,
       boxShadow: '0 4px 20px rgba(0,0,0,.6)',
       fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap',
     }}>
-      <div style={{ fontWeight: 700, fontSize: 13, color: '#efedea' }}>{hovered.player.name}</div>
-      <div style={{ color: '#a39586', fontSize: 11 }}>
+      <div style={{ fontWeight: 700, fontSize: 13, color: '#ebebee' }}>{hovered.player.name}</div>
+      <div style={{ color: '#a0a0ac', fontSize: 11 }}>
         {hovered.player.afl_team || '—'} · {hovered.player.position}
       </div>
       <div style={{ marginTop: 4, display: 'flex', gap: 10 }}>
-        <span>SC <b style={{ color: '#f5b940' }}>{Math.round(hovered.player.sc_avg || 0)}</b></span>
+        <span>SC <b style={{ color: '#ececf6' }}>{Math.round(hovered.player.sc_avg || 0)}</b></span>
         {hovered.player.score != null &&
-          <span>Rd <b style={{ color: '#dbcf94' }}>{Math.round(hovered.player.score)}</b></span>}
+          <span>Rd <b style={{ color: '#3fb950' }}>{Math.round(hovered.player.score)}</b></span>}
       </div>
       {hovered.player.is_captain &&
-        <div style={{ marginTop: 4, color: '#d26822', fontWeight: 800, fontSize: 10 }}>CAPTAIN (2×)</div>}
+        <div style={{ marginTop: 4, color: '#d29922', fontWeight: 800, fontSize: 10 }}>CAPTAIN (2×)</div>}
       {hovered.player.is_vice_captain &&
         <div style={{ marginTop: 4, color: '#bc8cff', fontWeight: 800, fontSize: 10 }}>VICE CAPTAIN</div>}
     </div>
@@ -309,8 +309,8 @@ export function Field3D({ players, teamColor = '#f5b940', onPlayerClick }: Props
         minHeight: 440,
         borderRadius: 12,
         overflow: 'hidden',
-        background: '#080707',
-        border: '1px solid #272522',
+        background: '#060606',
+        border: '1px solid #1e1d21',
       }}
     >
       <CanvasErrorBoundary fallback={fallback}>
@@ -344,8 +344,8 @@ export function Field3D({ players, teamColor = '#f5b940', onPlayerClick }: Props
 
       <div style={{
         position: 'absolute', bottom: 10, left: 10,
-        background: 'rgba(18,17,16,.6)', border: '1px solid rgba(55,51,48,.6)',
-        borderRadius: 6, padding: '4px 10px', color: '#a39586', fontSize: 11,
+        background: 'rgba(14,13,15,.6)', border: '1px solid rgba(42,41,47,.6)',
+        borderRadius: 6, padding: '4px 10px', color: '#a0a0ac', fontSize: 11,
         pointerEvents: 'none',
       }}>
         <i className="bi bi-mouse me-1"></i>drag to rotate · scroll to zoom · tap a player

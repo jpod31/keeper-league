@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router'
 import { LeagueProvider, useLeague } from '../../contexts/LeagueContext'
 import { Spinner } from '../ui/Spinner'
+import { rgbOf } from '../../lib/clubs'
 import { LockoutBadge } from '../ui/LockoutBadge'
 import { RoundRecapModal } from '../RoundRecapModal'
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
@@ -62,6 +63,16 @@ function LeagueShellInner() {
   const [reviewOpen, setReviewOpen] = useState(false)
 
   const activeTab = useMemo(() => detectActiveTab(pathname), [pathname])
+
+  // Your team's colour, as "r,g,b" on the root, for everything that should
+  // be lit in it (the light at the top of the page, the home strip).
+  const teamHex = league?.user_team?.accent
+  useEffect(() => {
+    const root = document.documentElement
+    if (teamHex) root.style.setProperty('--team', rgbOf(teamHex))
+    else root.style.removeProperty('--team')
+    return () => { root.style.removeProperty('--team') }
+  }, [teamHex])
 
   // Season Review auto-opens once per user per completed season, then lives on
   // in the rail until the league rolls over to a new season year.
@@ -129,7 +140,7 @@ function LeagueShellInner() {
         { label: 'Trades', icon: 'bi-arrow-left-right', to: `/leagues/${lid}/trades`, key: 'trades' },
         { label: 'Trade block', icon: 'bi-megaphone', to: `/leagues/${lid}/trade-block`, key: 'block' },
         ...(league.is_owner ? [
-          { label: 'Wishlist', icon: 'bi-star', to: `/leagues/${lid}/team/${t.id}?view=wishlist`, key: 'wishlist', style: { color: '#d26822' } as React.CSSProperties },
+          { label: 'Wishlist', icon: 'bi-star', to: `/leagues/${lid}/team/${t.id}?view=wishlist`, key: 'wishlist', style: { color: '#d29922' } as React.CSSProperties },
         ] : []),
       ] : [],
     },
@@ -300,14 +311,14 @@ function LeagueShellInner() {
               {league.is_commissioner ? (
                 <div
                   className="more-sheet-item"
-                  style={{ color: '#d26822' }}
+                  style={{ color: '#d29922' }}
                   onClick={() => navigate(`/leagues/${lid}/commissioner`)}
                 >
                   <i className="bi bi-shield-lock"></i>
                   <span>
                     Admin
                     {league.pending_ltil_count > 0 && (
-                      <span className="badge rounded-pill ms-1" style={{ background: '#d26822', color: '#000', fontSize: '.55rem' }}>
+                      <span className="badge rounded-pill ms-1" style={{ background: '#d29922', color: '#000', fontSize: '.55rem' }}>
                         {league.pending_ltil_count}
                       </span>
                     )}
@@ -332,7 +343,7 @@ function LeagueShellInner() {
                   <i className="bi bi-trophy"></i><span>{lg.name}</span>
                 </div>
               ))}
-              <div className="more-sheet-item" style={{ color: '#dbcf94' }} onClick={() => navigate('/leagues/create')}>
+              <div className="more-sheet-item" style={{ color: '#3fb950' }} onClick={() => navigate('/leagues/create')}>
                 <i className="bi bi-plus-circle"></i><span>Create League</span>
               </div>
             </div>
@@ -379,15 +390,23 @@ function LeagueShellInner() {
 // stop, a 17% opacity active-row fill, a 2px solid edge stripe, and
 // a solid icon colour, with white-on-fill text still readable.
 const SWITCH_PALETTE: { hex: string; rgb: string }[] = [
-  { hex: '#b8733d', rgb: '184,115,61' },    // cognac
+  { hex: '#3a7dc4', rgb: '58,125,196' },    // sapphire
+  { hex: '#b87f3d', rgb: '184,127,61' },    // cognac
+  { hex: '#8a6db8', rgb: '138,109,184' },   // amethyst
+  { hex: '#3d8c63', rgb: '61,140,99' },     // forest green
+  { hex: '#c2932f', rgb: '194,147,47' },    // deep gold / ochre
   { hex: '#b85a4a', rgb: '184,90,74' },     // rust
-  { hex: '#8e63b8', rgb: '142,99,184' },    // plum
-  { hex: '#d39a22', rgb: '211,154,34' },    // gold
-  { hex: '#c26a2f', rgb: '194,106,47' },    // ochre
+  { hex: '#3d8a9c', rgb: '61,138,156' },    // teal
   { hex: '#9d5878', rgb: '157,88,120' },    // garnet
-  { hex: '#a89468', rgb: '168,148,104' },   // sand
-  { hex: '#c94f4f', rgb: '201,79,79' },     // red
 ]
+
+/** The chrome wears the signed-in coach's team colour. A coach with no team
+ *  in this league falls back to the league's own slot on the palette. */
+function useShellAccent(lid: number) {
+  const { league } = useLeague()
+  const hex = league?.user_team?.accent
+  return hex ? { hex, rgb: rgbOf(hex) } : accentFor(lid)
+}
 
 function accentFor(id: number) {
   return SWITCH_PALETTE[(id || 0) % SWITCH_PALETTE.length]
@@ -473,7 +492,7 @@ function LeagueRail({
   })
   const [hover, setHover] = useState(false)
   const expanded = pinned || hover || switcherOpen
-  const accent = accentFor(lid)
+  const accent = useShellAccent(lid)
   // Sub-row active state needs both pathname and search to handle
   // ?view=wishlist properly. Pulled here so subActive() can be called
   // in the render loop below without re-subscribing per row.
@@ -678,7 +697,7 @@ function TopBarSwitcher({
   setOpen: (v: boolean | ((s: boolean) => boolean)) => void
 }) {
   const rootRef = useRef<HTMLDivElement>(null)
-  const accent = accentFor(lid)
+  const accent = useShellAccent(lid)
   const [slotEl, setSlotEl] = useState<HTMLElement | null>(null)
 
   useEffect(() => {

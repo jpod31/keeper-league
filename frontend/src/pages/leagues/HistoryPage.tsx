@@ -42,34 +42,34 @@ interface HistoryData {
 }
 
 const STYLE = `
-.rec-card { background:#1c1a18; border:1px solid #373330; border-radius:8px; margin-bottom:16px; overflow:hidden; }
-.rec-card-header { display:flex; align-items:center; gap:.5rem; padding:.6rem .9rem; border-bottom:1px solid #373330; background:#121110; }
-.rec-card-header h5 { margin:0; font-size:.85rem; font-weight:600; color:#efedea; }
-.rec-card-header i { color:#a39586; }
+.rec-card { background:#151518; border:1px solid #2a292f; border-radius:8px; margin-bottom:16px; overflow:hidden; }
+.rec-card-header { display:flex; align-items:center; gap:.5rem; padding:.6rem .9rem; border-bottom:1px solid #2a292f; background:#0e0d0f; }
+.rec-card-header h5 { margin:0; font-size:.85rem; font-weight:600; color:#ebebee; }
+.rec-card-header i { color:#a0a0ac; }
 .rec-card-body { padding:0; }
 .rec-card-body-padded { padding:16px; }
 .rec-table { width:100%; margin:0; font-size:.8rem; }
-.rec-table th { padding:.5rem .8rem; font-size:.68rem; color:#a39586; text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid #373330; background:#121110; text-align:left; }
-.rec-table td { padding:.5rem .8rem; color:#d7d1cb; border-bottom:1px solid #272522; }
-.rec-table tbody tr:hover { background:rgba(245,185,64,.03); }
+.rec-table th { padding:.5rem .8rem; font-size:.68rem; color:#a0a0ac; text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid #2a292f; background:#0e0d0f; text-align:left; }
+.rec-table td { padding:.5rem .8rem; color:#cfcfd6; border-bottom:1px solid #1e1d21; }
+.rec-table tbody tr:hover { background:rgba(236,236,246,.03); }
 .rec-table tbody tr:last-child td { border-bottom:none; }
-.rec-name { font-weight:600; color:#efedea; }
-.rec-score { font-weight:700; color:#f5b940; }
-.rec-year { color:#a39586; font-size:.75rem; }
-.rec-win { color:#dbcf94; font-weight:600; }
+.rec-name { font-weight:600; color:#ebebee; }
+.rec-score { font-weight:700; color:#ececf6; }
+.rec-year { color:#a0a0ac; font-size:.75rem; }
+.rec-win { color:#3fb950; font-weight:600; }
 .rec-loss { color:#f85149; font-weight:600; }
-.rec-empty { text-align:center; padding:32px 16px; color:#56504a; }
+.rec-empty { text-align:center; padding:32px 16px; color:#63616d; }
 .rec-empty i { font-size:1.8rem; display:block; margin-bottom:8px; }
 .rec-empty p { font-size:.82rem; margin:0; }
-.champ-badge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(210,104,34,.2); color:#e38241; font-size:.65rem; font-weight:700; }
-.streak-badge { display:inline-block; padding:2px 8px; border-radius:4px; background:rgba(219,207,148,.15); color:#dbcf94; font-size:.72rem; font-weight:700; }
+.champ-badge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(210,153,34,.2); color:#e3b341; font-size:.65rem; font-weight:700; }
+.streak-badge { display:inline-block; padding:2px 8px; border-radius:4px; background:rgba(63,185,80,.15); color:#3fb950; font-size:.72rem; font-weight:700; }
 .loss-badge { display:inline-block; padding:2px 8px; border-radius:4px; background:rgba(248,81,73,.15); color:#f85149; font-size:.72rem; font-weight:700; }
-.h2h-select { background:#121110; border:1px solid #373330; color:#efedea; border-radius:6px; padding:.4rem .7rem; font-size:.82rem; min-width:160px; }
-.h2h-vs { font-size:.75rem; font-weight:700; color:#a39586; text-transform:uppercase; letter-spacing:.5px; }
-.h2h-result-card { background:rgba(245,185,64,.04); border:1px solid rgba(245,185,64,.2); border-radius:8px; padding:20px; margin-top:16px; text-align:center; }
-.h2h-team-name { font-size:1.05rem; font-weight:700; color:#efedea; }
-.h2h-record { font-size:1.6rem; font-weight:800; color:#f5b940; margin:8px 0; font-family: 'SF Mono', Menlo, monospace; }
-.h2h-labels { font-size:.68rem; color:#a39586; letter-spacing:.5px; }
+.h2h-select { background:#0e0d0f; border:1px solid #2a292f; color:#ebebee; border-radius:6px; padding:.4rem .7rem; font-size:.82rem; min-width:160px; }
+.h2h-vs { font-size:.75rem; font-weight:700; color:#a0a0ac; text-transform:uppercase; letter-spacing:.5px; }
+.h2h-result-card { background:rgba(236,236,246,.04); border:1px solid rgba(236,236,246,.2); border-radius:8px; padding:20px; margin-top:16px; text-align:center; }
+.h2h-team-name { font-size:1.05rem; font-weight:700; color:#ebebee; }
+.h2h-record { font-size:1.6rem; font-weight:800; color:#ececf6; margin:8px 0; font-family: 'SF Mono', Menlo, monospace; }
+.h2h-labels { font-size:.68rem; color:#a0a0ac; letter-spacing:.5px; }
 `
 
 type Tab = 'records' | 'h2h' | 'alltime'
@@ -127,7 +127,7 @@ export function HistoryPage() {
         <div className="page-breadcrumb">
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Records
         </div>
-        <h2><i className="bi bi-trophy me-2" style={{ color: '#d26822' }}></i>League Records</h2>
+        <h2><i className="bi bi-trophy me-2" style={{ color: '#d29922' }}></i>League Records</h2>
       </div>
 
       {data.milestones.length > 0 && (
@@ -150,7 +150,7 @@ export function HistoryPage() {
 
       {tab === 'records' && (
         <>
-          <Card title="Season Champions" icon="bi-trophy-fill" color="#d26822">
+          <Card title="Season Champions" icon="bi-trophy-fill" color="#d29922">
             {data.champions.length === 0 ? <Empty icon="bi-trophy" text="No champions yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>Year</th><th>Champion</th><th className="text-end">Record</th><th className="text-end">PF</th><th className="text-end">%</th></tr></thead>
@@ -161,7 +161,7 @@ export function HistoryPage() {
                       <td className="rec-name">{c.team_name}</td>
                       <td className="text-end">{c.wins}-{c.losses}-{c.draws}</td>
                       <td className="text-end rec-score">{c.points_for.toFixed(0)}</td>
-                      <td className="text-end" style={{ color: '#a39586' }}>{c.percentage.toFixed(0)}%</td>
+                      <td className="text-end" style={{ color: '#a0a0ac' }}>{c.percentage.toFixed(0)}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -169,39 +169,39 @@ export function HistoryPage() {
             )}
           </Card>
 
-          <Card title="Highest Single-Round Scores" icon="bi-arrow-up-circle" color="#dbcf94">
+          <Card title="Highest Single-Round Scores" icon="bi-arrow-up-circle" color="#3fb950">
             {data.top_scores.length === 0 ? <Empty icon="bi-arrow-up-circle" text="No round scores yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Team</th><th className="text-center">Round</th><th className="text-center">Year</th><th className="text-end">Score</th></tr></thead>
                 <tbody>
                   {data.top_scores.map((s, i) => (
-                    <tr key={i}><td>{i === 0 ? <span className="champ-badge">1</span> : <span style={{ color: '#56504a' }}>{i + 1}</span>}</td><td className="rec-name">{s.team_name}</td><td className="text-center">R{s.round}</td><td className="text-center rec-year">{s.year}</td><td className="text-end rec-score">{s.score.toFixed(0)}</td></tr>
+                    <tr key={i}><td>{i === 0 ? <span className="champ-badge">1</span> : <span style={{ color: '#63616d' }}>{i + 1}</span>}</td><td className="rec-name">{s.team_name}</td><td className="text-center">R{s.round}</td><td className="text-center rec-year">{s.year}</td><td className="text-end rec-score">{s.score.toFixed(0)}</td></tr>
                   ))}
                 </tbody>
               </table>
             )}
           </Card>
 
-          <Card title="Highest Season Points For" icon="bi-graph-up-arrow" color="#dbcf94">
+          <Card title="Highest Season Points For" icon="bi-graph-up-arrow" color="#3fb950">
             {data.top_season_pf.length === 0 ? <Empty icon="bi-graph-up" text="No season data yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Team</th><th className="text-center">Year</th><th className="text-center">Record</th><th className="text-end">PF</th></tr></thead>
                 <tbody>
                   {data.top_season_pf.map((s, i) => (
-                    <tr key={i}><td>{i === 0 ? <span className="champ-badge">1</span> : <span style={{ color: '#56504a' }}>{i + 1}</span>}</td><td className="rec-name">{s.team_name}</td><td className="text-center rec-year">{s.year}</td><td className="text-center"><span className="rec-win">{s.wins}</span>-<span className="rec-loss">{s.losses}</span></td><td className="text-end rec-score">{s.points_for.toFixed(0)}</td></tr>
+                    <tr key={i}><td>{i === 0 ? <span className="champ-badge">1</span> : <span style={{ color: '#63616d' }}>{i + 1}</span>}</td><td className="rec-name">{s.team_name}</td><td className="text-center rec-year">{s.year}</td><td className="text-center"><span className="rec-win">{s.wins}</span>-<span className="rec-loss">{s.losses}</span></td><td className="text-end rec-score">{s.points_for.toFixed(0)}</td></tr>
                   ))}
                 </tbody>
               </table>
             )}
           </Card>
 
-          <Card title="Longest Win Streaks" icon="bi-fire" color="#f0763e">
+          <Card title="Longest Win Streaks" icon="bi-fire" color="#f0883e">
             {data.win_streaks.length === 0 ? <Empty icon="bi-fire" text="No completed fixtures yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Team</th><th className="text-center">Streak</th><th>Period</th></tr></thead>
                 <tbody>
                   {data.win_streaks.map((s, i) => (
-                    <tr key={i}><td>{i === 0 ? <span className="champ-badge" style={{ background: 'rgba(240,118,62,.15)', color: '#f0763e' }}>1</span> : <span style={{ color: '#56504a' }}>{i + 1}</span>}</td><td className="rec-name">{s.team_name}</td><td className="text-center"><span className="streak-badge">{s.streak}W</span></td><td className="rec-year">{streakPeriod(s)}</td></tr>
+                    <tr key={i}><td>{i === 0 ? <span className="champ-badge" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e' }}>1</span> : <span style={{ color: '#63616d' }}>{i + 1}</span>}</td><td className="rec-name">{s.team_name}</td><td className="text-center"><span className="streak-badge">{s.streak}W</span></td><td className="rec-year">{streakPeriod(s)}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -214,7 +214,7 @@ export function HistoryPage() {
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Winner</th><th>Loser</th><th className="text-center">Margin</th><th className="text-center d-none d-md-table-cell">When</th></tr></thead>
                 <tbody>
                   {data.blowouts.map((b, i) => (
-                    <tr key={i}><td>{i === 0 ? <span className="champ-badge" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149' }}>1</span> : <span style={{ color: '#56504a' }}>{i + 1}</span>}</td><td className="rec-name">{b.winner} <span className="rec-win">{b.winner_score.toFixed(0)}</span></td><td style={{ color: '#a39586' }}>{b.loser} <span className="rec-loss">{b.loser_score.toFixed(0)}</span></td><td className="text-center rec-score">+{b.margin.toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{b.year} R{b.round}</td></tr>
+                    <tr key={i}><td>{i === 0 ? <span className="champ-badge" style={{ background: 'rgba(248,81,73,.15)', color: '#f85149' }}>1</span> : <span style={{ color: '#63616d' }}>{i + 1}</span>}</td><td className="rec-name">{b.winner} <span className="rec-win">{b.winner_score.toFixed(0)}</span></td><td style={{ color: '#a0a0ac' }}>{b.loser} <span className="rec-loss">{b.loser_score.toFixed(0)}</span></td><td className="text-center rec-score">+{b.margin.toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{b.year} R{b.round}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -227,33 +227,33 @@ export function HistoryPage() {
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Team</th><th className="text-center">Round</th><th className="text-center">Year</th><th className="text-end">Score</th></tr></thead>
                 <tbody>
                   {data.lowest_scores.map((s, i) => (
-                    <tr key={i}><td style={{ color: '#56504a' }}>{i + 1}</td><td className="rec-name">{s.team_name}</td><td className="text-center">R{s.round}</td><td className="text-center rec-year">{s.year}</td><td className="text-end rec-loss">{s.score.toFixed(0)}</td></tr>
+                    <tr key={i}><td style={{ color: '#63616d' }}>{i + 1}</td><td className="rec-name">{s.team_name}</td><td className="text-center">R{s.round}</td><td className="text-center rec-year">{s.year}</td><td className="text-end rec-loss">{s.score.toFixed(0)}</td></tr>
                   ))}
                 </tbody>
               </table>
             )}
           </Card>
 
-          <Card title="Closest Matches" icon="bi-bullseye" color="#d26822">
+          <Card title="Closest Matches" icon="bi-bullseye" color="#d29922">
             {data.close_matches.length === 0 ? <Empty icon="bi-bullseye" text="No completed fixtures yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Home</th><th>Away</th><th className="text-center">Margin</th><th className="text-center d-none d-md-table-cell">When</th></tr></thead>
                 <tbody>
                   {data.close_matches.map((m, i) => (
-                    <tr key={i}><td style={{ color: '#56504a' }}>{i + 1}</td><td className="rec-name">{m.home} <span style={{ color: '#a39586' }}>{m.home_score.toFixed(0)}</span></td><td className="rec-name">{m.away} <span style={{ color: '#a39586' }}>{m.away_score.toFixed(0)}</span></td><td className="text-center" style={{ color: '#d26822', fontWeight: 700 }}>{(m.margin ?? 0).toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{m.year} R{m.round}</td></tr>
+                    <tr key={i}><td style={{ color: '#63616d' }}>{i + 1}</td><td className="rec-name">{m.home} <span style={{ color: '#a0a0ac' }}>{m.home_score.toFixed(0)}</span></td><td className="rec-name">{m.away} <span style={{ color: '#a0a0ac' }}>{m.away_score.toFixed(0)}</span></td><td className="text-center" style={{ color: '#d29922', fontWeight: 700 }}>{(m.margin ?? 0).toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{m.year} R{m.round}</td></tr>
                   ))}
                 </tbody>
               </table>
             )}
           </Card>
 
-          <Card title="Highest Combined Scores" icon="bi-arrow-up-circle" color="#dbcf94">
+          <Card title="Highest Combined Scores" icon="bi-arrow-up-circle" color="#3fb950">
             {data.highest_combined.length === 0 ? <Empty icon="bi-arrow-up-circle" text="No combined scores yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Home</th><th>Away</th><th className="text-end">Total</th><th className="text-center d-none d-md-table-cell">When</th></tr></thead>
                 <tbody>
                   {data.highest_combined.map((m, i) => (
-                    <tr key={i}><td style={{ color: '#56504a' }}>{i + 1}</td><td className="rec-name">{m.home} <span style={{ color: '#a39586' }}>{m.home_score.toFixed(0)}</span></td><td className="rec-name">{m.away} <span style={{ color: '#a39586' }}>{m.away_score.toFixed(0)}</span></td><td className="text-end rec-score">{(m.total ?? 0).toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{m.year} R{m.round}</td></tr>
+                    <tr key={i}><td style={{ color: '#63616d' }}>{i + 1}</td><td className="rec-name">{m.home} <span style={{ color: '#a0a0ac' }}>{m.home_score.toFixed(0)}</span></td><td className="rec-name">{m.away} <span style={{ color: '#a0a0ac' }}>{m.away_score.toFixed(0)}</span></td><td className="text-end rec-score">{(m.total ?? 0).toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{m.year} R{m.round}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -266,59 +266,59 @@ export function HistoryPage() {
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Home</th><th>Away</th><th className="text-end">Total</th><th className="text-center d-none d-md-table-cell">When</th></tr></thead>
                 <tbody>
                   {data.lowest_combined.map((m, i) => (
-                    <tr key={i}><td style={{ color: '#56504a' }}>{i + 1}</td><td className="rec-name">{m.home} <span style={{ color: '#a39586' }}>{m.home_score.toFixed(0)}</span></td><td className="rec-name">{m.away} <span style={{ color: '#a39586' }}>{m.away_score.toFixed(0)}</span></td><td className="text-end rec-loss">{(m.total ?? 0).toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{m.year} R{m.round}</td></tr>
+                    <tr key={i}><td style={{ color: '#63616d' }}>{i + 1}</td><td className="rec-name">{m.home} <span style={{ color: '#a0a0ac' }}>{m.home_score.toFixed(0)}</span></td><td className="rec-name">{m.away} <span style={{ color: '#a0a0ac' }}>{m.away_score.toFixed(0)}</span></td><td className="text-end rec-loss">{(m.total ?? 0).toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{m.year} R{m.round}</td></tr>
                   ))}
                 </tbody>
               </table>
             )}
           </Card>
 
-          <Card title="Longest Losing Streaks" icon="bi-snow" color="#f5b940">
+          <Card title="Longest Losing Streaks" icon="bi-snow" color="#ececf6">
             {data.loss_streaks.length === 0 ? <Empty icon="bi-snow" text="No losing streaks yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Team</th><th className="text-center">Streak</th><th>Period</th></tr></thead>
                 <tbody>
                   {data.loss_streaks.map((s, i) => (
-                    <tr key={i}><td style={{ color: '#56504a' }}>{i + 1}</td><td className="rec-name">{s.team_name}</td><td className="text-center"><span className="loss-badge">{s.streak}L</span></td><td className="rec-year">{streakPeriod(s)}</td></tr>
+                    <tr key={i}><td style={{ color: '#63616d' }}>{i + 1}</td><td className="rec-name">{s.team_name}</td><td className="text-center"><span className="loss-badge">{s.streak}L</span></td><td className="rec-year">{streakPeriod(s)}</td></tr>
                   ))}
                 </tbody>
               </table>
             )}
           </Card>
 
-          <Card title="Highest Individual Scores" icon="bi-person-fill" color="#f5b940">
+          <Card title="Highest Individual Scores" icon="bi-person-fill" color="#ececf6">
             {data.top_player_scores.length === 0 ? <Empty icon="bi-person" text="No player scores yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Player</th><th>Team</th><th className="text-end">Score</th><th className="text-center d-none d-md-table-cell">When</th></tr></thead>
                 <tbody>
                   {data.top_player_scores.map((p, i) => (
-                    <tr key={i}><td>{i === 0 ? <span className="champ-badge">1</span> : <span style={{ color: '#56504a' }}>{i + 1}</span>}</td><td className="rec-name">{p.player_name}</td><td style={{ color: '#a39586' }}>{p.team_name}</td><td className="text-end rec-score">{p.score.toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{p.year} R{p.round}</td></tr>
+                    <tr key={i}><td>{i === 0 ? <span className="champ-badge">1</span> : <span style={{ color: '#63616d' }}>{i + 1}</span>}</td><td className="rec-name">{p.player_name}</td><td style={{ color: '#a0a0ac' }}>{p.team_name}</td><td className="text-end rec-score">{p.score.toFixed(0)}</td><td className="text-center rec-year d-none d-md-table-cell">{p.year} R{p.round}</td></tr>
                   ))}
                 </tbody>
               </table>
             )}
           </Card>
 
-          <Card title="Most 100+ Scores in a Season" icon="bi-award" color="#d26822">
+          <Card title="Most 100+ Scores in a Season" icon="bi-award" color="#d29922">
             {data.hundred_plus.length === 0 ? <Empty icon="bi-award" text="No 100+ scores yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Player</th><th className="text-center">Year</th><th className="text-end">100+ / Games</th></tr></thead>
                 <tbody>
                   {data.hundred_plus.map((p, i) => (
-                    <tr key={i}><td style={{ color: '#56504a' }}>{i + 1}</td><td className="rec-name">{p.player_name}</td><td className="text-center rec-year">{p.year}</td><td className="text-end"><strong style={{ color: '#d26822' }}>{p.count}</strong> <span style={{ color: '#a39586' }}>/ {p.games}</span></td></tr>
+                    <tr key={i}><td style={{ color: '#63616d' }}>{i + 1}</td><td className="rec-name">{p.player_name}</td><td className="text-center rec-year">{p.year}</td><td className="text-end"><strong style={{ color: '#d29922' }}>{p.count}</strong> <span style={{ color: '#a0a0ac' }}>/ {p.games}</span></td></tr>
                   ))}
                 </tbody>
               </table>
             )}
           </Card>
 
-          <Card title="Highest Season Average (min 10 games)" icon="bi-graph-up" color="#f5b940">
+          <Card title="Highest Season Average (min 10 games)" icon="bi-graph-up" color="#ececf6">
             {data.best_averages.length === 0 ? <Empty icon="bi-graph-up" text="No season averages yet" /> : (
               <table className="rec-table">
                 <thead><tr><th style={{ width: 40 }}>#</th><th>Player</th><th className="text-center">Year</th><th className="text-center">GP</th><th className="text-end">Avg</th></tr></thead>
                 <tbody>
                   {data.best_averages.map((p, i) => (
-                    <tr key={i}><td style={{ color: '#56504a' }}>{i + 1}</td><td className="rec-name">{p.player_name}</td><td className="text-center rec-year">{p.year}</td><td className="text-center" style={{ color: '#a39586' }}>{p.games}</td><td className="text-end rec-score">{p.avg.toFixed(1)}</td></tr>
+                    <tr key={i}><td style={{ color: '#63616d' }}>{i + 1}</td><td className="rec-name">{p.player_name}</td><td className="text-center rec-year">{p.year}</td><td className="text-center" style={{ color: '#a0a0ac' }}>{p.games}</td><td className="text-end rec-score">{p.avg.toFixed(1)}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -348,7 +348,7 @@ export function HistoryPage() {
 
                 {h2hResult?.same && (
                   <div className="rec-empty" style={{ padding: 24 }}>
-                    <p style={{ color: '#a39586', margin: 0 }}>Please select two different teams.</p>
+                    <p style={{ color: '#a0a0ac', margin: 0 }}>Please select two different teams.</p>
                   </div>
                 )}
                 {h2hResult && !h2hResult.same && h2hResult.empty && (
@@ -372,15 +372,15 @@ export function HistoryPage() {
 
                 {(data.rivalry_facts.length > 0 || data.closest_rivalry) && (
                   <div className="mt-4">
-                    <h6 style={{ fontSize: '.82rem', fontWeight: 600, color: '#a39586', marginBottom: 12 }}>
+                    <h6 style={{ fontSize: '.82rem', fontWeight: 600, color: '#a0a0ac', marginBottom: 12 }}>
                       <i className="bi bi-fire me-1"></i>Rivalry Fun Facts
                     </h6>
                     {data.closest_rivalry && (
                       <div style={{ background: 'rgba(188,140,255,.06)', border: '1px solid rgba(188,140,255,.15)', borderRadius: 8, padding: '12px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <i className="bi bi-people-fill" style={{ color: '#bc8cff', fontSize: '1.1rem' }}></i>
                         <div>
-                          <div style={{ fontSize: '.8rem', fontWeight: 600, color: '#efedea' }}>Closest Rivalry</div>
-                          <div style={{ fontSize: '.75rem', color: '#a39586' }}>
+                          <div style={{ fontSize: '.8rem', fontWeight: 600, color: '#ebebee' }}>Closest Rivalry</div>
+                          <div style={{ fontSize: '.75rem', color: '#a0a0ac' }}>
                             {data.closest_rivalry.team1} vs {data.closest_rivalry.team2} — {data.closest_rivalry.record} across {data.closest_rivalry.total} games
                           </div>
                         </div>
@@ -388,14 +388,14 @@ export function HistoryPage() {
                     )}
                     {data.rivalry_facts.map((f, i) => {
                       const styles = f.type === 'dominance'
-                        ? { bg: 'rgba(219,207,148,.05)', border: '1px solid rgba(219,207,148,.12)', icon: 'bi-trophy-fill', color: '#dbcf94' }
+                        ? { bg: 'rgba(63,185,80,.05)', border: '1px solid rgba(63,185,80,.12)', icon: 'bi-trophy-fill', color: '#3fb950' }
                         : f.type === 'unbeaten'
-                          ? { bg: 'rgba(210,104,34,.06)', border: '1px solid rgba(210,104,34,.15)', icon: 'bi-shield-fill-check', color: '#d26822' }
-                          : { bg: 'rgba(245,185,64,.05)', border: '1px solid rgba(245,185,64,.12)', icon: 'bi-lightning-fill', color: '#f5b940' }
+                          ? { bg: 'rgba(210,153,34,.06)', border: '1px solid rgba(210,153,34,.15)', icon: 'bi-shield-fill-check', color: '#d29922' }
+                          : { bg: 'rgba(236,236,246,.05)', border: '1px solid rgba(236,236,246,.12)', icon: 'bi-lightning-fill', color: '#ececf6' }
                       return (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', marginBottom: 6, background: styles.bg, border: styles.border, borderRadius: 8, fontSize: '.78rem' }}>
                           <i className={`bi ${styles.icon}`} style={{ color: styles.color }}></i>
-                          <span style={{ color: '#d7d1cb' }}>{f.text}</span>
+                          <span style={{ color: '#cfcfd6' }}>{f.text}</span>
                         </div>
                       )
                     })}
@@ -403,7 +403,7 @@ export function HistoryPage() {
                 )}
 
                 <div className="mt-4 d-none d-lg-block">
-                  <h6 style={{ fontSize: '.82rem', fontWeight: 600, color: '#a39586', marginBottom: 12 }}>
+                  <h6 style={{ fontSize: '.82rem', fontWeight: 600, color: '#a0a0ac', marginBottom: 12 }}>
                     <i className="bi bi-grid-3x3-gap me-1"></i>Full Head-to-Head Matrix
                   </h6>
                   <div className="table-responsive">
@@ -419,10 +419,10 @@ export function HistoryPage() {
                           <tr key={t1.id}>
                             <td className="rec-name" style={{ whiteSpace: 'nowrap' }}>{t1.name}</td>
                             {sortedTeams.map(t2 => {
-                              if (t1.id === t2.id) return <td key={t2.id} className="text-center" style={{ background: 'rgba(39,37,34,.5)', color: '#373330' }}>—</td>
+                              if (t1.id === t2.id) return <td key={t2.id} className="text-center" style={{ background: 'rgba(30,29,33,.5)', color: '#2a292f' }}>—</td>
                               const rec = data.h2h_data[`${t1.id}-${t2.id}`]
-                              if (!rec) return <td key={t2.id} className="text-center" style={{ color: '#373330' }}>0-0-0</td>
-                              const color = rec.wins > rec.losses ? '#dbcf94' : rec.losses > rec.wins ? '#f85149' : '#d26822'
+                              if (!rec) return <td key={t2.id} className="text-center" style={{ color: '#2a292f' }}>0-0-0</td>
+                              const color = rec.wins > rec.losses ? '#3fb950' : rec.losses > rec.wins ? '#f85149' : '#d29922'
                               return <td key={t2.id} className="text-center" style={{ fontWeight: 600, color }}>{rec.wins}-{rec.draws}-{rec.losses}</td>
                             })}
                           </tr>
@@ -430,7 +430,7 @@ export function HistoryPage() {
                       </tbody>
                     </table>
                   </div>
-                  <p style={{ fontSize: '.68rem', color: '#373330', marginTop: 8 }}>Format: W-D-L (from row team's perspective)</p>
+                  <p style={{ fontSize: '.68rem', color: '#2a292f', marginTop: 8 }}>Format: W-D-L (from row team's perspective)</p>
                 </div>
               </>
             )}
@@ -439,7 +439,7 @@ export function HistoryPage() {
       )}
 
       {tab === 'alltime' && (
-        <Card title="All-Time Standings" icon="bi-bar-chart-fill" color="#f5b940">
+        <Card title="All-Time Standings" icon="bi-bar-chart-fill" color="#ececf6">
           {data.alltime_standings.length === 0 ? <Empty icon="bi-bar-chart" text="No standings yet" /> : (
             <table className="rec-table">
               <thead>
@@ -457,9 +457,9 @@ export function HistoryPage() {
               <tbody>
                 {data.alltime_standings.map((a, i) => (
                   <tr key={i}>
-                    <td>{i < 3 ? <span className="champ-badge">{i + 1}</span> : <span style={{ color: '#56504a' }}>{i + 1}</span>}</td>
+                    <td>{i < 3 ? <span className="champ-badge">{i + 1}</span> : <span style={{ color: '#63616d' }}>{i + 1}</span>}</td>
                     <td className="rec-name">{a.team_name}</td>
-                    <td className="text-center" style={{ color: '#a39586' }}>{a.seasons}</td>
+                    <td className="text-center" style={{ color: '#a0a0ac' }}>{a.seasons}</td>
                     <td className="text-center"><span className="rec-win">{a.wins}</span>-{a.draws}-<span className="rec-loss">{a.losses}</span></td>
                     <td className="text-end d-none d-md-table-cell">{a.win_pct.toFixed(0)}%</td>
                     <td className="text-end d-none d-md-table-cell">{a.points_for.toFixed(0)}</td>

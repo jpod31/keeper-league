@@ -139,6 +139,9 @@ def register_draft_events(socketio):
                 "player_name": pick.player.name if pick.player else "Unknown",
                 "player_position": pick.player.position if pick.player else "",
                 "player_afl_team": pick.player.afl_team if pick.player else "",
+                "player_rating": pick.player.rating if pick.player else None,
+                "player_potential": pick.player.potential if pick.player else None,
+                "player_age": pick.player.age if pick.player else None,
                 "is_auto_pick": pick.is_auto_pick,
             }
             emit("pick_made", pick_data, room=room)
@@ -544,6 +547,9 @@ def _start_timer(socketio, session_id, league_id):
                                         "player_name": pick.player.name if pick.player else "Unknown",
                                         "player_position": pick.player.position if pick.player else "",
                                         "player_afl_team": pick.player.afl_team if pick.player else "",
+                                        "player_rating": pick.player.rating if pick.player else None,
+                                        "player_potential": pick.player.potential if pick.player else None,
+                                        "player_age": pick.player.age if pick.player else None,
                                         "is_auto_pick": True,
                                     }
                                     socketio.emit("pick_made", pick_data, namespace="/draft", room=room)
@@ -632,6 +638,9 @@ def _recover_timer(socketio, session_id, league_id):
                     "player_name": pick.player.name if pick.player else "Unknown",
                     "player_position": pick.player.position if pick.player else "",
                     "player_afl_team": pick.player.afl_team if pick.player else "",
+                    "player_rating": pick.player.rating if pick.player else None,
+                    "player_potential": pick.player.potential if pick.player else None,
+                    "player_age": pick.player.age if pick.player else None,
                     "is_auto_pick": True,
                 }
                 socketio.emit("pick_made", pick_data, namespace="/draft", room=room)
@@ -686,6 +695,9 @@ def _recover_timer(socketio, session_id, league_id):
                                         "player_name": pick.player.name if pick.player else "Unknown",
                                         "player_position": pick.player.position if pick.player else "",
                                         "player_afl_team": pick.player.afl_team if pick.player else "",
+                                        "player_rating": pick.player.rating if pick.player else None,
+                                        "player_potential": pick.player.potential if pick.player else None,
+                                        "player_age": pick.player.age if pick.player else None,
                                         "is_auto_pick": True,
                                     }
                                     socketio.emit("pick_made", pick_data, namespace="/draft", room=room)

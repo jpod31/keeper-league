@@ -74,12 +74,12 @@ export function AppShell() {
              ambient gives the whole app a cool blue character without
              being loud. */
           background:
-            radial-gradient(900px 200px at 50% -40px, rgba(162,116,37,.16), transparent 60%),
+            radial-gradient(900px 200px at 50% -40px, rgba(81,78,95,.16), transparent 60%),
             linear-gradient(180deg, rgba(255,255,255,.025), transparent),
-            rgba(18,17,16,.82);
+            rgba(14,13,15,.82);
           backdrop-filter: blur(16px) saturate(130%);
           -webkit-backdrop-filter: blur(16px) saturate(130%);
-          border-bottom: 1px solid rgba(170,144,91,.12);
+          border-bottom: 1px solid rgba(220,218,231,.12);
         }
         .kl-bar-league-slot {
           display: inline-flex;
@@ -128,7 +128,7 @@ export function AppShell() {
           font-weight: 800;
           font-size: .92rem;
           letter-spacing: -.015em;
-          color: #f7f6f5;
+          color: #f5f5f7;
         }
 
         /* Home pill */
@@ -138,7 +138,7 @@ export function AppShell() {
           border-radius: 999px;
           background: rgba(255,255,255,.05);
           border: 1px solid rgba(255,255,255,.08);
-          color: #d7d1cb;
+          color: #cfcfd6;
           text-decoration: none;
           font-size: .78rem;
           font-weight: 600;
@@ -146,7 +146,7 @@ export function AppShell() {
         }
         .kl-bar-home:hover {
           background: rgba(255,255,255,.08);
-          color: #f7f6f5;
+          color: #f5f5f7;
           border-color: rgba(255,255,255,.16);
           transform: translateY(-1px);
         }
@@ -172,7 +172,7 @@ export function AppShell() {
           background: transparent !important;
           border: 0 !important;
           padding: 0 !important;
-          color: #d7d1cb !important;
+          color: #cfcfd6 !important;
           font-size: 1.05rem;
           cursor: pointer;
           text-decoration: none;
@@ -182,7 +182,7 @@ export function AppShell() {
         .kl-bar-icon-btn:hover,
         .kl-bar-cluster .nav-link:hover {
           background: rgba(255,255,255,.08) !important;
-          color: #f7f6f5 !important;
+          color: #f5f5f7 !important;
           transform: scale(1.05);
         }
         /* Notification dot inside the bell button */
@@ -192,7 +192,7 @@ export function AppShell() {
           width: 8px; height: 8px;
           border-radius: 50%;
           background: #ff5470;
-          box-shadow: 0 0 0 2px rgba(10,9,9,.95), 0 0 10px rgba(255,84,112,.7);
+          box-shadow: 0 0 0 2px rgba(8,7,9,.95), 0 0 10px rgba(255,84,112,.7);
           animation: kl-pulse-dot 1.6s ease-out infinite;
         }
         @keyframes kl-pulse-dot {
@@ -207,27 +207,27 @@ export function AppShell() {
           border-radius: 999px;
           background: transparent;
           border: 0;
-          color: #d7d1cb;
+          color: #cfcfd6;
           cursor: pointer;
           transition: background .14s ease, color .14s ease;
         }
-        .kl-bar-user:hover { background: rgba(255,255,255,.08); color: #f7f6f5; }
+        .kl-bar-user:hover { background: rgba(255,255,255,.08); color: #f5f5f7; }
         .kl-bar-user-avatar {
           width: 30px; height: 30px;
           border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
           font-size: .78rem;
           font-weight: 800;
-          color: #0a0909;
-          background: linear-gradient(135deg, #e6d894 0%, #e4d58b 100%);
-          box-shadow: 0 4px 12px -4px rgba(228,213,139,.5);
+          color: #080709;
+          background: linear-gradient(135deg, #b5ff3c 0%, #4ade80 100%);
+          box-shadow: 0 4px 12px -4px rgba(74,222,128,.5);
           letter-spacing: -.01em;
           flex-shrink: 0;
         }
         .kl-bar-user-name {
           font-size: .82rem;
           font-weight: 600;
-          color: #d7d1cb;
+          color: #cfcfd6;
           max-width: 140px;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -235,10 +235,10 @@ export function AppShell() {
         }
         .kl-bar-user-chev {
           font-size: .64rem;
-          color: #80786f;
+          color: #8a8895;
           transition: transform .2s ease, color .15s ease;
         }
-        .kl-bar-user.open .kl-bar-user-chev { transform: rotate(180deg); color: #f7f6f5; }
+        .kl-bar-user.open .kl-bar-user-chev { transform: rotate(180deg); color: #f5f5f7; }
 
         /* Dropdown panel (same DNA as league switcher) */
         .kl-bar-menu {
@@ -246,8 +246,8 @@ export function AppShell() {
           right: 0;
           top: calc(100% + 8px);
           min-width: 240px;
-          background: linear-gradient(180deg, #1c1a18, #121110);
-          border: 1px solid rgba(55,51,48,.85);
+          background: linear-gradient(180deg, #151518, #0e0d0f);
+          border: 1px solid rgba(42,41,47,.85);
           border-radius: 14px;
           padding: 8px;
           box-shadow: 0 24px 56px -16px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02) inset;
@@ -262,11 +262,11 @@ export function AppShell() {
         .kl-bar-menu-head {
           display: flex; align-items: center; gap: 10px;
           padding: 8px 10px 12px;
-          border-bottom: 1px solid rgba(55,51,48,.5);
+          border-bottom: 1px solid rgba(42,41,47,.5);
           margin-bottom: 8px;
         }
-        .kl-bar-menu-head-name { font-size: .92rem; font-weight: 700; color: #f7f6f5; }
-        .kl-bar-menu-head-sub  { font-size: .68rem; color: #a39586; }
+        .kl-bar-menu-head-name { font-size: .92rem; font-weight: 700; color: #f5f5f7; }
+        .kl-bar-menu-head-sub  { font-size: .68rem; color: #a0a0ac; }
         .kl-bar-menu-item {
           display: flex; align-items: center; gap: 10px;
           width: 100%;
@@ -274,7 +274,7 @@ export function AppShell() {
           border-radius: 10px;
           background: transparent;
           border: 0;
-          color: #d7d1cb;
+          color: #cfcfd6;
           font-size: .82rem;
           font-weight: 600;
           text-decoration: none;
@@ -284,19 +284,19 @@ export function AppShell() {
         }
         .kl-bar-menu-item:hover {
           background: rgba(255,255,255,.05);
-          color: #f7f6f5;
+          color: #f5f5f7;
           transform: translateX(2px);
           text-decoration: none;
         }
-        .kl-bar-menu-item i { font-size: .9rem; color: #a39586; transition: color .14s ease; }
-        .kl-bar-menu-item:hover i { color: #f7f6f5; }
+        .kl-bar-menu-item i { font-size: .9rem; color: #a0a0ac; transition: color .14s ease; }
+        .kl-bar-menu-item:hover i { color: #f5f5f7; }
         .kl-bar-menu-item-danger { color: #ff8a82; }
         .kl-bar-menu-item-danger:hover { background: rgba(248,81,73,.1); color: #ff8a82; }
         .kl-bar-menu-item-danger i { color: #f85149; }
         .kl-bar-menu-divider {
           height: 1px;
           margin: 6px 4px;
-          background: rgba(55,51,48,.6);
+          background: rgba(42,41,47,.6);
         }
 
         /* Mobile (<992px) — bar still visible but compact, no name */

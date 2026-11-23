@@ -10,7 +10,7 @@
       <div class="card-body p-4">
         <div class="text-center mb-4">
           <span class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
-                style="width:64px;height:64px;background:linear-gradient(135deg,#71602b,#b77a10);font-size:1.5rem;font-weight:700;color:#fff;">
+                style="width:64px;height:64px;background:linear-gradient(135deg,#238636,#514e5f);font-size:1.5rem;font-weight:700;color:#fff;">
             {{ (current_user.display_name or current_user.username)[0]|upper }}
           </span>
           <div class="fw-bold">{{ current_user.display_name or current_user.username }}</div>
@@ -145,7 +145,7 @@
 <div id="logoModal" class="logo-modal-overlay" style="display:none;" onclick="if(event.target===this)closeLogo()">
   <div class="logo-modal">
     <div class="logo-modal-header">
-      <h3><i class="bi bi-stars me-2" style="color:#d26822;"></i>Team Logo — <span id="logoTeamName"></span></h3>
+      <h3><i class="bi bi-stars me-2" style="color:#d29922;"></i>Team Logo — <span id="logoTeamName"></span></h3>
       <button onclick="closeLogo()" class="logo-modal-close"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="logo-modal-body">
@@ -192,17 +192,17 @@
   }
   .prof-team-logo-ph {
     width: 48px; height: 48px; border-radius: 12px;
-    background: linear-gradient(145deg, #2d2611, #71602b, #dbcf94);
+    background: linear-gradient(145deg, #0d3618, #238636, #3fb950);
     color: #fff; font-weight: 800; font-size: .95rem;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 4px 12px rgba(0,0,0,.3); letter-spacing: .5px;
   }
   .prof-logo-btn {
-    background: rgba(210,104,34,.12); color: #d26822; border: 1px solid rgba(210,104,34,.25);
+    background: rgba(210,153,34,.12); color: #d29922; border: 1px solid rgba(210,153,34,.25);
     border-radius: 8px; padding: 5px 12px; font-size: .72rem; font-weight: 600;
     cursor: pointer; white-space: nowrap; transition: background .15s;
   }
-  .prof-logo-btn:hover { background: rgba(210,104,34,.2); }
+  .prof-logo-btn:hover { background: rgba(210,153,34,.2); }
 
   /* ── Modal ── */
   .logo-modal-overlay {
@@ -212,43 +212,43 @@
     padding: 20px;
   }
   .logo-modal {
-    background: var(--kl-bg-card, #1c1a18); border: 1px solid var(--kl-border, #373330);
+    background: var(--kl-bg-card, #151518); border: 1px solid var(--kl-border, #2a292f);
     border-radius: 16px; width: 100%; max-width: 480px;
     box-shadow: 0 20px 60px rgba(0,0,0,.6); overflow: hidden;
   }
   .logo-modal-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 20px; border-bottom: 1px solid var(--kl-border, #272522);
+    padding: 16px 20px; border-bottom: 1px solid var(--kl-border, #1e1d21);
   }
-  .logo-modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--kl-text-heading, #efedea); margin: 0; }
+  .logo-modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--kl-text-heading, #ebebee); margin: 0; }
   .logo-modal-close {
-    background: none; border: none; color: var(--kl-text-faint, #56504a);
+    background: none; border: none; color: var(--kl-text-faint, #63616d);
     font-size: 1.1rem; cursor: pointer; padding: 4px;
   }
-  .logo-modal-close:hover { color: var(--kl-text-primary, #efedea); }
+  .logo-modal-close:hover { color: var(--kl-text-primary, #ebebee); }
   .logo-modal-body { padding: 20px; }
 
   .logo-modal-current {
     text-align: center; margin-bottom: 16px;
-    padding-bottom: 16px; border-bottom: 1px solid var(--kl-border, #272522);
+    padding-bottom: 16px; border-bottom: 1px solid var(--kl-border, #1e1d21);
   }
   .logo-modal-preview {
     width: 80px; height: 80px; border-radius: 16px; object-fit: cover;
-    border: 2px solid var(--kl-border, #373330); box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    border: 2px solid var(--kl-border, #2a292f); box-shadow: 0 4px 16px rgba(0,0,0,.3);
   }
-  .logo-modal-prev-prompt { font-size: .72rem; color: var(--kl-text-faint, #56504a); margin-top: 8px; }
+  .logo-modal-prev-prompt { font-size: .72rem; color: var(--kl-text-faint, #63616d); margin-top: 8px; }
   .logo-modal-label {
     display: block; font-size: .8rem; font-weight: 600;
-    color: var(--kl-text-secondary, #a39586); margin-bottom: 6px;
+    color: var(--kl-text-secondary, #a0a0ac); margin-bottom: 6px;
   }
   .logo-modal-input {
     width: 100%; padding: 10px 14px; border-radius: 10px;
-    background: var(--kl-bg-body, #121110); color: var(--kl-text-primary, #efedea);
-    border: 1px solid var(--kl-border, #373330); font-size: .85rem;
+    background: var(--kl-bg-body, #0e0d0f); color: var(--kl-text-primary, #ebebee);
+    border: 1px solid var(--kl-border, #2a292f); font-size: .85rem;
     resize: none; font-family: inherit;
   }
-  .logo-modal-input:focus { outline: none; border-color: #d26822; box-shadow: 0 0 0 3px rgba(210,104,34,.15); }
-  .logo-modal-hint { font-size: .68rem; color: var(--kl-text-faint, #56504a); margin-top: 6px; }
+  .logo-modal-input:focus { outline: none; border-color: #d29922; box-shadow: 0 0 0 3px rgba(210,153,34,.15); }
+  .logo-modal-hint { font-size: .68rem; color: var(--kl-text-faint, #63616d); margin-top: 6px; }
   .logo-modal-error {
     margin-top: 10px; padding: 8px 12px; border-radius: 8px;
     background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3);
@@ -257,7 +257,7 @@
   .logo-modal-generate {
     display: flex; align-items: center; justify-content: center;
     width: 100%; margin-top: 14px; padding: 10px 0;
-    background: linear-gradient(135deg, #d26822, #e38241);
+    background: linear-gradient(135deg, #d29922, #e3b341);
     color: #000; font-weight: 700; font-size: .85rem;
     border: none; border-radius: 10px; cursor: pointer; transition: opacity .15s;
   }
@@ -265,41 +265,41 @@
   .logo-modal-generate:disabled { opacity: .5; cursor: not-allowed; }
   .logo-modal-loading {
     display: flex; align-items: center; gap: 10px; justify-content: center;
-    margin-top: 14px; padding: 12px; color: var(--kl-text-secondary, #a39586); font-size: .8rem;
+    margin-top: 14px; padding: 12px; color: var(--kl-text-secondary, #a0a0ac); font-size: .8rem;
   }
   .logo-spinner {
-    width: 20px; height: 20px; border: 2px solid var(--kl-border, #373330);
-    border-top-color: #d26822; border-radius: 50%; animation: logoSpin 1s linear infinite;
+    width: 20px; height: 20px; border: 2px solid var(--kl-border, #2a292f);
+    border-top-color: #d29922; border-radius: 50%; animation: logoSpin 1s linear infinite;
   }
   @keyframes logoSpin { to { transform: rotate(360deg); } }
 
   .logo-modal-result-img {
     width: 140px; height: 140px; border-radius: 22px; object-fit: cover;
     display: block; margin: 0 auto;
-    border: 2px solid var(--kl-border, #373330); box-shadow: 0 8px 30px rgba(0,0,0,.5);
+    border: 2px solid var(--kl-border, #2a292f); box-shadow: 0 8px 30px rgba(0,0,0,.5);
   }
   .logo-result-actions {
     display: flex; gap: 8px; justify-content: center; margin-top: 16px;
   }
   .logo-btn-accept {
     padding: 8px 20px; border-radius: 10px; font-size: .8rem; font-weight: 700;
-    background: #71602b; color: #fff; border: none; cursor: pointer;
+    background: #238636; color: #fff; border: none; cursor: pointer;
     transition: opacity .15s;
   }
   .logo-btn-accept:hover { opacity: .9; }
   .logo-btn-regen {
     padding: 8px 16px; border-radius: 10px; font-size: .8rem; font-weight: 600;
-    background: rgba(210,104,34,.15); color: #d26822; border: 1px solid rgba(210,104,34,.3);
+    background: rgba(210,153,34,.15); color: #d29922; border: 1px solid rgba(210,153,34,.3);
     cursor: pointer; transition: background .15s;
   }
-  .logo-btn-regen:hover { background: rgba(210,104,34,.25); }
+  .logo-btn-regen:hover { background: rgba(210,153,34,.25); }
   .logo-btn-close {
     padding: 8px 16px; border-radius: 10px; font-size: .8rem; font-weight: 600;
-    background: rgba(163,149,134,.08); color: var(--kl-text-secondary, #a39586);
-    border: 1px solid var(--kl-border, #373330); cursor: pointer;
+    background: rgba(160,160,172,.08); color: var(--kl-text-secondary, #a0a0ac);
+    border: 1px solid var(--kl-border, #2a292f); cursor: pointer;
     transition: background .15s;
   }
-  .logo-btn-close:hover { background: rgba(163,149,134,.15); }
+  .logo-btn-close:hover { background: rgba(160,160,172,.15); }
 </style>
 {% endblock %}
 

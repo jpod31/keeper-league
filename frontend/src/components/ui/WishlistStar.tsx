@@ -46,7 +46,7 @@ export function WishlistStar({
         border: 'none',
         padding: 4,
         cursor: 'pointer',
-        color: pinned ? '#d26822' : 'var(--kl-text-faint)',
+        color: pinned ? '#d29922' : 'var(--kl-text-faint)',
         fontSize,
         lineHeight: 1,
         ...style,

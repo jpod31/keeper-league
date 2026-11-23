@@ -56,14 +56,14 @@ export function LoginPage() {
           </div>
           <div className="form-check mb-4">
             <input type="checkbox" className="form-check-input" id="remember" />
-            <label className="form-check-label" htmlFor="remember" style={{ fontSize: '.8rem', color: '#a39586' }}>Remember me</label>
+            <label className="form-check-label" htmlFor="remember" style={{ fontSize: '.8rem', color: '#a0a0ac' }}>Remember me</label>
           </div>
           <button type="submit" className="btn btn-primary w-100" disabled={loading}>
             {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Signing in...</> : 'Sign In'}
           </button>
         </form>
-        <p className="text-center mt-4 mb-0" style={{ fontSize: '.85rem', color: '#a39586' }}>
-          Don't have an account? <Link to="/auth/register" style={{ color: '#f5b940', textDecoration: 'none' }}>Create one</Link>
+        <p className="text-center mt-4 mb-0" style={{ fontSize: '.85rem', color: '#a0a0ac' }}>
+          Don't have an account? <Link to="/auth/register" style={{ color: '#ececf6', textDecoration: 'none' }}>Create one</Link>
         </p>
       </div>
     </div>

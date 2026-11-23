@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, post } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 import { useStatsYear } from '../../contexts/LeagueContext'
+import { clubVars, ratingTier, rgbOf } from '../../lib/clubs'
+import { TeamCrest } from '../../components/draft/TeamCrest'
 
 interface BlockPlayer {
   id: number
@@ -22,7 +24,7 @@ interface BlockPlayer {
 
 interface Entry {
   id: number
-  team: { id: number; name: string; logo: string | null; coach: string } | null
+  team: { id: number; name: string; logo: string | null; coach: string; accent?: string } | null
   player: BlockPlayer
   seeking: string[]
   note: string
@@ -54,18 +56,8 @@ function since(iso: string | null): string {
   return `Listed ${Math.floor(days / 30)} months ago`
 }
 
-function initials(name: string) {
-  const w = name.replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).filter(Boolean)
-  return ((w[0]?.[0] || '') + (w[1]?.[0] || '')).toUpperCase() || '?'
-}
-
-function Crest({ team }: { team: { name: string; logo: string | null } }) {
-  const [broken, setBroken] = useState(false)
-  return (
-    <span className="tb-crest">
-      {team.logo && !broken ? <img src={team.logo} alt="" onError={() => setBroken(true)} /> : initials(team.name)}
-    </span>
-  )
+function Crest({ team }: { team: { id?: number; name: string; logo: string | null; accent?: string } }) {
+  return <TeamCrest team={{ id: team.id ?? 0, name: team.name, logo: team.logo, accent: team.accent ?? '#ececf6' }} size={28} />
 }
 
 function PositionChips({ p }: { p: BlockPlayer }) {
@@ -294,8 +286,8 @@ export function TradeBlockPage() {
               {shown.map(e => {
                 const p = e.player
                 return (
-                  <article key={e.id} className={`tb-card${e.is_mine ? ' mine' : ''}`}>
-                    <div className="tb-card-top">
+                  <article key={e.id} className={`tb-card${e.is_mine ? ' mine' : ''}`} style={clubVars(p.afl_team)}>
+                    <div className="tb-card-top" style={{ ['--tm' as string]: rgbOf(e.team?.accent) } as React.CSSProperties}>
                       {e.team && <Crest team={e.team} />}
                       <span className="tb-owner">{e.team?.name}{e.is_mine ? ' (you)' : ''}</span>
                       <span className="tb-when">{since(e.created_at)}</span>
@@ -316,8 +308,8 @@ export function TradeBlockPage() {
                       <div className="tb-nums">
                         <div className="tb-num"><b className="gold">{p.sc_avg ? Math.round(p.sc_avg) : '-'}</b><span>{avgLabel}</span></div>
                         <div className="tb-num"><b>{p.l5 ? Math.round(p.l5) : '-'}</b><span>{l5Label}</span></div>
-                        <div className="tb-num"><b>{p.rating ?? '-'}</b><span>Rating</span></div>
-                        <div className="tb-num"><b>{p.potential ?? '-'}</b><span>Potential</span></div>
+                        <div className="tb-num"><b className={`rt-txt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</b><span>Rating</span></div>
+                        <div className="tb-num"><b className={`rt-txt ${ratingTier(p.potential)}`}>{p.potential ?? '-'}</b><span>Potential</span></div>
                       </div>
                       <div>
                         <div className="tb-want-label">Looking for</div>

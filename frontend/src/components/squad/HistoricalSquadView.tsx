@@ -33,10 +33,10 @@ export interface HistoricalSquadViewProps {
 }
 
 const POS_COLORS: Record<string, { bg: string; text: string; row: string }> = {
-  DEF: { bg: 'rgba(90,67,19,.45)', text: '#f8c552', row: 'rgba(90,67,19,.10)' },
-  MID: { bg: 'rgba(58,33,82,.45)', text: '#d6b0ff', row: 'rgba(58,33,82,.10)' },
-  RUC: { bg: 'rgba(70,66,59,.45)', text: '#f1ebdd', row: 'rgba(70,66,59,.10)' },
-  FWD: { bg: 'rgba(92,31,24,.45)', text: '#ff9484', row: 'rgba(92,31,24,.10)' },
+  DEF: { bg: 'rgba(26,63,102,.35)', text: '#79c0ff', row: 'rgba(26,63,102,.08)' },
+  MID: { bg: 'rgba(53,29,74,.35)', text: '#d2a8ff', row: 'rgba(53,29,74,.08)' },
+  RUC: { bg: 'rgba(29,61,46,.35)', text: '#7ee787', row: 'rgba(29,61,46,.08)' },
+  FWD: { bg: 'rgba(70,41,10,.35)', text: '#ffb471', row: 'rgba(70,41,10,.08)' },
 }
 
 export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquadViewProps) {
@@ -90,7 +90,7 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
           </div>
         </div>
         <div className="mob-pos-sc">
-          {p.sc_avg ? <span style={{ color: '#efedea', fontWeight: 700 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#56504a' }}>-</span>}
+          {p.sc_avg ? <span style={{ color: '#ebebee', fontWeight: 700 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#63616d' }}>-</span>}
         </div>
       </div>
     )
@@ -124,8 +124,8 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
         })}
         {fd.flex_data.some(s => s.player) && (
           <div className="mob-pos-group">
-            <div className="mob-pos-header" style={{ background: 'rgba(163,149,134,.15)', borderLeft: '3px solid #a39586' }}>
-              <span className="mob-pos-label" style={{ color: '#a39586' }}>FLEX</span>
+            <div className="mob-pos-header" style={{ background: 'rgba(160,160,172,.15)', borderLeft: '3px solid #a0a0ac' }}>
+              <span className="mob-pos-label" style={{ color: '#a0a0ac' }}>FLEX</span>
               <span className="mob-pos-count">{fd.flex_data.filter(s => s.player).length}/{fd.flex_count}</span>
             </div>
             {fd.flex_data.filter(s => s.player).map(s => <MobRow key={s.player!.id} p={s.player!} />)}
@@ -133,8 +133,8 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
         )}
         {fd.emergency_players.length > 0 && (
           <div className="mob-pos-group">
-            <div className="mob-pos-header" style={{ background: 'rgba(166,117,33,.1)', borderLeft: '3px solid #a67521' }}>
-              <span className="mob-pos-label" style={{ color: '#a67521' }}><i className="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
+            <div className="mob-pos-header" style={{ background: 'rgba(81,78,95,.1)', borderLeft: '3px solid #514e5f' }}>
+              <span className="mob-pos-label" style={{ color: '#514e5f' }}><i className="bi bi-shield-exclamation me-1"></i>EMERGENCIES</span>
               <span className="mob-pos-count">{fd.emergency_players.length}</span>
             </div>
             {fd.emergency_players.map(p => <MobRow key={p.id} p={p} badge="E" />)}
@@ -142,8 +142,8 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
         )}
         {fd.reserves.length > 0 && (
           <div className="mob-pos-group mob-reserves-group">
-            <div className="mob-pos-header" style={{ background: 'rgba(55,51,48,.4)', borderLeft: '3px solid #56504a' }}>
-              <span className="mob-pos-label" style={{ color: '#80786f' }}>BENCH</span>
+            <div className="mob-pos-header" style={{ background: 'rgba(42,41,47,.4)', borderLeft: '3px solid #63616d' }}>
+              <span className="mob-pos-label" style={{ color: '#8a8895' }}>BENCH</span>
               <span className="mob-pos-count">{fd.reserves.length}</span>
             </div>
             {fd.reserves.map(p => <MobRow key={p.id} p={p} />)}
@@ -151,8 +151,8 @@ export function HistoricalSquadView({ leagueId, teamId, round }: HistoricalSquad
         )}
         {(fd.rookies?.length ?? 0) > 0 && (
           <div className="mob-pos-group">
-            <div className="mob-pos-header" style={{ background: 'rgba(185,145,84,.12)', borderLeft: '3px solid #b99154' }}>
-              <span className="mob-pos-label" style={{ color: '#b99154' }}><i className="bi bi-stars me-1"></i>ROOKIES</span>
+            <div className="mob-pos-header" style={{ background: 'rgba(45,212,191,.12)', borderLeft: '3px solid #2dd4bf' }}>
+              <span className="mob-pos-label" style={{ color: '#2dd4bf' }}><i className="bi bi-stars me-1"></i>ROOKIES</span>
               <span className="mob-pos-count">{fd.rookies!.length}</span>
             </div>
             {fd.rookies!.map(p => <MobRow key={p.id} p={p} />)}

@@ -30,9 +30,9 @@ FIELD_POSITIONS = {"DEF", "MID", "FWD", "RUC", "FLEX"}
 # Same accent ramp the dashboard/fixture cards use, so a team keeps one
 # colour identity everywhere in the app.
 TEAM_PALETTE = [
-    "#f5b940", "#ff7b72", "#c79bff", "#f1ebdd", "#f08a4b",
-    "#f778ba", "#d9c27a", "#e0563f", "#9d7bd8", "#ffb48a",
-    "#b89a5e", "#ff9ed0",
+    "#58a6ff", "#ffb471", "#bc8cff", "#3fb950", "#e3b341",
+    "#ff7b72", "#7ee787", "#f778ba", "#79c0ff", "#ff9e64",
+    "#9ece6a", "#bb9af7",
 ]
 
 _CACHE = {}
@@ -176,9 +176,9 @@ class _Season:
         if not p:
             return {"id": pid, "name": "Unknown", "afl_team": "", "position": "MID",
                     "age": None, "rating": None, "logo": None,
-                    "club_bg": "#282523", "club_fg": "#a39586"}
+                    "club_bg": "#1c1c21", "club_fg": "#a0a0ac"}
         club = p.afl_team or ""
-        bg, fg = TEAM_COLOURS.get(club, ("#282523", "#a39586"))
+        bg, fg = TEAM_COLOURS.get(club, ("#1c1c21", "#a0a0ac"))
         return {
             "id": p.id, "name": p.name, "afl_team": club,
             "position": p.position or "MID", "age": p.age, "rating": p.rating,

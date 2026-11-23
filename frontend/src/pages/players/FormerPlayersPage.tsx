@@ -4,6 +4,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { AcquiredHistory, type Stint } from '../../components/ui/PlayerHistory'
+import { ratingTier } from '../../lib/clubs'
 
 interface FormerPlayer {
   id: number
@@ -211,10 +212,10 @@ export function FormerPlayersPage() {
                       <td className="ctr kx-strong">{p.left_year ?? '-'}</td>
                       <td className="ctr">{p.age ?? '-'}</td>
                       <td className="num kx-strong">{p.games || '-'}</td>
-                      <td className="num kx-gold">{p.career_avg != null ? p.career_avg.toFixed(1) : '-'}</td>
+                      <td className="num kx-strong">{p.career_avg != null ? p.career_avg.toFixed(1) : '-'}</td>
                       <td className="num">{p.best_avg != null ? <><b className="kx-strong">{p.best_avg.toFixed(1)}</b> ({p.best_year})</> : '-'}</td>
                       <td className="num">{p.last_avg != null ? <><b className="kx-strong">{p.last_avg.toFixed(1)}</b> ({p.last_year})</> : '-'}</td>
-                      <td className="num kx-strong">{p.rating ?? '-'}</td>
+                      <td className="num">{p.rating != null ? <span className={`rt ${ratingTier(p.rating)}`}>{p.rating}</span> : '-'}</td>
                       <td onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
                         {p.times_listed > 0
                           ? <AcquiredHistory history={p.history} fallback={null} />

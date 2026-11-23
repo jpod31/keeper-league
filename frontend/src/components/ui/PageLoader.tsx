@@ -23,7 +23,7 @@ export function PageLoader({ text }: { text?: string } = {}) {
           width: 640,
           height: 640,
           transform: 'translate(-50%, -50%)',
-          background: 'radial-gradient(circle at 35% 40%, rgba(219,207,148,.35), rgba(219,207,148,0) 55%), radial-gradient(circle at 65% 60%, rgba(183,122,16,.35), rgba(183,122,16,0) 55%)',
+          background: 'radial-gradient(circle at 35% 40%, rgba(63,185,80,.35), rgba(63,185,80,0) 55%), radial-gradient(circle at 65% 60%, rgba(81,78,95,.35), rgba(81,78,95,0) 55%)',
           filter: 'blur(40px)',
           animation: 'klHalo 3s ease-in-out infinite',
           pointerEvents: 'none',
@@ -51,7 +51,7 @@ export function PageLoader({ text }: { text?: string } = {}) {
           }}
         />
         {text && (
-          <p style={{ fontSize: '.8rem', color: '#a39586', margin: 0, fontWeight: 500 }}>{text}</p>
+          <p style={{ fontSize: '.8rem', color: '#a0a0ac', margin: 0, fontWeight: 500 }}>{text}</p>
         )}
       </div>
 

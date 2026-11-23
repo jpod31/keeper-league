@@ -5,6 +5,7 @@
 import { checkSwapEligible, type SwapSourceInfo, type ActionMode } from '../../hooks/useFieldActions'
 import { useEffect, useRef } from 'react'
 import { useStatsYear } from '../../contexts/LeagueContext'
+import { clubVars } from '../../lib/clubs'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
@@ -136,7 +137,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         <div className={`fv-card fv-card-empty fv-card-${posClass}${isFlex ? ' fv-card-flex' : ''}${isLtil ? ' fv-card-ltil' : ''}`}>
           <div className="fv-empty-slot">
             {isLtil ? <span className="fv-ltil-empty-label"><i className="bi bi-bandaid"></i> LTIL SLOT</span>
-              : isFlex ? <span style={{ fontSize: '.55rem', fontWeight: 700, color: '#373330', letterSpacing: '1px' }}>FLEX</span> : <i className="bi bi-person-dash"></i>}
+              : isFlex ? <span style={{ fontSize: '.55rem', fontWeight: 700, color: '#2a292f', letterSpacing: '1px' }}>FLEX</span> : <i className="bi bi-person-dash"></i>}
           </div>
         </div>
       )
@@ -182,7 +183,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     const ltilHasRoom = fd.ssp_enabled && (fd.ltil_entries.length + fd.pending_ltil_count) < fd.ssp_slots
 
     return (
-      <div className={cardClasses}
+      <div className={cardClasses} style={clubVars(p.afl_team)}
         data-player-id={p.id} data-section={section} data-positions={p.position || 'MID'}
         data-field-pos={fieldPosUpper} data-locked={isLocked ? '1' : ''}
         data-emg={isEmg ? '1' : ''} data-sevens={is7s ? '1' : ''} data-age={String(p.age || '')}

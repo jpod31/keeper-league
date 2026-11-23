@@ -115,7 +115,7 @@ export function SeasonReview({
   useEffect(() => () => window.clearTimeout(scrollTimer.current), [])
 
   const slide = deck[i]
-  const theme = slide?.theme ?? ['#f5ba43', '#ff5fa2', '#24221f']
+  const theme = slide?.theme ?? ['#e3e1ec', '#ff5fa2', '#1b1b1f']
   const last = i === deck.length - 1
 
   const body = (

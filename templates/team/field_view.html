@@ -158,7 +158,7 @@
     <div class="fv-card fv-card-empty fv-card-{{ pos_class }}{% if is_flex %} fv-card-flex{% endif %}">
       <div class="fv-empty-slot">
         {% if is_flex %}
-          <span style="font-size:.55rem;font-weight:700;color:#373330;letter-spacing:1px;">FLEX</span>
+          <span style="font-size:.55rem;font-weight:700;color:#2a292f;letter-spacing:1px;">FLEX</span>
         {% else %}
           <i class="bi bi-person-dash"></i>
         {% endif %}
@@ -300,16 +300,16 @@
         <div class="fv-ltil-sidebar-card fv-ltil-sidebar-pending" data-ltil-id="{{ lt.id }}">
           <div class="fv-ltil-sidebar-info">
             <div class="fv-ltil-sidebar-name">{{ lt.player.name }}</div>
-            <div class="fv-ltil-sidebar-meta" style="color:#d26822;">Pending approval</div>
+            <div class="fv-ltil-sidebar-meta" style="color:#d29922;">Pending approval</div>
           </div>
-          <i class="bi bi-hourglass-split" style="font-size:.7rem;color:#d26822;"></i>
+          <i class="bi bi-hourglass-split" style="font-size:.7rem;color:#d29922;"></i>
         </div>
         {% endfor %}
         {% set used_slots = field_data.ltil_entries|length + field_data.pending_ltil|default([])|length %}
         {% for i in range(field_data.ssp_slots - used_slots) %}
         <div class="fv-ltil-sidebar-card fv-ltil-sidebar-empty">
-          <i class="bi bi-bandaid" style="font-size:.7rem;color:#56504a;"></i>
-          <span style="font-size:.6rem;color:#56504a;">LTIL Slot</span>
+          <i class="bi bi-bandaid" style="font-size:.7rem;color:#63616d;"></i>
+          <span style="font-size:.6rem;color:#63616d;">LTIL Slot</span>
         </div>
         {% endfor %}
       </div>
@@ -322,13 +322,13 @@
   {% if is_owner and field_data.ssp_enabled %}
   <div class="modal fade" id="sspModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content" style="background:#1c1a18;border:1px solid #373330;border-radius:12px;">
-        <div class="modal-header" style="border-bottom:1px solid #373330;padding:.75rem 1rem;">
+      <div class="modal-content" style="background:#151518;border:1px solid #2a292f;border-radius:12px;">
+        <div class="modal-header" style="border-bottom:1px solid #2a292f;padding:.75rem 1rem;">
           <h6 class="modal-title fw-bold" style="font-size:.95rem;"><i class="bi bi-bandaid me-1" style="color:#f85149;"></i>SSP — Select Replacement</h6>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" style="padding:1rem;">
-          <input type="text" class="form-control form-control-sm mb-3" id="sspSearch" placeholder="Search players..." oninput="filterSSPList()" style="background:#121110;border-color:#373330;color:#d7d1cb;">
+          <input type="text" class="form-control form-control-sm mb-3" id="sspSearch" placeholder="Search players..." oninput="filterSSPList()" style="background:#0e0d0f;border-color:#2a292f;color:#cfcfd6;">
           <div id="sspPlayerList" style="max-height:350px;overflow-y:auto;">
             <div class="text-center text-secondary py-3" style="font-size:.8rem;">Loading players...</div>
           </div>
@@ -367,7 +367,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="text-center py-3" style="color:#56504a;font-size:.8rem;">
+    <div class="text-center py-3" style="color:#63616d;font-size:.8rem;">
       Tap the <span style="color:#bc8cff;font-weight:600;">7</span> button on any reserve to add them to your 7s squad
     </div>
     {% endif %}
@@ -437,8 +437,8 @@
 {# ═══ Player Scouting Report Modal ═══ #}
 <div class="modal fade" id="playerModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background:#1c1a18;border:1px solid #373330;border-radius:12px;">
-      <div class="modal-header" style="border-bottom:1px solid #373330;padding:.75rem 1rem;">
+    <div class="modal-content" style="background:#151518;border:1px solid #2a292f;border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid #2a292f;padding:.75rem 1rem;">
         <h6 class="modal-title fw-bold" id="pmName" style="font-size:.95rem;"></h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -459,24 +459,24 @@
             <div style="text-align:center;">
               <div class="draft-ring" style="width:56px;height:56px;">
                 <svg width="56" height="56" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="24" fill="none" stroke="#272522" stroke-width="4"/>
-                  <circle id="pmRatingArc" cx="28" cy="28" r="24" fill="none" stroke="#dbcf94" stroke-width="4"
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="#1e1d21" stroke-width="4"/>
+                  <circle id="pmRatingArc" cx="28" cy="28" r="24" fill="none" stroke="#3fb950" stroke-width="4"
                           stroke-dasharray="150.80" stroke-dashoffset="150.80" stroke-linecap="round"/>
                 </svg>
                 <div class="ring-value" id="pmRating" style="font-size:.9rem;">-</div>
               </div>
-              <div style="font-size:.45rem;color:#80786f;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Rating</div>
+              <div style="font-size:.45rem;color:#8a8895;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Rating</div>
             </div>
             <div style="text-align:center;">
               <div class="draft-ring" style="width:56px;height:56px;">
                 <svg width="56" height="56" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="24" fill="none" stroke="#272522" stroke-width="4"/>
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="#1e1d21" stroke-width="4"/>
                   <circle id="pmPotentialArc" cx="28" cy="28" r="24" fill="none" stroke="#bc8cff" stroke-width="4"
                           stroke-dasharray="150.80" stroke-dashoffset="150.80" stroke-linecap="round"/>
                 </svg>
                 <div class="ring-value" id="pmPotential" style="font-size:.9rem;">-</div>
               </div>
-              <div style="font-size:.45rem;color:#80786f;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Potential</div>
+              <div style="font-size:.45rem;color:#8a8895;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">Potential</div>
             </div>
           </div>
         </div>
@@ -1005,7 +1005,7 @@ function drawSparkline(canvasId, scores) {
   const min = Math.min(...vals) - 5;
   const max = Math.max(...vals) + 5;
   const range = max - min || 1;
-  ctx.strokeStyle = '#f5b940';
+  ctx.strokeStyle = '#ececf6';
   ctx.lineWidth = 2;
   ctx.beginPath();
   vals.forEach((v, i) => {
@@ -1014,7 +1014,7 @@ function drawSparkline(canvasId, scores) {
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
   ctx.stroke();
-  ctx.fillStyle = '#f5b940';
+  ctx.fillStyle = '#ececf6';
   vals.forEach((v, i) => {
     const x = vals.length === 1 ? w / 2 : (i / (vals.length - 1)) * w;
     const y = h - ((v - min) / range) * (h - 4) - 2;
@@ -1097,7 +1097,7 @@ function fvShowPlayer(pid) {
       const rOffset = circ - (rating / 100) * circ;
       const arc = document.getElementById('pmRatingArc');
       arc.style.strokeDashoffset = rOffset;
-      arc.style.stroke = rating >= 80 ? '#dbcf94' : rating >= 70 ? '#d26822' : rating >= 60 ? '#f0763e' : '#f85149';
+      arc.style.stroke = rating >= 80 ? '#3fb950' : rating >= 70 ? '#d29922' : rating >= 60 ? '#f0883e' : '#f85149';
 
       // Potential ring
       const potential = data.potential || 0;
@@ -1105,7 +1105,7 @@ function fvShowPlayer(pid) {
       const pOffset = circ - (potential / 100) * circ;
       const pArc = document.getElementById('pmPotentialArc');
       pArc.style.strokeDashoffset = pOffset;
-      pArc.style.stroke = potential >= 85 ? '#dbcf94' : potential >= 75 ? '#bc8cff' : potential >= 65 ? '#d26822' : '#a39586';
+      pArc.style.stroke = potential >= 85 ? '#3fb950' : potential >= 75 ? '#bc8cff' : potential >= 65 ? '#d29922' : '#a0a0ac';
 
       // Sparkline
       drawSparkline('pmSparkline', data.form);
@@ -1394,7 +1394,7 @@ function drawSparkline(canvasId, scores) {
   const min = Math.min(...vals) - 5;
   const max = Math.max(...vals) + 5;
   const range = max - min || 1;
-  ctx.strokeStyle = '#f5b940';
+  ctx.strokeStyle = '#ececf6';
   ctx.lineWidth = 2;
   ctx.beginPath();
   vals.forEach((v, i) => {
@@ -1403,7 +1403,7 @@ function drawSparkline(canvasId, scores) {
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
   ctx.stroke();
-  ctx.fillStyle = '#f5b940';
+  ctx.fillStyle = '#ececf6';
   vals.forEach((v, i) => {
     const x = vals.length === 1 ? w / 2 : (i / (vals.length - 1)) * w;
     const y = h - ((v - min) / range) * (h - 4) - 2;

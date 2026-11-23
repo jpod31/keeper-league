@@ -22,9 +22,9 @@
 </div>
 
 {% if bye_players %}
-  <div class="alert" style="background:rgba(210,104,34,.1);border:1px solid rgba(210,104,34,.2);border-radius:10px;font-size:.85rem;">
-    <i class="bi bi-exclamation-triangle me-1" style="color:#d26822;"></i>
-    <strong style="color:#d26822;">Bye players:</strong>
+  <div class="alert" style="background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.2);border-radius:10px;font-size:.85rem;">
+    <i class="bi bi-exclamation-triangle me-1" style="color:#d29922;"></i>
+    <strong style="color:#d29922;">Bye players:</strong>
     {% for p in bye_players %}{{ p.name }} ({{ p.afl_team }}){% if not loop.last %}, {% endif %}{% endfor %}
   </div>
 {% endif %}
@@ -84,7 +84,7 @@
       <div class="col-md-6">
         <div class="card">
           <div class="card-header" style="padding:.6rem 1rem;">
-            <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-star me-1" style="color:#d26822;"></i>Captain & Vice-Captain</h6>
+            <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-star me-1" style="color:#d29922;"></i>Captain & Vice-Captain</h6>
           </div>
           <div class="card-body">
             {% set cap = lineup.slots|selectattr('is_captain')|first %}
@@ -113,7 +113,7 @@
       <div class="col-md-6">
         <div class="card">
           <div class="card-header" style="padding:.6rem 1rem;">
-            <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-bench me-1" style="color:#a39586;"></i>Bench</h6>
+            <h6 class="mb-0 fw-bold" style="font-size:.8rem;"><i class="bi bi-bench me-1" style="color:#a0a0ac;"></i>Bench</h6>
           </div>
           <div class="card-body scroll-body" style="max-height:200px;">
             {% set bench_players = lineup.slots|selectattr('position_code', 'equalto', 'BENCH')|list %}
@@ -127,7 +127,7 @@
                 <label class="form-check-label" style="font-size:.8rem;">
                   {{ p.name }} <span class="text-secondary">({{ p.position }})</span>
                   {% if player_lock_times.get(p.id) %}
-                    <span style="font-size:.65rem;color:{% if player_lock_times[p.id] == 'Locked' %}#f85149{% else %}#a39586{% endif %};">{{ player_lock_times[p.id] }}</span>
+                    <span style="font-size:.65rem;color:{% if player_lock_times[p.id] == 'Locked' %}#f85149{% else %}#a0a0ac{% endif %};">{{ player_lock_times[p.id] }}</span>
                   {% endif %}
                 </label>
               </div>
@@ -162,10 +162,10 @@
                   <i class="bi bi-lock-fill" style="color:#f85149;font-size:.6rem;"></i>
                 {% endif %}
                 <span>{{ slot.player_name or 'Empty' }}</span>
-                {% if slot.is_captain %}<span class="badge" style="background:#d26822;font-size:.6rem;">C</span>{% endif %}
-                {% if slot.is_vice_captain %}<span class="badge" style="background:#f5b940;font-size:.6rem;">VC</span>{% endif %}
+                {% if slot.is_captain %}<span class="badge" style="background:#d29922;font-size:.6rem;">C</span>{% endif %}
+                {% if slot.is_vice_captain %}<span class="badge" style="background:#ececf6;font-size:.6rem;">VC</span>{% endif %}
                 {% if player_lock_times.get(slot.player_id) %}
-                  <span style="font-size:.6rem;color:{% if player_lock_times[slot.player_id] == 'Locked' %}#f85149{% else %}#a39586{% endif %};">{{ player_lock_times[slot.player_id] }}</span>
+                  <span style="font-size:.6rem;color:{% if player_lock_times[slot.player_id] == 'Locked' %}#f85149{% else %}#a0a0ac{% endif %};">{{ player_lock_times[slot.player_id] }}</span>
                 {% endif %}
               </div>
             {% endfor %}

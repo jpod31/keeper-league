@@ -169,10 +169,10 @@ export default function App() {
 
       {/* 404 */}
       <Route path="*" element={
-        <div className="min-h-screen bg-[#121110] flex items-center justify-center">
+        <div className="min-h-screen bg-[#0e0d0f] flex items-center justify-center">
           <div className="text-center">
-            <p className="text-4xl font-black text-[#272522]">404</p>
-            <p className="text-sm text-[#56504a] mt-2">Page not found</p>
+            <p className="text-4xl font-black text-[#1e1d21]">404</p>
+            <p className="text-sm text-[#63616d] mt-2">Page not found</p>
           </div>
         </div>
       } />

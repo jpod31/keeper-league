@@ -8,86 +8,86 @@
   .pool-table th {
     padding: .5rem .6rem;
     font-size: .7rem;
-    border-bottom: 2px solid #373330;
+    border-bottom: 2px solid #2a292f;
     position: relative;
   }
   .pool-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
-  .pool-table th.sort-active .sort-icon { opacity: 1; color: #f5b940; }
+  .pool-table th.sort-active .sort-icon { opacity: 1; color: #ececf6; }
   .pool-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
   .pool-table tbody tr { transition: background .1s; }
-  .pool-table tbody tr:hover { background: rgba(245,185,64,.04) !important; }
+  .pool-table tbody tr:hover { background: rgba(236,236,246,.04) !important; }
 
   .profile-tag {
     display: inline-block; padding: 2px 7px; border-radius: 10px;
     font-size: .6rem; font-weight: 700; white-space: nowrap; letter-spacing: .3px;
   }
-  .tag-elite { background: linear-gradient(135deg, rgba(249,192,6,.3), rgba(245,104,10,.25)); color: #f9c006; border: 1px solid rgba(249,192,6,.4); }
-  .tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(244,183,60,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
-  .tag-premium { background: linear-gradient(135deg, rgba(251,127,60,.2), rgba(245,105,11,.15)); color: #fb7f3c; }
-  .tag-rising { background: rgba(165,120,29,.18); color: #a5781d; }
-  .tag-breakout { background: rgba(185,122,14,.18); color: #b97a0e; }
-  .tag-proven { background: rgba(243,173,31,.15); color: #f3ad1f; }
-  .tag-steady { background: rgba(178,167,154,.12); color: #b2a79a; }
-  .tag-developing { background: rgba(228,213,139,.1); color: #e4d58b; }
-  .tag-project { background: rgba(232,99,10,.12); color: #e8630a; }
+  .tag-elite { background: linear-gradient(135deg, rgba(255,215,0,.3), rgba(255,170,0,.25)); color: #ffd700; border: 1px solid rgba(255,215,0,.4); }
+  .tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(226,224,235,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
+  .tag-premium { background: linear-gradient(135deg, rgba(251,146,60,.2), rgba(245,158,11,.15)); color: #fb923c; }
+  .tag-rising { background: rgba(16,185,129,.18); color: #10b981; }
+  .tag-breakout { background: rgba(81,78,95,.18); color: #514e5f; }
+  .tag-proven { background: rgba(222,220,233,.15); color: #dedce9; }
+  .tag-steady { background: rgba(186,185,193,.12); color: #bab9c1; }
+  .tag-developing { background: rgba(74,222,128,.1); color: #4ade80; }
+  .tag-project { background: rgba(234,179,8,.12); color: #eab308; }
   .tag-declining { background: rgba(239,68,68,.15); color: #ef4444; }
-  .tag-veteran { background: rgba(122,115,106,.12); color: #b0a496; }
-  .tag-fringe { background: rgba(93,87,80,.1); color: #7e766d; }
-  .pm-tag-hl { font-size:.58rem; color:#80786f; display:block; margin-top:1px; line-height:1.2; }
+  .tag-veteran { background: rgba(132,130,144,.12); color: #b7b6be; }
+  .tag-fringe { background: rgba(105,103,116,.1); color: #888693; }
+  .pm-tag-hl { font-size:.58rem; color:#8a8895; display:block; margin-top:1px; line-height:1.2; }
   .status-chip {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
   }
   .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
   .filter-bar .form-control-sm, .filter-bar .form-select-sm {
-    background: #121110; border-color: #373330; font-size: .78rem;
+    background: #0e0d0f; border-color: #2a292f; font-size: .78rem;
   }
   .pool-count {
-    font-size: .75rem; color: #a39586; white-space: nowrap;
+    font-size: .75rem; color: #a0a0ac; white-space: nowrap;
     display: flex; align-items: center; gap: .35rem;
   }
-  .pool-count strong { color: #d7d1cb; }
+  .pool-count strong { color: #cfcfd6; }
 
   /* ── Mobile player cards ── */
   .pm-card {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 12px;
-    border-bottom: 1px solid #22201e;
-    cursor: pointer; background: #121110;
+    border-bottom: 1px solid #1a191d;
+    cursor: pointer; background: #0e0d0f;
   }
-  .pm-card:active { background: #1c1a18; }
+  .pm-card:active { background: #151518; }
   .pm-taken { opacity: .5; }
   .pm-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; border-radius: 4px; }
   .pm-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .pm-row1 { display: flex; align-items: center; gap: 5px; }
   .pm-name {
-    font-weight: 700; font-size: .84rem; color: #efedea;
+    font-weight: 700; font-size: .84rem; color: #ebebee;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .pm-pos-badge { padding: 1px 5px; font-size: .55rem; }
-  .pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #80786f; }
-  .pm-row2 b { color: #d7d1cb; font-weight: 700; }
-  .pm-sep { width: 1px; height: 9px; background: #272522; flex-shrink: 0; }
-  .pm-l3 { color: #d7d1cb; }
+  .pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #8a8895; }
+  .pm-row2 b { color: #cfcfd6; font-weight: 700; }
+  .pm-sep { width: 1px; height: 9px; background: #1e1d21; flex-shrink: 0; }
+  .pm-l3 { color: #cfcfd6; }
   .pm-l3 b { font-weight: 700; }
   .pm-l3-delta { font-size: .58rem; font-weight: 700; margin-left: 2px; }
-  .pm-l3-delta-up { color: #dbcf94; }
+  .pm-l3-delta-up { color: #3fb950; }
   .pm-l3-delta-down { color: #f85149; }
-  .pm-l3-delta-flat { color: #56504a; }
+  .pm-l3-delta-flat { color: #63616d; }
   .pm-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-  .pm-sc { font-size: 1.05rem; font-weight: 800; color: #efedea; line-height: 1; }
-  .pm-sc-none { color: #56504a; font-size: .85rem; }
+  .pm-sc { font-size: 1.05rem; font-weight: 800; color: #ebebee; line-height: 1; }
+  .pm-sc-none { color: #63616d; font-size: .85rem; }
   .pm-owner {
     font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 3px;
     white-space: nowrap;
   }
-  .pm-fa { font-size: .58rem; font-weight: 600; color: #dbcf94; }
+  .pm-fa { font-size: .58rem; font-weight: 600; color: #3fb950; }
   .pm-add {
-    background: rgba(219,207,148,.12); border: none;
-    color: #dbcf94; border-radius: 4px;
+    background: rgba(63,185,80,.12); border: none;
+    color: #3fb950; border-radius: 4px;
     font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px;
   }
-  .pm-wish { font-size: .72rem; color: #373330; cursor: pointer; flex-shrink: 0; }
+  .pm-wish { font-size: .72rem; color: #2a292f; cursor: pointer; flex-shrink: 0; }
 
   /* Hide legacy mobile cards */
   .pool-mob-card {
@@ -95,12 +95,12 @@
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
-    border-bottom: 1px solid rgba(55,51,48,.4);
+    border-bottom: 1px solid rgba(42,41,47,.4);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition: background .1s;
   }
-  .pool-mob-card:active { background: rgba(245,185,64,.06); }
+  .pool-mob-card:active { background: rgba(236,236,246,.06); }
   .pool-mob-taken { opacity: .6; }
   .pool-mob-injured .pool-mob-name { color: #f85149; }
 
@@ -108,7 +108,7 @@
     width: 28px;
     font-size: .62rem;
     font-weight: 800;
-    color: #56504a;
+    color: #63616d;
     text-align: center;
     flex-shrink: 0;
   }
@@ -133,7 +133,7 @@
   .pool-mob-name {
     font-weight: 700;
     font-size: .82rem;
-    color: #d7d1cb;
+    color: #cfcfd6;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -148,7 +148,7 @@
   }
   .pool-mob-age {
     font-size: .6rem;
-    color: #80786f;
+    color: #8a8895;
   }
   .pool-mob-inj {
     color: #f85149;
@@ -162,13 +162,13 @@
   .pool-mob-sc {
     font-size: .85rem;
     font-weight: 800;
-    color: #d7d1cb;
+    color: #cfcfd6;
     line-height: 1;
   }
-  .pool-mob-sc-none { color: #373330; }
+  .pool-mob-sc-none { color: #2a292f; }
   .pool-mob-sc-label {
     font-size: .5rem;
-    color: #56504a;
+    color: #63616d;
     text-transform: uppercase;
     letter-spacing: .5px;
     font-weight: 600;
@@ -192,15 +192,15 @@
   .pool-mob-avail {
     font-size: .6rem;
     font-weight: 700;
-    color: #dbcf94;
-    background: rgba(219,207,148,.1);
+    color: #3fb950;
+    background: rgba(63,185,80,.1);
     padding: 2px 6px;
     border-radius: 6px;
   }
   .pool-mob-add-btn {
-    background: rgba(219,207,148,.12);
-    border: 1px solid rgba(219,207,148,.3);
-    color: #dbcf94;
+    background: rgba(63,185,80,.12);
+    border: 1px solid rgba(63,185,80,.3);
+    color: #3fb950;
     border-radius: 8px;
     width: 30px;
     height: 30px;
@@ -230,7 +230,7 @@
   <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
     <div>
       <h2 class="mb-0">Player Pool</h2>
-      <span style="font-size:.78rem;color:#a39586;">Ranked by draft value</span>
+      <span style="font-size:.78rem;color:#a0a0ac;">Ranked by draft value</span>
     </div>
     <div class="d-flex align-items-center gap-2">
       <div class="pool-count">
@@ -241,9 +241,9 @@
 </div>
 
 {% if can_pickup %}
-<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(219,207,148,.08);border:1px solid rgba(219,207,148,.2);border-radius:8px;font-size:.82rem;">
-  <i class="bi bi-person-plus-fill" style="color:#dbcf94;"></i>
-  <span style="color:#d7d1cb;">SSP pickups open — <strong>{{ effective_roster_count }}/{{ league.squad_size }}</strong> roster spots filled{% if ltil_count %} ({{ ltil_count }} on LTIL){% endif %}. Closes at Round {{ ssp_cutoff_round }}.</span>
+<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2" style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);border-radius:8px;font-size:.82rem;">
+  <i class="bi bi-person-plus-fill" style="color:#3fb950;"></i>
+  <span style="color:#cfcfd6;">SSP pickups open — <strong>{{ effective_roster_count }}/{{ league.squad_size }}</strong> roster spots filled{% if ltil_count %} ({{ ltil_count }} on LTIL){% endif %}. Closes at Round {{ ssp_cutoff_round }}.</span>
 </div>
 {% endif %}
 
@@ -253,7 +253,7 @@
     <div class="d-flex gap-2 align-items-center d-lg-none mb-0">
       <div style="flex:1;">
         <input type="text" class="form-control form-control-sm" id="pool-search-mobile"
-               placeholder="Search players..." style="background:#121110;border-color:#373330;"
+               placeholder="Search players..." style="background:#0e0d0f;border-color:#2a292f;"
                oninput="document.getElementById('pool-search').value=this.value;filterPool()">
       </div>
       <button class="filter-toggle-btn" onclick="toggleFilterSheet()" type="button">
@@ -315,9 +315,9 @@
   {# ── Mobile card view ── #}
   <div class="card-body p-0 d-lg-none" id="poolMobWrap" style="max-height:80vh;overflow-y:auto;">
     {# Mobile sort bar #}
-    <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid #272522;background:#1c1a18;">
-      <span style="font-size:.7rem;color:#a39586;white-space:nowrap;">Sort:</span>
-      <select class="form-select form-select-sm" id="pool-mob-sort" onchange="sortMobilePool()" style="background:#121110;border-color:#373330;font-size:.75rem;padding:3px 8px;height:auto;width:auto;flex:1;">
+    <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid #1e1d21;background:#151518;">
+      <span style="font-size:.7rem;color:#a0a0ac;white-space:nowrap;">Sort:</span>
+      <select class="form-select form-select-sm" id="pool-mob-sort" onchange="sortMobilePool()" style="background:#0e0d0f;border-color:#2a292f;font-size:.75rem;padding:3px 8px;height:auto;width:auto;flex:1;">
         <option value="sc" selected>SC Avg</option>
         <option value="name_asc">Name A–Z</option>
         <option value="age">Age</option>
@@ -401,7 +401,7 @@
   {# ── Table view (desktop) ── #}
   <div class="card-body p-0 pool-table-wrap d-none d-lg-block" id="poolTable" style="max-height:78vh;overflow:auto;">
     <table class="table table-sm mb-0 pool-table">
-      <thead class="sticky-top" style="background:#1c1a18;z-index:2;">
+      <thead class="sticky-top" style="background:#151518;z-index:2;">
         <tr>
           <th style="width:18px;"></th>
           <th class="sortable" onclick="sortPool('name',this)">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
@@ -461,7 +461,7 @@
                   <img src="{{ TEAM_LOGOS[p.afl_team] }}" alt="" class="team-icon">
                 {% endif %}
                 <span class="p-name">{{ p.name }}</span>
-                <span style="color:#d7d1cb;font-size:.72rem;margin-left:auto;">{{ p.afl_team or '' }}</span>
+                <span style="color:#cfcfd6;font-size:.72rem;margin-left:auto;">{{ p.afl_team or '' }}</span>
               </a>
             </td>
             {# Position — ordered FWD > DEF > RUC > MID, displayed side-by-side #}
@@ -476,13 +476,13 @@
               </div>
             </td>
             {# Age #}
-            <td class="text-center" style="color:#a39586;">{{ p.age or '-' }}</td>
+            <td class="text-center" style="color:#a0a0ac;">{{ p.age or '-' }}</td>
             {# SC Average #}
             <td class="text-end">
               {% if sc_display %}
                 <span style="font-weight:600;">{{ '%.1f'|format(sc_display) }}</span>
               {% else %}
-                <span style="color:#56504a;">-</span>
+                <span style="color:#63616d;">-</span>
               {% endif %}
             </td>
             {# L3: last 3 games avg + % change vs season avg #}
@@ -491,38 +491,38 @@
                 {% set l3_base = sc_display or pr.l3 %}
                 {% set l3_diff = pr.l3 - l3_base %}
                 {% set l3_pct = (l3_diff / l3_base * 100) if l3_base else 0 %}
-                <span style="font-weight:600;color:#d7d1cb;">{{ '%.0f'|format(pr.l3) }}</span>
-                {% if l3_pct > 2 %}<span style="font-size:.65rem;font-weight:700;color:#dbcf94;margin-left:2px;">+{{ '%.0f'|format(l3_pct) }}%</span>
+                <span style="font-weight:600;color:#cfcfd6;">{{ '%.0f'|format(pr.l3) }}</span>
+                {% if l3_pct > 2 %}<span style="font-size:.65rem;font-weight:700;color:#3fb950;margin-left:2px;">+{{ '%.0f'|format(l3_pct) }}%</span>
                 {% elif l3_pct < -2 %}<span style="font-size:.65rem;font-weight:700;color:#f85149;margin-left:2px;">{{ '%.0f'|format(l3_pct) }}%</span>
-                {% else %}<span style="font-size:.65rem;color:#56504a;margin-left:2px;">-</span>{% endif %}
+                {% else %}<span style="font-size:.65rem;color:#63616d;margin-left:2px;">-</span>{% endif %}
               {% else %}
-                <span style="color:#56504a;">-</span>
+                <span style="color:#63616d;">-</span>
               {% endif %}
             </td>
             {# Rating #}
             <td class="text-end">
               {% if p.rating %}
-                <span style="color:#d7d1cb;font-weight:600;">{{ p.rating }}</span>
-              {% else %}<span style="color:#56504a;">-</span>{% endif %}
+                <span style="color:#cfcfd6;font-weight:600;">{{ p.rating }}</span>
+              {% else %}<span style="color:#63616d;">-</span>{% endif %}
             </td>
             {# Rating Movement (current - start of year) #}
             <td class="text-center">
               {% if p.rating and p.rating_start %}
                 {% set rtg_move = p.rating - p.rating_start %}
                 {% if rtg_move > 0 %}
-                  <span style="color:#dbcf94;font-weight:600;font-size:.78rem;">+{{ rtg_move }}</span>
+                  <span style="color:#3fb950;font-weight:600;font-size:.78rem;">+{{ rtg_move }}</span>
                 {% elif rtg_move < 0 %}
                   <span style="color:#f85149;font-weight:600;font-size:.78rem;">{{ rtg_move }}</span>
                 {% else %}
-                  <span style="color:#56504a;font-size:.78rem;">-</span>
+                  <span style="color:#63616d;font-size:.78rem;">-</span>
                 {% endif %}
-              {% else %}<span style="color:#56504a;">-</span>{% endif %}
+              {% else %}<span style="color:#63616d;">-</span>{% endif %}
             </td>
             {# Potential #}
             <td class="text-end">
               {% if p.potential %}
-                <span style="color:#d7d1cb;font-weight:600;">{{ p.potential }}</span>
-              {% else %}<span style="color:#56504a;">-</span>{% endif %}
+                <span style="color:#cfcfd6;font-weight:600;">{{ p.potential }}</span>
+              {% else %}<span style="color:#63616d;">-</span>{% endif %}
             </td>
             {# Profile tag #}
             <td>
@@ -537,17 +537,17 @@
               {% set acq = acquired_map.get(p.id) %}
               {% if acq %}
                 <div style="font-size:.7rem;line-height:1.3;">
-                  <span style="color:#d7d1cb;font-weight:600;">{{ acq.coach }}</span>
+                  <span style="color:#cfcfd6;font-weight:600;">{{ acq.coach }}</span>
                   {% if acq.get('pick_number') %}
-                  <div style="color:#56504a;">Pick #{{ acq.pick_number }}{% if acq.get('draft_year') %} · {{ acq.draft_year }}{% endif %}{% if acq.draft_type == 'supplemental' %} <span style="color:#d26822;">mid</span>{% endif %}</div>
+                  <div style="color:#63616d;">Pick #{{ acq.pick_number }}{% if acq.get('draft_year') %} · {{ acq.draft_year }}{% endif %}{% if acq.draft_type == 'supplemental' %} <span style="color:#d29922;">mid</span>{% endif %}</div>
                   {% elif acq.method == 'trade' %}
                   <div style="color:#bc8cff;">Trade</div>
                   {% elif acq.method in ('ssp', 'free_agent') %}
-                  <div style="color:#dbcf94;">SSP{% if acq.acquired_at %} · {{ acq.acquired_at.strftime('%d %b') }}{% endif %}</div>
+                  <div style="color:#3fb950;">SSP{% if acq.acquired_at %} · {{ acq.acquired_at.strftime('%d %b') }}{% endif %}</div>
                   {% endif %}
                 </div>
               {% else %}
-                <span style="color:#373330;">-</span>
+                <span style="color:#2a292f;">-</span>
               {% endif %}
             </td>
             {# Status #}
@@ -560,13 +560,13 @@
                   <i class="bi bi-plus-lg me-1"></i>Add
                 </button>
               {% else %}
-                <span class="status-chip" style="background:rgba(245,185,64,.12);color:#f6c35c;">Available</span>
+                <span class="status-chip" style="background:rgba(236,236,246,.12);color:#79c0ff;">Available</span>
               {% endif %}
             </td>
             {# Wishlist star #}
             <td class="text-center" style="padding:0;vertical-align:middle;">
               <i class="bi bi-star wishlist-star" data-pid="{{ p.id }}" onclick="toggleWishlist({{ p.id }}, this); event.stopPropagation();"
-                 style="cursor:pointer;font-size:.9rem;color:#80786f;transition:color .15s;"></i>
+                 style="cursor:pointer;font-size:.9rem;color:#8a8895;transition:color .15s;"></i>
             </td>
           </tr>
         {% endfor %}
@@ -579,22 +579,22 @@
 {# ── SSP Pickup Confirmation Modal ── #}
 <div class="modal fade" id="pickupModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content" style="background:#1c1a18;border:1px solid #373330;border-radius:12px;">
-      <div class="modal-header" style="border-bottom:1px solid #373330;padding:.75rem 1rem;">
+    <div class="modal-content" style="background:#151518;border:1px solid #2a292f;border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid #2a292f;padding:.75rem 1rem;">
         <h6 class="modal-title fw-bold mb-0" style="font-size:.9rem;">
-          <i class="bi bi-person-plus me-1" style="color:#dbcf94;"></i>Add Player
+          <i class="bi bi-person-plus me-1" style="color:#3fb950;"></i>Add Player
         </h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" style="padding:1rem;">
-        <p style="font-size:.85rem;color:#d7d1cb;margin-bottom:.5rem;">
-          Add <strong id="pickup-player-name" style="color:#f5b940;"></strong> to your roster?
+        <p style="font-size:.85rem;color:#cfcfd6;margin-bottom:.5rem;">
+          Add <strong id="pickup-player-name" style="color:#ececf6;"></strong> to your roster?
         </p>
-        <p style="font-size:.75rem;color:#a39586;margin-bottom:0;">
-          Roster: <span id="pickup-roster-count">{{ effective_roster_count }}</span> / {{ league.squad_size }}{% if ltil_count %} <span style="color:#d26822;">({{ ltil_count }} on LTIL)</span>{% endif %}
+        <p style="font-size:.75rem;color:#a0a0ac;margin-bottom:0;">
+          Roster: <span id="pickup-roster-count">{{ effective_roster_count }}</span> / {{ league.squad_size }}{% if ltil_count %} <span style="color:#d29922;">({{ ltil_count }} on LTIL)</span>{% endif %}
         </p>
       </div>
-      <div class="modal-footer" style="border-top:1px solid #373330;padding:.5rem 1rem;">
+      <div class="modal-footer" style="border-top:1px solid #2a292f;padding:.5rem 1rem;">
         <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-sm btn-success flex-fill" id="pickup-confirm-btn" onclick="confirmPickup()">
           <i class="bi bi-plus-lg me-1"></i>Add to Team
@@ -632,7 +632,7 @@ var _wishlistedIds = new Set();
         if (_wishlistedIds.has(pid)) {
           el.classList.remove('bi-star');
           el.classList.add('bi-star-fill');
-          el.style.color = '#d26822';
+          el.style.color = '#d29922';
         }
       });
     })
@@ -653,12 +653,12 @@ function toggleWishlist(pid, el) {
       if (data.wishlisted) {
         star.classList.remove('bi-star');
         star.classList.add('bi-star-fill');
-        star.style.color = '#d26822';
+        star.style.color = '#d29922';
         _wishlistedIds.add(pid);
       } else {
         star.classList.remove('bi-star-fill');
         star.classList.add('bi-star');
-        star.style.color = '#56504a';
+        star.style.color = '#63616d';
         _wishlistedIds.delete(pid);
       }
     });

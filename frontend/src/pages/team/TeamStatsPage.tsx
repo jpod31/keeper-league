@@ -42,7 +42,7 @@ interface StatsData {
 }
 
 const POS_COLOR: Record<string, string> = {
-  DEF: '#f8c552', MID: '#d6b0ff', FWD: '#ff9484', RUC: '#f1ebdd',
+  DEF: '#58a6ff', MID: '#bc8cff', FWD: '#f0883e', RUC: '#3fb950',
 }
 function posCode(pos: string): string {
   return (pos || 'MID').split('/')[0].toUpperCase()
@@ -53,31 +53,31 @@ interface DraftRoiData {
   curve: { pick: number; expected: number }[]
   resid_sd: number
 }
-const VERDICT_COLOR: Record<string, string> = { steal: '#ddd093', fair: '#f5b941', bust: '#ef6b5e' }
+const VERDICT_COLOR: Record<string, string> = { steal: '#4ec77a', fair: '#e3e1ec', bust: '#ef6b5e' }
 
 // ── Watchlist auto-flags (Idea #29) — derived purely from available fields ──
 type FlagKey = 'sellHigh' | 'buyLow' | 'breakout' | 'decline' | 'injury' | 'keep' | 'roleRiser' | 'roleFaller'
 interface FlagDef { key: FlagKey; label: string; icon: string; color: string; test: (p: Player) => boolean; reason: (p: Player) => string }
 const FLAGS: FlagDef[] = [
-  { key: 'keep', label: 'Keep locks', icon: 'bi-shield-fill-check', color: '#f7c96b',
+  { key: 'keep', label: 'Keep locks', icon: 'bi-shield-fill-check', color: '#e8e7f0',
     test: p => (p.keeper_value ?? 0) >= 80,
     reason: p => `Keeper Value ${Math.round(p.keeper_value!)}` },
-  { key: 'breakout', label: 'Breakout watch', icon: 'bi-rocket-takeoff-fill', color: '#ba9256',
+  { key: 'breakout', label: 'Breakout watch', icon: 'bi-rocket-takeoff-fill', color: '#3fc4c4',
     test: p => (p.age ?? 99) <= 23 && p.potential != null && p.rating != null && (p.potential - p.rating) >= 6,
     reason: p => `Age ${p.age}, +${p.potential! - p.rating!} rating runway` },
   { key: 'roleRiser', label: 'Role riser', icon: 'bi-arrow-up-right-circle-fill', color: '#bc8cff',
     test: p => (p.cba_pct ?? 0) >= 25 && (p.cba_trend ?? 0) >= 12,
     reason: p => `CBA +${p.cba_trend} recent — winning more midfield time` },
-  { key: 'roleFaller', label: 'Role faller', icon: 'bi-arrow-down-right-circle-fill', color: '#d27b4f',
+  { key: 'roleFaller', label: 'Role faller', icon: 'bi-arrow-down-right-circle-fill', color: '#d2884f',
     test: p => (p.cba_pct ?? 0) >= 25 && (p.cba_trend ?? 0) <= -12,
     reason: p => `CBA ${p.cba_trend} recent — losing midfield time` },
-  { key: 'sellHigh', label: 'Sell-high', icon: 'bi-graph-up-arrow', color: '#ddd093',
+  { key: 'sellHigh', label: 'Sell-high', icon: 'bi-graph-up-arrow', color: '#4ec77a',
     test: p => p.sc_avg_prev != null && p.sc_avg - p.sc_avg_prev >= 12,
     reason: p => `+${(p.sc_avg - p.sc_avg_prev!).toFixed(0)} SC vs last year` },
-  { key: 'buyLow', label: 'Buy-low', icon: 'bi-graph-down-arrow', color: '#f5b941',
+  { key: 'buyLow', label: 'Buy-low', icon: 'bi-graph-down-arrow', color: '#e3e1ec',
     test: p => p.sc_avg_prev != null && p.sc_avg - p.sc_avg_prev <= -12,
     reason: p => `${(p.sc_avg - p.sc_avg_prev!).toFixed(0)} SC vs last year` },
-  { key: 'decline', label: 'Decline risk', icon: 'bi-hourglass-bottom', color: '#e07f3f',
+  { key: 'decline', label: 'Decline risk', icon: 'bi-hourglass-bottom', color: '#e0a93f',
     test: p => (p.age ?? 0) >= 30 && p.sc_avg >= 90,
     reason: p => `Age ${p.age}, ${p.sc_avg.toFixed(0)} SC — sell before the cliff` },
   { key: 'injury', label: 'Injured', icon: 'bi-bandaid-fill', color: '#ef6b5e',
@@ -131,12 +131,12 @@ function TheRead({ intel }: { intel: SquadIntel }) {
       </div>
       <div className="si-tiles">
         {m.health_rank != null && m.n_teams > 1 && (
-          <div className="si-tile"><div className="si-tile-v">#{m.health_rank}<span style={{ fontSize: '.7rem', color: '#80786f' }}> of {m.n_teams}</span></div><div className="si-tile-l">League rank</div><div className="si-tile-s">by squad strength</div></div>
+          <div className="si-tile"><div className="si-tile-v">#{m.health_rank}<span style={{ fontSize: '.7rem', color: '#8a8895' }}> of {m.n_teams}</span></div><div className="si-tile-l">League rank</div><div className="si-tile-s">by squad strength</div></div>
         )}
         <div className="si-tile"><div className="si-tile-v">{m.health ?? '–'}</div><div className="si-tile-l">Squad strength</div><div className="si-tile-s">health composite</div></div>
         <div className="si-tile"><div className="si-tile-v">{m.vorp_total}</div><div className="si-tile-l">Squad VORP</div><div className="si-tile-s">value over replacement</div></div>
         <div className="si-tile"><div className="si-tile-v">{m.avg_age}</div><div className="si-tile-l">Avg age</div><div className="si-tile-s">contention window</div></div>
-        {thin && <div className="si-tile"><div className="si-tile-v" style={{ color: '#e07f3f' }}>{thin[0]}</div><div className="si-tile-l">Thinnest line</div><div className="si-tile-s">{thin[1].above_repl} above repl</div></div>}
+        {thin && <div className="si-tile"><div className="si-tile-v" style={{ color: '#e0a93f' }}>{thin[0]}</div><div className="si-tile-l">Thinnest line</div><div className="si-tile-s">{thin[1].above_repl} above repl</div></div>}
       </div>
     </div>
   )
@@ -147,12 +147,12 @@ function siFmt(v: number | null | undefined, d = 0): string {
 }
 function MicroSpark({ form }: { form: { sc: number; z: number }[] }) {
   const vals = form.map(f => f.sc)
-  if (vals.length < 2) return <span style={{ color: '#56504a' }}>–</span>
+  if (vals.length < 2) return <span style={{ color: '#63616d' }}>–</span>
   const min = Math.min(...vals), max = Math.max(...vals), rng = max - min || 1
   const W = 58, H = 18
   const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - ((v - min) / rng) * H}`).join(' ')
   const last = form[form.length - 1]
-  const col = last.z >= 0.5 ? '#ddd093' : last.z <= -0.5 ? '#ef6b5e' : '#a39586'
+  const col = last.z >= 0.5 ? '#4ec77a' : last.z <= -0.5 ? '#ef6b5e' : '#a0a0ac'
   return (
     <svg width={W} height={H} style={{ display: 'block' }}>
       <polyline points={pts} fill="none" stroke={col} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
@@ -161,7 +161,7 @@ function MicroSpark({ form }: { form: { sc: number; z: number }[] }) {
   )
 }
 function MiniBar({ value, max, color, signed }: { value: number | null; max: number; color: string; signed?: boolean }) {
-  if (value == null) return <span style={{ color: '#56504a' }}>–</span>
+  if (value == null) return <span style={{ color: '#63616d' }}>–</span>
   const pct = Math.max(0, Math.min(100, (Math.abs(value) / max) * 100))
   return (
     <div className="si-mx-bar">
@@ -176,11 +176,11 @@ type MxCol = { k: string; l: string; align?: string; num: (p: IntelPlayer) => nu
 const SQUAD_COLS: MxCol[] = [
   { k: 'sc_avg', l: 'SC avg', align: 'end', num: p => p.sc_avg, cell: p => <b>{siFmt(p.sc_avg, 1)}</b> },
   { k: 'form_z', l: 'Form', align: 'center', num: p => p.form_z, cell: p => <MicroSpark form={p.round_form} /> },
-  { k: 'ceiling', l: 'Ceiling', align: 'end', num: p => p.ceiling, cell: p => <span style={{ color: '#f7c96b' }}>{siFmt(p.ceiling)}</span> },
-  { k: 'floor', l: 'Floor', align: 'end', num: p => p.floor, cell: p => <span style={{ color: '#a39586' }}>{siFmt(p.floor)}</span> },
+  { k: 'ceiling', l: 'Ceiling', align: 'end', num: p => p.ceiling, cell: p => <span style={{ color: '#e8e7f0' }}>{siFmt(p.ceiling)}</span> },
+  { k: 'floor', l: 'Floor', align: 'end', num: p => p.floor, cell: p => <span style={{ color: '#a0a0ac' }}>{siFmt(p.floor)}</span> },
   { k: 'boom_pct', l: 'Boom%', align: 'end', num: p => p.boom_pct, cell: p => p.boom_pct == null ? '–' : `${p.boom_pct}%` },
-  { k: 'vorp', l: 'VORP', align: 'end', num: p => p.vorp, cell: p => <MiniBar value={p.vorp} max={40} color={(p.vorp ?? 0) >= 0 ? '#ddd093' : '#ef6b5e'} signed /> },
-  { k: 'keeper_value', l: 'Keeper', align: 'end', num: p => p.keeper_value, cell: p => <span style={{ color: (p.keeper_value ?? 0) >= 70 ? '#f7c96b' : '#a39586', fontWeight: 700 }}>{siFmt(p.keeper_value)}</span> },
+  { k: 'vorp', l: 'VORP', align: 'end', num: p => p.vorp, cell: p => <MiniBar value={p.vorp} max={40} color={(p.vorp ?? 0) >= 0 ? '#4ec77a' : '#ef6b5e'} signed /> },
+  { k: 'keeper_value', l: 'Keeper', align: 'end', num: p => p.keeper_value, cell: p => <span style={{ color: (p.keeper_value ?? 0) >= 70 ? '#e8e7f0' : '#a0a0ac', fontWeight: 700 }}>{siFmt(p.keeper_value)}</span> },
   { k: 'age', l: 'Age', align: 'center', num: p => p.age, cell: p => p.age ?? '–' },
 ]
 
@@ -240,7 +240,7 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
     <div className="card si-matrix-card">
       <div className="card-header si-mx-head">
         <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-          <i className="bi bi-table me-2" style={{ color: '#a39586' }}></i>Squad value table
+          <i className="bi bi-table me-2" style={{ color: '#a0a0ac' }}></i>Squad value table
           <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>tap a column to sort · click a player to open</span>
         </h5>
         <div className="si-mx-filter">
@@ -285,7 +285,7 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
 }
 
 // ── Scouting Map — signature ECharts scatter (output × reliability) ──
-const SM_POS_COLOR: Record<string, string> = { DEF: '#f8c552', MID: '#d6b0ff', FWD: '#ff9484', RUC: '#f1ebdd' }
+const SM_POS_COLOR: Record<string, string> = { DEF: '#58a6ff', MID: '#bc8cff', FWD: '#f0883e', RUC: '#3fb950' }
 function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: (id: number) => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const onSel = useRef(onSelect); onSel.current = onSelect
@@ -310,15 +310,15 @@ function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: 
       }))
       chart.setOption({
         backgroundColor: 'transparent',
-        legend: { data: ['DEF', 'MID', 'FWD', 'RUC'], textStyle: { color: '#a39586' }, top: 2, icon: 'circle' },
+        legend: { data: ['DEF', 'MID', 'FWD', 'RUC'], textStyle: { color: '#a0a0ac' }, top: 2, icon: 'circle' },
         grid: { left: 52, right: 22, top: 34, bottom: 44 },
         tooltip: {
-          backgroundColor: '#1f1d1b', borderColor: 'rgba(170,144,91,.3)', textStyle: { color: '#efedea', fontSize: 12 },
+          backgroundColor: '#16161a', borderColor: 'rgba(220,218,231,.3)', textStyle: { color: '#ebebee', fontSize: 12 },
           formatter: (p: { data: { name: string; value: number[] } }) => `<b>${p.data.name}</b><br/>SC ${p.data.value[0]} · consistency ${p.data.value[1]} · VORP +${Math.round(p.data.value[2])}`,
         },
-        xAxis: { name: 'SC output ▶', nameLocation: 'middle', nameGap: 26, nameTextStyle: { color: '#80786f', fontSize: 11 }, axisLabel: { color: '#a39586' }, axisLine: { lineStyle: { color: '#373330' } }, splitLine: { lineStyle: { color: '#262421' } } },
-        yAxis: { name: 'reliability ▲', nameLocation: 'middle', nameGap: 34, nameTextStyle: { color: '#80786f', fontSize: 11 }, axisLabel: { color: '#a39586' }, axisLine: { lineStyle: { color: '#373330' } }, splitLine: { lineStyle: { color: '#262421' } } },
-        series: [...series, { type: 'scatter', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: '#45413c', type: 'dashed' }, label: { show: false }, data: [{ xAxis: xMid }, { yAxis: yMid }] } }],
+        xAxis: { name: 'SC output ▶', nameLocation: 'middle', nameGap: 26, nameTextStyle: { color: '#8a8895', fontSize: 11 }, axisLabel: { color: '#a0a0ac' }, axisLine: { lineStyle: { color: '#2a292f' } }, splitLine: { lineStyle: { color: '#1d1c21' } } },
+        yAxis: { name: 'reliability ▲', nameLocation: 'middle', nameGap: 34, nameTextStyle: { color: '#8a8895', fontSize: 11 }, axisLabel: { color: '#a0a0ac' }, axisLine: { lineStyle: { color: '#2a292f' } }, splitLine: { lineStyle: { color: '#1d1c21' } } },
+        series: [...series, { type: 'scatter', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: '#35333b', type: 'dashed' }, label: { show: false }, data: [{ xAxis: xMid }, { yAxis: yMid }] } }],
         animationDuration: 600,
       })
       chart.on('click', (p: { data?: { id?: number } }) => { if (p.data?.id) onSel.current(p.data.id) })
@@ -331,7 +331,7 @@ function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: 
     <div className="card mb-4">
       <div className="card-header d-flex align-items-center justify-content-between">
         <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-          <i className="bi bi-bullseye me-2" style={{ color: '#a39586' }}></i>Scouting Map
+          <i className="bi bi-bullseye me-2" style={{ color: '#a0a0ac' }}></i>Scouting Map
           <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>output × reliability{mode === '3d' ? ' × VORP' : ''} · {mode === '3d' ? 'drag to orbit' : 'top-right = safe studs'} · click to drill</span>
         </h5>
         <div className="si-mx-views">
@@ -341,7 +341,7 @@ function ScoutingMap({ players, onSelect }: { players: IntelPlayer[]; onSelect: 
       </div>
       <div className="card-body">
         {mode === '3d'
-          ? <Suspense fallback={<div style={{ height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a39586', fontSize: '.85rem' }}><Spinner /><span className="ms-2">Building value cloud…</span></div>}>
+          ? <Suspense fallback={<div style={{ height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a0a0ac', fontSize: '.85rem' }}><Spinner /><span className="ms-2">Building value cloud…</span></div>}>
               <ValueCloud3D players={pool} onSelect={id => onSel.current(id)} />
             </Suspense>
           : <div ref={ref} style={{ width: '100%', height: 360 }} />}
@@ -362,11 +362,11 @@ interface DynastyData {
   keeper_board?: KeeperRow[]
 }
 const KEEPER_BUCKETS: { key: string; label: string; color: string; blurb: string; icon: string }[] = [
-  { key: 'Cornerstone', label: 'Cornerstones', color: '#f7c96b', icon: 'bi-gem', blurb: 'Build around — keep no matter what' },
-  { key: 'Keep', label: 'Keep', color: '#ddd093', icon: 'bi-check-circle-fill', blurb: 'Solid value, at or before peak' },
-  { key: 'Develop', label: 'Develop', color: '#f5b940', icon: 'bi-arrow-up-right-circle-fill', blurb: 'Young upside — stash and grow' },
-  { key: 'Sell-high', label: 'Sell high', color: '#e07f3f', icon: 'bi-cash-coin', blurb: 'Aging but still has trade value' },
-  { key: 'Hold', label: 'Hold / watch', color: '#a39586', icon: 'bi-eye', blurb: 'Fringe — wait and see' },
+  { key: 'Cornerstone', label: 'Cornerstones', color: '#e8e7f0', icon: 'bi-gem', blurb: 'Build around — keep no matter what' },
+  { key: 'Keep', label: 'Keep', color: '#4ec77a', icon: 'bi-check-circle-fill', blurb: 'Solid value, at or before peak' },
+  { key: 'Develop', label: 'Develop', color: '#ececf6', icon: 'bi-arrow-up-right-circle-fill', blurb: 'Young upside — stash and grow' },
+  { key: 'Sell-high', label: 'Sell high', color: '#e0a93f', icon: 'bi-cash-coin', blurb: 'Aging but still has trade value' },
+  { key: 'Hold', label: 'Hold / watch', color: '#a0a0ac', icon: 'bi-eye', blurb: 'Fringe — wait and see' },
   { key: 'Replaceable', label: 'Replaceable', color: '#ef6b5e', icon: 'bi-arrow-down-circle', blurb: 'Below replacement — upgrade target' },
 ]
 function KeeperBoard({ board, onSelect }: { board: KeeperRow[]; onSelect: (id: number) => void }) {
@@ -413,7 +413,7 @@ function KeeperTab({ leagueId, teamId, onSelect }: { leagueId: string; teamId: s
     <>
       <div className="card mb-4">
         <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-          <i className="bi bi-clipboard-check me-2" style={{ color: '#a39586' }}></i>Keep / Trade board
+          <i className="bi bi-clipboard-check me-2" style={{ color: '#a0a0ac' }}></i>Keep / Trade board
           <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>every player sorted by what to do with them · click to open</span></h5></div>
         <div className="card-body">
           {board.length
@@ -424,33 +424,33 @@ function KeeperTab({ leagueId, teamId, onSelect }: { leagueId: string; teamId: s
       {data.has_data && (<>
         <div className="card mb-4">
           <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-            <i className="bi bi-graph-up-arrow me-2" style={{ color: '#a39586' }}></i>Contention window
+            <i className="bi bi-graph-up-arrow me-2" style={{ color: '#a0a0ac' }}></i>Contention window
             <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>projected squad output as your core ages · window {winLabel}</span></h5></div>
           <div className="card-body">
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={data.trajectory} margin={{ top: 10, right: 16, bottom: 0, left: -8 }}>
                 <defs><linearGradient id="dyn" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f5b940" stopOpacity={0.5} /><stop offset="100%" stopColor="#f5b940" stopOpacity={0.04} />
+                  <stop offset="0%" stopColor="#ececf6" stopOpacity={0.5} /><stop offset="100%" stopColor="#ececf6" stopOpacity={0.04} />
                 </linearGradient></defs>
-                <XAxis dataKey="year" tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
-                <YAxis tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
-                <Tooltip contentStyle={{ background: '#1f1d1b', border: '1px solid rgba(170,144,91,.3)', borderRadius: 8, fontSize: '.78rem' }} />
-                <ReferenceLine x={data.peak_year} stroke="#ddd093" strokeDasharray="4 3" label={{ value: 'peak', fill: '#ddd093', fontSize: 10, position: 'top' }} />
-                <Area type="monotone" dataKey="output" stroke="#f5b940" strokeWidth={2} fill="url(#dyn)" dot={{ r: 3, fill: '#f5b940' }} />
+                <XAxis dataKey="year" tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
+                <YAxis tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
+                <Tooltip contentStyle={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                <ReferenceLine x={data.peak_year} stroke="#4ec77a" strokeDasharray="4 3" label={{ value: 'peak', fill: '#4ec77a', fontSize: 10, position: 'top' }} />
+                <Area type="monotone" dataKey="output" stroke="#ececf6" strokeWidth={2} fill="url(#dyn)" dot={{ r: 3, fill: '#ececf6' }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
         <div className="card">
           <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-            <i className="bi bi-pie-chart-fill me-2" style={{ color: '#a39586' }}></i>Squad makeup
+            <i className="bi bi-pie-chart-fill me-2" style={{ color: '#a0a0ac' }}></i>Squad makeup
             <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>player archetypes</span></h5></div>
           <div className="card-body">
             {(data.archetypes || []).map(a => (
               <div key={a.type} className="bm-row" style={{ gridTemplateColumns: '150px 1fr 30px' }}>
                 <div className="bm-label">{a.type}</div>
-                <div className="bm-track"><div className="bm-fill" style={{ width: `${a.count / maxArch * 100}%`, background: '#f5b941' }}></div></div>
-                <div className="bm-pct" style={{ color: '#d7d1cb' }}>{a.count}</div>
+                <div className="bm-track"><div className="bm-fill" style={{ width: `${a.count / maxArch * 100}%`, background: '#e3e1ec' }}></div></div>
+                <div className="bm-pct" style={{ color: '#cfcfd6' }}>{a.count}</div>
               </div>
             ))}
           </div>
@@ -485,16 +485,16 @@ function ThisRound({ leagueId, teamId, onSelect }: { leagueId: string; teamId: s
           <div className="pred-head">Round {data.round} · projected matchup</div>
           <div className="pred-scores">
             <div className="pred-side">
-              <div className="pred-score" style={{ color: wp >= 50 ? '#ddd093' : '#d7d1cb' }}>{data.your_proj}</div>
+              <div className="pred-score" style={{ color: wp >= 50 ? '#4ec77a' : '#cfcfd6' }}>{data.your_proj}</div>
               <div className="pred-team">You</div><div className="pred-range">{data.your_lo}–{data.your_hi}</div>
             </div>
             <div className="pred-winwrap">
               <div className="pred-winlabel">win probability</div>
-              <div className="pred-winprob" style={{ color: wp >= 50 ? '#ddd093' : '#ef6b5e' }}>{wp}%</div>
-              <div className="pred-winbar"><div style={{ width: `${wp}%`, background: wp >= 50 ? '#ddd093' : '#ef6b5e' }}></div></div>
+              <div className="pred-winprob" style={{ color: wp >= 50 ? '#4ec77a' : '#ef6b5e' }}>{wp}%</div>
+              <div className="pred-winbar"><div style={{ width: `${wp}%`, background: wp >= 50 ? '#4ec77a' : '#ef6b5e' }}></div></div>
             </div>
             <div className="pred-side">
-              <div className="pred-score" style={{ color: wp < 50 ? '#ef6b5e' : '#d7d1cb' }}>{data.opp_proj}</div>
+              <div className="pred-score" style={{ color: wp < 50 ? '#ef6b5e' : '#cfcfd6' }}>{data.opp_proj}</div>
               <div className="pred-team">{data.opp_name}</div><div className="pred-range">{data.opp_lo}–{data.opp_hi}</div>
             </div>
           </div>
@@ -517,7 +517,7 @@ function ThisRound({ leagueId, teamId, onSelect }: { leagueId: string; teamId: s
       )}
       <div className="card">
         <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-          <i className="bi bi-people me-2" style={{ color: '#a39586' }}></i>On-field starters
+          <i className="bi bi-people me-2" style={{ color: '#a0a0ac' }}></i>On-field starters
           <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>{data.n_starters} on field · {data.captain_scoring ? 'captain ×2' : 'no captain bonus'} · matchup-adjusted</span></h5></div>
         <div className="card-body p-0">
           <table className="tr-table">
@@ -537,7 +537,7 @@ function ThisRound({ leagueId, teamId, onSelect }: { leagueId: string; teamId: s
                       : s.afl_opp ? <span>vs {s.afl_opp}{s.venue ? ` · ${s.venue}` : ''}{s.opp_diff != null ? <span className={s.opp_diff >= 0 ? 'kb-up' : 'kb-down'}> {s.opp_diff >= 0 ? '+' : ''}{s.opp_diff}</span> : ''}</span>
                         : <span className="text-secondary">—</span>}
                   </td>
-                  <td className="text-end" style={{ color: s.adj >= s.proj ? '#ddd093' : '#ef6b5e' }}>{s.adj}</td>
+                  <td className="text-end" style={{ color: s.adj >= s.proj ? '#4ec77a' : '#ef6b5e' }}>{s.adj}</td>
                 </tr>
               ))}
             </tbody>
@@ -584,18 +584,18 @@ function LeagueComparison({ leagueId, teamId }: { leagueId: string; teamId: stri
         <div className="col-lg-5">
           <div className="card h-100">
             <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-              <i className="bi bi-radar me-2" style={{ color: '#a39586' }}></i>Positional Strength
+              <i className="bi bi-radar me-2" style={{ color: '#a0a0ac' }}></i>Positional Strength
               <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>you vs league avg</span></h5></div>
             <div className="card-body">
               <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={data.radar} outerRadius="72%">
-                  <PolarGrid stroke="#373330" />
-                  <PolarAngleAxis dataKey="pos" tick={{ fill: '#d7d1cb', fontSize: 12 }} />
-                  <PolarRadiusAxis tick={{ fill: '#80786f', fontSize: 10 }} stroke="#373330" angle={90} />
-                  <Radar name="League avg" dataKey="league" stroke="#a39586" fill="#a39586" fillOpacity={0.12} />
-                  <Radar name="You" dataKey="you" stroke="#f5b940" fill="#f5b940" fillOpacity={0.35} />
+                  <PolarGrid stroke="#2a292f" />
+                  <PolarAngleAxis dataKey="pos" tick={{ fill: '#cfcfd6', fontSize: 12 }} />
+                  <PolarRadiusAxis tick={{ fill: '#8a8895', fontSize: 10 }} stroke="#2a292f" angle={90} />
+                  <Radar name="League avg" dataKey="league" stroke="#a0a0ac" fill="#a0a0ac" fillOpacity={0.12} />
+                  <Radar name="You" dataKey="you" stroke="#ececf6" fill="#ececf6" fillOpacity={0.35} />
                   <Legend wrapperStyle={{ fontSize: '.72rem' }} />
-                  <Tooltip contentStyle={{ background: '#1f1d1b', border: '1px solid rgba(170,144,91,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                  <Tooltip contentStyle={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, fontSize: '.78rem' }} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -604,7 +604,7 @@ function LeagueComparison({ leagueId, teamId }: { leagueId: string; teamId: stri
         <div className="col-lg-7">
           <div className="card h-100">
             <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-              <i className="bi bi-list-ol me-2" style={{ color: '#a39586' }}></i>League Ladder by Squad Strength
+              <i className="bi bi-list-ol me-2" style={{ color: '#a0a0ac' }}></i>League Ladder by Squad Strength
               <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>{data.n_teams} teams</span></h5></div>
             <div className="card-body p-0" style={{ overflowX: 'auto' }}>
               <table className="si-matrix">
@@ -616,13 +616,13 @@ function LeagueComparison({ leagueId, teamId }: { leagueId: string; teamId: stri
                 <tbody>
                   {data.teams.map(t => (
                     <tr key={t.team_id} className={t.team_id === data.your_team_id ? 'si-mx-row sel' : 'si-mx-row'}>
-                      <td style={{ color: t.rank <= 3 ? '#e8935b' : '#80786f', fontWeight: 700 }}>{t.rank}</td>
-                      <td className="si-mx-player"><span className="si-mx-name">{t.name}</span>{t.team_id === data.your_team_id && <span style={{ color: '#f5b940', fontSize: '.7rem', marginLeft: 5 }}>you</span>}</td>
+                      <td style={{ color: t.rank <= 3 ? '#e8c25b' : '#8a8895', fontWeight: 700 }}>{t.rank}</td>
+                      <td className="si-mx-player"><span className="si-mx-name">{t.name}</span>{t.team_id === data.your_team_id && <span style={{ color: '#ececf6', fontSize: '.7rem', marginLeft: 5 }}>you</span>}</td>
                       <td className="text-end fw-bold">{t.health ?? '–'}</td>
                       <td className="text-end">{t.avg_rating}</td>
                       <td className="text-end">{t.avg_sc || '–'}</td>
-                      <td className="text-center" style={{ color: '#a39586' }}>{t.avg_age}</td>
-                      <td className="text-end" style={{ color: '#a39586' }}>{t.keeper_value || '–'}</td>
+                      <td className="text-center" style={{ color: '#a0a0ac' }}>{t.avg_age}</td>
+                      <td className="text-end" style={{ color: '#a0a0ac' }}>{t.keeper_value || '–'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -736,7 +736,7 @@ export function TeamStatsPage() {
         <div className="card mb-4">
           <div className="card-header d-flex align-items-center justify-content-between">
             <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-              <i className="bi bi-binoculars-fill me-2" style={{ color: '#d26822' }}></i>Watchlist
+              <i className="bi bi-binoculars-fill me-2" style={{ color: '#d29922' }}></i>Watchlist
             </h5>
             {activeFlag && (
               <button className="btn btn-sm btn-outline-secondary py-0" style={{ fontSize: '.72rem' }}
@@ -750,8 +750,8 @@ export function TeamStatsPage() {
                 className="stats-flag-chip"
                 style={{
                   ['--fc' as string]: f.color,
-                  borderColor: activeFlag === f.key ? f.color : 'rgba(170,144,91,.25)',
-                  background: activeFlag === f.key ? `${f.color}22` : 'rgba(170,144,91,.07)',
+                  borderColor: activeFlag === f.key ? f.color : 'rgba(220,218,231,.25)',
+                  background: activeFlag === f.key ? `${f.color}22` : 'rgba(220,218,231,.07)',
                 } as React.CSSProperties}>
                 <i className={`bi ${f.icon}`} style={{ color: f.color }}></i>
                 <span className="stats-flag-label">{f.label}</span>
@@ -768,18 +768,18 @@ export function TeamStatsPage() {
           <div className="card h-100">
             <div className="card-header">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <i className="bi bi-graph-up me-2" style={{ color: '#a39586' }}></i>Development Curve
+                <i className="bi bi-graph-up me-2" style={{ color: '#a0a0ac' }}></i>Development Curve
                 <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>age vs SC · peak window shaded</span>
               </h5>
             </div>
             <div className="card-body">
               <ResponsiveContainer width="100%" height={300}>
                 <ScatterChart margin={{ top: 10, right: 12, bottom: 18, left: -8 }}>
-                  <ReferenceArea x1={24} x2={28} fill="#dbcf94" fillOpacity={0.07} />
+                  <ReferenceArea x1={24} x2={28} fill="#3fb950" fillOpacity={0.07} />
                   <XAxis type="number" dataKey="x" name="Age" domain={[17, 'dataMax + 1']}
-                    tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330"
-                    label={{ value: 'Age', position: 'insideBottom', offset: -8, fill: '#80786f', fontSize: 11 }} />
-                  <YAxis type="number" dataKey="y" name="SC Avg" tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
+                    tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f"
+                    label={{ value: 'Age', position: 'insideBottom', offset: -8, fill: '#8a8895', fontSize: 11 }} />
+                  <YAxis type="number" dataKey="y" name="SC Avg" tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
                   <ZAxis type="number" dataKey="z" range={[40, 320]} name="Career games" />
                   <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ScatterTip />} />
                   {['DEF', 'MID', 'FWD', 'RUC'].map(pos => (
@@ -800,7 +800,7 @@ export function TeamStatsPage() {
           <div className="card h-100">
             <div className="card-header">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <i className="bi bi-bar-chart-steps me-2" style={{ color: '#a39586' }}></i>Age Profile
+                <i className="bi bi-bar-chart-steps me-2" style={{ color: '#a0a0ac' }}></i>Age Profile
                 <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>% of squad SC by age</span>
               </h5>
             </div>
@@ -808,13 +808,13 @@ export function TeamStatsPage() {
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={pyramid} layout="vertical" margin={{ top: 4, right: 28, bottom: 4, left: 6 }}>
                   <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="bucket" tick={{ fill: '#d7d1cb', fontSize: 12 }} stroke="#373330" width={48} />
-                  <Tooltip content={<PyramidTip />} cursor={{ fill: 'rgba(170,144,91,.08)' }} />
+                  <YAxis type="category" dataKey="bucket" tick={{ fill: '#cfcfd6', fontSize: 12 }} stroke="#2a292f" width={48} />
+                  <Tooltip content={<PyramidTip />} cursor={{ fill: 'rgba(220,218,231,.08)' }} />
                   <Bar dataKey="scShare" radius={[0, 5, 5, 0]}>
-                    <LabelList dataKey="scShareLabel" position="right" fill="#a39586" fontSize={11} />
+                    <LabelList dataKey="scShareLabel" position="right" fill="#a0a0ac" fontSize={11} />
                     {pyramid.map((b, i) => {
-                      const c = b.bucket === '≤21' || b.bucket === '22–24' ? '#dbcf94'
-                        : b.bucket === '25–27' ? '#f5b940' : b.bucket === '28–30' ? '#d26822' : '#f85149'
+                      const c = b.bucket === '≤21' || b.bucket === '22–24' ? '#3fb950'
+                        : b.bucket === '25–27' ? '#ececf6' : b.bucket === '28–30' ? '#d29922' : '#f85149'
                       return <Cell key={i} fill={c} />
                     })}
                   </Bar>
@@ -830,7 +830,7 @@ export function TeamStatsPage() {
         <div className="card mb-4">
           <div className="card-header">
             <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-              <i className="bi bi-bullseye me-2" style={{ color: '#a39586' }}></i>Draft Value ROI
+              <i className="bi bi-bullseye me-2" style={{ color: '#a0a0ac' }}></i>Draft Value ROI
               <span className="text-secondary fw-normal ms-2" style={{ fontSize: '.72rem' }}>where you picked vs what they return · dashed = expected</span>
             </h5>
           </div>
@@ -838,20 +838,20 @@ export function TeamStatsPage() {
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart margin={{ top: 10, right: 16, bottom: 18, left: -8 }}>
                 <XAxis dataKey="pick" type="number" domain={[1, 'dataMax']} allowDuplicatedCategory={false}
-                  tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330"
-                  label={{ value: 'Draft pick', position: 'insideBottom', offset: -8, fill: '#80786f', fontSize: 11 }} />
-                <YAxis type="number" tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330"
-                  label={{ value: 'SC avg', angle: -90, position: 'insideLeft', offset: 16, fill: '#80786f', fontSize: 11 }} />
+                  tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f"
+                  label={{ value: 'Draft pick', position: 'insideBottom', offset: -8, fill: '#8a8895', fontSize: 11 }} />
+                <YAxis type="number" tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f"
+                  label={{ value: 'SC avg', angle: -90, position: 'insideLeft', offset: 16, fill: '#8a8895', fontSize: 11 }} />
                 <Tooltip content={<RoiTip />} cursor={{ strokeDasharray: '3 3' }} />
-                <Line data={roi.curve} dataKey="expected" type="monotone" stroke="#80786f" strokeDasharray="5 4" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Line data={roi.curve} dataKey="expected" type="monotone" stroke="#8a8895" strokeDasharray="5 4" strokeWidth={2} dot={false} isAnimationActive={false} />
                 <Scatter data={roi.team} dataKey="value" isAnimationActive={false}>
-                  {roi.team.map((d, i) => <Cell key={i} fill={VERDICT_COLOR[d.verdict] || '#f5b941'} />)}
+                  {roi.team.map((d, i) => <Cell key={i} fill={VERDICT_COLOR[d.verdict] || '#e3e1ec'} />)}
                 </Scatter>
               </ComposedChart>
             </ResponsiveContainer>
             <div className="d-flex gap-3 justify-content-center mt-1" style={{ fontSize: '.72rem' }}>
-              <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#ddd093', marginRight: 4 }}></span>Steal</span>
-              <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#f5b941', marginRight: 4 }}></span>Fair</span>
+              <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#4ec77a', marginRight: 4 }}></span>Steal</span>
+              <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#e3e1ec', marginRight: 4 }}></span>Fair</span>
               <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#ef6b5e', marginRight: 4 }}></span>Bust</span>
             </div>
           </div>
@@ -897,7 +897,7 @@ interface ComparePlayer {
   points_banked: number | null; team_games: number | null; captain_games: number | null
   season_trend: { year: number; avg: number }[]
 }
-const CMP_PALETTE = ['#f5b940', '#ddd093', '#e07f3f', '#bc8cff']
+const CMP_PALETTE = ['#ececf6', '#4ec77a', '#e0a93f', '#bc8cff']
 const CMP_ROWS: { k: keyof ComparePlayer; label: string; hb: boolean }[] = [
   { k: 'sc_avg', label: 'SuperCoach avg', hb: true },
   { k: 'rating', label: 'Rating', hb: true },
@@ -984,10 +984,10 @@ function CompareModal({ leagueId, teamId, ids, onClose }: {
                 <div className="usage-section-title">Career arc — SC average by season</div>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={chartData} margin={{ top: 8, right: 14, bottom: 0, left: -18 }}>
-                    <XAxis dataKey="year" tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
-                    <YAxis tick={{ fill: '#a39586', fontSize: 11 }} stroke="#373330" />
-                    <Tooltip cursor={{ stroke: '#373330' }}
-                      contentStyle={{ background: '#1f1d1b', border: '1px solid rgba(170,144,91,.3)', borderRadius: 8, fontSize: '.78rem' }} />
+                    <XAxis dataKey="year" tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
+                    <YAxis tick={{ fill: '#a0a0ac', fontSize: 11 }} stroke="#2a292f" />
+                    <Tooltip cursor={{ stroke: '#2a292f' }}
+                      contentStyle={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, fontSize: '.78rem' }} />
                     {players.map((p, i) => (
                       <Line key={p.player_id} type="monotone" dataKey={p.name} stroke={CMP_PALETTE[i]} strokeWidth={2} dot={{ r: 2 }} connectNulls />
                     ))}
@@ -1006,9 +1006,9 @@ function ScatterTip({ active, payload }: { active?: boolean; payload?: { payload
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div style={{ background: '#1f1d1b', border: '1px solid rgba(170,144,91,.3)', borderRadius: 8, padding: '7px 10px', fontSize: '.78rem' }}>
-      <div style={{ fontWeight: 700, color: '#efedea' }}>{d.name}</div>
-      <div style={{ color: '#a39586' }}>{d.pos} · Age {d.x} · {d.y.toFixed(1)} SC · {d.z} gms</div>
+    <div style={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, padding: '7px 10px', fontSize: '.78rem' }}>
+      <div style={{ fontWeight: 700, color: '#ebebee' }}>{d.name}</div>
+      <div style={{ color: '#a0a0ac' }}>{d.pos} · Age {d.x} · {d.y.toFixed(1)} SC · {d.z} gms</div>
     </div>
   )
 }
@@ -1019,9 +1019,9 @@ function RoiTip({ active, payload }: { active?: boolean; payload?: { payload: { 
   if (d.name == null) return null   // hovering the expectation line, not a player
   const c = VERDICT_COLOR[d.verdict || 'fair']
   return (
-    <div style={{ background: '#1f1d1b', border: '1px solid rgba(170,144,91,.3)', borderRadius: 8, padding: '7px 10px', fontSize: '.78rem' }}>
-      <div style={{ fontWeight: 700, color: '#efedea' }}>{d.name}</div>
-      <div style={{ color: '#a39586' }}>Pick {d.pick} · {d.value} SC · exp {d.expected}</div>
+    <div style={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, padding: '7px 10px', fontSize: '.78rem' }}>
+      <div style={{ fontWeight: 700, color: '#ebebee' }}>{d.name}</div>
+      <div style={{ color: '#a0a0ac' }}>Pick {d.pick} · {d.value} SC · exp {d.expected}</div>
       <div style={{ color: c, fontWeight: 700, textTransform: 'capitalize' }}>{d.verdict} ({(d.residual ?? 0) >= 0 ? '+' : ''}{d.residual} vs pick)</div>
     </div>
   )
@@ -1031,9 +1031,9 @@ function PyramidTip({ active, payload }: { active?: boolean; payload?: { payload
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div style={{ background: '#1f1d1b', border: '1px solid rgba(170,144,91,.3)', borderRadius: 8, padding: '7px 10px', fontSize: '.78rem' }}>
-      <div style={{ fontWeight: 700, color: '#efedea' }}>Age {d.bucket}</div>
-      <div style={{ color: '#a39586' }}>{d.count} player{d.count === 1 ? '' : 's'} · {d.scShare}% of squad SC</div>
+    <div style={{ background: '#16161a', border: '1px solid rgba(220,218,231,.3)', borderRadius: 8, padding: '7px 10px', fontSize: '.78rem' }}>
+      <div style={{ fontWeight: 700, color: '#ebebee' }}>Age {d.bucket}</div>
+      <div style={{ color: '#a0a0ac' }}>{d.count} player{d.count === 1 ? '' : 's'} · {d.scShare}% of squad SC</div>
     </div>
   )
 }

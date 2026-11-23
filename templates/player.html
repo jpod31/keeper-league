@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ player.name }} — Keeper League{% endblock %}
 
-{% set team_primary = TEAM_COLOURS.get(player.team, ('#f5b940','#fff'))[0] %}
-{% set team_secondary = TEAM_COLOURS.get(player.team, ('#f5b940','#fff'))[1] %}
+{% set team_primary = TEAM_COLOURS.get(player.team, ('#ececf6','#fff'))[0] %}
+{% set team_secondary = TEAM_COLOURS.get(player.team, ('#ececf6','#fff'))[1] %}
 {% set team_primary_rgb = team_primary|hex_to_rgb %}
 {% set has_sc = player.sc_avg is not none %}
 {% set has_detailed = detailed.has_data %}
@@ -73,7 +73,7 @@
     <div class="pp-poster-rings">
       {% if player.draft_score %}
       {% set ds = player.draft_score %}
-      {% set ds_color = '#f0763e' if ds >= 70 else '#d26822' if ds >= 50 else '#da6542' if ds >= 30 else '#8b5632' %}
+      {% set ds_color = '#f0883e' if ds >= 70 else '#d29922' if ds >= 50 else '#da6d42' if ds >= 30 else '#8b6c32' %}
       {% set ds_arc = (ds / 100 * 220)|round %}
       <div class="pp-ring">
         <svg viewBox="0 0 80 80">
@@ -86,7 +86,7 @@
       {% endif %}
       {% if player_ratings.get('rating') %}
       {% set rtg = player_ratings.rating %}
-      {% set rtg_color = '#dbcf94' if rtg >= 80 else '#e2d48e' if rtg >= 70 else '#efe7bd' if rtg >= 60 else '#97732b' %}
+      {% set rtg_color = '#3fb950' if rtg >= 80 else '#56d364' if rtg >= 70 else '#7ee787' if rtg >= 60 else '#2ea043' %}
       {% set rtg_arc = (rtg / 100 * 220)|round %}
       <div class="pp-ring">
         <svg viewBox="0 0 80 80">
@@ -99,7 +99,7 @@
       {% endif %}
       {% if player_ratings.get('potential') %}
       {% set pot = player_ratings.potential %}
-      {% set pot_color = '#f5b940' if pot >= 85 else '#f6c35c' if pot >= 75 else '#f8d182' if pot >= 65 else '#f3ae23' %}
+      {% set pot_color = '#ececf6' if pot >= 85 else '#79c0ff' if pot >= 75 else '#ebeaf2' if pot >= 65 else '#dfdde9' %}
       {% set pot_arc = (pot / 100 * 220)|round %}
       <div class="pp-ring">
         <svg viewBox="0 0 80 80">
@@ -502,7 +502,7 @@
               <th class="text-end">DIS</th><th class="text-end">MRK</th><th class="text-end">GLS</th>
               <th class="text-end">TKL</th><th class="text-end">HO</th><th class="text-end">CP</th>
               <th class="text-end">CLR</th><th class="text-end">I50</th>
-              <th class="text-end fw-bold" style="color:#f5b940;">FAN</th>
+              <th class="text-end fw-bold" style="color:#ececf6;">FAN</th>
             </tr>
           </thead>
           <tbody>
@@ -521,7 +521,7 @@
               <td class="text-end">{{ '%.1f'|format(s.contested_possessions) if s.contested_possessions else '—' }}</td>
               <td class="text-end">{{ '%.1f'|format(s.clearances) if s.clearances else '—' }}</td>
               <td class="text-end">{{ '%.1f'|format(s.inside_fifties) if s.inside_fifties else '—' }}</td>
-              <td class="text-end fw-bold" style="color:#f5b940;">{{ '%.0f'|format(s.fantasy_avg) if s.fantasy_avg else '—' }}</td>
+              <td class="text-end fw-bold" style="color:#ececf6;">{{ '%.0f'|format(s.fantasy_avg) if s.fantasy_avg else '—' }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -541,11 +541,11 @@
         {% for th in afl_team_history %}
         <div class="text-center" style="min-width:48px;{% if th.level != 'AFL' %}opacity:.78;{% endif %}">
           {% if th.logo %}<img src="{{ th.logo }}" alt="{{ th.team }}" style="width:28px;height:28px;object-fit:contain;" title="{{ th.team }} — {{ th.level }} ({{ th.games }} {{ 'games' if th.level == 'AFL' else 'matches' }})">{% endif %}
-          <div style="font-size:.65rem;color:#d7d1cb;font-weight:700;">{{ th.year }}</div>
-          <div style="font-size:.55rem;font-weight:700;color:{% if th.level == 'AFL' %}#f5b940{% else %}#a39586{% endif %};">{{ th.level }}</div>
+          <div style="font-size:.65rem;color:#cfcfd6;font-weight:700;">{{ th.year }}</div>
+          <div style="font-size:.55rem;font-weight:700;color:{% if th.level == 'AFL' %}#ececf6{% else %}#a0a0ac{% endif %};">{{ th.level }}</div>
         </div>
         {% if not loop.last and afl_team_history[loop.index].team != th.team %}
-        <div style="font-size:.6rem;color:#f5b940;font-weight:700;padding:0 2px;">→</div>
+        <div style="font-size:.6rem;color:#ececf6;font-weight:700;padding:0 2px;">→</div>
         {% endif %}
         {% endfor %}
       </div>
@@ -654,8 +654,8 @@
   const teamColour = '{{ team_primary }}';
 
   const chartScales = {
-    x: { ticks: { color: '#a39586' }, grid: { color: '#272522' } },
-    y: { ticks: { color: '#a39586' }, grid: { color: '#272522' } },
+    x: { ticks: { color: '#a0a0ac' }, grid: { color: '#1e1d21' } },
+    y: { ticks: { color: '#a0a0ac' }, grid: { color: '#1e1d21' } },
   };
 
   // ── Chart 1: SC Career Trajectory ──
@@ -694,10 +694,10 @@
     const ctx2 = document.getElementById('keyStatsChart');
     if (ctx2) {
       const statDefs = [
-        { key: 'avg_disposals', label: 'Disposals', colour: '#f5b940' },
+        { key: 'avg_disposals', label: 'Disposals', colour: '#ececf6' },
         { key: 'avg_marks', label: 'Marks', colour: '#bc8cff' },
-        { key: 'avg_tackles', label: 'Tackles', colour: '#f0763e' },
-        { key: 'avg_goals', label: 'Goals', colour: '#dbcf94' },
+        { key: 'avg_tackles', label: 'Tackles', colour: '#f0883e' },
+        { key: 'avg_goals', label: 'Goals', colour: '#3fb950' },
       ];
       const datasets = statDefs
         .filter(s => seasons.some(y => y[s.key] != null))
@@ -719,7 +719,7 @@
           },
           options: {
             responsive: true,
-            plugins: { legend: { labels: { color: '#a39586', boxWidth: 12, usePointStyle: true } } },
+            plugins: { legend: { labels: { color: '#a0a0ac', boxWidth: 12, usePointStyle: true } } },
             scales: {
               x: chartScales.x,
               y: { ...chartScales.y, suggestedMin: 0 },
@@ -789,19 +789,19 @@
               { label: '{{ player.name }}', data: pv.map((v, i) => Math.round(v / mx[i] * 100)),
                 borderColor: teamColour, backgroundColor: teamColour + '20', pointBackgroundColor: teamColour },
               { label: 'League Avg', data: lv.map((v, i) => Math.round(v / mx[i] * 100)),
-                borderColor: '#56504a', backgroundColor: '#56504a10', pointBackgroundColor: '#56504a', borderDash: [4,4] },
+                borderColor: '#63616d', backgroundColor: '#63616d10', pointBackgroundColor: '#63616d', borderDash: [4,4] },
             ]
           },
           options: {
             responsive: true,
             plugins: {
-              legend: { labels: { color: '#a39586', boxWidth: 12 } },
+              legend: { labels: { color: '#a0a0ac', boxWidth: 12 } },
               tooltip: { callbacks: { label: function(ctx) {
                 const s = avail[ctx.dataIndex];
                 return ctx.datasetIndex === 0 ? s.label + ': ' + pv[ctx.dataIndex] : s.label + ': ' + lv[ctx.dataIndex] + ' (league)';
               }}}
             },
-            scales: { r: { angleLines: { color: '#373330' }, grid: { color: '#272522' }, pointLabels: { color: '#a39586' }, ticks: { display: false }, suggestedMin: 0, suggestedMax: 100 } }
+            scales: { r: { angleLines: { color: '#2a292f' }, grid: { color: '#1e1d21' }, pointLabels: { color: '#a0a0ac' }, ticks: { display: false }, suggestedMin: 0, suggestedMax: 100 } }
           }
         });
       }

@@ -46,36 +46,36 @@ const NOTIF_TYPES: [string, string][] = [
 const PROFILE_CSS = `
 .prof-team-logo { flex-shrink: 0; }
 .prof-team-logo-img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; border: 2px solid var(--kl-border); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
-.prof-team-logo-ph { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(145deg, #2d2611, #71602b, #dbcf94); color: #fff; font-weight: 800; font-size: .95rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,.3); letter-spacing: .5px; }
-.prof-logo-btn { background: rgba(210,104,34,.1); border: 1px solid rgba(210,104,34,.3); color: #d26822; font-size: .72rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
-.prof-logo-btn:hover { background: rgba(210,104,34,.2); }
+.prof-team-logo-ph { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(145deg, #0d3618, #238636, #3fb950); color: #fff; font-weight: 800; font-size: .95rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,.3); letter-spacing: .5px; }
+.prof-logo-btn { background: rgba(210,153,34,.1); border: 1px solid rgba(210,153,34,.3); color: #d29922; font-size: .72rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.prof-logo-btn:hover { background: rgba(210,153,34,.2); }
 .logo-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
-.logo-modal { background: #1c1a18; border: 1px solid #373330; border-radius: 12px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
-.logo-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #373330; }
-.logo-modal-header h3 { margin: 0; font-size: 1rem; color: #efedea; font-weight: 700; }
-.logo-modal-close { background: transparent; border: none; color: #a39586; font-size: 1.2rem; cursor: pointer; }
-.logo-modal-close:hover { color: #efedea; }
+.logo-modal { background: #151518; border: 1px solid #2a292f; border-radius: 12px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+.logo-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #2a292f; }
+.logo-modal-header h3 { margin: 0; font-size: 1rem; color: #ebebee; font-weight: 700; }
+.logo-modal-close { background: transparent; border: none; color: #a0a0ac; font-size: 1.2rem; cursor: pointer; }
+.logo-modal-close:hover { color: #ebebee; }
 .logo-modal-body { padding: 20px; }
-.logo-modal-current { text-align: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #272522; }
+.logo-modal-current { text-align: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #1e1d21; }
 .logo-modal-preview { width: 96px; height: 96px; border-radius: 14px; object-fit: cover; }
-.logo-modal-prev-prompt { font-size: .7rem; color: #80786f; margin-top: 6px; font-style: italic; }
-.logo-modal-label { display: block; font-size: .85rem; font-weight: 600; color: #d7d1cb; margin-bottom: 6px; }
-.logo-modal-input { width: 100%; background: #121110; border: 1px solid #373330; border-radius: 6px; padding: 8px 10px; font-size: .85rem; color: #d7d1cb; resize: vertical; }
-.logo-modal-input:focus { outline: none; border-color: #f5b940; }
-.logo-modal-hint { font-size: .7rem; color: #80786f; margin-top: 6px; }
+.logo-modal-prev-prompt { font-size: .7rem; color: #8a8895; margin-top: 6px; font-style: italic; }
+.logo-modal-label { display: block; font-size: .85rem; font-weight: 600; color: #cfcfd6; margin-bottom: 6px; }
+.logo-modal-input { width: 100%; background: #0e0d0f; border: 1px solid #2a292f; border-radius: 6px; padding: 8px 10px; font-size: .85rem; color: #cfcfd6; resize: vertical; }
+.logo-modal-input:focus { outline: none; border-color: #ececf6; }
+.logo-modal-hint { font-size: .7rem; color: #8a8895; margin-top: 6px; }
 .logo-modal-error { background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); color: #f85149; padding: 8px 12px; border-radius: 6px; font-size: .78rem; margin-top: 10px; }
-.logo-modal-generate { width: 100%; margin-top: 12px; padding: 10px; background: linear-gradient(135deg, #d26822, #f0763e); color: #fff; border: none; border-radius: 6px; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.logo-modal-generate { width: 100%; margin-top: 12px; padding: 10px; background: linear-gradient(135deg, #d29922, #f0883e); color: #fff; border: none; border-radius: 6px; font-size: .85rem; font-weight: 700; cursor: pointer; }
 .logo-modal-generate:hover { opacity: .9; }
 .logo-modal-generate:disabled { opacity: .5; cursor: not-allowed; }
-.logo-modal-loading { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 30px 0; color: #a39586; font-size: .85rem; }
-.logo-spinner { width: 36px; height: 36px; border: 3px solid #373330; border-top-color: #d26822; border-radius: 50%; animation: spin 1s linear infinite; }
+.logo-modal-loading { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 30px 0; color: #a0a0ac; font-size: .85rem; }
+.logo-spinner { width: 36px; height: 36px; border: 3px solid #2a292f; border-top-color: #d29922; border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .logo-modal-result-img { width: 100%; max-width: 280px; border-radius: 14px; display: block; margin: 0 auto 14px; }
 .logo-result-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .logo-btn-accept, .logo-btn-regen, .logo-btn-close { padding: 8px 14px; font-size: .78rem; font-weight: 600; border-radius: 6px; cursor: pointer; border: 1px solid; }
-.logo-btn-accept { background: rgba(219,207,148,.15); color: #dbcf94; border-color: rgba(219,207,148,.3); }
-.logo-btn-regen { background: rgba(210,104,34,.15); color: #d26822; border-color: rgba(210,104,34,.3); }
-.logo-btn-close { background: transparent; color: #a39586; border-color: #373330; }
+.logo-btn-accept { background: rgba(63,185,80,.15); color: #3fb950; border-color: rgba(63,185,80,.3); }
+.logo-btn-regen { background: rgba(210,153,34,.15); color: #d29922; border-color: rgba(210,153,34,.3); }
+.logo-btn-close { background: transparent; color: #a0a0ac; border-color: #2a292f; }
 `
 
 export function ProfilePage() {
@@ -266,7 +266,7 @@ export function ProfilePage() {
                 className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
                 style={{
                   width: 64, height: 64,
-                  background: 'linear-gradient(135deg,#71602b,#b77a10)',
+                  background: 'linear-gradient(135deg,#238636,#514e5f)',
                   fontSize: '1.5rem', fontWeight: 700, color: '#fff',
                 }}
               >
@@ -451,7 +451,7 @@ export function ProfilePage() {
         <div className="logo-modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeLogoModal() }}>
           <div className="logo-modal">
             <div className="logo-modal-header">
-              <h3><i className="bi bi-stars me-2" style={{ color: '#d26822' }}></i>Team Logo — {logoModalTeam.name}</h3>
+              <h3><i className="bi bi-stars me-2" style={{ color: '#d29922' }}></i>Team Logo — {logoModalTeam.name}</h3>
               <button onClick={closeLogoModal} className="logo-modal-close"><i className="bi bi-x-lg"></i></button>
             </div>
             <div className="logo-modal-body">

@@ -708,6 +708,33 @@ def offseason_summary(league, team_id=None):
         req = delist_requirement(period, team_id, league, cfg)
         out.update(list_size=req["current_size"], target_size=req["target_size"],
                    to_cut=req["remaining"])
+
+    # Every club: where its list stands and how many picks it walks in with,
+    # in draft order, so the whole league can see who is ready.
+    from models.team_identity import team_card
+    from models.draft_picks import read_plan, base_order, pick_rounds, slot_owner
+    from models.draft_live import team_list_size
+    teams = base_order(league.id, league.season_year, read_plan(cfg))
+    reserve = (getattr(cfg, "offseason_draft_min_picks", None) or DEFAULT_DRAFT_MIN_PICKS)
+    target = max(0, (league.squad_size or 0) - reserve)
+    rounds = pick_rounds(league)
+    held = {t.id: 0 for t in teams}
+    for t in teams:
+        for rnd in range(1, rounds + 1):
+            owner = slot_owner(league.id, league.season_year, rnd, t.id)
+            held[owner] = held.get(owner, 0) + 1
+    clubs = []
+    for pos, t in enumerate(teams, 1):
+        size = team_list_size(league, t.id)
+        clubs.append({
+            **team_card(t), "order": pos, "list_size": size,
+            "to_cut": max(0, size - target) if period else 0,
+            "spots": max(0, (league.squad_size or 0) - size),
+            "picks": held.get(t.id, 0),
+        })
+    out["clubs"] = clubs
+    out["target_size"] = out["target_size"] or target
+    out["squad_size"] = league.squad_size
     return out
 
 

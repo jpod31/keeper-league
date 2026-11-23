@@ -41,10 +41,10 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   const score = payload.find(p => p.name === 'sc')?.value ?? 0
   const ma = payload.find(p => p.name === 'ma')?.value ?? 0
   return (
-    <div style={{ background: '#121110', border: '1px solid #373330', borderRadius: 10, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
-      <div style={{ fontSize: '.72rem', color: '#a39586', marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f5f3f1' }}>{score}</div>
-      {ma > 0 && <div style={{ fontSize: '.65rem', color: '#80786f', marginTop: 2 }}>3-game avg: {ma}</div>}
+    <div style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 10, padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
+      <div style={{ fontSize: '.72rem', color: '#a0a0ac', marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f2f2f4' }}>{score}</div>
+      {ma > 0 && <div style={{ fontSize: '.65rem', color: '#8a8895', marginTop: 2 }}>3-game avg: {ma}</div>}
     </div>
   )
 }
@@ -83,14 +83,14 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
               {logoUrl ? (
                 <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }} />
               ) : (
-                <div style={{ width: 44, height: 44, borderRadius: 8, background: '#272522', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#56504a' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 8, background: '#1e1d21', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#63616d' }}>
                   <i className="bi bi-shield-fill"></i>
                 </div>
               )}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#f5f3f1', letterSpacing: '-.02em', lineHeight: 1.2 }}>{p.name}</div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, fontSize: '.78rem', color: '#a39586', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#f2f2f4', letterSpacing: '-.02em', lineHeight: 1.2 }}>{p.name}</div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, fontSize: '.78rem', color: '#a0a0ac', flexWrap: 'wrap' }}>
                 <span className={`pos-badge badge-${(p.position || 'MID').split('/')[0].toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`} style={{ fontSize: '.6rem', padding: '2px 6px' }}>{p.position}{p.position_expected ? ' exp' : ''}</span>
                 {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
                 {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
@@ -116,7 +116,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
               )}
             </div>
             <button type="button" onClick={onClose}
-              style={{ background: 'rgba(255,255,255,.05)', border: 'none', color: '#a39586', fontSize: '1rem', cursor: 'pointer', padding: '6px 8px', borderRadius: 8, flexShrink: 0 }}>
+              style={{ background: 'rgba(255,255,255,.05)', border: 'none', color: '#a0a0ac', fontSize: '1rem', cursor: 'pointer', padding: '6px 8px', borderRadius: 8, flexShrink: 0 }}>
               <i className="bi bi-x-lg"></i>
             </button>
           </div>
@@ -124,14 +124,14 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
           {/* Key numbers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 18 }}>
             {[
-              { val: p.sc_avg ? Math.round(p.sc_avg) : '—', label: `${yrLabel} avg`, color: '#f5b940' },
-              { val: p.sc_avg_prev ? Math.round(p.sc_avg_prev) : '—', label: `${prevLabel} avg`, color: '#a39586' },
-              { val: p.rating || '—', label: 'Rating', color: '#dbcf94' },
+              { val: p.sc_avg ? Math.round(p.sc_avg) : '—', label: `${yrLabel} avg`, color: '#ececf6' },
+              { val: p.sc_avg_prev ? Math.round(p.sc_avg_prev) : '—', label: `${prevLabel} avg`, color: '#a0a0ac' },
+              { val: p.rating || '—', label: 'Rating', color: '#3fb950' },
               { val: p.potential || '—', label: 'Potential', color: '#bc8cff' },
             ].map((s, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: '10px 4px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(55,51,48,.3)', borderRadius: 10 }}>
+              <div key={i} style={{ textAlign: 'center', padding: '10px 4px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(42,41,47,.3)', borderRadius: 10 }}>
                 <div style={{ fontSize: '1.1rem', fontWeight: 900, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.val}</div>
-                <div style={{ fontSize: '.55rem', color: '#80786f', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 2 }}>{s.label}</div>
+                <div style={{ fontSize: '.55rem', color: '#8a8895', textTransform: 'uppercase', letterSpacing: '.5px', marginTop: 2 }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -139,28 +139,28 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
           {/* Season form chart */}
           {chartData.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#a39586', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>
+              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>
                 {yrLabel} form
               </div>
               <div style={{ height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#272522" vertical={false} />
-                    <XAxis dataKey="label" stroke="#56504a" fontSize={10} tickLine={false} axisLine={{ stroke: '#272522' }} />
-                    <YAxis stroke="#56504a" fontSize={10} tickLine={false} axisLine={false}
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e1d21" vertical={false} />
+                    <XAxis dataKey="label" stroke="#63616d" fontSize={10} tickLine={false} axisLine={{ stroke: '#1e1d21' }} />
+                    <YAxis stroke="#63616d" fontSize={10} tickLine={false} axisLine={false}
                       domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin * 0.8)), 'auto']} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(245,185,64,.04)' }} />
-                    <Bar dataKey="sc" fill="#f5b940" radius={[4, 4, 0, 0]} maxBarSize={28} fillOpacity={0.85} />
-                    <Line type="monotone" dataKey="ma" stroke="#d26822" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(236,236,246,.04)' }} />
+                    <Bar dataKey="sc" fill="#ececf6" radius={[4, 4, 0, 0]} maxBarSize={28} fillOpacity={0.85} />
+                    <Line type="monotone" dataKey="ma" stroke="#d29922" strokeWidth={2} dot={false} strokeDasharray="4 2" />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.72rem', color: '#80786f' }}>
-                <span>Avg: <b style={{ color: '#d7d1cb' }}>{Math.round(avg)}</b></span>
-                {l3 != null && <span>Last 3{p.stats_are_last_season ? ` of ${yr}` : ''}: <b style={{ color: l3 >= avg ? '#dbcf94' : '#f85149' }}>{l3}</b></span>}
-                {l5 != null && <span>Last 5{p.stats_are_last_season ? ` of ${yr}` : ''}: <b style={{ color: l5 >= avg ? '#dbcf94' : '#f85149' }}>{l5}</b></span>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.72rem', color: '#8a8895' }}>
+                <span>Avg: <b style={{ color: '#cfcfd6' }}>{Math.round(avg)}</b></span>
+                {l3 != null && <span>Last 3{p.stats_are_last_season ? ` of ${yr}` : ''}: <b style={{ color: l3 >= avg ? '#3fb950' : '#f85149' }}>{l3}</b></span>}
+                {l5 != null && <span>Last 5{p.stats_are_last_season ? ` of ${yr}` : ''}: <b style={{ color: l5 >= avg ? '#3fb950' : '#f85149' }}>{l5}</b></span>}
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 12, height: 2, background: '#d26822', display: 'inline-block' }}></span>
+                  <span style={{ width: 12, height: 2, background: '#d29922', display: 'inline-block' }}></span>
                   <span style={{ fontSize: '.62rem' }}>3-game avg</span>
                 </span>
               </div>
@@ -170,15 +170,15 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
           {/* Last game stats */}
           {p.last_game && (
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#a39586', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>Last Game</div>
+              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>Last Game</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(55px, 1fr))', gap: 5 }}>
                 {STAT_KEYS.map(([key, label]) => {
                   const val = p.last_game?.[key]
                   if (val == null) return null
                   return (
-                    <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(55,51,48,.25)' }}>
-                      <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#dcd6d0' }}>{val}</div>
-                      <div style={{ fontSize: '.48rem', color: '#56504a', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
+                    <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(42,41,47,.25)' }}>
+                      <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#d3d2da' }}>{val}</div>
+                      <div style={{ fontSize: '.48rem', color: '#63616d', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
                     </div>
                   )
                 })}
@@ -189,7 +189,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
           {/* Season averages */}
           {p.season_avg && (
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#a39586', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>
+              <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>
                 {yrLabel} averages · {p.season_games} games
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(55px, 1fr))', gap: 5 }}>
@@ -197,9 +197,9 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                   const val = p.season_avg?.[key]
                   if (val == null) return null
                   return (
-                    <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(55,51,48,.25)' }}>
-                      <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#dcd6d0' }}>{typeof val === 'number' ? val.toFixed(1) : val}</div>
-                      <div style={{ fontSize: '.48rem', color: '#56504a', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
+                    <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(42,41,47,.25)' }}>
+                      <div style={{ fontSize: '.82rem', fontWeight: 800, color: '#d3d2da' }}>{typeof val === 'number' ? val.toFixed(1) : val}</div>
+                      <div style={{ fontSize: '.48rem', color: '#63616d', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
                     </div>
                   )
                 })}
@@ -215,8 +215,8 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '12px', borderRadius: 12,
-              background: 'rgba(245,185,64,.08)', border: '1px solid rgba(245,185,64,.2)',
-              color: '#f5b940', fontSize: '.82rem', fontWeight: 700,
+              background: 'rgba(236,236,246,.08)', border: '1px solid rgba(236,236,246,.2)',
+              color: '#ececf6', fontSize: '.82rem', fontWeight: 700,
               textDecoration: 'none',
             }}
           >

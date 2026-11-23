@@ -13,6 +13,8 @@ What it does:
   - Reopens this off-season's delist period with closes_at = the draft start.
     Same period, so the finish size (squad size less the draft places), the
     locked player pool and this year's draft picks all still apply.
+  - --reopen-trades holds the off-season trade window open until the draft
+    starts too, and tells every manager.
   - --create-session also creates the scheduled draft session so the draft
     room counts down to it. DraftSession.scheduled_start is naive Melbourne
     wall-clock. The slots are rebuilt from the lists when the draft starts.
@@ -34,6 +36,8 @@ def main():
     ap.add_argument("--league-id", type=int, required=True)
     ap.add_argument("--draft", required=True, help="Melbourne time, YYYY-MM-DDTHH:MM")
     ap.add_argument("--create-session", action="store_true")
+    ap.add_argument("--reopen-trades", action="store_true",
+                    help="hold the off-season trade window open until the draft starts")
     ap.add_argument("--no-notify", action="store_true")
     args = ap.parse_args()
 
@@ -80,6 +84,28 @@ def main():
             changed.append("delists")
         db.session.commit()
 
+        trades_reopened = False
+        if args.reopen_trades and cfg.off_trade_window_close != utc_naive:
+            print(f"trade window: closes {cfg.off_trade_window_close} -> {utc_naive} UTC")
+            if not cfg.off_trade_window_open:
+                cfg.off_trade_window_open = datetime.now(timezone.utc).replace(tzinfo=None)
+            cfg.off_trade_window_close = utc_naive
+            league.trade_window_open = True
+            db.session.commit()
+            # Same as the hub's "open trades" step: deals already agreed for
+            # the off-season go through the moment the window is open.
+            from models.database import Trade
+            from models.trade_manager import _execute_trade
+            agreed = Trade.query.filter_by(
+                league_id=league.id, status="agreed", intended_period="offseason").all()
+            for t in agreed:
+                _execute_trade(t)
+                t.status = "accepted"
+            db.session.commit()
+            print(f"trade window reopened; {len(agreed)} agreed trade(s) executed")
+            trades_reopened = True
+            changed.append("trades")
+
         if args.create_session:
             live = DraftSession.query.filter_by(
                 league_id=league.id, is_mock=False, draft_round_type="supplemental",
@@ -124,6 +150,20 @@ def main():
                     link=f"/leagues/{league.id}/team/{t.id}",
                 )
             print("managers notified")
+
+        if trades_reopened and not args.no_notify:
+            from models.notification_manager import create_notification
+            when = local.strftime("%a %d %b, %I:%M%p").replace(" 0", " ").replace("AM", "am").replace("PM", "pm")
+            for t in FantasyTeam.query.filter_by(league_id=league.id).all():
+                if t.owner_id:
+                    create_notification(
+                        user_id=t.owner_id, league_id=league.id,
+                        notif_type="season_transition",
+                        title="Trades are open again",
+                        body=f"The trade window is open until the draft starts: {when}.",
+                        link=f"/leagues/{league.id}/trades",
+                    )
+            print("managers notified of the trade window")
 
         print("done:", ", ".join(changed) or "nothing to change")
 

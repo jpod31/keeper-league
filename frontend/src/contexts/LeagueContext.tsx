@@ -8,8 +8,10 @@ export interface LeagueInfo {
   season_year: number
   invite_code: string
   commissioner_id: number
-  user_team: { id: number; name: string } | null
-  teams: { id: number; name: string; owner: string }[]
+  user_team: { id: number; name: string; logo?: string | null; accent?: string } | null
+  teams: { id: number; name: string; owner: string; logo?: string | null; accent?: string }[]
+  /** AFL club name -> logo URL. */
+  club_logos?: Record<string, string>
   is_commissioner: boolean
   is_owner: boolean
   active_draft: boolean

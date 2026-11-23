@@ -2,6 +2,35 @@ import { useParams, useNavigate, Link } from 'react-router'
 import { useEffect, useMemo, useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton'
+import { TeamCrest } from '../../components/draft/TeamCrest'
+import { rgbOf } from '../../lib/clubs'
+
+/** Days, hours, minutes and seconds to the draft, ticking. */
+function DraftClock({ target }: { target: string }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(t)
+  }, [])
+  const left = Math.max(0, new Date(target).getTime() - now)
+  if (left <= 0) return <div className="dh-clock"><div className="dh-live">The draft is on</div></div>
+  const parts: [number, string][] = [
+    [Math.floor(left / 86400000), 'days'],
+    [Math.floor((left % 86400000) / 3600000), 'hours'],
+    [Math.floor((left % 3600000) / 60000), 'mins'],
+    [Math.floor((left % 60000) / 1000), 'secs'],
+  ]
+  return (
+    <div className="dh-clock" role="timer" aria-label="Time until the draft">
+      {parts.map(([n, label]) => (
+        <div key={label} className="dh-unit">
+          <b>{String(n).padStart(2, '0')}</b>
+          <span>{label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 // ── Types ────────────────────────────────────────────────────
 interface PositionSlot { position_code: string; count: number; is_bench: boolean }
@@ -96,6 +125,11 @@ interface DashboardData {
     list_size: number | null
     target_size: number | null
     to_cut: number | null
+    squad_size?: number
+    clubs?: {
+      id: number; name: string; logo: string | null; accent: string
+      order: number; list_size: number; to_cut: number; spots: number; picks: number
+    }[]
   } | null
   this_matchup: ThisMatchup | null
   my_rank: number | null
@@ -112,7 +146,7 @@ interface DashboardData {
 function hexToRgb(hex: string): string {
   const h = hex.replace('#', '')
   const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
-  if (full.length !== 6) return '245,185,64'
+  if (full.length !== 6) return '236,236,246'
   return `${parseInt(full.slice(0, 2), 16)},${parseInt(full.slice(2, 4), 16)},${parseInt(full.slice(4, 6), 16)}`
 }
 
@@ -194,7 +228,7 @@ export function DashboardPage() {
       m['--lg-opp-rgb'] = hexToRgb(data.this_matchup.opp.colour)
     } else if (data?.user_team) {
       const myStanding = data.standings.find(s => s.team.is_mine)
-      const myColour = myStanding?.team.colour || '#f5b940'
+      const myColour = myStanding?.team.colour || '#ececf6'
       m['--lg-me'] = myColour
       m['--lg-me-rgb'] = hexToRgb(myColour)
     }
@@ -207,7 +241,6 @@ export function DashboardPage() {
   const { league, user_team, teams, scoring_rules, this_matchup, my_rank, standings,
     league_fixtures, top_performers, recent_activity, current_round, live_games_count,
     next_lockout_at, pending_incoming, pending_outgoing, delist_open, offseason } = data
-  const draftIn = offseason?.draft_at ? fmtCountdown(offseason.draft_at) : null
   const draftWhen = offseason?.draft_at
     ? new Date(offseason.draft_at).toLocaleString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
     : null
@@ -234,35 +267,56 @@ export function DashboardPage() {
 
       {/* ── OFF-SEASON: the draft and the cuts, in place of rounds ── */}
       {offseason && !offseason.draft_done && (
-        <div className="os-strip">
-          <div className="os-cell">
-            <div className="os-label">Draft night</div>
-            <div className="os-value">{draftWhen ?? 'Date to be set'}</div>
-            {draftIn && <div className="os-sub">in {draftIn.value}</div>}
-          </div>
-          <div className="os-cell">
-            <div className="os-label">Delistings</div>
-            <div className="os-value">{offseason.delist_open ? 'Open until the draft' : 'Closed'}</div>
-            {offseason.delist_open && offseason.to_cut != null && (
-              <div className="os-sub">
-                {offseason.to_cut > 0
-                  ? `You are at ${offseason.list_size}. Cut ${offseason.to_cut} to reach ${offseason.target_size}.`
-                  : `You are at ${offseason.list_size}. Nothing more to cut.`}
+        <section className="dh">
+          <div className="dh-top">
+            <div className="dh-lead">
+              <div className="dh-kicker">Draft night</div>
+              <div className="dh-when">{draftWhen ?? 'Date to be set'}</div>
+              <div className="dh-facts">
+                <span>{offseason.delist_open ? 'Delistings and trades close when it starts' : 'Delistings are closed'}</span>
+                <span>Free agents open once it is done</span>
               </div>
-            )}
+              <div className="dh-actions">
+                {user_team && <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/team/${user_team.id}`}>My list</Link>}
+                <Link className="kx-btn" to={`/leagues/${leagueId}/draft`}>Draft room</Link>
+                <Link className="kx-btn" to={`/leagues/${leagueId}/player-pool`}>Scout the pool</Link>
+                <Link className="kx-btn" to={`/leagues/${leagueId}/trade-block`}>Trade block</Link>
+              </div>
+            </div>
+            {offseason.draft_at && <DraftClock target={offseason.draft_at} />}
           </div>
-          <div className="os-cell">
-            <div className="os-label">Player pool</div>
-            <div className="os-value">Locked until the draft</div>
-            <div className="os-sub">Free agents open once it is done</div>
-          </div>
-          {user_team && (
-            <div className="os-actions">
-              <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/team/${user_team.id}`}>My list</Link>
-              <Link className="kx-btn" to={`/leagues/${leagueId}/player-pool`}>Scout the pool</Link>
+
+          {offseason.clubs && offseason.clubs.length > 0 && (
+            <div className="dh-clubs">
+              {offseason.clubs.map(c => {
+                const cap = offseason.squad_size || 45
+                const mine = user_team && c.id === user_team.id
+                return (
+                  <Link key={c.id} to={`/leagues/${leagueId}/team/${c.id}`}
+                    className={`dh-club${mine ? ' mine' : ''}`}
+                    style={{ ['--tm' as string]: rgbOf(c.accent) } as React.CSSProperties}>
+                    <div className="dh-club-top">
+                      <span className="dh-order">{c.order}</span>
+                      <TeamCrest team={c} size={44} />
+                      <span className="dh-club-name">{c.name}</span>
+                    </div>
+                    <div className="dh-bar" aria-hidden="true">
+                      <span style={{ width: `${Math.min(100, (c.list_size / cap) * 100)}%` }}></span>
+                      {offseason.target_size != null && <i style={{ left: `${(offseason.target_size / cap) * 100}%` }}></i>}
+                    </div>
+                    <div className="dh-club-nums">
+                      <span><b>{c.list_size}</b> on the list</span>
+                      <span><b>{c.picks}</b> pick{c.picks === 1 ? '' : 's'}</span>
+                    </div>
+                    <div className={`dh-status${c.to_cut > 0 ? ' due' : ''}`}>
+                      {c.to_cut > 0 ? `${c.to_cut} to cut` : `Ready, ${c.spots} spot${c.spots === 1 ? '' : 's'} open`}
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* ── LIVE PULSE BAR ── */}
@@ -279,7 +333,7 @@ export function DashboardPage() {
         </span>
         {lockout && (
           <span className="lg-pulse-item">
-            <i className="bi bi-clock" style={{ color: '#d26822', fontSize: '.78rem' }}></i>
+            <i className="bi bi-clock" style={{ color: '#d29922', fontSize: '.78rem' }}></i>
             Next lockout
             <span className="lg-pulse-countdown">{lockout.value}</span>
           </span>
@@ -436,7 +490,7 @@ export function DashboardPage() {
           {standings.length > 0 && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-trophy" style={{ color: '#d26822' }}></i>Ladder</span>
+                <span className="lg-card-title"><i className="bi bi-trophy" style={{ color: '#d29922' }}></i>Ladder</span>
                 <Link to={`/leagues/${leagueId}/standings`} className="lg-card-action">View all →</Link>
               </div>
               <div className="lg-ladder">
@@ -472,7 +526,7 @@ export function DashboardPage() {
               </div>
               <div className="lg-perf">
                 {top_performers.slice(0, 6).map((p, i) => {
-                  const colour = p.owner_team?.colour || '#f5b940'
+                  const colour = p.owner_team?.colour || '#ececf6'
                   const rgb = hexToRgb(colour)
                   return (
                     <Link key={p.player_id}
@@ -495,7 +549,7 @@ export function DashboardPage() {
           {recent_activity.length > 0 && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-activity" style={{ color: '#f6c35c' }}></i>League pulse</span>
+                <span className="lg-card-title"><i className="bi bi-activity" style={{ color: '#79c0ff' }}></i>League pulse</span>
                 <Link to={`/leagues/${leagueId}/list-changes`} className="lg-card-action">All changes →</Link>
               </div>
               <div className="lg-feed">
@@ -530,7 +584,7 @@ export function DashboardPage() {
           {league_fixtures.length > 0 && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-grid" style={{ color: '#f6c35c' }}></i>Round {current_round} fixtures</span>
+                <span className="lg-card-title"><i className="bi bi-grid" style={{ color: '#79c0ff' }}></i>Round {current_round} fixtures</span>
               </div>
               <div>
                 {league_fixtures.map(fx => {
@@ -570,7 +624,7 @@ export function DashboardPage() {
           {user_team && (pending_incoming > 0 || pending_outgoing > 0 || league.trade_window_open) && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-arrow-left-right" style={{ color: '#ffa671' }}></i>Trade activity</span>
+                <span className="lg-card-title"><i className="bi bi-arrow-left-right" style={{ color: '#ffb471' }}></i>Trade activity</span>
                 <Link to={`/leagues/${leagueId}/trades`} className="lg-card-action">Trade center →</Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -587,7 +641,7 @@ export function DashboardPage() {
                 {pending_outgoing > 0 && (
                   <Link to={`/leagues/${leagueId}/trades?tab=outgoing`}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8,
-                             background: 'rgba(210,104,34,.08)', border: '1px solid rgba(210,104,34,.3)',
+                             background: 'rgba(210,153,34,.08)', border: '1px solid rgba(210,153,34,.3)',
                              textDecoration: 'none', color: '#f0b38a' }}>
                     <i className="bi bi-send"></i>
                     <span style={{ flex: 1, fontWeight: 700 }}>{pending_outgoing} awaiting response</span>
@@ -597,7 +651,7 @@ export function DashboardPage() {
                 {league.trade_window_open && (
                   <Link to={`/leagues/${leagueId}/trades/propose`}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 12px', borderRadius: 8,
-                             background: 'linear-gradient(135deg, #b77a10, #f3ae23)', color: '#fff',
+                             background: 'linear-gradient(135deg, #514e5f, #dfdde9)', color: '#fff',
                              textDecoration: 'none', fontWeight: 700 }}>
                     <i className="bi bi-plus-lg"></i>Propose a trade
                   </Link>
@@ -610,7 +664,7 @@ export function DashboardPage() {
           {!user_team && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-box-arrow-in-right" style={{ color: '#dbcf94' }}></i>Join the league</span>
+                <span className="lg-card-title"><i className="bi bi-box-arrow-in-right" style={{ color: '#3fb950' }}></i>Join the league</span>
               </div>
               <form onSubmit={joinLeague}>
                 <div className="mb-3">
@@ -626,7 +680,7 @@ export function DashboardPage() {
           {league.invite_code && (
             <div className="lg-card">
               <div className="lg-card-header">
-                <span className="lg-card-title"><i className="bi bi-share" style={{ color: '#d26822' }}></i>Invite players</span>
+                <span className="lg-card-title"><i className="bi bi-share" style={{ color: '#d29922' }}></i>Invite players</span>
               </div>
               <div className="input-group input-group-sm">
                 <input type="text" className="form-control" readOnly value={inviteUrl}
@@ -655,7 +709,7 @@ export function DashboardPage() {
             <div className="lg-info-row"><span className="lg-info-label">Pick timer</span><span className="lg-info-value">{league.pick_timer_secs}s</span></div>
             <div className="lg-info-row">
               <span className="lg-info-label">Trade window</span>
-              <span className="lg-info-value" style={{ color: league.trade_window_open ? '#efe7bd' : '#ff8a82' }}>
+              <span className="lg-info-value" style={{ color: league.trade_window_open ? '#7ee787' : '#ff8a82' }}>
                 <i className="bi bi-circle-fill me-1" style={{ fontSize: '.5rem' }}></i>{league.trade_window_open ? 'Open' : 'Closed'}
               </span>
             </div>

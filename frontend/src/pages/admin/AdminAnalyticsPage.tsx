@@ -63,7 +63,7 @@ export function AdminAnalyticsPage() {
             <div className="card-body">
               <div className="text-secondary" style={{ fontSize: '.7rem' }}>TOTAL VIEWS</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{data.summary.total_views.toLocaleString()}</div>
-              <div style={{ fontSize: '.75rem', color: data.summary.change_pct >= 0 ? '#dbcf94' : '#f85149' }}>
+              <div style={{ fontSize: '.75rem', color: data.summary.change_pct >= 0 ? '#3fb950' : '#f85149' }}>
                 {data.summary.change_pct >= 0 ? '▲' : '▼'} {Math.abs(data.summary.change_pct)}% vs prior
               </div>
             </div>
@@ -108,7 +108,7 @@ export function AdminAnalyticsPage() {
                     style={{
                       flex: 1,
                       height: `${(v / maxDaily) * 100}%`,
-                      background: '#f5b940',
+                      background: '#ececf6',
                       minHeight: 2,
                       borderRadius: '2px 2px 0 0',
                     }}
@@ -151,8 +151,8 @@ export function AdminAnalyticsPage() {
                       <span>{feat}</span>
                       <strong>{count}</strong>
                     </div>
-                    <div style={{ height: 4, background: '#272522', borderRadius: 2, overflow: 'hidden' }}>
-                      <div style={{ width: `${(count / max) * 100}%`, height: '100%', background: '#f5b940' }} />
+                    <div style={{ height: 4, background: '#1e1d21', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ width: `${(count / max) * 100}%`, height: '100%', background: '#ececf6' }} />
                     </div>
                   </div>
                 )

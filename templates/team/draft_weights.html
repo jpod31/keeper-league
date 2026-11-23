@@ -10,7 +10,7 @@
     </div>
 
     <div class="card mb-4">
-      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-bar-chart me-2" style="color:#f5b940;"></i>Weight Sliders</h5></div>
+      <div class="card-header"><h5 class="mb-0 fw-bold" style="font-size:.95rem;"><i class="bi bi-bar-chart me-2" style="color:#ececf6;"></i>Weight Sliders</h5></div>
       <div class="card-body">
         <form method="POST">
           {% set weight_labels = {
@@ -27,12 +27,12 @@
               <input type="range" class="form-range flex-grow-1" name="weight_{{ key }}"
                      min="0" max="1" step="0.05" value="{{ weights.get(key, 0) }}"
                      oninput="this.nextElementSibling.textContent=this.value;updateTotal()">
-              <span class="badge weight-badge" style="background:#272522;min-width:40px;">{{ weights.get(key, 0) }}</span>
+              <span class="badge weight-badge" style="background:#1e1d21;min-width:40px;">{{ weights.get(key, 0) }}</span>
             </div>
           {% endfor %}
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="form-text" style="color:#56504a;font-size:.75rem;">
-              Total: <strong id="weight_total" style="color:#d7d1cb;">{{ '%.2f'|format(weights.values()|sum) }}</strong> — weights auto-normalise to sum to 1.0 on save
+            <div class="form-text" style="color:#63616d;font-size:.75rem;">
+              Total: <strong id="weight_total" style="color:#cfcfd6;">{{ '%.2f'|format(weights.values()|sum) }}</strong> — weights auto-normalise to sum to 1.0 on save
             </div>
             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetDefaults()">
               <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Defaults
@@ -47,8 +47,8 @@
     <div class="card">
       <div class="card-body">
         <div class="d-flex align-items-start gap-3">
-          <i class="bi bi-info-circle" style="color:#f5b940;font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
-          <div style="font-size:.8rem;color:#a39586;">
+          <i class="bi bi-info-circle" style="color:#ececf6;font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
+          <div style="font-size:.8rem;color:#a0a0ac;">
             <p class="mb-1">These weights determine how the draft ranking algorithm scores available players <em>for you</em>.</p>
             <p class="mb-0">Other managers in your league can set their own weights independently. The draft room's "Available Players" list will be sorted based on your personal weights.</p>
           </div>

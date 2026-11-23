@@ -27,12 +27,12 @@ function FinalCard({ f, highlight, hideStatusPill, label }: { f: Final; highligh
   return (
     <div
       className="fixture-card mb-3"
-      style={highlight ? { borderColor: '#f9c006', borderWidth: 2, boxShadow: '0 0 12px rgba(249,192,6,.15)' } : undefined}
+      style={highlight ? { borderColor: '#ffd700', borderWidth: 2, boxShadow: '0 0 12px rgba(255,215,0,.15)' } : undefined}
     >
       <div className="p-3">
         <div
           className="d-flex justify-content-between align-items-center"
-          style={{ fontSize: '.7rem', color: highlight ? '#f9c006' : '#56504a', marginBottom: '.5rem' }}
+          style={{ fontSize: '.7rem', color: highlight ? '#ffd700' : '#63616d', marginBottom: '.5rem' }}
         >
           <span>{label || (f.final_type === 'GF' ? 'Grand Final' : f.final_type)}</span>
           {!hideStatusPill && f.status === 'completed' && (
@@ -43,8 +43,8 @@ function FinalCard({ f, highlight, hideStatusPill, label }: { f: Final; highligh
           <span className="fixture-team" style={{ fontSize: '.85rem' }}>{f.home_team?.name}</span>
           <span
             className="fw-bold"
-            style={homeWon ? { color: '#dbcf94', fontSize: highlight ? '1.1rem' : undefined }
-              : f.status === 'completed' && awayWon ? { color: '#80786f' }
+            style={homeWon ? { color: '#3fb950', fontSize: highlight ? '1.1rem' : undefined }
+              : f.status === 'completed' && awayWon ? { color: '#8a8895' }
               : undefined}
           >
             {f.status === 'completed' ? Math.round(f.home_score || 0) : '-'}
@@ -54,8 +54,8 @@ function FinalCard({ f, highlight, hideStatusPill, label }: { f: Final; highligh
           <span className="fixture-team" style={{ fontSize: '.85rem' }}>{f.away_team?.name}</span>
           <span
             className="fw-bold"
-            style={awayWon ? { color: '#dbcf94', fontSize: highlight ? '1.1rem' : undefined }
-              : f.status === 'completed' && homeWon ? { color: '#80786f' }
+            style={awayWon ? { color: '#3fb950', fontSize: highlight ? '1.1rem' : undefined }
+              : f.status === 'completed' && homeWon ? { color: '#8a8895' }
               : undefined}
           >
             {f.status === 'completed' ? Math.round(f.away_score || 0) : '-'}
@@ -92,7 +92,7 @@ export function FinalsPage() {
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>
             <h2 className="mb-0">Finals Series</h2>
-            <span style={{ fontSize: '.78rem', color: '#a39586' }}>{league.season_year} finals bracket</span>
+            <span style={{ fontSize: '.78rem', color: '#a0a0ac' }}>{league.season_year} finals bracket</span>
           </div>
           {is_commissioner && finals.length === 0 && (
             <button type="button" className="btn btn-primary btn-sm" onClick={generate}>
@@ -105,19 +105,19 @@ export function FinalsPage() {
       {finals.length > 0 ? (
         <div className="row g-4">
           <div className="col-md-4">
-            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a39586', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px' }}>
               Qualifying Finals
             </h5>
             {qfs.map(f => <FinalCard key={f.id} f={f} />)}
           </div>
           <div className="col-md-4">
-            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a39586', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#a0a0ac', textTransform: 'uppercase', letterSpacing: '.5px' }}>
               Preliminary Final
             </h5>
             {pfs.map(f => <FinalCard key={f.id} f={f} hideStatusPill label="Loser QF1 vs Winner QF2" />)}
           </div>
           <div className="col-md-4">
-            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#f9c006', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+            <h5 className="fw-bold mb-3" style={{ fontSize: '.85rem', color: '#ffd700', textTransform: 'uppercase', letterSpacing: '.5px' }}>
               Grand Final
             </h5>
             {gfs.map(f => <FinalCard key={f.id} f={f} highlight />)}

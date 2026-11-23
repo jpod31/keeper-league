@@ -9,13 +9,13 @@
   {% include "leagues/_settings_subnav.html" %}
 {% endif %}
 <style>
-  .scoring-card { cursor:pointer; border:2px solid #373330; border-radius:8px; padding:1.25rem; transition:all .15s; text-align:center; }
-  .scoring-card:hover { border-color:#f5b940; }
-  .scoring-card.active { border-color:#f5b940; background:#1c1a1880; }
+  .scoring-card { cursor:pointer; border:2px solid #2a292f; border-radius:8px; padding:1.25rem; transition:all .15s; text-align:center; }
+  .scoring-card:hover { border-color:#ececf6; }
+  .scoring-card.active { border-color:#ececf6; background:#15151880; }
   .scoring-card .card-icon { font-size:1.5rem; margin-bottom:.5rem; }
   .scoring-card h6 { margin:0; font-size:.9rem; font-weight:600; }
-  .scoring-card p { margin:0; font-size:.75rem; color:#a39586; }
-  .stat-category-header { font-size:.75rem; font-weight:600; color:#f5b940; text-transform:uppercase; letter-spacing:.5px; margin-top:1rem; margin-bottom:.5rem; border-bottom:1px solid #272522; padding-bottom:.25rem; }
+  .scoring-card p { margin:0; font-size:.75rem; color:#a0a0ac; }
+  .stat-category-header { font-size:.75rem; font-weight:600; color:#ececf6; text-transform:uppercase; letter-spacing:.5px; margin-top:1rem; margin-bottom:.5rem; border-bottom:1px solid #1e1d21; padding-bottom:.25rem; }
   .stat-category-header:first-child { margin-top:0; }
   .preset-btn { font-size:.75rem; padding:4px 10px; }
 </style>
@@ -36,21 +36,21 @@
       <div class="d-flex flex-wrap gap-3 mb-4" style="justify-content:center;">
         <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'supercoach' }}" onclick="selectScoring('supercoach')">
-            <div class="card-icon" style="color:#dbcf94;"><i class="bi bi-shield-check"></i></div>
+            <div class="card-icon" style="color:#3fb950;"><i class="bi bi-shield-check"></i></div>
             <h6>SuperCoach</h6>
             <p>Official SC scores</p>
           </div>
         </div>
         <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'afl_fantasy' }}" onclick="selectScoring('afl_fantasy')">
-            <div class="card-icon" style="color:#f5b940;"><i class="bi bi-star"></i></div>
+            <div class="card-icon" style="color:#ececf6;"><i class="bi bi-star"></i></div>
             <h6>AFL Fantasy</h6>
             <p>Official AF scores</p>
           </div>
         </div>
         <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'custom' }}" onclick="selectScoring('custom')">
-            <div class="card-icon" style="color:#f0763e;"><i class="bi bi-sliders"></i></div>
+            <div class="card-icon" style="color:#f0883e;"><i class="bi bi-sliders"></i></div>
             <h6>Custom</h6>
             <p>Build your own formula</p>
           </div>
@@ -64,7 +64,7 @@
         </div>
         <div style="flex:1 1 140px;max-width:200px;">
           <div class="scoring-card {{ 'active' if league.scoring_type == 'ultimate_footy' }}" onclick="selectScoring('ultimate_footy')">
-            <div class="card-icon" style="color:#d26822;"><i class="bi bi-trophy"></i></div>
+            <div class="card-icon" style="color:#d29922;"><i class="bi bi-trophy"></i></div>
             <h6>Ultimate Footy</h6>
             <p>Head-to-head categories</p>
           </div>
@@ -75,13 +75,13 @@
       {# ── SuperCoach / AFL Fantasy info ── #}
       <div id="info-supercoach" class="card mb-4" style="{{ '' if league.scoring_type == 'supercoach' else 'display:none' }}">
         <div class="card-body">
-          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-shield-check me-2" style="color:#dbcf94;"></i>SuperCoach Scoring</h5>
+          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-shield-check me-2" style="color:#3fb950;"></i>SuperCoach Scoring</h5>
           <p class="text-secondary mb-0" style="font-size:.8rem;">Uses official SuperCoach scores directly from the AFL. No configuration needed — scores are pulled automatically each round.</p>
         </div>
       </div>
       <div id="info-afl_fantasy" class="card mb-4" style="{{ '' if league.scoring_type == 'afl_fantasy' else 'display:none' }}">
         <div class="card-body">
-          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-star me-2" style="color:#f5b940;"></i>AFL Fantasy Scoring</h5>
+          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-star me-2" style="color:#ececf6;"></i>AFL Fantasy Scoring</h5>
           <p class="text-secondary mb-0" style="font-size:.8rem;">Uses official AFL Fantasy scores. No configuration needed — scores are stored alongside SuperCoach data.</p>
         </div>
       </div>
@@ -89,7 +89,7 @@
       {# ── Ultimate Footy info ── #}
       <div id="info-ultimate_footy" class="card mb-4" style="{{ '' if league.scoring_type == 'ultimate_footy' else 'display:none' }}">
         <div class="card-body">
-          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-trophy me-2" style="color:#d26822;"></i>Ultimate Footy</h5>
+          <h5 class="fw-bold mb-2" style="font-size:.9rem;"><i class="bi bi-trophy me-2" style="color:#d29922;"></i>Ultimate Footy</h5>
           <p class="text-secondary mb-0" style="font-size:.8rem;">Teams compete head-to-head on individual stat categories. For each stat, the team with the higher total wins 1 point. The team winning the most categories wins the fixture (e.g. 8&ndash;5).</p>
         </div>
       </div>
@@ -111,14 +111,14 @@
               <label class="form-check-label" for="hybrid_af">AFL Fantasy</label>
             </div>
           </div>
-          <hr style="border-color:#373330;margin:1rem 0;">
+          <hr style="border-color:#2a292f;margin:1rem 0;">
           <div class="d-flex align-items-center gap-3 mb-3">
             <label class="form-label mb-0" style="width:160px;flex-shrink:0;">Official Score Weight</label>
             <input type="range" class="form-range flex-grow-1" id="hybrid_base_weight" name="hybrid_base_weight"
                    min="0" max="1" step="0.05"
                    value="{{ league.hybrid_base_weight if league.hybrid_base_weight is not none else 1.0 }}"
                    oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'">
-            <span class="badge" style="background:#272522;min-width:50px;">{{ '%d' % (((league.hybrid_base_weight if league.hybrid_base_weight is not none else 1.0)|float) * 100) }}%</span>
+            <span class="badge" style="background:#1e1d21;min-width:50px;">{{ '%d' % (((league.hybrid_base_weight if league.hybrid_base_weight is not none else 1.0)|float) * 100) }}%</span>
           </div>
           <div class="d-flex gap-3 mb-2">
             <div class="form-check">
@@ -132,7 +132,7 @@
               <label class="form-check-label" for="score_mode_pct">Percentage Split</label>
             </div>
           </div>
-          <div class="form-text" style="color:#56504a;font-size:.75rem;">
+          <div class="form-text" style="color:#63616d;font-size:.75rem;">
             <strong>Flat Points:</strong> Score = Official &times; Weight + Custom Bonus<br>
             <strong>Percentage Split:</strong> Score = Official &times; Weight + Custom &times; (1 &minus; Weight)
           </div>
@@ -218,7 +218,7 @@
             {% endif %}
           {% endfor %}
         </div>
-        <div class="card-footer" style="border-top-color:#373330;">
+        <div class="card-footer" style="border-top-color:#2a292f;">
           <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addRule()" style="font-size:.8rem;">
             <i class="bi bi-plus-lg me-1"></i>Add Rule
           </button>

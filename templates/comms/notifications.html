@@ -21,7 +21,7 @@
     {% if not notifs %}
       <div class="card">
         <div class="card-body text-center py-5">
-          <i class="bi bi-chat-dots" style="font-size:2.5rem;color:#373330;"></i>
+          <i class="bi bi-chat-dots" style="font-size:2.5rem;color:#2a292f;"></i>
           <p class="text-secondary mt-2 mb-0">No notifications yet</p>
         </div>
       </div>
@@ -29,14 +29,14 @@
       <div class="card" style="overflow:hidden;">
         {% for n in notifs %}
           <a href="{{ n.link or '#' }}" class="d-flex align-items-start gap-3 px-3 py-3{% if not n.is_read %} bg-opacity-10{% endif %}"
-             style="border-bottom:1px solid #272522;text-decoration:none;color:{% if n.is_read %}#a39586{% else %}#d7d1cb{% endif %};{% if not n.is_read %}background:rgba(183,122,16,.05);{% endif %}">
+             style="border-bottom:1px solid #1e1d21;text-decoration:none;color:{% if n.is_read %}#a0a0ac{% else %}#cfcfd6{% endif %};{% if not n.is_read %}background:rgba(81,78,95,.05);{% endif %}">
             <i class="bi {% if n.type == 'trade_received' %}bi-arrow-left-right{% elif n.type == 'trade_accepted' %}bi-check-circle{% elif n.type == 'trade_rejected' %}bi-x-circle{% elif n.type == 'trade_vetoed' %}bi-shield-exclamation{% elif n.type == 'player_delisted' %}bi-person-dash{% elif n.type == 'message_received' %}bi-chat-dots{% else %}bi-bell{% endif %}"
-               style="font-size:1.1rem;color:#f5b940;margin-top:2px;"></i>
+               style="font-size:1.1rem;color:#ececf6;margin-top:2px;"></i>
             <div class="flex-grow-1">
               <div style="font-size:.85rem;font-weight:{% if not n.is_read %}600{% else %}400{% endif %};">{{ n.title }}</div>
-              {% if n.body %}<div style="font-size:.75rem;color:#a39586;margin-top:2px;">{{ n.body[:120] }}</div>{% endif %}
+              {% if n.body %}<div style="font-size:.75rem;color:#a0a0ac;margin-top:2px;">{{ n.body[:120] }}</div>{% endif %}
             </div>
-            <span style="font-size:.7rem;color:#56504a;white-space:nowrap;">
+            <span style="font-size:.7rem;color:#63616d;white-space:nowrap;">
               {{ n.created_at.strftime('%d %b %H:%M') }}
             </span>
           </a>

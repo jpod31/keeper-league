@@ -1,0 +1,5 @@
+import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-BwJb0T-f.js";var r=e(t(),1),i=n();function a(e){let t=e.replace(/[^A-Za-z0-9 ]/g,` `).split(/\s+/).filter(Boolean);return t.length===0?`?`:t.length===1?t[0].slice(0,2).toUpperCase():(t[0][0]+t[1][0]).toUpperCase()}function o({team:e,size:t=24}){let[n,o]=(0,r.useState)(!1),s=e?.accent??`#ececf6`;return(0,i.jsx)(`span`,{className:`tc-crest`,style:{width:t,height:t,fontSize:Math.max(10,Math.round(t*.38)),background:`color-mix(in srgb, ${s} 22%, #121215)`,boxShadow:`inset 0 0 0 1px color-mix(in srgb, ${s} 55%, transparent)`,color:s},"aria-hidden":`true`,children:e?.logo&&!n?(0,i.jsx)(`img`,{src:e.logo,alt:``,loading:`lazy`,onError:()=>o(!0)}):a(e?.name??`?`)})}var s=`
+.tc-crest { display: inline-flex; align-items: center; justify-content: center; flex: none;
+  border-radius: 7px; overflow: hidden; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+.tc-crest img { width: 100%; height: 100%; object-fit: cover; }
+`;export{o as n,s as t};

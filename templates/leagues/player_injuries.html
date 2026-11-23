@@ -8,34 +8,34 @@
   .inj-table th {
     padding: .5rem .6rem;
     font-size: .7rem;
-    border-bottom: 2px solid #373330;
+    border-bottom: 2px solid #2a292f;
     position: relative;
   }
   .inj-table th.sortable { cursor: pointer; user-select: none; }
-  .inj-table th.sortable:hover { color: #f5b940; }
+  .inj-table th.sortable:hover { color: #ececf6; }
   .inj-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
-  .inj-table th.sort-active .sort-icon { opacity: 1; color: #f5b940; }
+  .inj-table th.sort-active .sort-icon { opacity: 1; color: #ececf6; }
   .inj-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
   .inj-table tbody tr { transition: background .1s; }
-  .inj-table tbody tr:hover { background: rgba(245,185,64,.04) !important; }
+  .inj-table tbody tr:hover { background: rgba(236,236,246,.04) !important; }
   .sev-badge {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: .65rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap;
   }
-  .sev-test       { background: rgba(245,185,64,.15);  color: #f6c35c; }
-  .sev-short      { background: rgba(219,207,148,.15);    color: #efe7bd; }
-  .sev-medium     { background: rgba(240,118,62,.15);   color: #ffa671; }
+  .sev-test       { background: rgba(236,236,246,.15);  color: #79c0ff; }
+  .sev-short      { background: rgba(63,185,80,.15);    color: #7ee787; }
+  .sev-medium     { background: rgba(240,136,62,.15);   color: #ffb471; }
   .sev-long       { background: rgba(248,81,73,.15);    color: #f85149; }
-  .sev-suspension { background: rgba(227,130,65,.15);   color: #e38241; }
+  .sev-suspension { background: rgba(227,179,65,.15);   color: #e3b341; }
   .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
   .filter-bar .form-control-sm, .filter-bar .form-select-sm {
-    background: #121110; border-color: #373330; font-size: .78rem;
+    background: #0e0d0f; border-color: #2a292f; font-size: .78rem;
   }
   .inj-count {
-    font-size: .75rem; color: #a39586; white-space: nowrap;
+    font-size: .75rem; color: #a0a0ac; white-space: nowrap;
     display: flex; align-items: center; gap: .35rem;
   }
-  .inj-count strong { color: #d7d1cb; }
+  .inj-count strong { color: #cfcfd6; }
 </style>
 
 <div class="page-header">
@@ -43,7 +43,7 @@
   <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
     <div>
       <h2 class="mb-0">Injury List</h2>
-      <span style="font-size:.78rem;color:#a39586;">All currently injured &amp; suspended players</span>
+      <span style="font-size:.78rem;color:#a0a0ac;">All currently injured &amp; suspended players</span>
     </div>
     <div class="inj-count">
       <span id="visible-count"><strong>{{ players|length }}</strong> players</span>
@@ -98,7 +98,7 @@
 
   <div class="card-body p-0" style="max-height:78vh;overflow:auto;">
     <table class="table table-sm mb-0 inj-table">
-      <thead class="sticky-top" style="background:#1c1a18;z-index:2;">
+      <thead class="sticky-top" style="background:#151518;z-index:2;">
         <tr>
           <th class="sortable sort-active" onclick="sortInj('name',this)">Player <i class="bi bi-chevron-expand sort-icon"></i></th>
           <th class="sortable" onclick="sortInj('team',this)">Club <i class="bi bi-chevron-expand sort-icon"></i></th>
@@ -140,12 +140,12 @@
             <td class="text-center">
               <span class="sev-badge sev-{{ p.injury_severity or 'long' }}">{{ (p.injury_severity or 'long')|capitalize }}</span>
             </td>
-            <td style="font-size:.75rem;color:#a39586;">{{ p._return_display or '' }}</td>
+            <td style="font-size:.75rem;color:#a0a0ac;">{{ p._return_display or '' }}</td>
             <td>
               {% if owner_team %}
-                <span style="font-weight:600;color:#d7d1cb;">{{ owner_team }}</span>
+                <span style="font-weight:600;color:#cfcfd6;">{{ owner_team }}</span>
               {% else %}
-                <span style="color:#56504a;">&mdash;</span>
+                <span style="color:#63616d;">&mdash;</span>
               {% endif %}
             </td>
           </tr>
@@ -198,9 +198,9 @@
         </div>
         <div class="pool-card-rank" style="font-size:.65rem;">
           {% if owner_team %}
-            <span style="color:#d7d1cb;font-weight:600;">{{ owner_team }}</span>
+            <span style="color:#cfcfd6;font-weight:600;">{{ owner_team }}</span>
           {% else %}
-            <span style="color:#56504a;">&mdash;</span>
+            <span style="color:#63616d;">&mdash;</span>
           {% endif %}
         </div>
       </a>

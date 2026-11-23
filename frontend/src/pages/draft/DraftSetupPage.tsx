@@ -46,7 +46,7 @@ const DRAFT_SETUP_STYLE = `
 .draft-order-row.drag-over-below { box-shadow:inset 0 -2px 0 var(--kl-accent-blue); }
 .draft-order-grip { color:var(--kl-text-faint); font-size:1.1rem; width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .draft-order-row.draggable:hover .draft-order-grip { color:var(--kl-text-secondary); }
-.pick-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#272522; font-size:.75rem; font-weight:700; border-radius:6px; color:var(--kl-text-primary); }
+.pick-badge { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#1e1d21; font-size:.75rem; font-weight:700; border-radius:6px; color:var(--kl-text-primary); }
 .draft-order-info { flex:1; min-width:0; }
 .draft-order-name { font-weight:600; font-size:.85rem; color:var(--kl-text-heading); }
 .draft-order-owner { font-size:.72rem; color:var(--kl-text-muted); }
@@ -276,7 +276,7 @@ export function DraftSetupPage() {
           <div className="card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <i className="bi bi-sort-numeric-down me-2" style={{ color: '#a39586' }}></i>Draft Order
+                <i className="bi bi-sort-numeric-down me-2" style={{ color: '#a0a0ac' }}></i>Draft Order
               </h5>
               <button type="button" className="btn btn-outline-secondary btn-sm" onClick={randomize} disabled={!canEditOrder}>
                 <i className="bi bi-shuffle me-1"></i>Randomize
@@ -328,7 +328,7 @@ export function DraftSetupPage() {
           <div className="card mb-4">
             <div className="card-header">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <i className="bi bi-gear me-2" style={{ color: '#a39586' }}></i>Configuration
+                <i className="bi bi-gear me-2" style={{ color: '#a0a0ac' }}></i>Configuration
                 <span className="text-secondary" style={{ fontSize: '.7rem', fontWeight: 400 }}> (set at league creation)</span>
               </h5>
             </div>
@@ -390,13 +390,13 @@ export function DraftSetupPage() {
                   </div>
 
                   {session.scheduled_start ? (
-                    <div className="mt-2 p-3" style={{ background: '#121110', border: '1px solid #373330', borderRadius: 8 }}>
+                    <div className="mt-2 p-3" style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8 }}>
                       <div className="d-flex align-items-center gap-2 mb-2">
-                        <i className="bi bi-calendar-event" style={{ color: '#d26822' }}></i>
+                        <i className="bi bi-calendar-event" style={{ color: '#d29922' }}></i>
                         <span style={{ fontSize: '.85rem', fontWeight: 600 }}>Scheduled Start</span>
                       </div>
-                      <div style={{ fontSize: '.9rem', color: '#d7d1cb' }}>{formatDateTime(session.scheduled_start)}</div>
-                      <div className="mt-2" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f5b940' }}>
+                      <div style={{ fontSize: '.9rem', color: '#cfcfd6' }}>{formatDateTime(session.scheduled_start)}</div>
+                      <div className="mt-2" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ececf6' }}>
                         <Countdown target={session.scheduled_start} />
                       </div>
                     </div>
@@ -423,7 +423,7 @@ export function DraftSetupPage() {
                   <div className="d-flex align-items-center gap-3">
                     <span className="status-pill status-active">In Progress</span>
                     {session.draft_round_type === 'supplemental' && (
-                      <span className="badge" style={{ background: 'rgba(185,145,84,.15)', color: '#b99154', fontSize: '.7rem' }}>Supplemental</span>
+                      <span className="badge" style={{ background: 'rgba(45,212,191,.15)', color: '#2dd4bf', fontSize: '.7rem' }}>Supplemental</span>
                     )}
                   </div>
                   <Link to={`/leagues/${leagueId}/draft`} className="btn btn-primary">
@@ -437,7 +437,7 @@ export function DraftSetupPage() {
                   <div className="d-flex align-items-center gap-3">
                     <span className="status-pill status-pending">Paused</span>
                     {session.draft_round_type === 'supplemental' && (
-                      <span className="badge" style={{ background: 'rgba(185,145,84,.15)', color: '#b99154', fontSize: '.7rem' }}>Supplemental</span>
+                      <span className="badge" style={{ background: 'rgba(45,212,191,.15)', color: '#2dd4bf', fontSize: '.7rem' }}>Supplemental</span>
                     )}
                   </div>
                   <Link to={`/leagues/${leagueId}/draft`} className="btn btn-primary">
@@ -453,7 +453,7 @@ export function DraftSetupPage() {
               )}
 
               {can_restart && (
-                <div className="mt-3 pt-3" style={{ borderTop: '1px solid #272522' }}>
+                <div className="mt-3 pt-3" style={{ borderTop: '1px solid #1e1d21' }}>
                   <button type="button" className="btn btn-outline-danger btn-sm" onClick={restartDraft}>
                     <i className="bi bi-arrow-counterclockwise me-1"></i>Restart Draft
                   </button>
@@ -465,20 +465,20 @@ export function DraftSetupPage() {
 
           {/* Supplemental scheduled */}
           {showSuppScheduled && supp_session && (
-            <div className="card mt-4" style={{ borderColor: '#b99154' }}>
-              <div className="card-header" style={{ background: 'rgba(185,145,84,.08)', borderBottom: '1px solid rgba(185,145,84,.2)' }}>
+            <div className="card mt-4" style={{ borderColor: '#2dd4bf' }}>
+              <div className="card-header" style={{ background: 'rgba(45,212,191,.08)', borderBottom: '1px solid rgba(45,212,191,.2)' }}>
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-calendar-event me-2" style={{ color: '#b99154' }}></i>Supplemental Draft Scheduled
+                  <i className="bi bi-calendar-event me-2" style={{ color: '#2dd4bf' }}></i>Supplemental Draft Scheduled
                 </h5>
               </div>
               <div className="card-body">
                 {supp_session.scheduled_start ? (
-                  <div className="p-3 mb-3" style={{ background: '#121110', border: '1px solid #373330', borderRadius: 8 }}>
+                  <div className="p-3 mb-3" style={{ background: '#0e0d0f', border: '1px solid #2a292f', borderRadius: 8 }}>
                     <div className="d-flex align-items-center gap-2 mb-2">
-                      <i className="bi bi-clock-history" style={{ color: '#d26822', fontSize: '1.1rem' }}></i>
-                      <span style={{ fontSize: '.9rem', fontWeight: 600, color: '#d7d1cb' }}>{formatDateTime(supp_session.scheduled_start)}</span>
+                      <i className="bi bi-clock-history" style={{ color: '#d29922', fontSize: '1.1rem' }}></i>
+                      <span style={{ fontSize: '.9rem', fontWeight: 600, color: '#cfcfd6' }}>{formatDateTime(supp_session.scheduled_start)}</span>
                     </div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#b99154' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#2dd4bf' }}>
                       <Countdown target={supp_session.scheduled_start} />
                     </div>
                     <div className="text-secondary mt-1" style={{ fontSize: '.75rem' }}>
@@ -507,7 +507,7 @@ export function DraftSetupPage() {
             <div className="card mt-4">
               <div className="card-header">
                 <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-plus-circle me-2" style={{ color: '#b99154' }}></i>Schedule Supplemental Draft
+                  <i className="bi bi-plus-circle me-2" style={{ color: '#2dd4bf' }}></i>Schedule Supplemental Draft
                 </h5>
               </div>
               <div className="card-body">
@@ -548,8 +548,8 @@ export function DraftSetupPage() {
           <div className="card mt-4">
             <div className="card-header">
               <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-                <i className="bi bi-robot me-2" style={{ color: '#f0763e' }}></i>Mock Draft
-                <span className="badge ms-2" style={{ background: 'rgba(240,118,62,.15)', color: '#f0763e', fontSize: '.6rem', verticalAlign: 'middle' }}>SIMULATION</span>
+                <i className="bi bi-robot me-2" style={{ color: '#f0883e' }}></i>Mock Draft
+                <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.6rem', verticalAlign: 'middle' }}>SIMULATION</span>
               </h5>
             </div>
             <div className="card-body">

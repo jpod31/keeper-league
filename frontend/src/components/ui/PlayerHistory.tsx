@@ -42,13 +42,13 @@ export function stintStyle(e: Stint): { label: string; icon: string; color: stri
     return {
       label: `Pick ${e.pick_number} · ${which}`,
       icon: e.method === 'draft' ? 'bi-trophy' : 'bi-stars',
-      color: e.method === 'draft' ? '#f6c35c' : '#d6b0ff',
+      color: e.method === 'draft' ? '#79c0ff' : '#d2a8ff',
     }
   }
-  if (e.method === 'trade') return { label: `Traded in${when}`, icon: 'bi-arrow-left-right', color: '#ffa671' }
+  if (e.method === 'trade') return { label: `Traded in${when}`, icon: 'bi-arrow-left-right', color: '#ffb471' }
   if (e.method === 'ssp') return { label: `SSP signing${when}`, icon: 'bi-bandaid', color: '#f0b38a' }
-  if (e.method === 'commissioner') return { label: `Commissioner move${when}`, icon: 'bi-shield', color: '#d7d1cb' }
-  return { label: e.method || 'Listed', icon: 'bi-person-plus', color: '#d7d1cb' }
+  if (e.method === 'commissioner') return { label: `Commissioner move${when}`, icon: 'bi-shield', color: '#cfcfd6' }
+  return { label: e.method || 'Listed', icon: 'bi-person-plus', color: '#cfcfd6' }
 }
 
 /** How the stint ended, when it has. */
@@ -64,7 +64,7 @@ export function StintLine({ e, compact = false }: { e: Stint; compact?: boolean 
   const s = stintStyle(e)
   return (
     <div style={{ fontSize: compact ? '.8125rem' : '.8125rem', lineHeight: 1.3, opacity: e.is_active ? 1 : 0.72 }}>
-      <div style={{ color: '#eae7e4', fontWeight: e.is_active ? 700 : 500 }}>{e.team || e.coach || 'Unlisted'}</div>
+      <div style={{ color: '#ececf1', fontWeight: e.is_active ? 700 : 500 }}>{e.team || e.coach || 'Unlisted'}</div>
       <div style={{ color: s.color }}>
         <i className={`bi ${s.icon}`} style={{ marginRight: 4 }}></i>{s.label}
       </div>
@@ -94,7 +94,7 @@ export function StintTimeline({ history }: { history: Stint[] }) {
               <div className="pp-acq-popover-meta" style={{ color: s.color }}>
                 <i className={`bi ${s.icon}`}></i>{s.label}
               </div>
-              {exit && <div className="pp-acq-popover-meta" style={{ color: '#eae7e4' }}>{exit}</div>}
+              {exit && <div className="pp-acq-popover-meta" style={{ color: '#ececf1' }}>{exit}</div>}
             </div>
           </div>
         )
@@ -154,7 +154,7 @@ export function AcquiredHistory({
   if (!fallback) return <span aria-hidden="true">-</span>
   return (
     <>
-      {fallback.coach && <div style={{ color: '#eae7e4' }}>{fallback.coach}</div>}
+      {fallback.coach && <div style={{ color: '#ececf1' }}>{fallback.coach}</div>}
       <div style={{ fontSize: '.8125rem' }}>
         {(fallback.method === 'draft' || fallback.method === 'supplemental') && fallback.pick_number
           ? `Pick ${fallback.pick_number}${fallback.draft_label ? ` · ${fallback.draft_label}` : fallback.draft_year ? ` · ${fallback.draft_year}` : ''}`

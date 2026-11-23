@@ -9,6 +9,8 @@ import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
 import { useDensity } from '../../hooks/useDensity'
 import { DensityToggle } from '../../components/ui/DensityToggle'
 import { AcquiredHistory, type Acquired, type Stint } from '../../components/ui/PlayerHistory'
+import { TeamBadge } from '../../components/ui/TeamBadge'
+import { ratingTier } from '../../lib/clubs'
 
 type AcquiredHistoryEntry = Stint
 
@@ -168,7 +170,7 @@ const POOL_CSS = `
    (smart filters, each with a live count), and what is currently applied.
    ═══════════════════════════════════════════════════════════════════ */
 .pf {
-  --pf-line: rgba(173,155,120,.16);
+  --pf-line: rgba(224,222,234,.16);
   padding: 12px 14px 10px;
   border-bottom: 1px solid var(--pf-line);
   background: linear-gradient(180deg, rgba(255,255,255,.025), transparent);
@@ -183,12 +185,12 @@ const POOL_CSS = `
   border: 1px solid var(--pf-line);
   transition: border-color .15s, background .15s;
 }
-.pf-search:focus-within { border-color: rgba(246,195,91,.55); background: rgba(255,255,255,.07); }
-.pf-search i { color: #837b71; font-size: .82rem; }
-.pf-search input { all: unset; flex: 1; min-width: 0; font-size: .82rem; color: #f1efed; }
-.pf-search input::placeholder { color: #726b64; }
-.pf-search button { all: unset; cursor: pointer; color: #837b71; display: grid; place-items: center; }
-.pf-search button:hover { color: #f1efed; }
+.pf-search:focus-within { border-color: rgba(230,229,238,.55); background: rgba(255,255,255,.07); }
+.pf-search i { color: #8d8a98; font-size: .82rem; }
+.pf-search input { all: unset; flex: 1; min-width: 0; font-size: .82rem; color: #eeedf1; }
+.pf-search input::placeholder { color: #7d7a89; }
+.pf-search button { all: unset; cursor: pointer; color: #8d8a98; display: grid; place-items: center; }
+.pf-search button:hover { color: #eeedf1; }
 
 /* Position — a segmented control, not a dropdown. Four options should
    never cost a click to see. */
@@ -199,14 +201,14 @@ const POOL_CSS = `
 .pf-seg-btn {
   all: unset; cursor: pointer;
   padding: 5px 12px; border-radius: 7px;
-  font-size: .74rem; font-weight: 750; color: #a89a8b;
+  font-size: .74rem; font-weight: 750; color: #adacb5;
   transition: background .14s, color .14s;
 }
-.pf-seg-btn:hover { color: #edeae6; }
+.pf-seg-btn:hover { color: #e8e7ec; }
 .pf-seg-btn.on { background: rgba(255,255,255,.1); color: #fff; }
-.pf-seg-btn.on.pf-seg-DEF { background: rgba(246,191,80,.2); color: #f8cf7c; }
-.pf-seg-btn.on.pf-seg-MID { background: rgba(238,229,184,.2); color: #f7f3de; }
-.pf-seg-btn.on.pf-seg-RUC { background: rgba(255,164,95,.2); color: #ffc393; }
+.pf-seg-btn.on.pf-seg-DEF { background: rgba(107,178,255,.2); color: #9fccff; }
+.pf-seg-btn.on.pf-seg-MID { background: rgba(127,224,166,.2); color: #a5e9c1; }
+.pf-seg-btn.on.pf-seg-RUC { background: rgba(255,180,95,.2); color: #ffce93; }
 .pf-seg-btn.on.pf-seg-FWD { background: rgba(255,125,143,.2); color: #ffa6b3; }
 
 .pf-selects { display: flex; gap: 7px; flex-wrap: wrap; }
@@ -214,11 +216,11 @@ const POOL_CSS = `
   background: rgba(255,255,255,.04);
   border: 1px solid var(--pf-line);
   border-radius: 9px;
-  color: #dad4ce; font-size: .76rem; font-weight: 600;
+  color: #d1d0d8; font-size: .76rem; font-weight: 600;
   padding: 7px 9px; cursor: pointer; max-width: 160px;
 }
 .pf-select:hover { background: rgba(255,255,255,.08); }
-.pf-select:focus { outline: none; border-color: rgba(246,195,91,.5); }
+.pf-select:focus { outline: none; border-color: rgba(230,229,238,.5); }
 .pf-density { margin-left: auto; }
 
 /* Smart filters */
@@ -228,7 +230,7 @@ const POOL_CSS = `
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 11px; border-radius: 999px;
   font-size: .74rem; font-weight: 700;
-  color: #afa396;
+  color: #b7b5be;
   background: rgba(255,255,255,.04);
   border: 1px solid var(--pf-line);
   cursor: pointer;
@@ -236,22 +238,22 @@ const POOL_CSS = `
 }
 .pf-chip i { font-size: .74rem; opacity: .8; }
 .pf-chip-n {
-  font-size: .64rem; font-weight: 800; color: #7b736a;
+  font-size: .64rem; font-weight: 800; color: #858291;
   background: rgba(255,255,255,.06);
   border-radius: 999px; padding: 1px 6px; min-width: 20px; text-align: center;
 }
-.pf-chip:hover:not(:disabled) { background: rgba(255,255,255,.09); color: #efece9; }
+.pf-chip:hover:not(:disabled) { background: rgba(255,255,255,.09); color: #ebeaee; }
 .pf-chip:disabled { opacity: .3; cursor: default; }
 .pf-chip.on { color: #fff; }
 .pf-chip.on .pf-chip-n { background: rgba(0,0,0,.28); color: #fff; }
 .pf-red.on    { background: rgba(248,81,73,.22);  border-color: rgba(248,81,73,.55);  color: #ffb3ae; }
-.pf-green.on  { background: rgba(219,207,148,.2);   border-color: rgba(219,207,148,.55);  color: #f6f2da; }
-.pf-blue.on   { background: rgba(245,185,64,.2);  border-color: rgba(245,185,64,.55); color: #f9d284; }
+.pf-green.on  { background: rgba(63,185,80,.2);   border-color: rgba(63,185,80,.55);  color: #9be8a8; }
+.pf-blue.on   { background: rgba(236,236,246,.2);  border-color: rgba(236,236,246,.55); color: #eceaf2; }
 .pf-purple.on { background: rgba(188,140,255,.2); border-color: rgba(188,140,255,.55);color: #d6b8ff; }
-.pf-orange.on { background: rgba(240,144,80,.22); border-color: rgba(240,144,80,.55); color: #ffbd90; }
-.pf-gold.on   { background: rgba(227,130,65,.22); border-color: rgba(227,130,65,.55); color: #f2b389; }
-.pf-teal.on   { background: rgba(185,145,84,.2);  border-color: rgba(185,145,84,.5);  color: #dcc8aa; }
-.pf-slate.on  { background: rgba(163,149,134,.22);border-color: rgba(163,149,134,.5); color: #e0dcd7; }
+.pf-orange.on { background: rgba(240,160,80,.22); border-color: rgba(240,160,80,.55); color: #ffc890; }
+.pf-gold.on   { background: rgba(227,179,65,.22); border-color: rgba(227,179,65,.55); color: #f2d489; }
+.pf-teal.on   { background: rgba(45,212,191,.2);  border-color: rgba(45,212,191,.5);  color: #8ce8dc; }
+.pf-slate.on  { background: rgba(160,160,172,.22);border-color: rgba(160,160,172,.5); color: #d9d8df; }
 
 /* ── Filters button + panel ──────────────────────────────────────── */
 .pf-more-wrap { position: relative; }
@@ -259,18 +261,18 @@ const POOL_CSS = `
   all: unset;
   display: inline-flex; align-items: center; gap: 7px;
   padding: 7px 13px; border-radius: 10px;
-  font-size: .76rem; font-weight: 700; color: #c4b69b;
+  font-size: .76rem; font-weight: 700; color: #e8e6ef;
   background: rgba(255,255,255,.045);
   border: 1px solid var(--pf-line);
   cursor: pointer;
   transition: background .14s, border-color .14s, color .14s;
 }
 .pf-more:hover, .pf-more.open { background: rgba(255,255,255,.1); color: #fff; }
-.pf-more.open { border-color: rgba(246,195,91,.5); }
-.pf-more.has { border-color: rgba(246,195,91,.45); color: #f0edea; }
+.pf-more.open { border-color: rgba(230,229,238,.5); }
+.pf-more.has { border-color: rgba(230,229,238,.45); color: #ecebef; }
 .pf-more-n {
-  font-size: .64rem; font-weight: 800; color: #131110;
-  background: #f6c053; border-radius: 999px;
+  font-size: .64rem; font-weight: 800; color: #0e0e10;
+  background: #e5e3ed; border-radius: 999px;
   padding: 1px 6px; min-width: 18px; text-align: center;
 }
 .pf-more-chev { font-size: .62rem; opacity: .6; }
@@ -280,8 +282,8 @@ const POOL_CSS = `
   width: 460px; max-width: min(92vw, 460px);
   padding: 14px;
   border-radius: 14px;
-  background: #171614;
-  border: 1px solid rgba(173,155,120,.28);
+  background: #121114;
+  border: 1px solid rgba(224,222,234,.28);
   box-shadow: 0 26px 60px -22px rgba(0,0,0,.95);
   animation: pfPanel .14s cubic-bezier(.2,.8,.2,1);
 }
@@ -289,7 +291,7 @@ const POOL_CSS = `
 .pf-group + .pf-group { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--pf-line); }
 .pf-group-h {
   font-size: .58rem; font-weight: 900; letter-spacing: .16em;
-  text-transform: uppercase; color: #777067; margin-bottom: 8px;
+  text-transform: uppercase; color: #817f8d; margin-bottom: 8px;
 }
 .pf-group-items { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 
@@ -299,7 +301,7 @@ const POOL_CSS = `
   all: unset;
   display: flex; align-items: center; gap: 8px;
   padding: 6px 9px; border-radius: 8px;
-  font-size: .78rem; color: #c2b9ae;
+  font-size: .78rem; color: #b3b1bf;
   cursor: pointer;
   border: 1px solid transparent;
   transition: background .12s, color .12s, border-color .12s;
@@ -308,22 +310,22 @@ const POOL_CSS = `
 .pf-opt:disabled { opacity: .28; cursor: default; }
 .pf-opt-i { font-size: .78rem; width: 15px; text-align: center; }
 .pf-opt-l { flex: 1; min-width: 0; font-weight: 650; }
-.pf-opt-n { font-size: .68rem; font-weight: 700; color: #777067; font-variant-numeric: tabular-nums; }
+.pf-opt-n { font-size: .68rem; font-weight: 700; color: #817f8d; font-variant-numeric: tabular-nums; }
 .pf-opt.on {
-  background: rgba(246,195,91,.14);
-  border-color: rgba(246,195,91,.34);
+  background: rgba(230,229,238,.14);
+  border-color: rgba(230,229,238,.34);
   color: #fff;
 }
-.pf-opt.on .pf-opt-n { color: #f9d284; }
+.pf-opt.on .pf-opt-n { color: #eceaf2; }
 
 .pf-red-i { color: #ff8a80; }
-.pf-green-i { color: #efe7bd; }
-.pf-blue-i { color: #f6c35c; }
+.pf-green-i { color: #7ee787; }
+.pf-blue-i { color: #79c0ff; }
 .pf-purple-i { color: #d2a8ff; }
-.pf-orange-i { color: #ffa56b; }
-.pf-gold-i { color: #e38241; }
-.pf-teal-i { color: #c6a573; }
-.pf-slate-i { color: #b2a699; }
+.pf-orange-i { color: #ffb46b; }
+.pf-gold-i { color: #e3b341; }
+.pf-teal-i { color: #56d4c0; }
+.pf-slate-i { color: #bab8c0; }
 
 .pf-panel-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .pf-panel-selects .pf-select { max-width: none; width: 100%; }
@@ -336,8 +338,8 @@ const POOL_CSS = `
 .pf-apply {
   all: unset; margin-left: auto; cursor: pointer;
   padding: 6px 16px; border-radius: 8px;
-  font-size: .76rem; font-weight: 800; color: #131110;
-  background: linear-gradient(100deg, #f6c053, #f4b434);
+  font-size: .76rem; font-weight: 800; color: #0e0e10;
+  background: linear-gradient(100deg, #e5e3ed, #e1dfeb);
 }
 .pf-apply:hover { filter: brightness(1.08); }
 
@@ -347,23 +349,23 @@ const POOL_CSS = `
   margin-top: 10px; padding-top: 9px;
   border-top: 1px dashed var(--pf-line);
 }
-.pf-count { font-size: .75rem; color: #9a8b7a; }
-.pf-count b { color: #f1efed; font-weight: 800; font-size: .82rem; }
+.pf-count { font-size: .75rem; color: #9d9ba7; }
+.pf-count b { color: #eeedf1; font-weight: 800; font-size: .82rem; }
 .pf-applied { display: flex; flex-wrap: wrap; gap: 5px; }
 .pf-tag {
   all: unset;
   display: inline-flex; align-items: center; gap: 5px;
   padding: 2px 8px; border-radius: 999px;
-  font-size: .68rem; font-weight: 700; color: #e0dcd7;
-  background: rgba(246,195,91,.14);
-  border: 1px solid rgba(246,195,91,.3);
+  font-size: .68rem; font-weight: 700; color: #d9d8df;
+  background: rgba(230,229,238,.14);
+  border: 1px solid rgba(230,229,238,.3);
   cursor: pointer;
 }
 .pf-tag i { font-size: .66rem; opacity: .7; }
 .pf-tag:hover { background: rgba(248,81,73,.18); border-color: rgba(248,81,73,.4); color: #ffb3ae; }
 .pf-clear {
   all: unset; cursor: pointer;
-  font-size: .72rem; font-weight: 700; color: #9a8b7a;
+  font-size: .72rem; font-weight: 700; color: #9d9ba7;
   padding: 5px 11px; border-radius: 7px;
   border: 1px solid var(--pf-line);
   background: rgba(255,255,255,.03);
@@ -385,55 +387,55 @@ const POOL_CSS = `
   .pf-density { margin-left: 0; }
 }
 
-.pool-table th { padding: .5rem .6rem; font-size: .7rem; border-bottom: 2px solid #373330; position: relative; cursor: pointer; user-select: none; }
+.pool-table th { padding: .5rem .6rem; font-size: .7rem; border-bottom: 2px solid #2a292f; position: relative; cursor: pointer; user-select: none; }
 .pool-table th .sort-icon { font-size: .6rem; margin-left: 2px; opacity: .4; }
-.pool-table th.sort-active .sort-icon { opacity: 1; color: #f5b940; }
+.pool-table th.sort-active .sort-icon { opacity: 1; color: #ececf6; }
 .pool-table td { padding: .45rem .6rem; vertical-align: middle; font-size: .8rem; }
 .pool-table tbody tr { transition: background .1s; }
-.pool-table tbody tr:hover { background: rgba(245,185,64,.04) !important; }
+.pool-table tbody tr:hover { background: rgba(236,236,246,.04) !important; }
 .profile-tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: .6rem; font-weight: 700; white-space: nowrap; letter-spacing: .3px; }
-.tag-elite { background: linear-gradient(135deg, rgba(249,192,6,.3), rgba(245,104,10,.25)); color: #f9c006; border: 1px solid rgba(249,192,6,.4); }
-.tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(244,183,60,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
-.tag-premium { background: linear-gradient(135deg, rgba(251,127,60,.2), rgba(245,105,11,.15)); color: #fb7f3c; }
-.tag-rising { background: rgba(165,120,29,.18); color: #a5781d; }
-.tag-breakout { background: rgba(185,122,14,.18); color: #b97a0e; }
-.tag-proven { background: rgba(243,173,31,.15); color: #f3ad1f; }
-.tag-steady { background: rgba(178,167,154,.12); color: #b2a79a; }
-.tag-developing { background: rgba(228,213,139,.1); color: #e4d58b; }
-.tag-project { background: rgba(232,99,10,.12); color: #e8630a; }
+.tag-elite { background: linear-gradient(135deg, rgba(255,215,0,.3), rgba(255,170,0,.25)); color: #ffd700; border: 1px solid rgba(255,215,0,.4); }
+.tag-elite-vet { background: linear-gradient(135deg, rgba(192,132,252,.25), rgba(226,224,235,.2)); color: #c084fc; border: 1px solid rgba(192,132,252,.35); }
+.tag-premium { background: linear-gradient(135deg, rgba(251,146,60,.2), rgba(245,158,11,.15)); color: #fb923c; }
+.tag-rising { background: rgba(16,185,129,.18); color: #10b981; }
+.tag-breakout { background: rgba(81,78,95,.18); color: #514e5f; }
+.tag-proven { background: rgba(222,220,233,.15); color: #dedce9; }
+.tag-steady { background: rgba(186,185,193,.12); color: #bab9c1; }
+.tag-developing { background: rgba(74,222,128,.1); color: #4ade80; }
+.tag-project { background: rgba(234,179,8,.12); color: #eab308; }
 .tag-declining { background: rgba(239,68,68,.15); color: #ef4444; }
-.tag-veteran { background: rgba(122,115,106,.12); color: #b0a496; }
-.tag-fringe { background: rgba(93,87,80,.1); color: #7e766d; }
+.tag-veteran { background: rgba(132,130,144,.12); color: #b7b6be; }
+.tag-fringe { background: rgba(105,103,116,.1); color: #888693; }
 .filter-bar { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-.filter-bar .form-control-sm, .filter-bar .form-select-sm { background: #121110; border-color: #373330; font-size: .78rem; }
-.pool-count { font-size: .75rem; color: #a39586; white-space: nowrap; display: flex; align-items: center; gap: .35rem; }
-.pool-count strong { color: #d7d1cb; }
-.pm-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #22201e; cursor: pointer; background: #121110; }
-.pm-card:active { background: #1c1a18; }
+.filter-bar .form-control-sm, .filter-bar .form-select-sm { background: #0e0d0f; border-color: #2a292f; font-size: .78rem; }
+.pool-count { font-size: .75rem; color: #a0a0ac; white-space: nowrap; display: flex; align-items: center; gap: .35rem; }
+.pool-count strong { color: #cfcfd6; }
+.pm-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #1a191d; cursor: pointer; background: #0e0d0f; }
+.pm-card:active { background: #151518; }
 .pm-taken { opacity: .5; }
 .pm-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; border-radius: 4px; }
 .pm-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .pm-row1 { display: flex; align-items: center; gap: 5px; }
-.pm-name { font-weight: 700; font-size: .84rem; color: #efedea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-name { font-weight: 700; font-size: .84rem; color: #ebebee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm-pos-badge { padding: 1px 5px; font-size: .55rem; }
-.pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #80786f; }
-.pm-row2 b { color: #d7d1cb; font-weight: 700; }
-.pm-sep { width: 1px; height: 9px; background: #272522; flex-shrink: 0; }
+.pm-row2 { display: flex; align-items: center; gap: 5px; font-size: .67rem; color: #8a8895; }
+.pm-row2 b { color: #cfcfd6; font-weight: 700; }
+.pm-sep { width: 1px; height: 9px; background: #1e1d21; flex-shrink: 0; }
 .pm-right { flex-shrink: 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-.pm-sc { font-size: 1.05rem; font-weight: 800; color: #efedea; line-height: 1; }
-.pm-sc-none { color: #56504a; font-size: .85rem; }
+.pm-sc { font-size: 1.05rem; font-weight: 800; color: #ebebee; line-height: 1; }
+.pm-sc-none { color: #63616d; font-size: .85rem; }
 .pm-owner { font-size: .58rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
-.pm-fa { font-size: .58rem; font-weight: 600; color: #dbcf94; }
-.pm-add { background: rgba(219,207,148,.12); border: none; color: #dbcf94; border-radius: 4px; font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px; }
-.pm-l3 { color: #d7d1cb; }
+.pm-fa { font-size: .58rem; font-weight: 600; color: #3fb950; }
+.pm-add { background: rgba(63,185,80,.12); border: none; color: #3fb950; border-radius: 4px; font-size: .58rem; font-weight: 700; cursor: pointer; padding: 2px 8px; }
+.pm-l3 { color: #cfcfd6; }
 .pm-l3 b { font-weight: 700; }
 .pm-l3-delta { font-size: .58rem; font-weight: 700; margin-left: 2px; }
-.pm-l3-delta-up { color: #dbcf94; }
+.pm-l3-delta-up { color: #3fb950; }
 .pm-l3-delta-down { color: #f85149; }
-.pm-l3-delta-flat { color: #56504a; }
-.wishlist-star { cursor: pointer; background: none; border: none; padding: 4px 6px; color: #80786f; font-size: .95rem; line-height: 1; transition: color .15s, transform .15s; }
-.wishlist-star:hover { color: #d26822; }
-.wishlist-star.active { color: #d26822; }
+.pm-l3-delta-flat { color: #63616d; }
+.wishlist-star { cursor: pointer; background: none; border: none; padding: 4px 6px; color: #8a8895; font-size: .95rem; line-height: 1; transition: color .15s, transform .15s; }
+.wishlist-star:hover { color: #d29922; }
+.wishlist-star.active { color: #d29922; }
 .wishlist-star:active { transform: scale(1.2); }
 `
 
@@ -682,10 +684,10 @@ export function PlayerPoolPage() {
       {can_pickup && (
         <div
           className="d-flex align-items-center gap-2 mb-3 px-3 py-2 d-none d-lg-flex"
-          style={{ background: 'rgba(219,207,148,.08)', border: '1px solid rgba(219,207,148,.2)', borderRadius: 8, fontSize: '.82rem' }}
+          style={{ background: 'rgba(63,185,80,.08)', border: '1px solid rgba(63,185,80,.2)', borderRadius: 8, fontSize: '.82rem' }}
         >
-          <i className="bi bi-person-plus-fill" style={{ color: '#dbcf94' }}></i>
-          <span style={{ color: '#d7d1cb' }}>
+          <i className="bi bi-person-plus-fill" style={{ color: '#3fb950' }}></i>
+          <span style={{ color: '#cfcfd6' }}>
             SSP pickups open — <strong>{effective_roster_count}/{league.squad_size}</strong> roster spots filled
             {ltil_count ? ` (${ltil_count} on LTIL)` : ''}. Closes at Round {ssp_cutoff_round}.
           </span>
@@ -696,16 +698,16 @@ export function PlayerPoolPage() {
         <div
           className="d-flex align-items-center gap-2 mb-3 px-3 py-2"
           style={{
-            background: 'rgba(210,104,34,.08)',
-            border: '1px solid rgba(210,104,34,.3)',
+            background: 'rgba(210,153,34,.08)',
+            border: '1px solid rgba(210,153,34,.3)',
             borderRadius: 8,
             fontSize: '.82rem',
           }}
         >
-          <i className="bi bi-info-circle-fill" style={{ color: '#d26822' }}></i>
+          <i className="bi bi-info-circle-fill" style={{ color: '#d29922' }}></i>
           <span style={{ color: '#f0b38a' }}>
             <strong>Free-agent pickups paused.</strong>
-            <span style={{ color: '#d7d1cb', marginLeft: 6, fontWeight: 400 }}>{data.pickup_reason}</span>
+            <span style={{ color: '#cfcfd6', marginLeft: 6, fontWeight: 400 }}>{data.pickup_reason}</span>
           </span>
         </div>
       )}
@@ -876,7 +878,7 @@ export function PlayerPoolPage() {
         {/* Desktop table */}
         <div className="card-body p-0 d-none d-lg-block" style={{ maxHeight: '78vh', overflow: 'auto' }}>
           <table className="table table-sm mb-0 pool-table">
-            <thead className="sticky-top" style={{ background: '#1c1a18', zIndex: 2 }}>
+            <thead className="sticky-top" style={{ background: '#151518', zIndex: 2 }}>
               <tr>
                 <th style={{ width: 18 }}></th>
                 <th className={sortKey === 'name' ? 'sort-active' : ''} onClick={() => toggleSort('name')}>
@@ -909,14 +911,13 @@ export function PlayerPoolPage() {
                   Profile <i className={`bi ${sortIcon('tag')} sort-icon`}></i>
                 </th>
                 <th style={{ width: 196 }}>Acquired</th>
-                <th className="text-center" style={{ width: 110 }}>Status</th>
+                <th className="text-center" style={{ width: 64 }}>Club</th>
                 <th className="text-center" style={{ width: 34 }}></th>
               </tr>
             </thead>
             <tbody>
               {desk.visible.map(p => {
                 const positions = (p.position || 'MID').split('/')
-                const tc = p.owner_team ? team_colours[p.owner_team] : null
                 const l3Base = p.sc_avg || p.l3 || 0
                 const l3Diff = (p.l3 || 0) - l3Base
                 const l3Pct = l3Base ? (l3Diff / l3Base) * 100 : 0
@@ -948,7 +949,7 @@ export function PlayerPoolPage() {
                         {p.is_former && <span className="pl-mark pl-mark-off" title="No longer on an AFL list">OFF AFL LIST</span>}
                         {p.on_block && <i className="bi bi-megaphone-fill pl-ico pl-ico-block" title="On the trade block"></i>}
                         {(p.note_count || 0) > 0 && <i className="bi bi-journal-text pl-ico" title={`${p.note_count} note${p.note_count === 1 ? '' : 's'} of yours`}></i>}
-                        <span style={{ color: '#d7d1cb', fontSize: '.72rem', marginLeft: 'auto' }}>{p.afl_team}</span>
+                        <span style={{ color: '#cfcfd6', fontSize: '.72rem', marginLeft: 'auto' }}>{p.afl_team}</span>
                       </span>
                     </td>
                     <td>
@@ -962,32 +963,32 @@ export function PlayerPoolPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="text-center" style={{ color: '#a39586' }}>{p.age || '-'}</td>
+                    <td className="text-center" style={{ color: '#a0a0ac' }}>{p.age || '-'}</td>
                     <td className="text-end">
-                      {p.sc_avg ? <span style={{ fontWeight: 600 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#56504a' }}>-</span>}
+                      {p.sc_avg ? <span style={{ fontWeight: 600 }}>{p.sc_avg.toFixed(1)}</span> : <span style={{ color: '#63616d' }}>-</span>}
                     </td>
                     <td className="text-center">
                       {p.l3 ? (
                         <>
-                          <span style={{ fontWeight: 600, color: '#d7d1cb' }}>{Math.round(p.l3)}</span>
-                          {l3Pct > 2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#dbcf94', marginLeft: 2 }}>+{Math.round(l3Pct)}%</span>
+                          <span style={{ fontWeight: 600, color: '#cfcfd6' }}>{Math.round(p.l3)}</span>
+                          {l3Pct > 2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#3fb950', marginLeft: 2 }}>+{Math.round(l3Pct)}%</span>
                             : l3Pct < -2 ? <span style={{ fontSize: '.65rem', fontWeight: 700, color: '#f85149', marginLeft: 2 }}>{Math.round(l3Pct)}%</span>
-                            : <span style={{ fontSize: '.65rem', color: '#56504a', marginLeft: 2 }}>-</span>}
+                            : <span style={{ fontSize: '.65rem', color: '#63616d', marginLeft: 2 }}>-</span>}
                         </>
-                      ) : <span style={{ color: '#56504a' }}>-</span>}
+                      ) : <span style={{ color: '#63616d' }}>-</span>}
                     </td>
                     <td className="text-end">
-                      {p.rating ? <span style={{ color: '#d7d1cb', fontWeight: 600 }}>{p.rating}</span> : <span style={{ color: '#56504a' }}>-</span>}
+                      {p.rating ? <span className={`rt ${ratingTier(p.rating)}`}>{p.rating}</span> : <span style={{ color: '#63616d' }}>-</span>}
                     </td>
                     <td className="text-center">
                       {p.rating && p.rating_start ? (
-                        rtgMove > 0 ? <span style={{ color: '#dbcf94', fontWeight: 600, fontSize: '.78rem' }}>+{rtgMove}</span>
+                        rtgMove > 0 ? <span style={{ color: '#3fb950', fontWeight: 600, fontSize: '.78rem' }}>+{rtgMove}</span>
                           : rtgMove < 0 ? <span style={{ color: '#f85149', fontWeight: 600, fontSize: '.78rem' }}>{rtgMove}</span>
-                          : <span style={{ color: '#56504a', fontSize: '.78rem' }}>-</span>
-                      ) : <span style={{ color: '#56504a' }}>-</span>}
+                          : <span style={{ color: '#63616d', fontSize: '.78rem' }}>-</span>
+                      ) : <span style={{ color: '#63616d' }}>-</span>}
                     </td>
                     <td className="text-end">
-                      {p.potential ? <span style={{ color: '#d7d1cb', fontWeight: 600 }}>{p.potential}</span> : <span style={{ color: '#56504a' }}>-</span>}
+                      {p.potential ? <span className={`rt rt-line ${ratingTier(p.potential)}`}>{p.potential}</span> : <span style={{ color: '#63616d' }}>-</span>}
                     </td>
                     <td>
                       {p.profile_tag && p.profile_css && (
@@ -999,12 +1000,7 @@ export function PlayerPoolPage() {
                     </td>
                     <td className="text-center">
                       {p.owner_team ? (
-                        <span
-                          className="pm-owner"
-                          style={{ background: tc?.bg, color: tc?.fg }}
-                        >
-                          {p.owner_team}
-                        </span>
+                        <TeamBadge name={p.owner_team} size={26} showName={false} />
                       ) : can_pickup ? (
                         <button
                           className="pm-add"
@@ -1099,13 +1095,13 @@ export function PlayerPoolPage() {
           )}
 
           {/* Sort + count row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px', borderBottom: '1px solid rgba(55,51,48,.4)' }}>
-            <span style={{ fontSize: '.72rem', color: '#80786f' }}><b style={{ color: '#a39586' }}>{mobileSorted.length}</b> players</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px', borderBottom: '1px solid rgba(42,41,47,.4)' }}>
+            <span style={{ fontSize: '.72rem', color: '#8a8895' }}><b style={{ color: '#a0a0ac' }}>{mobileSorted.length}</b> players</span>
             <select
               className="form-select form-select-sm"
               value={mobSort}
               onChange={e => setMobSort(e.target.value as MobileSortKey)}
-              style={{ background: 'transparent', border: 'none', color: '#f5b940', fontSize: '.72rem', fontWeight: 600, width: 'auto', padding: '2px 24px 2px 4px' }}
+              style={{ background: 'transparent', border: 'none', color: '#ececf6', fontSize: '.72rem', fontWeight: 600, width: 'auto', padding: '2px 24px 2px 4px' }}
             >
               <option value="sc">SC Avg ↓</option>
               <option value="name_asc">Name A–Z</option>
@@ -1204,7 +1200,7 @@ export function PlayerPoolPage() {
             })}
             {mob.hasMore && <div ref={mob.sentinelRef} style={{ height: 1 }} />}
             {mobileSorted.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#56504a' }}>
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#63616d' }}>
                 <i className="bi bi-search" style={{ fontSize: '1.5rem', display: 'block', marginBottom: 8 }}></i>
                 <p style={{ fontSize: '.82rem', margin: 0 }}>No players match your filters</p>
               </div>

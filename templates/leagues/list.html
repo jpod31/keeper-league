@@ -25,7 +25,7 @@
       {% if upcoming %}
       <div class="card mb-3">
         <div class="card-header d-flex align-items-center gap-2">
-          <i class="bi bi-calendar-event" style="color:#f5b940;"></i>
+          <i class="bi bi-calendar-event" style="color:#ececf6;"></i>
           <span class="fw-bold" style="font-size:.85rem;">Upcoming Fixtures</span>
         </div>
         <div class="card-body p-0">
@@ -33,7 +33,7 @@
             {% set f = d.next_fixture %}
             {% set is_home = (f.home_team_id == d.team.id) %}
             {% set opponent = f.away_team if is_home else f.home_team %}
-            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #272522;">
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #1e1d21;">
               <div>
                 <span class="fw-bold" style="font-size:.85rem;">Round {{ f.afl_round }}: </span>
                 <span style="font-size:.85rem;">{{ d.team.name }}</span>
@@ -41,7 +41,7 @@
                 <span style="font-size:.85rem;">{{ opponent.name }}</span>
               </div>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge" style="background:rgba(245,185,64,.12);color:#f5b940;font-size:.7rem;">{{ d.league.name }}</span>
+                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.7rem;">{{ d.league.name }}</span>
                 <a href="{{ url_for('matchups.gameday', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">View</a>
               </div>
             </div>
@@ -60,7 +60,7 @@
       {% if results %}
       <div class="card mb-3">
         <div class="card-header d-flex align-items-center gap-2">
-          <i class="bi bi-trophy" style="color:#dbcf94;"></i>
+          <i class="bi bi-trophy" style="color:#3fb950;"></i>
           <span class="fw-bold" style="font-size:.85rem;">Recent Results</span>
         </div>
         <div class="card-body p-0">
@@ -72,19 +72,19 @@
             {% set opponent = f.away_team if is_home else f.home_team %}
             {% set won = my_score is not none and opp_score is not none and my_score > opp_score %}
             {% set drew = my_score is not none and opp_score is not none and my_score == opp_score %}
-            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #272522;">
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #1e1d21;">
               <div class="d-flex align-items-center gap-2">
                 {% if won %}
-                  <span class="badge" style="background:rgba(219,207,148,.15);color:#dbcf94;font-size:.65rem;">W</span>
+                  <span class="badge" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.65rem;">W</span>
                 {% elif drew %}
-                  <span class="badge" style="background:rgba(163,149,134,.15);color:#a39586;font-size:.65rem;">D</span>
+                  <span class="badge" style="background:rgba(160,160,172,.15);color:#a0a0ac;font-size:.65rem;">D</span>
                 {% else %}
                   <span class="badge" style="background:rgba(248,81,73,.15);color:#f85149;font-size:.65rem;">L</span>
                 {% endif %}
                 <span style="font-size:.85rem;">
                   <span class="fw-bold">R{{ f.afl_round }}:</span>
                   {{ d.team.name }}
-                  <span class="fw-bold" style="color:{{ '#dbcf94' if won else '#f85149' if not drew else '#a39586' }};">
+                  <span class="fw-bold" style="color:{{ '#3fb950' if won else '#f85149' if not drew else '#a0a0ac' }};">
                     {{ '%.0f'|format(my_score) if my_score is not none else '?' }}
                   </span>
                   <span class="text-muted">-</span>
@@ -92,7 +92,7 @@
                   vs {{ opponent.name }}
                 </span>
               </div>
-              <span class="badge" style="background:rgba(245,185,64,.12);color:#f5b940;font-size:.7rem;">{{ d.league.name }}</span>
+              <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.7rem;">{{ d.league.name }}</span>
             </div>
           {% endfor %}
         </div>
@@ -109,17 +109,17 @@
       {% if trade_entries %}
       <div class="card mb-3">
         <div class="card-header d-flex align-items-center gap-2">
-          <i class="bi bi-arrow-left-right" style="color:#d26822;"></i>
+          <i class="bi bi-arrow-left-right" style="color:#d29922;"></i>
           <span class="fw-bold" style="font-size:.85rem;">Active Trades</span>
         </div>
         <div class="card-body p-0">
           {% for d in trade_entries %}
-            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #272522;">
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #1e1d21;">
               <span style="font-size:.85rem;">
                 <span class="fw-bold">{{ d.pending_trades }}</span> pending proposal{{ 's' if d.pending_trades != 1 }}
               </span>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge" style="background:rgba(245,185,64,.12);color:#f5b940;font-size:.7rem;">{{ d.league.name }}</span>
+                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.7rem;">{{ d.league.name }}</span>
                 <a href="{{ url_for('trades.trade_center', league_id=d.league.id) }}" class="btn btn-outline-secondary btn-sm" style="font-size:.7rem;padding:2px 8px;">View</a>
               </div>
             </div>
@@ -143,7 +143,7 @@
         </div>
         <div class="card-body p-0">
           {% for d in draft_entries %}
-            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #272522;">
+            <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #1e1d21;">
               <div>
                 {% if d.draft.status == 'in_progress' %}
                   <span class="status-pill status-active" style="font-size:.65rem;">Live</span>
@@ -157,7 +157,7 @@
                 {% endif %}
               </div>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge" style="background:rgba(245,185,64,.12);color:#f5b940;font-size:.7rem;">{{ d.league.name }}</span>
+                <span class="badge" style="background:rgba(236,236,246,.12);color:#ececf6;font-size:.7rem;">{{ d.league.name }}</span>
                 <a href="{{ url_for('draft_live.draft_room', league_id=d.league.id) }}" class="btn btn-primary btn-sm" style="font-size:.7rem;padding:2px 8px;">Enter</a>
               </div>
             </div>
@@ -170,8 +170,8 @@
       {% if not upcoming and not results and not trade_entries and not draft_entries %}
       <div class="card">
         <div class="card-body text-center py-5">
-          <i class="bi bi-lightning" style="font-size:2rem;color:#56504a;"></i>
-          <p class="mt-2 mb-0" style="color:#a39586;font-size:.9rem;">No recent activity across your leagues. Check back once the season gets going!</p>
+          <i class="bi bi-lightning" style="font-size:2rem;color:#63616d;"></i>
+          <p class="mt-2 mb-0" style="color:#a0a0ac;font-size:.9rem;">No recent activity across your leagues. Check back once the season gets going!</p>
         </div>
       </div>
       {% endif %}
@@ -180,7 +180,7 @@
 
     {# ── My Leagues Sidebar (col-4) ── #}
     <div class="col-lg-4">
-      <h6 class="fw-bold mb-3" style="font-size:.8rem;color:#a39586;text-transform:uppercase;letter-spacing:.5px;">My Leagues</h6>
+      <h6 class="fw-bold mb-3" style="font-size:.8rem;color:#a0a0ac;text-transform:uppercase;letter-spacing:.5px;">My Leagues</h6>
       {% for d in dashboard_data %}
         <a href="{{ url_for('leagues.dashboard', league_id=d.league.id) }}" class="text-decoration-none">
           <div class="card mb-2" style="transition:border-color .15s;cursor:pointer;">
@@ -188,28 +188,28 @@
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="d-flex align-items-center gap-2">
                   <div class="d-inline-flex align-items-center justify-content-center rounded"
-                       style="width:32px;height:32px;background:linear-gradient(135deg,#71602b,#b77a10);font-weight:700;color:#fff;border-radius:8px !important;font-size:.75rem;">
+                       style="width:32px;height:32px;background:linear-gradient(135deg,#238636,#514e5f);font-weight:700;color:#fff;border-radius:8px !important;font-size:.75rem;">
                     {{ d.league.name[0]|upper }}
                   </div>
                   <div>
-                    <div class="fw-bold" style="font-size:.85rem;color:#d7d1cb;">{{ d.league.name }}</div>
-                    <div style="font-size:.7rem;color:#a39586;">{{ d.league.season_year }} &middot; {{ d.league.teams|length }}/{{ d.league.num_teams }} teams</div>
+                    <div class="fw-bold" style="font-size:.85rem;color:#cfcfd6;">{{ d.league.name }}</div>
+                    <div style="font-size:.7rem;color:#a0a0ac;">{{ d.league.season_year }} &middot; {{ d.league.teams|length }}/{{ d.league.num_teams }} teams</div>
                   </div>
                 </div>
                 <span class="status-pill status-{{ d.league.status }}" style="font-size:.6rem;">{{ d.league.status }}</span>
               </div>
               {% if d.team and d.standing %}
-                <div class="d-flex gap-3" style="font-size:.75rem;color:#a39586;">
-                  <span><i class="bi bi-trophy me-1" style="color:#dbcf94;"></i>{{ d.standing.wins }}W-{{ d.standing.losses }}L{{ '-' ~ d.standing.draws ~ 'D' if d.standing.draws else '' }}</span>
+                <div class="d-flex gap-3" style="font-size:.75rem;color:#a0a0ac;">
+                  <span><i class="bi bi-trophy me-1" style="color:#3fb950;"></i>{{ d.standing.wins }}W-{{ d.standing.losses }}L{{ '-' ~ d.standing.draws ~ 'D' if d.standing.draws else '' }}</span>
                   <span>{{ d.standing.ladder_points }} pts</span>
                   {% if d.standing.percentage %}
                     <span>{{ '%.1f'|format(d.standing.percentage) }}%</span>
                   {% endif %}
                 </div>
               {% elif d.team %}
-                <div style="font-size:.75rem;color:#a39586;">{{ d.team.name }}</div>
+                <div style="font-size:.75rem;color:#a0a0ac;">{{ d.team.name }}</div>
               {% else %}
-                <div style="font-size:.75rem;color:#d26822;">No team yet</div>
+                <div style="font-size:.75rem;color:#d29922;">No team yet</div>
               {% endif %}
             </div>
           </div>

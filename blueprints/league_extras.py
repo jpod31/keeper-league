@@ -216,6 +216,7 @@ def register_league_extras(spa_api):
                   for u in User.query.filter(User.id.in_({t.owner_id for t in teams.values()})).all()}
 
         from models.team_ai_summary import get_cached_analytics
+        from models.team_identity import team_card
         rolling = get_cached_analytics(0, league.season_year, "rolling_avgs") or {}
 
         def entry_json(e):
@@ -224,8 +225,7 @@ def register_league_extras(spa_api):
             form = rolling.get(p.name, {}) if isinstance(rolling, dict) else {}
             return {
                 "id": e.id,
-                "team": {"id": t.id, "name": t.name, "logo": t.logo_url,
-                         "coach": owners.get(t.owner_id, "")} if t else None,
+                "team": {**team_card(t), "coach": owners.get(t.owner_id, "")} if t else None,
                 "player": _player_card(p, {"l5": form.get("l5")}),
                 "seeking": [k for k in (e.seeking or "").split(",") if k in _SEEKING_KEYS],
                 "note": e.note or "",

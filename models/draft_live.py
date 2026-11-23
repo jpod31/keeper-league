@@ -103,6 +103,15 @@ def close_delists_for_draft(league_id):
     for period in DelistPeriod.query.filter_by(league_id=league_id, status="open").all():
         period.status = "closed"
         closed += 1
+    # The trade window shuts with it: a deal done mid-draft would move picks
+    # the board has already been built from.
+    from models.database import SeasonConfig
+    league = db.session.get(League, league_id)
+    cfg = SeasonConfig.query.filter_by(
+        league_id=league_id, year=league.season_year).first() if league else None
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if cfg and cfg.off_trade_window_close and cfg.off_trade_window_close > now:
+        cfg.off_trade_window_close = now
     return closed
 
 
@@ -288,6 +297,7 @@ def get_draft_state(session_id):
 
     # Picked player IDs
     picked_ids = {p.player_id for p in picks if p.player_id is not None}
+    from models.team_identity import team_accent
 
     # Timer remaining (imported lazily to avoid circular imports)
     try:
@@ -315,7 +325,14 @@ def get_draft_state(session_id):
         "total_picks": len(picks),
         "picks_made": len([p for p in picks if p.player_id is not None or p.is_pass]),
         "teams": [{"id": t.id, "name": t.name, "owner_id": t.owner_id,
+                    "logo": t.logo_url, "accent": team_accent(t),
                     "draft_order": order_of.get(t.id, t.draft_order)} for t in teams],
+        # Every slot still to come, in order: the board shows who is next.
+        "upcoming": [
+            {"pick_number": p.pick_number, "round": p.draft_round, "team_id": p.team_id,
+             "via_team_name": _via(p), "label": p.label}
+            for p in picks if p.player_id is None and not p.is_pass
+        ][:24],
         "pick_history": [
             {
                 "pick_number": p.pick_number,
@@ -328,6 +345,10 @@ def get_draft_state(session_id):
                 "player_name": p.player.name if p.player else None,
                 "player_position": p.player.position if p.player else None,
                 "player_afl_team": p.player.afl_team if p.player else None,
+                "player_rating": p.player.rating if p.player else None,
+                "player_potential": p.player.potential if p.player else None,
+                "player_age": p.player.age if p.player else None,
+                "player_sc_avg": p.player.sc_avg if p.player else None,
                 "is_auto_pick": p.is_auto_pick,
                 "is_pass": p.is_pass,
             }

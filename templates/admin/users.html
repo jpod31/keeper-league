@@ -6,16 +6,16 @@
   <span class="badge bg-secondary">{{ users|length }}</span>
 </div>
 
-<div class="card" style="background:#1c1a18;border:1px solid #373330;">
-  <div class="card-header" style="background:#121110;border-bottom:1px solid #373330;">
+<div class="card" style="background:#151518;border:1px solid #2a292f;">
+  <div class="card-header" style="background:#0e0d0f;border-bottom:1px solid #2a292f;">
     <input type="text" id="userSearch" class="form-control form-control-sm" placeholder="Search users..."
-           style="max-width:300px;background:#121110;border-color:#373330;color:#d7d1cb;font-size:.8rem;">
+           style="max-width:300px;background:#0e0d0f;border-color:#2a292f;color:#cfcfd6;font-size:.8rem;">
   </div>
   <div class="card-body p-0">
     <div class="table-responsive">
       <table class="table table-sm table-dark mb-0" style="font-size:.8rem;" id="usersTable">
         <thead>
-          <tr style="color:#a39586;">
+          <tr style="color:#a0a0ac;">
             <th>Username</th><th>Display Name</th><th>Email</th><th>Leagues</th><th>Teams</th><th>Joined</th><th>Role</th>
           </tr>
         </thead>
@@ -24,7 +24,7 @@
           <tr>
             <td class="fw-semibold">{{ u.username }}</td>
             <td>{{ u.display_name or '—' }}</td>
-            <td style="color:#a39586;">{{ u.email }}</td>
+            <td style="color:#a0a0ac;">{{ u.email }}</td>
             <td>
               {% for lg in u.leagues %}
                 <span class="badge bg-dark" style="font-size:.65rem;">{{ lg.name }}</span>
@@ -32,12 +32,12 @@
               {% if not u.leagues %}—{% endif %}
             </td>
             <td>{{ u.team_count }}</td>
-            <td style="color:#a39586;">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+            <td style="color:#a0a0ac;">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
             <td>
               {% if u.is_admin %}
                 <span class="badge" style="background:rgba(210,168,255,.15);color:#d2a8ff;">Admin</span>
               {% else %}
-                <span style="color:#a39586;">User</span>
+                <span style="color:#a0a0ac;">User</span>
               {% endif %}
             </td>
           </tr>

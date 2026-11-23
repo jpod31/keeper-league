@@ -69,7 +69,7 @@ export function RoundRecapModal() {
 
         .kl-recap-overlay {
           position: fixed; inset: 0; z-index: 10000;
-          background: rgba(12,11,10,.78);
+          background: rgba(7,7,9,.78);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
           display: flex; align-items: center; justify-content: center;
@@ -79,8 +79,8 @@ export function RoundRecapModal() {
           position: relative;
           max-width: 540px;
           width: 100%;
-          background: #1b1917;
-          border: 1px solid rgba(170,144,91,.22);
+          background: #121215;
+          border: 1px solid rgba(220,218,231,.22);
           border-radius: 16px;
           overflow: hidden;
           box-shadow: 0 24px 80px rgba(0,0,0,.7);
@@ -94,18 +94,18 @@ export function RoundRecapModal() {
           height: 3px;
           z-index: 2;
         }
-        .kl-recap-panel.win::before { background: linear-gradient(90deg, rgba(135,110,59,0), rgba(206,199,161,.9), rgba(135,110,59,0)); }
+        .kl-recap-panel.win::before { background: linear-gradient(90deg, rgba(61,140,99,0), rgba(109,179,138,.9), rgba(61,140,99,0)); }
         .kl-recap-panel.loss::before { background: linear-gradient(90deg, rgba(184,90,74,0), rgba(224,122,108,.9), rgba(184,90,74,0)); }
-        .kl-recap-panel.draw::before { background: linear-gradient(90deg, rgba(194,106,47,0), rgba(240,169,122,.9), rgba(194,106,47,0)); }
+        .kl-recap-panel.draw::before { background: linear-gradient(90deg, rgba(194,147,47,0), rgba(240,210,122,.9), rgba(194,147,47,0)); }
 
         .kl-recap-header {
           position: relative;
           padding: 22px 26px 18px;
-          border-bottom: 1px solid rgba(170,144,91,.1);
+          border-bottom: 1px solid rgba(220,218,231,.1);
         }
         .kl-recap-round-lbl {
           font-size: .58rem;
-          color: #888076;
+          color: #8c8c98;
           text-transform: uppercase;
           letter-spacing: .22em;
           font-weight: 800;
@@ -113,7 +113,7 @@ export function RoundRecapModal() {
         .kl-recap-title {
           font-size: 1.5rem;
           font-weight: 800;
-          color: #fbfaf9;
+          color: #ffffff;
           margin: 4px 0 0;
           letter-spacing: -.015em;
           line-height: 1.15;
@@ -123,7 +123,7 @@ export function RoundRecapModal() {
         .kl-recap-headline {
           padding: 18px 26px 16px;
           text-align: center;
-          border-bottom: 1px solid rgba(170,144,91,.08);
+          border-bottom: 1px solid rgba(220,218,231,.08);
         }
         .kl-recap-outcome {
           display: inline-block;
@@ -134,26 +134,26 @@ export function RoundRecapModal() {
           font-variant-numeric: tabular-nums;
           font-feature-settings: "tnum" 1, "zero" 0;
         }
-        .kl-recap-outcome.win { color: #dcd4ab; text-shadow: 0 0 24px rgba(135,110,59,.45); }
+        .kl-recap-outcome.win { color: #7dc99a; text-shadow: 0 0 24px rgba(61,140,99,.45); }
         .kl-recap-outcome.loss { color: #e07a6c; text-shadow: 0 0 24px rgba(184,90,74,.45); }
-        .kl-recap-outcome.draw { color: #f0a97a; text-shadow: 0 0 24px rgba(194,106,47,.45); }
+        .kl-recap-outcome.draw { color: #f0d27a; text-shadow: 0 0 24px rgba(194,147,47,.45); }
         .kl-recap-score {
           margin-top: 8px;
           font-size: .82rem;
-          color: #b5a99c;
+          color: #b0b0bc;
           font-variant-numeric: tabular-nums;
           font-feature-settings: "tnum" 1, "zero" 0;
         }
-        .kl-recap-score b { color: #eae7e4; font-weight: 700; }
+        .kl-recap-score b { color: #ececf1; font-weight: 700; }
 
         /* MVP hero card */
         .kl-recap-mvp {
           margin: 18px 22px 14px;
           padding: 16px 18px;
           border-radius: 12px;
-          background: linear-gradient(135deg, rgba(194,106,47,.18), rgba(194,106,47,.04));
-          border: 1px solid rgba(194,106,47,.4);
-          box-shadow: 0 0 28px -8px rgba(194,106,47,.35);
+          background: linear-gradient(135deg, rgba(194,147,47,.18), rgba(194,147,47,.04));
+          border: 1px solid rgba(194,147,47,.4);
+          box-shadow: 0 0 28px -8px rgba(194,147,47,.35);
           display: flex;
           align-items: center;
           gap: 14px;
@@ -161,17 +161,17 @@ export function RoundRecapModal() {
         .kl-recap-mvp-icon {
           width: 52px; height: 52px;
           border-radius: 12px;
-          background: rgba(194,106,47,.22);
-          border: 1px solid rgba(240,169,122,.48);
+          background: rgba(194,147,47,.22);
+          border: 1px solid rgba(240,210,122,.48);
           display: flex; align-items: center; justify-content: center;
           font-size: 1.4rem;
-          color: #f0a97a;
+          color: #f0d27a;
           flex-shrink: 0;
         }
         .kl-recap-mvp-body { flex: 1; min-width: 0; }
         .kl-recap-mvp-label {
           font-size: .54rem;
-          color: #c26a2f;
+          color: #c2932f;
           text-transform: uppercase;
           letter-spacing: .18em;
           font-weight: 800;
@@ -179,23 +179,23 @@ export function RoundRecapModal() {
         .kl-recap-mvp-name {
           font-size: 1.1rem;
           font-weight: 800;
-          color: #fbfaf9;
+          color: #ffffff;
           margin-top: 4px;
           letter-spacing: -.005em;
           line-height: 1.15;
         }
         .kl-recap-mvp-sub {
           font-size: .72rem;
-          color: #b5a99c;
+          color: #b0b0bc;
           margin-top: 2px;
         }
         .kl-recap-mvp-cap {
           font-size: .54rem;
           padding: 1px 6px;
           margin-left: 8px;
-          background: rgba(194,106,47,.24);
-          color: #f0a97a;
-          border: 1px solid rgba(194,106,47,.45);
+          background: rgba(194,147,47,.24);
+          color: #f0d27a;
+          border: 1px solid rgba(194,147,47,.45);
           border-radius: 3px;
           font-weight: 800;
           letter-spacing: .08em;
@@ -204,12 +204,12 @@ export function RoundRecapModal() {
         .kl-recap-mvp-score {
           font-size: 2.2rem;
           font-weight: 900;
-          color: #f0a97a;
+          color: #f0d27a;
           font-variant-numeric: tabular-nums;
           font-feature-settings: "tnum" 1, "zero" 0;
           letter-spacing: -.03em;
           line-height: 1;
-          text-shadow: 0 0 20px rgba(194,106,47,.4);
+          text-shadow: 0 0 20px rgba(194,147,47,.4);
           flex-shrink: 0;
         }
 
@@ -226,8 +226,8 @@ export function RoundRecapModal() {
           gap: 12px;
           padding: 9px 12px;
           border-radius: 8px;
-          background: rgba(33,31,28,.5);
-          border: 1px solid rgba(170,144,91,.12);
+          background: rgba(25,24,28,.5);
+          border: 1px solid rgba(220,218,231,.12);
         }
         .kl-recap-row-icon {
           width: 30px; height: 30px;
@@ -237,19 +237,19 @@ export function RoundRecapModal() {
           flex-shrink: 0;
         }
         .kl-recap-row-icon.bust { background: rgba(184,90,74,.14); color: #e07a6c; border: 1px solid rgba(184,90,74,.32); }
-        .kl-recap-row-icon.top { background: rgba(153,114,45,.14); color: #deb565; border: 1px solid rgba(153,114,45,.32); }
-        .kl-recap-row-icon.blowout { background: rgba(174,146,89,.14); color: #c9b284; border: 1px solid rgba(174,146,89,.32); }
+        .kl-recap-row-icon.top { background: rgba(81,78,95,.14); color: #e4e3ed; border: 1px solid rgba(81,78,95,.32); }
+        .kl-recap-row-icon.blowout { background: rgba(221,219,232,.14); color: #e6e4ee; border: 1px solid rgba(221,219,232,.32); }
         .kl-recap-row-body { flex: 1; min-width: 0; }
         .kl-recap-row-label {
           font-size: .54rem;
-          color: #888076;
+          color: #8c8c98;
           text-transform: uppercase;
           letter-spacing: .14em;
           font-weight: 800;
         }
         .kl-recap-row-value {
           font-size: .82rem;
-          color: #eae7e4;
+          color: #ececf1;
           font-weight: 600;
           margin-top: 2px;
           line-height: 1.25;
@@ -257,25 +257,25 @@ export function RoundRecapModal() {
         }
         .kl-recap-row-sub {
           font-size: .66rem;
-          color: #888076;
+          color: #8c8c98;
           margin-top: 1px;
         }
         .kl-recap-row-chip {
           font-size: .82rem;
           font-weight: 800;
-          color: #f7f6f5;
+          color: #f5f5f7;
           font-variant-numeric: tabular-nums;
           font-feature-settings: "tnum" 1, "zero" 0;
           padding: 4px 10px;
           border-radius: 5px;
-          background: rgba(170,144,91,.14);
-          border: 1px solid rgba(170,144,91,.2);
+          background: rgba(220,218,231,.14);
+          border: 1px solid rgba(220,218,231,.2);
           margin-left: 8px;
           flex-shrink: 0;
         }
         .kl-recap-row-chip.bust { color: #e07a6c; background: rgba(184,90,74,.14); border-color: rgba(184,90,74,.3); }
-        .kl-recap-row-chip.top { color: #deb565; background: rgba(153,114,45,.14); border-color: rgba(153,114,45,.3); }
-        .kl-recap-row-chip.blowout { color: #c9b284; background: rgba(174,146,89,.14); border-color: rgba(174,146,89,.3); }
+        .kl-recap-row-chip.top { color: #e4e3ed; background: rgba(81,78,95,.14); border-color: rgba(81,78,95,.3); }
+        .kl-recap-row-chip.blowout { color: #e6e4ee; background: rgba(221,219,232,.14); border-color: rgba(221,219,232,.3); }
 
         /* Footer */
         .kl-recap-footer {
@@ -283,27 +283,27 @@ export function RoundRecapModal() {
           display: flex;
           justify-content: flex-end;
           gap: 10px;
-          border-top: 1px solid rgba(170,144,91,.08);
+          border-top: 1px solid rgba(220,218,231,.08);
         }
         .kl-recap-btn {
           padding: 7px 18px;
           border-radius: 8px;
-          border: 1px solid rgba(170,144,91,.22);
-          background: rgba(33,31,28,.5);
-          color: #c4b79d;
+          border: 1px solid rgba(220,218,231,.22);
+          background: rgba(25,24,28,.5);
+          color: #e8e7f0;
           font-size: .76rem;
           font-weight: 700;
           letter-spacing: .04em;
           cursor: pointer;
           transition: background .15s, color .15s, border-color .15s;
         }
-        .kl-recap-btn:hover { background: rgba(43,41,38,.85); color: #f7f6f5; border-color: rgba(170,144,91,.32); }
+        .kl-recap-btn:hover { background: rgba(33,32,37,.85); color: #f5f5f7; border-color: rgba(220,218,231,.32); }
         .kl-recap-btn.primary {
-          background: rgba(153,114,45,.18);
-          color: #e6c686;
-          border-color: rgba(153,114,45,.45);
+          background: rgba(81,78,95,.18);
+          color: #eae8f0;
+          border-color: rgba(81,78,95,.45);
         }
-        .kl-recap-btn.primary:hover { background: rgba(153,114,45,.3); color: #fff; border-color: rgba(153,114,45,.6); }
+        .kl-recap-btn.primary:hover { background: rgba(81,78,95,.3); color: #fff; border-color: rgba(81,78,95,.6); }
 
         @media (max-width: 600px) {
           .kl-recap-panel { border-radius: 14px; }

@@ -6,11 +6,11 @@
 <style>
   .sevens-hero {
     padding:24px 20px 16px; margin-bottom:20px;
-    background:linear-gradient(135deg, rgba(183,122,16,.08), rgba(188,140,255,.06));
-    border:1px solid #272522; border-radius:12px;
+    background:linear-gradient(135deg, rgba(81,78,95,.08), rgba(188,140,255,.06));
+    border:1px solid #1e1d21; border-radius:12px;
   }
-  .sevens-hero-title { font-size:1.3rem; font-weight:700; color:#efedea; margin:0; }
-  .sevens-hero-sub { font-size:.8rem; color:#a39586; margin-top:4px; }
+  .sevens-hero-title { font-size:1.3rem; font-weight:700; color:#ebebee; margin:0; }
+  .sevens-hero-sub { font-size:.8rem; color:#a0a0ac; margin-top:4px; }
   .sevens-rule-badge {
     display:inline-flex; align-items:center; gap:6px;
     padding:6px 12px; border-radius:8px; font-size:.75rem; font-weight:600;
@@ -21,9 +21,9 @@
     display:flex; gap:16px; margin-top:12px; flex-wrap:wrap;
   }
   .sevens-counter-item {
-    font-size:.75rem; color:#a39586;
+    font-size:.75rem; color:#a0a0ac;
   }
-  .sevens-counter-item strong { color:#efedea; }
+  .sevens-counter-item strong { color:#ebebee; }
 
   .sevens-grid {
     display:grid; grid-template-columns:1fr 1fr; gap:20px;
@@ -32,59 +32,59 @@
   @media (max-width:991px) { .sevens-grid { grid-template-columns:1fr; } }
 
   .sevens-panel {
-    background:#121110; border:1px solid #272522; border-radius:10px; overflow:hidden;
+    background:#0e0d0f; border:1px solid #1e1d21; border-radius:10px; overflow:hidden;
   }
   .sevens-panel-hdr {
-    padding:12px 16px; border-bottom:1px solid #272522;
-    font-size:.8rem; font-weight:600; color:#efedea;
+    padding:12px 16px; border-bottom:1px solid #1e1d21;
+    font-size:.8rem; font-weight:600; color:#ebebee;
     display:flex; justify-content:space-between; align-items:center;
   }
   .sevens-panel-body { padding:0; }
 
   .sevens-player-row {
     display:flex; align-items:center; padding:10px 16px; gap:10px;
-    border-bottom:1px solid #1c1a18; cursor:pointer; transition:background .1s;
+    border-bottom:1px solid #151518; cursor:pointer; transition:background .1s;
   }
   .sevens-player-row:last-child { border-bottom:none; }
-  .sevens-player-row:hover { background:#1c1a18; }
-  .sevens-player-row.selected { background:rgba(183,122,16,.08); }
+  .sevens-player-row:hover { background:#151518; }
+  .sevens-player-row.selected { background:rgba(81,78,95,.08); }
   .sevens-player-row.locked { opacity:.5; cursor:not-allowed; }
 
   .sevens-player-name {
-    flex:1; font-size:.82rem; font-weight:500; color:#d7d1cb;
+    flex:1; font-size:.82rem; font-weight:500; color:#cfcfd6;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .sevens-player-meta {
-    font-size:.7rem; color:#80786f; white-space:nowrap;
+    font-size:.7rem; color:#8a8895; white-space:nowrap;
   }
   .sevens-age-badge {
     font-size:.65rem; font-weight:700; padding:2px 6px; border-radius:4px;
     display:inline-block; min-width:32px; text-align:center;
   }
-  .age-young { background:rgba(219,207,148,.12); color:#dbcf94; }
-  .age-senior { background:rgba(210,104,34,.12); color:#d26822; }
+  .age-young { background:rgba(63,185,80,.12); color:#3fb950; }
+  .age-senior { background:rgba(210,153,34,.12); color:#d29922; }
 
   .sevens-sc {
     font-size:.75rem; font-weight:600; min-width:36px; text-align:right;
   }
 
   .sevens-cap-star {
-    cursor:pointer; font-size:.9rem; color:#373330; transition:color .15s;
+    cursor:pointer; font-size:.9rem; color:#2a292f; transition:color .15s;
   }
-  .sevens-cap-star.active { color:#f9c006; text-shadow:0 0 6px rgba(249,192,6,.4); }
-  .sevens-cap-star:hover { color:#d26822; }
+  .sevens-cap-star.active { color:#ffd700; text-shadow:0 0 6px rgba(255,215,0,.4); }
+  .sevens-cap-star:hover { color:#d29922; }
 
   .sevens-check {
-    width:18px; height:18px; border-radius:4px; border:2px solid #373330;
+    width:18px; height:18px; border-radius:4px; border:2px solid #2a292f;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
     transition:all .15s;
   }
   .sevens-check.checked {
-    background:#b77a10; border-color:#b77a10;
+    background:#514e5f; border-color:#514e5f;
   }
   .sevens-check.checked::after { content:'\2713'; color:#fff; font-size:.7rem; font-weight:700; }
 
-  .sevens-lock-icon { color:#56504a; font-size:.75rem; }
+  .sevens-lock-icon { color:#63616d; font-size:.75rem; }
 
   .sevens-actions {
     display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;
@@ -94,30 +94,30 @@
     border:1px solid; cursor:pointer; transition:all .15s;
   }
   .sevens-btn-primary {
-    background:#b77a10; border-color:#b77a10; color:#fff;
+    background:#514e5f; border-color:#514e5f; color:#fff;
   }
-  .sevens-btn-primary:hover { background:#f3ae23; }
+  .sevens-btn-primary:hover { background:#dfdde9; }
   .sevens-btn-primary:disabled { opacity:.4; cursor:not-allowed; }
   .sevens-btn-secondary {
-    background:transparent; border-color:#373330; color:#a39586;
+    background:transparent; border-color:#2a292f; color:#a0a0ac;
   }
-  .sevens-btn-secondary:hover { border-color:#56504a; color:#d7d1cb; }
+  .sevens-btn-secondary:hover { border-color:#63616d; color:#cfcfd6; }
 
   .sevens-feedback {
     margin-top:10px; padding:8px 14px; border-radius:6px; font-size:.78rem;
     display:none;
   }
   .sevens-feedback.error { display:block; background:rgba(248,81,73,.1); color:#f85149; border:1px solid rgba(248,81,73,.2); }
-  .sevens-feedback.success { display:block; background:rgba(219,207,148,.1); color:#dbcf94; border:1px solid rgba(219,207,148,.2); }
+  .sevens-feedback.success { display:block; background:rgba(63,185,80,.1); color:#3fb950; border:1px solid rgba(63,185,80,.2); }
 
   .sevens-filter-bar {
-    display:flex; gap:8px; padding:8px 16px; border-bottom:1px solid #272522;
+    display:flex; gap:8px; padding:8px 16px; border-bottom:1px solid #1e1d21;
   }
   .sevens-filter-input {
-    flex:1; background:#121110; border:1px solid #373330; border-radius:6px;
-    padding:5px 10px; font-size:.75rem; color:#d7d1cb; outline:none;
+    flex:1; background:#0e0d0f; border:1px solid #2a292f; border-radius:6px;
+    padding:5px 10px; font-size:.75rem; color:#cfcfd6; outline:none;
   }
-  .sevens-filter-input:focus { border-color:#56504a; }
+  .sevens-filter-input:focus { border-color:#63616d; }
 </style>
 
 {# ── Hero Header ── #}
@@ -150,11 +150,11 @@
   {# ── Selected (left) ── #}
   <div class="sevens-panel">
     <div class="sevens-panel-hdr">
-      <span><i class="bi bi-check-circle me-1" style="color:#dbcf94;"></i>Selected 7</span>
-      <span id="selectedCount" style="font-size:.7rem; color:#56504a;">0/7</span>
+      <span><i class="bi bi-check-circle me-1" style="color:#3fb950;"></i>Selected 7</span>
+      <span id="selectedCount" style="font-size:.7rem; color:#63616d;">0/7</span>
     </div>
     <div class="sevens-panel-body" id="selectedList">
-      <div style="padding:30px 16px; text-align:center; color:#56504a; font-size:.8rem;" id="emptySelected">
+      <div style="padding:30px 16px; text-align:center; color:#63616d; font-size:.8rem;" id="emptySelected">
         Click players from the available list to add them
       </div>
     </div>
@@ -164,7 +164,7 @@
   <div class="sevens-panel">
     <div class="sevens-panel-hdr">
       <span><i class="bi bi-people me-1"></i>Available Players</span>
-      <span style="font-size:.7rem; color:#56504a;">{{ players|length }} on roster</span>
+      <span style="font-size:.7rem; color:#63616d;">{{ players|length }} on roster</span>
     </div>
     <div class="sevens-filter-bar">
       <input type="text" class="sevens-filter-input" id="filterInput" placeholder="Search players...">
@@ -187,7 +187,7 @@
         <span class="sevens-player-name">{{ p.name }}</span>
         <span class="sevens-player-meta">{{ p.afl_team or '' }}</span>
         <span class="sevens-player-meta">{{ (p.position or '')[:7] }}</span>
-        <span class="sevens-sc" style="color:{% if (p.sc_avg or 0) >= 80 %}#dbcf94{% elif (p.sc_avg or 0) >= 60 %}#f5b940{% else %}#80786f{% endif %}">{{ '%.0f'|format(p.sc_avg) if p.sc_avg else '—' }}</span>
+        <span class="sevens-sc" style="color:{% if (p.sc_avg or 0) >= 80 %}#3fb950{% elif (p.sc_avg or 0) >= 60 %}#ececf6{% else %}#8a8895{% endif %}">{{ '%.0f'|format(p.sc_avg) if p.sc_avg else '—' }}</span>
         {% if is_locked %}<span class="sevens-lock-icon"><i class="bi bi-lock-fill"></i></span>{% endif %}
         <span class="sevens-cap-star{% if p.id == captain_id %} active{% endif %}" onclick="event.stopPropagation(); setCaptain({{ p.id }})" title="Set as captain">&#9733;</span>
       </div>
@@ -280,8 +280,8 @@
           <span class="sevens-age-badge ${d.isYoung ? 'age-young' : 'age-senior'}">${d.age}</span>
           <span class="sevens-player-name">${name}</span>
           <span class="sevens-player-meta">${team}</span>
-          ${isCap ? '<span style="color:#f9c006;font-size:.7rem;font-weight:700;">CAPTAIN</span>' : ''}
-          <span class="sevens-sc" style="color:#a39586;">${d.scAvg > 0 ? Math.round(d.scAvg) : '—'}</span>
+          ${isCap ? '<span style="color:#ffd700;font-size:.7rem;font-weight:700;">CAPTAIN</span>' : ''}
+          <span class="sevens-sc" style="color:#a0a0ac;">${d.scAvg > 0 ? Math.round(d.scAvg) : '—'}</span>
         `;
         selList.appendChild(div);
       });

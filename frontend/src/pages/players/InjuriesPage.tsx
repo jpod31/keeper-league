@@ -33,10 +33,10 @@ interface InjuriesData {
 
 const SEV_COLOR: Record<string, string> = {
   out: '#f85149',
-  test: '#d26822',
+  test: '#d29922',
   major: '#f85149',
-  minor: '#d26822',
-  tbc: '#a39586',
+  minor: '#d29922',
+  tbc: '#a0a0ac',
 }
 
 const SORT_LABELS = {
@@ -173,7 +173,7 @@ export function InjuriesPage() {
                   <td className="mob-hide"><span className="text-secondary" style={{ fontSize: '.75rem' }}>{p.afl_team}</span></td>
                   <td><span className={`pos-badge pos-${p.position}`}>{p.position}</span></td>
                   <td>
-                    <span className="badge" style={{ background: (SEV_COLOR[p.injury_severity] || '#80786f') + '20', color: SEV_COLOR[p.injury_severity] || '#a39586', fontSize: '.7rem' }}>
+                    <span className="badge" style={{ background: (SEV_COLOR[p.injury_severity] || '#8a8895') + '20', color: SEV_COLOR[p.injury_severity] || '#a0a0ac', fontSize: '.7rem' }}>
                       {p.injury_severity.toUpperCase()}
                     </span>
                   </td>
@@ -195,7 +195,7 @@ export function InjuriesPage() {
                         )}
                       </span>
                     ) : (
-                      <span className="badge" style={{ background: 'rgba(219,207,148,.12)', color: '#dbcf94', fontSize: '.65rem' }}>FREE</span>
+                      <span className="badge" style={{ background: 'rgba(63,185,80,.12)', color: '#3fb950', fontSize: '.65rem' }}>FREE</span>
                     )}
                   </td>
                 </tr>

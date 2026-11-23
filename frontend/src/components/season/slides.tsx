@@ -38,7 +38,7 @@ const ord = (n: number) =>
 
 const intro: SlideDef = {
   key: 'intro', name: 'Intro',
-  theme: ['#f5ba43', '#ff5fa2', '#24221f'],
+  theme: ['#e3e1ec', '#ff5fa2', '#1b1b1f'],
   enabled: () => true,
   render: ({ d }) => (
     <div className="sr-inner" style={{ textAlign: 'center' }}>
@@ -78,7 +78,7 @@ const intro: SlideDef = {
 
 const numbers: SlideDef = {
   key: 'numbers', name: 'By the numbers',
-  theme: ['#f3ac1e', '#f5b638', '#211f1c'],
+  theme: ['#dedce9', '#e1e0eb', '#19181c'],
   enabled: () => true,
   render: ({ d }) => (
     <div className="sr-inner">
@@ -125,7 +125,7 @@ const numbers: SlideDef = {
 
 const ladder: SlideDef = {
   key: 'ladder', name: 'The ladder',
-  theme: ['#f78c44', '#ff773d', '#2c1304'],
+  theme: ['#ffc43c', '#ff8a3d', '#2c1704'],
   enabled: ({ d }) => d.ladder.length > 0,
   render: ({ d, teamId }) => {
     const champ = d.ladder[0]
@@ -174,7 +174,7 @@ const ladder: SlideDef = {
 
 const you: SlideDef = {
   key: 'you', name: 'Your season',
-  theme: ['#e4d58b', '#b97a0e', '#221d0d'],
+  theme: ['#4ade80', '#514e5f', '#052e1c'],
   enabled: ({ d }) => !!d.you,
   render: ({ d }) => {
     const y = d.you!
@@ -230,7 +230,7 @@ const you: SlideDef = {
 
 const arc: SlideDef = {
   key: 'arc', name: 'The climb',
-  theme: ['#b97a0e', '#f5ba43', '#1e1c1a'],
+  theme: ['#514e5f', '#e3e1ec', '#161619'],
   enabled: ({ d }) => d.arc.rounds.length > 1,
   render: ({ d, teamId }) => {
     const mine = d.arc.teams.find(t => t.team_id === teamId)
@@ -286,7 +286,7 @@ const arc: SlideDef = {
 
 const mvp: SlideDef = {
   key: 'mvp', name: 'Your MVP',
-  theme: ['#f9a46c', '#ff8a3d', '#2e1402'],
+  theme: ['#ffd666', '#ff9d3d', '#2e1e02'],
   enabled: ({ d }) => !!d.you && d.you.top_players.length > 0,
   render: ({ d }) => {
     const y = d.you!
@@ -354,7 +354,7 @@ const mvp: SlideDef = {
 
 const ironmen: SlideDef = {
   key: 'ironmen', name: 'In the 23',
-  theme: ['#fb7185', '#f95c16', '#320a12'],
+  theme: ['#fb7185', '#f97316', '#320a12'],
   enabled: ({ d }) => d.ever_present.league.length > 0,
   render: ({ d, teamId }) => {
     const lead = d.ever_present.league[0]
@@ -445,7 +445,7 @@ const ironmen: SlideDef = {
 /* ═══ 8 · The Best 23 ═════════════════════════════════════════════ */
 
 const LINE_COLOUR: Record<string, string> = {
-  DEF: '#f8c552', MID: '#d6b0ff', RUC: '#f1ebdd', FWD: '#ff9484', FLEX: '#f08a4b',
+  DEF: '#6bb2ff', MID: '#7fe0a6', RUC: '#ffb45f', FWD: '#ff7d8f', FLEX: '#c99cff',
 }
 const LINE_NAME: Record<string, string> = {
   DEF: 'Backline', MID: 'Midfield', RUC: 'Ruck', FWD: 'Forwards', FLEX: 'Flex',
@@ -453,7 +453,7 @@ const LINE_NAME: Record<string, string> = {
 
 const best23: SlideDef = {
   key: 'best23', name: 'The Best 23',
-  theme: ['#e4d58b', '#f5721a', '#1a160a'],
+  theme: ['#4ade80', '#facc15', '#04231a'],
   enabled: ({ d }) => d.best_23.lines.some(l => l.players.length > 0),
   render: ({ d }) => (
     <div className="sr-inner">
@@ -624,7 +624,7 @@ const records: SlideDef = {
 
 const h2h: SlideDef = {
   key: 'h2h', name: 'Head to head',
-  theme: ['#f7c767', '#f3ac1e', '#22201d'],
+  theme: ['#e8e6ef', '#dedce9', '#1a191d'],
   enabled: ({ d }) => d.h2h.matrix.length > 1,
   render: ({ d, teamId }) => {
     const mine = d.h2h.matrix.find(r => r.team_id === teamId)
@@ -650,7 +650,7 @@ const h2h: SlideDef = {
                 }}>{c.opp}</div>
                 <div style={{
                   fontSize: '1.6rem', fontWeight: 900, marginTop: 6, letterSpacing: '-.03em',
-                  color: c.w > c.l ? '#f3edcc' : c.w < c.l ? '#ff9aa4' : '#faba8f',
+                  color: c.w > c.l ? '#8fe6b4' : c.w < c.l ? '#ff9aa4' : '#ffd88a',
                 }}>
                   {c.w}–{c.l}{c.d ? `–${c.d}` : ''}
                 </div>
@@ -730,7 +730,7 @@ const h2h: SlideDef = {
 
 const bench: SlideDef = {
   key: 'bench', name: 'The bench',
-  theme: ['#fb7f3c', '#f43f5e', '#2b0f14'],
+  theme: ['#fb923c', '#f43f5e', '#2b0f14'],
   enabled: ({ d }) => d.bench.table.length > 0,
   render: ({ d, teamId }) => {
     const mine = d.bench.table.find(t => t.team_id === teamId)
@@ -796,7 +796,7 @@ const bench: SlideDef = {
 
 const sevens: SlideDef = {
   key: 'sevens', name: 'Reserve 7s',
-  theme: ['#b99154', '#e4d58b', '#171614'],
+  theme: ['#2dd4bf', '#4ade80', '#121114'],
   enabled: ({ d }) => d.sevens.ladder.length > 0,
   render: ({ d, teamId }) => {
     const p = d.sevens.premier
@@ -874,7 +874,7 @@ const sevens: SlideDef = {
 
 const draft: SlideDef = {
   key: 'draft', name: 'Draft report',
-  theme: ['#f67b29', '#f472b6', '#2b1605'],
+  theme: ['#fbbf24', '#f472b6', '#2b1a05'],
   enabled: ({ d }) => d.draft.steals.length > 0,
   render: ({ d, teamId }) => {
     const heist = d.draft.steals[0]
@@ -1006,7 +1006,7 @@ const draft: SlideDef = {
 
 const coaches: SlideDef = {
   key: 'coaches', name: 'The coaches',
-  theme: ['#f6c35d', '#b97a0e', '#22201e'],
+  theme: ['#e6e5ee', '#514e5f', '#1a191d'],
   enabled: ({ d }) => d.coaches.length > 0,
   render: ({ d, teamId }) => {
     const best = [...d.coaches].sort((a, b) => b.efficiency - a.efficiency)[0]
@@ -1057,7 +1057,7 @@ const coaches: SlideDef = {
                     <td>±{c.swing}</td>
                     <td>{c.churn}</td>
                     <td>{c.bench_waste.toLocaleString()}</td>
-                    <td style={{ color: c.team_id === best.team_id ? '#f3edcc' : undefined }}>
+                    <td style={{ color: c.team_id === best.team_id ? '#8fe6b4' : undefined }}>
                       <b>{c.efficiency}%</b>
                     </td>
                     <td>{c.subs_used}</td>
@@ -1098,7 +1098,7 @@ const coaches: SlideDef = {
 
 const awards: SlideDef = {
   key: 'awards', name: 'Awards',
-  theme: ['#f9a46c', '#a855f7', '#2a1304'],
+  theme: ['#ffd666', '#a855f7', '#2a1c04'],
   enabled: ({ d }) => d.awards.length > 0,
   render: ({ d }) => (
     <div className="sr-inner">
@@ -1132,7 +1132,7 @@ const awards: SlideDef = {
 
 const outro: SlideDef = {
   key: 'outro', name: 'Wrap',
-  theme: ['#f5ba43', '#ff5fa2', '#24221f'],
+  theme: ['#e3e1ec', '#ff5fa2', '#1b1b1f'],
   enabled: () => true,
   render: ({ d }) => {
     const champ = d.ladder[0]

@@ -215,7 +215,7 @@ export function TradeDetailPage() {
 
       {status === 'agreed' && (
         <div className="tr-window-banner tr-window-banner-closed" style={{ marginBottom: 16 }}>
-          <div className="tr-window-banner-icon" style={{ background: 'rgba(245,185,64,.15)', color: '#f6c35c' }}>
+          <div className="tr-window-banner-icon" style={{ background: 'rgba(236,236,246,.15)', color: '#79c0ff' }}>
             <i className="bi bi-check-circle-fill"></i>
           </div>
           <div className="tr-window-banner-body">
@@ -231,13 +231,13 @@ export function TradeDetailPage() {
           <div className="tr-deal-title">The deal</div>
           <div className="tr-deal-balance">
             <span><b>{giving.length + giving_picks.length}</b> ↔ <b>{receiving.length + receiving_picks.length}</b></span>
-            <span style={{ color: '#56504a' }}>·</span>
+            <span style={{ color: '#63616d' }}>·</span>
             <span className={rosterDelta > 0 ? 'tr-bal-pos' : rosterDelta < 0 ? 'tr-bal-neg' : ''}>
               {trade.proposer_team?.name?.split(' ')[0]} roster {rosterDelta > 0 ? '+' : ''}{rosterDelta}
             </span>
             {(giving.length > 0 || receiving.length > 0) && (
               <>
-                <span style={{ color: '#56504a' }}>·</span>
+                <span style={{ color: '#63616d' }}>·</span>
                 <span className={scDelta > 0 ? 'tr-bal-pos' : scDelta < 0 ? 'tr-bal-neg' : ''}>
                   SC {scDelta > 0 ? '+' : ''}{Math.round(scDelta)}
                 </span>
@@ -307,7 +307,7 @@ export function TradeDetailPage() {
       {/* Meta + notes */}
       <div className="card mb-4">
         <div className="card-body">
-          <div className="d-flex flex-wrap gap-4" style={{ fontSize: '.8rem', color: '#a39586' }}>
+          <div className="d-flex flex-wrap gap-4" style={{ fontSize: '.8rem', color: '#a0a0ac' }}>
             <span><i className="bi bi-clock me-1"></i>Proposed {trade.proposed_at}</span>
             {trade.review_deadline && status === 'pending' && (
               <span><i className="bi bi-hourglass-split me-1"></i>Deadline {trade.review_deadline}</span>
@@ -323,8 +323,8 @@ export function TradeDetailPage() {
             )}
           </div>
           {trade.notes && (
-            <div className="mt-3 p-3" style={{ background: '#272522', borderRadius: 8, fontSize: '.85rem' }}>
-              <i className="bi bi-chat-quote me-1" style={{ color: '#a39586' }}></i> "{trade.notes}"
+            <div className="mt-3 p-3" style={{ background: '#1e1d21', borderRadius: 8, fontSize: '.85rem' }}>
+              <i className="bi bi-chat-quote me-1" style={{ color: '#a0a0ac' }}></i> "{trade.notes}"
             </div>
           )}
           {trade.veto_reason && (
@@ -379,20 +379,20 @@ export function TradeDetailPage() {
       <div className="card">
         <div className="card-header">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}>
-            <i className="bi bi-chat-dots me-2" style={{ color: '#a39586' }}></i>
+            <i className="bi bi-chat-dots me-2" style={{ color: '#a0a0ac' }}></i>
             Comments {comments.length > 0 && <span className="text-secondary" style={{ fontSize: '.75rem', fontWeight: 500 }}>({comments.length})</span>}
           </h5>
         </div>
         <div className="card-body">
           {comments.length > 0 ? comments.map((c, i) => (
-            <div key={i} className="mb-3 pb-3" style={{ borderBottom: '1px solid #272522' }}>
+            <div key={i} className="mb-3 pb-3" style={{ borderBottom: '1px solid #1e1d21' }}>
               <div className="d-flex align-items-center gap-2 mb-1">
                 <span
                   className="d-inline-flex align-items-center justify-content-center rounded-circle"
-                  style={{ width: 24, height: 24, background: '#272522', fontSize: '.65rem', fontWeight: 600 }}
+                  style={{ width: 24, height: 24, background: '#1e1d21', fontSize: '.65rem', fontWeight: 600 }}
                 >{c.user_initial}</span>
                 <strong style={{ fontSize: '.85rem' }}>{c.user_name}</strong>
-                <small style={{ color: '#56504a' }}>{c.created_at}</small>
+                <small style={{ color: '#63616d' }}>{c.created_at}</small>
               </div>
               <p className="mb-0 ms-4" style={{ fontSize: '.85rem' }}>{c.comment}</p>
             </div>

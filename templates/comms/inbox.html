@@ -27,8 +27,8 @@
           {% for t in all_teams %}
             <a href="{{ url_for('comms.inbox', league_id=league.id) }}?new={{ t.id }}"
                class="d-flex align-items-center gap-2 px-3 py-2"
-               style="border-bottom:1px solid #272522;text-decoration:none;color:#d7d1cb;font-size:.85rem;">
-              <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:#272522;font-size:.7rem;font-weight:600;flex-shrink:0;">
+               style="border-bottom:1px solid #1e1d21;text-decoration:none;color:#cfcfd6;font-size:.85rem;">
+              <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:#1e1d21;font-size:.7rem;font-weight:600;flex-shrink:0;">
                 {{ t.name[0]|upper }}
               </div>
               {{ t.name }}
@@ -67,7 +67,7 @@
     {% if not convo_data %}
       <div class="card">
         <div class="card-body text-center py-5">
-          <i class="bi bi-chat-dots" style="font-size:2.5rem;color:#373330;"></i>
+          <i class="bi bi-chat-dots" style="font-size:2.5rem;color:#2a292f;"></i>
           <p class="text-secondary mt-2 mb-0">No conversations yet. Start one!</p>
         </div>
       </div>
@@ -76,19 +76,19 @@
         {% for item in convo_data %}
           <a href="{{ url_for('comms.conversation', league_id=league.id, convo_id=item.convo.id) }}"
              class="d-flex align-items-center gap-3 px-3 py-3"
-             style="border-bottom:1px solid #272522;text-decoration:none;color:#d7d1cb;{% if item.unread %}background:rgba(183,122,16,.05);{% endif %}">
-            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:#272522;font-size:.8rem;font-weight:600;flex-shrink:0;">
+             style="border-bottom:1px solid #1e1d21;text-decoration:none;color:#cfcfd6;{% if item.unread %}background:rgba(81,78,95,.05);{% endif %}">
+            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:#1e1d21;font-size:.8rem;font-weight:600;flex-shrink:0;">
               {{ item.other_team.name[0]|upper }}
             </div>
             <div class="flex-grow-1 overflow-hidden">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="fw-bold" style="font-size:.85rem;">{{ item.other_team.name }}</span>
                 {% if item.last_msg %}
-                  <span style="font-size:.65rem;color:#56504a;">{{ item.last_msg.created_at.strftime('%d %b %H:%M') }}</span>
+                  <span style="font-size:.65rem;color:#63616d;">{{ item.last_msg.created_at.strftime('%d %b %H:%M') }}</span>
                 {% endif %}
               </div>
               {% if item.last_msg %}
-                <div style="font-size:.78rem;color:#a39586;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                <div style="font-size:.78rem;color:#a0a0ac;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                   {{ item.last_msg.body[:80] }}
                 </div>
               {% endif %}

@@ -233,10 +233,9 @@ def build_slots(league_id, year, plan, total_rounds, offseason):
 def team_cards(league_id):
     """id -> {id, name, logo, accent}: one colour identity per team, the same
     ramp the dashboard, fixture and Season Review use."""
-    from models.season_review import TEAM_PALETTE
+    from models.team_identity import team_card
     return {
-        t.id: {"id": t.id, "name": t.name, "logo": t.logo_url,
-               "accent": TEAM_PALETTE[t.id % len(TEAM_PALETTE)]}
+        t.id: team_card(t)
         for t in FantasyTeam.query.filter_by(league_id=league_id).order_by(FantasyTeam.name).all()
     }
 

@@ -84,20 +84,20 @@ interface FormState {
 }
 
 const STYLE = `
-.settings-section-header { display:flex; justify-content:space-between; align-items:center; padding:.9rem 1.1rem; border-bottom:1px solid #272522; background:#121110; border-radius:12px 12px 0 0; transition:background .15s; }
-.settings-section-header.section-active { background:#1c1a18; }
-.settings-status { display:inline-block; width:8px; height:8px; border-radius:50%; background:#56504a; margin-left:10px; }
-.settings-status.status-on { background:#dbcf94; box-shadow:0 0 0 2px rgba(219,207,148,.2); }
+.settings-section-header { display:flex; justify-content:space-between; align-items:center; padding:.9rem 1.1rem; border-bottom:1px solid #1e1d21; background:#0e0d0f; border-radius:12px 12px 0 0; transition:background .15s; }
+.settings-section-header.section-active { background:#151518; }
+.settings-status { display:inline-block; width:8px; height:8px; border-radius:50%; background:#63616d; margin-left:10px; }
+.settings-status.status-on { background:#3fb950; box-shadow:0 0 0 2px rgba(63,185,80,.2); }
 .settings-expand { max-height:0; overflow:hidden; transition:max-height .3s ease, padding .3s ease; padding:0 1.1rem; }
 .settings-expand.expanded { max-height:1400px; padding:1rem 1.1rem; }
 .settings-toggle { position:relative; display:inline-block; width:38px; height:22px; cursor:pointer; }
 .settings-toggle input { opacity:0; width:0; height:0; }
-.settings-toggle .toggle-track { position:absolute; inset:0; background:#373330; border-radius:11px; transition:background .2s; }
-.settings-toggle .toggle-track::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#d7d1cb; border-radius:50%; transition:transform .2s; }
-.settings-toggle input:checked + .toggle-track { background:#71602b; }
+.settings-toggle .toggle-track { position:absolute; inset:0; background:#2a292f; border-radius:11px; transition:background .2s; }
+.settings-toggle .toggle-track::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#cfcfd6; border-radius:50%; transition:transform .2s; }
+.settings-toggle input:checked + .toggle-track { background:#238636; }
 .settings-toggle input:checked + .toggle-track::before { transform:translateX(16px); background:#fff; }
-.sync-scores-btn { background:#121110; border:1px solid #373330; color:#d7d1cb; border-radius:6px; padding:5px 12px; font-size:.75rem; display:flex; align-items:center; gap:6px; }
-.sync-scores-btn:hover:not(:disabled) { border-color:#f5b940; color:#f5b940; }
+.sync-scores-btn { background:#0e0d0f; border:1px solid #2a292f; color:#cfcfd6; border-radius:6px; padding:5px 12px; font-size:.75rem; display:flex; align-items:center; gap:6px; }
+.sync-scores-btn:hover:not(:disabled) { border-color:#ececf6; color:#ececf6; }
 `
 
 const AFL_SEASON_ROUNDS = 24
@@ -317,7 +317,7 @@ export function SettingsPage() {
               <h2 className="mb-0">
                 League Settings
                 {!is_commissioner && (
-                  <span className="badge ms-2" style={{ background: '#272522', color: '#a39586', fontSize: '.6rem', verticalAlign: 'middle' }}>
+                  <span className="badge ms-2" style={{ background: '#1e1d21', color: '#a0a0ac', fontSize: '.6rem', verticalAlign: 'middle' }}>
                     VIEW ONLY
                   </span>
                 )}
@@ -326,11 +326,11 @@ export function SettingsPage() {
           </div>
 
           {has_active_draft && is_commissioner && (
-            <div className="alert d-flex align-items-center gap-2 mb-3" style={{ background: 'rgba(210,104,34,.1)', border: '1px solid rgba(210,104,34,.2)', borderRadius: 10, fontSize: '.85rem' }}>
-              <i className="bi bi-lock-fill" style={{ color: '#d26822' }}></i>
-              <span style={{ color: '#d7d1cb' }}>
+            <div className="alert d-flex align-items-center gap-2 mb-3" style={{ background: 'rgba(210,153,34,.1)', border: '1px solid rgba(210,153,34,.2)', borderRadius: 10, fontSize: '.85rem' }}>
+              <i className="bi bi-lock-fill" style={{ color: '#d29922' }}></i>
+              <span style={{ color: '#cfcfd6' }}>
                 Some settings are locked while a draft session is active. Delete the draft from{' '}
-                <Link to={`/leagues/${leagueId}/draft/setup`} style={{ color: '#f5b940' }}>Draft Setup</Link> to unlock.
+                <Link to={`/leagues/${leagueId}/draft/setup`} style={{ color: '#ececf6' }}>Draft Setup</Link> to unlock.
               </span>
             </div>
           )}
@@ -344,7 +344,7 @@ export function SettingsPage() {
           <fieldset disabled={disabled}>
             {/* General */}
             <div className="card mb-4">
-              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-sliders me-2" style={{ color: '#a39586' }}></i>General</h5></div>
+              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-sliders me-2" style={{ color: '#a0a0ac' }}></i>General</h5></div>
               <div className="card-body">
                 <div className="row g-3">
                   <div className="col-md-6">
@@ -353,22 +353,22 @@ export function SettingsPage() {
                   </div>
                   <div className="col-md-3">
                     <label className="form-label">
-                      Max Teams {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d26822', fontSize: '.7rem' }} title="Locked — draft is active"></i>}
+                      Max Teams {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.7rem' }} title="Locked — draft is active"></i>}
                     </label>
                     <input type="number" className="form-control" min={2} max={18} value={form.num_teams} onChange={e => setField('num_teams', Number(e.target.value))} disabled={has_active_draft} />
                   </div>
                   <div className="col-md-3">
                     <label className="form-label">
-                      Squad Size {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d26822', fontSize: '.7rem' }}></i>}
+                      Squad Size {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.7rem' }}></i>}
                     </label>
                     <input type="number" className="form-control" min={5} max={60} value={form.squad_size} onChange={e => setField('squad_size', Number(e.target.value))} disabled={has_active_draft} />
                   </div>
                   <div className="col-md-4">
                     <label className="form-label">Positions Allocated</label>
-                    <div className="form-control" style={{ background: '#272522', fontWeight: 600, fontSize: '.85rem', color: posOk ? '#dbcf94' : '#f85149' }}>
+                    <div className="form-control" style={{ background: '#1e1d21', fontWeight: 600, fontSize: '.85rem', color: posOk ? '#3fb950' : '#f85149' }}>
                       {totals.onField} field + {totals.flex} flex = {totals.total} / {form.squad_size}
                     </div>
-                    <div className="form-text" style={{ color: '#56504a', fontSize: '.7rem' }}>On-field + flex must fit within squad size</div>
+                    <div className="form-text" style={{ color: '#63616d', fontSize: '.7rem' }}>On-field + flex must fit within squad size</div>
                     {!posOk && (
                       <div style={{ marginTop: 6, padding: '6px 10px', background: 'rgba(248,81,73,.12)', border: '1px solid rgba(248,81,73,.4)', borderRadius: 6, color: '#f85149', fontSize: '.75rem', fontWeight: 600 }}>
                         Total positions ({totals.total}) exceed squad size ({form.squad_size}). Reduce positions or increase squad size.
@@ -377,7 +377,7 @@ export function SettingsPage() {
                   </div>
                   <div className="col-md-4">
                     <label className="form-label">
-                      Draft Type {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d26822', fontSize: '.7rem' }}></i>}
+                      Draft Type {has_active_draft && <i className="bi bi-lock-fill" style={{ color: '#d29922', fontSize: '.7rem' }}></i>}
                     </label>
                     <select className="form-select" value={form.draft_type} onChange={e => setField('draft_type', e.target.value)} disabled={has_active_draft}>
                       <option value="snake">Snake</option>
@@ -391,7 +391,7 @@ export function SettingsPage() {
                   <div className="col-md-6">
                     <label className="form-label">Trade Window</label>
                     <div className="mt-1">
-                      <span className="badge" style={{ background: league.trade_window_open ? '#71602b' : '#56504a' }}>
+                      <span className="badge" style={{ background: league.trade_window_open ? '#238636' : '#63616d' }}>
                         {league.trade_window_open ? 'Open' : 'Closed'}
                       </span>
                       <span className="text-secondary" style={{ fontSize: '.7rem', display: 'block', marginTop: 4 }}>
@@ -409,11 +409,11 @@ export function SettingsPage() {
 
             {/* On-Field Formation */}
             <div className="card mb-4">
-              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-diagram-3 me-2" style={{ color: '#a39586' }}></i>On-Field Formation</h5></div>
+              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-diagram-3 me-2" style={{ color: '#a0a0ac' }}></i>On-Field Formation</h5></div>
               <div className="card-body">
                 <div className="row g-2 mb-2">
                   <div className="col-3">
-                    <label className="form-label" style={{ fontSize: '.75rem', color: '#f5b940' }}>DEF</label>
+                    <label className="form-label" style={{ fontSize: '.75rem', color: '#ececf6' }}>DEF</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={10} value={form.def_count} onChange={e => setField('def_count', Number(e.target.value))} />
                   </div>
                   <div className="col-3">
@@ -421,11 +421,11 @@ export function SettingsPage() {
                     <input type="number" className="form-control form-control-sm" min={1} max={12} value={form.mid_count} onChange={e => setField('mid_count', Number(e.target.value))} />
                   </div>
                   <div className="col-3">
-                    <label className="form-label" style={{ fontSize: '.75rem', color: '#f0763e' }}>FWD</label>
+                    <label className="form-label" style={{ fontSize: '.75rem', color: '#f0883e' }}>FWD</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={10} value={form.fwd_count} onChange={e => setField('fwd_count', Number(e.target.value))} />
                   </div>
                   <div className="col-3">
-                    <label className="form-label" style={{ fontSize: '.75rem', color: '#dbcf94' }}>RUC</label>
+                    <label className="form-label" style={{ fontSize: '.75rem', color: '#3fb950' }}>RUC</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={3} value={form.ruc_count} onChange={e => setField('ruc_count', Number(e.target.value))} />
                   </div>
                 </div>
@@ -434,17 +434,17 @@ export function SettingsPage() {
 
             <div className="row g-2 mb-4">
               <div className="col-4">
-                <label className="form-label" style={{ fontSize: '.75rem', color: '#d26822' }}>
+                <label className="form-label" style={{ fontSize: '.75rem', color: '#d29922' }}>
                   <i className="bi bi-lightning-charge me-1"></i>FLEX Slots
                 </label>
                 <input type="number" className="form-control form-control-sm" min={0} max={10} value={form.flex_count} onChange={e => setField('flex_count', Number(e.target.value))} />
-                <div className="form-text" style={{ color: '#56504a', fontSize: '.65rem' }}>Sidebar scoring slots — any position eligible.</div>
+                <div className="form-text" style={{ color: '#63616d', fontSize: '.65rem' }}>Sidebar scoring slots — any position eligible.</div>
               </div>
             </div>
 
             {/* Fixtures */}
             <div className="card mb-4">
-              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-calendar-week me-2" style={{ color: '#a39586' }}></i>Fixtures</h5></div>
+              <div className="card-header"><h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-calendar-week me-2" style={{ color: '#a0a0ac' }}></i>Fixtures</h5></div>
               <div className="card-body">
                 <div className="row g-3 align-items-end">
                   <div className="col-md-4">
@@ -466,7 +466,7 @@ export function SettingsPage() {
                     </button>
                   </div>
                 </div>
-                <div className="mt-2" style={{ fontSize: '.75rem', fontWeight: 600, color: fixtureOk ? '#dbcf94' : '#f85149' }}>
+                <div className="mt-2" style={{ fontSize: '.75rem', fontWeight: 600, color: fixtureOk ? '#3fb950' : '#f85149' }}>
                   {form.num_fixture_rounds} regular + {FINALS_WEEKS[form.finals_teams] ?? 0} finals weeks = {fixtureTotal} / {AFL_SEASON_ROUNDS} AFL rounds
                 </div>
                 {!fixtureOk && (
@@ -475,22 +475,22 @@ export function SettingsPage() {
                   </div>
                 )}
                 {genStatus && (
-                  <div className="mt-2" style={{ fontSize: '.75rem', color: genStatus.kind === 'success' ? '#dbcf94' : '#f85149' }}>
+                  <div className="mt-2" style={{ fontSize: '.75rem', color: genStatus.kind === 'success' ? '#3fb950' : '#f85149' }}>
                     {genStatus.text}
                   </div>
                 )}
-                <div className="form-text mt-1" style={{ color: '#56504a', fontSize: '.7rem' }}>
+                <div className="form-text mt-1" style={{ color: '#63616d', fontSize: '.7rem' }}>
                   AFL season has 24 rounds. Regular season + finals weeks must not exceed this.
                 </div>
                 {is_commissioner && (
                   <>
-                    <hr style={{ borderColor: '#272522', margin: '12px 0' }} />
+                    <hr style={{ borderColor: '#1e1d21', margin: '12px 0' }} />
                     <div className="d-flex align-items-center gap-3">
                       <button type="button" className="btn btn-outline-info btn-sm" onClick={generatePreseason}>
                         <i className="bi bi-trophy me-1"></i>{data.has_preseason ? 'Regenerate' : 'Generate'} Pre-Season Match
                       </button>
                       {data.has_preseason && (
-                        <span className="badge" style={{ background: 'rgba(243,174,35,.15)', color: '#f5b940', fontSize: '.7rem' }}>Pre-season fixtures exist</span>
+                        <span className="badge" style={{ background: 'rgba(223,221,233,.15)', color: '#ececf6', fontSize: '.7rem' }}>Pre-season fixtures exist</span>
                       )}
                     </div>
                   </>
@@ -501,17 +501,17 @@ export function SettingsPage() {
             {/* Scoring System link */}
             <div className="card mb-4">
               <div className="card-header d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-calculator me-2" style={{ color: '#d26822' }}></i>Scoring System</h5>
+                <h5 className="mb-0 fw-bold" style={{ fontSize: '.95rem' }}><i className="bi bi-calculator me-2" style={{ color: '#d29922' }}></i>Scoring System</h5>
                 <Link to={`/leagues/${leagueId}/scoring`} className="btn btn-outline-secondary btn-sm">
                   <i className="bi bi-pencil me-1"></i>Configure Scoring
                 </Link>
               </div>
               <div className="card-body py-3">
                 <div className="d-flex align-items-center gap-3">
-                  <span className="badge" style={{ background: 'rgba(210,104,34,.15)', color: '#d26822', fontSize: '.75rem', padding: '4px 10px' }}>
+                  <span className="badge" style={{ background: 'rgba(210,153,34,.15)', color: '#d29922', fontSize: '.75rem', padding: '4px 10px' }}>
                     {(league.scoring_type || 'supercoach').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                   </span>
-                  <span style={{ fontSize: '.75rem', color: '#a39586' }}>Scoring type, custom stat weights, and hybrid configuration</span>
+                  <span style={{ fontSize: '.75rem', color: '#a0a0ac' }}>Scoring type, custom stat weights, and hybrid configuration</span>
                 </div>
               </div>
             </div>
@@ -520,7 +520,7 @@ export function SettingsPage() {
             <div className="card mb-4">
               <div className={`settings-section-header${expanded.mid ? ' section-active' : ''}`}>
                 <h5 className="mb-0 fw-bold d-flex align-items-center" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-arrow-repeat me-2" style={{ color: '#b99154' }}></i>Mid-Season
+                  <i className="bi bi-arrow-repeat me-2" style={{ color: '#2dd4bf' }}></i>Mid-Season
                   <span className={`settings-status${expanded.mid ? ' status-on' : ''}`}></span>
                 </h5>
                 <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: '.7rem' }} onClick={() => setExpanded(e => ({ ...e, mid: !e.mid }))}>
@@ -528,9 +528,9 @@ export function SettingsPage() {
                 </button>
               </div>
               <div className={`settings-expand${expanded.mid ? ' expanded' : ''}`}>
-                <div className="d-flex align-items-center justify-content-between mb-2 pb-2" style={{ borderBottom: '1px solid #272522' }}>
+                <div className="d-flex align-items-center justify-content-between mb-2 pb-2" style={{ borderBottom: '1px solid #1e1d21' }}>
                   <div className="d-flex align-items-center gap-2">
-                    <i className="bi bi-arrow-repeat" style={{ color: '#b99154' }}></i>
+                    <i className="bi bi-arrow-repeat" style={{ color: '#2dd4bf' }}></i>
                     <span className="fw-bold" style={{ fontSize: '.85rem' }}>Enable Mid-Season</span>
                   </div>
                   <label className="settings-toggle mb-0">
@@ -539,9 +539,9 @@ export function SettingsPage() {
                   </label>
                 </div>
 
-                <div className="mb-3 pb-2" style={{ borderBottom: '1px solid #272522' }}>
+                <div className="mb-3 pb-2" style={{ borderBottom: '1px solid #1e1d21' }}>
                   <div className="d-flex align-items-center gap-2 mb-2">
-                    <i className="bi bi-arrow-left-right" style={{ color: '#d26822' }}></i>
+                    <i className="bi bi-arrow-left-right" style={{ color: '#d29922' }}></i>
                     <span className="fw-bold" style={{ fontSize: '.85rem' }}>Trading</span>
                   </div>
                   <div className="d-flex flex-column gap-2" style={{ paddingLeft: 4 }}>
@@ -556,8 +556,8 @@ export function SettingsPage() {
                           onChange={() => setField('mid_season_trade_mode', opt.value)}
                           style={{ marginTop: 3 }} />
                         <div>
-                          <span style={{ fontSize: '.8rem', fontWeight: 600, color: '#d7d1cb' }}>{opt.label}</span>
-                          <div style={{ fontSize: '.68rem', color: '#80786f' }}>{opt.help}</div>
+                          <span style={{ fontSize: '.8rem', fontWeight: 600, color: '#cfcfd6' }}>{opt.label}</span>
+                          <div style={{ fontSize: '.68rem', color: '#8a8895' }}>{opt.help}</div>
                         </div>
                       </label>
                     ))}
@@ -580,7 +580,7 @@ export function SettingsPage() {
                   </div>
                 </div>
 
-                <hr className="my-3" style={{ borderColor: '#272522' }} />
+                <hr className="my-3" style={{ borderColor: '#1e1d21' }} />
                 <div className="d-flex align-items-center gap-2 mb-2">
                   <i className="bi bi-x-circle" style={{ color: '#f85149' }}></i>
                   <span className="fw-bold" style={{ fontSize: '.85rem' }}>Mid-Season Delist</span>
@@ -595,7 +595,7 @@ export function SettingsPage() {
                     <input type="number" className="form-control form-control-sm" min={0} max={10} value={form.mid_season_delist_required} onChange={e => setField('mid_season_delist_required', Number(e.target.value))} />
                   </div>
                 </div>
-                <div className="mt-2" style={{ fontSize: '.7rem', color: '#80786f' }}>
+                <div className="mt-2" style={{ fontSize: '.7rem', color: '#8a8895' }}>
                   <i className="bi bi-info-circle me-1"></i>{tradeModeHelp}
                 </div>
               </div>
@@ -605,7 +605,7 @@ export function SettingsPage() {
             <div className="card mb-4">
               <div className={`settings-section-header${form.ssp_enabled ? ' section-active' : ''}`}>
                 <h5 className="mb-0 fw-bold d-flex align-items-center" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-bandaid me-2" style={{ color: '#f5b940' }}></i>SSP (Supplemental Selection Period)
+                  <i className="bi bi-bandaid me-2" style={{ color: '#ececf6' }}></i>SSP (Supplemental Selection Period)
                   <span className={`settings-status${form.ssp_enabled ? ' status-on' : ''}`}></span>
                 </h5>
                 <label className="settings-toggle mb-0">
@@ -633,7 +633,7 @@ export function SettingsPage() {
             <div className="card mb-4">
               <div className="settings-section-header section-active">
                 <h5 className="mb-0 fw-bold d-flex align-items-center" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-calendar-x me-2" style={{ color: '#f0763e' }}></i>Off-Season
+                  <i className="bi bi-calendar-x me-2" style={{ color: '#f0883e' }}></i>Off-Season
                 </h5>
                 <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: '.7rem' }} onClick={() => setExpanded(e => ({ ...e, off: !e.off }))}>
                   <i className={`bi bi-chevron-${expanded.off ? 'up' : 'down'}`}></i>
@@ -656,10 +656,10 @@ export function SettingsPage() {
                   <div className="col-md-6">
                     <label className="form-label" style={{ fontSize: '.75rem' }}>Supplemental Draft Date</label>
                     <input type="date" className="form-control form-control-sm" value={form.supplemental_draft_date} onChange={e => setField('supplemental_draft_date', e.target.value)} />
-                    <div className="form-text" style={{ fontSize: '.65rem', color: '#80786f' }}>After AFL draft ~Nov 30</div>
+                    <div className="form-text" style={{ fontSize: '.65rem', color: '#8a8895' }}>After AFL draft ~Nov 30</div>
                   </div>
                 </div>
-                <div className="mt-2" style={{ fontSize: '.7rem', color: '#80786f' }}>
+                <div className="mt-2" style={{ fontSize: '.7rem', color: '#8a8895' }}>
                   <i className="bi bi-info-circle me-1"></i>Delist period and trade window open in parallel when the season transitions to off-season.
                 </div>
               </div>
@@ -669,7 +669,7 @@ export function SettingsPage() {
             <div className="card mb-4">
               <div className={`settings-section-header${form.live_scoring_enabled ? ' section-active' : ''}`}>
                 <h5 className="mb-0 fw-bold d-flex align-items-center" style={{ fontSize: '.95rem' }}>
-                  <i className="bi bi-broadcast me-2" style={{ color: '#71602b' }}></i>Live Scoring
+                  <i className="bi bi-broadcast me-2" style={{ color: '#238636' }}></i>Live Scoring
                   <span className={`settings-status${form.live_scoring_enabled ? ' status-on' : ''}`}></span>
                 </h5>
                 <label className="settings-toggle mb-0">
@@ -689,16 +689,16 @@ export function SettingsPage() {
                   </div>
                   <div className="col-md-6">
                     <label className="form-label" style={{ fontSize: '.75rem' }}>Score Updates</label>
-                    <div style={{ fontSize: '.75rem', color: '#a39586', marginTop: 4 }}>
+                    <div style={{ fontSize: '.75rem', color: '#a0a0ac', marginTop: 4 }}>
                       <i className="bi bi-clock me-1"></i>Scores sync automatically Thu-Sun at 11pm and Sat 5pm AEST.
                     </div>
                   </div>
                 </div>
-                <hr className="my-3" style={{ borderColor: '#272522' }} />
+                <hr className="my-3" style={{ borderColor: '#1e1d21' }} />
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
                     <span className="fw-bold" style={{ fontSize: '.85rem' }}>Captain Scoring</span>
-                    <div style={{ fontSize: '.7rem', color: '#80786f' }}>Double captain's points (or VC if captain DNP)</div>
+                    <div style={{ fontSize: '.7rem', color: '#8a8895' }}>Double captain's points (or VC if captain DNP)</div>
                   </div>
                   <label className="settings-toggle mb-0">
                     <input type="checkbox" checked={form.captain_scoring_enabled} onChange={e => setField('captain_scoring_enabled', e.target.checked)} />
@@ -708,16 +708,16 @@ export function SettingsPage() {
                 <div className="d-flex align-items-center justify-content-between mt-3">
                   <div>
                     <span>7s Captain Scoring</span>
-                    <div style={{ fontSize: '.7rem', color: '#80786f' }}>Double 7s captain's score in reserve 7s comp</div>
+                    <div style={{ fontSize: '.7rem', color: '#8a8895' }}>Double 7s captain's score in reserve 7s comp</div>
                   </div>
                   <label className="settings-toggle mb-0">
                     <input type="checkbox" checked={form.sevens_captain_enabled} onChange={e => setField('sevens_captain_enabled', e.target.checked)} />
                     <span className="toggle-track"></span>
                   </label>
                 </div>
-                <hr className="my-3" style={{ borderColor: '#272522' }} />
+                <hr className="my-3" style={{ borderColor: '#1e1d21' }} />
                 <div className="d-flex align-items-center justify-content-between">
-                  <span style={{ fontSize: '.75rem', color: '#56504a' }}>Sync AFL game schedule (bounce times + results) from Squiggle</span>
+                  <span style={{ fontSize: '.75rem', color: '#63616d' }}>Sync AFL game schedule (bounce times + results) from Squiggle</span>
                   <button type="button" className="sync-scores-btn" disabled={!is_commissioner} onClick={syncSchedule}>
                     <i className="bi bi-cloud-download"></i>Sync Schedule
                   </button>

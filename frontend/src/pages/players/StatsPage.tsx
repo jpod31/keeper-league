@@ -47,8 +47,8 @@ const STYLE = `
    not as a label+value tile. Override the new global stat-card rules
    (text-align: center, padding, ::before stripe) to keep tables flush. */
 .stat-card {
-  background: rgba(26,24,22,.7);
-  border: 1px solid rgba(170,144,91,.18);
+  background: rgba(19,19,22,.7);
+  border: 1px solid rgba(220,218,231,.18);
   border-radius: 10px;
   text-align: initial;
   padding: 0;
@@ -56,33 +56,33 @@ const STYLE = `
 }
 .stat-card::before { display: none !important; }
 .stat-card:hover { transform: none; }
-.stat-card .card-header { border-bottom: 1px solid rgba(170,144,91,.12); padding: 10px 14px; background: rgba(33,31,28,.55); }
-.stat-card .card-header h6 { margin: 0; font-size: .85rem; font-weight: 700; color: #f7f6f5; display: flex; align-items: center; gap: 6px; }
-.stat-table th { padding: 8px 10px; font-size: .58rem; color: #888076; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; border-bottom: 1px solid rgba(170,144,91,.18); }
-.stat-table td { padding: 7px 10px; font-size: .8rem; vertical-align: middle; color: #eae7e4; border-bottom: 1px solid rgba(170,144,91,.06); }
-.stat-table tbody tr:hover { background: rgba(153,114,45,.05); }
+.stat-card .card-header { border-bottom: 1px solid rgba(220,218,231,.12); padding: 10px 14px; background: rgba(25,24,28,.55); }
+.stat-card .card-header h6 { margin: 0; font-size: .85rem; font-weight: 700; color: #f5f5f7; display: flex; align-items: center; gap: 6px; }
+.stat-table th { padding: 8px 10px; font-size: .58rem; color: #8c8c98; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; border-bottom: 1px solid rgba(220,218,231,.18); }
+.stat-table td { padding: 7px 10px; font-size: .8rem; vertical-align: middle; color: #ececf1; border-bottom: 1px solid rgba(220,218,231,.06); }
+.stat-table tbody tr:hover { background: rgba(81,78,95,.05); }
 .stat-rank { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:.65rem; font-weight:800; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1, "zero" 0; }
-.rank-1 { background:rgba(194,106,47,.18); color:#f0a97a; border:1px solid rgba(194,106,47,.4); }
-.rank-2 { background:rgba(219,213,207,.14); color:#e5e1dd; border:1px solid rgba(219,213,207,.3); }
-.rank-3 { background:rgba(184,115,61,.18); color:#d69e79; border:1px solid rgba(184,115,61,.36); }
-.rank-other { background:rgba(170,144,91,.08); color:#888076; }
+.rank-1 { background:rgba(194,147,47,.18); color:#f0d27a; border:1px solid rgba(194,147,47,.4); }
+.rank-2 { background:rgba(210,209,217,.14); color:#dfdee4; border:1px solid rgba(210,209,217,.3); }
+.rank-3 { background:rgba(184,127,61,.18); color:#d6a779; border:1px solid rgba(184,127,61,.36); }
+.rank-other { background:rgba(220,218,231,.08); color:#8c8c98; }
 .pos-bar-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:.75rem; }
-.pos-bar-label { min-width:40px; color:#a39586; font-weight:600; }
-.pos-bar-track { flex:1; height:18px; background:#121110; border-radius:3px; overflow:hidden; }
+.pos-bar-label { min-width:40px; color:#a0a0ac; font-weight:600; }
+.pos-bar-track { flex:1; height:18px; background:#0e0d0f; border-radius:3px; overflow:hidden; }
 .pos-bar-fill { height:100%; border-radius:3px; transition:width .3s; }
-.pos-bar-value { font-size:.72rem; color:#d7d1cb; font-weight:600; min-width:48px; text-align:right; }
-.bye-impact-row { display:flex; align-items:center; gap:.5rem; padding:.4rem 0; border-bottom:1px solid #272522; font-size:.78rem; }
+.pos-bar-value { font-size:.72rem; color:#cfcfd6; font-weight:600; min-width:48px; text-align:right; }
+.bye-impact-row { display:flex; align-items:center; gap:.5rem; padding:.4rem 0; border-bottom:1px solid #1e1d21; font-size:.78rem; }
 .bye-impact-row:last-child { border-bottom:none; }
-.bye-round-badge { display:inline-flex; align-items:center; justify-content:center; min-width:28px; padding:2px 8px; border-radius:12px; font-size:.7rem; font-weight:700; background:#272522; color:#a39586; }
+.bye-round-badge { display:inline-flex; align-items:center; justify-content:center; min-width:28px; padding:2px 8px; border-radius:12px; font-size:.7rem; font-weight:700; background:#1e1d21; color:#a0a0ac; }
 .trend-svg { width:100%; height:260px; }
-.trend-svg .line { fill:none; stroke:#f5b940; stroke-width:2; }
-.trend-svg .dot { fill:#f5b940; }
-.trend-svg .axis { stroke:#373330; stroke-width:1; }
-.trend-svg .tick-label { fill:#80786f; font-size:10px; font-family:system-ui; }
+.trend-svg .line { fill:none; stroke:#ececf6; stroke-width:2; }
+.trend-svg .dot { fill:#ececf6; }
+.trend-svg .axis { stroke:#2a292f; stroke-width:1; }
+.trend-svg .tick-label { fill:#8a8895; font-size:10px; font-family:system-ui; }
 `
 
 const POS_COLORS: Record<string, string> = {
-  DEF: '#f8c552', MID: '#d6b0ff', FWD: '#ff9484', RUC: '#f1ebdd',
+  DEF: '#58a6ff', MID: '#bc8cff', FWD: '#f0883e', RUC: '#3fb950',
 }
 
 function rankClass(i: number) {
@@ -144,7 +144,7 @@ export function StatsPage() {
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>
             <h2 className="mb-0">Advanced Stats</h2>
-            <span style={{ fontSize: '.78rem', color: '#a39586' }}>Season Analytics</span>
+            <span style={{ fontSize: '.78rem', color: '#a0a0ac' }}>Season Analytics</span>
           </div>
         </div>
       </div>
@@ -162,7 +162,7 @@ export function StatsPage() {
         <div className="row g-3">
           <div className="col-lg-6">
             <div className="stat-card">
-              <div className="card-header"><h6><i className="bi bi-trophy-fill" style={{ color: '#e38241' }}></i>Top Scorers (Avg)</h6></div>
+              <div className="card-header"><h6><i className="bi bi-trophy-fill" style={{ color: '#e3b341' }}></i>Top Scorers (Avg)</h6></div>
               <table className="table table-sm mb-0 stat-table">
                 <thead><tr><th style={{ width: 32 }}>#</th><th>Player</th><th>Team</th><th className="text-end">Avg</th><th className="text-end">GP</th></tr></thead>
                 <tbody>
@@ -170,9 +170,9 @@ export function StatsPage() {
                     <tr key={p.id}>
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
-                      <td style={{ color: '#a39586' }}>{p.fantasy_team || '-'}</td>
-                      <td className="text-end"><strong style={{ color: '#f5b940' }}>{p.avg.toFixed(1)}</strong></td>
-                      <td className="text-end" style={{ color: '#a39586' }}>{p.games}</td>
+                      <td style={{ color: '#a0a0ac' }}>{p.fantasy_team || '-'}</td>
+                      <td className="text-end"><strong style={{ color: '#ececf6' }}>{p.avg.toFixed(1)}</strong></td>
+                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.games}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -182,7 +182,7 @@ export function StatsPage() {
 
           <div className="col-lg-6">
             <div className="stat-card">
-              <div className="card-header"><h6><i className="bi bi-bullseye" style={{ color: '#dbcf94' }}></i>Most Consistent (Lowest Std Dev)</h6></div>
+              <div className="card-header"><h6><i className="bi bi-bullseye" style={{ color: '#3fb950' }}></i>Most Consistent (Lowest Std Dev)</h6></div>
               <table className="table table-sm mb-0 stat-table">
                 <thead><tr><th style={{ width: 32 }}>#</th><th>Player</th><th className="text-end">Avg</th><th className="text-end">Std Dev</th></tr></thead>
                 <tbody>
@@ -190,8 +190,8 @@ export function StatsPage() {
                     <tr key={p.id}>
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
-                      <td className="text-end" style={{ color: '#a39586' }}>{p.avg.toFixed(1)}</td>
-                      <td className="text-end"><strong style={{ color: '#dbcf94' }}>{p.std_dev.toFixed(1)}</strong></td>
+                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.avg.toFixed(1)}</td>
+                      <td className="text-end"><strong style={{ color: '#3fb950' }}>{p.std_dev.toFixed(1)}</strong></td>
                     </tr>
                   ))}
                 </tbody>
@@ -201,7 +201,7 @@ export function StatsPage() {
 
           <div className="col-lg-6">
             <div className="stat-card">
-              <div className="card-header"><h6><i className="bi bi-lightning-fill" style={{ color: '#d26822' }}></i>Highest Ceiling (Best Single Round)</h6></div>
+              <div className="card-header"><h6><i className="bi bi-lightning-fill" style={{ color: '#d29922' }}></i>Highest Ceiling (Best Single Round)</h6></div>
               <table className="table table-sm mb-0 stat-table">
                 <thead><tr><th style={{ width: 32 }}>#</th><th>Player</th><th className="text-end">Best</th><th className="text-end">Avg</th><th className="text-end">Rd</th></tr></thead>
                 <tbody>
@@ -209,9 +209,9 @@ export function StatsPage() {
                     <tr key={p.id}>
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
-                      <td className="text-end"><strong style={{ color: '#d26822' }}>{p.ceiling}</strong></td>
-                      <td className="text-end" style={{ color: '#a39586' }}>{p.avg.toFixed(1)}</td>
-                      <td className="text-end" style={{ color: '#a39586' }}>{p.best_round}</td>
+                      <td className="text-end"><strong style={{ color: '#d29922' }}>{p.ceiling}</strong></td>
+                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.avg.toFixed(1)}</td>
+                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.best_round}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -221,7 +221,7 @@ export function StatsPage() {
 
           <div className="col-lg-6">
             <div className="stat-card">
-              <div className="card-header"><h6><i className="bi bi-graph-up-arrow" style={{ color: '#f5be4f' }}></i>Most Improved (Avg Increase)</h6></div>
+              <div className="card-header"><h6><i className="bi bi-graph-up-arrow" style={{ color: '#e4e3ed' }}></i>Most Improved (Avg Increase)</h6></div>
               <table className="table table-sm mb-0 stat-table">
                 <thead><tr><th style={{ width: 32 }}>#</th><th>Player</th><th className="text-end">Prev</th><th className="text-end">Now</th><th className="text-end">Diff</th></tr></thead>
                 <tbody>
@@ -229,9 +229,9 @@ export function StatsPage() {
                     <tr key={`${p.name}-${i}`}>
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
-                      <td className="text-end" style={{ color: '#a39586' }}>{p.prev_avg.toFixed(1)}</td>
-                      <td className="text-end" style={{ color: '#d7d1cb' }}>{p.curr_avg.toFixed(1)}</td>
-                      <td className="text-end"><strong style={{ color: '#f5be4f' }}>+{p.improvement.toFixed(1)}</strong></td>
+                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.prev_avg.toFixed(1)}</td>
+                      <td className="text-end" style={{ color: '#cfcfd6' }}>{p.curr_avg.toFixed(1)}</td>
+                      <td className="text-end"><strong style={{ color: '#e4e3ed' }}>+{p.improvement.toFixed(1)}</strong></td>
                     </tr>
                   ))}
                 </tbody>
@@ -250,7 +250,7 @@ export function StatsPage() {
                       <td><span className={`stat-rank ${rankClass(i)}`}>{i + 1}</span></td>
                       <td><strong>{p.name}</strong></td>
                       <td className="text-end"><strong style={{ color: '#f85149' }}>{p.games}</strong></td>
-                      <td className="text-end" style={{ color: '#a39586' }}>{p.avg.toFixed(1)}</td>
+                      <td className="text-end" style={{ color: '#a0a0ac' }}>{p.avg.toFixed(1)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -263,7 +263,7 @@ export function StatsPage() {
       {tab === 'team' && (
         <div className="row g-3">
           <div className="col-12">
-            <select className="form-select form-select-sm" value={selectedTeamId} onChange={e => setSelectedTeamId(e.target.value)} style={{ maxWidth: 280, background: '#121110', borderColor: '#373330', fontSize: '.82rem' }}>
+            <select className="form-select form-select-sm" value={selectedTeamId} onChange={e => setSelectedTeamId(e.target.value)} style={{ maxWidth: 280, background: '#0e0d0f', borderColor: '#2a292f', fontSize: '.82rem' }}>
               <option value="">Select a team...</option>
               {data.teams.map(t => <option key={t.id} value={String(t.id)}>{t.name}</option>)}
             </select>
@@ -288,9 +288,9 @@ export function StatsPage() {
                       const pct = posTotal > 0 ? (pts / posTotal) * 100 : 0
                       return (
                         <div key={pos} className="pos-bar-row">
-                          <span className="pos-bar-label" style={{ color: POS_COLORS[pos] || '#a39586' }}>{pos}</span>
+                          <span className="pos-bar-label" style={{ color: POS_COLORS[pos] || '#a0a0ac' }}>{pos}</span>
                           <div className="pos-bar-track">
-                            <div className="pos-bar-fill" style={{ width: `${pct}%`, background: POS_COLORS[pos] || '#a39586' }}></div>
+                            <div className="pos-bar-fill" style={{ width: `${pct}%`, background: POS_COLORS[pos] || '#a0a0ac' }}></div>
                           </div>
                           <span className="pos-bar-value">{pts.toFixed(0)} ({pct.toFixed(0)}%)</span>
                         </div>
@@ -301,12 +301,12 @@ export function StatsPage() {
 
                 {selectedTeam.bye_impact.length > 0 && (
                   <div className="stat-card mt-3">
-                    <div className="card-header"><h6><i className="bi bi-calendar-x" style={{ color: '#d26822' }}></i>Bye Round Impact</h6></div>
+                    <div className="card-header"><h6><i className="bi bi-calendar-x" style={{ color: '#d29922' }}></i>Bye Round Impact</h6></div>
                     <div className="card-body p-3">
                       {selectedTeam.bye_impact.map(b => (
                         <div key={b.round} className="bye-impact-row">
                           <span className="bye-round-badge">R{b.round}</span>
-                          <span style={{ color: '#d7d1cb' }}>{b.players_out} out</span>
+                          <span style={{ color: '#cfcfd6' }}>{b.players_out} out</span>
                           <span className="ms-auto" style={{ color: '#f85149', fontWeight: 600 }}>-{b.estimated_loss.toFixed(0)}</span>
                         </div>
                       ))}

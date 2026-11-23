@@ -10,12 +10,12 @@
   <div class="d-flex justify-content-between align-items-start">
     <div>
       <h2>My Draft Values</h2>
-      <p class="mt-1 mb-0" style="font-size:.85rem;color:#a39586;">
+      <p class="mt-1 mb-0" style="font-size:.85rem;color:#a0a0ac;">
         Customise how players are ranked for <strong>your</strong> draft strategy.
         {% if has_custom %}
-          <span class="badge ms-1" style="background:rgba(219,207,148,.15);color:#dbcf94;font-size:.65rem;">Customised</span>
+          <span class="badge ms-1" style="background:rgba(63,185,80,.15);color:#3fb950;font-size:.65rem;">Customised</span>
         {% else %}
-          <span class="badge ms-1" style="background:rgba(163,149,134,.15);color:#a39586;font-size:.65rem;">League Defaults</span>
+          <span class="badge ms-1" style="background:rgba(160,160,172,.15);color:#a0a0ac;font-size:.65rem;">League Defaults</span>
         {% endif %}
       </p>
     </div>
@@ -29,7 +29,7 @@
       <div class="card mb-3">
         <div class="card-header">
           <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-            <i class="bi bi-sliders me-2" style="color:#a39586;"></i>Value Factors
+            <i class="bi bi-sliders me-2" style="color:#a0a0ac;"></i>Value Factors
           </h5>
         </div>
         <div class="card-body">
@@ -46,9 +46,9 @@
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <div>
                   <span style="font-weight:600;font-size:.85rem;">{{ label }}</span>
-                  <div style="font-size:.7rem;color:#a39586;">{{ desc }}</div>
+                  <div style="font-size:.7rem;color:#a0a0ac;">{{ desc }}</div>
                 </div>
-                <span class="badge weight-badge" id="badge-{{ key }}" style="background:#272522;color:#f5b940;font-size:.8rem;min-width:45px;text-align:center;">
+                <span class="badge weight-badge" id="badge-{{ key }}" style="background:#1e1d21;color:#ececf6;font-size:.8rem;min-width:45px;text-align:center;">
                   {{ "%.0f"|format((weights.get(key, 0.2)) * 100) }}%
                 </span>
               </div>
@@ -58,9 +58,9 @@
             </div>
           {% endfor %}
 
-          <div class="d-flex justify-content-between align-items-center pt-2" style="border-top:1px solid #373330;">
-            <span style="font-size:.8rem;color:#a39586;">Total</span>
-            <span id="total-badge" class="badge" style="background:#272522;color:#dbcf94;font-size:.8rem;">100%</span>
+          <div class="d-flex justify-content-between align-items-center pt-2" style="border-top:1px solid #2a292f;">
+            <span style="font-size:.8rem;color:#a0a0ac;">Total</span>
+            <span id="total-badge" class="badge" style="background:#1e1d21;color:#3fb950;font-size:.8rem;">100%</span>
           </div>
         </div>
       </div>
@@ -84,13 +84,13 @@
     <div class="card" style="max-height:75vh;overflow:hidden;display:flex;flex-direction:column;">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold" style="font-size:.95rem;">
-          <i class="bi bi-bar-chart me-2" style="color:#a39586;"></i>Top 20 Players
+          <i class="bi bi-bar-chart me-2" style="color:#a0a0ac;"></i>Top 20 Players
         </h5>
-        <span id="preview-status" style="font-size:.7rem;color:#a39586;"></span>
+        <span id="preview-status" style="font-size:.7rem;color:#a0a0ac;"></span>
       </div>
       <div class="card-body p-0" style="overflow-y:auto;">
         <table class="table table-hover table-sm mb-0">
-          <thead class="sticky-top" style="background:#1c1a18;">
+          <thead class="sticky-top" style="background:#151518;">
             <tr>
               <th style="width:35px;">#</th>
               <th>Player</th>
@@ -103,12 +103,12 @@
           <tbody id="preview-table">
             {% for player, score in top_players %}
               <tr>
-                <td style="color:#a39586;">{{ loop.index }}</td>
+                <td style="color:#a0a0ac;">{{ loop.index }}</td>
                 <td><strong>{{ player.name }}</strong></td>
                 <td><span class="pos-badge badge-{{ (player.position or 'mid').split('/')[0]|lower }}">{{ player.position }}</span></td>
                 <td>{{ player.afl_team }}</td>
                 <td>{{ "%.1f"|format(player.sc_avg) if player.sc_avg else '-' }}</td>
-                <td><span style="color:#f5b940;font-weight:600;">{{ "%.1f"|format(score) if score else '-' }}</span></td>
+                <td><span style="color:#ececf6;font-weight:600;">{{ "%.1f"|format(score) if score else '-' }}</span></td>
               </tr>
             {% endfor %}
           </tbody>
@@ -141,9 +141,9 @@ function updateSliders() {
   const pct = Math.round(total * 100);
   totalBadge.textContent = pct + '%';
   if (Math.abs(pct - 100) <= 2) {
-    totalBadge.style.color = '#dbcf94';
+    totalBadge.style.color = '#3fb950';
   } else {
-    totalBadge.style.color = '#d26822';
+    totalBadge.style.color = '#d29922';
   }
 
   // Debounced live preview
@@ -167,12 +167,12 @@ function fetchPreview() {
       tbody.innerHTML = players.map((p, i) => {
         const posClass = (p.position || 'mid').split('/')[0].toLowerCase();
         return `<tr>
-          <td style="color:#a39586;">${i + 1}</td>
+          <td style="color:#a0a0ac;">${i + 1}</td>
           <td><strong>${p.name}</strong></td>
           <td><span class="pos-badge badge-${posClass}">${p.position || ''}</span></td>
           <td>${p.afl_team || ''}</td>
           <td>${p.sc_avg ? p.sc_avg.toFixed(1) : '-'}</td>
-          <td><span style="color:#f5b940;font-weight:600;">${p.draft_score ? p.draft_score.toFixed(1) : '-'}</span></td>
+          <td><span style="color:#ececf6;font-weight:600;">${p.draft_score ? p.draft_score.toFixed(1) : '-'}</span></td>
         </tr>`;
       }).join('');
       statusEl.textContent = '';

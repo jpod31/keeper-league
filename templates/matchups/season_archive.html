@@ -39,7 +39,7 @@
               </thead>
               <tbody>
                 {% for s in standings %}
-                <tr{% if loop.index <= 4 %} style="background:rgba(245,185,64,.05);"{% endif %}>
+                <tr{% if loop.index <= 4 %} style="background:rgba(236,236,246,.05);"{% endif %}>
                   <td class="text-secondary">{{ loop.index }}</td>
                   <td class="fw-semibold">{{ s.team.name }}</td>
                   <td class="text-center">{{ s.wins }}</td>

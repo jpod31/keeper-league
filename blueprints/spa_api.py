@@ -142,8 +142,11 @@ def league_context(league_id):
         "season_year": league.season_year,
         "invite_code": league.invite_code or "",
         "commissioner_id": league.commissioner_id,
-        "user_team": {"id": user_team.id, "name": user_team.name} if user_team else None,
-        "teams": [{"id": t.id, "name": t.name, "owner": t.owner.display_name if t.owner else "?"} for t in teams],
+        # Every team with its crest and colour, so any page can draw a team
+        # as a team instead of as a name.
+        "user_team": _team_card(user_team) if user_team else None,
+        "teams": [{**_team_card(t), "owner": t.owner.display_name if t.owner else "?"} for t in teams],
+        "club_logos": _club_logos(),
         "is_commissioner": is_commissioner,
         "is_owner": user_team is not None,
         "active_draft": active_draft,
@@ -159,6 +162,16 @@ def league_context(league_id):
         # draft and Opening Round that is last season, and the UI says so.
         **_year_context(),
     })
+
+
+def _team_card(team):
+    from models.team_identity import team_card
+    return team_card(team)
+
+
+def _club_logos():
+    import config
+    return config.TEAM_LOGOS
 
 
 def _year_context():

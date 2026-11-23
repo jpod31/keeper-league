@@ -5,7 +5,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import type { UniNode } from './StyleUniverse3D'
 const StyleUniverse3D = lazy(() => import('./StyleUniverse3D'))
 
-const CL_COLORS = ['#f4b12a', '#bc8cff', '#f0763e', '#dbcf94', '#ff6b9d', '#f78d47', '#f5b940', '#ff5e57']
+const CL_COLORS = ['#e0deea', '#bc8cff', '#f0883e', '#3fb950', '#ff6b9d', '#ffd23f', '#ececf6', '#ff5e57']
 
 interface DeckData {
   universe: { has_data: boolean; nodes: UniNode[]; clusters: { id: number; name: string; n: number }[]; variance_explained: number; n_players: number; owned_count: number }
@@ -40,7 +40,7 @@ function Gauge({ pct, color, label }: { pct: number; color: string; label: strin
   return (
     <div className="dk-gauge">
       <svg viewBox="0 0 130 130" width="130" height="130">
-        <circle cx="65" cy="65" r={R} fill="none" stroke="rgba(191,160,97,.12)" strokeWidth="9" />
+        <circle cx="65" cy="65" r={R} fill="none" stroke="rgba(224,222,234,.12)" strokeWidth="9" />
         <circle cx="65" cy="65" r={R} fill="none" stroke={color} strokeWidth="9" strokeLinecap="round"
           strokeDasharray={C} strokeDashoffset={off} transform="rotate(-90 65 65)"
           style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
@@ -110,10 +110,10 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
 
       {/* KPI strip */}
       <div className="dk-kpis">
-        {o?.has_data && <Kpi value={o.finals_pct} suffix="%" label="Finals probability" sub={`${o.finals_n} of ${o.n_teams} make it`} color="#f4b12a" />}
-        {o?.has_data && <Kpi value={o.proj_wins} label="Projected wins" sub={`now on ${o.current_wins} · ${o.remaining} to play`} color="#dbcf94" decimals={1} />}
+        {o?.has_data && <Kpi value={o.finals_pct} suffix="%" label="Finals probability" sub={`${o.finals_n} of ${o.n_teams} make it`} color="#e0deea" />}
+        {o?.has_data && <Kpi value={o.proj_wins} label="Projected wins" sub={`now on ${o.current_wins} · ${o.remaining} to play`} color="#3fb950" decimals={1} />}
         {d?.has_data && <Kpi value={d.ceiling} label="Weekly ceiling" sub={`floor ${d.floor} · median ${d.median}`} color="#bc8cff" />}
-        {d?.has_data && <Kpi value={d.cv} suffix="%" label="Volatility (CV)" sub={d.cv <= 7 ? 'elite consistency' : d.cv <= 11 ? 'steady' : 'swingy'} color="#f0763e" decimals={1} />}
+        {d?.has_data && <Kpi value={d.cv} suffix="%" label="Volatility (CV)" sub={d.cv <= 7 ? 'elite consistency' : d.cv <= 11 ? 'steady' : 'swingy'} color="#f0883e" decimals={1} />}
       </div>
 
       <div className="dk-grid">
@@ -138,7 +138,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
           <div className="dk-panel dk-outlook">
             <div className="dk-panel-head"><span className="dk-panel-title">⬡ SEASON OUTLOOK</span><span className="dk-panel-meta">{o.remaining} rounds · {(4000).toLocaleString()} sims</span></div>
             <div className="dk-outlook-body">
-              <Gauge pct={o.finals_pct} color="#f4b12a" label="FINALS" />
+              <Gauge pct={o.finals_pct} color="#e0deea" label="FINALS" />
               <div className="dk-seed">
                 <div className="dk-seed-title">Where you finish</div>
                 <div className="dk-seed-bars">
@@ -146,12 +146,12 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
                     const mx = Math.max(...o.seed_dist) || 1
                     const inFinals = i < o.finals_n
                     return <div key={i} className="dk-seed-col" title={`${ordinal(i + 1)}: ${Math.round(c / o.seed_dist.reduce((a, b) => a + b, 0) * 100)}%`}>
-                      <div className="dk-seed-bar" style={{ height: `${c / mx * 100}%`, background: inFinals ? '#f4b12a' : 'rgba(191,160,97,.3)' }}></div>
+                      <div className="dk-seed-bar" style={{ height: `${c / mx * 100}%`, background: inFinals ? '#e0deea' : 'rgba(224,222,234,.3)' }}></div>
                       <div className="dk-seed-lbl">{i + 1}</div>
                     </div>
                   })}
                 </div>
-                <div className="dk-seed-foot">premiership odds <b style={{ color: '#f78d47' }}>{o.top_seed_pct}%</b> · median seed <b>{ordinal(o.median_seed)}</b></div>
+                <div className="dk-seed-foot">premiership odds <b style={{ color: '#ffd23f' }}>{o.top_seed_pct}%</b> · median seed <b>{ordinal(o.median_seed)}</b></div>
               </div>
             </div>
           </div>

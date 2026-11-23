@@ -15,11 +15,11 @@ interface LeagueSummary {
 
 // Stable accent palette so each league card gets a distinctive theme.
 const PALETTE = [
-  { hex: '#f5b940', rgb: '245,185,64' },
-  { hex: '#ffa671', rgb: '255,166,113' },
+  { hex: '#ececf6', rgb: '236,236,246' },
+  { hex: '#ffb471', rgb: '255,180,113' },
   { hex: '#bc8cff', rgb: '188,140,255' },
-  { hex: '#dbcf94', rgb: '219,207,148' },
-  { hex: '#e38241', rgb: '227,130,65' },
+  { hex: '#3fb950', rgb: '63,185,80' },
+  { hex: '#e3b341', rgb: '227,179,65' },
   { hex: '#ff7b72', rgb: '255,123,114' },
 ]
 
@@ -52,10 +52,10 @@ export function LeagueListPage() {
           <div style={{
             width: 96, height: 96, margin: '0 auto 20px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(245,185,64,.2), rgba(245,185,64,.04))',
-            border: '1px solid rgba(245,185,64,.35)',
+            background: 'radial-gradient(circle, rgba(236,236,246,.2), rgba(236,236,246,.04))',
+            border: '1px solid rgba(236,236,246,.35)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2.4rem', color: '#f6c35c',
+            fontSize: '2.4rem', color: '#79c0ff',
           }}>
             <i className="bi bi-trophy"></i>
           </div>
@@ -86,7 +86,7 @@ export function LeagueListPage() {
         padding: '20px 24px',
         borderRadius: 16,
         background:
-          'radial-gradient(120% 200% at 100% 0%, rgba(245,185,64,.18), transparent 55%),' +
+          'radial-gradient(120% 200% at 100% 0%, rgba(236,236,246,.18), transparent 55%),' +
           ' linear-gradient(180deg, var(--pp-surface-1), var(--pp-surface-0))',
         border: '1px solid var(--pp-surface-edge)',
         boxShadow: '0 24px 56px -22px rgba(0,0,0,.55)',
@@ -102,9 +102,9 @@ export function LeagueListPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <Stat value={totalLeagues} label="Leagues" colour="#f6c35c" />
-            <Stat value={teamsCount} label="Teams" colour="#efe7bd" />
-            <Stat value={commishCount} label="Commish of" colour="#d26822" />
+            <Stat value={totalLeagues} label="Leagues" colour="#79c0ff" />
+            <Stat value={teamsCount} label="Teams" colour="#7ee787" />
+            <Stat value={commishCount} label="Commish of" colour="#d29922" />
           </div>
         </div>
       </section>
@@ -122,7 +122,7 @@ export function LeagueListPage() {
                   <div className="lg-lobby-card-name">{lg.name}</div>
                   <div className="lg-lobby-card-sub">
                     {lg.season_year} season
-                    {lg.is_commissioner && <span style={{ marginLeft: 8, color: '#d26822' }}><i className="bi bi-shield-check"></i> Commish</span>}
+                    {lg.is_commissioner && <span style={{ marginLeft: 8, color: '#d29922' }}><i className="bi bi-shield-check"></i> Commish</span>}
                   </div>
                 </div>
               </div>
@@ -161,18 +161,18 @@ export function LeagueListPage() {
         {/* Create new league CTA card */}
         <Link to="/leagues/create" className="lg-lobby-card"
           style={{
-            background: 'linear-gradient(180deg, rgba(219,207,148,.04), var(--pp-surface-0))',
-            border: '1px dashed rgba(219,207,148,.4)',
+            background: 'linear-gradient(180deg, rgba(63,185,80,.04), var(--pp-surface-0))',
+            border: '1px dashed rgba(63,185,80,.4)',
             justifyContent: 'center', alignItems: 'center',
             textAlign: 'center',
           }}>
           <div style={{
             width: 56, height: 56, marginBottom: 12,
             borderRadius: 14,
-            background: 'rgba(219,207,148,.12)',
-            border: '1px solid rgba(219,207,148,.4)',
+            background: 'rgba(63,185,80,.12)',
+            border: '1px solid rgba(63,185,80,.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', color: '#efe7bd',
+            fontSize: '1.4rem', color: '#7ee787',
           }}>
             <i className="bi bi-plus-lg"></i>
           </div>

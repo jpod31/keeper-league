@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
+import { TeamBadge } from '../../components/ui/TeamBadge'
+import { ratingTier, rgbOf } from '../../lib/clubs'
 
 interface TeamCard { id: number; name: string; logo: string | null; accent: string }
 interface LadderRow extends TeamCard {
@@ -115,10 +117,10 @@ export function SeasonsPage() {
       </div>
 
       {data.premier && (
-        <div className="sn-premier">
-          <i className="bi bi-trophy-fill"></i>
+        <div className="sn-premier" style={{ ['--tm' as string]: rgbOf(data.premier.accent) } as React.CSSProperties}>
+          <TeamBadge team={data.premier} size={56} showName={false} />
           <div>
-            <div className="sn-premier-l">{year} premier</div>
+            <div className="sn-premier-l"><i className="bi bi-trophy-fill"></i> {year} premier</div>
             <div className="sn-premier-n">{data.premier.name}</div>
           </div>
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
@@ -155,7 +157,7 @@ export function SeasonsPage() {
                   {data.ladder.map(r => (
                     <tr key={r.id} className={r.id === me ? 'sn-me' : ''}>
                       <td><span className={`sn-pos${r.pos === 1 ? ' first' : ''}`}>{r.pos}</span></td>
-                      <td className="kx-strong">{r.name}{r.id === me ? ' (you)' : ''}</td>
+                      <td className="kx-strong"><TeamBadge team={r} size={26} />{r.id === me ? ' (you)' : ''}</td>
                       <td className="ctr kx-strong">{r.wins}</td><td className="ctr">{r.losses}</td><td className="ctr">{r.draws}</td>
                       <td className="num">{r.points_for.toLocaleString()}</td>
                       <td className="num">{r.points_against.toLocaleString()}</td>
@@ -245,8 +247,8 @@ export function SeasonsPage() {
                               <td>{p.position}</td>
                               <td>{p.afl_team}</td>
                               <td className="ctr">{p.age ?? '-'}</td>
-                              <td className="num kx-strong">{p.rating ?? '-'}</td>
-                              <td className="num kx-gold">{p.prev_avg != null ? p.prev_avg.toFixed(1) : '-'}</td>
+                              <td className="num">{p.rating != null ? <span className={`rt ${ratingTier(p.rating)}`}>{p.rating}</span> : '-'}</td>
+                              <td className="num kx-strong">{p.prev_avg != null ? p.prev_avg.toFixed(1) : '-'}</td>
                               <td>
                                 {p.draft_pick != null
                                   ? `Pick ${p.draft_pick}, round ${p.draft_round}`
@@ -293,7 +295,7 @@ export function SeasonsPage() {
                           <tr key={p.pick} className={p.team_id === me ? 'sn-me' : ''}>
                             <td className="num kx-gold">{p.pick}</td>
                             <td className="ctr">{p.round}</td>
-                            <td className="kx-strong">{p.team}</td>
+                            <td className="kx-strong"><TeamBadge name={p.team_id} size={24} /></td>
                             <td>
                               <div className="kx-player">
                                 {data.team_logos[p.afl_team] && <img src={data.team_logos[p.afl_team]} alt="" />}
@@ -323,11 +325,11 @@ export function SeasonsPage() {
             <div key={t.id} className="sn-trade">
               <div className="sn-trade-date">{day(t.date)}</div>
               <div>
-                <div className="sn-trade-team">{t.a} received</div>
+                <div className="sn-trade-team"><TeamBadge name={t.a_id} size={24} /> received</div>
                 <ul>{(t.a_gets.length ? t.a_gets : ['Nothing']).map((x, i) => <li key={i}>{x}</li>)}</ul>
               </div>
               <div>
-                <div className="sn-trade-team">{t.b} received</div>
+                <div className="sn-trade-team"><TeamBadge name={t.b_id} size={24} /> received</div>
                 <ul>{(t.b_gets.length ? t.b_gets : ['Nothing']).map((x, i) => <li key={i}>{x}</li>)}</ul>
               </div>
             </div>
@@ -353,7 +355,7 @@ export function SeasonsPage() {
                       <tr key={i} className={d.team_id === me ? 'sn-me' : ''}>
                         <td className="kx-strong">{d.player}</td>
                         <td>{d.position}</td>
-                        <td>{d.team}</td>
+                        <td><TeamBadge name={d.team_id} size={22} /></td>
                         <td>{d.period === 'midseason' ? 'Mid-season' : 'Off-season'}</td>
                         <td>{day(d.date)}</td>
                       </tr>
