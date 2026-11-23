@@ -153,6 +153,8 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     const posParts = (p.position || 'MID').split('/')
     const fname = p.name.split(' ')[0]
     const sname = p.name.split(' ').slice(1).join(' ')
+    const shownFirst = !sname ? '' : p.name.length <= 18 ? fname : `${fname[0]}.`
+    const shownLen = shownFirst.length + 1 + (sname || fname).length
     const form = fd.player_form?.[String(p.id)] || 'flat'
     const logo = p.afl_team ? teamLogos[p.afl_team] : undefined
     const roles: { k: string; label: string; title: string }[] = []
@@ -209,6 +211,11 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         {!isLtil && !isLocked && isSelected && <div className="fv-selected" title="Selected to play"><i className="bi bi-check-lg"></i></div>}
         {(isLtil || (!isLocked && !isSelected)) && p.injury_severity && (
           <div className={`fv-injury fv-injury-${p.injury_severity}`} title={`${p.injury_type || 'Injured'}, ${p.injury_return || ''}`}></div>
+        )}
+        {roles.length > 0 && (
+          <div className="pc7-bubs">
+            {roles.map(r => <span key={r.k} className={`pc7-bub pc7-bub-${r.k}${isPendingLtil && r.k === 'ltil' ? ' pending' : ''}`} title={r.title}>{r.label}</span>)}
+          </div>
         )}
         {p.is_former && <div className="fv-off-list" title="No longer on an AFL list. He will not score.">OFF AFL LIST</div>}
 
@@ -273,47 +280,44 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
           </div>
         )}
 
-        {/* The face. Club logo top left, positions top right, the name, then
-            three numbers along the bottom: average, rating, age. The top border
-            (drawn by .pc6::before) is the position colour. */}
-        <div className="fv-face pc6" style={{ ['--logo' as string]: logo ? `url("${logo}")` : 'none' } as React.CSSProperties}>
-          <div className="pc6-top">
+        {/* The face, wider than it is tall: club logo and positions on top, the
+            name on one line, then average, rating and age. The top border
+            (.pc7::before) is the position colour. */}
+        <div className="fv-face pc7" style={{ ['--logo' as string]: logo ? `url("${logo}")` : 'none' } as React.CSSProperties}>
+          <div className="pc7-top">
             {logo
-              ? <img className="pc6-logo" src={logo} alt={p.afl_team || ''} title={p.afl_team || ''} />
-              : <span className="pc6-logo pc6-logo-none" />}
-            <span className="pc6-pips">
+              ? <img className="pc7-logo" src={logo} alt={p.afl_team || ''} title={p.afl_team || ''} />
+              : <span className="pc7-logo" />}
+            <span className="pc7-pips">
               {posParts.map(part => (
                 <span key={part} className={`pos-badge badge-${part.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{part}</span>
               ))}
             </span>
           </div>
 
-          <div className="pc6-name">
-            <div className="pc6-first">
-              <span>{fname}</span>
-              {roles.map(r => <span key={r.k} className={`pc6-role pc6-role-${r.k}`} title={r.title}>{r.label}</span>)}
-            </div>
-            <div className={`pc6-sur${sname.length > 14 ? ' xl' : sname.length > 11 ? ' long' : ''}`} title={p.name}>{sname || fname}</div>
+          <div className={`pc7-name${shownLen > 19 ? ' xl' : shownLen > 16 ? ' long' : ''}`} title={p.name}>
+            {shownFirst && <span className="pc7-first">{shownFirst} </span>}
+            <span className="pc7-sur">{sname || fname}</span>
           </div>
 
-          <div className="pc6-stats">
-            <div className="pc6-cell">
-              <span className="pc6-v">
+          <div className="pc7-stats">
+            <div className="pc7-cell">
+              <span className="pc7-v">
                 {p.sc_avg ? Math.round(p.sc_avg) : '-'}
                 {form !== 'flat' && (
-                  <i className={`bi bi-caret-${form === 'up' ? 'up' : 'down'}-fill pc6-form pc6-form-${form}`}
+                  <i className={`bi bi-caret-${form === 'up' ? 'up' : 'down'}-fill pc7-form pc7-form-${form}`}
                     title={form === 'up' ? 'Form is up' : 'Form is down'}></i>
                 )}
               </span>
-              <span className="pc6-l">Avg</span>
+              <span className="pc7-l">Avg</span>
             </div>
-            <div className="pc6-cell">
-              <span className="pc6-v"><span className={`rt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</span></span>
-              <span className="pc6-l">Rtg</span>
+            <div className="pc7-cell">
+              <span className="pc7-v"><span className={`rt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</span></span>
+              <span className="pc7-l">Rtg</span>
             </div>
-            <div className="pc6-cell">
-              <span className="pc6-v">{p.age || '-'}</span>
-              <span className="pc6-l">Age</span>
+            <div className="pc7-cell">
+              <span className="pc7-v">{p.age || '-'}</span>
+              <span className="pc7-l">Age</span>
             </div>
           </div>
         </div>

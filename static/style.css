@@ -12300,3 +12300,104 @@ body { font-variant-numeric: tabular-nums; }
 @media (max-width: 600px) { .ds-next-when { font-size: 1.5rem; } .ds-next-actions { width: 100%; } .ds-next-actions .kx-btn { flex: 1; padding: 0 10px; } }
 .gd-round-title { text-transform: none !important; letter-spacing: -.02em !important; font-size: 1.25rem !important; font-weight: 700 !important; }
 .gd-hero-score.pre { color: #ffffff !important; }
+
+/* ══ Squad card, seventh cut: wider than it is tall (168 by about 113, the
+      shape the card had before the restyle), and the round coloured bubbles
+      back on the corner and on the hover buttons. Lucas, 2026-11-24: "the team
+      cards are way too vertical" and "the colours on the bubbles for things
+      have gone too". Fresh class names (pc7-) so no older card rule applies. ══ */
+.fv-card { width: 168px !important; }
+.fv-zone-grid { width: 100%; gap: 12px 8px !important; }
+.fv-grid-5 { grid-template-columns: repeat(5, min(168px, calc((100% - 32px) / 5))) !important; }
+.fv-grid-4 { grid-template-columns: repeat(4, min(168px, calc((100% - 32px) / 5))) !important; }
+.fv-grid-3 { grid-template-columns: repeat(3, min(168px, calc((100% - 32px) / 5))) !important; }
+.fv-grid-2 { grid-template-columns: repeat(2, min(168px, calc((100% - 32px) / 5))) !important; }
+.fv-grid-1 { grid-template-columns: min(168px, calc((100% - 32px) / 5)) !important; }
+.fv-zone-grid > .fv-card, .fv-zone-grid > * > .fv-card { width: 100% !important; }
+.fv-field { padding: 1.5rem 1rem !important; min-height: 0 !important; }
+.fv-sidebar { width: 196px !important; }
+.fv-sidebar .fv-card, .fv-sidebar .fv-card-flex { width: 100% !important; }
+.fv-reserves-grid { grid-template-columns: repeat(auto-fill, 168px) !important; }
+.fv-card-reserve { width: 168px !important; }
+.fv-card-empty { min-height: 113px; }
+
+.pc7 { position: relative; border-radius: 9px !important; overflow: hidden; isolation: isolate; font-family: var(--kl-font) !important;
+  font-variant-numeric: tabular-nums; color: #ffffff; text-align: left; }
+.pc7::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px !important; z-index: 2;
+  background: linear-gradient(90deg, var(--pc, #5a5a66) 0 50%, var(--pc2, var(--pc, #5a5a66)) 50% 100%) !important; }
+.pc7::after { content: ""; position: absolute; right: 14px !important; top: 2px !important; width: 104px !important; height: 104px !important; z-index: -1;
+  background: var(--logo) center / contain no-repeat; opacity: .1 !important; filter: grayscale(1) brightness(2) contrast(.9); }
+
+.pc7-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 12px 9px 0 10px; height: 38px; }
+.pc7-logo { width: 26px; height: 26px; object-fit: contain; flex: none; display: block; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+.pc7-pips { display: inline-flex; gap: 3px; }
+.pc7-pips .pos-badge { font-family: var(--kl-font) !important; font-size: .8125rem !important; font-weight: 700 !important; letter-spacing: .03em !important;
+  padding: 3px 5px !important; border-radius: 4px !important; line-height: 1 !important; box-shadow: 0 1px 2px rgba(0,0,0,.45); }
+
+.pc7-name { padding: 5px 10px 8px; font-size: .9375rem; line-height: 20px; letter-spacing: -.02em; color: #ffffff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,.5) !important; }
+.pc7-name.long { font-size: .875rem; letter-spacing: -.03em; }
+.pc7-name.xl { font-size: .8125rem; letter-spacing: -.035em; }
+.pc7-first { font-weight: 500; }
+.pc7-sur { font-weight: 700; }
+
+.pc7-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; background: rgba(0,0,0,.5); border-top: 1px solid rgba(255,255,255,.14); }
+.pc7-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0 6px; border-left: 1px solid rgba(255,255,255,.1); }
+.pc7-cell:first-child { border-left: 0; }
+.pc7-v { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 19px; font-size: 1.0625rem; font-weight: 700;
+  letter-spacing: -.02em; line-height: 1; color: #ffffff; }
+.pc7-v .rt { height: 19px !important; min-width: 30px !important; padding: 0 5px !important; border-radius: 4px !important; font-family: var(--kl-font) !important;
+  font-size: .875rem !important; font-weight: 700 !important; }
+.pc7-l { font-size: .8125rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; line-height: 1; color: #ffffff; }
+.pc7-form { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 2px; font-size: .625rem; }
+.pc7-form-up { color: #3fb950; } .pc7-form-down { color: #f85149; }
+
+/* Role bubbles: round, in colour, on the top right corner. */
+.pc7-bubs { position: absolute; top: -11px; right: -4px; z-index: 5; display: flex; gap: 3px; pointer-events: none; }
+.pc7-bub { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; padding: 0 4px; border-radius: 13px;
+  border: 2px solid #050506; font-size: .8125rem; font-weight: 800; line-height: 1; letter-spacing: 0; color: #050506; background: #ffffff;
+  box-shadow: 0 2px 5px rgba(0,0,0,.55); }
+.pc7-bub-cap { background: #e3b341; color: #050506; }
+.pc7-bub-vc { background: #1f6feb; color: #ffffff; }
+.pc7-bub-emg { background: #38a6d7; color: #050506; }
+.pc7-bub-7s { background: #bc8cff; color: #050506; }
+.pc7-bub-7c { background: #8e44ad; color: #ffffff; }
+.pc7-bub-slot { background: #bc8cff; color: #050506; }
+.pc7-bub-ltil { background: #f85149; color: #050506; }
+.pc7-bub-ltil.pending { background: #e3b341; }
+.pc7-bub-bye { background: #484f58; color: #ffffff; padding: 0 6px; }
+
+/* Hover buttons: round and in the same colours as the bubbles they set. */
+.fv-actions { bottom: calc(100% - 2px) !important; padding-bottom: 15px !important; gap: 5px !important; }
+.fv-action-btn, .fv-action-btn[class*="fv-act-"] { width: 28px !important; height: 28px !important; border-radius: 50% !important; border: 2px solid #050506 !important;
+  background: #ffffff !important; color: #050506 !important; font-size: .8125rem !important; font-weight: 800 !important; box-shadow: 0 3px 8px rgba(0,0,0,.6) !important; }
+.fv-action-btn:hover { transform: scale(1.12) !important; }
+.fv-action-btn.fv-act-cap { background: #e3b341 !important; color: #050506 !important; }
+.fv-action-btn.fv-act-vc { background: #1f6feb !important; color: #ffffff !important; }
+.fv-action-btn.fv-act-sub { background: #12a085 !important; color: #050506 !important; }
+.fv-action-btn.fv-act-emg { background: #38a6d7 !important; color: #050506 !important; }
+.fv-action-btn.fv-act-7s { background: #bc8cff !important; color: #050506 !important; }
+.fv-action-btn.fv-act-7c { background: #8e44ad !important; color: #ffffff !important; }
+.fv-action-btn.fv-act-ltil { background: #f0883e !important; color: #050506 !important; }
+.fv-action-btn.fv-act-delist { background: #f85149 !important; color: #050506 !important; }
+.fv-action-btn.active { box-shadow: 0 0 0 2px #ffffff, 0 3px 8px rgba(0,0,0,.6) !important; }
+.fv-action-btn:hover, .fv-action-btn.fv-act-delist:hover { border-color: #050506 !important; }
+
+@media (max-width: 1279.98px) {
+  .fv-sidebar { width: 176px !important; }
+  .pc7-first { display: none; }
+}
+/* Off the AFL list: the flag sits under the card, not over its numbers. */
+.fv-card:has(.fv-off-list) { display: flex; flex-direction: column; }
+.fv-card .fv-off-list { position: static; order: 2; padding: 3px 0; line-height: 1.2; border-radius: 0 0 8px 8px; }
+.fv-card:has(.fv-off-list) .fv-face { border-radius: 9px 9px 0 0 !important; }
+.fv-reserves-grid, .fv-zone-grid { align-items: start; }
+.fv-selected, .fv-injury { left: -4px !important; }
+/* Phone squad rows: the same round coloured bubbles as the cards. */
+.mob-pos-badge.mob-pos-badge.mob-pos-badge.mob-badge-cap, .mob-pos-badge.mob-pos-badge.mob-pos-badge.mob-badge-vc, .mob-pos-badge.mob-pos-badge.mob-pos-badge.mob-badge-emg, .mob-pos-badge.mob-pos-badge.mob-pos-badge.mob-badge-7s {
+  display: inline-flex !important; align-items: center; justify-content: center; min-width: 24px !important; height: 24px !important; padding: 0 4px !important;
+  border-radius: 12px !important; border: 0 !important; box-shadow: none !important; font-size: .8125rem !important; font-weight: 800 !important; line-height: 1 !important; }
+.mob-pos-badge.mob-badge-cap { background: #e3b341 !important; color: #050506 !important; }
+.mob-pos-badge.mob-badge-vc { background: #1f6feb !important; color: #ffffff !important; }
+.mob-pos-badge.mob-badge-emg { background: #38a6d7 !important; color: #050506 !important; }
+.mob-pos-badge.mob-badge-7s { background: #bc8cff !important; color: #050506 !important; }

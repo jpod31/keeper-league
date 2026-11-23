@@ -274,12 +274,19 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   being the position before.. the top one" (2026-11-24). Rows (phone squad,
   gameday) keep the position on the left edge. Lucas called the flat version
   "too 2d, basic, the fonts dont match" (2026-11-23).
-- **Squad card layout (`.pc6-*` in `FieldView.tsx`)**: club logo top left,
-  positions top right, first name with role chips (C, VC, E, 7, BYE) beside
-  it, surname large, then three cells along the bottom: average (with the
-  form arrow), rating chip, age. This is the layout coaches knew before the
-  restyle; keep it. New class names were used on purpose so the many older
-  `.fv-*` card overrides in `static/style.css` do not apply.
+- **Squad card layout (`.pc7-*` in `FieldView.tsx`)**: WIDER THAN TALL, 168 by
+  about 119 (the shape it had before the restyle; a 150 by 165 portrait cut
+  was called "way too vertical ... just not professional", 2026-11-24). Club
+  logo top left, positions top right, the name on ONE line (first name in
+  full up to 18 characters, else the initial), then three cells: average with
+  the form arrow, rating chip, age. Role bubbles (C, VC, E, 7, L, BYE) are
+  ROUND AND COLOURED on the top right corner (`.pc7-bub-*`), and the hover
+  buttons are round in the same colours. Flattening them to white outlines
+  was noticed straight away: "the colours on the bubbles for things have gone
+  too?? why??". Black and white is for chrome, not for these. Field rows use
+  `min(168px, (100% - 32px) / 5)` so every row has the same card width on a
+  small laptop. New class names on purpose, so older `.fv-*` and `.pc6-*`
+  rules do not apply.
 - **One typeface: Geist.** Geist Mono was dropped on 2026-11-24 (Lucas: "the
   fonts dont match the style"); `--kl-font-mono` now points at `--kl-font` so
   older rules keep working, and `body` has tabular numerals. Do not add a
