@@ -38,7 +38,7 @@
                     <div style="font-size:.72rem;color:#8a8895;margin-top:4px;">
                       {{ notif.created_at.strftime('%a %d %b, %I:%M %p') }}
                       {% if notif.link %}
-                        &middot; <a href="{{ notif.link }}" style="color:#ececf6;text-decoration:none;">View</a>
+                       , <a href="{{ notif.link }}" style="color:#ececf6;text-decoration:none;">View</a>
                       {% endif %}
                     </div>
                   </td>

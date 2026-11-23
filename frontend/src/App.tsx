@@ -169,11 +169,10 @@ export default function App() {
 
       {/* 404 */}
       <Route path="*" element={
-        <div className="min-h-screen bg-[#0e0d0f] flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-4xl font-black text-[#1e1d21]">404</p>
-            <p className="text-sm text-[#63616d] mt-2">Page not found</p>
-          </div>
+        <div className="kx-page tx-page" style={{ padding: '64px 20px' }}>
+          <div className="kx-head"><h2>Page not found</h2></div>
+          <p className="tx-none">That address does not lead anywhere on Keeper League.</p>
+          <a className="kx-btn kx-btn-gold" href="/">Home</a>
         </div>
       } />
     </Routes>

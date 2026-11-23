@@ -39,6 +39,17 @@ _CACHE = {}
 
 
 def _accent(team_id):
+    """The team's own colour (the one saved on the team), so the review
+    paints a club the same colour as the rest of the site."""
+    if team_id:
+        try:
+            from models.database import db, FantasyTeam
+            from models.team_identity import team_accent
+            team = db.session.get(FantasyTeam, team_id)
+            if team is not None:
+                return team_accent(team)
+        except Exception:
+            pass
     return TEAM_PALETTE[(team_id or 0) % len(TEAM_PALETTE)]
 
 

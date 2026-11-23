@@ -271,8 +271,7 @@ export function Ring({
         strokeDasharray={c}
         strokeDashoffset={c * (1 - clamped)}
         transform="rotate(-90 80 80)"
-        style={{ transition: 'stroke-dashoffset 1.3s cubic-bezier(.2,.85,.25,1)',
-                 filter: `drop-shadow(0 0 10px ${accent})` }}
+        style={{ transition: 'stroke-dashoffset 1.3s cubic-bezier(.2,.85,.25,1)' }}
       />
       <text x="80" y="76" textAnchor="middle" fontSize="30" fontWeight="900" fill="#fff"
             letterSpacing="-1">{value}</text>

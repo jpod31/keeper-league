@@ -115,14 +115,14 @@ export function SeasonReview({
   useEffect(() => () => window.clearTimeout(scrollTimer.current), [])
 
   const slide = deck[i]
-  const theme = slide?.theme ?? ['#e3e1ec', '#ff5fa2', '#1b1b1f']
   const last = i === deck.length - 1
 
   const body = (
     <div
       ref={rootRef}
       className="sr-root"
-      style={{ '--sr-a': theme[0], '--sr-b': theme[1], '--sr-c': theme[2] } as React.CSSProperties}
+      // One look for every slide: black, white, and the viewer's own team colour.
+      style={{ '--sr-a': 'rgb(var(--team, 236,236,246))', '--sr-b': '#ffffff', '--sr-c': '#050506' } as React.CSSProperties}
       role="dialog"
       aria-modal="true"
       aria-label={`${year} season in review`}

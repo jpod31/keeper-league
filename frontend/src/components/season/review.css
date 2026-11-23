@@ -1012,3 +1012,32 @@
   .sr-oval-chip { transform: translate(-50%, -50%); }
   .sr-seg-fill.timed { width: 100%; }
 }
+
+/* ── One look for every slide: flat black with the grid, white type, and the
+      viewer's team colour for emphasis. No colour blobs, no gradient text. ── */
+.sr-blob, .sr-grain, .sr-vignette { display: none !important; }
+.sr-root, .sr-stage {
+  background:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+    #050506 !important;
+  background-size: 56px 56px, 56px 56px, auto !important;
+}
+.sr-stage { background: none !important; }
+.sr-grad, .sr-eyebrow em { background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important;
+  color: var(--sr-a) !important; -webkit-text-fill-color: var(--sr-a) !important; }
+.sr-h1, .sr-mega { font-weight: 700 !important; letter-spacing: -.045em !important; }
+.sr-btn { border-radius: 6px !important; box-shadow: none !important; transform: none !important; }
+.sr-btn.primary { background: #ffffff !important; color: #050506 !important; border-color: #ffffff !important; }
+.sr-btn.primary:hover { background: #d9d9e0 !important; }
+.sr-badge b { background: #ffffff !important; color: #050506 !important; }
+.sr-card, .sr-tile, .sr-row { box-shadow: none !important; }
+.sr-lad-row.champ { background: #101013 !important; border-color: #ffffff !important; box-shadow: none !important; }
+.sr-lad-row { background: #0c0c0e !important; box-shadow: none !important; }
+.sr-lad-row.champ .sr-lad-pos, .sr-lad-row.champ i { color: #ffffff !important; }
+.sr-root svg text { fill: #ececf1; }
+.sr-crown { color: #ffffff !important; filter: none !important; }
+.sr-root svg * { filter: none !important; }
+.sr-pos { border: 0 !important; color: #050506 !important; font-family: var(--kl-font-mono); border-radius: 3px !important; }
+.sr-pos.DEF { background: #58a6ff !important; } .sr-pos.MID { background: #bc8cff !important; }
+.sr-pos.RUC { background: #3fb950 !important; } .sr-pos.FWD { background: #f0883e !important; }
