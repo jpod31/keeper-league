@@ -12043,3 +12043,20 @@ th .sort-icon { opacity: 1 !important; }
 .pmod-num b { display: flex; align-items: center; height: 28px; font-family: var(--kl-font-mono); font-size: 1.5rem; font-weight: 600; color: #ffffff; line-height: 1; }
 .pmod-num b .rt { height: 26px; min-width: 38px; font-size: 1rem; }
 .pmod-num > span { display: block; margin-top: 6px; font-family: var(--kl-font-mono); font-size: .8125rem; letter-spacing: .04em; text-transform: uppercase; color: #ffffff; }
+
+/* Trade block cards wear the same face as the squad card. */
+.tb-card { position: relative; isolation: isolate; border-radius: 10px !important; border: 1px solid rgba(255,255,255,.18) !important;
+  background:
+    linear-gradient(140deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.03) 20%, rgba(255,255,255,0) 36%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ca, #2a2a31) 88%, #ffffff 12%) 0%, var(--ca, #2a2a31) 22%,
+      color-mix(in srgb, var(--ca, #2a2a31) 36%, #07070a) 52%, #0b0b0e 78%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 18px 28px -16px rgba(0,0,0,.9), 0 3px 7px rgba(0,0,0,.45) !important; }
+.tb-card::after { content: ""; position: absolute; right: -50px; top: 30px; width: 230px; height: 230px; z-index: -1;
+  background: var(--logo) center / contain no-repeat; opacity: .12; filter: grayscale(1) brightness(1.9) contrast(.9); }
+.tb-card.mine { border-color: #ffffff !important; }
+.tb-card-top { background: rgba(0,0,0,.5) !important; }
+.tb-name { font-weight: 700 !important; letter-spacing: -.03em !important; text-shadow: 0 1px 2px rgba(0,0,0,.45) !important; }
+.tb-nums { background: rgba(0,0,0,.46) !important; border-color: rgba(255,255,255,.14) !important; }
+.tb-num b { font-family: var(--kl-font-mono); display: flex; align-items: center; justify-content: center; height: 26px; }
+.tb-num b .rt { height: 24px; min-width: 36px; font-size: .9375rem; }
+.tb-num b.gold { color: #ffffff !important; }

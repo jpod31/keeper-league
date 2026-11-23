@@ -263,6 +263,23 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   `.pp-*` styles in `static/style.css`), reached from the pool, trade block and
   former players. It also carries the What's New pop-up and install banner from
   `templates/base.html`. Restart the local server to see template changes.
+- **The player card has one face, used everywhere** (squad `.fv-card` +
+  `.fv-face`, phone rows `.mob-pos-row`, pop-up `.pmod-face`, trade block
+  `.tb-card`): the club's colour as a gradient with a sheen, the club logo
+  embossed behind (`--logo` set inline, drawn by `::after`), a trim line in
+  the club's second colour, a real drop shadow, position as solid badges plus
+  the left edge, rating as the `.rt` band chip. Lucas called the flat version
+  "too 2d, basic, the fonts dont match" (2026-11-23).
+- **The 13px floor flattens hierarchy if applied blindly.** It made the name,
+  numbers and labels on the card all 13px. After the floor, set sizes on
+  purpose: the main thing largest (surname 17px bold), numbers next (16px
+  mono), labels at 13px.
+- **Home is one thing in season too** (`.hm` in `DashboardPage.tsx`): your
+  game, one sentence, the round's games, the ladder. Do not add tiles to it.
+- **Viewing in-season pages in the off-season**: copy the DB, set round
+  fixtures to `live` or `scheduled`, and run the app with the AFL round pinned
+  (the home page asks Squiggle for the current round). A launcher that patches
+  `scrapers.squiggle.get_current_round` is enough.
 - **One set of position colours**: `--pos-def #58a6ff`, `--pos-mid #bc8cff`,
   `--pos-ruc #3fb950`, `--pos-fwd #f0883e`, solid fill with dark text. Several
   pages carried their own maps; grep `DEF:` and `pos-` before adding another.

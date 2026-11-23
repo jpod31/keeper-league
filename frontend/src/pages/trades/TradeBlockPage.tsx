@@ -286,7 +286,8 @@ export function TradeBlockPage() {
               {shown.map(e => {
                 const p = e.player
                 return (
-                  <article key={e.id} className={`tb-card${e.is_mine ? ' mine' : ''}`} style={clubVars(p.afl_team)}>
+                  <article key={e.id} className={`tb-card${e.is_mine ? ' mine' : ''}`}
+                    style={{ ...clubVars(p.afl_team), ['--logo' as string]: data.team_logos[p.afl_team] ? `url("${data.team_logos[p.afl_team]}")` : 'none' } as React.CSSProperties}>
                     <div className="tb-card-top" style={{ ['--tm' as string]: rgbOf(e.team?.accent) } as React.CSSProperties}>
                       {e.team && <Crest team={e.team} />}
                       <span className="tb-owner">{e.team?.name}{e.is_mine ? ' (you)' : ''}</span>
@@ -308,8 +309,8 @@ export function TradeBlockPage() {
                       <div className="tb-nums">
                         <div className="tb-num"><b className="gold">{p.sc_avg ? Math.round(p.sc_avg) : '-'}</b><span>{avgLabel}</span></div>
                         <div className="tb-num"><b>{p.l5 ? Math.round(p.l5) : '-'}</b><span>{l5Label}</span></div>
-                        <div className="tb-num"><b className={`rt-txt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</b><span>Rating</span></div>
-                        <div className="tb-num"><b className={`rt-txt ${ratingTier(p.potential)}`}>{p.potential ?? '-'}</b><span>Potential</span></div>
+                        <div className="tb-num"><b><span className={`rt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</span></b><span>Rating</span></div>
+                        <div className="tb-num"><b><span className={`rt rt-line ${ratingTier(p.potential)}`}>{p.potential ?? '-'}</span></b><span>Potential</span></div>
                       </div>
                       <div>
                         <div className="tb-want-label">Looking for</div>
