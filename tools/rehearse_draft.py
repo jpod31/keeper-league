@@ -21,6 +21,13 @@ DST = os.path.join(REPO, "data", "snap", "draftnight.db")
 c = sqlite3.connect(SRC)
 c.execute("pragma wal_checkpoint(truncate)")
 c.close()
+# A leftover -wal/-shm from an earlier run would be replayed over the fresh
+# copy and leave it holding the finished draft, so clear them first.
+for suffix in ("", "-wal", "-shm"):
+    try:
+        os.remove(DST + suffix)
+    except FileNotFoundError:
+        pass
 shutil.copy(SRC, DST)
 
 os.environ["DATABASE_URL"] = "sqlite:///" + DST.replace("\\", "/")
@@ -39,6 +46,8 @@ with app.app_context():
     league = db.session.get(League, 3)
     sess = (DraftSession.query.filter_by(league_id=3, is_mock=False, status="scheduled")
             .order_by(DraftSession.id.desc()).first())
+    if sess is None:
+        sys.exit("No scheduled draft in the copy. Is data/snap/now.db a fresh backup taken before the draft?")
     print("before: league", league.status, league.season_year, "| session", sess.id, sess.status,
           "| rounds", sess.total_rounds)
     sizes = {t.name: FantasyRoster.query.filter_by(team_id=t.id, is_active=True).count()
