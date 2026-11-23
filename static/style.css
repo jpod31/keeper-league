@@ -11908,3 +11908,100 @@ th .sort-icon { opacity: 1 !important; }
 .fv-7s-round { color: #ffffff !important; }
 .s7-big-score.s7-score-winning { color: rgb(var(--team, 255,255,255)) !important; }
 .mob-7s-round { color: #ffffff !important; opacity: 1 !important; }
+
+/* ── Commissioner page: plain cards, a table for who still owes cuts. ── */
+.comm-line { font-size: .9375rem; color: #ffffff; margin-bottom: 10px; }
+.comm-cuts { max-width: 640px; }
+.comm-cuts td, .comm-cuts th { padding: 10px 12px !important; }
+.comm-draftdate { background: none !important; border: 1px solid var(--hair-2) !important; border-radius: 6px !important; }
+.comm-draftdate label { color: #ffffff !important; }
+.comm-draftdate label i { display: none; }
+.comm-poolstate { background: none !important; border: 0 !important; color: #ffffff !important; padding: 0 !important; }
+.pool-line { font-size: .9375rem; color: #ffffff; margin: 0 0 14px; }
+/* A bye is marked at the top centre of the card, clear of the club logo. */
+.fv-bye-badge, .fv-bye-badge.fv-bye-shifted { left: 50% !important; right: auto !important; top: 0 !important; transform: translate(-50%, -50%) !important;
+  width: auto !important; height: auto !important; padding: 2px 6px !important; border-radius: 3px !important; background: #ffffff !important; color: #050506 !important; border: 0 !important; }
+
+/* ══ Squad card, rebuilt. A club-coloured face with depth: a sheen across the
+      top, the club's mark embossed behind the name, a trim line in the club's
+      second colour, and a real shadow under the card. Type has a hierarchy
+      again: surname first, then the numbers, then small labels. Position is
+      the solid badge and the left edge. ══ */
+.fv-card:not(.fv-card-empty) {
+  font-family: var(--kl-font) !important; text-align: left !important;
+  border-radius: 10px !important; border: 1px solid rgba(255,255,255,.18) !important; border-left: 4px solid var(--pc, #5a5a66) !important;
+  background:
+    linear-gradient(140deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.05) 24%, rgba(255,255,255,0) 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ca, #2a2a31) 88%, #ffffff 12%) 0%, var(--ca, #2a2a31) 30%,
+      color-mix(in srgb, var(--ca, #2a2a31) 42%, #07070a) 68%, #0b0b0e 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.26), 0 16px 26px -14px rgba(0,0,0,.9), 0 3px 7px rgba(0,0,0,.5) !important;
+  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease !important;
+}
+.fv-card:not(.fv-card-empty):hover {
+  transform: translateY(-4px) !important; border-color: rgba(255,255,255,.5) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 24px 30px -14px rgba(0,0,0,.95), 0 6px 12px rgba(0,0,0,.55) !important;
+}
+.fv-face { position: relative; border-radius: 0 9px 9px 0; overflow: hidden; isolation: isolate; }
+.fv-face::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--cb, #ececf6); z-index: 2; }
+.fv-face::after { content: ""; position: absolute; right: -34px; top: 16px; width: 124px; height: 124px; z-index: -1;
+  background: var(--logo) center / contain no-repeat; opacity: .17; filter: grayscale(1) brightness(1.9) contrast(.9); }
+
+.fv-face .fv-card-top { display: flex !important; align-items: center !important; justify-content: flex-start !important; gap: 4px; padding: 11px 8px 0 9px !important; }
+.fv-face .fv-pos-pip { font-family: var(--kl-font-mono) !important; box-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.fv-face .fv-pip-dual { box-shadow: none; }
+.fv-face .fv-pip-dual > span > span[class^="fv-pip-"]:not(.fv-pip-slash) { box-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.fv-roles { margin-left: auto; display: inline-flex; gap: 3px; }
+.fv-role { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 4px;
+  font-family: var(--kl-font-mono); font-size: .8125rem; font-weight: 700; line-height: 1; color: #ffffff; box-shadow: inset 0 0 0 1.5px #ffffff; }
+.fv-role-cap { background: #ffffff; color: #050506; box-shadow: none; }
+.fv-role-ltil { background: #f85149; color: #050506; box-shadow: none; }
+.fv-face .fv-rtg { min-width: 30px !important; height: 22px !important; padding: 0 5px !important; font-size: .875rem !important; font-weight: 700 !important;
+  border-radius: 4px !important; box-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.fv-roles:empty + .fv-rtg, .fv-roles + .fv-rtg { margin-left: 0; }
+
+.fv-face .fv-name-block { padding: 9px 9px 10px !important; min-height: 0 !important; }
+.fv-face .fv-firstname { display: flex !important; align-items: center; justify-content: space-between; gap: 6px; font-size: .8125rem !important; font-weight: 500 !important;
+  text-transform: none !important; letter-spacing: 0 !important; color: #ffffff !important; line-height: 1.2 !important; height: 22px; overflow: visible !important; }
+.fv-face .fv-firstname > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fv-crest { width: 22px; height: 22px; object-fit: contain; flex: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.fv-face .fv-surname { display: block !important; font-size: 1.0625rem !important; font-weight: 700 !important; letter-spacing: -.025em !important; line-height: 1.15 !important;
+  color: #ffffff !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: unset !important; text-shadow: 0 1px 2px rgba(0,0,0,.45) !important; }
+.fv-face .fv-surname.fv-name-long { font-size: .9375rem !important; letter-spacing: -.035em !important; }
+
+.fv-face .fv-stats-bar { display: flex !important; align-items: center !important; justify-content: space-between; gap: 8px; padding: 7px 9px 8px !important;
+  background: rgba(0,0,0,.46) !important; border-top: 1px solid rgba(255,255,255,.14) !important; border-radius: 0 !important; }
+.fv-face .fv-stat { flex: 0 0 auto !important; display: inline-flex !important; align-items: baseline; gap: 5px; padding: 0 !important; text-align: left !important; }
+.fv-face .fv-stat-label { display: inline !important; font-family: var(--kl-font-mono) !important; font-size: .8125rem !important; font-weight: 500 !important;
+  letter-spacing: .04em !important; text-transform: uppercase; color: #ffffff !important; line-height: 1 !important; }
+.fv-face .fv-stat-num { display: inline !important; font-family: var(--kl-font-mono) !important; font-size: 1rem !important; font-weight: 700 !important;
+  color: #ffffff !important; line-height: 1 !important; }
+.fv-face .fv-form { position: static !important; font-size: .8125rem !important; margin-left: 1px; align-self: center; }
+.fv-stat-sep { display: none !important; }
+
+/* Marks that hang off the card's corners. */
+.fv-selected, .fv-injury { top: -8px !important; left: -9px !important; width: 20px !important; height: 20px !important; border: 2px solid #050506 !important;
+  font-size: .8125rem !important; filter: none !important; box-shadow: 0 2px 4px rgba(0,0,0,.5); }
+.fv-selected { background: #3fb950 !important; color: #050506 !important; }
+.fv-selected.fv-locked { background: #ffffff !important; color: #050506 !important; }
+
+/* LTIL cards and cards in a smaller cell keep the same face. */
+.fv-card-ltil:not(.fv-card-empty) { border-color: rgba(248,81,73,.7) !important; border-left-color: #f85149 !important; }
+.fv-card-reserve { opacity: 1 !important; }
+.fv-card-captain:not(.fv-card-ltil), .fv-card-vc:not(.fv-card-ltil) { border-color: rgba(255,255,255,.18) !important; border-left-color: var(--pc, #5a5a66) !important; }
+.fv-swap-mode .fv-card.fv-swap-active { border-color: #ffffff !important; }
+.fv-swap-mode .fv-card.fv-swap-eligible { border-color: #3fb950 !important; }
+.fv-face .fv-surname.fv-name-xl { font-size: .8125rem !important; letter-spacing: -.03em !important; line-height: 1.5 !important; }
+.fv-face::after { opacity: .14; right: -40px; }
+
+/* Card actions on hover: a row of plain square buttons sitting on the card's top edge. */
+.fv-actions { bottom: calc(100% - 2px) !important; padding-bottom: 6px; gap: 4px !important; }
+.fv-action-btn, .fv-action-btn[class*="fv-act-"] { width: 28px !important; height: 26px !important; border-radius: 5px !important; background: #050506 !important;
+  border: 1px solid rgba(255,255,255,.55) !important; color: #ffffff !important; font-family: var(--kl-font-mono) !important; font-size: .8125rem !important;
+  font-weight: 700 !important; box-shadow: 0 4px 8px rgba(0,0,0,.6) !important; transform: none !important; }
+.fv-action-btn:hover, .fv-action-btn.active { background: #ffffff !important; color: #050506 !important; border-color: #ffffff !important; }
+.fv-action-btn.fv-act-delist:hover { background: #f85149 !important; border-color: #f85149 !important; color: #050506 !important; }
+.fv-action-btn:disabled { opacity: .5; }
+
+/* Bench cards get the same room as cards on the field. */
+.fv-reserves-grid { grid-template-columns: repeat(auto-fill, 150px) !important; justify-content: start !important; gap: 10px !important; }
+.fv-card-reserve { width: 150px !important; }

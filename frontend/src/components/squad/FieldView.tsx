@@ -4,7 +4,7 @@
  */
 import { checkSwapEligible, type SwapSourceInfo, type ActionMode } from '../../hooks/useFieldActions'
 import { useEffect, useRef } from 'react'
-import { clubVars } from '../../lib/clubs'
+import { clubVars, ratingTier } from '../../lib/clubs'
 
 interface Player {
   id: number; name: string; position: string; afl_team: string; age: number
@@ -153,8 +153,18 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     const posParts = (p.position || 'MID').split('/')
     const fname = p.name.split(' ')[0]
     const sname = p.name.split(' ').slice(1).join(' ')
-    const rtgClass = p.rating ? (p.rating >= 80 ? 'fv-rtg-elite' : p.rating >= 70 ? 'fv-rtg-good' : p.rating >= 60 ? 'fv-rtg-avg' : 'fv-rtg-low') : 'fv-rtg-none'
     const form = fd.player_form?.[String(p.id)] || 'flat'
+    const logo = p.afl_team ? teamLogos[p.afl_team] : undefined
+    const roles: { k: string; label: string; title: string }[] = []
+    if (isLtil) roles.push({ k: 'ltil', label: isPendingLtil ? '?' : 'L', title: isPendingLtil ? 'LTIL, pending approval' : 'Long-term injury list' })
+    else {
+      if (isCap) roles.push({ k: 'cap', label: 'C', title: 'Captain' })
+      else if (isVC) roles.push({ k: 'vc', label: 'VC', title: 'Vice captain' })
+      else if (isEmg) roles.push({ k: 'emg', label: 'E', title: 'Emergency' })
+    }
+    if (is7c) roles.push({ k: '7c', label: '7C', title: '7s captain' })
+    else if (is7s && !inSevens && !isEmg && !isCap && !isVC) roles.push({ k: '7s', label: '7', title: 'In the 7s squad' })
+    if (inSevens && slotNo !== undefined) roles.push({ k: 'slot', label: String(slotNo), title: '7s slot' })
 
     const isSwapActive = actions?.swapSource?.pid === p.id
     let isSwapEligible = false
@@ -192,17 +202,6 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
             actions.handlePlayerClick(p.id, section, posParts, fieldPosUpper, isLocked, isEmg, is7s)
           } else if (actions) { actions.showPlayer(p.id) }
         }}>
-
-        {/* Ribbon */}
-        {isLtil && <div className="fv-ribbon fv-ribbon-ltil" title={isPendingLtil ? 'LTIL, pending approval' : 'Long-term injury list'}><span>{isPendingLtil ? '?' : 'L'}</span></div>}
-        {!isLtil && isCap && <div className="fv-ribbon fv-ribbon-cap"><span>C</span></div>}
-        {!isLtil && isVC && !isCap && <div className="fv-ribbon fv-ribbon-vc"><span>VC</span></div>}
-        {!isLtil && isEmg && !isCap && !isVC && <div className="fv-ribbon fv-ribbon-emg"><span>E</span></div>}
-        {is7c && <div className="fv-ribbon fv-ribbon-7c" title="7s captain"><span>C</span></div>}
-        {is7s && !inSevens && !is7c && !isEmg && !isCap && !isVC && (
-          <div className="fv-ribbon fv-ribbon-7s" title="In the 7s squad"><span>7</span></div>
-        )}
-        {inSevens && slotNo !== undefined && <div className="fv-7s-slotno">{slotNo}</div>}
 
         {/* Status */}
         {!isLtil && isLocked && <div className="fv-selected fv-locked" title="Locked, game started"><i className="bi bi-lock-fill"></i></div>}
@@ -274,59 +273,49 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
           </div>
         )}
 
-        {/* Top: logo + position */}
-        <div className="fv-card-top">
-          <div className="fv-logo">
-            {p.afl_team && teamLogos[p.afl_team] ? (
-              <img src={teamLogos[p.afl_team]} alt={p.afl_team} title={p.afl_team} />
+        {/* The face: club colours with the club's mark behind, position and
+            role across the top, the name, then average and age. */}
+        <div className="fv-face" style={{ ['--logo' as string]: logo ? `url("${logo}")` : 'none' } as React.CSSProperties}>
+          <div className="fv-card-top">
+            {posParts.length > 1 ? (
+              <span className="fv-pos-pip fv-pip-dual">
+                {posParts.map((part, i) => (
+                  <span key={part}>{i > 0 && <span className="fv-pip-slash">/</span>}<span className={`fv-pip-${part.toLowerCase()}`}>{part}</span></span>
+                ))}
+              </span>
             ) : (
-              <span className="fv-logo-fallback"><i className="bi bi-shield-fill"></i></span>
+              <span className={`fv-pos-pip fv-pip-${posParts[0].toLowerCase()}`}>{posParts[0]}</span>
             )}
-          </div>
-          {isFlex && <span className="fv-flex-pip">FLEX</span>}
-          {posParts.length > 1 ? (
-            <span className="fv-pos-pip fv-pip-dual">
-              {posParts.map((part, i) => (
-                <span key={part}>{i > 0 && <span className="fv-pip-slash">/</span>}<span className={`fv-pip-${part.toLowerCase()}`}>{part}</span></span>
-              ))}
+            <span className="fv-roles">
+              {roles.map(r => <span key={r.k} className={`fv-role fv-role-${r.k}`} title={r.title}>{r.label}</span>)}
             </span>
-          ) : (
-            <span className={`fv-pos-pip fv-pip-${posParts[0].toLowerCase()}`}>{posParts[0]}</span>
-          )}
-        </div>
+            <span className={`rt ${ratingTier(p.rating)} fv-rtg`} title="Rating">{p.rating ?? '-'}</span>
+          </div>
 
-        {/* Name */}
-        <div className="fv-name-block">
-          <div className="fv-firstname">{fname}</div>
-          <div className={`fv-surname${sname.length > 9 ? ' fv-name-long' : ''}`} title={p.name}>
-            <span className="fv-initial">{fname[0]}. </span>{sname}
+          <div className="fv-name-block">
+            <div className="fv-firstname">
+              <span>{fname}</span>
+              {logo && <img className="fv-crest" src={logo} alt={p.afl_team || ''} title={p.afl_team || ''} />}
+            </div>
+            <div className={`fv-surname${sname.length > 14 ? ' fv-name-xl' : sname.length > 11 ? ' fv-name-long' : ''}`} title={p.name}>{sname || fname}</div>
           </div>
-        </div>
 
-        {/* Stats bar */}
-        <div className="fv-stats-bar">
-          <div className="fv-stat fv-stat-primary">
-            <span className="fv-stat-num">{p.sc_avg ? Math.round(p.sc_avg) : '-'}</span>
-            <span className="fv-stat-label">AVG</span>
-          </div>
-          <div className="fv-stat-sep"></div>
-          <div className="fv-stat">
-            <span className={`fv-stat-num ${rtgClass}`}>{p.rating || '-'}</span>
-            <span className="fv-stat-label">RTG</span>
-          </div>
-          <div className="fv-stat-sep"></div>
-          <div className="fv-stat">
-            <span className="fv-stat-num">{p.age || '-'}</span>
-            <span className="fv-stat-label">AGE</span>
+          <div className="fv-stats-bar">
+            <div className="fv-stat">
+              <span className="fv-stat-label">Avg</span>
+              <span className="fv-stat-num">{p.sc_avg ? Math.round(p.sc_avg) : '-'}</span>
+            </div>
+            <div className="fv-stat">
+              <span className="fv-stat-label">Age</span>
+              <span className="fv-stat-num">{p.age || '-'}</span>
+              {form !== 'flat' && (
+                <span className={`fv-form fv-form-${form}`} title={form === 'up' ? 'Form is up' : 'Form is down'}>
+                  <i className={`bi bi-caret-${form === 'up' ? 'up' : 'down'}-fill`}></i>
+                </span>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Form arrow */}
-        {form !== 'flat' && (
-          <span className={`fv-form fv-form-${form}`}>
-            <i className={`bi bi-caret-${form === 'up' ? 'up' : 'down'}-fill`}></i>
-          </span>
-        )}
       </div>
     )
   }

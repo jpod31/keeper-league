@@ -660,56 +660,25 @@ export function PlayerPoolPage() {
         <PlayersSubnav active="pool" leagueId={leagueId!} />
       </div>
 
-      <div className="page-header d-none d-lg-block">
-        <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}`}>{league.name}</Link> / Players / Pool
-        </div>
-        <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
-          <div>
-            <h2 className="mb-0">Player Pool</h2>
-            {stats.isLast && (
-              <span className="kl-season-note">
-                <i className="bi bi-calendar3"></i> Averages, L3 and L5 are from the {stats.label} season
-              </span>
-            )}
-          </div>
-          <div className="d-flex align-items-center gap-2">
-            <div className="pool-count">
-              <strong>{sorted.length}</strong> players
-            </div>
+      <div className="kx-page d-none d-lg-block">
+        <div className="kx-head">
+          <h2>Player pool</h2>
+          <div className="kx-head-side">
+            {stats.isLast && <span className="sq-chip">{stats.label} averages</span>}
+            <span className="sq-chip">{sorted.length} players</span>
           </div>
         </div>
       </div>
 
       {can_pickup && (
-        <div
-          className="d-flex align-items-center gap-2 mb-3 px-3 py-2 d-none d-lg-flex"
-          style={{ background: 'rgba(63,185,80,.08)', border: '1px solid rgba(63,185,80,.2)', borderRadius: 8, fontSize: '.82rem' }}
-        >
-          <i className="bi bi-person-plus-fill" style={{ color: '#3fb950' }}></i>
-          <span style={{ color: 'var(--kl-text-primary)' }}>
-            SSP pickups open, <strong>{effective_roster_count}/{league.squad_size}</strong> roster spots filled
-            {ltil_count ? ` (${ltil_count} on LTIL)` : ''}. Closes at Round {ssp_cutoff_round}.
-          </span>
-        </div>
+        <p className="pool-line d-none d-lg-block">
+          Pickups are open. You have {effective_roster_count} of {league.squad_size} list spots filled
+          {ltil_count ? ` (${ltil_count} on the LTIL)` : ''}. They close at round {ssp_cutoff_round}.
+        </p>
       )}
 
       {!can_pickup && data.pickup_reason && data.user_team_id && (
-        <div
-          className="d-flex align-items-center gap-2 mb-3 px-3 py-2"
-          style={{
-            background: 'rgba(210,153,34,.08)',
-            border: '1px solid rgba(210,153,34,.3)',
-            borderRadius: 8,
-            fontSize: '.82rem',
-          }}
-        >
-          <i className="bi bi-info-circle-fill" style={{ color: '#d29922' }}></i>
-          <span style={{ color: '#f0b38a' }}>
-            <strong>Free-agent pickups paused.</strong>
-            <span style={{ color: 'var(--kl-text-primary)', marginLeft: 6, fontWeight: 400 }}>{data.pickup_reason}</span>
-          </span>
-        </div>
+        <p className="pool-line">Pickups are paused. {data.pickup_reason}</p>
       )}
 
       <div className="card d-none d-lg-block" data-density={density}>

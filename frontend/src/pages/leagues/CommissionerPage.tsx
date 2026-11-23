@@ -292,9 +292,9 @@ export function CommissionerPage() {
         <div className="page-breadcrumb">
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Admin / Commissioner
         </div>
-        <div className="d-flex align-items-center mb-0">
-          <i className="bi bi-shield-lock me-2" style={{ fontSize: '1.4rem', color: '#d29922' }}></i>
-          <h4 className="mb-0 fw-bold" style={{ fontSize: '1.15rem' }}>Commissioner Hub</h4>
+        <div className="kx-head" style={{ marginBottom: 0 }}>
+          <h2>Commissioner</h2>
+          <div className="kx-head-side"><span className="sq-chip">{phaseBadge.label}</span></div>
         </div>
       </div>
 
@@ -305,56 +305,34 @@ export function CommissionerPage() {
       )}
 
       {/* Season Controls */}
-      <div className="card mb-4" style={{ borderColor: 'rgba(210,153,34,.35)' }}>
-        <div className="card-header d-flex justify-content-between align-items-center" style={{ background: 'rgba(210,153,34,.08)', borderBottom: '1px solid rgba(210,153,34,.2)' }}>
+      <div className="card mb-4">
+        <div className="card-header d-flex justify-content-between align-items-center">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-            <i className="bi bi-calendar-range me-2" style={{ color: '#d29922' }}></i>Season Controls
+            Season Controls
           </h5>
-          <span className="badge" style={{ background: phaseBadge.bg, color: '#050506', fontSize: '.8125rem' }}>{phaseBadge.label}</span>
         </div>
         <div className="card-body">
           {delist.is_open && (
-            <div className="mb-3 p-3" style={{ background: 'rgba(248,81,73,.05)', border: '1px solid rgba(248,81,73,.15)', borderRadius: 8 }}>
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <i className="bi bi-exclamation-triangle-fill" style={{ color: '#f85149' }}></i>
-                <span style={{ fontSize: '.85rem', fontWeight: 600, color: '#f85149' }}>Delist Period Open</span>
-                {delist.closes_at && (
-                  <span className="ms-auto" style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
-                    Closes {formatDate(delist.closes_at)}
-                  </span>
-                )}
+            <div className="mb-3">
+              <div className="comm-line">
+                Delistings are open{delist.closes_at ? `, closing ${formatDate(delist.closes_at)}` : ''}.
               </div>
               {delist.teams.length > 0 && (
-                <div className="row g-1">
-                  {delist.teams.map(tp => (
-                    <div key={tp.name} className="col-6 col-md-4">
-                      <div
-                        className="d-flex justify-content-between align-items-center px-2 py-1"
-                        style={{
-                          background: tp.met ? 'rgba(63,185,80,.08)' : 'rgba(160,160,172,.05)',
-                          border: `1px solid ${tp.met ? 'rgba(63,185,80,.2)' : 'rgba(160,160,172,.1)'}`,
-                          borderRadius: 6,
-                          fontSize: '.8125rem',
-                        }}
-                      >
-                        <span style={{ color: 'var(--kl-text-primary)' }}>{tp.name}</span>
-                        <span
-                          style={{ color: tp.met ? '#3fb950' : '#f85149', fontWeight: 600 }}
-                          title={tp.target_size != null
-                            ? `${tp.squad_size} listed, must finish at ${tp.target_size}`
-                            : undefined}
-                        >
-                          {tp.count}/{tp.required ?? delist.min_delists}
-                          {!tp.met && tp.remaining > 0 && (
-                            <span style={{ color: 'var(--kl-text-primary)', fontWeight: 500 }}>
-                              {' '}({tp.squad_size}→{tp.target_size})
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <table className="kx-table comm-cuts">
+                  <thead><tr><th>Club</th><th className="num">List</th><th className="num">Cut</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {delist.teams.map(tp => (
+                      <tr key={tp.name}>
+                        <td>{tp.name}</td>
+                        <td className="num">{tp.squad_size ?? ''}</td>
+                        <td className="num">{tp.count}</td>
+                        <td className={tp.met ? 'dh2-ok' : 'dh2-due'}>
+                          {tp.met ? 'Done' : tp.remaining > 0 ? `${tp.remaining} to cut${tp.target_size != null ? `, to get to ${tp.target_size}` : ''}` : 'Not done'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           )}
@@ -471,8 +449,7 @@ export function CommissionerPage() {
                   )}
                 </div>
 
-                <div className={`comm-poolstate${pool.open ? ' open' : ''}`}>
-                  <i className={`bi ${pool.open ? 'bi-unlock-fill' : 'bi-lock-fill'} me-1`}></i>
+                <div className="comm-line" style={{ flexBasis: '100%' }}>
                   {pool.open
                     ? 'Player pool open, free agents and SSP signings are live.'
                     : (pool.reason || 'Player pool closed.')}
@@ -500,10 +477,10 @@ export function CommissionerPage() {
       </div>
 
       {/* Pending LTIL */}
-      <div className="card mb-4" style={{ borderColor: 'rgba(210,153,34,.35)' }}>
-        <div className="card-header" style={{ background: 'rgba(210,153,34,.08)', borderBottom: '1px solid rgba(210,153,34,.2)' }}>
+      <div className="card mb-4">
+        <div className="card-header">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-            <i className="bi bi-hourglass-split me-2" style={{ color: '#d29922' }}></i>Pending LTIL Requests
+            Pending LTIL Requests
           </h5>
         </div>
         <div className="card-body p-0">
@@ -533,10 +510,10 @@ export function CommissionerPage() {
       </div>
 
       {/* Active LTIL */}
-      <div className="card mb-4" style={{ borderColor: 'rgba(63,185,80,.2)' }}>
-        <div className="card-header" style={{ background: 'rgba(63,185,80,.06)', borderBottom: '1px solid rgba(63,185,80,.15)' }}>
+      <div className="card mb-4">
+        <div className="card-header">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-            <i className="bi bi-bandaid me-2" style={{ color: '#3fb950' }}></i>Active LTIL Entries
+            Active LTIL Entries
           </h5>
         </div>
         <div className="card-body p-0">
@@ -563,10 +540,10 @@ export function CommissionerPage() {
       </div>
 
       {/* Commissioner Tools */}
-      <div className="card mb-4" style={{ borderColor: 'rgba(210,153,34,.3)' }}>
-        <div className="card-header" style={{ background: 'rgba(210,153,34,.08)', borderBottom: '1px solid rgba(210,153,34,.2)' }}>
+      <div className="card mb-4">
+        <div className="card-header">
           <h5 className="mb-0 fw-bold" style={{ fontSize: '.9rem' }}>
-            <i className="bi bi-tools me-2" style={{ color: '#d29922' }}></i>Commissioner Tools
+            Commissioner Tools
           </h5>
         </div>
         <div className="card-body">
