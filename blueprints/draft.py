@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 
 import config
-from models.database import db, League, FantasyTeam, DraftSession, AflPlayer, UserDraftWeights, LeagueDraftWeights, DraftChatMessage
+from models.database import db, League, FantasyTeam, FantasyRoster, DraftSession, AflPlayer, UserDraftWeights, LeagueDraftWeights, DraftChatMessage
 from blueprints import check_league_access
 from models.draft_live import (
     create_draft_session, get_draft_state, start_draft, pause_draft, resume_draft,
@@ -897,10 +897,22 @@ def draft_recap(league_id, session_id=None):
         flash("No picks found for this draft.", "info")
         return redirect(url_for("draft_live.draft_setup", league_id=league_id))
 
-    # Get all players with draft scores for expected-value calculation
+    # Players who could actually be picked in this draft: everyone with a
+    # draft score EXCEPT those a club in this league already held going in.
+    # Without this a keeper or mid-season draft is marked against the best
+    # players in the whole AFL, who were never on the board, and every club
+    # gets an F. (Held = on a list in this league now and not picked here.)
+    picked_here = {pk.player_id for pk in all_picks if pk.player_id}
+    held_ids = {
+        pid for (pid,) in db.session.query(FantasyRoster.player_id)
+        .join(FantasyTeam, FantasyRoster.team_id == FantasyTeam.id)
+        .filter(FantasyTeam.league_id == league_id, FantasyRoster.is_active == True)  # noqa: E712
+        .all()
+    } - picked_here
     all_players = AflPlayer.query.filter(AflPlayer.draft_score.isnot(None)).all()
     all_scores_sorted = sorted(
-        [p.draft_score for p in all_players if p.draft_score and p.draft_score > 0],
+        [p.draft_score for p in all_players
+         if p.draft_score and p.draft_score > 0 and p.id not in held_ids],
         reverse=True,
     )
 

@@ -105,7 +105,7 @@ export function DraftRecapPage() {
                     {(g.ratio * 100).toFixed(0)}%
                   </td>
                   <td className="text-secondary" style={{ fontSize: '.8125rem' }}>
-                    {g.best_pick ? `${g.best_pick.player_name} (+${g.best_pick.value_diff.toFixed(0)})` : '-'}
+                    {g.best_pick ? `${g.best_pick.player_name} (${Math.round(g.best_pick.value_diff) > 0 ? '+' : ''}${Math.round(g.best_pick.value_diff)})` : '-'}
                   </td>
                 </tr>
               ))}
