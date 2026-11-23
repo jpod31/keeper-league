@@ -1062,7 +1062,9 @@ function DraftRoomPageInner() {
 
       {/* The pick is in */}
       {reveal && (
-        <div className="dn-reveal" style={clubVars(reveal.player_afl_team)} onClick={() => setReveal(null)} role="status">
+        <div className="dn-reveal"
+          style={{ ...clubVars(reveal.player_afl_team), ['--logo' as string]: reveal.player_afl_team && clubLogos[reveal.player_afl_team] ? `url("${clubLogos[reveal.player_afl_team]}")` : 'none' } as React.CSSProperties}
+          onClick={() => setReveal(null)} role="status">
           <div className="dn-reveal-top">
             <TeamCrest team={teamOf(reveal.team_id)} size={34} />
             <span>Pick {reveal.pick_number}, {reveal.team_name}</span>
@@ -1474,28 +1476,44 @@ function DraftRoomPageInner() {
       </div>
 
       {/* Pick confirmation modal */}
-      {pendingPickId != null && pendingPickPlayer && (
-        <>
-          <div onClick={() => setPendingPickId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 1055 }} />
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1060, width: '90%', maxWidth: 360, background: '#151518', border: '1px solid #2a292f', borderRadius: 12 }}>
-            <div style={{ borderBottom: '1px solid #2a292f', padding: '.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h6 className="fw-bold mb-0" style={{ fontSize: '.9rem' }}>Confirm Pick</h6>
-              <button type="button" className="btn-close btn-close-white" onClick={() => setPendingPickId(null)}></button>
-            </div>
-            <div className="text-center" style={{ padding: '1rem' }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--kl-text-primary)' }}>{pendingPickPlayer.name}</div>
-              <div className="d-flex justify-content-center gap-2 mt-1">
-                <span className={`pos-badge badge-${posClass(pendingPickPlayer.position)}`}>{pendingPickPlayer.position}</span>
-                <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{pendingPickPlayer.afl_team}</span>
+      {pendingPickId != null && pendingPickPlayer && (() => {
+        const pp = pendingPickPlayer
+        const logo = pp.afl_team ? clubLogos[pp.afl_team] : undefined
+        return (
+          <>
+            <div onClick={() => setPendingPickId(null)} className="dn-confirm-back" />
+            <div role="dialog" aria-modal="true" aria-label="Confirm pick" className="dn-confirm">
+              <div className="pmod-face" style={{ ...clubVars(pp.afl_team), ['--logo' as string]: logo ? `url("${logo}")` : 'none' } as React.CSSProperties}>
+                <div className="pmod-face-top">
+                  {(pp.position || 'MID').split('/').map(ps => (
+                    <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${pp.position_expected ? ' pos-expected' : ''}`}>{ps}</span>
+                  ))}
+                </div>
+                <div className="pmod-face-id">
+                  {logo && <img className="pmod-crest" src={logo} alt="" />}
+                  <div style={{ minWidth: 0 }}>
+                    <div className="pmod-first">{pp.name.split(' ')[0]}</div>
+                    <div className="pmod-sur">{pp.name.split(' ').slice(1).join(' ') || pp.name}</div>
+                  </div>
+                </div>
+                <div className="pmod-face-meta">
+                  <span>{pp.afl_team}</span>
+                  {pp.age != null && <span>Age {pp.age}</span>}
+                </div>
+                <div className="pmod-nums" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                  <div className="pmod-num"><b>{pp.sc_avg != null ? Math.round(pp.sc_avg) : '-'}</b><span>Average</span></div>
+                  <div className="pmod-num"><b><span className={`rt ${rtBand(pp.rating)}`}>{pp.rating ?? '-'}</span></b><span>Rating</span></div>
+                  <div className="pmod-num"><b><span className={`rt rt-line ${rtBand(pp.potential)}`}>{pp.potential ?? '-'}</span></b><span>Potential</span></div>
+                </div>
+              </div>
+              <div className="dn-confirm-foot">
+                <button type="button" className="kx-btn" onClick={() => setPendingPickId(null)}>Cancel</button>
+                <button type="button" className="kx-btn kx-btn-gold" onClick={confirmPick}>Draft {pp.name.split(' ').slice(-1)[0]}</button>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid #2a292f', padding: '.75rem 1rem', display: 'flex', gap: '.5rem' }}>
-              <button type="button" className="btn btn-outline-secondary btn-sm flex-fill" onClick={() => setPendingPickId(null)}>Cancel</button>
-              <button type="button" className="btn btn-primary btn-sm flex-fill" onClick={confirmPick}>Confirm</button>
-            </div>
-          </div>
-        </>
-      )}
+          </>
+        )
+      })()}
 
       {/* Pass modal */}
       {showPassModal && (

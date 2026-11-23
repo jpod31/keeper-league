@@ -175,7 +175,7 @@ export function MatchupDetailPage() {
                 {Math.round(homeScore)}
               </div>
             ) : (
-              <div className="mu-tscore pending">&ndash;</div>
+              <div className="mu-tscore pending">{fixture.status === 'live' ? Math.round(homeScore) : '–'}</div>
             )}
           </Link>
 
@@ -200,7 +200,7 @@ export function MatchupDetailPage() {
                 {Math.round(awayScore)}
               </div>
             ) : (
-              <div className="mu-tscore pending">&ndash;</div>
+              <div className="mu-tscore pending">{fixture.status === 'live' ? Math.round(awayScore) : '–'}</div>
             )}
           </Link>
         </div>

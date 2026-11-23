@@ -247,6 +247,22 @@ def matchup_detail(league_id, fixture_id):
             "is_final": bool(fixture.is_final),
             "final_type": fixture.final_type,
         }
+        # While the round is live the fixture row has no score yet, so the
+        # page would show a dash. Give it the running score instead.
+        if fixture.status == "live":
+            try:
+                from models.scoring_engine import get_live_scores
+
+                def _total(v):
+                    if isinstance(v, dict):
+                        return v.get("total_score") or 0
+                    return getattr(v, "total_score", 0) or 0
+
+                live = get_live_scores(league_id, fixture.afl_round, fixture.year)
+                fixture_out["home_score"] = _total(live.get(fixture.home_team_id, {}))
+                fixture_out["away_score"] = _total(live.get(fixture.away_team_id, {}))
+            except Exception:
+                logging.getLogger(__name__).exception("live score for matchup %s failed", fixture.id)
 
         return jsonify({
             "fixture": fixture_out,

@@ -12060,3 +12060,20 @@ th .sort-icon { opacity: 1 !important; }
 .tb-num b { font-family: var(--kl-font-mono); display: flex; align-items: center; justify-content: center; height: 26px; }
 .tb-num b .rt { height: 24px; min-width: 36px; font-size: .9375rem; }
 .tb-num b.gold { color: #ffffff !important; }
+
+/* ── Draft: confirm and announce a pick with the player's face. ── */
+.dn-confirm-back { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 1055; }
+.dn-confirm { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1060; width: 92%; max-width: 440px;
+  background: #0b0b0e; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.85); }
+.dn-confirm .pmod-face-top { padding-right: 0; }
+.dn-confirm-foot { display: flex; gap: 8px; padding: 14px 20px; }
+.dn-confirm-foot .kx-btn { flex: 1; height: 44px; font-size: .9375rem; }
+.dn-reveal { position: fixed; isolation: isolate; overflow: hidden; border-radius: 10px !important;
+  background:
+    linear-gradient(140deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.03) 22%, rgba(255,255,255,0) 40%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ca, #2a2a31) 88%, #ffffff 12%) 0%, var(--ca, #2a2a31) 36%,
+      color-mix(in srgb, var(--ca, #2a2a31) 40%, #07070a) 80%, #0b0b0e 100%) !important; }
+.dn-reveal::after { content: ""; position: absolute; right: 60px; top: -40px; width: 260px; height: 260px; z-index: -1;
+  background: var(--logo) center / contain no-repeat; opacity: .12; filter: grayscale(1) brightness(1.9) contrast(.9); }
+.dn-reveal-name { font-weight: 700 !important; letter-spacing: -.04em !important; }
+.dn-reveal-top { font-family: var(--kl-font-mono); font-weight: 600 !important; letter-spacing: .04em; text-transform: uppercase; }
