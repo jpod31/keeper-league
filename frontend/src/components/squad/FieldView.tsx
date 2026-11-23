@@ -345,7 +345,6 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
   }
 
   const flexFilled = fd.flex_data.filter(s => s.player).length
-  const POS_LABELS: Record<string, string> = { DEF: 'Defenders', MID: 'Midfielders', RUC: 'Rucks', FWD: 'Forwards' }
 
   return (
     <div className={`fv-outer d-none d-lg-block${inMode ? ' fv-swap-mode' : ''}${byeIds ? ' fv-bye-preview' : ''}`} id="fvWrapper">
@@ -377,7 +376,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         <div className="fv-sidebar">
           <div className="fv-flex-section">
             <div className="fv-flex-hdr">
-              <i className="bi bi-lightning-charge me-1"></i>Flex
+              Flex
               <span className="fv-zone-tally ms-2">{flexFilled}/{fd.flex_count}</span>
             </div>
             <div className="fv-flex-stack">
@@ -393,7 +392,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
           {fd.ssp_enabled && (
             <div className="fv-ltil-sidebar">
               <div className="fv-ltil-hdr">
-                <i className="bi bi-bandaid me-1"></i>LTIL
+                Injured list
                 <span className="fv-zone-tally ms-2">{fd.ltil_entries.length}/{fd.ssp_slots}</span>
               </div>
               <div className="fv-ltil-sidebar-list">
@@ -454,7 +453,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       {/* Emergencies */}
       {fd.emergency_players.length > 0 && (
         <div className="fv-emg-section">
-          <div className="fv-emg-hdr"><i className="bi bi-shield-exclamation me-1"></i>Emergencies<span className="fv-zone-tally ms-2">{fd.emergency_players.length} / 4</span></div>
+          <div className="fv-emg-hdr">Emergencies<span className="fv-zone-tally ms-2">{fd.emergency_players.length} / 4</span></div>
           <div className="fv-reserves-grid">{fd.emergency_players.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
         </div>
       )}
@@ -468,7 +467,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         return (
           <div className={`fv-7s-section${isPlan ? ' fv-7s-plan' : ''}`}>
             <div className="fv-7s-hdr">
-              <i className="bi bi-7-circle me-1"></i>7s Squad
+              7s squad
               <span className="fv-zone-tally ms-2">{picked.length} / 7</span>
               {/* Off-season: name the season being picked for. That it's next
                   year's side needs no label, there's no other round left. */}
@@ -490,7 +489,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       {/* Injury list */}
       {fd.injury_list.length > 0 && (
         <div className="fv-injury-section">
-          <div className="fv-injury-hdr"><i className="bi bi-bandaid me-1"></i>Injury List<span className="fv-zone-tally ms-2">{fd.injury_list.length}</span></div>
+          <div className="fv-injury-hdr">Injuries<span className="fv-zone-tally ms-2">{fd.injury_list.length}</span></div>
           <div className="fv-reserves-grid">{fd.injury_list.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
         </div>
       )}
@@ -498,7 +497,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       {/* Reserves by position */}
       {fd.reserves.length > 0 && (
         <div className="fv-reserves-section">
-          <div className="fv-reserves-hdr"><i className="bi bi-people me-1"></i>Reserves<span className="fv-zone-tally ms-2">{fd.reserves.length} players</span></div>
+          <div className="fv-reserves-hdr">Bench<span className="fv-zone-tally ms-2">{fd.reserves.length}</span></div>
           {['DEF', 'MID', 'RUC', 'FWD'].map(posCode => {
             const posPlayers = fd.reserves_by_pos?.[posCode] || []
             if (!posPlayers.length) return null
@@ -506,7 +505,6 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
               <div className="fv-reserves-group" key={posCode}>
                 <div className="fv-reserves-group-hdr">
                   <span className={`fv-zone-pill fv-zp-${posCode.toLowerCase()}`}>{posCode}</span>
-                  <span className="fv-reserves-group-label">{POS_LABELS[posCode]}</span>
                   <span className="fv-zone-tally ms-1">{posPlayers.length}</span>
                 </div>
                 <div className="fv-reserves-grid">{posPlayers.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
@@ -519,7 +517,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
       {/* Rookies, bench players U22 with rating < 70 */}
       {(fd.rookies?.length ?? 0) > 0 && (
         <div className="fv-rookies-section">
-          <div className="fv-rookies-hdr"><i className="bi bi-asterisk me-1"></i>Rookies<span className="fv-zone-tally ms-2">{fd.rookies!.length}</span></div>
+          <div className="fv-rookies-hdr">Rookies<span className="fv-zone-tally ms-2">{fd.rookies!.length}</span></div>
           <div className="fv-reserves-grid">{fd.rookies!.map(p => <PlayerCard key={p.id} p={p} posClass={(p.position || 'MID').split('/')[0].toLowerCase()} isReserve />)}</div>
         </div>
       )}

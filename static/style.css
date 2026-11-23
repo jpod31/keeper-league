@@ -12094,3 +12094,23 @@ th .sort-icon { opacity: 1 !important; }
 .draft-need-chip.met { color: #56d364 !important; }
 .draft-need-chip.blocked { color: #f85149 !important; }
 .draft-pass-tag { color: #ffffff !important; background: none !important; border: 1px solid var(--hair-2) !important; }
+
+/* ── Squad page around the cards: solid zone labels, plain section headings,
+      flat side panels. ── */
+.fv-zone-hdr { gap: 8px !important; margin-bottom: 8px !important; justify-content: center; }
+.fv-zone-pill { font-family: var(--kl-font-mono) !important; font-size: .8125rem !important; font-weight: 700 !important; letter-spacing: .04em !important;
+  padding: 3px 8px !important; border-radius: 4px !important; color: #050506 !important; }
+.fv-zp-def { background: var(--pos-def) !important; } .fv-zp-mid { background: var(--pos-mid) !important; }
+.fv-zp-fwd { background: var(--pos-fwd) !important; } .fv-zp-ruc { background: var(--pos-ruc) !important; }
+.fv-zone-tally { font-family: var(--kl-font-mono) !important; font-size: .875rem !important; font-weight: 600 !important; color: #ffffff !important; }
+.fv-flex-hdr, .fv-ltil-hdr, .fv-7s-hdr, .fv-reserves-hdr, .fv-rookies-hdr, .fv-emg-hdr, .fv-injury-hdr {
+  display: flex !important; align-items: center !important; gap: 8px; font-family: var(--kl-font) !important; font-size: 1rem !important; font-weight: 600 !important;
+  letter-spacing: -.01em !important; text-transform: none !important; color: #ffffff !important; border: 0 !important; padding: 0 !important; margin: 0 0 10px !important; background: none !important; }
+.fv-flex-hdr *, .fv-ltil-hdr *, .fv-7s-hdr *, .fv-reserves-hdr *, .fv-rookies-hdr *, .fv-emg-hdr *, .fv-injury-hdr * { margin-left: 0 !important; }
+.fv-flex-section, .fv-ltil-sidebar, .fv-ltil-section { background: var(--panel) !important; border: 1px solid var(--hair-2) !important; border-radius: 8px !important;
+  box-shadow: none !important; padding: 14px !important; }
+.fv-7s-section, .fv-reserves-section, .fv-rookies-section, .fv-emg-section, .fv-injury-section { border: 0 !important; background: none !important; padding: 22px 0 0 !important; margin: 0 !important; }
+.fv-7s-round { margin-left: auto !important; border: 1px solid var(--hair-2) !important; border-radius: 5px !important; background: none !important; padding: 3px 9px !important;
+  font-family: var(--kl-font-mono); font-size: .8125rem !important; }
+.fv-reserves-group-hdr { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px !important; }
+.fv-ltil-slot-empty, .fv-card-empty.fv-card-ltil { border-radius: 8px !important; }
