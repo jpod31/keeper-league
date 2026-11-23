@@ -11803,3 +11803,31 @@ th .sort-icon { opacity: 1 !important; }
 /* Text on a team colour is dark when the colour is light. */
 .kl-rail-avatar, .lg-switch-avatar, .lg-switch-item-avatar { color: var(--team-ink, #ffffff) !important; }
 .fv-7s-slotno { color: #ffffff !important; opacity: 1 !important; }
+
+/* Phone: the last tables that ran wide. */
+@media (max-width: 600px) {
+  .dn-hist-tbl .dn-teamcell { font-size: 0 !important; gap: 0 !important; }
+  .dn-hist-tbl .dn-teamcell + span { display: none; }
+  .drc-grades th:nth-child(4), .drc-grades td:nth-child(4), .drc-grades th:nth-child(5), .drc-grades td:nth-child(5),
+  .drc-grades th:nth-child(7), .drc-grades td:nth-child(7) { display: none !important; }
+  .rm-table th:nth-child(4), .rm-table td:nth-child(4) { display: none !important; }
+  .br-table th:nth-child(3), .br-table td:nth-child(3), .br-table th:nth-child(5), .br-table td:nth-child(5),
+  .br-table th:nth-child(8), .br-table td:nth-child(8), .br-table th:nth-child(9), .br-table td:nth-child(9) { display: none !important; }
+  .br-table td:first-child { min-width: 0 !important; }
+  .sn-ladder th:nth-child(5), .sn-ladder td:nth-child(5), .sn-ladder th:nth-child(7), .sn-ladder td:nth-child(7),
+  .sn-ladder th:nth-child(8), .sn-ladder td:nth-child(8) { display: none !important; }
+  .ns-lad-name { white-space: normal !important; overflow: visible !important; }
+}
+@media (max-width: 600px) {
+  .rm-table2 th:nth-child(4), .rm-table2 td:nth-child(4) { display: none !important; }
+  .rm-table2 th, .rm-table2 td, .sn-ladder th, .sn-ladder td { padding-left: 5px !important; padding-right: 5px !important; }
+  .rm-table2 td strong { white-space: nowrap; }
+}
+@media (max-width: 600px) {
+  .draft-avail-tbl .pl-mark { display: none !important; }
+  .draft-avail-tbl .player-name .dn-club { max-width: 118px; }
+}
+@media (max-width: 600px) {
+  .draft-avail-tbl .player-name .dn-club { max-width: 104px; }
+  .draft-avail-tbl th:first-child, .draft-avail-tbl td:first-child { padding-left: 8px !important; }
+}

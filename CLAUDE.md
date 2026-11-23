@@ -237,6 +237,32 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   order, round picker, tabs) is a bug: content is hidden. Check 1280 and 390
   wide. Tables hide columns by `nth-child`, so removing a column shifts every
   such rule after it (page CSS and `static/style.css` both).
+- **The audit checks five things** per page: text under 13px, grey text
+  (including text faded with `opacity` on itself or a parent), text clipped by
+  its own box, boxes that scroll sideways, and low contrast (light on light,
+  dark on dark). `_mobtest/kl_states.mjs` clicks or hovers through menus,
+  sheets and pop-ups and screenshots each state; `_mobtest/wide.mjs <path>`
+  names the table and columns behind a sideways scroll.
+- **Grey reaches text three ways the type sweep cannot see**: colour variables
+  (`--pp-text-muted` and friends), `opacity` on a row, and inline SVG `fill`.
+  After adding UI, run the audit, not only `tools/type_floor.py`.
+- **Check the state coaches are in, not only the test state.** Take a fresh
+  read-only copy of prod (python `sqlite3` backup over ssh; the server has no
+  sqlite3 binary), set a local password, and view as a coach who still owes
+  cuts and has no team colour. That is how the squad strips and an unreadable
+  league badge were found.
+- **Status strips are a sentence and a button** (`.sq-strip`). No icon box,
+  title and caption per item.
+- **Team colour comes from the team** (`useTeamAccent()` in
+  `components/ui/TeamBadge.tsx`, `team_accent()` server-side). Gameday, the
+  ladder and the season review each had their own palette; do not add another.
+  Text on a team colour uses `--team-ink`.
+- **The season review has one look**: black, white, the viewer's team colour.
+  Per-slide `theme` triples in `slides.tsx` are no longer applied.
+- **`/player/<name>` is a server-rendered page** (`templates/player.html`,
+  `.pp-*` styles in `static/style.css`), reached from the pool, trade block and
+  former players. It also carries the What's New pop-up and install banner from
+  `templates/base.html`. Restart the local server to see template changes.
 - **One set of position colours**: `--pos-def #58a6ff`, `--pos-mid #bc8cff`,
   `--pos-ruc #3fb950`, `--pos-fwd #f0883e`, solid fill with dark text. Several
   pages carried their own maps; grep `DEF:` and `pos-` before adding another.

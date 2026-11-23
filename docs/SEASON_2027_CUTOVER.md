@@ -153,6 +153,27 @@ Went through every page by eye instead of by count.
       the type went up. The table now fits and the action column is pinned.
       The audit reports any box that scrolls sideways so this is caught.
 
+## Round 6: "stop stopping"
+
+Every page, desktop and phone, plus menus, sheets and pop-ups, viewed on a
+fresh copy of production.
+
+- [x] Gameday and the ladder use each team's saved colour; gameday position
+      badges are solid.
+- [x] Nothing is faded with opacity (bench and did-not-play rows, losing AFL
+      side, past ownership lines).
+- [x] The player page reached from the pool, trade block and former players
+      (a separate server-rendered page) brought into line; its tiles now show
+      the season average.
+- [x] What's New pop-up and install banner restyled; changelog wording cleaned.
+- [x] Phone sheets, player pool filter panel, optimise menu, notifications
+      drawer fixed.
+- [x] Squad page strips rebuilt as a sentence and a button.
+- [x] Team stats deck, trade detail, 7s ladder, analytics cleaned up.
+- [x] Season review re-skinned to black, white and the viewer's team colour.
+- [x] Em dashes out of messages the server sends and of email templates.
+- [x] The audit also checks faded text, sideways scrolling and contrast.
+
 ## Fixed along the way (would have bitten on draft night)
 
 - A club redrafting a player it had delisted crashed the pick. The roster

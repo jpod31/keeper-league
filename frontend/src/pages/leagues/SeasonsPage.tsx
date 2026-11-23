@@ -145,7 +145,7 @@ export function SeasonsPage() {
             <div className="kx-empty"><b>No ladder yet</b>The {year} season has not had a round played.</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table className="kx-table">
+              <table className="kx-table sn-ladder">
                 <thead>
                   <tr>
                     <th style={{ width: 44 }}></th><th>Club</th>

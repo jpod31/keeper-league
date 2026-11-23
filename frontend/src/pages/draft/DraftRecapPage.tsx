@@ -69,7 +69,7 @@ export function DraftRecapPage() {
           </h5>
         </div>
         <div className="card-body p-0">
-          <table className="table table-sm mb-0">
+          <table className="table table-sm mb-0 drc-grades">
             <thead>
               <tr>
                 <th style={{ width: 40 }}>#</th>

@@ -55,7 +55,7 @@ const RD_CSS = `
 .rd-sc { font-size:.95rem; font-weight:700; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }
 .rd-sc.won { color:#3fb950; }
 .rd-sc.lost { color:var(--kl-text-primary); }
-.rd-sep { color:#1e1d21; margin:0 4px; font-weight:300; font-size:.8125rem; }
+.rd-sep { color:#ffffff; margin:0 4px; font-weight:300; font-size:.8125rem; }
 .rd-vs { font-size:.8125rem; font-weight:700; color:#2a292f; letter-spacing:1.5px; }
 .rd-arrow { display:flex; align-items:center; justify-content:center; width:28px; color:#1e1d21; transition:color .1s; }
 .rd-row:hover .rd-arrow { color:var(--kl-text-primary); }

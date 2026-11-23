@@ -189,7 +189,7 @@ export function PlayerRatingsPage() {
               <p>Genuine rating changes from the next ratings refresh will show here.</p>
             </div>
           ) : (
-            <table className="table table-sm mb-0">
+            <table className="table table-sm mb-0 rm-table2">
               <thead><tr><th style={{ width: 30 }} aria-label="Watchlist"></th><th>Player</th><th>Pos</th><th className="text-end">Old</th><th className="text-end">New</th><th className="text-end">Δ</th></tr></thead>
               <tbody>
                 {data.last_update.map(r => (

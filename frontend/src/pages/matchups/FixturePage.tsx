@@ -85,7 +85,7 @@ const FX_CSS = `
 .mx-sc.won { color:#3fb950; }
 .mx-sc.lost { color:var(--kl-text-primary); }
 .mx-sc.draw { color:var(--kl-text-primary); }
-.mx-sep { color:#1e1d21; margin:0 4px; font-weight:300; font-size:.8125rem; }
+.mx-sep { color:#ffffff; margin:0 4px; font-weight:300; font-size:.8125rem; }
 .mx-vs { font-size:.8125rem; font-weight:700; color:#2a292f; letter-spacing:1.5px; text-transform:uppercase; }
 .mx-live-tag { font-size:.8125rem; font-weight:700; color:#3fb950; letter-spacing:.5px; background:rgba(63,185,80,.08); padding:2px 6px; border-radius:3px; }
 .mx-arrow { display:flex; align-items:center; justify-content:center; width:28px; color:#1e1d21; transition:color .1s; }

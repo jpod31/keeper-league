@@ -50,9 +50,9 @@ const S7T_CSS = `
 .age-young { background:rgba(63,185,80,.12); color:#3fb950; }
 .age-senior { background:rgba(210,153,34,.12); color:#d29922; }
 .sevens-sc { font-size:.8125rem; font-weight:600; min-width:36px; text-align:right; }
-.sevens-cap-star { cursor:pointer; font-size:.9rem; color:#2a292f; transition:color .15s; }
-.sevens-cap-star.active { color:#ffd700; text-shadow:0 0 6px rgba(255,215,0,.4); }
-.sevens-cap-star:hover { color:#d29922; }
+.sevens-cap-star { cursor:pointer; font-size:1rem; color:#ffffff; }
+.sevens-cap-star.active { color:#ffffff; }
+.sevens-cap-star:hover { color:#ffffff; }
 .sevens-check { width:18px; height:18px; border-radius:4px; border:2px solid #2a292f; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
 .sevens-check.checked { background:#514e5f; border-color:#514e5f; }
 .sevens-check.checked::after { content:'✓'; color:#fff; font-size:.8125rem; font-weight:700; }
@@ -296,7 +296,7 @@ export function Reserve7sTeamPage() {
                     onClick={e => { e.stopPropagation(); setCaptain(p.id) }}
                     title="Set as captain"
                   >
-                    ★
+                    {p.id === captainId ? '★' : '☆'}
                   </span>
                 </div>
               )
