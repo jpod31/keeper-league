@@ -12186,3 +12186,42 @@ th .sort-icon { opacity: 1 !important; }
 .sn-premier-l i { display: none !important; }
 .sn-premier { background: var(--panel) !important; }
 .sn-pos.first { background: #ffffff !important; color: #050506 !important; border-color: #ffffff !important; }
+
+/* ══ Card, position on top. The top border is the player's position colour
+      (two halves for a dual-position player), as it was before. No left edge.
+      One font inside the card. ══ */
+.fv-card:not(.fv-card-empty), .fv-card-captain:not(.fv-card-ltil), .fv-card-vc:not(.fv-card-ltil) {
+  border: 1px solid rgba(255,255,255,.18) !important; border-top: 0 !important; overflow: hidden; }
+.fv-card:not(.fv-card-empty):hover { border-color: rgba(255,255,255,.5) !important; }
+.fv-face { border-radius: 9px !important; }
+.fv-face::before { height: 5px !important; z-index: 2;
+  background: linear-gradient(90deg, var(--pc, #5a5a66) 0 50%, var(--pc2, var(--pc, #5a5a66)) 50% 100%) !important; }
+.fv-face .fv-card-top { padding: 13px 9px 0 10px !important; }
+.fv-face .fv-name-block { padding-left: 10px !important; }
+.fv-face .fv-stats-bar { padding-left: 10px !important; }
+.fv-card-ltil:not(.fv-card-empty) { border-color: rgba(248,81,73,.7) !important; }
+.fv-card:not(.fv-card-empty) { overflow: visible; }
+
+.fv-face, .fv-face .fv-pos-pip, .fv-face .fv-role, .fv-face .fv-rtg, .fv-face .fv-stat-label, .fv-face .fv-stat-num {
+  font-family: var(--kl-font) !important; font-variant-numeric: tabular-nums; }
+.fv-face .fv-pos-pip, .fv-face .fv-pip-dual > span > span { letter-spacing: .03em !important; }
+.fv-face .fv-stat-label { font-weight: 600 !important; letter-spacing: .05em !important; }
+.fv-face .fv-stat-num { font-size: 1.0625rem !important; letter-spacing: -.01em; }
+.fv-face .fv-rtg { font-weight: 700 !important; }
+.fv-face .fv-role { font-weight: 700 !important; }
+
+/* The pop-up and the draft confirm carry the same top band. */
+.pmod-face::before { height: 6px !important;
+  background: linear-gradient(90deg, var(--pc, var(--cb, #ececf6)) 0 50%, var(--pc2, var(--pc, var(--cb, #ececf6))) 50% 100%) !important; }
+.pmod-num b, .pmod-num > span, .pmod-face .pos-badge { font-family: var(--kl-font) !important; font-variant-numeric: tabular-nums; }
+.fv-card:not(.fv-card-empty):not(.fv-card-ltil), .fv-card.fv-card-ltil:not(.fv-card-empty) { border-left-width: 1px !important; border-left-color: rgba(255,255,255,.18) !important; }
+.fv-card.fv-card-ltil:not(.fv-card-empty) { border-left-color: rgba(248,81,73,.7) !important; }
+.fv-face .fv-card-top .fv-rtg { margin-left: auto !important; }
+.fv-face .fv-firstname .fv-roles { margin-left: auto; flex: none; }
+.fv-face .fv-firstname { justify-content: flex-start !important; }
+.fv-face .fv-firstname > span:first-child { flex: 0 1 auto; min-width: 0; }
+.fv-face .fv-stats-bar { gap: 4px !important; padding: 7px 8px 8px 10px !important; }
+.fv-face .fv-stat { gap: 4px !important; white-space: nowrap; }
+.fv-face .fv-stat-label { letter-spacing: .02em !important; }
+.fv-face .fv-stat-num { font-size: 1rem !important; }
+.fv-face .fv-form { margin-left: 0 !important; font-size: .75rem !important; }

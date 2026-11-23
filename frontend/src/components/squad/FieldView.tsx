@@ -190,7 +190,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     const ltilHasRoom = fd.ssp_enabled && (fd.ltil_entries.length + fd.pending_ltil_count) < fd.ssp_slots
 
     return (
-      <div className={cardClasses} style={clubVars(p.afl_team)}
+      <div className={cardClasses} style={{ ...clubVars(p.afl_team), ['--pc' as string]: `var(--pos-${posParts[0].toLowerCase()})`, ['--pc2' as string]: `var(--pos-${(posParts[1] || posParts[0]).toLowerCase()})` } as React.CSSProperties}
         data-player-id={p.id} data-section={section} data-positions={p.position || 'MID'}
         data-field-pos={fieldPosUpper} data-locked={isLocked ? '1' : ''}
         data-emg={isEmg ? '1' : ''} data-sevens={is7s ? '1' : ''} data-age={String(p.age || '')}
@@ -286,15 +286,15 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
             ) : (
               <span className={`fv-pos-pip fv-pip-${posParts[0].toLowerCase()}`}>{posParts[0]}</span>
             )}
-            <span className="fv-roles">
-              {roles.map(r => <span key={r.k} className={`fv-role fv-role-${r.k}`} title={r.title}>{r.label}</span>)}
-            </span>
             <span className={`rt ${ratingTier(p.rating)} fv-rtg`} title="Rating">{p.rating ?? '-'}</span>
           </div>
 
           <div className="fv-name-block">
             <div className="fv-firstname">
               <span>{fname}</span>
+              <span className="fv-roles">
+                {roles.map(r => <span key={r.k} className={`fv-role fv-role-${r.k}`} title={r.title}>{r.label}</span>)}
+              </span>
               {logo && <img className="fv-crest" src={logo} alt={p.afl_team || ''} title={p.afl_team || ''} />}
             </div>
             <div className={`fv-surname${sname.length > 14 ? ' fv-name-xl' : sname.length > 11 ? ' fv-name-long' : ''}`} title={p.name}>{sname || fname}</div>

@@ -1482,7 +1482,8 @@ function DraftRoomPageInner() {
           <>
             <div onClick={() => setPendingPickId(null)} className="dn-confirm-back" />
             <div role="dialog" aria-modal="true" aria-label="Confirm pick" className="dn-confirm">
-              <div className="pmod-face" style={{ ...clubVars(pp.afl_team), ['--logo' as string]: logo ? `url("${logo}")` : 'none' } as React.CSSProperties}>
+              <div className="pmod-face" style={{ ...clubVars(pp.afl_team), ['--logo' as string]: logo ? `url("${logo}")` : 'none',
+                ['--pc' as string]: `var(--pos-${(pp.position || 'MID').split('/')[0].toLowerCase()})`, ['--pc2' as string]: `var(--pos-${((pp.position || 'MID').split('/')[1] || (pp.position || 'MID').split('/')[0]).toLowerCase()})` } as React.CSSProperties}>
                 <div className="pmod-face-top">
                   {(pp.position || 'MID').split('/').map(ps => (
                     <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${pp.position_expected ? ' pos-expected' : ''}`}>{ps}</span>

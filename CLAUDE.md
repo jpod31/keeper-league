@@ -267,8 +267,12 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   `.fv-face`, phone rows `.mob-pos-row`, pop-up `.pmod-face`, trade block
   `.tb-card`): the club's colour as a gradient with a sheen, the club logo
   embossed behind (`--logo` set inline, drawn by `::after`), a trim line in
-  the club's second colour, a real drop shadow, position as solid badges plus
-  the left edge, rating as the `.rt` band chip. Lucas called the flat version
+  position colour across the TOP border (two halves for a dual-position
+  player, `--pc` and `--pc2` set inline), a real drop shadow, position as solid
+  badges, rating as the `.rt` band chip, one font inside the card (no mono).
+  Lucas asked for the top border back by name: "i liked the colour border
+  being the position before.. the top one" (2026-11-24). Rows (phone squad,
+  gameday) keep the position on the left edge. Lucas called the flat version
   "too 2d, basic, the fonts dont match" (2026-11-23).
 - **The 13px floor flattens hierarchy if applied blindly.** It made the name,
   numbers and labels on the card all 13px. After the floor, set sizes on

@@ -78,7 +78,8 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
       <div onClick={onClose} className="pmod-backdrop" />
       <div role="dialog" aria-modal="true" className="pmod-shell">
         {/* Header: the same club-coloured face as his card. */}
-        <div className="pmod-face" style={{ ...clubVars(p.afl_team), ['--logo' as string]: logoUrl ? `url("${logoUrl}")` : 'none' } as React.CSSProperties}>
+        <div className="pmod-face" style={{ ...clubVars(p.afl_team), ['--logo' as string]: logoUrl ? `url("${logoUrl}")` : 'none',
+          ['--pc' as string]: `var(--pos-${(p.position || 'MID').split('/')[0].toLowerCase()})`, ['--pc2' as string]: `var(--pos-${((p.position || 'MID').split('/')[1] || (p.position || 'MID').split('/')[0]).toLowerCase()})` } as React.CSSProperties}>
           <button type="button" onClick={onClose} className="pmod-close" aria-label="Close"><i className="bi bi-x-lg"></i></button>
           <div className="pmod-face-top">
             {(p.position || 'MID').split('/').map(ps => (
