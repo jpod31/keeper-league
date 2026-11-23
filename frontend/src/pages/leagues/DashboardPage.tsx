@@ -227,7 +227,9 @@ export function DashboardPage() {
                 <div className="dh2-you-text">
                   {mine.to_cut > 0
                     ? `You have ${mine.list_size} on your list. Cut ${mine.to_cut} before the draft.`
-                    : `Your list is ready: ${mine.list_size} players and ${mine.picks} picks.`}
+                    : mine.spots > 0
+                      ? `Your list is ready: ${mine.list_size} players, ${mine.spots} spot${mine.spots === 1 ? '' : 's'} to fill at the draft.`
+                      : `Your list is full at ${mine.list_size}. You will not pick at the draft.`}
                 </div>
                 <div className="dh2-actions">
                   <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/team/${user_team.id}`}>{mine.to_cut > 0 ? 'Make cuts' : 'My list'}</Link>
@@ -239,7 +241,7 @@ export function DashboardPage() {
           {offseason.clubs && offseason.clubs.length > 0 && (
             <table className="kx-table dh2-table">
               <thead>
-                <tr><th className="num" style={{ width: 64 }}>Pick</th><th>Club</th><th className="num">List</th><th className="num">Picks</th><th>Status</th></tr>
+                <tr><th className="num" style={{ width: 64 }}>Pick</th><th>Club</th><th className="num">List</th><th className="num">To draft</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {offseason.clubs.map(c => (
@@ -251,7 +253,7 @@ export function DashboardPage() {
                       </Link>
                     </td>
                     <td className="num">{c.list_size}</td>
-                    <td className="num">{c.picks}</td>
+                    <td className="num">{c.to_cut > 0 ? '' : c.spots}</td>
                     <td className={c.to_cut > 0 ? 'dh2-due' : 'dh2-ok'}>{c.to_cut > 0 ? `${c.to_cut} to cut` : 'Ready'}</td>
                   </tr>
                 ))}
