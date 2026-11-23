@@ -465,8 +465,6 @@ input[type="range"].draft-slider::-moz-range-thumb {
   .draft-banner .draft-pick-badge { width: 40px !important; height: 40px !important; font-size: .9rem !important; }
   .draft-timer { font-size: 1.7rem !important; }
   .draft-event { flex-direction: column; align-items: stretch; text-align: center; }
-  .draft-avail-tbl th:nth-child(3), .draft-avail-tbl td:nth-child(3) { display: none; }
-  .draft-avail-tbl th:nth-child(6), .draft-avail-tbl td:nth-child(6) { display: none; }
   .draft-right-col { max-height: none; padding-bottom: 80px; }
   .col-lg-5 > .card, .col-lg-7 > .card { max-height: 50vh !important; }
   .draft-chat-card { max-height: none !important; }
@@ -927,7 +925,7 @@ function DraftRoomPageInner() {
               <span className="draft-header-info">
                 {/* The session's own order, not the league default: an
                     off-season draft runs the same order every round. */}
-                {(state.draft_type || league.draft_type) === 'snake' ? 'Snake' : 'Same order every round'}, {session.pick_timer_secs ? `${session.pick_timer_secs}s timer` : 'No timer'}
+                {(state.draft_type || league.draft_type) === 'snake' ? 'Snake' : 'Same order every round'}, {session.pick_timer_secs ? `${session.pick_timer_secs}s timer` : 'no timer'}
               </span>
             </div>
           </div>
@@ -1196,7 +1194,6 @@ function DraftRoomPageInner() {
                     {([
                       ['name', 'Player'],
                       ['position', 'Pos'],
-                      ['afl_team', 'Team'],
                       ['age', 'Age'],
                       ['sc_avg', statsYr.tag ? `SC ${statsYr.tag}` : 'SC'],
                       ['rating', 'Rtg'],
@@ -1215,15 +1212,14 @@ function DraftRoomPageInner() {
                     const blocked = isPositionBlocked(p.position)
                     return (
                       <tr key={p.id} className={blocked ? 'blocked' : undefined}>
-                        <td className="player-name">{p.name}{p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}</td>
+                        <td className="player-name"><span className="dn-club" title={p.afl_team || undefined}>{p.afl_team && clubLogos[p.afl_team] ? <img src={clubLogos[p.afl_team]} alt="" /> : <span className="dn-club-gap" />}{p.name}</span>{p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}</td>
                         <td>{p.position && <span className={`draft-pos-chip ${posClass(p.position)}${p.position_expected ? ' pos-expected' : ''}`} title={p.position_expected ? 'Expected position. He has no SuperCoach position yet.' : undefined}>{p.position.split('/')[0]}</span>}</td>
-                        <td><span className="dn-club">{p.afl_team && clubLogos[p.afl_team] && <img src={clubLogos[p.afl_team]} alt="" />}{p.afl_team || ''}</span></td>
                         <td style={{ color: 'var(--kl-text-primary)' }}>{p.age ?? '-'}</td>
                         <td className="stat-cell" style={{ color: '#e8e7f0' }}>{p.sc_avg != null ? p.sc_avg.toFixed(1) : '-'}</td>
                         <td className="stat-cell"><span className={`rt ${rtBand(p.rating)}`}>{p.rating ?? '–'}</span></td>
                         <td className="stat-cell"><span className={`rt rt-line ${rtBand(p.potential)}`}>{p.potential ?? '–'}</span></td>
                         <td className="stat-cell"><span className="draft-stat-chip draft-score">{p.draft_score != null ? p.draft_score.toFixed(1) : '–'}</span></td>
-                        <td>
+                        <td className="dn-act">
                           <div className="d-flex gap-1 justify-content-end align-items-center">
                             <button
                               className={`btn btn-sm py-0 px-2 ${queuedIds.has(p.id) ? 'btn-warning' : 'btn-outline-secondary'}`}
@@ -1344,7 +1340,7 @@ function DraftRoomPageInner() {
                 </span>
               </div>
               <div className="card-body p-0" style={{ overflowY: 'auto' }}>
-                <table className="table table-sm mb-0">
+                <table className="table table-sm mb-0 dn-hist-tbl">
                   <thead className="sticky-top">
                     <tr><th>#</th><th>Team</th><th>Player</th><th>Pos</th><th>Rtg</th><th>Pot</th></tr>
                   </thead>
