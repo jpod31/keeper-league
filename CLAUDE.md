@@ -274,6 +274,12 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   being the position before.. the top one" (2026-11-24). Rows (phone squad,
   gameday) keep the position on the left edge. Lucas called the flat version
   "too 2d, basic, the fonts dont match" (2026-11-23).
+- **Squad card layout (`.pc6-*` in `FieldView.tsx`)**: club logo top left,
+  positions top right, first name with role chips (C, VC, E, 7, BYE) beside
+  it, surname large, then three cells along the bottom: average (with the
+  form arrow), rating chip, age. This is the layout coaches knew before the
+  restyle; keep it. New class names were used on purpose so the many older
+  `.fv-*` card overrides in `static/style.css` do not apply.
 - **The 13px floor flattens hierarchy if applied blindly.** It made the name,
   numbers and labels on the card all 13px. After the floor, set sizes on
   purpose: the main thing largest (surname 17px bold), numbers next (16px

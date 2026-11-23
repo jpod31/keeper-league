@@ -165,6 +165,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     if (is7c) roles.push({ k: '7c', label: '7C', title: '7s captain' })
     else if (is7s && !inSevens && !isEmg && !isCap && !isVC) roles.push({ k: '7s', label: '7', title: 'In the 7s squad' })
     if (inSevens && slotNo !== undefined) roles.push({ k: 'slot', label: String(slotNo), title: '7s slot' })
+    if (!isLtil && hasBye) roles.push({ k: 'bye', label: 'BYE', title: 'No game this round' })
 
     const isSwapActive = actions?.swapSource?.pid === p.id
     let isSwapEligible = false
@@ -209,7 +210,6 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
         {(isLtil || (!isLocked && !isSelected)) && p.injury_severity && (
           <div className={`fv-injury fv-injury-${p.injury_severity}`} title={`${p.injury_type || 'Injured'}, ${p.injury_return || ''}`}></div>
         )}
-        {!isLtil && hasBye && <div className={`fv-bye-badge${isSelected || p.injury_severity ? ' fv-bye-shifted' : ''}`} title="No game this round">BYE</div>}
         {p.is_former && <div className="fv-off-list" title="No longer on an AFL list. He will not score.">OFF AFL LIST</div>}
 
         {/* Hover action buttons */}
@@ -273,46 +273,47 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
           </div>
         )}
 
-        {/* The face: club colours with the club's mark behind, position and
-            role across the top, the name, then average and age. */}
-        <div className="fv-face" style={{ ['--logo' as string]: logo ? `url("${logo}")` : 'none' } as React.CSSProperties}>
-          <div className="fv-card-top">
-            {posParts.length > 1 ? (
-              <span className="fv-pos-pip fv-pip-dual">
-                {posParts.map((part, i) => (
-                  <span key={part}>{i > 0 && <span className="fv-pip-slash">/</span>}<span className={`fv-pip-${part.toLowerCase()}`}>{part}</span></span>
-                ))}
-              </span>
-            ) : (
-              <span className={`fv-pos-pip fv-pip-${posParts[0].toLowerCase()}`}>{posParts[0]}</span>
-            )}
-            <span className={`rt ${ratingTier(p.rating)} fv-rtg`} title="Rating">{p.rating ?? '-'}</span>
+        {/* The face. Club logo top left, positions top right, the name, then
+            three numbers along the bottom: average, rating, age. The top border
+            (drawn by .pc6::before) is the position colour. */}
+        <div className="fv-face pc6" style={{ ['--logo' as string]: logo ? `url("${logo}")` : 'none' } as React.CSSProperties}>
+          <div className="pc6-top">
+            {logo
+              ? <img className="pc6-logo" src={logo} alt={p.afl_team || ''} title={p.afl_team || ''} />
+              : <span className="pc6-logo pc6-logo-none" />}
+            <span className="pc6-pips">
+              {posParts.map(part => (
+                <span key={part} className={`pos-badge badge-${part.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{part}</span>
+              ))}
+            </span>
           </div>
 
-          <div className="fv-name-block">
-            <div className="fv-firstname">
+          <div className="pc6-name">
+            <div className="pc6-first">
               <span>{fname}</span>
-              <span className="fv-roles">
-                {roles.map(r => <span key={r.k} className={`fv-role fv-role-${r.k}`} title={r.title}>{r.label}</span>)}
-              </span>
-              {logo && <img className="fv-crest" src={logo} alt={p.afl_team || ''} title={p.afl_team || ''} />}
+              {roles.map(r => <span key={r.k} className={`pc6-role pc6-role-${r.k}`} title={r.title}>{r.label}</span>)}
             </div>
-            <div className={`fv-surname${sname.length > 14 ? ' fv-name-xl' : sname.length > 11 ? ' fv-name-long' : ''}`} title={p.name}>{sname || fname}</div>
+            <div className={`pc6-sur${sname.length > 14 ? ' xl' : sname.length > 11 ? ' long' : ''}`} title={p.name}>{sname || fname}</div>
           </div>
 
-          <div className="fv-stats-bar">
-            <div className="fv-stat">
-              <span className="fv-stat-label">Avg</span>
-              <span className="fv-stat-num">{p.sc_avg ? Math.round(p.sc_avg) : '-'}</span>
+          <div className="pc6-stats">
+            <div className="pc6-cell">
+              <span className="pc6-v">
+                {p.sc_avg ? Math.round(p.sc_avg) : '-'}
+                {form !== 'flat' && (
+                  <i className={`bi bi-caret-${form === 'up' ? 'up' : 'down'}-fill pc6-form pc6-form-${form}`}
+                    title={form === 'up' ? 'Form is up' : 'Form is down'}></i>
+                )}
+              </span>
+              <span className="pc6-l">Avg</span>
             </div>
-            <div className="fv-stat">
-              <span className="fv-stat-label">Age</span>
-              <span className="fv-stat-num">{p.age || '-'}</span>
-              {form !== 'flat' && (
-                <span className={`fv-form fv-form-${form}`} title={form === 'up' ? 'Form is up' : 'Form is down'}>
-                  <i className={`bi bi-caret-${form === 'up' ? 'up' : 'down'}-fill`}></i>
-                </span>
-              )}
+            <div className="pc6-cell">
+              <span className="pc6-v"><span className={`rt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</span></span>
+              <span className="pc6-l">Rtg</span>
+            </div>
+            <div className="pc6-cell">
+              <span className="pc6-v">{p.age || '-'}</span>
+              <span className="pc6-l">Age</span>
             </div>
           </div>
         </div>
