@@ -230,14 +230,12 @@ export function TradeDetailPage() {
         <div className="tr-deal-header">
           <div className="tr-deal-title">The deal</div>
           <div className="tr-deal-balance">
-            <span><b>{giving.length + giving_picks.length}</b> ↔ <b>{receiving.length + receiving_picks.length}</b></span>
-            <span style={{ color: 'var(--kl-text-primary)' }}>·</span>
+            <span><b>{giving.length + giving_picks.length}</b> for <b>{receiving.length + receiving_picks.length}</b></span>
             <span className={rosterDelta > 0 ? 'tr-bal-pos' : rosterDelta < 0 ? 'tr-bal-neg' : ''}>
               {trade.proposer_team?.name?.split(' ')[0]} roster {rosterDelta > 0 ? '+' : ''}{rosterDelta}
             </span>
             {(giving.length > 0 || receiving.length > 0) && (
               <>
-                <span style={{ color: 'var(--kl-text-primary)' }}>·</span>
                 <span className={scDelta > 0 ? 'tr-bal-pos' : scDelta < 0 ? 'tr-bal-neg' : ''}>
                   SC {scDelta > 0 ? '+' : ''}{Math.round(scDelta)}
                 </span>

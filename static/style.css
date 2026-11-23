@@ -11681,3 +11681,40 @@ th .sort-icon { opacity: 1 !important; }
   .squad-cmd-actions [class$="-icon"] { display: none !important; }
   .squad-cmd-actions > * > button, .squad-cmd-actions > button { justify-content: center !important; }
 }
+
+/* ── Trade detail: flat cards. Position is the left edge, no red or green wash. ── */
+.tr-deal { box-shadow: none !important; border: 1px solid var(--hair-2) !important; border-radius: 6px !important; background: var(--panel) !important; }
+.tr-deal-balance { gap: 18px !important; }
+.tr-deal-side { border: 1px solid var(--hair) !important; border-radius: 6px !important; background: none !important; box-shadow: none !important; }
+.tr-deal-side-label { color: #ffffff !important; }
+.tr-card, .tr-card-out, .tr-card-in { background: #101013 !important; box-shadow: none !important; border-radius: 6px !important;
+  border-top: 1px solid var(--hair-2) !important; border-right: 1px solid var(--hair-2) !important; border-bottom: 1px solid var(--hair-2) !important; }
+.tr-card:hover { transform: none !important; border-color: rgba(255,255,255,.45) !important; }
+.tr-card-DEF { border-left: 4px solid var(--pos-def) !important; } .tr-card-MID { border-left: 4px solid var(--pos-mid) !important; }
+.tr-card-FWD { border-left: 4px solid var(--pos-fwd) !important; } .tr-card-RUC { border-left: 4px solid var(--pos-ruc) !important; }
+.tr-card-sc { color: #ffffff !important; }
+
+/* ── Team stats deck: no glows, no glyphs, plain panel titles. ── */
+.dk-stage, .dk-stage * { text-shadow: none !important; }
+.dk-headline-desc { font-size: 2.1rem !important; font-weight: 700 !important; letter-spacing: -.04em; }
+.dk-kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; gap: 0 !important;
+  border: 1px solid var(--hair-2); border-radius: 6px; background: var(--panel); }
+.dk-kpi { background: none !important; border: 0 !important; border-left: 1px solid var(--hair) !important; border-radius: 0 !important;
+  box-shadow: none !important; padding: 18px 20px !important; }
+.dk-kpi:first-child { border-left: 0 !important; }
+.dk-kpi::before, .dk-kpi::after { display: none !important; }
+.dk-kpi-val { font-family: var(--kl-font-mono); font-size: 2rem !important; font-weight: 500 !important; letter-spacing: -.04em; }
+.dk-kpi-lbl { font-family: var(--kl-font-mono); }
+.dk-panel, .dk-universe { box-shadow: none !important; border: 1px solid var(--hair-2) !important; border-radius: 6px !important; }
+.dk-panel-title { font-family: var(--kl-font) !important; font-size: 1rem !important; font-weight: 600 !important; letter-spacing: 0 !important;
+  text-transform: none !important; color: #ffffff !important; }
+.dk-dna-l { text-transform: none !important; letter-spacing: 0 !important; }
+@media (min-width: 992px) { .dk-grid { grid-template-rows: auto 1fr auto; } .dk-dna { align-self: start; } }
+
+/* 7s ladder: it has no status, power rank, form or movement, so those columns are not drawn. */
+.lad-sevens .lad-row > .lad-status, .lad-sevens .lad-row > .lad-pr, .lad-sevens .lad-row > .lad-form, .lad-sevens .lad-row > .lad-momentum,
+.lad-sevens .lad-head > :nth-child(3), .lad-sevens .lad-head > :nth-child(4), .lad-sevens .lad-head > :nth-child(6), .lad-sevens .lad-head > :nth-child(7) { display: none !important; }
+@media (min-width: 769px) { .lad-sevens .lad-head, .lad-sevens .lad-row { grid-template-columns: 36px 1fr 96px 80px 80px 76px 56px !important; } }
+
+/* No glowing text anywhere. */
+*, *::before, *::after { text-shadow: none !important; }

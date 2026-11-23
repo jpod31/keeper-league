@@ -225,10 +225,9 @@ function Hero({ data }: { data: AnalyticsData }) {
   )
 }
 
-function Chapter({ label, title, body, children }: { label: string; title: string; body?: string; children?: React.ReactNode }) {
+function Chapter({ title, body, children }: { label?: string; title: string; body?: string; children?: React.ReactNode }) {
   return (
     <section className="wr-chapter">
-      <div className="wr-label">{label}</div>
       <div className="wr-title">{title}</div>
       {body && <div className="wr-body">{body}</div>}
       {children}
@@ -326,9 +325,6 @@ function DynastyRace({ dynasty, teamId }: { dynasty: Record<string, DynastyTeam>
             </div>
           )
         })}
-      </div>
-      <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textAlign: 'center', marginTop: 10 }}>
-        Best 23 auto-selected per year, kids develop and displace veterans over time
       </div>
     </div>
   )

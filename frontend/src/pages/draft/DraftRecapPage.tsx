@@ -145,7 +145,7 @@ export function DraftRecapPage() {
                       <td style={{ width: 140 }}>{p.team_name}</td>
                       <td>
                         {p.is_pass ? (
-                          <span className="text-secondary">, Pass,</span>
+                          <span>Passed</span>
                         ) : (
                           <>
                             <strong>{p.player_name}</strong>

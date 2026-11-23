@@ -68,10 +68,11 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
   const { data: deck, loading } = useFetch<DeckData>(`/leagues/${leagueId}/team/${teamId}/deck?format=json`)
   const { data: intel } = useFetch<Intel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
 
-  if (loading || !deck) return <div style={{ padding: 50, textAlign: 'center' }}><Spinner /><div className="text-secondary mt-2" style={{ fontSize: '.85rem' }}>Computing deep intelligence…</div></div>
+  if (loading || !deck) return <div style={{ padding: 50, textAlign: 'center' }}><Spinner /><div className="text-secondary mt-2" style={{ fontSize: '.85rem' }}>Working it out</div></div>
 
   const u = deck.universe, o = deck.outlook, d = deck.dna
   const desc = descriptor || intel?.team_metrics?.descriptor || 'Squad analysis'
+  const live = !!o?.has_data && o.remaining > 0
 
   // your style mix (owned per cluster)
   const mix: { name: string; n: number; cluster: number }[] = []
@@ -85,7 +86,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
 
   // narrative beats
   const beats: string[] = []
-  if (o?.has_data) {
+  if (o?.has_data && o.remaining > 0) {
     const verdict = o.finals_pct >= 75 ? 'firmly in the finals picture' : o.finals_pct >= 45 ? 'on the bubble' : 'facing an uphill run'
     beats.push(`Across ${o.remaining} simulated rounds you land ${verdict}, **${o.finals_pct}%** of seasons see you play September, most often as the **${ordinal(o.median_seed)} seed**.`)
   }
@@ -103,24 +104,22 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
     <div className="dk-stage">
       {/* headline */}
       <div className="dk-headline">
-        <div className="dk-headline-tag">SQUAD INTELLIGENCE</div>
         <div className="dk-headline-desc">{desc}</div>
-        {o?.has_data && <div className="dk-headline-sub">{o.finals_pct}% finals probability, projected {o.current_wins + Math.round(o.proj_wins - o.current_wins)}-win season, {o.n_teams}-team league</div>}
       </div>
 
       {/* KPI strip */}
       <div className="dk-kpis">
-        {o?.has_data && <Kpi value={o.finals_pct} suffix="%" label="Finals probability" sub={`${o.finals_n} of ${o.n_teams} make it`} color="#e0deea" />}
-        {o?.has_data && <Kpi value={o.proj_wins} label="Projected wins" sub={`now on ${o.current_wins}, ${o.remaining} to play`} color="#3fb950" decimals={1} />}
-        {d?.has_data && <Kpi value={d.ceiling} label="Weekly ceiling" sub={`floor ${d.floor}, median ${d.median}`} color="#bc8cff" />}
-        {d?.has_data && <Kpi value={d.cv} suffix="%" label="Volatility (CV)" sub={d.cv <= 7 ? 'elite consistency' : d.cv <= 11 ? 'steady' : 'swingy'} color="#f0883e" decimals={1} />}
+        {live && <Kpi value={o.finals_pct} suffix="%" label="Finals chance" color="#e0deea" />}
+        {live && <Kpi value={o.proj_wins} label="Projected wins" color="#e0deea" decimals={1} />}
+        {d?.has_data && <Kpi value={d.median} label="Typical week" color="#e0deea" />}
+        {d?.has_data && <Kpi value={d.ceiling} label="Best week" color="#e0deea" />}
+        {d?.has_data && <Kpi value={d.floor} label="Worst week" color="#e0deea" />}
       </div>
 
       <div className="dk-grid">
         {/* HERO, style universe */}
         <div className="dk-universe">
-          <div className="dk-panel-head"><span className="dk-panel-title">◈ STYLE UNIVERSE</span>
-            <span className="dk-panel-meta">{u?.has_data ? `${u.n_players} players, PCA ${u.variance_explained}%, your ${u.owned_count} glow` : 'mapping…'}</span></div>
+          <div className="dk-panel-head"><span className="dk-panel-title">Playing styles</span></div>
           <div className="dk-universe-canvas">
             {u?.has_data
               ? <Suspense fallback={<div className="dk-loading"><Spinner /></div>}><StyleUniverse3D nodes={u.nodes} onSelect={open} /></Suspense>
@@ -134,9 +133,9 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
         </div>
 
         {/* Season outlook */}
-        {o?.has_data && (
+        {live && (
           <div className="dk-panel dk-outlook">
-            <div className="dk-panel-head"><span className="dk-panel-title">⬡ SEASON OUTLOOK</span><span className="dk-panel-meta">{o.remaining} rounds, {(4000).toLocaleString()} sims</span></div>
+            <div className="dk-panel-head"><span className="dk-panel-title">Season outlook</span></div>
             <div className="dk-outlook-body">
               <Gauge pct={o.finals_pct} color="#e0deea" label="FINALS" />
               <div className="dk-seed">
@@ -151,7 +150,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
                     </div>
                   })}
                 </div>
-                <div className="dk-seed-foot">premiership odds <b style={{ color: '#ffd23f' }}>{o.top_seed_pct}%</b>, median seed <b>{ordinal(o.median_seed)}</b></div>
+                <div className="dk-seed-foot">Finish first <b>{o.top_seed_pct}%</b>, most likely <b>{ordinal(o.median_seed)}</b></div>
               </div>
             </div>
           </div>
@@ -160,7 +159,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
         {/* Squad DNA */}
         {d?.has_data && (
           <div className="dk-panel dk-dna">
-            <div className="dk-panel-head"><span className="dk-panel-title">⬢ SQUAD DNA</span><span className="dk-panel-meta">portfolio model</span></div>
+            <div className="dk-panel-head"><span className="dk-panel-title">Where your score comes from</span></div>
             <div className="dk-range">
               <div className="dk-range-track">
                 <div className="dk-range-fill"></div>
@@ -169,9 +168,9 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
               <div className="dk-range-ends"><span>floor {d.floor}</span><span>ceiling {d.ceiling}</span></div>
             </div>
             <div className="dk-dna-stats">
-              <div className="dk-dna-stat"><div className="dk-dna-v">{d.eff_scorers}</div><div className="dk-dna-l">effective scorers</div></div>
-              <div className="dk-dna-stat"><div className="dk-dna-v">{d.top3_share}%</div><div className="dk-dna-l">top-3 reliance</div></div>
-              <div className="dk-dna-stat"><div className="dk-dna-v">{d.fragility}%</div><div className="dk-dna-l">gun-out fragility</div></div>
+              <div className="dk-dna-stat"><div className="dk-dna-v">{d.eff_scorers}</div><div className="dk-dna-l">players who carry it</div></div>
+              <div className="dk-dna-stat"><div className="dk-dna-v">{d.top3_share}%</div><div className="dk-dna-l">from your top 3</div></div>
+              <div className="dk-dna-stat"><div className="dk-dna-v">{d.fragility}%</div><div className="dk-dna-l">lost if your best is out</div></div>
             </div>
             <div className="dk-lev">
               <div className="dk-lev-title">Who carries the week</div>
@@ -190,7 +189,7 @@ export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string
         {/* Narrative */}
         {beats.length > 0 && (
           <div className="dk-panel dk-story">
-            <div className="dk-panel-head"><span className="dk-panel-title">✦ THE READ</span></div>
+            <div className="dk-panel-head"><span className="dk-panel-title">In short</span></div>
             <div className="dk-story-body">
               {beats.map((b, i) => <p key={i} dangerouslySetInnerHTML={{ __html: b.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>') }} />)}
             </div>
