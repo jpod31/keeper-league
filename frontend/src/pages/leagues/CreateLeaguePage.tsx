@@ -226,7 +226,7 @@ export function CreateLeaguePage() {
           <div className="page-breadcrumb">
             <Link to="/leagues">Home</Link> / Create
           </div>
-          <h2>Create a New League</h2>
+          <h2>Create a league</h2>
         </div>
 
         {error && <div className="alert alert-danger" style={{ fontSize: '.85rem' }}>{error}</div>}

@@ -112,7 +112,7 @@ export function InjuriesPage() {
         <div className="page-breadcrumb">
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Players / Injuries
         </div>
-        <h2><i className="bi bi-bandaid me-2" style={{ color: '#f85149' }}></i>Injuries</h2>
+        <h2>Injuries</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
           {filtered.length} {filtered.length === 1 ? 'player' : 'players'} out
         </div>

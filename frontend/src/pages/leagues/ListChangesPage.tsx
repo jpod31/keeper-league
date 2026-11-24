@@ -94,9 +94,8 @@ export function ListChangesPage() {
       <style>{LC_CSS}</style>
       <LeagueSubnav active="changes" leagueId={leagueId!} />
 
-      <div className="lc-header">
-        <div className="lc-icon"><i className="bi bi-clock-history"></i></div>
-        <h2>List Changes</h2>
+      <div className="page-header">
+        <h2>List changes</h2>
       </div>
 
       <div className="lc-card">

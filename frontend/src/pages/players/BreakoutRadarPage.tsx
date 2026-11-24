@@ -100,12 +100,9 @@ export function BreakoutRadarPage() {
     <div className="br-wrap">
       <style>{CSS}</style>
       <PlayersSubnav active="breakout" leagueId={leagueId!} />
-      <div className="br-hero">
-        <i className="bi bi-broadcast-pin"></i>
-        <div>
-          <h2 className="br-hero-title">Breakout Radar</h2>
-          <p className="br-hero-sub">Players trending toward a senior AFL role based on VFL/SANFL/WAFL/NAB form and the scouting model.</p>
-        </div>
+      <div className="page-header">
+        <h2>Breakout radar</h2>
+        <p className="pool-line">State league players trending toward a senior AFL game, from VFL, SANFL and WAFL form.</p>
       </div>
 
       <div className="br-filters">

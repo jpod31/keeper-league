@@ -22,7 +22,7 @@ export function AdminLeaguesPage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-trophy me-2"></i>Leagues</h2>
+        <h2>Leagues</h2>
         <Link to="/admin" className="btn btn-sm btn-outline-secondary">
           <i className="bi bi-arrow-left me-1"></i>Back
         </Link>

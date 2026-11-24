@@ -69,7 +69,7 @@ export function AdminDashboardPage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-bar-chart-line me-2" style={{ color: '#d29922' }}></i>Admin Dashboard</h2>
+        <h2>Admin Dashboard</h2>
         <div className="d-flex gap-2">
           <Link to="/admin/users" className="btn btn-sm btn-outline-secondary">Users</Link>
           <Link to="/admin/leagues" className="btn btn-sm btn-outline-secondary">Leagues</Link>

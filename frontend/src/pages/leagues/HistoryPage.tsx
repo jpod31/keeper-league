@@ -127,7 +127,7 @@ export function HistoryPage() {
         <div className="page-breadcrumb">
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Records
         </div>
-        <h2><i className="bi bi-trophy me-2" style={{ color: '#d29922' }}></i>League Records</h2>
+        <h2>League records</h2>
       </div>
 
       {data.milestones.length > 0 && (

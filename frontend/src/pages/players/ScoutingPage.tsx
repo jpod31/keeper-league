@@ -220,7 +220,7 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
                   )}
                 </div>
                 <div className="scout-detail-sub">
-                  {player.position && <span className={`pos-pill ${(player.position.split('/')[0] || '').toLowerCase()}`}>{player.position}</span>}
+                  {player.position && player.position.split('/').map(ps => <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}`}>{ps}</span>)}
                   <span>{player.team}, {player.competition.toUpperCase()}</span>
                   {player.afl_team && <span style={{ color: '#ececf6' }}>{player.afl_team}</span>}
                   {player.age && <span>{player.age}yo</span>}
@@ -464,10 +464,9 @@ export function ScoutingPage() {
       <PlayersSubnav active="scouting" leagueId={leagueId!} />
       <div className="scout-wrap">
         <div className="scout-header">
-          <div className="scout-title">
-            <i className="bi bi-binoculars"></i>
-            State League Scouting
-            {data && <span className="scout-count">({data.total} players)</span>}
+          <div className="page-header" style={{ marginBottom: 0 }}>
+            <h2>State league scouting</h2>
+            {data && <p className="pool-line">{data.total} players</p>}
           </div>
         </div>
 
@@ -555,7 +554,7 @@ export function ScoutingPage() {
                           <div className="scout-text">
                             <span className="scout-name">{p.player_name}</span>
                             <div className="scout-meta">
-                              {p.position && <span className={`pos-pill ${(p.position.split('/')[0] || '').toLowerCase()}`}>{p.position}</span>}
+                              {p.position && p.position.split('/').map(ps => <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}`}>{ps}</span>)}
                               {p.is_afl_listed && p.afl_team && <span className="scout-afl-badge">{p.afl_team}</span>}
                               {!p.is_afl_listed && <span className="unlisted-badge">Unlisted</span>}
                               <span className="scout-comp-badge">{p.team}, {p.competition.toUpperCase()}</span>

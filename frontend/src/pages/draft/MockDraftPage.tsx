@@ -292,7 +292,7 @@ export function MockDraftPage() {
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
           <div>
             <h2 className="mb-0">
-              Mock Draft
+              Mock draft
               <span className="badge ms-2" style={{ background: 'rgba(240,136,62,.15)', color: '#f0883e', fontSize: '.8125rem', verticalAlign: 'middle' }}>SIMULATION</span>
             </h2>
             <div className="d-flex align-items-center gap-3 mt-1">

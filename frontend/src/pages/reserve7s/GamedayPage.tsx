@@ -442,7 +442,6 @@ export function Reserve7sGamedayPage() {
       <div className="s7gd-round-header">
         <div className="d-flex justify-content-between align-items-center">
           <h2 className="s7gd-round-title mb-0">
-            <i className="bi bi-7-circle me-1" style={{ color: '#a855f7' }}></i>
             Reserve 7s, {d.afl_round === 0 ? 'Opening Round' : `Round ${d.afl_round}`}
           </h2>
           <div className="d-flex align-items-center gap-2">

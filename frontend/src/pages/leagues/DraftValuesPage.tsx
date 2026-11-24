@@ -94,7 +94,7 @@ export function DraftValuesPage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-sliders me-2" style={{ color: '#ececf6' }}></i>Draft Values</h2>
+        <h2>Draft values</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
           Tune the weights used to compute draft scores. {data.has_custom ? 'Using custom weights.' : 'Using league defaults.'}
         </div>

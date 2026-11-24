@@ -316,7 +316,7 @@ export function SettingsPage() {
                 <i className="bi bi-arrow-left"></i>
               </Link>
               <h2 className="mb-0">
-                League Settings
+                League settings
                 {!is_commissioner && (
                   <span className="badge ms-2" style={{ background: '#1e1d21', color: 'var(--kl-text-primary)', fontSize: '.8125rem', verticalAlign: 'middle' }}>
                     VIEW ONLY
@@ -414,7 +414,7 @@ export function SettingsPage() {
               <div className="card-body">
                 <div className="row g-2 mb-2">
                   <div className="col-3">
-                    <label className="form-label" style={{ fontSize: '.8125rem', color: '#ececf6' }}>DEF</label>
+                    <label className="form-label" style={{ fontSize: '.8125rem', color: '#58a6ff' }}>DEF</label>
                     <input type="number" className="form-control form-control-sm" min={1} max={10} value={form.def_count} onChange={e => setField('def_count', Number(e.target.value))} />
                   </div>
                   <div className="col-3">
@@ -430,16 +430,13 @@ export function SettingsPage() {
                     <input type="number" className="form-control form-control-sm" min={1} max={3} value={form.ruc_count} onChange={e => setField('ruc_count', Number(e.target.value))} />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="row g-2 mb-4">
-              <div className="col-4">
-                <label className="form-label" style={{ fontSize: '.8125rem', color: '#d29922' }}>
-                  <i className="bi bi-lightning-charge me-1"></i>FLEX Slots
-                </label>
-                <input type="number" className="form-control form-control-sm" min={0} max={10} value={form.flex_count} onChange={e => setField('flex_count', Number(e.target.value))} />
-                <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>Sidebar scoring slots, any position eligible.</div>
+                <div className="row g-2 mt-1">
+                  <div className="col-3">
+                    <label className="form-label" style={{ fontSize: '.8125rem', color: '#ffffff' }}>Flex</label>
+                    <input type="number" className="form-control form-control-sm" min={0} max={10} value={form.flex_count} onChange={e => setField('flex_count', Number(e.target.value))} />
+                    <div className="form-text" style={{ color: 'var(--kl-text-primary)', fontSize: '.8125rem' }}>Any position.</div>
+                  </div>
+                </div>
               </div>
             </div>
 

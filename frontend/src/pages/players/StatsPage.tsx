@@ -143,7 +143,7 @@ export function StatsPage() {
         </div>
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>
-            <h2 className="mb-0">Advanced Stats</h2>
+            <h2 className="mb-0">Advanced stats</h2>
             <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>Season Analytics</span>
           </div>
         </div>

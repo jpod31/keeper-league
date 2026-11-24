@@ -55,7 +55,7 @@ export function DraftRecapPage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-list-check me-2" style={{ color: '#ececf6' }}></i>Draft Recap</h2>
+        <h2>Draft recap</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>
           {data.league.season_year} {data.session.draft_round_type} draft
           {data.session.completed_at && `, ${new Date(data.session.completed_at).toLocaleDateString()}`}

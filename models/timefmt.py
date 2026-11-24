@@ -31,11 +31,15 @@ def clock(dt):
     return f"{loc.hour % 12 or 12}:{loc:%M} {'am' if loc.hour < 12 else 'pm'}"
 
 
-def when(dt, year=False):
-    """'24 Nov, 1:03 pm' or, with year, '24 Nov 2026, 1:03 pm'"""
+def when(dt, year=None):
+    """'24 Nov, 1:03 pm'. The year is added when it is not this year
+    ('24 Nov 2025, 1:03 pm'), or always with year=True."""
     loc = to_local(dt)
     if loc is None:
         return None
+    if year is None:
+        from datetime import datetime
+        year = loc.year != datetime.now(MELB).year
     day = f"{loc.day} {loc:%b}" + (f" {loc.year}" if year else "")
     return f"{day}, {clock(dt)}"
 

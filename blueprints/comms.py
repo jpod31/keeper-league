@@ -404,7 +404,7 @@ def activity_feed(league_id):
                 "title": n.title,
                 "body": n.body,
                 "link": n.link,
-                "created_at": timefmt.when(n.created_at, year=True),
+                "created_at": timefmt.when(n.created_at),
             } for n in entries],
         })
 

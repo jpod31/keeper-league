@@ -100,7 +100,7 @@ export function PlayerRatingsPage() {
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Players / Ratings
         </div>
         <div>
-          <h2 className="mb-0"><i className="bi bi-star me-2" style={{ color: '#d29922' }}></i>Player Ratings</h2>
+          <h2 className="mb-0">Player ratings</h2>
           {data.last_update_date && (
             <div className="text-secondary" style={{ fontSize: '.85rem' }}>
               Last rating change: {new Date(data.last_update_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}

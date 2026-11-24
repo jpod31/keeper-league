@@ -137,7 +137,7 @@ export function AflLivePage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-broadcast me-2" style={{ color: '#f85149' }}></i>AFL Live</h2>
+        <h2>AFL live</h2>
         <div className="d-flex align-items-center gap-2 text-secondary" style={{ fontSize: '.85rem' }}>
           <span>Round {data.afl_round}</span>
           {data.round_dates && <span>{data.round_dates}</span>}

@@ -105,7 +105,7 @@ export function ScoringPage() {
         <div className="page-breadcrumb">
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Admin / Scoring
         </div>
-        <h2><i className="bi bi-calculator me-2" style={{ color: '#ececf6' }}></i>Scoring Configuration</h2>
+        <h2>Scoring</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>Configure how player stats convert to fantasy points.</div>
       </div>
 

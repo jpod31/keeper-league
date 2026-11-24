@@ -1,33 +1,12 @@
-import { useParams, Link } from 'react-router'
+import { useParams } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
-
-interface Notification {
-  id: number
-  type: string
-  title: string
-  body: string | null
-  link: string | null
-  is_read: boolean
-  created_at: string | null
-}
+import { NoticeList, type Notice } from '../../components/comms/NoticeList'
 
 interface NotifData {
   league: { id: number; name: string }
-  notifs: Notification[]
-}
-
-function iconForType(type: string): string {
-  switch (type) {
-    case 'trade_received': return 'bi-arrow-left-right'
-    case 'trade_accepted': return 'bi-check-circle'
-    case 'trade_rejected': return 'bi-x-circle'
-    case 'trade_vetoed': return 'bi-shield-exclamation'
-    case 'player_delisted': return 'bi-person-dash'
-    case 'message_received': return 'bi-chat-dots'
-    default: return 'bi-bell'
-  }
+  notifs: Notice[]
 }
 
 export function NotificationsPage() {
@@ -38,7 +17,8 @@ export function NotificationsPage() {
   if (loading) return <Spinner text="Loading notifications..." />
   if (!data) return <p className="text-danger">Failed to load notifications</p>
 
-  const { league, notifs } = data
+  const { notifs } = data
+  const unread = notifs.filter(n => n.is_read === false).length
 
   async function markAllRead() {
     setBusy(true)
@@ -51,61 +31,17 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-md-8">
-        <div className="page-header">
-          <div className="page-breadcrumb">
-            <Link to={`/leagues/${leagueId}`}>{league.name}</Link> / Notifications
-          </div>
-          <div className="d-flex justify-content-between align-items-center">
-            <h2>Notifications</h2>
-            {notifs.length > 0 && (
-              <button className="btn btn-sm btn-outline-secondary" onClick={markAllRead} disabled={busy}>
-                <i className="bi bi-check-all me-1"></i>Mark all read
-              </button>
-            )}
-          </div>
+    <div className="kx-page nt-page">
+      <div className="kx-head">
+        <h2>Notifications</h2>
+        <div className="kx-head-side">
+          {unread > 0 && <span className="sq-chip">{unread} unread</span>}
+          {unread > 0 && (
+            <button type="button" className="kx-btn" onClick={markAllRead} disabled={busy}>Mark all read</button>
+          )}
         </div>
-
-        {notifs.length === 0 ? (
-          <div className="card">
-            <div className="card-body text-center py-5">
-              <i className="bi bi-chat-dots" style={{ fontSize: '2.5rem', color: '#2a292f' }}></i>
-              <p className="text-secondary mt-2 mb-0">No notifications yet</p>
-            </div>
-          </div>
-        ) : (
-          <div className="card" style={{ overflow: 'hidden' }}>
-            {notifs.map(n => (
-              <a
-                key={n.id}
-                href={n.link || '#'}
-                className="d-flex align-items-start gap-3 px-3 py-3"
-                style={{
-                  borderBottom: '1px solid #1e1d21',
-                  textDecoration: 'none',
-                  color: n.is_read ? '#ececf1' : '#ececf1',
-                  borderLeft: n.is_read ? '3px solid transparent' : '3px solid #ffffff',
-                }}
-              >
-                <i className={`bi ${iconForType(n.type)}`}
-                  style={{ fontSize: '1.1rem', color: '#ececf6', marginTop: 2 }}></i>
-                <div className="flex-grow-1">
-                  <div style={{ fontSize: '.9375rem', fontWeight: n.is_read ? 400 : 700 }}>{n.title}</div>
-                  {n.body && (
-                    <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', marginTop: 2 }}>
-                      {n.body.substring(0, 120)}
-                    </div>
-                  )}
-                </div>
-                <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', whiteSpace: 'nowrap' }}>
-                  {n.created_at}
-                </span>
-              </a>
-            ))}
-          </div>
-        )}
       </div>
+      <NoticeList items={notifs} empty="Nothing yet. Trades, delistings and messages show up here." />
     </div>
   )
 }

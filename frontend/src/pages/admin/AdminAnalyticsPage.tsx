@@ -43,7 +43,7 @@ export function AdminAnalyticsPage() {
   return (
     <div>
       <div className="page-header">
-        <h2><i className="bi bi-graph-up me-2"></i>Analytics</h2>
+        <h2>Analytics</h2>
         <div className="d-flex gap-2 align-items-center">
           <select className="form-select form-select-sm" style={{ width: 120 }} value={days} onChange={e => setDays(Number(e.target.value))}>
             <option value={7}>Last 7 days</option>

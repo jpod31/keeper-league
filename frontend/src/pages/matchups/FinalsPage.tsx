@@ -92,7 +92,7 @@ export function FinalsPage() {
       <div className="page-header" style={{ marginTop: 0 }}>
         <div className="d-flex justify-content-between align-items-end flex-wrap gap-2">
           <div>
-            <h2 className="mb-0">Finals Series</h2>
+            <h2 className="mb-0">Finals</h2>
             <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>{league.season_year} finals bracket</span>
           </div>
           {is_commissioner && finals.length === 0 && (

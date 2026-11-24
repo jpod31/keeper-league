@@ -190,7 +190,6 @@ export function Reserve7sTeamPage() {
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
           <div>
             <h2 className="sevens-hero-title">
-              <i className="bi bi-7-circle me-2" style={{ color: '#bc8cff' }}></i>
               Reserve 7s, Round {afl_round}
             </h2>
             <div className="sevens-hero-sub">{team.name}, Select your 7 players</div>

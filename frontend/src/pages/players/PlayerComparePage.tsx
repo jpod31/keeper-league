@@ -88,7 +88,7 @@ export function PlayerComparePage() {
         <div className="page-breadcrumb">
           <LeagueBreadcrumb leagueId={leagueId!} fallbackName={data.league.name} /> / Players / Compare
         </div>
-        <h2><i className="bi bi-people-fill me-2" style={{ color: '#ececf6' }}></i>Player Compare</h2>
+        <h2>Player compare</h2>
         <div className="text-secondary" style={{ fontSize: '.85rem' }}>Side-by-side comparison of up to 4 players</div>
       </div>
 
