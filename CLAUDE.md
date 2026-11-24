@@ -366,13 +366,12 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
 
 ## Test baseline
 
-`python -m pytest -q` → **56 passed, 5 failed** as of 2026-11-23. Pre-existing
-failures (NOT regressions — don't chase unless asked):
-- `test_data_validation.py::TestLoginRateLimiting::test_rate_limit_blocks_after_max_attempts`
-- `test_live_scoring.py::TestApiLiveScores::test_api_returns_json`
-- `test_live_scoring.py::TestApiLiveScores::test_api_returns_fixture_data`
-- `test_scoring_finalization.py::TestFinalizeRound::test_finalize_updates_standings`
-- `test_scoring_finalization.py::TestRoundScoreCreation::test_round_score_has_breakdown`
+`python -m pytest -q` -> **61 passed** as of 2026-11-24. The five that failed
+for months were stale tests, not bugs: the seed left every player on the
+bench (a roster row with no `position_code` scores nothing), one test built a
+draw by accident, two called a live-scores route removed as dead code (the
+gameday page polls `/gameday/api/fixtures`), and the test app had no
+`csrf_token`. Any failure now is a regression.
 
 ## Planning docs
 

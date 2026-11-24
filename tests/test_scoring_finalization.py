@@ -60,9 +60,13 @@ class TestFinalizeRound:
         with app.app_context():
             league = seed_data["league"]
 
-            # Give team_a's players higher scores
+            # Give team_a's players higher scores. (This used to key on the AFL
+            # club, which split evenly across both sides and made a draw.)
+            from models.database import FantasyRoster
+            team_a_ids = {r.player_id for r in FantasyRoster.query.filter_by(
+                team_id=seed_data["team_a"].id).all()}
             for name, p in seed_data["players"].items():
-                sc = 120 if p.afl_team == "Adelaide" else 60
+                sc = 120 if p.id in team_a_ids else 60
                 db.session.add(PlayerStat(
                     player_id=p.id, year=2026, round=1,
                     supercoach_score=sc, is_live=False,

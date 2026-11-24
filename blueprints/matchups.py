@@ -884,7 +884,8 @@ def gameday(league_id):
 @login_required
 def api_gameday_fixtures(league_id):
     """Return all fixture player breakdowns for the current gameday round."""
-    league = db.session.get(League, league_id)
+    # Members only, like the page that polls it.
+    league, _user_team = check_league_access(league_id)
     if not league:
         return jsonify({"error": "League not found"}), 404
 

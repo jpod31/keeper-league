@@ -59,6 +59,8 @@ def app():
     test_app.context_processor(lambda: {
         "TEAM_LOGOS": config.TEAM_LOGOS,
         "TEAM_COLOURS": config.TEAM_COLOURS,
+        # The real app gets this from CSRFProtect; base.html needs it to render.
+        "csrf_token": lambda: "",
     })
 
     with test_app.app_context():
@@ -178,10 +180,12 @@ def seed_data(db):
         players.append(p)
     db.session.flush()
 
-    # Rosters: split players between teams
+    # Rosters: split players between teams, each named on the field in his own
+    # position. A roster row with no position is a bench player and scores
+    # nothing, which is why two finalisation tests scored 0 until 2026-11-24.
     for i, p in enumerate(players):
         team = team_a if i % 2 == 0 else team_b
-        db.session.add(FantasyRoster(team_id=team.id, player_id=p.id))
+        db.session.add(FantasyRoster(team_id=team.id, player_id=p.id, position_code=p.position))
 
     # Fixture: Team Alpha vs Team Beta, Round 1
     fixture = Fixture(

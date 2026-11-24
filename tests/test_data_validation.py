@@ -50,4 +50,7 @@ class TestLoginRateLimiting:
                     "username": "nonexistent",
                     "password": "wrong",
                 }, follow_redirects=True)
-                assert b"Too many login attempts" in resp.data
+                # Eight failures on one username trips the per-account lock
+                # before the per-address one; either message means blocked.
+                assert (b"Too many login attempts" in resp.data
+                        or b"temporarily locked" in resp.data)

@@ -843,7 +843,11 @@ class TestGameStatusHelpers:
 
 
 class TestApiLiveScores:
-    """Test the /live/<round>/api/scores JSON endpoint."""
+    """Test the live scores JSON the gameday page polls.
+
+    The old /live/<round>/api/scores route was removed as dead code; the
+    gameday page polls /gameday/api/fixtures, which these now cover.
+    """
 
     def test_api_returns_json(self, app, db, seed_data):
         from flask_login import FlaskLoginClient
@@ -853,11 +857,11 @@ class TestApiLiveScores:
         league = seed_data["league"]
 
         with app.test_client(user=commissioner) as client:
-            resp = client.get(f"/leagues/{league.id}/live/1/api/scores")
+            resp = client.get(f"/leagues/{league.id}/gameday/api/fixtures?round=1")
             assert resp.status_code == 200
             data = resp.get_json()
             assert "fixtures" in data
-            assert "game_statuses" in data
+            assert "teams_playing" in data
             assert "locked_player_ids" in data
             assert isinstance(data["fixtures"], list)
             assert isinstance(data["locked_player_ids"], list)
@@ -870,7 +874,7 @@ class TestApiLiveScores:
         league = seed_data["league"]
 
         with app.test_client(user=commissioner) as client:
-            resp = client.get(f"/leagues/{league.id}/live/1/api/scores")
+            resp = client.get(f"/leagues/{league.id}/gameday/api/fixtures?round=1")
             data = resp.get_json()
             # We have one fixture (Team Alpha vs Team Beta)
             assert len(data["fixtures"]) == 1
@@ -888,5 +892,5 @@ class TestApiLiveScores:
         commissioner = seed_data["commissioner"]
 
         with app.test_client(user=commissioner) as client:
-            resp = client.get("/leagues/99999/live/1/api/scores")
+            resp = client.get("/leagues/99999/gameday/api/fixtures?round=1")
             assert resp.status_code == 404
