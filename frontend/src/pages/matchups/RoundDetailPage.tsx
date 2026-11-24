@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
+import { TeamBadge } from '../../components/ui/TeamBadge'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -42,26 +43,31 @@ const RD_CSS = `
 .rd-btn:hover { border-color:#2a292f; color:var(--kl-text-primary); }
 .rd-btn-primary { border-color:rgba(236,236,246,.3); color:#ececf6; }
 .rd-btn-primary:hover { border-color:#ececf6; background:rgba(236,236,246,.06); }
-.rd-list { background:#0e0d0f; border:1px solid #1e1d21; border-radius:10px; overflow:hidden; }
-.rd-row { display:grid; grid-template-columns:1fr auto 1fr auto; align-items:center; padding:14px 20px; border-bottom:1px solid #151518; transition:background .1s; position:relative; }
-.rd-row:last-child { border-bottom:none; }
-.rd-row:hover { background:rgba(21,21,24,.5); }
-.rd-team { font-size:.85rem; font-weight:500; color:var(--kl-text-primary); text-decoration:none; transition:color .1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rd-team:hover { color:#ececf6; }
-.rd-team-home { text-align:left; padding-right:12px; }
-.rd-team-away { text-align:right; padding-left:12px; }
-.rd-team.won { color:#ebebee; font-weight:700; }
-.rd-centre { display:flex; align-items:center; justify-content:center; min-width:100px; }
-.rd-sc { font-size:.95rem; font-weight:700; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }
-.rd-sc.won { color:#3fb950; }
-.rd-sc.lost { color:var(--kl-text-primary); }
-.rd-sep { color:#ffffff; margin:0 4px; font-weight:300; font-size:.8125rem; }
-.rd-vs { font-size:.8125rem; font-weight:700; color:#ffffff; letter-spacing:.04em; }
-.rd-arrow { display:flex; align-items:center; justify-content:center; width:28px; color:#1e1d21; transition:color .1s; }
-.rd-row:hover .rd-arrow { color:var(--kl-text-primary); }
-.rd-arrow a { color:inherit; text-decoration:none; display:flex; }
-.rd-win-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 2px 2px 0; background:#3fb950; }
-.rd-loss-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:0 2px 2px 0; background:rgba(248,81,73,.4); }
+.rd-list { border-top:1px solid var(--hair); }
+.rd-row { display:grid; grid-template-columns:1fr auto 1fr 20px; align-items:center; gap:16px; padding:14px 8px; border-bottom:1px solid var(--hair); color:#ffffff; text-decoration:none; }
+.rd-row:hover { background:rgba(255,255,255,.04); color:#ffffff; }
+.rd-team { display:flex; align-items:center; gap:12px; min-width:0; font-size:1rem; font-weight:500; color:#ffffff; }
+.rd-team-away { justify-content:flex-end; text-align:right; }
+.rd-team-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.rd-team.won .rd-team-name { font-weight:700; }
+.rd-centre { display:grid; grid-template-columns:88px 64px 88px; align-items:center; justify-items:center; }
+.rd-centre > .rd-mid:only-child { grid-column:1 / -1; }
+.rd-sc { font-size:1.5rem; font-weight:500; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; color:#ffffff; }
+.rd-sc:first-child { justify-self:end; }
+.rd-sc:last-child { justify-self:start; }
+.rd-sc.won { font-weight:800; }
+.rd-mid { font-size:.8125rem; font-weight:600; color:#ffffff; }
+.rd-live { display:inline-block; padding:2px 6px; border-radius:4px; background:#f85149; color:#050506; font-size:.8125rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1.2; }
+.rd-arrow { font-size:.8125rem; color:#ffffff; justify-self:end; }
+@media (max-width: 600px) {
+  .rd-row { gap:8px; padding:12px 2px; grid-template-columns:1fr auto 1fr; }
+  .rd-arrow { display:none; }
+  .rd-team { flex-direction:column; gap:6px; font-size:.8125rem; text-align:center; }
+  .rd-team-away { flex-direction:column-reverse; }
+  .rd-team-name { max-width:100%; }
+  .rd-centre { grid-template-columns:auto 36px auto; }
+  .rd-sc { font-size:1.25rem; }
+}
 `
 
 function scoringTagType(label: string): string {
@@ -120,35 +126,34 @@ export function RoundDetailPage() {
       {fixtures.length > 0 ? (
         <div className="rd-list">
           {fixtures.map(f => {
-            const homeWon = f.status === 'completed' && (f.home_score || 0) > (f.away_score || 0)
-            const awayWon = f.status === 'completed' && (f.away_score || 0) > (f.home_score || 0)
+            const done = f.status === 'completed'
+            const live = f.status === 'live'
+            const hs = Math.round(f.home_score || 0), as = Math.round(f.away_score || 0)
+            const homeUp = (done || live) && hs > as
+            const awayUp = (done || live) && as > hs
             return (
-              <div key={f.id} className="rd-row">
-                {homeWon && <div className="rd-win-bar"></div>}
-                {awayWon && <div className="rd-loss-bar"></div>}
-                <Link to={`/leagues/${leagueId}/team/${f.home_team_id}`} className={`rd-team rd-team-home${homeWon ? ' won' : ''}`}>
-                  {f.home_team?.name}
-                </Link>
-                <div className="rd-centre">
-                  {f.status === 'completed' ? (
+              <Link key={f.id} to={`/leagues/${leagueId}/matchup/${f.id}`} className="rd-row">
+                <span className={`rd-team rd-team-home${homeUp ? ' won' : ''}`}>
+                  <TeamBadge name={f.home_team_id} size={32} showName={false} />
+                  <span className="rd-team-name">{f.home_team?.name}</span>
+                </span>
+                <span className="rd-centre">
+                  {done || live ? (
                     <>
-                      <span className={`rd-sc${homeWon ? ' won' : ' lost'}`}>{Math.round(f.home_score || 0)}</span>
-                      <span className="rd-sep">&ndash;</span>
-                      <span className={`rd-sc${awayWon ? ' won' : ' lost'}`}>{Math.round(f.away_score || 0)}</span>
+                      <span className={`rd-sc${homeUp ? ' won' : ''}`}>{hs.toLocaleString()}</span>
+                      <span className="rd-mid">{live ? <span className="rd-live">Live</span> : 'v'}</span>
+                      <span className={`rd-sc${awayUp ? ' won' : ''}`}>{as.toLocaleString()}</span>
                     </>
                   ) : (
-                    <span className="rd-vs">VS</span>
+                    <span className="rd-mid">v</span>
                   )}
-                </div>
-                <Link to={`/leagues/${leagueId}/team/${f.away_team_id}`} className={`rd-team rd-team-away${awayWon ? ' won' : ''}`}>
-                  {f.away_team?.name}
-                </Link>
-                <div className="rd-arrow">
-                  <Link to={`/leagues/${leagueId}/matchup/${f.id}`}>
-                    <i className="bi bi-chevron-right" style={{ fontSize: '.8125rem' }}></i>
-                  </Link>
-                </div>
-              </div>
+                </span>
+                <span className={`rd-team rd-team-away${awayUp ? ' won' : ''}`}>
+                  <span className="rd-team-name">{f.away_team?.name}</span>
+                  <TeamBadge name={f.away_team_id} size={32} showName={false} />
+                </span>
+                <i className="bi bi-chevron-right rd-arrow"></i>
+              </Link>
             )
           })}
         </div>

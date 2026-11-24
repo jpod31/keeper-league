@@ -4,6 +4,7 @@ import { Spinner } from '../ui/Spinner'
 import { rgbOf } from '../../lib/clubs'
 import { LockoutBadge } from '../ui/LockoutBadge'
 import { RoundRecapModal } from '../RoundRecapModal'
+import { PageErrorBoundary } from '../ui/PageErrorBoundary'
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -220,7 +221,7 @@ function LeagueShellInner() {
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
         >
-          <Outlet />
+          <PageErrorBoundary key={pathname}><Outlet /></PageErrorBoundary>
         </motion.div>
       </AnimatePresence>
 

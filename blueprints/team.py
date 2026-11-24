@@ -2511,13 +2511,18 @@ def team_analytics_api(league_id, team_id):
             logger.exception("SL intel failed for team %d", team_id)
 
     # Narrative + comparative insights — only compute if not fully cached
-    narr = None
+    # The page reads the narrative on every load, so it is cached with the rest.
+    # (It used to be None whenever the AI summary was already cached, which
+    # crashed the page.)
+    narr = get_cached_analytics(team_id, year, "narrative")
     comp_insights = None
-    if not ai_summary or request.args.get("rebuild") == "1":
+    if not narr or not ai_summary or request.args.get("rebuild") == "1":
         if not profile_tags:
             all_players = AflPlayer.query.all()
             profile_tags = compute_profile_tags(all_players)
         narr = _build_narrative_safe(team_id, league_id, year, dynasty, analytics, trade_table, profile_tags)
+        if narr:
+            cache_analytics(team_id, year, "narrative", narr)
         try:
             from models.team_analytics import compute_comparative_insights
             comp_insights = compute_comparative_insights(
@@ -2565,7 +2570,7 @@ def team_analytics_api(league_id, team_id):
         "dynasty": dynasty,
         "landscape": landscape,
         "ai_sections": ai_sections,
-        "narrative": narr,
+        "narrative": narr or {},
         "comparative_insights": comp_insights,
         "sl_intel": sl_intel,
         "ai_pending": not ai_summary and analytics is not None,

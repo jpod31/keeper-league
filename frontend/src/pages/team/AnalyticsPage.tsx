@@ -195,7 +195,7 @@ function HealthRing({ score }: { score: number }) {
 
 function Hero({ data }: { data: AnalyticsData }) {
   const a = data.analytics
-  const n = data.narrative
+  const n = (data.narrative || {}) as AnalyticsData['narrative']
   const wColor = a.window ? (windowColors[a.window] || '#ececf1') : undefined
   const rank = a.league_context?.avg_sc_rank
 
@@ -1033,7 +1033,7 @@ export function AnalyticsPage() {
   }
 
   const a = data.analytics
-  const n = data.narrative
+  const n = (data.narrative || {}) as AnalyticsData['narrative']
   const kids = (n.kid_timeline || []).filter(k => k.replaces)
   const gap = n.biggest_gap
   const hasTrade = data.trade_table && (data.trade_table.free_agents?.length || data.trade_table.trade_targets?.length)

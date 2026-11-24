@@ -171,15 +171,29 @@ def round_view(league_id, afl_round):
         def _ser_team(t):
             return {"id": t.id, "name": t.name, "logo_url": t.logo_url} if t else None
 
+        # A live fixture has no stored score until the round is finalised.
+        live_totals = {}
+        if any(f.status == "live" for f in fixtures):
+            try:
+                for tid, v in (get_live_scores(league_id, afl_round, league.season_year) or {}).items():
+                    live_totals[tid] = (v.get("total_score") if isinstance(v, dict)
+                                        else getattr(v, "total_score", 0)) or 0
+            except Exception:
+                live_totals = {}
+
         def _ser_fixture(f):
+            hs, as_ = f.home_score, f.away_score
+            if f.status == "live" and live_totals:
+                hs = live_totals.get(f.home_team_id, 0)
+                as_ = live_totals.get(f.away_team_id, 0)
             return {
                 "id": f.id,
                 "home_team_id": f.home_team_id,
                 "away_team_id": f.away_team_id,
                 "home_team": _ser_team(f.home_team),
                 "away_team": _ser_team(f.away_team),
-                "home_score": f.home_score,
-                "away_score": f.away_score,
+                "home_score": hs,
+                "away_score": as_,
                 "status": f.status,
             }
 

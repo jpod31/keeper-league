@@ -3,6 +3,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 import { WinProbabilityGauge } from '../../components/WinProbabilityGauge'
+import { TeamBadge } from '../../components/ui/TeamBadge'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -77,19 +78,20 @@ interface MatchupData {
 const MU_CSS = `
 .mu-hero { background:#0e0d0f; border:1px solid #1e1d21; border-radius:10px; padding:28px 24px; margin-bottom:20px; overflow:hidden; }
 .mu-hero-grid { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; }
-.mu-hero-team { text-decoration:none; transition:color .1s; text-align:center; display:block; color:inherit; }
+.mu-hero-team { text-decoration:none; text-align:center; display:flex; flex-direction:column; align-items:center; gap:10px; color:inherit; }
 .mu-hero-team:hover .mu-tname { color:#ececf6; }
-.mu-tname { font-size:1rem; font-weight:700; color:#ebebee; margin-bottom:4px; transition:color .1s; }
+.mu-tname { font-size:1.125rem; font-weight:700; color:#ffffff; letter-spacing:-.02em; }
 .mu-tname.lost { color:var(--kl-text-primary); }
-.mu-tscore { font-size:2.2rem; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+.mu-tscore { font-size:3.25rem; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.04em; }
 .mu-tscore.won { color:#3fb950; }
 .mu-tscore.lost { color:var(--kl-text-primary); }
 .mu-tscore.draw { color:var(--kl-text-primary); }
-.mu-tscore.pending { color:#ffffff; font-size:1.6rem; }
+.mu-tscore.pending { color:#ffffff; }
 .mu-centre { display:flex; flex-direction:column; align-items:center; gap:4px; }
 .mu-status { font-size:.8125rem; font-weight:600; padding:2px 8px; border-radius:4px; letter-spacing:.3px; text-transform:uppercase; }
 .mu-final { background:rgba(46,160,67,.08); color:#2ea043; }
-.mu-sched { color:#ffffff; font-size:.8125rem; font-weight:600; letter-spacing:1.5px; }
+.mu-sched { color:#ffffff; font-size:1rem; font-weight:600; }
+.mu-live { padding:3px 8px; border-radius:4px; background:#f85149; color:#050506; font-size:.8125rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; line-height:1.2; }
 .mu-margin { font-size:.8125rem; color:var(--kl-text-primary); margin-top:2px; }
 .mu-actions { display:flex; gap:8px; margin-top:16px; justify-content:center; padding-top:16px; border-top:1px solid #151518; flex-wrap:wrap; }
 .mu-act { font-size:.8125rem; padding:5px 12px; border-radius:6px; border:1px solid #1e1d21; background:transparent; color:var(--kl-text-primary); text-decoration:none; transition:all .12s; }
@@ -112,8 +114,9 @@ const MU_CSS = `
 .pb-player { display:flex; justify-content:space-between; align-items:center; padding:6px 16px; border-bottom:1px solid #151518; font-size:.8125rem; color:var(--kl-text-primary); }
 .pb-player:last-child { border-bottom:none; }
 .pb-player-name { color:var(--kl-text-primary); }
-.pb-player-em { font-style:italic; color:var(--kl-text-primary); }
-.pb-player-score { font-variant-numeric:tabular-nums; font-weight:600; color:var(--kl-text-primary); }
+.pb-player-em { color:var(--kl-text-primary); }
+.pb-player-name .kl-role { margin-left:8px; }
+.pb-player-score { font-variant-numeric:tabular-nums; font-weight:700; font-size:.9375rem; color:var(--kl-text-primary); }
 .pb-total { display:flex; justify-content:space-between; align-items:center; padding:8px 16px; border-top:1px solid #1e1d21; background:rgba(21,21,24,.4); font-size:.8125rem; }
 .pb-total.pb-won { border-top:2px solid #3fb950; }
 .pb-total.pb-lost { border-top:2px solid rgba(248,81,73,.3); }
@@ -154,7 +157,7 @@ export function MatchupDetailPage() {
       <div className="page-header" style={{ marginTop: 0 }}>
         <div className="page-breadcrumb">
           <Link to={`/leagues/${leagueId}/fixture?round=${fixture.afl_round}`}>Season</Link>
-          {' / '}Round {fixture.afl_round}
+          {' / '}{fixture.afl_round === 0 ? 'Opening Round' : `Round ${fixture.afl_round}`}
           {fixture.is_final && fixture.final_type && <> / {fixture.final_type}</>}
         </div>
       </div>
@@ -169,6 +172,7 @@ export function MatchupDetailPage() {
       <div className="mu-hero">
         <div className="mu-hero-grid">
           <Link to={`/leagues/${leagueId}/team/${fixture.home_team_id}`} className="mu-hero-team">
+            <TeamBadge name={fixture.home_team_id} size={56} showName={false} />
             <div className={`mu-tname${awayWon ? ' lost' : ''}`}>{fixture.home_team?.name}</div>
             {fixture.status === 'completed' ? (
               <div className={`mu-tscore${homeWon ? ' won' : awayWon ? ' lost' : ' draw'}`}>
@@ -188,12 +192,13 @@ export function MatchupDetailPage() {
                 )}
               </>
             ) : (
-              <span className="mu-sched">VS</span>
+              fixture.status === 'live' ? <span className="mu-live">Live</span> : <span className="mu-sched">v</span>
             )}
             <span className="scoring-tag" data-type={scType}>{scoring.label}</span>
           </div>
 
           <Link to={`/leagues/${leagueId}/team/${fixture.away_team_id}`} className="mu-hero-team">
+            <TeamBadge name={fixture.away_team_id} size={56} showName={false} />
             <div className={`mu-tname${homeWon ? ' lost' : ''}`}>{fixture.away_team?.name}</div>
             {fixture.status === 'completed' ? (
               <div className={`mu-tscore${awayWon ? ' won' : homeWon ? ' lost' : ' draw'}`}>
@@ -292,7 +297,7 @@ export function MatchupDetailPage() {
               {player_breakdown.home.map((p, i) => (
                 <div key={i} className="pb-player">
                   <span className={`pb-player-name${p.is_emergency ? ' pb-player-em' : ''}`}>
-                    {p.name}{p.is_emergency && ' (EM)'}
+                    {p.name}{p.is_emergency && <span className="kl-role kl-role-e" title="Emergency">E</span>}
                   </span>
                   <span className="pb-player-score">{Math.round(p.score)}</span>
                 </div>
@@ -313,7 +318,7 @@ export function MatchupDetailPage() {
               {player_breakdown.away.map((p, i) => (
                 <div key={i} className="pb-player">
                   <span className={`pb-player-name${p.is_emergency ? ' pb-player-em' : ''}`}>
-                    {p.name}{p.is_emergency && ' (EM)'}
+                    {p.name}{p.is_emergency && <span className="kl-role kl-role-e" title="Emergency">E</span>}
                   </span>
                   <span className="pb-player-score">{Math.round(p.score)}</span>
                 </div>
