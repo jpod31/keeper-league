@@ -293,6 +293,29 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   exception to the 13px floor: its size is the `--pc7-lab` variable so
   `tools/type_floor.py` does not raise it, and `kl_audit.mjs` skips `.pc7-l`.
   A label under a number should never be near the number's size.
+- **`python tools/css_prune.py`** (report) / `--apply` removes rules from
+  `static/style.css` whose classes exist nowhere in the code. First run,
+  2026-11-24: 558 rules, 12,508 lines down to 10,844. It leaves order alone,
+  so live markup cannot change. ALWAYS prove it with screenshots: every page
+  before and after, off-season and in season, 1280 and 390 wide, compared
+  with a tolerance (clocks, loading states and animations differ between two
+  identical runs). The first attempt deleted the rail's `:root` sizes because
+  a comment above them named an old class; the comparison caught it. Run it
+  after retiring a component (`.pc6-*` went this way).
+- **A role is a round coloured bubble everywhere** (`.kl-role` and the
+  "Sweep, 24 Nov" block in `static/style.css`: captain gold `--role-c`, vice
+  captain blue `--role-vc`, emergency `--role-e`, 7s `--role-7`, LTIL
+  `--role-l`). On the gameday scoreboard a role that has not played yet is
+  hollow. Do not draw a new C or VC tag by hand.
+- **A broad rule beats page rules**: `[class*="badge"]:not(...):not(...)`
+  (the no-pills sweep) has the weight of three classes and `!important`, so a
+  normal two-class override loses to it. That is why some selectors in the
+  sweep block repeat a class (`.kl-role.kl-role.kl-role`).
+- **Any page that throws shows a message, not a blank screen**
+  (`PageErrorBoundary`, wrapped round the outlet in `LeagueShell`). The team
+  analytics page had been blank whenever its summary was cached. After
+  changing what an endpoint returns, run `_mobtest/kl_audit.mjs` over every
+  route and look for `PAGEERROR`.
 - **One typeface: Geist.** Geist Mono was dropped on 2026-11-24 (Lucas: "the
   fonts dont match the style"); `--kl-font-mono` now points at `--kl-font` so
   older rules keep working, and `body` has tabular numerals. Do not add a
