@@ -295,7 +295,7 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
             </span>
           </div>
 
-          <div className={`pc7-name${shownLen > 19 ? ' xl' : shownLen > 16 ? ' long' : ''}`} title={p.name}>
+          <div className={`pc7-name${shownLen > 16 ? ' xl' : shownLen > 14 ? ' long' : ''}`} title={p.name}>
             {shownFirst && <span className="pc7-first">{shownFirst} </span>}
             <span className="pc7-sur">{sname || fname}</span>
           </div>

@@ -5,6 +5,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { useLeague } from '../../contexts/LeagueContext'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 import { ask } from '../../components/ui/dialog'
+import { HistoricalSquadView } from '../../components/squad/HistoricalSquadView'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -153,6 +154,33 @@ export function LineupPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // Someone else's side, or a round that has already been played: show the
+  // field as it was. The editor below is only for your own open round.
+  const roundLabel = afl_round === 0 ? 'Opening Round' : `Round ${afl_round}`
+  const played = league != null && afl_round < (league.current_round ?? 0)
+  if (!is_owner || played) {
+    return (
+      <div className="kx-page">
+        <TeamMobSubnav active="field" leagueId={leagueId!} teamId={teamId!} />
+        <div className="kx-head">
+          <h2>{team.name}, {roundLabel}</h2>
+          <div className="kx-head-side">
+            {afl_round > 0 && (
+              <button type="button" className="kx-btn" aria-label="Previous round"
+                onClick={() => navigate(`/leagues/${leagueId}/team/${teamId}/lineup/${afl_round - 1}`)}><i className="bi bi-chevron-left"></i></button>
+            )}
+            {afl_round < max_round && (
+              <button type="button" className="kx-btn" aria-label="Next round"
+                onClick={() => navigate(`/leagues/${leagueId}/team/${teamId}/lineup/${afl_round + 1}`)}><i className="bi bi-chevron-right"></i></button>
+            )}
+            <Link to={`/leagues/${leagueId}/team/${teamId}`} className="kx-btn">Squad</Link>
+          </div>
+        </div>
+        <HistoricalSquadView leagueId={leagueId!} teamId={teamId!} round={afl_round} />
+      </div>
+    )
   }
 
   return (

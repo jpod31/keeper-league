@@ -316,6 +316,29 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   analytics page had been blank whenever its summary was cached. After
   changing what an endpoint returns, run `_mobtest/kl_audit.mjs` over every
   route and look for `PAGEERROR`.
+- **Event times go through `models/timefmt.py`** (`when`, `day`, `clock`):
+  trades, notifications, chat, activity and list changes are stored as naive
+  UTC and were shown as UTC, eleven hours behind Melbourne in summer. Never
+  `strftime` one of those columns directly. Fixture and game times are naive
+  MELBOURNE and must not be passed to it.
+- **No browser pop-ups**: `ask()` and `tell()` from `components/ui/dialog.tsx`
+  replace `confirm()` and `alert()` (`DialogHost` is mounted in `App`). A
+  message that says delete, delist, veto, restart, reset or remove gets a red
+  button on its own.
+- **A player opens as a card over the page you are on**, from any list:
+  `const openPlayer = useOpenPlayer()` then `openPlayer(p.id)`
+  (`components/squad/PlayerPopup.tsx`, provider in `LeagueShell`). Do not
+  send a click to `/player/<name>`; that page is only the card's "full
+  profile" link. Sending the pool there lost the coach's filters.
+- **Notifications and activity are one list** (`components/comms/NoticeList.tsx`):
+  the crest of the club named in the line, in-app links, same layout.
+- **Page titles**: sentence case, no icon, no banner, in `.page-header` or
+  `.kx-head`.
+- **Click-through tests** live in `_mobtest/flow_*.mjs` on `flowlib.mjs`
+  (squad actions, a trade between two coaches, the draft room, pool, trade
+  block, notes). Run them against a THROWAWAY copy of the data (copy
+  `data/snap/now.db` first); they write. Each step prints page errors,
+  failed requests and any browser dialog.
 - **One typeface: Geist.** Geist Mono was dropped on 2026-11-24 (Lucas: "the
   fonts dont match the style"); `--kl-font-mono` now points at `--kl-font` so
   older rules keep working, and `body` has tabular numerals. Do not add a
