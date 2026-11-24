@@ -16,6 +16,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { api } from '../../lib/api'
 import { TradeProposeSkeleton } from '../../components/ui/TradeProposeSkeleton'
 import { ratingTier } from '../../lib/clubs'
+import { TeamBadge } from '../../components/ui/TeamBadge'
 import './trade-propose.css'
 
 interface Team {
@@ -61,12 +62,6 @@ function fmtSc(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return '-'
   return String(Math.round(n))
 }
-function teamInitials(name: string): string {
-  if (!name) return '·'
-  const w = name.replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).filter(Boolean)
-  if (w.length >= 2) return (w[0][0] + w[1][0]).toUpperCase()
-  return (w[0] || '·').slice(0, 2).toUpperCase()
-}
 function fmtCountdown(closeAt: string | null): string | null {
   if (!closeAt) return null
   const ms = new Date(closeAt).getTime() - Date.now()
@@ -81,16 +76,10 @@ function fmtCountdown(closeAt: string | null): string | null {
 
 /* ── Small pieces ──────────────────────────────────────────── */
 
+// The league-wide crest, so a club with no logo gets its initials in its own
+// colour here too (this page used to draw a grey one of its own).
 function Crest({ team, size = 34 }: { team: Team; size?: number }) {
-  const [failed, setFailed] = useState(false)
-  const show = team.logo_url && !failed
-  return (
-    <span className="tp-crest" style={{ width: size, height: size, flex: `0 0 ${size}px` }}>
-      {show
-        ? <img src={team.logo_url!} alt="" onError={() => setFailed(true)} />
-        : <span style={{ fontSize: size * 0.34 }}>{teamInitials(team.name)}</span>}
-    </span>
-  )
+  return <TeamBadge name={team.id} size={Math.max(size, 30)} showName={false} />
 }
 
 function ClubMark({ club, logos }: { club?: string; logos: Record<string, string> }) {

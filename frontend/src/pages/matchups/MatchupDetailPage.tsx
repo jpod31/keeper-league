@@ -77,7 +77,7 @@ interface MatchupData {
 // CSS from templates/matchups/detail.html <style> block
 const MU_CSS = `
 .mu-hero { background:#0e0d0f; border:1px solid #1e1d21; border-radius:10px; padding:28px 24px; margin-bottom:20px; overflow:hidden; }
-.mu-hero-grid { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; }
+.mu-hero-grid { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px; }
 .mu-hero-team { text-decoration:none; text-align:center; display:flex; flex-direction:column; align-items:center; gap:10px; color:inherit; }
 .mu-hero-team:hover .mu-tname { color:#ececf6; }
 .mu-tname { font-size:1.125rem; font-weight:700; color:#ffffff; letter-spacing:-.02em; }
@@ -122,6 +122,14 @@ const MU_CSS = `
 .pb-total.pb-lost { border-top:2px solid rgba(248,81,73,.3); }
 .pb-total-label { color:var(--kl-text-primary); font-weight:600; }
 .pb-total-val { color:#ebebee; font-weight:700; font-variant-numeric:tabular-nums; }
+@media (max-width: 600px) {
+  .mu-hero { padding:20px 12px; }
+  .mu-hero-grid { gap:8px; }
+  .mu-tscore { font-size:2rem; }
+  .mu-tname { font-size:.9375rem; overflow-wrap:anywhere; }
+  .mu-hero-team .tcrest, .mu-hero-team > span:first-child { transform:scale(.8); transform-origin:center bottom; }
+  .pb-player, .pb-side-hdr, .pb-total, .pb-cap-row { padding-left:10px; padding-right:10px; }
+}
 .pb-cap-row { display:flex; justify-content:space-between; padding:4px 16px; font-size:.8125rem; color:var(--kl-text-primary); border-top:1px solid #151518; }
 `
 
