@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { api } from '../../lib/api'
 import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { DraftPlanCard } from '../../components/draft/DraftPlanCard'
+import { ask } from '../../components/ui/dialog'
 
 interface Team { id: number; name: string; owner: string; draft_order: number }
 interface DraftSessionSummary {
@@ -223,7 +224,7 @@ export function DraftSetupPage() {
   }
 
   async function restartDraft() {
-    if (!confirm('Are you sure you want to restart the draft?\n\nThis will DELETE the current draft session, remove all drafted players from rosters, and take you to settings where you can make changes before re-drafting.\n\nThis cannot be undone.')) return
+    if (!await ask('Are you sure you want to restart the draft?\n\nThis will DELETE the current draft session, remove all drafted players from rosters, and take you to settings where you can make changes before re-drafting.\n\nThis cannot be undone.')) return
     await postAction({ action: 'restart_draft' }, 'Draft reset')
     navigate(`/leagues/${leagueId}/settings`)
   }
@@ -234,7 +235,7 @@ export function DraftSetupPage() {
   }
 
   async function deleteMock() {
-    if (!confirm('Delete the mock draft?')) return
+    if (!await ask('Delete the mock draft?')) return
     try {
       await fetch(`/leagues/${leagueId}/draft/mock/delete`, { method: 'POST', credentials: 'same-origin' })
       await refresh()

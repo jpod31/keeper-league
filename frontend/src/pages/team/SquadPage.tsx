@@ -13,6 +13,7 @@ import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
 import { useFieldActions, checkSwapEligible } from '../../hooks/useFieldActions'
 import { SSPModal } from '../../components/squad/SSPModal'
 import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
+import { ask, tell } from '../../components/ui/dialog'
 
 interface StandingsLite {
   standings: { team_id: number; wins?: number; losses?: number; draws?: number }[]   // ordered by ladder position
@@ -238,7 +239,7 @@ function SquadPageInner() {
 
   async function optimise(metric: 'rating' | 'sc_avg') {
     const label = metric === 'rating' ? 'rating' : 'SC average'
-    if (!window.confirm(
+    if (!await ask(
       `Optimise your team by ${label}?\n\nThis rebuilds your on-field lineup and emergencies with the best available players, ` +
       `excluding bye players, injuries (short/long), 7s and LTIL. Captain & Vice-Captain are kept, and any locked players are left in place.`
     )) return
@@ -249,10 +250,10 @@ function SquadPageInner() {
         body: JSON.stringify({ metric }),
       })
       const j = await res.json().catch(() => ({}))
-      if (!res.ok) { window.alert(j.error || 'Could not optimise team'); return }
+      if (!res.ok) { tell(j.error || 'Could not optimise team'); return }
       refetch()
     } catch {
-      window.alert('Could not optimise team')
+      tell('Could not optimise team')
     } finally {
       setOptimising(null)
     }
@@ -300,7 +301,7 @@ function SquadPageInner() {
       setDelistTarget(null)
       refetch()
     } catch (err) {
-      alert(`Delist failed: ${(err as Error).message}`)
+      tell(`Delist failed: ${(err as Error).message}`)
     } finally {
       setDelisting(false)
     }

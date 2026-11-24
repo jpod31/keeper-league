@@ -1,5 +1,6 @@
 """Trade center blueprint: propose, respond, veto, comment, history."""
 
+from models import timefmt
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
@@ -99,7 +100,7 @@ def trade_center(league_id):
                 "asset_count": len(assets),
                 "from_proposer": from_proposer,
                 "from_recipient": from_recipient,
-                "proposed_at": t.proposed_at.strftime("%d %b %Y %H:%M") if t.proposed_at else None,
+                "proposed_at": timefmt.when(t.proposed_at),
                 "proposed_at_iso": (t.proposed_at.isoformat() + ("" if t.proposed_at.tzinfo else "+00:00")) if t.proposed_at else None,
                 "intended_period": getattr(t, "intended_period", None),
             }
@@ -323,7 +324,7 @@ def trade_detail(league_id, trade_id):
                 "user_name": c.user.display_name if c.user else "?",
                 "user_initial": (c.user.display_name[0].upper() if c.user and c.user.display_name else "?"),
                 "comment": c.comment,
-                "created_at": c.created_at.strftime("%d %b %H:%M") if c.created_at else None,
+                "created_at": timefmt.when(c.created_at),
             }
 
         def _ser_team_full(t):
@@ -345,9 +346,9 @@ def trade_detail(league_id, trade_id):
                 "status": trade.status,
                 "proposer_team": _ser_team_full(trade.proposer_team),
                 "recipient_team": _ser_team_full(trade.recipient_team),
-                "proposed_at": trade.proposed_at.strftime("%d %b %Y %H:%M") if trade.proposed_at else None,
-                "review_deadline": trade.review_deadline.strftime("%d %b %Y %H:%M") if trade.review_deadline else None,
-                "responded_at": trade.responded_at.strftime("%d %b %Y %H:%M") if trade.responded_at else None,
+                "proposed_at": timefmt.when(trade.proposed_at),
+                "review_deadline": timefmt.when(trade.review_deadline),
+                "responded_at": timefmt.when(trade.responded_at),
                 "intended_period": trade.intended_period,
                 "notes": trade.notes,
                 "veto_reason": trade.veto_reason,

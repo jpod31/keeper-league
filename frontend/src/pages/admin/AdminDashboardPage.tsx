@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
+import { ask, tell } from '../../components/ui/dialog'
 
 interface Activity {
   user: string
@@ -46,17 +47,17 @@ function Stat({ label, value, icon, color }: { label: string; value: number; ico
 }
 
 async function syncPositions() {
-  if (!confirm('Sync player positions from Footywire?')) return
+  if (!await ask('Sync player positions from Footywire?')) return
   const fd = new FormData()
   await fetch('/admin/sync-positions', { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'manual' })
-  alert('Sync requested. Reload to see results.')
+  tell('Sync requested. Reload to see results.')
 }
 
 async function syncInjuries() {
-  if (!confirm('Sync injuries from AFL?')) return
+  if (!await ask('Sync injuries from AFL?')) return
   const fd = new FormData()
   await fetch('/admin/sync-injuries', { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'manual' })
-  alert('Sync requested. Reload to see results.')
+  tell('Sync requested. Reload to see results.')
 }
 
 export function AdminDashboardPage() {

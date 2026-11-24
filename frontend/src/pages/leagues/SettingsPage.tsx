@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 import { AdminSubnav } from '../../components/nav/AdminSubnav'
+import { ask } from '../../components/ui/dialog'
 
 interface OnFieldSlots { DEF?: number; MID?: number; FWD?: number; RUC?: number }
 
@@ -248,7 +249,7 @@ export function SettingsPage() {
   }
 
   async function generateFixtures() {
-    if (!confirm('Generate fixtures for the season? Any existing fixtures will be replaced.')) return
+    if (!await ask('Generate fixtures for the season? Any existing fixtures will be replaced.')) return
     setGenerating(true)
     setGenStatus(null)
     try {
@@ -272,7 +273,7 @@ export function SettingsPage() {
   }
 
   async function generatePreseason() {
-    const ok = confirm(`Generate pre-season fixtures?${data?.has_preseason ? ' This will replace existing pre-season matches.' : ''}`)
+    const ok = await ask(`Generate pre-season fixtures?${data?.has_preseason ? ' This will replace existing pre-season matches.' : ''}`)
     if (!ok) return
     try {
       await fetch(`/leagues/${leagueId}/fixture/generate-preseason`, { method: 'POST', credentials: 'include' })

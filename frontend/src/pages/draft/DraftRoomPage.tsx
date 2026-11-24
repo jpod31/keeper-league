@@ -7,6 +7,7 @@ import { useWishlist } from '../../hooks/useWishlist'
 import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
 import { TeamCrest } from '../../components/draft/TeamCrest'
 import { clubVars, rgbOf, ratingTier as rtBand } from '../../lib/clubs'
+import { ask, tell } from '../../components/ui/dialog'
 
 interface PickHistoryEntry {
   pick_number: number
@@ -707,7 +708,7 @@ function DraftRoomPageInner() {
         setData(prev => prev ? { ...prev, session: { ...prev.session, scheduled_start } } : prev)
         if (scheduled_start) setScheduleInput(scheduled_start.slice(0, 16))
       },
-      error: p => alert((p as { message: string }).message),
+      error: p => tell((p as { message: string }).message),
     },
   })
 
@@ -771,7 +772,7 @@ function DraftRoomPageInner() {
   }
 
   function pickPlayer(playerId: number) {
-    if (!socket?.connected) { alert('Not connected, refresh the page.'); return }
+    if (!socket?.connected) { tell('Not connected, refresh the page.'); return }
     setPendingPickId(playerId)
   }
 
@@ -836,12 +837,12 @@ function DraftRoomPageInner() {
   }
 
   function startDraft() { socket?.emit('start_draft', { league_id: Number(leagueId) }) }
-  function pauseDraft() { if (confirm('Pause the draft? All timers will stop.')) socket?.emit('pause_draft', { league_id: Number(leagueId) }) }
+  async function pauseDraft() { if (await ask('Pause the draft? All timers will stop.')) socket?.emit('pause_draft', { league_id: Number(leagueId) }) }
   function resumeDraft() { socket?.emit('resume_draft', { league_id: Number(leagueId) }) }
-  function undoPick() { if (confirm('Undo the last pick?')) socket?.emit('undo_pick', { league_id: Number(leagueId) }) }
+  async function undoPick() { if (await ask('Undo the last pick?')) socket?.emit('undo_pick', { league_id: Number(leagueId) }) }
 
-  function confirmRestart() {
-    if (!confirm('Are you sure you want to restart the draft?\n\nThis will DELETE the current draft session, remove all drafted players from rosters, and take you to settings where you can make changes before re-drafting.\n\nThis cannot be undone.')) return
+  async function confirmRestart() {
+    if (!await ask('Are you sure you want to restart the draft?\n\nThis will DELETE the current draft session, remove all drafted players from rosters, and take you to settings where you can make changes before re-drafting.\n\nThis cannot be undone.')) return
     const fd = new FormData()
     fd.set('action', 'restart_draft')
     fetch(`/leagues/${leagueId}/draft/setup`, { method: 'POST', body: fd, credentials: 'same-origin' })

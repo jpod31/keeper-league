@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { post, api } from '../lib/api'
 import { useToast } from '../components/ui/Toast'
+import { ask } from '../components/ui/dialog'
 
 interface PlayerDetail {
   id: number; name: string; position: string; afl_team: string
@@ -109,7 +110,7 @@ export function useFieldActions(
   }, [fvApi, toast, onRefresh])
 
   const removeFromLTIL = useCallback(async (pid: number) => {
-    if (!confirm('Remove this player from the LTIL? They return to your active squad.')) return
+    if (!await ask('Remove this player from the LTIL? They return to your active squad.')) return
     const data = await fvApi('/remove-from-ltil', { player_id: pid })
     if (!data.error) { toast('Player removed from LTIL', 'success'); onRefresh() }
   }, [fvApi, toast, onRefresh])

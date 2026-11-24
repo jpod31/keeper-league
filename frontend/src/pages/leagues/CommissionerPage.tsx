@@ -5,6 +5,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { post } from '../../lib/api'
 import { AdminSubnav } from '../../components/nav/AdminSubnav'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
+import { ask, tell } from '../../components/ui/dialog'
 
 interface LtilEntry {
   id: number
@@ -163,7 +164,7 @@ export function CommissionerPage() {
   }
 
   async function doPost(url: string, body: object, key: string, confirmMsg?: string) {
-    if (confirmMsg && !confirm(confirmMsg)) return false
+    if (confirmMsg && !await ask(confirmMsg)) return false
     setBusy(key)
     try {
       await post(url, body)
@@ -184,7 +185,7 @@ export function CommissionerPage() {
     confirmMsg?: string,
     extra?: Record<string, string>,
   ) {
-    if (confirmMsg && !confirm(confirmMsg)) return
+    if (confirmMsg && !await ask(confirmMsg)) return
     setBusy(`${phase}-${step}`)
     try {
       const fd = new FormData()
@@ -230,7 +231,7 @@ export function CommissionerPage() {
 
   async function commissionerMove() {
     if (!moveFrom || !moveTo || !movePlayer) return
-    if (moveFrom === moveTo) { alert('Source and destination teams must be different.'); return }
+    if (moveFrom === moveTo) { tell('Source and destination teams must be different.'); return }
     const player = moveRoster.find(p => p.id === movePlayer)
     const toTeam = data?.teams.find(t => t.id === moveTo)
     const ok = await doPost(
@@ -248,7 +249,7 @@ export function CommissionerPage() {
   async function deleteLeague() {
     const input = prompt('Type "DELETE" to permanently delete this league and all its data:')
     if (input !== 'DELETE') {
-      if (input !== null) alert('You must type DELETE exactly to confirm.')
+      if (input !== null) tell('You must type DELETE exactly to confirm.')
       return
     }
     const fd = new FormData()
@@ -256,7 +257,7 @@ export function CommissionerPage() {
       await fetch(`/leagues/${leagueId}/commissioner/delete-league`, { method: 'POST', body: fd, credentials: 'same-origin' })
       navigate('/leagues')
     } catch (e) {
-      alert((e as Error).message)
+      tell((e as Error).message)
     }
   }
 

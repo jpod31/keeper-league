@@ -58,6 +58,7 @@ import { ListChangesPage } from './pages/leagues/ListChangesPage'
 import { TradeCenterPage } from './pages/trades/TradeCenterPage'
 import { TradeProposePage } from './pages/trades/TradeProposePage'
 import { TradeDetailPage } from './pages/trades/TradeDetailPage'
+import { DialogHost } from './components/ui/dialog'
 import { TradeBlockPage } from './pages/trades/TradeBlockPage'
 
 // Comms pages
@@ -79,6 +80,8 @@ import { SeasonsPage } from './pages/leagues/SeasonsPage'
 
 export default function App() {
   return (
+    <>
+    <DialogHost />
     <Routes>
       {/* Public routes */}
       <Route path="/auth/login" element={<LoginPage />} />
@@ -176,5 +179,6 @@ export default function App() {
         </div>
       } />
     </Routes>
+    </>
   )
 }

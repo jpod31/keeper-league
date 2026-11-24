@@ -4,6 +4,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { AdminSubnav } from '../../components/nav/AdminSubnav'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
+import { tell } from '../../components/ui/dialog'
 
 interface ScoringData {
   league: {
@@ -89,7 +90,7 @@ export function ScoringPage() {
       const res = await fetch(`/leagues/${leagueId}/scoring`, {
         method: 'POST', body: fd, credentials: 'same-origin', redirect: 'manual',
       })
-      if (res.status < 500) alert('Scoring updated.')
+      if (res.status < 500) tell('Scoring updated.')
     } finally {
       setSaving(false)
     }

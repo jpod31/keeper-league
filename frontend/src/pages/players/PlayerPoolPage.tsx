@@ -11,6 +11,7 @@ import { DensityToggle } from '../../components/ui/DensityToggle'
 import { AcquiredHistory, type Acquired, type Stint } from '../../components/ui/PlayerHistory'
 import { TeamBadge } from '../../components/ui/TeamBadge'
 import { ratingTier } from '../../lib/clubs'
+import { ask, tell } from '../../components/ui/dialog'
 
 type AcquiredHistoryEntry = Stint
 
@@ -618,7 +619,7 @@ export function PlayerPoolPage() {
   }, [panelOpen])
 
   async function pickup(playerId: number) {
-    if (!confirm('Pick this player up?')) return
+    if (!await ask('Pick this player up?')) return
     setPickingUp(playerId)
     try {
       const res = await fetch(`/leagues/${leagueId}/player-pool/pickup`, {
@@ -629,7 +630,7 @@ export function PlayerPoolPage() {
       })
       const d = await res.json().catch(() => ({}))
       if (!res.ok) {
-        alert(d.error || 'Failed to pick up player')
+        tell(d.error || 'Failed to pick up player')
       } else {
         refetch()
       }

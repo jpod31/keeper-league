@@ -1,5 +1,6 @@
 """JSON API endpoints for the React SPA."""
 
+from models import timefmt
 import logging
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
@@ -927,7 +928,7 @@ def trade_list(league_id):
             "proposer": t.proposer_team.name if t.proposer_team else "?",
             "recipient": t.recipient_team.name if t.recipient_team else "?",
             "status": t.status,
-            "created": t.proposed_at.strftime("%b %d") if t.proposed_at else "",
+            "created": timefmt.day(t.proposed_at) or "",
             "players_out": [a.player.name if a.player else "Pick" for a in t.assets if a.from_team_id == t.proposer_team_id],
             "players_in": [a.player.name if a.player else "Pick" for a in t.assets if a.from_team_id == t.recipient_team_id],
         }
@@ -974,7 +975,7 @@ def chat_messages(league_id):
         "author": m.sender.display_name if m.sender else "?",
         "author_id": m.sender_user_id,
         "text": m.body,
-        "created": m.created_at.strftime("%H:%M") if m.created_at else "",
+        "created": timefmt.clock(m.created_at) or "",
     } for m in msgs])
 
 
@@ -1015,7 +1016,7 @@ def notifications(league_id):
         "id": n.id, "type": n.type or "",
         "title": n.title or "", "body": n.body or "",
         "read": n.is_read or False,
-        "created": n.created_at.strftime("%b %d, %H:%M") if n.created_at else "",
+        "created": timefmt.when(n.created_at) or "",
         "link": n.link,
     } for n in notifs])
 
@@ -1051,7 +1052,7 @@ def activity_feed(league_id):
         "id": a.id, "type": a.type or "",
         "text": a.title or "",
         "actor": a.actor.display_name if a.actor else "",
-        "created": a.created_at.strftime("%b %d, %H:%M") if a.created_at else "",
+        "created": timefmt.when(a.created_at) or "",
     } for a in activities])
 
 
@@ -1116,11 +1117,11 @@ def trade_detail(league_id, trade_id):
             "owner": t.recipient_team.owner.display_name if t.recipient_team and t.recipient_team.owner else "?",
         },
         "status": t.status,
-        "created": t.proposed_at.strftime("%b %d, %Y") if t.proposed_at else "",
+        "created": timefmt.day(t.proposed_at, year=True) or "",
         "message": t.notes or "",
         "players_out": [{"name": a.player.name if a.player else "Pick", "position": a.player.position if a.player else "", "sc_avg": a.player.sc_avg or 0 if a.player else 0} for a in t.assets if a.from_team_id == t.proposer_team_id],
         "players_in": [{"name": a.player.name if a.player else "Pick", "position": a.player.position if a.player else "", "sc_avg": a.player.sc_avg or 0 if a.player else 0} for a in t.assets if a.from_team_id == t.recipient_team_id],
-        "comments": [{"author": c.user.display_name if c.user else "?", "text": c.comment, "created": c.created_at.strftime("%b %d, %H:%M") if c.created_at else ""} for c in t.comments],
+        "comments": [{"author": c.user.display_name if c.user else "?", "text": c.comment, "created": timefmt.when(c.created_at) or ""} for c in t.comments],
         "can_respond": user_team and user_team.id == t.recipient_team_id and t.status == "pending",
         "can_veto": is_commish and t.status == "pending",
     })

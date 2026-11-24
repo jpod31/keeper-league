@@ -1,5 +1,6 @@
 """League player pages: pool, injuries, ratings, compare, stats, keepers, records, list changes."""
 
+from models import timefmt
 import os
 import re
 import json
@@ -639,7 +640,7 @@ def list_changes_page(league_id):
                 "type": e.get("type"),
                 "description": e.get("description"),
                 "year": e.get("year"),
-                "date": e["date"].strftime("%d %b %Y") if e.get("date") else None,
+                "date": timefmt.day(e["date"], year=True) if e.get("date") else None,
             } for e in (list_changes or [])],
         })
 

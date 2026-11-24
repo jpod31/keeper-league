@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
+import { ask, tell } from '../../components/ui/dialog'
 
 interface TopPlayer {
   id: number
@@ -75,13 +76,13 @@ export function DraftValuesPage() {
       const fd = new FormData()
       for (const [k, v] of Object.entries(weights)) fd.set(k, String(v))
       await fetch(`/leagues/${leagueId}/draft-values`, { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'manual' })
-      alert('Draft values saved.')
+      tell('Draft values saved.')
       setDirty(false)
     } finally { setSaving(false) }
   }
 
   async function reset() {
-    if (!confirm('Reset to league defaults?')) return
+    if (!await ask('Reset to league defaults?')) return
     const fd = new FormData()
     fd.set('action', 'reset')
     await fetch(`/leagues/${leagueId}/draft-values`, { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'manual' })

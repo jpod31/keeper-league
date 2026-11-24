@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router'
 import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
+import { ask } from '../../components/ui/dialog'
 
 interface Team {
   id: number
@@ -136,7 +137,7 @@ export function TradeDetailPage() {
   const rosterDelta = receiving.length - giving.length
 
   async function respondAction(action: 'accept' | 'reject' | 'cancel') {
-    if (action === 'accept' && !confirm('Accept this trade?')) return
+    if (action === 'accept' && !await ask('Accept this trade?', { ok: 'Accept trade' })) return
     setBusy(true); setError(null)
     try {
       const form = new FormData()
@@ -155,7 +156,7 @@ export function TradeDetailPage() {
   }
 
   async function vetoAction() {
-    if (!confirm('Veto this trade?')) return
+    if (!await ask('Veto this trade?', { ok: 'Veto trade' })) return
     setBusy(true); setError(null)
     try {
       const form = new FormData()

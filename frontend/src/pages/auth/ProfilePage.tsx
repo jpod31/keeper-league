@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
+import { tell } from '../../components/ui/dialog'
 
 interface ProfileTeam {
   id: number
@@ -169,13 +170,13 @@ export function ProfilePage() {
 
   async function enablePush() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      alert('Push notifications are not supported in this browser.')
+      tell('Push notifications are not supported in this browser.')
       return
     }
     try {
       const r = await fetch('/push/vapid-key', { credentials: 'include' })
       const d = await r.json()
-      if (!d.publicKey) { alert('Push not configured on server.'); return }
+      if (!d.publicKey) { tell('Push not configured on server.'); return }
       const reg = await navigator.serviceWorker.ready
       const key = urlBase64ToUint8Array(d.publicKey)
       // Cast to BufferSource, Uint8Array is valid but TS lib expects ArrayBuffer-backed view
@@ -188,7 +189,7 @@ export function ProfilePage() {
       })
       setPushBtnText('Enabled')
     } catch (err) {
-      alert(`Failed to enable push: ${(err as Error).message}`)
+      tell(`Failed to enable push: ${(err as Error).message}`)
     }
   }
 

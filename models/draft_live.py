@@ -1,5 +1,6 @@
 """Live draft session management: creation, pick order, making picks, auto-pick, queues."""
 
+from models import timefmt
 import threading
 from datetime import datetime, timezone
 
@@ -536,7 +537,7 @@ def make_pick(session_id, player_id, is_auto=False):
                         league_id=session.league_id,
                         notif_type="list_change",
                         title=f"{draft_label} completed",
-                        body=session.completed_at.strftime("%d %b %Y %H:%M"),
+                        body=timefmt.when(session.completed_at, year=True),
                     )
 
         return current_pick, None
@@ -638,7 +639,7 @@ def pass_pick(session_id):
                     league_id=session.league_id,
                     notif_type="list_change",
                     title=f"{draft_label} completed",
-                    body=session.completed_at.strftime("%d %b %Y %H:%M"),
+                    body=timefmt.when(session.completed_at, year=True),
                 )
 
         return current_pick, None

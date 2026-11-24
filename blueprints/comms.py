@@ -1,5 +1,6 @@
 """Communications blueprint: notifications and team messaging."""
 
+from models import timefmt
 from datetime import datetime, timezone
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
@@ -41,7 +42,7 @@ def notifications(league_id):
                 "body": n.body,
                 "link": n.link,
                 "is_read": bool(n.is_read),
-                "created_at": n.created_at.strftime("%d %b %H:%M") if n.created_at else None,
+                "created_at": timefmt.when(n.created_at),
             } for n in notifs],
         })
 
@@ -403,7 +404,7 @@ def activity_feed(league_id):
                 "title": n.title,
                 "body": n.body,
                 "link": n.link,
-                "created_at": n.created_at.strftime("%d %b %Y, %H:%M") if n.created_at else None,
+                "created_at": timefmt.when(n.created_at, year=True),
             } for n in entries],
         })
 

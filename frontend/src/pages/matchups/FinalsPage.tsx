@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import { useFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
+import { ask } from '../../components/ui/dialog'
 
 interface Team { id: number; name: string }
 
@@ -79,7 +80,7 @@ export function FinalsPage() {
   const gfs = finals.filter(f => f.final_type === 'GF')
 
   async function generate() {
-    if (!confirm('Generate finals from current standings?')) return
+    if (!await ask('Generate finals from current standings?')) return
     await fetch(`/leagues/${leagueId}/finals/generate`, { method: 'POST', credentials: 'include', redirect: 'manual' })
     refetch()
   }

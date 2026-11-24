@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '../../lib/api'
 import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
+import { ask, tell } from '../../components/ui/dialog'
 
 interface PickHistoryEntry {
   pick_number: number
@@ -188,7 +189,7 @@ export function MockDraftPage() {
         body: JSON.stringify({ player_id: playerId }),
       })
       const json = await res.json()
-      if (json.error) { alert(json.error); setIsProcessing(false); return }
+      if (json.error) { tell(json.error); setIsProcessing(false); return }
 
       // Add user's pick
       setAnimatedPicks(prev => [json.user_pick, ...prev])
@@ -208,11 +209,11 @@ export function MockDraftPage() {
   }
 
   async function resetMock() {
-    if (!confirm('Reset the mock draft? All picks will be cleared.')) return
+    if (!await ask('Reset the mock draft? All picks will be cleared.')) return
     try {
       const res = await fetch(`/leagues/${leagueId}/draft/mock/reset`, { method: 'POST', credentials: 'same-origin' })
       const json = await res.json()
-      if (json.error) { alert(json.error); return }
+      if (json.error) { tell(json.error); return }
       setState(json.state)
       setAnimatedPicks([])
       setYourTeamPicks([])

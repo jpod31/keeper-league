@@ -4,6 +4,7 @@ import { api } from '../../lib/api'
 import { Spinner } from '../../components/ui/Spinner'
 import { useLeague } from '../../contexts/LeagueContext'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
+import { ask } from '../../components/ui/dialog'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -116,7 +117,7 @@ export function LineupPage() {
   const fieldSlotConfigs = position_slots.filter(ps => !ps.is_bench)
 
   async function save(action: 'save' | 'auto_fill' | 'lock') {
-    if (action === 'lock' && !confirm('Lock this lineup? This cannot be undone.')) return
+    if (action === 'lock' && !await ask('Lock this lineup? This cannot be undone.')) return
     setSaving(true)
     try {
       const form = new FormData()

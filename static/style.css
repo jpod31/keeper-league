@@ -10842,3 +10842,12 @@ body { font-variant-numeric: tabular-nums; }
 .fv-action-sheet-btn.fv-as-ltil.fv-as-ltil i { color: #f0883e !important; }
 .fv-action-sheet-btn.fv-as-vc.fv-as-vc i { color: #6ea8ff !important; }
 .fv-action-sheet-btn.fv-as-7c.fv-as-7c i { color: #c98be6 !important; }
+/* In-page confirm and notice (components/ui/dialog.tsx). */
+.kl-dlg-back { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.72); }
+.kl-dlg { width: 100%; max-width: 440px; padding: 22px 22px 18px; background: #0b0b0e; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; box-shadow: 0 30px 80px rgba(0,0,0,.85); }
+.kl-dlg-head { margin: 0; font-size: 1.125rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.3; color: #ffffff; }
+.kl-dlg-body { margin: 10px 0 0; font-size: .9375rem; line-height: 1.45; color: #ffffff; }
+.kl-dlg-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.kl-dlg-foot .kx-btn { height: 42px; padding: 0 18px; font-size: .9375rem; }
+.kl-dlg-danger { background: #f85149 !important; border-color: #f85149 !important; color: #050506 !important; font-weight: 700; }
+@media (max-width: 480px) { .kl-dlg-foot .kx-btn { flex: 1; } }
