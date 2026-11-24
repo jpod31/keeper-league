@@ -15,6 +15,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { api } from '../../lib/api'
 import { TradeProposeSkeleton } from '../../components/ui/TradeProposeSkeleton'
+import { ratingTier } from '../../lib/clubs'
 import './trade-propose.css'
 
 interface Team {
@@ -135,7 +136,9 @@ function AssetRow({
           {isPick
             ? (pick!.is_own ? 'Own pick' : `via ${pick!.original_team}`)
             : <>
-                <span className={`tp-pos tp-pos-${pos}`}>{player!.position || pos}</span>
+                {(player!.position || pos).split('/').map(ps => (
+                  <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}`}>{ps}</span>
+                ))}
                 <span className="tp-row-club">{player!.afl_team}</span>
               </>}
         </span>
@@ -144,7 +147,7 @@ function AssetRow({
       {!isPick && (
         <span className="tp-row-stats">
           <span className="tp-stat"><b>{fmtSc(player!.sc_avg)}</b><i>SC</i></span>
-          <span className="tp-stat"><b>{player!.rating ?? '-'}</b><i>RTG</i></span>
+          <span className="tp-stat"><b><span className={`rt ${ratingTier(player!.rating)}`}>{player!.rating ?? '-'}</span></b><i>RTG</i></span>
           <span className="tp-stat"><b>{player!.age || '-'}</b><i>AGE</i></span>
         </span>
       )}
@@ -455,7 +458,7 @@ export function TradeProposePage() {
                   {ownerLine(t) && <span className="tp-partner-owner">{ownerLine(t)}</span>}
                 </span>
                 <span className="tp-partner-stats">
-                  {t.record && <span><b>{t.record}</b><i>W–L</i></span>}
+                  {t.record && <span><b>{t.record}</b><i>W-L</i></span>}
                   <span><b>{t.roster_count ?? '-'}</b><i>LIST</i></span>
                 </span>
                 <i className="bi bi-chevron-right tp-partner-go" />

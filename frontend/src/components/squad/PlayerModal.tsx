@@ -161,9 +161,9 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                   const val = p.last_game?.[key]
                   if (val == null) return null
                   return (
-                    <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(42,41,47,.25)' }}>
-                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>{val}</div>
-                      <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
+                    <div key={key} className="pmod-tile">
+                      <b>{val}</b>
+                      <span>{label}</span>
                     </div>
                   )
                 })}
@@ -182,9 +182,9 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                   const val = p.season_avg?.[key]
                   if (val == null) return null
                   return (
-                    <div key={key} style={{ textAlign: 'center', padding: '5px 3px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(42,41,47,.25)' }}>
-                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>{typeof val === 'number' ? val.toFixed(1) : val}</div>
-                      <div style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
+                    <div key={key} className="pmod-tile">
+                      <b>{typeof val === 'number' ? val.toFixed(1) : val}</b>
+                      <span>{label}</span>
                     </div>
                   )
                 })}

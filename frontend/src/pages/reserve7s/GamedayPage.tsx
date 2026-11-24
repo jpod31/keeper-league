@@ -640,7 +640,7 @@ export function Reserve7sGamedayPage() {
                     <div className="gd-mob-vs-left">
                       {mp && <>
                         <span className="gd-mob-vs-name">
-                          {mp.is_captain && <b className="gd-mob-c" style={{ color: '#a855f7' }}>C</b>}
+                          {mp.is_captain && <b className="gd-mob-c gd-mob-7c">C</b>}
                           {mp.name}
                         </span>
                         <span className={`gd-mob-vs-pos pos-badge pos-${(mp.position || '').split('/')[0].substring(0, 3).toUpperCase()}`}>{(mp.position || '').split('/')[0].substring(0, 3).toUpperCase()}</span>
@@ -664,7 +664,7 @@ export function Reserve7sGamedayPage() {
                       {op && <>
                         <span className={`gd-mob-vs-pos pos-badge pos-${(op.position || '').split('/')[0].substring(0, 3).toUpperCase()}`}>{(op.position || '').split('/')[0].substring(0, 3).toUpperCase()}</span>
                         <span className="gd-mob-vs-name">
-                          {op.is_captain && <b className="gd-mob-c" style={{ color: '#a855f7' }}>C</b>}
+                          {op.is_captain && <b className="gd-mob-c gd-mob-7c">C</b>}
                           {op.name}
                         </span>
                       </>}
