@@ -5,6 +5,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { AcquiredHistory, type Stint } from '../../components/ui/PlayerHistory'
 import { ratingTier } from '../../lib/clubs'
+import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 
 interface FormerPlayer {
   id: number
@@ -116,7 +117,8 @@ export function FormerPlayersPage() {
       {label}{sortKey === key && <i className={`bi ${asc ? 'bi-caret-up-fill' : 'bi-caret-down-fill'}`} style={{ marginLeft: 5, fontSize: '.8125rem' }}></i>}
     </th>
   )
-  const open = (p: FormerPlayer) => { window.location.href = `/player/${encodeURIComponent(p.name)}` }
+  const openPlayer = useOpenPlayer()
+  const open = (p: FormerPlayer) => openPlayer(p.id)
 
   return (
     <div className="kx-page">

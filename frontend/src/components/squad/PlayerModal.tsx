@@ -140,15 +140,12 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}>
-                <span>Avg: <b style={{ color: 'var(--kl-text-primary)' }}>{Math.round(avg)}</b></span>
-                {l3 != null && <span>Last 3{p.stats_are_last_season ? ` of ${yr}` : ''}: <b style={{ color: l3 >= avg ? '#3fb950' : '#f85149' }}>{l3}</b></span>}
-                {l5 != null && <span>Last 5{p.stats_are_last_season ? ` of ${yr}` : ''}: <b style={{ color: l5 >= avg ? '#3fb950' : '#f85149' }}>{l5}</b></span>}
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 12, height: 2, background: '#d29922', display: 'inline-block' }}></span>
-                  <span style={{ fontSize: '.8125rem' }}>3-game avg</span>
-                </span>
+              <div className="pmod-formnums">
+                <div className="pmod-tile"><b>{Math.round(avg)}</b><span>Average</span></div>
+                {l3 != null && <div className="pmod-tile"><b className={l3 >= avg ? 'up' : 'down'}>{l3}</b><span>Last 3{p.stats_are_last_season ? ` of ${yr}` : ''}</span></div>}
+                {l5 != null && <div className="pmod-tile"><b className={l5 >= avg ? 'up' : 'down'}>{l5}</b><span>Last 5{p.stats_are_last_season ? ` of ${yr}` : ''}</span></div>}
               </div>
+              <p className="pmod-legend"><i></i>Dashed line is the 3-game average</p>
             </div>
           )}
 

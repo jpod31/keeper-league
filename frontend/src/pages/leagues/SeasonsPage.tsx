@@ -5,6 +5,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 import { TeamBadge } from '../../components/ui/TeamBadge'
 import { ratingTier, rgbOf } from '../../lib/clubs'
+import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 
 interface TeamCard { id: number; name: string; logo: string | null; accent: string }
 interface LadderRow extends TeamCard {
@@ -67,6 +68,7 @@ function TeamPicker({ teams, value, onChange, allLabel }: {
 
 export function SeasonsPage() {
   const { leagueId, year: yearParam } = useParams()
+  const openPlayer = useOpenPlayer()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const url = `/api/leagues/${leagueId}/seasons${yearParam ? `/${yearParam}` : ''}`
@@ -236,7 +238,7 @@ export function SeasonsPage() {
                         </thead>
                         <tbody>
                           {line.map(p => (
-                            <tr key={p.id} className="click" onClick={() => { window.location.href = `/player/${encodeURIComponent(p.name)}` }}>
+                            <tr key={p.id} className="click" onClick={() => openPlayer(p.id)}>
                               <td>
                                 <div className="kx-player">
                                   {data.team_logos[p.afl_team] && <img src={data.team_logos[p.afl_team]} alt="" />}

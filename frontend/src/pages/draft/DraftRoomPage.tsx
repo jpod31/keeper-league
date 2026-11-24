@@ -680,6 +680,8 @@ function DraftRoomPageInner() {
           message: pick.is_pass ? `${pick.team_name} passed` : `${pick.team_name} drafted ${pick.player_name}`,
           is_system: true,
         }])
+        // He is gone, so he comes out of everyone's queue on screen too.
+        if (pick.player_id) setQueue(q => q.filter(x => x.player_id !== pick.player_id))
         if (!pick.is_pass) {
           setReveal(pick)
           window.setTimeout(() => setReveal(cur => (cur === pick ? null : cur)), 4500)
@@ -905,9 +907,11 @@ function DraftRoomPageInner() {
   const bannerYourPick = isMyTurn && state.status === 'in_progress'
   const bannerCompleted = state.status === 'completed'
 
-  const visiblePickHistory = pickFilterMode === 'mine' && user_team
+  // Newest pick first, always. (The server sends them oldest first and a live
+  // pick used to be put on top, so the order changed on reload.)
+  const visiblePickHistory = (pickFilterMode === 'mine' && user_team
     ? state.pick_history.filter(p => p.team_name === user_team.name)
-    : state.pick_history
+    : state.pick_history).slice().sort((x, y) => y.pick_number - x.pick_number)
 
   return (
     <div>

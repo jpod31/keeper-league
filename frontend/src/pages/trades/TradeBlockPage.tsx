@@ -5,6 +5,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { useStatsYear } from '../../contexts/LeagueContext'
 import { clubVars, ratingTier, rgbOf } from '../../lib/clubs'
 import { TeamCrest } from '../../components/draft/TeamCrest'
+import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 
 interface BlockPlayer {
   id: number
@@ -185,6 +186,7 @@ function BlockForm({
 
 export function TradeBlockPage() {
   const { leagueId } = useParams()
+  const openPlayer = useOpenPlayer()
   const stats = useStatsYear()
   const [data, setData] = useState<BlockData | null>(null)
   const [error, setError] = useState(false)
@@ -297,7 +299,7 @@ export function TradeBlockPage() {
                       <div className="tb-who">
                         {data.team_logos[p.afl_team] && <img src={data.team_logos[p.afl_team]} alt="" />}
                         <div style={{ minWidth: 0 }}>
-                          <a className="tb-name" href={`/player/${encodeURIComponent(p.name)}`} style={{ textDecoration: 'none' }}>{p.name}</a>
+                          <button type="button" className="tb-name tb-name-btn" onClick={() => openPlayer(p.id)}>{p.name}</button>
                           <div className="tb-sub">
                             <PositionChips p={p} />
                             <span>{p.afl_team}</span>

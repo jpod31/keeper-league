@@ -12,6 +12,7 @@ import { AcquiredHistory, type Acquired, type Stint } from '../../components/ui/
 import { TeamBadge } from '../../components/ui/TeamBadge'
 import { ratingTier } from '../../lib/clubs'
 import { ask, tell } from '../../components/ui/dialog'
+import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 
 type AcquiredHistoryEntry = Stint
 
@@ -460,6 +461,7 @@ type MobileSortKey = 'sc' | 'name_asc' | 'age' | 'rtg' | 'gp'
 
 export function PlayerPoolPage() {
   const { leagueId } = useParams()
+  const openPlayer = useOpenPlayer()
   const { data, loading, refetch } = useFetch<PoolData>(`/leagues/${leagueId}/player-pool?format=json`)
   const [search, setSearch] = useState('')
   const [posFilter, setPosFilter] = useState('')
@@ -895,7 +897,7 @@ export function PlayerPoolPage() {
                 return (
                   <tr
                     key={p.id}
-                    onClick={() => { window.location.href = `/player/${encodeURIComponent(p.name)}` }}
+                    onClick={() => openPlayer(p.id)}
                     style={{ cursor: 'pointer' }}
                   >
                     <td style={{ padding: '0 0 0 .4rem', verticalAlign: 'middle' }}>
@@ -1095,7 +1097,7 @@ export function PlayerPoolPage() {
                 <div
                   key={p.id}
                   className="kl-player-card"
-                  onClick={() => { window.location.href = `/player/${encodeURIComponent(p.name)}` }}
+                  onClick={() => openPlayer(p.id)}
                   style={{ cursor: 'pointer' }}
                 >
                   {p.afl_team && data.team_logos[p.afl_team] ? (

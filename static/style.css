@@ -10851,3 +10851,11 @@ body { font-variant-numeric: tabular-nums; }
 .kl-dlg-foot .kx-btn { height: 42px; padding: 0 18px; font-size: .9375rem; }
 .kl-dlg-danger { background: #f85149 !important; border-color: #f85149 !important; color: #050506 !important; font-weight: 700; }
 @media (max-width: 480px) { .kl-dlg-foot .kx-btn { flex: 1; } }
+/* A player's name that opens his card. */
+.tb-name-btn { display: block; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; }
+.tb-name-btn:hover { text-decoration: underline; }
+/* Player card: form figures under the chart. */
+.pmod-formnums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+.pmod-tile b.up { color: #3fb950; } .pmod-tile b.down { color: #f85149; }
+.pmod-legend { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-size: .8125rem; color: #ffffff; }
+.pmod-legend i { width: 18px; height: 0; border-top: 2px dashed #d29922; }

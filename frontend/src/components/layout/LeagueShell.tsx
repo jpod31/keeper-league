@@ -8,6 +8,7 @@ import { PageErrorBoundary } from '../ui/PageErrorBoundary'
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { PlayerPopupProvider } from '../squad/PlayerPopup'
 
 // Heavy, seasonal and rarely mounted, keep it out of the main bundle.
 const SeasonReview = lazy(() => import('../season/SeasonReview').then(m => ({ default: m.SeasonReview })))
@@ -221,7 +222,7 @@ function LeagueShellInner() {
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
         >
-          <PageErrorBoundary key={pathname}><Outlet /></PageErrorBoundary>
+          <PageErrorBoundary key={pathname}><PlayerPopupProvider><Outlet /></PlayerPopupProvider></PageErrorBoundary>
         </motion.div>
       </AnimatePresence>
 
