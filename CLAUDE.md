@@ -298,13 +298,14 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   NAME is the biggest thing (18px, one line, CENTRED; first name in full up to 16
   characters, else the initial, else the surname alone), then the three
   numbers (15px: average with the form arrow, rating chip, age), then the
-  club logo top left and a SMALL ROUND DOT per position top RIGHT (they
-  step left when a role bubble hangs over that corner), one
+  club logo top left and a SMALL ROUND DOT per position top RIGHT, one
   letter each: D, M, R, F in the position colour (`.pc7-dot-*`, hollow for an
   expected position). No FWD / MID rectangles, no position colour bar along
   the top, no lines between the numbers. The faded club logo behind the card
   STAYS ("the faded logo is cool"). Role bubbles (C, VC, E, 7, L, BYE) are
-  ROUND AND COLOURED on the top right corner (`.pc7-bub-*`), and the hover
+  ROUND AND COLOURED on the top LEFT corner (`.pc7-bub-*`; moved from the
+  right on 2026-11-25 so they are clear of the position dots, with the
+  selected tick and injury dot now top right), and the hover
   buttons are round in the same colours. Flattening them to white outlines
   was noticed straight away: "the colours on the bubbles for things have gone
   too?? why??". Black and white is for chrome, not for these. Field rows use

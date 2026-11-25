@@ -10935,3 +10935,15 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .fv-card:has(.pc7-bubs) .pc7-top { padding-right: 26px; }
 .fv-card:has(.pc7-bub:nth-child(2)) .pc7-top { padding-right: 55px; }
 .fv-card:has(.pc7-bub:nth-child(3)) .pc7-top { padding-right: 84px; }
+/* Role bubbles (C, VC, E, 7, L) hang on the top LEFT corner, away from the
+   position dots. Lucas, 2026-11-25: "put the c bubble on the left". The selected tick and the injury dot, which
+   used to sit on that corner, move to the top right. */
+.pc7-bubs { left: -4px; right: auto; }
+/* They sit high enough to clear the club logo under them, whatever their
+   width (BYE is wide), so nothing on the card has to move. The rows are a
+   little further apart so a bubble never reaches the card above. */
+.pc7-bubs { top: -16px; }
+.fv-card:has(.pc7-bubs) .pc7-top, .fv-card:has(.pc7-bub:nth-child(2)) .pc7-top, .fv-card:has(.pc7-bub:nth-child(3)) .pc7-top { padding-right: 10px; padding-left: 10px; }
+.fv-zone-grid { gap: 17px 8px !important; }
+.fv-reserves-grid { row-gap: 17px !important; }
+.fv-selected, .fv-injury { left: auto !important; right: -5px !important; top: -10px !important; }
