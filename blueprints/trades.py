@@ -158,9 +158,17 @@ def trade_propose(league_id):
         notes = request.form.get("notes", "").strip()
         intended_period = request.form.get("intended_period", "").strip() or None
 
+        # The app sends format=json. It used to read any 200 as "sent", so an
+        # offer the server refused (flashed and re-rendered) looked sent and
+        # was never there.
+        as_json = request.form.get("format") == "json"
         if not recipient_team_id:
+            if as_json:
+                return jsonify({"ok": False, "error": "Select a team to trade with."}), 400
             flash("Select a team to trade with.", "warning")
         elif not give_ids and not receive_ids and not give_pick_ids and not receive_pick_ids:
+            if as_json:
+                return jsonify({"ok": False, "error": "Select at least one player or draft pick to trade."}), 400
             flash("Select at least one player or draft pick to trade.", "warning")
         else:
             trade, error = propose_trade(
@@ -169,6 +177,8 @@ def trade_propose(league_id):
                 give_pick_ids=give_pick_ids, receive_pick_ids=receive_pick_ids,
                 intended_period=intended_period,
             )
+            if error and as_json:
+                return jsonify({"ok": False, "error": error}), 400
             if error:
                 flash(error, "danger")
             else:
@@ -184,6 +194,8 @@ def trade_propose(league_id):
                         link=url_for("trades.trade_detail", league_id=league_id, trade_id=trade.id),
                         trade_id=trade.id,
                     )
+                if as_json:
+                    return jsonify({"ok": True, "trade_id": trade.id})
                 flash("Trade proposed!", "success")
                 return redirect(url_for("trades.trade_detail", league_id=league_id, trade_id=trade.id))
 
@@ -378,8 +390,33 @@ def trade_detail(league_id, trade_id):
 @trades_bp.route("/<int:league_id>/trades/<int:trade_id>/respond", methods=["POST"])
 @login_required
 def trade_respond(league_id, trade_id):
+    resp = _trade_respond(league_id, trade_id)
+    # The app sends format=json so it can show why an answer did not go
+    # through (it used to refetch and say nothing). The messages are the
+    # same ones a page form would flash.
+    if request.form.get("format") == "json":
+        from flask import get_flashed_messages
+        msgs = get_flashed_messages(with_categories=True)
+        bad = [m for c, m in msgs if c in ("danger", "warning")]
+        return jsonify({"ok": not bad, "error": bad[0] if bad else None,
+                        "message": msgs[-1][1] if msgs else None})
+    return resp
+
+
+def _trade_respond(league_id, trade_id):
     action = request.form.get("action")
     trade = db.session.get(Trade, trade_id)
+    if not trade or trade.league_id != league_id:
+        flash("Trade not found.", "warning")
+        return redirect(url_for("trades.trade_center", league_id=league_id))
+    # Only the club an offer was sent to can answer it, and only the club
+    # that sent it can cancel it. This route used to take either from anyone.
+    me = FantasyTeam.query.filter_by(league_id=league_id, owner_id=current_user.id).first()
+    my_id = me.id if me else None
+    if (action in ("accept", "reject") and my_id != trade.recipient_team_id) or \
+            (action == "cancel" and my_id != trade.proposer_team_id):
+        flash("That is not your trade to answer.", "danger")
+        return redirect(url_for("trades.trade_detail", league_id=league_id, trade_id=trade_id))
     if action == "accept":
         _, error = respond_to_trade(trade_id, accept=True)
         if error:

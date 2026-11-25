@@ -243,6 +243,16 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   player, change his Specific Position in the workbook and sync.
   `scripts/refresh_draft_scores.py --league-id N` saves the values the
   draft's auto-pick falls back to; run it after a refit or a workbook sync.
+- **Trade offers don't lock players** (`models/trade_manager.py`, 2026-11-25).
+  A coach can have any number of open offers, to the same club or several,
+  with the same players or picks in them. Only an AGREED deal (accepted while
+  the window is shut) holds its players and picks. Accepting or agreeing one
+  offer withdraws every other open offer sharing a player or pick with it
+  (status `withdrawn`, both coaches notified). An identical offer to the same
+  club twice is refused. Only the club an offer was sent to can accept or
+  reject it, only its sender can cancel it. The propose and respond routes
+  answer `format=json` with `{ok, error}`: the app used to read any 200 as
+  sent, so a refused offer looked sent and never existed.
 - **`fantasy_roster` is one row per STINT**, not per (team, player). A club
   that redrafts a player it delisted gets a second row. Never add a unique
   constraint back; `models/player_history.py::league_stints` is the one

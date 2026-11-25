@@ -122,17 +122,22 @@ def respond_to_trade(trade_id, accept):
             if league and not league.trade_window_open:
                 trade.status = "agreed"
                 trade.responded_at = datetime.now(timezone.utc)
+                withdrawn = withdraw_overlapping_offers(trade)
                 db.session.commit()
+                _tell_withdrawn(trade, withdrawn)
                 return trade, None
 
             # Execute the swap
             _execute_trade(trade)
             trade.status = "accepted"
+            withdrawn = withdraw_overlapping_offers(trade)
         else:
             trade.status = "rejected"
+            withdrawn = []
 
         trade.responded_at = datetime.now(timezone.utc)
         db.session.commit()
+    _tell_withdrawn(trade, withdrawn)
 
     # Log activity (outside lock)
     try:
@@ -147,6 +152,26 @@ def respond_to_trade(trade_id, accept):
         pass
 
     return trade, None
+
+
+def _tell_withdrawn(done, withdrawn):
+    """Tell both coaches on each withdrawn offer why it went."""
+    if not withdrawn:
+        return
+    try:
+        from models.notification_manager import create_notification
+        for t in withdrawn:
+            for team in (t.proposer_team, t.recipient_team):
+                if team and team.owner_id:
+                    create_notification(
+                        user_id=team.owner_id, league_id=t.league_id, notif_type="trade_withdrawn",
+                        title=f"Trade withdrawn: {t.proposer_team.name} and {t.recipient_team.name}",
+                        body=f"A player or pick in it went in the {done.proposer_team.name} and "
+                             f"{done.recipient_team.name} trade.",
+                        link=f"/leagues/{t.league_id}/trades/{t.id}", trade_id=t.id,
+                    )
+    except Exception:
+        pass
 
 
 def cancel_trade(trade_id):
@@ -250,39 +275,50 @@ def check_trade_validity(league_id, proposer_team_id, recipient_team_id,
         if not pick or pick.current_owner_id != recipient_team_id:
             return f"Draft pick {pick_id} is not owned by the recipient."
 
-    # Check for double-dealing (player already in a pending/agreed trade)
+    # A player or pick can be in any number of OFFERS at once: a coach can
+    # shop the same player to several clubs, or send one club two versions.
+    # Lucas, 2026-11-25: "we cant send multiple trade offers to the same
+    # person right now, and we can have only one pending trade offer at
+    # once, that needs to change". Only an AGREED deal (accepted while the
+    # window is shut, waiting to go through) holds its players and picks.
+    # When one offer is accepted, every other open offer that shares a player
+    # or pick with it is withdrawn (withdraw_overlapping_offers).
     all_player_ids = set(give_player_ids) | set(receive_player_ids)
     if all_player_ids:
         query = (
             db.session.query(TradeAsset.player_id)
             .join(Trade)
-            .filter(Trade.league_id == league_id, Trade.status.in_(["pending", "agreed"]),
+            .filter(Trade.league_id == league_id, Trade.status == "agreed",
                     TradeAsset.player_id.isnot(None))
         )
         if exclude_trade_id:
             query = query.filter(Trade.id != exclude_trade_id)
-        pending_assets = query.all()
-        pending_pids = {row[0] for row in pending_assets}
-        overlap = all_player_ids & pending_pids
-        if overlap:
-            return "Player(s) already involved in a pending trade."
+        if all_player_ids & {row[0] for row in query.all()}:
+            return "A player in this trade is already in an agreed deal."
 
-    # Check for double-dealing on picks
     all_pick_ids = set(give_pick_ids) | set(receive_pick_ids)
     if all_pick_ids:
         query = (
             db.session.query(TradeAsset.future_pick_id)
             .join(Trade)
-            .filter(Trade.league_id == league_id, Trade.status.in_(["pending", "agreed"]),
+            .filter(Trade.league_id == league_id, Trade.status == "agreed",
                     TradeAsset.future_pick_id.isnot(None))
         )
         if exclude_trade_id:
             query = query.filter(Trade.id != exclude_trade_id)
-        pending_pick_assets = query.all()
-        pending_pick_ids = {row[0] for row in pending_pick_assets}
-        pick_overlap = all_pick_ids & pending_pick_ids
-        if pick_overlap:
-            return "Draft pick(s) already involved in a pending trade."
+        if all_pick_ids & {row[0] for row in query.all()}:
+            return "A draft pick in this trade is already in an agreed deal."
+
+    # The same offer twice is a double click, not a second offer.
+    if exclude_trade_id is None:
+        wanted = _asset_key(proposer_team_id, recipient_team_id, give_player_ids,
+                            receive_player_ids, give_pick_ids, receive_pick_ids)
+        open_offers = Trade.query.filter_by(
+            league_id=league_id, proposer_team_id=proposer_team_id,
+            recipient_team_id=recipient_team_id, status="pending").all()
+        for t in open_offers:
+            if _trade_key(t) == wanted:
+                return "You already have this exact offer open with them."
 
     # Validate roster sizes post-swap (only player assets affect roster)
     # LTIL players free up a list spot — subtract them from effective count (approved only)
@@ -309,6 +345,47 @@ def check_trade_validity(league_id, proposer_team_id, recipient_team_id,
             return f"Recipient would exceed squad size ({recipient_size} > {league.squad_size})."
 
     return None
+
+
+def _asset_key(proposer_id, recipient_id, give_players, receive_players, give_picks, receive_picks):
+    return (frozenset(("p", pid, proposer_id) for pid in give_players)
+            | frozenset(("p", pid, recipient_id) for pid in receive_players)
+            | frozenset(("k", pid, proposer_id) for pid in give_picks)
+            | frozenset(("k", pid, recipient_id) for pid in receive_picks))
+
+
+def _trade_key(trade):
+    return frozenset((("p", a.player_id) if a.player_id else ("k", a.future_pick_id)) + (a.from_team_id,)
+                     for a in trade.assets)
+
+
+def withdraw_overlapping_offers(trade):
+    """Withdraw every other open offer that shares a player or pick with `trade`.
+
+    Called once `trade` is accepted or agreed: those players and picks are
+    spoken for. Returns the withdrawn trades, so the caller can tell the
+    coaches. Caller commits.
+    """
+    pids = {a.player_id for a in trade.assets if a.player_id}
+    picks = {a.future_pick_id for a in trade.assets if a.future_pick_id}
+    if not pids and not picks:
+        return []
+    cond = []
+    if pids:
+        cond.append(TradeAsset.player_id.in_(pids))
+    if picks:
+        cond.append(TradeAsset.future_pick_id.in_(picks))
+    ids = {row[0] for row in db.session.query(TradeAsset.trade_id).join(Trade).filter(
+        Trade.league_id == trade.league_id, Trade.status == "pending",
+        Trade.id != trade.id, db.or_(*cond)).all()}
+    if not ids:
+        return []
+    now = datetime.now(timezone.utc)
+    gone = Trade.query.filter(Trade.id.in_(ids)).all()
+    for t in gone:
+        t.status = "withdrawn"
+        t.responded_at = now
+    return gone
 
 
 def expire_stale_trades(league_id):

@@ -142,10 +142,13 @@ export function TradeDetailPage() {
     try {
       const form = new FormData()
       form.set('action', action)
+      form.set('format', 'json')
       const res = await fetch(`/leagues/${leagueId}/trades/${tradeId}/respond`, {
         method: 'POST', body: form, credentials: 'include', redirect: 'manual',
       })
       if (res.status >= 500) throw new Error(`Server error: ${res.status}`)
+      const out = await res.json().catch(() => null) as { ok: boolean; error: string | null } | null
+      if (out && !out.ok) { setError(out.error || 'That did not go through.'); refetch(); return }
       if (action === 'cancel') navigate(`/leagues/${leagueId}/trades`)
       else refetch()
     } catch (e) {

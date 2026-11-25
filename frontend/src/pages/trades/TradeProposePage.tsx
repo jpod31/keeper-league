@@ -372,11 +372,13 @@ export function TradeProposePage() {
     receivePickIds.forEach(id => fd.append('receive_pick_ids', String(id)))
     fd.set('notes', notes)
     fd.set('intended_period', period)
+    fd.set('format', 'json')
     try {
       const res = await fetch(`/leagues/${leagueId}/trades/propose`, {
         method: 'POST', body: fd, credentials: 'same-origin',
       })
-      if (!res.ok) throw new Error(`Could not send the proposal (${res.status})`)
+      const out = await res.json().catch(() => null) as { ok: boolean; error?: string } | null
+      if (!out || !out.ok) throw new Error(out?.error || `Could not send the proposal (${res.status})`)
       navigate(`/leagues/${leagueId}/trades`)
     } catch (e) {
       setError((e as Error).message)

@@ -83,6 +83,7 @@ function Asset({ asset }: { asset: TradeAsset }) {
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pending', agreed: 'Agreed', accepted: 'Done',
   rejected: 'Rejected', cancelled: 'Cancelled', vetoed: 'Vetoed', expired: 'Expired',
+  withdrawn: 'Withdrawn',
 }
 const STATUS_TONE: Record<string, string> = { pending: ' due', agreed: ' due', accepted: ' ok' }
 

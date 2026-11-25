@@ -21,6 +21,7 @@ const ICONS: Record<string, string> = {
   trade_accepted: 'bi-check-lg',
   trade_rejected: 'bi-x-lg',
   trade_vetoed: 'bi-shield-exclamation',
+  trade_withdrawn: 'bi-x-lg',
   player_delisted: 'bi-person-dash',
   message_received: 'bi-chat-dots',
   list_change: 'bi-clock-history',
