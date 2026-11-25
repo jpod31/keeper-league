@@ -10951,3 +10951,41 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 /* Trade detail: which offer this one answers, or was answered by. */
 .tr-counter-line { margin: 0 0 14px; font-size: .9375rem; color: var(--kl-text-primary); }
 .tr-counter-line a { color: #ffffff; text-decoration: underline; }
+
+/* ══ Squad card, glass tray. Lucas, 2026-11-25: "can we get some more 3d
+      looking modern cards", picked option B ("do glass tray") from the
+      mock-ups. The club colour fills the card with light falling across it
+      from the top left, the faded logo is bigger and turned slightly, the
+      three numbers sit on a frosted plate floating at the bottom, and on a
+      mouse the card tilts toward you on hover. Content, sizes and places are
+      as before. Repeated classes give the weight to beat the older bands. ══ */
+.fv-card.fv-card:not(.fv-card-empty) { border-radius: 12px !important; border-top: 1px solid rgba(255,255,255,.18) !important;
+  transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, border-color .14s ease !important; }
+.fv-card.fv-card:not(.fv-card-empty):not(.fv-card-ltil), .fv-card.fv-card.fv-card-ltil:not(.fv-card-empty) {
+  background:
+    linear-gradient(125deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.04) 38%, rgba(0,0,0,0) 55%, rgba(0,0,0,.30) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ca, #2a2a31) 92%, #ffffff 8%) 0%, color-mix(in srgb, var(--ca, #2a2a31) 72%, #08080b) 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 18px 30px -12px rgba(0,0,0,.95), 0 4px 10px rgba(0,0,0,.55) !important; }
+.fv-card.fv-card:not(.fv-card-empty):not(.fv-card-ltil):hover, .fv-card.fv-card.fv-card-ltil:not(.fv-card-empty):hover {
+  transform: translateY(-4px) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 0 24px 32px -12px rgba(0,0,0,.95), 0 6px 12px rgba(0,0,0,.55) !important; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .fv-card.fv-card:not(.fv-card-empty):not(.fv-card-ltil):hover, .fv-card.fv-card.fv-card-ltil:not(.fv-card-empty):hover {
+    transform: perspective(700px) rotateX(9deg) rotateY(-7deg) translateY(-4px) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 14px 26px 34px -12px rgba(0,0,0,.95), 0 6px 12px rgba(0,0,0,.55) !important; }
+}
+.fv-card .fv-face.pc7 { border-radius: 11px !important; }
+.fv-card:has(.fv-off-list) .fv-face.pc7 { border-radius: 11px 11px 0 0 !important; }
+.fv-card .pc7::after { right: -18px !important; top: -6px !important; width: 132px !important; height: 132px !important; opacity: .16 !important; transform: rotate(-8deg); }
+.fv-card .pc7-logo { filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+.fv-card .pc7-dot { box-shadow: 0 0 0 1.5px rgba(255,255,255,.55), 0 2px 4px rgba(0,0,0,.45); }
+.fv-card .pc7-name { padding: 5px 10px 8px; text-shadow: 0 2px 6px rgba(0,0,0,.45) !important; }
+.fv-card .pc7-stats { margin: 0 7px 7px; border-radius: 8px; background: rgba(10,10,14,.38);
+  -webkit-backdrop-filter: blur(10px) saturate(140%); backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(255,255,255,.16); border-top-color: rgba(255,255,255,.32); box-shadow: 0 8px 14px -6px rgba(0,0,0,.6); }
+.fv-card .pc7-cell { padding: 5px 0; }
+.fv-card .pc7-bub { box-shadow: 0 0 0 2px #060608, 0 4px 8px rgba(0,0,0,.6); }
+/* The states that recolour the edge keep winning. */
+.fv-card.fv-card.fv-card-ltil:not(.fv-card-empty) { border-color: rgba(248,81,73,.7) !important; }
+.fv-swap-mode .fv-card.fv-card.fv-swap-active { border-color: #ffffff !important; }
+.fv-swap-mode .fv-card.fv-card.fv-swap-eligible { border-color: #3fb950 !important; }

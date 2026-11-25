@@ -364,7 +364,11 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   too?? why??". Black and white is for chrome, not for these. Field rows use
   `min(168px, (100% - 32px) / 5)` so every row has the same card width on a
   small laptop. New class names on purpose, so older `.fv-*` and `.pc6-*`
-  rules do not apply.
+  rules do not apply. The look is the "glass tray" (picked from mock-ups,
+  2026-11-25; the last card band in style.css): club colour with light
+  from the top left, a bigger turned faded logo, the numbers on a frosted
+  plate floating at the bottom, and a tilt toward you on mouse hover.
+  Proof: `_mobtest/shot_glass.mjs <outdir>`.
 - **A number is bigger than its label** (on the squad card a 15px figure
   over a 10.5px AVG / RTG / AGE label; the figure was 23px until he said the
   name must lead). Lucas, 2026-11-24: "larger numbers smaller text on
