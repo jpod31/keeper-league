@@ -48,6 +48,8 @@ interface Trade {
   intended_period: string | null
   notes: string | null
   veto_reason: string | null
+  counter_of_id: number | null
+  countered_by_id: number | null
 }
 
 interface TradeDetailData {
@@ -217,6 +219,13 @@ export function TradeDetailPage() {
 
       {error && <div className="alert alert-danger" style={{ marginBottom: 12 }}>{error}</div>}
 
+      {(trade.counter_of_id || trade.countered_by_id) && (
+        <p className="tr-counter-line">
+          {trade.counter_of_id && <>This answers <Link to={`/leagues/${leagueId}/trades/${trade.counter_of_id}`}>trade #{trade.counter_of_id}</Link>. </>}
+          {trade.countered_by_id && <>Answered with <Link to={`/leagues/${leagueId}/trades/${trade.countered_by_id}`}>trade #{trade.countered_by_id}</Link>.</>}
+        </p>
+      )}
+
       {status === 'agreed' && (
         <div className="tr-window-banner tr-window-banner-closed" style={{ marginBottom: 16 }}>
           <div className="tr-window-banner-icon" style={{ background: 'rgba(236,236,246,.15)', color: '#79c0ff' }}>
@@ -344,6 +353,9 @@ export function TradeDetailPage() {
               <button className="btn btn-primary" onClick={() => respondAction('accept')} disabled={busy}>
                 <i className="bi bi-check-lg me-1"></i>Accept
               </button>
+              <Link className="btn btn-outline-secondary" to={`/leagues/${leagueId}/trades/propose?counter=${trade.id}`}>
+                <i className="bi bi-arrow-repeat me-1"></i>Counter
+              </Link>
               <button className="btn btn-outline-secondary" style={{ borderColor: '#f85149', color: '#f85149' }} onClick={() => respondAction('reject')} disabled={busy}>
                 <i className="bi bi-x-lg me-1"></i>Reject
               </button>

@@ -46,6 +46,19 @@ interface ProposeData {
   other_teams: Team[]
   my_players: Player[]
   my_picks: Pick[]
+  counter: Counter | null
+}
+
+// ?counter=<trade id>: the offer you were sent, turned round. What they asked
+// of you starts on your side, what they offered on theirs.
+interface Counter {
+  trade_id: number
+  with_team_id: number
+  with_team: string | null
+  give_player_ids: number[]
+  give_pick_ids: number[]
+  receive_player_ids: number[]
+  receive_pick_ids: number[]
 }
 
 interface TeamAssets { players: Player[]; picks: Pick[] }
@@ -282,6 +295,7 @@ export function TradeProposePage() {
   const [searchParams] = useSearchParams()
   const deepLinkWith = Number(searchParams.get('with')) || null
   const deepLinkFrom = Number(searchParams.get('from')) || null
+  const counterOf = Number(searchParams.get('counter')) || null
   const deepLinkApplied = useRef(false)
 
   const [data, setData] = useState<ProposeData | null>(null)
@@ -308,16 +322,27 @@ export function TradeProposePage() {
   }, [])
 
   useEffect(() => {
-    api<ProposeData>(`/leagues/${leagueId}/trades/propose?format=json`)
-      .then(setData)
+    api<ProposeData>(`/leagues/${leagueId}/trades/propose?format=json${counterOf ? `&counter=${counterOf}` : ''}`)
+      .then(d => {
+        setData(d)
+        if (counterOf && !d.counter) setError('That offer can no longer be countered. You can still build a new one.')
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [leagueId])
+  }, [leagueId, counterOf])
+
+  const counter = data?.counter || null
 
   useEffect(() => {
-    if (deepLinkApplied.current || !data || !deepLinkFrom) return
-    setRecipientId(deepLinkFrom)
-  }, [data, deepLinkFrom])
+    if (deepLinkApplied.current || !data) return
+    if (counter) {
+      setGivePlayerIds(new Set(counter.give_player_ids))
+      setGivePickIds(new Set(counter.give_pick_ids))
+      setRecipientId(counter.with_team_id)
+      return
+    }
+    if (deepLinkFrom) setRecipientId(deepLinkFrom)
+  }, [data, deepLinkFrom, counter])
 
   useEffect(() => {
     if (!recipientId) { setTheirAssets(null); return }
@@ -332,7 +357,10 @@ export function TradeProposePage() {
         setTheirAssets({ players, picks })
         // Deep-link from "trade for this player" elsewhere in the app lands
         // the player straight in the receive side once their list resolves.
-        if (!deepLinkApplied.current && deepLinkWith
+        if (!deepLinkApplied.current && counter && recipientId === counter.with_team_id) {
+          setReceivePlayerIds(new Set(counter.receive_player_ids.filter(id => players.some(p => p.id === id))))
+          setReceivePickIds(new Set(counter.receive_pick_ids.filter(id => picks.some(p => p.id === id))))
+        } else if (!deepLinkApplied.current && deepLinkWith
             && players.some(p => p.id === deepLinkWith)) {
           setReceivePlayerIds(new Set([deepLinkWith]))
         }
@@ -340,7 +368,7 @@ export function TradeProposePage() {
       })
       .catch(e => setError(e.message))
       .finally(() => setLoadingTheir(false))
-  }, [recipientId, leagueId, deepLinkWith])
+  }, [recipientId, leagueId, deepLinkWith, counter])
 
   function toggle(set: Set<number>, id: number, setter: (s: Set<number>) => void) {
     const next = new Set(set)
@@ -373,6 +401,7 @@ export function TradeProposePage() {
     fd.set('notes', notes)
     fd.set('intended_period', period)
     fd.set('format', 'json')
+    if (counter && recipientId === counter.with_team_id) fd.set('counter_of', String(counter.trade_id))
     try {
       const res = await fetch(`/leagues/${leagueId}/trades/propose`, {
         method: 'POST', body: fd, credentials: 'same-origin',
@@ -423,7 +452,7 @@ export function TradeProposePage() {
             <div className="tp-crumb">
               <Link to={`/leagues/${leagueId}`}>{league.name}</Link> / Trades
             </div>
-            <h1>Build a trade</h1>
+            <h1>{counter && recipientId === counter.with_team_id ? `Counter ${counter.with_team}'s offer` : 'Build a trade'}</h1>
           </div>
         </div>
         <span className={`sq-chip${trade_window_open ? ' ok' : ''}`}>

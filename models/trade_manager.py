@@ -14,19 +14,51 @@ _trade_lock = threading.Lock()
 TRADE_REVIEW_HOURS = 48
 
 
+def counterable(trade_id, team_id):
+    """The open offer `team_id` may counter, or None. Only the club an offer
+    was sent to can counter it, and only while it is open."""
+    t = db.session.get(Trade, trade_id) if trade_id else None
+    if t and t.status == "pending" and t.recipient_team_id == team_id:
+        return t
+    return None
+
+
+def counter_prefill(trade):
+    """The countered offer turned round, for the trade builder: what they
+    asked of you is what you give, what they offered is what you get."""
+    a = trade.assets
+    return {
+        "trade_id": trade.id,
+        "with_team_id": trade.proposer_team_id,
+        "with_team": trade.proposer_team.name if trade.proposer_team else None,
+        "give_player_ids": [x.player_id for x in a if x.player_id and x.from_team_id == trade.recipient_team_id],
+        "give_pick_ids": [x.future_pick_id for x in a if x.future_pick_id and x.from_team_id == trade.recipient_team_id],
+        "receive_player_ids": [x.player_id for x in a if x.player_id and x.from_team_id == trade.proposer_team_id],
+        "receive_pick_ids": [x.future_pick_id for x in a if x.future_pick_id and x.from_team_id == trade.proposer_team_id],
+    }
+
+
 def propose_trade(league_id, proposer_team_id, recipient_team_id,
                   give_player_ids, receive_player_ids, notes=None,
                   give_pick_ids=None, receive_pick_ids=None,
-                  intended_period=None):
+                  intended_period=None, counter_of=None):
     """Propose a trade between two teams.
     give_player_ids: players moving FROM proposer TO recipient
     receive_player_ids: players moving FROM recipient TO proposer
     give_pick_ids: future draft pick IDs moving FROM proposer TO recipient
     receive_pick_ids: future draft pick IDs moving FROM recipient TO proposer
+    counter_of: the id of an open offer from recipient to proposer that this
+    answers. That offer is closed as "countered" once this one is made.
     Returns (trade, None) on success or (None, error_msg) on failure.
     """
     give_pick_ids = give_pick_ids or []
     receive_pick_ids = receive_pick_ids or []
+
+    original = None
+    if counter_of:
+        original = counterable(counter_of, proposer_team_id)
+        if not original or original.proposer_team_id != recipient_team_id:
+            return None, "That offer can no longer be countered."
 
     # Validate
     error = check_trade_validity(league_id, proposer_team_id, recipient_team_id,
@@ -43,9 +75,13 @@ def propose_trade(league_id, proposer_team_id, recipient_team_id,
         notes=notes,
         intended_period=intended_period,
         review_deadline=datetime.now(timezone.utc) + timedelta(hours=TRADE_REVIEW_HOURS),
+        counter_of_id=original.id if original else None,
     )
     db.session.add(trade)
     db.session.flush()
+    if original:
+        original.status = "countered"
+        original.responded_at = datetime.now(timezone.utc)
 
     # Create player trade assets
     for pid in give_player_ids:

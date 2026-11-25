@@ -115,3 +115,26 @@ def test_a_refused_offer_says_why_and_a_sent_one_says_so(app, db, seed_data):
     r3 = client.post(f"/leagues/{lg}/trades/propose", data=form)
     assert r3.get_json()["ok"] is True
     assert Trade.query.filter_by(status="pending").count() == 2
+
+
+def test_a_counter_closes_the_offer_it_answers(db, seed_data):
+    from models.trade_manager import counter_prefill
+    a, b, dawson, keays, laird, cripps = _ids(seed_data)
+    lg = seed_data["league"].id
+    offer, _ = propose_trade(lg, a.id, b.id, [dawson.id], [laird.id])
+    pre = counter_prefill(offer)
+    assert pre["with_team_id"] == a.id
+    assert pre["give_player_ids"] == [laird.id] and pre["receive_player_ids"] == [dawson.id]
+    counter, err = propose_trade(lg, b.id, a.id, [laird.id], [dawson.id, keays.id], counter_of=offer.id)
+    assert err is None
+    assert db.session.get(Trade, offer.id).status == "countered"
+    assert counter.counter_of_id == offer.id and counter.status == "pending"
+
+
+def test_only_the_club_an_offer_was_sent_to_can_counter_it(db, seed_data):
+    a, b, dawson, keays, laird, cripps = _ids(seed_data)
+    lg = seed_data["league"].id
+    offer, _ = propose_trade(lg, a.id, b.id, [dawson.id], [laird.id])
+    t, err = propose_trade(lg, a.id, b.id, [keays.id], [laird.id], counter_of=offer.id)   # the sender
+    assert t is None and "can no longer be countered" in err
+    assert db.session.get(Trade, offer.id).status == "pending"

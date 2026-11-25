@@ -131,6 +131,20 @@ def trade_center(league_id):
                            tab=tab)
 
 
+def _countered_by(trade):
+    """The offer that answered this one, if it was countered."""
+    if trade.status != "countered":
+        return None
+    t = Trade.query.filter_by(counter_of_id=trade.id).order_by(Trade.id.desc()).first()
+    return t.id if t else None
+
+
+def _counter_json(trade_id, team_id):
+    from models.trade_manager import counterable, counter_prefill
+    t = counterable(trade_id, team_id)
+    return counter_prefill(t) if t else None
+
+
 @trades_bp.route("/<int:league_id>/trades/propose", methods=["GET", "POST"])
 @login_required
 def trade_propose(league_id):
@@ -157,6 +171,7 @@ def trade_propose(league_id):
         receive_pick_ids = [int(x) for x in request.form.getlist("receive_pick_ids") if x]
         notes = request.form.get("notes", "").strip()
         intended_period = request.form.get("intended_period", "").strip() or None
+        counter_of = request.form.get("counter_of", type=int)
 
         # The app sends format=json. It used to read any 200 as "sent", so an
         # offer the server refused (flashed and re-rendered) looked sent and
@@ -175,7 +190,7 @@ def trade_propose(league_id):
                 league_id, user_team.id, recipient_team_id,
                 give_ids, receive_ids, notes or None,
                 give_pick_ids=give_pick_ids, receive_pick_ids=receive_pick_ids,
-                intended_period=intended_period,
+                intended_period=intended_period, counter_of=counter_of,
             )
             if error and as_json:
                 return jsonify({"ok": False, "error": error}), 400
@@ -189,8 +204,10 @@ def trade_propose(league_id):
                         user_id=recipient_team.owner_id,
                         league_id=league_id,
                         notif_type="trade_received",
-                        title=f"Trade offer from {user_team.name}",
-                        body="You have a new trade proposal to review.",
+                        title=(f"Counter offer from {user_team.name}" if trade.counter_of_id
+                               else f"Trade offer from {user_team.name}"),
+                        body=("They answered your offer with one of their own." if trade.counter_of_id
+                              else "You have a new trade proposal to review."),
                         link=url_for("trades.trade_detail", league_id=league_id, trade_id=trade.id),
                         trade_id=trade.id,
                     )
@@ -262,6 +279,8 @@ def trade_propose(league_id):
                 }
                 for pk in my_picks
             ],
+            # ?counter=<trade id>: the builder opens on that offer turned round.
+            "counter": _counter_json(request.args.get("counter", type=int), user_team.id),
         })
 
     return render_template("trades/propose.html",
@@ -364,6 +383,8 @@ def trade_detail(league_id, trade_id):
                 "intended_period": trade.intended_period,
                 "notes": trade.notes,
                 "veto_reason": trade.veto_reason,
+                "counter_of_id": trade.counter_of_id,
+                "countered_by_id": _countered_by(trade),
             },
             "giving": [_ser_player_asset(a) for a in giving_players],
             "receiving": [_ser_player_asset(a) for a in receiving_players],

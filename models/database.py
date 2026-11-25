@@ -680,6 +680,8 @@ class Trade(db.Model):
     veto_reason = db.Column(db.Text)
     intended_period = db.Column(db.String(20))  # "midseason" or "offseason"
     notes = db.Column(db.Text)
+    # The offer this one answers. The offer it answers is closed as "countered".
+    counter_of_id = db.Column(db.Integer, db.ForeignKey("trade.id"))
 
     proposer_team = db.relationship("FantasyTeam", foreign_keys=[proposer_team_id], lazy="joined")
     recipient_team = db.relationship("FantasyTeam", foreign_keys=[recipient_team_id], lazy="joined")
@@ -1491,6 +1493,9 @@ def _run_migrations(app):
             db.session.execute(
                 text("ALTER TABLE trade ADD COLUMN intended_period VARCHAR(20)")
             )
+            db.session.commit()
+        if "counter_of_id" not in existing_trade:
+            db.session.execute(text("ALTER TABLE trade ADD COLUMN counter_of_id INTEGER REFERENCES trade(id)"))
             db.session.commit()
 
     # League hybrid + draft preference columns

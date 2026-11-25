@@ -10947,3 +10947,7 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .fv-zone-grid { gap: 17px 8px !important; }
 .fv-reserves-grid { row-gap: 17px !important; }
 .fv-selected, .fv-injury { left: auto !important; right: -5px !important; top: -10px !important; }
+
+/* Trade detail: which offer this one answers, or was answered by. */
+.tr-counter-line { margin: 0 0 14px; font-size: .9375rem; color: var(--kl-text-primary); }
+.tr-counter-line a { color: #ffffff; text-decoration: underline; }

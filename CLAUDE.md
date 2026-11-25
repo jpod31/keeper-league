@@ -253,6 +253,11 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   reject it, only its sender can cancel it. The propose and respond routes
   answer `format=json` with `{ok, error}`: the app used to read any 200 as
   sent, so a refused offer looked sent and never existed.
+  Counter: the club an offer was sent to opens `/trades/propose?counter=<id>`
+  (the builder pre-filled with that offer turned round); sending it with
+  `counter_of` closes the original as `countered` and links the two
+  (`trade.counter_of_id`). Proof: `_mobtest/flow_counter.mjs` (writes, so
+  throwaway copy only).
 - **`fantasy_roster` is one row per STINT**, not per (team, player). A club
   that redrafts a player it delisted gets a second row. Never add a unique
   constraint back; `models/player_history.py::league_stints` is the one
