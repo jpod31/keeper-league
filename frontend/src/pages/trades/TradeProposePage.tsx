@@ -202,6 +202,9 @@ function AssetBoard({
   }, [players, q, filter, sort])
 
   const showPicks = picks.length > 0 && (filter === 'ALL' || filter === 'PICK') && !q.trim()
+  const inDealPlayers = players.filter(p => pickedPlayers.has(p.id))
+  const inDealPicks = picks.filter(pk => pickedPicks.has(pk.id))
+  const rest = shown.filter(p => !pickedPlayers.has(p.id))
   const counts = useMemo(() => {
     const c: Record<string, number> = { ALL: players.length, PICK: picks.length }
     for (const p of POS_ORDER) c[p] = players.filter(x => posPrimary(x.position) === p).length
@@ -263,20 +266,37 @@ function AssetBoard({
           </div>
 
           <div className="tp-board-list">
-            {shown.length === 0 && !showPicks && (
-              <p className="tp-board-none">Nothing matches “{q}”.</p>
+            {/* What is in the deal sits at the top, whatever the search or
+                filter, so a counter opens showing the offer it answers
+                rather than what looks like an empty builder. */}
+            {(inDealPlayers.length > 0 || inDealPicks.length > 0) && (
+              <>
+                <div className="tp-group">In this trade</div>
+                {inDealPlayers.map(p => (
+                  <AssetRow key={`d-${p.id}`} player={p} side={side} logos={logos} picked
+                    onToggle={() => onTogglePlayer(p.id)} />
+                ))}
+                {inDealPicks.map(pk => (
+                  <AssetRow key={`dk-${pk.id}`} pick={pk} side={side} logos={logos} picked
+                    onToggle={() => onTogglePick(pk.id)} />
+                ))}
+                <div className="tp-group">Rest of the list</div>
+              </>
             )}
-            {shown.map(p => (
+            {rest.length === 0 && !showPicks && (
+              <p className="tp-board-none">{q ? `Nothing matches “${q}”.` : 'Nothing else here.'}</p>
+            )}
+            {rest.map(p => (
               <AssetRow
                 key={p.id} player={p} side={side} logos={logos}
-                picked={pickedPlayers.has(p.id)}
+                picked={false}
                 onToggle={() => onTogglePlayer(p.id)}
               />
             ))}
-            {showPicks && picks.map(pk => (
+            {showPicks && picks.filter(pk => !pickedPicks.has(pk.id)).map(pk => (
               <AssetRow
                 key={`pk-${pk.id}`} pick={pk} side={side} logos={logos}
-                picked={pickedPicks.has(pk.id)}
+                picked={false}
                 onToggle={() => onTogglePick(pk.id)}
               />
             ))}
@@ -461,6 +481,11 @@ export function TradeProposePage() {
       </div>
 
       {error && <div className="alert alert-danger tp-alert">{error}</div>}
+      {counter && recipientId === counter.with_team_id && (
+        <p className="tp-counter-note">
+          This is {counter.with_team}'s offer. Change what you want and send it back; theirs closes as countered.
+        </p>
+      )}
 
       {/* ── Step 1: partner ── */}
       {!recipientTeam ? (

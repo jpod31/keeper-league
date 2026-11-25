@@ -507,3 +507,11 @@
   .tp-send { padding: 0 13px; }
   .tp-send span { display: none; }
 }
+
+/* "In this trade" and "Rest of the list" headings inside each board. */
+.tp-group {
+  padding: 10px 4px 6px; font-size: .8125rem; font-weight: 700; color: #ffffff;
+  border-bottom: 1px solid var(--tp-line); margin-bottom: 6px;
+}
+.tp-group:not(:first-child) { margin-top: 10px; }
+.tp-counter-note { max-width: 1320px; margin: 0 auto 12px; font-size: .9375rem; color: #ffffff; }
