@@ -27,6 +27,11 @@ class Player:
     draft_score: Optional[float] = None
     rating: Optional[int] = None          # FIFA-style 54–90
     potential: Optional[int] = None       # FIFA-style 64–94
+    role: Optional[str] = None            # workbook role: MID / RUC / GD / KD / GF / KF
+    role_detail: Optional[str] = None     # workbook specific position: "Small Forward"
+    # False when sc_avg has been replaced by another scoring system's average
+    # (a custom or AFL Fantasy league), so SuperCoach role lines do not apply.
+    sc_scale: bool = True
 
     # ----- helpers -----
     @property
@@ -110,4 +115,6 @@ def orm_to_player(afl_player) -> Player:
         draft_score=afl_player.draft_score,
         rating=afl_player.rating,
         potential=afl_player.potential,
+        role=getattr(afl_player, "role", None),
+        role_detail=getattr(afl_player, "role_detail", None),
     )

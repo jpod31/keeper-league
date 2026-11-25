@@ -107,7 +107,7 @@ const WEIGHT_KEYS: { key: string; label: string }[] = [
   { key: 'positional_scarcity', label: 'Scarcity' },
   { key: 'trajectory', label: 'Trajectory' },
   { key: 'durability', label: 'Durability' },
-  { key: 'rating_potential', label: 'Growth' },
+  { key: 'rating_potential', label: 'Ceiling' },
 ]
 
 // Jewel-tone chat author palette, replaces the legacy GitHub-themed

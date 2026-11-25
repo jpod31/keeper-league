@@ -46,6 +46,12 @@ class AflPlayer(db.Model):
     # True while `position` is our estimate (from the workbook's role) rather
     # than an official SuperCoach position. Cleared by the footywire position sync.
     position_expected = db.Column(db.Boolean, default=False)
+    # The kind of player he is, from the workbook: `role` is its Position
+    # column (MID / RUC / GD / KD / GF / KF), `role_detail` its Specific
+    # Position ("Small Forward"). Drives the scoring ceiling in draft values
+    # (models/role_scoring.py). Not the SuperCoach position.
+    role = db.Column(db.String(4))
+    role_detail = db.Column(db.String(40))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))
 
@@ -1540,6 +1546,8 @@ def _run_migrations(app):
             ("left_afl_year", "INTEGER"),
             ("joined_year", "INTEGER"),
             ("position_expected", "BOOLEAN DEFAULT 0"),
+            ("role", "VARCHAR(4)"),
+            ("role_detail", "VARCHAR(40)"),
         ]:
             if col_name not in existing_ap:
                 db.session.execute(

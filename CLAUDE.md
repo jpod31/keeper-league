@@ -205,6 +205,44 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   came from (`navigate(-n)` with the step count carried in `location.state`),
   not push a fresh copy. Proof: `_mobtest/flow_back.mjs <outdir> [width]`.
   A new list page that opens a player gets all of this from day one.
+- **Draft values know the kind of player** (`models/role_scoring.py`, fitted
+  by `scripts/fit_role_scoring.py --write` into `models/role_scoring_fit.json`).
+  `afl_player.role` / `role_detail` are the workbook's Position and Specific
+  Position columns, written by the player sync. Three numbers, in SuperCoach
+  points: `expected_now` (rating and role to a season average), `output` (his
+  average mixed with 10 games of that line, so three games at 88 is not an 88
+  player and a draftee is not a zero) and `ceiling` (potential moved by a role
+  offset, or his output if that is more). In `draft_model.py` the `sc_average`
+  and scarcity factors use `output`, and `rating_potential` (key kept for
+  saved weights, shown as "Scoring ceiling") is the ceiling; it used to be
+  40% potential plus 60% of the gap to rating, which ranked a 70-rated small
+  forward above a 91-rated midfielder. The trend factor only counts seasons
+  of 6+ games. Nothing in the model is hand-set: refit each November, and
+  read the fit script's report (error on held-out players, with and without
+  role) before changing a number. A layer that does not cut the held-out
+  error stays out (the SuperCoach MID tag was tried and dropped). To move one
+  player, change his Specific Position in the workbook and sync.
+  `scripts/refresh_draft_scores.py --league-id N` saves the values the
+  draft's auto-pick falls back to; run it after a refit or a workbook sync.
+- **Draft values know the kind of player** (`models/role_scoring.py`, fitted
+  by `scripts/fit_role_scoring.py --write` into `models/role_scoring_fit.json`).
+  `afl_player.role` / `role_detail` are the workbook's Position and Specific
+  Position columns, written by the player sync. Three numbers, in SuperCoach
+  points: `expected_now` (rating and role to a season average), `output` (his
+  average mixed with 10 games of that line, so three games at 88 is not an 88
+  player and a draftee is not a zero) and `ceiling` (potential moved by a role
+  offset, or his output if that is more). In `draft_model.py` the `sc_average`
+  and scarcity factors use `output`, and `rating_potential` (key kept for
+  saved weights, shown as "Scoring ceiling") is the ceiling; it used to be
+  40% potential plus 60% of the gap to rating, which ranked a 70-rated small
+  forward above a 91-rated midfielder. The trend factor only counts seasons
+  of 6+ games. Nothing in the model is hand-set: refit each November, and
+  read the fit script's report (error on held-out players, with and without
+  role) before changing a number. A layer that does not cut the held-out
+  error stays out (the SuperCoach MID tag was tried and dropped). To move one
+  player, change his Specific Position in the workbook and sync.
+  `scripts/refresh_draft_scores.py --league-id N` saves the values the
+  draft's auto-pick falls back to; run it after a refit or a workbook sync.
 - **`fantasy_roster` is one row per STINT**, not per (team, player). A club
   that redrafts a player it delisted gets a second row. Never add a unique
   constraint back; `models/player_history.py::league_stints` is the one

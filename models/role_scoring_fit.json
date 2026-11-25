@@ -1,0 +1,121 @@
+{
+  "fit": {
+    "now_rmse_rating_only": 13.66,
+    "now_rmse_with_role": 11.82,
+    "now_seasons": 1988,
+    "peak_rmse_potential_only": 17.29,
+    "peak_rmse_with_role": 15.0,
+    "peak_samples": 720
+  },
+  "now": {
+    "by_detail": {
+      "General Defender": [
+        -72.727,
+        1.938
+      ],
+      "General Forward": [
+        -70.751,
+        1.838
+      ],
+      "General Midfielder": [
+        -83.582,
+        2.186
+      ],
+      "Hybrid Forward": [
+        -51.517,
+        1.647
+      ],
+      "Inside Midfielder": [
+        -107.028,
+        2.448
+      ],
+      "Key Defender": [
+        -18.069,
+        1.112
+      ],
+      "Key Forward": [
+        -30.118,
+        1.253
+      ],
+      "Rebound Defender": [
+        -61.878,
+        1.9
+      ],
+      "Ruckman": [
+        -88.703,
+        2.288
+      ],
+      "Small Defender": [
+        -23.969,
+        1.238
+      ],
+      "Small Forward": [
+        -54.069,
+        1.565
+      ],
+      "Wingman": [
+        -68.305,
+        1.894
+      ]
+    },
+    "by_role": {
+      "GD": [
+        -75.599,
+        2.008
+      ],
+      "GF": [
+        -65.059,
+        1.753
+      ],
+      "KD": [
+        -28.915,
+        1.272
+      ],
+      "KF": [
+        -29.706,
+        1.249
+      ],
+      "MID": [
+        -91.461,
+        2.261
+      ],
+      "RUC": [
+        -95.344,
+        2.361
+      ]
+    },
+    "pooled": [
+      -84.166,
+      2.096
+    ]
+  },
+  "peak": {
+    "by_detail": {
+      "General Defender": -2.04,
+      "General Forward": -7.13,
+      "General Midfielder": 11.14,
+      "Hybrid Forward": 3.31,
+      "Inside Midfielder": 4.11,
+      "Intercept Defender": 9.37,
+      "Key Defender": -3.76,
+      "Key Forward": -10.12,
+      "Rebound Defender": 8.16,
+      "Ruckman": 13.46,
+      "Small Defender": -5.05,
+      "Small Forward": -14.85,
+      "Wingman": -5.21
+    },
+    "by_role": {
+      "GD": 0.81,
+      "GF": -10.2,
+      "KD": -2.53,
+      "KF": -9.32,
+      "MID": 5.72,
+      "RUC": 13.46
+    },
+    "intercept": -46.17,
+    "slope": 1.563
+  },
+  "season": 2027,
+  "shrink_games": 10
+}

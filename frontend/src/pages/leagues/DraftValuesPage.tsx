@@ -28,7 +28,7 @@ const WEIGHT_LABELS: Record<string, string> = {
   positional_scarcity: 'Positional Scarcity',
   trajectory: 'Trajectory',
   durability: 'Durability',
-  rating_potential: 'Rating / Potential',
+  rating_potential: 'Scoring ceiling',
 }
 
 export function DraftValuesPage() {

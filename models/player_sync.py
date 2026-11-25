@@ -333,8 +333,9 @@ def apply_sync(plan):
 
     year = plan.season_year
     taken = {(p.name, p.afl_team): p.id for p in AflPlayer.query.all()}
+    from models.role_scoring import clean_role, clean_detail
     changed = {"ratings": 0, "ages": 0, "clubs": 0, "created": 0,
-               "former": 0, "returning": 0}
+               "former": 0, "returning": 0, "roles": 0}
 
     for p, r, _how in plan.matched:
         if p.rating is not None and r.rating is not None and p.rating != r.rating:
@@ -353,6 +354,12 @@ def apply_sync(plan):
         if r.age is not None and p.age != r.age:
             p.age = r.age
             changed["ages"] += 1
+        # The kind of player he is. A blank cell leaves what we have.
+        role, detail = clean_role(r.role), clean_detail(r.role_detail)
+        if (role and p.role != role) or (detail and p.role_detail != detail):
+            p.role = role or p.role
+            p.role_detail = detail or p.role_detail
+            changed["roles"] += 1
         if r.team and p.afl_team != r.team:
             holder = taken.get((p.name, r.team))
             if holder and holder != p.id:
@@ -379,6 +386,7 @@ def apply_sync(plan):
             rating_start=r.rating_start if r.rating_start is not None else r.rating,
             games_played=0, career_games=0,
             list_status="listed", joined_year=year,
+            role=clean_role(r.role), role_detail=clean_detail(r.role_detail),
         )
         db.session.add(p)
         db.session.flush()

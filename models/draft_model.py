@@ -24,11 +24,26 @@ def _normalise(values: List[Optional[float]]) -> List[float]:
 # ── Individual factor calculators ────────────────────────────────────
 
 
+def player_output(p: Player) -> Optional[float]:
+    """What he scores now, in points.
+
+    His average, trusted in proportion to the games behind it, and for a
+    player with no games what his rating and role expect
+    (models/role_scoring.py). A draftee used to score zero here and a player
+    with three games at 88 scored 88; both were wrong in opposite directions.
+    """
+    if not p.sc_scale:
+        # Another scoring system's average: no SuperCoach role line to mix with.
+        return p.sc_avg if p.sc_avg else p.sc_avg_prev
+    from models.role_scoring import output
+    if p.sc_avg:
+        return output(p.sc_avg, p.games_played, p.rating, p.role, p.role_detail)
+    # No games in the latest season: last season's average if he has one.
+    return p.sc_avg_prev or output(None, 0, p.rating, p.role, p.role_detail)
+
+
 def _sc_average_scores(players: List[Player]) -> List[float]:
-    # Use current-year SC avg when available; fall back to previous year
-    # (pre-season everyone's current avg is 0/None, so draft on last year)
-    raw = [p.sc_avg if p.sc_avg else p.sc_avg_prev for p in players]
-    return _normalise(raw)
+    return _normalise([player_output(p) for p in players])
 
 
 def _age_factor_scores(players: List[Player]) -> List[float]:
@@ -76,7 +91,7 @@ def _positional_scarcity_scores(players: List[Player]) -> List[float]:
     pos_sc: Dict[str, list] = {pos: [] for pos in POSITIONS}
     player_sc: Dict[int, float] = {}
     for i, p in enumerate(players):
-        sc = p.sc_avg if p.sc_avg else p.sc_avg_prev
+        sc = player_output(p)
         if sc is None:
             continue
         player_sc[i] = sc
@@ -162,6 +177,13 @@ def _least_squares_slope(xs: List[float], ys: List[float]) -> float:
     return num / den
 
 
+# A season is only a point on a player's trend once he has played this many
+# games in it. Without it, three games at 20 followed by eight at 52 read as
+# the steepest rise in the competition, which is how a second-year small
+# forward topped the board in November 2026.
+TREND_MIN_GAMES = 6
+
+
 def _trajectory_scores_batch(players: List[Player]) -> List[float]:
     """Multi-year regression slope trajectory, computed in batch.
 
@@ -181,8 +203,8 @@ def _trajectory_scores_batch(players: List[Player]) -> List[float]:
         if os.path.exists(sc_path):
             df = pd.read_csv(sc_path)
             if "name" in df.columns and "sc_score" in df.columns:
-                avgs = df.groupby("name")["sc_score"].mean()
-                year_avgs[year] = avgs.to_dict()
+                g = df.groupby("name")["sc_score"].agg(["mean", "count"])
+                year_avgs[year] = g[g["count"] >= TREND_MIN_GAMES]["mean"].to_dict()
                 continue
 
         # Source 2: fitzRoy detailed stats CSVs (fallback)
@@ -205,8 +227,8 @@ def _trajectory_scores_batch(players: List[Player]) -> List[float]:
                 df[sc_col] = pd.to_numeric(df[sc_col], errors="coerce")
                 valid = df.dropna(subset=[sc_col])
                 if not valid.empty:
-                    avgs = valid.groupby(name_col)[sc_col].mean()
-                    year_avgs[year] = avgs.to_dict()
+                    g = valid.groupby(name_col)[sc_col].agg(["mean", "count"])
+                    year_avgs[year] = g[g["count"] >= TREND_MIN_GAMES]["mean"].to_dict()
                     continue
 
         # Source 3: DB fallback (no CSVs available for this year)
@@ -220,8 +242,8 @@ def _trajectory_scores_batch(players: List[Player]) -> List[float]:
             )
             if rows:
                 df = pd.DataFrame(rows, columns=["Player", "SC"])
-                avgs = df.groupby("Player")["SC"].mean()
-                year_avgs[year] = avgs.to_dict()
+                g = df.groupby("Player")["SC"].agg(["mean", "count"])
+                year_avgs[year] = g[g["count"] >= TREND_MIN_GAMES]["mean"].to_dict()
         except Exception:
             pass
 
@@ -252,14 +274,10 @@ def _trajectory_scores_batch(players: List[Player]) -> List[float]:
             # Dampen small samples: confidence ramps from 0.4 at 2 years to 1.0 at 5+
             confidence = min(1.0, 0.4 + (len(xs) - 2) * 0.2)
             raw.append(slope * confidence)
-        elif p.sc_avg is not None and p.sc_avg_prev is not None:
-            # Fallback: single-year delta
-            raw.append(p.sc_avg - p.sc_avg_prev)
-        elif p.sc_avg_prev is not None and len(xs) == 1:
-            # Have 1 year of historical data + a prev-year average
-            raw.append(ys[0] - p.sc_avg_prev)
         else:
-            # No trajectory data — assume flat (neutral) rather than worst
+            # Fewer than two real seasons is not a trend: flat, not worst.
+            # (This used to fall back to sc_avg minus sc_avg_prev, whatever
+            # the number of games behind either.)
             raw.append(0.0)
 
     return _normalise(raw)
@@ -275,19 +293,25 @@ def _durability_scores(players: List[Player]) -> List[float]:
     return _normalise(games)
 
 
+def player_ceiling(p: Player) -> Optional[float]:
+    """SuperCoach average he projects to at his best: his potential, moved by
+    the kind of player he is, or what he has already shown if that is more."""
+    from models.role_scoring import ceiling
+    if not p.sc_scale:
+        return ceiling(p.potential, p.rating, p.role, p.role_detail, None, 0)
+    return ceiling(p.potential, p.rating, p.role, p.role_detail, p.sc_avg, p.games_played)
+
+
 def _rating_potential_scores(players: List[Player]) -> List[float]:
-    """Reward high ceiling AND room to grow (potential - rating gap)."""
-    scores = []
-    for p in players:
-        if p.rating is None and p.potential is None:
-            scores.append(None)
-            continue
-        r = (p.rating or 50) / 100.0
-        pot = (p.potential or 50) / 100.0
-        growth = max(0, pot - r)  # room to improve
-        # 40% ceiling (absolute potential) + 60% growth room
-        scores.append(0.4 * pot + 0.6 * growth)
-    return _normalise(scores)
+    """Scoring ceiling, by role (models/role_scoring.py).
+
+    The key is still `rating_potential` because saved weights use it. It used
+    to be 40% potential plus 60% of the gap between potential and rating,
+    which scored a 70-rated small forward with 80 potential above a 91-rated
+    midfielder, and knew nothing about role. Youth is already paid for by the
+    age factor; this one is only how high he can go.
+    """
+    return _normalise([player_ceiling(p) for p in players])
 
 
 # ── Composite score ──────────────────────────────────────────────────
@@ -446,6 +470,8 @@ def _apply_custom_sc_projection(players, afl_players, rules):
         rounds = player_scores.get(ap.id)
         if rounds:
             players[idx].sc_avg = sum(rounds) / len(rounds)
+    for p in players:
+        p.sc_scale = False
 
 
 def _apply_af_projection(players, afl_players):
@@ -472,6 +498,8 @@ def _apply_af_projection(players, afl_players):
         rounds = player_scores.get(ap.id)
         if rounds:
             players[idx].sc_avg = sum(rounds) / len(rounds)
+    for p in players:
+        p.sc_scale = False
 
 
 def factor_breakdown(
@@ -505,7 +533,7 @@ def compute_historical_draft_scores(
       - Positional scarcity: same as current (static)
       - Trajectory: SC slope using all data up to that year
       - Durability: games that year / 25, capped at 1.0
-      - Rating/potential: growth ceiling (potential - rating gap)
+      - Rating/potential: scoring ceiling by role (same as rank_players)
 
     Returns list of {"year": int, "draft_score": float, "sc_avg": float}.
     """
@@ -522,6 +550,13 @@ def compute_historical_draft_scores(
     pos_score = POSITIONAL_SCARCITY.get(player.primary_position, 0.3)
 
     current_year = SC_HISTORY_YEARS[-1]
+
+    ceilings = [c for c in (player_ceiling(p) for p in players) if c is not None]
+    own = player_ceiling(player)
+    if own is not None and ceilings and max(ceilings) > min(ceilings):
+        ceiling_score = max(0.0, min(1.0, (own - min(ceilings)) / (max(ceilings) - min(ceilings))))
+    else:
+        ceiling_score = 0.5  # neutral if no rating data
 
     results = []
     for i, season in enumerate(season_averages):
@@ -560,14 +595,8 @@ def compute_historical_draft_scores(
         games = season.get("games", 0) or 0
         dur_score = min(games / 25.0, 1.0)
 
-        # Rating/potential component: growth ceiling (static across years)
-        if player.rating is not None or player.potential is not None:
-            r = (player.rating or 50) / 100.0
-            pot = (player.potential or 50) / 100.0
-            growth = max(0, pot - r)
-            rp_score = 0.4 * pot + 0.6 * growth
-        else:
-            rp_score = 0.5  # neutral if no rating data
+        # Scoring ceiling by role (static across years), against the pool's range
+        rp_score = ceiling_score
 
         # Weighted composite (6 factors — matches DRAFT_WEIGHTS in config.py)
         draft_score = (
