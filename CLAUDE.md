@@ -367,8 +367,11 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   rules do not apply. The look is the "glass tray" (picked from mock-ups,
   2026-11-25; the last card band in style.css): club colour with light
   from the top left, a bigger turned faded logo, the numbers on a frosted
-  plate floating at the bottom, and a tilt toward you on mouse hover.
-  Proof: `_mobtest/shot_glass.mjs <outdir>`.
+  plate floating at the bottom. Toned down the same day ("a bit TOO
+  light and glassy"): darker colour, a dark tray. NO tilt: it made subs
+  feel messy ("the card movement is not that clean when you are making
+  subs"); hover is a 2px lift and in swap mode cards do not move at all.
+  Proof: `_mobtest/shot_glass.mjs`, `_mobtest/sub_motion.mjs`.
 - **A number is bigger than its label** (on the squad card a 15px figure
   over a 10.5px AVG / RTG / AGE label; the figure was 23px until he said the
   name must lead). Lucas, 2026-11-24: "larger numbers smaller text on
