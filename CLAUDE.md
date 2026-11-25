@@ -295,7 +295,7 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   was called "way too vertical ... just not professional", 2026-11-24). Order
   of size, set 2026-11-25 ("theres too much going on, and the name is the
   smallest part of it ... make the names bigger, the numbers smaller"): the
-  NAME is the biggest thing (18px, one line; first name in full up to 16
+  NAME is the biggest thing (18px, one line, CENTRED; first name in full up to 16
   characters, else the initial, else the surname alone), then the three
   numbers (15px: average with the form arrow, rating chip, age), then the
   club logo top left with a SMALL ROUND DOT per position beside it, one

@@ -10927,3 +10927,5 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .pc7-v .rt { height: 17px !important; min-width: 22px !important; }
   .pc7-form { font-size: .5rem; margin-left: 0; }
 }
+/* Names sit in the middle of the card. Lucas, 2026-11-25: "centre the names". */
+.pc7-name { text-align: center; }
