@@ -153,8 +153,12 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
     const posParts = (p.position || 'MID').split('/')
     const fname = p.name.split(' ')[0]
     const sname = p.name.split(' ').slice(1).join(' ')
-    const shownFirst = !sname ? '' : p.name.length <= 18 ? fname : `${fname[0]}.`
-    const shownLen = shownFirst.length + 1 + (sname || fname).length
+    // The name is the biggest thing on the card, so it gets the room: the
+    // first name in full when it fits at full size, an initial when it does
+    // not, and the surname alone when even that is too long.
+    let shownFirst = !sname ? '' : p.name.length <= 16 ? fname : `${fname[0]}.`
+    if (sname && shownFirst.length + 1 + sname.length > 16) shownFirst = ''
+    const shownLen = (shownFirst ? shownFirst.length + 1 : 0) + (sname || fname).length
     const form = fd.player_form?.[String(p.id)] || 'flat'
     const logo = p.afl_team ? teamLogos[p.afl_team] : undefined
     const roles: { k: string; label: string; title: string }[] = []
@@ -280,22 +284,23 @@ export function FieldView({ fd: rawFd, teamLogos, isOwner, actions, delistContex
           </div>
         )}
 
-        {/* The face, wider than it is tall: club logo and positions on top, the
-            name on one line, then average, rating and age. The top border
-            (.pc7::before) is the position colour. */}
+        {/* The face, wider than it is tall. Three things, in this order of
+            size: the name, then average, rating and age, then the club logo
+            and a small round dot per position (D, M, R, F). */}
         <div className="fv-face pc7" style={{ ['--logo' as string]: logo ? `url("${logo}")` : 'none' } as React.CSSProperties}>
           <div className="pc7-top">
             {logo
               ? <img className="pc7-logo" src={logo} alt={p.afl_team || ''} title={p.afl_team || ''} />
               : <span className="pc7-logo" />}
-            <span className="pc7-pips">
+            <span className="pc7-dots">
               {posParts.map(part => (
-                <span key={part} className={`pos-badge badge-${part.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{part}</span>
+                <span key={part} className={`pc7-dot pc7-dot-${part.toLowerCase()}${p.position_expected ? ' expected' : ''}`}
+                  title={p.position_expected ? `${part}, expected position` : part}>{part[0]}</span>
               ))}
             </span>
           </div>
 
-          <div className={`pc7-name${shownLen > 16 ? ' xl' : shownLen > 14 ? ' long' : ''}`} title={p.name}>
+          <div className={`pc7-name${shownLen > 16 ? ' n3' : shownLen > 14 ? ' n2' : ''}`} title={p.name}>
             {shownFirst && <span className="pc7-first">{shownFirst} </span>}
             <span className="pc7-sur">{sname || fname}</span>
           </div>

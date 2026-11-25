@@ -10881,3 +10881,49 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 
 /* Full profile page: the Back button above the poster. */
 .pp-back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; text-decoration: none; }
+
+/* ══ Squad card, eighth cut. Lucas, 2026-11-25: "theres too much going on,
+      and the name is the smallest part of it, instead of fwd mid etc. can we
+      have a tiny circle with just D M F R. make the names bigger, the numbers
+      smaller". So, in order of size: the name, then the three numbers, then
+      the club logo and the position dots. Gone: the position colour bar along
+      the top and the lines between the numbers. The faded club logo behind
+      the card STAYS ("the faded logo is cool", same day). The colours that
+      mean something stay: club, position, rating band, form, roles. ══ */
+.pc7::before { display: none !important; }
+.pc7-top { justify-content: flex-start; gap: 7px; padding: 10px 10px 0 10px; height: 32px; }
+.pc7-logo { width: 22px; height: 22px; }
+.pc7-dots { display: inline-flex; gap: 3px; }
+.pc7-dot { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%;
+  font-size: .8125rem; font-weight: 800; line-height: 1; letter-spacing: 0; color: #050506; background: #5a5a66; }
+.pc7-dot-def { background: var(--pos-def); }
+.pc7-dot-mid { background: var(--pos-mid); }
+.pc7-dot-ruc { background: var(--pos-ruc); }
+.pc7-dot-fwd { background: var(--pos-fwd); }
+.pc7-dot.expected { background: transparent; border: 1px dashed currentColor; }
+.pc7-dot-def.expected { color: var(--pos-def); } .pc7-dot-mid.expected { color: var(--pos-mid); }
+.pc7-dot-ruc.expected { color: var(--pos-ruc); } .pc7-dot-fwd.expected { color: var(--pos-fwd); }
+
+.pc7-name { padding: 7px 10px 9px; font-size: 1.125rem; line-height: 22px; letter-spacing: -.025em; }
+.pc7-name.n2 { font-size: 1rem; letter-spacing: -.03em; }
+.pc7-name.n3 { font-size: .90625rem; letter-spacing: -.035em; }
+.pc7-first { font-weight: 500; }
+.pc7-sur { font-weight: 700; }
+
+.pc7-stats { background: rgba(0,0,0,.34); border-top: 0; }
+.pc7-cell { gap: 3px; padding: 6px 0 6px; border-left: 0; }
+.pc7-v { height: 17px; font-size: .9375rem; font-weight: 700; letter-spacing: -.01em; }
+.pc7-v .rt { height: 17px !important; min-width: 26px !important; padding: 0 4px !important; font-size: .8125rem !important; letter-spacing: 0; border-radius: 4px !important; }
+.pc7-form { font-size: .5625rem; margin-left: 1px; }
+.fv-card-empty { min-height: 104px; }
+@media (max-width: 1279.98px) {
+  .pc7-name { font-size: 1rem; }
+  .pc7-name.n2, .pc7-name.n3 { font-size: .875rem; }
+  .pc7-v { font-size: .875rem; }
+  .pc7-v .rt { min-width: 24px !important; padding: 0 3px !important; font-size: .8125rem !important; }
+}
+@media (max-width: 1179.98px) {
+  .pc7-v { font-size: .8125rem; }
+  .pc7-v .rt { height: 17px !important; min-width: 22px !important; }
+  .pc7-form { font-size: .5rem; margin-left: 0; }
+}

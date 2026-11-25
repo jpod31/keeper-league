@@ -292,10 +292,17 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   "too 2d, basic, the fonts dont match" (2026-11-23).
 - **Squad card layout (`.pc7-*` in `FieldView.tsx`)**: WIDER THAN TALL, 168 by
   about 119 (the shape it had before the restyle; a 150 by 165 portrait cut
-  was called "way too vertical ... just not professional", 2026-11-24). Club
-  logo top left, positions top right, the name on ONE line (first name in
-  full up to 18 characters, else the initial), then three cells: average with
-  the form arrow, rating chip, age. Role bubbles (C, VC, E, 7, L, BYE) are
+  was called "way too vertical ... just not professional", 2026-11-24). Order
+  of size, set 2026-11-25 ("theres too much going on, and the name is the
+  smallest part of it ... make the names bigger, the numbers smaller"): the
+  NAME is the biggest thing (18px, one line; first name in full up to 16
+  characters, else the initial, else the surname alone), then the three
+  numbers (15px: average with the form arrow, rating chip, age), then the
+  club logo top left with a SMALL ROUND DOT per position beside it, one
+  letter each: D, M, R, F in the position colour (`.pc7-dot-*`, hollow for an
+  expected position). No FWD / MID rectangles, no position colour bar along
+  the top, no lines between the numbers. The faded club logo behind the card
+  STAYS ("the faded logo is cool"). Role bubbles (C, VC, E, 7, L, BYE) are
   ROUND AND COLOURED on the top right corner (`.pc7-bub-*`), and the hover
   buttons are round in the same colours. Flattening them to white outlines
   was noticed straight away: "the colours on the bubbles for things have gone
@@ -303,8 +310,9 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   `min(168px, (100% - 32px) / 5)` so every row has the same card width on a
   small laptop. New class names on purpose, so older `.fv-*` and `.pc6-*`
   rules do not apply.
-- **Card numbers are big, their labels small** (23px figure over a 10.5px
-  AVG / RTG / AGE label). Lucas, 2026-11-24: "larger numbers smaller text on
+- **A number is bigger than its label** (on the squad card a 15px figure
+  over a 10.5px AVG / RTG / AGE label; the figure was 23px until he said the
+  name must lead). Lucas, 2026-11-24: "larger numbers smaller text on
   Age rating etc. come on... thats 101". This label is the one deliberate
   exception to the 13px floor: its size is the `--pc7-lab` variable so
   `tools/type_floor.py` does not raise it, and `kl_audit.mjs` skips `.pc7-l`.
