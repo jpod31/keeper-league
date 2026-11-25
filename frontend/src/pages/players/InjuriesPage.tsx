@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router'
-import { useMemo, useState } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useMemo } from 'react'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { FilterBar, type ActiveFilter } from '../../components/ui/FilterBar'
@@ -12,6 +12,7 @@ import { useLeague } from '../../contexts/LeagueContext'
 import { useDensity } from '../../hooks/useDensity'
 import { DensityToggle } from '../../components/ui/DensityToggle'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
+import { usePageState } from '../../lib/pageMemory'
 
 interface InjuredPlayer {
   id: number
@@ -54,7 +55,7 @@ const SEV_RANK: Record<string, number> = { out: 4, major: 4, test: 2, minor: 2, 
 
 export function InjuriesPage() {
   const { leagueId } = useParams()
-  const { data, loading } = useFetch<InjuriesData>(`/leagues/${leagueId}/injuries?format=json`)
+  const { data, loading } = useKeptFetch<InjuriesData>(`/leagues/${leagueId}/injuries?format=json`)
   const wishlist = useWishlist(leagueId)
   const { league: leagueCtx } = useLeague()
   const { density, setDensity } = useDensity('players.injuries.density')
@@ -65,9 +66,9 @@ export function InjuriesPage() {
     leagueCtx?.teams.forEach(t => m.set(t.name, t.id))
     return m
   }, [leagueCtx])
-  const [posFilter, setPosFilter] = useState('')
-  const [teamFilter, setTeamFilter] = useState('')
-  const [sevFilter, setSevFilter] = useState('')
+  const [posFilter, setPosFilter] = usePageState('posFilter', '')
+  const [teamFilter, setTeamFilter] = usePageState('teamFilter', '')
+  const [sevFilter, setSevFilter] = usePageState('sevFilter', '')
 
   // Default: severity desc, most-severe injuries surface first.
   // Name and AFL team default to ascending on first click; everything

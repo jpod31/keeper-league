@@ -59,6 +59,7 @@ import { TradeCenterPage } from './pages/trades/TradeCenterPage'
 import { TradeProposePage } from './pages/trades/TradeProposePage'
 import { TradeDetailPage } from './pages/trades/TradeDetailPage'
 import { DialogHost } from './components/ui/dialog'
+import { ScrollMemory } from './lib/pageMemory'
 import { TradeBlockPage } from './pages/trades/TradeBlockPage'
 
 // Comms pages
@@ -82,6 +83,7 @@ export default function App() {
   return (
     <>
     <DialogHost />
+    <ScrollMemory />
     <Routes>
       {/* Public routes */}
       <Route path="/auth/login" element={<LoginPage />} />

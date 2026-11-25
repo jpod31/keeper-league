@@ -1,11 +1,12 @@
 import { useParams, Link } from 'react-router'
-import { useMemo, useState } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useMemo } from 'react'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { AcquiredHistory, type Stint } from '../../components/ui/PlayerHistory'
 import { ratingTier } from '../../lib/clubs'
 import { useOpenPlayer } from '../../components/squad/PlayerPopup'
+import { usePageState } from '../../lib/pageMemory'
 
 interface FormerPlayer {
   id: number
@@ -65,16 +66,16 @@ const TEXT_KEYS: SortKey[] = ['name', 'club']
 
 export function FormerPlayersPage() {
   const { leagueId } = useParams()
-  const { data, loading, error } = useFetch<FormerData>(`/api/leagues/${leagueId}/former-players`)
+  const { data, loading, error } = useKeptFetch<FormerData>(`/api/leagues/${leagueId}/former-players`)
 
-  const [search, setSearch] = useState('')
-  const [pos, setPos] = useState('')
-  const [year, setYear] = useState<number | null>(null)
-  const [club, setClub] = useState('')
-  const [listed, setListed] = useState<Listed>('all')
-  const [team, setTeam] = useState('')
-  const [sortKey, setSortKey] = useState<SortKey>('games')
-  const [asc, setAsc] = useState(false)
+  const [search, setSearch] = usePageState('search', '')
+  const [pos, setPos] = usePageState('pos', '')
+  const [year, setYear] = usePageState<number | null>('year', null)
+  const [club, setClub] = usePageState('club', '')
+  const [listed, setListed] = usePageState<Listed>('listed', 'all')
+  const [team, setTeam] = usePageState('team', '')
+  const [sortKey, setSortKey] = usePageState<SortKey>('sortKey', 'games')
+  const [asc, setAsc] = usePageState('asc', false)
 
   const clubs = useMemo(
     () => (data ? [...new Set(data.players.map(p => p.afl_team).filter(Boolean))].sort() : []),

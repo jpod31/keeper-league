@@ -1,8 +1,9 @@
 import { useParams } from 'react-router'
-import { useState, useMemo } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useMemo } from 'react'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
+import { usePageState } from '../../lib/pageMemory'
 
 interface Entry {
   type: string
@@ -65,8 +66,8 @@ const FILTERS: [string, string][] = [
 
 export function ListChangesPage() {
   const { leagueId } = useParams()
-  const { data, loading } = useFetch<ListChangesData>(`/leagues/${leagueId}/list-changes?format=json`)
-  const [filter, setFilter] = useState('all')
+  const { data, loading } = useKeptFetch<ListChangesData>(`/leagues/${leagueId}/list-changes?format=json`)
+  const [filter, setFilter] = usePageState('filter', 'all')
 
   const filtered = useMemo(() => {
     if (!data) return []

@@ -4,6 +4,7 @@ import { useAnalytics } from '../../hooks/useAnalytics'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 import { AnalyticsSkeleton } from '../../components/ui/AnalyticsSkeleton'
 import type { AnalyticsData, DynastyTeam, PlayerBayesian } from '../../types'
+import { usePageState } from '../../lib/pageMemory'
 import {
   BarChart, Bar, XAxis, YAxis, Cell, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, Radar, PolarRadiusAxis,
@@ -394,7 +395,7 @@ interface SLOwnedForm {
 }
 
 function StateLeagueIntel({ intel }: { intel: { pickup_targets: SLPickup[]; draft_watch: SLDraftWatch[]; vfl_form_owned: SLOwnedForm[] } }) {
-  const [tab, setTab] = useState<'pickup' | 'draft' | 'owned'>('pickup')
+  const [tab, setTab] = usePageState<'pickup' | 'draft' | 'owned'>('tab', 'pickup')
   const scColor = (sc: number) => sc >= 100 ? '#3fb950' : sc >= 80 ? '#ebebee' : sc >= 60 ? '#ececf1' : '#ececf1'
 
   return (

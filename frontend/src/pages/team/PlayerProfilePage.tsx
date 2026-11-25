@@ -1,8 +1,8 @@
-import { useParams, Link, useNavigate } from 'react-router'
+import { useParams, Link, useNavigate, useLocation } from 'react-router'
 import {
   ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, LineChart, Line,
 } from 'recharts'
-import { useFetch } from '../../hooks/useFetch'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 
@@ -83,15 +83,17 @@ function MiniForm({ form }: { form: { sc: number }[] }) {
 export function PlayerProfilePage() {
   const { leagueId, teamId, playerId } = useParams()
   const navigate = useNavigate()
+  // How many pages back the stats page is, when that is how you got here.
+  const stepsBack = Number((useLocation().state as { back?: number } | null)?.back) || 0
   const base = `/leagues/${leagueId}/team/${teamId}`
   const pbase = `${base}/player/${playerId}`
-  const { data: id, loading } = useFetch<Identity>(`${base}/api/player/${playerId}?format=json`)
-  const { data: u } = useFetch<UsageData>(`${pbase}/usage?format=json`)
-  const { data: sc } = useFetch<ScoringData>(`${pbase}/scoring?format=json`)
-  const { data: sp } = useFetch<SplitsData>(`${pbase}/splits?format=json`)
-  const { data: pj } = useFetch<ProjectionData>(`${pbase}/projection?format=json`)
-  const { data: bm } = useFetch<BenchmarkData>(`${pbase}/benchmarks?format=json`)
-  const { data: sim } = useFetch<SimilarData>(`${pbase}/similar?format=json`)
+  const { data: id, loading } = useKeptFetch<Identity>(`${base}/api/player/${playerId}?format=json`)
+  const { data: u } = useKeptFetch<UsageData>(`${pbase}/usage?format=json`)
+  const { data: sc } = useKeptFetch<ScoringData>(`${pbase}/scoring?format=json`)
+  const { data: sp } = useKeptFetch<SplitsData>(`${pbase}/splits?format=json`)
+  const { data: pj } = useKeptFetch<ProjectionData>(`${pbase}/projection?format=json`)
+  const { data: bm } = useKeptFetch<BenchmarkData>(`${pbase}/benchmarks?format=json`)
+  const { data: sim } = useKeptFetch<SimilarData>(`${pbase}/similar?format=json`)
 
   if (loading || !id) return <Spinner text="Loading player…" />
   const primary = posCode(id.position)
@@ -104,7 +106,8 @@ export function PlayerProfilePage() {
       <TeamMobSubnav active="stats" leagueId={leagueId!} teamId={teamId!} />
       <div className="page-header">
         <div className="page-breadcrumb">
-          <Link to={`/leagues/${leagueId}/team/${teamId}/stats`}>Stats</Link>{' / '}{id.name}
+          <Link to={`/leagues/${leagueId}/team/${teamId}/stats`}
+            onClick={e => { if (stepsBack > 0) { e.preventDefault(); navigate(-stepsBack) } }}>Stats</Link>{' / '}{id.name}
         </div>
       </div>
 
@@ -290,7 +293,7 @@ export function PlayerProfilePage() {
         <Section title="Plays like" sub={`nearest ${sim.position}s by profile`}>
           {sim.similar.map(s => (
             <button key={s.player_id} className="sim-row" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none' }}
-              onClick={() => navigate(`${base}/player/${s.player_id}`)}>
+              onClick={() => navigate(`${base}/player/${s.player_id}`, { state: stepsBack > 0 ? { back: stepsBack + 1 } : null })}>
               <div className="sim-bar-wrap"><div className="sim-bar" style={{ width: `${s.similarity}%` }}></div></div>
               <div className="sim-name">{s.name}<span className="sim-meta">{posCode(s.position)}, {s.afl_team}</span></div>
               <div className="sim-stats">{s.sc_avg} SC{s.rating != null ? `, ${s.rating} rtg` : ''}{s.age != null ? `, ${s.age}y` : ''}</div>

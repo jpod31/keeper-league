@@ -1,11 +1,12 @@
 import { useParams } from 'react-router'
-import { useState, useMemo } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useMemo } from 'react'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { useWishlist } from '../../hooks/useWishlist'
 import { WishlistStar } from '../../components/ui/WishlistStar'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
+import { usePageState } from '../../lib/pageMemory'
 
 interface RatingChange {
   player_id: number
@@ -67,13 +68,13 @@ const POSITIONS = ['DEF', 'MID', 'RUC', 'FWD']
 
 export function PlayerRatingsPage() {
   const { leagueId } = useParams()
-  const { data, loading } = useFetch<RatingsData>(`/leagues/${leagueId}/player-ratings?format=json`)
+  const { data, loading } = useKeptFetch<RatingsData>(`/leagues/${leagueId}/player-ratings?format=json`)
   const wishlist = useWishlist(leagueId)
-  const [view, setView] = useState<MoverView>('risers')
-  const [pos, setPos] = useState<string>('ALL')
+  const [view, setView] = usePageState<MoverView>('view', 'risers')
+  const [pos, setPos] = usePageState<string>('pos', 'ALL')
   // Default ON: debutants' base→X jumps dwarf established players' moves, so
   // the meaningful list (established risers/fallers) shows first.
-  const [hideDebut, setHideDebut] = useState(true)
+  const [hideDebut, setHideDebut] = usePageState('hideDebut', true)
 
   const movers = useMemo(() => {
     const all = data?.season_movers ?? []

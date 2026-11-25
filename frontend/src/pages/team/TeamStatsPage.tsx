@@ -7,10 +7,11 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
   AreaChart, Area, ReferenceLine,
 } from 'recharts'
-import { useFetch } from '../../hooks/useFetch'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { TeamMobSubnav } from '../../components/nav/TeamMobSubnav'
 import { CommandDeck } from './CommandDeck'
+import { usePageState } from '../../lib/pageMemory'
 
 interface Player {
   id: number
@@ -192,9 +193,9 @@ function SquadMatrix({ players, flagMap, activeFlag, compareSet, toggleCompare, 
   toggleCompare: (id: number) => void
   onSelect: (id: number) => void
 }) {
-  const [pos, setPos] = useState<string | null>(null)
-  const [sortKey, setSortKey] = useState('sc_avg')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [pos, setPos] = usePageState<string | null>('pos', null)
+  const [sortKey, setSortKey] = usePageState('sortKey', 'sc_avg')
+  const [sortDir, setSortDir] = usePageState<'asc' | 'desc'>('sortDir', 'desc')
   const cols = SQUAD_COLS
   const numOf = (p: IntelPlayer, k: string) => cols.find(c => c.k === k)?.num(p) ?? null
 
@@ -403,7 +404,7 @@ function KeeperBoard({ board, onSelect }: { board: KeeperRow[]; onSelect: (id: n
   )
 }
 function KeeperTab({ leagueId, teamId, onSelect }: { leagueId: string; teamId: string; onSelect: (id: number) => void }) {
-  const { data, loading } = useFetch<DynastyData>(`/leagues/${leagueId}/team/${teamId}/dynasty?format=json`)
+  const { data, loading } = useKeptFetch<DynastyData>(`/leagues/${leagueId}/team/${teamId}/dynasty?format=json`)
   if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Reading the squad…</div>
   const board = data.keeper_board || []
   const win = data.window || []
@@ -473,7 +474,7 @@ interface ThisRoundData {
   starters: RoundStarter[]; captain: { id: number; name: string; why: string; is_current: boolean } | null
 }
 function ThisRound({ leagueId, teamId, onSelect }: { leagueId: string; teamId: string; onSelect: (id: number) => void }) {
-  const { data, loading } = useFetch<ThisRoundData>(`/leagues/${leagueId}/team/${teamId}/this-round?format=json`)
+  const { data, loading } = useKeptFetch<ThisRoundData>(`/leagues/${leagueId}/team/${teamId}/this-round?format=json`)
   if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Running this round's simulation…</div>
   if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>{data.note || 'Not enough data to project this round.'}</div>
   const wp = data.win_prob
@@ -562,7 +563,7 @@ interface LeagueCompare {
 }
 
 function LeagueComparison({ leagueId, teamId }: { leagueId: string; teamId: string }) {
-  const { data, loading } = useFetch<LeagueCompare>(`/leagues/${leagueId}/team/${teamId}/league-compare?format=json`)
+  const { data, loading } = useKeptFetch<LeagueCompare>(`/leagues/${leagueId}/team/${teamId}/league-compare?format=json`)
   if (loading || !data) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Loading league comparison…</div>
   if (!data.has_data) return <div className="text-secondary" style={{ padding: 30, textAlign: 'center' }}>No league data yet.</div>
   const yr = data.your_ranks
@@ -637,13 +638,13 @@ function LeagueComparison({ leagueId, teamId }: { leagueId: string; teamId: stri
 
 export function TeamStatsPage() {
   const { leagueId, teamId } = useParams()
-  const { data, loading } = useFetch<StatsData>(`/leagues/${leagueId}/team/${teamId}/stats?format=json`)
-  const { data: roi } = useFetch<DraftRoiData>(`/leagues/${leagueId}/team/${teamId}/draft-roi?format=json`)
-  const { data: intel } = useFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
+  const { data, loading } = useKeptFetch<StatsData>(`/leagues/${leagueId}/team/${teamId}/stats?format=json`)
+  const { data: roi } = useKeptFetch<DraftRoiData>(`/leagues/${leagueId}/team/${teamId}/draft-roi?format=json`)
+  const { data: intel } = useKeptFetch<SquadIntel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
   const navigate = useNavigate()
-  const openPlayer = (id: number) => navigate(`/leagues/${leagueId}/team/${teamId}/player/${id}`)
-  const [activeFlag, setActiveFlag] = useState<FlagKey | null>(null)
-  const [section, setSection] = useState<'deck' | 'keeper' | 'squad' | 'this-round' | 'league'>('deck')
+  const openPlayer = (id: number) => navigate(`/leagues/${leagueId}/team/${teamId}/player/${id}`, { state: { back: 1 } })
+  const [activeFlag, setActiveFlag] = usePageState<FlagKey | null>('activeFlag', null)
+  const [section, setSection] = usePageState<'deck' | 'keeper' | 'squad' | 'this-round' | 'league'>('section', 'deck')
   const [compareSet, setCompareSet] = useState<number[]>([])
   const [showCompare, setShowCompare] = useState(false)
   function toggleCompare(id: number) {
@@ -916,7 +917,7 @@ const CMP_ROWS: { k: keyof ComparePlayer; label: string; hb: boolean }[] = [
 function CompareModal({ leagueId, teamId, ids, onClose }: {
   leagueId: string; teamId: string; ids: number[]; onClose: () => void
 }) {
-  const { data, loading } = useFetch<{ players: ComparePlayer[] }>(
+  const { data, loading } = useKeptFetch<{ players: ComparePlayer[] }>(
     `/leagues/${leagueId}/team/${teamId}/compare?ids=${ids.join(',')}&format=json`)
   const players = data?.players ?? []
 

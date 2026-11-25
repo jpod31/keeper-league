@@ -10878,3 +10878,6 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .nt-row { grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 12px 2px; }
   .nt-when { grid-column: 2; padding-top: 0; }
 }
+
+/* Full profile page: the Back button above the poster. */
+.pp-back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; text-decoration: none; }

@@ -6,6 +6,7 @@ import { useStatsYear } from '../../contexts/LeagueContext'
 import { clubVars, ratingTier, rgbOf } from '../../lib/clubs'
 import { TeamCrest } from '../../components/draft/TeamCrest'
 import { useOpenPlayer } from '../../components/squad/PlayerPopup'
+import { usePageState } from '../../lib/pageMemory'
 
 interface BlockPlayer {
   id: number
@@ -190,8 +191,8 @@ export function TradeBlockPage() {
   const stats = useStatsYear()
   const [data, setData] = useState<BlockData | null>(null)
   const [error, setError] = useState(false)
-  const [pos, setPos] = useState('')
-  const [teamId, setTeamId] = useState<number | null>(null)
+  const [pos, setPos] = usePageState('pos', '')
+  const [teamId, setTeamId] = usePageState<number | null>('teamId', null)
   const [form, setForm] = useState<{ editing: Entry | null } | null>(null)
   const [removing, setRemoving] = useState<number | null>(null)
 

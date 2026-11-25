@@ -15,9 +15,25 @@ import { api, ApiError } from '../lib/api'
  * 4xx errors don't retry (a 401 means re-auth, a 404 means the row
  * isn't coming back), only network/transport errors and 5xx retry.
  */
-export function useFetch<T>(url: string | null) {
-  const [data, setData] = useState<T | null>(null)
-  const [loading, setLoading] = useState(true)
+// Last good answer per URL, for pages that ask to keep it (useKeptFetch).
+const kept = new Map<string, unknown>()
+const KEEP_MAX = 40
+function keep(url: string, value: unknown) {
+  kept.delete(url)
+  kept.set(url, value)
+  if (kept.size > KEEP_MAX) kept.delete(kept.keys().next().value as string)
+}
+
+/** useFetch for a page that only reads: coming back to it shows the last
+ *  copy straight away, with no spinner, and refreshes behind it. Not for a
+ *  page that fills a form from its data, which would start from a stale copy. */
+export function useKeptFetch<T>(url: string | null) {
+  return useFetch<T>(url, true)
+}
+
+export function useFetch<T>(url: string | null, keepLast = false) {
+  const [data, setData] = useState<T | null>(() => (keepLast && url && kept.has(url) ? (kept.get(url) as T) : null))
+  const [loading, setLoading] = useState(() => !(keepLast && url && kept.has(url)))
   const [error, setError] = useState<string | null>(null)
   const initialLoad = useRef(true)
   const urlRef = useRef(url)
@@ -30,8 +46,9 @@ export function useFetch<T>(url: string | null) {
     if (initialLoad.current) {
       setLoading(true)
     }
+    const got = (d: T) => { if (keepLast) keep(currentUrl, d); setData(d); setError(null) }
     api<T>(currentUrl)
-      .then(d => { setData(d); setError(null) })
+      .then(got)
       .catch(async (e: unknown) => {
         // Retry once for transient errors. Network errors (fetch failed
         // entirely) are NOT ApiError. Server 5xx ARE ApiError with
@@ -45,8 +62,7 @@ export function useFetch<T>(url: string | null) {
           // mid-flight), drop the retry, they're on another page now.
           if (urlRef.current !== currentUrl) return
           try {
-            const d = await api<T>(currentUrl)
-            setData(d); setError(null); return
+            got(await api<T>(currentUrl)); return
           } catch (e2) {
             setError(e2 instanceof Error ? e2.message : 'unknown error')
             return

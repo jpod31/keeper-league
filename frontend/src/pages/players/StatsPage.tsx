@@ -1,9 +1,9 @@
 import { useParams } from 'react-router'
-import { useState } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { StatsSkeleton } from '../../components/ui/StatsSkeleton'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
+import { usePageState } from '../../lib/pageMemory'
 
 interface PlayerMetric {
   id: number
@@ -120,9 +120,9 @@ function TrendChart({ rounds }: { rounds: { round: number; score: number }[] }) 
 
 export function StatsPage() {
   const { leagueId } = useParams()
-  const { data, loading } = useFetch<StatsData>(`/leagues/${leagueId}/stats?format=json`)
-  const [tab, setTab] = useState<'leaders' | 'team'>('leaders')
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('')
+  const { data, loading } = useKeptFetch<StatsData>(`/leagues/${leagueId}/stats?format=json`)
+  const [tab, setTab] = usePageState<'leaders' | 'team'>('tab', 'leaders')
+  const [selectedTeamId, setSelectedTeamId] = usePageState<string>('selectedTeamId', '')
 
   if (loading) return <StatsSkeleton />
   if (!data) return <p className="text-danger">Failed to load stats</p>

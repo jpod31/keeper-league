@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { post, api } from '../lib/api'
 import { useToast } from '../components/ui/Toast'
 import { ask } from '../components/ui/dialog'
+import { usePageState } from '../lib/pageMemory'
 
 interface PlayerDetail {
   id: number; name: string; position: string; afl_team: string
@@ -47,6 +48,8 @@ export function useFieldActions(
   const [swapSource, setSwapSource] = useState<SwapSourceInfo | null>(null)
   const [actionMode, setActionMode] = useState<ActionMode>(null)
   const [playerModal, setPlayerModal] = useState<PlayerDetail | null>(null)
+  // The open card is kept with the page, so back from a full profile returns to it.
+  const [cardId, setCardId] = usePageState<number | null>('card', null)
 
   // Route through the GLOBAL ToastProvider, no more local fv-toast
   // pill rendering in SquadPage. The old local implementation is what
@@ -291,10 +294,17 @@ export function useFieldActions(
     try {
       const data = await api<PlayerDetail>(`${API}/player/${pid}`)
       setPlayerModal(data)
+      setCardId(pid)
     } catch { toast('Failed to load player', 'error') }
-  }, [API, swapSource, toast])
+  }, [API, swapSource, toast, setCardId])
 
-  const closePlayerModal = useCallback(() => setPlayerModal(null), [])
+  const closePlayerModal = useCallback(() => { setPlayerModal(null); setCardId(null) }, [setCardId])
+
+  useEffect(() => {
+    if (cardId == null) return
+    api<PlayerDetail>(`${API}/player/${cardId}`).then(setPlayerModal).catch(() => setCardId(null))
+    // Only when the page comes up.
+  }, [API]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     swapSource, actionMode, playerModal,

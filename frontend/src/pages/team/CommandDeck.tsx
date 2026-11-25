@@ -64,7 +64,7 @@ function Kpi({ value, suffix, label, sub, color, decimals = 0 }: { value: number
 
 export function CommandDeck({ leagueId, teamId, descriptor }: { leagueId: string; teamId: string; descriptor: string | null }) {
   const navigate = useNavigate()
-  const open = (id: number) => navigate(`/leagues/${leagueId}/team/${teamId}/player/${id}`)
+  const open = (id: number) => navigate(`/leagues/${leagueId}/team/${teamId}/player/${id}`, { state: { back: 1 } })
   const { data: deck, loading } = useFetch<DeckData>(`/leagues/${leagueId}/team/${teamId}/deck?format=json`)
   const { data: intel } = useFetch<Intel>(`/leagues/${leagueId}/team/${teamId}/squad-intel?format=json`)
 

@@ -1,9 +1,10 @@
 import { useParams } from 'react-router'
-import { useState, useMemo } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useMemo } from 'react'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 import { LeagueBreadcrumb } from '../../components/ui/LeagueBreadcrumb'
+import { usePageState } from '../../lib/pageMemory'
 
 interface Champion { year: number; team_name: string; wins: number; losses: number; draws: number; points_for: number; percentage: number }
 interface AlltimeRow { team_name: string; wins: number; losses: number; draws: number; points_for: number; points_against: number; total_games: number; win_pct: number; percentage: number; seasons: number }
@@ -98,10 +99,10 @@ function streakPeriod(s: StreakRecord): string {
 
 export function HistoryPage() {
   const { leagueId } = useParams()
-  const { data, loading } = useFetch<HistoryData>(`/leagues/${leagueId}/records?format=json`)
-  const [tab, setTab] = useState<Tab>('records')
-  const [h2hT1, setH2hT1] = useState<string>('')
-  const [h2hT2, setH2hT2] = useState<string>('')
+  const { data, loading } = useKeptFetch<HistoryData>(`/leagues/${leagueId}/records?format=json`)
+  const [tab, setTab] = usePageState<Tab>('tab', 'records')
+  const [h2hT1, setH2hT1] = usePageState<string>('h2hT1', '')
+  const [h2hT2, setH2hT2] = usePageState<string>('h2hT2', '')
 
   const h2hResult = useMemo(() => {
     if (!data || !h2hT1 || !h2hT2) return null

@@ -1,9 +1,10 @@
 import { TeamBadge, useTeamAccent } from '../../components/ui/TeamBadge'
 import { useParams, Link } from 'react-router'
-import { useState, useMemo } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useMemo } from 'react'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { StandingsSkeleton } from '../../components/ui/StandingsSkeleton'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
+import { usePageState } from '../../lib/pageMemory'
 
 interface Team { id: number; name: string; logo_url?: string | null }
 
@@ -469,9 +470,9 @@ export function StandingsPage({ mode = 'main' }: StandingsPageProps = {}) {
   const apiUrl = isSevens
     ? `/leagues/${leagueId}/reserve7s/standings?format=json`
     : `/leagues/${leagueId}/standings?format=json`
-  const { data, loading } = useFetch<StandingsData>(apiUrl)
-  const [sortField, setSortField] = useState<SortField>('pos')
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const { data, loading } = useKeptFetch<StandingsData>(apiUrl)
+  const [sortField, setSortField] = usePageState<SortField>('sortField', 'pos')
+  const [sortDir, setSortDir] = usePageState<SortDir>('sortDir', 'asc')
 
   function setSort(field: SortField) {
     if (field === sortField) {

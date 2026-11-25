@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
+import { usePageState } from '../../lib/pageMemory'
 
 interface RadarPlayer {
   id: number
@@ -58,11 +59,11 @@ export function BreakoutRadarPage() {
   const { leagueId } = useParams()
   const [data, setData] = useState<RadarData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [comp, setComp] = useState('')
-  const [listed, setListed] = useState<'any' | 'afl_only' | 'unlisted'>('any')
-  const [minProb, setMinProb] = useState(0)
-  const [sort, setSort] = useState<SortKey>('predicted_afl_sc')
-  const [dir, setDir] = useState<1 | -1>(-1)
+  const [comp, setComp] = usePageState('comp', '')
+  const [listed, setListed] = usePageState<'any' | 'afl_only' | 'unlisted'>('listed', 'any')
+  const [minProb, setMinProb] = usePageState('minProb', 0)
+  const [sort, setSort] = usePageState<SortKey>('sort', 'predicted_afl_sc')
+  const [dir, setDir] = usePageState<1 | -1>('dir', -1)
 
   useEffect(() => {
     setLoading(true)

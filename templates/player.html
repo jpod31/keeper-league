@@ -11,12 +11,20 @@
 <div class="player-page"
      style="--pp-primary: {{ team_primary }}; --pp-secondary: {{ team_secondary }}; --pp-primary-rgb: {{ team_primary_rgb }};">
 
-<nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url_for('leagues.league_list') }}">Home</a></li>
-    <li class="breadcrumb-item active">{{ player.name }}</li>
-  </ol>
-</nav>
+{# Back goes to the page you came from, as you left it (the app restores its
+   filters, list position and the open card). Opened cold, it goes home. #}
+<a class="kx-btn pp-back" id="ppBack" href="{{ url_for('leagues.league_list') }}">
+  <i class="bi bi-chevron-left"></i> Back
+</a>
+<script>
+  document.getElementById('ppBack').addEventListener('click', function (e) {
+    var ref = document.referrer || '';
+    if (ref.indexOf(window.location.origin + '/') === 0 && window.history.length > 1) {
+      e.preventDefault();
+      window.history.back();
+    }
+  });
+</script>
 
 {# ══════════════ HERO POSTER ══════════════ #}
 <section class="pp-poster">

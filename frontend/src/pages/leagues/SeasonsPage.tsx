@@ -1,11 +1,12 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router'
-import { useMemo, useState } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useMemo } from 'react'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 import { TeamBadge } from '../../components/ui/TeamBadge'
 import { ratingTier, rgbOf } from '../../lib/clubs'
 import { useOpenPlayer } from '../../components/squad/PlayerPopup'
+import { usePageState } from '../../lib/pageMemory'
 
 interface TeamCard { id: number; name: string; logo: string | null; accent: string }
 interface LadderRow extends TeamCard {
@@ -72,13 +73,13 @@ export function SeasonsPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const url = `/api/leagues/${leagueId}/seasons${yearParam ? `/${yearParam}` : ''}`
-  const { data, loading, error } = useFetch<SeasonData>(url)
+  const { data, loading, error } = useKeptFetch<SeasonData>(url)
 
   const tab = (params.get('view') as Tab) || 'ladder'
   const setTab = (t: Tab) => setParams(t === 'ladder' ? {} : { view: t }, { replace: true })
-  const [squadTeam, setSquadTeam] = useState<number | null>(null)
-  const [draftTeam, setDraftTeam] = useState<number | null>(null)
-  const [delistTeam, setDelistTeam] = useState<number | null>(null)
+  const [squadTeam, setSquadTeam] = usePageState<number | null>('squadTeam', null)
+  const [draftTeam, setDraftTeam] = usePageState<number | null>('draftTeam', null)
+  const [delistTeam, setDelistTeam] = usePageState<number | null>('delistTeam', null)
 
   const squadTeamId = data ? (squadTeam ?? data.my_team_id ?? data.teams[0]?.id ?? null) : null
   const squad = useMemo(

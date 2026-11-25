@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router'
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { useFetch } from '../../hooks/useFetch'
+import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
@@ -13,6 +13,7 @@ import { TeamBadge } from '../../components/ui/TeamBadge'
 import { ratingTier } from '../../lib/clubs'
 import { ask, tell } from '../../components/ui/dialog'
 import { useOpenPlayer } from '../../components/squad/PlayerPopup'
+import { usePageState, useKeptScroll } from '../../lib/pageMemory'
 
 type AcquiredHistoryEntry = Stint
 
@@ -24,10 +25,19 @@ type AcquiredHistoryEntry = Stint
  * inside a display:none subtree never intersects, so the off-viewport list (the
  * hidden desktop table on mobile, or vice-versa) stays capped at one chunk.
  */
-function useIncremental<T>(items: T[], step = 50) {
-  const [count, setCount] = useState(step)
+function useIncremental<T>(items: T[], name: string, view: string, step = 50) {
+  // Kept with the page, so coming back from a player lands on the same row
+  // and not at the top of a list cut back to its first chunk.
+  const [count, setCount] = usePageState(`rows:${name}`, step)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => { setCount(step) }, [items, step])
+  // `view` names the filters and sort. A new one starts the list again; the
+  // same list refreshed (a pickup, a background reload) keeps its place.
+  const shown = useRef(view)
+  useEffect(() => {
+    if (shown.current === view) return
+    shown.current = view
+    setCount(step)
+  }, [view, step])
   useEffect(() => {
     const el = sentinelRef.current
     if (!el || count >= items.length) return
@@ -462,19 +472,19 @@ type MobileSortKey = 'sc' | 'name_asc' | 'age' | 'rtg' | 'gp'
 export function PlayerPoolPage() {
   const { leagueId } = useParams()
   const openPlayer = useOpenPlayer()
-  const { data, loading, refetch } = useFetch<PoolData>(`/leagues/${leagueId}/player-pool?format=json`)
-  const [search, setSearch] = useState('')
-  const [posFilter, setPosFilter] = useState('')
-  const [teamFilter, setTeamFilter] = useState('')
-  const [ageFilter, setAgeFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [ownerFilter, setOwnerFilter] = useState('')
-  const [smart, setSmart] = useState<Set<string>>(new Set())
+  const { data, loading, refetch } = useKeptFetch<PoolData>(`/leagues/${leagueId}/player-pool?format=json`)
+  const [search, setSearch] = usePageState('search', '')
+  const [posFilter, setPosFilter] = usePageState('posFilter', '')
+  const [teamFilter, setTeamFilter] = usePageState('teamFilter', '')
+  const [ageFilter, setAgeFilter] = usePageState('ageFilter', '')
+  const [statusFilter, setStatusFilter] = usePageState('statusFilter', '')
+  const [ownerFilter, setOwnerFilter] = usePageState('ownerFilter', '')
+  const [smart, setSmart] = usePageState<Set<string>>('smart', new Set())
   const [panelOpen, setPanelOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
-  const [sortKey, setSortKey] = useState<SortKey>('sc_avg')
-  const [sortDir, setSortDir] = useState<1 | -1>(-1)
-  const [mobSort, setMobSort] = useState<MobileSortKey>('sc')
+  const [sortKey, setSortKey] = usePageState<SortKey>('sortKey', 'sc_avg')
+  const [sortDir, setSortDir] = usePageState<1 | -1>('sortDir', -1)
+  const [mobSort, setMobSort] = usePageState<MobileSortKey>('mobSort', 'sc')
   const [pickingUp, setPickingUp] = useState<number | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
   const wishlist = useWishlist(leagueId)
@@ -585,8 +595,10 @@ export function PlayerPoolPage() {
   }, [filtered, mobSort])
 
   // Chunked rendering so the 800+ row pool doesn't all mount at once (mobile perf).
-  const desk = useIncremental(sorted)
-  const mob = useIncremental(mobileSorted)
+  const listView = JSON.stringify([search, posFilter, teamFilter, ageFilter, statusFilter, ownerFilter, [...smart].sort()])
+  const desk = useIncremental(sorted, 'desk', `${listView}|${sortKey}|${sortDir}`)
+  const keepTableScroll = useKeptScroll('table')
+  const mob = useIncremental(mobileSorted, 'mob', `${listView}|${mobSort}`)
 
   const teamOptions = useMemo(() => {
     if (!data) return []
@@ -848,7 +860,7 @@ export function PlayerPoolPage() {
         </div>
 
         {/* Desktop table */}
-        <div className="card-body p-0 d-none d-lg-block" style={{ maxHeight: '78vh', overflow: 'auto' }}>
+        <div ref={keepTableScroll} className="card-body p-0 d-none d-lg-block" style={{ maxHeight: '78vh', overflow: 'auto' }}>
           <table className="table table-sm mb-0 pool-table">
             <thead className="sticky-top" style={{ background: '#151518', zIndex: 2 }}>
               <tr>

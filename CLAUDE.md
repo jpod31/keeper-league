@@ -189,6 +189,22 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   deleted; `AflPlayer.listed()` is the filter for anything draftable or
   signable. Matching is one-to-one, strictest rule first; read the dry run's
   "new" and "off AFL lists" lists after every refresh.
+- **Back puts you where you were** (`frontend/src/lib/pageMemory.tsx`). Each
+  browser history entry has its own store in sessionStorage, so it survives
+  the full page load on the way back from the server-rendered profile
+  (`/player/<name>`). A list page keeps its filters, sort, open tab and open
+  player card with `usePageState('name', initial)` in place of `useState`;
+  `ScrollMemory` (mounted in `App.tsx`) restores the window scroll on back and
+  starts a clicked link at the top; `useKeptScroll` does the same for a list
+  that scrolls in its own box (the desktop pool table). A long list that
+  loads in chunks must keep its count the same way or the scroll has nothing
+  to land on. Scroll jumps must be `behavior: 'instant'`: Bootstrap turns
+  smooth scrolling on. `useKeptFetch` (read-only pages only) shows the last
+  copy at once and refreshes behind it; never use it on a page that fills a
+  form from its data. A page's own back link should return to the entry it
+  came from (`navigate(-n)` with the step count carried in `location.state`),
+  not push a fresh copy. Proof: `_mobtest/flow_back.mjs <outdir> [width]`.
+  A new list page that opens a player gets all of this from day one.
 - **`fantasy_roster` is one row per STINT**, not per (team, player). A club
   that redrafts a player it delisted gets a second row. Never add a unique
   constraint back; `models/player_history.py::league_stints` is the one

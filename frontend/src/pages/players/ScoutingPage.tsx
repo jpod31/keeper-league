@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts'
 import { Spinner } from '../../components/ui/Spinner'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
+import { usePageState } from '../../lib/pageMemory'
 
 interface CompSeason { comp: string; season: number; count: number }
 
@@ -402,18 +403,18 @@ function PlayerDetail({ player, leagueId, onClose, logos }: { player: SLPlayer; 
 export function ScoutingPage() {
   const { leagueId } = useParams<{ leagueId: string }>()
   const [comps, setComps] = useState<CompSeason[]>([])
-  const [comp, setComp] = useState('')
-  const [season, setSeason] = useState<number | ''>('')
-  const [aflOnly, setAflOnly] = useState(true)
-  const [search, setSearch] = useState('')
-  const [teamFilter, setTeamFilter] = useState('')
-  const [sort, setSort] = useState('disposals')
-  const [dir, setDir] = useState<'desc' | 'asc'>('desc')
-  const [page, setPage] = useState(1)
+  const [comp, setComp] = usePageState('comp', '')
+  const [season, setSeason] = usePageState<number | ''>('season', '')
+  const [aflOnly, setAflOnly] = usePageState('aflOnly', true)
+  const [search, setSearch] = usePageState('search', '')
+  const [teamFilter, setTeamFilter] = usePageState('teamFilter', '')
+  const [sort, setSort] = usePageState('sort', 'disposals')
+  const [dir, setDir] = usePageState<'desc' | 'asc'>('dir', 'desc')
+  const [page, setPage] = usePageState('page', 1)
   const [data, setData] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selected, setSelected] = useState<SLPlayer | null>(null)
-  const [mode, setMode] = useState<'avg' | 'total'>('avg')
+  const [selected, setSelected] = usePageState<SLPlayer | null>('selected', null)
+  const [mode, setMode] = usePageState<'avg' | 'total'>('mode', 'avg')
 
   useEffect(() => {
     fetch(`/api/leagues/${leagueId}/state-league-stats/comps`)
