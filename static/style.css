@@ -10929,3 +10929,9 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 }
 /* Names sit in the middle of the card. Lucas, 2026-11-25: "centre the names". */
 .pc7-name { text-align: center; }
+/* Position dots on the right, club logo on the left. Lucas, 2026-11-25: "and positions on the right". */
+.pc7-top { justify-content: space-between; }
+/* A role bubble hangs over the same corner, so the dots step left to clear it. */
+.fv-card:has(.pc7-bubs) .pc7-top { padding-right: 26px; }
+.fv-card:has(.pc7-bub:nth-child(2)) .pc7-top { padding-right: 55px; }
+.fv-card:has(.pc7-bub:nth-child(3)) .pc7-top { padding-right: 84px; }

@@ -298,7 +298,8 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   NAME is the biggest thing (18px, one line, CENTRED; first name in full up to 16
   characters, else the initial, else the surname alone), then the three
   numbers (15px: average with the form arrow, rating chip, age), then the
-  club logo top left with a SMALL ROUND DOT per position beside it, one
+  club logo top left and a SMALL ROUND DOT per position top RIGHT (they
+  step left when a role bubble hangs over that corner), one
   letter each: D, M, R, F in the position colour (`.pc7-dot-*`, hollow for an
   expected position). No FWD / MID rectangles, no position colour bar along
   the top, no lines between the numbers. The faded club logo behind the card
