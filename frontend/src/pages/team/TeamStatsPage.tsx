@@ -894,6 +894,7 @@ interface ComparePlayer {
   player_id: number; name: string; position: string; afl_team: string; age: number | null
   sc_avg: number | null; rating: number | null; potential: number | null; keeper_value: number | null
   cba_pct: number | null
+  kick_in_pct: number | null
   ceiling: number | null; floor: number | null; consistency: number | null; next_season: number | null
   points_banked: number | null; team_games: number | null; captain_games: number | null
   season_trend: { year: number; avg: number }[]
@@ -905,6 +906,7 @@ const CMP_ROWS: { k: keyof ComparePlayer; label: string; hb: boolean }[] = [
   { k: 'potential', label: 'Potential', hb: true },
   { k: 'keeper_value', label: 'Keeper Value', hb: true },
   { k: 'cba_pct', label: 'CBA% (mid role)', hb: true },
+  { k: 'kick_in_pct', label: 'Kick-in %', hb: true },
   { k: 'age', label: 'Age', hb: false },
   { k: 'ceiling', label: 'Ceiling', hb: true },
   { k: 'floor', label: 'Floor', hb: true },

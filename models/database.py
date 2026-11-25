@@ -36,6 +36,11 @@ class AflPlayer(db.Model):
     keeper_value = db.Column(db.Float)           # 0-99 Keeper Value Index
     cba_pct = db.Column(db.Float)                # season centre-bounce attendance % (dfsaustralia)
     cba_trend = db.Column(db.Float)              # recent-vs-season CBA% trend (+ = midfield role rising)
+    # Kick-ins (dfsaustralia): his share of his club's kick-ins in the games he
+    # played, the share of his kick-ins he played on from, and the season count.
+    kick_in_pct = db.Column(db.Float)
+    kick_in_playon_pct = db.Column(db.Float)
+    kick_ins_season = db.Column(db.Integer)
     # AFL list membership. The player workbook is the list of record: a player
     # it no longer names has left the AFL and becomes "former". The row stays
     # (every draft pick, lineup and score still points at it); afl_team is then
@@ -1547,6 +1552,9 @@ def _run_migrations(app):
             ("keeper_value", "FLOAT"),
             ("cba_pct", "FLOAT"),
             ("cba_trend", "FLOAT"),
+            ("kick_in_pct", "FLOAT"),
+            ("kick_in_playon_pct", "FLOAT"),
+            ("kick_ins_season", "INTEGER"),
             ("list_status", "VARCHAR(10) DEFAULT 'listed'"),
             ("left_afl_year", "INTEGER"),
             ("joined_year", "INTEGER"),
