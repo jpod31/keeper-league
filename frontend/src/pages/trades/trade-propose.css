@@ -515,3 +515,16 @@
 }
 .tp-group:not(:first-child) { margin-top: 10px; }
 .tp-counter-note { max-width: 1320px; margin: 0 auto 12px; font-size: .9375rem; color: #ffffff; }
+
+/* "In this trade": a frozen pane between the filters and the list. It does
+   not scroll with the list; past four or so rows it scrolls on its own. */
+.tp-board-pinned {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 0 10px 8px;
+  max-height: 260px; overflow-y: auto;
+  border-bottom: 1px solid var(--tp-line);
+  margin-bottom: 6px;
+  flex: 0 0 auto;
+}
+.tp-board-pinned .tp-group { margin-top: 0; }
+.tp-board-list > .tp-group:first-child { margin-top: 4px; }

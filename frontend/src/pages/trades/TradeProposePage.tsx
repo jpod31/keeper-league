@@ -265,23 +265,25 @@ function AssetBoard({
             ))}
           </div>
 
+          {/* What is in the deal is a frozen pane above the list: it stays
+              put, whatever the search or filter, while the list scrolls
+              under it. A counter opens showing the offer it answers. */}
+          {(inDealPlayers.length > 0 || inDealPicks.length > 0) && (
+            <div className="tp-board-pinned">
+              <div className="tp-group">In this trade</div>
+              {inDealPlayers.map(p => (
+                <AssetRow key={`d-${p.id}`} player={p} side={side} logos={logos} picked
+                  onToggle={() => onTogglePlayer(p.id)} />
+              ))}
+              {inDealPicks.map(pk => (
+                <AssetRow key={`dk-${pk.id}`} pick={pk} side={side} logos={logos} picked
+                  onToggle={() => onTogglePick(pk.id)} />
+              ))}
+            </div>
+          )}
           <div className="tp-board-list">
-            {/* What is in the deal sits at the top, whatever the search or
-                filter, so a counter opens showing the offer it answers
-                rather than what looks like an empty builder. */}
             {(inDealPlayers.length > 0 || inDealPicks.length > 0) && (
-              <>
-                <div className="tp-group">In this trade</div>
-                {inDealPlayers.map(p => (
-                  <AssetRow key={`d-${p.id}`} player={p} side={side} logos={logos} picked
-                    onToggle={() => onTogglePlayer(p.id)} />
-                ))}
-                {inDealPicks.map(pk => (
-                  <AssetRow key={`dk-${pk.id}`} pick={pk} side={side} logos={logos} picked
-                    onToggle={() => onTogglePick(pk.id)} />
-                ))}
-                <div className="tp-group">Rest of the list</div>
-              </>
+              <div className="tp-group">Rest of the list</div>
             )}
             {rest.length === 0 && !showPicks && (
               <p className="tp-board-none">{q ? `Nothing matches “${q}”.` : 'Nothing else here.'}</p>
