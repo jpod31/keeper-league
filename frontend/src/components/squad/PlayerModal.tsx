@@ -19,6 +19,7 @@ interface PreAfl {
     stats: { label: string; value: number }[]
     ranks: { label: string; value: number; pct: number; text: string; class_text?: string }[]
     pool: string
+    full?: boolean
   } | null
   seasons: { season: number; league: string; team: string | null; games: number | null; disposals: number | null;
     goals: number | null; tackles: number | null; marks: number | null; fantasy: number | null }[]
@@ -235,14 +236,14 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                       <div className="pa-head-t"><b>{p.pre_afl.headline.season} {p.pre_afl.headline.league}</b><span>{p.pre_afl.headline.team}{p.pre_afl.headline.games ? ', ' + p.pre_afl.headline.games + ' games' : ''}</span></div>
                       {p.pre_afl.headline.ranks.length > 0 ? (
                         <table className="pa-rt" title={'Ranked against ' + p.pre_afl.headline.pool}>
-                          <thead><tr><th></th><th className="n">Avg</th><th>In the league</th><th className="n">Draft class</th></tr></thead>
+                          <thead><tr><th></th><th className="n">Avg</th><th>{p.pre_afl.headline.full ? 'In the league' : 'Among draftees'}</th>{p.pre_afl.headline.full && <th className="n">Draft class</th>}</tr></thead>
                           <tbody>
                             {p.pre_afl.headline.ranks.map(r => (
                               <tr key={r.label}>
                                 <td>{r.label}</td>
                                 <td className="n"><b>{fmt1(r.value)}</b></td>
                                 <td><span className="pa-rk"><span className="pa-bar"><i style={{ width: Math.max(4, r.pct) + '%' }} /></span><b>{r.text}</b></span></td>
-                                <td className="n"><b>{r.class_text ?? '-'}</b></td>
+                                {p.pre_afl.headline!.full && <td className="n"><b>{r.class_text ?? '-'}</b></td>}
                               </tr>
                             ))}
                           </tbody>

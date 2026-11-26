@@ -238,7 +238,7 @@ def _rank(row, p):
                 "pct": round(100 * (1 - (rank - 1) / len(vals))),
                 "text": f"{ordinal(rank)} of {len(vals)}"}
         cvals = [fn(x) for x in pool if x.player_name in cls and fn(x) is not None]
-        if len(cvals) >= 5:
+        if full and len(cvals) >= 5:  # where we only hold draftees, the league rank already is the class rank
             crank = 1 + sum(1 for v in cvals if v > mine)
             item["class_text"] = f"{ordinal(crank)} of {len(cvals)}"
         out.append(item)
@@ -282,7 +282,7 @@ def pre_afl(p):
         headline = {"league": league_name(head.competition, head.season), "season": head.season,
                     "team": head.team, "games": head.matches,
                     "stats": [{"label": a, "value": b} for a, b in stats if b is not None][:3],
-                    "ranks": ranks,
+                    "ranks": ranks, "full": full,
                     "pool": ("every player in the " + league_name(head.competition, head.season)) if full
                             else "the draftees we hold from it"}
 
