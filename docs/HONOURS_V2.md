@@ -41,3 +41,10 @@ Show the design first (artifact), build after he says go.
 > ready made? are there spots in the 23 open for him?
 - [x] Before the AFL v2 design: Talent League percentile, draft class rank, three comparable past juniors with outcomes, readiness verdict (rating vs the 2026 first-year cohort, workbook best 22, spots opening)
 - [ ] Build it with the rest of v2
+
+## Same day, later
+- [x] Club Champion = coaches' votes (5-4-3-2-1 each round on points over replacement), not wins added ("i dont really like this as a metric")
+- [x] Premiership stars over club crests, or over the initials; drawn by TeamCrest so an uploaded crest gets them. LIVE.
+- [x] "Called Up" counts were inflated by AFL finals weeks 25-29; recomputed on league rounds only
+- [x] v3 proposal: "we dont need highly overlapping trophies ... you want them to be quite coveted". Twelve honours: Flag (12+ games), Keeper Medal, Club Champion, Rising Star (medal votes, 21 and under), The Siren, club games 50/100 (Life Member key)/150/200, Triple Crown, Hall of Fame, Legend, 7s Flag (8+ 7s games), 7s Medal, Called Up. Everything else cut.
+- [ ] Wait for his go on v3, then build
