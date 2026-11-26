@@ -204,44 +204,139 @@ def _games(n):
     return f"{n:g} game" + ("" if n == 1 else "s")
 
 
-VERDICTS = {  # by potential band, from what that band did (see draftees())
-    "85 or more": ("Expect games early", "good"),
-    "80 to 84": ("Should debut in his first year", "good"),
-    "75 to 79": ("A few games at most in year one", "warn"),
-    "under 75": ("Development years", "slow"),
-}
 LINE_WORD = {"DEF": "defenders", "MID": "midfielders", "FWD": "forwards", "RUC": "ruckmen"}
+ROLES = ("MID", "KF", "GF", "KD", "GD", "RUC")
+
+
+def _x(pot, role, senior):
+    return [1.0, (pot - 80) / 5] + [1.0 if role == k else 0.0 for k in ROLES[1:]] + [1.0 if senior else 0.0]
+
+
+def _fit(rows, target):
+    """Logistic fit (light ridge) of target(row) on potential, role and senior
+    games. Checked on held-out draft classes, 2026-11-27 (log loss, lower is
+    better), for 10+ games in year one: base rate .587, potential .537,
+    + role .535, + senior games .518; adding pick (.538 with role) or club
+    depth (regulars in his role against usual spots, .520) did worse, so
+    they stay out."""
+    import numpy as np
+    A = np.array([_x(r["pot"], r["role"], r["senior"]) for r in rows])
+    y = np.array([1.0 if target(r) else 0.0 for r in rows])
+    w = np.zeros(A.shape[1])
+    for _ in range(3000):
+        q = 1 / (1 + np.exp(-A @ w))
+        w -= 0.5 * (A.T @ (q - y) + np.r_[0, w[1:]]) / len(y)
+    return [float(v) for v in w]
+
+
+def chances():
+    """{'any': w, 'ten': w}: weights for a debut in year one and for 10+
+    games in it, fitted on every draftee since FIRST_CLASS with a potential
+    and a role."""
+    def build():
+        rows = [r for r in draftees() if r["pot"] and r["role"] in ROLES]
+        if len(rows) < 50:
+            return None
+        return {"n": len(rows), "any": _fit(rows, lambda r: r["g1"] > 0), "ten": _fit(rows, lambda r: r["g1"] >= 10)}
+    return _cached("chances", 6 * 3600, build)
+
+
+def _p(w, x):
+    return 1 / (1 + math.exp(-sum(a * b for a, b in zip(w, x))))
+
+
+def _depth(p, roles):
+    """His club's players of his role who played in the last season (any
+    club), most games first, and how many of that role its best 22 holds."""
+    from models.years import stats_year
+    from models.database import AflListHistory
+    yr = stats_year()
+    mates = AflPlayer.query.filter(AflPlayer.listed(), AflPlayer.afl_team == p.afl_team,
+                                   AflPlayer.id != p.id, AflPlayer.role.in_(roles)).all()
+    if not mates:
+        return [], 0
+    ids = [m.id for m in mates]
+    g = dict(db.session.query(PlayerStat.player_id, db.func.count(PlayerStat.id)).filter(
+        PlayerStat.year == yr, PlayerStat.player_id.in_(ids)).group_by(PlayerStat.player_id).all())
+    was = dict(db.session.query(AflListHistory.player_id, AflListHistory.club).filter(
+        AflListHistory.season == yr, AflListHistory.player_id.in_(ids)).all())
+    out = []
+    for m in mates:
+        n = g.get(m.id, 0)
+        if n >= 1:
+            came = was.get(m.id)
+            out.append({"name": m.name, "games": n, "from": came if came and came != p.afl_team else None})
+    out.sort(key=lambda x: -x["games"])
+    slots = AflPlayer.query.filter(AflPlayer.listed(), AflPlayer.afl_team == p.afl_team,
+                                   AflPlayer.afl_best22.is_(True), AflPlayer.role.in_(roles)).count()
+    return out, slots
+
+
+VERDICTS = (  # by the fitted chances (see chances())
+    ("Expect games early", "good"),
+    ("Should debut in his first year", "good"),
+    ("A few games at most in year one", "warn"),
+    ("Development years", "slow"),
+)
 
 
 def verdict(p, rows=None):
-    """{label, tone, reasons[]}: will he play early. Potential going into his
-    first season is the best guide we hold (draftees since 2019 at 85 or
-    more: 93% played in year one, median 12 games; under 75: 28%, median 0),
-    then where he was picked, then senior games already played and spots
-    left open at his club. Lucas, 2026-11-27: "ratings before first game
-    dont really matter, potential is more of an indicator, so is draft
-    numbers"."""
+    """{label, tone, chance, reasons[]}: will he play early. Lucas,
+    2026-11-27: "ratings before first game dont really matter, potential is
+    more of an indicator, so is draft numbers", then "why would you expect
+    games early from a ruckman..? ... theres already Nankervis and they just
+    signed Briggs". The label comes from a fit on every draftee since 2019
+    (potential going into year one, role, senior state games; see _fit for
+    what earned its place). The club's players of his role are named under
+    it, since depth is what a coach looks at, though as a count it did not
+    sharpen the fit."""
+    from models.years import stats_year
     pool = draftees()
     since = f"since {FIRST_CLASS}"
-    reasons = []
+    yr, pick, kind = draft_info(p)
+    seniors = [r for r in (rows or []) if r.competition in SENIOR_COMPS and (r.matches or 0) >= 1 and yr and r.season >= yr]
+    role = p.role if p.role in ROLES else None
+    fit = chances()
+    reasons, chance = [], None
+    if fit and role and p.potential:
+        x = _x(p.potential, role, bool(seniors))
+        pa, pt = _p(fit["any"], x), _p(fit["ten"], x)
+        chance = {"any": round(100 * pa), "ten": round(100 * pt)}
+        i = 0 if pt >= .5 else 1 if (pt >= .3 or pa >= .75) else 2 if pa >= .5 else 3
+        label, tone = VERDICTS[i]
+        reasons.append(f"{chance['ten']}% chance of 10+ games in {yr + 1 if yr else stats_year() + 1}, from what "
+                       f"draftees {since} with his potential, position and senior games did.")
+    else:
+        label, tone = "Not enough to go on", "warn"
+
+    roles = _roles_for(p)
+    if p.afl_team and roles:
+        ahead, slots = _depth(p, roles)
+        word = ROLE_WORDS[roles[0]] if len(roles) == 1 else LINE_WORDS.get(tuple(roles), "players")
+        one = ROLE_ONE[roles[0]] if len(roles) == 1 else word[:-1]
+        if ahead:
+            names = [f"{a['name']} ({a['games']} game{'s' if a['games'] != 1 else ''}"
+                     + (f" for {a['from']}, new" if a["from"] else "") + ")" for a in ahead[:3]]
+            head = (f"{p.afl_team}'s best 22 has {slots} {one if slots == 1 else word}. " if slots else "")
+            if len(ahead) > 3:
+                reasons.append(f"{head}{len(ahead)} {word} there played in {stats_year()}, led by {_and_list(names)}.")
+            else:
+                reasons.append(f"{head}{word[0].upper() + word[1:]} there who played in {stats_year()}: "
+                               f"{_and_list(names)}.")
+        else:
+            reasons.append(f"No {one} at {p.afl_team} played a game in {stats_year()}.")
+
+    if role:
+        s = _summary([x for x in pool if x["role"] == role])
+        if s["n"] >= 8:
+            reasons.append(f"Of the {s['n']} {ROLE_WORDS[role]} drafted {since}, {s['played']} played in year one "
+                           f"and {s['ten']} played 10+ games.")
     band = _in(POT_BANDS, p.potential)
     if band:
         s = _summary([x for x in pool if _in(POT_BANDS, x["pot"]) == band])
-        label, tone = VERDICTS[band[2]]
         if s["n"]:
             reasons.append(f"Potential {p.potential}: of the {s['n']} draftees {since} at {band[2]}, {s['played']} played "
-                           f"in year one and {s['ten']} played 10+ games (median {_games(s['median'])}).")
-    else:
-        label, tone = "No potential figure yet", "warn"
-    yr, pick, kind = draft_info(p)
-    pb = _in(PICK_BANDS, pick)
-    if pb:
-        s = _summary([x for x in pool if x["kind"] == kind and _in(PICK_BANDS, x["pick"]) == pb])
-        where = "" if kind == "National" else f" in the {kind.lower()} draft"
-        if s["n"] >= 5:
-            reasons.append(f"Pick {pick}{where}: of the {s['n']} {pb[2]}{where} {since}, {s['played']} played in year one "
-                           f"(median {_games(s['median'])}).")
-    seniors = [r for r in (rows or []) if r.competition in SENIOR_COMPS and (r.matches or 0) >= 1 and yr and r.season >= yr]
+                           f"in year one and {s['ten']} played 10+ games.")
     if seniors:
         n = sum(r.matches for r in seniors)
         lg = league_name(seniors[0].competition, seniors[0].season)
@@ -249,8 +344,8 @@ def verdict(p, rows=None):
         without = _summary([x for x in pool if x["senior"] == 0])
         line = f"{n} senior {lg} game{'s' if n != 1 else ''} already."
         if with_["n"] >= 5 and without["n"] >= 5:
-            line += (f" Draftees {since} with senior games in their draft year played a median "
-                     f"{_games(with_['median'])} in year one, those without {_games(without['median'])}.")
+            line += (f" {round(100 * with_['ten'] / with_['n'])}% of draftees {since} with senior games in their draft "
+                     f"year played 10+ in year one, {round(100 * without['ten'] / without['n'])}% of those without.")
         reasons.append(line)
     pos = (p.position or "MID").split("/")[0]
     if p.afl_team:
@@ -260,7 +355,7 @@ def verdict(p, rows=None):
         if left:
             reasons.append(f"{p.afl_team} lost {len(left)} {LINE_WORD.get(pos, 'players')} who played 8 or more games: "
                            f"{_and_list(left[:3])}.")
-    return {"label": label, "tone": tone, "reasons": reasons}
+    return {"label": label, "tone": tone, "chance": chance, "reasons": reasons}
 
 
 # ── ranking a junior season ──────────────────────────────────────────────

@@ -286,10 +286,18 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   profile written from our data plus his state league and under-18 seasons
   in place of the form chart. `state_league_stat.goals` is a season TOTAL
   (use `goals_avg`), and junior rows often lack disposals (kicks + handballs).
-  Rankings are like for like: against AFL-listed players of his workbook
-  role (`afl_player.role`) who played that competition (`role_pool`). Junior
+  Rankings are like for like: against listed players of his role
+  (`afl_player.role`) who played that competition (`role_pool`), in two
+  columns: drafted 2019 to last year, and this year's draft crop. Junior
   feeds carry no position, and guessing a role from the stat line was 54%
-  right on a held-out check, so unlisted juniors are never in the pool.
+  right on a held-out check, so unlisted juniors are never in the pool. The
+  verdict (will he play early) runs on potential going into his first
+  season, then pick, then senior state games and spots left at his club,
+  each with what earlier draftees in that band did (`draftees()`); rating
+  before a first game is not used. Card copy never says "workbook" or
+  "rated". `scripts/sync_junior_sources.py --since 2019` refills
+  championship and WAFL Colts numbers for past draftees (the pool needs
+  them, not only players with no AFL games).
 - **The full player page** (`/leagues/<id>/player/<pid>`,
   `pages/players/PlayerDossierPage.tsx`, data from
   `/api/leagues/<id>/players/<pid>/dossier` built by `models/player_dossier.py`).

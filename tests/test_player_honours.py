@@ -95,7 +95,7 @@ def test_pre_afl_profile_drops_a_namesake_too_young(db, seed_data):
     assert {"label": "Disposals", "value": 24.5} in h["stats"]
     assert out["projection"]["sc"] == 76
     from models.pre_afl import VERDICTS
-    assert out["verdict"]["label"] in [v[0] for v in VERDICTS.values()] + ["No potential figure yet"]
+    assert out["verdict"]["label"] in [v[0] for v in VERDICTS] + ["Not enough to go on"]
     assert not any("workbook" in r for r in out["verdict"]["reasons"])
 
 
