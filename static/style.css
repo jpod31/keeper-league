@@ -11240,3 +11240,25 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .pa-verdict > div > span { display: none !important; }
   .pa-rt tbody tr:nth-child(n+3) { display: none; }
 }
+
+/* Before the AFL, 2026-11-27: the section scrolls if a long report still
+   does not fit (it was cut off with no way down). Short screens keep the
+   chance line under the verdict and three ranked stats. */
+.pmod-preafl { overflow-y: auto; overscroll-behavior: contain; }
+.pa-verdict b { font-size: 16px; }
+.pa-verdict > div > span:first-of-type { font-weight: 600; }
+@media (max-width:575.98px), (max-height:820px) {
+  .pa-verdict > div > span:first-of-type { display: block !important; }
+  .pa-rt tbody tr:nth-child(3) { display: table-row; }
+  .pa-rt tbody tr:nth-child(n+4) { display: none; }
+}
+.pa-rt th { white-space: nowrap; }
+.pa-head-t b { text-transform: none; letter-spacing: 0; font-size: 15px; }
+@media (max-width:575.98px) {
+  .pa-rk { display: block; }
+  .pa-rk .pa-bar { display: none; }
+  .pa-rk b { min-width: 0; }
+}
+/* Both verdict lines on every screen: the club line (who is ahead of him) is
+   the one coaches need. The section scrolls if it runs long. */
+.pa-verdict > div > span:not(.pa-dot) { display: block !important; }

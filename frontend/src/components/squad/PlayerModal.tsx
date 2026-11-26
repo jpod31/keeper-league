@@ -234,15 +234,14 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                       </div>
                     </div>
                   )}
-                  {(p.pre_afl.facts?.length ?? 0) > 0 && <div className="pa-facts">{p.pre_afl.facts!.map(f => <span key={f}>{f}</span>)}</div>}
                   {p.pre_afl.headline ? (
                     <div className="pa-head">
-                      <div className="pa-head-t"><b>{p.pre_afl.headline.season} {p.pre_afl.headline.league}</b><span>{p.pre_afl.headline.team}{p.pre_afl.headline.games ? ', ' + p.pre_afl.headline.games + ' games' : ''}</span></div>
+                      <div className="pa-head-t"><b>{p.pre_afl.headline.season} {p.pre_afl.headline.league}{p.pre_afl.headline.ranks.length > 0 && p.pre_afl.headline.group ? ', ' + p.pre_afl.headline.group : ''}</b><span>{p.pre_afl.headline.team}{p.pre_afl.headline.games ? ', ' + p.pre_afl.headline.games + ' games' : ''}</span></div>
                       {p.pre_afl.headline.ranks.length > 0 ? (
                         <table className="pa-rt" title={'Ranked against ' + p.pre_afl.headline.pool}>
-                          <thead><tr><th>{p.pre_afl.headline.group}</th><th className="n">Avg</th><th>{p.pre_afl.headline.col}</th>{p.pre_afl.headline.class_col && <th className="n">{p.pre_afl.headline.class_col}</th>}</tr></thead>
+                          <thead><tr><th></th><th className="n">Avg</th><th>{p.pre_afl.headline.col}</th>{p.pre_afl.headline.class_col && <th className="n">{p.pre_afl.headline.class_col}</th>}</tr></thead>
                           <tbody>
-                            {p.pre_afl.headline.ranks.map(r => (
+                            {p.pre_afl.headline.ranks.slice(0, 4).map(r => (
                               <tr key={r.label}>
                                 <td>{r.label}</td>
                                 <td className="n"><b>{fmt1(r.value)}</b></td>
@@ -257,7 +256,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                       )}
                     </div>
                   ) : <p className="pa-none">No junior or state league games in any source we hold.</p>}
-                  {p.pre_afl.seasons.length > 0 && (
+                  {p.pre_afl.seasons.length > 0 && !p.pre_afl.headline?.ranks.length && (
                     <table className="pmod-sl">
                       <thead><tr><th>Year</th><th>League</th><th className="n">GP</th><th className="n">Disp</th><th className="n">Goals</th><th className="n">Fant</th></tr></thead>
                       <tbody>
