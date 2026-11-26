@@ -71,6 +71,41 @@ def team_accent(team):
     return colour
 
 
+_flags_cache = {}
+
+
+def premierships(league_id):
+    """{team_id: flags won}. This league has no finals: the flag goes to the
+    club on top of the ladder once every fixture of that season is completed
+    (Lucas, 2026-11-26). Drawn as gold stars above the club's crest, or above
+    its initials when it has no crest."""
+    import time
+    from models.database import db, Fixture, SeasonStanding
+    hit = _flags_cache.get(league_id)
+    if hit and time.time() - hit[0] < 300:
+        return hit[1]
+    out = {}
+    rows = (db.session.query(Fixture.year, Fixture.status, db.func.count(Fixture.id))
+            .filter(Fixture.league_id == league_id).group_by(Fixture.year, Fixture.status).all())
+    by_year = {}
+    for year, status, n in rows:
+        by_year.setdefault(year, {})[status] = n
+    for year, counts in by_year.items():
+        if not counts.get("completed") or any(s != "completed" for s in counts):
+            continue
+        top = (SeasonStanding.query.filter_by(league_id=league_id, year=year)
+               .order_by(SeasonStanding.ladder_points.desc(), SeasonStanding.percentage.desc()).first())
+        if top:
+            out[top.team_id] = out.get(top.team_id, 0) + 1
+    _flags_cache[league_id] = (time.time(), out)
+    return out
+
+
 def team_card(team):
-    """What the frontend needs to draw a team: crest, name, colour."""
-    return {"id": team.id, "name": team.name, "logo": team.logo_url, "accent": team_accent(team)}
+    """What the frontend needs to draw a team: crest, name, colour, and the
+    flags it has won (stars over the crest)."""
+    try:
+        flags = premierships(team.league_id).get(team.id, 0)
+    except Exception:
+        flags = 0
+    return {"id": team.id, "name": team.name, "logo": team.logo_url, "accent": team_accent(team), "flags": flags}

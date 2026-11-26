@@ -1,4 +1,4 @@
-import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-BwJb0T-f.js";import{n as r,t as i}from"./TeamCrest-CTEMtaE3.js";var a=e(t(),1),o=n(),s=[`1st`,`2nd`,`3rd`,`4th`,`5th`,`6th`,`7th`,`8th`,`9th`,`10th`,`11th`,`12th`],c=[{v:`reverse_ladder`,title:`Reverse ladder`,line:`Wooden spoon picks first`},{v:`ladder`,title:`Ladder`,line:`Premier picks first`},{v:`custom`,title:`Custom`,line:`You set the order`}],l=`
+import{a as e}from"./chunk-BEqpzyXh.js";import{n as t,t as n}from"./jsx-runtime-BwJb0T-f.js";import{r,t as i}from"./TeamCrest-DmHH_s_v.js";var a=e(t(),1),o=n(),s=[`1st`,`2nd`,`3rd`,`4th`,`5th`,`6th`,`7th`,`8th`,`9th`,`10th`,`11th`,`12th`],c=[{v:`reverse_ladder`,title:`Reverse ladder`,line:`Wooden spoon picks first`},{v:`ladder`,title:`Ladder`,line:`Premier picks first`},{v:`custom`,title:`Custom`,line:`You set the order`}],l=`
 ${i}
 .dp { padding: 4px 18px 18px; container-type: inline-size; }
 .dp-group { margin-top: 16px; }

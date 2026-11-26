@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useLeague } from '../../contexts/LeagueContext'
 
-export interface TeamCard { id: number; name: string; logo: string | null; accent: string }
+export interface TeamCard { id: number; name: string; logo: string | null; accent: string; flags?: number }
 
 function initials(name: string) {
   const parts = name.replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean)
@@ -9,24 +10,48 @@ function initials(name: string) {
   return (parts[0][0] + parts[1][0]).toUpperCase()
 }
 
-/** A fantasy team's crest on its own accent, or its initials when it has none. */
+const STAR = '10,1 12.6,7 19,7.4 14,11.6 15.8,18.4 10,14.6 4.2,18.4 6,11.6 1,7.4 7.4,7'
+
+/** Gold stars over a crest, one per flag, the way a club wears them over its
+ *  badge. They sit above the crest or the initials alike, so a crest uploaded
+ *  later gets them too. Lucas, 2026-11-26. */
+export function FlagStars({ n, size }: { n: number; size: number }) {
+  if (!n || n < 1) return null
+  const s = Math.max(9, Math.min(16, Math.round(size * 0.36)))
+  return (
+    <span className="tc-stars" style={{ ['--st' as string]: `${s}px` } as React.CSSProperties}
+      title={`${n} premiership${n === 1 ? '' : 's'}`} aria-label={`${n} premiership${n === 1 ? '' : 's'}`}>
+      {Array.from({ length: Math.min(n, 5) }, (_, i) => (
+        <svg key={i} viewBox="0 0 20 20" aria-hidden="true"><polygon points={STAR} /></svg>
+      ))}
+    </span>
+  )
+}
+
+/** A fantasy team's crest on its own accent, or its initials when it has none,
+ *  with a star above for every flag. */
 export function TeamCrest({ team, size = 24 }: { team: TeamCard | undefined; size?: number }) {
   const [failed, setFailed] = useState(false)
+  const league = useLeague()?.league
   const accent = team?.accent ?? '#ececf6'
+  const flags = team?.flags ?? (team?.id ? league?.teams.find(t => t.id === team.id)?.flags : 0) ?? 0
   return (
-    <span
-      className="tc-crest"
-      style={{
-        width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.38)),
-        background: `color-mix(in srgb, ${accent} 22%, #121215)`,
-        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accent} 55%, transparent)`,
-        color: accent,
-      }}
-      aria-hidden="true"
-    >
-      {team?.logo && !failed
-        ? <img src={team.logo} alt="" loading="lazy" onError={() => setFailed(true)} />
-        : initials(team?.name ?? '?')}
+    <span className="tc-wrap">
+      <FlagStars n={flags} size={size} />
+      <span
+        className="tc-crest"
+        style={{
+          width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.38)),
+          background: `color-mix(in srgb, ${accent} 22%, #121215)`,
+          boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accent} 55%, transparent)`,
+          color: accent,
+        }}
+        aria-hidden="true"
+      >
+        {team?.logo && !failed
+          ? <img src={team.logo} alt="" loading="lazy" onError={() => setFailed(true)} />
+          : initials(team?.name ?? '?')}
+      </span>
     </span>
   )
 }

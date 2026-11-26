@@ -7,7 +7,7 @@ export function useTeamCard() {
   return (key: number | string | null | undefined): TeamCard | undefined => {
     if (key == null || !league) return undefined
     const t = league.teams.find(x => (typeof key === 'number' ? x.id === key : x.name === key))
-    return t ? { id: t.id, name: t.name, logo: t.logo ?? null, accent: t.accent ?? '#ececf6' } : undefined
+    return t ? { id: t.id, name: t.name, logo: t.logo ?? null, accent: t.accent ?? '#ececf6', flags: t.flags ?? 0 } : undefined
   }
 }
 

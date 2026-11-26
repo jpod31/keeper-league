@@ -11141,3 +11141,15 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .pmod-body{gap:14px}
   .pmod-hon-detail{margin-top:8px}
 }
+
+/* ── Premiership stars over club crests (2026-11-26) ──────────────────
+   One gold star per flag (the ladder topper wins it), above the crest or the
+   initials, drawn by TeamCrest / FlagStars so an uploaded crest gets them
+   too. Positioned over the crest so rows keep their height. */
+.tc-wrap { position: relative; display: inline-flex; flex: none; vertical-align: middle; }
+.tc-stars { position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%);
+  display: flex; gap: 1px; pointer-events: none; z-index: 1; }
+.tc-stars svg { width: var(--st); height: var(--st); display: block; }
+.tc-stars polygon { fill: #f0c35a; stroke: #3a2a06; stroke-width: 1; }
+.squad-logo-wrap { position: relative; overflow: visible !important; }
+.squad-logo-wrap > .squad-logo-img, .squad-logo-wrap > .squad-logo-placeholder { border-radius: inherit; overflow: hidden; }

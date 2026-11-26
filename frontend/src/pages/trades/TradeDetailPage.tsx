@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { RowsSkeleton } from '../../components/ui/RowsSkeleton'
 import { ask } from '../../components/ui/dialog'
+import { TeamBadge } from '../../components/ui/TeamBadge'
 
 interface Team {
   id: number
@@ -71,12 +72,6 @@ function aflInitials(name: string): string {
   const words = name.split(/\s+/).filter(Boolean)
   if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
   return name.slice(0, 3).toUpperCase()
-}
-
-function teamInitials(name: string): string {
-  if (!name) return '·'
-  const words = name.split(/\s+/).filter(Boolean).slice(0, 2)
-  return words.map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
 function StaticPlayerCard({ player, logoUrl, side }: {
@@ -263,11 +258,7 @@ export function TradeDetailPage() {
           <div className="tr-deal-side tr-deal-side-out" style={{ minHeight: 'unset' }}>
             <div className="tr-deal-side-label">sends</div>
             <div className="tr-deal-side-team" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="tr-team-chip-logo">
-                {trade.proposer_team?.logo_url
-                  ? <img src={trade.proposer_team.logo_url} alt="" />
-                  : teamInitials(trade.proposer_team?.name || '')}
-              </span>
+              <TeamBadge name={trade.proposer_team?.id ?? trade.proposer_team?.name} size={28} showName={false} />
               {trade.proposer_team?.name}
             </div>
             {giving.length === 0 && giving_picks.length === 0 ? (
@@ -291,11 +282,7 @@ export function TradeDetailPage() {
           <div className="tr-deal-side tr-deal-side-in" style={{ minHeight: 'unset' }}>
             <div className="tr-deal-side-label">sends</div>
             <div className="tr-deal-side-team" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="tr-team-chip-logo">
-                {trade.recipient_team?.logo_url
-                  ? <img src={trade.recipient_team.logo_url} alt="" />
-                  : teamInitials(trade.recipient_team?.name || '')}
-              </span>
+              <TeamBadge name={trade.recipient_team?.id ?? trade.recipient_team?.name} size={28} showName={false} />
               {trade.recipient_team?.name}
             </div>
             {receiving.length === 0 && receiving_picks.length === 0 ? (
