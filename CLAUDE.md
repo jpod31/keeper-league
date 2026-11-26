@@ -258,6 +258,13 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   `counter_of` closes the original as `countered` and links the two
   (`trade.counter_of_id`). Proof: `_mobtest/flow_counter.mjs` (writes, so
   throwaway copy only).
+- **Role data from dfsaustralia**: CBA% (`scrapers/cba_scraper.py`,
+  `cba_pct`/`cba_trend`) and kick-ins (`scrapers/kickin_scraper.py`,
+  `kick_in_pct` = share of his club's kick-ins in the games he played,
+  `kick_in_playon_pct`, `kick_ins_season`; season is `stats_year()`). Both
+  run in the `/refresh` sequence and show in the player compare and the
+  position percentile ranks. Unmatched names are printed; a near match is
+  settled by club.
 - **`fantasy_roster` is one row per STINT**, not per (team, player). A club
   that redrafts a player it delisted gets a second row. Never add a unique
   constraint back; `models/player_history.py::league_stints` is the one
