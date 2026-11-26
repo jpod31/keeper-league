@@ -746,8 +746,9 @@ def create_app():
                             "latest_season": latest.season}
 
                 # Split into state league (VFL/SANFL/WAFL) and U18 (NAB/Coates)
-                sl_senior = [r for r in sl_rows if r.competition != "nab"]
-                sl_u18 = [r for r in sl_rows if r.competition == "nab"]
+                from models.pre_afl import JUNIOR_COMPS
+                sl_senior = [r for r in sl_rows if r.competition not in JUNIOR_COMPS]
+                sl_u18 = [r for r in sl_rows if r.competition in JUNIOR_COMPS]
                 if sl_senior:
                     state_league_data = _build_section(sl_senior)
                 if sl_u18:

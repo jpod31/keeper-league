@@ -3,6 +3,9 @@
 Supplements wheeloratings data with:
 - SANFL 2026+ (wheeloratings doesn't cover yet)
 - Coates Talent League / NAB (U18s) — all historical years
+- SANFL under-18s (2021+): where South Australian draftees come through.
+  Added 2026-11-26 after Lucas asked why some draftees had no junior stats.
+  WAFL Colts and the U18 national championships are not on DFS Australia.
 
 Data source: WordPress admin-ajax endpoints on dfsaustralia.com.
 Summary endpoint gives per-game avgs; game logs give per-round detail
@@ -24,6 +27,7 @@ _HEADERS = {"User-Agent": _UA}
 COMPETITIONS = {
     "SANFL": {"code": "sanfl", "seasons": list(range(2021, 2027))},
     "NAB":   {"code": "nab",   "seasons": [2019] + list(range(2021, 2027))},
+    "SANFLU18": {"code": "sanflu18", "seasons": list(range(2021, 2027))},
 }
 
 # Abbreviation → full team name mappings

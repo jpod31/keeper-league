@@ -15,7 +15,15 @@ dropped as somebody else with the same name.
 import config
 from models.database import db, StateLeagueStat
 
-LEAGUE = {"vfl": "VFL", "sanfl": "SANFL", "wafl": "WAFL"}
+LEAGUE = {"vfl": "VFL", "sanfl": "SANFL", "wafl": "WAFL", "sanflu18": "SANFL under-18s"}
+# Under-18 competitions: shown as "came through", and kept apart from senior state leagues.
+JUNIOR_COMPS = ("nab", "sanflu18")
+# Junior honours draftguru names, and what they are for.
+HONOUR_NOTES = {
+    "larke medal": "the best player at the under-18 national championships",
+    "hunter harrison medal": "the best player in division two of the under-18 championships",
+    "morrish medal": "the Talent League best and fairest",
+}
 POS_WORD = {"DEF": "defender", "MID": "midfielder", "FWD": "forward", "RUC": "ruck"}
 
 
@@ -95,6 +103,26 @@ def _averages_sentence(r):
     return text + "."
 
 
+def _and_list(items):
+    items = [i.strip() for i in items if i and i.strip()]
+    if len(items) <= 1:
+        return items[0] if items else ""
+    return ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def honour_text(raw):
+    """'Larke Medallist' -> 'Larke Medallist: the best player at the under-18
+    national championships.' Unknown honours are kept as draftguru names them."""
+    if not raw:
+        return None
+    out = []
+    for part in [x.strip() for x in raw.split(",") if x.strip()]:
+        key = part.lower().replace("medallist", "medal").strip()
+        note = HONOUR_NOTES.get(key)
+        out.append(f"{part}: {note}" if note else part)
+    return ". ".join(out) + "."
+
+
 def pre_afl(p):
     rows = _rows(p)
     pos = (p.position or "").split("/")[0]
@@ -109,13 +137,23 @@ def pre_afl(p):
     if p.draft_pick and p.draft_year:
         kind = f" {p.draft_type.lower()}" if p.draft_type else ""
         lines.append(f"Pick {p.draft_pick} in the {p.draft_year}{kind} draft.")
+    elif p.draft_note:
+        bits = [b.strip() for b in p.draft_note.split(",")]
+        if len(bits) >= 2:
+            lines.append(f"{bits[0]} in the {bits[1]}.")
+    honours = honour_text(p.junior_honours)
+    if honours:
+        lines.append(honours)
     elif p.joined_year and p.joined_year >= config.CURRENT_YEAR:
         lines.append(f"New to an AFL list for {p.joined_year}.")
 
-    juniors = [r for r in rows if (r.competition or "").lower() == "nab"]
-    seniors = [r for r in rows if (r.competition or "").lower() != "nab"]
+    juniors = [r for r in rows if (r.competition or "").lower() in JUNIOR_COMPS]
+    seniors = [r for r in rows if (r.competition or "").lower() not in JUNIOR_COMPS]
     if juniors:
-        lines.append(f"Came through the {juniors[0].team} in the {league_name('nab', juniors[0].season)}.")
+        j = juniors[0]
+        lines.append(f"Came through {j.team} in the {league_name(j.competition, j.season)}.")
+    elif p.junior_origin:
+        lines.append("Came through " + _and_list(p.junior_origin.split(" / ")) + ".")
     if seniors:
         s = seniors[0]
         lines.append(f"Played {s.season} in the {league_name(s.competition, s.season)}"
@@ -133,4 +171,5 @@ def pre_afl(p):
                       "tag": proj.scouting_tag or None}
         lines.append(f"Our scouting model projects about {round(proj.predicted_afl_sc)} SuperCoach points a game at AFL level.")
 
-    return {"lines": lines, "seasons": [_season_row(r) for r in rows[:6]], "projection": projection}
+    return {"lines": lines, "seasons": [_season_row(r) for r in rows[:6]], "projection": projection,
+            "honours": p.junior_honours, "pathway": p.junior_origin}

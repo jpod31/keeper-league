@@ -28,8 +28,8 @@ with app.app_context():
     league = args[0].upper() if len(args) >= 1 else None
     season = int(args[1]) if len(args) >= 2 else None
 
-    if league and league not in ("SANFL", "NAB"):
-        print(f"Unknown league: {league}. Use SANFL or NAB.")
+    if league and league not in ("SANFL", "NAB", "SANFLU18"):
+        print(f"Unknown league: {league}. Use SANFL, NAB or SANFLU18.")
         sys.exit(1)
 
     print(f"Syncing DFS Australia: league={league or 'all'}, season={season or 'all'}, logs={fetch_logs}")

@@ -11167,3 +11167,5 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   display: flex; gap: 1px; pointer-events: none; z-index: 1; }
 .tc-stars7 svg { width: var(--st); height: var(--st); display: block; overflow: visible; }
 .tc-stars7 polygon { fill: none; stroke: #a78bfa; stroke-width: 2; stroke-linejoin: round; }
+/* A junior honour (Larke Medallist ...) beside "Before the AFL". */
+.pmod-jhon { font-size: 13px; font-weight: 800; color: #f0c35a; border: 1px solid rgba(240,195,90,.5); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }

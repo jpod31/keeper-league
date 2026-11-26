@@ -864,6 +864,8 @@ def _sync_state_league_stats():
             logger.info("DFS Australia SANFL sync: %d rows", count2)
             count3 = sync_dfsaustralia(league="NAB", season=year, fetch_logs=True)
             logger.info("DFS Australia NAB sync: %d rows", count3)
+            count4 = sync_dfsaustralia(league="SANFLU18", season=year, fetch_logs=True)
+            logger.info("DFS Australia SANFL U18 sync: %d rows", count4)
 
             # Precompute scouting model predictions for all SL players
             from models.scouting_model import predict_afl_output

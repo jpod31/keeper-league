@@ -197,3 +197,61 @@ def sync_draftguru_list_history(limit=None):
         time.sleep(0.25)
     logger.info("draftguru sync: %d players matched, %d rows", matched, rows_written)
     return matched, rows_written
+
+
+# ── Player profile facts for the pre-AFL card (2026-11-26) ───────────────
+# Lucas: "why doesnt someone like Heath Mellody have any junior stats!??!".
+# WA draftees come through WAFL Colts and the U18 championships, which no
+# stats source we use covers. draftguru has every draftee's pathway and
+# junior honours, so a new player's card can still say who he is.
+
+def parse_player_profile(html):
+    """{honours, origin, draft_note, height_cm} from a draftguru player page."""
+    out = {"honours": None, "origin": None, "draft_note": None, "height_cm": None}
+    m = re.search(r'<div class="player-bits">\s*<p[^>]*>\s*<em>(.*?)</em>\s*</p>', html, re.S)
+    if m:
+        txt = _clean(m.group(1))
+        if txt and not txt.lower().startswith("born"):
+            out["honours"] = txt
+    m = re.search(r"<em>Originally from: </em>(.*?)</p>", html, re.S)
+    if m:
+        parts = [p for p in (_clean(x) for x in re.split(r"<em>\s*/\s*(?:&#8203;|\u200b)?\s*</em>", m.group(1))) if p]
+        out["origin"] = " / ".join(parts) or None
+    m = re.search(r"<em>Height: </em>\s*(\d{3})cm", html)
+    if m:
+        out["height_cm"] = int(m.group(1))
+    m = re.search(r'href="/years/(\d{4})">Drafted by (.+?) with (.+?) pick #(\d+)<', html)
+    if m:
+        year, club, kind, pick = m.groups()
+        out["draft_note"] = f"Pick {pick}, {year} {_clean(kind)}, {_clean(club)}"
+    return out
+
+
+def sync_draftguru_profiles(only_new=True):
+    """Fill junior_origin, junior_honours, draft_note (and a missing height)
+    for players with no AFL games yet. Returns players updated."""
+    from models.database import db, AflPlayer
+    idx = build_player_url_index()
+    q = AflPlayer.query.filter(AflPlayer.listed())
+    if only_new:
+        q = q.filter(db.or_(AflPlayer.career_games.is_(None), AflPlayer.career_games == 0))
+    n = 0
+    for p in q.all():
+        url = idx.get((p.name or "").strip().lower())
+        if not url:
+            continue
+        try:
+            facts = parse_player_profile(_get(_BASE + url))
+        except Exception as e:
+            logger.warning("draftguru profile failed for %s: %s", p.name, e)
+            continue
+        p.junior_origin = facts["origin"]
+        p.junior_honours = facts["honours"]
+        p.draft_note = facts["draft_note"]
+        if not p.height_cm and facts["height_cm"]:
+            p.height_cm = facts["height_cm"]
+        n += 1
+        time.sleep(0.25)
+    db.session.commit()
+    logger.info("draftguru profiles: %d players", n)
+    return n

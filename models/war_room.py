@@ -465,7 +465,7 @@ def compute_state_league_intel(team_id, league_id, year, trade_table=None):
     # ── 2. Draft watch: NAB/Coates prospects (precomputed predictions) ──
     nab_current = StateLeagueStat.query.filter(
         StateLeagueStat.season == year,
-        StateLeagueStat.competition == "nab",
+        StateLeagueStat.competition.in_(("nab", "sanflu18")),
         StateLeagueStat.matches >= 2,
         StateLeagueStat.predicted_afl_sc.isnot(None),
     ).order_by(StateLeagueStat.predicted_afl_sc.desc()).limit(15).all()

@@ -50,6 +50,10 @@ class AflPlayer(db.Model):
     international = db.Column(db.Boolean)
     grade = db.Column(db.String(20))             # Elite, A Grade, B Grade, AFL Standard, Rotation, Reserves
     afl_best22 = db.Column(db.Boolean)           # in his AFL club's best 22 (workbook "22")
+    # From draftguru, for the pre-AFL profile (scrapers/draftguru_scraper.py):
+    junior_origin = db.Column(db.String(200))    # "Wembley Downs JFC / Hale School / Claremont"
+    junior_honours = db.Column(db.String(200))   # "Larke Medallist"
+    draft_note = db.Column(db.String(120))       # "Pick 5, 2026 National Draft, West Coast"
     # AFL list membership. The player workbook is the list of record: a player
     # it no longer names has left the AFL and becomes "former". The row stays
     # (every draft pick, lineup and score still points at it); afl_team is then
@@ -1588,6 +1592,9 @@ def _run_migrations(app):
             ("international", "BOOLEAN"),
             ("grade", "VARCHAR(20)"),
             ("afl_best22", "BOOLEAN"),
+            ("junior_origin", "VARCHAR(200)"),
+            ("junior_honours", "VARCHAR(200)"),
+            ("draft_note", "VARCHAR(120)"),
             ("list_status", "VARCHAR(10) DEFAULT 'listed'"),
             ("left_afl_year", "INTEGER"),
             ("joined_year", "INTEGER"),

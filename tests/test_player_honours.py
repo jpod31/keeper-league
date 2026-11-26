@@ -93,3 +93,33 @@ def test_pre_afl_profile_drops_a_namesake_too_young(db, seed_data):
     text = " ".join(out["lines"])
     assert "GWV Rebels in the Talent League" in text and "24.5 disposals" in text
     assert out["projection"]["sc"] == 76
+
+
+DG_PAGE = """<div class="player-bits">
+    <p style="max-width: 40em"><em>Larke Medallist</em></p>
+  <p class="top-bump"><em>Born: </em>27 Jul 2008 (18 years old)</p>
+  <p><em>Height: </em>185cm</p>
+    <p><em>Originally from: </em><a href="/from/a">Wembley Downs JFC</a><em>/&#8203;</em><a href="/from/b">Hale School</a><em>/&#8203;</em><a href="/from/c">Claremont</a></p>
+</div>
+<td colspan="10"><a href="/years/2026">Drafted by West Coast with National Draft pick #5</a></td>"""
+
+
+def test_draftguru_profile_facts():
+    from scrapers.draftguru_scraper import parse_player_profile
+    f = parse_player_profile(DG_PAGE)
+    assert f == {"honours": "Larke Medallist", "origin": "Wembley Downs JFC / Hale School / Claremont",
+                 "draft_note": "Pick 5, 2026 National Draft, West Coast", "height_cm": 185}
+
+
+def test_pre_afl_without_junior_stats_still_says_who_he_is(db, seed_data):
+    p = list(seed_data["players"].values())[1]
+    p.age, p.draft_pick, p.draft_year = 18, None, None
+    p.junior_origin = "Wembley Downs JFC / Hale School / Claremont"
+    p.junior_honours = "Larke Medallist"
+    p.draft_note = "Pick 5, 2026 National Draft, West Coast"
+    db.session.commit()
+    text = " ".join(pre_afl(p)["lines"])
+    assert "Pick 5 in the 2026 National Draft." in text
+    assert "Larke Medallist: the best player at the under-18 national championships." in text
+    assert "Came through Wembley Downs JFC, Hale School and Claremont." in text
+    assert league_name("sanflu18", 2026) == "SANFL under-18s"

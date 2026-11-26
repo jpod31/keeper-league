@@ -13,6 +13,8 @@ interface PreAfl {
   seasons: { season: number; league: string; team: string | null; games: number | null; disposals: number | null;
     goals: number | null; tackles: number | null; marks: number | null; fantasy: number | null }[]
   projection: { sc: number; season: number; tag: string | null } | null
+  honours?: string | null
+  pathway?: string | null
 }
 
 interface PlayerDetail {
@@ -205,7 +207,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
 
               {chartData.length === 0 && p.pre_afl ? (
                 <section className="pmod-sec pmod-preafl">
-                  <header className="pmod-sec-h"><h3>Before the AFL</h3></header>
+                  <header className="pmod-sec-h"><h3>Before the AFL</h3>{p.pre_afl.honours && <span className="pmod-jhon">{p.pre_afl.honours}</span>}</header>
                   <p className="pmod-preafl-text">{p.pre_afl.lines.join(' ')}</p>
                   {p.pre_afl.seasons.length > 0 && (
                     <table className="pmod-sl">
