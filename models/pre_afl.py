@@ -246,6 +246,76 @@ def _rank(row, p):
     return out[:6], full
 
 
+# ── the scouting description ─────────────────────────────────────────────
+
+SENIOR_COMPS = ("vfl", "sanfl", "wafl")
+STAT_WORDS = {"Disposals": "disposals", "Fantasy": "fantasy", "Marks": "marks", "Tackles": "tackles",
+              "Clearances": "clearances", "Goals": "goals", "Contested": "contested possessions",
+              "Inside 50s": "inside 50s", "Rebound 50s": "rebound 50s", "Hitouts": "hitouts"}
+
+
+def description(p, head, ranks, full, rows):
+    """Three or four plain sentences a coach can act on, every one from a
+    number we hold. Lucas, 2026-11-26: "we need much stronger descriptions,
+    new player in 2027.. what the actual fuck is that?"."""
+    out = []
+    pos = (p.position or "").split("/")[0]
+    size = f"{p.height_cm} cm " if p.height_cm else ""
+    who = f"{size}{POS_WORD.get(pos, 'player')}".strip()
+    draft = None
+    if p.draft_pick and p.draft_year:
+        draft = f"Pick {p.draft_pick} in the {p.draft_year} {p.draft_type or 'draft'}".replace("draft draft", "draft")
+    elif p.draft_note:
+        bits = [b.strip() for b in p.draft_note.split(",")]
+        draft = f"{bits[0]} in the {bits[1]}" if len(bits) >= 2 else bits[0]
+    honour = None
+    if p.junior_honours:
+        first = p.junior_honours.split(",")[0].strip()
+        note = HONOUR_NOTES.get(first.lower().replace("medallist", "medal").strip())
+        honour = f"the {first}" + (f", {note}" if note else "")
+    came = f" from {p.junior_origin.split(' / ')[-1]}" if p.junior_origin else ""
+    if draft and honour:
+        out.append(f"{draft}{came} and {honour}.")
+    elif draft:
+        out.append(f"{draft}{came}, a {who}.")
+    elif honour:
+        out.append(f"A {who}, and {honour}.")
+
+    if head and ranks:
+        top = [r for r in ranks if r["pct"] >= 75][:2] or ranks[:1]
+        league = f"{head.season} {league_name(head.competition, head.season)}"
+        bits = []
+        for r in top:
+            what = f"{STAT_WORDS.get(r['label'], r['label'].lower())} ({fmt_num(r['value'])}{'' if r['label'] == 'Fantasy' else ' a game'})"
+            if full:
+                bits.append(f"top {max(1, math.ceil(r['rank'] / r['of'] * 100))}% for {what}")
+            else:
+                bits.append(("1st" if r["rank"] == 1 else ordinal(r["rank"])) + f" for {what}")
+        if full:
+            out.append(f"In the {league} he was " + " and ".join(bits) + f", from {head.matches} games for {head.team}.")
+        else:
+            out.append(f"{bits[0][0].upper() + bits[0][1:]}" + (f" and {bits[1]}" if len(bits) > 1 else "")
+                       + f" among the {top[0]['of']} draftees at the {league}.")
+    elif head:
+        out.append(f"{head.matches} games in the {head.season} {league_name(head.competition, head.season)} for {head.team}, "
+                   f"{fmt_num(disposals(head))} disposals a game.")
+
+    seniors = [r for r in rows if r.competition in SENIOR_COMPS and (r.matches or 0) >= 1]
+    if seniors:
+        s = max(seniors, key=lambda r: (r.season, r.matches or 0))
+        d = disposals(s)
+        out.append(f"Already {s.matches} senior {league_name(s.competition, s.season)} game{'s' if s.matches != 1 else ''} "
+                   f"for {s.team} in {s.season}" + (f", {fmt_num(d)} disposals a game." if d else "."))
+    if not out:
+        out.append("No junior or state league games in any source we hold.")
+    return " ".join(out)
+
+
+def fmt_num(v):
+    v = _r1(v)
+    return "-" if v is None else (str(int(v)) if float(v).is_integer() else f"{v:.1f}")
+
+
 # ── the card ─────────────────────────────────────────────────────────────
 
 def _headline(rows):
@@ -288,11 +358,13 @@ def pre_afl(p):
 
     proj = next((r for r in rows if r.predicted_afl_sc), None)
     v = verdict(p)
+    desc = description(p, head, headline["ranks"] if headline else [], headline.get("full") if headline else False, rows)
     ht = honour_text(p.junior_honours)
     lines = [f"{(p.afl_team or '')} {POS_WORD.get(pos, 'player')}".strip() + (f", {p.age}" if p.age else "") + "."]
     if ht:
         lines.append(ht)
     return {
+        "description": desc,
         "verdict": {"label": v["label"], "tone": v["tone"], "reasons": v["reasons"]},
         "cohort": v["cohort"], "band": v["band"],
         "facts": facts, "honours": p.junior_honours, "honour_note": ht, "pathway": p.junior_origin,

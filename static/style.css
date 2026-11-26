@@ -11225,3 +11225,18 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .pa-rt tbody tr:nth-child(n+5) { display: none; }
   .pa-rk { grid-template-columns: minmax(24px,1fr) auto; }
 }
+
+/* Before the AFL: the scouting description, every sentence from a number. */
+.pa-desc { margin: 0; font-size: 15px; line-height: 1.45; font-weight: 500; color: #fff; }
+@media (max-width:575.98px), (max-height:820px) {
+  .pa-desc { font-size: 14px; }
+  .pmod-preafl .pa-facts { display: none; }
+}
+
+/* The description carries the pick, size and club: no chips. Phones: the
+   verdict without its reasons, and his top two ranked stats. */
+.pmod-preafl .pa-facts { display: none; }
+@media (max-width:575.98px), (max-height:820px) {
+  .pa-verdict > div > span { display: none !important; }
+  .pa-rt tbody tr:nth-child(n+3) { display: none; }
+}

@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { Emblem, EmblemStars, emblemLabel, emblemTitle, type Honours } from '../honours/Emblem'
 
 interface PreAfl {
+  description?: string
   verdict?: { label: string; tone: 'good' | 'warn' | 'slow'; reasons: string[] }
   facts?: string[]
   honours?: string | null
@@ -221,6 +222,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                   {/* Numbers, not prose. Lucas, 2026-11-26: "the text does not
                       help anywhere near enough". */}
                   <header className="pmod-sec-h"><h3>Before the AFL</h3>{p.pre_afl.honours && <span className="pmod-jhon" title={p.pre_afl.honour_note || ''}>{p.pre_afl.honours}</span>}</header>
+                  {p.pre_afl.description && <p className="pa-desc">{p.pre_afl.description}</p>}
                   {p.pre_afl.verdict && (
                     <div className={'pa-verdict pa-' + p.pre_afl.verdict.tone}>
                       <span className="pa-dot" />
