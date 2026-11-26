@@ -11162,3 +11162,8 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .tc-crest.tc-logo img { object-fit: contain; }
 .squad-logo-wrap.has-logo { background: none !important; border: 0 !important; border-radius: 0 !important; }
 .squad-logo-wrap.has-logo > .squad-logo-img { object-fit: contain; border-radius: 0 !important; }
+/* 7s premierships: small purple outline stars under the crest. */
+.tc-stars7 { position: absolute; left: 50%; top: calc(100% + 2px); transform: translateX(-50%);
+  display: flex; gap: 1px; pointer-events: none; z-index: 1; }
+.tc-stars7 svg { width: var(--st); height: var(--st); display: block; overflow: visible; }
+.tc-stars7 polygon { fill: none; stroke: #a78bfa; stroke-width: 2; stroke-linejoin: round; }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLeague } from '../../contexts/LeagueContext'
 
-export interface TeamCard { id: number; name: string; logo: string | null; accent: string; flags?: number }
+export interface TeamCard { id: number; name: string; logo: string | null; accent: string; flags?: number; flags7?: number }
 
 function initials(name: string) {
   const parts = name.replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean)
@@ -28,19 +28,38 @@ export function FlagStars({ n, size }: { n: number; size: number }) {
   )
 }
 
+/** Small purple outline stars under a crest, one per 7s flag. Lucas,
+ *  2026-11-26: "outlines of purple stars for 7s premierships underneath the
+ *  logo ... smaller ones too". */
+export function SevensStars({ n, size }: { n: number; size: number }) {
+  if (!n || n < 1) return null
+  const s = Math.max(7, Math.min(12, Math.round(size * 0.26)))
+  return (
+    <span className="tc-stars7" style={{ ['--st' as string]: `${s}px` } as React.CSSProperties}
+      title={`${n} 7s premiership${n === 1 ? '' : 's'}`} aria-label={`${n} 7s premiership${n === 1 ? '' : 's'}`}>
+      {Array.from({ length: Math.min(n, 5) }, (_, i) => (
+        <svg key={i} viewBox="0 0 20 20" aria-hidden="true"><polygon points={STAR} /></svg>
+      ))}
+    </span>
+  )
+}
+
 /** A fantasy team's crest on its own accent, or its initials when it has none,
  *  with a star above for every flag. */
 export function TeamCrest({ team, size = 24 }: { team: TeamCard | undefined; size?: number }) {
   const [failed, setFailed] = useState(false)
   const league = useLeague()?.league
   const accent = team?.accent ?? '#ececf6'
-  const flags = team?.flags ?? (team?.id ? league?.teams.find(t => t.id === team.id)?.flags : 0) ?? 0
+  const known = team?.id ? league?.teams.find(t => t.id === team.id) : undefined
+  const flags = team?.flags ?? known?.flags ?? 0
+  const flags7 = team?.flags7 ?? known?.flags7 ?? 0
   // A club's own crest stands on its own: no tile behind it (Lucas,
   // 2026-11-26). Only the initials, for a club with no crest, sit on a tile.
   const hasLogo = !!team?.logo && !failed
   return (
     <span className="tc-wrap">
       <FlagStars n={flags} size={size} />
+      <SevensStars n={flags7} size={size} />
       <span
         className={`tc-crest${hasLogo ? ' tc-logo' : ''}`}
         style={hasLogo ? { width: size, height: size } : {

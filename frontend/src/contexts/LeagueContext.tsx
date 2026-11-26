@@ -8,9 +8,10 @@ export interface LeagueInfo {
   season_year: number
   invite_code: string
   commissioner_id: number
-  user_team: { id: number; name: string; logo?: string | null; accent?: string; flags?: number } | null
-  /** flags: premierships won (ladder toppers), drawn as stars over the crest. */
-  teams: { id: number; name: string; owner: string; logo?: string | null; accent?: string; flags?: number }[]
+  user_team: { id: number; name: string; logo?: string | null; accent?: string; flags?: number; flags7?: number } | null
+  /** flags: premierships won (ladder toppers), gold stars over the crest;
+   *  flags7: 7s premierships, purple outline stars under it. */
+  teams: { id: number; name: string; owner: string; logo?: string | null; accent?: string; flags?: number; flags7?: number }[]
   /** AFL club name -> logo URL. */
   club_logos?: Record<string, string>
   is_commissioner: boolean

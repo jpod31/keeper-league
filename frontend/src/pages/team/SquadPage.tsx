@@ -13,7 +13,7 @@ import { MobileActionSheet } from '../../components/squad/MobileActionSheet'
 import { useFieldActions, checkSwapEligible } from '../../hooks/useFieldActions'
 import { SSPModal } from '../../components/squad/SSPModal'
 import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
-import { FlagStars } from '../../components/draft/TeamCrest'
+import { FlagStars, SevensStars } from '../../components/draft/TeamCrest'
 import { ask, tell } from '../../components/ui/dialog'
 
 interface StandingsLite {
@@ -468,6 +468,7 @@ function SquadPageInner() {
           <div className="squad-cmd-id">
             <div className={`squad-logo-wrap${data.team.logo_url ? ' has-logo' : ''}`}>
               <FlagStars n={league?.teams.find(t => t.id === data.team.id)?.flags ?? 0} size={64} />
+              <SevensStars n={league?.teams.find(t => t.id === data.team.id)?.flags7 ?? 0} size={64} />
               {data.team.logo_url ? <img src={data.team.logo_url} alt="" className="squad-logo-img" width={44} height={44} />
                 : <div className="squad-logo-placeholder">{data.team.name.substring(0, 2).toUpperCase()}</div>}
             </div>

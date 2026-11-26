@@ -101,11 +101,45 @@ def premierships(league_id):
     return out
 
 
+def sevens_premierships(league_id):
+    """{team_id: 7s flags}: the club on top of the 7s ladder once every 7s
+    fixture of that season is completed. Drawn as small purple outline stars
+    under the crest (Lucas, 2026-11-26)."""
+    import time
+    from models.database import db, Reserve7sFixture, Reserve7sStanding
+    key = ("7s", league_id)
+    hit = _flags_cache.get(key)
+    if hit and time.time() - hit[0] < 300:
+        return hit[1]
+    out = {}
+    rows = (db.session.query(Reserve7sFixture.year, Reserve7sFixture.status, db.func.count(Reserve7sFixture.id))
+            .filter(Reserve7sFixture.league_id == league_id)
+            .group_by(Reserve7sFixture.year, Reserve7sFixture.status).all())
+    by_year = {}
+    for year, status, n in rows:
+        by_year.setdefault(year, {})[status] = n
+    for year, counts in by_year.items():
+        if not counts.get("completed") or any(s != "completed" for s in counts):
+            continue
+        top = (Reserve7sStanding.query.filter_by(league_id=league_id, year=year)
+               .order_by(Reserve7sStanding.ladder_points.desc(), Reserve7sStanding.percentage.desc()).first())
+        if top:
+            out[top.team_id] = out.get(top.team_id, 0) + 1
+    _flags_cache[key] = (time.time(), out)
+    return out
+
+
 def team_card(team):
     """What the frontend needs to draw a team: crest, name, colour, and the
-    flags it has won (stars over the crest)."""
+    flags it has won (gold stars over the crest, purple outline stars under
+    it for the 7s)."""
     try:
         flags = premierships(team.league_id).get(team.id, 0)
     except Exception:
         flags = 0
-    return {"id": team.id, "name": team.name, "logo": team.logo_url, "accent": team_accent(team), "flags": flags}
+    try:
+        flags7 = sevens_premierships(team.league_id).get(team.id, 0)
+    except Exception:
+        flags7 = 0
+    return {"id": team.id, "name": team.name, "logo": team.logo_url, "accent": team_accent(team),
+            "flags": flags, "flags7": flags7}
