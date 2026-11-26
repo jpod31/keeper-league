@@ -2891,9 +2891,9 @@ def generate_logo(league_id, team_id):
         f"A professional sports team logo for a fantasy AFL football team. "
         f"The team is called \"{team.name}\". "
         f"User description: {user_prompt}. "
-        f"Style: clean vector-style emblem on a solid dark background (#0d1117), "
-        f"circular or shield shape, bold and modern, suitable as a small avatar icon. "
-        f"No text or letters in the logo."
+        f"Style: clean vector-style emblem, bold and modern, readable as a small icon. "
+        f"Only the crest itself on a fully transparent background: no backing square, "
+        f"no frame or border around the image. No text or letters in the logo."
     )
 
     # OpenAI Images 2.6 (GA 4 Nov 2026): Sunburst is the higher-quality model,
@@ -2919,6 +2919,8 @@ def generate_logo(league_id, team_id):
                     "size": "1024x1024",
                     "quality": "medium",
                     "moderation": "low",
+                    # Just the crest, no square behind it (Lucas, 2026-11-26).
+                    "background": "transparent",
                     "output_format": "png",
                 },
                 timeout=100,

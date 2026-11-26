@@ -11153,3 +11153,12 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .tc-stars polygon { fill: #f0c35a; stroke: #3a2a06; stroke-width: 1; }
 .squad-logo-wrap { position: relative; overflow: visible !important; }
 .squad-logo-wrap > .squad-logo-img, .squad-logo-wrap > .squad-logo-placeholder { border-radius: inherit; overflow: hidden; }
+
+/* ── Club crests stand on their own (2026-11-26) ──────────────────────
+   A club's own crest has no tile, border or clip behind it; only the
+   initials of a club without one sit on a tile. Generated crests now come
+   with a transparent background. */
+.tc-crest.tc-logo { background: none !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; }
+.tc-crest.tc-logo img { object-fit: contain; }
+.squad-logo-wrap.has-logo { background: none !important; border: 0 !important; border-radius: 0 !important; }
+.squad-logo-wrap.has-logo > .squad-logo-img { object-fit: contain; border-radius: 0 !important; }

@@ -35,12 +35,15 @@ export function TeamCrest({ team, size = 24 }: { team: TeamCard | undefined; siz
   const league = useLeague()?.league
   const accent = team?.accent ?? '#ececf6'
   const flags = team?.flags ?? (team?.id ? league?.teams.find(t => t.id === team.id)?.flags : 0) ?? 0
+  // A club's own crest stands on its own: no tile behind it (Lucas,
+  // 2026-11-26). Only the initials, for a club with no crest, sit on a tile.
+  const hasLogo = !!team?.logo && !failed
   return (
     <span className="tc-wrap">
       <FlagStars n={flags} size={size} />
       <span
-        className="tc-crest"
-        style={{
+        className={`tc-crest${hasLogo ? ' tc-logo' : ''}`}
+        style={hasLogo ? { width: size, height: size } : {
           width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.38)),
           background: `color-mix(in srgb, ${accent} 22%, #121215)`,
           boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accent} 55%, transparent)`,
