@@ -11034,27 +11034,66 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   background: #ffffff; color: #050506; font-size: 15px; font-weight: 700; text-decoration: none; }
 .pmod-more:hover { background: #d9d9e0; color: #050506; }
 
-/* The player card pop-up carries his photo, standing on the numbers bar at
-   the right (AFL Manager cutouts, signed-in only), or a silhouette. */
-.pmod-upper { position: relative; padding-right: 170px; }
-.pmod-photo { position: absolute; right: 34px; bottom: -18px; width: 140px; height: 140px; object-fit: contain; object-position: bottom;
-  z-index: 0; pointer-events: none; filter: drop-shadow(0 8px 12px rgba(0,0,0,.5)); }
-.pmod-sil { fill: rgba(255,255,255,.16); filter: none; width: 116px; height: 116px; right: 44px; }
-.pmod-upper > :not(.pmod-photo) { position: relative; z-index: 1; }
-.pmod-nums { position: relative; z-index: 1; }
-
-/* The surname on the card stays on one line ("Wanganeen-Milera" used to
-   break in two, then lost its end on a phone). It is sized to the room it
-   has: the name block is a size container, the type is that width over the
+/* The player card pop-up: his photo on the LEFT, standing on the numbers
+   bar (AFL Manager cutouts, signed-in only, or a silhouette); positions,
+   name and club to its right. Lucas, 2026-11-26: "player photo on the left
+   side please". The surname stays on one line, sized to the room it has:
+   the text column is a size container and the type is its width over the
    letter count (--n, set inline), between 16px and 32px. */
-.pmod-sur { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pmod-upper { padding-right: 150px; }
-.pmod-upper .pmod-crest { width: 42px; height: 42px; }
+.pmod-upper { display: flex; align-items: flex-end; gap: 14px; padding-right: 40px; }
+.pmod-photo-box { flex: none; width: 128px; height: 128px; margin: 0 0 -18px -10px; display: flex; align-items: flex-end; justify-content: center; }
+.pmod-photo { width: 128px; height: 128px; object-fit: contain; object-position: bottom; display: block; filter: drop-shadow(0 8px 12px rgba(0,0,0,.5)); }
+.pmod-sil { width: 108px; height: 108px; fill: rgba(255,255,255,.16); filter: none; }
+.pmod-upper-text { flex: 1 1 auto; min-width: 0; padding-bottom: 2px; }
+.pmod-upper .pmod-face-top { padding-right: 0; }
+.pmod-upper .pmod-face-id { margin-top: 10px; }
 .pmod-upper .pmod-face-id > div { flex: 1 1 auto; min-width: 0; container-type: inline-size; }
+.pmod-sur { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pmod-sur.pmod-fit { font-size: clamp(16px, calc(100cqw / (var(--n, 8) * .62)), 32px); }
+.pmod-upper .pmod-face-meta { gap: 6px 14px; margin-top: 8px; }
+.pmod-club { display: inline-flex; align-items: center; gap: 6px; }
+.pmod-club .pmod-crest { width: 22px; height: 22px; }
+.pmod-nums { position: relative; z-index: 1; }
 @media (max-width: 575.98px) {
-  .pmod-upper { padding-right: 112px; }
-  .pmod-photo { width: 118px; height: 118px; right: 18px; }
-  .pmod-sil { width: 100px; height: 100px; right: 26px; }
-  .pmod-upper .pmod-crest { display: none; }
+  .pmod-photo-box { width: 104px; height: 104px; }
+  .pmod-photo { width: 104px; height: 104px; }
+  .pmod-sil { width: 90px; height: 90px; }
+}
+
+/* ══ Player card pop-up body, 2026-11-26. Lucas: "dont want the right side
+      pane scrollable, so beautify this section and clean it up such that
+      theres no right side scroll, i hate all those shitty boxes". One
+      screen: the header, his form (the chart takes what room is left), six
+      season averages as plain type, then My notes and More details. Notes
+      open in place of the form. No tiles, no last-game grid. ══ */
+.pmod-shell { display: flex; flex-direction: column; overflow: hidden !important; --pmod-bar: #d9d9e0; }
+.pmod-shell > .pmod-face { flex: none; }
+.pmod-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 20px; padding: 18px 20px 20px; }
+.pmod-flags { display: flex; flex-direction: column; gap: 6px; }
+.pmod-flags .pmod-flag { margin: 0; }
+.pmod-sec-h { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 10px; }
+.pmod-sec-h h3, .pmod-figs span { white-space: nowrap; }
+.pmod-sec-h h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #ffffff; }
+.pmod-sub { font-size: 14px; color: #ffffff; }
+.pmod-figs { display: flex; gap: 14px; }
+.pmod-figs span { display: inline-flex; align-items: baseline; gap: 5px; font-size: 13px; color: #ffffff; }
+.pmod-figs b { font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: #ffffff; }
+.pmod-figs b.up { color: #3fb950; } .pmod-figs b.down { color: #f85149; }
+.pmod-form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.pmod-chart { flex: 1 1 auto; min-height: 120px; }
+.pmod-none { margin: 0; font-size: 15px; color: #ffffff; }
+.pmod-avgs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1); }
+.pmod-avgs div { display: flex; flex-direction: column; gap: 3px; }
+.pmod-avgs b { font-size: 24px; font-weight: 800; letter-spacing: -.03em; line-height: 1; color: #ffffff; }
+.pmod-avgs span { font-size: 13px; color: #ffffff; }
+.pmod-foot { margin-top: auto; display: flex; gap: 10px; }
+.pmod-foot .pmod-more { flex: 1 1 auto; }
+.pmod-notesbtn { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 16px; border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.24); background: transparent; color: #ffffff; font-size: 15px; font-weight: 600; cursor: pointer; }
+.pmod-notesbtn:hover { border-color: rgba(255,255,255,.55); }
+.pmod-notes { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.pmod-textbtn { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none;
+  color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; }
+@media (max-width: 1099.98px) {
+  .pmod-shell { height: min(760px, 92vh); }
 }

@@ -74,3 +74,11 @@ details stats (scrollable left and right), sortable. everything."
       type stepping down for long names.
 - [ ] "dont like any of em" (squad header layouts 1 to 3): a second, bolder
       set of directions on the canvas.
+- [x] "player photo on the left side please.. rearrange that right side panel
+      header": photo on the left standing on the numbers bar; positions,
+      name, club, age and games to its right.
+- [x] "no need for all this crap, dont want the right side pane scrollable
+      ... i hate all those shitty boxes": the card is one screen. Last-game
+      tiles and the boxed averages are gone; his form chart fills the room,
+      six season averages as plain type (picked for his position), notes
+      open in place of the form, More details at the bottom.

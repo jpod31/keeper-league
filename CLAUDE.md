@@ -265,6 +265,13 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   run in the `/refresh` sequence and show in the player compare and the
   position percentile ranks. Unmatched names are printed; a near match is
   settled by club.
+- **The player card pop-up** (`components/squad/PlayerModal.tsx`) is ONE
+  screen, never scrolls (Lucas: "dont want the right side pane scrollable
+  ... i hate all those shitty boxes"): photo on the LEFT of the header, the
+  surname on one line sized to its space (container query, 16 to 32px), the
+  form chart filling the spare height, six season averages as plain type,
+  My notes opening in place of the form, More details at the bottom. No
+  stat tiles, no last-game grid.
 - **The full player page** (`/leagues/<id>/player/<pid>`,
   `pages/players/PlayerDossierPage.tsx`, data from
   `/api/leagues/<id>/players/<pid>/dossier` built by `models/player_dossier.py`).

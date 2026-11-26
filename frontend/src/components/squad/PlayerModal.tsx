@@ -33,12 +33,25 @@ interface Props {
   leagueId?: string
 }
 
-const STAT_KEYS: [string, string][] = [
-  ['disposals', 'DIS'], ['kicks', 'KCK'], ['handballs', 'HBL'], ['marks', 'MRK'],
-  ['goals', 'GLS'], ['behinds', 'BHD'], ['tackles', 'TKL'], ['hitouts', 'HO'],
-  ['clearances', 'CLR'], ['inside_fifties', 'I50'], ['contested_possessions', 'CP'],
-  ['pressure_acts', 'PA'],
-]
+// Six season averages, picked for his kind of player: a ruck's hitouts, a
+// midfielder's clearances, a forward's goals.
+function avgKeys(p: PlayerDetail): [string, string][] {
+  const pos = (p.position || 'MID').split('/')
+  const out: [string, string][] = [['disposals', 'Disposals'], ['marks', 'Marks'], ['tackles', 'Tackles']]
+  if (pos.includes('RUC')) out.push(['hitouts', 'Hitouts'])
+  if (pos.includes('MID') || pos.includes('RUC')) out.push(['clearances', 'Clearances'])
+  if (pos.includes('FWD')) out.push(['goals', 'Goals'])
+  if (pos.includes('DEF')) out.push(['rebounds', 'Rebound 50s'])
+  const have = (k: string) => p.season_avg?.[k] != null
+  const picked = out.filter(([k]) => have(k))
+  for (const k of [['contested_possessions', 'Contested'], ['kicks', 'Kicks'], ['handballs', 'Handballs'], ['goals', 'Goals'],
+    ['inside_fifties', 'Inside 50s'], ['hitouts', 'Hitouts'], ['behinds', 'Behinds']] as [string, string][]) {
+    if (picked.length >= 6) break
+    if (have(k[0]) && !picked.some(o => o[0] === k[0])) picked.push(k)
+  }
+  return picked.slice(0, 6)
+}
+const fmt1 = (v: number | undefined) => v == null ? '-' : Number.isInteger(v) ? String(v) : v.toFixed(1)
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) {
   if (!active || !payload?.length) return null
@@ -56,6 +69,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId }: Props) {
   const logoUrl = p.afl_team ? teamLogos[p.afl_team] : null
   const [photoBad, setPhotoBad] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
 
   const scores = p.round_scores || []
   const vals = scores.map(s => s.sc)
@@ -85,30 +99,34 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
         <div className="pmod-face" style={{ ...clubVars(p.afl_team), ['--logo' as string]: logoUrl ? `url("${logoUrl}")` : 'none',
           ['--pc' as string]: `var(--pos-${(p.position || 'MID').split('/')[0].toLowerCase()})`, ['--pc2' as string]: `var(--pos-${((p.position || 'MID').split('/')[1] || (p.position || 'MID').split('/')[0]).toLowerCase()})` } as React.CSSProperties}>
           <button type="button" onClick={onClose} className="pmod-close" aria-label="Close"><i className="bi bi-x-lg"></i></button>
-          {/* His photo stands on the numbers bar, on the right. */}
+          {/* His photo on the left, standing on the numbers bar; positions,
+              name and club to its right. */}
           <div className="pmod-upper">
-          {p.photo_url && !photoBad
-            ? <img className="pmod-photo" src={p.photo_url} alt="" onError={() => setPhotoBad(true)} />
-            : <svg className="pmod-photo pmod-sil" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="92" r="46" /><path d="M30 240c4-58 44-92 90-92s86 34 90 92z" /></svg>}
-          <div className="pmod-face-top">
-            {(p.position || 'MID').split('/').map(ps => (
-              <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{ps}</span>
-            ))}
-            {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
-            {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
-          </div>
-          <div className="pmod-face-id">
-            {logoUrl && <img className="pmod-crest" src={logoUrl} alt="" />}
-            <div style={{ minWidth: 0 }}>
-              <div className="pmod-first">{p.name.split(' ')[0]}</div>
-              <div className="pmod-sur pmod-fit" style={{ ['--n' as string]: (p.name.split(' ').slice(1).join(' ') || p.name).length } as React.CSSProperties}>{p.name.split(' ').slice(1).join(' ') || p.name}</div>
+            <div className="pmod-photo-box">
+              {p.photo_url && !photoBad
+                ? <img className="pmod-photo" src={p.photo_url} alt="" onError={() => setPhotoBad(true)} />
+                : <svg className="pmod-photo pmod-sil" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="92" r="46" /><path d="M30 240c4-58 44-92 90-92s86 34 90 92z" /></svg>}
             </div>
-          </div>
-          <div className="pmod-face-meta">
-            <span>{p.afl_team}</span>
-            <span>Age {p.age}</span>
-            <span>{p.career_games || 0} games</span>
-          </div>
+            <div className="pmod-upper-text">
+              <div className="pmod-face-top">
+                {(p.position || 'MID').split('/').map(ps => (
+                  <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{ps}</span>
+                ))}
+                {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
+                {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
+              </div>
+              <div className="pmod-face-id">
+                <div>
+                  <div className="pmod-first">{p.name.split(' ')[0]}</div>
+                  <div className="pmod-sur pmod-fit" style={{ ['--n' as string]: (p.name.split(' ').slice(1).join(' ') || p.name).length } as React.CSSProperties}>{p.name.split(' ').slice(1).join(' ') || p.name}</div>
+                </div>
+              </div>
+              <div className="pmod-face-meta">
+                <span className="pmod-club">{logoUrl && <img className="pmod-crest" src={logoUrl} alt="" />}{p.afl_team}</span>
+                <span>Age {p.age}</span>
+                <span>{p.career_games || 0} games</span>
+              </div>
+            </div>
           </div>
           <div className="pmod-nums">
             <div className="pmod-num"><b>{p.sc_avg ? Math.round(p.sc_avg) : '-'}</b><span>{yrLabel} avg</span></div>
@@ -118,96 +136,83 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
           </div>
         </div>
 
-        <div style={{ padding: '18px 20px 24px' }}>
-          {p.position_expected && (
-            <div className="pmod-flag">Expected position. He has no SuperCoach position yet.</div>
-          )}
-          {p.is_former && (
-            <div className="pmod-flag pmod-flag-off">
-              No longer on an AFL list{p.left_afl_year ? ` (last listed ${p.left_afl_year})` : ''}. He will not score.
-            </div>
-          )}
-          {p.injury_severity && (
-            <div className="pmod-flag pmod-flag-off">{p.injury_type || 'Injured'}, {p.injury_return || 'TBC'}</div>
-          )}
-
-          {/* Season form chart */}
-          {chartData.length > 0 && (
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 10 }}>
-                {yrLabel} form
-              </div>
-              <div style={{ height: 180 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e1d21" vertical={false} />
-                    <XAxis dataKey="label" stroke="#63616d" fontSize={13} tickLine={false} axisLine={{ stroke: '#1e1d21' }} />
-                    <YAxis stroke="#63616d" fontSize={13} tickLine={false} axisLine={false}
-                      domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin * 0.8)), 'auto']} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(236,236,246,.04)' }} />
-                    <Bar dataKey="sc" fill="#ececf6" radius={[4, 4, 0, 0]} maxBarSize={28} fillOpacity={0.85} />
-                    <Line type="monotone" dataKey="ma" stroke="#d29922" strokeWidth={2} dot={false} strokeDasharray="4 2" />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="pmod-formnums">
-                <div className="pmod-tile"><b>{Math.round(avg)}</b><span>Average</span></div>
-                {l3 != null && <div className="pmod-tile"><b className={l3 >= avg ? 'up' : 'down'}>{l3}</b><span>Last 3{p.stats_are_last_season ? ` of ${yr}` : ''}</span></div>}
-                {l5 != null && <div className="pmod-tile"><b className={l5 >= avg ? 'up' : 'down'}>{l5}</b><span>Last 5{p.stats_are_last_season ? ` of ${yr}` : ''}</span></div>}
-              </div>
-              <p className="pmod-legend"><i></i>Dashed line is the 3-game average</p>
+        {/* One screen, no scrolling: a flag line if he has one, his form,
+            six season averages, notes on demand, and the way to the full
+            page. Lucas, 2026-11-26: "dont want the right side pane
+            scrollable ... i hate all those shitty boxes". */}
+        <div className="pmod-body">
+          {(p.position_expected || p.is_former || p.injury_severity) && (
+            <div className="pmod-flags">
+              {p.injury_severity && <span className="pmod-flag pmod-flag-off">{p.injury_type || 'Injured'}, {p.injury_return || 'TBC'}</span>}
+              {p.is_former && <span className="pmod-flag pmod-flag-off">Off AFL lists{p.left_afl_year ? ` since ${p.left_afl_year + 1}` : ''}. He will not score.</span>}
+              {p.position_expected && <span className="pmod-flag">Expected position, no SuperCoach position yet.</span>}
             </div>
           )}
 
-          {/* Last game stats */}
-          {p.last_game && (
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>Last Game</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-                {STAT_KEYS.map(([key, label]) => {
-                  const val = p.last_game?.[key]
-                  if (val == null) return null
-                  return (
-                    <div key={key} className="pmod-tile">
-                      <b>{val}</b>
-                      <span>{label}</span>
+          {notesOpen ? (
+            <div className="pmod-notes">
+              <button type="button" className="pmod-textbtn" onClick={() => setNotesOpen(false)}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>Back to his form
+              </button>
+              <PlayerNotes playerId={p.id} />
+            </div>
+          ) : (
+            <>
+              <section className="pmod-sec pmod-form">
+                <header className="pmod-sec-h">
+                  <h3>{yrLabel} form</h3>
+                  {vals.length > 0 && (
+                    <div className="pmod-figs">
+                      <span><b>{Math.round(avg)}</b>avg</span>
+                      {l3 != null && <span><b className={l3 >= avg ? 'up' : 'down'}>{l3}</b>last 3</span>}
+                      {l5 != null && <span><b className={l5 >= avg ? 'up' : 'down'}>{l5}</b>last 5</span>}
                     </div>
-                  )
-                })}
-              </div>
-            </div>
+                  )}
+                </header>
+                {chartData.length > 0 ? (
+                  <div className="pmod-chart">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={chartData} margin={{ top: 6, right: 2, left: 0, bottom: 0 }}>
+                        <CartesianGrid stroke="rgba(255,255,255,.06)" vertical={false} />
+                        <XAxis dataKey="label" stroke="#ececf1" tick={{ fill: '#ececf1', fontSize: 13 }} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={18} />
+                        <YAxis stroke="#ececf1" tick={{ fill: '#ececf1', fontSize: 13 }} tickLine={false} axisLine={false} width={34}
+                          domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin * 0.8)), 'auto']} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(236,236,246,.04)' }} />
+                        <Bar isAnimationActive={false} dataKey="sc" fill="var(--pmod-bar)" radius={[3, 3, 0, 0]} maxBarSize={22} />
+                        <Line isAnimationActive={false} type="monotone" dataKey="ma" stroke="#ffffff" strokeWidth={2} dot={false} strokeDasharray="4 3" />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : <p className="pmod-none">No games yet.</p>}
+              </section>
+
+              {p.season_avg && (
+                <section className="pmod-sec">
+                  <header className="pmod-sec-h"><h3>{yrLabel} averages</h3><span className="pmod-sub">{p.season_games} games</span></header>
+                  <div className="pmod-avgs">
+                    {avgKeys(p).map(([key, label]) => (
+                      <div key={key}><b>{fmt1(p.season_avg?.[key])}</b><span>{label}</span></div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
           )}
 
-          {/* Season averages */}
-          {p.season_avg && (
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: '.8125rem', fontWeight: 700, color: 'var(--kl-text-primary)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>
-                {yrLabel} averages, {p.season_games} games
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-                {STAT_KEYS.map(([key, label]) => {
-                  const val = p.season_avg?.[key]
-                  if (val == null) return null
-                  return (
-                    <div key={key} className="pmod-tile">
-                      <b>{typeof val === 'number' ? val.toFixed(1) : val}</b>
-                      <span>{label}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          <PlayerNotes playerId={p.id} />
-
-          {/* The full player page: career, ratings, his keeper league story. */}
-          {_leagueId && (
-            <Link to={`/leagues/${_leagueId}/player/${p.id}`} className="pmod-more">
-              More details
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
-            </Link>
-          )}
+          <div className="pmod-foot">
+            {!notesOpen && (
+              <button type="button" className="pmod-notesbtn" onClick={() => setNotesOpen(true)}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 2.5h7l3 3v8H3z M10 2.5v3h3 M5.5 8.5h5 M5.5 11h3.5" /></svg>
+                My notes
+              </button>
+            )}
+            {_leagueId && (
+              <Link to={`/leagues/${_leagueId}/player/${p.id}`} className="pmod-more">
+                More details
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </>
