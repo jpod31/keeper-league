@@ -72,7 +72,7 @@ details stats (scrollable left and right), sortable. everything."
       space so it doesnt.. this is the right pane stuff": the surname stays
       on one line in the slide-in card (and the player page header), the
       type stepping down for long names.
-- [ ] "dont like any of em" (squad header layouts 1 to 3): a second, bolder
+- [x] "dont like any of em" (squad header layouts 1 to 3): a second, bolder
       set of directions on the canvas.
 - [x] "player photo on the left side please.. rearrange that right side panel
       header": photo on the left standing on the numbers bar; positions,
