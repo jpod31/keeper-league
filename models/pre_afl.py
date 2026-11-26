@@ -453,9 +453,10 @@ def _rank(row, p):
         word = "players"
     prev = [x for x in pool if FIRST_CLASS <= x["dy"] < dy]
     crop = [x for x in pool if x["dy"] == dy]
-    wanted = set()
+    core = set()
     for r in (roles or ROLES):
-        wanted.update(ROLE_STATS[r])
+        core.update(ROLE_STATS[r])
+    wanted = core | set(GENERAL)
     out = []
     for label, fn in RANK_STATS:
         if label not in wanted:
@@ -466,7 +467,7 @@ def _rank(row, p):
             continue
         rank = 1 + sum(1 for v in vals if v > mine)
         of = len(vals) + 1
-        item = {"label": label, "value": _r1(mine), "rank": rank, "of": of,
+        item = {"label": label, "value": _r1(mine), "rank": rank, "of": of, "core": label in core,
                 "pct": round(100 * (1 - (rank - 1) / of)), "text": f"{ordinal(rank)} of {of}"}
         cvals = [x["vals"][label] for x in crop if x["vals"][label] is not None]
         if len(cvals) + 1 >= MIN_CROP:
@@ -556,7 +557,8 @@ def description(p, head, ranks, meta, rows):
 
     if head and ranks:
         lg = league_name(head.competition, head.season)
-        whole = [r for r in ranks if r["of"] == meta["of"]] or ranks
+        mine = [r for r in ranks if r.get("core", True)]
+        whole = [r for r in mine if r["of"] == meta["of"]] or mine
         strong = [r for r in whole if r["pct"] >= 80][:2]
         if strong:
             does = " and ".join(STRENGTH[r["label"]] for r in strong)
@@ -593,6 +595,30 @@ def fmt_num(v):
 
 # ── the card ─────────────────────────────────────────────────────────────
 
+# Always on the card, whatever he is good at (Lucas, 2026-11-27: "things
+# should also keep general ones too... disposals... marks.. tackles"), plus
+# the number that defines his role.
+GENERAL = ("Disposals", "Marks", "Tackles", "Fantasy")
+ROLE_KEY = {"MID": ("Clearances", "Contested", "Goals"), "RUC": ("Hitouts", "Clearances"), "KF": ("Goals",),
+            "GF": ("Goals", "Inside 50s"), "KD": ("Rebound 50s",), "GD": ("Rebound 50s",)}
+BEST_PCT = 80
+
+
+def card_rows(ranks, roles):
+    """His standout numbers first (marked best), then the general ones and his
+    role's key stat, in a fixed order."""
+    by = {r["label"]: r for r in ranks}
+    best = [dict(r, best=True) for r in ranks if r["pct"] >= BEST_PCT]
+    keys = list(GENERAL) + [k for r in roles for k in ROLE_KEY.get(r, ())]
+    seen = {r["label"] for r in best}
+    rest = []
+    for k in keys:
+        if k in by and k not in seen:
+            rest.append(by[k])
+            seen.add(k)
+    return (best + rest)[:7]
+
+
 def _headline(rows):
     """His season to rank: the latest junior season with 3+ games (2+ at the
     championships), the one with more games on a tie."""
@@ -624,17 +650,18 @@ def pre_afl(p):
                  ("Marks", _r1(head.marks)), ("Tackles", _r1(head.tackles)), ("Goals", _r1(goals(head))),
                  ("Clearances", _r1(head.clearances))]
         ranks, meta = _rank(head, p)
+        table = card_rows(ranks, _roles_for(p))
         headline = {"league": league_name(head.competition, head.season), "season": head.season,
                     "team": head.team, "games": head.matches,
                     "stats": [{"label": a, "value": b} for a, b in stats if b is not None][:3],
-                    "ranks": ranks, "meta": meta, "pool": meta["pool"],
+                    "ranks": table, "meta": meta, "pool": meta["pool"],
                     "group": f"vs {meta['word']}",
                     "col": f"Since {meta['first']}",
                     "class_col": "This draft" if any("class_text" in r for r in ranks) else None}
 
     proj = next((r for r in rows if r.predicted_afl_sc), None)
     v = verdict(p, rows)
-    desc = description(p, head, headline["ranks"] if headline else [], headline["meta"] if headline else None, rows)
+    desc = description(p, head, ranks if headline else [], headline["meta"] if headline else None, rows)
     ht = honour_text(p.junior_honours)
     lines = [f"{(p.afl_team or '')} {POS_WORD.get(pos, 'player')}".strip() + (f", {p.age}" if p.age else "") + "."]
     if ht:

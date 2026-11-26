@@ -11262,3 +11262,13 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 /* Both verdict lines on every screen: the club line (who is ahead of him) is
    the one coaches need. The section scrolls if it runs long. */
 .pa-verdict > div > span:not(.pa-dot) { display: block !important; }
+
+/* Before the AFL table, 2026-11-27: his standout numbers first (white bar,
+   bold), then the general ones every player shows (grey bar). All rows on
+   every screen; the section scrolls. */
+.pa-rt td:first-child { font-weight: 500; }
+.pa-rt tr.pa-best td:first-child { font-weight: 800; }
+.pa-rt tr:not(.pa-best) .pa-bar i { background: #6e6e7a; }
+@media (max-width:575.98px), (max-height:820px) {
+  .pa-rt tbody tr:nth-child(n) { display: table-row; }
+}
