@@ -198,12 +198,13 @@ def _career_totals(games):
 
 
 def _state_league(p):
+    from models.pre_afl import disposals as sl_disposals, goals as sl_goals
     rows = (StateLeagueStat.query
             .filter(db.or_(StateLeagueStat.player_id == p.id, StateLeagueStat.player_name == p.name))
             .order_by(StateLeagueStat.season.desc()).all())
     return [{"season": r.season, "competition": (r.competition or "").upper(), "team": r.team,
-             "matches": r.matches, "disposals": _r1(r.disposals), "marks": _r1(r.marks),
-             "goals": _r1(r.goals), "tackles": _r1(r.tackles), "hitouts": _r1(r.hitouts),
+             "matches": r.matches, "disposals": _r1(sl_disposals(r)), "marks": _r1(r.marks),
+             "goals": _r1(sl_goals(r)), "tackles": _r1(r.tackles), "hitouts": _r1(r.hitouts),
              "clearances": _r1(r.clearances), "fantasy_avg": _r1(r.dreamteam_avg)} for r in rows]
 
 
@@ -360,4 +361,15 @@ def build(league_id, player_id):
         "splits": _named_splits(league_id, p.id, games),
         "benchmarks": bench,
         "current_year": config.CURRENT_YEAR,
+        "honours": _honours(league_id, p.id),
     }
+
+
+def _honours(league_id, player_id):
+    from models.player_honours import for_player
+    try:
+        return for_player(league_id, player_id)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("player honours failed for %s", player_id)
+        return {"emblems": [], "next": None}

@@ -241,3 +241,10 @@
 .pd-rd.bye { border-style: dashed; border-color: rgba(255,255,255,.18); background: transparent; }
 .pd-rd.bye b { font-size: 13px; letter-spacing: .06em; }
 .pd-legend .l-bye { border: 1px dashed rgba(255,255,255,.35); }
+
+/* Honours cabinet on the Keeper League tab (2026-11-26) */
+.pd-cabinet{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:18px 14px}
+.pd-trophy{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;min-width:0}
+.pd-trophy b{font-size:15px}
+.pd-trophy ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:14px}
+.pd-next{margin:14px 0 0;font-size:15px;font-weight:600}

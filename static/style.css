@@ -11097,3 +11097,47 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 @media (max-width: 1099.98px) {
   .pmod-shell { height: min(760px, 92vh); }
 }
+
+/* ── Player card honours shelf + pre-AFL profile (2026-11-26) ─────────
+   Honours from models/player_honours.py drawn by components/honours/Emblem.
+   The shelf sits between the numbers and the form chart so the chart stops
+   stretching. A player with no AFL games gets "Before the AFL": a profile
+   written from our data plus his state league / under-18 seasons. */
+.emblem{display:block;flex:none}
+.emblem-locked{opacity:.38;filter:grayscale(1)}
+.emblem-stars{display:flex;gap:2px;height:12px;align-items:center}
+.emblem-stars svg{width:12px;height:12px}
+.pmod-honours{flex:none;display:flex;flex-direction:column}
+.pmod-shelf{display:flex;align-items:flex-end;gap:4px;padding:4px 2px 0}
+.pmod-hon{all:unset;box-sizing:border-box;cursor:pointer;flex:1 1 0;min-width:0;max-width:96px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 0 8px}
+.pmod-hon span{font-size:13px;font-weight:600;line-height:1.2;text-align:center;color:#fff;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pmod-hon:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:6px}
+.pmod-hon:hover .emblem,.pmod-hon.on .emblem{transform:translateY(-2px)}
+.pmod-hon .emblem{transition:transform .12s ease}
+.pmod-hon.on span{text-decoration:underline;text-underline-offset:3px}
+.pmod-ledge{height:8px;background:#18181d;border-top:1px solid rgba(255,255,255,.16);border-bottom:1px solid #000;border-radius:2px}
+.pmod-hon-detail{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;color:#fff}
+.pmod-honours-next{flex-direction:row;align-items:center;gap:14px}
+.pmod-honours-next > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pmod-honours-next b{font-size:15px;color:#fff}
+.pmod-honours-next span{font-size:14px;color:#fff}
+.pmod-preafl{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.pmod-preafl-text{margin:0;font-size:15px;line-height:1.5;color:#fff}
+.pmod-sl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;color:#fff}
+.pmod-sl th{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:6px;border-bottom:1px solid rgba(255,255,255,.14)}
+.pmod-sl td{padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top}
+.pmod-sl .n{text-align:right}
+.pmod-sl-lg{display:block;font-weight:700}
+.pmod-sl-tm{display:block;font-size:13px}
+/* Emblems line up across the shelf whatever the label length. */
+.pmod-shelf{align-items:flex-start;padding-top:2px}
+/* Short screens and phones: emblems without labels (tap one for the
+   detail), so the form chart keeps its height and nothing overlaps. */
+.pmod-form{min-height:150px}
+@media (max-width:575.98px), (max-height:820px){
+  .pmod-hon span{display:none}
+  .pmod-hon{padding-bottom:6px}
+  .pmod-hon .emblem{width:46px;height:auto}
+  .pmod-body{gap:14px}
+  .pmod-hon-detail{margin-top:8px}
+}

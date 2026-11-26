@@ -9,6 +9,7 @@ import { usePageState, useGoBack } from '../../lib/pageMemory'
 import { club, clubVars, ratingTier } from '../../lib/clubs'
 import { TeamBadge } from '../../components/ui/TeamBadge'
 import { Spinner } from '../../components/ui/Spinner'
+import { Emblem, EmblemStars, emblemLabel, type Honours } from '../../components/honours/Emblem'
 import './player-dossier.css'
 
 // The full player page: card pop-up, "More details", then this. Everything
@@ -49,6 +50,7 @@ interface Dossier {
   career: { games: number; seasons: number; goals: number; disposals: number; sc_avg: number | null; sc_best: number | null; sc_100s: number; first_year: number | null }
   afl_clubs: { season: number; club: string; list_type: string | null; games: number }[]
   state_league: { season: number; competition: string; team: string; matches: number; disposals: number | null; marks: number | null; goals: number | null; tackles: number | null; hitouts: number | null; clearances: number | null; fantasy_avg: number | null }[]
+  honours?: Honours
   keeper: { owner: { team_id: number; team: string } | null; stints: Stint[]; rounds: KRound[]; seasons: (KSummary & { year: number })[]; totals: KSummary }
   splits: { named: StatRow & { games: number }; not_named: StatRow & { games: number } }
   benchmarks: { has_data: boolean; position: string; cohort: number; metrics: { key: string; label: string; value: number; percentile: number; of: number }[] }
@@ -607,8 +609,28 @@ function Keeper({ d }: { d: Dossier }) {
   if (!k.stints.length && !k.rounds.length) {
     return <div className="pd-grid"><Panel title="Keeper League" wide><p className="pd-empty">No club in this league has had him on its list.</p></Panel></div>
   }
+  const hon = d.honours
   return (
     <div className="pd-grid">
+      {hon && (hon.emblems.length > 0 || hon.next) && (
+        <Panel title="Honours" wide>
+          {hon.emblems.length > 0 ? (
+            <div className="pd-cabinet">
+              {hon.emblems.map(e => (
+                <div key={e.kind} className="pd-trophy">
+                  <EmblemStars n={e.times} />
+                  <Emblem kind={e.kind} tier={e.tier} label={e.step ?? undefined} size={96} title={emblemLabel(e)} />
+                  <b>{emblemLabel(e)}</b>
+                  <ul>{e.items.map((it, i) => <li key={i}>{[it.year, it.detail].filter(Boolean).join(', ')}</li>)}</ul>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {hon.next && (
+            <p className="pd-next">Next: {hon.next.step} games for {hon.next.team}. {hon.next.games} so far, {hon.next.to_go} to go.</p>
+          )}
+        </Panel>
+      )}
       <Panel title="His keeper career" wide>
         <div className="pd-bigs">
           <Big v={t.rounds_on_list} l="Rounds on a list" />

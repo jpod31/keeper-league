@@ -272,6 +272,20 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   form chart filling the spare height, six season averages as plain type,
   My notes opening in place of the form, More details at the bottom. No
   stat tiles, no last-game grid.
+- **Player honours** (`models/player_honours.py`, emblems drawn by
+  `components/honours/Emblem.tsx`, list in `docs/HONOURS.md`): a trophy shelf
+  on the card between the numbers and the form chart, and an Honours block on
+  the player page's Keeper League tab. All keeper league: the premiership is
+  the LADDER TOPPER (no finals in this league), 2026 was the first season. A
+  game = in the counted 23 (round_score breakdown, emergencies included) and
+  scored > 0. Most honours run on points over replacement and wins added
+  (see the module docstring); season honours wait for the last fixture.
+  Repeats change the metal (`tier_for`). Cached per league, keyed on the
+  completed fixtures.
+- **Before the AFL** (`models/pre_afl.py`): a player with no AFL games gets a
+  profile written from our data plus his state league and under-18 seasons
+  in place of the form chart. `state_league_stat.goals` is a season TOTAL
+  (use `goals_avg`), and junior rows often lack disposals (kicks + handballs).
 - **The full player page** (`/leagues/<id>/player/<pid>`,
   `pages/players/PlayerDossierPage.tsx`, data from
   `/api/leagues/<id>/players/<pid>/dossier` built by `models/player_dossier.py`).

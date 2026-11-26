@@ -2109,7 +2109,27 @@ def api_player_detail(league_id, team_id, player_id):
         "is_former": player.is_former,
         "left_afl_year": player.left_afl_year,
         "photo_url": player_photo_url(player.name),
+        "honours": _player_honours(league_id, player_id),
+        "pre_afl": _pre_afl(player) if not (player.career_games or 0) and not round_scores else None,
     })
+
+
+def _player_honours(league_id, player_id):
+    from models.player_honours import for_player
+    try:
+        return for_player(league_id, player_id)
+    except Exception:
+        current_app.logger.exception("player honours failed for %s", player_id)
+        return {"emblems": [], "next": None}
+
+
+def _pre_afl(player):
+    from models.pre_afl import pre_afl
+    try:
+        return pre_afl(player)
+    except Exception:
+        current_app.logger.exception("pre-AFL profile failed for %s", player.id)
+        return None
 
 
 @team_bp.route("/<int:league_id>/team/<int:team_id>/api/roster-stats")

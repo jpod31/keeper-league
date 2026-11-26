@@ -6,6 +6,14 @@ import {
 import { PlayerNotes } from '../ui/PlayerNotes'
 import { Link } from 'react-router'
 import { useState } from 'react'
+import { Emblem, EmblemStars, emblemLabel, emblemTitle, type Honours } from '../honours/Emblem'
+
+interface PreAfl {
+  lines: string[]
+  seasons: { season: number; league: string; team: string | null; games: number | null; disposals: number | null;
+    goals: number | null; tackles: number | null; marks: number | null; fantasy: number | null }[]
+  projection: { sc: number; season: number; tag: string | null } | null
+}
 
 interface PlayerDetail {
   id: number; name: string; position: string; afl_team: string
@@ -24,6 +32,8 @@ interface PlayerDetail {
   is_former?: boolean
   left_afl_year?: number | null
   photo_url?: string | null
+  honours?: Honours
+  pre_afl?: PreAfl | null
 }
 
 interface Props {
@@ -70,6 +80,10 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
   const logoUrl = p.afl_team ? teamLogos[p.afl_team] : null
   const [photoBad, setPhotoBad] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
+  const [picked, setPicked] = useState<number | null>(null)
+  const emblems = (p.honours?.emblems || []).slice(0, 5)
+  const nextUp = p.honours?.next
+  const pickedE = picked != null ? emblems[picked] : null
 
   const scores = p.round_scores || []
   const vals = scores.map(s => s.sc)
@@ -158,6 +172,60 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
             </div>
           ) : (
             <>
+              {/* His keeper league honours on a shelf; the next games
+                  milestone when he has none yet. 2026-11-26. */}
+              {emblems.length > 0 ? (
+                <section className="pmod-honours" aria-label="Honours">
+                  <div className="pmod-shelf">
+                    {emblems.map((e, i) => (
+                      <button key={e.kind} type="button" className={`pmod-hon${picked === i ? ' on' : ''}`}
+                        onClick={() => setPicked(picked === i ? null : i)} title={emblemTitle(e)}>
+                        {e.times >= 2 && e.times <= 4 ? <EmblemStars n={e.times} /> : <span className="emblem-stars" />}
+                        <Emblem kind={e.kind} tier={e.tier} label={e.step ?? undefined} size={58} />
+                        <span>{emblemLabel(e)}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="pmod-ledge" />
+                  {pickedE && (
+                    <ul className="pmod-hon-detail">
+                      {pickedE.items.map((it, i) => <li key={i}>{[it.year, it.detail].filter(Boolean).join(', ')}</li>)}
+                    </ul>
+                  )}
+                </section>
+              ) : nextUp ? (
+                <section className="pmod-honours pmod-honours-next" aria-label="Next milestone">
+                  <Emblem kind={nextUp.kind} tier={nextUp.tier} label={nextUp.step} size={48} locked />
+                  <div>
+                    <b>Next: {nextUp.step} games for {nextUp.team}</b>
+                    <span>{nextUp.games} so far, {nextUp.to_go} to go</span>
+                  </div>
+                </section>
+              ) : null}
+
+              {chartData.length === 0 && p.pre_afl ? (
+                <section className="pmod-sec pmod-preafl">
+                  <header className="pmod-sec-h"><h3>Before the AFL</h3></header>
+                  <p className="pmod-preafl-text">{p.pre_afl.lines.join(' ')}</p>
+                  {p.pre_afl.seasons.length > 0 && (
+                    <table className="pmod-sl">
+                      <thead><tr><th>Year</th><th>League</th><th className="n">GP</th><th className="n">Disp</th><th className="n">Goals</th><th className="n">Fant</th></tr></thead>
+                      <tbody>
+                        {p.pre_afl.seasons.slice(0, 4).map(s => (
+                          <tr key={`${s.season}-${s.league}-${s.team}`}>
+                            <td>{s.season}</td>
+                            <td><span className="pmod-sl-lg">{s.league}</span>{s.team && <span className="pmod-sl-tm">{s.team}</span>}</td>
+                            <td className="n">{s.games ?? '-'}</td>
+                            <td className="n">{fmt1(s.disposals ?? undefined)}</td>
+                            <td className="n">{fmt1(s.goals ?? undefined)}</td>
+                            <td className="n">{s.fantasy != null ? Math.round(s.fantasy) : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </section>
+              ) : (
               <section className="pmod-sec pmod-form">
                 <header className="pmod-sec-h">
                   <h3>{yrLabel} form</h3>
@@ -185,6 +253,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                   </div>
                 ) : <p className="pmod-none">No games yet.</p>}
               </section>
+              )}
 
               {p.season_avg && (
                 <section className="pmod-sec">
