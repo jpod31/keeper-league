@@ -286,6 +286,10 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   profile written from our data plus his state league and under-18 seasons
   in place of the form chart. `state_league_stat.goals` is a season TOTAL
   (use `goals_avg`), and junior rows often lack disposals (kicks + handballs).
+  Rankings are like for like: against AFL-listed players of his workbook
+  role (`afl_player.role`) who played that competition (`role_pool`). Junior
+  feeds carry no position, and guessing a role from the stat line was 54%
+  right on a held-out check, so unlisted juniors are never in the pool.
 - **The full player page** (`/leagues/<id>/player/<pid>`,
   `pages/players/PlayerDossierPage.tsx`, data from
   `/api/leagues/<id>/players/<pid>/dossier` built by `models/player_dossier.py`).

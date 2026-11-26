@@ -217,6 +217,8 @@ def ordinal(n):
 
 ROLE_WORDS = {"MID": "midfielders", "KF": "key forwards", "GF": "general forwards",
               "KD": "key defenders", "GD": "general defenders", "RUC": "ruckmen"}
+ROLE_ONE = {"MID": "midfielder", "KF": "key forward", "GF": "general forward",
+            "KD": "key defender", "GD": "general defender", "RUC": "ruckman"}
 LINE_ROLES = {"KF": ("KF", "GF"), "GF": ("KF", "GF"), "KD": ("KD", "GD"), "GD": ("KD", "GD")}
 LINE_WORDS = {("KF", "GF"): "forwards", ("KD", "GD"): "defenders"}
 MIN_ROLE_POOL = 12
@@ -322,7 +324,8 @@ def description(p, head, ranks, meta, rows):
     out = []
     pos = (p.position or "").split("/")[0]
     size = f"{p.height_cm} cm " if p.height_cm else ""
-    who = f"{size}{POS_WORD.get(pos, 'player')}".strip()
+    # the workbook role, as the rankings use it, ahead of the line
+    who = f"{size}{ROLE_ONE.get(p.role) or POS_WORD.get(pos, 'player')}".strip()
     draft = None
     if p.draft_pick and p.draft_year:
         draft = f"Pick {p.draft_pick} in the {p.draft_year} {p.draft_type or 'draft'}".replace("draft draft", "draft")
@@ -408,7 +411,7 @@ def pre_afl(p):
                     "team": head.team, "games": head.matches,
                     "stats": [{"label": a, "value": b} for a, b in stats if b is not None][:3],
                     "ranks": ranks, "meta": meta, "pool": meta["pool"],
-                    "col": f"vs {meta['of']} {meta['word']}",
+                    "col": f"vs {meta['word']}",
                     "class_col": f"{head.season} only" if any("class_text" in r for r in ranks) else None}
 
     proj = next((r for r in rows if r.predicted_afl_sc), None)
