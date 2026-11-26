@@ -2,6 +2,7 @@
 
 import os
 import logging
+from models.player_photos import photo_url as player_photo_url
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
@@ -2107,6 +2108,7 @@ def api_player_detail(league_id, team_id, player_id):
         "is_new": player.joined_year == config.CURRENT_YEAR,
         "is_former": player.is_former,
         "left_afl_year": player.left_afl_year,
+        "photo_url": player_photo_url(player.name),
     })
 
 

@@ -52,3 +52,19 @@ details stats (scrollable left and right), sortable. everything."
 
 - [x] Tests for the keeper career splits and the photo slug.
 - [x] Screens checked at 1280 and 390, audit clean, deployed, prod sync run.
+
+## Follow-ups from Lucas, same day (none to be dropped)
+
+- [x] "can we add their picture on the right pane player cards too": the
+      slide-in player card shows his photo (silhouette if none).
+- [x] "there have not been 30 rounds this year": count only rounds the league
+      played (a league fixture, live or finished). The site also saved
+      lineups and scores for rounds 25 to 29 (AFL finals weeks); they never
+      counted and come out of the totals and points banked.
+- [x] "some of those are byes, which i dont know why youre counting them":
+      a round his AFL club had the bye is not counted at all (not on the
+      list, not named, not not-named); its tile says BYE.
+- [x] "Round SC DIS K HB M G T HO CP CLR I50 MG ... this isnt comprehensive
+      enough": the round-by-round and season tables show every stat we hold
+      by default, plus where a coach in this league had him that round; the
+      named / not named comparison covers every stat.

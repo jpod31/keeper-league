@@ -37,8 +37,8 @@ interface Stint {
   left: string | null; left_at: string | null; left_to: string | null
   pick_number: number | null; draft_round: number | null; draft_label: string | null; draft_year: number | string; draft_type: string | null
 }
-interface KRound { year: number; round: number; team_id: number; team: string | null; slot: string | null; named: boolean; captain: boolean; vice_captain: boolean; emergency: boolean; sc: number | null; banked: number | null }
-interface KSummary { rounds_on_list: number; named: number; named_played: number; not_named: number; not_named_played: number; captain: number; vice_captain: number; emergency: number; avg_named: number | null; avg_not_named: number | null; banked: number }
+interface KRound { year: number; round: number; team_id: number; team: string | null; slot: string | null; named: boolean; captain: boolean; vice_captain: boolean; emergency: boolean; sc: number | null; banked: number | null; bye: boolean }
+interface KSummary { rounds_on_list: number; named: number; named_played: number; not_named: number; not_named_played: number; captain: number; vice_captain: number; emergency: number; avg_named: number | null; avg_not_named: number | null; banked: number; byes: number }
 interface Dossier {
   player: Bio
   years: { afl_year: number; stats_year: number; stats_are_last_season: boolean }
@@ -60,7 +60,6 @@ interface Similar { has_data: boolean; similar: { player_id: number; name: strin
 
 type Tab = 'overview' | 'stats' | 'ratings' | 'career' | 'keeper'
 const TABS: [Tab, string][] = [['overview', 'Overview'], ['stats', 'AFL stats'], ['ratings', 'Ratings'], ['career', 'Career'], ['keeper', 'Keeper League']]
-const KEY_STATS = ['supercoach_score', 'disposals', 'kicks', 'handballs', 'marks', 'goals', 'tackles', 'hitouts', 'contested_possessions', 'clearances', 'inside_fifties', 'metres_gained']
 const POS_LETTER: Record<string, string> = { DEF: 'D', MID: 'M', RUC: 'R', FWD: 'F' }
 
 const fmt = (v: number | null | undefined, dp = 1) => v == null ? '-' : Number.isInteger(v) ? String(v) : v.toFixed(dp)
@@ -116,18 +115,25 @@ function Meter({ label, value, max = 100, unit = '%', note, shown }: { label: st
   )
 }
 
-function StatTable({ labels, rows, first, firstLabel, keys }: {
-  labels: StatLabel[]; rows: StatRow[]; first: (r: StatRow) => React.ReactNode; firstLabel: string; keys?: string[]
+function StatTable({ labels, rows, first, firstLabel, extra }: {
+  labels: StatLabel[]; rows: StatRow[]; first: (r: StatRow) => React.ReactNode; firstLabel: string
+  extra?: { label: string; title: string; cell: (r: StatRow) => React.ReactNode }[]
 }) {
-  const cols = keys ? labels.filter(l => keys.includes(l.key)) : labels
+  // Every stat we hold; a column with nothing in it for any row is left out.
+  const cols = labels.filter(l => rows.some(r => r[l.key] != null))
   return (
     <div className="pd-tablebox">
       <table className="pd-table">
-        <thead><tr><th className="pin">{firstLabel}</th>{cols.map(c => <th key={c.key}>{c.label}</th>)}</tr></thead>
+        <thead><tr>
+          <th className="pin">{firstLabel}</th>
+          {(extra || []).map(x => <th key={x.label} title={x.title} className="txt">{x.label}</th>)}
+          {cols.map(c => <th key={c.key} title={c.name || c.label}>{c.label}</th>)}
+        </tr></thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i}>
               <td className="pin">{first(r)}</td>
+              {(extra || []).map(x => <td key={x.label} className="txt">{x.cell(r)}</td>)}
               {cols.map(c => <td key={c.key} className={c.key === 'supercoach_score' ? 'sc' : ''}>{fmt(r[c.key] as number | null)}</td>)}
             </tr>
           ))}
@@ -351,8 +357,12 @@ function Overview({ d, sc, pj, sim, onPlayer }: { d: Dossier; sc: Scoring | null
 function Stats({ d, sp }: { d: Dossier; sp: Splits | null }) {
   const years = Object.keys(d.rounds).map(Number).sort((a, b) => b - a)
   const [year, setYear] = usePageState<number>('year', years[0] ?? d.years.stats_year)
-  const [all, setAll] = usePageState('allstats', false)
-  const keys = all ? undefined : KEY_STATS
+  // Where a coach in this league had him each round.
+  const kround = useMemo(() => {
+    const m = new Map<string, KRound>()
+    for (const r of d.keeper.rounds) m.set(`${r.year}-${r.round}`, r)
+    return m
+  }, [d.keeper.rounds])
   const bySeason = d.seasons.map(s => ({ y: String(s.year), Average: s.supercoach_score, Best: s.sc_max }))
   const rounds = d.rounds[String(year)] || []
   const seasonsDesc = [...d.seasons].sort((a, b) => b.year - a.year)
@@ -375,11 +385,9 @@ function Stats({ d, sp }: { d: Dossier; sp: Splits | null }) {
         ) : <p className="pd-empty">No AFL games on record.</p>}
       </Panel>
 
-      <Panel title="Season averages" wide right={
-        <label className="pd-switch"><input type="checkbox" checked={all} onChange={e => setAll(e.target.checked)} /><span>Every stat</span></label>
-      }>
+      <Panel title="Season averages" wide right={<span className="pd-hint">Per game. Scroll sideways for every stat.</span>}>
         {seasonsDesc.length ? (
-          <StatTable labels={d.stat_labels} rows={seasonsDesc} keys={keys} firstLabel="Season"
+          <StatTable labels={d.stat_labels} rows={seasonsDesc} firstLabel="Season"
             first={r => <><b>{r.year}</b><span className="pd-sub">{r.games} gm</span></>} />
         ) : <p className="pd-empty">No AFL games on record.</p>}
       </Panel>
@@ -390,7 +398,16 @@ function Stats({ d, sp }: { d: Dossier; sp: Splits | null }) {
         </div>
       }>
         {rounds.length ? (
-          <StatTable labels={d.stat_labels} rows={rounds} keys={keys} firstLabel="Round" first={r => <b>{r.round === 0 ? 'OR' : `R${r.round}`}</b>} />
+          <StatTable labels={d.stat_labels} rows={rounds} firstLabel="Round" first={r => <b>{r.round === 0 ? 'OR' : `R${r.round}`}</b>}
+            extra={d.keeper.rounds.some(k => k.year === year) ? [{
+              label: 'Keeper', title: 'Where a coach in this league had him that round',
+              cell: r => {
+                const k = kround.get(`${year}-${r.round}`)
+                if (!k) return '-'
+                const where = k.named ? (k.slot || 'Named') : k.emergency ? 'Emergency' : 'Bench'
+                return <span className={k.named ? 'pd-kcell on' : 'pd-kcell'}>{where}{k.captain ? ', C' : k.vice_captain ? ', VC' : ''}</span>
+              },
+            }] : undefined} />
         ) : <p className="pd-empty">No games in {year}.</p>}
       </Panel>
 
@@ -586,7 +603,7 @@ function Keeper({ d }: { d: Dossier }) {
     for (const r of k.rounds) { const a = m.get(r.year) || []; a.push(r); m.set(r.year, a) }
     return [...m.entries()].sort((a, b) => b[0] - a[0])
   }, [k.rounds])
-  const splitKeys = d.stat_labels.filter(l => KEY_STATS.includes(l.key))
+  const splitKeys = d.stat_labels.filter(l => sn.named[l.key] != null || sn.not_named[l.key] != null)
   if (!k.stints.length && !k.rounds.length) {
     return <div className="pd-grid"><Panel title="Keeper League" wide><p className="pd-empty">No club in this league has had him on its list.</p></Panel></div>
   }
@@ -639,10 +656,14 @@ function Keeper({ d }: { d: Dossier }) {
       {byYear.map(([y, rs]) => {
         const s = k.seasons.find(x => x.year === y)
         return (
-          <Panel key={y} title={`${y}, round by round`} wide right={s && <span className="pd-hint">{s.named} named, {fmt(s.banked, 0)} banked</span>}>
+          <Panel key={y} title={`${y}, round by round`} wide right={s && <span className="pd-hint">{s.rounds_on_list} rounds on a list, {s.named} named, {fmt(s.banked, 0)} banked{s.byes ? `, ${s.byes} bye${s.byes === 1 ? '' : 's'} left out` : ''}</span>}>
             <div className="pd-rounds">
               {rs.map(r => (
-                <div key={`${r.team_id}-${r.round}`} className={`pd-rd${r.named ? ' named' : ''}${r.captain ? ' cap' : ''}${r.vice_captain ? ' vc' : ''}`}
+                r.bye ? (
+                  <div key={`${r.team_id}-${r.round}`} className="pd-rd bye" title={`Round ${r.round}: his club had the bye`}>
+                    <span className="rn">{r.round === 0 ? 'OR' : r.round}</span><b>BYE</b>
+                  </div>
+                ) : <div key={`${r.team_id}-${r.round}`} className={`pd-rd${r.named ? ' named' : ''}${r.captain ? ' cap' : ''}${r.vice_captain ? ' vc' : ''}`}
                   title={`Round ${r.round}, ${r.team || ''}: ${r.named ? `named${r.slot ? ` at ${r.slot}` : ''}` : r.emergency ? 'emergency' : 'not named'}${r.sc != null ? `, scored ${r.sc}` : ', did not play'}${r.banked != null ? `, banked ${r.banked}` : ''}`}>
                   <span className="rn">{r.round === 0 ? 'OR' : r.round}</span>
                   <b>{r.sc ?? '-'}</b>
@@ -650,7 +671,7 @@ function Keeper({ d }: { d: Dossier }) {
                 </div>
               ))}
             </div>
-            <div className="pd-legend"><span><i className="l-named" />Named</span><span><i className="l-out" />On the list, not named</span><span><i className="l-cap" />Captain</span><span><i className="l-vc" />Vice captain</span></div>
+            <div className="pd-legend"><span><i className="l-named" />Named</span><span><i className="l-out" />On the list, not named</span><span><i className="l-cap" />Captain</span><span><i className="l-vc" />Vice captain</span><span><i className="l-bye" />Bye, not counted</span></div>
           </Panel>
         )
       })}

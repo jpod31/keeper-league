@@ -1,6 +1,6 @@
 """The full player page: photos, season averages, and his keeper career."""
 
-from models.database import WeeklyLineup, LineupSlot, PlayerStat, RoundScore
+from models.database import WeeklyLineup, LineupSlot, PlayerStat, RoundScore, Fixture, AflGame
 from models.player_photos import photo_slug, find_slug
 from models.player_dossier import _avg_cover, keeper_career, build
 
@@ -34,6 +34,14 @@ def test_keeper_career_splits_named_from_not_named(db, seed_data):
     lg = seed_data["league"]
     a = seed_data["team_a"]
     p = seed_data["players"]["Jordan Dawson"]
+    b = seed_data["team_b"]
+    for f in Fixture.query.filter_by(league_id=lg.id).all():
+        db.session.delete(f)
+    for rnd in (1, 2, 3):
+        db.session.add(Fixture(league_id=lg.id, afl_round=rnd, year=2026, home_team_id=a.id,
+                               away_team_id=b.id, status="completed"))
+    _lineup(db, a, 25, p, "MID")                  # an AFL finals week: no league game, never counts
+    db.session.add(RoundScore(team_id=a.id, afl_round=25, year=2026, total_score=0, breakdown={str(p.id): 500}))
     _lineup(db, a, 1, p, "MID", captain=True)
     _lineup(db, a, 2, p, "BENCH")
     _lineup(db, a, 3, p, "MID")
@@ -54,3 +62,26 @@ def test_keeper_career_splits_named_from_not_named(db, seed_data):
     assert d["splits"]["named"]["disposals"] == 22.0          # rounds 1 and 3
     assert d["splits"]["not_named"]["supercoach_score"] == 70.0
     assert d["seasons"][0]["games"] == 3
+
+
+def test_a_bye_round_is_not_counted(db, seed_data):
+    lg, a, b = seed_data["league"], seed_data["team_a"], seed_data["team_b"]
+    p = seed_data["players"]["Jordan Dawson"]
+    for f in Fixture.query.filter_by(league_id=lg.id).all():
+        db.session.delete(f)
+    for rnd in (1, 2, 3):
+        db.session.add(Fixture(league_id=lg.id, afl_round=rnd, year=2026, home_team_id=a.id,
+                               away_team_id=b.id, status="completed"))
+    # His club plays rounds 1 and 3; round 2 is his bye.
+    gid = 9000
+    for rnd, home, away in ((1, p.afl_team, "Sydney"), (2, "Carlton", "Sydney"), (3, "Geelong", p.afl_team)):
+        gid += 1
+        db.session.add(AflGame(id=gid, year=2026, afl_round=rnd, home_team=home, away_team=away))
+    _lineup(db, a, 1, p, "MID")
+    _lineup(db, a, 2, p, "BENCH")
+    _lineup(db, a, 3, p, "BENCH")
+    db.session.commit()
+    k = keeper_career(lg.id, p.id, {})
+    t = k["totals"]
+    assert (t["rounds_on_list"], t["named"], t["not_named"], t["byes"]) == (2, 1, 1, 1)
+    assert [r["bye"] for r in k["rounds"]] == [False, True, False]

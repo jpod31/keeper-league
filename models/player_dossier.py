@@ -13,6 +13,15 @@ Built from tables we already keep, nothing scraped on the way:
   weekly_lineup / slots   where each club named him each round
   round_score.breakdown   the points he banked for the club
 
+Only rounds the league actually played count: a round with a fixture that
+is live or finished. Lineups and round scores are also saved for the AFL
+finals weeks after a season ends (2026 has them for rounds 25 to 29), and
+those never counted for anyone.
+
+A round his AFL club had the bye is left out of every count too: nobody
+can pick a player whose club isn't playing. Byes come from the AFL fixture
+(afl_game), with his club that season from his list history.
+
 "Named in the side" means an on-field slot (DEF, MID, FWD, RUC, FLEX): the
 coach's best 22 plus the flex. Every other slot (bench, emergency, no
 position) is on the list but not named.
@@ -23,7 +32,7 @@ from collections import defaultdict
 import config
 from models.database import (
     db, AflPlayer, PlayerSeasonRating, RatingLog, PlayerStat, AflListHistory,
-    StateLeagueStat, FantasyTeam, FantasyRoster, WeeklyLineup, LineupSlot, RoundScore,
+    StateLeagueStat, FantasyTeam, FantasyRoster, WeeklyLineup, LineupSlot, RoundScore, Fixture, AflGame,
 )
 
 ON_FIELD = {"DEF", "MID", "FWD", "RUC", "FLEX"}
@@ -198,6 +207,31 @@ def _state_league(p):
              "clearances": _r1(r.clearances), "fantasy_avg": _r1(r.dreamteam_avg)} for r in rows]
 
 
+def league_rounds(league_id):
+    """{(year, round)} the league has played or is playing."""
+    rows = (db.session.query(Fixture.year, Fixture.afl_round)
+            .filter(Fixture.league_id == league_id, Fixture.status.in_(("completed", "live")))
+            .distinct().all())
+    return {(y, r) for y, r in rows}
+
+
+def bye_rounds(player, years):
+    """{(year, round)} where his AFL club had no game. Empty for a year we
+    hold no AFL fixture for."""
+    out = set()
+    for y in years:
+        games = AflGame.query.filter_by(year=y).all()
+        if not games:
+            continue
+        clubs = {r.club for r in AflListHistory.query.filter(
+            db.or_(AflListHistory.player_id == player.id, AflListHistory.player_name == player.name),
+            AflListHistory.season == y).all()} or {player.afl_team}
+        rounds = {g.afl_round for g in games}
+        played = {g.afl_round for g in games if g.home_team in clubs or g.away_team in clubs}
+        out |= {(y, r) for r in rounds - played}
+    return out
+
+
 def keeper_career(league_id, player_id, sc_by_round=None):
     """His career with this league's clubs: stints, and round by round where
     he was named, with his score and what he banked.
@@ -233,6 +267,9 @@ def keeper_career(league_id, player_id, sc_by_round=None):
                 if v is not None:
                     banked[(rs.team_id, rs.year, rs.afl_round)] = v
 
+    played = league_rounds(league_id)
+    rows = [(s, w) for s, w in rows if (w.year, w.afl_round) in played]
+    byes = bye_rounds(db.session.get(AflPlayer, player_id), {w.year for _s, w in rows})
     rounds = []
     for s, w in sorted(rows, key=lambda sw: (sw[1].year, sw[1].afl_round)):
         code = (s.position_code or "").upper()
@@ -245,9 +282,12 @@ def keeper_career(league_id, player_id, sc_by_round=None):
             "captain": bool(s.is_captain), "vice_captain": bool(s.is_vice_captain),
             "emergency": bool(s.is_emergency),
             "sc": sc, "banked": banked.get((w.team_id, w.year, w.afl_round)),
+            "bye": (w.year, w.afl_round) in byes,
         })
 
     def summary(rs):
+        byes_n = sum(1 for r in rs if r["bye"])
+        rs = [r for r in rs if not r["bye"]]
         named = [r for r in rs if r["named"]]
         not_named = [r for r in rs if not r["named"]]
         return {
@@ -262,6 +302,7 @@ def keeper_career(league_id, player_id, sc_by_round=None):
             "avg_named": _avg([r["sc"] for r in named]),
             "avg_not_named": _avg([r["sc"] for r in not_named]),
             "banked": round(sum(r["banked"] or 0 for r in rs), 1),
+            "byes": byes_n,
         }
 
     by_year = defaultdict(list)
@@ -279,6 +320,8 @@ def _named_splits(league_id, player_id, games):
     slots = (db.session.query(LineupSlot.position_code, WeeklyLineup.year, WeeklyLineup.afl_round)
              .join(WeeklyLineup, LineupSlot.lineup_id == WeeklyLineup.id)
              .filter(LineupSlot.player_id == player_id, WeeklyLineup.team_id.in_(teams or [0])).all())
+    played = league_rounds(league_id)
+    slots = [(c, y, r) for c, y, r in slots if (y, r) in played]
     named = {(y, r) for code, y, r in slots if (code or "").upper() in ON_FIELD}
     listed = {(y, r) for _c, y, r in slots}
     gin = [g for g in games if (g.year, g.round) in named and not g.is_live]

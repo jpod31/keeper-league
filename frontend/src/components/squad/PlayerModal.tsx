@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import { PlayerNotes } from '../ui/PlayerNotes'
 import { Link } from 'react-router'
+import { useState } from 'react'
 
 interface PlayerDetail {
   id: number; name: string; position: string; afl_team: string
@@ -22,6 +23,7 @@ interface PlayerDetail {
   is_new?: boolean
   is_former?: boolean
   left_afl_year?: number | null
+  photo_url?: string | null
 }
 
 interface Props {
@@ -53,6 +55,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 
 export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId }: Props) {
   const logoUrl = p.afl_team ? teamLogos[p.afl_team] : null
+  const [photoBad, setPhotoBad] = useState(false)
 
   const scores = p.round_scores || []
   const vals = scores.map(s => s.sc)
@@ -82,6 +85,11 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
         <div className="pmod-face" style={{ ...clubVars(p.afl_team), ['--logo' as string]: logoUrl ? `url("${logoUrl}")` : 'none',
           ['--pc' as string]: `var(--pos-${(p.position || 'MID').split('/')[0].toLowerCase()})`, ['--pc2' as string]: `var(--pos-${((p.position || 'MID').split('/')[1] || (p.position || 'MID').split('/')[0]).toLowerCase()})` } as React.CSSProperties}>
           <button type="button" onClick={onClose} className="pmod-close" aria-label="Close"><i className="bi bi-x-lg"></i></button>
+          {/* His photo stands on the numbers bar, on the right. */}
+          <div className="pmod-upper">
+          {p.photo_url && !photoBad
+            ? <img className="pmod-photo" src={p.photo_url} alt="" onError={() => setPhotoBad(true)} />
+            : <svg className="pmod-photo pmod-sil" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="92" r="46" /><path d="M30 240c4-58 44-92 90-92s86 34 90 92z" /></svg>}
           <div className="pmod-face-top">
             {(p.position || 'MID').split('/').map(ps => (
               <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{ps}</span>
@@ -100,6 +108,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
             <span>{p.afl_team}</span>
             <span>Age {p.age}</span>
             <span>{p.career_games || 0} games</span>
+          </div>
           </div>
           <div className="pmod-nums">
             <div className="pmod-num"><b>{p.sc_avg ? Math.round(p.sc_avg) : '-'}</b><span>{yrLabel} avg</span></div>

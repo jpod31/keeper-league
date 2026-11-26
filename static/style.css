@@ -11033,3 +11033,13 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .pmod-more { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 9px;
   background: #ffffff; color: #050506; font-size: 15px; font-weight: 700; text-decoration: none; }
 .pmod-more:hover { background: #d9d9e0; color: #050506; }
+
+/* The player card pop-up carries his photo, standing on the numbers bar at
+   the right (AFL Manager cutouts, signed-in only), or a silhouette. */
+.pmod-upper { position: relative; padding-right: 170px; }
+.pmod-photo { position: absolute; right: 34px; bottom: -18px; width: 140px; height: 140px; object-fit: contain; object-position: bottom;
+  z-index: 0; pointer-events: none; filter: drop-shadow(0 8px 12px rgba(0,0,0,.5)); }
+.pmod-sil { fill: rgba(255,255,255,.16); filter: none; width: 116px; height: 116px; right: 44px; }
+.pmod-upper > :not(.pmod-photo) { position: relative; z-index: 1; }
+.pmod-nums { position: relative; z-index: 1; }
+.pmod-sur { white-space: normal; overflow-wrap: anywhere; }
