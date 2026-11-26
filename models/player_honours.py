@@ -235,7 +235,7 @@ def _season(league_id, year, teams):
     if top:
         for (tid, pid), g in games.items():
             if tid == top.team_id:
-                add("premiership", pid, tid, f"{tname(tid)}, {g} games", g)
+                add("premiership", pid, tid, f"{tname(tid)}, {g} game{'' if g == 1 else 's'}", g)
 
     # Club champion: most wins added at the club. A tie shares it.
     by_club = defaultdict(list)
