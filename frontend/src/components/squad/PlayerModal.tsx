@@ -243,7 +243,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                                 <td>{r.label}</td>
                                 <td className="n"><b>{fmt1(r.value)}</b></td>
                                 <td><span className="pa-rk"><span className="pa-bar"><i style={{ width: Math.max(4, r.pct) + '%' }} /></span><b>{r.text}</b></span></td>
-                                {p.pre_afl.headline!.full && <td className="n"><b>{r.class_text ?? '-'}</b></td>}
+                                {p.pre_afl!.headline!.full && <td className="n"><b>{r.class_text ?? '-'}</b></td>}
                               </tr>
                             ))}
                           </tbody>
