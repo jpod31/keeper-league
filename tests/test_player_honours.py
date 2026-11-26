@@ -128,6 +128,24 @@ def test_pre_afl_without_junior_stats_still_says_who_he_is(db, seed_data):
 
 
 
+def test_rankings_are_like_for_like(db, seed_data, monkeypatch):
+    from models import pre_afl as pa
+    ps = list(seed_data["players"].values())[:4]
+    for p, role, disp in zip(ps, ("MID", "MID", "KF", "KF"), (20, 25, 30, 35)):
+        p.role, p.age = role, 19
+        db.session.add(StateLeagueStat(player_id=p.id, player_name=p.name, competition="nab",
+                                       season=config.CURRENT_YEAR - 1, team="GWV Rebels", matches=10, disposals=disp))
+    db.session.commit()
+    monkeypatch.setattr(pa, "MIN_ROLE_POOL", 2)
+    monkeypatch.setattr(pa, "MIN_RANK_POOL", 2)
+    pa._cache.clear()
+    row = StateLeagueStat.query.filter_by(player_id=ps[0].id).first()
+    ranks, meta = pa._rank(row, ps[0])
+    # Two key forwards had more of the ball; against midfielders he is 2nd of 2.
+    assert meta["word"] == "midfielders" and meta["of"] == 2
+    assert next(r for r in ranks if r["label"] == "Disposals")["text"] == "2nd of 2"
+
+
 WAFL_ROW = ('<table><thead><tr><th> AVG </th></tr></thead><tbody><tr><td>2025</td><td>Colts</td><td>Claremont</td>'
             '<td><div class="w-6">8</div></td><td>99</td><td>86</td><td>185</td><td>23.1</td><td>31</td><td>39</td>'
             '<td>0</td><td>17</td><td>2</td><td>6</td><td>5</td></tr></tbody></table>')
