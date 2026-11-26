@@ -31,6 +31,13 @@ logger = logging.getLogger(__name__)
 _AJAX_URL = "https://dfsaustralia.com/wp-admin/admin-ajax.php"
 _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
+# dfsaustralia's club codes, for settling a near-match by club.
+CLUB = {"ADE": "Adelaide", "BRL": "Brisbane Lions", "CAR": "Carlton", "COL": "Collingwood",
+        "ESS": "Essendon", "FRE": "Fremantle", "GCS": "Gold Coast", "GEE": "Geelong",
+        "GWS": "GWS", "HAW": "Hawthorn", "MEL": "Melbourne", "NTH": "North Melbourne",
+        "PTA": "Port Adelaide", "RIC": "Richmond", "STK": "St Kilda", "SYD": "Sydney",
+        "WBD": "Western Bulldogs", "WCE": "West Coast"}
+
 
 def _fetch_team(season, team, retries=3):
     for attempt in range(retries):
@@ -91,7 +98,8 @@ def sync_kickins(season=None):
     for team in TEAMS:
         rows, games = _fetch_team(season, team)
         for name, v in team_shares(rows, len(games)).items():
-            a = agg.setdefault(_norm(name), {"name": name, "ki": 0, "po": 0, "team_ki": 0})
+            a = agg.setdefault(_norm(name), {"name": name, "ki": 0, "po": 0, "team_ki": 0, "clubs": set()})
+            a["clubs"].add(CLUB.get(team))
             a["ki"] += v["ki"]; a["po"] += v["po"]; a["team_ki"] += v["team_ki"]
         time.sleep(0.4)
 
@@ -100,7 +108,7 @@ def sync_kickins(season=None):
         return {"season": season, "listed": 0, "matched": 0, "unmatched": [], "zeroed": 0}
 
     # Same matching as the CBA sync: exact normalised name, else surname plus
-    # first initial when exactly one player fits.
+    # first initial when exactly one player fits, or exactly one at his club.
     masters = AflPlayer.query.all()
     by_norm, by_key2 = {}, {}
 
@@ -120,6 +128,8 @@ def sync_kickins(season=None):
         if not cands:
             k2 = _key2(a["name"])
             alt = by_key2.get(k2, []) if k2 else []
+            if len(alt) > 1:   # "Lachie Jones": two L. Joneses, one at his club
+                alt = [p for p in alt if p.afl_team in a["clubs"]]
             if len(alt) == 1:
                 cands, fuzzy = alt, fuzzy + 1
             else:
