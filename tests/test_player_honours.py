@@ -90,9 +90,11 @@ def test_pre_afl_profile_drops_a_namesake_too_young(db, seed_data):
     db.session.commit()
     out = pre_afl(p)
     assert [s["season"] for s in out["seasons"]] == [config.CURRENT_YEAR - 1]
-    text = " ".join(out["lines"])
-    assert "GWV Rebels in the Talent League" in text and "24.5 disposals" in text
+    h = out["headline"]
+    assert h["league"] == "Talent League" and h["team"] == "GWV Rebels" and h["games"] == 10
+    assert {"label": "Disposals", "value": 24.5} in h["stats"]
     assert out["projection"]["sc"] == 76
+    assert out["verdict"]["label"] in ("Walks straight in", "Pushing for round 1", "Mid-season debut", "Development year")
 
 
 DG_PAGE = """<div class="player-bits">
@@ -118,8 +120,32 @@ def test_pre_afl_without_junior_stats_still_says_who_he_is(db, seed_data):
     p.junior_honours = "Larke Medallist"
     p.draft_note = "Pick 5, 2026 National Draft, West Coast"
     db.session.commit()
-    text = " ".join(pre_afl(p)["lines"])
-    assert "Pick 5 in the 2026 National Draft." in text
-    assert "Larke Medallist: the best player at the under-18 national championships." in text
-    assert "Came through Wembley Downs JFC, Hale School and Claremont." in text
+    out = pre_afl(p)
+    assert out["facts"][:2] == ["Pick 5, 2026 National Draft", "Claremont"]
+    assert out["honour_note"] == "Larke Medallist: the best player at the under-18 national championships."
+    assert out["pathway"] == "Wembley Downs JFC / Hale School / Claremont"
     assert league_name("sanflu18", 2026) == "SANFL under-18s"
+
+
+
+WAFL_ROW = ('<table><thead><tr><th> AVG </th></tr></thead><tbody><tr><td>2025</td><td>Colts</td><td>Claremont</td>'
+            '<td><div class="w-6">8</div></td><td>99</td><td>86</td><td>185</td><td>23.1</td><td>31</td><td>39</td>'
+            '<td>0</td><td>17</td><td>2</td><td>6</td><td>5</td></tr></tbody></table>')
+RM_TABLE = ('<h4 class="sp-table-caption">AFL U18 Championships</h4><div><table><tbody><tr class="odd">'
+            '<td class="data-name">2026</td><td class="data-team"><a>Western Australia</a></td>'
+            '<td class="data-kicks">64</td><td class="data-handballs">49</td><td class="data-disposals">113</td>'
+            '<td class="data-marks">20</td><td class="data-cp">27</td><td class="data-up">72</td>'
+            '<td class="data-tackles">10</td><td class="data-hitouts">0</td><td class="data-clr">9</td>'
+            '<td class="data-i">12</td><td class="data-r">16</td><td class="data-goals">0</td>'
+            '<td class="data-gamesplayed">4</td><td class="data-dc">104</td></tr></tbody></table>')
+
+
+def test_wafl_and_championship_tables():
+    from scrapers.junior_sources import parse_wafl, parse_rookieme
+    w = parse_wafl(WAFL_ROW)
+    assert w == [{"season": 2025, "comp": "waflcolts", "team": "Claremont", "matches": 8, "kicks": 99.0,
+                  "handballs": 86.0, "disposals": 185.0, "marks": 31.0, "tackles": 39.0, "hitouts": 0.0,
+                  "frees_for": 17.0, "frees_against": 2.0, "goals_total": 6.0, "behinds": 5.0}]
+    r = parse_rookieme(RM_TABLE)
+    assert r[0]["comp"] == "u18champs" and r[0]["matches"] == 4 and r[0]["disposals"] == 113 and r[0]["fantasy"] == 104
+    assert league_name("u18champs", 2026) == "Under-18 Championships"

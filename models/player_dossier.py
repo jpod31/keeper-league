@@ -202,7 +202,8 @@ def _state_league(p):
     rows = (StateLeagueStat.query
             .filter(db.or_(StateLeagueStat.player_id == p.id, StateLeagueStat.player_name == p.name))
             .order_by(StateLeagueStat.season.desc()).all())
-    return [{"season": r.season, "competition": (r.competition or "").upper(), "team": r.team,
+    from models.pre_afl import league_name
+    return [{"season": r.season, "competition": league_name(r.competition, r.season), "team": r.team,
              "matches": r.matches, "disposals": _r1(sl_disposals(r)), "marks": _r1(r.marks),
              "goals": _r1(sl_goals(r)), "tackles": _r1(r.tackles), "hitouts": _r1(r.hitouts),
              "clearances": _r1(r.clearances), "fantasy_avg": _r1(r.dreamteam_avg)} for r in rows]

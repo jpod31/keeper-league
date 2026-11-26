@@ -11169,3 +11169,59 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .tc-stars7 polygon { fill: none; stroke: #a78bfa; stroke-width: 2; stroke-linejoin: round; }
 /* A junior honour (Larke Medallist ...) beside "Before the AFL". */
 .pmod-jhon { font-size: 13px; font-weight: 800; color: #f0c35a; border: 1px solid rgba(240,195,90,.5); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+
+/* ── Before the AFL v2 (2026-11-26): verdict, headline numbers, ranks, comps ── */
+.pmod-preafl { gap: 12px; }
+.pa-verdict { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; }
+.pa-verdict > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pa-verdict b { font-size: 17px; color: #fff; }
+.pa-verdict span:not(.pa-dot) { font-size: 13px; color: #fff; line-height: 1.35; }
+.pa-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; margin-top: 5px; }
+.pa-good .pa-dot { background: #3fb950; } .pa-warn .pa-dot { background: #e3b341; } .pa-slow .pa-dot { background: #f85149; }
+.pa-facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.pa-facts span { font-size: 13px; font-weight: 700; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 2px 10px; color: #fff; }
+.pa-head { display: flex; flex-direction: column; gap: 10px; }
+.pa-head-t { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.pa-head-t b { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: #fff; }
+.pa-head-t span { font-size: 13px; color: #fff; }
+.pa-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pa-stats div { display: flex; flex-direction: column; }
+.pa-stats b { font-size: 26px; font-weight: 900; letter-spacing: -.03em; line-height: 1.05; color: #fff; }
+.pa-stats span { font-size: 13px; font-weight: 600; color: #fff; }
+.pa-ranks { display: flex; flex-direction: column; gap: 6px; }
+.pa-rank { display: grid; grid-template-columns: 88px minmax(0,1fr) 78px; gap: 10px; align-items: center; font-size: 13px; color: #fff; }
+.pa-rank b { text-align: right; font-size: 13px; }
+.pa-bar { height: 8px; border-radius: 3px; background: #1d1d23; position: relative; }
+.pa-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: #fff; }
+.pa-comps { display: flex; flex-direction: column; }
+.pa-lab { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #fff; padding-bottom: 4px; }
+.pa-comp { display: grid; grid-template-columns: minmax(0,1fr) auto 64px; gap: 10px; align-items: center; padding: 5px 0; border-top: 1px solid rgba(255,255,255,.08); font-size: 13px; color: #fff; }
+.pa-comp > div { display: flex; flex-direction: column; min-width: 0; }
+.pa-comp > div b { font-size: 14px; }
+.pa-comp > b { text-align: right; }
+.pa-none { margin: 0; font-size: 14px; color: #fff; }
+
+/* Phones: the card keeps the verdict, facts, headline and ranks; the
+   comparisons and the seasons table live on the full player page. */
+@media (max-width:575.98px), (max-height:820px) {
+  .pmod-preafl .pa-comps, .pmod-preafl .pmod-sl { display: none; }
+  .pa-stats b { font-size: 22px; }
+}
+@media (max-width:575.98px), (max-height:820px) {
+  .pa-verdict { padding: 10px 12px; }
+  .pa-verdict > div > span:nth-of-type(n+2) { display: none; }
+}
+
+/* Before the AFL: rankings table (stat, average, rank in the league, rank in
+   his draft class), strongest first. */
+.pa-rt { width: 100%; border-collapse: collapse; font-size: 13px; color: #fff; font-variant-numeric: tabular-nums; }
+.pa-rt th { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-align: left; padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.14); }
+.pa-rt td { padding: 6px; border-bottom: 1px solid rgba(255,255,255,.07); white-space: nowrap; }
+.pa-rt .n { text-align: right; }
+.pa-rt td:first-child { font-weight: 600; }
+.pa-rk { display: grid; grid-template-columns: minmax(40px,1fr) auto; gap: 8px; align-items: center; }
+.pa-rk b { min-width: 70px; text-align: right; }
+@media (max-width:575.98px), (max-height:820px) {
+  .pa-rt tbody tr:nth-child(n+5) { display: none; }
+  .pa-rk { grid-template-columns: minmax(24px,1fr) auto; }
+}

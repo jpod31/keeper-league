@@ -9,13 +9,23 @@ import { useState } from 'react'
 import { Emblem, EmblemStars, emblemLabel, emblemTitle, type Honours } from '../honours/Emblem'
 
 interface PreAfl {
-  lines: string[]
+  verdict?: { label: string; tone: 'good' | 'warn' | 'slow'; reasons: string[] }
+  facts?: string[]
+  honours?: string | null
+  honour_note?: string | null
+  pathway?: string | null
+  headline?: {
+    league: string; season: number; team: string | null; games: number | null
+    stats: { label: string; value: number }[]
+    ranks: { label: string; value: number; pct: number; text: string; class_text?: string }[]
+    pool: string
+  } | null
   seasons: { season: number; league: string; team: string | null; games: number | null; disposals: number | null;
     goals: number | null; tackles: number | null; marks: number | null; fantasy: number | null }[]
   projection: { sc: number; season: number; tag: string | null } | null
-  honours?: string | null
-  pathway?: string | null
+  lines: string[]
 }
+
 
 interface PlayerDetail {
   id: number; name: string; position: string; afl_team: string
@@ -207,14 +217,47 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
 
               {chartData.length === 0 && p.pre_afl ? (
                 <section className="pmod-sec pmod-preafl">
-                  <header className="pmod-sec-h"><h3>Before the AFL</h3>{p.pre_afl.honours && <span className="pmod-jhon">{p.pre_afl.honours}</span>}</header>
-                  <p className="pmod-preafl-text">{p.pre_afl.lines.join(' ')}</p>
+                  {/* Numbers, not prose. Lucas, 2026-11-26: "the text does not
+                      help anywhere near enough". */}
+                  <header className="pmod-sec-h"><h3>Before the AFL</h3>{p.pre_afl.honours && <span className="pmod-jhon" title={p.pre_afl.honour_note || ''}>{p.pre_afl.honours}</span>}</header>
+                  {p.pre_afl.verdict && (
+                    <div className={'pa-verdict pa-' + p.pre_afl.verdict.tone}>
+                      <span className="pa-dot" />
+                      <div>
+                        <b>{p.pre_afl.verdict.label}</b>
+                        {p.pre_afl.verdict.reasons.map((r, i) => <span key={i}>{r}</span>)}
+                      </div>
+                    </div>
+                  )}
+                  {(p.pre_afl.facts?.length ?? 0) > 0 && <div className="pa-facts">{p.pre_afl.facts!.map(f => <span key={f}>{f}</span>)}</div>}
+                  {p.pre_afl.headline ? (
+                    <div className="pa-head">
+                      <div className="pa-head-t"><b>{p.pre_afl.headline.season} {p.pre_afl.headline.league}</b><span>{p.pre_afl.headline.team}{p.pre_afl.headline.games ? ', ' + p.pre_afl.headline.games + ' games' : ''}</span></div>
+                      {p.pre_afl.headline.ranks.length > 0 ? (
+                        <table className="pa-rt" title={'Ranked against ' + p.pre_afl.headline.pool}>
+                          <thead><tr><th></th><th className="n">Avg</th><th>In the league</th><th className="n">Draft class</th></tr></thead>
+                          <tbody>
+                            {p.pre_afl.headline.ranks.map(r => (
+                              <tr key={r.label}>
+                                <td>{r.label}</td>
+                                <td className="n"><b>{fmt1(r.value)}</b></td>
+                                <td><span className="pa-rk"><span className="pa-bar"><i style={{ width: Math.max(4, r.pct) + '%' }} /></span><b>{r.text}</b></span></td>
+                                <td className="n"><b>{r.class_text ?? '-'}</b></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="pa-stats">{p.pre_afl.headline.stats.map(st => <div key={st.label}><b>{fmt1(st.value)}</b><span>{st.label}</span></div>)}</div>
+                      )}
+                    </div>
+                  ) : <p className="pa-none">No junior or state league games in any source we hold.</p>}
                   {p.pre_afl.seasons.length > 0 && (
                     <table className="pmod-sl">
                       <thead><tr><th>Year</th><th>League</th><th className="n">GP</th><th className="n">Disp</th><th className="n">Goals</th><th className="n">Fant</th></tr></thead>
                       <tbody>
-                        {p.pre_afl.seasons.slice(0, 4).map(s => (
-                          <tr key={`${s.season}-${s.league}-${s.team}`}>
+                        {p.pre_afl.seasons.slice(0, p.pre_afl.headline?.ranks.length ? 3 : 4).map(s => (
+                          <tr key={s.season + '-' + s.league + '-' + s.team}>
                             <td>{s.season}</td>
                             <td><span className="pmod-sl-lg">{s.league}</span>{s.team && <span className="pmod-sl-tm">{s.team}</span>}</td>
                             <td className="n">{s.games ?? '-'}</td>
