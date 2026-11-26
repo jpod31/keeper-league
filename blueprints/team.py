@@ -2868,7 +2868,7 @@ LOGO_DIR = os.path.join(config.DATA_DIR, "team_logos")
                methods=["POST"])
 @login_required
 def generate_logo(league_id, team_id):
-    """Generate a team logo via OpenAI DALL-E from a user prompt."""
+    """Generate a team logo with OpenAI's image model from a user prompt."""
     league = db.session.get(League, league_id)
     team = db.session.get(FantasyTeam, team_id)
     if not league or not team or team.league_id != league_id:
@@ -2896,34 +2896,50 @@ def generate_logo(league_id, team_id):
         f"No text or letters in the logo."
     )
 
+    # OpenAI Images 2.6 (GA 4 Nov 2026): Sunburst is the higher-quality model,
+    # gpt-image-2 the fallback. The gpt-image models always return base64 and
+    # reject DALL-E's `response_format` (that is what broke every attempt on
+    # 2026-11-26). moderation "low" so club names like Demons aren't refused.
+    models = [os.environ.get("LOGO_IMAGE_MODEL", "gpt-image-2.6-sunburst"), "gpt-image-2"]
     try:
         import requests as _req
 
-        resp = _req.post(
-            "https://api.openai.com/v1/images/generations",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "dall-e-3",
-                "prompt": full_prompt,
-                "n": 1,
-                "size": "1024x1024",
-                "quality": "standard",
-                "response_format": "b64_json",
-            },
-            timeout=60,
-        )
-        if resp.status_code != 200:
-            err_detail = resp.text[:500]
-            _logo_logger.warning("OpenAI API error %d: %s", resp.status_code, err_detail)
-            # Try to extract a user-friendly message
+        resp = None
+        for model in dict.fromkeys(models):
+            resp = _req.post(
+                "https://api.openai.com/v1/images/generations",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "prompt": full_prompt,
+                    "n": 1,
+                    "size": "1024x1024",
+                    "quality": "medium",
+                    "moderation": "low",
+                    "output_format": "png",
+                },
+                timeout=100,
+            )
+            if resp.status_code == 200:
+                break
+            _logo_logger.warning("OpenAI image error %s %d: %s", model, resp.status_code, resp.text[:500])
             try:
-                err_msg = resp.json().get("error", {}).get("message", err_detail)
+                code = resp.json().get("error", {}).get("code") or ""
             except Exception:
-                err_msg = err_detail
-            return jsonify(error=f"OpenAI error: {err_msg}"), 502
+                code = ""
+            if code not in ("model_not_found", "unsupported_model", "invalid_model"):
+                break
+        if resp.status_code != 200:
+            try:
+                err = resp.json().get("error", {})
+            except Exception:
+                err = {}
+            if err.get("code") in ("moderation_blocked", "content_policy_violation"):
+                return jsonify(error="OpenAI turned that description down. Try describing it a different way."), 400
+            return jsonify(error=f"OpenAI error: {err.get('message') or resp.text[:300]}"), 502
         data = resp.json()
         b64_image = data["data"][0]["b64_json"]
     except Exception as exc:
