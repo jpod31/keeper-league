@@ -94,7 +94,9 @@ def test_pre_afl_profile_drops_a_namesake_too_young(db, seed_data):
     assert h["league"] == "Talent League" and h["team"] == "GWV Rebels" and h["games"] == 10
     assert {"label": "Disposals", "value": 24.5} in h["stats"]
     assert out["projection"]["sc"] == 76
-    assert out["verdict"]["label"] in ("Walks straight in", "Pushing for round 1", "Mid-season debut", "Development year")
+    from models.pre_afl import VERDICTS
+    assert out["verdict"]["label"] in [v[0] for v in VERDICTS.values()] + ["No potential figure yet"]
+    assert not any("workbook" in r for r in out["verdict"]["reasons"])
 
 
 DG_PAGE = """<div class="player-bits">
@@ -131,8 +133,9 @@ def test_pre_afl_without_junior_stats_still_says_who_he_is(db, seed_data):
 def test_rankings_are_like_for_like(db, seed_data, monkeypatch):
     from models import pre_afl as pa
     ps = list(seed_data["players"].values())[:4]
-    for p, role, disp in zip(ps, ("MID", "MID", "KF", "KF"), (20, 25, 30, 35)):
-        p.role, p.age = role, 19
+    for p, role, disp, yr in zip(ps, ("MID", "MID", "KF", "KF"), (20, 25, 30, 35), (2026, 2024, 2024, 2024)):
+        p.role, p.age, p.draft_year, p.draft_pick = role, 19, None, None
+        p.draft_note = f"Pick 9, {yr} National Draft, Carlton"
         db.session.add(StateLeagueStat(player_id=p.id, player_name=p.name, competition="nab",
                                        season=config.CURRENT_YEAR - 1, team="GWV Rebels", matches=10, disposals=disp))
     db.session.commit()

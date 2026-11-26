@@ -25,6 +25,7 @@ WAFL Colts/Reserves/League and the under-18 championships), afl_player
 """
 
 import math
+import re
 import statistics
 import time
 
@@ -120,7 +121,7 @@ def _season_row(r):
     }
 
 
-# ── the cohort: what last year's first-year players did, by rating ───────
+# ── will he play early: what earlier draftees did ────────────────────────
 
 _cache = {}
 
@@ -134,71 +135,132 @@ def _cached(key, ttl, fn):
     return val
 
 
-BANDS = ((70, 100, "70 and up"), (66, 70, "66 to 69"), (62, 66, "62 to 65"), (58, 62, "58 to 61"), (0, 58, "under 58"))
+FIRST_CLASS = 2019  # the first draft we compare against (Talent League numbers start in 2019)
+_NOTE = re.compile(r"Pick (\d+), (\d{4}) ([\w-]+) Draft")
 
 
-def cohort():
-    """First-year players of last season (rated, no AFL game before it, 21 or
-    under), grouped by their rating that season: how many played, median games."""
+def draft_info(p):
+    """(year, pick, kind) from the list record, else from the draftguru line
+    ("Pick 5, 2026 National Draft, West Coast"). kind is 'National',
+    'Rookie', 'Pre-Season', ..."""
+    if p.draft_year and p.draft_pick:
+        return p.draft_year, p.draft_pick, (p.draft_type or "National")
+    m = _NOTE.match(p.draft_note or "")
+    if m:
+        return int(m.group(2)), int(m.group(1)), m.group(3)
+    if p.joined_year:
+        return p.joined_year - 1, None, None
+    return None, None, None
+
+
+POT_BANDS = ((85, 100, "85 or more"), (80, 85, "80 to 84"), (75, 80, "75 to 79"), (0, 75, "under 75"))
+PICK_BANDS = ((1, 5, "picks 1 to 5"), (6, 10, "picks 6 to 10"), (11, 20, "picks 11 to 20"),
+              (21, 40, "picks 21 to 40"), (41, 999, "picks 41 on"))
+
+
+def _in(bands, v):
+    return next((b for b in bands if v is not None and b[0] <= v <= (b[1] - (0 if bands is PICK_BANDS else 1e-9))), None)
+
+
+def draftees():
+    """Every player drafted since FIRST_CLASS whose first season is done: his
+    pick, his potential going into that first season (the pre-season figure,
+    so nothing from the season itself), and his games in it. Only players
+    still on a list are in our records, so a draftee delisted since is
+    missing; that flatters the lower bands a little, not the top ones."""
+    from models.years import stats_year
     def build():
-        year = config.CURRENT_YEAR - 1
-        first = dict(db.session.query(PlayerStat.player_id, db.func.min(PlayerStat.year))
-                     .group_by(PlayerStat.player_id).all())
-        games = dict(db.session.query(PlayerStat.player_id, db.func.count(PlayerStat.id))
-                     .filter(PlayerStat.year == year).group_by(PlayerStat.player_id).all())
-        ages = dict(db.session.query(AflPlayer.id, AflPlayer.age).all())
-        out = {b[2]: [] for b in BANDS}
-        for pid, rating in db.session.query(PlayerSeasonRating.player_id, PlayerSeasonRating.rating).filter(
-                PlayerSeasonRating.season == year, PlayerSeasonRating.rating.isnot(None)).all():
-            if (ages.get(pid) or 99) - 1 > 21 or (first.get(pid) or 9999) < year:
+        last = stats_year() - 1
+        games = {(pid, yr): n for pid, yr, n in db.session.query(
+            PlayerStat.player_id, PlayerStat.year, db.func.count(PlayerStat.id)).group_by(
+            PlayerStat.player_id, PlayerStat.year).all()}
+        pot = {(pid, se): pt for pid, se, pt in db.session.query(
+            PlayerSeasonRating.player_id, PlayerSeasonRating.season, PlayerSeasonRating.potential).filter(
+            PlayerSeasonRating.potential.isnot(None)).all()}
+        senior = {}
+        for name, se, m in db.session.query(StateLeagueStat.player_name, StateLeagueStat.season,
+                                            StateLeagueStat.matches).filter(
+                StateLeagueStat.competition.in_(SENIOR_COMPS)).all():
+            senior[(name, se)] = senior.get((name, se), 0) + (m or 0)
+        out = []
+        for q in AflPlayer.query.filter(db.or_(AflPlayer.draft_year.isnot(None), AflPlayer.draft_note.isnot(None))).all():
+            yr, pick, kind = draft_info(q)
+            if not yr or not (FIRST_CLASS <= yr <= last):
                 continue
-            for lo, hi, label in BANDS:
-                if lo <= rating < hi:
-                    out[label].append(games.get(pid, 0))
-        return {"year": year, "bands": [{"band": label, "n": len(out[label]),
-                                          "played": sum(1 for g in out[label] if g),
-                                          "median": statistics.median(out[label]) if out[label] else 0}
-                                         for _lo, _hi, label in BANDS]}
-    return _cached("cohort", 6 * 3600, build)
+            out.append({"pid": q.id, "role": q.role, "year": yr, "pick": pick, "kind": kind,
+                        "pot": pot.get((q.id, yr + 1)), "g1": games.get((q.id, yr + 1), 0),
+                        "senior": senior.get((q.name, yr), 0)})
+        return out
+    return _cached("draftees", 6 * 3600, build)
 
 
-def _band(rating):
-    for lo, hi, label in BANDS:
-        if rating is not None and lo <= rating < hi:
-            return label
-    return None
+def _summary(group):
+    g = [x["g1"] for x in group]
+    return {"n": len(g), "played": sum(1 for x in g if x), "ten": sum(1 for x in g if x >= 10),
+            "median": statistics.median(g) if g else 0}
 
 
-def verdict(p):
-    """{label, tone, reasons[]}: will he play early."""
-    c = cohort()
-    band = _band(p.rating)
-    b = next((x for x in c["bands"] if x["band"] == band), None)
+def _games(n):
+    return f"{n:g} game" + ("" if n == 1 else "s")
+
+
+VERDICTS = {  # by potential band, from what that band did (see draftees())
+    "85 or more": ("Expect games early", "good"),
+    "80 to 84": ("Should debut in his first year", "good"),
+    "75 to 79": ("A few games at most in year one", "warn"),
+    "under 75": ("Development years", "slow"),
+}
+LINE_WORD = {"DEF": "defenders", "MID": "midfielders", "FWD": "forwards", "RUC": "ruckmen"}
+
+
+def verdict(p, rows=None):
+    """{label, tone, reasons[]}: will he play early. Potential going into his
+    first season is the best guide we hold (draftees since 2019 at 85 or
+    more: 93% played in year one, median 12 games; under 75: 28%, median 0),
+    then where he was picked, then senior games already played and spots
+    left open at his club. Lucas, 2026-11-27: "ratings before first game
+    dont really matter, potential is more of an indicator, so is draft
+    numbers"."""
+    pool = draftees()
+    since = f"since {FIRST_CLASS}"
+    reasons = []
+    band = _in(POT_BANDS, p.potential)
+    if band:
+        s = _summary([x for x in pool if _in(POT_BANDS, x["pot"]) == band])
+        label, tone = VERDICTS[band[2]]
+        if s["n"]:
+            reasons.append(f"Potential {p.potential}: of the {s['n']} draftees {since} at {band[2]}, {s['played']} played "
+                           f"in year one and {s['ten']} played 10+ games (median {_games(s['median'])}).")
+    else:
+        label, tone = "No potential figure yet", "warn"
+    yr, pick, kind = draft_info(p)
+    pb = _in(PICK_BANDS, pick)
+    if pb:
+        s = _summary([x for x in pool if x["kind"] == kind and _in(PICK_BANDS, x["pick"]) == pb])
+        where = "" if kind == "National" else f" in the {kind.lower()} draft"
+        if s["n"] >= 5:
+            reasons.append(f"Pick {pick}{where}: of the {s['n']} {pb[2]}{where} {since}, {s['played']} played in year one "
+                           f"(median {_games(s['median'])}).")
+    seniors = [r for r in (rows or []) if r.competition in SENIOR_COMPS and (r.matches or 0) >= 1 and yr and r.season >= yr]
+    if seniors:
+        n = sum(r.matches for r in seniors)
+        lg = league_name(seniors[0].competition, seniors[0].season)
+        with_ = _summary([x for x in pool if x["senior"] >= 1])
+        without = _summary([x for x in pool if x["senior"] == 0])
+        line = f"{n} senior {lg} game{'s' if n != 1 else ''} already."
+        if with_["n"] >= 5 and without["n"] >= 5:
+            line += (f" Draftees {since} with senior games in their draft year played a median "
+                     f"{_games(with_['median'])} in year one, those without {_games(without['median'])}.")
+        reasons.append(line)
     pos = (p.position or "MID").split("/")[0]
-    left = []
     if p.afl_team:
         left = [q.name for q in AflPlayer.query.filter(
             AflPlayer.afl_team == p.afl_team, AflPlayer.left_afl_year == config.CURRENT_YEAR - 1).all()
             if pos in (q.position or "").split("/") and (q.games_played or 0) >= 8]
-    best22 = bool(p.afl_best22)
-    r = p.rating or 0
-    if r >= 66 and best22:
-        label, tone = "Walks straight in", "good"
-    elif r >= 66 or best22:
-        label, tone = "Pushing for round 1", "good"
-    elif r >= 62:
-        label, tone = "Mid-season debut", "warn"
-    else:
-        label, tone = "Development year", "slow"
-    reasons = []
-    if p.rating is not None:
-        reasons.append(f"Rated {p.rating}" + (", in your workbook's best 22" if best22 else ", outside your workbook's best 22"))
-    if b and b["n"]:
-        reasons.append(f"{c['year']} first-years rated {band}: {b['played']} of {b['n']} played, median {b['median']:g} games")
-    if left:
-        line = {"DEF": "defence", "MID": "midfield", "FWD": "forward line", "RUC": "ruck"}.get(pos, "list")
-        reasons.append(f"Left {p.afl_team}'s {line}: {_and_list(left[:3])}")
-    return {"label": label, "tone": tone, "reasons": reasons, "band": band, "cohort": c}
+        if left:
+            reasons.append(f"{p.afl_team} lost {len(left)} {LINE_WORD.get(pos, 'players')} who played 8 or more games: "
+                           f"{_and_list(left[:3])}.")
+    return {"label": label, "tone": tone, "reasons": reasons}
 
 
 # ── ranking a junior season ──────────────────────────────────────────────
@@ -223,6 +285,7 @@ LINE_ROLES = {"KF": ("KF", "GF"), "GF": ("KF", "GF"), "KD": ("KD", "GD"), "GD": 
 LINE_WORDS = {("KF", "GF"): "forwards", ("KD", "GD"): "defenders"}
 MIN_ROLE_POOL = 12
 MIN_RANK_POOL = 8
+MIN_CROP = 4
 
 
 def _min_games(comp):
@@ -230,15 +293,14 @@ def _min_games(comp):
 
 
 def role_pool(comp):
-    """Every AFL-listed player (now or before) with a workbook role who played
-    this competition: his last season in it, as plain numbers. Junior feeds
+    """Every listed player with a known role who played this competition: his
+    last season in it and his draft year, as plain numbers. Junior feeds
     carry no position and a stat line cannot tell a key forward from a
     general one (54% right on a held-out check, 2026-11-26), so the pool is
     only players whose role we know. Lucas, 2026-11-26: "it should be like
     for like... so against mids, against key forwards, rucks"."""
     def build():
-        people = db.session.query(AflPlayer.id, AflPlayer.name, AflPlayer.role, AflPlayer.age).filter(
-            AflPlayer.role.isnot(None)).all()
+        people = AflPlayer.query.filter(AflPlayer.role.isnot(None)).all()
         by_id = {x.id: x for x in people}
         by_name = {}
         for x in people:
@@ -257,6 +319,7 @@ def role_pool(comp):
             if who.id in best and best[who.id]["key"] >= key:
                 continue
             best[who.id] = {"key": key, "pid": who.id, "role": who.role, "season": r.season,
+                            "dy": draft_info(who)[0],
                             "vals": {label: fn(r) for label, fn in RANK_STATS}}
         return list(best.values())
     return _cached("role_pool:" + comp, 6 * 3600, build)
@@ -270,17 +333,20 @@ def _roles_for(p):
 
 
 def _rank(row, p):
-    """Where his season ranks, stat by stat, against AFL-listed players of his
-    role from the same competition (any season), and against those of them
-    from his own season. Widens to his line (forwards, defenders) and then to
-    everyone when too few share his role. Lucas, 2026-11-26: "rankings not
-    comparisons of bs" and "who cares if someone was top 3% disposals when
-    most of the team are not disposal getters". Strongest first."""
-    pool = [x for x in role_pool(row.competition) if x["pid"] != p.id]
+    """Where his season ranks, stat by stat, against players of his role who
+    played the same competition: those drafted from FIRST_CLASS to last
+    year, and this year's crop. Widens to his line (forwards, defenders) and
+    then to everyone when too few share his role. Lucas, 2026-11-26/27:
+    "rankings not comparisons of bs", "who cares if someone was top 3%
+    disposals when most of the team are not disposal getters", "it should
+    have since 2019 and against current crop of draftee mids". Strongest
+    first."""
+    dy = draft_info(p)[0] or config.CURRENT_YEAR
+    pool = [x for x in role_pool(row.competition) if x["pid"] != p.id and x["dy"]]
     roles = _roles_for(p)
     group = None
     for cand in (roles, LINE_ROLES.get(roles[0]) if len(roles) == 1 else None):
-        if cand and sum(1 for x in pool if x["role"] in cand) + 1 >= MIN_ROLE_POOL:
+        if cand and sum(1 for x in pool if x["role"] in cand and FIRST_CLASS <= x["dy"] < dy) + 1 >= MIN_ROLE_POOL:
             group = tuple(cand)
             break
     if group:
@@ -288,24 +354,27 @@ def _rank(row, p):
         word = ROLE_WORDS[group[0]] if len(group) == 1 else LINE_WORDS.get(group, "players")
     else:
         word = "players"
-    first = min((x["season"] for x in pool), default=row.season)
+    prev = [x for x in pool if FIRST_CLASS <= x["dy"] < dy]
+    crop = [x for x in pool if x["dy"] == dy]
     out = []
     for label, fn in RANK_STATS:
         mine = fn(row)
-        vals = [x["vals"][label] for x in pool if x["vals"][label] is not None]
+        vals = [x["vals"][label] for x in prev if x["vals"][label] is not None]
         if mine is None or len(vals) + 1 < MIN_RANK_POOL or (label in ("Goals", "Hitouts") and mine < 0.5):
             continue
         rank = 1 + sum(1 for v in vals if v > mine)
         of = len(vals) + 1
         item = {"label": label, "value": _r1(mine), "rank": rank, "of": of,
                 "pct": round(100 * (1 - (rank - 1) / of)), "text": f"{ordinal(rank)} of {of}"}
-        cvals = [x["vals"][label] for x in pool if x["season"] == row.season and x["vals"][label] is not None]
-        if len(cvals) + 1 >= 5:
-            item["class_text"] = f"{ordinal(1 + sum(1 for v in cvals if v > mine))} of {len(cvals) + 1}"
+        cvals = [x["vals"][label] for x in crop if x["vals"][label] is not None]
+        if len(cvals) + 1 >= MIN_CROP:
+            item["crank"], item["cof"] = 1 + sum(1 for v in cvals if v > mine), len(cvals) + 1
+            item["class_text"] = f"{ordinal(item['crank'])} of {item['cof']}"
         out.append(item)
     out.sort(key=lambda x: (-x["pct"], x["rank"]))
-    meta = {"word": word, "since": first, "of": len(pool) + 1,
-            "pool": f"AFL-listed {word} who played the {league_name(row.competition, row.season)}, since {first}"}
+    meta = {"word": word, "first": FIRST_CLASS, "last": dy - 1, "dy": dy, "of": len(prev) + 1,
+            "crop_of": len(crop) + 1,
+            "pool": f"{word} drafted {FIRST_CLASS} to {dy - 1} who played the {league_name(row.competition, row.season)}"}
     return out[:6], meta
 
 
@@ -346,14 +415,22 @@ def description(p, head, ranks, meta, rows):
         out.append(f"A {who}, and {honour}.")
 
     if head and ranks:
-        top = [r for r in ranks if r["pct"] >= 75][:2] or ranks[:1]
+        # only stats every player in the pool has, so "against the 83" is true of each
+        whole = [r for r in ranks if r["of"] == meta["of"]] or ranks
+        top = [r for r in whole if r["pct"] >= 75][:2] or whole[:1]
         league = f"{head.season} {league_name(head.competition, head.season)}"
         bits = [f"{ordinal(r['rank'])} for {STAT_WORDS.get(r['label'], r['label'].lower())} "
                 f"({fmt_num(r['value'])}{'' if r['label'] == 'Fantasy' else ' a game'})" for r in top]
         comp = league_name(head.competition, head.season)
-        since = f" since {meta['since']}" if meta["since"] < head.season else f" in {head.season}"
-        out.append(f"{head.matches} games in the {league} for {head.team}. Against the {meta['of']} AFL-listed "
-                   f"{meta['word']} who played the {comp}{since}, he ranks " + " and ".join(bits) + ".")
+        out.append(f"{head.matches} games in the {league} for {head.team}. Against the {meta['of']} {meta['word']} "
+                   f"drafted {meta['first']} to {meta['last']} who played the {comp}, he ranks " + " and ".join(bits) + ".")
+        crop = [r for r in top if "crank" in r]
+        if crop:
+            ords = {ordinal(r["crank"]) for r in crop}
+            what = (f"{ords.pop()} for {'both' if len(crop) > 1 else STAT_WORDS.get(crop[0]['label'], crop[0]['label'].lower())}"
+                    if len(ords) == 1 else
+                    " and ".join(f"{ordinal(r['crank'])} for {STAT_WORDS.get(r['label'], r['label'].lower())}" for r in crop))
+            out.append(f"Among the {crop[0]['cof']} {meta['word']} in the {meta['dy']} draft who played it, he is {what}.")
     elif head:
         out.append(f"{head.matches} games in the {head.season} {league_name(head.competition, head.season)} for {head.team}, "
                    f"{fmt_num(disposals(head))} disposals a game.")
@@ -411,11 +488,12 @@ def pre_afl(p):
                     "team": head.team, "games": head.matches,
                     "stats": [{"label": a, "value": b} for a, b in stats if b is not None][:3],
                     "ranks": ranks, "meta": meta, "pool": meta["pool"],
-                    "col": f"vs {meta['word']}",
-                    "class_col": f"{head.season} only" if any("class_text" in r for r in ranks) else None}
+                    "group": f"vs {meta['word']}",
+                    "col": f"Drafted {meta['first']}-{meta['last'] % 100:02d}",
+                    "class_col": f"{meta['dy']} draft" if any("class_text" in r for r in ranks) else None}
 
     proj = next((r for r in rows if r.predicted_afl_sc), None)
-    v = verdict(p)
+    v = verdict(p, rows)
     desc = description(p, head, headline["ranks"] if headline else [], headline["meta"] if headline else None, rows)
     ht = honour_text(p.junior_honours)
     lines = [f"{(p.afl_team or '')} {POS_WORD.get(pos, 'player')}".strip() + (f", {p.age}" if p.age else "") + "."]
@@ -423,8 +501,7 @@ def pre_afl(p):
         lines.append(ht)
     return {
         "description": desc,
-        "verdict": {"label": v["label"], "tone": v["tone"], "reasons": v["reasons"]},
-        "cohort": v["cohort"], "band": v["band"],
+        "verdict": v,
         "facts": facts, "honours": p.junior_honours, "honour_note": ht, "pathway": p.junior_origin,
         "headline": headline,
         "seasons": [_season_row(r) for r in rows[:6]],

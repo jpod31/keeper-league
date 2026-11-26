@@ -193,15 +193,21 @@ def store(player, rows):
     return n
 
 
-def sync_junior_sources(only_new=True, limit=None):
-    """Fetch WAFL and Rookie Me rows for listed players with no AFL games.
+def sync_junior_sources(only_new=True, limit=None, drafted_since=None):
+    """Fetch WAFL and Rookie Me rows for listed players with no AFL games, or
+    with drafted_since, for every listed player drafted that year or later
+    (the past draftees the Before the AFL rankings compare against).
     Returns (players with rows, rows written)."""
     from models.database import db, AflPlayer
+    from models.pre_afl import draft_info
     q = AflPlayer.query.filter(AflPlayer.listed())
-    if only_new:
+    if only_new and not drafted_since:
         q = q.filter(db.or_(AflPlayer.career_games.is_(None), AflPlayer.career_games == 0))
+    todo = q.all()
+    if drafted_since:
+        todo = [p for p in todo if (draft_info(p)[0] or 0) >= drafted_since]
     players, rows_n = 0, 0
-    for i, p in enumerate(q.all()):
+    for i, p in enumerate(todo):
         if limit and i >= limit:
             break
         rows = fetch_wafl(p.name) + fetch_rookieme(p.name)

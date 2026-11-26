@@ -20,6 +20,7 @@ interface PreAfl {
     stats: { label: string; value: number }[]
     ranks: { label: string; value: number; pct: number; text: string; class_text?: string }[]
     pool: string
+    group?: string
     col?: string
     class_col?: string | null
   } | null
@@ -239,7 +240,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                       <div className="pa-head-t"><b>{p.pre_afl.headline.season} {p.pre_afl.headline.league}</b><span>{p.pre_afl.headline.team}{p.pre_afl.headline.games ? ', ' + p.pre_afl.headline.games + ' games' : ''}</span></div>
                       {p.pre_afl.headline.ranks.length > 0 ? (
                         <table className="pa-rt" title={'Ranked against ' + p.pre_afl.headline.pool}>
-                          <thead><tr><th></th><th className="n">Avg</th><th>{p.pre_afl.headline.col}</th>{p.pre_afl.headline.class_col && <th className="n">{p.pre_afl.headline.class_col}</th>}</tr></thead>
+                          <thead><tr><th>{p.pre_afl.headline.group}</th><th className="n">Avg</th><th>{p.pre_afl.headline.col}</th>{p.pre_afl.headline.class_col && <th className="n">{p.pre_afl.headline.class_col}</th>}</tr></thead>
                           <tbody>
                             {p.pre_afl.headline.ranks.map(r => (
                               <tr key={r.label}>
