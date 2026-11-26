@@ -180,7 +180,7 @@ export function PlayerDossierPage() {
             ))}
             {p.role_detail && <span className="pd-roletag">{p.role_detail}</span>}
           </div>
-          <h1 className="pd-name"><span className="pd-first">{first}</span><span className="pd-sur">{sur}</span></h1>
+          <h1 className="pd-name"><span className="pd-first">{first}</span><span className={`pd-sur${sur.length > 15 ? ' n3' : sur.length > 11 ? ' n2' : ''}`}>{sur}</span></h1>
           <div className="pd-club">
             {logo && <img src={logo} alt="" />}
             <span>{p.afl_team || 'No club'}</span>

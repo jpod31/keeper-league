@@ -11042,4 +11042,19 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .pmod-sil { fill: rgba(255,255,255,.16); filter: none; width: 116px; height: 116px; right: 44px; }
 .pmod-upper > :not(.pmod-photo) { position: relative; z-index: 1; }
 .pmod-nums { position: relative; z-index: 1; }
-.pmod-sur { white-space: normal; overflow-wrap: anywhere; }
+
+/* The surname on the card stays on one line ("Wanganeen-Milera" used to
+   break in two, then lost its end on a phone). It is sized to the room it
+   has: the name block is a size container, the type is that width over the
+   letter count (--n, set inline), between 16px and 32px. */
+.pmod-sur { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pmod-upper { padding-right: 150px; }
+.pmod-upper .pmod-crest { width: 42px; height: 42px; }
+.pmod-upper .pmod-face-id > div { flex: 1 1 auto; min-width: 0; container-type: inline-size; }
+.pmod-sur.pmod-fit { font-size: clamp(16px, calc(100cqw / (var(--n, 8) * .62)), 32px); }
+@media (max-width: 575.98px) {
+  .pmod-upper { padding-right: 112px; }
+  .pmod-photo { width: 118px; height: 118px; right: 18px; }
+  .pmod-sil { width: 100px; height: 100px; right: 26px; }
+  .pmod-upper .pmod-crest { display: none; }
+}

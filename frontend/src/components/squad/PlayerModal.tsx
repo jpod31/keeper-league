@@ -101,7 +101,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
             {logoUrl && <img className="pmod-crest" src={logoUrl} alt="" />}
             <div style={{ minWidth: 0 }}>
               <div className="pmod-first">{p.name.split(' ')[0]}</div>
-              <div className="pmod-sur">{p.name.split(' ').slice(1).join(' ') || p.name}</div>
+              <div className="pmod-sur pmod-fit" style={{ ['--n' as string]: (p.name.split(' ').slice(1).join(' ') || p.name).length } as React.CSSProperties}>{p.name.split(' ').slice(1).join(' ') || p.name}</div>
             </div>
           </div>
           <div className="pmod-face-meta">

@@ -68,3 +68,9 @@ details stats (scrollable left and right), sortable. everything."
       enough": the round-by-round and season tables show every stat we hold
       by default, plus where a coach in this league had him that round; the
       named / not named comparison covers every stat.
+- [x] "the wangeneen milera falls on multiple lines, we have to structure that
+      space so it doesnt.. this is the right pane stuff": the surname stays
+      on one line in the slide-in card (and the player page header), the
+      type stepping down for long names.
+- [ ] "dont like any of em" (squad header layouts 1 to 3): a second, bolder
+      set of directions on the canvas.

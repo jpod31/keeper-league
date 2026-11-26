@@ -37,7 +37,9 @@
 .pd-roletag { margin-left: 4px; padding: 3px 9px; border-radius: 6px; border: 1px solid rgba(255,255,255,.3); font-size: 14px; font-weight: 600; }
 .pd-name { margin: 0; display: flex; flex-direction: column; line-height: 1; text-shadow: 0 2px 12px rgba(0,0,0,.35); }
 .pd-first { font-size: 26px; font-weight: 500; letter-spacing: -.02em; margin-bottom: 4px; }
-.pd-sur { font-size: 64px; font-weight: 800; letter-spacing: -.045em; overflow-wrap: anywhere; }
+.pd-sur { font-size: 64px; font-weight: 800; letter-spacing: -.045em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd-sur.n2 { font-size: 52px; }
+.pd-sur.n3 { font-size: 42px; }
 .pd-club { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 17px; font-weight: 600; }
 .pd-club img { width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
 .pd-flag { padding: 3px 9px; border-radius: 6px; background: rgba(248,81,73,.2); border: 1px solid rgba(248,81,73,.6); font-size: 14px; font-weight: 600; }
@@ -218,6 +220,8 @@
   .pd-sil { width: 130px; height: 130px; }
   .pd-hero-id { padding-bottom: 18px; padding-right: 110px; }
   .pd-sur { font-size: 40px; }
+  .pd-sur.n2 { font-size: 32px; }
+  .pd-sur.n3 { font-size: 26px; }
   .pd-first { font-size: 20px; }
   .pd-facts { grid-template-columns: repeat(2, max-content); gap: 10px 24px; }
   .pd-hero-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
