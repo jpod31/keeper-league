@@ -14,6 +14,8 @@ import { ratingTier } from '../../lib/clubs'
 import { ask, tell } from '../../components/ui/dialog'
 import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 import { usePageState, useKeptScroll } from '../../lib/pageMemory'
+import { PoolDetailTable } from './PoolDetailTable'
+import { useWide } from '../../hooks/useWide'
 
 type AcquiredHistoryEntry = Stint
 
@@ -488,6 +490,9 @@ export function PlayerPoolPage() {
   const [pickingUp, setPickingUp] = useState<number | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
   const wishlist = useWishlist(leagueId)
+  // "Detailed stats": the table turns into every stat, sortable, scrolling sideways.
+  const [detailed, setDetailed] = usePageState('detailed', false)
+  const wide = useWide()
   // LeagueContext (separate from data.league below, that one is the
   // PoolData league summary, this one carries the teams[] roster for
   // the trade-from-row deep link).
@@ -827,6 +832,9 @@ export function PlayerPoolPage() {
               )}
             </div>
 
+            <button type="button" className={`pool-detail-switch${detailed ? ' on' : ''}`} aria-pressed={detailed} onClick={() => setDetailed(v => !v)}>
+              <span className="knob" />Detailed stats
+            </button>
             <span className="pf-density"><DensityToggle density={density} onChange={setDensity} /></span>
           </div>
 
@@ -859,8 +867,13 @@ export function PlayerPoolPage() {
           </div>
         </div>
 
+        {detailed && wide && (
+          <div className="card-body p-2 d-none d-lg-block">
+            <PoolDetailTable leagueId={leagueId!} players={sorted} teamLogos={data.team_logos} onOpen={openPlayer} />
+          </div>
+        )}
         {/* Desktop table */}
-        <div ref={keepTableScroll} className="card-body p-0 d-none d-lg-block" style={{ maxHeight: '78vh', overflow: 'auto' }}>
+        <div ref={keepTableScroll} className={`card-body p-0 ${detailed ? 'd-none' : 'd-none d-lg-block'}`} style={{ maxHeight: '78vh', overflow: 'auto' }}>
           <table className="table table-sm mb-0 pool-table">
             <thead className="sticky-top" style={{ background: '#151518', zIndex: 2 }}>
               <tr>
@@ -1081,6 +1094,9 @@ export function PlayerPoolPage() {
           {/* Sort + count row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px', borderBottom: '1px solid rgba(42,41,47,.4)' }}>
             <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}><b style={{ color: 'var(--kl-text-primary)' }}>{mobileSorted.length}</b> players</span>
+            <button type="button" className={`pool-detail-switch${detailed ? ' on' : ''}`} aria-pressed={detailed} onClick={() => setDetailed(v => !v)}>
+              <span className="knob" />Detailed
+            </button>
             <select
               className="form-select form-select-sm"
               value={mobSort}
@@ -1095,8 +1111,9 @@ export function PlayerPoolPage() {
             </select>
           </div>
 
+          {detailed && !wide && <PoolDetailTable leagueId={leagueId!} players={mobileSorted} teamLogos={data.team_logos} onOpen={openPlayer} />}
           {/* Player list, new card design */}
-          <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: detailed ? 'none' : undefined }}>
             {mob.visible.map(p => {
               const positions = (p.position || 'MID').split('/')
               const tc = p.owner_team ? team_colours[p.owner_team] : null

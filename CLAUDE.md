@@ -265,6 +265,35 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   run in the `/refresh` sequence and show in the player compare and the
   position percentile ranks. Unmatched names are printed; a near match is
   settled by club.
+- **The full player page** (`/leagues/<id>/player/<pid>`,
+  `pages/players/PlayerDossierPage.tsx`, data from
+  `/api/leagues/<id>/players/<pid>/dossier` built by `models/player_dossier.py`).
+  Reached from the card pop-up's "More details"; back returns to the card.
+  Tabs: Overview, AFL stats, Ratings, Career, Keeper League. "Named" in the
+  keeper career = an on-field slot (DEF/MID/FWD/RUC/FLEX); bench, emergency
+  and no slot are "not named". A season average only counts a stat held for
+  at least half his games (`_avg_cover`). The old server page `/player/<name>`
+  still exists but nothing in the app links to it now.
+- **Player photos**: AFL Manager's cutouts in `player_photos/` (NOT under
+  /static: nginx would serve them openly), served signed-in only by
+  `/api/player-photo/<slug>.webp`. `models/player_photos.find_slug`: exact
+  slug, then the player sync's nickname variants, then `ALIASES`. Never a
+  looser guess (surname + initial put Lachie Jones's face on Liam Jones).
+  No photo draws a silhouette. The folder is gitignored (licensed images,
+  never pushed to GitHub): copy it to `/opt/keeper-league/player_photos/`
+  on the server with scp, and copy new files over from
+  `AFL Manager/backend/aflm/api/static/players/` when that set grows.
+- **Workbook history**: `player_season_rating` (rating 2016 on, potential 2017
+  on) and `afl_player.draft_pick/draft_year/draft_type/father_son/academy/
+  international/grade/afl_best22` are written by the player sync.
+- **2026 stats gap, fixed 2026-11-26**: the live feed writes a game's row with
+  only the basic stats, and `scripts/import_player_stats.py` used to skip any
+  game that already had a row, so contested possessions, clearances, metres
+  gained and the rest never arrived from the full CSV. It now fills the
+  missing stats on existing rows (never changing a value already held).
+- **Pool "Detailed stats"** (`pages/players/PoolDetailTable.tsx`, data from
+  `/api/leagues/<id>/player-pool/detail`): every stat as a season average,
+  plus role and draft columns, name pinned, every column sorts, kept on back.
 - **`fantasy_roster` is one row per STINT**, not per (team, player). A club
   that redrafts a player it delisted gets a second row. Never add a unique
   constraint back; `models/player_history.py::league_stints` is the one

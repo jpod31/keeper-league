@@ -4,6 +4,7 @@ import {
   ResponsiveContainer, ComposedChart,
 } from 'recharts'
 import { PlayerNotes } from '../ui/PlayerNotes'
+import { Link } from 'react-router'
 
 interface PlayerDetail {
   id: number; name: string; position: string; afl_team: string
@@ -191,20 +192,13 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
 
           <PlayerNotes playerId={p.id} />
 
-          {/* Full player profile */}
-          <a
-            href={`/player/${encodeURIComponent(p.name)}`}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '12px', borderRadius: 12,
-              background: 'rgba(236,236,246,.08)', border: '1px solid rgba(236,236,246,.2)',
-              color: '#ececf6', fontSize: '.82rem', fontWeight: 700,
-              textDecoration: 'none',
-            }}
-          >
-            <i className="bi bi-person-lines-fill"></i>
-            Full Player Profile
-          </a>
+          {/* The full player page: career, ratings, his keeper league story. */}
+          {_leagueId && (
+            <Link to={`/leagues/${_leagueId}/player/${p.id}`} className="pmod-more">
+              More details
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
+            </Link>
+          )}
         </div>
       </div>
     </>

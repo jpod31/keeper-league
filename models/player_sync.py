@@ -124,6 +124,16 @@ class Row:
     rating_start: Optional[int]
     role: Optional[str]            # MID / RUC / GD / KD / GF / KF
     role_detail: Optional[str]     # "Rebound Defender"
+    # season -> (rating, potential), from the per-season columns
+    history: dict = field(default_factory=dict)
+    draft_pick: Optional[int] = None
+    draft_year: Optional[int] = None
+    draft_type: Optional[str] = None
+    father_son: Optional[bool] = None
+    academy: Optional[bool] = None
+    international: Optional[bool] = None
+    grade: Optional[str] = None
+    afl_best22: Optional[bool] = None
 
     @property
     def expected_position(self):
@@ -168,6 +178,34 @@ def _num(v, lo=0, hi=100):
     return v if lo <= v <= hi else None
 
 
+def _flag(v):
+    """1 / 0 cells as True / False; anything else unknown."""
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)) and v in (0, 1):
+        return bool(v)
+    return None
+
+
+def _write_profile(p, r):
+    """The workbook's draft details, grade, best-22 status and rating history.
+    A blank cell leaves what we have."""
+    from models.database import db, PlayerSeasonRating
+    for attr in ("draft_pick", "draft_year", "draft_type", "father_son", "academy",
+                 "international", "grade", "afl_best22"):
+        v = getattr(r, attr)
+        if v is not None:
+            setattr(p, attr, v)
+    if r.history:
+        have = {s.season: s for s in PlayerSeasonRating.query.filter_by(player_id=p.id).all()}
+        for y, (rt, pt) in r.history.items():
+            s = have.get(y)
+            if s is None:
+                db.session.add(PlayerSeasonRating(player_id=p.id, season=y, rating=rt, potential=pt))
+            else:
+                s.rating, s.potential = rt, pt
+
+
 def read_workbook(path, season_year):
     """The workbook's players as Rows. Raises if the sheet isn't there."""
     import openpyxl
@@ -185,6 +223,12 @@ def read_workbook(path, season_year):
         c_team, c_role = col("Team", 4), col("Position", 5)
         c_detail = col("Specific Position")
         c_start = col(str(season_year))
+        # Rating per season ("2016".."2027") and potential ("Potential 2017"..).
+        seasons = sorted(int(h) for h in headers if h.isdigit() and len(h) == 4)
+        c_hist = {y: (col(str(y)), col(f"Potential {y}")) for y in seasons}
+        c_pick, c_dyear, c_dtype = col("Draft Pick"), col("Draft Year"), col("Draft Type")
+        c_fs, c_acad, c_intl = col("FS"), col("Academy"), col("International")
+        c_grade, c_22 = col("Grade"), col("22")
 
         def cell(row, i):
             return row[i] if i is not None and i < len(row) else None
@@ -197,7 +241,24 @@ def read_workbook(path, season_year):
             team_raw = str(cell(row, c_team) or "").strip()
             role = cell(row, c_role)
             detail = cell(row, c_detail)
+            hist = {}
+            for y, (cr, cp) in c_hist.items():
+                rt, pt = _num(cell(row, cr)), _num(cell(row, cp))
+                if rt is not None or pt is not None:
+                    hist[y] = (rt, pt)
+            dtype = cell(row, c_dtype)
+            grade = cell(row, c_grade)
+            b22 = cell(row, c_22)
             rows.append(Row(
+                history=hist,
+                draft_pick=_num(cell(row, c_pick), 0, 200),
+                draft_year=_num(cell(row, c_dyear), 1980, 2100),
+                draft_type=str(dtype).strip() if isinstance(dtype, str) and dtype.strip() else None,
+                father_son=_flag(cell(row, c_fs)),
+                academy=_flag(cell(row, c_acad)),
+                international=_flag(cell(row, c_intl)),
+                grade=str(grade).strip() if isinstance(grade, str) and grade.strip() else None,
+                afl_best22=(b22.strip() == "Best 22") if isinstance(b22, str) and b22.strip() else None,
                 name=name.strip(),
                 team=TEAM_MAP.get(team_raw, team_raw),
                 age=_num(cell(row, c_age), 15, 50),
@@ -375,6 +436,7 @@ def apply_sync(plan):
             p.list_status = "listed"
         if p.left_afl_year is not None:
             p.left_afl_year = None
+        _write_profile(p, r)
 
     for r in plan.create:
         if (r.name, r.team) in taken:
@@ -390,6 +452,7 @@ def apply_sync(plan):
         )
         db.session.add(p)
         db.session.flush()
+        _write_profile(p, r)
         taken[(r.name, r.team)] = p.id
         changed["created"] += 1
 

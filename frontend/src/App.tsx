@@ -72,6 +72,7 @@ import { PlayerPoolPage } from './pages/players/PlayerPoolPage'
 import { InjuriesPage } from './pages/players/InjuriesPage'
 import { PlayerRatingsPage } from './pages/players/PlayerRatingsPage'
 import { PlayerComparePage } from './pages/players/PlayerComparePage'
+const PlayerDossierPage = lazy(() => import('./pages/players/PlayerDossierPage').then(m => ({ default: m.PlayerDossierPage })))
 import { StatsPage } from './pages/players/StatsPage'
 import { ScoutingPage } from './pages/players/ScoutingPage'
 import { BreakoutRadarPage } from './pages/players/BreakoutRadarPage'
@@ -148,6 +149,7 @@ export default function App() {
           {/* Players */}
           <Route path="player-pool" element={<PlayerPoolPage />} />
           <Route path="players/compare" element={<PlayerComparePage />} />
+          <Route path="player/:playerId" element={<PlayerDossierPage />} />
           <Route path="player-ratings" element={<PlayerRatingsPage />} />
           <Route path="injuries" element={<InjuriesPage />} />
           <Route path="list-changes" element={<ListChangesPage />} />

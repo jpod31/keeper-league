@@ -1,0 +1,49 @@
+/* Pool, detailed stats: a wide table, name pinned, sideways scroll. */
+.pdt { display: flex; flex-direction: column; gap: 8px; }
+.pdt-note { padding: 0 2px; font-size: 14px; }
+.pdt-loading { padding: 30px; text-align: center; font-size: 15px; }
+.pdt-box { max-height: 76vh; overflow: auto; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: #0b0b0e; }
+.pdt-table { border-collapse: separate; border-spacing: 0; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pdt-table th { position: sticky; top: 0; z-index: 2; padding: 10px 10px; text-align: right; font-size: 13px; font-weight: 700; letter-spacing: .03em;
+  background: #141418; border-bottom: 1px solid rgba(255,255,255,.14); cursor: pointer; user-select: none; }
+.pdt-table th:hover { background: #1c1c22; }
+.pdt-table th.on { background: #ffffff; color: #050506; }
+.pdt-table th .arr { margin-left: 3px; }
+.pdt-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid rgba(255,255,255,.05); }
+.pdt-table td.on { background: rgba(255,255,255,.05); font-weight: 700; }
+.pdt-table td.sc { font-weight: 800; }
+.pdt-table td.own { text-align: center; }
+.pdt-table td.own .fa { font-weight: 600; color: #3fb950; }
+.pdt-table tbody tr { cursor: pointer; }
+.pdt-table tbody tr:hover td { background: #18181d; }
+.pdt-table .pin { position: sticky; left: 0; z-index: 1; text-align: left; background: #0f0f13; border-right: 1px solid rgba(255,255,255,.12);
+  min-width: 230px; max-width: 260px; }
+.pdt-table th.pin { z-index: 3; background: #141418; }
+.pdt-table tbody tr:hover td.pin { background: #18181d; }
+.pdt-name { display: flex; align-items: center; gap: 8px; }
+.pdt-name img, .pdt-name > i { width: 18px; height: 18px; object-fit: contain; flex: none; }
+.pdt-name .n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.pdt-pos { display: inline-flex; gap: 2px; margin-left: auto; padding-left: 6px; }
+.pdt-dot { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%;
+  font-size: 13px; font-weight: 800; color: #050506; }
+.pdt-def { background: var(--pos-def); } .pdt-mid { background: var(--pos-mid); }
+.pdt-ruc { background: var(--pos-ruc); } .pdt-fwd { background: var(--pos-fwd); }
+.pdt-dot.exp { background: transparent; border: 1px dashed currentColor; }
+.pdt-def.exp { color: var(--pos-def); } .pdt-mid.exp { color: var(--pos-mid); } .pdt-ruc.exp { color: var(--pos-ruc); } .pdt-fwd.exp { color: var(--pos-fwd); }
+.pdt-table .rt { min-width: 32px; }
+.pdt-more { text-align: center !important; padding: 14px !important; }
+@media (max-width: 991.98px) {
+  .pdt-box { max-height: none; border-radius: 0; border-left: 0; border-right: 0; }
+  .pdt-table .pin { min-width: 168px; max-width: 168px; }
+  .pdt-pos { display: none; }
+}
+
+/* The switch that turns it on. */
+.pool-detail-switch { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.22); background: transparent; color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.pool-detail-switch:hover { border-color: rgba(255,255,255,.5); }
+.pool-detail-switch.on { background: #ffffff; color: #050506; border-color: #ffffff; }
+.pool-detail-switch .knob { width: 28px; height: 16px; border-radius: 8px; background: rgba(255,255,255,.25); position: relative; flex: none; }
+.pool-detail-switch .knob::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #ffffff; transition: left .12s ease; }
+.pool-detail-switch.on .knob { background: #050506; }
+.pool-detail-switch.on .knob::after { left: 14px; }

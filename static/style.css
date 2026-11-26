@@ -11028,3 +11028,8 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 }
 .fv-swap-mode .fv-card.fv-card.fv-card.fv-card, .fv-swap-mode .fv-card.fv-card.fv-card.fv-card:hover {
   transform: none !important; transition: border-color .1s ease !important; }
+
+/* Player card pop-up: the way on to the full player page. */
+.pmod-more { display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border-radius: 9px;
+  background: #ffffff; color: #050506; font-size: 15px; font-weight: 700; text-decoration: none; }
+.pmod-more:hover { background: #d9d9e0; color: #050506; }

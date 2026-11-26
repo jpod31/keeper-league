@@ -1662,3 +1662,6 @@ register_season_review_endpoints(spa_api)
 
 from blueprints.league_extras import register_league_extras
 register_league_extras(spa_api)
+
+from blueprints.player_dossier_endpoints import register_player_dossier_endpoints
+register_player_dossier_endpoints(spa_api)

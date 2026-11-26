@@ -2,7 +2,10 @@
 
 Matches CSV 'Player' column to AflPlayer.name -> player_id.
 Parses round strings ('Round 5', 'Qualifying Final', etc.) to integers.
-Idempotent: skips rows where (player_id, year, round) already exists.
+Idempotent. A game that already has a row (the live feed writes one during
+the match, with only the basic stats) gets the stats it is missing filled
+in from the CSV; a value it already holds is never changed, so scores that
+were counted stay as they were.
 
 Usage:
     python scripts/import_player_stats.py              # all years
@@ -120,12 +123,10 @@ def import_year(year, name_to_id, data_dir):
         print(f"  {year}: file not found, skipping")
         return 0
 
-    # Pre-load existing keys for this year to skip dupes
-    existing = set(
-        db.session.query(PlayerStat.player_id, PlayerStat.round)
-        .filter_by(year=year)
-        .all()
-    )
+    # Rows already there for this year, to fill in rather than duplicate.
+    existing_rows = {(s.player_id, s.round): s for s in PlayerStat.query.filter_by(year=year).all()}
+    existing = set(existing_rows)
+    filled = 0
 
     created = 0
     skipped_name = 0
@@ -150,7 +151,21 @@ def import_year(year, name_to_id, data_dir):
                 continue
 
             if (pid, rnd) in existing:
-                skipped_dupe += 1
+                have = existing_rows.get((pid, rnd))
+                changed = False
+                if have is not None and not have.is_live:
+                    for csv_col, attr in COL_MAP.items():
+                        if getattr(have, attr) is not None:
+                            continue
+                        val = row.get(csv_col)
+                        v = safe_float(val) if attr in ("disposal_efficiency", "metres_gained", "time_on_ground_pct") else safe_int(val)
+                        if v is not None:
+                            setattr(have, attr, v)
+                            changed = True
+                if changed:
+                    filled += 1
+                else:
+                    skipped_dupe += 1
                 continue
 
             stat = PlayerStat(
@@ -177,9 +192,10 @@ def import_year(year, name_to_id, data_dir):
 
     if batch:
         db.session.bulk_save_objects(batch)
-        db.session.commit()
+    db.session.commit()
 
-    print(f"  {year}: {created} imported, {skipped_dupe} dupes, {skipped_name} unmatched names, {skipped_round} bad rounds")
+    print(f"  {year}: {created} imported, {filled} filled in, {skipped_dupe} already complete, "
+          f"{skipped_name} unmatched names, {skipped_round} bad rounds")
     return created
 
 

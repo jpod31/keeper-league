@@ -12,3 +12,6 @@ cookies.txt
 .DS_Store
 _mobtest/
 node_modules/
+
+# AFL Manager headshots: licensed, copied to the server directly, never pushed.
+player_photos/

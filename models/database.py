@@ -41,6 +41,15 @@ class AflPlayer(db.Model):
     kick_in_pct = db.Column(db.Float)
     kick_in_playon_pct = db.Column(db.Float)
     kick_ins_season = db.Column(db.Integer)
+    # From the player workbook: how he came into the AFL, and where he sits.
+    draft_pick = db.Column(db.Integer)           # 0 = no pick number (rookie, pre-listed)
+    draft_year = db.Column(db.Integer)
+    draft_type = db.Column(db.String(20))        # National, Rookie, Mid-Season, ...
+    father_son = db.Column(db.Boolean)
+    academy = db.Column(db.Boolean)
+    international = db.Column(db.Boolean)
+    grade = db.Column(db.String(20))             # Elite, A Grade, B Grade, AFL Standard, Rotation, Reserves
+    afl_best22 = db.Column(db.Boolean)           # in his AFL club's best 22 (workbook "22")
     # AFL list membership. The player workbook is the list of record: a player
     # it no longer names has left the AFL and becomes "former". The row stays
     # (every draft pick, lineup and score still points at it); afl_team is then
@@ -94,6 +103,22 @@ class RatingLog(db.Model):
     changed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     player = db.relationship("AflPlayer", backref="rating_logs")
+
+
+class PlayerSeasonRating(db.Model):
+    """His rating and potential as the workbook had them each season
+    (rating from 2016, potential from 2017). Rewritten by the player sync."""
+    __tablename__ = "player_season_rating"
+
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=False, index=True)
+    season = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.Integer)
+    potential = db.Column(db.Integer)
+
+    __table_args__ = (
+        db.UniqueConstraint("player_id", "season", name="uq_season_rating_player_season"),
+    )
 
 
 class ScScore(db.Model):
@@ -1555,6 +1580,14 @@ def _run_migrations(app):
             ("kick_in_pct", "FLOAT"),
             ("kick_in_playon_pct", "FLOAT"),
             ("kick_ins_season", "INTEGER"),
+            ("draft_pick", "INTEGER"),
+            ("draft_year", "INTEGER"),
+            ("draft_type", "VARCHAR(20)"),
+            ("father_son", "BOOLEAN"),
+            ("academy", "BOOLEAN"),
+            ("international", "BOOLEAN"),
+            ("grade", "VARCHAR(20)"),
+            ("afl_best22", "BOOLEAN"),
             ("list_status", "VARCHAR(10) DEFAULT 'listed'"),
             ("left_afl_year", "INTEGER"),
             ("joined_year", "INTEGER"),
