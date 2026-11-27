@@ -640,3 +640,29 @@ def honour_boards(league_id):
         else:
             out.append(board(kind, kind, KINDS[kind][0]))
     return out
+
+
+def cabinets(league_id):
+    """Every honoured player with everything he has accumulated: one row per
+    player, his badges in their metal, his Hall of Fame points. Lucas,
+    2026-11-27: "its more about which badges players have accumulated ... a
+    scrollable list with badges of players that have earnt those badges"."""
+    from models.player_photos import photo_url
+    data = league_honours(league_id)
+    teams = data["teams"]
+    pids = list(data["by_player"])
+    players = {p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_(pids or [0])).all()}
+    out = []
+    for pid, hs in data["by_player"].items():
+        p = players.get(pid)
+        if not p:
+            continue
+        with_club = [h for h in hs if h.get("team_id")]
+        team = teams.get(max(with_club, key=lambda h: h.get("year") or 0)["team_id"], "") if with_club else ""
+        ems = _emblems(hs, teams)
+        out.append({"id": pid, "name": p.name, "position": p.position or "", "afl_team": p.afl_team or "",
+                    "photo_url": photo_url(p.name), "team": team, "points": data["points"].get(pid, 0),
+                    "badges": [{"kind": e["kind"], "name": e["name"], "tier": e["tier"], "times": e["times"], "step": e["step"],
+                                "seven": e["seven"], "years": sorted({i["year"] for i in e["items"] if i.get("year")})} for e in ems]})
+    out.sort(key=lambda r: (-r["points"], -len(r["badges"]), r["name"]))
+    return out

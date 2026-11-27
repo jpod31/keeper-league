@@ -11613,3 +11613,45 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .hb2-bh { grid-template-columns: 48px minmax(0, 1fr) auto; padding: 16px; }
   .hb2-bh > .emblem { width: 48px; height: 48px; }
 }
+
+/* Honour Board, 2026-11-27 (third pass): Players is the default view, a
+   scrollable list of everyone with a badge and everything he has earned;
+   Badges is one collapsible section per badge. Lucas: "its more about which
+   badges players have accumulated ... collapsable lists of the players". */
+.hb2-tools { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.hb2-search { display: flex; align-items: center; gap: 10px; height: 46px; max-width: 460px; padding: 0 14px; border-radius: 12px; background: #101014; border: 1px solid rgba(255,255,255,.14); color: #fff; }
+.hb2-search:focus-within { border-color: #fff; }
+.hb2-search input { flex: 1; min-width: 0; border: 0; background: none; color: #fff; font: 500 15px var(--kl-font); outline: none; }
+.hb2-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.hb2-filter button { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px 0 8px; border-radius: 18px; border: 1px solid rgba(255,255,255,.14);
+  background: #101014; color: #fff; font: 700 13px var(--kl-font); cursor: pointer; white-space: nowrap; }
+.hb2-filter button:first-child { padding-left: 12px; }
+.hb2-filter button.on { background: #fff; color: #050506; border-color: #fff; }
+.hb2-people { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.hb2-person { width: 100%; display: grid; grid-template-columns: 28px 48px minmax(160px, 240px) minmax(0, 1fr) 72px; gap: 14px; align-items: center;
+  padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: #101014; color: #fff; text-align: left; cursor: pointer; font-family: var(--kl-font); }
+.hb2-person:hover { border-color: rgba(255,255,255,.28); background: #14141a; }
+.hb2-rank { font: 900 16px/1 var(--kl-font); text-align: center; font-variant-numeric: tabular-nums; }
+.hb2-cab { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.hb2-bad { position: relative; display: inline-flex; padding: 4px; border-radius: 10px; background: #17171d; box-shadow: inset 0 -2px 0 var(--t); }
+.hb2-bad em { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--t); color: #0b0b0e;
+  font: 900 13px/20px var(--kl-font); font-style: normal; text-align: center; }
+.hb2-bad.t-black em { background: #0b0b0e; color: var(--t); box-shadow: 0 0 0 1.5px var(--t); }
+.hb2-accs { display: flex; flex-direction: column; gap: 10px; }
+.hb2-acc-h { width: 100%; grid-template-columns: 56px minmax(0, 1fr) auto 24px; border: 0; background: none; color: #fff; text-align: left; cursor: pointer; font-family: var(--kl-font); }
+.hb2-acc:not(.open) .hb2-acc-h { border-bottom: 0; }
+.hb2-acc-h:hover { background: rgba(255,255,255,.03); }
+.hb2-h3 { font-size: 21px; font-weight: 800; letter-spacing: -.015em; }
+.hb2-p { font-size: 14px; line-height: 1.45; font-weight: 500; }
+.hb2-chev { font-size: 16px; }
+.hb2-acc .hb2-list { padding: 10px 12px 14px; }
+@media (max-width: 991.98px) {
+  .hb2-person { grid-template-columns: 22px 44px minmax(0, 1fr) 56px; }
+  .hb2-person .hb2-cab { grid-column: 2 / -1; grid-row: 2; }
+}
+@media (max-width: 575.98px) {
+  .hb2-acc-h { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .hb2-acc-h > .emblem { width: 44px; height: 44px; }
+  .hb2-acc-h .hb2-chev { display: none; }
+  .hb2-acc-h .hb2-p { display: none; }
+}

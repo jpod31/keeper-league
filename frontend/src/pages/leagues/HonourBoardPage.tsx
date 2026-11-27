@@ -27,7 +27,10 @@ interface Season {
     top_club_round: { score: number; team: string; round: number } | null
   }
 }
+interface Badge { kind: Kind; name: string; tier: Tier; times: number; step: number | null; seven: boolean; years: number[] }
+interface Cabinet extends P { team: string; points: number; badges: Badge[] }
 interface Data {
+  players: Cabinet[]
   boards: Board[]
   seasons: Season[]
   hall: { line: number; legend: number; race: (P & { points: number; emblems: { kind: Kind; tier: Tier; seven: boolean; step: number | null }[] })[]
@@ -51,7 +54,6 @@ const HOW: Record<string, string> = {
   legend: '250 points, or two Keeper Medals and the Hall of Fame.',
 }
 const TIER_WORD: Record<Tier, string> = { gold: 'Gold', plat: 'Platinum', ruby: 'Ruby', sapph: 'Sapphire', black: 'Black', silver: 'Silver', bronze: 'Bronze' }
-const SHOW = 8
 
 function Face({ p, size = 44 }: { p: P; size?: number }) {
   const [bad, setBad] = useState(false)
@@ -66,54 +68,55 @@ function Pos({ p }: { p: string }) {
   return <span className={`pos-badge badge-${k.toLowerCase()}`}>{k}</span>
 }
 
-function BoardCard({ b, open }: { b: Board; open: (id: number) => void }) {
-  const [all, setAll] = useState(false)
-  const shown = all ? b.holders : b.holders.slice(0, SHOW)
+const boardTier = (b: Board): Tier => b.kind === 'legend' ? 'black' : b.kind === 'siren' ? 'bronze'
+  : b.kind === 'clubgames' ? (b.step === 50 ? 'silver' : b.step === 150 ? 'plat' : b.step === 200 ? 'black' : 'gold') : 'gold'
+const howOf = (b: Board) => b.kind === 'clubgames' ? `${b.step} games for one club, counting games in the side that scored.` : HOW[b.kind]
+
+/** One badge, collapsed to its header until opened: then everyone who holds it. */
+function BadgeSection({ b, open, onToggle, openPlayer }: { b: Board; open: boolean; onToggle: () => void; openPlayer: (id: number) => void }) {
   return (
-    <article className={`hb2-board${b.seven ? ' seven' : ''}`}>
-      <header className="hb2-bh">
-        <Emblem kind={b.kind} tier={b.kind === 'legend' ? 'black' : b.kind === 'siren' ? 'bronze' : b.kind === 'clubgames' ? (b.step === 50 ? 'silver' : b.step === 150 ? 'plat' : b.step === 200 ? 'black' : 'gold') : 'gold'} step={b.step} size={60} />
-        <div className="hb2-bt">
-          <h3>{b.name}</h3>
-          <p>{b.kind === 'clubgames' ? `${b.step} games for one club, counting games in the side that scored.` : HOW[b.kind]}</p>
-        </div>
-        <div className="hb2-count"><b>{b.holders.length}</b><span>{b.holders.length === 1 ? 'Holder' : 'Holders'}</span></div>
-      </header>
-      {b.holders.length === 0 ? (
+    <article className={`hb2-board hb2-acc${b.seven ? ' seven' : ''}${open ? ' open' : ''}`}>
+      <button type="button" className="hb2-bh hb2-acc-h" onClick={onToggle} aria-expanded={open}>
+        <Emblem kind={b.kind} tier={boardTier(b)} step={b.step} size={56} />
+        <span className="hb2-bt"><span className="hb2-h3">{b.name}</span><span className="hb2-p">{howOf(b)}</span></span>
+        <span className="hb2-count"><b>{b.holders.length}</b><span>{b.holders.length === 1 ? 'Holder' : 'Holders'}</span></span>
+        <i className={`bi bi-chevron-${open ? 'up' : 'down'} hb2-chev`} aria-hidden="true"></i>
+      </button>
+      {open && (b.holders.length === 0 ? (
         <div className="hb2-empty">No one yet.{b.points ? ` Worth ${b.points} Hall of Fame points.` : ''}</div>
       ) : (
         <ol className="hb2-list">
-          {shown.map(h => (
+          {b.holders.map(h => (
             <li key={h.id} className={`hb2-h t-${h.tier}`}>
-              <button type="button" onClick={() => open(h.id)}>
+              <button type="button" onClick={() => openPlayer(h.id)}>
                 <Face p={h} />
                 <span className="hb2-who">
                   <span className="hb2-nm"><b>{h.name}</b><Pos p={h.position} /></span>
                   <span className="hb2-club">{h.team ? <TeamBadge name={h.team} size={22} /> : h.afl_team}</span>
                 </span>
                 <span className="hb2-won">
-                  <b>{h.years.length ? h.years.join(', ') : 'Inducted'}</b>
-                  <span>{h.times > 1 ? `${h.times} times, ${TIER_WORD[h.tier]}` : TIER_WORD[h.tier]}</span>
+                  <b>{h.times > 1 ? `${h.times} times` : 'Once'}</b>
+                  <span>{h.years.length ? h.years.join(', ') : TIER_WORD[h.tier]}</span>
                 </span>
                 <Emblem kind={b.kind} tier={h.tier} step={b.step} size={40} />
               </button>
             </li>
           ))}
         </ol>
-      )}
-      {b.holders.length > SHOW && (
-        <button type="button" className="hb2-more" onClick={() => setAll(v => !v)}>{all ? 'Show fewer' : `Show all ${b.holders.length}`}</button>
-      )}
+      ))}
     </article>
   )
 }
 
-type View = 'boards' | 'allleague' | 'hall' | 'records'
+type View = 'players' | 'badges' | 'allleague' | 'hall' | 'records'
 
 export function HonourBoardPage() {
   const { leagueId } = useParams()
   const { data, loading, error } = useKeptFetch<Data>(`/api/leagues/${leagueId}/honours/board`)
-  const [view, setView] = usePageState<View>('view', 'boards')
+  const [view, setView] = usePageState<View>('view2', 'players')
+  const [opened, setOpened] = usePageState<string[]>('opened', [])
+  const [q, setQ] = usePageState('q', '')
+  const [only, setOnly] = usePageState<string | null>('only', null)
   const [year, setYear] = usePageState<number | null>('year', null)
   const openPlayer = useOpenPlayer()
 
@@ -122,7 +125,12 @@ export function HonourBoardPage() {
   const named = data.seasons.filter(s => Object.keys(s.all_league || {}).length)
   const season = named.find(s => s.year === year) || named[0]
   const recSeason = data.seasons.find(s => s.year === year) || data.seasons[0]
-  const views: [View, string][] = [['boards', 'Honour boards'], ['allleague', 'All-League 23'], ['hall', 'Hall of Fame'], ['records', 'Records']]
+  const views: [View, string][] = [['players', 'Players'], ['badges', 'Badges'], ['allleague', 'All-League 23'], ['hall', 'Hall of Fame'], ['records', 'Records']]
+  const kinds = data.boards.filter(b => b.holders.length).map(b => ({ key: b.key, kind: b.kind, step: b.step, name: b.name }))
+  const ql = q.trim().toLowerCase()
+  const people = data.players.filter(p => (!ql || p.name.toLowerCase().includes(ql) || p.team.toLowerCase().includes(ql))
+    && (!only || p.badges.some(x => (x.kind === 'clubgames' ? `clubgames${x.step}` : x.kind) === only)))
+  const toggle = (k: string) => setOpened(o => o.includes(k) ? o.filter(x => x !== k) : [...o, k])
   const Name = ({ p }: { p: P }) => <button type="button" className="hb2-link" onClick={() => openPlayer(p.id)}>{p.name}</button>
 
   return (
@@ -136,17 +144,55 @@ export function HonourBoardPage() {
         </div>
       </header>
 
-      {view === 'boards' && (
+      {view === 'players' && (
         <>
+          <div className="hb2-tools">
+            <label className="hb2-search"><i className="bi bi-search"></i><input value={q} onChange={e => setQ(e.target.value)} placeholder="Find a player or club" aria-label="Find a player or club" /></label>
+            <div className="hb2-filter" role="group" aria-label="Only players with this badge">
+              <button type="button" className={!only ? 'on' : ''} onClick={() => setOnly(null)}>All badges</button>
+              {kinds.map(k => (
+                <button key={k.key} type="button" className={only === k.key ? 'on' : ''} onClick={() => setOnly(only === k.key ? null : k.key)} title={k.name}>
+                  <Emblem kind={k.kind} tier="gold" step={k.step} size={22} />{k.name}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="hb2-legend" aria-label="What the colours mean">
             {(['gold', 'plat', 'ruby', 'sapph', 'black'] as Tier[]).map((t, i) => (
               <span key={t} className={`t-${t}`}><i />{i === 4 ? '5 or more' : i === 0 ? 'Won once' : `${i + 1} times`}</span>
             ))}
           </div>
-          <div className="hb2-boards">
-            {data.boards.map(b => <BoardCard key={b.key} b={b} open={openPlayer} />)}
-          </div>
+          <ol className="hb2-people">
+            {people.map((p, i) => (
+              <li key={p.id}>
+                <button type="button" className="hb2-person" onClick={() => openPlayer(p.id)}>
+                  <span className="hb2-rank">{i + 1}</span>
+                  <Face p={p} size={48} />
+                  <span className="hb2-who">
+                    <span className="hb2-nm"><b>{p.name}</b><Pos p={p.position} /></span>
+                    <span className="hb2-club">{p.team ? <TeamBadge name={p.team} size={22} /> : p.afl_team}</span>
+                  </span>
+                  <span className="hb2-cab">
+                    {p.badges.map(x => (
+                      <span key={x.kind + (x.step ?? '')} className={`hb2-bad t-${x.tier}`} title={`${x.kind === 'clubgames' ? (x.step === 100 ? 'Life Member' : `${x.step} club games`) : x.name}${x.years.length ? ', ' + x.years.join(', ') : ''}`}>
+                        <Emblem kind={x.kind} tier={x.tier} step={x.step} size={38} />
+                        {x.times > 1 && <em>{x.times}</em>}
+                      </span>
+                    ))}
+                  </span>
+                  <span className="hb2-stat"><b>{p.points}</b><span>Points</span></span>
+                </button>
+              </li>
+            ))}
+            {!people.length && <li className="hb2-empty">No player matches.</li>}
+          </ol>
         </>
+      )}
+
+      {view === 'badges' && (
+        <div className="hb2-accs">
+          {data.boards.map(b => <BadgeSection key={b.key} b={b} open={opened.includes(b.key)} onToggle={() => toggle(b.key)} openPlayer={openPlayer} />)}
+        </div>
       )}
 
       {view === 'allleague' && (
