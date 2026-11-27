@@ -24,6 +24,8 @@ from models.database import (
     DraftSession, DraftPick, DelistAction, DelistPeriod, User,
 )
 
+from models.player_photos import photo_url
+
 logger = logging.getLogger(__name__)
 
 NOTE_MAX = 2000
@@ -144,7 +146,7 @@ def register_league_extras(spa_api):
             for fr in rows:
                 if fr.player and fr.player_id not in mine:
                     mine.add(fr.player_id)
-                    squad.append(_player_card(fr.player))
+                    squad.append(_player_card(fr.player, {"photo_url": photo_url(fr.player.name)}))
             squad.sort(key=lambda x: x["name"].split(" ")[-1])
         by_player = defaultdict(list)
         for n in (PlayerNote.query.filter_by(user_id=current_user.id)
@@ -155,7 +157,7 @@ def register_league_extras(spa_api):
             p = notes[0].player
             if not p:
                 continue
-            players.append({"player": _player_card(p), "mine": pid in mine,
+            players.append({"player": _player_card(p, {"photo_url": photo_url(p.name)}), "mine": pid in mine,
                             "latest": _utc_iso(notes[0].created_at),
                             "notes": [_note_json(n) for n in notes]})
         # newest first, your own squad ahead of everyone else
@@ -207,7 +209,7 @@ def register_league_extras(spa_api):
         ql = q.lower()
         rows.sort(key=lambda p: (p.is_former, not p.name.lower().startswith(ql)
                                  and not p.name.lower().split(" ")[-1].startswith(ql), p.name))
-        return jsonify({"players": [_player_card(p) for p in rows[:15]]})
+        return jsonify({"players": [_player_card(p, {"photo_url": photo_url(p.name)}) for p in rows[:15]]})
 
     # ── Honours v3 (models/player_honours.py) ────────────────────────
 
