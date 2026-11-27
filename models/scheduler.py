@@ -573,15 +573,19 @@ def _sync_round_schedule():
 
 
 def _sync_positions():
-    """Weekly job: sync player positions from Footywire."""
+    """Weekly job: positions from the official AFL Fantasy list (players the
+    article adds later, rookie and SSP signings, pick theirs up). Footywire
+    is no longer the source, so it cannot overwrite the official list."""
     if not _app:
         return
 
     with _app.app_context():
         try:
-            from scrapers.footywire import sync_player_positions
-            changes = sync_player_positions()
-            logger.info("Weekly position sync: %d changes", len(changes))
+            import config
+            from models.fantasy_positions import sync
+            p = sync(config.FANTASY_POSITIONS_URL)
+            logger.info("Weekly position sync: %d changed, %d expected confirmed",
+                        len(p.changes), len(p.confirmed))
         except Exception:
             logger.exception("Error in weekly position sync")
 

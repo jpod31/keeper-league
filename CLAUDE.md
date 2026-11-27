@@ -183,12 +183,26 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   run by `scripts/sync_players.py --dry-run` then for real, or the whole
   November sequence by `scripts/cutover_season.py`). It updates rating, age
   AND club, creates new players with an EXPECTED position
-  (`afl_player.position_expected`, shown as "exp", cleared by the footywire
-  position sync), and marks players it no longer names as former
+  (`afl_player.position_expected`, shown as "exp", cleared by the official
+  positions sync below), and marks players it no longer names as former
   (`list_status='former'`, `left_afl_year`). Former players are never
   deleted; `AflPlayer.listed()` is the filter for anything draftable or
   signable. Matching is one-to-one, strictest rule first; read the dry run's
   "new" and "off AFL lists" lists after every refresh.
+- **Positions come from the official AFL Fantasy list**
+  (`models/fantasy_positions.py`, `scripts/sync_fantasy_positions.py`, dry run
+  by default, `--apply` to write). Source: the AFL.com.au "Fantasy <year>:
+  Every player, every position" article (Champion Data), address in
+  `config.FANTASY_POSITIONS_URL`; replace it each pre-season. Matching is name
+  + club, nickname + club, name alone, then surname + first initial + club
+  (Archer / Archie May; `SPELLINGS` for Teixeira / Texeira). It writes
+  `position`, clears `position_expected`, then `repair_slots()` moves anyone
+  now named in a slot he cannot play (nothing checks eligibility at lockout,
+  so it would score): swap with a team-mate on the field first, else the best
+  bench player comes on and the side keeps the stronger of him and the
+  weakest player in a slot he can play. The Tuesday job runs the same sync
+  (Footywire positions were the source until 2026-11-28 and would overwrite
+  the official list). Applied for 2027 on 2026-11-28.
 - **Back puts you where you were** (`frontend/src/lib/pageMemory.tsx`). Each
   browser history entry has its own store in sessionStorage, so it survives
   the full page load on the way back from the server-rendered profile

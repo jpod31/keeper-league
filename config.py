@@ -92,6 +92,12 @@ TEAM_ABBR = {
 # the new season has a game played they come from models.years.stats_year().
 CURRENT_YEAR = 2027
 SC_ROUNDS = 24          # max rounds in a regular season
+# The official AFL Fantasy positions for CURRENT_YEAR (Champion Data, posted on
+# AFL.com.au each pre-season). Read by models/fantasy_positions.py; replace the
+# address when next year's article is out.
+FANTASY_POSITIONS_URL = os.environ.get(
+    "FANTASY_POSITIONS_URL",
+    "https://www.afl.com.au/news/1645224/fantasy-2027-every-player-every-position")
 SC_HISTORY_YEARS = list(range(2013, CURRENT_YEAR + 1))  # historical years for SC data
 
 # ---------- Footywire team slugs ----------
