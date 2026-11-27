@@ -292,6 +292,18 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   (`tier_for`). The pool has an Honours switch and icons beside names
   (`/api/leagues/<id>/honours/summary`). Cached per league on the completed
   main and 7s fixtures.
+- **Honours, Records, Seasons: one job each** (2026-11-27, concept artifact
+  NGSh3hPtSk6HTY6nQJsR2o). Honours = what a player has earned (badges, Hall of
+  Fame, All-League; League > Honours). Records = the best and worst ever done
+  (`models/record_book.py`, `pages/leagues/RecordBookPage.tsx`, route
+  /leagues/<id>/history, API /api/leagues/<id>/record-book): club, player and
+  match records, the head-to-head grid, the all-time ladder. Seasons = one
+  year. Records never hand out badges; premierships show there only as a
+  count. Record Book counts completed league rounds only (AFL finals weeks
+  are saved in round_score too) and keeps the short Opening Round out of
+  every score record. The old `/leagues/<id>/records` route
+  (blueprints/leagues_players.py) still counts finals weeks; the SPA no
+  longer calls it.
 - **Before the AFL** (`models/pre_afl.py`): a player with no AFL games gets a
   profile written from our data plus his state league and under-18 seasons
   in place of the form chart. `state_league_stat.goals` is a season TOTAL

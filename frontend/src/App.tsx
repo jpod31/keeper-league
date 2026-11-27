@@ -18,7 +18,7 @@ import { SettingsPage } from './pages/leagues/SettingsPage'
 import { CommissionerPage } from './pages/leagues/CommissionerPage'
 import { NewSeasonPage } from './pages/leagues/NewSeasonPage'
 import { ScoringPage } from './pages/leagues/ScoringPage'
-import { HistoryPage } from './pages/leagues/HistoryPage'
+import { RecordBookPage } from './pages/leagues/RecordBookPage'
 import { InvitePage } from './pages/leagues/InvitePage'
 
 // Lazy-loaded heavy pages (code splitting)
@@ -122,8 +122,8 @@ export default function App() {
           <Route path="fixture" element={<FixturePage />} />
           <Route path="fixture/:round" element={<RoundDetailPage />} />
           <Route path="matchup/:fixtureId" element={<MatchupDetailPage />} />
-          <Route path="history" element={<HistoryPage />} />
-          <Route path="history/:year" element={<HistoryPage />} />
+          <Route path="history" element={<RecordBookPage />} />
+          <Route path="history/:year" element={<RecordBookPage />} />
           <Route path="finals" element={<FinalsPage />} />
           <Route path="afl-live" element={<AflLivePage />} />
           <Route path="gameday/afl-game/:gameId" element={<AflGamePage />} />

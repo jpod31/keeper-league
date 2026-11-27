@@ -4,6 +4,7 @@
   notes panel       /leagues/<id>/notes, /leagues/<id>/notes/general[/<id>]
   player search     /players/search?q=
   honours           /leagues/<id>/honours/board, /leagues/<id>/honours/summary
+  record book       /leagues/<id>/record-book
   former players    /leagues/<id>/former-players
   trade block       /leagues/<id>/trade-block[/<entry>]
   past seasons      /leagues/<id>/seasons[/<year>]
@@ -231,6 +232,17 @@ def register_league_extras(spa_api):
             return jsonify({"error": "Not a league member"}), 403
         from models.player_honours import summary
         return jsonify({"players": {str(k): v for k, v in summary(league_id).items()}})
+
+    @spa_api.route("/leagues/<int:league_id>/record-book")
+    @login_required
+    def record_book(league_id):
+        """The Record Book: club, player and match records, rivalries, the
+        all-time ladder (models/record_book.py)."""
+        league, _team = check_league_access(league_id)
+        if not league:
+            return jsonify({"error": "Not a league member"}), 403
+        from models.record_book import build
+        return jsonify(build(league_id))
 
     # ── Former players ───────────────────────────────────────────────
 

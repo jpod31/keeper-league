@@ -11692,3 +11692,90 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .hb2-dd-btn > span { min-width: 0; flex: 1; }
 }
 .hb2-key-btn > span { min-width: 0 !important; flex: none !important; }
+
+/* ══ Record Book (pages/leagues/RecordBookPage.tsx, 2026-11-27) and the
+      shared player face. Same look as the Honour Board: near-black panels,
+      hairlines, one face (Geist), big tabular numbers, colour only from
+      clubs and results. ══ */
+.pface { flex: none; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: flex-end; justify-content: center;
+  background: var(--ca, #2a2a31); box-shadow: 0 0 0 2px var(--cb, rgba(255,255,255,.4)); }
+.pface img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.pface svg { width: 80%; height: 80%; fill: rgba(255,255,255,.4); }
+
+.rb-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 6px 0 18px; }
+.rb-head h2 { margin: 0; font-size: 40px; font-weight: 900; letter-spacing: -.035em; line-height: 1; color: #fff; }
+.rb-head p { margin: 8px 0 0; font-size: 15px; color: #fff; }
+.rb-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.rb-card { background: #101014; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; overflow: hidden; transition: border-color .12s ease; }
+.rb-card:hover { border-color: rgba(255,255,255,.2); }
+.rb-top { padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 16px; }
+.rb-label { font: 800 13px/1 var(--kl-font); text-transform: uppercase; letter-spacing: .07em; color: #fff; }
+.rb-num { font: 900 56px/1 var(--kl-font); letter-spacing: -.045em; color: #fff; font-variant-numeric: tabular-nums; }
+.rb-num small { font: 800 16px/1 var(--kl-font); letter-spacing: 0; margin-left: 8px; }
+.rb-holder { display: flex; align-items: center; gap: 14px; border: 0; background: none; padding: 0; color: #fff; text-align: left; font-family: var(--kl-font); cursor: default; min-width: 0; }
+button.rb-holder { cursor: pointer; }
+button.rb-holder:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.rb-holder > span { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.rb-holder b { font-size: 18px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-sub { display: flex; align-items: center; font-size: 14px; font-weight: 600; }
+.rb-when { font-size: 14px; font-weight: 600; color: #fff; }
+.rb-match { display: flex; flex-direction: column; gap: 6px; }
+.rb-side { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 11px; background: #16161c; color: #fff; }
+.rb-side b { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-side em { font: 900 19px/1 var(--kl-font); font-style: normal; font-variant-numeric: tabular-nums; }
+.rb-side.win b { font-weight: 900; }
+.rb-side.win { box-shadow: inset 3px 0 0 #3fb950; }
+.rb-match .rb-when { margin-top: 4px; }
+.rb-pack { border-top: 1px solid rgba(255,255,255,.08); }
+.rb-pack-h { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 13px 20px; border: 0; background: none; color: #fff;
+  font: 700 14px var(--kl-font); cursor: pointer; }
+.rb-pack-h:hover { background: rgba(255,255,255,.03); }
+.rb-pack-h > span:last-child { display: inline-flex; align-items: center; gap: 8px; }
+.rb-pack ol { list-style: none; margin: 0; padding: 0 12px 12px; display: flex; flex-direction: column; gap: 4px; }
+.rb-pack li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: #16161c;
+  color: #fff; font-size: 14px; font-weight: 600; }
+.rb-pack li em { font-style: normal; font-weight: 900; text-align: center; }
+.rb-pack li b { font-weight: 900; font-variant-numeric: tabular-nums; }
+.rb-who { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.rb-who > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.rb-panel { background: #101014; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; padding: 18px; color: #fff; }
+.rb-panel-flush { padding: 0; overflow: hidden; }
+.rb-grid-wrap { overflow-x: auto; }
+.rb-h2h { border-collapse: separate; border-spacing: 6px; margin: 0 auto; }
+.rb-h2h th { padding: 4px; text-align: center; font: 800 13px/1.2 var(--kl-font); }
+.rb-h2h th.row { text-align: left; white-space: nowrap; padding-right: 10px; }
+.rb-h2h thead th > * { margin: 0 auto; }
+.rb-h2h td { padding: 0; }
+.rb-h2h td.self { border-radius: 12px; background: repeating-linear-gradient(45deg, #121217, #121217 6px, #18181e 6px, #18181e 12px); }
+.rb-h2h td button { width: 96px; height: 60px; border: 0; border-radius: 12px; background: #16161c; color: #fff; font: 900 19px/1 var(--kl-font); cursor: pointer;
+  font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.rb-h2h td button small { display: block; margin-top: 5px; font: 700 13px/1 var(--kl-font); }
+.rb-h2h td button:hover { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55); }
+.rb-h2h td button.on { box-shadow: inset 0 0 0 2px #fff; }
+.rb-key { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font-size: 14px; font-weight: 600; }
+.rb-key span { display: inline-flex; align-items: center; gap: 7px; }
+.rb-key i { width: 14px; height: 14px; border-radius: 4px; }
+.rb-games { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.1); display: flex; flex-direction: column; gap: 10px; }
+.rb-games h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; }
+.rb-tbl { width: 100%; border-collapse: collapse; color: #fff; font-variant-numeric: tabular-nums; }
+.rb-tbl th { font: 800 13px/1 var(--kl-font); text-transform: uppercase; letter-spacing: .06em; text-align: left; padding: 14px 16px 10px; border-bottom: 1px solid rgba(255,255,255,.14); white-space: nowrap; }
+.rb-tbl td { padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 15px; font-weight: 600; white-space: nowrap; }
+.rb-tbl tr:last-child td { border-bottom: 0; }
+.rb-tbl .n { text-align: right; }
+.rb-tbl td.w { color: #3fb950; font-weight: 800; } .rb-tbl td.l { color: #f85149; font-weight: 800; }
+.rb-ladder td.rb-pos { font-weight: 900; width: 44px; }
+.rb-ladder tbody tr:hover { background: rgba(255,255,255,.03); }
+.rb-flags { display: inline-flex; align-items: center; gap: 4px; }
+.rb-flags i { width: 10px; height: 15px; border-radius: 2px; background: #f0c35a; }
+.rb-flags b { margin-left: 4px; }
+
+@media (max-width: 1199.98px) { .rb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767.98px) {
+  .rb-grid { grid-template-columns: 1fr; }
+  .rb-head h2 { font-size: 32px; }
+  .rb-num { font-size: 46px; }
+  .rb-h2h td button { width: 66px; height: 52px; font-size: 16px; }
+  .rb-h2h th.row .tbadge-name { display: none; }
+}
+@media (min-width: 768px) { .rb-grid.rb-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

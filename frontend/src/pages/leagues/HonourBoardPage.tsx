@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router'
 import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
@@ -6,7 +6,7 @@ import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 import { TeamBadge } from '../../components/ui/TeamBadge'
 import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 import { usePageState } from '../../lib/pageMemory'
-import { clubVars } from '../../lib/clubs'
+import { PlayerFace } from '../../components/ui/PlayerFace'
 import { Emblem, type Kind, type Tier } from '../../components/honours/Emblem'
 
 // The Honour Board (League > Honours). Lucas, 2026-11-27: "we just want
@@ -56,12 +56,7 @@ const HOW: Record<string, string> = {
 const TIER_WORD: Record<Tier, string> = { gold: 'Gold', plat: 'Platinum', ruby: 'Ruby', sapph: 'Sapphire', black: 'Black', silver: 'Silver', bronze: 'Bronze' }
 
 function Face({ p, size = 44 }: { p: P; size?: number }) {
-  const [bad, setBad] = useState(false)
-  return (
-    <span className="hb2-face" style={{ ...clubVars(p.afl_team), width: size, height: size } as CSSProperties}>
-      {p.photo_url && !bad ? <img src={p.photo_url} alt="" onError={() => setBad(true)} /> : <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7" /><path d="M6 40c1-9 7-14 14-14s13 5 14 14z" /></svg>}
-    </span>
-  )
+  return <PlayerFace name={p.name} afl_team={p.afl_team} photo_url={p.photo_url} size={size} />
 }
 function Pos({ p }: { p: string }) {
   const k = (p || 'MID').split('/')[0]
@@ -169,7 +164,7 @@ function BadgeSection({ b, open, onToggle, openPlayer }: { b: Board; open: boole
   )
 }
 
-type View = 'players' | 'badges' | 'allleague' | 'hall' | 'records'
+type View = 'players' | 'badges' | 'allleague' | 'hall'
 
 export function HonourBoardPage() {
   const { leagueId } = useParams()
@@ -185,8 +180,7 @@ export function HonourBoardPage() {
   if (error || !data) return <div className="kx-page"><p>The honour board could not be loaded.</p></div>
   const named = data.seasons.filter(s => Object.keys(s.all_league || {}).length)
   const season = named.find(s => s.year === year) || named[0]
-  const recSeason = data.seasons.find(s => s.year === year) || data.seasons[0]
-  const views: [View, string][] = [['players', 'Players'], ['badges', 'Badges'], ['allleague', 'All-League 23'], ['hall', 'Hall of Fame'], ['records', 'Records']]
+  const views: [View, string][] = [['players', 'Players'], ['badges', 'Badges'], ['allleague', 'All-League 23'], ['hall', 'Hall of Fame']]
   const kinds: KindOpt[] = data.boards.filter(b => b.holders.length).map(b => ({ key: b.key, kind: b.kind, step: b.step, name: b.name, count: b.holders.length }))
   const ql = q.trim().toLowerCase()
   const people = data.players.filter(p => (!ql || p.name.toLowerCase().includes(ql) || p.team.toLowerCase().includes(ql))
@@ -296,6 +290,12 @@ export function HonourBoardPage() {
               ))}
             </div>
           </section>
+          <section className="hb2-board hb2-wide">
+            <header className="hb2-bh hb2-bh-sm"><Emblem kind="clubgames" tier="silver" step={50} size={44} /><div className="hb2-bt"><h3>Next milestones</h3><p>The closest to their next club games milestone.</p></div></header>
+            <table className="hb2-tbl"><thead><tr><th>Player</th><th>Club</th><th className="n">Games</th><th className="n">Milestone</th><th className="n">To go</th></tr></thead><tbody>
+              {data.coming.map(p => <tr key={p.id + p.team}><td><span className="hb2-nm"><Face p={p} size={30} /><Name p={p} /></span></td><td><TeamBadge name={p.team} size={28} /></td><td className="n">{p.games}</td><td className="n">{p.step}</td><td className="n">{p.to_go}</td></tr>)}
+            </tbody></table>
+          </section>
           <section className="hb2-board">
             <header className="hb2-bh hb2-bh-sm"><div className="hb2-bt"><h3>What each honour is worth</h3></div></header>
             <table className="hb2-tbl"><thead><tr><th>Honour</th><th className="n">Points</th></tr></thead><tbody>
@@ -305,31 +305,6 @@ export function HonourBoardPage() {
         </div>
       )}
 
-      {view === 'records' && recSeason && (
-        <div className="hb2-records">
-          {recSeason.records.top_score && (
-            <div className="hb2-rec"><span className="hb2-lab">Highest score</span><b>{recSeason.records.top_score.score}</b>
-              <span className="hb2-nm"><Face p={recSeason.records.top_score.player} size={32} /><Name p={recSeason.records.top_score.player} /></span>
-              <span>{recSeason.records.top_score.team}, round {recSeason.records.top_score.round}, {recSeason.year}</span></div>
-          )}
-          {recSeason.records.top_season && (
-            <div className="hb2-rec"><span className="hb2-lab">Most points in a season</span><b>{recSeason.records.top_season.points.toLocaleString()}</b>
-              <span className="hb2-nm"><Face p={recSeason.records.top_season.player} size={32} /><Name p={recSeason.records.top_season.player} /></span>
-              <span>{recSeason.records.top_season.team}, {recSeason.year}</span></div>
-          )}
-          {recSeason.records.top_club_round && (
-            <div className="hb2-rec"><span className="hb2-lab">Highest club score</span><b>{recSeason.records.top_club_round.score.toLocaleString()}</b>
-              <span className="hb2-nm"><TeamBadge name={recSeason.records.top_club_round.team} size={32} /></span>
-              <span>Round {recSeason.records.top_club_round.round}, {recSeason.year}</span></div>
-          )}
-          <section className="hb2-board hb2-wide">
-            <header className="hb2-bh hb2-bh-sm"><Emblem kind="clubgames" tier="silver" step={50} size={44} /><div className="hb2-bt"><h3>Next milestones</h3><p>The closest to their next club games milestone.</p></div></header>
-            <table className="hb2-tbl"><thead><tr><th>Player</th><th>Club</th><th className="n">Games</th><th className="n">Milestone</th><th className="n">To go</th></tr></thead><tbody>
-              {data.coming.map(p => <tr key={p.id + p.team}><td><span className="hb2-nm"><Face p={p} size={30} /><Name p={p} /></span></td><td><TeamBadge name={p.team} size={24} /></td><td className="n">{p.games}</td><td className="n">{p.step}</td><td className="n">{p.to_go}</td></tr>)}
-            </tbody></table>
-          </section>
-        </div>
-      )}
     </div>
   )
 }
