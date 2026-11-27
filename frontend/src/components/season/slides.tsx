@@ -10,13 +10,13 @@
 
 import type { ReactNode } from 'react'
 import {
-  CountUp, Crest, ClubMark, PlayerRow, Tile, Pos, Head,
+  CountUp, Crest, ClubMark, PlayerRow, Tile, Pos, Head, SafeImg,
   PositionArc, ScoreBars, Ring, CompareBars, Confetti, initials,
 } from './bits'
 import {
   Beat, Kinetic, Roll, Presence, PresenceKey, Oval, Ticker, IronBadge,
 } from './bits2'
-import type { SeasonReviewData } from './types'
+import type { SeasonReviewData, HonourWin } from './types'
 import { Emblem } from '../honours/Emblem'
 
 export interface SlideCtx {
@@ -1144,24 +1144,39 @@ const honours: SlideDef = {
       ...h.triple.map(w => ({ kind: 'triple' as const, title: 'Triple Crown', w })),
     ]
     const n = (v: number) => (Number.isInteger(v) ? v.toLocaleString() : v.toFixed(1))
+    // The player's club: its logo on its own colour, as on every other slide.
+    const Club = ({ w }: { w: HonourWin }) => (
+      <span className="sr-hon-club" style={{ '--sr-club': w.club_bg } as React.CSSProperties}>
+        {w.logo ? <SafeImg src={w.logo} alt={w.afl_team || ''} fallback={null} /> : null}
+      </span>
+    )
+    const Coach = ({ w }: { w: HonourWin }) => w.team
+      ? <span className="sr-hon-coach"><Crest name={w.team} logo={w.team_logo} accent={w.accent || '#ffffff'} size="sm" />{w.team}</span>
+      : null
     return (
-      <div className="sr-inner">
-        <Head eyebrow={`${d.year}, the honour board`} title={<>The</>} accentWord="honours"
-          sub="Every badge earned this season is on the Honour Board, under League." />
-        <div className={`sr-grid ${big.length >= 4 ? 'sr-g4' : 'sr-g3'}`}>
+      <div className="sr-inner sr-hon">
+        <Head eyebrow={`${d.year}, the honour board`} title={<>The</>} accentWord="honours" />
+        <div className={`sr-hon-medals n${big.length}`}>
           {big.map((b, i) => (
-            <div key={b.title + b.w.name} className="sr-aw sr-rise" style={{ animationDelay: `${i * 60}ms` }}>
-              <div className="sr-hon-em"><Emblem kind={b.kind} tier="gold" size={64} /></div>
-              <div className="sr-aw-t">{b.title}</div>
-              <div className="sr-aw-w"><b>{b.w.name}</b></div>
-              <div className="sr-aw-d">{b.w.team}{b.w.detail && b.kind !== 'triple' ? `, ${b.w.detail}` : ''}</div>
+            <div key={b.title + b.w.name} className="sr-hon-medal sr-rise"
+              style={{ '--sr-club': b.w.club_bg, '--logo': b.w.logo ? `url("${b.w.logo}")` : 'none', animationDelay: `${i * 70}ms` } as React.CSSProperties}>
+              <Emblem kind={b.kind} tier="gold" size={62} />
+              <div className="sr-hon-mt">
+                <div className="sr-hon-award">{b.title}</div>
+                <div className="sr-hon-name">{b.w.name}</div>
+                <div className="sr-hon-sub">
+                  {b.kind === 'triple' ? b.w.detail : <><Coach w={b.w} />{b.w.detail ? <span>{b.w.detail}</span> : null}</>}
+                </div>
+              </div>
             </div>
           ))}
         </div>
-        <div className="sr-grid sr-g3" style={{ marginTop: 14 }}>
+        <div className="sr-hon-panels">
           <div className="sr-card sr-card-pad sr-rise">
             <div className="sr-label">Club Champions</div>
-            {h.champions.map(c => <div key={c.name + c.team} className="sr-hon-row"><b>{c.name}</b><span>{c.team}</span></div>)}
+            {h.champions.map(c => (
+              <div key={c.name + c.team} className="sr-hon-champ"><Club w={c} /><b>{c.name}</b><Coach w={c} /></div>
+            ))}
           </div>
           <div className="sr-card sr-card-pad sr-rise">
             <div className="sr-label">Badges this season</div>

@@ -12,7 +12,7 @@ import type { PlayerCard } from './types'
 /** An <img> that steps aside for its fallback if the file isn't there.
  *  Team logos are optional on disk, so a missing one must not leave a
  *  broken-image glyph sitting in the middle of a crest. */
-function SafeImg({ src, alt, fallback }: { src: string; alt: string; fallback: ReactNode }) {
+export function SafeImg({ src, alt, fallback }: { src: string; alt: string; fallback: ReactNode }) {
   const [failed, setFailed] = useState(false)
   if (failed) return <>{fallback}</>
   return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} />

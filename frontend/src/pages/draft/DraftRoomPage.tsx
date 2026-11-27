@@ -6,6 +6,8 @@ import { useSocket } from '../../hooks/useSocket'
 import { useWishlist } from '../../hooks/useWishlist'
 import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
 import { TeamCrest } from '../../components/draft/TeamCrest'
+import { OutlookChip, type Outlook } from '../../components/draft/OutlookChip'
+import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 import { clubVars, rgbOf, ratingTier as rtBand } from '../../lib/clubs'
 import { ask, tell } from '../../components/ui/dialog'
 
@@ -86,8 +88,6 @@ interface AvailablePlayer {
   outlook_ten?: number | null
 }
 
-/** A new player's scouting outlook (models/pre_afl.py scouting_summary). */
-interface Outlook { label: string | null; tone: 'good' | 'warn' | 'slow' | null; ten: number | null; pick: number | null; best: string | null }
 
 interface PositionNeeds {
   drafted: Record<string, number>
@@ -497,6 +497,7 @@ function posClass(position: string | null | undefined): string {
 function DraftRoomPageInner() {
   const { leagueId } = useParams()
   const statsYr = useStatsYear()
+  const openPlayer = useOpenPlayer()
   const clubLogos = useLeague().league?.club_logos ?? {}
   // The pick that has just been made, shown as a card for a few seconds.
   const [reveal, setReveal] = useState<PickHistoryEntry | null>(null)
@@ -1231,7 +1232,7 @@ function DraftRoomPageInner() {
                     const blocked = isPositionBlocked(p.position)
                     return (
                       <tr key={p.id} className={blocked ? 'blocked' : undefined}>
-                        <td className="player-name"><span className="dn-club" title={p.afl_team || undefined}>{p.afl_team && clubLogos[p.afl_team] ? <img src={clubLogos[p.afl_team]} alt="" /> : <span className="dn-club-gap" />}{p.name}</span>{p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}</td>
+                        <td className="player-name"><div className="dn-cell"><button type="button" className="dn-club dn-open" onClick={() => openPlayer(p.id)} title={`Open ${p.name}'s card`}>{p.afl_team && clubLogos[p.afl_team] ? <img src={clubLogos[p.afl_team]} alt="" /> : <span className="dn-club-gap" />}<span className="dn-nm">{p.name}</span></button>{p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}</div></td>
                         <td>{p.position && <span className={`draft-pos-chip ${posClass(p.position)}${p.position_expected ? ' pos-expected' : ''}`} title={p.position_expected ? 'Expected position. He has no SuperCoach position yet.' : undefined}>{p.position.split('/')[0]}</span>}</td>
                         <td style={{ color: 'var(--kl-text-primary)' }}>{p.age ?? '-'}</td>
                         <td className="stat-cell" style={{ color: '#e8e7f0' }}>{p.sc_avg != null ? p.sc_avg.toFixed(1) : '-'}</td>
@@ -1240,7 +1241,7 @@ function DraftRoomPageInner() {
                         <td className="stat-cell">{(() => {
                           const o = outlook[String(p.id)]
                           if (!o || o.ten == null) return '–'
-                          return <span className={`dr-out dr-${o.tone || 'warn'}`} title={[o.label, o.best].filter(Boolean).join('. ')}><i />{o.ten}%</span>
+                          return <OutlookChip o={o} />
                         })()}</td>
                         <td className="stat-cell"><span className="draft-stat-chip draft-score">{p.draft_score != null ? p.draft_score.toFixed(1) : '–'}</span></td>
                         <td className="dn-act">

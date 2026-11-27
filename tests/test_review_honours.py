@@ -8,8 +8,11 @@ def test_honours_block_keeps_the_years_records(monkeypatch):
         "honours": {"keepermedal": [{"name": "X", "team": "A", "detail": "18 votes"}], "champion": [], "allleague": [1] * 23}}]})
     monkeypatch.setattr("models.record_book.build", lambda _lg: {"clubs": [
         {"key": "high", "label": "Highest club score", "unit": "", "top": {"value": 2378, "team": "A", "year": 2026}},
-        {"key": "low", "label": "Lowest club score", "unit": "", "top": {"value": 1410, "team": "B", "year": 2025}}], "players": [], "matches": []})
+        {"key": "low", "label": "Lowest club score", "unit": "", "top": {"value": 1410, "team": "B", "year": 2025}}],
+        "players": [{"key": "p_high", "label": "Highest score", "unit": "", "top": {"value": 223, "player": "Z", "year": 2026}}], "matches": []})
     h = season_review._honours(1, 2026)
-    assert h["medal"] == [{"name": "X", "team": "A", "detail": "18 votes"}]
+    m = h["medal"][0]
+    assert (m["name"], m["team"], m["detail"]) == ("X", "A", "18 votes")
+    assert "club_bg" in m and "team_logo" in m          # the slide paints him in his club's colours
     assert h["counts"]["flag"] == 2 and h["counts"]["allleague"] == 23
-    assert [r["label"] for r in h["records"]] == ["Highest club score"]
+    assert [r["label"] for r in h["records"]] == ["Highest club score", "Highest score by a player"]

@@ -10338,7 +10338,7 @@ th .sort-icon { opacity: 1 !important; }
   letter-spacing: .04em !important; text-transform: uppercase; color: #ffffff !important; line-height: 1 !important; }
 .fv-face .fv-stat-num { display: inline !important; font-family: var(--kl-font-mono) !important; font-size: 1rem !important; font-weight: 700 !important;
   color: #ffffff !important; line-height: 1 !important; }
-.fv-face .fv-form { position: static !important; font-size: .8125rem !important; margin-left: 1px; align-self: center; }
+.fv-face .fv-form { position: static !important; font-size: .8125rem !important; margin-left: 1px; align-self: center; } /* keep-size: form arrow */
 .fv-stat-sep { display: none !important; }
 
 /* Marks that hang off the card's corners. */
@@ -10586,7 +10586,7 @@ th .sort-icon { opacity: 1 !important; }
 .fv-face .fv-stat { gap: 4px !important; white-space: nowrap; }
 .fv-face .fv-stat-label { letter-spacing: .02em !important; }
 .fv-face .fv-stat-num { font-size: 1rem !important; }
-.fv-face .fv-form { margin-left: 0 !important; font-size: .75rem !important; }
+.fv-face .fv-form { margin-left: 0 !important; font-size: .75rem !important; } /* keep-size: form arrow */
 
 /* ══ Squad card, sixth cut. The layout coaches knew (logo top left, positions
       top right, three numbers along the bottom) with depth and a real type
@@ -10680,7 +10680,7 @@ body { font-variant-numeric: tabular-nums; }
 .pc7-v .rt { height: 19px !important; min-width: 30px !important; padding: 0 5px !important; border-radius: 4px !important; font-family: var(--kl-font) !important;
   font-size: .875rem !important; font-weight: 700 !important; }
 .pc7-l { font-size: .8125rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; line-height: 1; color: #ffffff; }
-.pc7-form { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 2px; font-size: .625rem; }
+.pc7-form { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 2px; font-size: .625rem; } /* keep-size: form arrow */
 .pc7-form-up { color: #3fb950; } .pc7-form-down { color: #f85149; }
 
 /* Role bubbles: round, in colour, on the top right corner. */
@@ -10741,7 +10741,7 @@ body { font-variant-numeric: tabular-nums; }
 .pc7-v { height: 23px; font-size: 1.4375rem; font-weight: 700; letter-spacing: -.035em; }
 .pc7-v .rt { height: 23px !important; min-width: 36px !important; padding: 0 6px !important; font-size: 1.0625rem !important; letter-spacing: -.01em; }
 .pc7-l { font-size: var(--pc7-lab); font-weight: 600; letter-spacing: .08em; }
-.pc7-form { font-size: .6875rem; margin-left: 1px; }
+.pc7-form { font-size: .6875rem; margin-left: 1px; } /* keep-size: form arrow */
 @media (max-width: 1279.98px) {
   .pc7-v { font-size: 1.1875rem; }
   .pc7-v .rt { min-width: 30px !important; padding: 0 4px !important; font-size: .9375rem !important; }
@@ -10749,7 +10749,7 @@ body { font-variant-numeric: tabular-nums; }
 @media (max-width: 1179.98px) {
   .pc7-v { font-size: 1.0625rem; }
   .pc7-v .rt { min-width: 28px !important; padding: 0 3px !important; font-size: .875rem !important; height: 21px !important; }
-  .pc7-form { font-size: .5625rem; margin-left: 0; }
+  .pc7-form { font-size: .5625rem; margin-left: 0; } /* keep-size: form arrow */
 }
 
 /* ══ Sweep, 24 Nov. Two rules from the squad card, applied everywhere else.
@@ -10914,7 +10914,7 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .pc7-cell { gap: 3px; padding: 6px 0 6px; border-left: 0; }
 .pc7-v { height: 17px; font-size: .9375rem; font-weight: 700; letter-spacing: -.01em; }
 .pc7-v .rt { height: 17px !important; min-width: 26px !important; padding: 0 4px !important; font-size: .8125rem !important; letter-spacing: 0; border-radius: 4px !important; }
-.pc7-form { font-size: .5625rem; margin-left: 1px; }
+.pc7-form { font-size: .5625rem; margin-left: 1px; } /* keep-size: form arrow */
 .fv-card-empty { min-height: 104px; }
 @media (max-width: 1279.98px) {
   .pc7-name { font-size: 1rem; }
@@ -10925,7 +10925,7 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 @media (max-width: 1179.98px) {
   .pc7-v { font-size: .8125rem; }
   .pc7-v .rt { height: 17px !important; min-width: 22px !important; }
-  .pc7-form { font-size: .5rem; margin-left: 0; }
+  .pc7-form { font-size: .5rem; margin-left: 0; } /* keep-size: form arrow */
 }
 /* Names sit in the middle of the card. Lucas, 2026-11-25: "centre the names". */
 .pc7-name { text-align: center; }
@@ -11790,3 +11790,38 @@ button.rb-holder:hover b { text-decoration: underline; text-underline-offset: 3p
 .dh2-hon:hover { text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 1200px) { .draft-avail-tbl th, .draft-avail-tbl td { padding-left: 6px !important; padding-right: 6px !important; } .draft-avail-tbl .dr-out { gap: 4px; } }
 @media (max-width: 1200px) { .draft-avail-tbl .player-name .dn-club { max-width: 108px; } }
+
+/* Honours news (2026-11-27, second pass): an honour's line shows that honour's
+   own emblem, in the feed and in the bell. */
+.nt-mark .emblem { margin: -1px; }
+.kl-notif-emblem { flex: 0 0 40px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+
+/* Draft room (2026-11-27, second pass): a name opens the player's card, and the
+   10+ figure opens a card with the verdict instead of a browser tooltip. */
+.draft-avail-tbl .dn-open { background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
+.draft-avail-tbl .dn-open:hover { text-decoration: underline; text-underline-offset: 3px; }
+.dr-out { background: none; border: 0; padding: 2px 0; cursor: pointer; font: inherit; font-weight: 800; }
+.dr-out:focus-visible { outline: 1px solid #fff; outline-offset: 2px; border-radius: 3px; }
+.dr-outcard {
+  position: fixed; z-index: 3000; width: 300px; transform: translateX(-50%);
+  background: #0d0d10; border: 1px solid var(--hair-2, rgba(255,255,255,.16)); border-top: 3px solid #e3b341;
+  border-radius: 8px; padding: 12px 14px; box-shadow: 0 18px 40px rgba(0,0,0,.6); color: #fff; pointer-events: none;
+}
+.dr-outcard.up { transform: translate(-50%, -100%); }
+.dr-outcard.dr-good { border-top-color: #3fb950; } .dr-outcard.dr-slow { border-top-color: #f85149; }
+.dr-outcard-top { display: flex; align-items: baseline; gap: 8px; }
+.dr-outcard-top b { font-size: 26px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.dr-outcard-top span { font-size: 13px; font-weight: 600; }
+.dr-outcard-verdict { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 15px; font-weight: 700; }
+.dr-outcard-verdict i { width: 9px; height: 9px; border-radius: 50%; background: #e3b341; flex: none; }
+.dr-outcard.dr-good .dr-outcard-verdict i { background: #3fb950; } .dr-outcard.dr-slow .dr-outcard-verdict i { background: #f85149; }
+.dr-outcard-best { margin-top: 6px; font-size: 13px; line-height: 1.4; }
+.hb2-acc { scroll-margin-top: 84px; }
+/* A long name wraps to a second line instead of being cut ("Harry Van Ha"
+   at 1122 wide), and NEW sits centred beside it. */
+.draft-avail-tbl .dn-cell { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.draft-avail-tbl .dn-cell .pl-mark { margin-left: 0; flex: none; }
+.draft-avail-tbl .player-name .dn-club.dn-open { max-width: none; overflow: visible; white-space: normal; min-width: 0; }
+.draft-avail-tbl .dn-nm { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; overflow-wrap: anywhere; }
+.draft-avail-tbl td.player-name { min-width: 150px; }
+@media (max-width: 600px) { .draft-avail-tbl td.player-name { min-width: 0; } }

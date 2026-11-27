@@ -13,6 +13,7 @@ exists without posting it, so a deploy never replays a past season.
 """
 
 import logging
+import re
 from collections import defaultdict
 
 from models.database import db, FantasyTeam, AflPlayer, HonourAnnouncement
@@ -36,49 +37,115 @@ def _names(items):
     return ", ".join(shown) + (f" and {more} more" if more > 0 else "") + "."
 
 
+def _by_club(who):
+    """Names for a line's body. One player per club: "Name (Club), ...".
+    All from one club: the names alone (the club is in the title). Several
+    from several clubs: grouped, "Club: A, B. Other: C." so the club is not
+    repeated after every name."""
+    clubs = defaultdict(list)
+    for n, c in who:
+        clubs[c].append(n)
+    if len(clubs) == 1:
+        return _names([(n, None) for n, _c in who])
+    if all(len(v) == 1 for v in clubs.values()):
+        return _names(who)
+    return " ".join(f"{c}: {', '.join(v)}." if c else f"{', '.join(v)}." for c, v in
+                    sorted(clubs.items(), key=lambda kv: -len(kv[1])))
+
+
+def _board_key(kind, step):
+    """The Honour Board board a line links to (player_honours.honour_boards keys)."""
+    return f"clubgames{step}" if kind == "clubgames" else kind
+
+
+TROPHY = {"keepermedal": "the Keeper Medal", "rising": "the Rising Star", "medal7": "the 7s Medal",
+          "triple": "the Triple Crown"}
+
+
 def _honour_lines(new, teams, players):
-    """Group new honours into one line each: (title, body)."""
+    """Group new honours into one line each: (title, body, board key).
+    Titles are sentences about a player or a club; when every player in a
+    group is from one club the club is in the title, so its crest shows."""
     from models.player_honours import KINDS
     groups = defaultdict(list)
     for h in new:
         groups[(h["kind"], h.get("step"))].append(h)
     out = []
     for (kind, step), hs in groups.items():
-        name = KINDS[kind][0]
+        key = _board_key(kind, step)
         who = [(players[h["player_id"]].name if h["player_id"] in players else "?", teams.get(h.get("team_id"), ""))
                for h in hs]
         n = len(hs)
+        clubs = {c for _n, c in who}
+        one_club = next(iter(clubs)) if len(clubs) == 1 and "" not in clubs else None
+        nm, club = who[0]
         if kind == "clubgames":
-            label = "Life Member, 100 club games" if step == 100 else f"{step} club games"
+            what = "100 club games and Life Membership" if step == 100 else f"{step} club games"
             if n == 1:
-                out.append((f"{who[0][0]} reached {label}" + (f" for {who[0][1]}" if who[0][1] else ""), None))
+                out.append((f"{nm} reached {what}" + (f" for {club}" if club else ""), None, key))
+            elif one_club:
+                out.append((f"{n} {one_club} players reached {what}", _by_club(who), key))
             else:
-                out.append((f"{n} players reached {label} this round", _names(who)))
+                out.append((f"{n} players reached {what} this round", _by_club(who), key))
+        elif kind == "calledup":
+            if n == 1:
+                out.append((f"{nm} was called up from the 7s" + (f" by {club}" if club else ""), None, key))
+            elif one_club:
+                out.append((f"{one_club} called up {n} players from the 7s", _by_club(who), key))
+            else:
+                out.append((f"{n} players were called up from the 7s", _by_club(who), key))
         elif kind == "siren":
-            for h, (nm, club) in zip(hs, who):
-                out.append((f"The Siren: {nm} won round {h.get('round')} for {club}", h.get("detail")))
+            for h, (pn, pc) in zip(hs, who):
+                m = re.match(r"Round \d+, (\d+) points, won by (\d+)", h.get("detail") or "")
+                body = f"He scored {m.group(1)} and {pc} won by {m.group(2)}." if m and pc else None
+                out.append((f"The Siren: {pn} won round {h.get('round')} on his own" + (f" for {pc}" if pc else ""), body, key))
         elif kind in ("flag", "flag7"):
             by_team = defaultdict(list)
-            for h, w in zip(hs, who):
+            for w in who:
                 by_team[w[1]].append(w[0])
-            for club, ps in by_team.items():
-                out.append((f"{club} won the {hs[0].get('year')} {'7s ' if kind == 'flag7' else ''}flag: {len(ps)} premiership players",
-                            _names([(p, None) for p in ps])))
+            for c, ps in by_team.items():
+                out.append((f"{c} won the {hs[0].get('year')} {'7s ' if kind == 'flag7' else ''}flag, {len(ps)} premiership players",
+                            _names([(p, None) for p in ps]), key))
         elif kind == "allleague":
-            out.append((f"The {hs[0].get('year')} All-League 23 is named", _names(who)))
+            per = defaultdict(int)
+            for _n, c in who:
+                per[c] += 1
+            body = ", ".join(f"{c} {k}" for c, k in sorted(per.items(), key=lambda kv: -kv[1]) if c) + "."
+            out.append((f"The {hs[0].get('year')} All-League 23 is named", body, key))
         elif kind == "champion":
-            out.append((f"{n} Club Champion{'s' if n > 1 else ''} crowned" if n > 1 else f"{who[0][0]} is {who[0][1]}'s Club Champion",
-                        _names(who) if n > 1 else None))
+            if n == 1:
+                out.append((f"{nm} is {club}'s Club Champion", hs[0].get("detail"), key))
+            else:
+                out.append((f"{n} Club Champions crowned", _by_club(who), key))
         elif kind in ("hof", "legend"):
             title = "the Hall of Fame" if kind == "hof" else "Legend status"
-            out.append((f"{who[0][0]} enters {title}" if n == 1 else f"{n} players enter {title}", None if n == 1 else _names(who)))
+            out.append((f"{nm} enters {title}" if n == 1 else f"{n} players enter {title}",
+                        hs[0].get("detail") if n == 1 else _by_club(who), key))
         else:
-            # Keeper Medal, Rising Star, 7s Medal, Called Up, Triple Crown
+            name = TROPHY.get(kind, KINDS[kind][0])
             if n == 1:
-                out.append((f"{who[0][0]} won {'the ' if kind in ('keepermedal', 'medal7', 'triple') else ''}{name}", hs[0].get("detail")))
+                out.append((f"{nm} won {name}" + (f" for {club}" if club else ""), hs[0].get("detail"), key))
             else:
-                out.append((f"{n} players earned {name} this round", _names(who)))
+                out.append((f"{n} players won {name}", _by_club(who), key))
     return out
+
+
+# How each record reads when it falls, from (who, value).
+RECORD_TITLES = {
+    "high": lambda h, v: f"{h} posted the highest club score ever, {v}",
+    "season_pf": lambda h, v: f"{h} scored the most points in a season, {v}",
+    "win_run": lambda h, v: f"{h} have won {v} in a row, the longest winning run",
+    "loss_run": lambda h, v: f"{h} have lost {v} in a row, the longest losing run",
+    "low": lambda h, v: f"{h} posted the lowest club score ever, {v}",
+    "p_high": lambda h, v: f"{h} scored {v}, the highest score by a player",
+    "p_total": lambda h, v: f"{h} has the most points by a player in a season, {v}",
+    "p_hundreds": lambda h, v: f"{h} has {v} scores of 100 or more this season, a record",
+    "p_avg": lambda h, v: f"{h} is averaging {v}, above the best season average",
+    "closest": lambda h, v: f"The closest match ever: {h} by {v}",
+    "biggest": lambda h, v: f"The biggest win ever: {h} by {v}",
+    "combined": lambda h, v: f"The highest scoring match ever: {h}, {v} combined",
+}
+MARGINS = ("closest", "biggest")
 
 
 def _record_lines(league_id, seen, fresh):
@@ -87,6 +154,7 @@ def _record_lines(league_id, seen, fresh):
     from models.record_book import build
     book = build(league_id)
     out, store = [], {}
+    fmt = (lambda x: f"{x:,.1f}" if x != int(x) else f"{int(x):,}")
     for r in book["clubs"] + book["players"] + book["matches"]:
         top = r.get("top")
         if not top or r["key"] == "flags":
@@ -100,10 +168,16 @@ def _record_lines(league_id, seen, fresh):
         better = v < old if r["key"] in LOWER else v > old
         if not better:
             continue
-        unit = f" {r['unit']}" if r["unit"] else ""
-        holder = top.get("player") or top.get("team") or top.get("winner") or ""
-        fmt = (lambda x: f"{x:,.1f}" if x != int(x) else f"{int(x):,}")
-        out.append((f"New record, {r['label'].lower()}: {holder}, {fmt(v)}{unit}", f"The old record was {fmt(old)}{unit}."))
+        if top.get("winner"):
+            who = f"{top['winner']} beat {top.get('loser', '')}".strip()
+        elif top.get("player"):
+            who = f"{top['player']} ({top['team']})" if top.get("team") else top["player"]
+        else:
+            who = top.get("team") or ""
+        unit = (" point" if v == 1 else " points") if r["key"] in MARGINS else ""
+        make = RECORD_TITLES.get(r["key"])
+        title = make(who, fmt(v) + unit) if make else f"New record, {r['label'].lower()}: {who}, {fmt(v)}"
+        out.append((title, f"The old record was {fmt(old)}{unit}."))
     return out, store
 
 
@@ -126,7 +200,7 @@ def post_round_news(league_id, year=None, afl_round=None):
     players = {p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_([h["player_id"] for _k, h in new] or [0])).all()}
     lines = [] if fresh else _honour_lines([h for _k, h in new], teams, players)
     rec_lines, rec_store = _record_lines(league_id, seen, fresh)
-    lines += rec_lines
+    lines += [(t, b, None) for t, b in rec_lines]
 
     for k, _h in new:
         db.session.add(HonourAnnouncement(league_id=league_id, key=k))
@@ -140,9 +214,11 @@ def post_round_news(league_id, year=None, afl_round=None):
 
     if lines:
         coaches = {t.owner_id for t in FantasyTeam.query.filter_by(league_id=league_id).all() if t.owner_id}
-        for title, body in lines:
-            is_record = title.startswith("New record")
-            link = f"/leagues/{league_id}/history" if is_record else f"/leagues/{league_id}/honours"
+        for title, body, board in lines:
+            # A record has no board. An honour links to its own board, and the
+            # board key in the link tells the feed which emblem to draw.
+            is_record = board is None
+            link = f"/leagues/{league_id}/history" if is_record else f"/leagues/{league_id}/honours?badge={board}"
             log_activity(league_id, "record" if is_record else "honours", title, body=body, link=link)
             for uid in coaches:
                 try:
@@ -150,4 +226,4 @@ def post_round_news(league_id, year=None, afl_round=None):
                 except Exception:
                     logger.warning("honours notification failed for %s", uid, exc_info=True)
     logger.info("round news league %s R%s: %d lines%s", league_id, afl_round, len(lines), " (first run, recorded only)" if fresh else "")
-    return lines
+    return [(t, b) for t, b, _k in lines]

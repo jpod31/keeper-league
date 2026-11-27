@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, Link } from 'react-router'
+import { useParams, Link, useSearchParams } from 'react-router'
 import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
@@ -131,7 +131,7 @@ const howOf = (b: Board) => b.kind === 'clubgames' ? `${b.step} games for one cl
 /** One badge, collapsed to its header until opened: then everyone who holds it. */
 function BadgeSection({ b, open, onToggle, openPlayer }: { b: Board; open: boolean; onToggle: () => void; openPlayer: (id: number) => void }) {
   return (
-    <article className={`hb2-board hb2-acc${b.seven ? ' seven' : ''}${open ? ' open' : ''}`}>
+    <article id={`hb-${b.key}`} className={`hb2-board hb2-acc${b.seven ? ' seven' : ''}${open ? ' open' : ''}`}>
       <button type="button" className="hb2-bh hb2-acc-h" onClick={onToggle} aria-expanded={open}>
         <Emblem kind={b.kind} tier={boardTier(b)} step={b.step} size={56} />
         <span className="hb2-bt"><span className="hb2-h3">{b.name}</span><span className="hb2-p">{howOf(b)}</span></span>
@@ -175,6 +175,21 @@ export function HonourBoardPage() {
   const [only, setOnly] = usePageState<string | null>('only', null)
   const [year, setYear] = usePageState<number | null>('year', null)
   const openPlayer = useOpenPlayer()
+  // A news line links here as ?badge=<board>: open that board and bring it into view.
+  const [params, setParams] = useSearchParams()
+  const linked = params.get('badge')
+  useEffect(() => {
+    if (!linked || !data) return
+    if (linked === 'allleague') setView('allleague')
+    else {
+      setView('badges')
+      setOpened(o => (o.includes(linked) ? o : [...o, linked]))
+      setTimeout(() => document.getElementById(`hb-${linked}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150)
+    }
+    const next = new URLSearchParams(params)
+    next.delete('badge')
+    setParams(next, { replace: true })
+  }, [linked, data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading && !data) return <Spinner />
   if (error || !data) return <div className="kx-page"><p>The honour board could not be loaded.</p></div>

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
+import { noticeBadge } from './comms/NoticeList'
+import { Emblem } from './honours/Emblem'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRealtime } from '../contexts/RealtimeContext'
@@ -16,6 +18,7 @@ const ICONS: Record<string, string> = {
   message_received:  'bi-chat-dots-fill',
   season_transition: 'bi-calendar-event-fill',
   draft_pick:        'bi-list-check',
+  honours:           'bi-trophy-fill',
   default:           'bi-bell-fill',
 }
 
@@ -75,6 +78,9 @@ interface Notif {
 export function NotificationBell() {
   const { unreadCount, notifications, markAllRead, refresh } = useRealtime()
   const [open, setOpen] = useState(false)
+  // The full log is the league's Activity page when a league is open.
+  const lg = /^\/leagues\/(\d+)/.exec(useLocation().pathname)
+  const logHref = lg ? `/leagues/${lg[1]}/activity` : '/leagues'
 
   // Close on Escape, and on route change (handled by useEffect on pathname elsewhere)
   useEffect(() => {
@@ -204,7 +210,7 @@ export function NotificationBell() {
 
                 <footer className="kl-drawer-foot">
                   <Link
-                    to="/leagues"
+                    to={logHref}
                     className="kl-drawer-foot-link"
                     onClick={() => setOpen(false)}
                   >
@@ -227,11 +233,14 @@ function NotifItem({
 }: { notif: Notif; index: number; onClose: () => void }) {
   const icon = ICONS[notif.type] || ICONS.default
   const tone = toneFor(notif.type, notif.title)
+  const badge = noticeBadge(notif.url)
   const body = (
     <>
-      <span className={`kl-notif-icon kl-notif-icon-${tone}`}>
-        <i className={`bi ${icon}`}></i>
-      </span>
+      {badge
+        ? <span className="kl-notif-emblem"><Emblem kind={badge.kind} step={badge.step} tier="gold" size={40} /></span>
+        : <span className={`kl-notif-icon kl-notif-icon-${tone}`}>
+            <i className={`bi ${icon}`}></i>
+          </span>}
       <span className="kl-notif-body">
         <span className="kl-notif-title">{notif.title}</span>
         {notif.body && <span className="kl-notif-sub">{notif.body}</span>}

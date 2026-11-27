@@ -4,6 +4,9 @@
 2. One text colour. Grey text (neutral hex between dim and near-white, and
    part-transparent white) becomes the primary text colour.
 
+A line with "keep-size" in it is left alone: the squad card's form arrow
+(.pc7-form, .fv-form) is an icon beside the average, small on purpose.
+
 Run from the repo root: python tools/type_floor.py [--dry-run]
 """
 import glob
@@ -40,8 +43,14 @@ def is_grey(hexv):
 def sweep(s, is_js):
     n = {"size": 0, "colour": 0}
 
+    def kept(m):
+        t = m.string
+        start = t.rfind("\n", 0, m.start()) + 1
+        end = t.find("\n", m.end())
+        return "keep-size" in t[start: end if end >= 0 else len(t)]
+
     def size(m):
-        if px(m.group(2), m.group(3)) < FLOOR_PX:
+        if px(m.group(2), m.group(3)) < FLOOR_PX and not kept(m):
             n["size"] += 1
             return m.group(1) + FLOOR
         return m.group(0)

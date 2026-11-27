@@ -330,7 +330,21 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   `scoring_engine.py`): new honours grouped one line per badge per round, and
   broken league records, to Activity and every coach (notification type
   `honours`). `honour_announcement` remembers what was said; the first run for
-  a league records without posting.
+  a league records without posting. Each line is a sentence about a player or
+  club (one club: the club in the title, so its crest shows; several: names
+  grouped under each club). An honour's link is
+  `/leagues/<id>/honours?badge=<board key>`: `noticeBadge()` in `NoticeList.tsx`
+  reads it to draw that honour's emblem in the feed and the bell, and the
+  Honour Board opens that board.
+- **The Activity page lists the league's notifications**, not
+  `activity_feed_entry`. A line sent to every coach is one row: dedupe on
+  title, body and link within two minutes (a same-second key let copies that
+  straddled a second show twice).
+- **Draft room**: a player's name opens his card (`useOpenPlayer`); the 10+
+  figure opens `components/draft/OutlookChip.tsx` (verdict and best rank) on
+  hover, focus or tap. Long names wrap to two lines instead of being cut.
+- **`tools/type_floor.py` skips lines marked `keep-size`** (the squad card form
+  arrow, `.pc7-form` / `.fv-form`). It raised them once; check its diff.
 - **The full player page** (`/leagues/<id>/player/<pid>`,
   `pages/players/PlayerDossierPage.tsx`, data from
   `/api/leagues/<id>/players/<pid>/dossier` built by `models/player_dossier.py`).

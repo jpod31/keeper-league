@@ -187,7 +187,11 @@ export interface BenchRow {
   efficiency: number
 }
 
-export interface HonourWin { name: string; team: string; detail: string }
+export interface HonourWin {
+  name: string; team: string; detail: string; id?: number | null
+  afl_team?: string; logo?: string | null; club_bg?: string; club_fg?: string
+  team_logo?: string | null; accent?: string | null
+}
 /** The season's honours and the records set in it (models/season_review.py _honours). */
 export interface ReviewHonours {
   medal: HonourWin[]; rising: HonourWin[]; medal7: HonourWin[]; triple: HonourWin[]; champions: HonourWin[]

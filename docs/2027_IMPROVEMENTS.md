@@ -17,3 +17,11 @@
 
 ## Polish
 - [x] 10. 1122x626: Honour Board, Record Book, Home, squad, the card and the notes panel audit clean; the draft table fits after the new column.
+
+## UI second pass (Lucas, 2026-11-27: "think more deeply about the UI and its design, is this optimal..?")
+- [x] Honours news: each line shows its honour's emblem (feed and bell) and opens that board on the Honour Board; titles are sentences, names grouped by club, The Siren says how he won it, records say whose and what.
+- [x] Activity page showed a line twice when the copies to each coach straddled a second: dedupe by title, body and link within two minutes.
+- [x] Bell: "View full activity log" went to the league list; now the league's Activity.
+- [x] Review Honours slide: winners on their club's colours and logo with the coach's crest; fits 1122x626 without scrolling; player records say "by a player".
+- [x] Draft room: names open the player card; the 10+ figure opens a styled card (verdict, best rank) instead of a browser tooltip; long names wrap instead of being cut at 1122.
+- [x] tools/type_floor.py no longer raises the squad card's form arrow (lines marked keep-size).

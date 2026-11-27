@@ -384,14 +384,20 @@ def activity_feed(league_id):
         .order_by(Notification.created_at.desc())
         .all()
     )
-    # Deduplicate: same title + same second = one entry
-    seen = set()
+    # One entry per event: the same line sent to every coach is one row. The
+    # copies are written a few ms apart and can straddle a second, so match
+    # on title, body and link within two minutes (a same-second key showed
+    # "6 Club Champions crowned" twice, 2026-11-27).
+    last = {}
     entries = []
     for n in all_notifs:
-        key = (n.title, n.created_at.strftime("%Y-%m-%d %H:%M:%S") if n.created_at else "")
-        if key not in seen:
-            seen.add(key)
-            entries.append(n)
+        key = (n.title, n.body or "", n.link or "")
+        t = n.created_at
+        prev = last.get(key)
+        if prev is not None and t is not None and abs((prev - t).total_seconds()) <= 120:
+            continue
+        last[key] = t
+        entries.append(n)
         if len(entries) >= 100:
             break
 
