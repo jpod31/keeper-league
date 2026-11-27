@@ -272,16 +272,21 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   form chart filling the spare height, six season averages as plain type,
   My notes opening in place of the form, More details at the bottom. No
   stat tiles, no last-game grid.
-- **Player honours** (`models/player_honours.py`, emblems drawn by
-  `components/honours/Emblem.tsx`, list in `docs/HONOURS.md`): a trophy shelf
-  on the card between the numbers and the form chart, and an Honours block on
-  the player page's Keeper League tab. All keeper league: the premiership is
-  the LADDER TOPPER (no finals in this league), 2026 was the first season. A
-  game = in the counted 23 (round_score breakdown, emergencies included) and
-  scored > 0. Most honours run on points over replacement and wins added
-  (see the module docstring); season honours wait for the last fixture.
-  Repeats change the metal (`tier_for`). Cached per league, keyed on the
-  completed fixtures.
+- **Player honours, v3** (`models/player_honours.py`, emblems drawn by
+  `components/honours/Emblem.tsx`, the Honour Board at League > Honours,
+  `pages/leagues/HonourBoardPage.tsx`; list in `docs/HONOURS_V2.md`). Few
+  honours, hard to win (Lucas: "you want them to be quite coveted"): The Flag
+  (12+ games for the ladder topper; no finals in this league), Keeper Medal
+  (3-2-1 a match on points over replacement), Club Champion (5-4-3-2-1 a
+  round), All-League 23, Rising Star, The Siren, 7s Flag (8+ 7s games), 7s
+  Medal, Called Up (started in the 7s, then 8+ in the 23), club games 50 /
+  100 (Life Member) / 150 / 200, Triple Crown, Hall of Fame (100 points),
+  Legend. Each carries Hall of Fame points (`KINDS`). A game = in the
+  counted 23 and scored > 0, in a round with a completed fixture (AFL finals
+  weeks are saved too and must never count). Repeats change the metal
+  (`tier_for`). The pool has an Honours switch and icons beside names
+  (`/api/leagues/<id>/honours/summary`). Cached per league on the completed
+  main and 7s fixtures.
 - **Before the AFL** (`models/pre_afl.py`): a player with no AFL games gets a
   profile written from our data plus his state league and under-18 seasons
   in place of the form chart. `state_league_stat.goals` is a season TOTAL

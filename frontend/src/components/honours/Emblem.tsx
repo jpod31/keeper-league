@@ -1,167 +1,241 @@
 import { useId } from 'react'
 
-/* The honours emblems: metal and enamel pieces drawn in SVG, one shape per
-   honour, the metal set by how many times he has won it (models/player_honours.py
-   tier_for). Agreed on the honours cabinet page, 2026-11-26. */
+/* Honours v3 emblems (2026-11-27): every honour is its own object, drawn as a
+   real piece in SVG, the metal set by how many times he has won it
+   (models/player_honours.py tier_for). 7s honours carry a stylised purple 7.
+   Drawings agreed on the honours proposal (artifact 6Bp96JykZHQTjzFspYyx8M). */
 
 export type Tier = 'gold' | 'plat' | 'ruby' | 'sapph' | 'black' | 'silver' | 'bronze'
-export type Kind = 'premiership' | 'champion' | 'leaguemedal' | 'allleague' | 'topscorer' | 'rising'
-  | 'matchwinner' | 'rock' | 'breakout' | 'bargain' | 'captain' | 'clubgames' | 'leaguegames'
+export type Kind = 'flag' | 'keepermedal' | 'champion' | 'allleague' | 'rising' | 'siren'
+  | 'flag7' | 'medal7' | 'calledup' | 'clubgames' | 'triple' | 'hof' | 'legend'
 
-const METAL: Record<string, string[]> = {
-  gold: ['#fff6cf', '#f0c35a', '#b07d22', '#5c3b08'],
-  silver: ['#ffffff', '#dfe3ea', '#9aa1ad', '#3f4550'],
-  bronze: ['#ffe0bf', '#d99a5b', '#9b5d27', '#4a2a0c'],
-  plat: ['#ffffff', '#e3f3f7', '#9cc3cc', '#3d6670'],
-  black: ['#9a9aa4', '#45454e', '#1e1e24', '#08080a'],
+const MET: Record<string, string[]> = {
+  gold: ['#fff8d6', '#f4cf6a', '#c08a26', '#6b4309'],
+  silver: ['#ffffff', '#e4e8ee', '#a3aab6', '#4a505b'],
+  bronze: ['#ffe2c4', '#e0a067', '#a3632b', '#4f2c0d'],
+  plat: ['#ffffff', '#e8f6fa', '#a9cdd6', '#46707a'],
+  black: ['#b9b9c4', '#5a5a64', '#26262d', '#0b0b0d'],
 }
-const TIER: Record<Tier, { m: string; e: string; g: string }> = {
-  gold: { m: 'gold', e: '#121419', g: 'gold' },
-  plat: { m: 'plat', e: '#0f1f36', g: 'plat' },
-  ruby: { m: 'gold', e: '#6d1020', g: 'gold' },
-  sapph: { m: 'plat', e: '#0b2c6b', g: 'plat' },
-  black: { m: 'black', e: '#050506', g: 'gold' },
-  silver: { m: 'silver', e: '#121419', g: 'silver' },
-  bronze: { m: 'bronze', e: '#121419', g: 'bronze' },
+const TIERS: Record<Tier, { m: string; base: [string, string]; gold?: boolean }> = {
+  gold: { m: 'gold', base: ['#2c2c33', '#0b0b0e'] },
+  plat: { m: 'plat', base: ['#2c2c33', '#0b0b0e'] },
+  ruby: { m: 'gold', base: ['#6e1424', '#2a050c'] },
+  sapph: { m: 'plat', base: ['#143a86', '#06142f'] },
+  black: { m: 'black', base: ['#1a1a1f', '#020203'], gold: true },
+  silver: { m: 'silver', base: ['#2c2c33', '#0b0b0e'] },
+  bronze: { m: 'bronze', base: ['#2c2c33', '#0b0b0e'] },
 }
 
-function grads(id: string, t: Tier) {
-  const m = METAL[TIER[t].m], g = METAL[TIER[t].g]
+function defs(id: string, tier: Tier) {
+  const t = TIERS[tier], m = MET[t.m], g = t.gold ? MET.gold : m
   return `<defs>
-  <linearGradient id="m${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${m[0]}"/><stop offset=".35" stop-color="${m[1]}"/><stop offset=".7" stop-color="${m[2]}"/><stop offset="1" stop-color="${m[3]}"/></linearGradient>
-  <linearGradient id="r${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${m[3]}"/><stop offset=".5" stop-color="${m[2]}"/><stop offset="1" stop-color="${m[0]}"/></linearGradient>
-  <linearGradient id="g${id}" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="${g[0]}"/><stop offset=".45" stop-color="${g[1]}"/><stop offset="1" stop-color="${g[2]}"/></linearGradient>
-  <radialGradient id="e${id}" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="${TIER[t].e}" stop-opacity=".75"/><stop offset="1" stop-color="${TIER[t].e}"/></radialGradient>
+  <linearGradient id="c${id}" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${m[3]}"/><stop offset=".16" stop-color="${m[2]}"/><stop offset=".36" stop-color="${m[1]}"/><stop offset=".47" stop-color="${m[0]}"/><stop offset=".58" stop-color="${m[1]}"/><stop offset=".84" stop-color="${m[2]}"/><stop offset="1" stop-color="${m[3]}"/></linearGradient>
+  <linearGradient id="f${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${g[0]}"/><stop offset=".35" stop-color="${g[1]}"/><stop offset=".72" stop-color="${g[2]}"/><stop offset="1" stop-color="${g[3]}"/></linearGradient>
+  <linearGradient id="d${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${m[2]}"/><stop offset="1" stop-color="${m[3]}"/></linearGradient>
+  <radialGradient id="r${id}" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="${m[0]}"/><stop offset=".35" stop-color="${m[1]}"/><stop offset=".8" stop-color="${m[2]}"/><stop offset="1" stop-color="${m[3]}"/></radialGradient>
+  <linearGradient id="b${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.base[0]}"/><stop offset="1" stop-color="${t.base[1]}"/></linearGradient>
+  <linearGradient id="p${id}" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="#d6c4ff"/><stop offset=".4" stop-color="#9461ff"/><stop offset="1" stop-color="#4a17a8"/></linearGradient>
   </defs>`
 }
-const sc = (k: number, cx: number, cy: number) => `transform="translate(${cx} ${cy}) scale(${k}) translate(${-cx} ${-cy})"`
-function starPts(cx: number, cy: number, R: number, r: number, n = 5, rot = -90) {
-  const p: string[] = []
-  for (let i = 0; i < n * 2; i++) {
-    const a = (rot + i * 180 / n) * Math.PI / 180, rr = i % 2 ? r : R
-    p.push((cx + rr * Math.cos(a)).toFixed(2) + ',' + (cy + rr * Math.sin(a)).toFixed(2))
-  }
-  return p.join(' ')
+const L = 'stroke="#000" stroke-opacity=".4" stroke-width=".7"'
+const FONT = 'font-family="Geist,system-ui,sans-serif" font-weight="900"'
+
+function plinth(id: string, cx: number, top: number, w: number, h = 15) {
+  const x = cx - w / 2
+  return `<ellipse cx="${cx}" cy="${top + h + 1.5}" rx="${w / 2 + 2}" ry="2.6" fill="#000" opacity=".55"/>
+  <rect x="${x + 5}" y="${top - 5}" width="${w - 10}" height="6" rx="1.2" fill="url(#b${id})"/>
+  <rect x="${x + 5}" y="${top - 5}" width="${w - 10}" height="1.2" fill="#fff" opacity=".18"/>
+  <rect x="${x}" y="${top}" width="${w}" height="${h}" rx="2" fill="url(#b${id})"/>
+  <rect x="${x}" y="${top}" width="${w}" height="1.4" fill="#fff" opacity=".2"/>
+  <rect x="${cx - 12}" y="${top + 4.5}" width="24" height="${h - 9}" rx="1" fill="url(#f${id})"/>`
 }
-function laurel(id: string, cx: number, cy: number, R: number, from: number, to: number, n: number, side: number) {
+function starPts(cx: number, cy: number, R: number, r: number, n = 5, rot = -90): [number, number][] {
+  const p: [number, number][] = []
+  for (let i = 0; i < n * 2; i++) { const a = (rot + i * 180 / n) * Math.PI / 180, rr = i % 2 ? r : R; p.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]) }
+  return p
+}
+const pts = (a: [number, number][]) => a.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ')
+function facetStar(id: string, cx: number, cy: number, R: number, r: number, n = 5) {
+  const p = starPts(cx, cy, R, r, n)
+  let s = ''
+  for (let i = 0; i < p.length; i++) {
+    const a = p[i], b = p[(i + 1) % p.length]
+    s += `<polygon points="${pts([[cx, cy], a, b])}" fill="${i % 2 ? `url(#d${id})` : `url(#f${id})`}"/>`
+  }
+  return s + `<polygon points="${pts(p)}" fill="none" ${L}/>`
+}
+function leaves(id: string, cx: number, cy: number, R: number, from: number, to: number, n: number, side: number) {
   let s = ''
   for (let i = 0; i < n; i++) {
-    const a = (from + (to - from) * i / (n - 1)) * Math.PI / 180
-    const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a)
-    const deg = a * 180 / Math.PI + (side > 0 ? 55 : 125)
-    s += `<ellipse cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" rx="2.4" ry="5.2" transform="rotate(${deg.toFixed(1)} ${x.toFixed(2)} ${y.toFixed(2)})" fill="url(#g${id})" stroke="#000" stroke-opacity=".35" stroke-width=".5"/>`
+    const a = (from + (to - from) * i / (n - 1)) * Math.PI / 180, x = cx + R * Math.cos(a), y = cy + R * Math.sin(a)
+    const deg = a * 180 / Math.PI + (side > 0 ? 50 : 130)
+    s += `<ellipse cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" rx="2.6" ry="6" transform="rotate(${deg.toFixed(1)} ${x.toFixed(2)} ${y.toFixed(2)})" fill="url(#f${id})" ${L}/>`
   }
   return s
 }
-function body(id: string, d: string, cx: number, cy: number, black: boolean) {
-  const edge = black ? ' stroke="#f0c35a" stroke-width="1.6"' : ''
-  return `<path d="${d}" fill="#000" opacity=".55" transform="translate(0 3)"/>
-  <path d="${d}" fill="url(#m${id})"${edge}/>
-  <path d="${d}" fill="url(#r${id})" ${sc(.92, cx, cy)}/>
-  <path d="${d}" fill="url(#e${id})" ${sc(.85, cx, cy)}/>
-  <path d="${d}" fill="none" stroke="url(#m${id})" stroke-width="1" opacity=".55" ${sc(.78, cx, cy)}/>`
+function footy(id: string, cx: number, cy: number, rx: number, ry: number, rot: number, fill?: string) {
+  return `<g transform="rotate(${rot} ${cx} ${cy})">
+    <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill || `url(#r${id})`}" ${L}/>
+    <path d="M${cx - rx * .92} ${cy} Q${cx} ${cy - ry * .32} ${cx + rx * .92} ${cy}" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="1"/>
+    ${[-.35, -.17, 0, .17, .35].map(f => `<path d="M${cx + rx * f} ${cy - ry * .22 - 2.6} v5" stroke="#fff" stroke-opacity=".85" stroke-width="1.5" stroke-linecap="round"/>`).join('')}
+    <ellipse cx="${cx - rx * .3}" cy="${cy - ry * .45}" rx="${rx * .35}" ry="${ry * .16}" fill="#fff" opacity=".35"/></g>`
 }
-const num = (id: string, x: number, y: number, txt: string, size: number) =>
-  `<text x="${x}" y="${y}" text-anchor="middle" font-family="Geist,Inter,system-ui,sans-serif" font-weight="900" font-size="${size}" letter-spacing="-1" fill="url(#g${id})" stroke="#000" stroke-opacity=".45" stroke-width=".8">${txt}</text>`
-const circ = (cx: number, cy: number, r: number) => `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`
-function polyD(cx: number, cy: number, r: number, n: number, rot: number) {
-  const p: string[] = []
-  for (let i = 0; i < n; i++) { const a = (rot + i * 360 / n) * Math.PI / 180; p.push((cx + r * Math.cos(a)).toFixed(2) + ' ' + (cy + r * Math.sin(a)).toFixed(2)) }
-  return 'M' + p.join(' L') + 'Z'
-}
-function burstD(cx: number, cy: number, R: number, r: number, n: number) {
-  const p: string[] = []
-  for (let i = 0; i < n * 2; i++) { const a = (-90 + i * 180 / n) * Math.PI / 180, rr = i % 2 ? r : R; p.push((cx + rr * Math.cos(a)).toFixed(2) + ' ' + (cy + rr * Math.sin(a)).toFixed(2)) }
-  return 'M' + p.join(' L') + 'Z'
-}
-const ribbonV = `<path d="M34 4 H52 L62 46 H46 Z" fill="#f2f2f4"/><path d="M40 4 H46 L56 46 H50 Z" fill="#111"/>
-  <path d="M86 4 H68 L58 46 H74 Z" fill="#f2f2f4"/><path d="M80 4 H74 L64 46 H70 Z" fill="#111"/>`
-const cup = (id: string, cx: number, cy: number, k = 1) => `<g transform="translate(${cx} ${cy}) scale(${k})" stroke="#000" stroke-opacity=".45" stroke-width=".8">
-  <path d="M-13 -16 H13 V-8 C13 3 7 9 0 9 C-7 9 -13 3 -13 -8 Z" fill="url(#g${id})"/>
-  <path d="M-13 -12 C-22 -12 -22 0 -11 1 M13 -12 C22 -12 22 0 11 1" fill="none" stroke="url(#g${id})" stroke-width="3.2" stroke-opacity="1"/>
-  <rect x="-3" y="9" width="6" height="6" fill="url(#g${id})"/><path d="M-10 15 H10 L12 21 H-12 Z" fill="url(#g${id})"/>
-  <path d="M-15 -18 H15 V-15 H-15 Z" fill="url(#g${id})"/></g>`
-const star = (id: string, cx: number, cy: number, R: number, r: number) =>
-  `<polygon points="${starPts(cx, cy, R, r)}" fill="url(#g${id})" stroke="#000" stroke-opacity=".45" stroke-width=".8"/>`
-
-type Draw = (id: string, b: boolean, label: string) => string
-const KINDS: Record<Kind, Draw> = {
-  premiership: (id, b) => {
-    const d = 'M22 22 H98 V32 L60 112 L22 32 Z'
-    return `<rect x="10" y="10" width="100" height="9" rx="4.5" fill="#000" opacity=".5" transform="translate(0 3)"/>
-      <rect x="10" y="10" width="100" height="9" rx="4.5" fill="url(#m${id})"/>
-      <circle cx="10" cy="14.5" r="6" fill="url(#m${id})"/><circle cx="110" cy="14.5" r="6" fill="url(#m${id})"/>
-      ${body(id, d, 60, 52, b)}<path d="M30 36 H90" stroke="url(#g${id})" stroke-width="2"/>${cup(id, 60, 60, 1.05)}`
-  },
-  champion: (id, b) => ribbonV + body(id, circ(60, 76, 38), 60, 76, b)
-    + laurel(id, 60, 76, 24, 115, 215, 7, -1) + laurel(id, 60, 76, 24, 65, -35, 7, 1) + star(id, 60, 74, 15, 6.3),
-  leaguemedal: (id, b) => `<path d="M46 4 H74 L70 30 H50 Z" fill="#f2f2f4"/><path d="M56 4 H64 L62 30 H58 Z" fill="#111"/>`
-    + body(id, burstD(60, 72, 44, 36, 18), 60, 72, b)
-    + `<circle cx="60" cy="72" r="20" fill="none" stroke="url(#g${id})" stroke-width="2"/>` + star(id, 60, 72, 14, 5.6),
-  allleague: (id, b) => body(id, 'M60 6 L104 20 V54 C104 82 86 102 60 114 C34 102 16 82 16 54 V20 Z', 60, 58, b)
-    + `<polygon points="${starPts(40, 38, 7.5, 3.1)}" fill="url(#g${id})"/><polygon points="${starPts(60, 33, 9, 3.7)}" fill="url(#g${id})"/><polygon points="${starPts(80, 38, 7.5, 3.1)}" fill="url(#g${id})"/>
-       <path d="M30 50 H90" stroke="url(#g${id})" stroke-width="1.6"/>` + num(id, 60, 88, '23', 34),
-  topscorer: (id, b) => body(id, 'M14 92 L10 36 L36 60 L60 20 L84 60 L110 36 L106 92 Z', 60, 62, b)
-    + `<rect x="14" y="92" width="92" height="16" rx="3" fill="#000" opacity=".5" transform="translate(0 3)"/>
-       <rect x="14" y="92" width="92" height="16" rx="3" fill="url(#m${id})"/>
-       <circle cx="10" cy="34" r="6" fill="url(#g${id})"/><circle cx="60" cy="18" r="7" fill="url(#g${id})"/><circle cx="110" cy="34" r="6" fill="url(#g${id})"/>
-       <circle cx="38" cy="100" r="3.5" fill="#c3243a"/><circle cx="60" cy="100" r="3.5" fill="#1f5fd1"/><circle cx="82" cy="100" r="3.5" fill="#c3243a"/>
-       <path d="M60 46 L66 64 L60 82 L54 64 Z" fill="url(#g${id})" stroke="#000" stroke-opacity=".4" stroke-width=".8"/>`,
-  rising: (id, b) => `<path d="M8 104 L44 74" stroke="url(#m${id})" stroke-width="5" stroke-linecap="round" opacity=".9"/>
-      <path d="M4 86 L34 66" stroke="url(#m${id})" stroke-width="3" stroke-linecap="round" opacity=".6"/>
-      <path d="M26 112 L52 84" stroke="url(#m${id})" stroke-width="3" stroke-linecap="round" opacity=".6"/>`
-    + body(id, 'M' + starPts(66, 58, 48, 21).split(' ').join(' L') + 'Z', 66, 60, b) + star(id, 66, 59, 15, 6.5),
-  matchwinner: (id, b) => {
-    let ticks = ''
-    for (let i = 0; i < 12; i++) {
-      const a = i * 30 * Math.PI / 180, r1 = i % 3 ? 27 : 24, r2 = 31
-      ticks += `<path d="M${(60 + r1 * Math.sin(a)).toFixed(2)} ${(66 - r1 * Math.cos(a)).toFixed(2)} L${(60 + r2 * Math.sin(a)).toFixed(2)} ${(66 - r2 * Math.cos(a)).toFixed(2)}" stroke="url(#g${id})" stroke-width="${i % 3 ? 1.6 : 3}"/>`
-    }
-    return `<rect x="52" y="6" width="16" height="10" rx="2" fill="url(#m${id})"/><rect x="56" y="14" width="8" height="10" fill="url(#m${id})"/>
-      <rect x="92" y="20" width="10" height="7" rx="2" fill="url(#m${id})" transform="rotate(45 97 23)"/>`
-      + body(id, circ(60, 66, 44), 60, 66, b) + ticks
-      + `<path d="M60 66 L60 35 A31 31 0 0 1 75.5 39.2 Z" fill="#d22a3c" opacity=".9"/>
-       <path d="M60 66 L60 36" stroke="url(#g${id})" stroke-width="3.5" stroke-linecap="round"/>
-       <circle cx="60" cy="66" r="5" fill="url(#g${id})" stroke="#000" stroke-opacity=".4"/>`
-  },
-  rock: (id, b) => {
-    let riv = ''
-    for (let i = 0; i < 8; i++) {
-      const a = (22.5 + i * 45) * Math.PI / 180
-      riv += `<circle cx="${(60 + 40 * Math.cos(a)).toFixed(2)}" cy="${(62 + 40 * Math.sin(a)).toFixed(2)}" r="2.6" fill="url(#g${id})" stroke="#000" stroke-opacity=".4" stroke-width=".6"/>`
-    }
-    return body(id, polyD(60, 62, 50, 8, 22.5), 60, 62, b) + riv
-      + `<path d="M30 82 L50 46 L60 60 L70 42 L92 82 Z" fill="url(#g${id})" stroke="#000" stroke-opacity=".45" stroke-width=".8"/>
-       <path d="M50 46 L45 56 L55 54 Z M70 42 L64 54 L76 52 Z" fill="#fff" opacity=".55"/>`
-  },
-  bargain: (id, b) => body(id, 'M24 34 L42 12 H78 L96 34 L60 112 Z', 60, 52, b)
-    + `<g fill="none" stroke="url(#g${id})" stroke-width="1.6" stroke-linejoin="round">
-       <path d="M30 36 H90"/><path d="M47 20 L42 36 L60 96 L78 36 L73 20"/><path d="M42 36 L60 20 L78 36"/></g>
-       <path d="M60 20 L42 36 H78 Z" fill="url(#g${id})" opacity=".85"/>`,
-  breakout: (id, b) => body(id, 'M60 6 L108 54 H82 V112 H38 V54 H12 Z', 60, 60, b)
-    + `<g fill="none" stroke="url(#g${id})" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
-       <path d="M44 74 L60 58 L76 74"/><path d="M44 94 L60 78 L76 94" opacity=".7"/></g>`,
-  captain: (id, b) => body(id, 'M8 40 Q60 28 112 40 V84 Q60 72 8 84 Z', 60, 62, b)
-    + `<path d="M8 40 Q60 28 112 40" fill="none" stroke="url(#g${id})" stroke-width="2"/><path d="M8 84 Q60 72 112 84" fill="none" stroke="url(#g${id})" stroke-width="2"/>`
-    + num(id, 60, 76, 'C', 40),
-  clubgames: (id, b, label) => body(id, 'M38 12 L22 20 L6 44 L22 54 L28 48 V112 H92 V48 L98 54 L114 44 L98 20 L82 12 C77 22 69 26 60 26 C51 26 43 22 38 12 Z', 60, 60, b)
-    + `<path d="M38 12 C43 22 51 26 60 26 C69 26 77 22 82 12" fill="none" stroke="url(#g${id})" stroke-width="2.4"/>`
-    + num(id, 60, 90, label, label.length > 2 ? 27 : 42),
-  leaguegames: (id, b, label) => body(id, polyD(60, 62, 52, 6, -90), 60, 62, b)
-    + laurel(id, 60, 62, 33, 105, 160, 4, -1) + laurel(id, 60, 62, 33, 75, 20, 4, 1)
-    + `<polygon points="${starPts(60, 34, 6, 2.5)}" fill="url(#g${id})"/>`
-    + num(id, 60, 72, label, label.length > 2 ? 26 : 34),
+function cup(id: string, cx: number, top: number, k = 1) {
+  return `<g transform="translate(${cx} ${top}) scale(${k}) translate(-60 -8)">
+    <path d="M37 33 C21 31 19 55 41 59" fill="none" stroke="url(#c${id})" stroke-width="5.2" stroke-linecap="round"/>
+    <path d="M83 33 C99 31 101 55 79 59" fill="none" stroke="url(#c${id})" stroke-width="5.2" stroke-linecap="round"/>
+    <path d="M37 33 C21 31 19 55 41 59 M83 33 C99 31 101 55 79 59" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.1"/>
+    <path d="M44 93 C46 87 53 85 56 80 H64 C67 85 74 87 76 93 Z" fill="url(#c${id})" ${L}/>
+    <rect x="56.5" y="66" width="7" height="15" fill="url(#c${id})"/>
+    <ellipse cx="60" cy="74" rx="6.5" ry="2.8" fill="url(#c${id})" ${L}/>
+    <path d="M36 30 H84 C84 50 76 63 60 67 C44 63 36 50 36 30 Z" fill="url(#c${id})" ${L}/>
+    <path d="M37.6 41 H82.4" stroke="url(#f${id})" stroke-width="2.4"/>
+    <path d="M38.5 44 H81.5" stroke="#000" stroke-opacity=".25" stroke-width=".8"/>
+    <ellipse cx="60" cy="30" rx="24" ry="4.6" fill="url(#f${id})" ${L}/>
+    <path d="M41 29 C43 20 51 16 60 16 C69 16 77 20 79 29 Z" fill="url(#c${id})" ${L}/>
+    <ellipse cx="60" cy="29" rx="19" ry="2.4" fill="url(#f${id})"/>
+    <rect x="58.6" y="8" width="2.8" height="9" fill="url(#c${id})"/>
+    <circle cx="60" cy="7" r="3.6" fill="url(#r${id})" ${L}/>
+    <path d="M43 34 C43 48 48 58 55 63" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="2"/></g>`
 }
 
-export function emblemSvg(kind: Kind, tier: Tier, label: string, uid: string) {
+type Shape = (id: string, label: string) => string
+const SHAPES: Record<string, Shape> = {
+  flag: id => plinth(id, 60, 99, 52) + cup(id, 60, 8),
+  keepermedal: id => `
+    <path d="M40 13 H80 L75 54 H45 Z" fill="#111116"/>
+    <path d="M47 13 L50.5 54 M73 13 L69.5 54" stroke="url(#f${id})" stroke-width="3.4"/>
+    <path d="M45 54 L60 62 L75 54 Z" fill="#050507"/>
+    <rect x="34" y="4" width="52" height="10" rx="2.5" fill="url(#f${id})" ${L}/>
+    <circle cx="34" cy="9" r="5" fill="url(#r${id})" ${L}/><circle cx="86" cy="9" r="5" fill="url(#r${id})" ${L}/>
+    <circle cx="60" cy="61" r="5.5" fill="none" stroke="url(#f${id})" stroke-width="3"/>
+    <circle cx="60" cy="90" r="27" fill="#000" opacity=".5" transform="translate(0 2)"/>
+    <circle cx="60" cy="90" r="27" fill="url(#r${id})" ${L}/>
+    <circle cx="60" cy="90" r="22.5" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="1.2"/>
+    <circle cx="60" cy="90" r="24.5" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>
+    ${leaves(id, 60, 90, 17, 110, 200, 5, -1)}${leaves(id, 60, 90, 17, 70, -20, 5, 1)}
+    ${footy(id, 60, 88, 10, 6.5, -28, `url(#f${id})`)}`,
+  sevensmedal: id => `
+    <path d="M40 13 H80 L75 54 H45 Z" fill="#6d3df0"/>
+    <path d="M52 13 L54 54 M68 13 L66 54" stroke="#ffffff" stroke-width="4"/>
+    <path d="M45 54 L60 62 L75 54 Z" fill="#3a1597"/>
+    <rect x="34" y="4" width="52" height="10" rx="2.5" fill="url(#f${id})" ${L}/>
+    <circle cx="60" cy="61" r="5.5" fill="none" stroke="url(#f${id})" stroke-width="3"/>
+    <polygon points="${pts(starPts(60, 90, 30, 19, 7))}" fill="#000" opacity=".5" transform="translate(0 2)"/>
+    ${facetStar(id, 60, 90, 30, 19, 7)}
+    <circle cx="60" cy="90" r="12" fill="url(#r${id})" ${L}/>`,
+  champion: id => `
+    <rect x="22" y="6" width="76" height="108" rx="11" fill="#000" opacity=".5" transform="translate(0 3)"/>
+    <rect x="22" y="6" width="76" height="108" rx="11" fill="url(#b${id})"/>
+    <rect x="27" y="11" width="66" height="98" rx="8" fill="none" stroke="url(#f${id})" stroke-width="1.3" opacity=".8"/>
+    <path d="M60 20 L86 28 V56 C86 74 75 86 60 94 C45 86 34 74 34 56 V28 Z" fill="url(#c${id})" ${L}/>
+    <path d="M60 27 L80 33 V56 C80 70 72 80 60 87 C48 80 40 70 40 56 V33 Z" fill="url(#d${id})" opacity=".55"/>
+    <path d="M40 58 L60 46 L80 58 V64 L60 52 L40 64 Z" fill="url(#f${id})" ${L}/>
+    <polygon points="${pts(starPts(60, 72, 7.5, 3.1))}" fill="url(#f${id})" ${L}/>
+    <rect x="44" y="99" width="32" height="6" rx="1" fill="url(#f${id})"/>`,
+  // All-League: the blazer of the side, three stars on the pocket
+  allleague: id => `
+    <path d="M28 28 L46 18 L60 34 L74 18 L92 28 L100 110 H20 Z" fill="#000" opacity=".5" transform="translate(0 3)"/>
+    <path d="M28 28 L46 18 L60 34 L74 18 L92 28 L100 110 H20 Z" fill="#15151b"/>
+    <path d="M28 28 L46 18 L60 34 L74 18 L92 28 L100 110 H20 Z" fill="none" stroke="url(#f${id})" stroke-width="2"/>
+    <path d="M49 19 L60 33 L71 19 Z" fill="#ececf1"/>
+    <path d="M57.5 26 L62.5 26 L64 60 L60 66 L56 60 Z" fill="url(#c${id})"/>
+    <path d="M46 18 L54 64 L60 34 Z" fill="#0a0a0e" stroke="url(#f${id})" stroke-width="1.2"/>
+    <path d="M74 18 L66 64 L60 34 Z" fill="#0a0a0e" stroke="url(#f${id})" stroke-width="1.2"/>
+    <path d="M68 50 H90 V66 C90 73 85 78 79 80 C73 78 68 73 68 66 Z" fill="url(#f${id})" ${L}/>
+    <text x="79" y="71" text-anchor="middle" ${FONT} font-size="13" fill="#15151b">23</text>
+    <circle cx="60" cy="76" r="2.4" fill="url(#r${id})"/><circle cx="60" cy="90" r="2.4" fill="url(#r${id})"/>`,
+  rising: id => plinth(id, 60, 101, 38) + `
+    <rect x="57" y="66" width="6" height="35" fill="url(#c${id})"/>
+    <ellipse cx="60" cy="67" rx="7" ry="2.2" fill="url(#f${id})"/>
+    <polygon points="${pts(starPts(60, 39, 33, 14))}" fill="#000" opacity=".45" transform="translate(0 2.5)"/>
+    ${facetStar(id, 60, 39, 33, 14)}`,
+  siren: id => plinth(id, 60, 101, 40) + `
+    <rect x="56.5" y="60" width="7" height="41" fill="url(#c${id})"/>
+    <path d="M38 62 L52 54 L83 25 C91 28 96 38 94 47 L60 63 L46 68 Z" fill="url(#c${id})" ${L}/>
+    <ellipse cx="89" cy="36" rx="7" ry="12.5" transform="rotate(-38 89 36)" fill="url(#d${id})" ${L}/>
+    <ellipse cx="89" cy="36" rx="4.2" ry="9" transform="rotate(-38 89 36)" fill="#0b0b0e"/>
+    <circle cx="48" cy="62" r="7" fill="url(#r${id})" ${L}/>
+    <path d="M99 18 C106 24 108 34 104 44 M104 9 C115 18 118 34 111 50" fill="none" stroke="url(#f${id})" stroke-width="2.6" stroke-linecap="round"/>`,
+  framed: (id, label) => `
+    <rect x="14" y="8" width="92" height="104" rx="3" fill="#000" opacity=".5" transform="translate(0 3)"/>
+    <rect x="14" y="8" width="92" height="104" rx="3" fill="url(#c${id})" ${L}/>
+    <rect x="21" y="15" width="78" height="90" fill="#0d0d11"/>
+    <path d="M44 24 L32 30 L24 46 L34 52 L38 48 V96 H82 V48 L86 52 L96 46 L88 30 L76 24 C72 31 66 34 60 34 C54 34 48 31 44 24 Z" fill="#1c1c23" stroke="url(#f${id})" stroke-width="1.5"/>
+    <text x="60" y="${label.length > 2 ? 80 : 83}" text-anchor="middle" ${FONT} font-size="${label.length > 2 ? 24 : 32}" letter-spacing="-1" fill="url(#f${id})" ${L}>${label}</text>`,
+  key: id => `
+    <g transform="rotate(-35 60 60)">
+    <circle cx="60" cy="28" r="19" fill="url(#r${id})" ${L}/>
+    <circle cx="60" cy="28" r="9" fill="#0b0b0e"/>
+    ${[0, 90, 180, 270].map(a => `<circle cx="${60 + 15 * Math.cos(a * Math.PI / 180)}" cy="${28 + 15 * Math.sin(a * Math.PI / 180)}" r="5" fill="url(#f${id})" ${L}/>`).join('')}
+    <rect x="56" y="45" width="8" height="64" rx="2" fill="url(#c${id})" ${L}/>
+    <rect x="52" y="50" width="16" height="5" rx="1.5" fill="url(#f${id})"/>
+    <path d="M64 92 H76 V98 H70 V102 H76 V108 H64 Z" fill="url(#c${id})" ${L}/></g>`,
+  triple: id => `
+    <path d="M14 92 L10 34 L36 58 L60 18 L84 58 L110 34 L106 92 Z" fill="#000" opacity=".45" transform="translate(0 3)"/>
+    <path d="M14 92 L10 34 L36 58 L60 18 L84 58 L110 34 L106 92 Z" fill="url(#c${id})" ${L}/>
+    <path d="M14 92 L10 34 L36 58 L60 18 L60 92 Z" fill="#fff" opacity=".12"/>
+    <rect x="12" y="90" width="96" height="18" rx="3" fill="url(#f${id})" ${L}/>
+    <circle cx="10" cy="32" r="6" fill="url(#r${id})"/><circle cx="60" cy="16" r="7" fill="url(#r${id})"/><circle cx="110" cy="32" r="6" fill="url(#r${id})"/>
+    <circle cx="36" cy="99" r="4" fill="#c3243a"/><circle cx="60" cy="99" r="4.5" fill="#1f5fd1"/><circle cx="84" cy="99" r="4" fill="#1f9d55"/>`,
+  hof: id => `
+    <ellipse cx="60" cy="112" rx="52" ry="3" fill="#000" opacity=".5"/>
+    <path d="M10 44 L60 12 L110 44 Z" fill="url(#f${id})" ${L}/>
+    <path d="M24 40 L60 18 L96 40 Z" fill="#000" opacity=".22"/>
+    <rect x="12" y="44" width="96" height="7" fill="url(#c${id})" ${L}/>
+    ${[22, 42, 62, 82].map(x => `<rect x="${x}" y="53" width="12" height="42" fill="url(#c${id})" ${L}/>`).join('')}
+    <rect x="8" y="95" width="104" height="7" fill="url(#c${id})" ${L}/>
+    <rect x="4" y="102" width="112" height="8" fill="url(#d${id})" ${L}/>
+    <polygon points="${pts(starPts(60, 33, 6.5, 2.7))}" fill="#fff" opacity=".9"/>`,
+  legend: id => {
+    let rays = ''
+    for (let i = 0; i < 24; i++) {
+      const a = i * 15 * Math.PI / 180, r1 = 30, r2 = i % 2 ? 46 : 54
+      rays += `<path d="M${(60 + r1 * Math.cos(a)).toFixed(1)} ${(60 + r1 * Math.sin(a)).toFixed(1)} L${(60 + r2 * Math.cos(a)).toFixed(1)} ${(60 + r2 * Math.sin(a)).toFixed(1)}" stroke="url(#f${id})" stroke-width="${i % 2 ? 2 : 3.4}" stroke-linecap="round"/>`
+    }
+    return rays + `<circle cx="60" cy="60" r="31" fill="url(#r${id})" ${L}/><circle cx="60" cy="60" r="25" fill="#0b0b0e"/>` + facetStar(id, 60, 61, 20, 8.5)
+  },
+  ticket: id => `
+    <g transform="rotate(-12 60 60)">
+    <path d="M10 36 H110 V52 A8 8 0 0 0 110 68 V84 H10 V68 A8 8 0 0 0 10 52 Z" fill="#000" opacity=".45" transform="translate(0 3)"/>
+    <path d="M10 36 H110 V52 A8 8 0 0 0 110 68 V84 H10 V68 A8 8 0 0 0 10 52 Z" fill="url(#f${id})" ${L}/>
+    <path d="M82 38 V82" stroke="#000" stroke-opacity=".35" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <rect x="18" y="44" width="58" height="32" rx="2" fill="none" stroke="#000" stroke-opacity=".35"/>
+    <text x="47" y="66" text-anchor="middle" ${FONT} font-size="15" fill="#2a1a05" opacity=".8">SENIORS</text>
+    <polygon points="${pts(starPts(96, 60, 8, 3.4))}" fill="#2a1a05" opacity=".7"/></g>`,
+}
+
+// The stylised purple 7 on every 7s honour: a heavy italic 7, two facets, no roundel.
+const sevenMark = (id: string) => `<g>
+  <path d="M79 79 H115 L111 90 L94 118 H80 L96 91 H76 Z" fill="#000" opacity=".55" transform="translate(1.5 2)"/>
+  <path d="M79 79 H115 L111 90 L94 118 H80 L96 91 H76 Z" fill="url(#p${id})" stroke="#1b0640" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M79.6 80.2 H113.4 L112.2 84 H78.2 Z" fill="#fff" opacity=".55"/>
+  <path d="M96 91 L111 90 L94 118 H87 Z" fill="#000" opacity=".22"/></g>`
+
+/** Which object draws each honour. */
+function shapeOf(kind: Kind, step: number | null | undefined): [string, string, boolean] {
+  switch (kind) {
+    case 'flag7': return ['flag', '', true]
+    case 'medal7': return ['sevensmedal', '', true]
+    case 'calledup': return ['ticket', '', true]
+    case 'clubgames': return step === 100 ? ['key', '', false] : ['framed', String(step ?? ''), false]
+    default: return [kind, '', false]
+  }
+}
+
+export function emblemSvg(kind: Kind, tier: Tier, uid: string, step?: number | null) {
   const id = uid.replace(/[^a-zA-Z0-9]/g, '')
-  return grads(id, tier) + KINDS[kind](id, tier === 'black', label)
+  const [shape, label, seven] = shapeOf(kind, step)
+  const draw = SHAPES[shape] || SHAPES.flag
+  return defs(id, tier) + draw(id, label) + (seven ? sevenMark(id) : '')
 }
 
 interface Props {
   kind: Kind
   tier: Tier
-  /** The number on a milestone emblem. */
+  /** The games milestone, for club games. */
+  step?: number | null
+  /** Older callers pass the milestone as a label. */
   label?: string | number
   size?: number
   title?: string
@@ -170,12 +244,13 @@ interface Props {
   locked?: boolean
 }
 
-export function Emblem({ kind, tier, label, size = 56, title, className, locked }: Props) {
+export function Emblem({ kind, tier, step, label, size = 56, title, className, locked }: Props) {
   const uid = useId()
+  const st = step ?? (label != null && label !== '' ? Number(label) : null)
   return (
-    <svg className={`emblem${locked ? ' emblem-locked' : ''}${className ? ' ' + className : ''}`} width={size} height={size * 124 / 120}
-      viewBox="0 -2 120 124" role="img" aria-label={title || kind}
-      dangerouslySetInnerHTML={{ __html: (title ? `<title>${title.replace(/[<&>]/g, '')}</title>` : '') + emblemSvg(kind, tier, label != null ? String(label) : '', uid) }} />
+    <svg className={`emblem${locked ? ' emblem-locked' : ''}${className ? ' ' + className : ''}`} width={size} height={size}
+      viewBox="0 0 120 120" role="img" aria-label={title || kind}
+      dangerouslySetInnerHTML={{ __html: (title ? `<title>${title.replace(/[<&>]/g, '')}</title>` : '') + emblemSvg(kind, tier, uid, st) }} />
   )
 }
 
@@ -185,24 +260,26 @@ export function EmblemStars({ n }: { n: number }) {
   return (
     <span className="emblem-stars" aria-hidden="true">
       {Array.from({ length: n }, (_, i) => (
-        <svg key={i} viewBox="0 0 20 20"><polygon points={starPts(10, 10.5, 9.5, 4)} fill="#f0c35a" /></svg>
+        <svg key={i} viewBox="0 0 20 20"><polygon points={pts(starPts(10, 10.5, 9.5, 4))} fill="#f0c35a" /></svg>
       ))}
     </span>
   )
 }
 
 export interface HonourEmblem {
-  kind: Kind; name: string; tier: Tier; times: number; step: number | null
+  kind: Kind; name: string; tier: Tier; times: number; step: number | null; seven?: boolean
   items: { year: number | null; team: string; detail: string }[]
 }
 export interface Honours {
   emblems: HonourEmblem[]
   next: { kind: Kind; name: string; step: number; games: number; to_go: number; team: string; tier: Tier } | null
+  points?: number
+  hof?: number
 }
 
-/** One line under an emblem: "Club champion" or "Match winner x3". */
-export function emblemLabel(e: HonourEmblem) {
-  if (e.step) return `${e.step} ${e.kind === 'clubgames' ? 'club' : 'league'} games`
+/** One line under an emblem: "Club Champion" or "The Siren x3". */
+export function emblemLabel(e: { kind: Kind; name: string; times: number; step: number | null }) {
+  if (e.kind === 'clubgames') return e.step === 100 ? 'Life Member' : `${e.step} club games`
   return e.times > 1 ? `${e.name} x${e.times}` : e.name
 }
 

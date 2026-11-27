@@ -11333,3 +11333,73 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .nd-fab { right: 16px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   .nd-panel { right: 16px; left: 16px; width: auto; max-width: none; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); max-height: calc(100vh - 150px); }
 }
+
+/* ── Honour Board (pages/leagues/HonourBoardPage.tsx, 2026-11-27) ── */
+.hb-tabs { display: flex; gap: 4px; border-bottom: 1px solid rgba(255,255,255,.12); margin: 4px 0 18px; overflow-x: auto; }
+.hb-tabs button { height: 42px; padding: 0 16px; border: 0; background: none; color: #fff; font: 600 15px var(--kl-font); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.hb-tabs button.on { font-weight: 800; border-bottom-color: #fff; }
+.hb-body { display: flex; flex-direction: column; gap: 18px; }
+.hb-note { margin: 0; font-size: 15px; color: #fff; }
+.hb-cabinet { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.hb-trophy { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: #0f0f12; }
+.hb-trophy > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.hb-trophy b { font-size: 18px; font-weight: 800; color: #fff; }
+.hb-trophy span { font-size: 14px; color: #fff; }
+.hb-lab { font-size: 13px !important; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.hb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; align-items: start; }
+.hb-panel { border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: #0f0f12; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.hb-panel.hb-wide { grid-column: 1 / -1; }
+.hb-panel h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; color: #fff; }
+.hb-foot { margin: 0; font-size: 13px; color: #fff; }
+.hb-table { width: 100%; border-collapse: collapse; font-size: 14px; color: #fff; }
+.hb-table td { padding: 7px 6px; border-bottom: 1px solid rgba(255,255,255,.07); vertical-align: middle; }
+.hb-table tr:last-child td { border-bottom: 0; }
+.hb-table .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hb-name { border: 0; background: none; padding: 0; color: #fff; font: inherit; font-weight: 700; cursor: pointer; text-align: left; }
+.hb-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.hb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hb-chips span { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border: 1px solid rgba(255,255,255,.14); border-radius: 6px; font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; }
+.hb-team { display: flex; flex-direction: column; gap: 16px; }
+.hb-line { display: flex; flex-direction: column; gap: 8px; }
+.hb-line h4 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #fff; }
+.hb-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.hb-pl { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: #0f0f12; color: #fff; text-align: left; cursor: pointer; min-width: 0; }
+.hb-pl:hover { border-color: rgba(255,255,255,.4); }
+.hb-pl-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hb-pl-top b { font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hb-pl-nums { font-size: 14px; font-variant-numeric: tabular-nums; }
+.hb-pl-nums b { font-size: 17px; font-weight: 800; }
+.hb-pl-team { font-size: 14px; }
+.hb-race { display: flex; flex-direction: column; }
+.hb-race-row { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 190px) minmax(120px, 1fr) 44px; gap: 12px; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+.hb-race-row b { text-align: right; font-size: 17px; font-variant-numeric: tabular-nums; color: #fff; }
+.hb-race-ems { display: flex; gap: 3px; }
+.hb-race-bar { position: relative; height: 10px; border-radius: 3px; background: #1f1f26; }
+.hb-race-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: #f0c35a; }
+.hb-race-bar em { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #fff; }
+.hb-kv { display: flex; flex-direction: column; }
+.hb-kv > div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+.hb-kv b { font-size: 22px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+.hb-kv span { font-size: 14px; color: #fff; }
+@media (max-width: 767.98px) {
+  .hb-grid { grid-template-columns: 1fr; }
+  .hb-three { grid-template-columns: 1fr; }
+  .hb-race-row { grid-template-columns: minmax(0, 1fr) 44px; }
+  .hb-race-ems, .hb-race-bar { display: none; }
+}
+
+/* Honours in the player pool: small emblems beside his name, and the
+   Honours view (pages/players/HonoursPoolTable.tsx). */
+.hon-icons { display: inline-flex; gap: 2px; margin-left: 6px; vertical-align: middle; }
+.hon-icons .emblem { display: inline-block; }
+.hon-wrap { overflow-x: auto; }
+.hon-table { width: 100%; border-collapse: collapse; font-size: 14px; color: #fff; }
+.hon-table th { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.14); white-space: nowrap; text-align: left; cursor: default; }
+.hon-table th[role="button"] { cursor: pointer; }
+.hon-table th.sorted { text-decoration: underline; text-underline-offset: 4px; }
+.hon-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.07); white-space: nowrap; vertical-align: middle; }
+.hon-table tbody tr { cursor: pointer; }
+.hon-table tbody tr:hover { background: rgba(255,255,255,.04); }
+.hon-table .n { text-align: right; font-variant-numeric: tabular-nums; }
+.hon-strip { display: inline-flex; gap: 3px; }
+.hon-empty { margin: 12px; font-size: 15px; color: #fff; }

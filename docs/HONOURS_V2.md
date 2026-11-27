@@ -47,4 +47,6 @@ Show the design first (artifact), build after he says go.
 - [x] Premiership stars over club crests, or over the initials; drawn by TeamCrest so an uploaded crest gets them. LIVE.
 - [x] "Called Up" counts were inflated by AFL finals weeks 25-29; recomputed on league rounds only
 - [x] v3 proposal: "we dont need highly overlapping trophies ... you want them to be quite coveted". Twelve honours: Flag (12+ games), Keeper Medal, Club Champion, Rising Star (medal votes, 21 and under), The Siren, club games 50/100 (Life Member key)/150/200, Triple Crown, Hall of Fame, Legend, 7s Flag (8+ 7s games), 7s Medal, Called Up. Everything else cut.
-- [ ] Wait for his go on v3, then build
+- [x] Built 2026-11-27 ("where is the badges summary area that I asked for"), with the All-League 23 back in ("wheres the all league 23?") as an honour worth 6 points
+- [x] Engine v3, emblems v2, Honour Board (Season, All-League 23, Hall of Fame, Clubs, Records), pool Honours switch and name icons
+- [x] Called Up = started the season in the 7s (no 23 game before his first 7s game), then 8+ in the 23: 11 in 2026

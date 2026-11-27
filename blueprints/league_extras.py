@@ -3,6 +3,7 @@
   player notes      /players/<id>/notes, /players/notes/<id>
   notes panel       /leagues/<id>/notes, /leagues/<id>/notes/general[/<id>]
   player search     /players/search?q=
+  honours           /leagues/<id>/honours/board, /leagues/<id>/honours/summary
   former players    /leagues/<id>/former-players
   trade block       /leagues/<id>/trade-block[/<entry>]
   past seasons      /leagues/<id>/seasons[/<year>]
@@ -207,6 +208,27 @@ def register_league_extras(spa_api):
         rows.sort(key=lambda p: (p.is_former, not p.name.lower().startswith(ql)
                                  and not p.name.lower().split(" ")[-1].startswith(ql), p.name))
         return jsonify({"players": [_player_card(p) for p in rows[:15]]})
+
+    # ── Honours v3 (models/player_honours.py) ────────────────────────
+
+    @spa_api.route("/leagues/<int:league_id>/honours/board")
+    @login_required
+    def honours_board(league_id):
+        league, _team = check_league_access(league_id)
+        if not league:
+            return jsonify({"error": "Not a league member"}), 403
+        from models.player_honours import board
+        return jsonify(board(league_id))
+
+    @spa_api.route("/leagues/<int:league_id>/honours/summary")
+    @login_required
+    def honours_summary(league_id):
+        """Every honoured player's points, counts and icons, for the pool."""
+        league, _team = check_league_access(league_id)
+        if not league:
+            return jsonify({"error": "Not a league member"}), 403
+        from models.player_honours import summary
+        return jsonify({"players": {str(k): v for k, v in summary(league_id).items()}})
 
     # ── Former players ───────────────────────────────────────────────
 

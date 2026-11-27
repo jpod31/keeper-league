@@ -10,9 +10,9 @@ from models.pre_afl import league_name, pre_afl
 
 
 def test_repeats_change_the_metal():
-    assert [tier_for("premiership", n) for n in (1, 2, 3, 4, 5, 9)] == ["gold", "plat", "ruby", "sapph", "black", "black"]
-    assert [tier_for("matchwinner", n) for n in (1, 2, 3, 4, 5, 10)] == ["bronze", "silver", "gold", "gold", "plat", "black"]
-    assert [tier_for("clubgames", step=s) for s in (25, 50, 100, 150, 200)] == ["bronze", "silver", "gold", "plat", "black"]
+    assert [tier_for("flag", n) for n in (1, 2, 3, 4, 5, 9)] == ["gold", "plat", "ruby", "sapph", "black", "black"]
+    assert [tier_for("siren", n) for n in (1, 2, 3, 4, 5, 10)] == ["bronze", "silver", "gold", "gold", "plat", "black"]
+    assert [tier_for("clubgames", step=s) for s in (50, 100, 150, 200)] == ["silver", "gold", "plat", "black"]
 
 
 def _named(db, team, rnd, player, code="MID", captain=False):
@@ -55,22 +55,30 @@ def _season(db, seed_data, complete=True):
     return lg, a, (p1, p2, p3, p4)
 
 
-def test_honours_from_a_season(db, seed_data):
+def test_honours_from_a_season(db, seed_data, monkeypatch):
+    monkeypatch.setattr(player_honours, "MIN_FLAG", 1)
     lg, a, (p1, p2, p3, p4) = _season(db, seed_data)
     h1 = {e["kind"]: e for e in for_player(lg.id, p1.id)["emblems"]}
-    assert "matchwinner" in h1 and h1["matchwinner"]["tier"] == "bronze"
-    assert "champion" in h1 and "premiership" in h1 and "captain" in h1
+    assert h1["siren"]["tier"] == "bronze"
+    assert {"flag", "keepermedal", "champion"} <= set(h1)
+    assert "triple" in h1  # a Flag, a Keeper Medal and a Club Champion
+    assert for_player(lg.id, p1.id)["points"] == 4 + 15 + 30 + 15
     # A zero is not a game: no flag for p2. The emergency who came in and scored has one.
-    assert "premiership" not in {e["kind"] for e in for_player(lg.id, p2.id)["emblems"]}
-    assert "premiership" in {e["kind"] for e in for_player(lg.id, p4.id)["emblems"]}
+    assert "flag" not in {e["kind"] for e in for_player(lg.id, p2.id)["emblems"]}
+    assert "flag" in {e["kind"] for e in for_player(lg.id, p4.id)["emblems"]}
     nxt = for_player(lg.id, p1.id)["next"]
-    assert nxt["step"] == 25 and nxt["games"] == 1 and nxt["to_go"] == 24
+    assert nxt["step"] == 50 and nxt["games"] == 1 and nxt["to_go"] == 49
+
+
+def test_flag_needs_games_in_the_side(db, seed_data):
+    lg, a, (p1, *_rest) = _season(db, seed_data)
+    assert "flag" not in {e["kind"] for e in for_player(lg.id, p1.id)["emblems"]}  # 1 game, 12 needed
 
 
 def test_season_honours_wait_for_the_last_fixture(db, seed_data):
     lg, a, (p1, *_rest) = _season(db, seed_data, complete=False)
     kinds = {e["kind"] for e in for_player(lg.id, p1.id)["emblems"]}
-    assert kinds == {"matchwinner"}
+    assert kinds == {"siren"}
 
 
 def test_under_18_league_names():

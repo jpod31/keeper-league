@@ -46,7 +46,7 @@ function detectActiveTab(pathname: string): string {
   if (rest.startsWith('afl-live')) return 'live'
   if (rest.startsWith('player-pool') || rest.startsWith('players/') || rest.startsWith('player-ratings') || rest.startsWith('injuries') || rest.startsWith('stats')) return 'players'
   if (rest.startsWith('reserve7s/team')) return 'team'
-  if (rest.startsWith('standings') || rest.startsWith('fixture') || rest.startsWith('matchup') || rest.startsWith('finals') || rest.startsWith('history') || rest.startsWith('list-changes') || rest.startsWith('reserve7s')) return 'league'
+  if (rest.startsWith('standings') || rest.startsWith('fixture') || rest.startsWith('matchup') || rest.startsWith('finals') || rest.startsWith('history') || rest.startsWith('honours') || rest.startsWith('seasons') || rest.startsWith('list-changes') || rest.startsWith('reserve7s')) return 'league'
   if (rest.startsWith('draft')) return 'draft'
   if (rest.startsWith('chat') || rest.startsWith('notifications') || rest.startsWith('activity') || rest.startsWith('messages')) return 'comms'
   if (rest.startsWith('commissioner') || rest.startsWith('new-season')) return 'commissioner'
@@ -174,6 +174,7 @@ function LeagueShellInner() {
         { label: 'Fixtures', icon: 'bi-calendar-week', to: `/leagues/${lid}/fixture`, key: 'fixture' },
         ...(league.finals_teams > 0 ? [{ label: 'Finals', icon: 'bi-trophy', to: `/leagues/${lid}/finals`, key: 'finals' }] : []),
         { label: 'Seasons', icon: 'bi-calendar3', to: `/leagues/${lid}/seasons`, key: 'seasons' },
+        { label: 'Honours', icon: 'bi-award', to: `/leagues/${lid}/honours`, key: 'honours' },
         { label: 'Records', icon: 'bi-trophy', to: `/leagues/${lid}/history`, key: 'records' },
         { label: 'Changes', icon: 'bi-clock-history', to: `/leagues/${lid}/list-changes`, key: 'changes' },
       ],
@@ -559,6 +560,7 @@ function LeagueRail({
       { to: `/leagues/${lid}/standings`,    key: 'ladder',   label: 'Ladder' },
       { to: `/leagues/${lid}/fixture`,      key: 'fixture',  label: 'Fixtures' },
       { to: `/leagues/${lid}/seasons`,      key: 'seasons',  label: 'Seasons' },
+      { to: `/leagues/${lid}/honours`,      key: 'honours',  label: 'Honours' },
       { to: `/leagues/${lid}/history`,      key: 'records',  label: 'Records' },
       { to: `/leagues/${lid}/list-changes`, key: 'changes',  label: 'Changes' },
     ],

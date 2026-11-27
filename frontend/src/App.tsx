@@ -22,6 +22,7 @@ import { HistoryPage } from './pages/leagues/HistoryPage'
 import { InvitePage } from './pages/leagues/InvitePage'
 
 // Lazy-loaded heavy pages (code splitting)
+const HonourBoardPage = lazy(() => import('./pages/leagues/HonourBoardPage').then(m => ({ default: m.HonourBoardPage })))
 const SquadPage = lazy(() => import('./pages/team/SquadPage').then(m => ({ default: m.SquadPage })))
 const GamedayPage = lazy(() => import('./pages/matchups/GamedayPage').then(m => ({ default: m.GamedayPage })))
 const Reserve7sGamedayPage = lazy(() => import('./pages/reserve7s/GamedayPage').then(m => ({ default: m.Reserve7sGamedayPage })))
@@ -159,6 +160,7 @@ export default function App() {
           <Route path="former-players" element={<FormerPlayersPage />} />
           <Route path="seasons" element={<SeasonsPage />} />
           <Route path="seasons/:year" element={<SeasonsPage />} />
+          <Route path="honours" element={<HonourBoardPage />} />
 
           {/* Settings & Admin */}
           <Route path="settings" element={<SettingsPage />} />

@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router'
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { useKeptFetch } from '../../hooks/useFetch'
+import { useKeptFetch, useFetch as useHonFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
 import { BottomSheet } from '../../components/ui/BottomSheet'
 import { PlayersSubnav } from '../../components/nav/PlayersSubnav'
@@ -15,6 +15,7 @@ import { ask, tell } from '../../components/ui/dialog'
 import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 import { usePageState, useKeptScroll } from '../../lib/pageMemory'
 import { PoolDetailTable } from './PoolDetailTable'
+import { HonoursPoolTable, HonourIcons, type HonourSummary } from './HonoursPoolTable'
 import { useWide } from '../../hooks/useWide'
 
 type AcquiredHistoryEntry = Stint
@@ -492,6 +493,11 @@ export function PlayerPoolPage() {
   const wishlist = useWishlist(leagueId)
   // "Detailed stats": the table turns into every stat, sortable, scrolling sideways.
   const [detailed, setDetailed] = usePageState('detailed', false)
+  // "Honours": the table turns into every player's honours, and his icons sit
+  // beside his name in every view (models/player_honours.py summary()).
+  const [honView, setHonView] = usePageState('honours', false)
+  const { data: honData } = useHonFetch<{ players: Record<string, HonourSummary> }>(leagueId ? `/api/leagues/${leagueId}/honours/summary` : null)
+  const hon = honData?.players || {}
   const wide = useWide()
   // LeagueContext (separate from data.league below, that one is the
   // PoolData league summary, this one carries the teams[] roster for
@@ -832,8 +838,11 @@ export function PlayerPoolPage() {
               )}
             </div>
 
-            <button type="button" className={`pool-detail-switch${detailed ? ' on' : ''}`} aria-pressed={detailed} onClick={() => setDetailed(v => !v)}>
+            <button type="button" className={`pool-detail-switch${detailed ? ' on' : ''}`} aria-pressed={detailed} onClick={() => { setDetailed(v => !v); setHonView(false) }}>
               <span className="knob" />Detailed stats
+            </button>
+            <button type="button" className={`pool-detail-switch${honView ? ' on' : ''}`} aria-pressed={honView} onClick={() => { setHonView(v => !v); setDetailed(false) }}>
+              <span className="knob" />Honours
             </button>
             <span className="pf-density"><DensityToggle density={density} onChange={setDensity} /></span>
           </div>
@@ -867,13 +876,18 @@ export function PlayerPoolPage() {
           </div>
         </div>
 
+        {honView && wide && (
+          <div className="card-body p-2 d-none d-lg-block">
+            <HonoursPoolTable players={sorted} honours={hon} onOpen={openPlayer} />
+          </div>
+        )}
         {detailed && wide && (
           <div className="card-body p-2 d-none d-lg-block">
             <PoolDetailTable leagueId={leagueId!} players={sorted} teamLogos={data.team_logos} onOpen={openPlayer} />
           </div>
         )}
         {/* Desktop table */}
-        <div ref={keepTableScroll} className={`card-body p-0 ${detailed ? 'd-none' : 'd-none d-lg-block'}`} style={{ maxHeight: '78vh', overflow: 'auto' }}>
+        <div ref={keepTableScroll} className={`card-body p-0 ${detailed || honView ? 'd-none' : 'd-none d-lg-block'}`} style={{ maxHeight: '78vh', overflow: 'auto' }}>
           <table className="table table-sm mb-0 pool-table">
             <thead className="sticky-top" style={{ background: '#151518', zIndex: 2 }}>
               <tr>
@@ -942,6 +956,7 @@ export function PlayerPoolPage() {
                           />
                         )}
                         <span className="p-name">{p.name}</span>
+                        <HonourIcons s={hon[String(p.id)]} />
                         {p.is_new && <span className="pl-mark pl-mark-new" title={`New to the AFL in ${data.afl_year ?? ''}`}>NEW</span>}
                         {p.is_former && <span className="pl-mark pl-mark-off" title="No longer on an AFL list">OFF AFL LIST</span>}
                         {p.on_block && <i className="bi bi-megaphone-fill pl-ico pl-ico-block" title="On the trade block"></i>}
@@ -1094,8 +1109,11 @@ export function PlayerPoolPage() {
           {/* Sort + count row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px', borderBottom: '1px solid rgba(42,41,47,.4)' }}>
             <span style={{ fontSize: '.8125rem', color: 'var(--kl-text-primary)' }}><b style={{ color: 'var(--kl-text-primary)' }}>{mobileSorted.length}</b> players</span>
-            <button type="button" className={`pool-detail-switch${detailed ? ' on' : ''}`} aria-pressed={detailed} onClick={() => setDetailed(v => !v)}>
+            <button type="button" className={`pool-detail-switch${detailed ? ' on' : ''}`} aria-pressed={detailed} onClick={() => { setDetailed(v => !v); setHonView(false) }}>
               <span className="knob" />Detailed
+            </button>
+            <button type="button" className={`pool-detail-switch${honView ? ' on' : ''}`} aria-pressed={honView} onClick={() => { setHonView(v => !v); setDetailed(false) }}>
+              <span className="knob" />Honours
             </button>
             <select
               className="form-select form-select-sm"
@@ -1111,9 +1129,10 @@ export function PlayerPoolPage() {
             </select>
           </div>
 
+          {honView && !wide && <HonoursPoolTable players={mobileSorted} honours={hon} onOpen={openPlayer} />}
           {detailed && !wide && <PoolDetailTable leagueId={leagueId!} players={mobileSorted} teamLogos={data.team_logos} onOpen={openPlayer} />}
           {/* Player list, new card design */}
-          <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: detailed ? 'none' : undefined }}>
+          <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: detailed || honView ? 'none' : undefined }}>
             {mob.visible.map(p => {
               const positions = (p.position || 'MID').split('/')
               const tc = p.owner_team ? team_colours[p.owner_team] : null
@@ -1139,6 +1158,7 @@ export function PlayerPoolPage() {
                   <div className="kl-player-card-body">
                     <div className="kl-player-card-name">
                       {p.name}
+                      <HonourIcons s={hon[String(p.id)]} max={3} size={18} />
                       {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
                       {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
                       {p.on_block && <i className="bi bi-megaphone-fill pl-ico pl-ico-block"></i>}

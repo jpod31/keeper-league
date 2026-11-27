@@ -2886,10 +2886,12 @@ def generate_logo(league_id, team_id):
     if len(user_prompt) > 400:
         return jsonify(error="Prompt is too long (max 400 characters)."), 400
 
-    # Build the full prompt — enforce logo style constraints
+    # Build the full prompt, enforcing the logo style. The team name is left
+    # out: the logo has no text, and OpenAI's filter refused every attempt by
+    # "Reservoir Wogs" over the word in the name, not the description
+    # (safety_violations=[abuse] at the input stage, 2026-11-27).
     full_prompt = (
         f"A professional sports team logo for a fantasy AFL football team. "
-        f"The team is called \"{team.name}\". "
         f"User description: {user_prompt}. "
         f"Style: clean vector-style emblem, bold and modern, readable as a small icon. "
         f"Only the crest itself on a fully transparent background: no backing square, "
