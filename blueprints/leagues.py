@@ -674,6 +674,7 @@ def dashboard(league_id):
             "pending_outgoing": pending_outgoing,
             "delist_open": delist_open,
             "offseason": _offseason_block(league, user_team),
+            "honours_line": _honours_line(league.id, user_team),
         })
 
     # Default to My Team view if user has a team (HTML mode only)
@@ -839,3 +840,17 @@ from blueprints import leagues_settings      # noqa: F401, E402
 from blueprints import leagues_season        # noqa: F401, E402
 from blueprints import leagues_players       # noqa: F401, E402
 from blueprints import leagues_commissioner  # noqa: F401, E402
+
+
+
+def _honours_line(league_id, user_team):
+    """Home's honours sentence (models/player_honours.py home_line)."""
+    if not user_team:
+        return None
+    try:
+        from models.player_honours import home_line
+        return home_line(league_id, user_team.id)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("honours line failed", exc_info=True)
+        return None

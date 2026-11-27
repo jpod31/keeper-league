@@ -178,3 +178,15 @@ def test_wafl_and_championship_tables():
     r = parse_rookieme(RM_TABLE)
     assert r[0]["comp"] == "u18champs" and r[0]["matches"] == 4 and r[0]["disposals"] == 113 and r[0]["fantasy"] == 104
     assert league_name("u18champs", 2026) == "Under-18 Championships"
+
+
+def test_home_line_names_your_closest_milestone(db, seed_data, monkeypatch):
+    from models.player_honours import home_line
+    from models.database import FantasyRoster
+    monkeypatch.setattr(player_honours, "MIN_FLAG", 1)
+    lg, a, (p1, *_rest) = _season(db, seed_data)
+    if not FantasyRoster.query.filter_by(team_id=a.id, player_id=p1.id, is_active=True).first():
+        db.session.add(FantasyRoster(team_id=a.id, player_id=p1.id, is_active=True))
+        db.session.commit()
+    s = home_line(lg.id, a.id)
+    assert s.startswith(f"{p1.name} is 49 games from 50 for you") and "Hall of Fame race on" in s

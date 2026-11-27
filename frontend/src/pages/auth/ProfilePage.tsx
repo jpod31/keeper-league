@@ -42,6 +42,7 @@ const NOTIF_TYPES: [string, string][] = [
   ['player_delisted', 'Player Delisted'],
   ['message_received', 'Message Received'],
   ['season_transition', 'Season Change'],
+  ['honours', 'Honours and records'],
 ]
 
 const PROFILE_CSS = `

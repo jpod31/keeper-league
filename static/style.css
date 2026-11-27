@@ -11784,3 +11784,7 @@ button.rb-holder:hover b { text-decoration: underline; text-underline-offset: 3p
 .dr-out { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff; cursor: help; }
 .dr-out i { width: 9px; height: 9px; border-radius: 50%; background: #e3b341; }
 .dr-out.dr-good i { background: #3fb950; } .dr-out.dr-slow i { background: #f85149; }
+
+/* Home: one sentence on your players' honours (2026-11-27), under your game line. */
+.dh2-hon { display: block; margin-top: 6px; color: #fff; font-weight: 600; text-decoration: none; }
+.dh2-hon:hover { text-decoration: underline; text-underline-offset: 3px; }

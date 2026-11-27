@@ -556,6 +556,15 @@ def finalize_round(league_id, afl_round, year):
         import logging
         logging.getLogger(__name__).warning("Power rankings failed", exc_info=True)
 
+    # 7. Honours earned and records broken this round, grouped, to Activity
+    #    and every coach (models/round_news.py)
+    try:
+        from models.round_news import post_round_news
+        post_round_news(league_id, year, afl_round)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("Round news failed", exc_info=True)
+
     return scores
 
 

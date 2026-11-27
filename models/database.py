@@ -1260,6 +1260,17 @@ class GeneralNote(db.Model):
     )
 
 
+class HonourAnnouncement(db.Model):
+    """What post-round news has already announced (models/round_news.py)."""
+    __tablename__ = "honour_announcement"
+    id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False, index=True)
+    key = db.Column(db.String(160), nullable=False)
+    value = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    __table_args__ = (db.UniqueConstraint("league_id", "key", name="uq_honour_announcement"),)
+
+
 class TradeBlockEntry(db.Model):
     """A player a team has put up for trade. One live entry per team-player;
     it is removed when the team takes him down or he leaves the list."""

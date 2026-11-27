@@ -109,6 +109,7 @@ interface DashboardData {
   league: League
   user_team: Team | null
   teams: Team[]
+  honours_line?: string | null
   is_commissioner: boolean
   scoring_rules: Record<string, number | string>
   has_completed_onboarding: boolean
@@ -287,7 +288,7 @@ export function DashboardPage() {
 
         {user_team ? (
           <div className="dh2-you">
-            <div className="dh2-you-text">{line}</div>
+            <div className="dh2-you-text">{line}{data.honours_line && <Link className="dh2-hon" to={`/leagues/${leagueId}/honours`}>{data.honours_line}</Link>}</div>
             <div className="dh2-actions">
               {m
                 ? <Link className="kx-btn kx-btn-gold" to={`/leagues/${leagueId}/gameday`}>Gameday</Link>

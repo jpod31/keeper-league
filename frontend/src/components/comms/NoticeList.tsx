@@ -25,6 +25,8 @@ const ICONS: Record<string, string> = {
   player_delisted: 'bi-person-dash',
   message_received: 'bi-chat-dots',
   list_change: 'bi-clock-history',
+  honours: 'bi-award',
+  record: 'bi-trophy',
 }
 
 export function NoticeList({ items, empty }: { items: Notice[]; empty: string }) {

@@ -666,3 +666,33 @@ def cabinets(league_id):
                                 "seven": e["seven"], "years": sorted({i["year"] for i in e["items"] if i.get("year")})} for e in ems]})
     out.sort(key=lambda r: (-r["points"], -len(r["badges"]), r["name"]))
     return out
+
+
+def home_line(league_id, team_id):
+    """One sentence for Home: your player closest to his next club games
+    milestone, and your Hall of Fame leader (2026-11-27). None when there is
+    nothing to say."""
+    from models.database import FantasyRoster
+    data = league_honours(league_id)
+    mine = {fr.player_id for fr in FantasyRoster.query.filter_by(team_id=team_id, is_active=True).all()}
+    if not mine:
+        return None
+    names = {p.id: p.name for p in AflPlayer.query.filter(AflPlayer.id.in_(list(mine))).all()}
+    near = None
+    for (tid, pid), g in data["club_games"].items():
+        if tid != team_id or pid not in mine:
+            continue
+        step = next((s for s in CLUB_STEPS if s > g), None)
+        if step and (near is None or step - g < near[2]):
+            near = (pid, step, step - g)
+    lead = max(((pid, data["points"].get(pid, 0)) for pid in mine), key=lambda x: x[1], default=(None, 0))
+    bits = []
+    if near:
+        pid, step, to_go = near
+        bits.append(f"{names.get(pid, '?')} is {to_go} game{'s' if to_go != 1 else ''} from {step} for you")
+    if lead[0] and lead[1] > 0:
+        bits.append(f"{names.get(lead[0], '?')} leads your Hall of Fame race on {lead[1]} points")
+    if not bits:
+        return None
+    s = "; ".join(bits) + "."
+    return s[0].upper() + s[1:]
