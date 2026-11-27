@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useParams, Link } from 'react-router'
 import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
@@ -68,6 +68,67 @@ function Pos({ p }: { p: string }) {
   return <span className={`pos-badge badge-${k.toLowerCase()}`}>{k}</span>
 }
 
+/** Closes when you click anywhere else or press Escape. */
+function useDismiss(open: boolean, close: () => void) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const down = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) close() }
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    document.addEventListener('mousedown', down); document.addEventListener('keydown', key)
+    return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key) }
+  }, [open, close])
+  return ref
+}
+
+interface KindOpt { key: string; kind: Kind; step: number | null; name: string; count: number }
+
+/** Lucas, 2026-11-27: "i hate when you list them all instead of dropdowns". */
+function BadgeDropdown({ opts, value, onChange }: { opts: KindOpt[]; value: string | null; onChange: (k: string | null) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useDismiss(open, () => setOpen(false))
+  const cur = opts.find(o => o.key === value)
+  return (
+    <div className="hb2-dd" ref={ref}>
+      <button type="button" className="hb2-dd-btn" onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open}>
+        {cur ? <Emblem kind={cur.kind} tier="gold" step={cur.step} size={24} /> : <i className="bi bi-award"></i>}
+        <span>{cur ? cur.name : 'All badges'}</span>
+        <i className={`bi bi-chevron-${open ? 'up' : 'down'}`}></i>
+      </button>
+      {open && (
+        <ul className="hb2-dd-menu" role="listbox">
+          <li><button type="button" role="option" aria-selected={!value} className={!value ? 'on' : ''} onClick={() => { onChange(null); setOpen(false) }}>
+            <i className="bi bi-award"></i><span>All badges</span></button></li>
+          {opts.map(o => (
+            <li key={o.key}><button type="button" role="option" aria-selected={value === o.key} className={value === o.key ? 'on' : ''} onClick={() => { onChange(o.key); setOpen(false) }}>
+              <Emblem kind={o.kind} tier="gold" step={o.step} size={26} /><span>{o.name}</span><em>{o.count}</em></button></li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function ColourKey() {
+  const [open, setOpen] = useState(false)
+  const ref = useDismiss(open, () => setOpen(false))
+  return (
+    <div className="hb2-dd" ref={ref}>
+      <button type="button" className="hb2-dd-btn hb2-key-btn" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        <span className="hb2-key-dots"><i className="t-gold" /><i className="t-plat" /><i className="t-ruby" /></span><span>Colours</span>
+      </button>
+      {open && (
+        <div className="hb2-dd-menu hb2-key">
+          <b>The metal shows how many times he has won it</b>
+          {(['gold', 'plat', 'ruby', 'sapph', 'black'] as Tier[]).map((t, i) => (
+            <span key={t} className={`t-${t}`}><i />{TIER_WORD[t]}<em>{i === 4 ? '5 or more' : i === 0 ? 'Once' : `${i + 1} times`}</em></span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const boardTier = (b: Board): Tier => b.kind === 'legend' ? 'black' : b.kind === 'siren' ? 'bronze'
   : b.kind === 'clubgames' ? (b.step === 50 ? 'silver' : b.step === 150 ? 'plat' : b.step === 200 ? 'black' : 'gold') : 'gold'
 const howOf = (b: Board) => b.kind === 'clubgames' ? `${b.step} games for one club, counting games in the side that scored.` : HOW[b.kind]
@@ -126,7 +187,7 @@ export function HonourBoardPage() {
   const season = named.find(s => s.year === year) || named[0]
   const recSeason = data.seasons.find(s => s.year === year) || data.seasons[0]
   const views: [View, string][] = [['players', 'Players'], ['badges', 'Badges'], ['allleague', 'All-League 23'], ['hall', 'Hall of Fame'], ['records', 'Records']]
-  const kinds = data.boards.filter(b => b.holders.length).map(b => ({ key: b.key, kind: b.kind, step: b.step, name: b.name }))
+  const kinds: KindOpt[] = data.boards.filter(b => b.holders.length).map(b => ({ key: b.key, kind: b.kind, step: b.step, name: b.name, count: b.holders.length }))
   const ql = q.trim().toLowerCase()
   const people = data.players.filter(p => (!ql || p.name.toLowerCase().includes(ql) || p.team.toLowerCase().includes(ql))
     && (!only || p.badges.some(x => (x.kind === 'clubgames' ? `clubgames${x.step}` : x.kind) === only)))
@@ -148,19 +209,8 @@ export function HonourBoardPage() {
         <>
           <div className="hb2-tools">
             <label className="hb2-search"><i className="bi bi-search"></i><input value={q} onChange={e => setQ(e.target.value)} placeholder="Find a player or club" aria-label="Find a player or club" /></label>
-            <div className="hb2-filter" role="group" aria-label="Only players with this badge">
-              <button type="button" className={!only ? 'on' : ''} onClick={() => setOnly(null)}>All badges</button>
-              {kinds.map(k => (
-                <button key={k.key} type="button" className={only === k.key ? 'on' : ''} onClick={() => setOnly(only === k.key ? null : k.key)} title={k.name}>
-                  <Emblem kind={k.kind} tier="gold" step={k.step} size={22} />{k.name}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="hb2-legend" aria-label="What the colours mean">
-            {(['gold', 'plat', 'ruby', 'sapph', 'black'] as Tier[]).map((t, i) => (
-              <span key={t} className={`t-${t}`}><i />{i === 4 ? '5 or more' : i === 0 ? 'Won once' : `${i + 1} times`}</span>
-            ))}
+            <BadgeDropdown opts={kinds} value={only} onChange={setOnly} />
+            <ColourKey />
           </div>
           <ol className="hb2-people">
             {people.map((p, i) => (

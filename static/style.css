@@ -11655,3 +11655,40 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
   .hb2-acc-h .hb2-chev { display: none; }
   .hb2-acc-h .hb2-p { display: none; }
 }
+
+/* Honour Board tools, 2026-11-27: search, a badge dropdown and a colour key
+   behind one button, all on one row ("i hate when you list them all instead
+   of dropdowns"). */
+.hb2-tools { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.hb2-tools .hb2-search { flex: 1 1 280px; max-width: 420px; }
+.hb2-dd { position: relative; }
+.hb2-dd-btn { display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.14);
+  background: #101014; color: #fff; font: 700 14px var(--kl-font); cursor: pointer; white-space: nowrap; }
+.hb2-dd-btn:hover, .hb2-dd-btn[aria-expanded="true"] { border-color: rgba(255,255,255,.4); }
+.hb2-dd-btn > span { min-width: 120px; text-align: left; }
+.hb2-key-btn > span:last-child { min-width: 0; }
+.hb2-dd-menu { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; min-width: 260px; max-height: 380px; overflow-y: auto; margin: 0; padding: 6px; list-style: none;
+  border-radius: 14px; border: 1px solid rgba(255,255,255,.16); background: #0f0f13; box-shadow: 0 20px 50px rgba(0,0,0,.7); }
+.hb2-dd-menu button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 9px; background: none; color: #fff;
+  font: 600 14px var(--kl-font); cursor: pointer; text-align: left; }
+.hb2-dd-menu button:hover { background: rgba(255,255,255,.07); }
+.hb2-dd-menu button.on { background: #fff; color: #050506; }
+.hb2-dd-menu button > i { width: 26px; text-align: center; font-size: 17px; }
+.hb2-dd-menu button > span { flex: 1; }
+.hb2-dd-menu button em { font-style: normal; font-weight: 800; font-size: 13px; }
+.hb2-key-dots { display: inline-flex; }
+.hb2-key-dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--t); margin-left: -3px; box-shadow: 0 0 0 2px #101014; }
+.hb2-key-dots i:first-child { margin-left: 0; }
+.hb2-key { left: auto; right: 0; padding: 14px; display: flex; flex-direction: column; gap: 8px; color: #fff; }
+.hb2-key b { font-size: 14px; font-weight: 800; padding-bottom: 4px; }
+.hb2-key span { display: flex; align-items: center; gap: 10px; font: 700 14px var(--kl-font); }
+.hb2-key span i { width: 14px; height: 14px; border-radius: 50%; background: var(--t); }
+.hb2-key span.t-black i { background: #0b0b0e; box-shadow: 0 0 0 2px var(--t); }
+.hb2-key span em { margin-left: auto; font-style: normal; font-weight: 600; }
+@media (max-width: 575.98px) {
+  .hb2-tools .hb2-search { flex-basis: 100%; max-width: none; }
+  .hb2-tools .hb2-dd:first-of-type { flex: 1; }
+  .hb2-tools .hb2-dd:first-of-type .hb2-dd-btn { width: 100%; }
+  .hb2-dd-btn > span { min-width: 0; flex: 1; }
+}
+.hb2-key-btn > span { min-width: 0 !important; flex: none !important; }
