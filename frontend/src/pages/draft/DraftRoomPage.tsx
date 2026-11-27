@@ -1215,10 +1215,11 @@ function DraftRoomPageInner() {
                       ['sc_avg', statsYr.tag ? `SC ${statsYr.tag}` : 'SC'],
                       ['rating', 'Rtg'],
                       ['potential', 'Pot'],
-                      ['outlook_ten', '10+ gms'],
+                      ['outlook_ten', '10+'],
                       ['draft_score', 'Value'],
                     ] as const).map(([col, label]) => (
-                      <th key={col} className={`sortable-th${sortColumn === col ? ' active-sort' : ''}`} onClick={() => toggleSort(col)}>
+                      <th key={col} className={`sortable-th${sortColumn === col ? ' active-sort' : ''}`} onClick={() => toggleSort(col)}
+                        title={col === 'outlook_ten' ? 'Chance of 10+ AFL games next year, for players yet to play one' : undefined}>
                         {label} <i className={`bi sort-icon ${sortIcon(col)}`}></i>
                       </th>
                     ))}

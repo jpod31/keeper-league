@@ -11788,3 +11788,5 @@ button.rb-holder:hover b { text-decoration: underline; text-underline-offset: 3p
 /* Home: one sentence on your players' honours (2026-11-27), under your game line. */
 .dh2-hon { display: block; margin-top: 6px; color: #fff; font-weight: 600; text-decoration: none; }
 .dh2-hon:hover { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 1200px) { .draft-avail-tbl th, .draft-avail-tbl td { padding-left: 6px !important; padding-right: 6px !important; } .draft-avail-tbl .dr-out { gap: 4px; } }
+@media (max-width: 1200px) { .draft-avail-tbl .player-name .dn-club { max-width: 108px; } }
