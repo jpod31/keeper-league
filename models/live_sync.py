@@ -517,6 +517,11 @@ def _rescore_affected_matchups(year: int, afl_round: int, updated_player_ids: se
         fixtures = Fixture.query.filter_by(
             league_id=league_id, year=year, afl_round=fantasy_round
         ).all()
+        if not fixtures:
+            # No league match this round (AFL finals weeks, a bye in the draw):
+            # nothing to score. Writing round scores here put AFL finals weeks
+            # into every season count (Called Up, records, usage), 2026-11-27.
+            continue
 
         if league.scoring_type == "ultimate_footy":
             # UF: rescore at fixture level using stat category totals

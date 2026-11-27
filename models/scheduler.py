@@ -230,6 +230,28 @@ def init_scheduler(app, socketio):
         replace_existing=True,
         max_instances=1,
     )
+    # AFL career games: daily from our own stats (cheap), and the draftguru
+    # games history re-scraped once a year after the AFL season (1 Nov).
+    scheduler.add_job(
+        _refresh_career_games,
+        "cron",
+        hour=5,
+        minute=15,
+        id="career_games_daily",
+        replace_existing=True,
+        max_instances=1,
+    )
+    scheduler.add_job(
+        _sync_list_history_yearly,
+        "cron",
+        month=11,
+        day=1,
+        hour=4,
+        minute=0,
+        id="draftguru_history_yearly",
+        replace_existing=True,
+        max_instances=1,
+    )
     scheduler.start()
     logger.info("Scheduler started with %d jobs", len(scheduler.get_jobs()))
 
@@ -1045,3 +1067,31 @@ def _precompute_all_analytics():
         except Exception as e:
             _track_failure("analytics_precompute", e)
             logger.exception("Analytics precomputation failed")
+
+
+def _refresh_career_games():
+    """Daily: AFL career games from the draftguru history plus this season's
+    games in player_stat (models/career_games.py)."""
+    if not _app:
+        return
+    with _app.app_context():
+        try:
+            from models.career_games import refresh
+            refresh()
+        except Exception:
+            logger.warning("career games refresh failed", exc_info=True)
+
+
+def _sync_list_history_yearly():
+    """1 November: re-scrape every player's games by season from draftguru
+    (finals included), then recompute career games."""
+    if not _app:
+        return
+    with _app.app_context():
+        try:
+            from scrapers.draftguru_scraper import sync_draftguru_list_history
+            from models.career_games import refresh
+            sync_draftguru_list_history()
+            refresh()
+        except Exception:
+            logger.warning("yearly draftguru history sync failed", exc_info=True)
