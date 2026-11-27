@@ -15,6 +15,7 @@ import { SSPModal } from '../../components/squad/SSPModal'
 import { useLeague, useStatsYear } from '../../contexts/LeagueContext'
 import { FlagStars, SevensStars } from '../../components/draft/TeamCrest'
 import { ask, tell } from '../../components/ui/dialog'
+import { NotesDock } from '../../components/notes/NotesDock'
 
 interface StandingsLite {
   standings: { team_id: number; wins?: number; losses?: number; draws?: number }[]   // ordered by ladder position
@@ -917,6 +918,9 @@ function SquadPageInner() {
 
       {/* Toasts now route through the global ToastProvider (.kl-toast),
           old fv-toast pill render deleted */}
+
+      {/* ── My notes: a button bottom right that opens the notes panel ── */}
+      {is_owner && <NotesDock leagueId={leagueId!} />}
 
       {/* ── Player modal ── */}
       {fieldActions.playerModal && <PlayerModal player={fieldActions.playerModal} teamLogos={data.team_logos} onClose={fieldActions.closePlayerModal} leagueId={leagueId} />}

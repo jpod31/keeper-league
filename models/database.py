@@ -1244,6 +1244,22 @@ class PlayerNote(db.Model):
     )
 
 
+class GeneralNote(db.Model):
+    """A manager's own notes for one league, not about any one player: the
+    notes panel on My Team (2026-11-27). Private to the manager."""
+    __tablename__ = "general_note"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    league_id = db.Column(db.Integer, db.ForeignKey("league.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.Index("ix_general_note_user_league", "user_id", "league_id"),
+    )
+
+
 class TradeBlockEntry(db.Model):
     """A player a team has put up for trade. One live entry per team-player;
     it is removed when the team takes him down or he leaves the list."""

@@ -1,6 +1,8 @@
 """2027 additions, registered onto the spa_api blueprint (all under /api):
 
   player notes      /players/<id>/notes, /players/notes/<id>
+  notes panel       /leagues/<id>/notes, /leagues/<id>/notes/general[/<id>]
+  player search     /players/search?q=
   former players    /leagues/<id>/former-players
   trade block       /leagues/<id>/trade-block[/<entry>]
   past seasons      /leagues/<id>/seasons[/<year>]
@@ -17,7 +19,7 @@ import config
 from blueprints import check_league_access
 from models.database import (
     db, League, FantasyTeam, FantasyRoster, AflPlayer, PlayerStat,
-    PlayerNote, TradeBlockEntry, SeasonStanding, Fixture, Trade, TradeAsset,
+    PlayerNote, GeneralNote, TradeBlockEntry, SeasonStanding, Fixture, Trade, TradeAsset,
     DraftSession, DraftPick, DelistAction, DelistPeriod, User,
 )
 
@@ -121,6 +123,90 @@ def register_league_extras(spa_api):
             "afl_team": n.player.afl_team if n.player else "",
             "position": n.player.position if n.player else "",
         } for n in notes]})
+
+    # ── Notes panel on My Team (2026-11-27) ──────────────────────────
+    # General notes are per league; player notes are the same notes the
+    # player card writes, grouped into your squad and everyone else.
+
+    @spa_api.route("/leagues/<int:league_id>/notes", methods=["GET"])
+    @login_required
+    def league_notes(league_id):
+        league, user_team = check_league_access(league_id)
+        if not league:
+            return jsonify({"error": "Not a league member"}), 403
+        general = (GeneralNote.query.filter_by(user_id=current_user.id, league_id=league_id)
+                   .order_by(GeneralNote.created_at.desc(), GeneralNote.id.desc()).all())
+        squad = []
+        mine = set()
+        if user_team:
+            rows = (FantasyRoster.query.filter_by(team_id=user_team.id, is_active=True).all())
+            for fr in rows:
+                if fr.player and fr.player_id not in mine:
+                    mine.add(fr.player_id)
+                    squad.append(_player_card(fr.player))
+            squad.sort(key=lambda x: x["name"].split(" ")[-1])
+        by_player = defaultdict(list)
+        for n in (PlayerNote.query.filter_by(user_id=current_user.id)
+                  .order_by(PlayerNote.created_at.desc(), PlayerNote.id.desc()).all()):
+            by_player[n.player_id].append(n)
+        players = []
+        for pid, notes in by_player.items():
+            p = notes[0].player
+            if not p:
+                continue
+            players.append({"player": _player_card(p), "mine": pid in mine,
+                            "latest": _utc_iso(notes[0].created_at),
+                            "notes": [_note_json(n) for n in notes]})
+        # newest first, your own squad ahead of everyone else
+        players.sort(key=lambda x: x["latest"] or "", reverse=True)
+        players.sort(key=lambda x: not x["mine"])
+        return jsonify({
+            "general": [{"id": g.id, "body": g.body, "created_at": _utc_iso(g.created_at)} for g in general],
+            "players": players,
+            "squad": squad,
+        })
+
+    @spa_api.route("/leagues/<int:league_id>/notes/general", methods=["POST"])
+    @login_required
+    def league_note_add(league_id):
+        league, _team = check_league_access(league_id)
+        if not league:
+            return jsonify({"error": "Not a league member"}), 403
+        body = ((request.get_json(silent=True) or {}).get("body") or "").strip()
+        if not body:
+            return jsonify({"error": "A note needs some text."}), 400
+        if len(body) > NOTE_MAX:
+            return jsonify({"error": f"Keep a note under {NOTE_MAX} characters."}), 400
+        g = GeneralNote(user_id=current_user.id, league_id=league_id, body=body)
+        db.session.add(g)
+        db.session.commit()
+        return jsonify({"note": {"id": g.id, "body": g.body, "created_at": _utc_iso(g.created_at)}}), 201
+
+    @spa_api.route("/leagues/<int:league_id>/notes/general/<int:note_id>", methods=["DELETE"])
+    @login_required
+    def league_note_delete(league_id, note_id):
+        g = db.session.get(GeneralNote, note_id)
+        if not g or g.user_id != current_user.id or g.league_id != league_id:
+            return jsonify({"error": "Note not found"}), 404
+        db.session.delete(g)
+        db.session.commit()
+        return jsonify({"ok": True})
+
+    @spa_api.route("/players/search")
+    @login_required
+    def player_search():
+        """Any player by name, listed ones first: for a note on someone not on
+        your list."""
+        q = (request.args.get("q") or "").strip()
+        if len(q) < 2:
+            return jsonify({"players": []})
+        like = f"%{q}%"
+        rows = (AflPlayer.query.filter(AflPlayer.name.ilike(like))
+                .order_by(AflPlayer.list_status.desc(), AflPlayer.name).limit(40).all())
+        ql = q.lower()
+        rows.sort(key=lambda p: (p.is_former, not p.name.lower().startswith(ql)
+                                 and not p.name.lower().split(" ")[-1].startswith(ql), p.name))
+        return jsonify({"players": [_player_card(p) for p in rows[:15]]})
 
     # ── Former players ───────────────────────────────────────────────
 
