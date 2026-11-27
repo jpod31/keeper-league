@@ -320,6 +320,17 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   "rated". `scripts/sync_junior_sources.py --since 2019` refills
   championship and WAFL Colts numbers for past draftees (the pool needs
   them, not only players with no AFL games).
+- **Year-one odds count every draftee** (`draft_history`, filled by
+  `scrapers/draftguru_scraper.py::sync_draft_history` from draftguru's year
+  pages, refreshed each 1 November). afl_player only holds listed players, and
+  the draftees gone are mostly the ones who never played, so `pre_afl._weights`
+  weights the fit by pick band and outcome (case-control correction). The
+  draft room's "10+" column reads `scouting_summary()`.
+- **Post-round news** (`models/round_news.py`, step 7 of round finalisation in
+  `scoring_engine.py`): new honours grouped one line per badge per round, and
+  broken league records, to Activity and every coach (notification type
+  `honours`). `honour_announcement` remembers what was said; the first run for
+  a league records without posting.
 - **The full player page** (`/leagues/<id>/player/<pid>`,
   `pages/players/PlayerDossierPage.tsx`, data from
   `/api/leagues/<id>/players/<pid>/dossier` built by `models/player_dossier.py`).
