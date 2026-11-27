@@ -1089,9 +1089,10 @@ def _sync_list_history_yearly():
         return
     with _app.app_context():
         try:
-            from scrapers.draftguru_scraper import sync_draftguru_list_history
+            from scrapers.draftguru_scraper import sync_draftguru_list_history, sync_draft_history
             from models.career_games import refresh
             sync_draftguru_list_history()
             refresh()
+            sync_draft_history()
         except Exception:
             logger.warning("yearly draftguru history sync failed", exc_info=True)

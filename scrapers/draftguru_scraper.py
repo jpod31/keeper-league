@@ -255,3 +255,93 @@ def sync_draftguru_profiles(only_new=True):
     db.session.commit()
     logger.info("draftguru profiles: %d players", n)
     return n
+
+
+DRAFT_KINDS = (("national_draft", "national"), ("rookie_draft", "rookie"))
+
+
+def fetch_draft_year(year):
+    """[{kind, pick, club, name, url}] for one year's national and rookie
+    drafts (draftguru /years/<year>/<kind>), every pick including players
+    delisted since."""
+    out = []
+    for page, kind in DRAFT_KINDS:
+        try:
+            html = _get(f"{_BASE}/years/{year}/{page}")
+        except Exception as e:
+            logger.warning("draftguru %s %s failed: %s", year, page, e)
+            continue
+        m = re.search(r"<table.*?</table>", html, re.S)
+        if not m:
+            continue
+        for rw in re.findall(r"<tr.*?</tr>", m.group(0), re.S):
+            cells = [_clean(c).replace("\u200b", "") for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", rw, re.S)]
+            link = re.findall(r'href="(/players/[^"]+)"', rw)
+            if len(cells) < 5 or not cells[1].isdigit() or not link:
+                continue
+            out.append({"kind": kind, "pick": int(cells[1]), "club": cells[2], "name": cells[4],
+                        "url": _html.unescape(link[0])})
+        time.sleep(0.3)
+    return out
+
+
+def _season_games(url_path, season):
+    total = None
+    for r in fetch_player_list_history(url_path):
+        if r["season"] == season:
+            total = (total or 0) + r["games"]
+    return total or 0
+
+
+def sync_draft_history(first=2019, last=None):
+    """Fill draft_history from FIRST to LAST (default: the latest finished
+    season's draft year). A player we hold is matched by name (nickname
+    variants too) and draft year, and his first-season games come from our
+    list history; anyone else's from his draftguru page. Returns rows written."""
+    from models.database import db, AflPlayer, AflListHistory, DraftHistory
+    from models.player_sync import norm, variants
+    from models.years import stats_year
+    last = last or stats_year() - 1
+    by = {}
+    for q in AflPlayer.query.all():
+        by.setdefault(norm(q.name), []).append(q)
+
+    def find(name, year):
+        for k in [norm(name)] + variants(name):
+            c = by.get(k, [])
+            exact = [q for q in c if q.draft_year == year]
+            if exact:
+                return exact[0]
+            if len(c) == 1 and c[0].draft_year in (None, year):
+                return c[0]
+        return None
+
+    written = 0
+    for year in range(first, last + 1):
+        for r in fetch_draft_year(year):
+            row = DraftHistory.query.filter_by(year=year, kind=r["kind"], pick=r["pick"]).first()
+            if row and row.g1 is not None:
+                continue
+            q = find(r["name"], year)
+            done = year + 1 <= stats_year()
+            g1 = None
+            if done:
+                if q:
+                    g1 = db.session.query(db.func.coalesce(db.func.sum(AflListHistory.games), 0)).filter(
+                        AflListHistory.player_id == q.id, AflListHistory.season == year + 1).scalar() or 0
+                else:
+                    try:
+                        g1 = _season_games(r["url"], year + 1)
+                    except Exception:
+                        logger.warning("draftguru player %s failed", r["url"], exc_info=True)
+                    time.sleep(0.25)
+            if not row:
+                row = DraftHistory(year=year, kind=r["kind"], pick=r["pick"])
+                db.session.add(row)
+            row.club, row.name, row.url = r["club"], r["name"], r["url"]
+            row.player_id = q.id if q else None
+            row.g1 = g1
+            written += 1
+        db.session.commit()
+    logger.info("draft history: %d rows written", written)
+    return written

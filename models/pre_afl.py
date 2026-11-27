@@ -167,7 +167,7 @@ def draftees():
     pick, his potential going into that first season (the pre-season figure,
     so nothing from the season itself), and his games in it. Only players
     still on a list are in our records, so a draftee delisted since is
-    missing; that flatters the lower bands a little, not the top ones."""
+    missing; _weights() puts the lower bands right from draft_history."""
     from models.years import stats_year
     def build():
         last = stats_year() - 1
@@ -213,6 +213,39 @@ def _x(pot, role, senior):
     return [1.0, (pot - 80) / 5] + [1.0 if role == k else 0.0 for k in ROLES[1:]] + [1.0 if senior else 0.0]
 
 
+def _band(kind, pick):
+    """Pick band used to correct for draftees missing from our records."""
+    k = (kind or "national").lower()
+    if k.startswith("rookie"):
+        return "rookie"
+    if not k.startswith("national") or not pick:
+        return None                       # pre-season and mid-season drafts
+    return "1-10" if pick <= 10 else "11-20" if pick <= 20 else "21-40" if pick <= 40 else "41+"
+
+
+def _weights(rows, target):
+    """Row weights that put back the draftees our records lost. Only players
+    still on a list are in afl_player, and the ones gone are mostly the ones
+    who never played (picks 41 on: 12% of those we hold played 10+ games in
+    year one, 9% of every pick; rookies 14% against 9%, 2026-11-27). Sampling
+    that depends on the outcome is corrected by weighting each row by one
+    over the share of its pick band AND outcome that we hold (draft_history
+    is the full draft). A band with no history keeps weight 1."""
+    from models.database import DraftHistory
+    full = {}
+    for d in DraftHistory.query.filter(DraftHistory.g1.isnot(None)).all():
+        b = _band(d.kind, d.pick)
+        if b:
+            k = (b, bool(target({"g1": d.g1})))
+            n, held = full.get(k, (0, 0))
+            full[k] = (n + 1, held + (1 if d.player_id else 0))
+    out = []
+    for r in rows:
+        n, held = full.get((_band(r["kind"], r["pick"]), bool(target(r))), (0, 0))
+        out.append(n / held if held else 1.0)
+    return out
+
+
 def _fit(rows, target):
     """Logistic fit (light ridge) of target(row) on potential, role and senior
     games. Checked on held-out draft classes, 2026-11-27 (log loss, lower is
@@ -223,10 +256,11 @@ def _fit(rows, target):
     import numpy as np
     A = np.array([_x(r["pot"], r["role"], r["senior"]) for r in rows])
     y = np.array([1.0 if target(r) else 0.0 for r in rows])
+    s = np.array(_weights(rows, target))
     w = np.zeros(A.shape[1])
     for _ in range(3000):
         q = 1 / (1 + np.exp(-A @ w))
-        w -= 0.5 * (A.T @ (q - y) + np.r_[0, w[1:]]) / len(y)
+        w -= 0.5 * (A.T @ (s * (q - y)) + np.r_[0, w[1:]]) / s.sum()
     return [float(v) for v in w]
 
 

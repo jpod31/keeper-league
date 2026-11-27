@@ -248,6 +248,25 @@ class StateLeagueStat(db.Model):
     )
 
 
+class DraftHistory(db.Model):
+    """Every pick of the national and rookie drafts since 2019 from draftguru's
+    year pages, delisted players included, with games in his first season
+    (scrapers/draftguru_scraper.py sync_draft_history). Our own records only
+    hold players still on a list, so without this the draftees who never
+    played drop out and early games look likelier than they were."""
+    __tablename__ = "draft_history"
+    id = db.Column(db.Integer, primary_key=True)
+    year = db.Column(db.Integer, nullable=False, index=True)
+    kind = db.Column(db.String(20), nullable=False)      # national / rookie
+    pick = db.Column(db.Integer, nullable=False)
+    club = db.Column(db.String(80))
+    name = db.Column(db.String(120), nullable=False)
+    url = db.Column(db.String(200))
+    player_id = db.Column(db.Integer, db.ForeignKey("afl_player.id"), nullable=True, index=True)
+    g1 = db.Column(db.Integer)                           # games in year + 1; None until that season is done
+    __table_args__ = (db.UniqueConstraint("year", "kind", "pick", name="uq_draft_history_pick"),)
+
+
 class AflListHistory(db.Model):
     """A player's AFL club for a given season, including list-only (no senior
     game) seasons. Sourced from draftguru.com.au — the only feed that records
