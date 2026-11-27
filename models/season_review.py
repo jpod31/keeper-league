@@ -1281,6 +1281,45 @@ def _your_season(s, idx, team_id, arc, h2h, bench):
 # ── Assembler ────────────────────────────────────────────────────────
 
 
+def _honours(league_id, year):
+    """The season's honours (models/player_honours.py) and the league records
+    set in it (models/record_book.py), for the Honours slide. 2026-11-27."""
+    try:
+        from models.player_honours import board
+        from models.record_book import build
+    except Exception:
+        return None
+    try:
+        season = next((x for x in board(league_id)["seasons"] if x["year"] == year), None)
+        if not season:
+            return None
+        h = season["honours"]
+
+        def one(kind):
+            rows = h.get(kind) or []
+            return [{"name": r["name"], "team": r["team"], "detail": r["detail"]} for r in rows]
+        book = build(league_id)
+        records = []
+        for r in book["clubs"] + book["players"] + book["matches"]:
+            t = r.get("top")
+            if t and t.get("year") == year and r["key"] != "flags":
+                records.append({"label": r["label"], "value": t["value"], "unit": r["unit"],
+                                "holder": t.get("player") or t.get("team") or t.get("winner") or ""})
+        flag = season.get("flag") or {}
+        return {
+            "medal": one("keepermedal"), "rising": one("rising"), "medal7": one("medal7"), "triple": one("triple"),
+            "champions": one("champion"),
+            "counts": {"flag": len(flag.get("players") or []), "flag_team": flag.get("team"),
+                       "allleague": len(h.get("allleague") or []), "siren": len(h.get("siren") or []),
+                       "calledup": len(h.get("calledup") or [])},
+            "records": records,
+        }
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("season review honours failed", exc_info=True)
+        return None
+
+
 def build_season_review(league_id, year, viewer_team_id=None):
     """Full year-in-review payload. Memoised per (league, year), the season is
     finished, so nothing behind it can change until the league rolls over."""
@@ -1317,6 +1356,7 @@ def build_season_review(league_id, year, viewer_team_id=None):
             "movement": _movement(s, idx),
             "coaches": _coaches(s, idx, bench, sevens, draft),
             "awards": _awards(s, idx, bench, sevens, draft),
+            "honours": _honours(league_id, year),
         }
         shared["_per_team"] = {
             tid: _your_season(s, idx, tid, arc, h2h, bench) for tid in s.team_ids

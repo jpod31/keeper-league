@@ -1041,3 +1041,9 @@
 .sr-pos { border: 0 !important; color: #050506 !important; font-family: var(--kl-font-mono); border-radius: 3px !important; }
 .sr-pos.DEF { background: #58a6ff !important; } .sr-pos.MID { background: #bc8cff !important; }
 .sr-pos.RUC { background: #3fb950 !important; } .sr-pos.FWD { background: #f0883e !important; }
+
+/* Honours slide (2026-11-27) */
+.sr-hon-em { display: flex; justify-content: center; margin-bottom: 6px; }
+.sr-hon-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 7px 0; border-top: 1px solid rgba(255,255,255,.08); font-size: 14px; }
+.sr-hon-row:first-of-type { border-top: 0; }
+.sr-hon-row b { font-weight: 900; }

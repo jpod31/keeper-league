@@ -187,8 +187,17 @@ export interface BenchRow {
   efficiency: number
 }
 
+export interface HonourWin { name: string; team: string; detail: string }
+/** The season's honours and the records set in it (models/season_review.py _honours). */
+export interface ReviewHonours {
+  medal: HonourWin[]; rising: HonourWin[]; medal7: HonourWin[]; triple: HonourWin[]; champions: HonourWin[]
+  counts: { flag: number; flag_team: string | null; allleague: number; siren: number; calledup: number }
+  records: { label: string; value: number; unit: string; holder: string }[]
+}
+
 export interface SeasonReviewData {
   available: boolean
+  honours?: ReviewHonours | null
   year: number
   league: { id: number; name: string; teams: number; rounds: number; scoring: string }
   /** Round numbers the season ran, in order, the x-axis for presence strips. */

@@ -25,7 +25,7 @@ const HOLD_MS: Record<string, number> = {
   intro: 5200, numbers: 9000, ladder: 10000, you: 10000, arc: 10000,
   mvp: 9500, ironmen: 12000, best23: 14000, records: 12000, h2h: 12000,
   bench: 11000, sevens: 11000, draft: 12000, coaches: 13000,
-  awards: 14000, outro: 12000,
+  awards: 14000, honours: 14000, outro: 12000,
 }
 const DEFAULT_HOLD = 10000
 

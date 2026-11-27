@@ -17,6 +17,7 @@ import {
   Beat, Kinetic, Roll, Presence, PresenceKey, Oval, Ticker, IronBadge,
 } from './bits2'
 import type { SeasonReviewData } from './types'
+import { Emblem } from '../honours/Emblem'
 
 export interface SlideCtx {
   d: SeasonReviewData
@@ -1128,6 +1129,59 @@ const awards: SlideDef = {
   ),
 }
 
+/* ═══ 15b · Honours (2026-11-27): the season's honours and the records set in it ═══ */
+
+const honours: SlideDef = {
+  key: 'honours', name: 'Honours',
+  theme: ['#f0c35a', '#9461ff', '#1a1405'],
+  enabled: ({ d }) => !!d.honours && (d.honours.medal.length > 0 || d.honours.champions.length > 0),
+  render: ({ d }) => {
+    const h = d.honours!
+    const big = [
+      ...h.medal.map(w => ({ kind: 'keepermedal' as const, title: 'Keeper Medal', w })),
+      ...h.rising.map(w => ({ kind: 'rising' as const, title: 'Rising Star', w })),
+      ...h.medal7.map(w => ({ kind: 'medal7' as const, title: '7s Medal', w })),
+      ...h.triple.map(w => ({ kind: 'triple' as const, title: 'Triple Crown', w })),
+    ]
+    const n = (v: number) => (Number.isInteger(v) ? v.toLocaleString() : v.toFixed(1))
+    return (
+      <div className="sr-inner">
+        <Head eyebrow={`${d.year}, the honour board`} title={<>The</>} accentWord="honours"
+          sub="Every badge earned this season is on the Honour Board, under League." />
+        <div className={`sr-grid ${big.length >= 4 ? 'sr-g4' : 'sr-g3'}`}>
+          {big.map((b, i) => (
+            <div key={b.title + b.w.name} className="sr-aw sr-rise" style={{ animationDelay: `${i * 60}ms` }}>
+              <div className="sr-hon-em"><Emblem kind={b.kind} tier="gold" size={64} /></div>
+              <div className="sr-aw-t">{b.title}</div>
+              <div className="sr-aw-w"><b>{b.w.name}</b></div>
+              <div className="sr-aw-d">{b.w.team}{b.w.detail && b.kind !== 'triple' ? `, ${b.w.detail}` : ''}</div>
+            </div>
+          ))}
+        </div>
+        <div className="sr-grid sr-g3" style={{ marginTop: 14 }}>
+          <div className="sr-card sr-card-pad sr-rise">
+            <div className="sr-label">Club Champions</div>
+            {h.champions.map(c => <div key={c.name + c.team} className="sr-hon-row"><b>{c.name}</b><span>{c.team}</span></div>)}
+          </div>
+          <div className="sr-card sr-card-pad sr-rise">
+            <div className="sr-label">Badges this season</div>
+            {h.counts.flag > 0 && <div className="sr-hon-row"><b>{h.counts.flag}</b><span>premiership players, {h.counts.flag_team}</span></div>}
+            {h.counts.allleague > 0 && <div className="sr-hon-row"><b>{h.counts.allleague}</b><span>named All-League</span></div>}
+            {h.counts.siren > 0 && <div className="sr-hon-row"><b>{h.counts.siren}</b><span>won a match on their own</span></div>}
+            {h.counts.calledup > 0 && <div className="sr-hon-row"><b>{h.counts.calledup}</b><span>called up from the 7s</span></div>}
+          </div>
+          {h.records.length > 0 && (
+            <div className="sr-card sr-card-pad sr-rise">
+              <div className="sr-label">League records set</div>
+              {h.records.slice(0, 6).map(r => <div key={r.label} className="sr-hon-row"><b>{n(r.value)}</b><span>{r.label.toLowerCase()}, {r.holder}</span></div>)}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  },
+}
+
 /* ═══ 16 · Outro ══════════════════════════════════════════════════ */
 
 const outro: SlideDef = {
@@ -1163,5 +1217,5 @@ const outro: SlideDef = {
 
 export const SLIDES: SlideDef[] = [
   intro, numbers, ladder, you, arc, mvp, ironmen, best23,
-  records, h2h, bench, sevens, draft, coaches, awards, outro,
+  records, h2h, bench, sevens, draft, coaches, awards, honours, outro,
 ]
