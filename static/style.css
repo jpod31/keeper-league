@@ -11464,3 +11464,52 @@ a.nt-row:hover { background: rgba(255,255,255,.04); color: #ffffff; }
 .hon-table .n { text-align: right; font-variant-numeric: tabular-nums; }
 .hon-strip { display: inline-flex; gap: 3px; }
 .hon-empty { margin: 12px; font-size: 15px; color: #fff; }
+
+/* ══ Player card v2 (2026-11-27, mock T2rjMtvmtFEGoWVTRG1NTv). The whole card
+      scrolls as one, the buttons sit in the header, a slim bar with his name
+      once you scroll. Lucas: "it just functions strangely now the middle
+      section is scrollable ... maybe we need to change where the more
+      details button sits". ══ */
+.pmod-shell.pmod-v2 { display: block; overflow-y: auto !important; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #3a3a44 transparent; }
+.pmod-v2 .pmod-body { display: flex; flex-direction: column; gap: 22px; padding: 20px 20px 32px; min-height: 0; flex: none; }
+.pmod-v2 .pmod-form { flex: none; display: block; }
+.pmod-v2 .pmod-chart { height: 190px; flex: none; min-height: 0; }
+.pmod-v2 .pmod-upper { padding-right: 0; }
+.pmod-v2 .pmod-face { padding-top: 14px; }
+.pmod-topline { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.pmod-topline .pmod-face-top { padding-right: 0; min-height: 0; }
+.pmod-actions { display: flex; gap: 8px; flex: none; }
+.pmod-act { height: 34px; min-width: 34px; padding: 0 10px; border-radius: 7px; border: 1px solid rgba(255,255,255,.38); background: rgba(5,5,6,.5);
+  color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 700 13px var(--kl-font); text-decoration: none; cursor: pointer; }
+.pmod-act:hover, .pmod-act.on { background: #fff; color: #050506; border-color: #fff; }
+.pmod-act-wide { padding: 0 12px; }
+.pmod-slim { position: sticky; top: 0; z-index: 6; height: 56px; margin-bottom: -56px; display: flex; align-items: center; gap: 7px; padding: 0 14px;
+  background: color-mix(in srgb, var(--ca, #2a2a31) 55%, #0b0b0e); border-bottom: 1px solid rgba(255,255,255,.16);
+  opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity .14s ease, transform .14s ease; }
+.pmod-slim.on { opacity: 1; pointer-events: auto; transform: none; }
+.pmod-slim > b { flex: 1; min-width: 0; font-size: 17px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 3px; }
+@media (prefers-reduced-motion: reduce) { .pmod-slim { transition: none; } }
+.pmod-trend { font-style: normal; font-size: 13px; margin-left: 5px; }
+.pmod-trend.up { color: #3fb950; } .pmod-trend.down { color: #f85149; }
+.pmod-v2 .pa-verdict { margin: 0; }
+.pmod-v2 .pmod-sec-h { margin-bottom: 12px; }
+
+/* the season stats table: stats down the side, a column per season */
+.st-wrap { overflow-x: auto; margin: 0 -4px; }
+.st { width: 100%; border-collapse: collapse; font-size: 14px; color: #fff; font-variant-numeric: tabular-nums; }
+.st th, .st td { padding: 6px 8px; text-align: right; white-space: nowrap; }
+.st th:first-child, .st td:first-child { text-align: left; padding-left: 4px; }
+.st thead th { vertical-align: bottom; border-bottom: 1px solid rgba(255,255,255,.18); padding-bottom: 8px; font-weight: 600; }
+.st thead th b { display: block; font-size: 16px; font-weight: 900; }
+.st thead th span { display: block; font-size: 13px; font-weight: 600; }
+.st tbody td { border-bottom: 1px solid rgba(255,255,255,.07); font-weight: 500; }
+.st tbody td:first-child { font-weight: 600; }
+.st tbody td.top { font-weight: 800; }
+.st .now { background: rgba(255,255,255,.06); }
+.st tr.st-grp td { padding-top: 14px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid rgba(255,255,255,.18); background: none; }
+.st.st-wide th, .st.st-wide td { padding-left: 5px; padding-right: 5px; }
+.st.st-wide td:first-child { white-space: normal; }
+@media (max-width: 575.98px) {
+  .st th, .st td { padding-left: 4px; padding-right: 4px; }
+  .pmod-act-wide { padding: 0 9px; }
+}

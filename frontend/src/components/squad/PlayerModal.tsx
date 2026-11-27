@@ -5,12 +5,16 @@ import {
 } from 'recharts'
 import { PlayerNotes } from '../ui/PlayerNotes'
 import { Link } from 'react-router'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { SeasonTable, type SeasonTableData } from './SeasonTable'
 import { Emblem, EmblemStars, emblemLabel, emblemTitle, type Honours } from '../honours/Emblem'
 
 interface PreAfl {
   description?: string
-  verdict?: { label: string; tone: 'good' | 'warn' | 'slow'; reasons: string[] }
+  verdict?: { label: string; tone: 'good' | 'warn' | 'slow'; reasons: string[]; chance?: { any: number; ten: number } | null }
+  pick?: number | null
+  pick_kind?: string | null
+  season_table?: SeasonTableData | null
   facts?: string[]
   honours?: string | null
   honour_note?: string | null
@@ -50,6 +54,7 @@ interface PlayerDetail {
   photo_url?: string | null
   honours?: Honours
   pre_afl?: PreAfl | null
+  season_table?: SeasonTableData | null
 }
 
 interface Props {
@@ -96,6 +101,8 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
   const logoUrl = p.afl_team ? teamLogos[p.afl_team] : null
   const [photoBad, setPhotoBad] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
+  const [slim, setSlim] = useState(false)
+  const shellRef = useRef<HTMLDivElement>(null)
   const [picked, setPicked] = useState<number | null>(null)
   const emblems = (p.honours?.emblems || []).slice(0, 5)
   const nextUp = p.honours?.next
@@ -119,18 +126,49 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
   // last season, so each label names the year rather than saying "season".
   const yr = p.stats_year
   const yrLabel = yr ? String(yr) : 'Season'
-  const prevLabel = yr ? String(yr - 1) : 'Prev yr'
+
+  const pos = (p.position || 'MID').split('/')
+  const isNew = chartData.length === 0 && !!p.pre_afl
+  const pa = p.pre_afl
+  const faceVars = { ...clubVars(p.afl_team), ['--logo' as string]: logoUrl ? `url("${logoUrl}")` : 'none' } as React.CSSProperties
+
+  const actions = (
+    <div className="pmod-actions">
+      <button type="button" className={`pmod-act${notesOpen ? ' on' : ''}`} onClick={() => setNotesOpen(o => !o)} aria-pressed={notesOpen} aria-label="My notes" title="My notes">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 2.5h7l3 3v8H3z M10 2.5v3h3 M5.5 8.5h5 M5.5 11h3.5" /></svg>
+      </button>
+      {_leagueId && (
+        <Link to={`/leagues/${_leagueId}/player/${p.id}`} className="pmod-act pmod-act-wide">
+          Full profile
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
+        </Link>
+      )}
+      <button type="button" onClick={onClose} className="pmod-act" aria-label="Close"><i className="bi bi-x-lg"></i></button>
+    </div>
+  )
+  const badges = (
+    <>
+      {pos.map(ps => <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`} title={p.position_expected ? 'Expected position' : undefined}>{ps}</span>)}
+      {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
+      {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
+    </>
+  )
 
   return (
     <>
       <div onClick={onClose} className="pmod-backdrop" />
-      <div role="dialog" aria-modal="true" className="pmod-shell">
-        {/* Header: the same club-coloured face as his card. */}
-        <div className="pmod-face" style={{ ...clubVars(p.afl_team), ['--logo' as string]: logoUrl ? `url("${logoUrl}")` : 'none',
-          ['--pc' as string]: `var(--pos-${(p.position || 'MID').split('/')[0].toLowerCase()})`, ['--pc2' as string]: `var(--pos-${((p.position || 'MID').split('/')[1] || (p.position || 'MID').split('/')[0]).toLowerCase()})` } as React.CSSProperties}>
-          <button type="button" onClick={onClose} className="pmod-close" aria-label="Close"><i className="bi bi-x-lg"></i></button>
-          {/* His photo on the left, standing on the numbers bar; positions,
-              name and club to its right. */}
+      {/* One card that scrolls as one, the buttons in the header, a slim bar
+          with his name once you scroll. Lucas, 2026-11-27: "it just functions
+          strangely now the middle section is scrollable". Mock agreed:
+          artifact T2rjMtvmtFEGoWVTRG1NTv. */}
+      <div role="dialog" aria-modal="true" className="pmod-shell pmod-v2" ref={shellRef}
+        onScroll={e => setSlim((e.currentTarget as HTMLDivElement).scrollTop > 150)}>
+        <div className={`pmod-slim${slim ? ' on' : ''}`} style={faceVars} aria-hidden={!slim}>
+          {pos.map(ps => <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{ps}</span>)}<b>{p.name}</b>{actions}
+        </div>
+        <div className="pmod-face" style={{ ...faceVars,
+          ['--pc' as string]: `var(--pos-${pos[0].toLowerCase()})`, ['--pc2' as string]: `var(--pos-${(pos[1] || pos[0]).toLowerCase()})` } as React.CSSProperties}>
+          <div className="pmod-topline"><div className="pmod-face-top">{badges}</div>{actions}</div>
           <div className="pmod-upper">
             <div className="pmod-photo-box">
               {p.photo_url && !photoBad
@@ -138,13 +176,6 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                 : <svg className="pmod-photo pmod-sil" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="92" r="46" /><path d="M30 240c4-58 44-92 90-92s86 34 90 92z" /></svg>}
             </div>
             <div className="pmod-upper-text">
-              <div className="pmod-face-top">
-                {(p.position || 'MID').split('/').map(ps => (
-                  <span key={ps} className={`pos-badge badge-${ps.toLowerCase()}${p.position_expected ? ' pos-expected' : ''}`}>{ps}</span>
-                ))}
-                {p.is_new && <span className="pl-mark pl-mark-new">NEW</span>}
-                {p.is_former && <span className="pl-mark pl-mark-off">OFF AFL LIST</span>}
-              </div>
               <div className="pmod-face-id">
                 <div>
                   <div className="pmod-first">{p.name.split(' ')[0]}</div>
@@ -154,42 +185,85 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
               <div className="pmod-face-meta">
                 <span className="pmod-club">{logoUrl && <img className="pmod-crest" src={logoUrl} alt="" />}{p.afl_team}</span>
                 <span>Age {p.age}</span>
-                <span>{p.career_games || 0} games</span>
+                {isNew ? (p.height_cm ? <span>{p.height_cm} cm</span> : null) : <span>{p.career_games || 0} games</span>}
               </div>
             </div>
           </div>
           <div className="pmod-nums">
-            <div className="pmod-num"><b>{p.sc_avg ? Math.round(p.sc_avg) : '-'}</b><span>{yrLabel} avg</span></div>
-            <div className="pmod-num"><b>{p.sc_avg_prev ? Math.round(p.sc_avg_prev) : '-'}</b><span>{prevLabel} avg</span></div>
-            <div className="pmod-num"><b><span className={`rt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</span></b><span>Rating</span></div>
-            <div className="pmod-num"><b><span className={`rt rt-line ${ratingTier(p.potential)}`}>{p.potential ?? '-'}</span></b><span>Potential</span></div>
+            {isNew ? (
+              <>
+                <div className="pmod-num"><b>{pa?.pick ?? '-'}</b><span>{pa?.pick_kind && pa.pick_kind !== 'National' ? `${pa.pick_kind} pick` : 'Pick'}</span></div>
+                <div className="pmod-num"><b><span className={`rt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</span></b><span>Rating</span></div>
+                <div className="pmod-num"><b><span className={`rt rt-line ${ratingTier(p.potential)}`}>{p.potential ?? '-'}</span></b><span>Potential</span></div>
+                <div className="pmod-num"><b>{pa?.verdict?.chance ? pa.verdict.chance.ten + '%' : '-'}</b><span>10+ games</span></div>
+              </>
+            ) : (
+              <>
+                <div className="pmod-num"><b>{p.sc_avg ? Math.round(p.sc_avg) : '-'}</b><span>{yrLabel} avg</span></div>
+                <div className="pmod-num"><b>{l3 ?? '-'}{l3 != null && <i className={`pmod-trend ${l3 >= avg ? 'up' : 'down'}`}>{l3 >= avg ? '\u25B2' : '\u25BC'}</i>}</b><span>Last 3</span></div>
+                <div className="pmod-num"><b><span className={`rt ${ratingTier(p.rating)}`}>{p.rating ?? '-'}</span></b><span>Rating</span></div>
+                <div className="pmod-num"><b><span className={`rt rt-line ${ratingTier(p.potential)}`}>{p.potential ?? '-'}</span></b><span>Potential</span></div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* One screen, no scrolling: a flag line if he has one, his form,
-            six season averages, notes on demand, and the way to the full
-            page. Lucas, 2026-11-26: "dont want the right side pane
-            scrollable ... i hate all those shitty boxes". */}
         <div className="pmod-body">
-          {(p.position_expected || p.is_former || p.injury_severity) && (
+          {(p.is_former || p.injury_severity) && (
             <div className="pmod-flags">
               {p.injury_severity && <span className="pmod-flag pmod-flag-off">{p.injury_type || 'Injured'}, {p.injury_return || 'TBC'}</span>}
               {p.is_former && <span className="pmod-flag pmod-flag-off">Off AFL lists{p.left_afl_year ? ` since ${p.left_afl_year + 1}` : ''}. He will not score.</span>}
-              {p.position_expected && <span className="pmod-flag">Expected position, no SuperCoach position yet.</span>}
             </div>
           )}
 
           {notesOpen ? (
             <div className="pmod-notes">
               <button type="button" className="pmod-textbtn" onClick={() => setNotesOpen(false)}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>Back to his form
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>Back to his card
               </button>
               <PlayerNotes playerId={p.id} />
             </div>
+          ) : isNew && pa ? (
+            <>
+              {pa.verdict && (
+                <section className={'pa-verdict pa-' + pa.verdict.tone}>
+                  <span className="pa-dot" />
+                  <div><b>{pa.verdict.label}</b>{pa.verdict.reasons.slice(1).map((r, i) => <span key={i}>{r}</span>)}</div>
+                </section>
+              )}
+              {pa.description && (
+                <section className="pmod-sec">
+                  <header className="pmod-sec-h"><h3>Scouting report</h3>{pa.honours && <span className="pmod-jhon" title={pa.honour_note || ''}>{pa.honours}</span>}</header>
+                  <p className="pa-desc">{pa.description}</p>
+                </section>
+              )}
+              {pa.headline && pa.headline.ranks.length > 0 && (
+                <section className="pmod-sec">
+                  <header className="pmod-sec-h"><h3>{pa.headline.season} {pa.headline.league}{pa.headline.group ? ', ' + pa.headline.group : ''}</h3><span className="pmod-sub">{pa.headline.team}{pa.headline.games ? ', ' + pa.headline.games + ' games' : ''}</span></header>
+                  <table className="pa-rt" title={'Ranked against ' + pa.headline.pool}>
+                    <thead><tr><th></th><th className="n">Avg</th><th>{pa.headline.col}</th>{pa.headline.class_col && <th className="n">{pa.headline.class_col}</th>}</tr></thead>
+                    <tbody>
+                      {pa.headline.ranks.map(r => (
+                        <tr key={r.label} className={r.best ? 'pa-best' : undefined}>
+                          <td>{r.label}</td>
+                          <td className="n"><b>{fmt1(r.value)}</b></td>
+                          <td><span className="pa-rk"><span className="pa-bar"><i style={{ width: Math.max(4, r.pct) + '%' }} /></span><b>{r.text}</b></span></td>
+                          {pa.headline!.class_col && <td className="n"><b>{r.class_text ?? '-'}</b></td>}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              )}
+              {pa.season_table ? (
+                <section className="pmod-sec">
+                  <header className="pmod-sec-h"><h3>Every season</h3></header>
+                  <SeasonTable data={pa.season_table} />
+                </section>
+              ) : !pa.headline && <p className="pa-none">No junior or state league games in any source we hold.</p>}
+            </>
           ) : (
             <>
-              {/* His keeper league honours on a shelf; the next games
-                  milestone when he has none yet. 2026-11-26. */}
               {emblems.length > 0 ? (
                 <section className="pmod-honours" aria-label="Honours">
                   <div className="pmod-shelf">
@@ -197,7 +271,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                       <button key={e.kind} type="button" className={`pmod-hon${picked === i ? ' on' : ''}`}
                         onClick={() => setPicked(picked === i ? null : i)} title={emblemTitle(e)}>
                         {e.times >= 2 && e.times <= 4 ? <EmblemStars n={e.times} /> : <span className="emblem-stars" />}
-                        <Emblem kind={e.kind} tier={e.tier} label={e.step ?? undefined} size={58} />
+                        <Emblem kind={e.kind} tier={e.tier} step={e.step} size={58} />
                         <span>{emblemLabel(e)}</span>
                       </button>
                     ))}
@@ -211,7 +285,7 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                 </section>
               ) : nextUp ? (
                 <section className="pmod-honours pmod-honours-next" aria-label="Next milestone">
-                  <Emblem kind={nextUp.kind} tier={nextUp.tier} label={nextUp.step} size={48} locked />
+                  <Emblem kind={nextUp.kind} tier={nextUp.tier} step={nextUp.step} size={48} locked />
                   <div>
                     <b>Next: {nextUp.step} games for {nextUp.team}</b>
                     <span>{nextUp.games} so far, {nextUp.to_go} to go</span>
@@ -219,62 +293,6 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                 </section>
               ) : null}
 
-              {chartData.length === 0 && p.pre_afl ? (
-                <section className="pmod-sec pmod-preafl">
-                  {/* Numbers, not prose. Lucas, 2026-11-26: "the text does not
-                      help anywhere near enough". */}
-                  <header className="pmod-sec-h"><h3>Before the AFL</h3>{p.pre_afl.honours && <span className="pmod-jhon" title={p.pre_afl.honour_note || ''}>{p.pre_afl.honours}</span>}</header>
-                  {p.pre_afl.description && <p className="pa-desc">{p.pre_afl.description}</p>}
-                  {p.pre_afl.verdict && (
-                    <div className={'pa-verdict pa-' + p.pre_afl.verdict.tone}>
-                      <span className="pa-dot" />
-                      <div>
-                        <b>{p.pre_afl.verdict.label}</b>
-                        {p.pre_afl.verdict.reasons.map((r, i) => <span key={i}>{r}</span>)}
-                      </div>
-                    </div>
-                  )}
-                  {p.pre_afl.headline ? (
-                    <div className="pa-head">
-                      <div className="pa-head-t"><b>{p.pre_afl.headline.season} {p.pre_afl.headline.league}{p.pre_afl.headline.ranks.length > 0 && p.pre_afl.headline.group ? ', ' + p.pre_afl.headline.group : ''}</b><span>{p.pre_afl.headline.team}{p.pre_afl.headline.games ? ', ' + p.pre_afl.headline.games + ' games' : ''}</span></div>
-                      {p.pre_afl.headline.ranks.length > 0 ? (
-                        <table className="pa-rt" title={'Ranked against ' + p.pre_afl.headline.pool}>
-                          <thead><tr><th></th><th className="n">Avg</th><th>{p.pre_afl.headline.col}</th>{p.pre_afl.headline.class_col && <th className="n">{p.pre_afl.headline.class_col}</th>}</tr></thead>
-                          <tbody>
-                            {p.pre_afl.headline.ranks.map(r => (
-                              <tr key={r.label} className={r.best ? 'pa-best' : undefined}>
-                                <td>{r.label}</td>
-                                <td className="n"><b>{fmt1(r.value)}</b></td>
-                                <td><span className="pa-rk"><span className="pa-bar"><i style={{ width: Math.max(4, r.pct) + '%' }} /></span><b>{r.text}</b></span></td>
-                                {p.pre_afl!.headline!.class_col && <td className="n"><b>{r.class_text ?? '-'}</b></td>}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div className="pa-stats">{p.pre_afl.headline.stats.map(st => <div key={st.label}><b>{fmt1(st.value)}</b><span>{st.label}</span></div>)}</div>
-                      )}
-                    </div>
-                  ) : <p className="pa-none">No junior or state league games in any source we hold.</p>}
-                  {p.pre_afl.seasons.length > 0 && !p.pre_afl.headline?.ranks.length && (
-                    <table className="pmod-sl">
-                      <thead><tr><th>Year</th><th>League</th><th className="n">GP</th><th className="n">Disp</th><th className="n">Goals</th><th className="n">Fant</th></tr></thead>
-                      <tbody>
-                        {p.pre_afl.seasons.slice(0, p.pre_afl.headline?.ranks.length ? 3 : 4).map(s => (
-                          <tr key={s.season + '-' + s.league + '-' + s.team}>
-                            <td>{s.season}</td>
-                            <td><span className="pmod-sl-lg">{s.league}</span>{s.team && <span className="pmod-sl-tm">{s.team}</span>}</td>
-                            <td className="n">{s.games ?? '-'}</td>
-                            <td className="n">{fmt1(s.disposals ?? undefined)}</td>
-                            <td className="n">{fmt1(s.goals ?? undefined)}</td>
-                            <td className="n">{s.fantasy != null ? Math.round(s.fantasy) : '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </section>
-              ) : (
               <section className="pmod-sec pmod-form">
                 <header className="pmod-sec-h">
                   <h3>{yrLabel} form</h3>
@@ -302,9 +320,13 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
                   </div>
                 ) : <p className="pmod-none">No games yet.</p>}
               </section>
-              )}
 
-              {p.season_avg && (
+              {p.season_table ? (
+                <section className="pmod-sec">
+                  <header className="pmod-sec-h"><h3>Season averages</h3></header>
+                  <SeasonTable data={p.season_table} />
+                </section>
+              ) : p.season_avg && (
                 <section className="pmod-sec">
                   <header className="pmod-sec-h"><h3>{yrLabel} averages</h3><span className="pmod-sub">{p.season_games} games</span></header>
                   <div className="pmod-avgs">
@@ -316,21 +338,6 @@ export function PlayerModal({ player: p, teamLogos, onClose, leagueId: _leagueId
               )}
             </>
           )}
-
-          <div className="pmod-foot">
-            {!notesOpen && (
-              <button type="button" className="pmod-notesbtn" onClick={() => setNotesOpen(true)}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 2.5h7l3 3v8H3z M10 2.5v3h3 M5.5 8.5h5 M5.5 11h3.5" /></svg>
-                My notes
-              </button>
-            )}
-            {_leagueId && (
-              <Link to={`/leagues/${_leagueId}/player/${p.id}`} className="pmod-more">
-                More details
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
-              </Link>
-            )}
-          </div>
         </div>
       </div>
     </>

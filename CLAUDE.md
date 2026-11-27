@@ -265,13 +265,18 @@ registers more routes onto `leagues_bp`; `spa_api.py` likewise pulls in
   run in the `/refresh` sequence and show in the player compare and the
   position percentile ranks. Unmatched names are printed; a near match is
   settled by club.
-- **The player card pop-up** (`components/squad/PlayerModal.tsx`) is ONE
-  screen, never scrolls (Lucas: "dont want the right side pane scrollable
-  ... i hate all those shitty boxes"): photo on the LEFT of the header, the
-  surname on one line sized to its space (container query, 16 to 32px), the
-  form chart filling the spare height, six season averages as plain type,
-  My notes opening in place of the form, More details at the bottom. No
-  stat tiles, no last-game grid.
+- **The player card pop-up** (`components/squad/PlayerModal.tsx`, v2 from
+  2026-11-27, mock artifact T2rjMtvmtFEGoWVTRG1NTv): the WHOLE card scrolls as
+  one, never a box inside it ("it just functions strangely now the middle
+  section is scrollable"). The buttons (notes, Full profile, close) sit in the
+  header, with no footer; a slim bar with his name and the buttons appears
+  once you scroll. Numbers: season avg, last 3, rating, potential; a player
+  with no AFL games gets pick, rating, potential and his chance of 10+ games.
+  Established order: honours shelf, form chart (fixed height), season stats
+  table. New player order: verdict, scouting report, ranks, every season.
+  The season table (`models/season_table.py`, `SeasonTable.tsx`) is stats
+  down the side, a column per season, best season bold, latest shaded: three
+  AFL seasons, or up to five junior and state league seasons.
 - **Player honours, v3** (`models/player_honours.py`, emblems drawn by
   `components/honours/Emblem.tsx`, the Honour Board at League > Honours,
   `pages/leagues/HonourBoardPage.tsx`; list in `docs/HONOURS_V2.md`). Few

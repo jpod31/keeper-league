@@ -666,9 +666,13 @@ def pre_afl(p):
     lines = [f"{(p.afl_team or '')} {POS_WORD.get(pos, 'player')}".strip() + (f", {p.age}" if p.age else "") + "."]
     if ht:
         lines.append(ht)
+    from models.season_table import junior_table
+    _yr, pick, kind = draft_info(p)
     return {
         "description": desc,
         "verdict": v,
+        "pick": pick, "pick_kind": kind,
+        "season_table": junior_table(rows),
         "facts": facts, "honours": p.junior_honours, "honour_note": ht, "pathway": p.junior_origin,
         "headline": headline,
         "seasons": [_season_row(r) for r in rows[:6]],

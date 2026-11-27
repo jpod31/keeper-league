@@ -2111,7 +2111,17 @@ def api_player_detail(league_id, team_id, player_id):
         "photo_url": player_photo_url(player.name),
         "honours": _player_honours(league_id, player_id),
         "pre_afl": _pre_afl(player) if not (player.career_games or 0) and not round_scores else None,
+        "season_table": _season_table(player, stats_y),
     })
+
+
+def _season_table(player, year):
+    from models.season_table import afl_table
+    try:
+        return afl_table(player, year)
+    except Exception:
+        _logo_logger.warning("season table failed for %s", player.id, exc_info=True)
+        return None
 
 
 def _player_honours(league_id, player_id):

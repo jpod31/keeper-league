@@ -247,7 +247,6 @@ export function NotesDock({ leagueId }: { leagueId: string }) {
         {league?.user_team && <TeamBadge name={league.user_team.id} size={34} showName={false} />}
         <div className="nd-head-t">
           <h3>My notes</h3>
-          <span><i className="bi bi-lock-fill"></i> Only you can see these</span>
         </div>
         <button type="button" className="nd-min" onClick={() => toggle(false)} aria-label="Minimise notes"><i className="bi bi-chevron-down"></i></button>
       </header>
