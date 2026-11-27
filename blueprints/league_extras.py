@@ -219,8 +219,8 @@ def register_league_extras(spa_api):
         league, _team = check_league_access(league_id)
         if not league:
             return jsonify({"error": "Not a league member"}), 403
-        from models.player_honours import board
-        return jsonify(board(league_id))
+        from models.player_honours import board, honour_boards
+        return jsonify({**board(league_id), "boards": honour_boards(league_id)})
 
     @spa_api.route("/leagues/<int:league_id>/honours/summary")
     @login_required

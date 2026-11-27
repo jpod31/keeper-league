@@ -1,3 +1,4 @@
+import { useState, type CSSProperties } from 'react'
 import { useParams, Link } from 'react-router'
 import { useKeptFetch } from '../../hooks/useFetch'
 import { Spinner } from '../../components/ui/Spinner'
@@ -5,266 +6,231 @@ import { LeagueSubnav } from '../../components/nav/LeagueSubnav'
 import { TeamBadge } from '../../components/ui/TeamBadge'
 import { useOpenPlayer } from '../../components/squad/PlayerPopup'
 import { usePageState } from '../../lib/pageMemory'
+import { clubVars } from '../../lib/clubs'
 import { Emblem, type Kind, type Tier } from '../../components/honours/Emblem'
 
-// The Honour Board (Lucas, 2026-11-27: "where is the badges summary area that I
-// asked for"): every season's winners, the All-League 23, the Hall of Fame
-// race, each club's board and the records. Data: models/player_honours.py board().
-// Styles: .hb-* in static/style.css.
+// The Honour Board (League > Honours). Lucas, 2026-11-27: "we just want
+// honour boards for players that have that badge, and the year they earnt
+// them in ... and colour changes for multi year winnings". One board per
+// honour, every holder with his years, his metal set by how many he has won.
+// Data: models/player_honours.py honour_boards() and board(). Styles: .hb2-*.
 
-interface P { id: number; name: string; position: string; afl_team: string }
-interface Won extends P { team: string; detail: string; value: number | null; round: number | null }
+interface P { id: number; name: string; position: string; afl_team: string; photo_url?: string | null }
+interface Holder extends P { team: string; times: number; years: number[]; tier: Tier; detail: string }
+interface Board { key: string; kind: Kind; name: string; step: number | null; seven: boolean; points: number; holders: Holder[] }
 interface Season {
   year: number; complete: boolean
-  flag: { team: string; team_id: number; wins: number; losses: number; players: (P & { games: number })[] } | null
-  medal: (P & { votes: number })[]
-  honours: Partial<Record<Kind, Won[]>>
   all_league: Record<string, (P & { avg: number; games: number; team: string })[]>
-  sevens: {
-    flag: { team: string; team_id: number; wins: number; losses: number; players: (P & { games: number })[] } | null
-    medal: (P & { votes: number })[]
-    called_up: (P & { games: number })[]
-  }
   records: {
     top_score: { score: number; team: string; round: number; player: P } | null
     top_season: { points: number; team: string; player: P } | null
     top_club_round: { score: number; team: string; round: number } | null
   }
 }
-interface Board {
+interface Data {
+  boards: Board[]
   seasons: Season[]
   hall: { line: number; legend: number; race: (P & { points: number; emblems: { kind: Kind; tier: Tier; seven: boolean; step: number | null }[] })[]
     table: { name: string; points: number | string; kind: Kind; seven: boolean }[] }
   coming: (P & { team: string; games: number; step: number; to_go: number })[]
-  clubs: { team_id: number; team: string; honours: (P & { kind: Kind; name: string; year: number | null; detail: string; seven: boolean; step: number | null })[] }[]
 }
 
-type Tab = 'season' | 'allleague' | 'hall' | 'clubs' | 'records'
+const HOW: Record<string, string> = {
+  keepermedal: "The league's best and fairest. Every match gives 3, 2 and 1 votes to the three best players on the ground.",
+  flag: 'Played 12 or more games for the club on top of the ladder after the last round. There are no finals.',
+  champion: "A club's best and fairest. After every round the club's five best get 5, 4, 3, 2 and 1 votes.",
+  allleague: 'Named in the best 23 of the season, from players with 12 or more games.',
+  rising: 'The most Keeper Medal votes by a player aged 21 or under.',
+  triple: 'The Flag, the Keeper Medal and a Club Champion, all in one career.',
+  siren: 'Won a match on his own: without what he scored over a replacement, his club loses.',
+  medal7: 'The 7s best and fairest: 3, 2 and 1 votes to the best three on the ground each 7s match.',
+  flag7: 'Played 8 or more 7s games for the club on top of the 7s ladder.',
+  calledup: "Started the season in his club's 7s, then played 8 or more games in its 23.",
+  clubgames: 'Games for one club, counting only games in the side that scored.',
+  hof: 'Every honour carries points across a career. 100 points gets a player in.',
+  legend: '250 points, or two Keeper Medals and the Hall of Fame.',
+}
+const TIER_WORD: Record<Tier, string> = { gold: 'Gold', plat: 'Platinum', ruby: 'Ruby', sapph: 'Sapphire', black: 'Black', silver: 'Silver', bronze: 'Bronze' }
+const SHOW = 8
 
+function Face({ p, size = 44 }: { p: P; size?: number }) {
+  const [bad, setBad] = useState(false)
+  return (
+    <span className="hb2-face" style={{ ...clubVars(p.afl_team), width: size, height: size } as CSSProperties}>
+      {p.photo_url && !bad ? <img src={p.photo_url} alt="" onError={() => setBad(true)} /> : <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7" /><path d="M6 40c1-9 7-14 14-14s13 5 14 14z" /></svg>}
+    </span>
+  )
+}
 function Pos({ p }: { p: string }) {
   const k = (p || 'MID').split('/')[0]
   return <span className={`pos-badge badge-${k.toLowerCase()}`}>{k}</span>
 }
 
+function BoardCard({ b, open }: { b: Board; open: (id: number) => void }) {
+  const [all, setAll] = useState(false)
+  const shown = all ? b.holders : b.holders.slice(0, SHOW)
+  return (
+    <article className={`hb2-board${b.seven ? ' seven' : ''}`}>
+      <header className="hb2-bh">
+        <Emblem kind={b.kind} tier={b.kind === 'legend' ? 'black' : b.kind === 'siren' ? 'bronze' : b.kind === 'clubgames' ? (b.step === 50 ? 'silver' : b.step === 150 ? 'plat' : b.step === 200 ? 'black' : 'gold') : 'gold'} step={b.step} size={60} />
+        <div className="hb2-bt">
+          <h3>{b.name}</h3>
+          <p>{b.kind === 'clubgames' ? `${b.step} games for one club, counting games in the side that scored.` : HOW[b.kind]}</p>
+        </div>
+        <div className="hb2-count"><b>{b.holders.length}</b><span>{b.holders.length === 1 ? 'Holder' : 'Holders'}</span></div>
+      </header>
+      {b.holders.length === 0 ? (
+        <div className="hb2-empty">No one yet.{b.points ? ` Worth ${b.points} Hall of Fame points.` : ''}</div>
+      ) : (
+        <ol className="hb2-list">
+          {shown.map(h => (
+            <li key={h.id} className={`hb2-h t-${h.tier}`}>
+              <button type="button" onClick={() => open(h.id)}>
+                <Face p={h} />
+                <span className="hb2-who">
+                  <span className="hb2-nm"><b>{h.name}</b><Pos p={h.position} /></span>
+                  <span className="hb2-club">{h.team ? <TeamBadge name={h.team} size={22} /> : h.afl_team}</span>
+                </span>
+                <span className="hb2-won">
+                  <b>{h.years.length ? h.years.join(', ') : 'Inducted'}</b>
+                  <span>{h.times > 1 ? `${h.times} times, ${TIER_WORD[h.tier]}` : TIER_WORD[h.tier]}</span>
+                </span>
+                <Emblem kind={b.kind} tier={h.tier} step={b.step} size={40} />
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+      {b.holders.length > SHOW && (
+        <button type="button" className="hb2-more" onClick={() => setAll(v => !v)}>{all ? 'Show fewer' : `Show all ${b.holders.length}`}</button>
+      )}
+    </article>
+  )
+}
+
+type View = 'boards' | 'allleague' | 'hall' | 'records'
+
 export function HonourBoardPage() {
   const { leagueId } = useParams()
-  const { data, loading, error } = useKeptFetch<Board>(`/api/leagues/${leagueId}/honours/board`)
-  const [tab, setTab] = usePageState<Tab>('tab', 'season')
+  const { data, loading, error } = useKeptFetch<Data>(`/api/leagues/${leagueId}/honours/board`)
+  const [view, setView] = usePageState<View>('view', 'boards')
   const [year, setYear] = usePageState<number | null>('year', null)
   const openPlayer = useOpenPlayer()
 
   if (loading && !data) return <Spinner />
   if (error || !data) return <div className="kx-page"><p>The honour board could not be loaded.</p></div>
-  const season = data.seasons.find(s => s.year === year) || data.seasons[0]
-  const Name = ({ p }: { p: P }) => <button type="button" className="hb-name" onClick={() => openPlayer(p.id)}>{p.name}</button>
-
-  const tabs: [Tab, string][] = [['season', 'Season'], ['allleague', 'All-League 23'], ['hall', 'Hall of Fame'], ['clubs', 'Clubs'], ['records', 'Records']]
+  const named = data.seasons.filter(s => Object.keys(s.all_league || {}).length)
+  const season = named.find(s => s.year === year) || named[0]
+  const recSeason = data.seasons.find(s => s.year === year) || data.seasons[0]
+  const views: [View, string][] = [['boards', 'Honour boards'], ['allleague', 'All-League 23'], ['hall', 'Hall of Fame'], ['records', 'Records']]
+  const Name = ({ p }: { p: P }) => <button type="button" className="hb2-link" onClick={() => openPlayer(p.id)}>{p.name}</button>
 
   return (
-    <div className="kx-page hb">
+    <div className="kx-page hb2">
       <div className="d-none d-lg-block"><LeagueSubnav active="honours" leagueId={leagueId!} /></div>
       <div className="page-breadcrumb d-none d-lg-block"><Link to={`/leagues/${leagueId}`}>League</Link> / Honours</div>
-      <div className="kx-head">
+      <header className="hb2-head">
         <h2>Honour Board</h2>
-        {data.seasons.length > 1 && (
-          <div className="sn-years" role="group" aria-label="Season">
-            {data.seasons.map(s => <button key={s.year} type="button" className={`sn-year${s.year === season?.year ? ' on' : ''}`} onClick={() => setYear(s.year)}>{s.year}</button>)}
-          </div>
-        )}
-      </div>
-      <div className="hb-tabs" role="tablist">
-        {tabs.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
-      </div>
-
-      {tab === 'season' && season && (
-        <div className="hb-body">
-          {!season.complete && <p className="hb-note">The {season.year} season is still going. Season honours are given when the last round is done; The Siren counts as it happens.</p>}
-          <section className="hb-cabinet">
-            {season.flag && (
-              <div className="hb-trophy">
-                <Emblem kind="flag" tier="gold" size={84} />
-                <div><span className="hb-lab">The Flag</span><b><TeamBadge name={season.flag.team} size={22} /></b><span>{season.flag.wins}-{season.flag.losses}, top of the ladder</span></div>
-              </div>
-            )}
-            {(season.honours.keepermedal || []).map(w => (
-              <div className="hb-trophy" key={'m' + w.id}><Emblem kind="keepermedal" tier="gold" size={84} />
-                <div><span className="hb-lab">Keeper Medal</span><b><Name p={w} /></b><span>{w.team}, {w.detail}</span></div></div>
-            ))}
-            {(season.honours.rising || []).map(w => (
-              <div className="hb-trophy" key={'r' + w.id}><Emblem kind="rising" tier="gold" size={84} />
-                <div><span className="hb-lab">Rising Star</span><b><Name p={w} /></b><span>{w.team}, {w.detail}</span></div></div>
-            ))}
-            {(season.honours.triple || []).map(w => (
-              <div className="hb-trophy" key={'t' + w.id}><Emblem kind="triple" tier="gold" size={84} />
-                <div><span className="hb-lab">Triple Crown</span><b><Name p={w} /></b><span>{w.detail}</span></div></div>
-            ))}
-            {season.sevens.flag && (
-              <div className="hb-trophy"><Emblem kind="flag7" tier="gold" size={84} />
-                <div><span className="hb-lab">7s Flag</span><b><TeamBadge name={season.sevens.flag.team} size={22} /></b><span>{season.sevens.flag.wins}-{season.sevens.flag.losses}, top of the 7s ladder</span></div></div>
-            )}
-            {(season.honours.medal7 || []).map(w => (
-              <div className="hb-trophy" key={'s' + w.id}><Emblem kind="medal7" tier="gold" size={84} />
-                <div><span className="hb-lab">7s Medal</span><b><Name p={w} /></b><span>{w.team}, {w.detail}</span></div></div>
-            ))}
-          </section>
-
-          <div className="hb-grid">
-            {(season.honours.champion || []).length > 0 && (
-              <section className="hb-panel">
-                <h3><Emblem kind="champion" tier="gold" size={34} />Club Champions</h3>
-                <table className="hb-table"><tbody>
-                  {season.honours.champion!.map(w => (
-                    <tr key={w.id + w.team}><td><TeamBadge name={w.team} size={22} showName={false} /></td><td><Pos p={w.position} /> <Name p={w} /></td><td className="n">{w.value} votes</td></tr>
-                  ))}
-                </tbody></table>
-                <p className="hb-foot">Each round the club's best five on points over replacement get 5, 4, 3, 2 and 1 votes.</p>
-              </section>
-            )}
-            {season.medal.length > 0 && (
-              <section className="hb-panel">
-                <h3><Emblem kind="keepermedal" tier="gold" size={34} />Keeper Medal count</h3>
-                <table className="hb-table"><tbody>
-                  {season.medal.map((p, i) => <tr key={p.id}><td className="n">{i + 1}</td><td><Pos p={p.position} /> <Name p={p} /></td><td className="n">{p.votes}</td></tr>)}
-                </tbody></table>
-                <p className="hb-foot">3, 2 and 1 votes a match to the best three on the ground.</p>
-              </section>
-            )}
-            {season.flag && (
-              <section className="hb-panel hb-wide">
-                <h3><Emblem kind="flag" tier="gold" size={34} />Premiership players, {season.flag.team}</h3>
-                <div className="hb-chips">{season.flag.players.map(p => <span key={p.id}><Name p={p} /> {p.games}</span>)}</div>
-                <p className="hb-foot">12 or more games in the side. The number is his games.</p>
-              </section>
-            )}
-            {(season.honours.siren || []).length > 0 && (
-              <section className="hb-panel hb-wide">
-                <h3><Emblem kind="siren" tier="bronze" size={34} />The Siren</h3>
-                <table className="hb-table"><tbody>
-                  {season.honours.siren!.map(w => <tr key={w.id + '-' + w.round}><td><TeamBadge name={w.team} size={22} showName={false} /></td><td><Name p={w} /></td><td>{w.detail}</td></tr>)}
-                </tbody></table>
-                <p className="hb-foot">His club won, without his points over replacement they lose, and no more than two team-mates could say the same.</p>
-              </section>
-            )}
-            {season.sevens.flag && (
-              <section className="hb-panel">
-                <h3><Emblem kind="flag7" tier="gold" size={34} />7s premiership, {season.sevens.flag.team}</h3>
-                <div className="hb-chips">{season.sevens.flag.players.map(p => <span key={p.id}><Name p={p} /> {p.games}</span>)}</div>
-                <p className="hb-foot">8 or more 7s games.</p>
-              </section>
-            )}
-            {season.sevens.called_up.length > 0 && (
-              <section className="hb-panel">
-                <h3><Emblem kind="calledup" tier="gold" size={34} />Called Up</h3>
-                <table className="hb-table"><tbody>
-                  {season.sevens.called_up.map(p => <tr key={p.id}><td><Pos p={p.position} /> <Name p={p} /></td><td className="n">{p.games} games in the 23</td></tr>)}
-                </tbody></table>
-                <p className="hb-foot">Started in his club's 7s, then 8 or more games in its 23.</p>
-              </section>
-            )}
-            {season.sevens.medal.length > 0 && (
-              <section className="hb-panel">
-                <h3><Emblem kind="medal7" tier="gold" size={34} />7s Medal count</h3>
-                <table className="hb-table"><tbody>
-                  {season.sevens.medal.map((p, i) => <tr key={p.id}><td className="n">{i + 1}</td><td><Pos p={p.position} /> <Name p={p} /></td><td className="n">{p.votes}</td></tr>)}
-                </tbody></table>
-              </section>
-            )}
-          </div>
+        <div className="hb2-views" role="tablist">
+          {views.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={view === k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}
         </div>
+      </header>
+
+      {view === 'boards' && (
+        <>
+          <div className="hb2-legend" aria-label="What the colours mean">
+            {(['gold', 'plat', 'ruby', 'sapph', 'black'] as Tier[]).map((t, i) => (
+              <span key={t} className={`t-${t}`}><i />{i === 4 ? '5 or more' : i === 0 ? 'Won once' : `${i + 1} times`}</span>
+            ))}
+          </div>
+          <div className="hb2-boards">
+            {data.boards.map(b => <BoardCard key={b.key} b={b} open={openPlayer} />)}
+          </div>
+        </>
       )}
 
-      {tab === 'allleague' && season && (
-        <div className="hb-body">
-          {Object.keys(season.all_league).length === 0 ? <p className="hb-note">Named when the {season.year} season is done.</p> : (
-            <section className="hb-team">
-              <p className="hb-note">The best 23 of {season.year} on points over replacement, 12 or more games, picked into real lines. Each is an All-League honour.</p>
-              {([['DEF', 'Defence'], ['MID', 'Midfield'], ['RUC', 'Ruck'], ['FWD', 'Forwards'], ['FLEX', 'Flex']] as [string, string][]).map(([k, label]) => {
-                const rows = season.all_league[k] || []
-                if (!rows.length) return null
-                const lines: typeof rows[] = []
-                for (let i = 0; i < rows.length; i += 3) lines.push(rows.slice(i, i + 3))
-                return (
-                  <div key={k} className="hb-line">
-                    <h4>{label}</h4>
-                    {lines.map((ln, i) => (
-                      <div key={i} className="hb-three">
-                        {ln.map(p => (
-                          <button key={p.id} type="button" className="hb-pl" onClick={() => openPlayer(p.id)}>
-                            <span className="hb-pl-top"><Pos p={p.position} /><b>{p.name}</b></span>
-                            <span className="hb-pl-nums"><b>{p.avg}</b> avg <b>{p.games}</b> games</span>
-                            <span className="hb-pl-team"><TeamBadge name={p.team} size={18} /></span>
-                          </button>
-                        ))}
-                      </div>
+      {view === 'allleague' && (
+        season ? (
+          <section className="hb2-sheet">
+            <header className="hb2-sheet-h">
+              <Emblem kind="allleague" tier="gold" size={60} />
+              <div className="hb2-bt"><h3>All-League 23, {season.year}</h3><p>{HOW.allleague}</p></div>
+              {named.length > 1 && (
+                <div className="hb2-years">{named.map(s => <button key={s.year} type="button" className={s.year === season.year ? 'on' : ''} onClick={() => setYear(s.year)}>{s.year}</button>)}</div>
+              )}
+            </header>
+            {([['DEF', 'Defence'], ['MID', 'Midfield'], ['RUC', 'Ruck'], ['FWD', 'Forwards'], ['FLEX', 'Flex']] as [string, string][]).map(([k, label]) => {
+              const rows = season.all_league[k] || []
+              if (!rows.length) return null
+              return (
+                <div key={k} className="hb2-line">
+                  <span className="hb2-lab">{label}</span>
+                  <div className="hb2-three">
+                    {rows.map(p => (
+                      <button key={p.id} type="button" className="hb2-slot" onClick={() => openPlayer(p.id)}>
+                        <Face p={p} size={48} />
+                        <span className="hb2-who"><b>{p.name}</b><span className="hb2-nm"><Pos p={p.position} /><TeamBadge name={p.team} size={22} showName={false} /></span></span>
+                        <span className="hb2-stat"><b>{p.avg}</b><span>Avg</span></span>
+                      </button>
                     ))}
                   </div>
-                )
-              })}
-            </section>
-          )}
-        </div>
+                </div>
+              )
+            })}
+          </section>
+        ) : <div className="hb2-empty">Named when the first season is done.</div>
       )}
 
-      {tab === 'hall' && (
-        <div className="hb-body hb-grid">
-          <section className="hb-panel hb-wide">
-            <h3><Emblem kind="hof" tier="gold" size={34} />The race to the Hall of Fame</h3>
-            <p className="hb-foot">{data.hall.line} points to get in. Legend at {data.hall.legend}, or two Keeper Medals and the Hall.</p>
-            <div className="hb-race">
-              {data.hall.race.map(p => (
-                <div key={p.id} className="hb-race-row">
-                  <span className="hb-race-name"><Name p={p} /></span>
-                  <span className="hb-race-ems">{p.emblems.slice(0, 6).map((e, i) => <Emblem key={i} kind={e.kind} tier={e.tier} step={e.step} size={24} />)}</span>
-                  <span className="hb-race-bar"><i style={{ width: Math.min(100, p.points / (data.hall.line * 1.2) * 100) + '%' }} /><em style={{ left: (100 / 1.2) + '%' }} /></span>
-                  <b>{p.points}</b>
+      {view === 'hall' && (
+        <div className="hb2-hall">
+          <section className="hb2-board">
+            <header className="hb2-bh">
+              <Emblem kind="hof" tier="gold" size={60} />
+              <div className="hb2-bt"><h3>The race to the Hall of Fame</h3><p>{HOW.hof} Legend at {data.hall.legend}.</p></div>
+              <div className="hb2-count"><b>{data.boards.find(b => b.kind === 'hof')?.holders.length ?? 0}</b><span>Inducted</span></div>
+            </header>
+            <div className="hb2-race">
+              {data.hall.race.map((p, i) => (
+                <div key={p.id} className="hb2-track">
+                  <Face p={p} />
+                  <span className="hb2-who"><Name p={p} /><span className="hb2-ems">{p.emblems.slice(0, 7).map((e, n) => <Emblem key={n} kind={e.kind} tier={e.tier} step={e.step} size={24} />)}</span></span>
+                  <span className="hb2-bar"><i style={{ width: Math.min(100, p.points / (data.hall.line * 1.2) * 100) + '%' }} /><em style={{ left: (100 / 1.2) + '%' }}>{i === 0 && <small>Hall of Fame, {data.hall.line}</small>}</em></span>
+                  <span className="hb2-stat"><b>{p.points}</b><span>Points</span></span>
                 </div>
               ))}
             </div>
           </section>
-          <section className="hb-panel">
-            <h3>What each honour is worth</h3>
-            <table className="hb-table"><tbody>
-              {data.hall.table.map(r => <tr key={r.name}><td><Emblem kind={r.kind} tier="gold" step={r.kind === 'clubgames' ? 50 : null} size={28} /></td><td>{r.name}</td><td className="n"><b>{r.points}</b></td></tr>)}
+          <section className="hb2-board">
+            <header className="hb2-bh hb2-bh-sm"><div className="hb2-bt"><h3>What each honour is worth</h3></div></header>
+            <table className="hb2-tbl"><thead><tr><th>Honour</th><th className="n">Points</th></tr></thead><tbody>
+              {data.hall.table.map(r => <tr key={r.name}><td><span className="hb2-nm"><Emblem kind={r.kind} tier="gold" step={r.kind === 'clubgames' ? 50 : null} size={30} />{r.name}</span></td><td className="n">{r.points}</td></tr>)}
             </tbody></table>
           </section>
         </div>
       )}
 
-      {tab === 'clubs' && (
-        <div className="hb-body hb-grid">
-          {data.clubs.map(c => (
-            <section key={c.team_id} className="hb-panel">
-              <h3><TeamBadge name={c.team} size={30} /></h3>
-              {c.honours.length === 0 ? <p className="hb-foot">No honours yet.</p> : (
-                <table className="hb-table"><tbody>
-                  {c.honours.filter(h => h.kind !== 'flag' && h.kind !== 'flag7').map((h, i) => (
-                    <tr key={i}><td><Emblem kind={h.kind} tier="gold" step={h.step} size={26} /></td><td>{h.kind === 'clubgames' ? (h.step === 100 ? 'Life Member' : `${h.step} club games`) : h.name}</td><td><Name p={h} /></td><td className="n">{h.year ?? ''}</td></tr>
-                  ))}
-                </tbody></table>
-              )}
-              {c.honours.some(h => h.kind === 'flag') && <p className="hb-foot">Premiership: {[...new Set(c.honours.filter(h => h.kind === 'flag').map(h => h.year))].join(', ')}</p>}
-              {c.honours.some(h => h.kind === 'flag7') && <p className="hb-foot">7s premiership: {[...new Set(c.honours.filter(h => h.kind === 'flag7').map(h => h.year))].join(', ')}</p>}
-            </section>
-          ))}
-        </div>
-      )}
-
-      {tab === 'records' && season && (
-        <div className="hb-body hb-grid">
-          <section className="hb-panel">
-            <h3>Records, {season.year}</h3>
-            <div className="hb-kv">
-              {season.records.top_score && <div><b>{season.records.top_score.score}</b><span>Highest score: <Name p={season.records.top_score.player} />, {season.records.top_score.team}, round {season.records.top_score.round}</span></div>}
-              {season.records.top_season && <div><b>{season.records.top_season.points.toLocaleString()}</b><span>Most points in the season: <Name p={season.records.top_season.player} />, {season.records.top_season.team}</span></div>}
-              {season.records.top_club_round && <div><b>{season.records.top_club_round.score.toLocaleString()}</b><span>Highest club score: {season.records.top_club_round.team}, round {season.records.top_club_round.round}</span></div>}
-            </div>
-          </section>
-          <section className="hb-panel">
-            <h3><Emblem kind="clubgames" tier="silver" step={50} size={34} />Coming up</h3>
-            <table className="hb-table"><tbody>
-              {data.coming.map(p => <tr key={p.id + p.team}><td><Name p={p} /></td><td><TeamBadge name={p.team} size={20} showName={false} /></td><td className="n">{p.games} of {p.step}</td></tr>)}
+      {view === 'records' && recSeason && (
+        <div className="hb2-records">
+          {recSeason.records.top_score && (
+            <div className="hb2-rec"><span className="hb2-lab">Highest score</span><b>{recSeason.records.top_score.score}</b>
+              <span className="hb2-nm"><Face p={recSeason.records.top_score.player} size={32} /><Name p={recSeason.records.top_score.player} /></span>
+              <span>{recSeason.records.top_score.team}, round {recSeason.records.top_score.round}, {recSeason.year}</span></div>
+          )}
+          {recSeason.records.top_season && (
+            <div className="hb2-rec"><span className="hb2-lab">Most points in a season</span><b>{recSeason.records.top_season.points.toLocaleString()}</b>
+              <span className="hb2-nm"><Face p={recSeason.records.top_season.player} size={32} /><Name p={recSeason.records.top_season.player} /></span>
+              <span>{recSeason.records.top_season.team}, {recSeason.year}</span></div>
+          )}
+          {recSeason.records.top_club_round && (
+            <div className="hb2-rec"><span className="hb2-lab">Highest club score</span><b>{recSeason.records.top_club_round.score.toLocaleString()}</b>
+              <span className="hb2-nm"><TeamBadge name={recSeason.records.top_club_round.team} size={32} /></span>
+              <span>Round {recSeason.records.top_club_round.round}, {recSeason.year}</span></div>
+          )}
+          <section className="hb2-board hb2-wide">
+            <header className="hb2-bh hb2-bh-sm"><Emblem kind="clubgames" tier="silver" step={50} size={44} /><div className="hb2-bt"><h3>Next milestones</h3><p>The closest to their next club games milestone.</p></div></header>
+            <table className="hb2-tbl"><thead><tr><th>Player</th><th>Club</th><th className="n">Games</th><th className="n">Milestone</th><th className="n">To go</th></tr></thead><tbody>
+              {data.coming.map(p => <tr key={p.id + p.team}><td><span className="hb2-nm"><Face p={p} size={30} /><Name p={p} /></span></td><td><TeamBadge name={p.team} size={24} /></td><td className="n">{p.games}</td><td className="n">{p.step}</td><td className="n">{p.to_go}</td></tr>)}
             </tbody></table>
-            <p className="hb-foot">The closest to the next club games milestone.</p>
           </section>
         </div>
       )}

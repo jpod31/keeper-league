@@ -229,7 +229,7 @@ def _season(league_id, year, teams):
                 if flips and len(flips) <= 3:
                     pid, s, v = max(flips, key=lambda x: x[2])
                     out.append({"kind": "siren", "player_id": pid, "team_id": tid, "year": year, "round": r,
-                                "detail": f"Round {r}: {round(s)} points, won by {round(m)}", "value": round(m)})
+                                "detail": f"Round {r}, {round(s)} points, won by {round(m)}", "value": round(m)})
         for i, (pid, v) in enumerate(sorted(both, key=lambda x: -x[1])[:3]):
             medal[pid] += 3 - i
 
@@ -245,6 +245,8 @@ def _season(league_id, year, teams):
         pid = max(pp, key=pp.get)
         facts["top_season"] = {"points": round(pp[pid]), "player_id": pid, "team": tname(club_of[pid])}
     facts["medal_votes"] = sorted(([pid, v] for pid, v in medal.items()), key=lambda x: -x[1])[:10]
+    facts["rising_votes"] = sorted(([pid, v] for pid, v in medal.items()
+                                    if (_age_in(players.get(pid), year) or 99) <= RISING_AGE), key=lambda x: -x[1])[:5]
 
     if not complete:
         return out, dict(games), {"facts": facts, "complete": False, "rounds_in": rounds_in}
@@ -263,7 +265,7 @@ def _season(league_id, year, teams):
         flag = {"team_id": top.team_id, "team": tname(top.team_id), "wins": top.wins, "losses": top.losses, "players": []}
         for (tid, pid), g in sorted(games.items(), key=lambda kv: -kv[1]):
             if tid == top.team_id and g >= MIN_FLAG:
-                add("flag", pid, tid, f"{tname(tid)}, {g} games", g)
+                add("flag", pid, tid, f"{tname(tid)} premiers", g)
                 flag["players"].append([pid, g])
 
     # Keeper Medal (ties share)
@@ -305,7 +307,7 @@ def _season(league_id, year, teams):
     for line in ("DEF", "MID", "RUC", "FWD", "FLEX"):
         all_league[line] = [[pid, round(pp[pid] / pg[pid], 1), pg[pid], tname(club_of[pid])] for pid in team.get(line, [])]
         for pid in team.get(line, []):
-            add("allleague", pid, club_of[pid], f"Named in the {line_word[line]}", round(pv[pid], 1), {"line": line})
+            add("allleague", pid, club_of[pid], line_word[line].capitalize(), round(pv[pid], 1), {"line": line})
 
     return out, dict(games), {"facts": facts, "complete": True, "flag": flag, "champions": champs,
                               "all_league": all_league, "rounds_in": rounds_in}
@@ -357,7 +359,7 @@ def _sevens(league_id, year, teams, main_rounds_in):
         facts["flag"] = {"team_id": top.team_id, "team": tname(top.team_id), "wins": top.wins, "losses": top.losses, "players": []}
         for (tid, pid), g in sorted(games.items(), key=lambda kv: -kv[1]):
             if tid == top.team_id and g >= MIN_FLAG7:
-                add("flag7", pid, tid, f"{tname(tid)}, {g} 7s games", g)
+                add("flag7", pid, tid, f"{tname(tid)} 7s premiers", g)
                 facts["flag"]["players"].append([pid, g])
     if votes:
         best = max(votes.values())
@@ -372,7 +374,7 @@ def _sevens(league_id, year, teams, main_rounds_in):
             continue  # already in the 23 before his first 7s game: not called up from the 7s
         after = [r for r in main if r > r7]
         if len(after) >= MIN_CALLED_UP:
-            add("calledup", pid, tid, f"{tname(tid)}, {len(after)} games in the 23 after his first 7s game", len(after))
+            add("calledup", pid, tid, f"Called up by {tname(tid)}", len(after))
             facts["called_up"].append([pid, len(after)])
     facts["called_up"].sort(key=lambda x: -x[1])
     return out, dict(games), facts
@@ -513,14 +515,18 @@ def board(league_id):
             if f.get(key):
                 pids.add(f[key]["player_id"])
         pids.update(p for p, _v in f.get("medal_votes", []))
+        pids.update(p for p, _v in f.get("rising_votes", []))
         pids.update(p for p, _v in s.get("sevens", {}).get("medal_votes", []))
         for line in (s.get("all_league") or {}).values():
             pids.update(x[0] for x in line)
     players = {p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_(list(pids) or [0])).all()}
 
+    from models.player_photos import photo_url
+
     def card(pid):
         p = players.get(pid)
-        return {"id": pid, "name": p.name if p else "?", "position": (p.position if p else "") or "", "afl_team": (p.afl_team if p else "") or ""}
+        return {"id": pid, "name": p.name if p else "?", "position": (p.position if p else "") or "",
+                "afl_team": (p.afl_team if p else "") or "", "photo_url": photo_url(p.name) if p else None}
 
     seasons = []
     for y in sorted(data["seasons"], reverse=True):
@@ -539,6 +545,7 @@ def board(league_id):
             "year": y, "complete": s.get("complete", False),
             "flag": s.get("flag") and {**s["flag"], "players": [{**card(pid), "games": g} for pid, g in s["flag"]["players"]]},
             "medal": [{**card(pid), "votes": v} for pid, v in f.get("medal_votes", [])[:5]],
+            "rising": [{**card(pid), "votes": v} for pid, v in f.get("rising_votes", [])],
             "honours": dict(by_kind),
             "all_league": {line: [{**card(pid), "avg": avg, "games": g, "team": t} for pid, avg, g, t in rows]
                            for line, rows in (s.get("all_league") or {}).items()},
@@ -579,3 +586,57 @@ def board(league_id):
         "coming": coming,
         "clubs": [{"team_id": tid, "team": teams[tid], "honours": clubs.get(tid, [])} for tid in teams],
     }
+
+
+# Board order on the Honour Board, biggest first.
+BOARD_ORDER = ("keepermedal", "flag", "champion", "allleague", "rising", "triple", "siren",
+               "medal7", "flag7", "calledup", "clubgames", "hof", "legend")
+
+
+def honour_boards(league_id):
+    """One board per honour: every player who holds it, the years he won it,
+    and the metal his count puts him in. Lucas, 2026-11-27: "we just want
+    honour boards for players that have that badge, and the year they earnt
+    them in ... and colour changes for multi year winnings"."""
+    from models.player_photos import photo_url
+    data = league_honours(league_id)
+    teams = data["teams"]
+    held = defaultdict(lambda: defaultdict(list))   # kind (or clubgames step) -> pid -> honours
+    for pid, hs in data["by_player"].items():
+        for h in hs:
+            key = f"clubgames{h['step']}" if h["kind"] == "clubgames" else h["kind"]
+            held[key][pid].append(h)
+    players = {p.id: p for p in AflPlayer.query.filter(AflPlayer.id.in_([p for b in held.values() for p in b] or [0])).all()}
+
+    def board(key, kind, name, step=None):
+        rows = []
+        for pid, hs in held.get(key, {}).items():
+            p = players.get(pid)
+            if not p:
+                continue
+            years = sorted({h["year"] for h in hs if h.get("year")})
+            latest = max(hs, key=lambda h: (h.get("year") or 0, h.get("round") or 0))
+            if not latest.get("team_id"):
+                # career honours carry no club: use the club of his latest club honour
+                with_club = [h for h in data["by_player"].get(pid, []) if h.get("team_id")]
+                if with_club:
+                    latest = {**latest, "team_id": max(with_club, key=lambda h: h.get("year") or 0)["team_id"]}
+            times = len(hs) if kind != "clubgames" else 1
+            rows.append({"id": pid, "name": p.name, "position": p.position or "", "afl_team": p.afl_team or "",
+                         "photo_url": photo_url(p.name), "team": teams.get(latest.get("team_id"), ""),
+                         "times": times, "years": years, "tier": tier_for(kind, times, step),
+                         "detail": latest.get("detail", ""), "value": latest.get("value")})
+        rows.sort(key=lambda r: (-r["times"], -(r["years"][-1] if r["years"] else 0), -(r["value"] or 0), r["name"]))
+        return {"key": key, "kind": kind, "name": name, "step": step, "seven": kind in SEVENS,
+                "points": KINDS[kind][1] if kind != "clubgames" else CLUB_STEP_POINTS[step], "holders": rows}
+
+    out = []
+    for kind in BOARD_ORDER:
+        if kind == "clubgames":
+            for step in CLUB_STEPS:
+                b = board(f"clubgames{step}", "clubgames", "Life Member" if step == 100 else f"{step} club games", step)
+                if b["holders"] or step == 100:
+                    out.append(b)
+        else:
+            out.append(board(kind, kind, KINDS[kind][0]))
+    return out
