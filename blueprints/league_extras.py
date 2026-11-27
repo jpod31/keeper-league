@@ -233,6 +233,17 @@ def register_league_extras(spa_api):
         from models.player_honours import summary
         return jsonify({"players": {str(k): v for k, v in summary(league_id).items()}})
 
+    @spa_api.route("/leagues/<int:league_id>/draft-scouting")
+    @login_required
+    def draft_scouting(league_id):
+        """The draft room's outlook column: every player with no AFL games,
+        his verdict and chance of 10+ games (models/pre_afl.py)."""
+        league, _team = check_league_access(league_id)
+        if not league:
+            return jsonify({"error": "Not a league member"}), 403
+        from models.pre_afl import scouting_summary
+        return jsonify({"players": {str(k): v for k, v in scouting_summary().items()}})
+
     @spa_api.route("/leagues/<int:league_id>/record-book")
     @login_required
     def record_book(league_id):

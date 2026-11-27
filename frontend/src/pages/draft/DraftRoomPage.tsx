@@ -83,7 +83,11 @@ interface AvailablePlayer {
   draft_score: number | null
   is_new?: boolean
   position_expected?: boolean
+  outlook_ten?: number | null
 }
+
+/** A new player's scouting outlook (models/pre_afl.py scouting_summary). */
+interface Outlook { label: string | null; tone: 'good' | 'warn' | 'slow' | null; ten: number | null; pick: number | null; best: string | null }
 
 interface PositionNeeds {
   drafted: Record<string, number>
@@ -510,6 +514,13 @@ function DraftRoomPageInner() {
   const [ageFilter, setAgeFilter] = useState('')
   const [clubFilter, setClubFilter] = useState('')
   const [sortColumn, setSortColumn] = useState<string>('draft_score')
+  // Every new player's outlook from his scouting card: the verdict and his
+  // chance of 10+ games next year, as a column on the board (2026-11-27).
+  const [outlook, setOutlook] = useState<Record<string, Outlook>>({})
+  useEffect(() => {
+    api<{ players: Record<string, Outlook> }>(`/api/leagues/${leagueId}/draft-scouting`)
+      .then(d => setOutlook(d.players || {})).catch(() => setOutlook({}))
+  }, [leagueId])
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [weights, setWeights] = useState<Record<string, number>>({})
   const [weightsOpen, setWeightsOpen] = useState(false)
@@ -715,7 +726,7 @@ function DraftRoomPageInner() {
   })
 
   const sortedAvailable = useMemo(() => {
-    let filtered = available.filter(p => {
+    let filtered = available.map(p => ({ ...p, outlook_ten: outlook[String(p.id)]?.ten ?? null })).filter(p => {
       if (state && p.id != null && state.picked_player_ids.includes(p.id)) return false
       return true
     })
@@ -742,7 +753,7 @@ function DraftRoomPageInner() {
       if (typeof va === 'string' && typeof vb === 'string') return dir * va.localeCompare(vb)
       return dir * ((va as number) - (vb as number))
     }).slice(0, 100)
-  }, [available, ageFilter, clubFilter, sortColumn, sortDir, state])
+  }, [available, ageFilter, clubFilter, sortColumn, sortDir, state, outlook])
 
   const clubOptions = useMemo(() => {
     const set = new Set<string>()
@@ -1204,6 +1215,7 @@ function DraftRoomPageInner() {
                       ['sc_avg', statsYr.tag ? `SC ${statsYr.tag}` : 'SC'],
                       ['rating', 'Rtg'],
                       ['potential', 'Pot'],
+                      ['outlook_ten', '10+ gms'],
                       ['draft_score', 'Value'],
                     ] as const).map(([col, label]) => (
                       <th key={col} className={`sortable-th${sortColumn === col ? ' active-sort' : ''}`} onClick={() => toggleSort(col)}>
@@ -1224,6 +1236,11 @@ function DraftRoomPageInner() {
                         <td className="stat-cell" style={{ color: '#e8e7f0' }}>{p.sc_avg != null ? p.sc_avg.toFixed(1) : '-'}</td>
                         <td className="stat-cell"><span className={`rt ${rtBand(p.rating)}`}>{p.rating ?? '–'}</span></td>
                         <td className="stat-cell"><span className={`rt rt-line ${rtBand(p.potential)}`}>{p.potential ?? '–'}</span></td>
+                        <td className="stat-cell">{(() => {
+                          const o = outlook[String(p.id)]
+                          if (!o || o.ten == null) return '–'
+                          return <span className={`dr-out dr-${o.tone || 'warn'}`} title={[o.label, o.best].filter(Boolean).join('. ')}><i />{o.ten}%</span>
+                        })()}</td>
                         <td className="stat-cell"><span className="draft-stat-chip draft-score">{p.draft_score != null ? p.draft_score.toFixed(1) : '–'}</span></td>
                         <td className="dn-act">
                           <div className="d-flex gap-1 justify-content-end align-items-center">

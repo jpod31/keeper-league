@@ -10022,7 +10022,7 @@ th .sort-icon { opacity: 1 !important; }
 .draft-avail-tbl .player-name .dn-club { max-width: 168px; }
 @media (max-width: 1400px) { .pool-table th:nth-child(10), .pool-table td:nth-child(10) { display: none !important; } }
 @media (max-width: 1200px) { .pool-table th:nth-child(8), .pool-table td:nth-child(8) { display: none !important; } }
-@media (max-width: 1320px) { .draft-avail-tbl th:nth-child(7), .draft-avail-tbl td:nth-child(7) { display: none !important; } }
+@media (max-width: 1320px) { .draft-avail-tbl th:nth-child(8), .draft-avail-tbl td:nth-child(8) { display: none !important; } }
 @media (max-width: 1200px) { .draft-avail-tbl .player-name .dn-club { max-width: 128px; } }
 @media (max-width: 600px) {
   .draft-avail-tbl th:nth-child(3), .draft-avail-tbl td:nth-child(3),
@@ -11779,3 +11779,8 @@ button.rb-holder:hover b { text-decoration: underline; text-underline-offset: 3p
   .rb-h2h th.row .tbadge-name { display: none; }
 }
 @media (min-width: 768px) { .rb-grid.rb-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Draft room: a new player's outlook from his scouting card (2026-11-27). */
+.dr-out { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff; cursor: help; }
+.dr-out i { width: 9px; height: 9px; border-radius: 50%; background: #e3b341; }
+.dr-out.dr-good i { background: #3fb950; } .dr-out.dr-slow i { background: #f85149; }

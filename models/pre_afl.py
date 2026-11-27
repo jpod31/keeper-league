@@ -680,3 +680,27 @@ def pre_afl(p):
                        if proj else None),
         "lines": lines,
     }
+
+
+def scouting_summary():
+    """{player_id: {label, tone, ten, pick, best}} for every listed player
+    with no AFL games: the draft room's outlook column (2026-11-27). Built
+    from the same card the player pop-up shows, cached for an hour."""
+    def build():
+        out = {}
+        q = AflPlayer.query.filter(AflPlayer.listed(),
+                                   db.or_(AflPlayer.career_games.is_(None), AflPlayer.career_games == 0))
+        for p in q.all():
+            try:
+                card = pre_afl(p)
+            except Exception:
+                continue
+            v = card.get("verdict") or {}
+            ranks = (card.get("headline") or {}).get("ranks") or []
+            best = next((r for r in ranks if r.get("best")), ranks[0] if ranks else None)
+            word = ((card.get("headline") or {}).get("meta") or {}).get("word", "")
+            out[p.id] = {"label": v.get("label"), "tone": v.get("tone"),
+                         "ten": (v.get("chance") or {}).get("ten"), "pick": card.get("pick"),
+                         "best": f"{best['text']} {word} drafted since {FIRST_CLASS} for {best['label'].lower()}" if best else None}
+        return out
+    return _cached("scouting_summary", 3600, build)
